@@ -14,14 +14,13 @@ import {
 } from "./catalog";
 import { mapWithConcurrency, TABLE_CONCURRENCY } from "./concurrency";
 import {
-  BACKUP_INTEGRATION,
   BACKUP_KIND,
   BACKUP_VERSION,
-  backupTablePath,
   encodeValue,
   type Manifest,
   serializeTable
 } from "./format";
+import type { JobProgress } from "./runs";
 import {
   buildScopeFilter,
   computeScopeExclusions,
@@ -29,7 +28,12 @@ import {
   findExportScopeViolationsDetailed,
   type ScopeExclusions
 } from "./scope";
-import { listBucketFilesRecursive } from "./storage";
+import {
+  copyAssetsToBackup,
+  listBucketFilesRecursive,
+  writeBackupManifest,
+  writeBackupTable
+} from "./storage";
 
 const log = getLogger("jobs", "backup-dump");
 
@@ -47,13 +51,14 @@ type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
 const MAX_STORAGE_TOTAL_BYTES = 1024 * 1024 * 1024;
 
 /**
- * Build a company backup as a folder of small objects under `exports/<name>/`:
- * one `tables/<table>.ndjson.gz` per non-empty table (dumped in parallel), a
- * `manifest.json`, and (via the caller) `assets/<path>` files. Returns the folder
- * name. Exported so the same logic backs the export job, snapshots and onboarding
- * templates.
+ * Write a company backup as a folder under `exports/<name>/`: one
+ * `tables/<table>.ndjson.gz` per non-empty table (dumped in parallel), the
+ * in-scope storage files copied server-side into `assets/`, then
+ * `manifest.json` LAST, whose presence marks the backup complete. The export
+ * and both snapshots write through here, so a snapshot carries its files and
+ * a revert can put them back.
  */
-export async function buildCompanyBackup(
+export async function writeCompanyBackup(
   client: ServiceRole,
   db: JobDatabase,
   opts: {
@@ -70,19 +75,15 @@ export async function buildCompanyBackup(
      * user-confirmed recovery after a visible failure (spec 2026-09-01).
      */
     skipCorrupted?: boolean;
-    /** Live progress of the table-dump phase (`tables`). Throttled by the caller. */
-    onProgress?: (p: {
-      phase: string;
-      done: number;
-      total: number;
-    }) => Promise<void>;
+    /** Live progress of the `tables` and `files` phases. Throttled by the caller. */
+    onProgress?: (p: JobProgress) => Promise<void>;
   }
 ): Promise<{
   name: string;
   manifest: Manifest;
   rows: number;
-  /** `private`-bucket paths to copy into the backup's `assets/` folder. */
-  assetSourcePaths: string[];
+  /** Storage files copied into `assets/`, and those that failed to copy. */
+  assets: { copied: number; failed: number };
 }> {
   const { companyId, userId, includeStorage } = opts;
   const label = opts.label ?? null;
@@ -177,11 +178,6 @@ export async function buildCompanyBackup(
   let dumped = 0; // incremented as each table completes (single-threaded → safe)
   await mapWithConcurrency(exportable, TABLE_CONCURRENCY, async (table) => {
     const columns = exportableColumns(table);
-    // a prior import's revert ledger must never travel in an artifact
-    const ledgerFilter =
-      table.name === "externalIntegrationMapping"
-        ? sql` AND ${sql.id("integration")} != ${BACKUP_INTEGRATION}`
-        : sql``;
     // A skipCorrupted export leaves out the rows computeScopeExclusions decided on.
     const exclusion = exclusions?.predicates.get(table.name);
     const exclusionFilter = exclusion ? sql` AND NOT (${exclusion})` : sql``;
@@ -191,7 +187,7 @@ export async function buildCompanyBackup(
     const result = await sql<Record<string, unknown>>`
       SELECT ${sql.join(columns.map((c) => sql.id(c.name)))}
       FROM ${sql.id(table.name)}
-      WHERE ${buildScopeFilter(table, byName, companyId, companyGroupId)}${ledgerFilter}${exclusionFilter}
+      WHERE ${buildScopeFilter(table, byName, companyId, companyGroupId)}${exclusionFilter}
     `.execute(db);
 
     if (result.rows.length === 0) {
@@ -212,13 +208,7 @@ export async function buildCompanyBackup(
       return encoded;
     });
     const buf = await serializeTable(rows);
-    const up = await client.storage
-      .from(companyId)
-      .upload(backupTablePath(name, table.name), buf, {
-        contentType: "application/gzip",
-        upsert: true
-      });
-    if (up.error) throw new Error(`table ${table.name}: ${up.error.message}`);
+    await writeBackupTable(client, companyId, name, table.name, buf);
 
     tableManifest.push({
       name: table.name,
@@ -233,11 +223,8 @@ export async function buildCompanyBackup(
     });
   });
 
-  // Decide which storage assets are in scope. They live in the shared `private`
-  // bucket under a `{companyId}/` prefix (3D models, item thumbnails,
-  // attachments). They are NOT embedded — the caller copies the included files
-  // server-side into the backup's `assets/` folder, so a large asset set costs no
-  // memory. Skip anything over the total size guard.
+  // The company's storage files under its `{companyId}/` prefix (3D models,
+  // item thumbnails, attachments), up to the total size guard.
   const storageManifest: Manifest["storage"] = [];
   const assetSourcePaths: string[] = [];
 
@@ -276,8 +263,25 @@ export async function buildCompanyBackup(
     excludedRowsByTable: exclusions?.perTable ?? []
   };
 
-  // The manifest is NOT written here — the caller writes it LAST (after assets)
-  // via writeBackupManifest, so its presence marks the backup as complete.
+  // Server-side copies, best-effort: a file that fails only warns.
+  await opts.onProgress?.({
+    phase: "files",
+    done: 0,
+    total: assetSourcePaths.length
+  });
+  const assets = await copyAssetsToBackup(
+    client,
+    {
+      companyId,
+      sourcePaths: assetSourcePaths,
+      name
+    },
+    (done, total) =>
+      opts.onProgress?.({ phase: "files", done, total }) ?? Promise.resolve()
+  );
+
+  await writeBackupManifest(client, companyId, name, manifest);
+
   const rows = tableManifest.reduce((sum, t) => sum + t.rows, 0);
-  return { name, manifest, rows, assetSourcePaths };
+  return { name, manifest, rows, assets };
 }

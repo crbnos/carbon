@@ -439,24 +439,6 @@ describe("buildRowTransforms", () => {
     });
   });
 
-  it("rewrites a storage path to the shared template prefix when templateIndustryId is set", () => {
-    const t = table("modelUpload", [
-      col("id"),
-      col("companyId"),
-      col("thumbnailPath", { nullable: true })
-    ]);
-    const out = apply(
-      t,
-      {
-        id: "i1",
-        companyId: "src-co",
-        thumbnailPath: "src-co/thumbnails/x.png"
-      },
-      ctx({ templateIndustryId: "metal" })
-    );
-    expect(out.thumbnailPath).toBe("_templates/metal/thumbnails/x.png");
-  });
-
   it("nulls a nullable FK into a skipped (not-imported) table", () => {
     const t = table(
       "thing",

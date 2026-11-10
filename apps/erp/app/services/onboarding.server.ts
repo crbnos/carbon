@@ -102,10 +102,7 @@ export async function provisionCompanyData(
     await trigger("company-import", {
       companyId,
       userId,
-      filePath,
-      mode: "reseed",
-      importRunId: nanoid(),
-      autoFinalize: true
+      filePath
     });
   } catch (err) {
     logger.error("Failed to start company data import", { error: err });

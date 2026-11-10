@@ -5,11 +5,10 @@
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getCompanyPrivateBucket, isStorageNotFound } from "@carbon/files";
-import { chunkArray } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
 import type { Catalog } from "../../../backups/catalog";
 import { wipeScopedData } from "../../../backups/load";
-import { listBucketFilesRecursive } from "../../../backups/storage";
+import { removeBucketPrefix } from "../../../backups/storage";
 
 /**
  * Delete one company and everything it owns, inside the caller's transaction.
@@ -176,7 +175,12 @@ export async function removeCompanyFiles(
   // `deleteBucket` after it is refused as "not empty" for any bucket with files.
   // A bucket already gone (an earlier attempt removed it, then failed) is done.
   const bucket = getCompanyPrivateBucket(companyId);
-  let bucketError = await drainFolder(serviceRole, bucket, "");
+  let bucketError: unknown = null;
+  try {
+    await removeBucketPrefix(serviceRole, bucket, "", { strict: true });
+  } catch (error) {
+    bucketError = error;
+  }
   if (!bucketError) {
     bucketError = (await serviceRole.storage.deleteBucket(bucket)).error;
   }
@@ -187,44 +191,3 @@ export async function removeCompanyFiles(
 const isBucketGone = async (error: unknown) =>
   (await isStorageNotFound(error)) ||
   /not found/i.test((error as { message?: string }).message ?? "");
-
-/** Deletion passes per run; each listing returns at most 1000 entries per folder. */
-const MAX_DRAIN_PASSES = 20;
-
-/**
- * Delete every file under `prefix` of `bucket`. Returns the error that stopped
- * it, including a folder still not empty after `MAX_DRAIN_PASSES`: the company
- * is then kept, and the next run carries on from what this one already removed.
- */
-async function drainFolder(
-  serviceRole: ReturnType<typeof getCarbonServiceRole>,
-  bucket: string,
-  prefix: string
-): Promise<unknown> {
-  for (let pass = 0; ; pass++) {
-    let files: { path: string }[];
-    try {
-      files = await listBucketFilesRecursive(serviceRole, bucket, prefix, {
-        strict: true
-      });
-    } catch (error) {
-      return error;
-    }
-    if (files.length === 0) return null;
-    if (pass === MAX_DRAIN_PASSES) {
-      return new Error(
-        `${files.length}+ files remain after ${MAX_DRAIN_PASSES} passes`
-      );
-    }
-
-    // Small requests: storage deletes the rows and the objects in one statement
-    // timeout, and each row fires `delete_orphaned_documents`.
-    for (const paths of chunkArray(
-      files.map((f) => f.path),
-      200
-    )) {
-      const { error } = await serviceRole.storage.from(bucket).remove(paths);
-      if (error) return error;
-    }
-  }
-}

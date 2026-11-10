@@ -1,9 +1,7 @@
 import { Readable } from "node:stream";
 import { StringDecoder } from "node:string_decoder";
 import { createGunzip, createGzip } from "node:zlib";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ColumnInfo } from "./catalog";
-import { mapWithConcurrency, TABLE_CONCURRENCY } from "./concurrency";
 
 /**
  * The backup format: a folder `exports/<name>/` holding `manifest.json`, one
@@ -51,8 +49,6 @@ export type Manifest = {
   excludedRowsByTable?: Array<{ table: string; rows: number }>;
 };
 
-export const BACKUP_INTEGRATION = "company-backup";
-
 export const EXPORTS_PREFIX = "exports";
 
 export type CompanyBackup = {
@@ -80,27 +76,6 @@ export function backupTablePath(name: string, table: string): string {
 
 export function backupAssetsDir(name: string): string {
   return `${EXPORTS_PREFIX}/${name}/assets`;
-}
-
-/**
- * Write `manifest.json` — the LAST thing written for a backup, after every table
- * file and asset is in place. Its presence is the "backup is complete" marker:
- * the UI lists a folder without a manifest as still-preparing (no size yet), and
- * restore/import refuse to read one until its manifest exists.
- */
-export async function writeBackupManifest(
-  client: SupabaseClient,
-  companyId: string,
-  name: string,
-  manifest: Manifest
-): Promise<void> {
-  const up = await client.storage
-    .from(companyId)
-    .upload(backupManifestPath(name), Buffer.from(JSON.stringify(manifest)), {
-      contentType: "application/json",
-      upsert: true
-    });
-  if (up.error) throw new Error(`manifest: ${up.error.message}`);
 }
 
 /**
@@ -163,47 +138,6 @@ export async function deserializeTable(
  *  transition. */
 export function backupNameFromSource(source: string): string {
   return source.replace(/^exports\//, "").replace(/\.carbon\.json\.gz$/, "");
-}
-
-/**
- * Read a backup folder `exports/<name>/`: its manifest, then every table file in
- * parallel, into the in-memory `CompanyBackup` the load pipeline expects.
- */
-export async function readBackup(
-  client: SupabaseClient,
-  companyId: string,
-  name: string
-): Promise<CompanyBackup> {
-  const mf = await client.storage
-    .from(companyId)
-    .download(backupManifestPath(name));
-  if (mf.error || !mf.data) {
-    throw new Error(
-      `Failed to download backup manifest ${name}: ${
-        mf.error?.message || JSON.stringify(mf.error) || "not found"
-      }`
-    );
-  }
-  const manifest = JSON.parse(await mf.data.text()) as Manifest;
-  if (manifest.kind !== BACKUP_KIND) {
-    throw new Error("Not a Carbon company backup");
-  }
-
-  const data: CompanyBackup["data"] = {};
-  await mapWithConcurrency(manifest.tables, TABLE_CONCURRENCY, async (t) => {
-    const f = await client.storage
-      .from(companyId)
-      .download(backupTablePath(name, t.name));
-    if (f.error || !f.data) {
-      throw new Error(
-        `Failed to download table ${t.name} for ${name}: ${
-          f.error?.message || JSON.stringify(f.error) || "not found"
-        }`
-      );
-    }
-    data[t.name] = await deserializeTable(await f.data.arrayBuffer());
-  });
-  return { manifest, data };
 }
 
 /** Convert a pg-returned value into a JSON-safe backup value. */

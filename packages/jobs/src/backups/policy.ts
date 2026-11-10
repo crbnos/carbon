@@ -133,28 +133,12 @@ export const READABLE_ID_TABLES = new Set([
 ]);
 
 /**
- * Additional tables skipped in `reseed` mode — memberships, invites and
- * integration state belong to the source company's users, not to a copy.
- * The importing company already has its admin membership from onboarding.
- * (Tables whose PK is keyed by a user/employee FK — employeeJob, customer/
- * supplierAccount — are skipped automatically via `isUserScopedIdentityTable`,
- * so they don't need listing here.)
+ * The target company's own access and identity rows, which a restore and an
+ * import leave as they are: wiping them mid-restore would lock the user out of
+ * the company being restored, and a copy's memberships, invites and integration
+ * state belong to the source company's users. The backup still carries them.
  */
-export const RESEED_SKIPPED_TABLES = [
-  "userToCompany",
-  "employee",
-  "employeeType",
-  "employeeTypePermission",
-  "invite",
-  "externalIntegrationMapping"
-];
-
-/**
- * Tables an in-place restore must NOT wipe or reload — the caller's own access
- * and identity. Wiping these mid-restore would lock the user out of the company
- * they're restoring. The backup still carries them; they're simply left as-is.
- */
-export const IN_PLACE_SKIPPED_TABLES = new Set([
+export const KEPT_TABLES = new Set<string>([
   "userToCompany",
   "employee",
   "employeeType",
@@ -162,6 +146,17 @@ export const IN_PLACE_SKIPPED_TABLES = new Set([
   "invite",
   "externalIntegrationMapping"
 ]);
+
+const SECRET = new Set<string>(SECRET_TABLES);
+
+export function isSecretTable(name: string): boolean {
+  return SECRET.has(name);
+}
+
+/** Never written by a load: secrets don't travel, kept tables stay as they are. */
+export function isLeftAlone(name: string): boolean {
+  return SECRET.has(name) || KEPT_TABLES.has(name);
+}
 
 /**
  * The companyId-scoped tables an in-place restore may clear and reload: minus
@@ -197,7 +192,7 @@ export function isUserScopedIdentityTable(table: TableInfo): boolean {
       fk.column !== "companyId" &&
       fk.column !== "companyGroupId" &&
       uniqueCols.has(fk.column) &&
-      (fk.refTable === "user" || fk.refTable === "employee")
+      USER_REF_TABLES.has(fk.refTable)
   );
 }
 
@@ -205,10 +200,9 @@ export function selectWipeableTables(
   catalog: Catalog,
   opts: { includeGroup?: boolean } = {}
 ): TableInfo[] {
-  const skip = new Set([...SECRET_TABLES, ...IN_PLACE_SKIPPED_TABLES]);
   return catalog.tables.filter(
     (t) =>
-      !skip.has(t.name) &&
+      !isLeftAlone(t.name) &&
       // Identity tables (per-user rows) are wiped like any other. An own restore
       // and a revert reload them from the backup, whose users are this
       // company's; a foreign restore can't (its users collapse onto one) and
@@ -232,9 +226,8 @@ export function assertWipeSafe(
   const wipeable = new Set(
     selectWipeableTables(catalog, { includeGroup: true }).map((t) => t.name)
   );
-  const kept = new Set([...IN_PLACE_SKIPPED_TABLES, ...SECRET_TABLES]);
   for (const table of catalog.tables) {
-    if (!kept.has(table.name)) continue;
+    if (!isLeftAlone(table.name)) continue;
     const colByName = new Map(table.columns.map((c) => [c.name, c]));
     for (const fk of table.foreignKeys) {
       const col = colByName.get(fk.column);
@@ -259,8 +252,7 @@ export const USER_REF_TABLES = new Set(["user", "employee"]);
  * target group). A FK to any of these can't be a closure gap.
  */
 export const RETAINED_REF_TABLES = new Set([
-  "user",
-  "employee",
+  ...USER_REF_TABLES,
   "company",
   "companyGroup"
 ]);

@@ -248,26 +248,12 @@ export type Events = {
     };
   };
 
-  // Company backup import — two-phase: rows are inserted alongside an
-  // externalIntegrationMapping ledger (integration = 'company-backup'),
-  // then the user finalizes (keeps) or reverts (deletes) the run
+  // Onboarding from a backup: populate a freshly created company from it.
   "carbon/company-import": {
     data: {
       companyId: string;
       userId: string;
       filePath: string;
-      mode: "preserve" | "reseed";
-      importRunId: string;
-      /** Delete the revert ledger as soon as the import commits (no pending
-       *  review step). Used by onboarding-from-template. */
-      autoFinalize?: boolean;
-      /** Set when the source is an onboarding demo template. The template's
-       *  storage assets live once per workspace at `_templates/<industryId>/`
-       *  (uploaded at deploy), so the import REFERENCES them instead of copying
-       *  files into `{companyId}/` — storage path columns are rewritten to the
-       *  shared prefix and no per-company file upload happens. Absent for real
-       *  backups, which stay self-contained (files embedded + copied). */
-      templateIndustryId?: string;
     };
   };
 

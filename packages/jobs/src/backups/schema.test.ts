@@ -252,12 +252,19 @@ describe("reportBackupCompatibility — TABLE_RENAMES", () => {
   });
 });
 
-// The gate is the boolean form of the report and delegates to it. These pin that
+// The gate refuses on the report's findings. These pin that
 // the delegation refuses exactly the `blocked` findings and nothing else — the
 // report's `discarded`/`defaulted` findings must NOT stop a restore.
 describe("assertBackupImportable", () => {
-  const gate = (cat: Catalog, mf: Manifest) =>
-    assertBackupImportable(cat, { manifest: mf, data: {} });
+  // The refusal message, or null when the backup may load.
+  const gate = (cat: Catalog, mf: Manifest) => {
+    try {
+      assertBackupImportable(cat, { manifest: mf, data: {} });
+      return null;
+    } catch (e) {
+      return (e as Error).message;
+    }
+  };
 
   it("passes a backup the schema has not moved away from", () => {
     expect(
@@ -265,7 +272,7 @@ describe("assertBackupImportable", () => {
         catalog([table("item", [col("id"), col("name")])]),
         backup([{ name: "item", rows: 3, columns: ["id", "name"] }])
       )
-    ).toEqual({ ok: true });
+    ).toBeNull();
   });
 
   it("refuses an unsupported backup format", () => {
@@ -273,10 +280,7 @@ describe("assertBackupImportable", () => {
       catalog([table("item", [col("id")])]),
       backup([{ name: "item", rows: 1, columns: ["id"] }], { version: 0 })
     );
-    expect(result.ok).toBe(false);
-    expect((result as { reason: string }).reason).toContain(
-      "is no longer supported"
-    );
+    expect(result).toContain("is no longer supported");
   });
 
   it("refuses a table the schema no longer has and cannot map", () => {
@@ -284,8 +288,7 @@ describe("assertBackupImportable", () => {
       catalog([table("item", [col("id")])]),
       backup([{ name: "vanished", rows: 1, columns: ["id"] }])
     );
-    expect(result.ok).toBe(false);
-    expect((result as { reason: string }).reason).toContain("vanished");
+    expect(result).toContain("vanished");
   });
 
   it("refuses a new required column with no default, naming table and column", () => {
@@ -293,11 +296,9 @@ describe("assertBackupImportable", () => {
       catalog([table("item", [col("id"), col("mandatory")])]),
       backup([{ name: "item", rows: 1, columns: ["id"] }])
     );
-    expect(result).toEqual({
-      ok: false,
-      reason:
-        '"item" now requires column "mandatory", which this backup predates'
-    });
+    expect(result).toBe(
+      'This backup can\'t be restored: "item" now requires column "mandatory", which this backup predates.'
+    );
   });
 
   it("REFUSES a rename whose target the backup also carries", () => {
@@ -310,10 +311,7 @@ describe("assertBackupImportable", () => {
         { name: "enforcementRule", rows: 5, columns: ["id"] }
       ])
     );
-    expect(result.ok).toBe(false);
-    expect((result as { reason: string }).reason).toContain(
-      "which this backup also contains"
-    );
+    expect(result).toContain("which this backup also contains");
   });
 
   it("accepts a renamed table", () => {
@@ -322,7 +320,7 @@ describe("assertBackupImportable", () => {
         catalog([table("enforcementRule", [col("id")])]),
         backup([{ name: "storageRule", rows: 2, columns: ["id"] }])
       )
-    ).toEqual({ ok: true });
+    ).toBeNull();
   });
 
   it("accepts a dropped-with-its-feature table — discarded is not blocking", () => {
@@ -334,7 +332,7 @@ describe("assertBackupImportable", () => {
           { name: "exchangeRateHistory", rows: 9, columns: ["id"] }
         ])
       )
-    ).toEqual({ ok: true });
+    ).toBeNull();
   });
 
   it("accepts a removed column — those values are discarded, not blocking", () => {
@@ -343,7 +341,7 @@ describe("assertBackupImportable", () => {
         catalog([table("item", [col("id")])]),
         backup([{ name: "item", rows: 1, columns: ["id", "goneNow"] }])
       )
-    ).toEqual({ ok: true });
+    ).toBeNull();
   });
 
   it("accepts a new required column that has a default", () => {
@@ -354,7 +352,7 @@ describe("assertBackupImportable", () => {
         ]),
         backup([{ name: "item", rows: 1, columns: ["id"] }])
       )
-    ).toEqual({ ok: true });
+    ).toBeNull();
   });
 
   it("refuses account defaults arriving without a chart of accounts", () => {
@@ -365,10 +363,7 @@ describe("assertBackupImportable", () => {
       ]),
       backup([{ name: "accountDefault", rows: 4, columns: ["id"] }])
     );
-    expect(result.ok).toBe(false);
-    expect((result as { reason: string }).reason).toContain(
-      "no chart of accounts"
-    );
+    expect(result).toContain("no chart of accounts");
   });
 });
 

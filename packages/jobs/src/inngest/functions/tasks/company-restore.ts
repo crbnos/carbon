@@ -8,16 +8,11 @@ import { getLogger } from "@carbon/logger";
 import { NonRetriableError } from "inngest";
 import { getCompanyTableCatalog } from "../../../backups/catalog";
 import { assertBackupImportable } from "../../../backups/compatibility";
-import { buildCompanyBackup } from "../../../backups/dump";
-import {
-  backupAssetsDir,
-  backupDir,
-  backupNameFromSource,
-  readBackup,
-  writeBackupManifest
-} from "../../../backups/format";
+import { writeCompanyBackup } from "../../../backups/dump";
+import { backupDir, backupNameFromSource } from "../../../backups/format";
 import {
   getCompanyGroupId,
+  readBackupForLoad,
   resolveRestoreScope,
   wipeAndLoad
 } from "../../../backups/load";
@@ -25,7 +20,6 @@ import {
   assertReferentiallyClosed,
   loadSubstrateIds
 } from "../../../backups/remap";
-import { applyTableRenames } from "../../../backups/renames";
 import {
   type JobProgress,
   RESTORE_INTEGRATION,
@@ -259,7 +253,14 @@ export const companyRestoreFunction = inngest.createFunction(
 
       try {
         const name = backupNameFromSource(filePath);
-        const raw = await readBackup(client, companyId, name);
+        const catalog = await getCompanyTableCatalog(db);
+        const backup = await readBackupForLoad(
+          client,
+          companyId,
+          name,
+          catalog
+        );
+        assertBackupImportable(catalog, backup);
         const { targetGroupId, includeGroup } = await resolveRestoreScope(
           client,
           companyId
@@ -267,7 +268,7 @@ export const companyRestoreFunction = inngest.createFunction(
 
         // A backup from ANOTHER company must re-stamp the chart of accounts onto
         // this group, so it's only allowed when the group is this company's alone.
-        const foreign = raw.manifest.sourceCompanyId !== companyId;
+        const foreign = backup.manifest.sourceCompanyId !== companyId;
         if (foreign && !includeGroup) {
           throw new Error(
             !targetGroupId
@@ -277,18 +278,6 @@ export const companyRestoreFunction = inngest.createFunction(
                   "replaces shared data (chart of accounts) used by the other " +
                   "companies in this group, so it's only allowed in a " +
                   "single-company environment."
-          );
-        }
-
-        const catalog = await getCompanyTableCatalog(db);
-        // Move renamed tables onto their current names BEFORE the gate, so the
-        // gate, the closure preflight and the load all agree on what this backup
-        // contains. An unmapped missing table survives this and the gate refuses it.
-        const backup = applyTableRenames(catalog, raw);
-        const compatibility = assertBackupImportable(catalog, backup);
-        if (!compatibility.ok) {
-          throw new Error(
-            `This backup can't be restored: ${compatibility.reason}.`
           );
         }
 
@@ -317,23 +306,14 @@ export const companyRestoreFunction = inngest.createFunction(
         let snapshotPath = existing?.metadata.snapshotPath ?? undefined;
         if (!snapshotPath) {
           await report({ phase: "snapshot", done: 0, total: 1 });
-          // buildCompanyBackup writes the snapshot's table files; the manifest is
-          // written last (its presence marks the snapshot complete). The marker
-          // stores the folder name.
           snapshotPath = `_pre-restore-${restoreRunId}`;
-          const snapshot = await buildCompanyBackup(client, db, {
+          await writeCompanyBackup(client, db, {
             companyId,
             userId,
             label: `Pre-restore ${restoreRunId}`,
             includeStorage: "all",
             name: snapshotPath
           });
-          await writeBackupManifest(
-            client,
-            companyId,
-            snapshotPath,
-            snapshot.manifest
-          );
           await writeRestoreMarker(client, {
             companyId,
             userId,
@@ -373,8 +353,7 @@ export const companyRestoreFunction = inngest.createFunction(
               client,
               {
                 files: backup.manifest.storage,
-                srcBucket: companyId,
-                srcPrefix: backupAssetsDir(name),
+                name,
                 sourceCompanyId: backup.manifest.sourceCompanyId,
                 companyId,
                 idRewrite
@@ -527,11 +506,14 @@ export const companyRestoreRevertFunction = inngest.createFunction(
         // check). Wipe + reload the SAME scope the forward restore touched so the
         // undo is exact — including group data (chart of accounts) when the
         // forward run covered it.
-        const rawSnapshot = await readBackup(client, companyId, snapshotPath);
-        const targetGroupId = await getCompanyGroupId(client, companyId);
         const catalog = await getCompanyTableCatalog(db);
-        // A snapshot predates any migration deployed since the restore it undoes.
-        const snapshot = applyTableRenames(catalog, rawSnapshot);
+        const snapshot = await readBackupForLoad(
+          client,
+          companyId,
+          snapshotPath,
+          catalog
+        );
+        const targetGroupId = await getCompanyGroupId(client, companyId);
         const { rows, idRewrite } = await wipeAndLoad(db, catalog, snapshot, {
           companyId,
           userId: "",
@@ -547,8 +529,7 @@ export const companyRestoreRevertFunction = inngest.createFunction(
           client,
           {
             files: snapshot.manifest.storage,
-            srcBucket: companyId,
-            srcPrefix: backupAssetsDir(snapshotPath),
+            name: snapshotPath,
             sourceCompanyId: companyId,
             companyId,
             idRewrite

@@ -163,3 +163,10 @@ Template non-snapshot branch; import `preserve` mode + revert ledger + export le
 Solves: ERP audit hidden/needless links, `_pre-template-` listed (BUG), view-only archive download (BUG), errors read as empty/success.
 
 ### F5. Comments pass, then tests pass (keep behavior tests; add flow-level tests at the new seams).
+
+## F1b decisions (2026-11-10)
+- `readBackupForLoad` (read + table renames) is the one read for every load. The compatibility gate (`assertBackupImportable`, now throwing) runs only on forward restore and import: a revert loads the company's own snapshot, and a company with no group has account defaults without a chart of accounts, which the gate would refuse.
+- Import's revert ledger and `importRunId` idempotency check are gone. The only sender always auto-finalized, so the ledger was written row by row and then deleted. A retry after the load committed now fails on the "already set up" guard instead of skipping silently.
+- `insertTables` + `bulkLoad` are the one insert loop and the one load transaction (replica mode, derived groups, tableChange, realtime) for restore, both reverts and import. Import now also logs the table changes and broadcasts. The user-collapse PK dedupe now applies to every remapped load (foreign restore had the same risk).
+- `removeBucketPrefix` is the one prefix delete, batches of 200, also used by purge (replaces `drainFolder`).
+- Backup storage I/O (`readBackup`, `writeBackupManifest`, `writeBackupTable`, asset copies) lives in `storage.ts` and resolves the bucket with `getCompanyPrivateBucket`; `format.ts` is pure.

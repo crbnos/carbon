@@ -7,7 +7,7 @@ import { type Kysely, sql } from "kysely";
 import {
   CATALOG_EXCLUDED_TABLES,
   COMPANY_SINGLETON_TABLES,
-  SECRET_TABLES
+  isSecretTable
 } from "./policy";
 
 /**
@@ -84,11 +84,10 @@ export function selectExportableTables(catalog: Catalog): {
   exportable: TableInfo[];
   excludedTables: string[];
 } {
-  const secret = new Set<string>(SECRET_TABLES);
   const exportable: TableInfo[] = [];
   const excludedTables: string[] = [];
   for (const table of catalog.tables) {
-    if (secret.has(table.name)) excludedTables.push(table.name);
+    if (isSecretTable(table.name)) excludedTables.push(table.name);
     else exportable.push(table);
   }
   return { exportable, excludedTables };

@@ -9,15 +9,14 @@ import { applyDataset, getDataset } from "@carbon/database/datasets";
 import { datetime } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
 import { getCompanyTableCatalog } from "../../../backups/catalog";
-import { buildCompanyBackup } from "../../../backups/dump";
+import { writeCompanyBackup } from "../../../backups/dump";
+import { backupDir } from "../../../backups/format";
 import {
-  backupAssetsDir,
-  backupDir,
-  readBackup,
-  writeBackupManifest
-} from "../../../backups/format";
-import { resolveRestoreScope, wipeAndLoad } from "../../../backups/load";
-import { applyTableRenames } from "../../../backups/renames";
+  getCompanyGroupId,
+  readBackupForLoad,
+  resolveRestoreScope,
+  wipeAndLoad
+} from "../../../backups/load";
 import { type JobProgress, throttleProgress } from "../../../backups/runs";
 import {
   ExportScopeViolationError,
@@ -265,7 +264,7 @@ export const companyTemplateFunction = inngest.createFunction(
           const db = getJobDatabaseClient();
           const { includeGroup } = await resolveRestoreScope(client, companyId);
           snapshotPath = `_pre-template-${templateRunId}`;
-          const snap = await buildCompanyBackup(client, db, {
+          await writeCompanyBackup(client, db, {
             companyId,
             userId,
             label: `Pre-template ${templateRunId}`,
@@ -273,12 +272,6 @@ export const companyTemplateFunction = inngest.createFunction(
             name: snapshotPath,
             onProgress: (p) => report({ ...p, phase: "snapshot" })
           });
-          await writeBackupManifest(
-            client,
-            companyId,
-            snapshotPath,
-            snap.manifest
-          );
           await writeTemplateMarker(client, {
             companyId,
             userId,
@@ -512,11 +505,14 @@ export const companyTemplateRevertFunction = inngest.createFunction(
         // SAME scope the forward apply covered so the undo is exact. Note this is
         // the restore engine's tabula-rasa wipe, not the dataset wipe the forward
         // apply used: the snapshot carries the config back, so nothing is kept.
-        const rawSnapshot = await readBackup(client, companyId, snapshotPath);
-        const { targetGroupId } = await resolveRestoreScope(client, companyId);
         const catalog = await getCompanyTableCatalog(db);
-        // A snapshot predates any migration deployed since the apply it undoes.
-        const snapshot = applyTableRenames(catalog, rawSnapshot);
+        const snapshot = await readBackupForLoad(
+          client,
+          companyId,
+          snapshotPath,
+          catalog
+        );
+        const targetGroupId = await getCompanyGroupId(client, companyId);
         const { rows, idRewrite } = await wipeAndLoad(db, catalog, snapshot, {
           companyId,
           userId: "",
@@ -528,8 +524,7 @@ export const companyTemplateRevertFunction = inngest.createFunction(
         await report({ phase: "files", done: 0, total: 1 });
         await restoreAssetsFromBackup(client, {
           files: snapshot.manifest.storage,
-          srcBucket: companyId,
-          srcPrefix: backupAssetsDir(snapshotPath),
+          name: snapshotPath,
           sourceCompanyId: companyId,
           companyId,
           idRewrite

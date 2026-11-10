@@ -4,8 +4,18 @@
 
 import { getCompanyPrivateBucket } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { chunkArray } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { mapWithConcurrency } from "./concurrency";
+import { mapWithConcurrency, TABLE_CONCURRENCY } from "./concurrency";
+import {
+  BACKUP_KIND,
+  backupAssetsDir,
+  backupManifestPath,
+  backupTablePath,
+  type CompanyBackup,
+  deserializeTable,
+  type Manifest
+} from "./format";
 import { rewriteStoragePath } from "./remap";
 
 const log = getLogger("jobs", "backup-storage");
@@ -58,10 +68,89 @@ export async function listBucketFilesRecursive(
 }
 
 /**
- * Delete every file under `prefix` (a backup or snapshot folder). Lists the
- * whole folder first, then removes in batches: removing while paging would
- * shift the pages. `strict` throws on a list or remove error, for a caller
- * that tells the person the backup is gone.
+ * Read a backup folder `exports/<name>/`: its manifest, then every table file in
+ * parallel, into the in-memory `CompanyBackup` the load pipeline expects.
+ */
+export async function readBackup(
+  client: SupabaseClient,
+  companyId: string,
+  name: string
+): Promise<CompanyBackup> {
+  const mf = await client.storage
+    .from(getCompanyPrivateBucket(companyId))
+    .download(backupManifestPath(name));
+  if (mf.error || !mf.data) {
+    throw new Error(
+      `Failed to download backup manifest ${name}: ${
+        mf.error?.message || JSON.stringify(mf.error) || "not found"
+      }`
+    );
+  }
+  const manifest = JSON.parse(await mf.data.text()) as Manifest;
+  if (manifest.kind !== BACKUP_KIND) {
+    throw new Error("Not a Carbon company backup");
+  }
+
+  const data: CompanyBackup["data"] = {};
+  await mapWithConcurrency(manifest.tables, TABLE_CONCURRENCY, async (t) => {
+    const f = await client.storage
+      .from(getCompanyPrivateBucket(companyId))
+      .download(backupTablePath(name, t.name));
+    if (f.error || !f.data) {
+      throw new Error(
+        `Failed to download table ${t.name} for ${name}: ${
+          f.error?.message || JSON.stringify(f.error) || "not found"
+        }`
+      );
+    }
+    data[t.name] = await deserializeTable(await f.data.arrayBuffer());
+  });
+  return { manifest, data };
+}
+
+/** Upload one table file of a backup being written. */
+export async function writeBackupTable(
+  client: SupabaseClient,
+  companyId: string,
+  name: string,
+  table: string,
+  file: Buffer
+): Promise<void> {
+  const up = await client.storage
+    .from(getCompanyPrivateBucket(companyId))
+    .upload(backupTablePath(name, table), file, {
+      contentType: "application/gzip",
+      upsert: true
+    });
+  if (up.error) throw new Error(`table ${table}: ${up.error.message}`);
+}
+
+/**
+ * Write `manifest.json` — the LAST thing written for a backup, after every table
+ * file and asset is in place. Its presence is the "backup is complete" marker:
+ * the UI lists a folder without a manifest as still-preparing (no size yet), and
+ * restore/import refuse to read one until its manifest exists.
+ */
+export async function writeBackupManifest(
+  client: SupabaseClient,
+  companyId: string,
+  name: string,
+  manifest: Manifest
+): Promise<void> {
+  const up = await client.storage
+    .from(getCompanyPrivateBucket(companyId))
+    .upload(backupManifestPath(name), Buffer.from(JSON.stringify(manifest)), {
+      contentType: "application/json",
+      upsert: true
+    });
+  if (up.error) throw new Error(`manifest: ${up.error.message}`);
+}
+
+/**
+ * Delete every file under `prefix` ("" for the whole bucket). Lists the whole
+ * folder first, then removes in batches: removing while paging would shift the
+ * pages. `strict` throws on a list or remove error, for a caller that must know
+ * the files are gone.
  */
 export async function removeBucketPrefix(
   client: SupabaseClient,
@@ -72,10 +161,13 @@ export async function removeBucketPrefix(
   const files = await listBucketFilesRecursive(client, bucket, prefix, {
     strict
   });
-  for (let i = 0; i < files.length; i += LIST_PAGE) {
-    const { error } = await client.storage
-      .from(bucket)
-      .remove(files.slice(i, i + LIST_PAGE).map((f) => f.path));
+  // Small requests: storage deletes the rows and the objects in one statement
+  // timeout, and each row fires `delete_orphaned_documents`.
+  for (const paths of chunkArray(
+    files.map((f) => f.path),
+    200
+  )) {
+    const { error } = await client.storage.from(bucket).remove(paths);
     if (error && strict) throw error;
   }
 }
@@ -124,13 +216,13 @@ export async function copyAssetsToBackup(
   args: {
     companyId: string;
     sourcePaths: string[];
-    destBucket: string;
-    destPrefix: string;
+    /** The backup the files are copied into. */
+    name: string;
   },
   onProgress?: (done: number, total: number) => Promise<void>
 ): Promise<{ copied: number; failed: number }> {
-  const { companyId, sourcePaths, destBucket, destPrefix } = args;
-  const srcBucket = getCompanyPrivateBucket(companyId);
+  const { companyId, sourcePaths, name } = args;
+  const bucket = getCompanyPrivateBucket(companyId);
   const total = sourcePaths.length;
   let copied = 0;
   let failed = 0;
@@ -142,10 +234,10 @@ export async function copyAssetsToBackup(
       // The bucket comes from the company, never from the path: a path naming
       // another company would otherwise read that company's bucket.
       const { ok, error } = await copyStorageObject(client, {
-        srcBucket,
+        srcBucket: bucket,
         srcPath: path,
-        destBucket,
-        destPath: `${destPrefix}/${path}`
+        destBucket: bucket,
+        destPath: `${backupAssetsDir(name)}/${path}`
       });
       if (ok) {
         copied++;
@@ -170,16 +262,16 @@ export async function restoreAssetsFromBackup(
   client: SupabaseClient,
   args: {
     files: Array<{ path: string; included: boolean }>;
-    srcBucket: string;
-    srcPrefix: string;
+    /** The backup, in the target company's own bucket. */
+    name: string;
     sourceCompanyId: string;
     companyId: string;
     idRewrite: Map<string, string>;
   },
   onProgress?: (done: number, total: number) => Promise<void>
 ): Promise<{ copied: number; failed: number }> {
-  const { files, srcBucket, srcPrefix, sourceCompanyId, companyId, idRewrite } =
-    args;
+  const { files, name, sourceCompanyId, companyId, idRewrite } = args;
+  const bucket = getCompanyPrivateBucket(companyId);
   const included = files.filter((f) => f.included);
   const total = included.length;
   let copied = 0;
@@ -201,9 +293,9 @@ export async function restoreAssetsFromBackup(
       return;
     }
     const { ok, error } = await copyStorageObject(client, {
-      srcBucket,
-      srcPath: `${srcPrefix}/${file.path}`,
-      destBucket: getCompanyPrivateBucket(companyId),
+      srcBucket: bucket,
+      srcPath: `${backupAssetsDir(name)}/${file.path}`,
+      destBucket: bucket,
       destPath: targetPath
     });
     if (ok) {

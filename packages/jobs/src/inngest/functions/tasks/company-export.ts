@@ -5,13 +5,11 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
 import { NonRetriableError } from "inngest";
-import { buildCompanyBackup } from "../../../backups/dump";
-import { backupAssetsDir, writeBackupManifest } from "../../../backups/format";
+import { writeCompanyBackup } from "../../../backups/dump";
 import {
   ExportScopeViolationError,
   type ScopeViolation
 } from "../../../backups/scope";
-import { copyAssetsToBackup } from "../../../backups/storage";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
@@ -123,38 +121,18 @@ export const companyExportFunction = inngest.createFunction(
       };
 
       try {
-        const { name, manifest, rows, assetSourcePaths } =
-          await buildCompanyBackup(client, db, {
+        const { name, manifest, rows, assets } = await writeCompanyBackup(
+          client,
+          db,
+          {
             companyId,
             userId,
             label,
             includeStorage,
             skipCorrupted: skipCorrupted === true,
             onProgress: report
-          });
-
-        // Copy the in-scope assets server-side into the backup's `assets/` folder.
-        // Best-effort (matches restore/import): the table files are already
-        // committed; per-file copy failures only warn.
-        await report({
-          phase: "files",
-          done: 0,
-          total: assetSourcePaths.length
-        });
-        const assets = await copyAssetsToBackup(
-          client,
-          {
-            companyId,
-            sourcePaths: assetSourcePaths,
-            destBucket: companyId,
-            destPrefix: backupAssetsDir(name)
-          },
-          (done, total) => report({ phase: "files", done, total })
+          }
         );
-
-        // Manifest LAST — its presence marks the backup complete, so the list
-        // never shows a half-written backup as ready.
-        await writeBackupManifest(client, companyId, name, manifest);
 
         logger.info("Company export complete", {
           companyId,

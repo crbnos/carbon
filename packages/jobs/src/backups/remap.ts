@@ -19,9 +19,9 @@ import { mapWithConcurrency, TABLE_CONCURRENCY } from "./concurrency";
 import type { CompanyBackup } from "./format";
 import { ID_REF_COLUMNS, ROW_ID_REF_COLUMNS } from "./id-refs";
 import {
+  isSecretTable,
   READABLE_ID_TABLES,
   RETAINED_REF_TABLES,
-  SECRET_TABLES,
   STORAGE_PATH_COLUMNS,
   USER_REF_TABLES
 } from "./policy";
@@ -69,7 +69,6 @@ export function findDanglingReferences(
   // still carry its rows (e.g. `apiKeyRateLimit` → the stripped `apiKey`) — those
   // are ignored on load, so the preflight must ignore them too rather than report
   // a gap that can't exist for the restore.
-  const secret = new Set<string>(SECRET_TABLES);
   const idsByTable = new Map<string, Set<unknown>>();
   for (const t of catalog.tables) {
     // FKs are only ever checked against `refColumn === "id"` below, so any table
@@ -88,11 +87,11 @@ export function findDanglingReferences(
   for (const t of catalog.tables) {
     const rows = dataByTable[t.name];
     if (!rows?.length) continue;
-    if (secret.has(t.name)) continue; // not loaded → its refs are moot
+    if (isSecretTable(t.name)) continue; // not loaded → its refs are moot
     const colByName = new Map(t.columns.map((c) => [c.name, c]));
     for (const fk of t.foreignKeys) {
       if (fk.refColumn !== "id") continue;
-      if (secret.has(fk.refTable)) continue; // parent never present in any backup
+      if (isSecretTable(fk.refTable)) continue; // parent never present in any backup
       if (RETAINED_REF_TABLES.has(fk.refTable)) continue;
       if (!catalogNames.has(fk.refTable)) continue; // non-scoped global → stable ids
       const col = colByName.get(fk.column);
@@ -384,10 +383,6 @@ export function buildRowTransforms(
      *  one of these is kept verbatim — the stable id resolves against the
      *  target's own seed. From the same probe the closure guard uses. */
     substrateIds?: Map<string, Set<unknown>>;
-    /** Reseed only: an onboarding demo template references shared assets at
-     *  `_templates/<industryId>/` instead of per-company files — rewrite storage
-     *  paths there (ids kept) rather than to `{companyId}/`. */
-    templateIndustryId?: string;
     /** Reseed only: tenant tables NOT imported (skipped/secret). A nullable FK
      *  into one is nulled — its source id has no row in the target. */
     skippedRefTables?: ReadonlySet<string>;
@@ -428,13 +423,11 @@ export function buildRowTransforms(
     if (col.name === "companyId") return () => ctx.companyId;
     if (col.name === "companyGroupId") return () => ctx.targetGroupId;
     if (STORAGE_PATH_COLUMNS.has(col.name)) {
-      const { sourceCompanyId, companyId, idRewrite, templateIndustryId } = ctx;
-      return (v) => {
-        if (typeof v !== "string") return v;
-        return templateIndustryId
-          ? rewriteToTemplateAssetPath(v, sourceCompanyId, templateIndustryId)
-          : rewriteStoragePath(v, sourceCompanyId, companyId, idRewrite);
-      };
+      const { sourceCompanyId, companyId, idRewrite } = ctx;
+      return (v) =>
+        typeof v === "string"
+          ? rewriteStoragePath(v, sourceCompanyId, companyId, idRewrite)
+          : v;
     }
     if (table.name === "documentEdit" && col.name === "settings") {
       return (v) => rewriteDocumentEditRowKeys(v, ctx.idRewrite);
@@ -527,36 +520,6 @@ export function rewriteDocumentEditRowKeys(
     valueEdits: rewriteValueEditRowKeys(edits, (id) => idRewrite.get(id) ?? id)
   };
   return typeof settings === "string" ? JSON.stringify(next) : next;
-}
-
-/**
- * Prefix in the `private` bucket where onboarding demo-template assets live ONCE
- * per workspace (3D models, etc.), uploaded at deploy from the committed
- * template gz. A template import references these instead of copying the files
- * into every onboarded company's `{companyId}/` prefix.
- */
-export const TEMPLATE_ASSET_PREFIX = "_templates";
-
-/**
- * Rewrite a `{sourceCompanyId}/…` storage path to its shared template location
- * `_templates/{industryId}/…`, keeping the trailing segments (and their ids)
- * intact — the canonical asset is shared across every company onboarded from
- * the template, so ids are NOT remapped. Used both when fanning a template's
- * assets into the shared prefix at deploy and when pointing a referenced
- * import's path columns at them. A no-op if the path isn't under the source
- * company prefix.
- */
-export function rewriteToTemplateAssetPath(
-  path: string,
-  sourceCompanyId: string,
-  industryId: string
-): string {
-  if (path.startsWith(`${sourceCompanyId}/`)) {
-    return `${TEMPLATE_ASSET_PREFIX}/${industryId}/${path.slice(
-      sourceCompanyId.length + 1
-    )}`;
-  }
-  return path;
 }
 
 /**

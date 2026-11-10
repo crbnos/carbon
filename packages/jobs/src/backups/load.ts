@@ -21,8 +21,10 @@ import {
   selectWipeableTables
 } from "./policy";
 import { buildIdMaps, buildRowTransforms } from "./remap";
+import { applyTableRenames } from "./renames";
 import type { JobProgress } from "./runs";
 import { buildScopeFilter, deleteDanglingRows } from "./scope";
+import { readBackup } from "./storage";
 
 const log = getLogger("jobs", "backup-load");
 
@@ -83,6 +85,167 @@ export async function wipeScopedData(
 
 const INSERT_CHUNK_SIZE = 200;
 
+type RemapContext = Omit<Parameters<typeof buildRowTransforms>[2], "remap">;
+
+/**
+ * Insert a backup's rows, table by table in the given (catalog) order. With no
+ * `remap` the rows go in verbatim; with one, every value passes its column's
+ * transform, and a table keyed by a user keeps the first of the rows that the
+ * transform collapsed onto one user. Returns the rows inserted per table.
+ */
+export async function insertTables(
+  trx: Kysely<KyselyDatabase>,
+  tables: TableInfo[],
+  backup: CompanyBackup,
+  remap: RemapContext | null,
+  onProgress?: (done: number, total: number) => Promise<void>
+): Promise<Record<string, number>> {
+  const backupColumns = new Map(
+    backup.manifest.tables.map((t) => [t.name, new Set(t.columns)])
+  );
+  const counts: Record<string, number> = {};
+  for (let t = 0; t < tables.length; t++) {
+    const table = tables[t]!;
+    const sourceRows = backup.data[table.name] ?? [];
+    const backupCols =
+      backupColumns.get(table.name) ??
+      new Set(Object.keys(sourceRows[0] ?? {}));
+    const columns = table.columns.filter(
+      (c) => !c.isGenerated && backupCols.has(c.name)
+    );
+    if (columns.length === 0 || sourceRows.length === 0) continue;
+
+    // Hot path: indexed loops, and `out` keys in a fixed column order so every
+    // row of a table shares one hidden class.
+    const colCount = columns.length;
+    let rows: Record<string, unknown>[] = [];
+    if (remap) {
+      const transforms = buildRowTransforms(table, columns, {
+        ...remap,
+        remap: true
+      });
+      for (let r = 0; r < sourceRows.length; r++) {
+        const row = sourceRows[r]!;
+        const out: Record<string, unknown> = {};
+        for (let c = 0; c < colCount; c++) {
+          out[columns[c]!.name] = transforms[c]!(row[columns[c]!.name]);
+        }
+        rows.push(out);
+      }
+      if (!table.hasId && table.pkColumns.length > 0) {
+        const seen = new Set<string>();
+        rows = rows.filter((row) => {
+          const key = JSON.stringify(table.pkColumns.map((c) => row[c]));
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      }
+    } else {
+      for (let r = 0; r < sourceRows.length; r++) {
+        const row = sourceRows[r]!;
+        const out: Record<string, unknown> = {};
+        for (let c = 0; c < colCount; c++) {
+          const name = columns[c]!.name;
+          out[name] = row[name];
+        }
+        rows.push(out);
+      }
+    }
+
+    for (const batch of chunkArray(rows, INSERT_CHUNK_SIZE)) {
+      await sql`
+        INSERT INTO ${sql.id(table.name)}
+          (${sql.join(columns.map((c) => sql.id(c.name)))})
+        VALUES ${sql.join(
+          batch.map(
+            (row) =>
+              sql`(${sql.join(
+                columns.map((c) => sql`${bindValue(row[c.name], c)}`)
+              )})`
+          )
+        )}${groupConflictClause(table.name)}
+      `.execute(trx);
+    }
+    counts[table.name] = rows.length;
+    await onProgress?.(t + 1, tables.length);
+  }
+  return counts;
+}
+
+/**
+ * Run a bulk load of one company's data in a single transaction, with triggers
+ * and FK checks off where this connection may turn them off. Then do what the
+ * triggers would have done: rebuild the derived groups, and tell open clients
+ * that every list changed.
+ */
+export async function bulkLoad<T>(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  load: (trx: Kysely<KyselyDatabase>) => Promise<T>
+): Promise<T> {
+  const replicaMode = await canSetReplicationRole(db);
+  if (!replicaMode) {
+    log.warn(
+      "session_replication_role unavailable: loading with triggers and FK " +
+        "enforcement on, relying on topological order",
+      { companyId }
+    );
+  }
+
+  return db.transaction().execute(async (trx) => {
+    if (replicaMode) {
+      await sql`SET LOCAL session_replication_role = 'replica'`.execute(trx);
+    }
+
+    // The company's groups before the load: memberships survive an own
+    // restore, and any left pointing at a group that doesn't come back go.
+    const groupsBefore = await trx
+      .selectFrom("group")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .execute();
+
+    const result = await load(trx);
+
+    await rebuildDerivedGroups(
+      trx,
+      companyId,
+      groupsBefore.map((g) => g.id)
+    );
+
+    // With triggers off nothing logged the change: a null row id tells a client
+    // to read the whole table again.
+    await trx
+      .insertInto("tableChange")
+      .values(
+        CHANGE_LOGGED_TABLES.map((table) => ({ companyId, table, rowId: null }))
+      )
+      .execute();
+
+    // The log only answers a client that asks, and an open tab asks when a
+    // broadcast tells it to. With triggers off none was sent: after a template
+    // was reverted, a tab kept the reverted parts in its pickers for up to an
+    // hour, and creating a job with one of them failed. Sent with the
+    // transaction, so nothing hears of a load that rolled back.
+    const realtime = await sql<{ present: boolean }>`
+      SELECT to_regprocedure('realtime.send(jsonb,text,text,boolean)') IS NOT NULL AS present
+    `.execute(trx);
+    if (realtime.rows[0]?.present) {
+      await sql`
+        SELECT realtime.send(
+          jsonb_build_object('table', t, 'op', 'UPDATE', 'ids', NULL, 'parents', NULL),
+          'UPDATE',
+          'company:' || ${companyId} || ':' || t,
+          true
+        )
+        FROM unnest(${[...REALTIME_TABLES]}::text[]) AS t
+      `.execute(trx);
+    }
+    return result;
+  });
+}
+
 /**
  * Wipe the company's restorable tables and reload them from `backup`. Two modes:
  * - `remap=false` (own backup / snapshot): ids and scope already belong to this
@@ -91,10 +254,6 @@ const INSERT_CHUNK_SIZE = 200;
  *   id is remapped and companyId/group/FKs are re-stamped onto this company —
  *   including the chart of accounts (group-scoped), which is why `includeGroup`
  *   is set for foreign restores.
- * Runs in one transaction with FK enforcement relaxed when possible.
- *
- * Exported: `company-template.ts` is a second caller — a demo template's revert
- * reloads its pre-apply snapshot through exactly this path.
  */
 export async function wipeAndLoad(
   db: JobDatabase,
@@ -142,9 +301,6 @@ export async function wipeAndLoad(
       !(remap && isUserScopedIdentityTable(t)) &&
       (backup.data[t.name]?.length ?? 0) > 0
   );
-  const backupColumns = new Map(
-    backup.manifest.tables.map((t) => [t.name, new Set(t.columns)])
-  );
 
   // Foreign: assign a fresh id to every id-bearing row up front so FKs (and the
   // ids embedded in storage paths) can be rewritten in a single pass. See
@@ -166,28 +322,11 @@ export async function wipeAndLoad(
       })
     : new Map<string, Map<string, string>>();
   const idRewrite = new Map<string, string>();
-  if (remap) {
-    for (const map of idMaps.values()) {
-      for (const [oldId, newId] of map) idRewrite.set(oldId, newId);
-    }
+  for (const map of idMaps.values()) {
+    for (const [oldId, newId] of map) idRewrite.set(oldId, newId);
   }
 
-  const replicaMode = await canSetReplicationRole(db);
-  let inserted = 0;
-
-  await db.transaction().execute(async (trx) => {
-    if (replicaMode) {
-      await sql`SET LOCAL session_replication_role = 'replica'`.execute(trx);
-    }
-
-    // The company's groups before the wipe: memberships survive an own
-    // restore, and any left pointing at a group that doesn't come back go.
-    const wipedGroups = await trx
-      .selectFrom("group")
-      .select("id")
-      .where("companyId", "=", companyId)
-      .execute();
-
+  const counts = await bulkLoad(db, companyId, async (trx) => {
     await onProgress?.({ phase: "wipe", done: 0, total: wipeTables.length });
     await wipeScopedData(
       trx,
@@ -199,76 +338,25 @@ export async function wipeAndLoad(
         : undefined
     );
 
-    for (let t = 0; t < loadTables.length; t++) {
-      const table = loadTables[t]!;
-      const backupCols =
-        backupColumns.get(table.name) ??
-        new Set(Object.keys(backup.data[table.name]![0] ?? {}));
-      const columns = table.columns.filter(
-        (c) => !c.isGenerated && backupCols.has(c.name)
-      );
-      if (columns.length === 0) continue;
-
-      // Hot path. Plain indexed loops (no per-row `forEach` closure), packed
-      // output array, and `out` keys assigned in a fixed column order so every
-      // row of a table shares one hidden class. Own restore skips transforms
-      // entirely (verbatim copy) — that call site would otherwise be megamorphic
-      // across the per-column closures.
-      const sourceRows = backup.data[table.name]!;
-      const colCount = columns.length;
-      const rows: Record<string, unknown>[] = [];
-      if (remap) {
-        const transforms = buildRowTransforms(table, columns, {
-          remap,
-          companyId,
-          userId,
-          targetGroupId,
-          sourceCompanyId: backup.manifest.sourceCompanyId,
-          idMaps,
-          idRewrite,
-          substrateIds
-        });
-        for (let r = 0; r < sourceRows.length; r++) {
-          const row = sourceRows[r]!;
-          const out: Record<string, unknown> = {};
-          for (let c = 0; c < colCount; c++) {
-            out[columns[c]!.name] = transforms[c]!(row[columns[c]!.name]);
+    const counts = await insertTables(
+      trx,
+      loadTables,
+      backup,
+      remap
+        ? {
+            companyId,
+            userId,
+            targetGroupId,
+            sourceCompanyId: backup.manifest.sourceCompanyId,
+            idMaps,
+            idRewrite,
+            substrateIds
           }
-          rows.push(out);
-        }
-      } else {
-        for (let r = 0; r < sourceRows.length; r++) {
-          const row = sourceRows[r]!;
-          const out: Record<string, unknown> = {};
-          for (let c = 0; c < colCount; c++) {
-            const name = columns[c]!.name;
-            out[name] = row[name];
-          }
-          rows.push(out);
-        }
-      }
-
-      for (const batch of chunkArray(rows, INSERT_CHUNK_SIZE)) {
-        await sql`
-          INSERT INTO ${sql.id(table.name)}
-            (${sql.join(columns.map((c) => sql.id(c.name)))})
-          VALUES ${sql.join(
-            batch.map(
-              (row) =>
-                sql`(${sql.join(
-                  columns.map((c) => sql`${bindValue(row[c.name], c)}`)
-                )})`
-            )
-          )}${groupConflictClause(table.name)}
-        `.execute(trx);
-      }
-      inserted += rows.length;
-      await onProgress?.({
-        phase: "load",
-        done: t + 1,
-        total: loadTables.length
-      });
-    }
+        : null,
+      onProgress
+        ? (done, total) => onProgress({ phase: "load", done, total })
+        : undefined
+    );
 
     // Kept identity rows whose parent the wipe removed (replica mode skipped the
     // cascade) would fail every later export. A foreign restore already wiped them.
@@ -289,50 +377,26 @@ export async function wipeAndLoad(
         });
       }
     }
-
-    await rebuildDerivedGroups(
-      trx,
-      companyId,
-      wipedGroups.map((g) => g.id)
-    );
-
-    // Every list an open client keeps a copy of has just been replaced. With
-    // triggers off nothing logged that, so say it here: a null row id tells
-    // the client to read the whole table again.
-    await trx
-      .insertInto("tableChange")
-      .values(
-        CHANGE_LOGGED_TABLES.map((table) => ({ companyId, table, rowId: null }))
-      )
-      .execute();
-
-    // The log only answers a client that asks, and an open tab asks when a
-    // broadcast tells it to. With triggers off none was sent: after a template
-    // was reverted, a tab kept the reverted parts in its pickers for up to an
-    // hour, and creating a job with one of them failed. Say on every table's
-    // topic that it changed in bulk (null ids): a list reads the log again and
-    // a page reloads. Sent with the transaction, so nothing hears of a restore
-    // that rolled back.
-    const realtime = await sql<{ present: boolean }>`
-      SELECT to_regprocedure('realtime.send(jsonb,text,text,boolean)') IS NOT NULL AS present
-    `.execute(trx);
-    if (realtime.rows[0]?.present) {
-      await sql`
-        SELECT realtime.send(
-          jsonb_build_object('table', t, 'op', 'UPDATE', 'ids', NULL, 'parents', NULL),
-          'UPDATE',
-          'company:' || ${companyId} || ':' || t,
-          true
-        )
-        FROM unnest(${[...REALTIME_TABLES]}::text[]) AS t
-      `.execute(trx);
-    }
+    return counts;
   });
 
-  return { rows: inserted, idRewrite };
+  const rows = Object.values(counts).reduce((sum, n) => sum + n, 0);
+  return { rows, idRewrite };
 }
 
-/** Exported: also used by `company-template.ts` when reverting a demo template. */
+/**
+ * Read a backup folder under today's table names. A backup — a snapshot too —
+ * can predate a migration that renamed a table, so every load reads through here.
+ */
+export async function readBackupForLoad(
+  client: ServiceRole,
+  companyId: string,
+  name: string,
+  catalog: Catalog
+): Promise<CompanyBackup> {
+  return applyTableRenames(catalog, await readBackup(client, companyId, name));
+}
+
 export async function getCompanyGroupId(
   client: ServiceRole,
   companyId: string
@@ -352,22 +416,17 @@ export async function getCompanyGroupId(
  * group, so we only wipe/reload it when this company is the group's SOLE member —
  * then the group is effectively this company's. In a multi-company group it is
  * left untouched and managed at the group level.
- *
- * Exported: shared by the restore path and the demo-template path so the two can
- * never disagree about what a revert is allowed to touch.
  */
 export async function resolveRestoreScope(
   client: ServiceRole,
   companyId: string
 ): Promise<{ targetGroupId: string | null; includeGroup: boolean }> {
   const targetGroupId = await getCompanyGroupId(client, companyId);
-  const groupCompanyCount = targetGroupId
-    ? ((
-        await client
-          .from("company")
-          .select("id", { count: "exact", head: true })
-          .eq("companyGroupId", targetGroupId)
-      ).count ?? 1)
-    : 0;
-  return { targetGroupId, includeGroup: groupCompanyCount === 1 };
+  if (!targetGroupId) return { targetGroupId, includeGroup: false };
+  const members = await client
+    .from("company")
+    .select("id", { count: "exact", head: true })
+    .eq("companyGroupId", targetGroupId);
+  if (members.error) throw new Error(members.error.message);
+  return { targetGroupId, includeGroup: members.count === 1 };
 }

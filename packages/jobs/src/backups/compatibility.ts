@@ -25,7 +25,7 @@ export type CompatibilityFinding = {
  * Diff a backup's manifest against a catalog: what a restore would fill with a
  * default, discard, or refuse outright. Only meaningful when the two come from
  * DIFFERENT points in time — the ERP loader computes it against the live schema,
- * and `assertBackupImportable` is its boolean form inside the restore.
+ * and `assertBackupImportable` refuses on it inside the jobs.
  *
  * A NULLABLE column added since the backup is not reported — the ordinary
  * additive case would bury the findings that matter.
@@ -169,36 +169,20 @@ export function compatibilityStatus(report: {
 }
 
 /**
- * Decide whether a backup can be imported into the *current* schema — the hard
- * gate the restore and import jobs call, and the boolean form of exactly the same
- * question `reportBackupCompatibility` answers in detail.
- *
- * It DELEGATES to that function rather than restating its rules. The two were
- * separate implementations kept in step by hand, and they drifted: table renames
- * reached the report but not the gate, so the pre-restore screen said "restorable"
- * and the restore then refused. A finding is `blocked` or it is not; that decision
- * now exists in one place.
- *
- * Reads only the manifest, so the verdict never depends on which table files a
- * caller happens to have loaded.
+ * Refuse a backup today's schema can't load: the restore and import jobs' gate.
+ * It reads the same `blocked` findings the Backups page shows, so the screen and
+ * the job can't disagree, and it reads only the manifest, so the verdict doesn't
+ * depend on which table files a caller has loaded.
  */
 export function assertBackupImportable(
   catalog: Catalog,
   backup: CompanyBackup
-): { ok: true } | { ok: false; reason: string } {
+): void {
   const { findings } = reportBackupCompatibility(catalog, backup.manifest);
-  const blocking = findings.find((f) => f.kind === "blocked");
-  if (!blocking) return { ok: true };
-  return { ok: false, reason: blockingReason(blocking) };
-}
-
-/**
- * A `blocked` finding as one sentence, for a caller with nowhere to render the
- * `table`/`column` fields the UI shows beside `reason`.
- */
-function blockingReason(f: CompatibilityFinding): string {
-  if (f.column) {
-    return `"${f.table}" now requires column "${f.column}", which this backup predates`;
-  }
-  return f.reason;
+  const f = findings.find((x) => x.kind === "blocked");
+  if (!f) return;
+  const reason = f.column
+    ? `"${f.table}" now requires column "${f.column}", which this backup predates`
+    : f.reason;
+  throw new Error(`This backup can't be restored: ${reason}.`);
 }
