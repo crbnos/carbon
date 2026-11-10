@@ -31,8 +31,6 @@ export function userActor(claims: {
 export type AccessRequirement = AnyGate | "employee" | "system";
 
 export type AdmitOptions = {
-  /** Check the gate as a data read (`holdsGate`'s `reads`). */
-  reads?: boolean;
   /**
    * Also admit a signed-in user who is not an employee of the company: a
    * customer or supplier portal account, or a user with no role there (before
@@ -62,7 +60,7 @@ export function admits(
   actor: AccessActor,
   companyId: string,
   requirement: AccessRequirement,
-  { reads = false, allowPortalAccounts = false }: AdmitOptions = {}
+  { allowPortalAccounts = false }: AdmitOptions = {}
 ): boolean {
   if (actor.type === "system") return true;
   if (requirement === "system") return false;
@@ -72,5 +70,5 @@ export function admits(
       : actor.role === "employee" || allowPortalAccounts;
   if (!member) return false;
   if (requirement === "employee") return true;
-  return holdsGate(actor.permissions ?? {}, requirement, companyId, { reads });
+  return holdsGate(actor.permissions ?? {}, requirement, companyId);
 }

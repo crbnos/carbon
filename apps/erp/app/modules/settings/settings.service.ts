@@ -20,7 +20,6 @@ import {
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
-import { clearClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
 import { ACCOUNT_DEFAULT_COLUMNS } from "@carbon/database/account-import";
@@ -3802,14 +3801,13 @@ export async function createHeadquarters(
     );
   }
 
-  const [job] = await Promise.all([
-    insertEmployeeJob(client, {
-      id: ctx.auditUserId,
-      companyId,
-      locationId: headquarters.data.id
-    }),
-    clearClaims([ctx.auditUserId])
-  ]);
+  // No claims clear: the cache holds one field per company, and a company
+  // just created has none yet.
+  const job = await insertEmployeeJob(client, {
+    id: ctx.auditUserId,
+    companyId,
+    locationId: headquarters.data.id
+  });
   if (job.error) {
     return ctx.error(
       "internal",

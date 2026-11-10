@@ -327,6 +327,21 @@ export const urlSegments = (url: string): string[] =>
   (url.split(/[?#]/)[0] ?? "").split("/").filter(Boolean);
 
 /**
+ * The URL a flat-routes file under `routes/x+/` serves:
+ * `receipt+/$receiptId.details.tsx` → `/x/receipt/$receiptId/details`.
+ * A `_` segment is pathless; a trailing `_` opts out of the parent layout.
+ */
+export function routeUrl(file: string): string {
+  const segments = file
+    .replace(/\.(tsx?|jsx?)$/, "")
+    .split("/")
+    .flatMap((part) => part.replace(/\+$/, "").split("."))
+    .filter((segment) => !segment.startsWith("_"))
+    .map((segment) => segment.replace(/_$/, ""));
+  return ["/x", ...segments].join("/");
+}
+
+/**
  * How many segments of a path cover the URL; 0 when it does not. A path
  * covers its own URL and every URL below it. A `$param` segment of the path
  * matches any one segment, so a pathname (`/x/customer/c1/assets`) and a route

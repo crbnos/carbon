@@ -3,10 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  type ExpandedClaims,
   type Gate,
-  landingOf,
-  type ModuleId,
   moduleOf,
   pageOfUrl,
   urlCoverage,
@@ -14,19 +11,6 @@ import {
 } from "@carbon/database/access";
 import type { Route } from "~/types";
 import type { Handle } from "~/utils/handle";
-
-/**
- * Where a module's link and its `_index` redirect take a person: the first
- * page of the module they can view (`landingOf`). Undefined when they can
- * view none.
- */
-export function moduleLanding(
-  module: ModuleId,
-  permissions: ExpandedClaims | null | undefined,
-  companyId: string
-): string | undefined {
-  return landingOf(module, permissions, companyId)?.path;
-}
 
 type ModuleMatch = { pathname: string; handle?: unknown };
 

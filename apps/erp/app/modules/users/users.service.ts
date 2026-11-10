@@ -43,12 +43,11 @@ import {
 } from "@carbon/database/access-write";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { InviteEmail } from "@carbon/documents/email";
-import { saveApiKey } from "@carbon/ee/api-keys.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { accessSubject, subjectGates } from "@carbon/ee/permission-grants";
 import {
   type AccessChange,
-  type AccessWriteError,
+  grantWriteRefusal,
   saveEmployeeType,
   writeAccessGrants
 } from "@carbon/ee/permissions.server";
@@ -2535,7 +2534,7 @@ export async function saveAccessGrants(
     ip?: string;
   }
 ): Promise<CarbonError | null> {
-  return refusalOf(
+  return grantWriteRefusal(
     ctx,
     writeAccessGrants(ctx.asCaller.supabase, ctx.asSystem.pg, {
       companyId: ctx.company.id,
@@ -2561,32 +2560,9 @@ export async function writeEmployeeType(
     companyId: ctx.company.id,
     actorId: ctx.auditUserId
   });
-  const refused = await refusalOf(ctx, write);
+  const refused = await grantWriteRefusal(ctx, write);
   if (refused) return refused;
   return { id: (await write).id as string };
-}
-
-/** Create or update an API key with its grants, in one transaction (`saveApiKey`, `@carbon/ee`). */
-export function writeApiKey(
-  ctx: ServiceContext,
-  input: Pick<Parameters<typeof saveApiKey>[2], "key" | "grants" | "ip">
-): Promise<CarbonError | null> {
-  return refusalOf(
-    ctx,
-    saveApiKey(ctx.asCaller.supabase, ctx.asSystem.pg, {
-      ...input,
-      companyId: ctx.company.id,
-      actorId: ctx.auditUserId
-    })
-  );
-}
-
-async function refusalOf(
-  ctx: ServiceContext,
-  write: Promise<{ error: AccessWriteError | null }>
-): Promise<CarbonError | null> {
-  const { error } = await write;
-  return error ? ctx.error(error.code, error.message) : null;
 }
 
 /**

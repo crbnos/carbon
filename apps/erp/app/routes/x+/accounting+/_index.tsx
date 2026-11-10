@@ -3,11 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
-import { anyOf, pagesOf } from "@carbon/database/access";
+import { anyOf, landingOf, pagesOf } from "@carbon/database/access";
 import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
-import { moduleLanding } from "~/utils/nav";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -17,7 +16,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 
   const landing =
-    moduleLanding("accounting", permissions, companyId) ?? path.to.reports;
+    landingOf("accounting", permissions, companyId)?.path ?? path.to.reports;
   if (landing !== path.to.reports) throw redirect(landing);
 
   // Before the cutover there is nothing to report on: Reporting opens the

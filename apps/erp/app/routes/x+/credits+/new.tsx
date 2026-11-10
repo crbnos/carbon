@@ -53,8 +53,7 @@ export const handle: Handle = {
         ? { breadcrumb: msg`Supplier Credits`, to: path.to.supplierCredits }
         : { breadcrumb: msg`Credit Memos`, to: path.to.creditMemos }
     ];
-  },
-  module: "invoicing"
+  }
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

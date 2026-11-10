@@ -5,15 +5,10 @@
 import { describe, expect, it } from "vitest";
 import {
   gateOfRoute,
-  moduleLanding,
   moduleOfMatches,
   routeOwnsUrl,
   visibleGroups
 } from "./nav";
-
-const none = { view: [], create: [], update: [], delete: [] };
-const viewing = (...pages: string[]) =>
-  Object.fromEntries(pages.map((page) => [page, { ...none, view: ["c1"] }]));
 
 describe("gateOfRoute", () => {
   it("shows an entry behind View on its page, its own gate, or nothing", () => {
@@ -90,28 +85,6 @@ describe("visibleGroups", () => {
         (route) => route.to !== "/x/sales/customer-statuses"
       )
     ).toEqual([{ name: "Quoting", routes: [{ to: "/x/sales/quotes" }] }]);
-  });
-});
-
-describe("moduleLanding", () => {
-  it("opens a module on the first page the person can view", () => {
-    expect(moduleLanding("parts", viewing("parts.tools"), "c1")).toBe(
-      "/x/items/tools"
-    );
-    expect(moduleLanding("parts", {}, "c1")).toBeUndefined();
-  });
-
-  it("opens Settings on Company when the person can view it", () => {
-    expect(
-      moduleLanding(
-        "settings",
-        viewing("settings.billing", "settings.company"),
-        "c1"
-      )
-    ).toBe("/x/settings/company");
-    expect(moduleLanding("settings", viewing("settings.billing"), "c1")).toBe(
-      "/x/settings/billing"
-    );
   });
 });
 

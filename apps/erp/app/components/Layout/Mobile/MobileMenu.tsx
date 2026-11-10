@@ -38,7 +38,6 @@ import { useModuleLinks } from "~/hooks/useModuleSubmodules";
 import { useAllModules, useSettingsModule } from "~/hooks/useModules";
 import { moduleOfMatches } from "~/utils/nav";
 import { path } from "~/utils/path";
-import { getModule } from "~/utils/submodule-visibility";
 import { AddCompanyModal } from "../Navigation/AddCompanyModal";
 import { useCompactModuleSidebar } from "../Navigation/CollapsibleSidebar";
 import {
@@ -95,6 +94,7 @@ function ModuleRows({ currentKey }: { currentKey: string | null }) {
   const modules = useModuleLinks();
   const settingsModule = useSettingsModule();
   const isHome = pathname === path.to.authenticatedRoot;
+  const isGetStarted = moduleOfMatches(useMatches()) === "get-started";
 
   const row = (
     key: string,
@@ -127,13 +127,7 @@ function ModuleRows({ currentKey }: { currentKey: string | null }) {
           {(data) => {
             const item = getImplementationNavItem(data, i18n);
             return item
-              ? row(
-                  "get-started",
-                  item.to,
-                  item.icon,
-                  item.name,
-                  getModule(pathname) === getModule(item.to)
-                )
+              ? row("get-started", item.to, item.icon, item.name, isGetStarted)
               : null;
           }}
         </ImplementationData>

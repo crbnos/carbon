@@ -6,7 +6,8 @@ import {
   ITEM_PAGES,
   pageById,
   pageOfUrl,
-  pagesOf
+  pagesOf,
+  routeUrl
 } from "@carbon/database/access";
 import ts from "typescript5";
 import type { ConformanceCheck, SourceFile, Violation } from "../check";
@@ -30,12 +31,6 @@ const RENTAL_RATES: Exception = {
     "the item's rental rates are Rental Agreements tables (itemRentalRate, customerItemRentalRate), edited from the item's Sales tab"
 };
 
-const WORK_CENTER_RULES: Exception = {
-  pages: ["inventory.storageRules"],
-  reason:
-    "assigning a storage rule to a work center writes enforcementRuleWorkCenterAssignment, a Storage Rules table"
-};
-
 /**
  * Routes whose gate may name other pages than the one their URL maps to, and
  * why. Keyed by the route file under `apps/erp/app/routes/x+/`. A gate passes
@@ -51,9 +46,6 @@ export const ROUTE_GATE_EXCEPTIONS: Readonly<Record<string, Exception>> = {
   "part+/$itemId.sales.rental-rates.new.tsx": RENTAL_RATES,
   "part+/$itemId.sales.rental-rates.$rateId.tsx": RENTAL_RATES,
   "part+/$itemId.sales.rental-rates.delete.$rateId.tsx": RENTAL_RATES,
-  "resources+/work-centers.rules.assign.$workCenterId.tsx": WORK_CENTER_RULES,
-  "resources+/work-centers.rules.unassign.$workCenterId.$ruleId.tsx":
-    WORK_CENTER_RULES,
   "projects+/timesheets.$employeeId.tsx": {
     pages: ["projects.approvals"],
     reason:
@@ -65,17 +57,6 @@ export const ROUTE_GATE_EXCEPTIONS: Readonly<Record<string, Exception>> = {
       "resetting the PIN of an employee who is not a console operator is a People setting, as resetConsoleOperatorPin checks"
   }
 };
-
-/** The URL of a route file under `routes/x+/`, as the registry test builds it. */
-export function routeUrl(file: string): string {
-  const segments = file
-    .replace(/\.(tsx?|jsx?)$/, "")
-    .split("/")
-    .flatMap((part) => part.replace(/\+$/, "").split("."))
-    .filter((segment) => !segment.startsWith("_"))
-    .map((segment) => segment.replace(/_$/, ""));
-  return ["/x", ...segments].join("/");
-}
 
 const isPage = (text: string) => pageById(text) !== undefined;
 

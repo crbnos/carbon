@@ -160,7 +160,7 @@ export async function updateConsoleSetting(
     pinUserId?: string;
   }
 ): Promise<{
-  error: (AccessWriteError & { cause?: unknown }) | null;
+  error: AccessWriteError | null;
   pin: string | null;
   pinError: string | null;
 }> {
@@ -204,9 +204,7 @@ export async function updateConsoleSetting(
   let generatedPin: string | null = null;
   let pinError: string | null = null;
 
-  // Auto-generate a PIN for the enabling user if they don't have one
-  // (a user with no employee row in this company fails the FK and gets none,
-  // as before).
+  // A user with no employee row in this company fails the FK and gets no PIN.
   if (
     consoleEnabled &&
     userId &&

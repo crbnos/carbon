@@ -231,7 +231,7 @@ describe("readGate", () => {
     ).toBe(false);
   });
 
-  it("widens each value of a keyed rule, and leaves a shared table's list", () => {
+  it("widens each value of a keyed rule, and each page of a list", () => {
     const keyed = readGate({
       by: "side",
       rules: {
@@ -249,7 +249,10 @@ describe("readGate", () => {
     expect(resolvePermissions(keyed as never, { side: "b" })).toEqual({
       "users.accounts": "Edit"
     });
+    // View on any Parts page reads an item row, as RLS admits.
     const list = anyOfRule("item", "View");
-    expect(readGate(list)).toEqual(list);
+    const units = claimsFor("parts.units", "view");
+    expect(holdsGate(units, list as never, "c1")).toBe(false);
+    expect(holdsGate(units, readGate(list) as never, "c1")).toBe(true);
   });
 });

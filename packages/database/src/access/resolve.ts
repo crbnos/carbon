@@ -357,28 +357,22 @@ function widenOne(gate: PageGate): readonly PageGate[] {
  * A gate as a data read asks it: View on one page admits View on every page
  * that reads what the page owns (`readPages`: its module, and the pages of
  * other modules that list its tables in `readers`), the reads RLS renders.
- * In a list, View on a page of a shared table stays: RLS picks which of its
- * rows the caller reads. Any other entry, a write or a gate of two pages,
- * stays as written. A widened gate comes back as `{ anyOf }`.
+ * Each entry of a list widens the same way. Any other entry, a write or a
+ * gate of two pages, stays as written. A widened gate comes back as
+ * `{ anyOf }`, each gate in it once.
  */
 export function widenReads(gate: AnyGate): AnyGate {
-  if (!Array.isArray(gate) && !isAnyOf(gate)) {
-    const widened = widenOne(gate as PageGate);
-    return widened.length > 1 ? { anyOf: widened } : gate;
-  }
+  const widened = alternatives(gate).flatMap(widenOne);
+  if (!Array.isArray(gate) && !isAnyOf(gate) && widened.length === 1)
+    return gate;
   const seen = new Set<string>();
   return {
-    anyOf: alternatives(gate)
-      .flatMap((entry) => {
-        const page = onePageRead(entry);
-        return page && pageById(page)?.where ? [entry] : widenOne(entry);
-      })
-      .filter((entry) => {
-        const key = JSON.stringify(entry);
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      })
+    anyOf: widened.filter((entry) => {
+      const key = JSON.stringify(entry);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
   };
 }
 
@@ -401,19 +395,15 @@ function holdsAll(
  * whether the caller belongs to the company is the caller check's question,
  * not the gate's. An empty list passes nothing. No claims pass nothing.
  *
- * Page gates (routes, sidebars, buttons) are exact. A data read asks with
- * `{ reads: true }`, which widens it first (`widenReads`).
+ * The check is exact. A data read widens its gate first (`widenReads`).
  */
 export function holdsGate(
   expanded: ExpandedClaims | null | undefined,
   gate: AnyGate,
-  companyId: string,
-  { reads = false }: { reads?: boolean } = {}
+  companyId: string
 ): boolean {
   if (!expanded) return false;
-  return alternatives(reads ? widenReads(gate) : gate).some((one) =>
-    holdsAll(expanded, one, companyId)
-  );
+  return alternatives(gate).some((one) => holdsAll(expanded, one, companyId));
 }
 
 /**

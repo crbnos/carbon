@@ -49,8 +49,7 @@ export const handle: Handle = {
         : { breadcrumb: msg`Credit Memos`, to: path.to.creditMemos },
       { breadcrumb: memo?.memoId }
     ];
-  },
-  module: "invoicing"
+  }
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

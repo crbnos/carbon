@@ -4,15 +4,14 @@
 
 import { randomBytes } from "node:crypto";
 import type { AuthSession } from "@carbon/auth";
-import { authorize, type Gate } from "@carbon/auth/auth.server";
+import { authorize, type Caller, type Gate } from "@carbon/auth/auth.server";
 import { logAuthEvent } from "@carbon/auth/auth-events.server";
 import {
   getCarbonServiceRole,
   getUserScopedClient
 } from "@carbon/auth/client.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
-import { clearClaims, getUserClaims } from "@carbon/auth/users.server";
-import type { Database } from "@carbon/database";
+import { getUserClaims } from "@carbon/auth/users.server";
 import { admits, userActor } from "@carbon/database/access";
 import {
   CONTROLLED_ENVIRONMENT,
@@ -21,7 +20,6 @@ import {
 } from "@carbon/env";
 import { redis } from "@carbon/kv";
 import { getClientIp } from "@carbon/utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   type PanelSession,
   panelSessionForCompany,
@@ -149,8 +147,6 @@ export async function switchPanelSessionCompany(
   if (stored !== "OK") return null;
 
   await deletePanelSession(token);
-  // The cached role is the old company's; the cookie switch drops it too.
-  await clearClaims([session.userId]);
   return next;
 }
 
@@ -198,21 +194,15 @@ async function panelCaller(
   request: Request,
   gate: Gate,
   options: { bypassRls?: boolean }
-): Promise<{
-  client: SupabaseClient<Database>;
-  companyId: string;
-  companyGroupId: string;
-  email: string;
-  userId: string;
-  sessionUserId: string;
-  /** Set on an SSO sign-in, where the identity provider owns MFA. */
-  ssoProviderId?: string;
-  consoleMode: boolean;
-  caller: "session";
-  permissions: Awaited<ReturnType<typeof getUserClaims>>["permissions"];
-  /** Always an employee: the panel refuses every other role. */
-  role: "employee";
-}> {
+): Promise<
+  Caller & {
+    caller: "session";
+    /** Always an employee: the panel refuses every other role. */
+    role: "employee";
+    /** Set on an SSO sign-in, where the identity provider owns MFA. */
+    ssoProviderId?: string;
+  }
+> {
   const token = panelSessionTokenFromRequest(request);
   if (!token) {
     throw new Response("Unauthorized", { status: 401 });

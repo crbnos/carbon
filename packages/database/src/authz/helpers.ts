@@ -9,8 +9,6 @@ import { parse } from "libpg-query";
 import type { Client } from "pg";
 import { HELPERS_DIR } from "./registry-sql";
 
-export { HELPERS_DIR };
-
 /**
  * The managed functions: the RLS and auth helpers (`helpers/<name>.sql`) and the event
  * system's functions (`../event-system/functions/<name>.sql`). Each file is the only place

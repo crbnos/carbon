@@ -37,7 +37,7 @@ import {
   upsertDimensionValueMapping,
   validateDimensionSlots
 } from "@carbon/ee/accounting";
-import { deleteApiKey } from "@carbon/ee/api-keys.server";
+import { deleteApiKey, saveApiKey } from "@carbon/ee/api-keys.server";
 import {
   disableAuditLog,
   enableAuditLog,
@@ -58,6 +58,7 @@ import {
 } from "@carbon/ee/oee.server";
 import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape";
 import { subjectGates } from "@carbon/ee/permission-grants";
+import { grantWriteRefusal } from "@carbon/ee/permissions.server";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { updateRequireMfaSetting } from "@carbon/ee/two-factor.server";
@@ -100,7 +101,6 @@ import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import * as accountingPostings from "../accounting/accounting.service";
 import { fromServerFn } from "../shared/shared.service";
 import { grantsSchema } from "../users/users.models";
-import { writeApiKey } from "../users/users.service";
 import {
   accountMappingEntrySchema,
   apiKeyValidator,
@@ -2040,16 +2040,21 @@ export const createApiKey = defineServiceFn({
   permission: subjectGates("Edit").key,
   async run(ctx, { name, grants, expiresAt, rateLimit }) {
     const rawKey = `crbn_${nanoid()}`;
-    const refused = await writeApiKey(ctx, {
-      key: {
-        name,
-        expiresAt,
-        rateLimit,
-        keyHash: hashApiKey(rawKey),
-        keyPreview: rawKey.slice(-5)
-      },
-      grants
-    });
+    const refused = await grantWriteRefusal(
+      ctx,
+      saveApiKey(ctx.asCaller.supabase, ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        actorId: ctx.auditUserId,
+        key: {
+          name,
+          expiresAt,
+          rateLimit,
+          keyHash: hashApiKey(rawKey),
+          keyPreview: rawKey.slice(-5)
+        },
+        grants
+      })
+    );
     return refused ?? { key: rawKey };
   }
 });
@@ -2066,10 +2071,15 @@ export const updateApiKey = defineServiceFn({
   input: z.object({ id: z.string().min(1), ...apiKeyFields }),
   permission: subjectGates("Edit").key,
   async run(ctx, { id, name, grants, expiresAt, rateLimit }) {
-    const refused = await writeApiKey(ctx, {
-      key: { id, name, expiresAt, rateLimit },
-      grants
-    });
+    const refused = await grantWriteRefusal(
+      ctx,
+      saveApiKey(ctx.asCaller.supabase, ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        actorId: ctx.auditUserId,
+        key: { id, name, expiresAt, rateLimit },
+        grants
+      })
+    );
     return refused ?? { id };
   }
 });
@@ -2085,13 +2095,14 @@ export const revokeApiKey = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
   permission: subjectGates("Edit").key,
   async run(ctx, { id }) {
-    const { error } = await deleteApiKey(
-      ctx.asCaller.supabase,
-      ctx.asSystem.pg,
-      { companyId: ctx.company.id, id }
+    const refused = await grantWriteRefusal(
+      ctx,
+      deleteApiKey(ctx.asCaller.supabase, ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        id
+      })
     );
-    if (error) return ctx.error(error.code, error.message, error.cause);
-    return { id };
+    return refused ?? { id };
   }
 });
 

@@ -127,9 +127,10 @@ export type ServiceContext = {
   /**
    * Whether the actor also passes `required` (`admits`): for a permission that
    * depends on the data, which the entry gate cannot know. The system actor
-   * passes all. `reads` checks it as a data read (`widenReads`).
+   * passes all. The check is exact: the entry gate's `readGate` is the one
+   * place a data read widens.
    */
-  can(required: AccessRequirement, options?: { reads?: boolean }): boolean;
+  can(required: AccessRequirement): boolean;
   error<C extends ErrorCategory>(
     category: C,
     message: string,
@@ -264,8 +265,8 @@ class Context implements ServiceContext {
     return this.handles.kv();
   }
 
-  can(required: AccessRequirement, options?: { reads?: boolean }): boolean {
-    return admits(this.actor, this.company.id, required, options);
+  can(required: AccessRequirement): boolean {
+    return admits(this.actor, this.company.id, required);
   }
 
   inside(): Context {

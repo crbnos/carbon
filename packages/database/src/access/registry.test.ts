@@ -21,6 +21,7 @@ import {
   pageOfRow,
   pageOfTable,
   pageOfUrl,
+  routeUrl,
   urlCoverage,
   urlSegments,
   writersOf
@@ -148,17 +149,6 @@ const namesPermission = (sql: string) =>
 const NAMED_TABLES = Object.keys(manifest).filter((table) =>
   policiesOf(table).some(namesPermission)
 );
-
-/** The URL a flat-routes file serves: `receipt+/$receiptId.details.tsx` → `/x/receipt/$receiptId/details`. */
-function routeUrl(file: string): string {
-  const segments = file
-    .replace(/\.(tsx?|jsx?)$/, "")
-    .split("/")
-    .flatMap((part) => part.replace(/\+$/, "").split("."))
-    .filter((segment) => !segment.startsWith("_"))
-    .map((segment) => segment.replace(/_$/, ""));
-  return ["/x", ...segments].join("/");
-}
 
 const ROUTES_DIR = fileURLToPath(
   new URL("../../../../apps/erp/app/routes/x+/", import.meta.url)
@@ -555,6 +545,15 @@ describe("writersOf", () => {
         expect(ownersOf(table)).toContain(page.id);
         for (const writer of writers) expect(writer).not.toBe(page.id);
       }
+  });
+});
+
+describe("routeUrl", () => {
+  it("drops layout and index segments and splits on dots", () => {
+    expect(routeUrl("part+/$itemId.sales.rental-rates.new.tsx")).toBe(
+      "/x/part/$itemId/sales/rental-rates/new"
+    );
+    expect(routeUrl("inventory+/_index.tsx")).toBe("/x/inventory");
   });
 });
 

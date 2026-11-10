@@ -287,13 +287,13 @@ describe("holdsGate forms", () => {
     );
   });
 
-  it("checks a page exactly unless asked for a read", () => {
+  it("checks a page exactly, and a widened read as widened", () => {
     const gate = { "inventory.receipts": "View" } as const;
     expect(holdsGate(expanded, gate, "c1")).toBe(false);
-    expect(holdsGate(expanded, gate, "c1", { reads: true })).toBe(true);
-    expect(
-      holdsGate({ "sales.quotes": view }, gate, "c1", { reads: true })
-    ).toBe(false);
+    expect(holdsGate(expanded, widenReads(gate), "c1")).toBe(true);
+    expect(holdsGate({ "sales.quotes": view }, widenReads(gate), "c1")).toBe(
+      false
+    );
   });
 
   it("never widens a write", () => {
@@ -301,9 +301,8 @@ describe("holdsGate forms", () => {
     expect(
       holdsGate(
         { "inventory.shipments": edit },
-        { "inventory.receipts": "Edit" },
-        "c1",
-        { reads: true }
+        widenReads({ "inventory.receipts": "Edit" }),
+        "c1"
       )
     ).toBe(false);
   });
@@ -340,16 +339,37 @@ describe("widenReads", () => {
     expect(widenReads(unknown)).toBe(unknown);
   });
 
-  it("keeps a shared table's pages in a list, and widens the rest", () => {
-    const items = anyOf(ITEM_PAGES, "View");
-    expect(widenReads({ anyOf: items })).toEqual({ anyOf: items });
+  it("widens each entry of a list as it widens one page", () => {
+    // The item pages are all Parts pages, so each widens to the Parts module:
+    // the pages whose View RLS admits for an item row.
+    const parts = anyOf(
+      [
+        "parts.parts",
+        "parts.materials",
+        "parts.tools",
+        "parts.consumables",
+        "parts.services",
+        "parts.changeNotices",
+        "parts.changeNoticeTypes",
+        "parts.changeNoticeActions",
+        "parts.dimensions",
+        "parts.finishes",
+        "parts.grades",
+        "parts.shapes",
+        "parts.substances",
+        "parts.types",
+        "parts.itemGroups",
+        "parts.units"
+      ],
+      "View"
+    );
+    expect(widenReads({ anyOf: anyOf(ITEM_PAGES, "View") })).toEqual({
+      anyOf: parts
+    });
     expect(
       widenReads([{ "parts.parts": "View" }, { "inventory.receipts": "View" }])
     ).toEqual({
-      anyOf: [
-        { "parts.parts": "View" },
-        ...anyOf(readPages("inventory.receipts"), "View")
-      ]
+      anyOf: [...parts, ...anyOf(readPages("inventory.receipts"), "View")]
     });
   });
 

@@ -6,8 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   gateConstants,
   listGates,
-  routeGateNamesPage,
-  routeUrl
+  routeGateNamesPage
 } from "./route-gate-names-page";
 
 const ROUTES = "apps/erp/app/routes/x+/";
@@ -19,15 +18,6 @@ const scan = (route: string, contents: string) =>
   check.scan(`${ROUTES}${route}`, contents);
 const gated = (gate: string) =>
   `export async function loader({ request }) {\n  await authorize(request, ${gate});\n}\n`;
-
-describe("routeUrl", () => {
-  it("drops layout and index segments and splits on dots", () => {
-    expect(routeUrl("part+/$itemId.sales.rental-rates.new.tsx")).toBe(
-      "/x/part/$itemId/sales/rental-rates/new"
-    );
-    expect(routeUrl("inventory+/_index.tsx")).toBe("/x/inventory");
-  });
-});
 
 describe("routeGateNamesPage", () => {
   it("accepts a gate on the page the URL maps to", () => {
@@ -99,14 +89,14 @@ describe("routeGateNamesPage", () => {
   it("accepts the pages an exception lists for its route", () => {
     expect(
       scan(
-        "resources+/work-centers.rules.assign.$workCenterId.tsx",
-        gated(`{ "inventory.storageRules": "Create" }`)
+        "projects+/timesheets.$employeeId.tsx",
+        gated(`{ "projects.approvals": "View" }`)
       )
     ).toEqual([]);
     expect(
       scan(
-        "resources+/work-centers.rules.assign.$workCenterId.tsx",
-        gated(`{ "sales.quotes": "Create" }`)
+        "projects+/timesheets.$employeeId.tsx",
+        gated(`{ "sales.quotes": "View" }`)
       )
     ).toHaveLength(1);
   });

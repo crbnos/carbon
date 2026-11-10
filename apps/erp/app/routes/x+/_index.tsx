@@ -410,14 +410,11 @@ function RecentlyViewed() {
   const { documents, remove, loading } = useRecentlyViewed(company.id);
   const modules = useAllModules();
 
-  // Resolve a document's module to its icon and name from `useModules`. Match
-  // on the module key OR the second segment of its URL: recents saved before
-  // modules were keyed by id carry `items` for the module keyed `parts`.
+  // A recent saved before modules were keyed by id (`items`) finds no module
+  // and shows the plain icon until the document is opened again.
   const moduleFor = useCallback(
     (moduleKey: string): { icon: IconType; name?: string } => {
-      const module = modules.find(
-        (m) => m.key === moduleKey || m.to.split("/")[2] === moduleKey
-      );
+      const module = modules.find((m) => m.key === moduleKey);
       return { icon: module?.icon ?? LuFileText, name: module?.name };
     },
     [modules]

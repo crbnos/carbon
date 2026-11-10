@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import type { PageId } from "@carbon/database/access";
+import { type PageId, pageOfTable } from "@carbon/database/access";
 import {
   convertKbToString,
   downloadUrl,
@@ -68,15 +68,15 @@ import { useOptimisticDocumentDrag } from "../SalesRFQ/useOptimiticDocumentDrag"
 
 const logger = getLogger("erp", "opportunitydocuments");
 
-/** The page of each opportunity document, whose level gates its files. */
+/** The page that owns each opportunity document's table; its level gates the files. */
 export const OPPORTUNITY_PAGES: Record<
   "Sales Order" | "Request for Quote" | "Quote" | "Sales Invoice",
   PageId
 > = {
-  "Request for Quote": "sales.rfqs",
-  Quote: "sales.quotes",
-  "Sales Order": "sales.salesOrders",
-  "Sales Invoice": "invoicing.salesInvoices"
+  "Request for Quote": pageOfTable("salesRfq"),
+  Quote: pageOfTable("quote"),
+  "Sales Order": pageOfTable("salesOrder"),
+  "Sales Invoice": pageOfTable("salesInvoice")
 };
 
 /**

@@ -10,8 +10,13 @@ import { deactivateUser } from "@carbon/auth/users.server";
 import { LEVELS, pageById } from "@carbon/database/access";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { generateConsolePin, setEmployeePin } from "@carbon/ee/console.server";
-import { ACCESS_READER_GATE, subjectGates } from "@carbon/ee/permission-grants";
 import {
+  ACCESS_READER_GATE,
+  SUBJECT_RULES,
+  subjectGates
+} from "@carbon/ee/permission-grants";
+import {
+  grantWriteRefusal,
   deleteEmployeeType as removeEmployeeType,
   subjectEntitlement
 } from "@carbon/ee/permissions.server";
@@ -537,7 +542,7 @@ export const bulkUpdatePermissions = defineServiceFn({
         userIds: uniqueUserIds,
         error: members.error
       });
-      return ctx.error("notFound", "Employee not found");
+      return ctx.error("notFound", SUBJECT_RULES.person.notFound);
     }
 
     await service.queuePermissionUpdates({
@@ -608,12 +613,14 @@ export const deleteEmployeeType = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
   permission: subjectGates("Full").role,
   async run(ctx, { id }) {
-    const { error } = await removeEmployeeType(ctx.asCaller.supabase, {
-      companyId: ctx.company.id,
-      id
-    });
-    if (error) return ctx.error(error.code, error.message, error.cause);
-    return { id };
+    const refused = await grantWriteRefusal(
+      ctx,
+      removeEmployeeType(ctx.asCaller.supabase, {
+        companyId: ctx.company.id,
+        id
+      })
+    );
+    return refused ?? { id };
   }
 });
 
@@ -626,7 +633,7 @@ export const getEffectiveAccess = defineServiceFn({
   permission: subjectGates("View").person,
   async run(ctx, { userId }) {
     const access = await service.readEffectiveAccess(ctx, userId);
-    if (!access) return ctx.error("notFound", "Employee not found");
+    if (!access) return ctx.error("notFound", SUBJECT_RULES.person.notFound);
     return access;
   }
 });

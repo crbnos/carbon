@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { REGISTRY_HELPERS_DIR } from "@carbon/database/authz-registry-sql";
 import type { ConformanceCheck, Violation } from "../check";
 import { blankSqlComments } from "../sources/comments";
-import { REGISTRY_HELPERS_DIR } from "./registry-helpers-fresh";
 
 /**
  * RLS policies and the managed functions are authored only as files — the manifest and

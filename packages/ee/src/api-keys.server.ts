@@ -118,7 +118,7 @@ export async function deleteApiKey(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   { companyId, id }: { companyId: string; id: string }
-): Promise<{ error: (AccessWriteError & { cause?: unknown }) | null }> {
+): Promise<{ error: AccessWriteError | null }> {
   const unentitled = await subjectEntitlement(client, companyId, "key");
   if (unentitled) return { error: unentitled };
   const key = await db

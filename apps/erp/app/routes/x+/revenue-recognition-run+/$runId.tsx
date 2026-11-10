@@ -60,8 +60,7 @@ export const handle: Handle = {
       { breadcrumb: title, to: listPath },
       (loaded: RunBreadcrumbData) => loaded.run?.runId
     )(params, data);
-  },
-  module: "accounting"
+  }
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

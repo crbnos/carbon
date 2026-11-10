@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import type { PageId } from "@carbon/database/access";
+import { type PageId, pageOfTable } from "@carbon/database/access";
 import {
   convertKbToString,
   downloadUrl,
@@ -50,7 +50,7 @@ import { stripSpecialCharacters } from "~/utils/string";
 
 const logger = getLogger("erp", "supplierinteractiondocuments");
 
-/** The page of each supplier interaction document, whose level gates its files. */
+/** The page that owns each supplier interaction document's table; its level gates the files. */
 export const SUPPLIER_INTERACTION_PAGES: Record<
   | "Supplier Quote"
   | "Purchase Order"
@@ -58,10 +58,10 @@ export const SUPPLIER_INTERACTION_PAGES: Record<
   | "Purchasing Request for Quote",
   PageId
 > = {
-  "Purchasing Request for Quote": "purchasing.rfqs",
-  "Supplier Quote": "purchasing.supplierQuotes",
-  "Purchase Order": "purchasing.purchaseOrders",
-  "Purchase Invoice": "invoicing.purchaseInvoices"
+  "Purchasing Request for Quote": pageOfTable("purchasingRfq"),
+  "Supplier Quote": pageOfTable("supplierQuote"),
+  "Purchase Order": pageOfTable("purchaseOrder"),
+  "Purchase Invoice": pageOfTable("purchaseInvoice")
 };
 
 type SupplierInteractionDocumentsProps = {

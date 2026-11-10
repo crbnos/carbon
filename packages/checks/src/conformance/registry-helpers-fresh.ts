@@ -7,8 +7,6 @@ import type { Violation } from "../check";
 
 export const REGISTRY_HELPERS_FRESH = "registry-helpers-fresh";
 
-export { REGISTRY_HELPERS_DIR };
-
 export const REGISTRY_HELPERS_FIX = "pnpm --filter @carbon/database authz sync";
 
 /**

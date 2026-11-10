@@ -87,7 +87,7 @@ export const cancelJob = defineServiceFn({
   only the system actor.
 - **Context**: `ctx.asCaller.supabase` (RLS), `ctx.asSystem.supabase` /
   `ctx.asSystem.pg` (no RLS: scope every query by `ctx.company.id`), `ctx.kv`,
-  `ctx.auditUserId` for `createdBy` / `updatedBy`. `ctx.can(required, { reads? })` (`admits`; a gate,
+  `ctx.auditUserId` for `createdBy` / `updatedBy`. `ctx.can(required)` (`admits`; a gate,
   a list, `{ anyOf }`, `"employee"` or `"system"`) checks a permission the data decides (a posting mode, reopening a completed
   transfer). Before an RLS-bypassing write keyed on an id the caller sent,
   `refuseUnlessOwned(ctx, table, match)` (`shared/shared.service.ts`) returns

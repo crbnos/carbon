@@ -44,7 +44,7 @@ type ModuleLink = Authenticated<NavItem> & { key: string; opensOn: string };
 
 /**
  * Each module's nav entry. A module of several pages whose `to` is one of
- * them opens on the person's first page of the module (`moduleLanding`); the
+ * them opens on the person's first page of the module (`landingOf`); the
  * others open on `to`: a dashboard any page of the module can view, the one
  * page of a one-page module, or, with `indexPicksPage`, an `_index` that
  * redirects to that first page itself.

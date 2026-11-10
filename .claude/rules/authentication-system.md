@@ -476,7 +476,9 @@ Claims cache must be invalidated when permissions change. Grant writes go throug
 `writeAccessGrants` (`@carbon/ee/permissions.server`), which clears it; the deactivation
 flows (`users.server.ts`, one `deactivateAs(role, …)` behind `deactivateCustomer` /
 `deactivateEmployee` / `deactivateSupplier` / `deactivateUser`) clear it themselves; a
-membership change elsewhere (company switch, invite accept) calls `clearClaims([userId])`.
+membership change elsewhere (invite accept, SSO provisioning) calls `clearClaims([userId])`.
+A company switch or a new company clears nothing: one field per company, so neither leaves
+a field stale.
 
 ## API key auth
 

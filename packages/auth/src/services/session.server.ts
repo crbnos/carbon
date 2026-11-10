@@ -39,7 +39,6 @@ import {
   userHasVerifiedTotpFactor,
   verifyTotpChallenge
 } from "./mfa.server";
-import { clearClaims } from "./users.server";
 
 async function assertAuthSession(
   request: Request,
@@ -545,11 +544,9 @@ export async function updateCompanySession(
   const session = await getSession(request);
   const authSession = await getAuthSession(request);
 
+  // No claims clear: the cache holds one field per company, and a switch
+  // changes no grant or membership.
   if (authSession !== undefined) {
-    // Fire-and-forget cache invalidation. If Redis is down, @carbon/kv fails
-    // soft — benign: a stale permission cache entry (if any) simply expires on
-    // its own TTL, and the session cookie is still returned.
-    if (authSession?.userId) void clearClaims([authSession.userId]);
     session.set(SESSION_KEY, {
       ...authSession,
       companyId,

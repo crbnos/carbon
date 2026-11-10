@@ -2,6 +2,10 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type {
+  CarbonError,
+  ServiceContext
+} from "@carbon/api/service-fn.server";
 import type { Result } from "@carbon/auth";
 import { error, getClaims, success } from "@carbon/auth";
 import { bustApiKeyCache } from "@carbon/auth/auth.server";
@@ -56,7 +60,7 @@ import {
 export async function deleteEmployeeType(
   client: SupabaseClient<Database>,
   { companyId, id }: { companyId: string; id: string }
-): Promise<{ error: (AccessWriteError & { cause?: unknown }) | null }> {
+): Promise<{ error: AccessWriteError | null }> {
   const unentitled = await subjectEntitlement(client, companyId, "role");
   if (unentitled) return { error: unentitled };
   const deleted = await client
@@ -77,8 +81,6 @@ export async function deleteEmployeeType(
   return { error: null };
 }
 
-export type AccessSubject = GrantSubject;
-
 export type AccessChange =
   | { set: readonly GrantInput[] }
   | { remove: GrantRow };
@@ -90,7 +92,21 @@ export type AccessChange =
 export type AccessWriteError = {
   code: "entitlement" | "notFound" | "validation" | "internal";
   message: string;
+  /** The failed query's error, for the log; never shown. */
+  cause?: unknown;
 };
+
+/**
+ * A grant write's refusal as the service function's error, `cause` kept. The
+ * one mapping every ERP caller of these writes uses.
+ */
+export async function grantWriteRefusal(
+  ctx: Pick<ServiceContext, "error">,
+  write: Promise<{ error: AccessWriteError | null }>
+): Promise<CarbonError | null> {
+  const { error } = await write;
+  return error ? ctx.error(error.code, error.message, error.cause) : null;
+}
 
 /**
  * The entitlement lock (`requireEntitlement`) for a subject type, as a returned
@@ -143,7 +159,7 @@ function grantChanges(
 async function ownedSubject(
   db: Kysely<KyselyDatabase> | KyselyTx,
   companyId: string,
-  subject: AccessSubject
+  subject: GrantSubject
 ): Promise<{ employeeTypeId?: string | null; keyHash?: string } | null> {
   if ("userId" in subject) {
     const employee = await db
@@ -211,7 +227,7 @@ export async function writeAccessGrants(
     reason
   }: {
     companyId: string;
-    subject: AccessSubject;
+    subject: GrantSubject;
     change: AccessChange;
     /** A person only: the employee type to move them to. */
     employeeType?: string;
@@ -432,7 +448,7 @@ export async function updatePermissions(
     .where("employee.companyId", "=", companyId)
     .executeTakeFirst();
   if (!employee) {
-    return error({ companyId, userId: id }, "Employee not found");
+    return error({ companyId, userId: id }, SUBJECT_RULES.person.notFound);
   }
   const actorClaims = await getClaims(
     getCarbonServiceRole(),

@@ -260,7 +260,6 @@ export const manifest = {
   attributeDataType: policies({ select: authenticated }),
   auditLogArchive: serviceOnly(),
   balloon: company({ read: "employee" }),
-  // Batch properties are also kept from Tracked Entities, which wrote them before.
   batchProperty: company(),
   capacityReservation: company({ read: "employee" }),
   charge: policies({
@@ -1061,7 +1060,6 @@ export const manifest = {
   }),
   methodOperation: company(),
   methodOperationParameter: company({ read: "employee" }),
-  // Operation steps are also edited by whoever edits job operations, as before.
   methodOperationStep: company({ read: "employee" }),
   methodOperationStepSlide: company({ read: "employee" }),
   methodOperationTool: company(),
@@ -1071,8 +1069,7 @@ export const manifest = {
     update: exists("methodOperationTool", "methodOperationToolId", "update"),
     delete: exists("methodOperationTool", "methodOperationToolId", "delete")
   }),
-  // Items, quotes, orders and jobs point at a model; the model names none of
-  // them, so every item page writes it (the registry: Parts, alsoWrittenBy).
+  // Every item page writes it (the registry: Parts, alsoWrittenBy).
   modelUpload: company({ read: "employee" }),
   nonConformance: company(),
   nonConformanceActionProcess: company(),
@@ -1266,7 +1263,7 @@ export const manifest = {
   projectMember: projectTable(),
   projectMilestone: projectTable(),
   // MRP writes pegs with the service role; a manual peg goes through a server
-  // action that checks update: projects first.
+  // action that checks Edit on Projects first.
   projectPeg: company({
     read: "employee",
     create: false,

@@ -526,12 +526,8 @@ describe("gates the row decides", () => {
     expect(named("items_deleteItem")?.oneOf).toEqual(byItemType("Full"));
   });
 
-  it("gates an item list on any one item page", () => {
-    expect(named("items_getItemMpnsList")?.oneOf).toEqual({
-      pages: ITEM_PAGES,
-      level: "View",
-      by: []
-    });
+  it("reads an item list on any Parts page, as one item page reads", () => {
+    expect(named("items_getItemMpnsList")).toEqual(read("parts.parts"));
   });
 
   it("gates a memo on the page of its party, and a run on the page of its type", () => {
@@ -584,7 +580,7 @@ describe("gates the row decides", () => {
         ).length
       ])
     );
-    expect(counts).toEqual({ parts: 116, invoicing: 8, accounting: 7 });
+    expect(counts).toEqual({ parts: 110, invoicing: 7, accounting: 7 });
   });
 
   it("lets Tools at Edit change a tool's bill of material: the method's item picks the page", () => {

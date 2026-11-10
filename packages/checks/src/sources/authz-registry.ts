@@ -4,9 +4,9 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { REGISTRY_HELPERS_DIR } from "@carbon/database/authz-registry-sql";
 import type { SourceFile } from "../check";
 import { MOVED_TABLES_MIGRATION } from "../conformance/moved-tables-covered";
-import { REGISTRY_HELPERS_DIR } from "../conformance/registry-helpers-fresh";
 
 /** The registry helper files `findStaleRegistryHelpers` compares; a missing one has no contents. */
 export function loadRegistryHelperFiles(

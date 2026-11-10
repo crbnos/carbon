@@ -102,13 +102,6 @@ export function renderRegistryHelpers(): { name: string; sql: string }[] {
   ];
 }
 
-function registryHelperFiles(dir: string): { file: string; sql: string }[] {
-  return renderRegistryHelpers().map(({ name, sql }) => ({
-    file: path.join(dir, name),
-    sql
-  }));
-}
-
 const read = (file: string) => {
   try {
     return readFileSync(file, "utf8");
@@ -117,10 +110,11 @@ const read = (file: string) => {
   }
 };
 
-/** Writes the registry helpers into `dir` (`HELPERS_DIR`); returns the files written. */
-export function writeRegistryHelpers(dir: string): string[] {
+/** Writes the registry helpers into `HELPERS_DIR`; returns the files written. */
+export function writeRegistryHelpers(): string[] {
   const written: string[] = [];
-  for (const { file, sql } of registryHelperFiles(dir)) {
+  for (const { name, sql } of renderRegistryHelpers()) {
+    const file = path.join(HELPERS_DIR, name);
     if (read(file) === sql) continue;
     writeFileSync(file, sql);
     written.push(file);

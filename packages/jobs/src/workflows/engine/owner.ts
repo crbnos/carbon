@@ -51,8 +51,8 @@ export async function getOwnerClient(
   return client;
 }
 
-/** Not `getUserClaims`: that reads privileged, through a one-hour cache, so a
- * revoked permission would survive an hour. This asks as the owner. */
+/** Not `getUserClaims`: that reads privileged, through a cache that a failed
+ * clear leaves stale for up to an hour. This asks as the owner, uncached. */
 export async function readOwnerPermissions(
   client: SupabaseClient<Database>,
   ownerId: string,

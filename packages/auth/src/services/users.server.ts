@@ -23,7 +23,7 @@ import { getClaims } from "./users";
 const log = getLogger("auth");
 
 // TTL for the cached permission claims. Bounds staleness if an invalidation
-// (company switch / deactivation) fails to delete the key — the cache heals
+// (a grant or membership write) fails to delete the key — the cache heals
 // itself on expiry. 1 hour, matching the auth package's other short-lived keys.
 const PERMISSION_CACHE_TTL_SECONDS = 3600;
 

@@ -73,6 +73,7 @@ export function useModuleLinks() {
   return modules.map((module) => ({
     ...module,
     to: moduleLanding(
+      module.key,
       module.to,
       module.opensOn,
       submodules[module.key] ?? [],
