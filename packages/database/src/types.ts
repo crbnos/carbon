@@ -83280,27 +83280,33 @@ export type Database = {
         Row: {
           companyId: string
           hidden: boolean
+          hiddenSubmodules: string[]
           id: string
           module: string
           position: number
+          submoduleOrder: string[]
           updatedAt: string
           userId: string
         }
         Insert: {
           companyId: string
           hidden?: boolean
+          hiddenSubmodules?: string[]
           id?: string
           module: string
           position: number
+          submoduleOrder?: string[]
           updatedAt?: string
           userId: string
         }
         Update: {
           companyId?: string
           hidden?: boolean
+          hiddenSubmodules?: string[]
           id?: string
           module?: string
           position?: number
+          submoduleOrder?: string[]
           updatedAt?: string
           userId?: string
         }

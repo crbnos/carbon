@@ -14389,6 +14389,7 @@ msgid "Hide"
 msgstr "Gizle"
 
 #. placeholder {0}: module.name
+#. placeholder {0}: route.name
 msgid "Hide {0}"
 msgstr "{0} Gizle"
 
@@ -14400,6 +14401,10 @@ msgstr "Hesap numarasını gizle"
 
 msgid "Hide Again"
 msgstr "Tekrar Gizle"
+
+#. placeholder {0}: group.name
+msgid "Hide all in {0}"
+msgstr ""
 
 msgid "Hide block"
 msgstr "Bloğu gizle"
@@ -16170,6 +16175,9 @@ msgstr ""
 
 msgid "Keep navigation open"
 msgstr "Gezinmeyi açık tut"
+
+msgid "Keep one, or hide {moduleName} itself"
+msgstr ""
 
 msgid "Keep only items where…"
 msgstr "Yalnızca öğeleri sakla…"
@@ -18148,6 +18156,7 @@ msgid "Move"
 msgstr "Taşış"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: route.name
 msgid "Move {0}"
 msgstr "{0}'ı Taşı"
 
@@ -27567,6 +27576,7 @@ msgid "Show"
 msgstr "Göster"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: route.name
 msgid "Show {0}"
 msgstr "{0}'ı göster"
 
@@ -27594,6 +27604,10 @@ msgstr "Tümünü göster"
 
 msgid "Show all hidden on this step"
 msgstr "Bu adımda gizli olanların tümünü göster"
+
+#. placeholder {0}: group.name
+msgid "Show all in {0}"
+msgstr ""
 
 msgid "Show available batch numbers"
 msgstr "Kullanılabilir parti numaralarını göster"
@@ -28571,6 +28585,10 @@ msgstr "Alt-montaj yolu"
 
 msgid "Sub-Departments"
 msgstr "Alt Departmanlar"
+
+#. placeholder {0}: module.name
+msgid "Sub-modules of {0}"
+msgstr ""
 
 msgid "Subassembly"
 msgstr "Alt Montaj"

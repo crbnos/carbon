@@ -14389,6 +14389,7 @@ msgid "Hide"
 msgstr "Скрыть"
 
 #. placeholder {0}: module.name
+#. placeholder {0}: route.name
 msgid "Hide {0}"
 msgstr "Скрыть {0}"
 
@@ -14400,6 +14401,10 @@ msgstr "Скрыть номер счёта"
 
 msgid "Hide Again"
 msgstr "Скрыть снова"
+
+#. placeholder {0}: group.name
+msgid "Hide all in {0}"
+msgstr ""
 
 msgid "Hide block"
 msgstr "Скрыть блок"
@@ -16170,6 +16175,9 @@ msgstr ""
 
 msgid "Keep navigation open"
 msgstr "Не сворачивать навигацию"
+
+msgid "Keep one, or hide {moduleName} itself"
+msgstr ""
 
 msgid "Keep only items where…"
 msgstr "Оставить только элементы где…"
@@ -18148,6 +18156,7 @@ msgid "Move"
 msgstr "Переместить"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: route.name
 msgid "Move {0}"
 msgstr "Переместить {0}"
 
@@ -27567,6 +27576,7 @@ msgid "Show"
 msgstr "Показать"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: route.name
 msgid "Show {0}"
 msgstr "Показать {0}"
 
@@ -27594,6 +27604,10 @@ msgstr "Показать все"
 
 msgid "Show all hidden on this step"
 msgstr "Показать все скрытые на этом шаге"
+
+#. placeholder {0}: group.name
+msgid "Show all in {0}"
+msgstr ""
 
 msgid "Show available batch numbers"
 msgstr "Показать доступные номера серии"
@@ -28571,6 +28585,10 @@ msgstr "Траектория подсборки"
 
 msgid "Sub-Departments"
 msgstr "Подразделения"
+
+#. placeholder {0}: module.name
+msgid "Sub-modules of {0}"
+msgstr ""
 
 msgid "Subassembly"
 msgstr "Узел в сборке"

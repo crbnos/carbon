@@ -32,8 +32,10 @@ import {
 import { useSubmit } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { useDrawerItem } from "~/hooks";
+import { useSubmoduleLayout } from "~/hooks/useModules";
 import type { RouteGroup } from "~/types";
 import { path } from "~/utils/path";
+import { arrangedGroups } from "~/utils/submodule-visibility";
 import { SidebarLinks, useSidebarLocation } from "./CollapsibleSidebar";
 import {
   SheetNavGroup,
@@ -80,6 +82,9 @@ const GroupedContentSidebar = ({
     )
   );
   const submit = useSubmit();
+  const submoduleLayout = useSubmoduleLayout();
+  // The compact title reads `groups`, so it still names a hidden page.
+  const shownGroups = arrangedGroups(groups, submoduleLayout);
 
   const [expandedViews, setExpandedViews] = useState<Record<string, boolean>>(
     () =>
@@ -147,7 +152,7 @@ const GroupedContentSidebar = ({
     // them stays on desktop.
     return (
       <div className="flex flex-col">
-        {groups.map((group) => (
+        {shownGroups.map((group) => (
           <SheetNavGroup key={group.name} title={group.name}>
             {group.routes.map((route) => {
               const views = [...(route.views ?? [])].sort(
@@ -259,7 +264,7 @@ const GroupedContentSidebar = ({
     <>
       <SidebarLinks>
         <VStack>
-          {groups.map((group) => (
+          {shownGroups.map((group) => (
             <VStack
               key={group.name}
               className="border-b border-border p-2 pb-4 space-y-0.5"

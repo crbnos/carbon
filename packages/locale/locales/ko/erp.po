@@ -14389,6 +14389,7 @@ msgid "Hide"
 msgstr "숨기기"
 
 #. placeholder {0}: module.name
+#. placeholder {0}: route.name
 msgid "Hide {0}"
 msgstr "{0} 숨기기"
 
@@ -14400,6 +14401,10 @@ msgstr "계좌 번호 숨기기"
 
 msgid "Hide Again"
 msgstr "다시 숨기기"
+
+#. placeholder {0}: group.name
+msgid "Hide all in {0}"
+msgstr ""
 
 msgid "Hide block"
 msgstr "블록 숨기기"
@@ -16170,6 +16175,9 @@ msgstr ""
 
 msgid "Keep navigation open"
 msgstr "탐색 열어 두기"
+
+msgid "Keep one, or hide {moduleName} itself"
+msgstr ""
 
 msgid "Keep only items where…"
 msgstr "...인 항목만 유지"
@@ -18148,6 +18156,7 @@ msgid "Move"
 msgstr "이동"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: route.name
 msgid "Move {0}"
 msgstr "{0} 이동"
 
@@ -27567,6 +27576,7 @@ msgid "Show"
 msgstr "표시"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: route.name
 msgid "Show {0}"
 msgstr "{0} 표시"
 
@@ -27594,6 +27604,10 @@ msgstr "모두 표시"
 
 msgid "Show all hidden on this step"
 msgstr "이 단계에서 모두 숨김 표시"
+
+#. placeholder {0}: group.name
+msgid "Show all in {0}"
+msgstr ""
 
 msgid "Show available batch numbers"
 msgstr "가용 배치 번호 표시"
@@ -28571,6 +28585,10 @@ msgstr "소부조립품 경로"
 
 msgid "Sub-Departments"
 msgstr "하위 부서"
+
+#. placeholder {0}: module.name
+msgid "Sub-modules of {0}"
+msgstr ""
 
 msgid "Subassembly"
 msgstr "서브어셈블리"

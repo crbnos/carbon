@@ -68,7 +68,8 @@ import { getCustomerContact } from "~/modules/sales/sales.service";
 import type { EmployeeInsert, InviteInsert, User } from "~/modules/users/types";
 import {
   type BulkUserAction,
-  canBulkActOnUser
+  canBulkActOnUser,
+  type modulePreferencesValidator
 } from "~/modules/users/users.models";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { LIST_COUNT, listCount, setGenericQueryFilters } from "~/utils/query";
@@ -1714,7 +1715,7 @@ export async function getModulePreferences(
 ) {
   return client
     .from("userModulePreference")
-    .select("module, position, hidden")
+    .select("module, position, hidden, hiddenSubmodules, submoduleOrder")
     .eq("userId", userId)
     .eq("companyId", companyId)
     .order("position");
@@ -1724,7 +1725,7 @@ export async function upsertModulePreferences(
   client: SupabaseClient<Database>,
   userId: string,
   companyId: string,
-  preferences: { module: string; position: number; hidden: boolean }[]
+  preferences: z.infer<typeof modulePreferencesValidator>["preferences"]
 ) {
   return client.from("userModulePreference").upsert(
     preferences.map((p) => ({
@@ -1733,6 +1734,9 @@ export async function upsertModulePreferences(
       module: p.module,
       position: p.position,
       hidden: p.hidden,
+      // A client that does not send the list must not clear it.
+      ...(p.hiddenSubmodules ? { hiddenSubmodules: p.hiddenSubmodules } : {}),
+      ...(p.submoduleOrder ? { submoduleOrder: p.submoduleOrder } : {}),
       updatedAt: new Date().toISOString()
     })),
     { onConflict: "userId,companyId,module" }
