@@ -154,7 +154,11 @@ import type {
 } from "~/services/types";
 import { useItems } from "~/stores";
 import { makeDurations } from "~/utils/durations";
-import { isKanbanCompleteScan, kanbanCompleteTarget } from "~/utils/kanban";
+import {
+  isKanbanCompleteScan,
+  kanbanCompleteTarget,
+  soleUnitId
+} from "~/utils/kanban";
 import { useOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 import ItemThumbnail from "../ItemThumbnail";
@@ -711,7 +715,8 @@ export const JobOperation = ({
         selectedEntityId: selected?.id ?? null,
         selectedIsIncomplete:
           !!selected &&
-          isSerialEntityIncompleteForOperation(selected, operation.id)
+          isSerialEntityIncompleteForOperation(selected, operation.id),
+        soleUnitId: soleUnitId(trackedEntities, operation.operationQuantity)
       });
       if (target.action === "select") {
         toast.info(t`Scan or select the unit, then scan the kanban card again`);
@@ -1286,7 +1291,7 @@ export const JobOperation = ({
           value="details"
           className="[grid-area:main] mt-0 h-full min-h-0"
         >
-          <div className="h-full w-full min-w-0 overflow-y-auto scroll-fade scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+          <div className="h-full w-full min-w-0 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
             {contextInPane && (
               <>
                 {renderContextRow("border-b border-border")}
@@ -1843,6 +1848,7 @@ export const JobOperation = ({
                                               </div>
 
                                               <BarProgress
+                                                className="w-40"
                                                 label={t`Steps`}
                                                 gradient
                                                 invertGradient
@@ -2460,7 +2466,7 @@ export const JobOperation = ({
                                     );
 
                                   return (
-                                    <div className="flex items-end justify-between gap-1 w-full px-4 pb-2 border-b">
+                                    <div className="flex flex-wrap items-end justify-between gap-1 w-full px-4 pb-2 border-b">
                                       <div className="flex items-center gap-1">
                                         {showNavigation && !parentIsSerial && (
                                           <>
@@ -2527,8 +2533,9 @@ export const JobOperation = ({
                                         )}
                                       </div>
 
-                                      <div className="flex flex-col justify-center items-end gap-1">
+                                      <div className="ml-auto flex min-w-0 max-w-full flex-col justify-center items-end gap-1">
                                         <BarProgress
+                                          className="w-40 max-w-full"
                                           label={t`Steps`}
                                           gradient
                                           invertGradient
@@ -2642,7 +2649,7 @@ export const JobOperation = ({
 
               <ScrollArea className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
                 <div
-                  className="prose dark:prose-invert"
+                  className="prose max-w-none dark:prose-invert [&_img]:max-h-[65vh] [&_img]:w-full [&_img]:object-contain"
                   dangerouslySetInnerHTML={{
                     __html: generateHTML(
                       (operation.workInstruction ?? {}) as JSONContent

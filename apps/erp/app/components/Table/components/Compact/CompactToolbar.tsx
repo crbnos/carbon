@@ -51,6 +51,8 @@ type CompactToolbarProps = {
   /** Extra items first in the ⋯ (a page's own phone actions). */
   menuItems?: ReactNode;
   hideControls?: boolean;
+  hasRememberedChanges: boolean;
+  onResetRememberedState: () => void;
 };
 
 /**
@@ -80,7 +82,9 @@ export function CompactToolbar({
   importCSV,
   onSelect,
   menuItems,
-  hideControls = false
+  hideControls = false,
+  hasRememberedChanges,
+  onResetRememberedState
 }: CompactToolbarProps) {
   const { t } = useLingui();
   const { urlFiltersParams, hasFilters } = useFilters();
@@ -196,6 +200,8 @@ export function CompactToolbar({
           sortKeyToLabel={withSort ? sortKeyToLabel : {}}
           tableName={tableName}
           count={count}
+          hasRememberedChanges={hasRememberedChanges}
+          onResetRememberedState={onResetRememberedState}
         />
       ) : null}
       {importCsv.item ? (

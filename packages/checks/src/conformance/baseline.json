@@ -34,6 +34,7 @@
   "function-redefinition-keeps-changes::20261102032700_merge-main-non-nettable-and-project-stripes.sql::get_production_planning drops 20261029090412_non-nettable-storage.sql",
   "function-redefinition-keeps-changes::20261102032700_merge-main-non-nettable-and-project-stripes.sql::reconcile_item_stock_quantities drops 20261029090412_non-nettable-storage.sql",
   "function-redefinition-keeps-changes::20261102032723_merge-main-handlers.sql::apply_item_stock_quantities drops 20261029090447_non-nettable-storage-handlers.sql",
+  "function-redefinition-keeps-changes::20261106193127_legacy-deposit-refund-account-guards.sql::prevent_invalid_deposit_refund drops 20261106192501_legacy-deposit-refund-reservations.sql",
   "list-select-covers-columns::apps/erp/app/modules/projects/projects.service.ts::PROJECT_BASELINE_LIST_COLUMNS",
   "list-select-covers-columns::apps/erp/app/modules/projects/projects.service.ts::PROJECT_BASELINE_LIST_COLUMNS has no PROJECT_BASELINE_PAGING",
   "list-select-covers-columns::apps/erp/app/modules/projects/projects.service.ts::PROJECT_CHANGE_REQUEST_LIST_COLUMNS",

@@ -27353,6 +27353,7 @@ export type Database = {
           sourcePaymentId: string | null
           targetExchangeRate: number
           targetMemoId: string | null
+          targetPaymentId: string | null
           targetPurchaseInvoiceId: string | null
           targetReimbursementId: string | null
           targetSalesInvoiceId: string | null
@@ -27376,6 +27377,7 @@ export type Database = {
           sourcePaymentId?: string | null
           targetExchangeRate: number
           targetMemoId?: string | null
+          targetPaymentId?: string | null
           targetPurchaseInvoiceId?: string | null
           targetReimbursementId?: string | null
           targetSalesInvoiceId?: string | null
@@ -27399,6 +27401,7 @@ export type Database = {
           sourcePaymentId?: string | null
           targetExchangeRate?: number
           targetMemoId?: string | null
+          targetPaymentId?: string | null
           targetPurchaseInvoiceId?: string | null
           targetReimbursementId?: string | null
           targetSalesInvoiceId?: string | null
@@ -27503,6 +27506,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "memo"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoiceSettlement_targetPaymentId_fkey"
+            columns: ["targetPaymentId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "payment"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "invoiceSettlement_targetPurchaseInvoiceId_fkey"
@@ -45877,6 +45887,7 @@ export type Database = {
           postedAt: string | null
           postedBy: string | null
           postingDate: string | null
+          purchaseOrderId: string | null
           reference: string | null
           rentalAgreementId: string | null
           salesOrderId: string | null
@@ -45908,6 +45919,7 @@ export type Database = {
           postedAt?: string | null
           postedBy?: string | null
           postingDate?: string | null
+          purchaseOrderId?: string | null
           reference?: string | null
           rentalAgreementId?: string | null
           salesOrderId?: string | null
@@ -45939,6 +45951,7 @@ export type Database = {
           postedAt?: string | null
           postedBy?: string | null
           postingDate?: string | null
+          purchaseOrderId?: string | null
           reference?: string | null
           rentalAgreementId?: string | null
           salesOrderId?: string | null
@@ -46125,6 +46138,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "payment_purchaseOrder_fkey"
+            columns: ["purchaseOrderId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrder"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "payment_purchaseOrder_fkey"
+            columns: ["purchaseOrderId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrders"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "payment_rentalAgreementId_fkey"
@@ -107169,6 +107196,13 @@ export type Database = {
           supplierQuotes: Json
         }[]
       }
+      get_supplier_prepayment_refund_currencies: {
+        Args: { _company_id: string }
+        Returns: {
+          purchaseOrderId: string
+          refundableCurrencyCodes: string[]
+        }[]
+      }
       get_timezone_names: {
         Args: never
         Returns: {
@@ -107574,11 +107608,19 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      prevent_invalid_deposit_refund: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       prevent_posted_purchase_invoice_deletion: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
       prevent_posted_sales_invoice_deletion: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      prevent_prepaid_purchase_order_deletion: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }

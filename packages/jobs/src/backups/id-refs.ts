@@ -141,3 +141,15 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
   workCenterLoad: ["jobOperationId"],
   workflowRun: ["causedByRunId", "rootRunId", "triggerRecordId"]
 } satisfies IdRefColumns;
+
+/**
+ * The ID_REF_COLUMNS that only ever hold a tenant row's id. On a foreign
+ * restore a value with no new id is a row the backup doesn't carry (a job
+ * operation deleted after its inspection), so it is nulled, as a nullable FK
+ * into a missing row is. Kept verbatim, `inspection.sourceDocumentLineId`
+ * collides with the source company's live inspection on the cross-company
+ * `inspection_sourceDocumentLineId_key`.
+ */
+export const ROW_ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
+  inspection: ["sourceDocumentLineId"]
+} satisfies IdRefColumns;

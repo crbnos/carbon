@@ -117,7 +117,11 @@ import type {
   OperationWithDetails,
   ProductionEvent as ProductionEventType
 } from "~/services/types";
-import { isKanbanCompleteScan, kanbanCompleteTarget } from "~/utils/kanban";
+import {
+  isKanbanCompleteScan,
+  kanbanCompleteTarget,
+  soleUnitId
+} from "~/utils/kanban";
 import { ORIGIN_PARAM, readOrigin, useOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
 import { deriveUnits } from "~/utils/units";
@@ -614,7 +618,8 @@ export function AssemblyView({
         isFirstOperation,
         selectedEntityId: selected?.id ?? null,
         selectedIsIncomplete:
-          !!selected && isUnitIncompleteForOperation(selected, operationId)
+          !!selected && isUnitIncompleteForOperation(selected, operationId),
+        soleUnitId: soleUnitId(trackedEntities, operation?.operationQuantity)
       });
       if (target.action === "select") {
         toast.info(t`Scan or select the unit, then scan the kanban card again`);

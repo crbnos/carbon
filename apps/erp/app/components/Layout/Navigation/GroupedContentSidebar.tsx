@@ -138,6 +138,7 @@ const GroupedContentSidebar = ({
                     label={route.name}
                     count={route.count}
                     isActive={isActive(route)}
+                    restoreRememberedTable
                   />
                   {views.map((view) => (
                     <SheetNavRow
@@ -186,7 +187,10 @@ const GroupedContentSidebar = ({
                 : "hover:bg-transparent hover:text-active-foreground hover:scale-100 focus-visible:scale-100"
             )}
           >
-            <PrefetchLink to={route.to + (route.q ? `?q=${route.q}` : "")}>
+            <PrefetchLink
+              to={route.to + (route.q ? `?q=${route.q}` : "")}
+              state={{ restoreRememberedTable: true }}
+            >
               <span className="truncate">{route.name}</span>
               {route.count !== undefined && route.count > 0 && (
                 <Count

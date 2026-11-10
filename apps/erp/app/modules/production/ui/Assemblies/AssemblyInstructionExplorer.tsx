@@ -49,6 +49,7 @@ import { Empty } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRealtime } from "~/hooks";
 import { useDrawerItem } from "~/hooks/useDrawerItem";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import type { action as replanAction } from "~/routes/x+/assembly+/$id.plan.rerun";
 import type { action as generateAction } from "~/routes/x+/assembly+/$id.steps.generate";
 import { path } from "~/utils/path";
@@ -200,7 +201,11 @@ function AssemblyInstructionExplorer({
 
   // Controlled so the Components tab knows when it becomes active — it scrolls the
   // current selection into view on activation
-  const [tab, setTab] = useState<"steps" | "components">("steps");
+  const [tab, setTab] = usePersistentPageTab(
+    "assembly-explorer",
+    ["steps", "components"],
+    "steps"
+  );
   // A pre-existing Failed job stays the latest row until the freshly
   // triggered run inserts its own — remember it so it doesn't read as the
   // outcome of the run we're waiting on. Persisted next to the awaiting flag:
@@ -485,6 +490,13 @@ function AssemblyInstructionExplorer({
     });
   };
 
+  const retryGenerate = () => {
+    // A new run must not be mistaken for the previous failed planner job.
+    setIgnoredFailedJobId(planJob?.status === "Failed" ? planJob.id : null);
+    setIsAwaitingPlan(false);
+    submitGenerate("generate");
+  };
+
   return (
     <>
       <Tabs
@@ -500,6 +512,27 @@ function AssemblyInstructionExplorer({
             Components
           </TabsTrigger>
         </TabsList>
+        {planFailed && steps.length === 0 && tab === "components" && (
+          <div
+            role="alert"
+            className="mx-3 mt-3 flex flex-none items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs"
+          >
+            <span className="text-destructive">
+              {planJob?.error ??
+                "Motion planning failed. Retry to run it again."}
+            </span>
+            {permissions.can("update", "production") && (
+              <Button
+                size="sm"
+                variant="secondary"
+                isDisabled={isDisabled || isConverting || !assemblerAvailable}
+                onClick={retryGenerate}
+              >
+                Retry Generate Steps
+              </Button>
+            )}
+          </div>
+        )}
         <TabsContent
           value="steps"
           className="flex min-h-0 flex-1 flex-col justify-between"
@@ -592,16 +625,7 @@ function AssemblyInstructionExplorer({
                       }
                       isLoading={isSolving}
                       leftIcon={planFailed ? undefined : <LuSparkles />}
-                      onClick={() => {
-                        // The action starts a fresh planner run when the
-                        // latest one failed — don't read that stale failure
-                        // as this run's outcome
-                        setIgnoredFailedJobId(
-                          planJob?.status === "Failed" ? planJob.id : null
-                        );
-                        setIsAwaitingPlan(false);
-                        submitGenerate("generate");
-                      }}
+                      onClick={retryGenerate}
                     >
                       {planFailed ? "Retry Generate Steps" : "Generate Steps"}
                     </Button>

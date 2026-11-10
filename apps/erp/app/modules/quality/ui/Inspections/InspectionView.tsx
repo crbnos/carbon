@@ -30,6 +30,7 @@ import {
   SelectValue,
   Spinner,
   useDisclosure,
+  usePaneResize,
   VStack
 } from "@carbon/react";
 import {
@@ -247,10 +248,6 @@ const InspectionView = ({
   const [gridExpanded, setGridExpanded] = useState(true);
   const [pdfPaneHeightPx, setPdfPaneHeightPx] = useState(360);
   const [stackHeightPx, setStackHeightPx] = useState(0);
-  const [isResizingSplit, setIsResizingSplit] = useState(false);
-  const splitDragRef = useRef<{ startY: number; startPdfPx: number } | null>(
-    null
-  );
   // Until the user drags the splitter, the PDF takes ~45% of the measured
   // stack (capped by the grid's half-stack minimum) instead of a fixed pixel
   // default — portrait drawings get a usable slice on tall viewports.
@@ -276,41 +273,15 @@ const InspectionView = ({
     return () => ro.disconnect();
   }, [gridExpanded, showDrawing]);
 
-  useEffect(() => {
-    if (!isResizingSplit) return;
-    const onMove = (e: MouseEvent) => {
-      const start = splitDragRef.current;
-      if (!start) return;
-      const dy = e.clientY - start.startY;
-      setPdfPaneHeightPx(
-        clampPdfPaneHeight(start.startPdfPx + dy, stackHeightPx, gridExpanded)
-      );
-    };
-    const onUp = () => {
-      setIsResizingSplit(false);
-      splitDragRef.current = null;
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, [isResizingSplit, stackHeightPx, gridExpanded]);
-
-  const onSplitResizeMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (!gridExpanded) return;
-      e.preventDefault();
+  const splitResize = usePaneResize({
+    height: pdfPaneHeightPx,
+    clamp: (height) => clampPdfPaneHeight(height, stackHeightPx, gridExpanded),
+    enabled: gridExpanded && stackHeightPx > 0,
+    onStart: () => {
       hasUserResizedRef.current = true;
-      splitDragRef.current = {
-        startY: e.clientY,
-        startPdfPx: pdfPaneHeightPx
-      };
-      setIsResizingSplit(true);
     },
-    [gridExpanded, pdfPaneHeightPx]
-  );
+    onCommit: setPdfPaneHeightPx
+  });
 
   // Per-cell saves are quiet (no revalidation), so measurement + derived
   // sample statuses are mirrored locally from the save responses and merged
@@ -704,6 +675,7 @@ const InspectionView = ({
           >
             {/* PDF viewer — pinned height while the grid is expanded */}
             <div
+              ref={splitResize.paneRef}
               className={`flex min-h-0 min-w-full flex-col overflow-hidden rounded-lg border bg-muted ${
                 gridExpanded
                   ? "shrink-0 max-md:!h-[40dvh]"
@@ -758,10 +730,10 @@ const InspectionView = ({
                 aria-orientation="horizontal"
                 aria-label={t`Drag to resize drawing and characteristics`}
                 aria-valuenow={Math.round(pdfPaneHeightPx)}
-                className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 max-md:hidden ${
-                  isResizingSplit ? "bg-muted" : ""
+                className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 pointer-coarse:h-6 pointer-coarse:hit-area max-md:hidden ${
+                  splitResize.isResizing ? "bg-muted" : ""
                 }`}
-                onMouseDown={onSplitResizeMouseDown}
+                {...splitResize.handleProps}
               >
                 <span className="h-1 w-14 shrink-0 rounded-full bg-muted-foreground/40 group-hover:bg-muted-foreground/65" />
               </div>

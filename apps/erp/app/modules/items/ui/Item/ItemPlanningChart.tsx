@@ -56,6 +56,7 @@ import {
 } from "recharts";
 import { DateTime, Empty, Hyperlink } from "~/components";
 import { useQuantityFormatter } from "~/hooks";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import type { DemandForecastSourceRow } from "~/modules/items/items.service";
 import type { loader as forecastLoader } from "~/routes/api+/items.$id.$locationId.forecast";
 import { path } from "~/utils/path";
@@ -171,6 +172,11 @@ export const ItemPlanningChart = ({
   timeFenceDate?: string | null;
 }) => {
   const { t } = useLingui();
+  const [planningTab, setPlanningTab] = usePersistentPageTab(
+    "supply-demand",
+    ["all", "supply", "demand"],
+    "all"
+  );
   const forecastFetcher = useLoaderQuery<typeof forecastLoader>(
     path.to.api.itemForecast(itemId, locationId)
   );
@@ -831,7 +837,11 @@ export const ItemPlanningChart = ({
           </div>
         </CardContent>
       </Card>
-      <Tabs defaultValue="all" className="w-full">
+      <Tabs
+        value={planningTab}
+        onValueChange={setPlanningTab}
+        className="w-full"
+      >
         <Card className={cn(compact && "border-none p-0 dark:shadow-none")}>
           <HStack className="w-full justify-between">
             <CardHeader>

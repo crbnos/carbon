@@ -25,6 +25,7 @@ import useMount from "./useMount";
 import { useNProgress } from "./useNProgress";
 import { useOptimisticLocation } from "./useOptimisticLocation";
 import useOutsideClick from "./useOutsideClick";
+import { usePaneResize } from "./usePaneResize";
 import { usePlan } from "./usePlan";
 import { useRevalidator } from "./useRevalidator";
 import { useRouteData } from "./useRouteData";
@@ -71,6 +72,7 @@ export {
   useOptimisticLocation,
   useOptimisticMode,
   useOutsideClick,
+  usePaneResize,
   usePlan,
   useRevalidator,
   useRouteData,

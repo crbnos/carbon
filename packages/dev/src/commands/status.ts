@@ -7,23 +7,15 @@ import pc from "picocolors";
 import { listContainers, listSharedContainers } from "../services/compose.js";
 import { isAsleep } from "../services/hibernate.js";
 import { sharedStats } from "../services/shared-db.js";
+import { currentStack } from "../stack.js";
 import { portsTable, servicesTable } from "../ui.js";
-import {
-  getSlot,
-  getWorktreeRoot,
-  projectName,
-  recordedStackMode,
-  resolveSlug,
-  stackDatabase
-} from "../worktree.js";
 
 export async function status(opts: { json?: boolean } = {}) {
-  const root = await getWorktreeRoot();
-  const slug = resolveSlug(root);
-  const slot = getSlot(slug);
+  const stack = await currentStack();
+  const { slug, slot } = stack;
   // null: no crbn with modes ran `up` here yet.
-  const mode = recordedStackMode(slug);
-  const database = mode ? stackDatabase(slug, mode) : null;
+  const mode = stack.recordedMode;
+  const database = mode ? (stack.db?.database ?? null) : null;
   let sharedError: string | null = null;
   const shared =
     mode === "shared"
@@ -40,12 +32,12 @@ export async function status(opts: { json?: boolean } = {}) {
     // Ports and containers only — the slot's JWT secret stays out of stdout.
     const out = {
       slug,
-      project: projectName(slug),
+      project: stack.project,
       mode,
       database,
       ports: slot?.ports ?? null,
       redisDb: slot?.redisDb ?? null,
-      containers: slot ? await listContainers(root, slug) : [],
+      containers: slot ? await listContainers(stack) : [],
       sharedContainers: shared,
       sharedConnections: stats?.connections ?? null,
       netQueue: stats?.netQueue ?? null
@@ -56,7 +48,7 @@ export async function status(opts: { json?: boolean } = {}) {
 
   intro("Carbon · dev status");
   log.info(
-    `worktree: ${pc.cyan(slug)}  project: ${pc.cyan(projectName(slug))}  mode: ${pc.cyan(mode ?? "not started")}${database ? `  database: ${pc.cyan(database)}` : ""}`
+    `worktree: ${pc.cyan(slug)}  project: ${pc.cyan(stack.project)}  mode: ${pc.cyan(mode ?? "not started")}${database ? `  database: ${pc.cyan(database)}` : ""}`
   );
   if (!slot) {
     log.warn("no port assignment yet — run `crbn up`");
@@ -72,7 +64,7 @@ export async function status(opts: { json?: boolean } = {}) {
     log.info("hibernated — the next ERP/MES request wakes it");
   }
 
-  const containers = await listContainers(root, slug);
+  const containers = await listContainers(stack);
   if (containers.length === 0) {
     log.warn("no worktree containers running");
   } else {

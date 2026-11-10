@@ -61,8 +61,8 @@ run the same checks. The route only parses the form, and takes the document id f
   `setReceiptLineSerial` / `assignReceiptReturnEntity` / `removeReceiptReturnEntity`, one per
   `trackingType`) — writes `trackedEntity.attributes` (`"Shipment Line"`, `Shipment`, serial
   `"Shipment Line Index"`); guards entity status with `shippableEntityStatuses`
-  (`inventory.utils.ts`) — `"Available"` normally, `"On Hold"` when the shipment's source is a
-  Sales Return Order (returned stock ships back from hold), `"Available"` or `"Rejected"` when it
+  (`inventory.utils.ts`) — `"Available"` normally, `"On Hold"` or `"Available"` when the shipment's source is a
+  Sales Return Order (returned stock ships back from hold, a serviced unit from the depot), `"Available"` or `"Rejected"` when it
   is a Purchase Return Order (rejected units go back to the supplier — a Rejected unit only when
   its `Receipt` attribute is a posted receipt from the shipment's supplier); clears stale
   attrs off prior entities. Receipt tracking additionally has a `returnEntity` type for
