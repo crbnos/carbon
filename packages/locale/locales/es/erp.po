@@ -5930,9 +5930,6 @@ msgstr "Ambas pruebas pasan; considera No financiado (§41(d)(4)(H))"
 msgid "Bottleneck"
 msgstr "Cuello de botella"
 
-msgid "Bottom of page"
-msgstr "Parte inferior de la página"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "Crea una copia editable de esta versión que puedes cambiar y publicar."
 

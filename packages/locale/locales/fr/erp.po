@@ -5930,9 +5930,6 @@ msgstr "Les deux tests réussissent ; envisagez Non financé (§41(d)(4)(H))"
 msgid "Bottleneck"
 msgstr "Goulot d'étranglement"
 
-msgid "Bottom of page"
-msgstr "Bas de page"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "Créer une copie modifiable de cette version que vous pouvez modifier et publier."
 

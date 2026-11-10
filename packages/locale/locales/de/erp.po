@@ -5930,9 +5930,6 @@ msgstr "Beide Tests bestanden; erwägen Sie „Nicht finanziert\" (§41(d)(4)(H)
 msgid "Bottleneck"
 msgstr "Engpass"
 
-msgid "Bottom of page"
-msgstr "Seitenende"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "Erstellen Sie einen bearbeitbaren Branch dieser Version, den Sie ändern und veröffentlichen können."
 

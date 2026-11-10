@@ -5930,9 +5930,6 @@ msgstr "Her iki test geçti; Finansman sağlanmamış olduğunu düşünün (§4
 msgid "Bottleneck"
 msgstr "Darboğaz"
 
-msgid "Bottom of page"
-msgstr "Sayfa altı"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "Bu sürümün düzenlenebilir bir kopyasını oluşturun, değiştirebilir ve yayınlayabilirsiniz."
 
