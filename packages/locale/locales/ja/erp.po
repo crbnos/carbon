@@ -1943,7 +1943,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "問題が他の場所で再発するのを防ぐ不適合タスク—是正措置と封じ込めとは異なります。"
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr ""
+msgstr "数値のすぐ隣にある数字や記号は、数値の意味を変えてしまいます。間に言葉を入れてください。"
 
 msgid "A part"
 msgstr "部品"
@@ -5336,13 +5336,13 @@ msgid "Backup for {0}"
 msgstr "{0} のバックアップ"
 
 msgid "Backup ready"
-msgstr ""
+msgstr "バックアップ準備完了"
 
 msgid "Backup uploaded"
 msgstr "バックアップをアップロードしました"
 
 msgid "Backup uploaded, but {assetErrors} file(s) failed to upload. Its data restores; those files won't."
-msgstr ""
+msgstr "バックアップはアップロードされましたが、{assetErrors} 件のファイルのアップロードに失敗しました。データは復元されますが、それらのファイルは復元されません。"
 
 msgid "Backups"
 msgstr "バックアップ"
@@ -5987,7 +5987,7 @@ msgid "Bulk Jobs"
 msgstr "一括製造指図"
 
 msgid "Bundling files"
-msgstr ""
+msgstr "ファイルをまとめています"
 
 msgid "Burden"
 msgstr "負担"
@@ -6988,10 +6988,10 @@ msgid "Clearing demo data"
 msgstr "デモデータをクリア中"
 
 msgid "Clearing existing data"
-msgstr ""
+msgstr "既存のデータを消去しています"
 
 msgid "Clearing restored data"
-msgstr ""
+msgstr "復元されたデータを消去しています"
 
 msgid "Click a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "{selectedLabel} に時間を追加するには、日をクリックしてください。時間を変更するには、バーの下端をドラッグしてください。"
@@ -7154,7 +7154,7 @@ msgid "Collapse subtree"
 msgstr "サブツリーを折りたたむ"
 
 msgid "Collecting records"
-msgstr ""
+msgstr "レコードを収集しています"
 
 msgid "Color"
 msgstr "色"
@@ -8498,7 +8498,7 @@ msgid "Couldn't confirm the account"
 msgstr "アカウントを確認できませんでした"
 
 msgid "Couldn't confirm the restore started. It may still be running — close this and check the list in a moment."
-msgstr ""
+msgstr "復元が開始されたことを確認できませんでした。まだ実行中の可能性があります。この画面を閉じて、しばらくしてから一覧をご確認ください。"
 
 msgid "Couldn't load documents"
 msgstr "ドキュメントを読み込めませんでした"
@@ -8920,7 +8920,7 @@ msgid "Creates the 12 monthly periods for a fiscal year. Periods that already ex
 msgstr "会計年度の12ヶ月間の期間を作成します。既に存在する期間は保持されます。"
 
 msgid "Creating backup…"
-msgstr ""
+msgstr "バックアップを作成しています…"
 
 msgid "Creating part..."
 msgstr "パーツを作成中..."
@@ -16123,7 +16123,7 @@ msgid "Keep matching items"
 msgstr "一致する品目を保持"
 
 msgid "Keep mine"
-msgstr ""
+msgstr "自分の変更を保持"
 
 msgid "Keep navigation open"
 msgstr "ナビゲーションを開いたままにする"
@@ -16868,7 +16868,7 @@ msgid "Linked Record"
 msgstr "リンクされたレコード"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr ""
+msgstr "共有セクションにリンクされています。ライブラリで編集すると、すべての箇所で更新されます。"
 
 msgid "Links"
 msgstr "リンク"
@@ -16922,7 +16922,7 @@ msgstr "テンプレートを読み込む"
 
 #. placeholder {0}: rows.toLocaleString()
 msgid "Loaded {0} rows. Review it below — keep the restore, or revert to what was here before."
-msgstr ""
+msgstr "{0} 行を読み込みました。下の内容をご確認ください。復元を維持するか、復元前の状態に元に戻してください。"
 
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "最後に読み込まれ、カットオーバー時に残高が最新の状態になります。"
@@ -16934,7 +16934,7 @@ msgid "Loading associated jobs..."
 msgstr "関連する製造指図を読み込み中..."
 
 msgid "Loading backup"
-msgstr ""
+msgstr "バックアップを読み込んでいます"
 
 msgid "Loading creditable lines..."
 msgstr "クレジット対象行を読み込み中..."
@@ -19973,7 +19973,7 @@ msgid "No values available"
 msgstr "利用可能な値がありません"
 
 msgid "No values found"
-msgstr ""
+msgstr "値が見つかりません"
 
 msgid "No variable matches {query}"
 msgstr "{query}に一致する変数がありません"
@@ -22240,7 +22240,7 @@ msgid "Playback"
 msgstr "再生"
 
 msgid "Please <0>change it</0>."
-msgstr ""
+msgstr "<0>変更</0>してください。"
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "監査ログを有効にするには、管理者にお問い合わせください。"
@@ -23880,7 +23880,7 @@ msgid "Received By"
 msgstr "受け取った人"
 
 msgid "Received Date"
-msgstr ""
+msgstr "入荷日"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "この仕入先から入荷した明細で返却数量が残っているもの"
@@ -24383,7 +24383,7 @@ msgid "Remove authenticator app"
 msgstr "認証アプリを除去"
 
 msgid "Remove block"
-msgstr ""
+msgstr "ブロックを除去"
 
 msgid "Remove clause"
 msgstr "条項を除去"
@@ -24775,7 +24775,7 @@ msgid "Request date"
 msgstr "リクエスト日付"
 
 msgid "Requested"
-msgstr ""
+msgstr "依頼済み"
 
 msgid "Requested By"
 msgstr "要求者"
@@ -25042,10 +25042,10 @@ msgid "Restore"
 msgstr "復元"
 
 msgid "Restore complete"
-msgstr ""
+msgstr "復元完了"
 
 msgid "Restore failed"
-msgstr ""
+msgstr "復元に失敗しました"
 
 msgid "Restore from Trash"
 msgstr "ゴミ箱から復元"
@@ -25063,13 +25063,13 @@ msgid "Restoring files"
 msgstr "ファイルを復元中"
 
 msgid "Restoring your snapshot"
-msgstr ""
+msgstr "スナップショットを復元しています"
 
 msgid "restoring…"
 msgstr "復元中…"
 
 msgid "Restoring…"
-msgstr ""
+msgstr "復元しています…"
 
 msgid "Restrict charging to members"
 msgstr "請求を会員に制限する"
@@ -25366,10 +25366,10 @@ msgid "Revert cancellation of {readableId}"
 msgstr "{readableId} のキャンセルを取り消す"
 
 msgid "Revert failed"
-msgstr ""
+msgstr "元に戻せませんでした"
 
 msgid "Reverted"
-msgstr ""
+msgstr "元に戻しました"
 
 msgid "Reverting"
 msgstr "リバート中"
@@ -25381,7 +25381,7 @@ msgid "reverting…"
 msgstr "戻す中…"
 
 msgid "Reverting…"
-msgstr ""
+msgstr "元に戻しています…"
 
 msgid "Review"
 msgstr "レビュー"
@@ -27235,7 +27235,7 @@ msgid "Shared channel"
 msgstr "共有チャネル"
 
 msgid "Shared Section (deleted)"
-msgstr ""
+msgstr "共有セクション（削除済み）"
 
 msgid "Shared Sections"
 msgstr "共有セクション"
@@ -27833,7 +27833,7 @@ msgid "Smoke-test the core daily flows end to end"
 msgstr "コアの毎日のワークフローをエンドツーエンドでスモークテストします"
 
 msgid "Snapshotting current data"
-msgstr ""
+msgstr "現在のデータのスナップショットを作成しています"
 
 msgid "so you can assign it here."
 msgstr "ここで割り当てることができます。"
@@ -27875,7 +27875,7 @@ msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "いくつかのレコードは戻りません。続行するには<0>{CONFIRM_WORD}</0>と入力してください。"
 
 msgid "Some rows excluded"
-msgstr ""
+msgstr "一部の行は除外されました"
 
 msgid "Some Shifts"
 msgstr "一部のシフト"
@@ -27884,7 +27884,7 @@ msgid "Someone"
 msgstr "誰か"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr ""
+msgstr "他のユーザーがこのテンプレートを保存したばかりです。最新版を読み込むには再読み込みしてください。このまま編集を続けると、保存時に上書きされます。"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "会計を更新できるユーザーが製造にかかった原価を入力してからでなければ、資本化できません。"
@@ -28271,7 +28271,7 @@ msgid "Still Owed"
 msgstr "未払い"
 
 msgid "Still working — this is a large dataset. You can close this and check back in a bit."
-msgstr ""
+msgstr "処理中です。データ量が多いため時間がかかります。この画面を閉じて、しばらくしてから再度ご確認ください。"
 
 msgid "Stock"
 msgstr "在庫"
@@ -29871,7 +29871,7 @@ msgid "The document could not be downloaded."
 msgstr "文書をダウンロードできませんでした。"
 
 msgid "The document could not be opened."
-msgstr ""
+msgstr "文書を開けませんでした。"
 
 msgid "The early hours, {name}."
 msgstr "早朝の時間、{name}。"
@@ -30441,7 +30441,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "このイシューに適用されるタスクと承認要件のプリセットバンドル。設定されると、イシュータイプのデフォルトワークフローを置き換えます。"
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr ""
+msgstr "プレビューを描画できませんでした。直前に描画できたプレビューを表示しています。"
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "タイム & マテリアル明細の 1 時間の価格：従業員の明細レート。それ以外の場合は労務カテゴリ。それ以外の場合は労務カテゴリの既定請求レート。その日から有効。"
@@ -30568,7 +30568,7 @@ msgid "The recorded genealogy of tracked entities — which inputs were consumed
 msgstr "追跡対象エンティティの記録された系譜 — どのインプットがどのアウトプットを生成するために消費されたか、入荷から出荷まで。"
 
 msgid "The records couldn't be counted. Try again later."
-msgstr ""
+msgstr "レコード数を集計できませんでした。しばらくしてから再度お試しください。"
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "参照データはすべての基盤となります。最初に読み込まれます。"
@@ -31294,7 +31294,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "このPINは再度表示されません。MES 端末でコンソールモードを終了するときに必要です。"
 
 msgid "This preview is paused because a text changes a figure."
-msgstr ""
+msgstr "テキストが数値の意味を変えているため、このプレビューは一時停止しています。"
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "この価格は手動で入力されたため、価格設定ルールは適用されていません。"
@@ -31360,7 +31360,7 @@ msgid "This serial"
 msgstr "このシリアル"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr ""
+msgstr "この共有セクションは存在しません。ブロックを除去するか、セクションを作り直してください。"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "このステーションはスキル制限のある作業を実行します — 適切なスキルを持つ作業者がシフト中のみ実行されます。人員配置ボードに割り当てられた作業者は、利用可能な労務をさらに決定します。"
@@ -33882,10 +33882,10 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "仕入先の回答が返信予定の日付。仕入先は見積依頼ポータルでこの日付を確認できます。Carbonはこの日付後の遅い回答の受け入れを中止します（設定可能）。"
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr ""
+msgstr "購買担当者が品物の入荷を依頼した日付です。仕入先は入荷回答納期として別の日付を回答する場合があり、納期にも別の日付が記録されることがあります。"
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr ""
+msgstr "購買担当者がこの明細の品物を受入場所に必要とする日付です。新しい明細は、発注の入荷希望納期から始まります。計画では、この日付を在庫可否の判定と外注工程のスケジュールに使用します。"
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "契約の実行期間と完了時のアクション。"
@@ -34528,7 +34528,7 @@ msgid "Your account stays safe even if your login is stolen"
 msgstr "ログインが盗まれてもアカウントは安全です"
 
 msgid "Your backup is ready — it's in the list below."
-msgstr ""
+msgstr "バックアップの準備が完了しました。下の一覧に表示されています。"
 
 msgid "Your backups"
 msgstr "バックアップ"
@@ -34612,7 +34612,7 @@ msgid "Your part numbers and the item master behind them"
 msgstr "あなたの部品番号とそれらの背後にあるアイテムマスター"
 
 msgid "Your previous data is back, exactly as it was before the restore."
-msgstr ""
+msgstr "復元前のデータが、そのまま元に戻りました。"
 
 msgid "Your profile could not be loaded."
 msgstr "プロファイルを読み込めませんでした。"

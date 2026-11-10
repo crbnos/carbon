@@ -1943,7 +1943,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "Uma tarefa de não conformidade que impede que o problema se repita em outro lugar — distinta da correção corretiva e contenção."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr ""
+msgstr "Um número ou sinal ao lado de um valor muda o que ele diz. Coloque uma palavra entre eles."
 
 msgid "A part"
 msgstr "Uma peça"
@@ -5336,13 +5336,13 @@ msgid "Backup for {0}"
 msgstr "Backup para {0}"
 
 msgid "Backup ready"
-msgstr ""
+msgstr "Backup pronto"
 
 msgid "Backup uploaded"
 msgstr "Backup enviado"
 
 msgid "Backup uploaded, but {assetErrors} file(s) failed to upload. Its data restores; those files won't."
-msgstr ""
+msgstr "Backup enviado, mas falhou o envio de {assetErrors} arquivo(s). Os dados serão restaurados; esses arquivos, não."
 
 msgid "Backups"
 msgstr "Backups"
@@ -5987,7 +5987,7 @@ msgid "Bulk Jobs"
 msgstr "Ordens de produção em massa"
 
 msgid "Bundling files"
-msgstr ""
+msgstr "Agrupando arquivos"
 
 msgid "Burden"
 msgstr "Onerar"
@@ -6988,10 +6988,10 @@ msgid "Clearing demo data"
 msgstr "Limpando dados de demonstração"
 
 msgid "Clearing existing data"
-msgstr ""
+msgstr "Limpando dados existentes"
 
 msgid "Clearing restored data"
-msgstr ""
+msgstr "Limpando dados restaurados"
 
 msgid "Click a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Clique em um dia para adicionar tempo a {selectedLabel}. Arraste a borda inferior de uma barra para alterar suas horas."
@@ -7154,7 +7154,7 @@ msgid "Collapse subtree"
 msgstr "Recolher subárvore"
 
 msgid "Collecting records"
-msgstr ""
+msgstr "Coletando registros"
 
 msgid "Color"
 msgstr "Cor"
@@ -8498,7 +8498,7 @@ msgid "Couldn't confirm the account"
 msgstr "Não foi possível confirmar a conta"
 
 msgid "Couldn't confirm the restore started. It may still be running — close this and check the list in a moment."
-msgstr ""
+msgstr "Não foi possível confirmar que a restauração foi iniciada. Ela pode ainda estar em andamento — feche e verifique a lista em instantes."
 
 msgid "Couldn't load documents"
 msgstr "Não foi possível carregar documentos"
@@ -8920,7 +8920,7 @@ msgid "Creates the 12 monthly periods for a fiscal year. Periods that already ex
 msgstr "Cria os 12 períodos mensais para um ano fiscal. Os períodos que já existem são mantidos."
 
 msgid "Creating backup…"
-msgstr ""
+msgstr "Criando backup…"
 
 msgid "Creating part..."
 msgstr "Criando peça..."
@@ -16123,7 +16123,7 @@ msgid "Keep matching items"
 msgstr "Manter itens correspondentes"
 
 msgid "Keep mine"
-msgstr ""
+msgstr "Manter o meu"
 
 msgid "Keep navigation open"
 msgstr "Manter navegação aberta"
@@ -16868,7 +16868,7 @@ msgid "Linked Record"
 msgstr "Registro Vinculado"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr ""
+msgstr "Vinculado a uma seção compartilhada. Edite-a na biblioteca para atualizar em todos os lugares."
 
 msgid "Links"
 msgstr "Links"
@@ -16922,7 +16922,7 @@ msgstr "Carregar Modelos"
 
 #. placeholder {0}: rows.toLocaleString()
 msgid "Loaded {0} rows. Review it below — keep the restore, or revert to what was here before."
-msgstr ""
+msgstr "{0} linhas carregadas. Revise abaixo — mantenha a restauração ou reverta para o que havia antes."
 
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "Carregado por último, logo no cutover, para que os saldos estejam atualizados."
@@ -16934,7 +16934,7 @@ msgid "Loading associated jobs..."
 msgstr "Carregando ordens de produção associadas..."
 
 msgid "Loading backup"
-msgstr ""
+msgstr "Carregando backup"
 
 msgid "Loading creditable lines..."
 msgstr "Carregando linhas credíveis..."
@@ -19973,7 +19973,7 @@ msgid "No values available"
 msgstr "Nenhum valor disponível"
 
 msgid "No values found"
-msgstr ""
+msgstr "Nenhum valor encontrado"
 
 msgid "No variable matches {query}"
 msgstr "Nenhuma variável corresponde a {query}"
@@ -22240,7 +22240,7 @@ msgid "Playback"
 msgstr "Reprodução"
 
 msgid "Please <0>change it</0>."
-msgstr ""
+msgstr "Por favor, <0>altere-o</0>."
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "Por favor, contacte seu administrador para ativar o registro de auditoria."
@@ -23880,7 +23880,7 @@ msgid "Received By"
 msgstr "Recebido Por"
 
 msgid "Received Date"
-msgstr ""
+msgstr "Data de recebimento"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Linhas recebidas deste fornecedor com quantidade restante para devolver"
@@ -24383,7 +24383,7 @@ msgid "Remove authenticator app"
 msgstr "Remover aplicação autenticadora"
 
 msgid "Remove block"
-msgstr ""
+msgstr "Remover bloco"
 
 msgid "Remove clause"
 msgstr "Remover cláusula"
@@ -24775,7 +24775,7 @@ msgid "Request date"
 msgstr "Data da solicitação"
 
 msgid "Requested"
-msgstr ""
+msgstr "Solicitado"
 
 msgid "Requested By"
 msgstr "Solicitado por"
@@ -25042,10 +25042,10 @@ msgid "Restore"
 msgstr "Restaurar"
 
 msgid "Restore complete"
-msgstr ""
+msgstr "Restauração concluída"
 
 msgid "Restore failed"
-msgstr ""
+msgstr "Falha na restauração"
 
 msgid "Restore from Trash"
 msgstr "Restaurar da Lixeira"
@@ -25063,13 +25063,13 @@ msgid "Restoring files"
 msgstr "Restaurando arquivos"
 
 msgid "Restoring your snapshot"
-msgstr ""
+msgstr "Restaurando seu snapshot"
 
 msgid "restoring…"
 msgstr "restaurando…"
 
 msgid "Restoring…"
-msgstr ""
+msgstr "Restaurando…"
 
 msgid "Restrict charging to members"
 msgstr "Restringir cobrança a membros"
@@ -25366,10 +25366,10 @@ msgid "Revert cancellation of {readableId}"
 msgstr "Reverter cancelamento de {readableId}"
 
 msgid "Revert failed"
-msgstr ""
+msgstr "Falha ao reverter"
 
 msgid "Reverted"
-msgstr ""
+msgstr "Revertido"
 
 msgid "Reverting"
 msgstr "Revertendo"
@@ -25381,7 +25381,7 @@ msgid "reverting…"
 msgstr "revertendo…"
 
 msgid "Reverting…"
-msgstr ""
+msgstr "Revertendo…"
 
 msgid "Review"
 msgstr "Revisar"
@@ -27235,7 +27235,7 @@ msgid "Shared channel"
 msgstr "Canal compartilhado"
 
 msgid "Shared Section (deleted)"
-msgstr ""
+msgstr "Seção compartilhada (excluída)"
 
 msgid "Shared Sections"
 msgstr "Seções Compartilhadas"
@@ -27833,7 +27833,7 @@ msgid "Smoke-test the core daily flows end to end"
 msgstr "Teste de fumaça dos fluxos diários principais de ponta a ponta"
 
 msgid "Snapshotting current data"
-msgstr ""
+msgstr "Criando snapshot dos dados atuais"
 
 msgid "so you can assign it here."
 msgstr "para que você possa atribuí-lo aqui."
@@ -27875,7 +27875,7 @@ msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Alguns registros não voltarão. Digite <0>{CONFIRM_WORD}</0> para continuar."
 
 msgid "Some rows excluded"
-msgstr ""
+msgstr "Algumas linhas ficaram de fora"
 
 msgid "Some Shifts"
 msgstr "Alguns Turnos"
@@ -27884,7 +27884,7 @@ msgid "Someone"
 msgstr "Alguém"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr ""
+msgstr "Outra pessoa acabou de salvar este modelo. Recarregue a página para carregar a versão dela, ou continue editando para sobrescrevê-la ao salvar."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Alguém que possa atualizar a contabilidade deve inserir o custo para fabricar antes que possa ser capitalizado."
@@ -28271,7 +28271,7 @@ msgid "Still Owed"
 msgstr "Ainda devido"
 
 msgid "Still working — this is a large dataset. You can close this and check back in a bit."
-msgstr ""
+msgstr "Ainda processando — este é um conjunto de dados grande. Você pode fechar e voltar daqui a pouco."
 
 msgid "Stock"
 msgstr "Estoque"
@@ -29871,7 +29871,7 @@ msgid "The document could not be downloaded."
 msgstr "Não foi possível baixar o documento."
 
 msgid "The document could not be opened."
-msgstr ""
+msgstr "Não foi possível abrir o documento."
 
 msgid "The early hours, {name}."
 msgstr "As primeiras horas, {name}."
@@ -30441,7 +30441,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "O pacote predefinido de tarefas e requisitos de aprovação aplicados a este problema; sobrescreve o fluxo de trabalho padrão do tipo de problema quando definido."
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr ""
+msgstr "Não foi possível gerar a pré-visualização. Exibindo a última que foi gerada."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "O preço de uma hora em uma linha de Tempo & Materiais: a taxa da linha para o funcionário, senão para a categoria de mão de obra, senão a Taxa de Faturamento padrão da categoria de mão de obra, em vigor no dia."
@@ -30568,7 +30568,7 @@ msgid "The recorded genealogy of tracked entities — which inputs were consumed
 msgstr "A genealogia registrada de entidades rastreadas - quais entradas foram consumidas para produzir quais saídas, recebimento até remessa."
 
 msgid "The records couldn't be counted. Try again later."
-msgstr ""
+msgstr "Não foi possível contar os registros. Tente novamente mais tarde."
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "Os dados de referência dos quais tudo o mais depende. Carrega primeiro."
@@ -31294,7 +31294,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Este PIN não será exibido novamente. Você precisará dele para sair do modo de console em terminais MES."
 
 msgid "This preview is paused because a text changes a figure."
-msgstr ""
+msgstr "Esta pré-visualização está pausada porque um texto altera um valor."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Este preço foi inserido manualmente, portanto nenhuma regra de precificação foi aplicada."
@@ -31360,7 +31360,7 @@ msgid "This serial"
 msgstr "Este serial"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr ""
+msgstr "Esta seção compartilhada não existe mais. Remova o bloco ou recrie a seção."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Esta estação executa trabalho com requisitos de habilidade — ela funciona apenas enquanto um operador qualificado está no turno; operadores atribuídos no quadro de pessoal moldam ainda mais a mão de obra disponível."
@@ -33882,10 +33882,10 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "Quando se espera que os fornecedores respondam; os fornecedores veem esta data no portal RFQ e a Carbon para de aceitar respostas tardias depois dela (configurável)."
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr ""
+msgstr "Quando o comprador solicitou as mercadorias; o fornecedor pode prometer outra data na Data prometida de recebimento e contabilizar outra coisa novamente na Data de entrega."
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr ""
+msgstr "Quando o comprador precisa das mercadorias desta linha na doca. Uma nova linha começa na Data solicitada de recebimento do pedido; o planejamento usa esta data para a disponibilidade de estoque e o agendamento de processos externos."
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Quando o contrato é executado e o que acontece quando é concluído."
@@ -34528,7 +34528,7 @@ msgid "Your account stays safe even if your login is stolen"
 msgstr "Sua conta permanece segura mesmo se seu login for roubado"
 
 msgid "Your backup is ready — it's in the list below."
-msgstr ""
+msgstr "Seu backup está pronto — ele está na lista abaixo."
 
 msgid "Your backups"
 msgstr "Seus backups"
@@ -34612,7 +34612,7 @@ msgid "Your part numbers and the item master behind them"
 msgstr "Seus números de peça e o mestre de itens por trás deles"
 
 msgid "Your previous data is back, exactly as it was before the restore."
-msgstr ""
+msgstr "Seus dados anteriores foram recuperados, exatamente como estavam antes da restauração."
 
 msgid "Your profile could not be loaded."
 msgstr "Não foi possível carregar seu perfil."

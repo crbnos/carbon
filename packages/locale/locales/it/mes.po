@@ -1461,7 +1461,7 @@ msgid "Location"
 msgstr "Ubicazione"
 
 msgid "Locations"
-msgstr ""
+msgstr "Ubicazioni"
 
 msgid "Log completed"
 msgstr "Registra completato"

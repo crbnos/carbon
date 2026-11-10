@@ -1943,7 +1943,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "Задача несоответствия, которая предотвращает повторение проблемы в других местах — отличающаяся от исправления и локализации."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr ""
+msgstr "Число или знак рядом с цифрой меняют её смысл. Поставьте между ними слово."
 
 msgid "A part"
 msgstr "Деталь"
@@ -5336,13 +5336,13 @@ msgid "Backup for {0}"
 msgstr "Резервная копия для {0}"
 
 msgid "Backup ready"
-msgstr ""
+msgstr "Резервная копия готова"
 
 msgid "Backup uploaded"
 msgstr "Резервная копия загружена"
 
 msgid "Backup uploaded, but {assetErrors} file(s) failed to upload. Its data restores; those files won't."
-msgstr ""
+msgstr "Резервная копия загружена, но {assetErrors} файл(ов) не удалось загрузить. Данные восстановятся, а эти файлы — нет."
 
 msgid "Backups"
 msgstr "Резервные копии"
@@ -5987,7 +5987,7 @@ msgid "Bulk Jobs"
 msgstr "Массовые производственные заказы"
 
 msgid "Bundling files"
-msgstr ""
+msgstr "Упаковка файлов"
 
 msgid "Burden"
 msgstr "Обремение"
@@ -6988,10 +6988,10 @@ msgid "Clearing demo data"
 msgstr "Удаление демо-данных"
 
 msgid "Clearing existing data"
-msgstr ""
+msgstr "Очистка текущих данных"
 
 msgid "Clearing restored data"
-msgstr ""
+msgstr "Очистка восстановленных данных"
 
 msgid "Click a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Щелкните день, чтобы добавить время к {selectedLabel}. Перетащите нижний край полосы, чтобы изменить её часы."
@@ -7154,7 +7154,7 @@ msgid "Collapse subtree"
 msgstr "Свернуть поддерево"
 
 msgid "Collecting records"
-msgstr ""
+msgstr "Сбор записей"
 
 msgid "Color"
 msgstr "Цвет"
@@ -8498,7 +8498,7 @@ msgid "Couldn't confirm the account"
 msgstr "Не удалось подтвердить аккаунт"
 
 msgid "Couldn't confirm the restore started. It may still be running — close this and check the list in a moment."
-msgstr ""
+msgstr "Не удалось подтвердить запуск восстановления. Возможно, оно ещё выполняется — закройте окно и проверьте список через минуту."
 
 msgid "Couldn't load documents"
 msgstr "Не удалось загрузить документы"
@@ -8920,7 +8920,7 @@ msgid "Creates the 12 monthly periods for a fiscal year. Periods that already ex
 msgstr "Создает 12 ежемесячных периодов для финансового года. Уже существующие периоды сохраняются."
 
 msgid "Creating backup…"
-msgstr ""
+msgstr "Создание резервной копии…"
 
 msgid "Creating part..."
 msgstr "Создание детали..."
@@ -16123,7 +16123,7 @@ msgid "Keep matching items"
 msgstr "Сохранить соответствующие элементы"
 
 msgid "Keep mine"
-msgstr ""
+msgstr "Оставить мою версию"
 
 msgid "Keep navigation open"
 msgstr "Не сворачивать навигацию"
@@ -16868,7 +16868,7 @@ msgid "Linked Record"
 msgstr "Связанная запись"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr ""
+msgstr "Связано с общим разделом. Измените его в библиотеке, чтобы обновить везде."
 
 msgid "Links"
 msgstr "Ссылки"
@@ -16922,7 +16922,7 @@ msgstr "Загрузить шаблоны"
 
 #. placeholder {0}: rows.toLocaleString()
 msgid "Loaded {0} rows. Review it below — keep the restore, or revert to what was here before."
-msgstr ""
+msgstr "Загружено строк: {0}. Проверьте ниже — оставьте восстановление или откатитесь к прежним данным."
 
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "Загружается в последнюю очередь, прямо при переходе, поэтому остатки актуальны."
@@ -16934,7 +16934,7 @@ msgid "Loading associated jobs..."
 msgstr "Загрузка связанных производственных заказов..."
 
 msgid "Loading backup"
-msgstr ""
+msgstr "Загрузка резервной копии"
 
 msgid "Loading creditable lines..."
 msgstr "Загрузка строк, доступных для кредитования..."
@@ -19973,7 +19973,7 @@ msgid "No values available"
 msgstr "Нет доступных значений"
 
 msgid "No values found"
-msgstr ""
+msgstr "Значения не найдены"
 
 msgid "No variable matches {query}"
 msgstr "Нет переменных соответствующих {query}"
@@ -22240,7 +22240,7 @@ msgid "Playback"
 msgstr "Воспроизведение"
 
 msgid "Please <0>change it</0>."
-msgstr ""
+msgstr "Пожалуйста, <0>измените его</0>."
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "Пожалуйста, обратитесь к администратору для включения логирования аудита."
@@ -23880,7 +23880,7 @@ msgid "Received By"
 msgstr "Получено от"
 
 msgid "Received Date"
-msgstr ""
+msgstr "Дата получения"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Полученные строки от этого поставщика с количеством, оставшимся для возврата"
@@ -24383,7 +24383,7 @@ msgid "Remove authenticator app"
 msgstr "Удалить приложение аутентификации"
 
 msgid "Remove block"
-msgstr ""
+msgstr "Убрать блок"
 
 msgid "Remove clause"
 msgstr "Убрать условие"
@@ -24775,7 +24775,7 @@ msgid "Request date"
 msgstr "Дата запроса"
 
 msgid "Requested"
-msgstr ""
+msgstr "Запрошено"
 
 msgid "Requested By"
 msgstr "Запрошено"
@@ -25042,10 +25042,10 @@ msgid "Restore"
 msgstr "Восстановить"
 
 msgid "Restore complete"
-msgstr ""
+msgstr "Восстановление завершено"
 
 msgid "Restore failed"
-msgstr ""
+msgstr "Не удалось восстановить"
 
 msgid "Restore from Trash"
 msgstr "Восстановить из корзины"
@@ -25063,13 +25063,13 @@ msgid "Restoring files"
 msgstr "Восстановление файлов"
 
 msgid "Restoring your snapshot"
-msgstr ""
+msgstr "Восстанавливаем ваш снимок"
 
 msgid "restoring…"
 msgstr "восстановление…"
 
 msgid "Restoring…"
-msgstr ""
+msgstr "Восстановление…"
 
 msgid "Restrict charging to members"
 msgstr "Ограничить начисление членам"
@@ -25366,10 +25366,10 @@ msgid "Revert cancellation of {readableId}"
 msgstr "Восстановить отмену {readableId}"
 
 msgid "Revert failed"
-msgstr ""
+msgstr "Не удалось откатить"
 
 msgid "Reverted"
-msgstr ""
+msgstr "Откат выполнен"
 
 msgid "Reverting"
 msgstr "Восстановление"
@@ -25381,7 +25381,7 @@ msgid "reverting…"
 msgstr "откат…"
 
 msgid "Reverting…"
-msgstr ""
+msgstr "Откат…"
 
 msgid "Review"
 msgstr "Рассмотрение"
@@ -27235,7 +27235,7 @@ msgid "Shared channel"
 msgstr "Общий канал"
 
 msgid "Shared Section (deleted)"
-msgstr ""
+msgstr "Общий раздел (удалён)"
 
 msgid "Shared Sections"
 msgstr "Общие разделы"
@@ -27833,7 +27833,7 @@ msgid "Smoke-test the core daily flows end to end"
 msgstr "Дымовое тестирование основных ежедневных процессов от начала до конца"
 
 msgid "Snapshotting current data"
-msgstr ""
+msgstr "Создание снимка текущих данных"
 
 msgid "so you can assign it here."
 msgstr "чтобы вы могли назначить его здесь."
@@ -27875,7 +27875,7 @@ msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Некоторые записи не вернутся. Введите <0>{CONFIRM_WORD}</0> для продолжения."
 
 msgid "Some rows excluded"
-msgstr ""
+msgstr "Некоторые строки исключены"
 
 msgid "Some Shifts"
 msgstr "Некоторые смены"
@@ -27884,7 +27884,7 @@ msgid "Someone"
 msgstr "Кто-то"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr ""
+msgstr "Кто-то другой только что сохранил этот шаблон. Перезагрузите страницу, чтобы загрузить его версию, или продолжайте редактирование и перезапишите шаблон при сохранении."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Пользователь, имеющий права на обновление бухгалтерии, должен ввести себестоимость производства перед тем, как она может быть капитализирована."
@@ -28271,7 +28271,7 @@ msgid "Still Owed"
 msgstr "Все еще задолжено"
 
 msgid "Still working — this is a large dataset. You can close this and check back in a bit."
-msgstr ""
+msgstr "Всё ещё выполняется — это большой объём данных. Можно закрыть окно и проверить позже."
 
 msgid "Stock"
 msgstr "Запас"
@@ -29871,7 +29871,7 @@ msgid "The document could not be downloaded."
 msgstr "Не удалось скачать документ."
 
 msgid "The document could not be opened."
-msgstr ""
+msgstr "Не удалось открыть документ."
 
 msgid "The early hours, {name}."
 msgstr "Ранние часы, {name}."
@@ -30441,7 +30441,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "Предварительно установленный пакет задач и требований утверждения, применяемый к этой проблеме; переопределяет рабочий процесс по умолчанию типа проблемы при установке."
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr ""
+msgstr "Не удалось обновить предпросмотр. Показан последний успешно построенный."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "Цена часа на строке Time & Materials: ставка строки для сотрудника, иначе для категории труда, иначе стандартная ставка выставления счета категории труда, действующая на день."
@@ -30568,7 +30568,7 @@ msgid "The recorded genealogy of tracked entities — which inputs were consumed
 msgstr "Записанная генеалогия отслеживаемых объектов — какие входные данные были израсходованы для производства каких выходных данных, от поступления через отгрузку."
 
 msgid "The records couldn't be counted. Try again later."
-msgstr ""
+msgstr "Не удалось подсчитать записи. Повторите позже."
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "Справочные данные, на которые опирается всё остальное. Загружаются первыми."
@@ -31294,7 +31294,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Этот PIN больше не будет показан. Он вам понадобится для выхода из режима консоли на терминалах MES."
 
 msgid "This preview is paused because a text changes a figure."
-msgstr ""
+msgstr "Предпросмотр приостановлен, так как текст меняет значение цифры."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Эта цена была введена вручную, поэтому правила ценообразования не были применены."
@@ -31360,7 +31360,7 @@ msgid "This serial"
 msgstr "Этот серийный номер"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr ""
+msgstr "Этот общий раздел больше не существует. Уберите блок или создайте раздел заново."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Эта станция выполняет работу, требующую определенных навыков — она работает только когда квалифицированный оператор находится на смене; операторы, назначенные на доску укомплектования, уточняют доступный труд."
@@ -33882,10 +33882,10 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "Когда ожидается ответ поставщиков; поставщики видят эту дату на портале RFQ, и Carbon перестает принимать поздние ответы после нее (настраивается)."
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr ""
+msgstr "Дата, на которую закупщик запросил товары. Поставщик может подтвердить иную дату в поле «Подтвержденная дата поступления» и снова указать иную дату в поле «Дата поставки»."
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr ""
+msgstr "Дата, к которой закупщику нужны товары этой строки на приёмке. Новая строка по умолчанию получает запрошенную дату поступления из заказа; планирование использует эту дату для проверки наличия на складе и планирования внешней обработки."
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Когда контракт вступает в действие и что происходит при его завершении."
@@ -34528,7 +34528,7 @@ msgid "Your account stays safe even if your login is stolen"
 msgstr "Ваша учетная запись остается в безопасности, даже если ваше имя входа украдено"
 
 msgid "Your backup is ready — it's in the list below."
-msgstr ""
+msgstr "Резервная копия готова — она в списке ниже."
 
 msgid "Your backups"
 msgstr "Ваши резервные копии"
@@ -34612,7 +34612,7 @@ msgid "Your part numbers and the item master behind them"
 msgstr "Ваши номера деталей и основной справочник товаров"
 
 msgid "Your previous data is back, exactly as it was before the restore."
-msgstr ""
+msgstr "Прежние данные восстановлены — в точности как до восстановления."
 
 msgid "Your profile could not be loaded."
 msgstr "Не удалось загрузить ваш профиль."

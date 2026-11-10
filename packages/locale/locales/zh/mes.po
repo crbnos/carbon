@@ -1461,7 +1461,7 @@ msgid "Location"
 msgstr "位置"
 
 msgid "Locations"
-msgstr ""
+msgstr "地点"
 
 msgid "Log completed"
 msgstr "记录完成"

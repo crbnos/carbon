@@ -1461,7 +1461,7 @@ msgid "Location"
 msgstr "Расположение"
 
 msgid "Locations"
-msgstr ""
+msgstr "Площадки"
 
 msgid "Log completed"
 msgstr "Записать завершение"

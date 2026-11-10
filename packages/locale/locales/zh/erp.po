@@ -1943,7 +1943,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "一项不合格任务，用于防止问题在其他地方重复出现——不同于纠正修复和围堵。"
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr ""
+msgstr "数字旁边紧挨的数字或符号会改变其含义。请在两者之间加入一个文字。"
 
 msgid "A part"
 msgstr "一个零件"
@@ -5336,13 +5336,13 @@ msgid "Backup for {0}"
 msgstr "{0}的备份"
 
 msgid "Backup ready"
-msgstr ""
+msgstr "备份已就绪"
 
 msgid "Backup uploaded"
 msgstr "已上传备份"
 
 msgid "Backup uploaded, but {assetErrors} file(s) failed to upload. Its data restores; those files won't."
-msgstr ""
+msgstr "备份已上传，但 {assetErrors} 个文件上传失败。其数据可以恢复，这些文件则无法恢复。"
 
 msgid "Backups"
 msgstr "备份"
@@ -5987,7 +5987,7 @@ msgid "Bulk Jobs"
 msgstr "批量工单"
 
 msgid "Bundling files"
-msgstr ""
+msgstr "正在打包文件"
 
 msgid "Burden"
 msgstr "分摊"
@@ -6988,10 +6988,10 @@ msgid "Clearing demo data"
 msgstr "正在清除演示数据"
 
 msgid "Clearing existing data"
-msgstr ""
+msgstr "正在清除现有数据"
 
 msgid "Clearing restored data"
-msgstr ""
+msgstr "正在清除已恢复的数据"
 
 msgid "Click a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "点击某天向 {selectedLabel} 添加时间。拖动条形图的下边缘更改其小时数。"
@@ -7154,7 +7154,7 @@ msgid "Collapse subtree"
 msgstr "折叠子树"
 
 msgid "Collecting records"
-msgstr ""
+msgstr "正在收集记录"
 
 msgid "Color"
 msgstr "颜色"
@@ -8498,7 +8498,7 @@ msgid "Couldn't confirm the account"
 msgstr "无法确认帐户"
 
 msgid "Couldn't confirm the restore started. It may still be running — close this and check the list in a moment."
-msgstr ""
+msgstr "无法确认恢复是否已开始。它可能仍在运行，请关闭此窗口，稍后查看列表。"
 
 msgid "Couldn't load documents"
 msgstr "无法加载文档"
@@ -8920,7 +8920,7 @@ msgid "Creates the 12 monthly periods for a fiscal year. Periods that already ex
 msgstr "为会计年度创建12个每月期间。已有期间保留不变。"
 
 msgid "Creating backup…"
-msgstr ""
+msgstr "正在创建备份…"
 
 msgid "Creating part..."
 msgstr "正在创建零件..."
@@ -16123,7 +16123,7 @@ msgid "Keep matching items"
 msgstr "保留匹配的物料"
 
 msgid "Keep mine"
-msgstr ""
+msgstr "保留我的"
 
 msgid "Keep navigation open"
 msgstr "保持导航展开"
@@ -16868,7 +16868,7 @@ msgid "Linked Record"
 msgstr "关联记录"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr ""
+msgstr "已链接到共享区块。请在库中编辑，以便在所有位置更新。"
 
 msgid "Links"
 msgstr "链接"
@@ -16922,7 +16922,7 @@ msgstr "加载模板"
 
 #. placeholder {0}: rows.toLocaleString()
 msgid "Loaded {0} rows. Review it below — keep the restore, or revert to what was here before."
-msgstr ""
+msgstr "已加载 {0} 行。请在下方检查，选择保留此次恢复，或还原为之前的数据。"
 
 msgid "Loaded last, right at cutover, so balances are current."
 msgstr "最后加载，在切换时进行，以便余额是最新的。"
@@ -16934,7 +16934,7 @@ msgid "Loading associated jobs..."
 msgstr "加载相关工单..."
 
 msgid "Loading backup"
-msgstr ""
+msgstr "正在加载备份"
 
 msgid "Loading creditable lines..."
 msgstr "正在加载可退款行..."
@@ -19973,7 +19973,7 @@ msgid "No values available"
 msgstr "没有可用的值"
 
 msgid "No values found"
-msgstr ""
+msgstr "未找到任何值"
 
 msgid "No variable matches {query}"
 msgstr "没有变量匹配{query}"
@@ -22240,7 +22240,7 @@ msgid "Playback"
 msgstr "回放"
 
 msgid "Please <0>change it</0>."
-msgstr ""
+msgstr "请<0>更改</0>。"
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "请联系您的管理员以启用审计日志。"
@@ -23880,7 +23880,7 @@ msgid "Received By"
 msgstr "接收人"
 
 msgid "Received Date"
-msgstr ""
+msgstr "收货日期"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "来自此供应商且还有数量待退货的已收行"
@@ -24383,7 +24383,7 @@ msgid "Remove authenticator app"
 msgstr "移除身份验证器应用"
 
 msgid "Remove block"
-msgstr ""
+msgstr "移除区块"
 
 msgid "Remove clause"
 msgstr "移除条款"
@@ -24775,7 +24775,7 @@ msgid "Request date"
 msgstr "请求日期"
 
 msgid "Requested"
-msgstr ""
+msgstr "已请求"
 
 msgid "Requested By"
 msgstr "请求人"
@@ -25042,10 +25042,10 @@ msgid "Restore"
 msgstr "恢复"
 
 msgid "Restore complete"
-msgstr ""
+msgstr "恢复完成"
 
 msgid "Restore failed"
-msgstr ""
+msgstr "恢复失败"
 
 msgid "Restore from Trash"
 msgstr "从垃圾箱恢复"
@@ -25063,13 +25063,13 @@ msgid "Restoring files"
 msgstr "正在恢复文件"
 
 msgid "Restoring your snapshot"
-msgstr ""
+msgstr "正在恢复您的快照"
 
 msgid "restoring…"
 msgstr "恢复中…"
 
 msgid "Restoring…"
-msgstr ""
+msgstr "正在恢复…"
 
 msgid "Restrict charging to members"
 msgstr "限制成员计费"
@@ -25366,10 +25366,10 @@ msgid "Revert cancellation of {readableId}"
 msgstr "撤销取消 {readableId}"
 
 msgid "Revert failed"
-msgstr ""
+msgstr "还原失败"
 
 msgid "Reverted"
-msgstr ""
+msgstr "已还原"
 
 msgid "Reverting"
 msgstr "正在还原"
@@ -25381,7 +25381,7 @@ msgid "reverting…"
 msgstr "还原中…"
 
 msgid "Reverting…"
-msgstr ""
+msgstr "正在还原…"
 
 msgid "Review"
 msgstr "评审"
@@ -27235,7 +27235,7 @@ msgid "Shared channel"
 msgstr "共享频道"
 
 msgid "Shared Section (deleted)"
-msgstr ""
+msgstr "共享区块（已删除）"
 
 msgid "Shared Sections"
 msgstr "共享部分"
@@ -27833,7 +27833,7 @@ msgid "Smoke-test the core daily flows end to end"
 msgstr "进行核心日常流程的端到端冒烟测试"
 
 msgid "Snapshotting current data"
-msgstr ""
+msgstr "正在为当前数据创建快照"
 
 msgid "so you can assign it here."
 msgstr "这样你可以在这里分配它。"
@@ -27875,7 +27875,7 @@ msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "某些记录不会回来。输入 <0>{CONFIRM_WORD}</0> 继续。"
 
 msgid "Some rows excluded"
-msgstr ""
+msgstr "部分行已排除"
 
 msgid "Some Shifts"
 msgstr "某些班次"
@@ -27884,7 +27884,7 @@ msgid "Someone"
 msgstr "某人"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr ""
+msgstr "其他人刚刚保存了此模板。请刷新以加载其版本，或继续编辑，保存时将覆盖其版本。"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "能够更新会计的人员必须先输入该资产的制造成本，才能将其资本化。"
@@ -28271,7 +28271,7 @@ msgid "Still Owed"
 msgstr "仍欠"
 
 msgid "Still working — this is a large dataset. You can close this and check back in a bit."
-msgstr ""
+msgstr "仍在处理中，数据量较大。您可以关闭此窗口，稍后再查看。"
 
 msgid "Stock"
 msgstr "库存"
@@ -29871,7 +29871,7 @@ msgid "The document could not be downloaded."
 msgstr "无法下载文档。"
 
 msgid "The document could not be opened."
-msgstr ""
+msgstr "无法打开该文件。"
 
 msgid "The early hours, {name}."
 msgstr "早晨时刻，{name}。"
@@ -30441,7 +30441,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "应用于此问题的预设任务和审批要求捆绑；设置时覆盖问题类型的默认工作流。"
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr ""
+msgstr "无法生成预览，当前显示的是上一次的预览。"
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "时间和物料订单行上一小时的价格：员工的订单行费率，或劳动力分类的费率，或劳动力分类的默认账单费率，有效期为当天。"
@@ -30568,7 +30568,7 @@ msgid "The recorded genealogy of tracked entities — which inputs were consumed
 msgstr "已跟踪实体的记录谱系——哪些输入被消耗以生产哪些输出,从收货到发货。"
 
 msgid "The records couldn't be counted. Try again later."
-msgstr ""
+msgstr "无法统计记录数，请稍后重试。"
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "参考数据是其他一切的基础。首先加载。"
@@ -31294,7 +31294,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "此PIN将不再显示。您需要它来在MES终端上退出控制台模式。"
 
 msgid "This preview is paused because a text changes a figure."
-msgstr ""
+msgstr "由于某段文字会改变数字，此预览已暂停。"
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "此价格手动输入，因此未应用定价规则。"
@@ -31360,7 +31360,7 @@ msgid "This serial"
 msgstr "此序列号"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr ""
+msgstr "此共享区块已不存在。请移除该区块，或重新创建该区块。"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "此工作中心运行需要特定技能的工作 — 仅当具有资格的操作员值班时才运行；人员配置委员会上指定的操作员进一步形成可用的人工。"
@@ -33882,10 +33882,10 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "何时预期供应商回复;供应商在RFQ门户上看到该日期,Carbon在之后停止接受迟到的回复(可配置)。"
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr ""
+msgstr "采购员要求交付货物的日期。供应商可能会在收货承诺日期给出另一个承诺，并在交货日期又给出不同的日期。"
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr ""
+msgstr "采购员需要本行货物到达收货月台的日期。新增行默认采用订单的收货要求日期；计划使用此日期进行库存可用性和外协加工排程。"
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "当合同运行时以及完成时会发生什么。"
@@ -34531,7 +34531,7 @@ msgid "Your account stays safe even if your login is stolen"
 msgstr "即使您的登录被盗，您的账户也保持安全"
 
 msgid "Your backup is ready — it's in the list below."
-msgstr ""
+msgstr "您的备份已就绪，请见下方列表。"
 
 msgid "Your backups"
 msgstr "您的备份"
@@ -34615,7 +34615,7 @@ msgid "Your part numbers and the item master behind them"
 msgstr "您的零件编号和背后的物料主数据"
 
 msgid "Your previous data is back, exactly as it was before the restore."
-msgstr ""
+msgstr "您之前的数据已恢复，与恢复前完全一致。"
 
 msgid "Your profile could not be loaded."
 msgstr "无法加载您的个人资料。"

@@ -1461,7 +1461,7 @@ msgid "Location"
 msgstr "Konum"
 
 msgid "Locations"
-msgstr ""
+msgstr "Lokasyonlar"
 
 msgid "Log completed"
 msgstr "Tamamlandı kaydı"
