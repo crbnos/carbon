@@ -26,20 +26,25 @@ const log = getLogger("jobs", "backup-storage");
 const LIST_PAGE = 1000;
 
 /**
- * Every file under `prefix` in `bucket`, recursing into folders. `list(prefix)`
- * matches the exact folder, never a sibling that shares the prefix string.
- * Pages past storage's 1000 entries per call: a folder with more (a company's
- * thumbnails) was cut short, and a backup silently left the rest out.
- *
- * A listing error reads as "no files" (a backup of a company with no bucket yet),
- * unless `strict`: a caller that must know the folder is really empty, such as a
- * delete, gets the error thrown instead.
+ * Every file under `prefix` in the company's bucket, recursing into folders.
+ * `list(prefix)` matches the exact folder, never a sibling that shares the
+ * prefix string. Pages past storage's 1000 entries per call: a folder with more
+ * (a company's thumbnails) was cut short, and a backup silently left the rest
+ * out. A bucket not created yet holds no files; any other listing error throws,
+ * so a cut-short list never passes for a complete one.
  */
-export async function listBucketFilesRecursive(
+export async function listCompanyFiles(
+  client: SupabaseClient,
+  companyId: string,
+  prefix = ""
+): Promise<Array<{ path: string; size: number }>> {
+  return listFolder(client, getCompanyPrivateBucket(companyId), prefix);
+}
+
+async function listFolder(
   client: SupabaseClient,
   bucket: string,
-  prefix = "",
-  { strict = false }: { strict?: boolean } = {}
+  prefix: string
 ): Promise<Array<{ path: string; size: number }>> {
   const files: Array<{ path: string; size: number }> = [];
   for (let offset = 0; ; offset += LIST_PAGE) {
@@ -48,16 +53,15 @@ export async function listBucketFilesRecursive(
       offset,
       sortBy: { column: "name", order: "asc" }
     });
-    if (error && strict) throw error;
-    if (error || !data) return files;
+    if (error) {
+      if (await isStorageNotFound(error)) return files;
+      throw error;
+    }
 
-    for (const entry of data) {
+    for (const entry of data ?? []) {
       const path = prefix ? `${prefix}/${entry.name}` : entry.name;
       if (entry.id === null) {
-        // folder
-        files.push(
-          ...(await listBucketFilesRecursive(client, bucket, path, { strict }))
-        );
+        files.push(...(await listFolder(client, bucket, path)));
       } else {
         files.push({
           path,
@@ -65,7 +69,7 @@ export async function listBucketFilesRecursive(
         });
       }
     }
-    if (data.length < LIST_PAGE) return files;
+    if ((data?.length ?? 0) < LIST_PAGE) return files;
   }
 }
 
@@ -198,20 +202,17 @@ export async function writeBackupManifest(
 }
 
 /**
- * Delete every file under `prefix` ("" for the whole bucket). Lists the whole
- * folder first, then removes in batches: removing while paging would shift the
- * pages. `strict` throws on a list or remove error, for a caller that must know
- * the files are gone.
+ * Delete every file under `prefix` of the company's bucket ("" for all of it).
+ * Lists the whole folder first, then removes in batches: removing while paging
+ * would shift the pages. Throws on any error, so a caller knows the files are gone.
  */
-export async function removeBucketPrefix(
+export async function deleteCompanyFiles(
   client: SupabaseClient,
-  bucket: string,
-  prefix: string,
-  { strict = false }: { strict?: boolean } = {}
+  companyId: string,
+  prefix: string
 ): Promise<void> {
-  const files = await listBucketFilesRecursive(client, bucket, prefix, {
-    strict
-  });
+  const bucket = getCompanyPrivateBucket(companyId);
+  const files = await listFolder(client, bucket, prefix);
   // Small requests: storage deletes the rows and the objects in one statement
   // timeout, and each row fires `delete_orphaned_documents`.
   for (const paths of chunkArray(
@@ -219,7 +220,7 @@ export async function removeBucketPrefix(
     200
   )) {
     const { error } = await client.storage.from(bucket).remove(paths);
-    if (error && strict) throw error;
+    if (error) throw error;
   }
 }
 

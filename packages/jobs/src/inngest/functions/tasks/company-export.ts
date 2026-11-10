@@ -4,7 +4,6 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
-import { datetime } from "@carbon/utils";
 import { writeCompanyBackup } from "../../../backups/dump";
 import {
   EXPORT_INTEGRATION,
@@ -12,7 +11,8 @@ import {
   failRun,
   PER_COMPANY_CONCURRENCY,
   progressWriter,
-  runMarker
+  runMarker,
+  startRun
 } from "../../../backups/runs";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
@@ -46,17 +46,7 @@ export const companyExportFunction = inngest.createFunction(
       });
 
       // A retry overwrites a failed marker back to running.
-      await marker.write({
-        status: "running",
-        startedAt: datetime.timestamp(),
-        progress: null,
-        error: null,
-        reason: null,
-        violations: null,
-        violationRowsByTable: null,
-        label: label ?? null,
-        includeStorage
-      });
+      await startRun(marker, { label: label ?? null, includeStorage });
 
       try {
         await requireBackupsEntitlement(companyId);

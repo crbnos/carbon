@@ -297,7 +297,6 @@ describe("assertReferentiallyClosed", () => {
 describe("buildRowTransforms", () => {
   type RestampCtx = Parameters<typeof buildRowTransforms>[2];
   const ctx = (over: Partial<RestampCtx> = {}): RestampCtx => ({
-    remap: true,
     companyId: "target-co",
     userId: "importer",
     targetGroupId: "target-grp",
@@ -319,16 +318,6 @@ describe("buildRowTransforms", () => {
     });
     return out;
   }
-
-  it("copies every column verbatim when remap=false (own restore)", () => {
-    const t = table("part", [col("id"), col("companyId"), col("name")]);
-    const out = apply(
-      t,
-      { id: "p1", companyId: "src-co", name: "Widget" },
-      ctx({ remap: false })
-    );
-    expect(out).toEqual({ id: "p1", companyId: "src-co", name: "Widget" });
-  });
 
   it("does NOT crash on an int/serial-id table absent from idMaps — keeps id verbatim", () => {
     // Regression: journal/trainingCompletion have a serial `id` and no idMap entry.
@@ -562,16 +551,6 @@ describe("buildRowTransforms", () => {
       ctx({ idRewrite: new Map([["a-old", "a-new"]]) })
     );
     expect(out.itemIds).toEqual(["a-new", "global-1"]);
-  });
-
-  it("leaves an id ref verbatim on an own restore (remap=false)", () => {
-    const t = table("inspection", [col("id"), col("sourceDocumentLineId")]);
-    const out = apply(
-      t,
-      { id: "i1", sourceDocumentLineId: "line-old" },
-      ctx({ remap: false, idRewrite: new Map([["line-old", "line-new"]]) })
-    );
-    expect(out.sourceDocumentLineId).toBe("line-old");
   });
 });
 
@@ -936,7 +915,6 @@ describe("cross-company restore invariants", () => {
       part: [{ id: "ADCS-001", companyId: "src-co", name: "Widget" }]
     });
     const transforms = buildRowTransforms(part, part.columns, {
-      remap: true,
       companyId: "target-co",
       userId: "importer",
       targetGroupId: "target-grp",

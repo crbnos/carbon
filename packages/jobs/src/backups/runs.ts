@@ -12,7 +12,7 @@ import { writeCompanyBackup } from "./dump";
 import { backupDir, snapshotName } from "./format";
 import { getCompanyGroupId, readBackupForLoad, wipeAndLoad } from "./load";
 import { ExportScopeViolationError, type ScopeViolation } from "./scope";
-import { removeBucketPrefix, restoreAssetsFromBackup } from "./storage";
+import { deleteCompanyFiles, restoreAssetsFromBackup } from "./storage";
 
 /**
  * The state of a long backup job, kept in a marker row for the Backups page to
@@ -44,7 +44,7 @@ export const PER_COMPANY_CONCURRENCY = {
  *  label per job, so the job never bakes in display copy. */
 export type JobProgress = { phase: string; done: number; total: number };
 
-export type RunStatus = "running" | "ready" | "failed" | "reverting";
+type RunStatus = "running" | "ready" | "failed" | "reverting";
 
 export type RowsByTable = Array<{ table: string; rows: number }>;
 
@@ -179,6 +179,26 @@ export function runMarker<M extends RunMeta>(
   };
 }
 
+/**
+ * Mark the run started. Clears what an earlier attempt, or an earlier run on the
+ * same marker, left behind, so a retry never shows the last failure while it runs.
+ */
+export function startRun<M extends RunMeta>(
+  marker: RunMarker<M>,
+  patch: Partial<M>
+): Promise<void> {
+  return marker.write({
+    status: "running",
+    startedAt: datetime.timestamp(),
+    progress: null,
+    error: null,
+    reason: null,
+    violations: null,
+    violationRowsByTable: null,
+    ...patch
+  });
+}
+
 const PROGRESS_THROTTLE_MS = 250;
 
 /**
@@ -297,9 +317,7 @@ export async function keepRun(
     throw new NonRetriableError(`Cannot keep a run that is ${meta.status}`);
   }
   if (meta.snapshotPath) {
-    await removeBucketPrefix(client, companyId, backupDir(meta.snapshotPath), {
-      strict: true
-    });
+    await deleteCompanyFiles(client, companyId, backupDir(meta.snapshotPath));
   }
   await marker.clear();
   return true;
@@ -348,8 +366,7 @@ export async function revertRun(
     );
     const { rows, idRewrite } = await wipeAndLoad(db, catalog, snapshot, {
       companyId,
-      userId: "",
-      remap: false,
+      remap: null,
       includeGroup: meta.includeGroup ?? false,
       targetGroupId: await getCompanyGroupId(client, companyId),
       onProgress: report
@@ -365,8 +382,16 @@ export async function revertRun(
       },
       (done, total) => report({ phase: "files", done, total })
     );
-    // Not strict: the data is already back, and a leftover snapshot is hidden.
-    await removeBucketPrefix(client, companyId, backupDir(snapshotPath));
+    // The data is already back: a snapshot left behind is only logged, never
+    // reported as a failed revert.
+    await deleteCompanyFiles(client, companyId, backupDir(snapshotPath)).catch(
+      (err) =>
+        log.error("Failed to delete a reverted run's snapshot", {
+          companyId,
+          snapshotPath,
+          error: err instanceof Error ? err.message : String(err)
+        })
+    );
     await marker.clear();
     return { reverted: true, rows };
   } catch (err) {

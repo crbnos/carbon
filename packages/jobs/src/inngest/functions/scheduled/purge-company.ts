@@ -8,7 +8,7 @@ import { getCompanyPrivateBucket, isStorageNotFound } from "@carbon/files";
 import { type Kysely, sql } from "kysely";
 import type { Catalog } from "../../../backups/catalog";
 import { wipeScopedData } from "../../../backups/load";
-import { removeBucketPrefix } from "../../../backups/storage";
+import { deleteCompanyFiles } from "../../../backups/storage";
 
 /**
  * Delete one company and everything it owns, inside the caller's transaction.
@@ -177,7 +177,7 @@ export async function removeCompanyFiles(
   const bucket = getCompanyPrivateBucket(companyId);
   let bucketError: unknown = null;
   try {
-    await removeBucketPrefix(serviceRole, bucket, "", { strict: true });
+    await deleteCompanyFiles(serviceRole, companyId, "");
   } catch (error) {
     bucketError = error;
   }

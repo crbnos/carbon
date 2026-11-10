@@ -20,7 +20,7 @@ import {
   isUserScopedIdentityTable,
   selectWipeableTables
 } from "./policy";
-import { buildIdMaps, buildRowTransforms } from "./remap";
+import { buildIdMaps, buildRowTransforms, flattenIdMaps } from "./remap";
 import { applyTableRenames } from "./renames";
 import type { JobProgress } from "./runs";
 import { buildScopeFilter, deleteDanglingRows } from "./scope";
@@ -118,10 +118,7 @@ export async function insertTables(
     const colCount = columns.length;
     let rows: Record<string, unknown>[] = [];
     if (remap) {
-      const transforms = buildRowTransforms(table, columns, {
-        ...remap,
-        remap: true
-      });
+      const transforms = buildRowTransforms(table, columns, remap);
       for (let r = 0; r < sourceRows.length; r++) {
         const row = sourceRows[r]!;
         const out: Record<string, unknown> = {};
@@ -246,9 +243,9 @@ export async function bulkLoad<T>(
 
 /**
  * Wipe the company's restorable tables and reload them from `backup`. Two modes:
- * - `remap=false` (own backup / snapshot): ids and scope already belong to this
+ * - no `remap` (own backup / snapshot): ids and scope already belong to this
  *   company, so rows load verbatim.
- * - `remap=true` (foreign backup): the data belongs to another company, so every
+ * - `remap` (foreign backup): the data belongs to another company, so every
  *   id is remapped and companyId/group/FKs are re-stamped onto this company —
  *   including the chart of accounts (group-scoped), which is why `includeGroup`
  *   is set for foreign restores.
@@ -259,27 +256,17 @@ export async function wipeAndLoad(
   backup: CompanyBackup,
   opts: {
     companyId: string;
-    userId: string;
-    remap: boolean;
     includeGroup: boolean;
     targetGroupId: string | null;
-    /** Target substrate ids (global rows the backup omits); only consulted on a
-     *  remap (foreign/template) load so a FK into a seeded global row is kept
+    /** A foreign backup: the importing user, and the target's substrate ids
+     *  (global rows the backup omits), so a FK into a seeded global row is kept
      *  verbatim instead of treated as a dangling gap. */
-    substrateIds?: Map<string, Set<unknown>>;
+    remap: { userId: string; substrateIds: Map<string, Set<unknown>> } | null;
     /** Live phase progress (`wipe` then `load`). Throttled by the caller. */
     onProgress?: (p: JobProgress) => Promise<void>;
   }
 ): Promise<{ rows: number; idRewrite: Map<string, string> }> {
-  const {
-    companyId,
-    userId,
-    remap,
-    includeGroup,
-    targetGroupId,
-    substrateIds,
-    onProgress
-  } = opts;
+  const { companyId, remap, includeGroup, targetGroupId, onProgress } = opts;
 
   const safe = assertWipeSafe(catalog);
   if (!safe.ok) {
@@ -318,10 +305,7 @@ export async function wipeAndLoad(
         )
       })
     : new Map<string, Map<string, string>>();
-  const idRewrite = new Map<string, string>();
-  for (const map of idMaps.values()) {
-    for (const [oldId, newId] of map) idRewrite.set(oldId, newId);
-  }
+  const idRewrite = flattenIdMaps(idMaps);
 
   const counts = await bulkLoad(db, companyId, async (trx) => {
     await onProgress?.({ phase: "wipe", done: 0, total: wipeTables.length });
@@ -341,13 +325,12 @@ export async function wipeAndLoad(
       backup,
       remap
         ? {
+            ...remap,
             companyId,
-            userId,
             targetGroupId,
             sourceCompanyId: backup.manifest.sourceCompanyId,
             idMaps,
-            idRewrite,
-            substrateIds
+            idRewrite
           }
         : null,
       onProgress

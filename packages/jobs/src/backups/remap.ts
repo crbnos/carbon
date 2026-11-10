@@ -352,6 +352,18 @@ function mapGroupIds(
   return map;
 }
 
+/** Old id → new id across every remapped table, for ids held outside a FK
+ *  (storage paths, generic refs). */
+export function flattenIdMaps(
+  idMaps: Map<string, Map<string, string>>
+): Map<string, string> {
+  const idRewrite = new Map<string, string>();
+  for (const map of idMaps.values()) {
+    for (const [oldId, newId] of map) idRewrite.set(oldId, newId);
+  }
+  return idRewrite;
+}
+
 type RowTransform = (value: unknown) => unknown;
 
 /**
@@ -359,15 +371,14 @@ type RowTransform = (value: unknown) => unknown;
  * shared by the in-place restore (wipe + reload) and the reseed/template import
  * (additive). Every id is remapped, companyId/companyGroupId point at the target,
  * FKs follow the id remap, user refs collapse to the importing user, and storage
- * paths are rewritten. For an OWN backup (remap=false) every column is identity.
- * The optional `ctx` fields are the import/reseed-only
- * policies; omit them and the behavior is the restore path's, unchanged.
+ * paths are rewritten. An own backup needs none of this: it loads verbatim.
+ * The optional `ctx` fields are the import-only policies; omit them and the
+ * behavior is the restore path's.
  */
 export function buildRowTransforms(
   table: TableInfo,
   columns: ColumnInfo[],
   ctx: {
-    remap: boolean;
     companyId: string;
     userId: string;
     targetGroupId: string | null;
@@ -396,8 +407,6 @@ export function buildRowTransforms(
   }
 ): RowTransform[] {
   const identity: RowTransform = (v) => v;
-  if (!ctx.remap) return columns.map(() => identity);
-
   const fkByColumn = new Map(table.foreignKeys.map((fk) => [fk.column, fk]));
   // A company-singleton (one row per company) keys itself by `id -> company`, so
   // its `id` IS the company id. On remap it must follow the company, not mint a

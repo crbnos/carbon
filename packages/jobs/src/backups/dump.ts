@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getCompanyPrivateBucket } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { async, datetime } from "@carbon/utils";
 import { sql } from "kysely";
@@ -32,7 +31,7 @@ import {
 } from "./scope";
 import {
   copyAssetsToBackup,
-  listBucketFilesRecursive,
+  listCompanyFiles,
   writeBackupManifest,
   writeBackupTable
 } from "./storage";
@@ -225,11 +224,7 @@ export async function writeCompanyBackup(
 
   if (includeStorage === "all") {
     let totalBytes = 0;
-    const paths = await listBucketFilesRecursive(
-      client,
-      getCompanyPrivateBucket(companyId),
-      companyId
-    );
+    const paths = await listCompanyFiles(client, companyId, companyId);
     for (const file of paths) {
       const included = totalBytes + file.size <= MAX_STORAGE_TOTAL_BYTES;
       if (included) {

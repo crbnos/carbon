@@ -24,13 +24,12 @@ export {
   RESTORE_INTEGRATION,
   type RestoreRunMeta,
   type RowsByTable,
-  type RunStatus,
   TEMPLATE_INTEGRATION,
   type TemplateRunMeta
 } from "./runs";
 export { purgeScopeViolations, type ScopeViolation } from "./scope";
 export {
+  deleteCompanyFiles,
   listBackups,
-  listBucketFilesRecursive,
-  removeBucketPrefix
+  listCompanyFiles
 } from "./storage";

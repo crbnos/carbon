@@ -6,7 +6,6 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import { getProcessPool } from "@carbon/database/client";
 import { applyDataset, getDataset } from "@carbon/database/datasets";
-import { datetime } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
 import { resolveRestoreScope } from "../../../backups/load";
 import {
@@ -16,6 +15,7 @@ import {
   progressWriter,
   revertRun,
   runMarker,
+  startRun,
   TEMPLATE_INTEGRATION,
   type TemplateRunMeta,
   takeSnapshot
@@ -53,9 +53,8 @@ export const companyTemplateFunction = inngest.createFunction(
   {
     id: "company-template",
     retries: 1,
-    // The unkeyed limit stops N companies onboarding together from outnumbering
-    // the pool below — each run holds one of its two connections for a whole
-    // transaction.
+    // The unkeyed limit stops N companies onboarding together from filling the
+    // job process's pool: each run holds a connection for a whole transaction.
     concurrency: [{ limit: 2 }, PER_COMPANY_CONCURRENCY]
   },
   { event: "carbon/company-template" },
@@ -78,31 +77,23 @@ export const companyTemplateFunction = inngest.createFunction(
         throw new NonRetriableError(error);
       }
 
-      // A pending keep/revert owns the only snapshot of the user's real data.
-      // Applying again would overwrite it, so refuse until it is resolved. A
-      // marker naming THIS run is a retry of it, not a second apply.
+      // A pending keep/revert owns the only snapshot of the user's real data,
+      // and so does a failed run that still holds one: applying again would
+      // reuse that old snapshot, and a revert would then drop everything done
+      // since. Refuse until it is resolved. A marker naming THIS run is a retry
+      // of it, not a second apply.
       const existing = await marker.read();
       if (
         existing &&
         existing.templateRunId !== templateRunId &&
-        existing.status !== "failed"
+        (existing.status !== "failed" || existing.snapshotPath)
       ) {
         throw new NonRetriableError(
           "A demo data change is already pending — keep or revert it first."
         );
       }
 
-      await marker.write({
-        status: "running",
-        datasetKey,
-        startedAt: datetime.timestamp(),
-        // A retry, or a new run after a failed one, inherits that marker's error.
-        error: null,
-        planningError: null,
-        reason: null,
-        violations: null,
-        violationRowsByTable: null
-      });
+      await startRun(marker, { datasetKey, planningError: null });
       const report = progressWriter(marker);
 
       // Everything past the `running` marker must be able to reach the failure
@@ -125,9 +116,8 @@ export const companyTemplateFunction = inngest.createFunction(
 
         const timeZone = await getCompanyTimeZone(client, companyId);
 
-        // A dedicated pool: applyDataset holds one connection for the whole
-        // transaction, and the shared size-1 pool behind getJobDatabaseClient is
-        // what the event drainer and workflow matcher run on.
+        // Its own client: applyDataset holds one connection for its whole
+        // transaction.
         pgClient = await pool.connect();
         await applyDataset(pgClient, {
           companyId,

@@ -20,7 +20,11 @@ import {
   isLeftAlone,
   isUserScopedIdentityTable
 } from "../../../backups/policy";
-import { buildIdMaps, loadSubstrateIds } from "../../../backups/remap";
+import {
+  buildIdMaps,
+  flattenIdMaps,
+  loadSubstrateIds
+} from "../../../backups/remap";
 import {
   filterUnpopulated,
   getUniqueColumnGroups,
@@ -47,9 +51,8 @@ export const companyImportFunction = inngest.createFunction(
   async ({ event, step, logger }) => {
     const { companyId, userId, filePath: name } = event.data;
 
-    await requireBackupsEntitlement(companyId);
-
     return await step.run("import-company", async () => {
+      await requireBackupsEntitlement(companyId);
       const client = getCarbonServiceRole();
       const db = getJobDatabaseClient();
 
@@ -157,10 +160,7 @@ export const companyImportFunction = inngest.createFunction(
       // storage paths (e.g. `{co}/models/{modelId}.stl`). Built after the
       // collision overrides, so a mapped-onto-target row's path segments
       // rewrite to the surviving id.
-      const idRewrite = new Map<string, string>();
-      for (const map of idMaps.values()) {
-        for (const [oldId, newId] of map) idRewrite.set(oldId, newId);
-      }
+      const idRewrite = flattenIdMaps(idMaps);
 
       if (
         targetGroupId === null &&

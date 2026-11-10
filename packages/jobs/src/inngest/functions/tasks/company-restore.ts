@@ -4,7 +4,6 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
-import { datetime } from "@carbon/utils";
 import { getCompanyTableCatalog } from "../../../backups/catalog";
 import { assertBackupImportable } from "../../../backups/compatibility";
 import {
@@ -25,6 +24,7 @@ import {
   type RestoreRunMeta,
   revertRun,
   runMarker,
+  startRun,
   takeSnapshot
 } from "../../../backups/runs";
 import { restoreAssetsFromBackup } from "../../../backups/storage";
@@ -77,12 +77,11 @@ export const companyRestoreFunction = inngest.createFunction(
         return { restoreRunId, skipped: true };
       }
 
-      await marker.write({
-        status: "running",
+      await startRun(marker, {
         label: label ?? null,
         filePath: name,
         includeStorage,
-        startedAt: existing?.startedAt ?? datetime.timestamp()
+        ...(existing?.startedAt ? { startedAt: existing.startedAt } : {})
       });
       const report = progressWriter(marker);
 
@@ -148,11 +147,9 @@ export const companyRestoreFunction = inngest.createFunction(
         // re-runs the wipe before the load, so it lands the same result.
         const { rows, idRewrite } = await wipeAndLoad(db, catalog, backup, {
           companyId,
-          userId,
-          remap: foreign,
+          remap: foreign ? { userId, substrateIds } : null,
           includeGroup,
           targetGroupId,
-          substrateIds,
           onProgress: report
         });
 
