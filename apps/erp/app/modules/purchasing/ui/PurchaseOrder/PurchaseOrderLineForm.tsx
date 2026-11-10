@@ -8,6 +8,7 @@ import {
   Combobox,
   DatePicker,
   InputControlled,
+  TextAreaControlled,
   ValidatedForm
 } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
@@ -19,7 +20,6 @@ import {
   FormLabel,
   HStack,
   IconButton,
-  Input,
   Label,
   ModalCard,
   ModalCardBody,
@@ -33,6 +33,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Textarea,
   toast,
   useDisclosure,
   useMount,
@@ -747,7 +748,7 @@ const PurchaseOrderLineForm = ({
                           onTypeChange={isReceived ? undefined : onTypeChange}
                         />
 
-                        <InputControlled
+                        <TextAreaControlled
                           label={t`Description`}
                           name="description"
                           value={itemData.description}
@@ -1037,7 +1038,7 @@ const PurchaseOrderLineForm = ({
                             <FormLabel>
                               <Trans>Description</Trans>
                             </FormLabel>
-                            <Input
+                            <Textarea
                               value={indirectData.description}
                               onChange={(e) =>
                                 setIndirectData((d) => ({
