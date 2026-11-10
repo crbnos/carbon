@@ -4,11 +4,12 @@
 
 import { randomInt } from "node:crypto";
 import type { Database } from "@carbon/database";
-import { type GrantInput, replaceGrants } from "@carbon/database/access-write";
+import { replaceGrants } from "@carbon/database/access-write";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
+import { CONSOLE_OPERATOR_GRANTS } from "./console-grants";
 import { requireEntitlement } from "./entitlements.server";
 import { companyHasFeature } from "./plan.server";
 
@@ -117,22 +118,6 @@ export async function verifyEmployeePin(
   const row = result.rows[0];
   return { hasPin: row?.hasPin === true, valid: row?.valid === true };
 }
-
-/**
- * What a new Console Operator type may do: the MES modules only, never ERP
- * administration. Module grants, so every page of a module (the MES gates on
- * `production.jobs`, `production.batches`, `quality.inspections`,
- * `quality.issues`) is covered. Edit is view, create and update without delete
- * — the checkboxes this type was created with before grants.
- */
-export const CONSOLE_OPERATOR_GRANTS: readonly GrantInput[] = [
-  { module: "Production", page: null, level: "Edit" },
-  { module: "Inventory", page: null, level: "Edit" },
-  { module: "Quality", page: null, level: "Edit" },
-  { module: "Resources", page: null, level: "View" },
-  { module: "Items", page: null, level: "View" },
-  { module: "People", page: null, level: "View" }
-];
 
 /**
  * Commercial (Enterprise) console / kiosk mode. Enabling it provisions the

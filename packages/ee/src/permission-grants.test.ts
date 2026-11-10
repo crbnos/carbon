@@ -3,44 +3,9 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Level } from "@carbon/database/access";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-const getClaims = vi.hoisted(() => vi.fn());
-const replaceGrants = vi.hoisted(() => vi.fn(async () => undefined));
-
-vi.mock("@carbon/auth", () => ({
-  error: (_cause: unknown, message: string) => ({ success: false, message }),
-  success: (message: string) => ({ success: true, message }),
-  getClaims,
-  getPermissionCacheKey: (id: string) => `permissions:${id}`
-}));
-vi.mock("@carbon/auth/auth-events.server", () => ({
-  logPermissionChange: vi.fn(),
-  logRoleAccessChange: vi.fn()
-}));
-vi.mock("@carbon/auth/client.server", () => ({
-  getCarbonServiceRole: () => ({
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          eq: () => ({
-            maybeSingle: async () => ({ data: { id: "u_1" }, error: null })
-          })
-        })
-      })
-    })
-  })
-}));
-vi.mock("@carbon/kv", () => ({ redis: { del: vi.fn() } }));
-vi.mock("./entitlements.server", () => ({
-  requireEntitlement: vi.fn(async () => undefined)
-}));
-vi.mock("@carbon/database/access-write", () => ({
-  readGrants: vi.fn(async () => []),
-  replaceGrants
-}));
-
-import { bulkEditGrants, updatePermissions } from "./permissions.server";
+import { bulkEditGrants, claimsMayEditAccounts } from "./permission-grants";
 
 const g = (module: string, page: string | null, level: Level) => ({
   module,
@@ -141,69 +106,44 @@ describe("bulkEditGrants", () => {
   });
 });
 
-describe("updatePermissions", () => {
-  const db = {
-    selectFrom: () => {
-      const q = {
-        leftJoin: () => q,
-        select: () => q,
-        where: () => q,
-        executeTakeFirst: async () => ({
-          employeeTypeId: null,
-          systemType: null
-        })
-      };
-      return q;
-    }
-  };
-  const run = () =>
-    updatePermissions({} as never, db as never, {
-      id: "u_1",
-      companyId: "co_1",
-      grants: [g("Sales", null, "Edit")],
-      actorId: "actor"
-    });
-
-  beforeEach(() => {
-    replaceGrants.mockClear();
+describe("claimsMayEditAccounts", () => {
+  const claims = (grants: unknown[]) => ({
+    role: "employee",
+    admin: false,
+    grants,
+    portal: {}
   });
 
-  it("refuses an actor without Users → Accounts at Edit", async () => {
-    getClaims.mockResolvedValue({
-      data: {
-        role: "employee",
-        admin: false,
-        grants: [
+  it("refuses an actor without Users → Accounts at Edit", () => {
+    expect(
+      claimsMayEditAccounts(
+        claims([
           {
             subject: "role",
             module: "Users",
             page: "users.accounts",
             level: "View"
           }
-        ],
-        portal: {}
-      },
-      error: null
-    });
-    const result = await run();
-    expect(result.success).toBe(false);
-    expect(replaceGrants).not.toHaveBeenCalled();
+        ]),
+        "co_1"
+      )
+    ).toBe(false);
   });
 
-  it("writes for an actor with Users → Accounts at Edit", async () => {
-    getClaims.mockResolvedValue({
-      data: {
-        role: "employee",
-        admin: false,
-        grants: [
+  it("admits an actor with Users at Edit", () => {
+    expect(
+      claimsMayEditAccounts(
+        claims([
           { subject: "role", module: "Users", page: null, level: "Edit" }
-        ],
-        portal: {}
-      },
-      error: null
-    });
-    const result = await run();
-    expect(result.success).toBe(true);
-    expect(replaceGrants).toHaveBeenCalledOnce();
+        ]),
+        "co_1"
+      )
+    ).toBe(true);
+  });
+
+  it("admits an Admin", () => {
+    expect(claimsMayEditAccounts({ ...claims([]), admin: true }, "co_1")).toBe(
+      true
+    );
   });
 });

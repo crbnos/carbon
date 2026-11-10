@@ -9,18 +9,15 @@ import {
   logRoleAccessChange
 } from "@carbon/auth/auth-events.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { Constants, type Database } from "@carbon/database";
+import type { Database } from "@carbon/database";
 import {
   claimKeys,
   claimsFromJson,
   expandClaims,
-  holdsGate,
-  LEVELS,
   type Level
 } from "@carbon/database/access";
 import {
   type GrantInput,
-  type GrantModule,
   readGrants,
   replaceGrants
 } from "@carbon/database/access-write";
@@ -28,6 +25,11 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { redis } from "@carbon/kv";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireEntitlement } from "./entitlements.server";
+import {
+  bulkEditGrants,
+  claimsMayEditAccounts,
+  type LeveledGrant
+} from "./permission-grants";
 
 /**
  * Commercial (Enterprise) RBAC authoring — the single, licensed source of truth
@@ -43,24 +45,6 @@ import { requireEntitlement } from "./entitlements.server";
  * The invite flow's permission merge stays in the ERP `users.service.ts`: only
  * portal invites carry permissions through it, and it is not authoring.
  */
-
-// Uppercase the first letter only (mirrors the ERP `~/utils/string` capitalize),
-// which `@carbon/ee` cannot import.
-function capitalize(words: string) {
-  const [first, ...otherLetters] = words;
-  return [first?.toLocaleUpperCase() ?? "", ...otherLetters].join("");
-}
-
-const MODULES = new Set<string>(Constants.public.Enums.module);
-
-/** A form's module name ("parts", "Parts") as the `module` enum value. */
-function toModule(name: string): GrantModule | null {
-  const module = capitalize(name.toLowerCase());
-  return MODULES.has(module) ? (module as GrantModule) : null;
-}
-
-const higher = (a: Level, b: Level) =>
-  LEVELS.indexOf(a) >= LEVELS.indexOf(b) ? a : b;
 
 // ---------------------------------------------------------------------------
 // Employee-type CRUD
@@ -321,86 +305,13 @@ export async function updateEmployee(
   return success("Employee updated");
 }
 
-type LeveledGrant = { module: string; page: string | null; level: Level };
-
-const findLevel = (
-  grants: readonly LeveledGrant[],
-  module: string,
-  page: string | null
-) => grants.find((g) => g.module === module && g.page === page)?.level;
-
-/**
- * A person's grants after a bulk edit. Each chosen grant becomes an override;
- * one whose level equals what the row inherits stores nothing. A page row
- * inherits the person's own module grant, else the role's page grant, else
- * the role's module grant (Full on the Admin type) — the order the access grid
- * shows. `addOnly` only raises a level above what the person holds today. The
- * person's other grants are kept, page overrides inside an edited module too:
- * the spec gives the bulk edit no "replace" meaning.
- */
-export function bulkEditGrants({
-  chosen,
-  own,
-  role,
-  admin,
-  addOnly
-}: {
-  chosen: readonly LeveledGrant[];
-  own: readonly LeveledGrant[];
-  role: readonly LeveledGrant[];
-  admin: boolean;
-  addOnly: boolean;
-}): GrantInput[] {
-  const roleLevel = (module: string, page: string | null): Level =>
-    admin
-      ? "Full"
-      : (findLevel(role, module, page) ??
-        findLevel(role, module, null) ??
-        "None");
-  const inherited = (module: string, page: string | null): Level =>
-    page === null
-      ? roleLevel(module, null)
-      : (findLevel(own, module, null) ?? roleLevel(module, page));
-
-  const edited = new Map<string, GrantInput>();
-  for (const grant of chosen) {
-    const module = toModule(grant.module);
-    if (!module) continue;
-    const base = inherited(module, grant.page);
-    const level = addOnly
-      ? higher(grant.level, findLevel(own, module, grant.page) ?? base)
-      : grant.level;
-    edited.set(`${module}:${grant.page ?? ""}`, {
-      module,
-      page: grant.page,
-      level: level === base ? null : level
-    });
-  }
-
-  return [
-    ...own
-      .filter((g) => !edited.has(`${g.module}:${g.page ?? ""}`))
-      .map((g) => ({
-        module: g.module as GrantModule,
-        page: g.page,
-        level: g.level
-      })),
-    ...edited.values()
-  ];
-}
-
-/** Whether the user may edit people's access in the company, by their claims. */
 async function canEditAccounts(
   userId: string,
   companyId: string
 ): Promise<boolean> {
   const claims = await getClaims(getCarbonServiceRole(), userId, companyId);
   if (claims.error || claims.data === null) return false;
-  return holdsGate(
-    expandClaims(claimsFromJson(claims.data, companyId), companyId),
-    { "users.accounts": "Edit" },
-    companyId
-  );
+  return claimsMayEditAccounts(claims.data, companyId);
 }
 
 /**
