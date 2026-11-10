@@ -12911,6 +12911,9 @@ msgstr "失敗"
 msgid "Failed characteristics"
 msgstr "不合格の特性"
 
+msgid "Failed inspection"
+msgstr "検査不合格"
+
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
 msgstr "行を追加できませんでした — {0} 行中 {addedCount} 行を追加しました"

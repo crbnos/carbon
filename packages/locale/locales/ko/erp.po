@@ -12911,6 +12911,9 @@ msgstr "실패"
 msgid "Failed characteristics"
 msgstr "실패한 특성"
 
+msgid "Failed inspection"
+msgstr "검사 불합격"
+
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
 msgstr "행 추가 실패 — {0}개 중 {addedCount}개 행이 추가되었습니다"

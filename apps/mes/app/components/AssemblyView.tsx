@@ -306,6 +306,8 @@ type Props = {
     readableId?: string | null;
     status?: string | null;
     attributes?: unknown;
+    /** False when this rework or correction copy does not work the unit. */
+    inOperationScope?: boolean;
   }[];
   trackedEntityId: string | null;
   materials: { materials?: any[]; trackedInputs?: any[] } | null;
@@ -863,10 +865,23 @@ export function AssemblyView({
   // Only serial/batch parents bind entities to the unit axis; inventory/non-inventory
   // page purely by index, so stray inventory entities must not surface as units or "S/N".
   const axisEntities = isTracked ? trackedEntities : [];
-  const units = deriveUnits(unitCount, axisEntities);
+  // A rework or correction copy works only the units sent into it: page through
+  // those, but key step records by each unit's place in the full axis, as the
+  // operation view and the ERP do. With no scope the two are the same.
+  const scopedAxis = axisEntities
+    .map((entity, axisIndex) => ({ entity, axisIndex }))
+    .filter(({ entity }) => entity.inOperationScope !== false);
+  const axisIndexOf = (position: number) =>
+    scopedAxis[position]?.axisIndex ?? position;
+  const units = deriveUnits(
+    unitCount,
+    scopedAxis.map(({ entity }) => entity)
+  );
   // The tracked entities within the navigable set (for the serial picker; empty when
   // the parent is untracked).
-  const unitEntities = axisEntities.slice(0, unitCount);
+  const unitEntities = units.flatMap((unit) =>
+    unit.entity ? [unit.entity] : []
+  );
 
   // Units already built. Drives the quantity progress indicator and, for untracked
   // parents, the default landing unit (the next one still to build).
@@ -901,7 +916,7 @@ export function AssemblyView({
 
   // Step records key off the unit index for ALL tracking types, identical to the
   // Operation view (FIX-1 / FIX-5) — this is what isolates unit i's records.
-  const activeIndex = currentUnitIndex;
+  const activeIndex = axisIndexOf(currentUnitIndex);
 
   const isStepDone = (step: Step) =>
     (step.jobOperationStepRecord ?? []).some((r) => r.index === activeIndex);
@@ -929,14 +944,16 @@ export function AssemblyView({
     isStepBadResultAtIndex(step, activeIndex);
   // Does any step have an out-of-spec record for this unit? Flags the unit red in
   // the sidebar navigator so a bad build is visible without opening each unit.
-  const unitHasBadResult = (index: number) =>
-    steps.some((s) => isStepBadResultAtIndex(s, index));
+  const unitHasBadResult = (position: number) =>
+    steps.some((s) => isStepBadResultAtIndex(s, axisIndexOf(position)));
   // Every step recorded for this unit — flags a fully-built unit green in the
   // navigator (mirrors `allStepsRecorded`, but for an arbitrary unit index).
-  const unitIsRecorded = (index: number) =>
+  const unitIsRecorded = (position: number) =>
     steps.length > 0 &&
     steps.every((s) =>
-      (s.jobOperationStepRecord ?? []).some((r) => r.index === index)
+      (s.jobOperationStepRecord ?? []).some(
+        (r) => r.index === axisIndexOf(position)
+      )
     );
   const doneCount = steps.filter(isStepDone).length;
   // All steps recorded for the current unit — drives the "Steps are missing"
@@ -998,7 +1015,7 @@ export function AssemblyView({
     const effectiveMaterial =
       linkShare !== null ? { ...m, quantity: perUnit } : m;
     const state = getIssuedForUnit(effectiveMaterial, {
-      unitIndex: currentUnitIndex,
+      unitIndex: activeIndex,
       issuedIsPerUnit,
       issuedOverride
     });
@@ -1350,7 +1367,7 @@ export function AssemblyView({
         fd.set("workCenterId", operation.workCenterId);
       const entityId = isTracked ? currentEntity?.id : undefined;
       if (entityId) fd.set("trackedEntityId", entityId);
-      fd.set("unitIndex", String(currentUnitIndex));
+      fd.set("unitIndex", String(activeIndex));
       laborFetcher.submit(fd, {
         method: "post",
         action: path.to.productionEvent
@@ -1946,7 +1963,7 @@ export function AssemblyView({
               openEvent={openEventForWorkType(wt)}
               workType={wt}
               trackedEntityId={isTracked ? currentEntity?.id : undefined}
-              unitIndex={currentUnitIndex}
+              unitIndex={activeIndex}
               startDisabled={abilityBlocked}
             />
           ))
@@ -2569,7 +2586,7 @@ export function AssemblyView({
                         material={m}
                         stepNumbers={stepNumbers}
                         currentStepNumber={currentStep + 1}
-                        unitIndex={currentUnitIndex}
+                        unitIndex={activeIndex}
                         issuedIsPerUnit={issuedIsPerUnit}
                         issuedOverride={issuedOverride}
                         onIssue={
@@ -2772,7 +2789,7 @@ export function AssemblyView({
         // quantities can be attributed per-unit even for a batch parent (where
         // all units share one lot). See the loader's batch attribution.
         jobOperationStepId={step?.id}
-        unitNumber={currentUnitIndex + 1}
+        unitNumber={activeIndex + 1}
         trackedInputs={materials?.trackedInputs ?? []}
         onClose={issueModal.onClose}
       />
@@ -3018,7 +3035,7 @@ export function AssemblyView({
             workCenterId={operation.workCenterId ?? undefined}
             openEvent={openEventForWorkType(headerWorkTypes[0])}
             trackedEntityId={isTracked ? currentEntity?.id : undefined}
-            unitIndex={currentUnitIndex}
+            unitIndex={activeIndex}
           />
         )}
     </div>

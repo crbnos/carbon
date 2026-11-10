@@ -108,6 +108,7 @@ import {
   type customerPartValidator,
   EACH_UNIT_OF_MEASURE_CODE,
   type getMethodValidator,
+  inspectionFailedResult,
   isAllowedChangeNoticeTransition,
   type itemCostValidator,
   type itemManufacturingValidator,
@@ -4991,7 +4992,15 @@ export async function setMethodCorrectionTrigger(
         error: { message: "Only List and Inspection steps map values" }
       };
     }
-    if (!(step.data.listValues ?? []).includes(listValue)) {
+    // An Inspection maps its fail, not a list value.
+    if (step.data.type === "Inspection") {
+      if (listValue !== inspectionFailedResult) {
+        return {
+          data: null,
+          error: { message: "An Inspection step maps only a failed result" }
+        };
+      }
+    } else if (!(step.data.listValues ?? []).includes(listValue)) {
       return {
         data: null,
         error: { message: `"${listValue}" is not a value of this step` }
@@ -10669,6 +10678,10 @@ interface MakeMethodInfo {
   status: "Draft" | "Active" | "Archived";
 }
 
+/**
+ * Copies a make method's routing onto another make method, then its
+ * corrections, which map results of the copied steps.
+ */
 async function copyMakeMethodOperations(
   trx: Transaction<KyselyDatabase>,
   sourceMakeMethodId: string,
@@ -10771,19 +10784,27 @@ async function copyMakeMethodOperations(
       .execute();
   }
 
+  // Step ids are made here so the corrections' result mappings can follow
+  // each step to its copy.
+  const stepIds = await newIds(trx, null, steps.length);
+  const stepIdMap: Record<string, string> = {};
+  steps.forEach((step, i) => {
+    stepIdMap[step.id] = stepIds[i]!;
+  });
   if (steps.length > 0) {
     await trx
       .insertInto("methodOperationStep")
       .values(
         steps.map(
           ({
-            id: _id,
+            id,
             createdAt: _createdAt,
             updatedAt: _updatedAt,
             updatedBy: _updatedBy,
             ...step
           }) => ({
             ...step,
+            id: stepIdMap[id]!,
             operationId: newOperationId.get(step.operationId)!,
             createdBy: userId
           })
@@ -10791,6 +10812,14 @@ async function copyMakeMethodOperations(
       )
       .execute();
   }
+
+  await productionPostings.copyMethodCorrections(trx, {
+    sourceMakeMethodId,
+    targetMakeMethodId,
+    companyId,
+    userId,
+    stepIdMap
+  });
 }
 
 export const syncMakeMethodPermission = {

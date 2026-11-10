@@ -12911,6 +12911,9 @@ msgstr "失败"
 msgid "Failed characteristics"
 msgstr "失败的特性"
 
+msgid "Failed inspection"
+msgstr "检验不合格"
+
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
 msgstr "无法添加行 — 已添加 {addedCount} / {0} 行"

@@ -12911,6 +12911,9 @@ msgstr "विफल"
 msgid "Failed characteristics"
 msgstr "विफल विशेषताएं"
 
+msgid "Failed inspection"
+msgstr "निरीक्षण विफल"
+
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
 msgstr "पंक्ति जोड़ने में विफल — {addedCount} में से {0} पंक्तियां जोड़ी गईं"

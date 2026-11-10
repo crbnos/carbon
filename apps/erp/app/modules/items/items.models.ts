@@ -653,6 +653,13 @@ export const correctionMeasurementConditions = [
   "Above Maximum"
 ] as const;
 
+/**
+ * The `listValue` that maps a failed Inspection step. An Inspection records
+ * pass or fail, not a list value; MES matches this when the operator records
+ * a fail (`inspectionFailedResult` in `apps/mes/app/services/models.ts`).
+ */
+export const inspectionFailedResult = "Failed";
+
 /** A correction: a rework-only routing on a make method. */
 export const methodCorrectionValidator = z.object({
   id: zfd.text(z.string().optional()),

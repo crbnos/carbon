@@ -45,6 +45,7 @@ import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   correctionReturnTo,
+  inspectionFailedResult,
   methodCorrectionValidator
 } from "../../items.models";
 import BillOfMaterial from "./BillOfMaterial";
@@ -419,12 +420,16 @@ function ResultMappings({
       routingOperations.flatMap((operation) =>
         (operation.methodOperationStep ?? []).flatMap(
           (step): MappableResult[] => {
-            if (step.type === "List" || step.type === "Inspection") {
+            if (step.type === "List") {
               return (step.listValues ?? []).map((listValue) => ({
                 operation,
                 step,
                 listValue
               }));
+            }
+            // An Inspection records pass or fail: a fail is its one result.
+            if (step.type === "Inspection") {
+              return [{ operation, step, listValue: inspectionFailedResult }];
             }
             if (step.type === "Measurement") {
               const rows: MappableResult[] = [];
@@ -498,10 +503,12 @@ function ResultMappings({
               <span className="text-sm min-w-0 truncate">
                 {result.operation.description} · {result.step.name} ·{" "}
                 <span className="font-medium">
-                  {result.listValue ??
-                    (result.measurementCondition === "Below Minimum"
-                      ? t`Below ${result.step.minValue}`
-                      : t`Above ${result.step.maxValue}`)}
+                  {result.step.type === "Inspection"
+                    ? t`Failed inspection`
+                    : (result.listValue ??
+                      (result.measurementCondition === "Below Minimum"
+                        ? t`Below ${result.step.minValue}`
+                        : t`Above ${result.step.maxValue}`))}
                 </span>
               </span>
               <Select

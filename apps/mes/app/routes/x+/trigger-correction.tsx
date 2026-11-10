@@ -14,7 +14,22 @@ import { triggerCorrectionValidator } from "~/services/models";
 /** Sends a unit through the correction the operator confirmed. */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId, caller, permissions } = await requirePermissions(
+    request,
+    {}
+  );
+  // The posting runs as the system, so it checks nothing about the caller.
+  // An operator on the floor may start a correction; an API key needs the
+  // production update scope, the posting's own rule (`triggerCorrectionPermission`).
+  if (
+    caller === "apiKey" &&
+    !permissions.production?.update?.includes(companyId)
+  ) {
+    return data(
+      { success: false },
+      await flash(request, error(null, "This API key cannot update production"))
+    );
+  }
 
   const formData = await request.formData();
   const validation = await validator(triggerCorrectionValidator).validate(

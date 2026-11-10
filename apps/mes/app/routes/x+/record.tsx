@@ -93,6 +93,7 @@ export async function action({ request }: ActionFunctionArgs) {
     index: validation.data.index,
     value: validation.data.value,
     numericValue: validation.data.numericValue,
+    booleanValue: validation.data.booleanValue,
     companyId
   });
 

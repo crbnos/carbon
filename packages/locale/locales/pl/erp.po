@@ -12911,6 +12911,9 @@ msgstr "Nieudane"
 msgid "Failed characteristics"
 msgstr "Cechy niezgodne"
 
+msgid "Failed inspection"
+msgstr "Kontrola niezaliczona"
+
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
 msgstr "Nie udało się dodać wiersza — dodano {addedCount} z {0} wierszy"

@@ -14527,7 +14527,7 @@ async function insertOperationChildren(
  * to their copies; a mapping whose step was not copied is dropped. The
  * target's own corrections are replaced.
  */
-async function copyMethodCorrections(
+export async function copyMethodCorrections(
   trx: Transaction<KyselyDatabase>,
   args: {
     sourceMakeMethodId: string;
@@ -27040,6 +27040,19 @@ export async function triggerCorrection(
   }
 
   const trackedEntityIds = input.trackedEntityIds ?? [];
+  // A serial part is corrected unit by unit: without a unit the correction
+  // would scope to none and skip the attempt limit.
+  if (trackedEntityIds.length === 0 && triggeringOperation.jobMakeMethodId) {
+    const makeMethod = await db
+      .selectFrom("jobMakeMethod")
+      .select("requiresSerialTracking")
+      .where("id", "=", triggeringOperation.jobMakeMethodId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (makeMethod?.requiresSerialTracking) {
+      throw new InvalidInputError("Choose the unit to correct");
+    }
+  }
   await assertCompanyRecords(
     db,
     "trackedEntity",

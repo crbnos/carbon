@@ -115,6 +115,12 @@ export const convertEntityValidator = z.object({
   quantity: z.coerce.number().positive().default(1)
 });
 
+/**
+ * The trigger `listValue` that maps a failed Inspection step; the ERP writes it
+ * (`inspectionFailedResult` in the items module's models).
+ */
+export const inspectionFailedResult = "Failed";
+
 export const stepRecordValidator = z.object({
   index: zfd.numeric(z.number()),
   jobOperationStepId: z.string(),

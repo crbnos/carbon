@@ -44,6 +44,7 @@ import type {
   scrapQuantityValidator,
   stepRecordValidator
 } from "./models";
+import { inspectionFailedResult } from "./models";
 import { planStepBackflush } from "./step-backflush";
 import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
 
@@ -822,11 +823,6 @@ export async function getJobAttributesByOperationId(
 }
 
 /**
- * Tenant check for a caller-supplied job operation id. Routes read operations
- * with a service-role client (operators often lack RLS rights), so this scoped
- * lookup is the boundary: null data means the id is not in the company.
- */
-/**
  * Why an operation is not on the floor, or null when it is. The operation,
  * assembly and inspection views share it: a batched operation follows its
  * batch (a Planned batch is off the floor), any other follows its job, which
@@ -847,7 +843,10 @@ export async function floorRefusal(
       .eq("id", args.jobOperationBatchId)
       .eq("companyId", args.companyId)
       .maybeSingle();
-    return batch.data?.status === "Planned"
+    if (batch.error || !batch.data) {
+      return "This operation's batch could not be checked";
+    }
+    return batch.data.status === "Planned"
       ? "This operation is part of a batch that has not been released to the floor"
       : null;
   }
@@ -857,6 +856,11 @@ export async function floorRefusal(
     : "This operation's job has not been released to the floor";
 }
 
+/**
+ * Tenant check for a caller-supplied job operation id. Routes read operations
+ * with a service-role client (operators often lack RLS rights), so this scoped
+ * lookup is the boundary: null data means the id is not in the company.
+ */
 export async function getJobOperationForCompany(
   client: SupabaseClient<Database>,
   operationId: string,
@@ -2232,7 +2236,8 @@ export type CorrectionSuggestion = {
 
 /**
  * The correction a just-recorded step result maps to, with the unit's earlier
- * uses of it, or null when the result maps to none. A List or Inspection value matches a mapped value; a
+ * uses of it, or null when the result maps to none. A List value matches a
+ * mapped value; a failed Inspection matches `inspectionFailedResult`; a
  * Measurement matches "Below Minimum" or "Above Maximum".
  */
 export async function getCorrectionSuggestion(
@@ -2242,6 +2247,7 @@ export async function getCorrectionSuggestion(
     index: number;
     value?: string | null;
     numericValue?: number | null;
+    booleanValue?: boolean | null;
     companyId: string;
   }
 ): Promise<CorrectionSuggestion | null> {
@@ -2261,12 +2267,24 @@ export async function getCorrectionSuggestion(
   if (step.error) return null;
 
   let match: { jobCorrectionId: string; reason: string } | undefined;
-  if (step.data.type === "List" || step.data.type === "Inspection") {
+  if (step.data.type === "List") {
     const trigger = triggers.data.find(
       (t) => args.value && t.listValue === args.value
     );
     if (trigger && args.value) {
       match = { jobCorrectionId: trigger.jobCorrectionId, reason: args.value };
+    }
+  } else if (step.data.type === "Inspection") {
+    // An Inspection records pass or fail; its `value` is the attached file.
+    const trigger =
+      args.booleanValue === false
+        ? triggers.data.find((t) => t.listValue === inspectionFailedResult)
+        : undefined;
+    if (trigger) {
+      match = {
+        jobCorrectionId: trigger.jobCorrectionId,
+        reason: "Failed inspection"
+      };
     }
   } else if (
     step.data.type === "Measurement" &&
@@ -2312,14 +2330,15 @@ export async function getCorrectionSuggestion(
       .from("jobMakeMethod")
       .select("requiresSerialTracking")
       .eq("id", operation.data.jobMakeMethodId)
+      .eq("companyId", args.companyId)
       .single()
   ]);
-  if (corrections.error) return null;
+  if (corrections.error || jobMakeMethod.error) return null;
 
   // A serial unit is the record's position in the unit axis.
   let trackedEntityId: string | null = null;
   const uses = new Map<string, number>();
-  if (jobMakeMethod.data?.requiresSerialTracking) {
+  if (jobMakeMethod.data.requiresSerialTracking) {
     const entities = await getTrackedEntitiesByMakeMethodId(
       client,
       operation.data.jobMakeMethodId,

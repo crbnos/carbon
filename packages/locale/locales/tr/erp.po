@@ -12911,6 +12911,9 @@ msgstr "Başarısız"
 msgid "Failed characteristics"
 msgstr "Başarısız özellikler"
 
+msgid "Failed inspection"
+msgstr "Muayene başarısız"
+
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
 msgstr "Satır eklenemedi — {0} satırdan {addedCount} tanesi eklendi"

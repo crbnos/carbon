@@ -12911,6 +12911,9 @@ msgstr "Non riuscito"
 msgid "Failed characteristics"
 msgstr "Caratteristiche non riuscite"
 
+msgid "Failed inspection"
+msgstr "Controllo non superato"
+
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
 msgstr "Impossibile aggiungere la riga — aggiunte {addedCount} righe su {0}"
