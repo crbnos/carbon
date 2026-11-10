@@ -43,8 +43,9 @@ type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
 
 /**
  * Probe whether this connection may disable triggers/FK enforcement via
- * `session_replication_role`. True on local dev (superuser); on hosted
- * Supabase it depends on the grants of the connecting role.
+ * `session_replication_role`. True locally and on hosted Supabase (the
+ * `postgres` role may set it); false only for a role that isn't allowed to,
+ * such as a restricted self-hosted one.
  */
 export async function canSetReplicationRole(
   db: Kysely<KyselyDatabase>
