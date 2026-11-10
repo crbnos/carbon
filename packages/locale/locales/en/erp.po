@@ -4299,6 +4299,12 @@ msgstr "Approve {displayName}"
 msgid "Approve all"
 msgstr "Approve all"
 
+msgid "Approve and delete"
+msgstr "Approve and delete"
+
+msgid "Approve and Delete"
+msgstr "Approve and Delete"
+
 msgid "Approve Request"
 msgstr "Approve Request"
 
@@ -4307,6 +4313,9 @@ msgstr "Approved"
 
 msgid "Approved <0/> by <1/>"
 msgstr "Approved <0/> by <1/>"
+
+msgid "Approved by"
+msgstr "Approved by"
 
 msgid "Approved By"
 msgstr "Approved By"
@@ -6277,6 +6286,9 @@ msgstr "Cancel Purchase Order"
 
 msgid "Cancel purchase order {target}"
 msgstr "Cancel purchase order {target}"
+
+msgid "Cancel Request"
+msgstr "Cancel Request"
 
 msgid "Cancel Return"
 msgstr "Cancel Return"
@@ -13703,6 +13715,16 @@ msgstr "For example Site or Ordered by"
 msgid "For Form 6765 Section E"
 msgstr "For Form 6765 Section E"
 
+msgid "Force Delete (Admin)"
+msgstr "Force Delete (Admin)"
+
+msgid "Force delete {purchaseOrderReadableId}"
+msgstr "Force delete {purchaseOrderReadableId}"
+
+#. placeholder {0}: approvedBy.length
+msgid "Force delete requested ({0} of {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} Admin approvals)"
+msgstr "Force delete requested ({0} of {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} Admin approvals)"
+
 msgid "Forecast"
 msgstr "Forecast"
 
@@ -15901,6 +15923,12 @@ msgstr "It is coming soon. Contact Carbon to have it set up for your company."
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "It is still used by a \"{table}\" record; remove that first."
+
+msgid "It never touches the ledger. Void or delete the order's receipts, shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgstr "It never touches the ledger. Void or delete the order's receipts, shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+
+msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
+msgstr "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
 
 msgid "It shows with no hours until you add some."
 msgstr "It shows with no hours until you add some."
@@ -20367,6 +20395,9 @@ msgstr "Nothing here yet"
 
 msgid "Nothing in the archive"
 msgstr "Nothing in the archive"
+
+msgid "Nothing is deleted yet. The deletion runs only after {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} other Admins approve it."
+msgstr "Nothing is deleted yet. The deletion runs only after {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} other Admins approve it."
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "Nothing is due. Invoices are created automatically when a period comes due."
@@ -24930,8 +24961,14 @@ msgstr "Request Approval"
 msgid "Request date"
 msgstr "Request date"
 
+msgid "Request Force Delete"
+msgstr "Request Force Delete"
+
 msgid "Requested"
 msgstr "Requested"
+
+msgid "Requested by"
+msgstr "Requested by"
 
 msgid "Requested By"
 msgstr "Requested By"
@@ -31337,6 +31374,9 @@ msgstr "This is a purchased item — it has no BoM/BoP; only its attributes and 
 msgid "This is a unique identifier for the webhook"
 msgstr "This is a unique identifier for the webhook"
 
+msgid "This is an Admin override"
+msgstr "This is an Admin override"
+
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 
@@ -32403,6 +32443,9 @@ msgstr "Type '{' for a variable"
 #. placeholder {0}: company.name
 msgid "Type {0} to confirm"
 msgstr "Type {0} to confirm"
+
+msgid "Type {purchaseOrderReadableId} to confirm"
+msgstr "Type {purchaseOrderReadableId} to confirm"
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "Type {TRIGGER} to insert a variable"
@@ -33977,6 +34020,9 @@ msgstr "What this time entry counts as — Labor (operator time), Machine (run t
 msgid "What to set up"
 msgstr "What to set up"
 
+msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
+msgstr "What was entered wrongly, and why the order cannot be corrected or closed instead"
+
 msgid "What we're assuming"
 msgstr "What we're assuming"
 
@@ -34803,6 +34849,9 @@ msgstr "Your rate"
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Your real data is loaded and you have checked a sample and approved it."
 
+msgid "Your reason and every approval are kept in the audit log."
+msgstr "Your reason and every approval are kept in the audit log."
+
 msgid "Your session was locked after inactivity."
 msgstr "Your session was locked after inactivity."
 
@@ -34823,6 +34872,9 @@ msgstr "Your team, structure, and access."
 
 msgid "Your vendor list"
 msgstr "Your vendor list"
+
+msgid "Yours is the last approval needed. The purchase order and all of its lines are deleted now, and this cannot be undone."
+msgstr "Yours is the last approval needed. The purchase order and all of its lines are deleted now, and this cannot be undone."
 
 msgid "yourself"
 msgstr "yourself"

@@ -1550,6 +1550,146 @@ export function purchaseOrderDeleteRefusal({
   return null;
 }
 
+// ─── Purchase Order Force Delete (Admin override) ───
+
+/**
+ * Admins, other than the one who asked, who must approve a force delete
+ * before it runs.
+ */
+export const PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED = 2;
+
+export const PURCHASE_ORDER_FORCE_DELETE_MIN_REASON_LENGTH = 10;
+
+export const purchaseOrderForceDeleteRequestValidator = z.object({
+  intent: z.literal("request"),
+  reason: z
+    .string()
+    .trim()
+    .min(PURCHASE_ORDER_FORCE_DELETE_MIN_REASON_LENGTH, {
+      message: `Explain why, in at least ${PURCHASE_ORDER_FORCE_DELETE_MIN_REASON_LENGTH} characters`
+    }),
+  confirmation: z.string().trim().min(1, { message: "Type the order number" })
+});
+
+export const purchaseOrderForceDeleteDecisionValidator = z.object({
+  intent: z.enum(["approve", "reject", "cancel"]),
+  requestId: z.string().min(1, { message: "Request is required" }),
+  notes: zfd.text(z.string().optional())
+});
+
+/** What still names an order and keeps it from being force deleted. */
+export type PurchaseOrderForceDeleteBlockers = {
+  /** Receipts not Voided: Draft, Pending or Posted. */
+  receipts: { readableId: string; status: string }[];
+  /** Shipments (outside processing) not Voided. */
+  shipments: { readableId: string; status: string }[];
+  /** Purchase invoices with a line on the order, in any status. */
+  invoices: { readableId: string; status: string }[];
+  /** Prepayments to the supplier against the order, not Voided. */
+  payments: { readableId: string; status: string }[];
+};
+
+/**
+ * Why the order cannot be force deleted yet, or null. The override skips the
+ * status and approval rules of a normal delete, never the ledger: a posted
+ * receipt, shipment, invoice or payment has journal lines for this order, so
+ * it is voided first (or, before the accounting cutover, corrected with a
+ * return, adjustment or debit memo). An invoice line holds the order line by
+ * a foreign key, so even a voided invoice keeps the order.
+ */
+export function purchaseOrderForceDeleteBlockerMessage(
+  blockers: PurchaseOrderForceDeleteBlockers
+): string | null {
+  const list = (docs: { readableId: string; status: string }[]) =>
+    docs.map((d) => `${d.readableId} (${d.status})`).join(", ");
+  const parts: string[] = [];
+  if (blockers.receipts.length > 0) {
+    parts.push(`void or delete its receipts: ${list(blockers.receipts)}`);
+  }
+  if (blockers.shipments.length > 0) {
+    parts.push(`void or delete its shipments: ${list(blockers.shipments)}`);
+  }
+  if (blockers.payments.length > 0) {
+    parts.push(`void or delete its prepayments: ${list(blockers.payments)}`);
+  }
+  if (blockers.invoices.length > 0) {
+    parts.push(
+      `remove its lines from these purchase invoices (a posted or voided invoice keeps the order): ${list(blockers.invoices)}`
+    );
+  }
+  if (parts.length === 0) return null;
+  return `This purchase order cannot be force deleted until you ${parts.join("; ")}.`;
+}
+
+/**
+ * Why `userId` cannot approve this force delete, or null. Only a Pending
+ * request, only an Admin, never the Admin who asked, and once per Admin.
+ */
+export function purchaseOrderForceDeleteApprovalRefusal({
+  status,
+  requestedBy,
+  approvedBy,
+  userId,
+  isAdmin
+}: {
+  status: string;
+  requestedBy: string;
+  approvedBy: string[];
+  userId: string;
+  isAdmin: boolean;
+}): string | null {
+  if (status !== "Pending") {
+    return `This force delete request is ${status.toLowerCase()}`;
+  }
+  if (!isAdmin) return "Only an Admin can approve a force delete";
+  if (requestedBy === userId) {
+    return `You asked for this force delete: ${PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} other Admins must approve it`;
+  }
+  if (approvedBy.includes(userId)) {
+    return "You have already approved this force delete";
+  }
+  return null;
+}
+
+/**
+ * Why `userId` cannot reject or cancel this request, or null. Any Admin may
+ * reject it; only the Admin who asked may cancel it.
+ */
+export function purchaseOrderForceDeleteWithdrawRefusal({
+  intent,
+  status,
+  requestedBy,
+  userId,
+  isAdmin
+}: {
+  intent: "reject" | "cancel";
+  status: string;
+  requestedBy: string;
+  userId: string;
+  isAdmin: boolean;
+}): string | null {
+  if (status !== "Pending") {
+    return `This force delete request is ${status.toLowerCase()}`;
+  }
+  if (!isAdmin) return "Only an Admin can decide a force delete";
+  if (intent === "cancel" && requestedBy !== userId) {
+    return "Only the Admin who asked can cancel this force delete; reject it instead";
+  }
+  return null;
+}
+
+/** Whether the order's own number was typed to confirm (case and spaces ignored). */
+export function isPurchaseOrderForceDeleteConfirmed(
+  confirmation: string,
+  purchaseOrderReadableId: string
+): boolean {
+  const norm = (s: string) => s.replace(/\s+/g, "").toUpperCase();
+  return (
+    norm(confirmation) !== "" &&
+    norm(confirmation) === norm(purchaseOrderReadableId)
+  );
+}
+
 // ─── Purchase Return Orders (Supplier Returns) ───
 
 export const purchaseReturnOrderStatusType = [

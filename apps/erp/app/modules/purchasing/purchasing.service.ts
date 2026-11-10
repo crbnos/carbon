@@ -223,6 +223,7 @@ import {
   PURCHASE_ORDER_LOCKED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
   type PurchaseOrderDateField,
+  type PurchaseOrderForceDeleteBlockers,
   type PurchaseOrderFundsIntent,
   type PurchaseOrderLineDateField,
   type PurchaseOrderLineIdentity,
@@ -8226,6 +8227,238 @@ export async function cancelPendingApprovals(
     .where("status", "=", "Pending")
     .returning("id")
     .execute();
+}
+
+/**
+ * Whether the user is an active employee of the company whose employee type
+ * is the company's Admin type (`employeeType.systemType = 'Admin'`).
+ */
+export async function isCompanyAdmin(
+  db: Kysely<KyselyDatabase>,
+  { companyId, userId }: { companyId: string; userId: string }
+): Promise<boolean> {
+  const row = await db
+    .selectFrom("employee")
+    .innerJoin("employeeType", (join) =>
+      join
+        .onRef("employeeType.id", "=", "employee.employeeTypeId")
+        .onRef("employeeType.companyId", "=", "employee.companyId")
+    )
+    .select("employee.id")
+    .where("employee.id", "=", userId)
+    .where("employee.companyId", "=", companyId)
+    .where("employee.active", "=", true)
+    .where("employeeType.systemType", "=", "Admin")
+    .executeTakeFirst();
+  return !!row;
+}
+
+/** The active Admins of the company (`isCompanyAdmin`), as user ids. */
+export async function getCompanyAdminIds(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<string[]> {
+  const rows = await db
+    .selectFrom("employee")
+    .innerJoin("employeeType", (join) =>
+      join
+        .onRef("employeeType.id", "=", "employee.employeeTypeId")
+        .onRef("employeeType.companyId", "=", "employee.companyId")
+    )
+    .select("employee.id")
+    .where("employee.companyId", "=", companyId)
+    .where("employee.active", "=", true)
+    .where("employeeType.systemType", "=", "Admin")
+    .execute();
+  return rows.map((row) => row.id);
+}
+
+/**
+ * The documents that still name the order and keep a force delete from
+ * running (`purchaseOrderForceDeleteBlockerMessage`). Runs on the caller's
+ * connection, so the delete re-reads them inside its own transaction.
+ */
+export async function getPurchaseOrderForceDeleteBlockers(
+  db: Kysely<KyselyDatabase>,
+  { companyId, purchaseOrderId }: { companyId: string; purchaseOrderId: string }
+): Promise<PurchaseOrderForceDeleteBlockers> {
+  const [receipts, shipments, invoices, payments] = await Promise.all([
+    db
+      .selectFrom("receipt")
+      .select(["receiptId as readableId", "status"])
+      .where("companyId", "=", companyId)
+      .where("sourceDocument", "=", "Purchase Order")
+      .where("sourceDocumentId", "=", purchaseOrderId)
+      .where("status", "<>", "Voided")
+      .orderBy("receiptId")
+      .execute(),
+    db
+      .selectFrom("shipment")
+      .select(["shipmentId as readableId", "status"])
+      .where("companyId", "=", companyId)
+      .where("sourceDocument", "=", "Purchase Order")
+      .where("sourceDocumentId", "=", purchaseOrderId)
+      .where("status", "<>", "Voided")
+      .orderBy("shipmentId")
+      .execute(),
+    db
+      .selectFrom("purchaseInvoice")
+      .select([
+        "purchaseInvoice.invoiceId as readableId",
+        "purchaseInvoice.status"
+      ])
+      .where("purchaseInvoice.companyId", "=", companyId)
+      .where((eb) =>
+        eb.exists(
+          eb
+            .selectFrom("purchaseInvoiceLine")
+            .select("purchaseInvoiceLine.id")
+            .whereRef(
+              "purchaseInvoiceLine.invoiceId",
+              "=",
+              "purchaseInvoice.id"
+            )
+            .where((line) =>
+              line.or([
+                line(
+                  "purchaseInvoiceLine.purchaseOrderId",
+                  "=",
+                  purchaseOrderId
+                ),
+                line(
+                  "purchaseInvoiceLine.purchaseOrderLineId",
+                  "in",
+                  line
+                    .selectFrom("purchaseOrderLine")
+                    .select("purchaseOrderLine.id")
+                    .where(
+                      "purchaseOrderLine.purchaseOrderId",
+                      "=",
+                      purchaseOrderId
+                    )
+                )
+              ])
+            )
+        )
+      )
+      .orderBy("purchaseInvoice.invoiceId")
+      .execute(),
+    db
+      .selectFrom("payment")
+      .select(["paymentId as readableId", "status"])
+      .where("companyId", "=", companyId)
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("status", "<>", "Voided")
+      .orderBy("paymentId")
+      .execute()
+  ]);
+  return {
+    receipts: receipts.map((r) => ({ ...r, readableId: r.readableId ?? "" })),
+    shipments: shipments.map((s) => ({ ...s, readableId: s.readableId ?? "" })),
+    invoices: invoices.map((i) => ({ ...i, readableId: i.readableId ?? "" })),
+    payments: payments.map((p) => ({ ...p, readableId: p.readableId ?? "" }))
+  };
+}
+
+export type PurchaseOrderForceDeleteRequest = {
+  id: string;
+  reason: string;
+  requestedBy: string;
+  requestedAt: string;
+  purchaseOrderStatus: string;
+  approvals: { approvedBy: string; approvedAt: string; notes: string | null }[];
+};
+
+/** The order's Pending force delete request, with its approvals, or null. */
+export async function getPendingPurchaseOrderForceDeleteRequest(
+  db: Kysely<KyselyDatabase>,
+  { companyId, purchaseOrderId }: { companyId: string; purchaseOrderId: string }
+): Promise<PurchaseOrderForceDeleteRequest | null> {
+  const request = await db
+    .selectFrom("purchaseOrderForceDeleteRequest")
+    .select([
+      "id",
+      "reason",
+      "requestedBy",
+      "requestedAt",
+      "purchaseOrderStatus"
+    ])
+    .where("companyId", "=", companyId)
+    .where("purchaseOrderId", "=", purchaseOrderId)
+    .where("status", "=", "Pending")
+    .executeTakeFirst();
+  if (!request) return null;
+  const approvals = await db
+    .selectFrom("purchaseOrderForceDeleteApproval")
+    .select(["approvedBy", "approvedAt", "notes"])
+    .where("companyId", "=", companyId)
+    .where("requestId", "=", request.id)
+    .orderBy("approvedAt")
+    .execute();
+  return {
+    ...request,
+    requestedAt: String(request.requestedAt),
+    approvals: approvals.map((a) => ({
+      ...a,
+      approvedAt: String(a.approvedAt)
+    }))
+  };
+}
+
+/** The Admins to tell about a force delete request: every Admin but `except`. */
+export async function notifyForceDeleteAdmins(
+  ctx: ServiceContext,
+  { purchaseOrderId, except }: { purchaseOrderId: string; except: string[] }
+) {
+  const companyId = ctx.company.id;
+  try {
+    const adminIds = (
+      await getCompanyAdminIds(ctx.asSystem.pg, companyId)
+    ).filter((id) => !except.includes(id));
+    if (adminIds.length === 0) return;
+    // The approval notice links to the order, where the request is shown.
+    await trigger("notify", {
+      event: NotificationEvent.ApprovalRequested,
+      companyId,
+      documentId: purchaseOrderId,
+      documentType: "purchaseOrder",
+      recipient: { type: "users", userIds: adminIds },
+      from: ctx.auditUserId
+    });
+  } catch (e) {
+    logger.error("Failed to notify Admins of a force delete request", {
+      error: e
+    });
+  }
+}
+
+/** Best-effort: a failed audit write never undoes the override. */
+export async function auditForceDelete(
+  ctx: ServiceContext,
+  entry: {
+    purchaseOrderId: string;
+    requestId: string;
+    operation: "INSERT" | "UPDATE" | "DELETE";
+    diff: Record<string, { old: unknown; new: unknown }>;
+  }
+) {
+  try {
+    await insertAuditLogEntries(ctx.asSystem.supabase, ctx.company.id, [
+      {
+        tableName: "purchaseOrderForceDeleteRequest",
+        entityType: "purchaseOrder",
+        entityId: entry.purchaseOrderId,
+        recordId: entry.requestId,
+        operation: entry.operation,
+        actorId: ctx.auditUserId,
+        diff: entry.diff
+      }
+    ]);
+  } catch (err) {
+    logger.warn("audit write skipped for a purchase order force delete", {
+      error: err
+    });
+  }
 }
 
 /** A file's size as the documents table stores it: whole kilobytes. */

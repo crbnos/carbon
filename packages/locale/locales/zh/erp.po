@@ -4299,6 +4299,12 @@ msgstr "审批{displayName}"
 msgid "Approve all"
 msgstr "全部审批"
 
+msgid "Approve and delete"
+msgstr ""
+
+msgid "Approve and Delete"
+msgstr ""
+
 msgid "Approve Request"
 msgstr "审批请求"
 
@@ -4307,6 +4313,9 @@ msgstr "已审批"
 
 msgid "Approved <0/> by <1/>"
 msgstr "由<1/>审批的<0/>"
+
+msgid "Approved by"
+msgstr ""
 
 msgid "Approved By"
 msgstr "批准人"
@@ -6277,6 +6286,9 @@ msgstr "取消采购订单"
 
 msgid "Cancel purchase order {target}"
 msgstr "取消采购订单 {target}"
+
+msgid "Cancel Request"
+msgstr ""
 
 msgid "Cancel Return"
 msgstr "取消退货"
@@ -13703,6 +13715,16 @@ msgstr "例如：站点或下单人"
 msgid "For Form 6765 Section E"
 msgstr "表格 6765 E 部分"
 
+msgid "Force Delete (Admin)"
+msgstr ""
+
+msgid "Force delete {purchaseOrderReadableId}"
+msgstr ""
+
+#. placeholder {0}: approvedBy.length
+msgid "Force delete requested ({0} of {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} Admin approvals)"
+msgstr ""
+
 msgid "Forecast"
 msgstr "预测"
 
@@ -15901,6 +15923,12 @@ msgstr "即将推出。请联系 Carbon 为您的公司进行设置。"
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "它仍然被「{table}」记录使用；请先删除它。"
+
+msgid "It never touches the ledger. Void or delete the order's receipts, shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgstr ""
+
+msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
+msgstr ""
 
 msgid "It shows with no hours until you add some."
 msgstr "添加工时后才会显示。"
@@ -20367,6 +20395,9 @@ msgstr "暂无内容"
 
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
+
+msgid "Nothing is deleted yet. The deletion runs only after {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} other Admins approve it."
+msgstr ""
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "当前没有应付款项。当到期期间来临时，发票会自动生成。"
@@ -24930,8 +24961,14 @@ msgstr "请求审批"
 msgid "Request date"
 msgstr "请求日期"
 
+msgid "Request Force Delete"
+msgstr ""
+
 msgid "Requested"
 msgstr "已申请"
+
+msgid "Requested by"
+msgstr ""
 
 msgid "Requested By"
 msgstr "请求人"
@@ -31337,6 +31374,9 @@ msgstr "这是一个采购项目 — 它没有BoM/BoP；只有其属性和文档
 msgid "This is a unique identifier for the webhook"
 msgstr "这是webhook的唯一标识符"
 
+msgid "This is an Admin override"
+msgstr ""
+
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "这是一个ITAR管制环境。访问仅限于美国人。"
 
@@ -32403,6 +32443,9 @@ msgstr "输入 '{' 以表示变量"
 #. placeholder {0}: company.name
 msgid "Type {0} to confirm"
 msgstr "输入 {0} 以确认"
+
+msgid "Type {purchaseOrderReadableId} to confirm"
+msgstr ""
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "输入 {TRIGGER} 以插入变量"
@@ -33977,6 +34020,9 @@ msgstr "这个时间记录计为——人工(操作员时间)、机器(加工时
 msgid "What to set up"
 msgstr "要设置什么"
 
+msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
+msgstr ""
+
 msgid "What we're assuming"
 msgstr "我们的假设"
 
@@ -34803,6 +34849,9 @@ msgstr "自定义汇率"
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "您的真实数据已加载，您已检查样本并批准了它。"
 
+msgid "Your reason and every approval are kept in the audit log."
+msgstr ""
+
 msgid "Your session was locked after inactivity."
 msgstr "你的会话因不活动而被已锁定。"
 
@@ -34823,6 +34872,9 @@ msgstr "您的班组、结构和访问权限。"
 
 msgid "Your vendor list"
 msgstr "您的供应商列表"
+
+msgid "Yours is the last approval needed. The purchase order and all of its lines are deleted now, and this cannot be undone."
+msgstr ""
 
 msgid "yourself"
 msgstr "你自己"

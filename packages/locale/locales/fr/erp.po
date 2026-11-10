@@ -4299,6 +4299,12 @@ msgstr "Approuver {displayName}"
 msgid "Approve all"
 msgstr "Approuver tout"
 
+msgid "Approve and delete"
+msgstr ""
+
+msgid "Approve and Delete"
+msgstr ""
+
 msgid "Approve Request"
 msgstr "Approuver la demande"
 
@@ -4307,6 +4313,9 @@ msgstr "Approuvé"
 
 msgid "Approved <0/> by <1/>"
 msgstr "Approuvé <0/> par <1/>"
+
+msgid "Approved by"
+msgstr ""
 
 msgid "Approved By"
 msgstr "Approuvé par"
@@ -6277,6 +6286,9 @@ msgstr "Annuler le bon de commande"
 
 msgid "Cancel purchase order {target}"
 msgstr "Annuler le bon de commande {target}"
+
+msgid "Cancel Request"
+msgstr ""
 
 msgid "Cancel Return"
 msgstr "Annuler le retour"
@@ -13703,6 +13715,16 @@ msgstr "Par exemple Site ou Commandé par"
 msgid "For Form 6765 Section E"
 msgstr "Pour la section E du formulaire 6765"
 
+msgid "Force Delete (Admin)"
+msgstr ""
+
+msgid "Force delete {purchaseOrderReadableId}"
+msgstr ""
+
+#. placeholder {0}: approvedBy.length
+msgid "Force delete requested ({0} of {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} Admin approvals)"
+msgstr ""
+
 msgid "Forecast"
 msgstr "Prévision"
 
@@ -15901,6 +15923,12 @@ msgstr "Elle sera bientôt disponible. Contactez Carbon pour la faire configurer
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Il est toujours utilisé par un enregistrement « {table} » ; supprimez d'abord celui-ci."
+
+msgid "It never touches the ledger. Void or delete the order's receipts, shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgstr ""
+
+msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
+msgstr ""
 
 msgid "It shows with no hours until you add some."
 msgstr "Il s'affiche sans heures tant que vous n'en avez pas ajouté."
@@ -20367,6 +20395,9 @@ msgstr "Rien ici pour le moment"
 
 msgid "Nothing in the archive"
 msgstr "Rien dans l'archive"
+
+msgid "Nothing is deleted yet. The deletion runs only after {PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED} other Admins approve it."
+msgstr ""
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "Rien n'est dû. Les factures sont créées automatiquement lorsqu'une période arrive à échéance."
@@ -24930,8 +24961,14 @@ msgstr "Demander l'approbation"
 msgid "Request date"
 msgstr "Date de demande"
 
+msgid "Request Force Delete"
+msgstr ""
+
 msgid "Requested"
 msgstr "Demandé"
+
+msgid "Requested by"
+msgstr ""
 
 msgid "Requested By"
 msgstr "Demandé par"
@@ -31337,6 +31374,9 @@ msgstr "Ceci est un article acheté — il n'a pas de BoM/BoP ; seuls ses attrib
 msgid "This is a unique identifier for the webhook"
 msgstr "Ceci est un identifiant unique pour le webhook"
 
+msgid "This is an Admin override"
+msgstr ""
+
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "Ceci est un environnement contrôlé par l'ITAR. L'accès est restreint aux personnes des États-Unis."
 
@@ -32403,6 +32443,9 @@ msgstr "Tapez '{' pour une variable"
 #. placeholder {0}: company.name
 msgid "Type {0} to confirm"
 msgstr "Saisissez {0} pour confirmer"
+
+msgid "Type {purchaseOrderReadableId} to confirm"
+msgstr ""
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "Tapez {TRIGGER} pour insérer une variable"
@@ -33977,6 +34020,9 @@ msgstr "Ce que cette saisie de temps compte comme — Main-d'œuvre (temps opér
 msgid "What to set up"
 msgstr "Quoi configurer"
 
+msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
+msgstr ""
+
 msgid "What we're assuming"
 msgstr "Ce que nous supposons"
 
@@ -34800,6 +34846,9 @@ msgstr "Votre taux"
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Vos données réelles sont chargées et vous avez vérifié un échantillon et l'avez approuvé."
 
+msgid "Your reason and every approval are kept in the audit log."
+msgstr ""
+
 msgid "Your session was locked after inactivity."
 msgstr "Votre session a été verrouillée suite à l'inactivité."
 
@@ -34820,6 +34869,9 @@ msgstr "Votre équipe, structure et accès."
 
 msgid "Your vendor list"
 msgstr "Votre liste de fournisseurs"
+
+msgid "Yours is the last approval needed. The purchase order and all of its lines are deleted now, and this cannot be undone."
+msgstr ""
 
 msgid "yourself"
 msgstr "vous-même"

@@ -859,6 +859,12 @@ export const Constants = {
         "Overdue",
         "Voided",
       ],
+      purchaseOrderForceDeleteStatus: [
+        "Pending",
+        "Executed",
+        "Rejected",
+        "Cancelled",
+      ],
       purchaseOrderLineType: [
         "Comment",
         "G/L Account",

@@ -40,6 +40,7 @@ import {
   datetime,
   deriveRate,
   groupBy,
+  isUniqueViolation,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
   requireAffected,
   SCALE,
@@ -87,6 +88,7 @@ import {
   isPurchaseOrderAmendable,
   isPurchaseOrderDateField,
   isPurchaseOrderEditableFromPlanning,
+  isPurchaseOrderForceDeleteConfirmed,
   isPurchaseOrderLocked,
   isPurchaseReturnOrderLocked,
   isRfqLocked,
@@ -96,11 +98,16 @@ import {
   leasePurchaseValidator,
   leaseTerminateValidator,
   lockedReturnLineField,
+  PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED,
+  PURCHASE_ORDER_FORCE_DELETE_MIN_REASON_LENGTH,
   PURCHASE_ORDER_REOPEN_STATUSES,
   plannedOrderValidator,
   planningPurchaseOrderWeek,
   purchaseOrderDeleteRefusal,
   purchaseOrderEditRefusal,
+  purchaseOrderForceDeleteApprovalRefusal,
+  purchaseOrderForceDeleteBlockerMessage,
+  purchaseOrderForceDeleteWithdrawRefusal,
   purchaseOrderLineDateFields,
   purchaseOrderLineDateRefusal,
   purchaseOrderLineReceivingIntents,
@@ -2377,6 +2384,371 @@ export const deletePurchaseOrders = defineServiceFn({
     if (removed instanceof CarbonError) return removed;
     const deleted = (removed.data ?? []).map((order) => order.id);
     return { purchaseOrderIds: deleted, skipped: ids.length - deleted.length };
+  }
+});
+
+const NOT_ADMIN_FORCE_DELETE =
+  "Only an Admin can force delete a purchase order";
+
+/**
+ * Ask to force delete a purchase order.
+ *
+ * @remarks
+ * An Admin override for an order the normal delete refuses (a released
+ * order, or one in approval the caller did not request). The caller must be
+ * an Admin, give a reason and type the order's number. Nothing is deleted
+ * here: the request waits until two OTHER Admins approve it
+ * (`decidePurchaseOrderForceDelete`), and the other Admins are notified.
+ * Refused while a receipt, shipment, invoice or prepayment still names the
+ * order (`purchaseOrderForceDeleteBlockerMessage`): those carry journal lines
+ * and are voided first. One open request per order.
+ *
+ * @returns `requestId`, the new request.
+ */
+export const requestPurchaseOrderForceDelete = defineServiceFn({
+  input: z.object({
+    purchaseOrderId: z.string().min(1),
+    reason: z
+      .string()
+      .trim()
+      .min(PURCHASE_ORDER_FORCE_DELETE_MIN_REASON_LENGTH),
+    confirmation: z.string()
+  }),
+  permission: { delete: "purchasing" },
+
+  async run(ctx, { purchaseOrderId, reason, confirmation }) {
+    const db = ctx.asSystem.pg;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+
+    if (!(await service.isCompanyAdmin(db, { companyId, userId }))) {
+      return ctx.error("forbidden", NOT_ADMIN_FORCE_DELETE);
+    }
+
+    const order = await db
+      .selectFrom("purchaseOrder")
+      .select(["id", "purchaseOrderId", "status"])
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!order) return ctx.error("notFound", "Purchase order not found");
+
+    if (
+      !isPurchaseOrderForceDeleteConfirmed(confirmation, order.purchaseOrderId)
+    ) {
+      return ctx.error(
+        "validation",
+        `Type ${order.purchaseOrderId} to confirm the force delete`
+      );
+    }
+
+    const blocked = purchaseOrderForceDeleteBlockerMessage(
+      await service.getPurchaseOrderForceDeleteBlockers(db, {
+        companyId,
+        purchaseOrderId
+      })
+    );
+    if (blocked) return ctx.error("rule", blocked);
+
+    const inserted = await db
+      .insertInto("purchaseOrderForceDeleteRequest")
+      .values({
+        companyId,
+        purchaseOrderId,
+        purchaseOrderReadableId: order.purchaseOrderId,
+        purchaseOrderStatus: order.status,
+        reason,
+        requestedBy: userId,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow()
+      .catch((err: unknown) =>
+        isUniqueViolation(err)
+          ? ctx.error(
+              "conflict",
+              "A force delete of this purchase order is already waiting for approval"
+            )
+          : ctx.error("internal", "Failed to request the force delete", err)
+      );
+    if (inserted instanceof CarbonError) return inserted;
+
+    await service.auditForceDelete(ctx, {
+      purchaseOrderId,
+      requestId: inserted.id,
+      operation: "INSERT",
+      diff: {
+        status: { old: null, new: "Pending" },
+        reason: { old: null, new: reason },
+        purchaseOrderStatus: { old: null, new: order.status }
+      }
+    });
+    await service.notifyForceDeleteAdmins(ctx, {
+      purchaseOrderId,
+      except: [userId]
+    });
+
+    return { requestId: inserted.id };
+  }
+});
+
+/**
+ * Approve or reject a purchase order force delete.
+ *
+ * @remarks
+ * Admins only. Any Admin may reject; the Admin who asked may not approve, and
+ * each Admin approves once. When the second approval lands the order is
+ * deleted in the same transaction: the request is locked, the receipts,
+ * shipments, invoices and prepayments are read again (a document posted since
+ * the request refuses the approval, which is then not recorded), the order's
+ * pending approval requests are cancelled and the order and its lines are
+ * deleted. The request keeps the order's number after it is gone.
+ *
+ * @returns `status`: Pending (more approvals needed, with `approvals`),
+ * Executed (the order was deleted) or Rejected.
+ */
+export const decidePurchaseOrderForceDelete = defineServiceFn({
+  input: z.object({
+    requestId: z.string().min(1),
+    decision: z.enum(["approve", "reject"]),
+    notes: z.string().optional()
+  }),
+  permission: { delete: "purchasing" },
+
+  async run(ctx, { requestId, decision, notes }) {
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const isAdmin = await service.isCompanyAdmin(ctx.asSystem.pg, {
+      companyId,
+      userId
+    });
+    if (!isAdmin) return ctx.error("forbidden", NOT_ADMIN_FORCE_DELETE);
+
+    const settled = await ctx.transaction(async (tx) => {
+      const db = tx.asSystem.pg;
+      const request = await db
+        .selectFrom("purchaseOrderForceDeleteRequest")
+        .select([
+          "id",
+          "status",
+          "requestedBy",
+          "purchaseOrderId",
+          "purchaseOrderReadableId"
+        ])
+        .where("id", "=", requestId)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!request)
+        return ctx.error("notFound", "Force delete request not found");
+      const now = datetime.timestamp();
+
+      if (decision === "reject") {
+        const refusal = purchaseOrderForceDeleteWithdrawRefusal({
+          intent: "reject",
+          status: request.status,
+          requestedBy: request.requestedBy,
+          userId,
+          isAdmin
+        });
+        if (refusal) return ctx.error("rule", refusal);
+        await db
+          .updateTable("purchaseOrderForceDeleteRequest")
+          .set({
+            status: "Rejected",
+            decidedBy: userId,
+            decidedAt: now,
+            decisionNotes: notes || null,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", requestId)
+          .where("companyId", "=", companyId)
+          .execute();
+        return { request, status: "Rejected" as const, approvals: 0 };
+      }
+
+      const approvedBy = (
+        await db
+          .selectFrom("purchaseOrderForceDeleteApproval")
+          .select("approvedBy")
+          .where("requestId", "=", requestId)
+          .where("companyId", "=", companyId)
+          .execute()
+      ).map((row) => row.approvedBy);
+      const refusal = purchaseOrderForceDeleteApprovalRefusal({
+        status: request.status,
+        requestedBy: request.requestedBy,
+        approvedBy,
+        userId,
+        isAdmin
+      });
+      if (refusal) return ctx.error("rule", refusal);
+
+      await db
+        .insertInto("purchaseOrderForceDeleteApproval")
+        .values({
+          companyId,
+          requestId,
+          approvedBy: userId,
+          notes: notes || null
+        })
+        .execute();
+      const approvals = approvedBy.length + 1;
+      if (approvals < PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED) {
+        return { request, status: "Pending" as const, approvals };
+      }
+
+      const purchaseOrderId = request.purchaseOrderId;
+      if (!purchaseOrderId) {
+        return ctx.error("conflict", "This purchase order no longer exists");
+      }
+      const order = await db
+        .selectFrom("purchaseOrder")
+        .select("id")
+        .where("id", "=", purchaseOrderId)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!order) {
+        return ctx.error("conflict", "This purchase order no longer exists");
+      }
+      const blocked = purchaseOrderForceDeleteBlockerMessage(
+        await service.getPurchaseOrderForceDeleteBlockers(db, {
+          companyId,
+          purchaseOrderId
+        })
+      );
+      if (blocked) return ctx.error("rule", blocked);
+
+      await db
+        .updateTable("purchaseOrderForceDeleteRequest")
+        .set({
+          status: "Executed",
+          decidedBy: userId,
+          decidedAt: now,
+          decisionNotes: notes || null,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "=", requestId)
+        .where("companyId", "=", companyId)
+        .execute();
+      await service.cancelPendingApprovals(db, {
+        companyId,
+        userId,
+        purchaseOrderIds: [purchaseOrderId]
+      });
+      await db
+        .deleteFrom("purchaseOrder")
+        .where("id", "=", purchaseOrderId)
+        .where("companyId", "=", companyId)
+        .execute();
+      return { request, status: "Executed" as const, approvals };
+    });
+    if (settled.error) return settled.error;
+    const { request, status, approvals } = settled.data;
+
+    await service.auditForceDelete(ctx, {
+      purchaseOrderId:
+        request.purchaseOrderId ?? request.purchaseOrderReadableId,
+      requestId,
+      operation: status === "Executed" ? "DELETE" : "UPDATE",
+      diff:
+        status === "Pending"
+          ? { approvals: { old: approvals - 1, new: approvals } }
+          : { status: { old: "Pending", new: status } }
+    });
+
+    if (status !== "Pending" && request.requestedBy !== userId) {
+      // The order is gone once Executed, so the notice has no order to name.
+      if (status === "Rejected" && request.purchaseOrderId) {
+        await trigger("notify", {
+          event: NotificationEvent.ApprovalRejected,
+          companyId,
+          documentId: request.purchaseOrderId,
+          documentType: "purchaseOrder",
+          recipient: { type: "user", userId: request.requestedBy },
+          from: userId
+        }).catch((e) =>
+          logger.error("Failed to notify a force delete rejection", {
+            error: e
+          })
+        );
+      }
+    }
+
+    return {
+      requestId,
+      status,
+      approvals,
+      approvalsRequired: PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED,
+      purchaseOrderReadableId: request.purchaseOrderReadableId
+    };
+  }
+});
+
+/**
+ * Cancel a purchase order force delete.
+ *
+ * @remarks
+ * Only the Admin who asked, while it is Pending. Other Admins reject it.
+ */
+export const cancelPurchaseOrderForceDelete = defineServiceFn({
+  input: z.object({ requestId: z.string().min(1) }),
+  permission: { delete: "purchasing" },
+
+  async run(ctx, { requestId }) {
+    const db = ctx.asSystem.pg;
+    const companyId = ctx.company.id;
+    const userId = ctx.auditUserId;
+    const isAdmin = await service.isCompanyAdmin(db, { companyId, userId });
+
+    const request = await db
+      .selectFrom("purchaseOrderForceDeleteRequest")
+      .select(["id", "status", "requestedBy", "purchaseOrderId"])
+      .where("id", "=", requestId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!request)
+      return ctx.error("notFound", "Force delete request not found");
+    const refusal = purchaseOrderForceDeleteWithdrawRefusal({
+      intent: "cancel",
+      status: request.status,
+      requestedBy: request.requestedBy,
+      userId,
+      isAdmin
+    });
+    if (refusal) return ctx.error(isAdmin ? "rule" : "forbidden", refusal);
+
+    const now = datetime.timestamp();
+    const updated = await db
+      .updateTable("purchaseOrderForceDeleteRequest")
+      .set({
+        status: "Cancelled",
+        decidedBy: userId,
+        decidedAt: now,
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("id", "=", requestId)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Pending")
+      .returning("id")
+      .executeTakeFirst();
+    if (!updated) {
+      return ctx.error(
+        "conflict",
+        "This force delete request is no longer pending"
+      );
+    }
+    await service.auditForceDelete(ctx, {
+      purchaseOrderId: request.purchaseOrderId ?? requestId,
+      requestId,
+      operation: "UPDATE",
+      diff: { status: { old: "Pending", new: "Cancelled" } }
+    });
+    return { requestId, status: "Cancelled" as const };
   }
 });
 

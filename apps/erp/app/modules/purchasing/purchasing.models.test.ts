@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import {
   canCreatePurchaseOrderRevision,
   isPurchaseOrderBulkDeletable,
+  isPurchaseOrderForceDeleteConfirmed,
   isPurchaseOrderLocked,
   isPurchaseOrderPromisedDateEditable,
   leaseDetailsValidator,
@@ -21,8 +22,13 @@ import {
   leaseValidator,
   lockedReturnLineField,
   orderItemSupplierFiles,
+  PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED,
   PURCHASE_ORDER_LOCKED_STATUSES,
   purchaseOrderDeleteRefusal,
+  purchaseOrderForceDeleteApprovalRefusal,
+  purchaseOrderForceDeleteBlockerMessage,
+  purchaseOrderForceDeleteRequestValidator,
+  purchaseOrderForceDeleteWithdrawRefusal,
   purchaseOrderLineDateRefusal,
   purchaseOrderStatusType,
   purchaseOrderValidator,
@@ -803,5 +809,163 @@ describe("supplierContactEmailRequiredValidator", () => {
       email: "test@example.com"
     });
     expect(result.success).toBe(true);
+  });
+});
+
+describe("purchase order force delete", () => {
+  const noBlockers = {
+    receipts: [],
+    shipments: [],
+    invoices: [],
+    payments: []
+  };
+
+  it("needs two Admin approvals", () => {
+    expect(PURCHASE_ORDER_FORCE_DELETE_APPROVALS_REQUIRED).toBe(2);
+  });
+
+  describe("purchaseOrderForceDeleteBlockerMessage", () => {
+    it("allows an order nothing else names", () => {
+      expect(purchaseOrderForceDeleteBlockerMessage(noBlockers)).toBeNull();
+    });
+
+    it("names every document that still holds the order", () => {
+      const message = purchaseOrderForceDeleteBlockerMessage({
+        receipts: [{ readableId: "RE000001", status: "Posted" }],
+        shipments: [{ readableId: "SHP000002", status: "Draft" }],
+        invoices: [{ readableId: "PI000003", status: "Voided" }],
+        payments: [{ readableId: "PAY000004", status: "Posted" }]
+      });
+      expect(message).toContain("RE000001 (Posted)");
+      expect(message).toContain("SHP000002 (Draft)");
+      expect(message).toContain("PI000003 (Voided)");
+      expect(message).toContain("PAY000004 (Posted)");
+    });
+  });
+
+  describe("purchaseOrderForceDeleteApprovalRefusal", () => {
+    const base = {
+      status: "Pending",
+      requestedBy: "requester",
+      approvedBy: [] as string[],
+      userId: "admin-1",
+      isAdmin: true
+    };
+
+    it("lets another Admin approve", () => {
+      expect(purchaseOrderForceDeleteApprovalRefusal(base)).toBeNull();
+    });
+
+    it("refuses a non-Admin", () => {
+      expect(
+        purchaseOrderForceDeleteApprovalRefusal({ ...base, isAdmin: false })
+      ).toMatch(/Only an Admin/);
+    });
+
+    it("refuses the Admin who asked", () => {
+      expect(
+        purchaseOrderForceDeleteApprovalRefusal({
+          ...base,
+          userId: "requester"
+        })
+      ).toMatch(/other Admins must approve/);
+    });
+
+    it("refuses a second approval from the same Admin", () => {
+      expect(
+        purchaseOrderForceDeleteApprovalRefusal({
+          ...base,
+          approvedBy: ["admin-1"]
+        })
+      ).toMatch(/already approved/);
+    });
+
+    it.each(["Executed", "Rejected", "Cancelled"])(
+      "refuses a %s request",
+      (status) => {
+        expect(
+          purchaseOrderForceDeleteApprovalRefusal({ ...base, status })
+        ).toMatch(status.toLowerCase());
+      }
+    );
+  });
+
+  describe("purchaseOrderForceDeleteWithdrawRefusal", () => {
+    const base = {
+      status: "Pending",
+      requestedBy: "requester",
+      userId: "admin-1",
+      isAdmin: true
+    };
+
+    it("lets any Admin reject, the requester included", () => {
+      expect(
+        purchaseOrderForceDeleteWithdrawRefusal({ ...base, intent: "reject" })
+      ).toBeNull();
+      expect(
+        purchaseOrderForceDeleteWithdrawRefusal({
+          ...base,
+          intent: "reject",
+          userId: "requester"
+        })
+      ).toBeNull();
+    });
+
+    it("lets only the requester cancel", () => {
+      expect(
+        purchaseOrderForceDeleteWithdrawRefusal({ ...base, intent: "cancel" })
+      ).toMatch(/Only the Admin who asked/);
+      expect(
+        purchaseOrderForceDeleteWithdrawRefusal({
+          ...base,
+          intent: "cancel",
+          userId: "requester"
+        })
+      ).toBeNull();
+    });
+
+    it("refuses a non-Admin", () => {
+      expect(
+        purchaseOrderForceDeleteWithdrawRefusal({
+          ...base,
+          intent: "reject",
+          isAdmin: false
+        })
+      ).toMatch(/Only an Admin/);
+    });
+  });
+
+  describe("isPurchaseOrderForceDeleteConfirmed", () => {
+    it("matches the order number, ignoring case and spaces", () => {
+      expect(
+        isPurchaseOrderForceDeleteConfirmed(" po000123 ", "PO000123")
+      ).toBe(true);
+    });
+
+    it("refuses another number or an empty confirmation", () => {
+      expect(isPurchaseOrderForceDeleteConfirmed("PO000124", "PO000123")).toBe(
+        false
+      );
+      expect(isPurchaseOrderForceDeleteConfirmed("", "")).toBe(false);
+    });
+  });
+
+  describe("purchaseOrderForceDeleteRequestValidator", () => {
+    it("needs a reason of at least ten characters", () => {
+      expect(
+        purchaseOrderForceDeleteRequestValidator.safeParse({
+          intent: "request",
+          reason: "typo",
+          confirmation: "PO000123"
+        }).success
+      ).toBe(false);
+      expect(
+        purchaseOrderForceDeleteRequestValidator.safeParse({
+          intent: "request",
+          reason: "Wrong supplier and lines entered",
+          confirmation: "PO000123"
+        }).success
+      ).toBe(true);
+    });
   });
 });
