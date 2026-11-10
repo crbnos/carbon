@@ -139,6 +139,8 @@ services:
       SESSION_SECRET: __SESSION_SECRET__
       INNGEST_SIGNING_KEY: __INNGEST_SIGNING_KEY__
       INNGEST_EVENT_KEY: __INNGEST_EVENT_KEY__
+      # MES sends no email, but its env check requires a from-address.
+      SMTP_FROM: ${SMTP_FROM:-}
     volumes:
       - *shim
     healthcheck:
