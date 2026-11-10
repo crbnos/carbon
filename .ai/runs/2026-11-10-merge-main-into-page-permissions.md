@@ -165,3 +165,32 @@ through Approvals. Two bugs were fixed:
   sends grants, so every all-matching edit failed with "Failed to parse permissions". It now sends
   grants through `update-permissions`.
 - [x] Commit the merge (not pushed). The PR description update and push wait for the go-ahead.
+
+## Review fixes (2026-11-10, commit f6b4e4200d, 22b0146ad1)
+
+A five-reviewer pass over the whole branch found 11 must-fix problems and a set of sibling-page
+write gaps. Every finding was verified, then fixed. Full verification passed afterwards:
+typecheck (11 packages), lint, all test suites, 43/44 SQL tests (`integration-metadata-patch`
+fails on main too), the datasets, backups, manifest, workflow-catalog and license checks, and the
+173-page one-page-role pass.
+
+**Product decisions taken:**
+- Moved tables keep their writers. A page grant is given only where the new page is the table's own
+  home (`20261110101723_grants-for-moved-tables`). Elsewhere, the manifest also accepts the old page
+  as a writer (`writesAlso`).
+- A colleague's time is changed with Projects → Approvals at Edit. The manager path is removed.
+- The 14 Settings pages save their own columns as the system, after their page check.
+- Bulk "Update" with a module grant keeps the person's page overrides in that module. The spec is
+  silent on this.
+
+**Left as they are, for a decision:**
+- **No grant ceiling in the editors.** An editor can grant more than they hold. main has the same gap.
+- **Frozen personal Service overrides.** Most people get a personal Service = View override,
+  because main copied it from Sales. Role changes to Service then don't reach them.
+- **`transferCompanyOwnership` cannot work as the caller.** `companyGroup` has no update policy,
+  on main too.
+- **`createIntercompanyTransaction` writes as the caller** into the company it picks. That is
+  correct: RLS checks the caller's access there.
+- **Deploy pipeline order.** CI still runs migrations and the app deploy in separate workflows.
+  The code now works in either order, but making the deploy wait for migrations is still
+  recommended.
