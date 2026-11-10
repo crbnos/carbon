@@ -71,6 +71,7 @@ import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { MeasurementLimits } from "~/components/MeasurementLimits";
 import { ConfirmDelete } from "~/components/Modals";
 import { useImageUpload, usePermissions, useRouteData } from "~/hooks";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import { procedureStepType } from "~/modules/shared/shared.models";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
@@ -83,6 +84,11 @@ import type { Procedure, ProcedureParameter, ProcedureStep } from "../../types";
 const logger = getLogger("erp", "procedureexplorer");
 
 export default function ProcedureExplorer() {
+  const [tab, setTab] = usePersistentPageTab(
+    "procedure-explorer",
+    ["attributes", "parameters"],
+    "attributes"
+  );
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
   const procedureData = useRouteData<{
@@ -256,7 +262,8 @@ export default function ProcedureExplorer() {
     <>
       <VStack className="w-full h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] justify-between">
         <Tabs
-          defaultValue="attributes"
+          value={tab}
+          onValueChange={setTab}
           className="w-full flex-1 h-full flex flex-col"
         >
           <div className="w-full p-2">

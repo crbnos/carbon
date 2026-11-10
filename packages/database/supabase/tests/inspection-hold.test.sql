@@ -594,6 +594,9 @@ BEGIN
     INSERT INTO "location" ("name", "addressLine1", "city", "postalCode", "timezone", "companyId", "createdBy")
     VALUES ('HOLD-TEST-LOC2-' || substr(md5(random()::text), 1, 8), '1 Test St', 'Testville', '00000', 'UTC', company, usr)
     RETURNING "id" INTO moved_to;
+    PERFORM pg_temp.expect('one unit is not both the inspection and the rejected unit',
+      pg_temp.refused_edit(format('UPDATE "location" SET "rejectedStorageUnitId" = "inspectionStorageUnitId" WHERE "id" = %L', location),
+        '%two different units%')::text, 'true');
     PERFORM pg_temp.expect('the inspection unit is not moved to another location',
       pg_temp.refused_edit(format('UPDATE "storageUnit" SET "locationId" = %L WHERE "id" = %L', moved_to, unit),
         '%goods-in storage unit of%')::text, 'true');

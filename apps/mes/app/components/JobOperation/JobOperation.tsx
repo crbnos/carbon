@@ -154,7 +154,11 @@ import type {
 } from "~/services/types";
 import { useItems } from "~/stores";
 import { makeDurations } from "~/utils/durations";
-import { isKanbanCompleteScan, kanbanCompleteTarget } from "~/utils/kanban";
+import {
+  isKanbanCompleteScan,
+  kanbanCompleteTarget,
+  soleUnitId
+} from "~/utils/kanban";
 import { useOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 import ItemThumbnail from "../ItemThumbnail";
@@ -712,7 +716,8 @@ export const JobOperation = ({
         selectedEntityId: selected?.id ?? null,
         selectedIsIncomplete:
           !!selected &&
-          isSerialEntityIncompleteForOperation(selected, operation.id)
+          isSerialEntityIncompleteForOperation(selected, operation.id),
+        soleUnitId: soleUnitId(trackedEntities, operation.operationQuantity)
       });
       if (target.action === "select") {
         toast.info(t`Scan or select the unit, then scan the kanban card again`);

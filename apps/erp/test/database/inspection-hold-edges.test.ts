@@ -86,6 +86,7 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
     "track",
     "void-pa",
     "pa-to",
+    "ncr-msg",
     "pa-site",
     "rel-link",
     "two-p",
@@ -2650,6 +2651,39 @@ describe.skipIf(!hasLocalDatabase)("goods-in inspection hold edges", () => {
         .where("id", "=", result.created.id)
         .executeTakeFirstOrThrow();
       expect(transfer.locationId).toBe(f.otherLocationId);
+    },
+    60_000
+  );
+
+  it.skipIf(!client)(
+    "moving a Partial lot's held remainder names its NCR",
+    async () => {
+      const { issueId } = await partialLot("ncr-msg");
+      const readable = await f.db
+        .selectFrom("nonConformance")
+        .select("nonConformanceId")
+        .where("id", "=", issueId)
+        .executeTakeFirstOrThrow();
+      await expect(
+        withGuard(() =>
+          f.db
+            .insertInto("itemLedger")
+            .values({
+              entryType: "Negative Adjmt.",
+              documentType: "Inventory Count",
+              documentId: `${f.prefix}-ncr-msg-move`,
+              locationId: f.locationId,
+              itemId: f.partId,
+              storageUnitId: unitOf("ncr-msg"),
+              quantity: -10,
+              companyId: f.companyId,
+              createdBy: USER
+            })
+            .execute()
+        )
+      ).rejects.toThrow(
+        new RegExp(`until NCR ${readable.nonConformanceId} is completed`)
+      );
     },
     60_000
   );

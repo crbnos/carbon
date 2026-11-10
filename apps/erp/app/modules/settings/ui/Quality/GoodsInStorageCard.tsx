@@ -127,7 +127,10 @@ export function GoodsInStorageCard({
                     ariaLabel={t`${location.name} inspection storage unit`}
                     value={location.inspectionStorageUnitId}
                     storedUnit={location.inspectionStorageUnit}
-                    options={options}
+                    options={options.filter(
+                      (option) =>
+                        option.value !== location.rejectedStorageUnitId
+                    )}
                     placeholder={placeholder}
                     isPending={fetcher.isPending}
                     canEdit={canEditLocations}
@@ -140,7 +143,10 @@ export function GoodsInStorageCard({
                     ariaLabel={t`${location.name} rejected storage unit`}
                     value={location.rejectedStorageUnitId}
                     storedUnit={location.rejectedStorageUnit}
-                    options={options}
+                    options={options.filter(
+                      (option) =>
+                        option.value !== location.inspectionStorageUnitId
+                    )}
                     placeholder={placeholder}
                     isPending={fetcher.isPending}
                     canEdit={canEditLocations}

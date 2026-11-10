@@ -1320,8 +1320,8 @@ export const draftIssueSupplierReturn = defineServiceFn({
  * the shop floor. A non-tracked Inventory lot's value is written off through
  * `post-nonconformance` in the decision's transaction; when the write-off
  * fails the lot is not rejected. With `createNcr` false that is all
- * (`issueId` null). Otherwise an issue opens, of `nonConformanceTypeId` or the
- * first issue type, at the receipt line's location, else the caller's default
+ * (`issueId` null). Otherwise an issue opens, of `nonConformanceTypeId`, else a
+ * supplier or receiving issue type, else the first, at the receipt line's location, else the caller's default
  * location: its item's disposition row takes the lot quantity and Scrap, the
  * lot's entities and receipt line are linked to it, and its tasks are
  * created. The failed features, with their measured values against spec, and

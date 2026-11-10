@@ -353,7 +353,8 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   bins with untracked stock give the rest, fullest first. Those are active, nettable bins under
   no work center (`get_effective_work_center_id`, so a child of a lineside unit is lineside too)
   and no storage unit. A real shortfall goes to the last (common) stripe, on the named bin, else
-  the first bin drawn, else no storage unit. The bin reads come from `getUntrackedBinStock`
+  the first bin drawn, else no storage unit. A Non-Inventory material holds no stock: both
+  backflushes issue it with no ledger row and no cost (`20261106213428_backflush-skips-non-inventory.sql`). The bin reads come from `getUntrackedBinStock`
   (`shared.service.ts`, one row per bin and stripe). Before it reads, each path locks every
   (location, item) it draws (`lockUntrackedDraws`, key `untracked-draw:<companyId>:<locationId>:<itemId>`,
   `untrackedDrawLockKey`; the SQL locks the same keys in the same key-hash order outside strict

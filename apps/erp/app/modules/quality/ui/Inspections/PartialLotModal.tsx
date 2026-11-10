@@ -23,6 +23,7 @@ import { INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import { useQuantityFormatter } from "~/hooks";
+import { receiptLotIssueType } from "~/modules/quality/quality.utils";
 import type { IssueTypeListItem } from "~/modules/quality/types";
 import { IssueTypeField } from "./OpenNcrModal";
 
@@ -60,7 +61,7 @@ const PartialLotModal = ({
   const [createNcr, setCreateNcr] = useState(true);
   const [reason, setReason] = useState("");
   const [issueTypeId, setIssueTypeId] = useState<string>(
-    issueTypes[0]?.id ?? ""
+    receiptLotIssueType(issueTypes)?.id ?? ""
   );
 
   const formatQuantity = useQuantityFormatter();

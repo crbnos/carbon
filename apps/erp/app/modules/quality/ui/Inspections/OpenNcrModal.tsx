@@ -26,6 +26,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
+import { receiptLotIssueType } from "~/modules/quality/quality.utils";
 import type { IssueTypeListItem } from "~/modules/quality/types";
 
 export function IssueTypeField({
@@ -101,7 +102,7 @@ const OpenNcrModal = ({
   });
   const submitted = useRef(false);
   const [issueTypeId, setIssueTypeId] = useState<string>(
-    issueTypes[0]?.id ?? ""
+    receiptLotIssueType(issueTypes)?.id ?? ""
   );
 
   return (

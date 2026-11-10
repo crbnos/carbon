@@ -66,3 +66,25 @@ export const revalidateIgnoringPivotDisplay: ShouldRevalidateFunction = ({
 
   return defaultShouldRevalidate;
 };
+
+/** Tree/list tabs only change client-side display, not the route's loader data. */
+export const revalidateIgnoringTabDisplay: ShouldRevalidateFunction = ({
+  currentUrl,
+  nextUrl,
+  formMethod,
+  defaultShouldRevalidate
+}) => {
+  if (formMethod && formMethod !== "GET") return defaultShouldRevalidate;
+  if (currentUrl.pathname !== nextUrl.pathname) return defaultShouldRevalidate;
+  if (currentUrl.search === nextUrl.search) return defaultShouldRevalidate;
+
+  const current = new URLSearchParams(currentUrl.search);
+  const next = new URLSearchParams(nextUrl.search);
+  current.delete("tab");
+  next.delete("tab");
+  current.sort();
+  next.sort();
+  return current.toString() === next.toString()
+    ? false
+    : defaultShouldRevalidate;
+};

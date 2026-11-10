@@ -28,6 +28,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
+import { receiptLotIssueType } from "~/modules/quality/quality.utils";
 import type { IssueTypeListItem } from "~/modules/quality/types";
 
 export type FailedFeatureSummary = {
@@ -74,7 +75,7 @@ const RejectLotModal = ({
   const [createNcr, setCreateNcr] = useState(true);
   const [reason, setReason] = useState("");
   const [issueTypeId, setIssueTypeId] = useState<string>(
-    issueTypes[0]?.id ?? ""
+    receiptLotIssueType(issueTypes)?.id ?? ""
   );
 
   const hasIssueTypes = issueTypes.length > 0;

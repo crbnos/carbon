@@ -140,7 +140,8 @@ export const attachments = {
     statement: [
       "broadcast_table_changes",
       "log_table_changes",
-      "queue_pmi_inspection_plans"
+      "queue_pmi_inspection_plans",
+      "sync_item_tracking_type_change"
     ]
   },
   itemCost: { events: true },

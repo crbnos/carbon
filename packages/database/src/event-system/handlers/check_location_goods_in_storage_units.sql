@@ -20,6 +20,11 @@ BEGIN
     RETURN;
   END IF;
 
+  IF p_new->>'inspectionStorageUnitId' IS NOT NULL
+     AND p_new->>'inspectionStorageUnitId' = p_new->>'rejectedStorageUnitId' THEN
+    RAISE EXCEPTION 'The inspection and rejected storage units must be two different units.';
+  END IF;
+
   FOREACH v_column IN ARRAY ARRAY['inspectionStorageUnitId', 'rejectedStorageUnitId'] LOOP
     v_unit := p_new->>v_column;
     CONTINUE WHEN v_unit IS NULL;

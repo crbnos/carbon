@@ -74,6 +74,8 @@ AS $function$
 -- transaction. A plain RAISE (P0001): the API passes its text to the person;
 -- any other SQLSTATE reads as a server failure and is withheld.
 DECLARE
+  v_company   TEXT;
+  v_ncr       TEXT;
   v_companies TEXT[];
   v_items     TEXT[];
   v_units     TEXT[];
@@ -130,7 +132,7 @@ BEGIN
     );
   END LOOP;
 
-  SELECT k.i, k.u INTO v_item_id, v_unit
+  SELECT k.c, k.i, k.u INTO v_company, v_item_id, v_unit
   FROM unnest(v_companies, v_items, v_units) AS k(c, i, u)
   CROSS JOIN LATERAL (
     SELECT
@@ -143,6 +145,29 @@ BEGIN
   IF FOUND THEN
     SELECT "readableIdWithRevision" INTO v_item FROM "item" WHERE "id" = v_item_id;
     SELECT "name" INTO v_unit_name FROM "storageUnit" WHERE "id" = v_unit;
+    -- A decided Partial lot's remainder is released by its NCR, not by Quality.
+    SELECT nc."nonConformanceId" INTO v_ncr
+    FROM "inspection" i
+    JOIN "nonConformanceInspection" nci ON nci."inspectionId" = i."id"
+    JOIN "nonConformance" nc ON nc."id" = nci."nonConformanceId"
+    WHERE i."companyId" = v_company
+      AND i."itemId" = v_item_id
+      AND i."storageUnitId" = v_unit
+      AND i."status" = 'Partial'
+      AND public.inspection_lot_holds(i."id", i."status", i."acceptedQuantity")
+      AND NOT EXISTS (
+        SELECT 1 FROM "inspection" o
+        WHERE o."companyId" = v_company
+          AND o."itemId" = v_item_id
+          AND o."storageUnitId" = v_unit
+          AND o."status" IN ('Pending', 'In Progress')
+      )
+    ORDER BY nc."nonConformanceId"
+    LIMIT 1;
+    IF FOUND THEN
+      RAISE EXCEPTION '% is held for inspection in % until NCR % is completed.',
+        COALESCE(v_item, v_item_id), COALESCE(v_unit_name, v_unit), v_ncr;
+    END IF;
     RAISE EXCEPTION '% is held for inspection in %. Quality must decide its inspection lot before it can move.',
       COALESCE(v_item, v_item_id), COALESCE(v_unit_name, v_unit);
   END IF;
@@ -304,6 +329,11 @@ BEGIN
   IF current_setting('app.inspection_release', true) = 'on'
      OR current_setting('app.sync_in_progress', true) = 'true' THEN
     RETURN;
+  END IF;
+
+  IF p_new->>'inspectionStorageUnitId' IS NOT NULL
+     AND p_new->>'inspectionStorageUnitId' = p_new->>'rejectedStorageUnitId' THEN
+    RAISE EXCEPTION 'The inspection and rejected storage units must be two different units.';
   END IF;
 
   FOREACH v_column IN ARRAY ARRAY['inspectionStorageUnitId', 'rejectedStorageUnitId'] LOOP
@@ -600,7 +630,7 @@ $function$;
 -- event triggers (packages/database/src/event-system/attachments.ts)
 SET lock_timeout = '5s';
 SELECT set_event_triggers('inspection', ARRAY['check_inspection_lot_release']::text[], ARRAY['sync_receipt_inspection_status']::text[], false, ARRAY['broadcast_table_changes']::text[]);
-SELECT set_event_triggers('item', ARRAY['check_item_inspection_hold']::text[], ARRAY['sync_create_item_related_records', 'sync_create_make_method_related_records', 'sync_propagate_item_readable_id_to_tracked_entity']::text[], true, ARRAY['broadcast_table_changes', 'log_table_changes', 'queue_pmi_inspection_plans']::text[]);
+SELECT set_event_triggers('item', ARRAY['check_item_inspection_hold']::text[], ARRAY['sync_create_item_related_records', 'sync_create_make_method_related_records', 'sync_propagate_item_readable_id_to_tracked_entity']::text[], true, ARRAY['broadcast_table_changes', 'log_table_changes', 'queue_pmi_inspection_plans', 'sync_item_tracking_type_change']::text[]);
 SELECT set_event_triggers('itemLedger', ARRAY[]::text[], ARRAY[]::text[], false, ARRAY['apply_item_stock_quantities', 'broadcast_table_changes', 'check_inspection_hold', 'queue_kanban_level_checks']::text[]);
 SELECT set_event_triggers('location', ARRAY['check_location_goods_in_storage_units']::text[], ARRAY['sync_create_location_related_records']::text[], true, ARRAY['broadcast_reference_changes']::text[]);
 SELECT set_event_triggers('nonConformance', ARRAY['check_nonconformance_inspection_release']::text[], ARRAY['sync_advance_document_sequence']::text[], true, ARRAY['broadcast_table_changes']::text[]);

@@ -260,7 +260,6 @@ import {
 } from "~/modules/invoicing/invoicing.service";
 import { canEditChangeNoticeEngineering } from "~/modules/items/items.models";
 import {
-  cascadeItemTrackingType,
   createMakeMethodVersion,
   createRevision,
   deleteChangeNotice,
@@ -5312,14 +5311,9 @@ const STANDARD_FIELD_WRITERS: Record<
       })
       .eq("id", ctx.itemId)
       .eq("companyId", ctx.companyId);
-    if (updated.error) return updated.error.message;
-    await cascadeItemTrackingType(ctx.db, {
-      itemIds: [ctx.itemId],
-      companyId: ctx.companyId,
-      newType: write.itemTrackingType,
-      userId: ctx.userId
-    });
-    return null;
+    // The database gives the new flags to the open documents in the same
+    // statement (`sync_item_tracking_type_change`), or refuses the change.
+    return updated.error ? updated.error.message : null;
   },
   itemColumn: async (ctx, write) => {
     const updated = await updateItemColumns(ctx.client, {

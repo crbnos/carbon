@@ -23,6 +23,7 @@ import { z } from "zod";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import { receiptLotIssueType } from "./quality.utils";
 
 const logger = getLogger("erp", "quality");
 
@@ -6598,10 +6599,10 @@ export async function inspectionNcrPrerequisite(
     getUserDefaults(client, ctx.auditUserId, ctx.company.id),
     getIssueTypesList(client, ctx.company.id)
   ]);
-  // The same choice openInspectionNcr makes: the given type, else the first.
+  // The same choice openInspectionNcr makes.
   const issueType =
     issueTypes.data?.find((type) => type.id === args.nonConformanceTypeId) ??
-    issueTypes.data?.[0];
+    receiptLotIssueType(issueTypes.data);
   if (!issueType) {
     return "Configure an issue type first. The rejected part of the lot needs an NCR.";
   }
@@ -6678,7 +6679,7 @@ export async function openInspectionNcr(
 
   const issueType =
     issueTypes.data?.find((t) => t.id === nonConformanceTypeId) ??
-    issueTypes.data?.[0];
+    receiptLotIssueType(issueTypes.data);
   const locationId = lotLocationId ?? userDefaults.data?.locationId ?? null;
   if (!issueType || !locationId) {
     return ctx.error(
