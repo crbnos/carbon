@@ -15278,6 +15278,7 @@ export type Database = {
       }
       customerStatus: {
         Row: {
+          color: string | null
           companyId: string
           createdAt: string
           createdBy: string
@@ -15289,6 +15290,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          color?: string | null
           companyId: string
           createdAt?: string
           createdBy: string
@@ -15300,6 +15302,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          color?: string | null
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -79072,6 +79075,7 @@ export type Database = {
       }
       supplierStage: {
         Row: {
+          color: string | null
           companyId: string
           createdAt: string
           createdBy: string
@@ -79081,6 +79085,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          color?: string | null
           companyId: string
           createdAt?: string
           createdBy: string
@@ -79090,6 +79095,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          color?: string | null
           companyId?: string
           createdAt?: string
           createdBy?: string

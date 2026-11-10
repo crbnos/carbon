@@ -23,7 +23,7 @@ import {
   SUPPLIERS_PAGING
 } from "~/modules/purchasing/purchasing.service";
 import type { SupplierReportContacts } from "~/modules/purchasing/types";
-import { SUPPLIER_CONTACT_VALUES } from "~/modules/purchasing/ui/Supplier/supplier-list-export";
+import { SUPPLIER_EXPORT_VALUES } from "~/modules/purchasing/ui/Supplier/supplier-list-export";
 import type { ListDefinition, ListRowsContext } from "./index.server";
 import { searchList } from "./index.server";
 
@@ -122,7 +122,7 @@ export const suppliersList = searchList({
   service: getSuppliers,
   params: { type: "type", status: "status" },
   rows: withSupplierReportContacts,
-  exportValues: SUPPLIER_CONTACT_VALUES
+  exportValues: SUPPLIER_EXPORT_VALUES
 });
 
 export const leasesList = searchList({

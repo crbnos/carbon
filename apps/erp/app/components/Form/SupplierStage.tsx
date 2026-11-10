@@ -5,10 +5,11 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
+import { asColor } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { Enumerable } from "~/components/Enumerable";
+import { useDrawerItem } from "~/hooks";
 import type { getSupplierStagesList } from "~/modules/purchasing/purchasing.service";
 import SupplierStageForm from "~/modules/purchasing/ui/SupplierStages/SupplierStageForm";
 import { path } from "~/utils/path";
@@ -18,44 +19,41 @@ type SupplierStageSelectProps = Omit<ComboboxProps, "options">;
 
 const SupplierStage = (props: SupplierStageSelectProps) => {
   const { t } = useLingui();
-  const newSupplierStageModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useSupplierStages();
 
   const emptyMessage = useEmptyState("supplierStage", {
-    onCreate: () => newSupplierStageModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
     <>
       <CreatableCombobox
         ref={triggerRef}
-        options={
-          options.map((o) => ({
-            value: o.value,
-            label: <Enumerable value={o.label} />
-          })) ?? []
-        }
+        options={options.map((o) => ({
+          value: o.value,
+          label: <Enumerable value={o.label} color={o.color} />
+        }))}
         emptyMessage={emptyMessage}
         {...props}
         label={props?.label ?? t`Supplier Stage`}
         onCreateOption={(option) => {
-          newSupplierStageModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newSupplierStageModal.isOpen && (
+      {create.item !== null && (
         <SupplierStageForm
+          key={create.key}
           type="modal"
+          open={create.isOpen}
           onClose={() => {
-            setCreated("");
-            newSupplierStageModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created
+            name: create.item
           }}
         />
       )}
@@ -76,7 +74,8 @@ export const useSupplierStages = () => {
     () =>
       (supplierStageFetcher.data?.data ?? []).map((stage) => ({
         value: stage.id,
-        label: stage.name
+        label: stage.name,
+        color: asColor(stage.color)
       })),
     [supplierStageFetcher.data?.data]
   );

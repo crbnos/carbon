@@ -86,6 +86,7 @@ const ItemRecordHeader = ({
       <DropdownMenuItem
         disabled={
           !permissions.can("create", "purchasing") ||
+          !permissions.can("view", "purchasing") ||
           !permissions.is("employee")
         }
         onClick={requestQuoteModal.onOpen}

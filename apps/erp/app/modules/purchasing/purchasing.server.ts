@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
-import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import {
   type Database,
   fetchAllByIds,
@@ -37,6 +37,7 @@ import { NotificationEvent } from "@carbon/notifications";
 import type { JSONContent } from "@carbon/react";
 import {
   applyRate,
+  colorNames,
   datetime,
   deriveRate,
   groupBy,
@@ -7798,13 +7799,17 @@ export const getSupplierStagesList = defineServiceFn({
  * @mcp
  */
 export const createSupplierStage = defineServiceFn({
-  input: z.object({ name: z.string().trim().min(1) }),
+  input: z.object({
+    name: z.string().trim().min(1),
+    color: z.enum(colorNames).nullish()
+  }),
   permission: { create: "purchasing" },
-  async run(ctx, { name }) {
+  async run(ctx, { name, color }) {
     return unwrap(
       ctx,
       await service.insertSupplierStage(ctx.asCaller.supabase, {
         name,
+        color: color ?? null,
         companyId: ctx.company.id,
         createdBy: ctx.auditUserId
       })
@@ -7815,17 +7820,24 @@ export const createSupplierStage = defineServiceFn({
 /**
  * Update a supplier stage
  *
+ * @param color - A badge color. Leave out to keep the stage's color; null clears it.
+ *
  * @mcp
  */
 export const updateSupplierStage = defineServiceFn({
-  input: z.object({ id: z.string(), name: z.string().trim().min(1) }),
+  input: z.object({
+    id: z.string(),
+    name: z.string().trim().min(1),
+    color: z.enum(colorNames).nullish()
+  }),
   permission: { update: "purchasing" },
-  async run(ctx, { id, name }) {
+  async run(ctx, { id, name, color }) {
     return unwrap(
       ctx,
       await service.updateSupplierStage(ctx.asCaller.supabase, {
         id,
         name,
+        color,
         companyId: ctx.company.id,
         updatedBy: ctx.auditUserId
       })
@@ -7863,7 +7875,8 @@ export const deleteSupplierStage = defineServiceFn({
  */
 export const getRequestQuoteRows = defineServiceFn({
   input: z.object({ itemId: z.string().min(1) }),
-  permission: { view: "purchasing" },
+  // The Bill of Material is read as the caller, and parts_view guards it.
+  permission: { view: ["purchasing", "parts"] },
 
   async run(ctx, { itemId }) {
     const client = ctx.asCaller.supabase;
@@ -7871,7 +7884,7 @@ export const getRequestQuoteRows = defineServiceFn({
 
     const item = await client
       .from("item")
-      .select("id, readableIdWithRevision, name")
+      .select("id, readableIdWithRevision, name, replenishmentSystem")
       .eq("id", itemId)
       .eq("companyId", companyId)
       .single();
@@ -7954,6 +7967,7 @@ export const getRequestQuoteRows = defineServiceFn({
         id: item.data.id,
         readableId: item.data.readableIdWithRevision ?? "",
         name: item.data.name,
+        replenishmentSystem: item.data.replenishmentSystem,
         defaultSupplierId: defaultSupplierId(itemId)
       },
       rows: lines.map((line) => ({
@@ -7979,15 +7993,20 @@ export const requestQuoteFromItem = defineServiceFn({
 
   async run(ctx, { locationId, lines }) {
     const companyId = ctx.company.id;
-    const rfqs = await service.insertRequestQuoteRfqs(ctx.asSystem.pg, {
-      companyId,
-      userId: ctx.auditUserId,
-      rfqDate: datetime
-        .today(await getCompanyTimeZone(ctx.asSystem.supabase, companyId))
-        .toString(),
-      locationId,
-      groups: groupRequestQuoteLines(lines)
-    });
+    const rfqDate = datetime
+      .today(await getCompanyTimeZone(ctx.asSystem.supabase, companyId))
+      .toString();
+    // `run` turns the building block's not-found refusal into a 400 with its message.
+    const rfqs = await run(ctx, "requestQuoteFromItem", () =>
+      service.insertRequestQuoteRfqs(ctx.asSystem.pg, {
+        companyId,
+        userId: ctx.auditUserId,
+        rfqDate,
+        locationId,
+        groups: groupRequestQuoteLines(lines)
+      })
+    );
+    if (rfqs instanceof CarbonError) return rfqs;
     return { rfqs };
   }
 });

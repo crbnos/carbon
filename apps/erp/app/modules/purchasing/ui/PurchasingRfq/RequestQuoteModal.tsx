@@ -19,6 +19,7 @@ import {
   MultiSelect,
   NumberField,
   NumberInput,
+  SHORTCUTS,
   Spinner,
   Table,
   Tabs,
@@ -31,11 +32,11 @@ import {
   Tr,
   VStack
 } from "@carbon/react";
+import { round } from "@carbon/utils";
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { useMemo, useRef, useState } from "react";
-import { useHotkeys } from "react-hotkeys-hook";
 import { useFetcher } from "react-router";
 import { useSupplierApprovalRequired, useUser } from "~/hooks";
 import { useQuantityFormatter } from "~/hooks/useQuantityFormatter";
@@ -131,16 +132,22 @@ const RequestQuoteForm = ({
 
   const { item, rows } = data;
   const hasBom = rows.length > 0;
-  const [quoteBom, setQuoteBom] = useState(hasBom);
+  // A bought part is usually quoted on its own; anything made, for its parts.
+  const [pickedQuoteBom, setQuoteBom] = useState<boolean | null>(null);
+  const quoteBom =
+    pickedQuoteBom ?? (hasBom && item.replenishmentSystem !== "Buy");
   const [builds, setBuilds] = useState(1);
   const [itemQuantity, setItemQuantity] = useState(1);
   const [search, setSearch] = useState("");
   const [unticked, setUnticked] = useState<Set<string>>(new Set());
   const [chosen, setChosen] = useState<Record<string, string>>({});
-  const [itemSuppliers, setItemSuppliers] = useState<string[]>(() => {
-    const supplierId = usable(item.defaultSupplierId);
-    return supplierId ? [supplierId] : [];
-  });
+  // Only the user's pick; until then the default, once the suppliers load.
+  const [pickedItemSuppliers, setItemSuppliers] = useState<string[] | null>(
+    null
+  );
+  const defaultItemSupplier = usable(item.defaultSupplierId);
+  const itemSuppliers =
+    pickedItemSuppliers ?? (defaultItemSupplier ? [defaultItemSupplier] : []);
 
   const supplierOf = (row: (typeof rows)[number]) =>
     chosen[row.itemId] ?? usable(row.defaultSupplierId);
@@ -176,7 +183,7 @@ const RequestQuoteForm = ({
         .filter((row) => supplierOf(row))
         .map((row) => ({
           itemId: row.itemId,
-          quantity: row.quantity * builds,
+          quantity: round(row.quantity * builds),
           supplierIds: [supplierOf(row)]
         }))
     : itemSuppliers.length > 0 && itemQuantity > 0
@@ -207,13 +214,6 @@ const RequestQuoteForm = ({
       }
     );
   };
-
-  // Reads the latest `submit` when the keys fire, not one from an older render.
-  const submitRef = useRef(submit);
-  submitRef.current = submit;
-  useHotkeys("mod+enter", () => submitRef.current(), {
-    enableOnFormTags: true
-  });
 
   const setTicked = (itemId: string, isTicked: boolean) => {
     setUnticked((current) => {
@@ -247,11 +247,11 @@ const RequestQuoteForm = ({
                   onValueChange={(value) => setQuoteBom(value === "bom")}
                 >
                   <TabsList>
-                    <TabsTrigger value="bom">
-                      <Trans>Bill of Material</Trans>
-                    </TabsTrigger>
                     <TabsTrigger value="item">
                       <Trans>This part only</Trans>
+                    </TabsTrigger>
+                    <TabsTrigger value="bom">
+                      <Trans>Bill of Material</Trans>
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
@@ -370,7 +370,7 @@ const RequestQuoteForm = ({
                             : row.usedIn[0]}
                         </Td>
                         <Td className="text-right tabular-nums">
-                          {formatQuantity(row.quantity * builds)}
+                          {formatQuantity(round(row.quantity * builds))}
                         </Td>
                         <Td className="text-muted-foreground">
                           {row.unitOfMeasureCode}
@@ -452,6 +452,7 @@ const RequestQuoteForm = ({
         <Button
           isDisabled={!canCreate || isSubmitting}
           isLoading={isSubmitting}
+          shortcut={SHORTCUTS.save}
           onClick={submit}
         >
           {rfqCount > 1 ? (

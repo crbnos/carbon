@@ -5,7 +5,8 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
 import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
+import { asColor } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { supplierStageValidator } from "~/modules/purchasing/purchasing.models";
@@ -32,11 +33,16 @@ export async function loader(args: LoaderFunctionArgs) {
 export async function action(args: ActionFunctionArgs) {
   const input = await validator(supplierStageValidator).request(args);
   if ("invalid" in input) return input.invalid;
-  const { id, name } = input.data;
+  const { id, name, color } = input.data;
   if (!id) throw notFound("id not found");
 
   const api = await carbon(args.request);
-  const result = await api.purchasing.updateSupplierStage({ id, name });
+  const result = await api.purchasing.updateSupplierStage({
+    id,
+    name,
+    // The form always sends the color; empty clears it.
+    color: color ?? null
+  });
 
   return respond(args.request, result).redirect(path.to.supplierStages, {
     message: "Updated supplier stage"
@@ -45,13 +51,18 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function EditSupplierStageRoute() {
   const { supplierStage } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   return (
     <SupplierStageForm
       key={supplierStage.id}
-      initialValues={{ id: supplierStage.id, name: supplierStage.name }}
-      onClose={() => closeRoute()}
+      initialValues={{
+        id: supplierStage.id,
+        name: supplierStage.name,
+        color: asColor(supplierStage.color)
+      }}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

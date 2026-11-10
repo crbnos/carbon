@@ -1461,7 +1461,7 @@ msgid "Location"
 msgstr "Standort"
 
 msgid "Locations"
-msgstr ""
+msgstr "Standorte"
 
 msgid "Log completed"
 msgstr "Fertigstellung protokollieren"

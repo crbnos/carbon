@@ -5,7 +5,7 @@
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { supplierStageValidator } from "~/modules/purchasing/purchasing.models";
 import SupplierStageForm from "~/modules/purchasing/ui/SupplierStages/SupplierStageForm";
@@ -25,7 +25,8 @@ export async function action(args: ActionFunctionArgs) {
 
   const api = await carbon(args.request);
   const result = await api.purchasing.createSupplierStage({
-    name: input.data.name
+    name: input.data.name,
+    color: input.data.color
   });
 
   // The inline create on the supplier form stays open on its own page.
@@ -38,12 +39,13 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function NewSupplierStageRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   return (
     <SupplierStageForm
       initialValues={{ name: "" }}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

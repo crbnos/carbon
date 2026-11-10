@@ -142,7 +142,16 @@ const SuppliersTable = memo(function SuppliersTable({
       {
         accessorKey: "supplierStageId",
         header: t`Stage`,
-        cell: ({ row }) => <Enumerable value={row.original.stage ?? ""} />,
+        cell: ({ row }) => (
+          <Enumerable
+            value={row.original.stage ?? ""}
+            color={
+              supplierStages.find(
+                (s) => s.value === row.original.supplierStageId
+              )?.color
+            }
+          />
+        ),
         meta: {
           mobile: "P2",
           icon: <LuFlag />,
@@ -152,7 +161,7 @@ const SuppliersTable = memo(function SuppliersTable({
             type: "static",
             options: supplierStages?.map((stage) => ({
               value: stage.value,
-              label: <Enumerable value={stage.label} />
+              label: <Enumerable value={stage.label} color={stage.color} />
             }))
           }
         }

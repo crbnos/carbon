@@ -613,7 +613,7 @@ msgstr "{0} saat başına"
 
 #. placeholder {0}: row.usedIn.length
 msgid "{0} places"
-msgstr ""
+msgstr "{0} yer"
 
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
@@ -1101,7 +1101,7 @@ msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} eksik muhasebe fişi ve {mismatchCount} uyumsuz ay"
 
 msgid "{missingSupplier, plural, one {# ticked part needs a supplier. Choose one or untick it.} other {# ticked parts need a supplier. Choose one or untick them.}}"
-msgstr ""
+msgstr "{missingSupplier, plural, one {# işaretli parça için tedarikçi gerekli. Tedarikçi seçin veya işaretini kaldırın.} other {# işaretli parça için tedarikçi gerekli. Tedarikçi seçin veya işaretlerini kaldırın.}}"
 
 msgid "{name} at {station}"
 msgstr "{name} adlı {station}"
@@ -1973,7 +1973,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "Sorununun başka yerlerde tekrarlanmasını durduran uygunsuzluk görevi — düzeltici onarım ve çevrelemeden farklı."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr ""
+msgstr "Bir rakamın yanındaki sayı veya işaret, söylediği anlamı değiştirir. Aralarına bir kelime yazın."
 
 msgid "A part"
 msgstr "Bir parça"
@@ -2036,10 +2036,10 @@ msgid "A project, or a project and one of its elements, that a job, a purchase o
 msgstr "Bir proje veya bir projenin ve onun elementlerinden birinin, bir iş emri, satın alma siparişi veya fatura satırı, zaman çizelgesi girişi veya malzeme çıkışının maliyetini yüklendiği yer. Yalnızca Serbest bırakıldı projeleri ve Başlamamış veya Başlamış durumundaki faturalandırılabilir elementler seçilebilir."
 
 msgid "A promised date is optional to finalize"
-msgstr ""
+msgstr "Sonuçlandırmak için taahhüt tarihi isteğe bağlı"
 
 msgid "A promised date is required to finalize"
-msgstr ""
+msgstr "Sonuçlandırmak için taahhüt tarihi zorunlu"
 
 msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
 msgstr "Kesme tarihinden önce tarihlendirilmiş bir Geçici muhasebe fişi; muhasebebi ayarladığında bunu açılış fişiyle değiştirir ve asla değişemez."
@@ -2053,8 +2053,8 @@ msgstr "Her son tarih için bir alış faturası hazırlanır, her varlığın �
 msgid "A purchase invoice is posted"
 msgstr "Alış faturası muhasebeleştirildi"
 
-msgid "A purchase order cannot leave Draft or Planned until it has a supplier promised date. A date on the order covers every line. Keep this off if suppliers give you a date after they receive the order."
-msgstr ""
+msgid "A purchase order cannot be finalized until it has a supplier promised date. A date on the order covers every line. Keep this off if suppliers give you a date after they receive the order."
+msgstr "Satın alma siparişi, tedarikçi taahhüt tarihine sahip olmadan sonuçlandırılamaz. Siparişteki tek bir tarih tüm satırları kapsar. Tedarikçiler siparişi aldıktan sonra tarih veriyorsa bunu kapalı tutun."
 
 msgid "A purchase order is created"
 msgstr "Bir satın alma siparişi oluşturuldu"
@@ -2959,7 +2959,7 @@ msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Etiketleri doğrudan yazdırmak için yazdırma ayarlarında bir yazıcı ekleyin."
 
 msgid "Add a promised date before you finalize this purchase order."
-msgstr ""
+msgstr "Bu satın alma siparişini sonuçlandırmadan önce bir taahhüt tarihi ekleyin."
 
 msgid "Add a requirement"
 msgstr "Gereklilik ekle"
@@ -4686,7 +4686,7 @@ msgstr "Depolama birimini silmek istediğinizden emin misiniz: {0}? Bu geri alı
 
 #. placeholder {0}: supplierStage.name
 msgid "Are you sure you want to delete the supplier stage: {0}? This cannot be undone."
-msgstr ""
+msgstr "{0} tedarikçi aşamasını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
 #. placeholder {0}: supplierType.name
 msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
@@ -5837,6 +5837,9 @@ msgstr "Makineyi Engeller"
 msgid "Blocks save until resolved"
 msgstr "Çözülene kadar kaydetmeyi engeller"
 
+msgid "Blue"
+msgstr "Mavi"
+
 msgid "Board"
 msgstr "Pano"
 
@@ -5942,6 +5945,9 @@ msgstr "Parçalarınızı, BOM'ları, Operasyon listesini ve maliyetlendirmeyi g
 msgid "Broadcast reply to channel"
 msgstr "Kanala yayın cevabı"
 
+msgid "Brown"
+msgstr "Kahverengi"
+
 msgid "Browse library"
 msgstr "Kütüphaneyi göz at"
 
@@ -6012,7 +6018,7 @@ msgid "Build tailored, role-based training materials"
 msgstr "Özelleştirilmiş, rol tabanlı eğitim materyalleri oluşturun"
 
 msgid "Builds"
-msgstr ""
+msgstr "Üretimler"
 
 msgid "Built after this step"
 msgstr "Bu adımdan sonra inşa edildi"
@@ -6890,7 +6896,7 @@ msgid "Choose another file"
 msgstr "Başka bir dosya seç"
 
 msgid "Choose at least one part and a supplier."
-msgstr ""
+msgstr "En az bir parça ve bir tedarikçi seçin."
 
 msgid "Choose avatar"
 msgstr "Avatar seç"
@@ -6911,10 +6917,10 @@ msgid "Choose stock to move"
 msgstr "Taşınacak stoğu seçin"
 
 msgid "Choose supplier"
-msgstr ""
+msgstr "Tedarikçi seçin"
 
 msgid "Choose suppliers"
-msgstr ""
+msgstr "Tedarikçileri seçin"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "Geçerli dönem veya bundan önceki 3 dönemden birinin ilk gününü seçin."
@@ -8648,7 +8654,7 @@ msgid "Create {name}"
 msgstr "Oluştur {name}"
 
 msgid "Create {rfqCount} RFQs"
-msgstr ""
+msgstr "{rfqCount} teklif talebi oluştur"
 
 msgid "Create & Release"
 msgstr "Oluştur ve Serbest Bırak"
@@ -8786,7 +8792,7 @@ msgid "Create Revision"
 msgstr "Revizyon Oluştur"
 
 msgid "Create RFQ"
-msgstr ""
+msgstr "Teklif talebi oluştur"
 
 msgid "Create Rule"
 msgstr "Kural Oluştur"
@@ -8950,7 +8956,7 @@ msgid "Created storage type"
 msgstr "Depolama türü oluşturuldu"
 
 msgid "Created supplier stage"
-msgstr ""
+msgstr "Tedarikçi aşaması oluşturuldu"
 
 #. placeholder {0}: created.name
 msgid "Created supplier: {0}"
@@ -8972,7 +8978,7 @@ msgid "Created work center"
 msgstr "İş merkezi oluşturuldu"
 
 msgid "Creates {rfqCount, plural, one {# draft RFQ} other {# draft RFQs}}. Nothing goes to a supplier until you finalize."
-msgstr ""
+msgstr "{rfqCount, plural, one {# taslak teklif talebi} other {# taslak teklif talebi}} oluşturur. Siz sonuçlandırana kadar hiçbiri tedarikçiye gönderilmez."
 
 msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
 msgstr "Henüz ödenmemiş sevkiyat miktarları için taslak bir tedarikçi alacak dekontu oluşturur"
@@ -10260,7 +10266,7 @@ msgid "Delete Supplier Return"
 msgstr "Tedarikçi İadesini Sil"
 
 msgid "Delete Supplier Stage"
-msgstr ""
+msgstr "Tedarikçi aşamasını sil"
 
 msgid "Delete Supplier Type"
 msgstr "Tedarikçi Türünü Sil"
@@ -11738,7 +11744,7 @@ msgid "Edit supplier process"
 msgstr "Tedarikçi Prosesi Düzenle"
 
 msgid "Edit Supplier Stage"
-msgstr ""
+msgstr "Tedarikçi aşamasını düzenle"
 
 msgid "Edit Supplier Type"
 msgstr "Tedarikçi Türünü Düzenle"
@@ -13008,7 +13014,7 @@ msgstr "Hizmet oluşturma başarısız: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier stage: {0}"
-msgstr ""
+msgstr "Tedarikçi aşaması oluşturulamadı: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
@@ -13490,7 +13496,7 @@ msgid "Financing Terms"
 msgstr "Finansman Şartları"
 
 msgid "Find a part"
-msgstr ""
+msgstr "Bir parça bul"
 
 msgid "Find an element"
 msgstr "Bir öğe bul"
@@ -14343,6 +14349,12 @@ msgstr "Her kullanıcıya modüle özel, ayrıntılı izinler verin, herkes içi
 msgid "Grants Ability"
 msgstr "Yetkinlik Verir"
 
+msgid "Gray"
+msgstr "Gri"
+
+msgid "Green"
+msgstr "Yeşil"
+
 msgid "Grid layout"
 msgstr "Tablo düzeni"
 
@@ -14464,7 +14476,7 @@ msgstr "Tekrar Gizle"
 
 #. placeholder {0}: group.name
 msgid "Hide all in {0}"
-msgstr ""
+msgstr "{0} içindekilerin tümünü gizle"
 
 msgid "Hide block"
 msgstr "Bloğu gizle"
@@ -15123,7 +15135,7 @@ msgstr "Gelen Kutusu"
 
 #. placeholder {0}: row.itemReadableId
 msgid "Include {0}"
-msgstr ""
+msgstr "{0} dahil et"
 
 msgid "Include bought components"
 msgstr "Satın alınan bileşenleri dahil et"
@@ -16235,13 +16247,13 @@ msgid "Keep matching items"
 msgstr "Eşleşen öğeleri sakla"
 
 msgid "Keep mine"
-msgstr ""
+msgstr "Benimkini tut"
 
 msgid "Keep navigation open"
 msgstr "Gezinmeyi açık tut"
 
 msgid "Keep one, or hide {moduleName} itself"
-msgstr ""
+msgstr "Birini tut veya {moduleName} modülünün kendisini gizle"
 
 msgid "Keep only items where…"
 msgstr "Yalnızca öğeleri sakla…"
@@ -16635,6 +16647,9 @@ msgstr "Sonraki revizyonu otomatik olarak kullanmak için boş bırakın"
 msgid "Leave empty for exact match"
 msgstr "Tam eşleşme için boş bırakın"
 
+msgid "Leave empty to pick a color from the name"
+msgstr "Boş bırakırsanız renk addan seçilir"
+
 msgid "Leave empty to use the account default"
 msgstr "Hesap varsayılanını kullanmak için boş bırakın"
 
@@ -16764,6 +16779,9 @@ msgstr "LIFO"
 
 msgid "Light"
 msgstr "Aydınlık"
+
+msgid "Light Gray"
+msgstr "Açık gri"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "Açık, Koyu veya sistem ayarınız."
@@ -16983,7 +17001,7 @@ msgid "Linked Record"
 msgstr "Bağlantılı Kayıt"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr ""
+msgstr "Ortak bir bölüme bağlı. Her yerde güncellemek için kitaplıkta düzenleyin."
 
 msgid "Links"
 msgstr "Bağlantılar"
@@ -20088,7 +20106,7 @@ msgid "No values available"
 msgstr "Kullanılabilir değer yok"
 
 msgid "No values found"
-msgstr ""
+msgstr "Değer bulunamadı"
 
 msgid "No variable matches {query}"
 msgstr "Değişken {query} ile eşleşmiyor"
@@ -21233,6 +21251,9 @@ msgstr "Veya bu sırrı manuel olarak girin:"
 msgid "Or focus the box or the handle and use the arrow keys (Shift for bigger steps)."
 msgstr "Ya da kutuya veya tutamağa odaklanıp ok tuşlarını kullanın (daha büyük adımlar için Shift)."
 
+msgid "Orange"
+msgstr "Turuncu"
+
 msgid "Order"
 msgstr "Sipariş"
 
@@ -22218,6 +22239,9 @@ msgstr "WBS Kodlarını Sabitle"
 msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
 msgstr "Yakınlaştırmak için kıstırın veya kaydırın · kaydırmak için sürükleyin · sıfırlamak için iki kez dokunun"
 
+msgid "Pink"
+msgstr "Pembe"
+
 msgid "Pinned"
 msgstr "Sabitlenmiş"
 
@@ -22379,7 +22403,7 @@ msgid "Playback"
 msgstr "Oynatma"
 
 msgid "Please <0>change it</0>."
-msgstr ""
+msgstr "Lütfen <0>değiştirin</0>."
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "Denetim günlüğünü etkinleştirmek için lütfen yöneticinizle iletişime geçin."
@@ -23102,10 +23126,10 @@ msgid "Promised Date"
 msgstr "Taahhüt Tarihi"
 
 msgid "Promised date optional to finalize purchase orders"
-msgstr ""
+msgstr "Satın alma siparişlerini sonuçlandırmak için taahhüt tarihi isteğe bağlı"
 
 msgid "Promised date required to finalize purchase orders"
-msgstr ""
+msgstr "Satın alma siparişlerini sonuçlandırmak için taahhüt tarihi zorunlu"
 
 msgid "Properties"
 msgstr "Özellikler"
@@ -23393,6 +23417,9 @@ msgstr "Satın Alma Faturaları"
 msgid "Purchasing Unit of Measure"
 msgstr "Satın alma ölçü birimi"
 
+msgid "Purple"
+msgstr "Mor"
+
 msgid "Push"
 msgstr "Gönder"
 
@@ -23662,7 +23689,7 @@ msgid "Quote expired"
 msgstr "Teklif süresi doldu"
 
 msgid "Quote for"
-msgstr ""
+msgstr "Teklif verilen"
 
 msgid "Quote ID"
 msgstr "Teklif Kimliği"
@@ -24038,7 +24065,7 @@ msgid "Received By"
 msgstr "Kim Aldığı Kişi"
 
 msgid "Received Date"
-msgstr ""
+msgstr "Teslim alma tarihi"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Bu tedarikçiden alınan ve iade edilmek üzere kalan miktar içeren satırlar"
@@ -24245,6 +24272,9 @@ msgstr "Haftalık Tekrarlayan"
 
 msgid "Recurring per year"
 msgstr "Yıllık Tekrarlayan"
+
+msgid "Red"
+msgstr "Kırmızı"
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "Kırmızı yetersiz personeli gösterir, yeşil yeterli personeli gösterir, sarı işin ihtiyaç duyduğundan daha fazla personeli gösterir."
@@ -24547,7 +24577,7 @@ msgid "Remove authenticator app"
 msgstr "Kimlik Doğrulayıcı Uygulamasını Kaldır"
 
 msgid "Remove block"
-msgstr ""
+msgstr "Bloğu kaldır"
 
 msgid "Remove clause"
 msgstr "Maddeyi kaldır"
@@ -24939,10 +24969,10 @@ msgid "Request date"
 msgstr "İstek tarihi"
 
 msgid "Request Quote"
-msgstr ""
+msgstr "Teklif iste"
 
 msgid "Requested"
-msgstr ""
+msgstr "Talep edildi"
 
 msgid "Requested By"
 msgstr "Talep Eden"
@@ -24963,7 +24993,7 @@ msgid "Require a Customer Contact and Location"
 msgstr "Müşteri İlgili Kişisi ve Lokasyonu İste"
 
 msgid "Require a Promised Date to Finalize Purchase Orders"
-msgstr ""
+msgstr "Satın alma siparişlerini kesinleştirmek için taahhüt tarihi zorunlu olsun"
 
 msgid "Require a Signature to Approve Purchase Orders"
 msgstr "Satın alma siparişlerini onaylamak için İmza Gerekli"
@@ -26681,7 +26711,7 @@ msgid "Select all jobs"
 msgstr "Tüm iş emirlerini seç"
 
 msgid "Select all parts"
-msgstr ""
+msgstr "Tüm parçaları seç"
 
 msgid "Select all rows"
 msgstr "Tüm satırları seç"
@@ -26842,7 +26872,7 @@ msgid "Select station"
 msgstr "İstasyonu seç"
 
 msgid "Select Supplier Stage"
-msgstr ""
+msgstr "Tedarikçi aşamasını seç"
 
 msgid "Select Supplier Status"
 msgstr "Tedarikçi Durumu Seçin"
@@ -27387,7 +27417,7 @@ msgid "Shared channel"
 msgstr "Paylaşılan kanal"
 
 msgid "Shared Section (deleted)"
-msgstr ""
+msgstr "Paylaşılan bölüm (silindi)"
 
 msgid "Shared Sections"
 msgstr "Paylaşılan Bölümler"
@@ -27528,7 +27558,7 @@ msgid "Shipped <0/>"
 msgstr "Gönderildi <0/>"
 
 msgid "Shipped Date"
-msgstr ""
+msgstr "Sevk tarihi"
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "Bu müşteriye gönderilen ve iade edilecek miktar kalan satırlar"
@@ -27695,7 +27725,7 @@ msgstr "Bu adımda gizli olanların tümünü göster"
 
 #. placeholder {0}: group.name
 msgid "Show all in {0}"
-msgstr ""
+msgstr "{0} içindekilerin tümünü göster"
 
 msgid "Show available batch numbers"
 msgstr "Kullanılabilir parti numaralarını göster"
@@ -28038,7 +28068,7 @@ msgid "Someone"
 msgstr "Birisi"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr ""
+msgstr "Başka biri bu şablonu az önce kaydetti. Onun sürümünü yüklemek için sayfayı yenileyin ya da kaydettiğinizde üzerine yazmak için düzenlemeye devam edin."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Muhasebeyi güncelleyebilen birinin, varlıklaştırılabilmesi için üretim maliyetini girmesi gerekir."
@@ -28209,10 +28239,10 @@ msgid "Staffing requirement enabled"
 msgstr "Personel gereksinimi etkinleştirildi"
 
 msgid "Stage"
-msgstr ""
+msgstr "Aşama"
 
 msgid "Stages"
-msgstr ""
+msgstr "Aşamalar"
 
 msgid "Stand up hosting"
 msgstr "Barındırmayı ayarla"
@@ -28682,7 +28712,7 @@ msgstr "Alt Departmanlar"
 
 #. placeholder {0}: module.name
 msgid "Sub-modules of {0}"
-msgstr ""
+msgstr "{0} alt modülleri"
 
 msgid "Subassembly"
 msgstr "Alt Montaj"
@@ -28940,9 +28970,10 @@ msgstr "Tedarikçi e-posta ayarları güncellendi"
 
 msgid "Supplier EORI"
 msgstr "Tedarikçi EORI"
+
 #. placeholder {0}: row.itemReadableId
 msgid "Supplier for {0}"
-msgstr ""
+msgstr "{0} için tedarikçi"
 
 msgid "Supplier ID"
 msgstr "Tedarikçi Kimliği"
@@ -29086,19 +29117,20 @@ msgstr "Tedarikçi RMA #"
 msgid "Supplier RMA Number"
 msgstr "Tedarikçi RMA Numarası"
 
-msgid "Supplier State and Postal Code"
-msgstr "Tedarikçi Eyalet ve Posta Kodu"
 msgid "supplier stage"
-msgstr ""
+msgstr "tedarikçi aşaması"
 
 msgid "Supplier Stage"
-msgstr ""
+msgstr "Tedarikçi aşaması"
 
 msgid "supplier stages"
-msgstr ""
+msgstr "tedarikçi aşamaları"
 
 msgid "Supplier Stages"
-msgstr ""
+msgstr "Tedarikçi aşamaları"
+
+msgid "Supplier State and Postal Code"
+msgstr "Tedarikçi Eyalet ve Posta Kodu"
 
 msgid "Supplier Status"
 msgstr "Tedarikçi Durumu"
@@ -30052,7 +30084,7 @@ msgid "The document could not be downloaded."
 msgstr "Belge indirilemedi."
 
 msgid "The document could not be opened."
-msgstr ""
+msgstr "Belge açılamadı."
 
 msgid "The early hours, {name}."
 msgstr "Sabah saatleri, {name}."
@@ -30622,7 +30654,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "Bu sorun türüne uygulanan Görev ve Onay gereksinimlerinin önceden ayarlanmış kümesi; ayarlandığında sorun türünün varsayılan İş akışını geçersiz kılar."
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr ""
+msgstr "Önizleme çizilemedi. Son çizilen önizleme gösteriliyor."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "Bir Zaman ve Malzeme satırında bir saatin fiyatı: satır için çalışanın oranı, yoksa işçilik kategorisinin oranı, yoksa işçilik kategorisinin varsayılan Faturalandırma Oranı, o gün geçerli."
@@ -31463,7 +31495,7 @@ msgid "This part is superseded and set to Stock Only — it's replenished to its
 msgstr "Bu parça kullanımdan kaldırılmış ve Yalnızca Stok olarak ayarlanmıştır — talep bağımsız olarak yedek rezerv tabanına kadar yenilenir."
 
 msgid "This part only"
-msgstr ""
+msgstr "Yalnızca bu parça"
 
 msgid "This path only decides what runs next"
 msgstr "Bu yol yalnızca sonra ne çalışacağını belirler"
@@ -31481,7 +31513,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Bu PIN bir daha gösterilmeyecek. MES terminal'lerinde konsol modundan çıkmak için gerekli olacak."
 
 msgid "This preview is paused because a text changes a figure."
-msgstr ""
+msgstr "Bir metin bir değeri değiştirdiği için bu önizleme duraklatıldı."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Bu fiyat manuel olarak girildi, bu nedenle hiçbir fiyatlandırma kuralı uygulanmadı."
@@ -31547,7 +31579,7 @@ msgid "This serial"
 msgstr "Bu seri numarası"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr ""
+msgstr "Bu paylaşılan bölüm artık yok. Bloğu kaldırın ya da bölümü yeniden oluşturun."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Bu istasyon yetkinlik kapısı geçmeli işleri çalıştırır — yalnızca nitelikli operatör vardiyada olduğu sürece çalışır; kadro tarafından atanan operatörler kullanılabilir işçiliği şekillendirir."
@@ -34072,10 +34104,10 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "Tedarikçi yanıtlarının ne zaman beklenmesi gerektiği; tedarikçiler RFQ portalında bu tarihi görür ve Carbon bundan sonra geç yanıtları kabul etmeyi durdurur (yapılandırılabilir)."
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr ""
+msgstr "Alıcının malları talep ettiği tarih. Tedarikçi, Mal kabul taahhüt tarihinde başka bir tarih taahhüt edebilir ve Teslim tarihinde yine başka bir tarih bildirebilir."
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr ""
+msgstr "Alıcının bu satırdaki malları teslimat rıhtımında istediği tarih. Yeni bir satır, siparişin Mal kabul talep edilen tarihinden başlar; planlama bu tarihi stok uygunluğu ve dış işlem planlaması için kullanır."
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Sözleşme ne zaman çalıştırılır ve tamamlandığında ne olur."
@@ -34126,7 +34158,7 @@ msgid "When the supplier committed to deliver; planning uses this date for the i
 msgstr "Tedarikçi teslim etmeyi ne zaman taahhüt etti; planlama bu tarihi gelen stok varışı tahmini için kullanır."
 
 msgid "When the supplier sent the goods. You can edit this on the Shipping card after the purchase order is finalized."
-msgstr ""
+msgstr "Tedarikçinin malları gönderdiği tarih. Satın alma siparişi kesinleştirildikten sonra bunu Sevkiyat kartında düzenleyebilirsiniz."
 
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "Tedarikçi fiyatlandırması artık kabul edilmediğinde; bu fiyatlandırmayı bu tarihten sonra bir PO'ya dönüştürmek yeniden fiyatlandırma gerektirebilir."
@@ -34168,7 +34200,7 @@ msgid "When you committed to deliver; planning treats this as the demand-due-dat
 msgstr "Teslim etmeyi taahhüt ettiğiniz zaman; planlama bunu karşılama için talep vadesi tarihi olarak değerlendirir."
 
 msgid "When you expect the goods to arrive, based on how they shipped. It is for your reference and does not change planning, which uses the promised date."
-msgstr ""
+msgstr "Malların gönderim şekline göre ne zaman ulaşmasını beklediğiniz tarih. Yalnızca bilgi amaçlıdır; planlamayı değiştirmez, planlama taahhüt tarihini kullanır."
 
 msgid "When your fiscal and tax years start"
 msgstr "Mali ve vergi yıllarınız ne zaman başlar"
@@ -34234,7 +34266,7 @@ msgid "Where this maintenance request originated — operator-reported, schedule
 msgstr "Bu bakım talebinin nereden kaynaklandığı — operatör tarafından bildirilen, planlanan, durum izlemesi tetiklemesi, işten sonraki muayene; bakım raporlarında kaynak dağılımını belirler."
 
 msgid "Where this supplier is in your onboarding, such as Prospect or Qualified. Your company manages this list; it does not affect approvals or which suppliers you can use."
-msgstr ""
+msgstr "Bu tedarikçinin sizinle çalışma sürecindeki aşaması, ör. Potansiyel veya Nitelikli. Bu liste şirketiniz tarafından yönetilir; onay süreçlerini ya da kullanabileceğiniz tedarikçileri etkilemez."
 
 msgid "Where you are today"
 msgstr "Bugün nerede olduğunuz"
@@ -34611,6 +34643,9 @@ msgstr "Yıl Sonu Kapanışı"
 
 msgid "Yearly"
 msgstr "Yıllık"
+
+msgid "Yellow"
+msgstr "Sarı"
 
 msgid "Yes"
 msgstr "Evet"

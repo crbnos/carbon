@@ -2053,8 +2053,8 @@ msgstr "A purchase invoice is drafted for each due date, with a line for each as
 msgid "A purchase invoice is posted"
 msgstr "A purchase invoice is posted"
 
-msgid "A purchase order cannot leave Draft or Planned until it has a supplier promised date. A date on the order covers every line. Keep this off if suppliers give you a date after they receive the order."
-msgstr "A purchase order cannot leave Draft or Planned until it has a supplier promised date. A date on the order covers every line. Keep this off if suppliers give you a date after they receive the order."
+msgid "A purchase order cannot be finalized until it has a supplier promised date. A date on the order covers every line. Keep this off if suppliers give you a date after they receive the order."
+msgstr "A purchase order cannot be finalized until it has a supplier promised date. A date on the order covers every line. Keep this off if suppliers give you a date after they receive the order."
 
 msgid "A purchase order is created"
 msgstr "A purchase order is created"
@@ -5837,6 +5837,9 @@ msgstr "Blocks Machine"
 msgid "Blocks save until resolved"
 msgstr "Blocks save until resolved"
 
+msgid "Blue"
+msgstr "Blue"
+
 msgid "Board"
 msgstr "Board"
 
@@ -5941,6 +5944,9 @@ msgstr "Bring in your parts, BOMs, Bill of Process, and costing — with Carbon'
 
 msgid "Broadcast reply to channel"
 msgstr "Broadcast reply to channel"
+
+msgid "Brown"
+msgstr "Brown"
 
 msgid "Browse library"
 msgstr "Browse library"
@@ -14343,6 +14349,12 @@ msgstr "Grant each user fine-grained, per-module permissions instead of giving e
 msgid "Grants Ability"
 msgstr "Grants Ability"
 
+msgid "Gray"
+msgstr "Gray"
+
+msgid "Green"
+msgstr "Green"
+
 msgid "Grid layout"
 msgstr "Grid layout"
 
@@ -16635,6 +16647,9 @@ msgstr "Leave blank to use the next revision automatically"
 msgid "Leave empty for exact match"
 msgstr "Leave empty for exact match"
 
+msgid "Leave empty to pick a color from the name"
+msgstr "Leave empty to pick a color from the name"
+
 msgid "Leave empty to use the account default"
 msgstr "Leave empty to use the account default"
 
@@ -16764,6 +16779,9 @@ msgstr "LIFO"
 
 msgid "Light"
 msgstr "Light"
+
+msgid "Light Gray"
+msgstr "Light Gray"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "Light, dark, or follow your system setting."
@@ -21233,6 +21251,9 @@ msgstr "Or enter this secret manually:"
 msgid "Or focus the box or the handle and use the arrow keys (Shift for bigger steps)."
 msgstr "Or focus the box or the handle and use the arrow keys (Shift for bigger steps)."
 
+msgid "Orange"
+msgstr "Orange"
+
 msgid "Order"
 msgstr "Order"
 
@@ -22217,6 +22238,9 @@ msgstr "Pin WBS codes"
 
 msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
 msgstr "Pinch or scroll to zoom · drag to pan · double-tap to reset"
+
+msgid "Pink"
+msgstr "Pink"
 
 msgid "Pinned"
 msgstr "Pinned"
@@ -23393,6 +23417,9 @@ msgstr "Purchasing Invoices"
 msgid "Purchasing Unit of Measure"
 msgstr "Purchasing Unit of Measure"
 
+msgid "Purple"
+msgstr "Purple"
+
 msgid "Push"
 msgstr "Push"
 
@@ -24245,6 +24272,9 @@ msgstr "Recurring per week"
 
 msgid "Recurring per year"
 msgstr "Recurring per year"
+
+msgid "Red"
+msgstr "Red"
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "Red is short-staffed, green is covered, amber is more people than the work needs."
@@ -28940,6 +28970,7 @@ msgstr "Supplier email settings updated"
 
 msgid "Supplier EORI"
 msgstr "Supplier EORI"
+
 #. placeholder {0}: row.itemReadableId
 msgid "Supplier for {0}"
 msgstr "Supplier for {0}"
@@ -29086,8 +29117,6 @@ msgstr "Supplier RMA #"
 msgid "Supplier RMA Number"
 msgstr "Supplier RMA Number"
 
-msgid "Supplier State and Postal Code"
-msgstr "Supplier State and Postal Code"
 msgid "supplier stage"
 msgstr "supplier stage"
 
@@ -29099,6 +29128,9 @@ msgstr "supplier stages"
 
 msgid "Supplier Stages"
 msgstr "Supplier Stages"
+
+msgid "Supplier State and Postal Code"
+msgstr "Supplier State and Postal Code"
 
 msgid "Supplier Status"
 msgstr "Supplier Status"
@@ -34611,6 +34643,9 @@ msgstr "Year-End Close"
 
 msgid "Yearly"
 msgstr "Yearly"
+
+msgid "Yellow"
+msgstr "Yellow"
 
 msgid "Yes"
 msgstr "Yes"

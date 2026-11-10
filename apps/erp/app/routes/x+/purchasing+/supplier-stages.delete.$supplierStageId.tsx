@@ -4,9 +4,10 @@
 
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { notFound } from "@carbon/auth";
+import { useRouteDialog } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { getParams, path } from "~/utils/path";
 
@@ -43,14 +44,15 @@ export async function action(args: ActionFunctionArgs) {
 export default function DeleteSupplierStageRoute() {
   const { t } = useLingui();
   const { supplierStage } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.supplierStages);
 
   return (
     <ConfirmDelete
       action={path.to.deleteSupplierStage(supplierStage.id)}
+      isOpen={dialog.open}
       name={supplierStage.name}
       text={t`Are you sure you want to delete the supplier stage: ${supplierStage.name}? This cannot be undone.`}
-      onCancel={() => navigate(path.to.supplierStages)}
+      onCancel={dialog.close}
     />
   );
 }

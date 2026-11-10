@@ -3,23 +3,18 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { carbon, respond } from "@carbon/api/carbon.server";
-import { assertIsPost } from "@carbon/auth";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { requestQuoteValidator } from "~/modules/purchasing/purchasing.models";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
-  assertIsPost(args.request);
-  const parsed = requestQuoteValidator.safeParse(await args.request.json());
+  const input = await validator(requestQuoteValidator).request(args);
+  if ("invalid" in input) return input.invalid;
   const back = requestReferrer(args.request) ?? path.to.purchasingRfqs;
-  if (!parsed.success) {
-    return respond(args.request, {
-      error: { message: "Choose at least one part and a supplier for each" }
-    }).redirect(back);
-  }
 
   const api = await carbon(args.request);
-  const result = await api.purchasing.requestQuoteFromItem(parsed.data);
+  const result = await api.purchasing.requestQuoteFromItem(input.data);
   const rfqs = result.data?.rfqs ?? [];
   const first = rfqs[0];
 

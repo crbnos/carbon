@@ -1461,7 +1461,7 @@ msgid "Location"
 msgstr "स्थान"
 
 msgid "Locations"
-msgstr ""
+msgstr "स्थान"
 
 msgid "Log completed"
 msgstr "पूर्ण लॉग किया गया"

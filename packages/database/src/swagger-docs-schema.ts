@@ -30784,6 +30784,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierStage.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.supplierStage.color"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -30864,6 +30867,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierStage.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.supplierStage.color"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -30896,6 +30902,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierStage.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierStage.color"
           },
           {
             $ref: "#/parameters/body.supplierStage"
@@ -61360,6 +61369,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerStatus.tags"
           },
           {
+            $ref: "#/parameters/rowFilter.customerStatus.color"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -61446,6 +61458,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerStatus.tags"
           },
           {
+            $ref: "#/parameters/rowFilter.customerStatus.color"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -61484,6 +61499,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerStatus.tags"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerStatus.color"
           },
           {
             $ref: "#/parameters/body.customerStatus"
@@ -117583,10 +117601,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactEmail"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requirePromisedDateToFinalizePurchaseOrder"
+            $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
+            $ref: "#/parameters/rowFilter.companySettings.requirePromisedDateToFinalizePurchaseOrder"
           },
           {
             $ref: "#/parameters/select"
@@ -117924,10 +117942,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactEmail"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requirePromisedDateToFinalizePurchaseOrder"
+            $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
+            $ref: "#/parameters/rowFilter.companySettings.requirePromisedDateToFinalizePurchaseOrder"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -118219,10 +118237,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactEmail"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requirePromisedDateToFinalizePurchaseOrder"
+            $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.includeSupplierPartFiles"
+            $ref: "#/parameters/rowFilter.companySettings.requirePromisedDateToFinalizePurchaseOrder"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -151785,6 +151803,10 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
+        },
+        color: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -166319,6 +166341,10 @@ export default {
             type: "string"
           },
           type: "array"
+        },
+        color: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -193057,8 +193083,8 @@ export default {
         "kanbanLabelSize",
         "requireSupplierContactEmail",
         "requireCustomerContactEmail",
-        "requirePromisedDateToFinalizePurchaseOrder",
-        "includeSupplierPartFiles"
+        "includeSupplierPartFiles",
+        "requirePromisedDateToFinalizePurchaseOrder"
       ],
       properties: {
         id: {
@@ -193551,13 +193577,13 @@ export default {
           format: "boolean",
           type: "boolean"
         },
-        requirePromisedDateToFinalizePurchaseOrder: {
-          default: false,
+        includeSupplierPartFiles: {
+          default: true,
           format: "boolean",
           type: "boolean"
         },
-        includeSupplierPartFiles: {
-          default: true,
+        requirePromisedDateToFinalizePurchaseOrder: {
+          default: false,
           format: "boolean",
           type: "boolean"
         }
@@ -210583,6 +210609,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.supplierStage.color": {
+      name: "color",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.salesOrderPayment": {
       name: "salesOrderPayment",
       description: "salesOrderPayment",
@@ -226644,6 +226676,12 @@ export default {
     },
     "rowFilter.customerStatus.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerStatus.color": {
+      name: "color",
       required: false,
       in: "query",
       type: "string"
@@ -257058,14 +257096,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.requirePromisedDateToFinalizePurchaseOrder": {
-      name: "requirePromisedDateToFinalizePurchaseOrder",
+    "rowFilter.companySettings.includeSupplierPartFiles": {
+      name: "includeSupplierPartFiles",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.includeSupplierPartFiles": {
-      name: "includeSupplierPartFiles",
+    "rowFilter.companySettings.requirePromisedDateToFinalizePurchaseOrder": {
+      name: "requirePromisedDateToFinalizePurchaseOrder",
       required: false,
       in: "query",
       type: "string"

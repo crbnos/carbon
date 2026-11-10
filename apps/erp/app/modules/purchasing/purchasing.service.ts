@@ -46,7 +46,7 @@ import {
   selectRows,
   updateRowsById
 } from "@carbon/database/rows";
-import { getNextSequence } from "@carbon/database/sequence";
+import { getNextSequence, getNextSequences } from "@carbon/database/sequence";
 import {
   findStorageObjectBuckets,
   listStorageObjects
@@ -244,7 +244,8 @@ import {
   SUPPLIER_CONTACT_EMAIL_REQUIRED,
   shortClosePurchaseOrderLineRefusal,
   splitRfqFileAttachments,
-  taxPairForQuantity
+  taxPairForQuantity,
+  toPurchaseQuantity
 } from "./purchasing.models";
 import { renderPurchaseOrderPdf } from "./purchasing.pdf";
 import type {
@@ -1489,7 +1490,7 @@ export async function getSupplierStages(
 ) {
   let query = client
     .from("supplierStage")
-    .select("id, name", {
+    .select("id, name, color", {
       count: listCount(args)
     })
     .eq("companyId", companyId);
@@ -1511,7 +1512,7 @@ export async function getSupplierStagesList(
 ) {
   return client
     .from("supplierStage")
-    .select("id, name")
+    .select("id, name, color")
     .eq("companyId", companyId)
     .order("name");
 }
@@ -1533,7 +1534,12 @@ export async function deleteSupplierStage(
 
 export async function insertSupplierStage(
   client: SupabaseClient<Database>,
-  supplierStage: { name: string; companyId: string; createdBy: string }
+  supplierStage: {
+    name: string;
+    color: string | null;
+    companyId: string;
+    createdBy: string;
+  }
 ) {
   return client.from("supplierStage").insert([supplierStage]).select("id");
 }
@@ -1543,15 +1549,22 @@ export async function updateSupplierStage(
   supplierStage: {
     id: string;
     name: string;
+    /** Left out, the stage keeps its color; null clears it. */
+    color?: string | null;
     companyId: string;
     updatedBy: string;
   }
 ) {
-  const { id, companyId, name, updatedBy } = supplierStage;
+  const { id, companyId, name, color, updatedBy } = supplierStage;
   return requireAffected(
     client
       .from("supplierStage")
-      .update({ name, updatedBy, updatedAt: datetime.timestamp() })
+      .update({
+        name,
+        ...(color !== undefined && { color }),
+        updatedBy,
+        updatedAt: datetime.timestamp()
+      })
       .eq("id", id)
       .eq("companyId", companyId)
       .select("id")
@@ -4872,6 +4885,15 @@ export async function requiredPromisedDateRefusal(
 ): Promise<string | null> {
   const companyId = ctx.company.id;
   const settings = await getCompanySettings(ctx.asSystem.supabase, companyId);
+  // Fails closed, as the planning approval bypass does: an unread setting may be on.
+  if (settings.error) {
+    logger.error("Failed to read the promised date rule", {
+      companyId,
+      purchaseOrderId,
+      error: settings.error
+    });
+    return "The promised date rule could not be checked. Try again.";
+  }
   if (!settings.data?.requirePromisedDateToFinalizePurchaseOrder) return null;
 
   const [lines, delivery] = await Promise.all([
@@ -4966,38 +4988,53 @@ export async function insertRequestQuoteRfqs(
       supplierParts.map((part) => [`${part.itemId}|${part.supplierId}`, part])
     );
 
-    const created: { id: string; rfqId: string }[] = [];
-    for (const group of groups) {
-      const rfq = await trx
-        .insertInto("purchasingRfq")
-        .values({
-          rfqId: await getNextSequence(trx, "purchasingRfq", companyId),
+    const rfqIds = await getNextSequences(
+      trx,
+      "purchasingRfq",
+      companyId,
+      groups.length
+    );
+    const created = await trx
+      .insertInto("purchasingRfq")
+      .values(
+        rfqIds.map((rfqId) => ({
+          rfqId,
           rfqDate,
           locationId,
           employeeId: userId,
-          status: "Draft",
+          status: "Draft" as const,
           companyId,
           createdBy: userId,
           updatedBy: userId
-        })
-        .returning(["id", "rfqId"])
-        .executeTakeFirstOrThrow();
+        }))
+      )
+      .returning(["id", "rfqId"])
+      .execute();
+    const idByRfqId = new Map(created.map((rfq) => [rfq.rfqId, rfq.id]));
+    const rfqOf = groups.map((_, index) => {
+      const id = idByRfqId.get(rfqIds[index]!);
+      if (!id) throw new Error("RFQ not created");
+      return id;
+    });
 
-      await trx
-        .insertInto("purchasingRfqSupplier")
-        .values(
+    await trx
+      .insertInto("purchasingRfqSupplier")
+      .values(
+        groups.flatMap((group, index) =>
           group.supplierIds.map((supplierId) => ({
-            purchasingRfqId: rfq.id,
+            purchasingRfqId: rfqOf[index]!,
             supplierId,
             companyId,
             createdBy: userId
           }))
         )
-        .execute();
+      )
+      .execute();
 
-      await trx
-        .insertInto("purchasingRfqLine")
-        .values(
+    await trx
+      .insertInto("purchasingRfqLine")
+      .values(
+        groups.flatMap((group, groupIndex) =>
           group.lines.map((line, index) => {
             const item = itemById.get(line.itemId);
             const isService = item?.type === "Service";
@@ -5012,10 +5049,10 @@ export async function insertRequestQuoteRfqs(
                 : undefined;
             const factor = Number(part?.conversionFactor) || 1;
             return {
-              purchasingRfqId: rfq.id,
+              purchasingRfqId: rfqOf[groupIndex]!,
               itemId: line.itemId,
               description: item?.name,
-              quantity: [round(line.quantity / factor)],
+              quantity: [toPurchaseQuantity(line.quantity, factor)],
               purchaseUnitOfMeasureCode:
                 part?.supplierUnitOfMeasureCode ?? inventoryUnit,
               inventoryUnitOfMeasureCode: inventoryUnit,
@@ -5027,11 +5064,10 @@ export async function insertRequestQuoteRfqs(
             };
           })
         )
-        .execute();
+      )
+      .execute();
 
-      created.push(rfq);
-    }
-    return created;
+    return rfqOf.map((id, index) => ({ id, rfqId: rfqIds[index]! }));
   });
 }
 

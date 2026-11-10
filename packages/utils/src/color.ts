@@ -21,6 +21,13 @@ const colorIndex = {
 
 export type Color = keyof typeof colorIndex;
 
+export const colorNames = Object.keys(colorIndex) as [Color, ...Color[]];
+
+/** A stored color name as a `Color`; anything else is undefined (the derived color). */
+export function asColor(value: string | null | undefined) {
+  return colorNames.find((name) => name === value);
+}
+
 const colors = [
   { background: "#a6a5a5", color: "#32302c" },
   { background: "#e3e2e0", color: "#32302c" },

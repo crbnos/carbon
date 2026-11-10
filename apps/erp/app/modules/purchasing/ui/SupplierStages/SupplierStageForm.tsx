@@ -22,6 +22,7 @@ import { useEffect } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { Hidden, Input, Submit } from "~/components/Form";
+import BadgeColor from "~/components/Form/BadgeColor";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { supplierStageValidator } from "../../purchasing.models";
@@ -44,7 +45,7 @@ const SupplierStageForm = ({
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
@@ -54,7 +55,7 @@ const SupplierStageForm = ({
         t`Failed to create supplier stage: ${fetcher.data.error.message}`
       );
     }
-  }, [fetcher.data, fetcher.state, onClose, t, type]);
+  }, [fetcher.data, fetcher.state, onClose, open, t, type]);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
@@ -93,6 +94,7 @@ const SupplierStageForm = ({
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
                 <Input name="name" label={t`Supplier Stage`} />
+                <BadgeColor />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>

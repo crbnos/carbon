@@ -7,6 +7,7 @@ import {
   addDays,
   addMonths,
   bicMatchesCountry,
+  colorNames,
   EPSILON,
   getBankFieldConfig,
   getCompletionAfterQuantityChange,
@@ -380,7 +381,9 @@ export const selectedLinesValidator = z.record(z.string(), selectedLineSchema);
 
 export const supplierStageValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  /** Empty keeps the color derived from the name. */
+  color: zfd.text(z.enum(colorNames).optional())
 });
 
 export const supplierValidator = z.object({
@@ -734,16 +737,30 @@ export const requestQuoteValidator = z.object({
       z.object({
         itemId: z.string().min(1),
         /** In the item's inventory unit. */
-        quantity: z.number().positive(),
-        supplierIds: z.array(z.string().min(1)).min(1)
+        quantity: z
+          .number()
+          .positive({ message: "Each part needs a quantity above 0" }),
+        supplierIds: z
+          .array(z.string().min(1))
+          .min(1, { message: "Choose a supplier for each part" })
       })
     )
-    .min(1)
+    .min(1, { message: "Choose at least one part" })
+    // One insert writes every line; this keeps it under Postgres's bind limit.
+    .max(1000, { message: "Request a quote for at most 1000 parts at a time" })
 });
 
 export type RequestQuoteLine = z.infer<
   typeof requestQuoteValidator
 >["lines"][number];
+
+/** Whole purchase units when the unit differs, as planning orders them; the
+ * inner round strips float noise (1.1 / 0.1 = 11.000000000000002). */
+export function toPurchaseQuantity(inventoryQuantity: number, factor: number) {
+  return factor === 1
+    ? round(inventoryQuantity)
+    : round(round(inventoryQuantity / factor), 0, RoundingMode.Up);
+}
 
 /** One RFQ per set of suppliers, because every supplier on an RFQ gets every line. */
 export function groupRequestQuoteLines(lines: RequestQuoteLine[]) {
@@ -789,7 +806,8 @@ export type RfqLineFromMethod = {
  * It walks into each Make to Order line and does not list it. It lists each
  * other line unless the item is only ever made, and a Make to Order line that
  * has no method to walk and can be bought. The contents of a part pulled from
- * stock are not needed, so it skips them. Repeats of an item add up.
+ * stock are not needed, so it skips them, and so is a line with no quantity.
+ * Repeats of an item add up.
  */
 export function getRfqLinesFromMethod(
   tree: MethodTreeRow[],
@@ -814,6 +832,8 @@ export function getRfqLinesFromMethod(
     for (const row of childrenOf.get(parentId) ?? []) {
       if (row.isPickDescendant || path.has(row.methodMaterialId)) continue;
       const quantity = round(multiplier * row.quantity);
+      // Nothing to buy, and a quantity of 0 fails the RFQ line's positive check.
+      if (!(quantity > 0)) continue;
       if (
         row.methodType === "Make to Order" &&
         (childrenOf.has(row.methodMaterialId) ||

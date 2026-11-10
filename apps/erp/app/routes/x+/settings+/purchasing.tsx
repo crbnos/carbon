@@ -562,10 +562,9 @@ export default function PurchasingSettingsRoute() {
             </CardTitle>
             <CardDescription>
               <Trans>
-                A purchase order cannot leave Draft or Planned until it has a
-                supplier promised date. A date on the order covers every line.
-                Keep this off if suppliers give you a date after they receive
-                the order.
+                A purchase order cannot be finalized until it has a supplier
+                promised date. A date on the order covers every line. Keep this
+                off if suppliers give you a date after they receive the order.
               </Trans>
             </CardDescription>
           </CardHeader>
