@@ -25,8 +25,7 @@ const logger = getLogger("erp", "employee-timesheet");
 
 export const handle: Handle = {
   breadcrumb: msg`Timesheet`,
-  to: path.to.projectTimesheetApprovals,
-  module: "projects"
+  to: path.to.projectTimesheetApprovals
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

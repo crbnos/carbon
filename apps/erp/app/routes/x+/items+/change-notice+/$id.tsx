@@ -60,7 +60,6 @@ export const handle: Handle = {
     _params: unknown,
     data?: { changeNotice?: { changeOrderId?: string } }
   ) => data?.changeNotice?.changeOrderId ?? msg`Change Notice`,
-  module: "parts",
   // The CO detail workspace has its own left affected-items sidebar — hide the
   // Items module sidebar here so two left sidebars don't stack.
   hideModuleSidebar: true

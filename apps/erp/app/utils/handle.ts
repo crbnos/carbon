@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { ModuleId } from "@carbon/database/access";
 import type { RouteRealtimeTable } from "@carbon/database/realtime-tables";
 import type { Mode } from "@carbon/utils";
 import type { MessageDescriptor } from "@lingui/core";
@@ -10,7 +11,9 @@ import type { ComponentType, ReactNode } from "react";
 export type Handle = {
   breadcrumb?: any;
   to?: string;
-  module?: string;
+  // The module of a route no page covers (`moduleOfMatches`); a route with a
+  // page takes its page's module.
+  module?: ModuleId | "get-started";
   // The tables this route shows. The shell (`RouteRealtime`) reloads the page
   // when one of them changes; each must be in REALTIME_TABLES.
   realtime?: RouteRealtimeTable[];

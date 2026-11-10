@@ -15,8 +15,7 @@ export const meta = moduleMeta("Fixed Asset");
 
 export const handle: Handle = {
   breadcrumb: msg`Accounting`,
-  to: path.to.fixedAssets,
-  module: "accounting"
+  to: path.to.fixedAssets
 };
 
 export default function FixedAssetLayout() {

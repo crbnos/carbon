@@ -89,17 +89,21 @@ they transfer it). Billing is the owner's alone, whatever grants anyone else hol
 Billing at Edit is needed as well, never instead.
 
 - The decision is `ownsCompany(ownerId, userId)` (`@carbon/database/access`, `owner.ts`): the
-  client's `usePermissions().isOwner()` (sidebar, avatar menu, the Billing page) and the server
-  share it.
+  client's `usePermissions().isOwner()` (sidebar, avatar menu) and the server share it. The
+  Billing page needs no client check: its loader already refused a non-owner.
 - The server check is `isCompanyOwner(companyId, userId)` (`@carbon/auth/company.server`): the
-  owner read past RLS; a failed read is no owner. A route uses `requireCompanyOwner({ companyId,
+  owner read past RLS (`readCompanyOwnerId`, shared with `isCarbonOwnedCompany`); a failed read
+  is no owner. A route uses `requireCompanyOwner({ companyId,
   userId })` (403 otherwise): the Billing loader (`x+/settings+/billing.tsx`) and the checkout
   action (`onboarding+/plan.tsx`). The service functions `getBillingPortalUrl` and
   `transferCompanyOwnership` (`settings.server.ts`) refuse a non-owner as `forbidden`; an API key
   or a job is never the owner.
 - **Transfer** (`transferCompanyOwnership`): the caller must be the current owner (and hold
   Billing at Edit), and the new owner an active employee (`employee.active`, `userToCompany.role
-  = 'employee'`) of a company in the group — `ownershipTransferRefusal`, tested by value in
+  = 'employee'`) of a company in the group. That rule is one query, `ownershipCandidates`
+  (`settings.service.ts`): the Billing page lists from it (`listOwnershipCandidates`, read as the
+  system, since the group's other companies are not the owner's) and `readOwnershipTransfer`
+  checks the chosen user against it. The decision is `ownershipTransferRefusal`, tested by value in
   `packages/database/src/access/owner.test.ts`. `companyGroup` has no update policy (do not add
   one), so it writes as the system through `setCompanyGroupOwner` (`settings.service.ts`), for
   the company's own group and only while the caller still owns it, then emits

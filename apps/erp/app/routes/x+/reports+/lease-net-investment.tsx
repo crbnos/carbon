@@ -22,8 +22,7 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Net Investment in Leases`,
-  to: path.to.leaseNetInvestment,
-  module: "accounting"
+  to: path.to.leaseNetInvestment
 };
 
 // A bad bookmark must not 500 — an unparseable `asOf` falls back to today.

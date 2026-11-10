@@ -24,8 +24,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Journal Entries`, to: path.to.accountingJournals },
     (data) => data?.journalEntry?.journalEntryId
-  ),
-  module: "accounting"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

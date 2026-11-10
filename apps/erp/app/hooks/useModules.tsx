@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  type ExpandedClaims,
   MODULES,
   type ModuleId,
   pageOfUrl,
@@ -33,14 +32,12 @@ import {
 } from "react-icons/lu";
 import { useUIStore } from "~/stores/ui";
 import type { Authenticated, NavItem } from "~/types";
-import { moduleLanding } from "~/utils/nav";
 import { path } from "~/utils/path";
 import {
   type SubmoduleLayout,
   submoduleLayout
 } from "~/utils/submodule-visibility";
 import { usePermissions } from "./usePermissions";
-import { useUser } from "./useUser";
 
 /** `opensOn`: the sub-module the link opens on, or `to` when that is a dashboard. */
 type ModuleLink = Authenticated<NavItem> & { key: string; opensOn: string };
@@ -173,12 +170,6 @@ function usePermittedModules(): {
   const permissions = usePermissions();
   const links = useModuleLinks();
   const { t } = useLingui();
-  const {
-    company: { id: companyId }
-  } = useUser();
-  const routeData = useRouteData<{ permissions: ExpandedClaims }>(
-    path.to.authenticatedRoot
-  );
   const modulePreferences = useModulePreferences();
 
   const permitted = MODULES.filter(({ id }) =>
@@ -188,7 +179,7 @@ function usePermittedModules(): {
     const landing =
       indexPicksPage ||
       (pagesOf(id).length > 1 && pageOfUrl(link.to) !== undefined)
-        ? moduleLanding(id, routeData?.permissions, companyId)
+        ? permissions.landing(id)
         : undefined;
     return {
       ...link,

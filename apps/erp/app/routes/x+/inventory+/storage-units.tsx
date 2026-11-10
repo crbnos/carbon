@@ -23,8 +23,7 @@ import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Storage Units`,
-  to: path.to.storageUnits,
-  module: "inventory"
+  to: path.to.storageUnits
 };
 
 // Deepest level (1-based, roots = 1) the tree eagerly loads and pre-expands.

@@ -410,11 +410,9 @@ function RecentlyViewed() {
   const { documents, remove, loading } = useRecentlyViewed(company.id);
   const modules = useAllModules();
 
-  // Resolve a document's `handle.module` to its module icon and name straight
-  // from the `useModules` registry — the single source of truth for module
-  // icons. Match on the module key OR the second segment of its URL, since item
-  // detail pages declare `module: "items"` while the registry keys that module
-  // `parts` (its URL is `/x/items/parts`). Nothing to keep in sync.
+  // Resolve a document's module to its icon and name from `useModules`. Match
+  // on the module key OR the second segment of its URL: recents saved before
+  // modules were keyed by id carry `items` for the module keyed `parts`.
   const moduleFor = useCallback(
     (moduleKey: string): { icon: IconType; name?: string } => {
       const module = modules.find(

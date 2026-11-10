@@ -7,17 +7,13 @@ import {
   type Gate,
   landingOf,
   type ModuleId,
-  type PageId,
+  moduleOf,
   pageOfUrl,
   urlCoverage,
   urlSegments
 } from "@carbon/database/access";
 import type { Route } from "~/types";
-
-/** A module that opens on another page than its first one, when the person can view it. */
-const PREFERRED_PAGE: Partial<Record<ModuleId, PageId>> = {
-  settings: "settings.company"
-};
+import type { Handle } from "~/utils/handle";
 
 /**
  * Where a module's link and its `_index` redirect take a person: the first
@@ -29,9 +25,28 @@ export function moduleLanding(
   permissions: ExpandedClaims | null | undefined,
   companyId: string
 ): string | undefined {
-  return landingOf(module, permissions, companyId, {
-    prefer: PREFERRED_PAGE[module]
-  })?.path;
+  return landingOf(module, permissions, companyId)?.path;
+}
+
+type ModuleMatch = { pathname: string; handle?: unknown };
+
+/**
+ * The module the page on screen belongs to: that of the outermost matched
+ * route that names one, by the page its URL belongs to or, for a route no
+ * page covers (a module's layout, a memo's detail), by its `handle.module`.
+ * Outermost, so a record's tab that another module's page owns (a customer's
+ * bank accounts) stays in the record's module.
+ */
+export function moduleOfMatches(
+  matches: readonly ModuleMatch[]
+): string | undefined {
+  for (const match of matches) {
+    const page = pageOfUrl(match.pathname);
+    if (page) return moduleOf(page);
+    const module = (match.handle as Handle | undefined)?.module;
+    if (module) return module;
+  }
+  return undefined;
 }
 
 type NavRoute = Pick<Route, "to" | "gate">;

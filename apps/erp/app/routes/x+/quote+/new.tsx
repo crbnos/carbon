@@ -26,8 +26,7 @@ export const meta = newRecordMeta("Quote");
 
 export const handle: Handle = {
   breadcrumb: msg`Quotes`,
-  to: path.to.quotes,
-  module: "sales"
+  to: path.to.quotes
 };
 
 export async function action({ request }: ActionFunctionArgs) {

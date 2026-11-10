@@ -27,8 +27,7 @@ const logger = getLogger("erp", "kanbans");
 
 export const handle: Handle = {
   breadcrumb: msg`Kanbans`,
-  to: path.to.kanbans,
-  module: "inventory"
+  to: path.to.kanbans
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

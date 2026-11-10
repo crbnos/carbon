@@ -22,8 +22,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Customer Assets`, to: path.to.customerAssets },
     (data) => data?.asset?.trackedEntity?.readableId
-  ),
-  module: "service"
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

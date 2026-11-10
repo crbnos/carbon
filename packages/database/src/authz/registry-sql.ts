@@ -4,6 +4,7 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { ACTION_LEVEL, ACTIONS } from "../access/levels";
 import { MODULES, PAGES, type Page, pagesOf } from "../access/registry";
 
@@ -12,6 +13,18 @@ import { MODULES, PAGES, type Page, pagesOf } from "../access/registry";
  * written by `authz sync` and `authz migration`, checked by `registry-helpers-fresh`
  * (@carbon/checks). A page edit changes these functions, not the policies that call them.
  */
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = path.resolve(HERE, "../../../..");
+
+/** The managed helpers directory (`authz sync` writes the registry helpers here). */
+export const HELPERS_DIR = path.join(HERE, "helpers");
+
+/** `HELPERS_DIR` from the repo root, as @carbon/checks names files. */
+export const REGISTRY_HELPERS_DIR = path
+  .relative(REPO_ROOT, HELPERS_DIR)
+  .split(path.sep)
+  .join("/");
 
 const literal = (s: string) => `'${s.replaceAll("'", "''")}'`;
 
@@ -104,7 +117,7 @@ const read = (file: string) => {
   }
 };
 
-/** Writes the registry helpers into `dir` (helpers.ts `HELPERS_DIR`); returns the files written. */
+/** Writes the registry helpers into `dir` (`HELPERS_DIR`); returns the files written. */
 export function writeRegistryHelpers(dir: string): string[] {
   const written: string[] = [];
   for (const { file, sql } of registryHelperFiles(dir)) {

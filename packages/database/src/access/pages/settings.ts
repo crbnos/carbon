@@ -12,13 +12,6 @@ export const LABEL = "Settings";
 // entry manages: the tag list every page adds to, and the Implementation Hub.
 export const PAGES = [
   {
-    id: "settings.billing",
-    label: "Billing",
-    maxLevel: "Full",
-    tables: [],
-    paths: ["/x/settings/billing"]
-  },
-  {
     id: "settings.company",
     label: "Company",
     maxLevel: "Full",
@@ -33,6 +26,13 @@ export const PAGES = [
       "implementationFieldValue"
     ],
     paths: ["/x/settings/company"]
+  },
+  {
+    id: "settings.billing",
+    label: "Billing",
+    maxLevel: "Full",
+    tables: [],
+    paths: ["/x/settings/billing"]
   },
   {
     id: "settings.companies",

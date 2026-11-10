@@ -10,17 +10,20 @@ import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { CONSOLE_OPERATOR_GRANTS, consoleOperatorWork } from "./console-grants";
-import { requireEntitlement } from "./entitlements.server";
-import { writeAccessGrants } from "./permissions.server";
+import {
+  type AccessWriteError,
+  subjectEntitlement,
+  writeAccessGrants
+} from "./permissions.server";
 import { companyHasFeature } from "./plan.server";
 
 const logger = getLogger("ee", "console");
 
 /**
  * RUNTIME gate for console (kiosk) mode — the DEGRADE counterpart of the
- * `requireEntitlement` lock in `updateConsoleSetting`. Console mode is on for a
- * company only when BOTH its `companySettings.consoleEnabled` flag is set AND the
- * company is entitled to the `PERMISSIONS` feature.
+ * entitlement lock (`subjectEntitlement`) in `updateConsoleSetting`. Console
+ * mode is on for a company only when BOTH its `companySettings.consoleEnabled`
+ * flag is set AND the company is entitled to the `PERMISSIONS` feature.
  *
  * The flag alone is not enough: it outlives the entitlement (a plan downgrade
  * leaves it set), and it predates the trigger that now keeps API roles from
@@ -124,9 +127,9 @@ export async function verifyEmployeePin(
  * Commercial (Enterprise) console / kiosk mode. Enabling it provisions the
  * protected "Console Operator" employee type (MES-only permissions) and a PIN
  * for the enabling user — role provisioning, gated to the Business plan via the
- * `PERMISSIONS` feature. The ERP's settings service function calls it and
- * turns its `EntitlementError` into a refusal for Community/Starter; the
- * `.server` file is server-only and the `@carbon/ee`
+ * `PERMISSIONS` feature: a company without it gets an `entitlement` error
+ * (`subjectEntitlement`), returned, not thrown. The `.server` file is
+ * server-only and the `@carbon/ee`
  * package boundary carries the commercial license (see root LICENSE).
  *
  * `companySettings.consoleEnabled` is written over `db` (the server's direct
@@ -136,29 +139,40 @@ export async function verifyEmployeePin(
  * Enabling first provisions the type (`provisionConsoleOperator`); when that
  * fails, console mode stays off and the error is returned.
  *
- * Returns the PIN it generated for `userId` (only when that user had none) so
- * the caller can show it ONCE — it cannot be read back later. `pinError` is
- * set when that PIN could not be created; console mode is enabled regardless.
+ * `actorId` writes and audits the Console Operator grants. `pinUserId` is the
+ * signed-in user who gets a PIN; a key caller passes none. Returns the PIN it
+ * generated for `pinUserId` (only when that user had none) so the caller can
+ * show it ONCE — it cannot be read back later. `pinError` is set when that PIN
+ * could not be created; console mode is enabled regardless.
  */
 export async function updateConsoleSetting(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  companyId: string,
-  consoleEnabled: boolean,
-  userId?: string
+  {
+    companyId,
+    consoleEnabled,
+    actorId,
+    pinUserId: userId
+  }: {
+    companyId: string;
+    consoleEnabled: boolean;
+    actorId: string;
+    pinUserId?: string;
+  }
 ): Promise<{
-  error: { message: string } | null;
+  error: (AccessWriteError & { cause?: unknown }) | null;
   pin: string | null;
   pinError: string | null;
 }> {
-  await requireEntitlement(client, companyId, "PERMISSIONS");
+  const unentitled = await subjectEntitlement(client, companyId, "role");
+  if (unentitled) return { error: unentitled, pin: null, pinError: null };
 
   if (consoleEnabled) {
     const provisioned = await provisionConsoleOperator(
       client,
       db,
       companyId,
-      userId ?? "system"
+      actorId
     );
     if (provisioned.error) {
       logger.error("Failed to provision the Console Operator type", {
@@ -178,6 +192,7 @@ export async function updateConsoleSetting(
   } catch (err) {
     return {
       error: {
+        code: "internal",
         message:
           err instanceof Error ? err.message : "Failed to update console mode"
       },
@@ -233,7 +248,7 @@ async function provisionConsoleOperator(
   db: Kysely<KyselyDatabase>,
   companyId: string,
   actorId: string
-): Promise<{ error: { message: string } | null }> {
+): Promise<{ error: AccessWriteError | null }> {
   let existing: { id: string; grantCount: number } | undefined;
   try {
     const type = await db
@@ -250,6 +265,7 @@ async function provisionConsoleOperator(
   } catch (err) {
     return {
       error: {
+        code: "internal",
         message:
           err instanceof Error
             ? err.message

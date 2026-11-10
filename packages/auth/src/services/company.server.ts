@@ -109,6 +109,17 @@ export async function isCompanyOwner(
   userId: string | null
 ): Promise<boolean> {
   if (!userId) return false;
+  const owner = await readCompanyOwnerId(companyId);
+  return owner.ok && ownsCompany(owner.ownerId, userId);
+}
+
+/**
+ * The company's owner: its group's `ownerId`, read past RLS. `ok: false` when
+ * the read failed (logged); `ownerId: null` when the group has no owner.
+ */
+async function readCompanyOwnerId(
+  companyId: string
+): Promise<{ ok: true; ownerId: string | null } | { ok: false }> {
   const company = await getCarbonServiceRole()
     .from("company")
     .select("companyGroup(ownerId)")
@@ -119,9 +130,9 @@ export async function isCompanyOwner(
       companyId,
       error: company.error
     });
-    return false;
+    return { ok: false };
   }
-  return ownsCompany(company.data?.companyGroup?.ownerId, userId);
+  return { ok: true, ownerId: company.data?.companyGroup?.ownerId ?? null };
 }
 
 /**
@@ -156,25 +167,13 @@ async function loadIsCarbonOwnedCompany(companyId: string): Promise<boolean> {
   const cached = await redis.get(cacheKey);
   if (cached === "1" || cached === "0") return cached === "1";
 
-  const client = getCarbonServiceRole();
-
-  const company = await client
-    .from("company")
-    .select("companyGroup(ownerId)")
-    .eq("id", companyId)
-    .maybeSingle();
-  if (company.error) {
-    logger.error("Failed to read company owner", {
-      companyId,
-      error: company.error
-    });
-    return false;
-  }
+  const company = await readCompanyOwnerId(companyId);
+  if (!company.ok) return false;
 
   let owned = false;
-  const ownerId = company.data?.companyGroup?.ownerId;
+  const { ownerId } = company;
   if (ownerId) {
-    const owner = await client
+    const owner = await getCarbonServiceRole()
       .from("user")
       .select("email")
       .eq("id", ownerId)

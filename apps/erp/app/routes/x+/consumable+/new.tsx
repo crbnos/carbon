@@ -23,8 +23,7 @@ export const meta = newRecordMeta("Consumable");
 
 export const handle: Handle = {
   breadcrumb: msg`Consumables`,
-  to: path.to.consumables,
-  module: "items"
+  to: path.to.consumables
 };
 
 export async function action({ request }: ActionFunctionArgs) {

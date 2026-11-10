@@ -1263,9 +1263,49 @@ export async function updateSubsidiary(
 }
 
 /**
+ * Who may own a company group: an active employee of any company in it. The
+ * one rule behind the billing page's list (`listOwnershipCandidates`) and the
+ * transfer's check (`readOwnershipTransfer`). Read past RLS: the group's other
+ * companies are not the caller's.
+ */
+function ownershipCandidates(db: Kysely<KyselyDatabase>, groupId: string) {
+  return db
+    .selectFrom("employee")
+    .innerJoin("company", "company.id", "employee.companyId")
+    .innerJoin("userToCompany", (join) =>
+      join
+        .onRef("userToCompany.userId", "=", "employee.id")
+        .onRef("userToCompany.companyId", "=", "employee.companyId")
+    )
+    .where("employee.active", "=", true)
+    .where("userToCompany.role", "=", "employee")
+    .where("company.companyGroupId", "=", groupId);
+}
+
+/** The users the owner of `companyId`'s group may hand it to (`ownershipCandidates`). */
+export async function listOwnershipCandidates(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<{ id: string; fullName: string | null; email: string }[]> {
+  const company = await db
+    .selectFrom("company")
+    .select("companyGroupId")
+    .where("id", "=", companyId)
+    .executeTakeFirst();
+  if (!company?.companyGroupId) return [];
+  return ownershipCandidates(db, company.companyGroupId)
+    .innerJoin("user", "user.id", "employee.id")
+    .select(["user.id", "user.fullName", "user.email"])
+    .distinct()
+    .orderBy("user.fullName")
+    .execute();
+}
+
+/**
  * What deciding a transfer of the company group's ownership reads: the group
- * and its owner, and whether the new owner is an active employee of a company
- * in that group. Read past RLS: `transferCompanyOwnership` decides itself.
+ * and its owner, and whether the new owner is one of its
+ * `ownershipCandidates`. Read past RLS: `transferCompanyOwnership` decides
+ * itself.
  */
 export async function readOwnershipTransfer(
   db: Kysely<KyselyDatabase>,
@@ -1283,19 +1323,9 @@ export async function readOwnershipTransfer(
     .executeTakeFirst();
   if (!group) return null;
 
-  const employee = await db
-    .selectFrom("employee")
-    .innerJoin("company", "company.id", "employee.companyId")
-    .innerJoin("userToCompany", (join) =>
-      join
-        .onRef("userToCompany.userId", "=", "employee.id")
-        .onRef("userToCompany.companyId", "=", "employee.companyId")
-    )
+  const employee = await ownershipCandidates(db, group.groupId)
     .select("employee.id")
     .where("employee.id", "=", args.newOwnerId)
-    .where("employee.active", "=", true)
-    .where("userToCompany.role", "=", "employee")
-    .where("company.companyGroupId", "=", group.groupId)
     .limit(1)
     .executeTakeFirst();
 

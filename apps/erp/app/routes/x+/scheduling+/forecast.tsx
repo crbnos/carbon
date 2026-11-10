@@ -134,8 +134,7 @@ function resolveForecastWindow(input: {
 
 export const handle: Handle = {
   breadcrumb: msg`Forecast`,
-  to: path.to.scheduleForecast,
-  module: "production"
+  to: path.to.scheduleForecast
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

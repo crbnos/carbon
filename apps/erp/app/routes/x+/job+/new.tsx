@@ -28,8 +28,7 @@ export const meta = newRecordMeta("Job");
 
 export const handle: Handle = {
   breadcrumb: msg`Jobs`,
-  to: path.to.jobs,
-  module: "production"
+  to: path.to.jobs
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

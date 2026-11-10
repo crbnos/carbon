@@ -76,8 +76,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Orders`, to: path.to.purchaseOrders },
     (data) => data?.purchaseOrder?.purchaseOrderId
-  ),
-  module: "purchasing"
+  )
 };
 
 export async function action(args: ActionFunctionArgs) {

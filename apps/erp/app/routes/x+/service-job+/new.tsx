@@ -18,8 +18,7 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Jobs`,
-  to: path.to.serviceJobs,
-  module: "service"
+  to: path.to.serviceJobs
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

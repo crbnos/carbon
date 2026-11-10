@@ -40,8 +40,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`RFQs`, to: path.to.purchasingRfqs },
     (data) => data?.rfqSummary?.rfqId
-  ),
-  module: "purchasing"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

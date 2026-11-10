@@ -194,12 +194,12 @@ export function logApiKeyAccessChange(fields: {
 /**
  * Emit an `ownership_transferred` audit event (NIST 800-171 3.3.1 / 3.3.2 /
  * AC-2): the owner of a company group, who alone holds billing, changed.
+ * `actor` is the outgoing owner.
  */
 export function logOwnershipTransfer(fields: {
   actor: string;
   companyId: string;
   companyGroupId: string;
-  fromOwnerId: string;
   toOwnerId: string;
   ip?: string | null;
 }): void {
@@ -207,7 +207,8 @@ export function logOwnershipTransfer(fields: {
     actor: fields.actor,
     companyId: fields.companyId,
     companyGroupId: fields.companyGroupId,
-    fromOwnerId: fields.fromOwnerId,
+    // Only the owner may transfer, so the actor is the outgoing owner.
+    fromOwnerId: fields.actor,
     targetUserId: fields.toOwnerId,
     ip: fields.ip ?? undefined
   });

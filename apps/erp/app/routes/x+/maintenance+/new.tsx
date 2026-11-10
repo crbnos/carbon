@@ -20,8 +20,7 @@ export const meta = newRecordMeta("Maintenance Dispatch");
 
 export const handle: Handle = {
   breadcrumb: msg`Maintenance`,
-  to: path.to.maintenanceDispatches,
-  module: "resources"
+  to: path.to.maintenanceDispatches
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

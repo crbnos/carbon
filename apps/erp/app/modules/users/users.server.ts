@@ -11,6 +11,10 @@ import { LEVELS, pageById } from "@carbon/database/access";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { generateConsolePin, setEmployeePin } from "@carbon/ee/console.server";
 import { ACCESS_READER_GATE, subjectGates } from "@carbon/ee/permission-grants";
+import {
+  deleteEmployeeType as removeEmployeeType,
+  subjectEntitlement
+} from "@carbon/ee/permissions.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { batchTrigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -511,8 +515,12 @@ export const bulkUpdatePermissions = defineServiceFn({
   }),
   permission: subjectGates("Edit").person,
   async run(ctx, { editType, userIds, grants, ip }) {
-    const gated = await service.refuseUnlessPermissionsFeature(ctx);
-    if (gated) return gated;
+    const unentitled = await subjectEntitlement(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      "person"
+    );
+    if (unentitled) return ctx.error(unentitled.code, unentitled.message);
 
     const companyId = ctx.company.id;
     // The job writes these users' grants as the service role: every id must
@@ -586,6 +594,26 @@ export const updateEmployeeType = defineServiceFn({
       employeeType: { id, name },
       grants
     });
+  }
+});
+
+/**
+ * Delete an employee type.
+ *
+ * @remarks
+ * Needs role authoring (the PERMISSIONS feature). A protected type (Admin,
+ * Console Operator) is never deleted.
+ */
+export const deleteEmployeeType = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: subjectGates("Full").role,
+  async run(ctx, { id }) {
+    const { error } = await removeEmployeeType(ctx.asCaller.supabase, {
+      companyId: ctx.company.id,
+      id
+    });
+    if (error) return ctx.error(error.code, error.message, error.cause);
+    return { id };
   }
 });
 

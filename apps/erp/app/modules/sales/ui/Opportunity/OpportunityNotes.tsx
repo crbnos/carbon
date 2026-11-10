@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import type { PageId } from "@carbon/database/access";
+import { pageOfTable } from "@carbon/database/access";
 import type { JSONContent } from "@carbon/react";
 import {
   Card,
@@ -26,17 +26,6 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { useImageUpload, usePermissions, useUser } from "~/hooks";
 
-/** The page of each table whose notes this edits. */
-const OPPORTUNITY_NOTE_PAGES: Record<
-  "salesRfq" | "quote" | "salesOrder" | "salesInvoice",
-  PageId
-> = {
-  salesRfq: "sales.rfqs",
-  quote: "sales.quotes",
-  salesOrder: "sales.salesOrders",
-  salesInvoice: "invoicing.salesInvoices"
-};
-
 const OpportunityNotes = ({
   id,
   table,
@@ -58,8 +47,7 @@ const OpportunityNotes = ({
   const isEmployee = permissions.is("employee");
   const { t } = useLingui();
   const canEdit =
-    !isReadOnlyProp &&
-    permissions.has({ [OPPORTUNITY_NOTE_PAGES[table]]: "Edit" });
+    !isReadOnlyProp && permissions.has({ [pageOfTable(table)]: "Edit" });
   const [tab, setTab] = useState(isEmployee ? "internal" : "external");
   const [internalNotes, setInternalNotes] = useState(
     initialInternalNotes ?? {}

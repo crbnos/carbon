@@ -16,9 +16,7 @@ export const meta: MetaFunction = () => {
 
 // No breadcrumb here: the asset route emits the "Customer Assets" list link
 // through detailBreadcrumb.
-export const handle: Handle = {
-  module: "service"
-};
+export const handle: Handle = {};
 
 // The only check on this layout's own URL, which has no index route; the
 // children gate themselves.

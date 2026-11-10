@@ -67,8 +67,7 @@ export const handle: Handle = {
   breadcrumb: (params: unknown, data: ContractRouteData | undefined) =>
     data?.contract?.billingBasis === "Project"
       ? projectContractsCrumb(params, data)
-      : serviceContractsCrumb(params, data),
-  module: "sales"
+      : serviceContractsCrumb(params, data)
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

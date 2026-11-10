@@ -30,7 +30,6 @@ function ProjectsSidebar() {
 export const handle: Handle = {
   breadcrumb: msg`Projects`,
   to: path.to.projects,
-  module: "projects",
   sidebar: ProjectsSidebar
 };
 

@@ -44,8 +44,7 @@ export const links: LinksFunction = () => [
 
 export const handle: Handle = {
   breadcrumb: msg`Traceability`,
-  to: path.to.traceability,
-  module: "inventory"
+  to: path.to.traceability
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

@@ -15,6 +15,7 @@ import {
   hasLocalDatabase
 } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
+import { pageClaims } from "../page-claims";
 import {
   createSubsidiary,
   updatePlanningSettings,
@@ -46,14 +47,14 @@ const ctx = () =>
       type: "user",
       role: "employee",
       userId: ids.user,
-      permissions: {
+      permissions: pageClaims({
         settings: {
           view: [ids.ours],
           create: [ids.ours],
           update: [ids.ours],
           delete: [ids.ours]
         }
-      }
+      })
     },
     company: { id: ids.ours, groupId: ids.ourGroup },
     caller: client!,
@@ -205,9 +206,10 @@ describeLocal("a settings operation", () => {
       }
     });
 
+    // Written as the system, for this company's locations only.
     expect(result.error).toMatchObject({
-      category: "forbidden",
-      message: "You do not have permission to change this location"
+      category: "notFound",
+      message: "Location not found"
     });
   });
 

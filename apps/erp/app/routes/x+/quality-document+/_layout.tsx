@@ -15,8 +15,7 @@ export const meta = moduleMeta("Quality Document");
 
 export const handle: Handle = {
   breadcrumb: msg`Quality`,
-  to: path.to.quality,
-  module: "quality"
+  to: path.to.quality
 };
 
 export default function QualityDocumentRoute() {

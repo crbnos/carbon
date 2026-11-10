@@ -4214,6 +4214,46 @@ export const getInspection = defineServiceFn({
 });
 
 /**
+ * Fill in what a lot needs before it is shown. A serial lot whose plan
+ * inspects every unit gets every unit as a sample, so the inspector records
+ * results without scanning. A lot whose inspection document gained features
+ * after receipt gets their plan rows (the lot reads its document live). A
+ * failure only leaves the inspector to add them, so it is logged, not returned.
+ */
+export const prepareInspection = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { "quality.inspections": "View" },
+  async run(ctx, { id }) {
+    const companyId = ctx.company.id;
+    const prefill = await engine.prefillInspectionSamples(ctx.asSystem.pg, {
+      inspectionId: id,
+      companyId,
+      userId: ctx.auditUserId
+    });
+    if (prefill.error) {
+      logger.error("Failed to prefill the inspection samples", {
+        companyId,
+        inspectionId: id,
+        error: prefill.error
+      });
+    }
+    const reconciled = await service.reconcileInspectionSamplingPlans(
+      ctx.asSystem.pg,
+      id,
+      companyId
+    );
+    if (reconciled.error) {
+      logger.error("Failed to add the inspection's new plan rows", {
+        companyId,
+        inspectionId: id,
+        error: reconciled.error
+      });
+    }
+    return { id };
+  }
+});
+
+/**
  * Get receipt inspections
  *
  * @mcp read

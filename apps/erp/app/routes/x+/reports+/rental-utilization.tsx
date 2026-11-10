@@ -29,8 +29,7 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Rental Utilization`,
-  to: path.to.rentalUtilization,
-  module: "accounting"
+  to: path.to.rentalUtilization
 };
 
 // A bad bookmark must not 500 — an unparseable date falls back to the default.

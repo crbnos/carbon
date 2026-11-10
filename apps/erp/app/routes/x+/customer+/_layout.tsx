@@ -16,8 +16,7 @@ export const meta = moduleMeta("Customer");
 
 export const handle: Handle = {
   breadcrumb: msg`Sales`,
-  to: path.to.sales,
-  module: "sales"
+  to: path.to.sales
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

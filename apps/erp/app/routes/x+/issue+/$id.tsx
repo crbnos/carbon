@@ -47,8 +47,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Issues`, to: path.to.issues },
     (data) => data?.nonConformance?.nonConformanceId
-  ),
-  module: "quality"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

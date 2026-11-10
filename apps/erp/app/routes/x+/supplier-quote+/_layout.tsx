@@ -17,8 +17,7 @@ export const meta = moduleMeta("Supplier Quote");
 
 export const handle: Handle = {
   breadcrumb: msg`Purchasing`,
-  to: path.to.purchasing,
-  module: "purchasing"
+  to: path.to.purchasing
 };
 
 // The only check on this layout's own URL, which has no index route; the

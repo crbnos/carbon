@@ -32,8 +32,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Warehouse Transfer`, to: path.to.warehouseTransfers },
     (data) => data?.warehouseTransfer?.transferId
-  ),
-  module: "inventory"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

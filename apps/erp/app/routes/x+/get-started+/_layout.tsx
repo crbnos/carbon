@@ -137,6 +137,7 @@ function GetStartedSidebar() {
 export const handle: Handle = {
   breadcrumb: msg`Get Started`,
   to: path.to.getStarted,
+  module: "get-started",
   sidebar: GetStartedSidebar
 };
 

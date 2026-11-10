@@ -44,8 +44,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Depreciation`, to: path.to.depreciationRuns },
     (data) => data?.run?.depreciationRunId
-  ),
-  module: "accounting"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

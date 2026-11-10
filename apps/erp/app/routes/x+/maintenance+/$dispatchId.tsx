@@ -34,8 +34,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Maintenance`, to: path.to.maintenanceDispatches },
     (data) => data?.dispatch?.maintenanceDispatchId
-  ),
-  module: "resources"
+  )
 };
 
 async function getMaintenanceDispatchFiles(

@@ -33,8 +33,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Picking List`, to: path.to.pickingLists },
     (data) => data?.pickingList?.pickingListId
-  ),
-  module: "inventory"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

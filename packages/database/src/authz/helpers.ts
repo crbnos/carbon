@@ -7,6 +7,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "libpg-query";
 import type { Client } from "pg";
+import { HELPERS_DIR } from "./registry-sql";
+
+export { HELPERS_DIR };
 
 /**
  * The managed functions: the RLS and auth helpers (`helpers/<name>.sql`) and the event
@@ -19,7 +22,6 @@ import type { Client } from "pg";
  */
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-export const HELPERS_DIR = path.join(HERE, "helpers");
 export const EVENT_SYSTEM_DIR = path.join(HERE, "../event-system/functions");
 /** The functions attachments.ts attaches to tables: interceptors and statement handlers. */
 export const EVENT_HANDLERS_DIR = path.join(HERE, "../event-system/handlers");

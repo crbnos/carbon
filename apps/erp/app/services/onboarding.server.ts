@@ -6,7 +6,7 @@ import { Readable } from "node:stream";
 import { CarbonEdition, readClaimsFresh } from "@carbon/auth";
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import { admits } from "@carbon/database/access";
+import { admits, userActor } from "@carbon/database/access";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { Edition } from "@carbon/utils";
@@ -157,11 +157,7 @@ async function assertCanUpdateCompany(
 
   const allowed =
     claims !== null &&
-    admits(
-      { type: "user", role: claims.role, permissions: claims.permissions },
-      companyId,
-      { "settings.company": "Edit" }
-    );
+    admits(userActor(claims), companyId, { "settings.company": "Edit" });
 
   if (!allowed) {
     logger.error("Onboarding re-entry refused: caller cannot update company", {

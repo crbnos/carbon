@@ -69,8 +69,7 @@ const logger = getLogger("erp", "dates");
 
 export const handle: Handle = {
   breadcrumb: msg`Priorities`,
-  to: path.to.priorityDates,
-  module: "production"
+  to: path.to.priorityDates
 };
 
 type ViewType = "week" | "month";

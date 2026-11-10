@@ -803,21 +803,18 @@ export const updatePeopleSettings = defineServiceFn({
       return { ...input, pin: null, pinError: null };
     }
 
-    let update: Awaited<ReturnType<typeof updateConsoleSetting>>;
-    try {
-      update = await updateConsoleSetting(
-        ctx.asCaller.supabase,
-        ctx.asSystem.pg,
-        ctx.company.id,
+    const update = await updateConsoleSetting(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      {
+        companyId: ctx.company.id,
         consoleEnabled,
-        ctx.actor.type === "user" ? ctx.actor.userId : undefined
-      );
-    } catch (err) {
-      if (!(err instanceof EntitlementError)) throw err;
-      return ctx.error(
-        "entitlement",
-        "Console mode requires the Business plan"
-      );
+        actorId: ctx.auditUserId,
+        pinUserId: ctx.actor.type === "user" ? ctx.actor.userId : undefined
+      }
+    );
+    if (update.error?.code === "entitlement") {
+      return ctx.error("entitlement", update.error.message);
     }
     if (update.error) {
       return ctx.error(
@@ -2067,7 +2064,7 @@ export const createApiKey = defineServiceFn({
  */
 export const updateApiKey = defineServiceFn({
   input: z.object({ id: z.string().min(1), ...apiKeyFields }),
-  permission: { "settings.apiKeys": "Edit" },
+  permission: subjectGates("Edit").key,
   async run(ctx, { id, name, grants, expiresAt, rateLimit }) {
     const refused = await writeApiKey(ctx, {
       key: { id, name, expiresAt, rateLimit },
@@ -2086,7 +2083,7 @@ export const updateApiKey = defineServiceFn({
  */
 export const revokeApiKey = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
-  permission: { "settings.apiKeys": "Edit" },
+  permission: subjectGates("Edit").key,
   async run(ctx, { id }) {
     const { error } = await deleteApiKey(
       ctx.asCaller.supabase,
@@ -2392,7 +2389,6 @@ export const transferCompanyOwnership = defineServiceFn({
       actor: callerId,
       companyId: ctx.company.id,
       companyGroupId: transfer.groupId,
-      fromOwnerId: callerId,
       toOwnerId: newOwnerId
     });
     return { ownerId: newOwnerId };

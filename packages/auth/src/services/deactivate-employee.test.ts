@@ -3,8 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { getPermissionCacheKey } from "./users";
-import { deactivateEmployee } from "./users.server";
+import { deactivateEmployee, getPermissionCacheKey } from "./users.server";
 
 // Import-safety: the module builds a Supabase client at import.
 vi.hoisted(() => {

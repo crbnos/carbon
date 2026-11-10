@@ -24,8 +24,7 @@ export const meta = newRecordMeta("Material");
 
 export const handle: Handle = {
   breadcrumb: msg`Materials`,
-  to: path.to.materials,
-  module: "items"
+  to: path.to.materials
 };
 
 export async function action({ request }: ActionFunctionArgs) {

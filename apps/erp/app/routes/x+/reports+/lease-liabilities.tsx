@@ -51,8 +51,7 @@ const logger = getLogger("erp", "reports/lease-liabilities");
 
 export const handle: Handle = {
   breadcrumb: msg`Lease Liabilities`,
-  to: path.to.leaseLiabilities,
-  module: "accounting"
+  to: path.to.leaseLiabilities
 };
 
 // A bad bookmark must not 500 — an unparseable date falls back to the default.

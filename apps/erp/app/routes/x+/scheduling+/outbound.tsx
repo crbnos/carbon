@@ -26,8 +26,7 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Outbound`,
-  to: path.to.scheduleOutbound,
-  module: "production"
+  to: path.to.scheduleOutbound
 };
 
 const logger = getLogger("erp", "scheduling", "outbound");

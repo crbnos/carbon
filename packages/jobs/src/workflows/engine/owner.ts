@@ -5,7 +5,11 @@
 import { readClaimsFresh } from "@carbon/auth";
 import { getUserScopedClient } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import { admits, type ExpandedClaims } from "@carbon/database/access";
+import {
+  admits,
+  type ExpandedClaims,
+  userActor
+} from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -68,13 +72,7 @@ export async function readOwnerPermissions(
 
   // A workflow acts as its owner only while the owner is an employee: a
   // customer or supplier portal account runs nothing.
-  if (
-    !admits(
-      { type: "user", role: claims.role, permissions: claims.permissions },
-      companyId,
-      "employee"
-    )
-  ) {
+  if (!admits(userActor(claims), companyId, "employee")) {
     log.warn("Workflow owner is not an employee of the company", {
       ownerId,
       companyId,

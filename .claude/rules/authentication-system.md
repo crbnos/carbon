@@ -18,8 +18,11 @@ Export subpaths (`package.json`): `.` (`index.ts`), `./auth.server`, `./session.
 `./company.server`, `./users.server`, `./passkey.server`, `./verification.server`,
 `./middleware/flash.{server,client}`. User query helpers split across
 `services/users.ts` (client-safe: `getClaims`, `getCompaniesForUser`,
-`readClaimsFresh`; `getPermissionCacheKey` is internal to the package) and `services/users.server.ts`
-(server-only: `getUserClaims`, deactivate flows).
+`readClaimsFresh`) and `services/users.server.ts`
+(server-only: `getUserClaims`, `clearClaims`, deactivate flows, and the claims cache key
+`getPermissionCacheKey` with its TTL — exported only for its tests; callers use `clearClaims`).
+Claims become an `AccessActor` through `userActor(claims)` (`@carbon/database/access`), never a
+hand-built `{ type: "user", … }`.
 
 ## Supabase client factories (`lib/supabase/client.ts`, `client.server.ts`)
 

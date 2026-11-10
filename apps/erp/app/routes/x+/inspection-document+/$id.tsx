@@ -42,8 +42,7 @@ export const handle: Handle = {
     ];
     const name = data?.diagram?.name;
     return name ? [...segments, { breadcrumb: name }] : segments;
-  },
-  module: "quality"
+  }
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

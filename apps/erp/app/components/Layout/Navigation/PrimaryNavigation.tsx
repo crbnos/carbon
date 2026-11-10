@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { moduleOf, pageOfUrl } from "@carbon/database/access";
 import {
   cn,
   NavRail,
@@ -52,6 +53,7 @@ import {
 import { useUIStore } from "~/stores/ui";
 import type { Authenticated, NavItem } from "~/types";
 import { POINTER_SENSOR_OPTIONS } from "~/utils/drag-sensors";
+import { moduleOfMatches } from "~/utils/nav";
 import { getModule } from "~/utils/submodule-visibility";
 import { SearchModal } from "../Topbar/Search";
 import CompanySwitcher from "./CompanySwitcher";
@@ -101,36 +103,30 @@ const PrimaryNavigation = () => {
   const { t, i18n } = useLingui();
   const { isMobile } = useSidebar();
   const permissions = usePermissions();
-  const committedModule = getModule(useLocation().pathname);
-  const pendingModule = getModule(useOptimisticLocation().pathname);
+  const { pathname } = useLocation();
+  const pendingPathname = useOptimisticLocation().pathname;
   const links = useModuleLinks();
   const settingsModule = useSettingsModule();
-  const matchedModules = useMatches().reduce((acc, match) => {
-    const handle = match.handle as { module?: string } | undefined;
-
-    if (handle && typeof handle.module === "string") {
-      acc.add(handle.module);
-    }
-
-    return acc;
-  }, new Set<string>());
+  const committedModule = moduleOfMatches(useMatches());
 
   // While a navigation is pending the highlight moves to the destination at
-  // once, and off the module being left: `matchedModules` still describes the
-  // page on screen, so honouring both lit two modules for the length of the
-  // loader. A destination that is no module's own path (a detail page, whose
-  // module is only known from its route handle) keeps the current highlight.
-  const pendingIsModule =
-    pendingModule !== committedModule &&
-    (pendingModule === "get-started" ||
-      [...links, settingsModule].some(
-        (link) => link && getModule(link.to) === pendingModule
-      ));
-  const currentModule = pendingIsModule ? pendingModule : committedModule;
-  const isModuleActive = (to: string) => {
-    const m = getModule(to);
-    return currentModule === m || (!pendingIsModule && matchedModules.has(m));
-  };
+  // once. The routes of a pending URL are not matched yet, so only a URL
+  // inside a module's own path counts, and only when its page is in that
+  // module; a record's page keeps the current highlight until it loads.
+  const pendingModule = useMemo(() => {
+    if (pendingPathname === pathname) return undefined;
+    const segment = getModule(pendingPathname);
+    if (segment === "get-started") return segment;
+    const link = [...links, settingsModule].find(
+      (l) => l && getModule(l.to) === segment
+    );
+    const page = pageOfUrl(pendingPathname);
+    return link && (!page || moduleOf(page) === link.key)
+      ? link.key
+      : undefined;
+  }, [pathname, pendingPathname, links, settingsModule]);
+  const currentModule = pendingModule ?? committedModule;
+  const isModuleActive = (key: string) => currentModule === key;
 
   const editMode = useNavigationEditMode();
 
@@ -169,7 +165,7 @@ const PrimaryNavigation = () => {
       {settingsModule && !editMode.isEditing
         ? renderLink(
             settingsModule,
-            isModuleActive(settingsModule.to),
+            isModuleActive(settingsModule.key),
             MODULE_GO_TO[settingsModule.key]
           )
         : null}
@@ -222,7 +218,7 @@ const PrimaryNavigation = () => {
           />
         ) : (
           links.map((link) =>
-            renderLink(link, isModuleActive(link.to), MODULE_GO_TO[link.key])
+            renderLink(link, isModuleActive(link.key), MODULE_GO_TO[link.key])
           )
         )}
 
@@ -246,7 +242,7 @@ const CustomizeModuleList = ({
   currentModule
 }: {
   editMode: ReturnType<typeof useNavigationEditMode>;
-  currentModule: string;
+  currentModule: string | undefined;
 }) => {
   const submodules = useModuleSubmodules();
   const sensors = useSensors(
@@ -257,7 +253,7 @@ const CustomizeModuleList = ({
     () =>
       new Set(
         editMode.visibleDraft
-          .filter((m) => getModule(m.to) === currentModule)
+          .filter((m) => m.key === currentModule)
           .map((m) => m.key)
       )
   );

@@ -25,8 +25,7 @@ export const meta = newRecordMeta("Service");
 
 export const handle: Handle = {
   breadcrumb: msg`Services`,
-  to: path.to.services,
-  module: "items"
+  to: path.to.services
 };
 
 export async function action({ request }: ActionFunctionArgs) {

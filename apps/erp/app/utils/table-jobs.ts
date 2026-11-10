@@ -7,7 +7,8 @@ import {
   admits,
   type Claims,
   type Gate,
-  pageById
+  pageById,
+  userActor
 } from "@carbon/database/access";
 import type { Feature } from "@carbon/ee/plan";
 import { RoundingMode, round } from "@carbon/utils";
@@ -32,11 +33,7 @@ export function holdsListGate(
   gate: Gate,
   companyId: string
 ): boolean {
-  return admits(
-    { type: "user", role: claims.role, permissions: claims.permissions },
-    companyId,
-    gate
-  );
+  return admits(userActor(claims), companyId, gate);
 }
 
 /** The answer when another job of the company holds the lock: the job kind

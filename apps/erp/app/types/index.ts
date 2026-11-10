@@ -95,7 +95,7 @@ export type Route<T = {}> = T & {
   }[];
   q?: string;
   table?: string;
-  /** What the entry shows behind, when it is more than View on its page. */
+  /** What the entry shows behind, when it is not View on the page of `to`. */
   gate?: Gate;
   /** When present, overrides the default check (`routeOwnsUrl`). */
   isActive?: (pathname: string) => boolean;

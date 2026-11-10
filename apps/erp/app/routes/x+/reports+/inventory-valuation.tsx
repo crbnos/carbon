@@ -15,8 +15,7 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Inventory Valuation`,
-  to: path.to.inventoryValuation,
-  module: "accounting"
+  to: path.to.inventoryValuation
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

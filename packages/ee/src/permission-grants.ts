@@ -217,7 +217,7 @@ export const SUBJECT_RULES: Record<AccessSubjectType, SubjectRules> = {
 };
 
 export function subjectGates(
-  level: "View" | "Edit"
+  level: "View" | "Edit" | "Full"
 ): Record<AccessSubjectType, PageGate> {
   const gate = (type: AccessSubjectType): PageGate => ({
     [SUBJECT_RULES[type].page]: level

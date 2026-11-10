@@ -377,24 +377,16 @@ describe("widenReads", () => {
 describe("landingOf", () => {
   const view = { view: ["c1"], create: [], update: [], delete: [] };
 
-  it("takes the preferred page when the person can view it", () => {
+  it("takes the first page in sidebar order the person can view", () => {
+    const [first, second] = pagesOf("inventory");
     expect(
-      landingOf("inventory", { "inventory.quantities": view }, "c1", {
-        prefer: "inventory.quantities"
-      })
-    ).toEqual({
-      page: "inventory.quantities",
-      path: "/x/inventory/quantities"
-    });
-  });
-
-  it("else the first page in sidebar order the person can view", () => {
-    const [, second] = pagesOf("inventory");
-    expect(
-      landingOf("inventory", { [second as string]: view }, "c1", {
-        prefer: "inventory.quantities"
-      })
-    ).toEqual({
+      landingOf(
+        "inventory",
+        { [first as string]: view, [second as string]: view },
+        "c1"
+      )
+    ).toEqual({ page: first, path: pageById(first as string)?.paths[0] });
+    expect(landingOf("inventory", { [second as string]: view }, "c1")).toEqual({
       page: second,
       path: pageById(second as string)?.paths[0]
     });

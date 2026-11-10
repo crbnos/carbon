@@ -23,8 +23,7 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Deferred Revenue Waterfall`,
-  to: path.to.revenueWaterfall,
-  module: "accounting"
+  to: path.to.revenueWaterfall
 };
 
 // A bad bookmark must not 500 — an unparseable `asOf` falls back to today.

@@ -17,8 +17,7 @@ export const meta: MetaFunction = () => {
 
 export const handle: Handle = {
   breadcrumb: msg`Projects`,
-  to: path.to.projects,
-  module: "projects"
+  to: path.to.projects
 };
 
 // The only check on this layout's own URL, which has no index route; the

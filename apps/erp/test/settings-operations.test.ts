@@ -43,7 +43,6 @@ vi.mock("@carbon/printing/printing.server", () => ({
 }));
 vi.mock("@carbon/jobs", () => ({ batchTrigger, trigger }));
 
-import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { pageClaims } from "./page-claims";
 
@@ -351,12 +350,17 @@ describe("planning settings", () => {
 
 describe("people settings", () => {
   it("answers a company without the plan with an entitlement error", async () => {
-    consoleSetting.mockRejectedValue(new EntitlementError("PERMISSIONS"));
+    consoleSetting.mockResolvedValue({
+      error: { code: "entitlement", message: "Requires the Business plan" },
+      pin: null,
+      pinError: null
+    });
     const { ctx } = contextWith();
 
     const result = await updatePeopleSettings(ctx, { consoleEnabled: true });
 
     expect(result.error?.category).toBe("entitlement");
+    expect(result.error?.message).toBe("Requires the Business plan");
   });
 
   it("generates no console PIN for a key caller: the key holder may not be its creator", async () => {
@@ -374,7 +378,10 @@ describe("people settings", () => {
     const result = await updatePeopleSettings(ctx, { consoleEnabled: true });
 
     expect(result.data).toMatchObject({ pin: null });
-    expect(consoleSetting.mock.calls[0]![4]).toBeUndefined();
+    expect(consoleSetting.mock.calls[0]![2]).toMatchObject({
+      actorId: "user-1",
+      pinUserId: undefined
+    });
   });
 });
 

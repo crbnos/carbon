@@ -21,9 +21,7 @@ export const meta: MetaFunction = () => {
 // No breadcrumb here: the detail route ($projectId.tsx) already emits the
 // "Projects" list link via detailBreadcrumb, so declaring it on the layout too
 // would render "Projects" twice. `module` keeps the navigation highlighted.
-export const handle: Handle = {
-  module: "projects"
-};
+export const handle: Handle = {};
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await authorize(request, {

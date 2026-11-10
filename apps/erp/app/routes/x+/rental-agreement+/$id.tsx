@@ -29,8 +29,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Rental Agreements`, to: path.to.rentalAgreements },
     (data) => data?.rentalAgreement?.rentalAgreementId
-  ),
-  module: "sales"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

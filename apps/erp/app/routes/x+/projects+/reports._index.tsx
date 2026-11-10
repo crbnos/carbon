@@ -54,8 +54,7 @@ export const meta: MetaFunction = () => [{ title: "Carbon | Project Reports" }];
 
 export const handle: Handle = {
   breadcrumb: msg`Reports`,
-  to: path.to.projectReports,
-  module: "projects"
+  to: path.to.projectReports
 };
 
 const logger = getLogger("erp", "projects-reports");

@@ -22,8 +22,7 @@ const logger = getLogger("erp", "planning-groups");
 
 export const handle: Handle = {
   breadcrumb: msg`Planning Groups`,
-  to: path.to.planningGroups,
-  module: "projects"
+  to: path.to.planningGroups
 };
 
 // The list loads without a plan check: a gated company sees the upgrade

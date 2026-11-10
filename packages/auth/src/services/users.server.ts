@@ -3,7 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { claimsFor, isLegacyClaims } from "@carbon/database/access";
+import {
+  claimsFor,
+  isLegacyClaims,
+  REGISTRY_HASH
+} from "@carbon/database/access";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { oncePerRead } from "@carbon/logger/middleware.server";
@@ -14,7 +18,7 @@ import type { CompanyRole, Result } from "../types";
 import { error, success } from "../utils/result";
 import { type AuditGrant, logRoleChange } from "./auth-events.server";
 import type { SessionClaims } from "./session-access";
-import { getClaims, getPermissionCacheKey } from "./users";
+import { getClaims } from "./users";
 
 const log = getLogger("auth");
 
@@ -22,6 +26,14 @@ const log = getLogger("auth");
 // (company switch / deactivation) fails to delete the key — the cache heals
 // itself on expiry. 1 hour, matching the auth package's other short-lived keys.
 const PERMISSION_CACHE_TTL_SECONDS = 3600;
+
+/**
+ * A Redis hash of the user's claims, one field per company. Deleting it clears
+ * every company; the registry hash retires entries a deploy changed the pages of.
+ */
+export function getPermissionCacheKey(userId: string) {
+  return `permissions:${REGISTRY_HASH}:${userId}`;
+}
 
 export async function getUserByEmail(email: string) {
   return getCarbonServiceRole()

@@ -14,7 +14,7 @@ import {
   getUserScopedClient
 } from "@carbon/auth/client.server";
 import { getUserClaims } from "@carbon/auth/users.server";
-import { admits } from "@carbon/database/access";
+import { admits, userActor } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import type { AuthedContext } from "./base.server";
 
@@ -113,13 +113,7 @@ export async function oauthContext({
     getUserScopedClient(userId)
   ]);
 
-  if (
-    !admits(
-      { type: "user", role: claims.role, permissions: claims.permissions },
-      companyId,
-      "employee"
-    )
-  ) {
+  if (!admits(userActor(claims), companyId, "employee")) {
     return null;
   }
   if (!company.data) {

@@ -34,8 +34,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Policy & Procedure`, to: path.to.qualityDocuments },
     (data) => data?.document?.name
-  ),
-  module: "quality"
+  )
 };
 
 // Approving makes the document Active; rejecting leaves it in Draft.

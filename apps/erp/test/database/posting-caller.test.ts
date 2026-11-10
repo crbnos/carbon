@@ -15,16 +15,23 @@ import {
   databaseTest
 } from "./fixtures/local-database";
 import { ForbiddenError } from "@carbon/api/errors";
+import { SUPABASE_SERVICE_ROLE_KEY } from "@carbon/env";
 import {
   authorizePostingCaller,
   type PostingCredential,
   postingCredential
 } from "~/modules/shared/shared.service";
 
-vi.mock("@carbon/env", async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  SUPABASE_SERVICE_ROLE_KEY: "service-role-key"
-}));
+// An API key is authenticated through the auth package's service-role
+// client, so that client reads the local stack.
+vi.mock("@carbon/env", async (importOriginal) => {
+  const { localSupabaseEnv } = await import("./fixtures/local-supabase");
+  return {
+    ...(await importOriginal<object>()),
+    SUPABASE_SERVICE_ROLE_KEY: "service-role-key",
+    ...localSupabaseEnv()
+  };
+});
 
 const jwt = (payload: object) =>
   `h.${Buffer.from(JSON.stringify(payload)).toString("base64url")}.s`;
@@ -70,7 +77,7 @@ describe("postingCredential", () => {
   });
 
   it("makes the service-role client the system", async () => {
-    expect(postingCredential(clientWith("service-role-key"), fields.userId)).toEqual(
+    expect(postingCredential(clientWith(SUPABASE_SERVICE_ROLE_KEY!), fields.userId)).toEqual(
       { type: "system" }
     );
   });

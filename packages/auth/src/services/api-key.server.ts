@@ -18,8 +18,8 @@ const log = getLogger("auth");
 // The registry hash retires records whose permissions a deploy reshaped.
 const API_KEY_CACHE_PREFIX = `apikey:auth:${REGISTRY_HASH}:`;
 // Short on purpose: the record carries the key's grants, expiry and rate limit,
-// so a revoked or re-granted key can act for at most this long (the api-keys routes
-// additionally bust the entry on edit/revoke). Negative results are cached too —
+// so a revoked or re-granted key can act for at most this long (saving or revoking
+// a key, a grant write and a restore clear it at once). Negative results are cached too —
 // a bad key hammering the endpoint must not hammer Postgres.
 const API_KEY_CACHE_TTL_SECONDS = 30;
 /** PostgREST's code for a `.single()` that matched no rows. */

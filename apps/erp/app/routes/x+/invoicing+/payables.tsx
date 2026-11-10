@@ -16,8 +16,7 @@ import { path } from "~/utils/path";
 export const handle: Handle = {
   realtime: ["purchaseInvoice", "payment"],
   breadcrumb: msg`Payables`,
-  to: path.to.payables,
-  module: "invoicing"
+  to: path.to.payables
 };
 
 function parseBuckets(raw: string | null): [number, number, number] {

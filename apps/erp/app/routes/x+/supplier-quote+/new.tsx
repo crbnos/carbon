@@ -24,8 +24,7 @@ export const meta = newRecordMeta("Supplier Quote");
 
 export const handle: Handle = {
   breadcrumb: msg`Supplier Quote`,
-  to: path.to.supplierQuotes,
-  module: "purchasing"
+  to: path.to.supplierQuotes
 };
 
 export async function action({ request }: ActionFunctionArgs) {

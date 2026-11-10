@@ -58,8 +58,7 @@ export const handle: Handle = {
           }
         ]
       : [])
-  ],
-  module: "projects"
+  ]
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

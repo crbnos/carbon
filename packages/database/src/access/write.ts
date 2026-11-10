@@ -5,12 +5,7 @@
 import type { Kysely } from "kysely";
 import { type KyselyDatabase, type KyselyTx, withTransaction } from "../client";
 import type { Level } from "./levels";
-import {
-  clampLevel,
-  isPageModule,
-  type ModuleEnum,
-  moduleId
-} from "./registry";
+import { clampLevel, isPageModule, type ModuleEnum } from "./registry";
 import type { Grant } from "./resolve";
 
 export type GrantSubject =
@@ -118,10 +113,9 @@ export async function replaceGrants(
       apiKeyId: column === "apiKeyId" ? id : null,
       module: grant.module,
       page: grant.page,
-      level: clampLevel(
-        grant.page ?? (moduleId(grant.module) as string),
-        grant.level as Level
-      ),
+      level: grant.page
+        ? clampLevel(grant.page, grant.level as Level)
+        : (grant.level as Level),
       createdBy: userId
     }));
 

@@ -45,18 +45,13 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { InviteEmail } from "@carbon/documents/email";
 import { saveApiKey } from "@carbon/ee/api-keys.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
-import {
-  accessSubject,
-  SUBJECT_RULES,
-  subjectGates
-} from "@carbon/ee/permission-grants";
+import { accessSubject, subjectGates } from "@carbon/ee/permission-grants";
 import {
   type AccessChange,
   type AccessWriteError,
   saveEmployeeType,
   writeAccessGrants
 } from "@carbon/ee/permissions.server";
-import { companyHasFeature } from "@carbon/ee/plan.server";
 import {
   emailDomain,
   getSsoAwareInviteLink,
@@ -2275,20 +2270,6 @@ export function originOf(request: Request) {
   };
 }
 
-/**
- * Role authoring is a Business-plan feature. This is the friendly refusal;
- * the lock is `requireEntitlement` inside `@carbon/ee/permissions.server`.
- */
-export async function refuseUnlessPermissionsFeature(ctx: ServiceContext) {
-  const { feature, refusal } = SUBJECT_RULES.person;
-  if (
-    await companyHasFeature(ctx.asCaller.supabase, ctx.company.id, { feature })
-  ) {
-    return null;
-  }
-  return ctx.error("entitlement", refusal);
-}
-
 /** The company's name and the inviting user, for the invite email. */
 export async function inviteSender(ctx: ServiceContext) {
   const client = ctx.asCaller.supabase;
@@ -2376,8 +2357,6 @@ export async function emailAccountInvite(
   });
   return { userId: account.userId };
 }
-
-export type { AccessSubjectType };
 
 export function readAccessGrants(
   ctx: ServiceContext,

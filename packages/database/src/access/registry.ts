@@ -299,8 +299,8 @@ export function writersOf(table: string): readonly string[] {
 /**
  * The pages whose View admits a read of what a page owns: every page of its
  * module, then the pages of other modules that list one of its tables in
- * `readers`. Writes stay per page. RLS (`render`) and `holdsGate`'s read
- * mode (`widenReads`) both use it.
+ * `readers`. Writes stay per page. `holdsGate`'s read mode (`widenReads`)
+ * uses it; RLS composes the same rule per table in rules.ts `belongsTo`.
  */
 export function readPages(pageId: string): PageId[] {
   const module = moduleOf(pageId);

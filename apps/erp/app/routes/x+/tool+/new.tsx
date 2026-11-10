@@ -23,8 +23,7 @@ export const meta = newRecordMeta("Tool");
 
 export const handle: Handle = {
   breadcrumb: msg`Tools`,
-  to: path.to.tools,
-  module: "items"
+  to: path.to.tools
 };
 
 export async function action({ request }: ActionFunctionArgs) {

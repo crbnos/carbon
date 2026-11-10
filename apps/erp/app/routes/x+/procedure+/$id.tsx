@@ -37,8 +37,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Procedures`, to: path.to.procedures },
     (data) => data?.procedure?.name
-  ),
-  module: "production"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

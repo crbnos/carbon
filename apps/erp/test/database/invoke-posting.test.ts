@@ -2,7 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Runs against the local database (SUPABASE_DB_URL); skipped without one.
+// Runs against the local database (SUPABASE_DB_URL) and the PostgREST `crbn up`
+// started; skipped without them.
 
 import { createHash } from "node:crypto";
 import type { ServiceContext } from "@carbon/api/service-fn.server";
@@ -13,10 +14,16 @@ import {
   databaseTest
 } from "./fixtures/local-database";
 import { createClient } from "@supabase/supabase-js";
-import { expect } from "vitest";
+import { sql } from "kysely";
+import { expect, vi } from "vitest";
 import { invokePosting } from "../../app/modules/shared/shared.service";
 
-class Rollback extends Error {}
+// An API key is authenticated through the auth package's service-role
+// client, so that client reads the local stack.
+vi.mock("@carbon/env", async (importOriginal) => {
+  const { localSupabaseEnv } = await import("./fixtures/local-supabase");
+  return { ...(await importOriginal<object>()), ...localSupabaseEnv() };
+});
 
 type Scratch = {
   db: Kysely<KyselyDatabase>;
@@ -29,7 +36,11 @@ type Scratch = {
 /** A grant of the scratch key: a module and its level, or one page of it. */
 type KeyGrant = { module: string; page?: string; level: string };
 
-/** A company, its group and an API key holding `grants`, all rolled back. */
+/**
+ * A company, its group and an API key holding `grants`, deleted afterwards.
+ * Committed: the key is authenticated through PostgREST, which cannot see
+ * an open transaction.
+ */
 async function withScratch(
   grants: KeyGrant[],
   fn: (s: Scratch) => Promise<void>
@@ -81,19 +92,23 @@ async function withScratch(
           )
           .execute();
       }
-      await fn({
-        db: trx,
-        companyId,
-        groupId,
-        keyClient: createClient<Database>("http://localhost:54321", "anon", {
-          global: { headers: { "carbon-key": rawKey } }
-        })
-      });
-      throw new Rollback();
     });
-  } catch (err) {
-    if (!(err instanceof Rollback)) throw err;
+    await fn({
+      db,
+      companyId,
+      groupId,
+      keyClient: createClient<Database>("http://localhost:54321", "anon", {
+        global: { headers: { "carbon-key": rawKey } }
+      })
+    });
   } finally {
+    await db.transaction().execute(async (trx) => {
+      await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+      await trx.deleteFrom("permission").where("companyId", "=", companyId).execute();
+      await trx.deleteFrom("apiKey").where("companyId", "=", companyId).execute();
+      await trx.deleteFrom("company").where("id", "=", companyId).execute();
+      await trx.deleteFrom("companyGroup").where("id", "=", groupId).execute();
+    });
     await db.destroy();
   }
 }

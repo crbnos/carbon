@@ -39,8 +39,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Jobs`, to: path.to.serviceJobs },
     (data) => data?.job?.serviceJobId
-  ),
-  module: "service"
+  )
 };
 
 async function getServiceJobFiles(

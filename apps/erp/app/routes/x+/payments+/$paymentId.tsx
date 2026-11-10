@@ -49,8 +49,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Payments`, to: path.to.payments },
     (data) => data?.payment?.paymentId
-  ),
-  module: "invoicing"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

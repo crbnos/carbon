@@ -9,12 +9,14 @@ import {
   type Gate,
   type GateLevel,
   holdsGate,
+  type ModuleId,
   ownsCompany,
   pagesOf
 } from "@carbon/database/access";
 import { useRouteData } from "@carbon/react";
 import { useCallback } from "react";
 import type { Role } from "~/types";
+import { moduleLanding } from "~/utils/nav";
 import { path } from "~/utils/path";
 import { useUser } from "./useUser";
 
@@ -62,11 +64,18 @@ export function usePermissions() {
     return ownsCompany(ownerId, userId);
   }, [ownerId, userId]);
 
+  /** Where the module opens for this person (`moduleLanding`). */
+  const landing = useCallback(
+    (module: ModuleId) => moduleLanding(module, data?.permissions, companyId),
+    [companyId, data?.permissions]
+  );
+
   return {
     has,
     hasAny,
     is,
-    isOwner
+    isOwner,
+    landing
   };
 }
 

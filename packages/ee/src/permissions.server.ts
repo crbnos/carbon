@@ -48,18 +48,33 @@ import {
  * portal invites carry permissions through it, and it is not authoring.
  */
 
+/**
+ * Delete one of the company's unprotected employee types. The plan lock is
+ * returned as a refusal (`subjectEntitlement`), like every other subject write.
+ * A protected type, or one that is not the company's, is left as it is.
+ */
 export async function deleteEmployeeType(
   client: SupabaseClient<Database>,
-  employeeTypeId: string,
-  companyId: string
-) {
-  await requireEntitlement(client, companyId, "PERMISSIONS");
-  return client
+  { companyId, id }: { companyId: string; id: string }
+): Promise<{ error: (AccessWriteError & { cause?: unknown }) | null }> {
+  const unentitled = await subjectEntitlement(client, companyId, "role");
+  if (unentitled) return { error: unentitled };
+  const deleted = await client
     .from("employeeType")
     .delete()
-    .eq("id", employeeTypeId)
+    .eq("id", id)
     .eq("companyId", companyId)
     .eq("protected", false);
+  if (deleted.error) {
+    return {
+      error: {
+        code: "internal",
+        message: "Failed to delete employee type",
+        cause: deleted.error
+      }
+    };
+  }
+  return { error: null };
 }
 
 export type AccessSubject = GrantSubject;

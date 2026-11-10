@@ -159,7 +159,7 @@ export type RawClaims = {
 };
 
 const LEVEL_SET = new Set<string>(LEVELS);
-const SUBJECTS = new Set<string>(["person", "role", "key"]);
+const SUBJECTS = new Set<string>(ACCESS_SUBJECT_TYPES);
 
 /** TRANSITIONAL(#1958): a legacy `<module>_<action>` key: a module id is lowercase letters, no dot. */
 const legacyKey = (key: string) => {
@@ -417,26 +417,23 @@ export function holdsGate(
 }
 
 /**
- * Where a module's link takes a person: `prefer` when they can view it, else
- * the first page of the module, in sidebar order, that they can view and whose
- * first path has no `$param`. Undefined when there is none. `path` is the
- * page's first path.
+ * Where a module's link takes a person: the first page of the module, in
+ * sidebar order, that they can view and whose first path has no `$param`.
+ * Undefined when there is none. `path` is the page's first path.
  */
 export function landingOf(
   module: string,
   expanded: ExpandedClaims | null | undefined,
-  companyId: string,
-  { prefer }: { prefer?: PageId } = {}
+  companyId: string
 ): { page: PageId; path: string } | undefined {
-  const canView = (page: PageId) =>
-    holdsGate(expanded, { [page]: "View" }, companyId);
-  const at = (page: PageId) => pageById(page)?.paths[0];
-  const preferred = prefer && at(prefer);
-  if (prefer && preferred && canView(prefer))
-    return { page: prefer, path: preferred };
   for (const page of pagesOf(module)) {
-    const path = at(page);
-    if (path && !path.includes("$") && canView(page)) return { page, path };
+    const path = pageById(page)?.paths[0];
+    if (
+      path &&
+      !path.includes("$") &&
+      holdsGate(expanded, { [page]: "View" }, companyId)
+    )
+      return { page, path };
   }
   return undefined;
 }

@@ -17,8 +17,7 @@ export const meta: MetaFunction = () => {
 
 export const handle: Handle = {
   breadcrumb: msg`Service`,
-  to: path.to.serviceJobs,
-  module: "service"
+  to: path.to.serviceJobs
 };
 
 export default function ServiceJobLayoutRoute() {

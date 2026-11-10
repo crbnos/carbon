@@ -24,8 +24,7 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Reimbursements`,
-  to: path.to.reimbursements,
-  module: "invoicing"
+  to: path.to.reimbursements
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

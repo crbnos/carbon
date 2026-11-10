@@ -37,6 +37,26 @@ export function localServiceRoleClient(): SupabaseClient<Database> | null {
   return localClient("SUPABASE_SERVICE_ROLE_KEY");
 }
 
+/**
+ * The `@carbon/env` values that point the auth package's server clients
+ * (`getCarbonServiceRole`, so `authenticateApiKey`) at the local stack, for a
+ * test that mocks `@carbon/env` with them. Empty without a local stack.
+ */
+export function localSupabaseEnv(): {
+  SUPABASE_URL?: string;
+  SUPABASE_INTERNAL_URL?: string;
+  SUPABASE_SERVICE_ROLE_KEY?: string;
+} {
+  const env = localEnv();
+  if (!env?.PORT_API || !env.SUPABASE_SERVICE_ROLE_KEY) return {};
+  const url = `http://localhost:${env.PORT_API}`;
+  return {
+    SUPABASE_URL: url,
+    SUPABASE_INTERNAL_URL: url,
+    SUPABASE_SERVICE_ROLE_KEY: env.SUPABASE_SERVICE_ROLE_KEY
+  };
+}
+
 /** The same PostgREST with the anonymous key: a caller with no permissions. */
 export function localAnonClient(): SupabaseClient<Database> | null {
   return localClient("SUPABASE_ANON_KEY");

@@ -33,7 +33,9 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Form, useLoaderData, useNavigation } from "react-router";
 import { z } from "zod";
 import { SettingsPage } from "~/components/SettingsPage";
-import { usePermissions, useUser } from "~/hooks";
+import { useUser } from "~/hooks";
+import { listOwnershipCandidates } from "~/modules/settings/settings.service";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -54,7 +56,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   await requireCompanyOwner({ companyId, userId });
 
   // Get company plan and usage data for payment section
-  const [companyPlan, companyUsage, userToCompany] = await Promise.all([
+  const [companyPlan, companyUsage, employees] = await Promise.all([
     client
       .from("companyPlan")
       .select(
@@ -71,35 +73,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .eq("id", companyId)
       .single(),
     client.from("companyUsage").select("*").eq("companyId", companyId).single(),
-    client
-      .from("userToCompany")
-      .select("userId")
-      .eq("companyId", companyId)
-      .eq("role", "employee")
+    // The group's other companies are not the caller's: read as the system.
+    listOwnershipCandidates(getDatabaseClient(), companyId)
   ]);
-
-  const userIds = userToCompany.data?.map((utc) => utc.userId) || [];
-
-  const employees =
-    userIds.length > 0
-      ? await client
-          .from("user")
-          .select(
-            `
-      id,
-      firstName,
-      lastName,
-      fullName,
-      email
-    `
-          )
-          .in("id", userIds)
-      : { data: [], error: null };
 
   return {
     plan: companyPlan.data,
     usage: companyUsage.data,
-    employees: employees.data || []
+    employees
   };
 }
 
@@ -129,11 +110,9 @@ export async function action(args: ActionFunctionArgs) {
   });
 }
 
-// This route now only handles actions - UI is in the company route
 export default function PaymentSettings() {
   const { plan, usage, employees } = useLoaderData<typeof loader>();
   const navigation = useNavigation();
-  const { isOwner } = usePermissions();
   const { id: userId } = useUser();
   const edition = useEdition();
   const [ownerId, setOwnerId] = useState<string | null>(userId);
@@ -145,7 +124,7 @@ export default function PaymentSettings() {
         <Heading as="h1" size="h3">
           <Trans>Billing</Trans>
         </Heading>
-        {edition === Edition.Cloud && isOwner() && (
+        {edition === Edition.Cloud && (
           <>
             <Card>
               <CardHeader>

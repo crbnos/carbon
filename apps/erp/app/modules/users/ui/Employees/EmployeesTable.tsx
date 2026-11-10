@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { subjectGates } from "@carbon/ee/permission-grants";
 import {
   Badge,
   Checkbox,
@@ -115,7 +116,7 @@ const EmployeesTable = memo(
     const resendInviteModal = useDisclosure();
     const revokeInviteModal = useDisclosure();
 
-    const canEdit = permissions.has({ "users.accounts": "Edit" });
+    const canEdit = permissions.has(subjectGates("Edit").person);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const columns = useMemo<ColumnDef<(typeof data)[number]>[]>(() => {
@@ -320,7 +321,7 @@ const EmployeesTable = memo(
               shortcut={MENU_ITEM_SHORTCUTS.edit}
               onClick={() => open("permissions", bulkEditDrawer.onOpen)}
               disabled={
-                !permissions.has({ "users.accounts": "Edit" }) ||
+                !permissions.has(subjectGates("Edit").person) ||
                 (!allMatching && usersFor("permissions").length === 0)
               }
             >

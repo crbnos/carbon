@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { type Claims, claimsFor, REGISTRY_HASH } from "@carbon/database/access";
+import { type Claims, claimsFor } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { SUPABASE_URL } from "../config/env";
@@ -16,14 +16,6 @@ export async function getClaims(
   company?: string
 ) {
   return client.rpc("get_claims", { uid, company: company ?? "" });
-}
-
-/**
- * A Redis hash of the user's claims, one field per company. Deleting it clears
- * every company; the registry hash retires entries a deploy changed the pages of.
- */
-export function getPermissionCacheKey(userId: string) {
-  return `permissions:${REGISTRY_HASH}:${userId}`;
 }
 
 export async function getCompanies(

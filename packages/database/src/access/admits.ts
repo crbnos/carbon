@@ -16,6 +16,14 @@ export type AccessActor =
     }
   | { type: "apiKey"; permissions: ExpandedClaims | null | undefined };
 
+/** The user actor for a user's claims (`get_claims` / the session). */
+export function userActor(claims: {
+  role: string | null;
+  permissions: ExpandedClaims | null | undefined;
+}): AccessActor {
+  return { type: "user", role: claims.role, permissions: claims.permissions };
+}
+
 /**
  * A gate, or `"employee"` (the same as `{}`: a member of the company), or
  * `"system"` (the system actor only).

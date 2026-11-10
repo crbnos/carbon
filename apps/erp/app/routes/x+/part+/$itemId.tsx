@@ -60,8 +60,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Parts`, to: path.to.parts },
     (data) => data?.partSummary?.readableIdWithRevision
-  ),
-  module: "items"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

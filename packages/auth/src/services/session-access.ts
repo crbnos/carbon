@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { admits, type Claims, type Gate } from "@carbon/database/access";
+import {
+  admits,
+  type Claims,
+  type Gate,
+  userActor
+} from "@carbon/database/access";
 
 /** What a session gate reads of a user's claims: `getUserClaims` returns it. */
 export type SessionClaims = Pick<Claims, "permissions" | "role">;
@@ -28,12 +33,9 @@ export function sessionAccess(
   operator: SessionClaims | null
 ): SessionAccess {
   const holds = (claims: SessionClaims, required: Gate) =>
-    admits(
-      { type: "user", role: claims.role, permissions: claims.permissions },
-      companyId,
-      required,
-      { allowPortalAccounts: options.allowPortalAccounts }
-    );
+    admits(userActor(claims), companyId, required, {
+      allowPortalAccounts: options.allowPortalAccounts
+    });
 
   if (!operator) {
     return {

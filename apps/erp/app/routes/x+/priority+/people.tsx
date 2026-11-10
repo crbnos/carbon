@@ -93,8 +93,7 @@ function fitsShiftFilter(
 
 export const handle: Handle = {
   breadcrumb: msg`Resource Planning`,
-  to: path.to.priorityPeople,
-  module: "production"
+  to: path.to.priorityPeople
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

@@ -24,8 +24,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export const handle: Handle = {
   breadcrumb: msg`Production`,
-  to: path.to.production,
-  module: "production"
+  to: path.to.production
 };
 
 export default function AssemblyRoute() {

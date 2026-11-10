@@ -2,11 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, notFound, success } from "@carbon/auth";
+import { respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { deleteEmployeeType } from "@carbon/ee/permissions.server";
 import { requireFeature } from "@carbon/ee/plan.server";
+import { validator } from "@carbon/form";
 import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -47,48 +48,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
-    "users.employeeTypes": "Full"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, {
+    params: ["employeeTypeId"]
   });
-
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    redirectTo: path.to.employeeAccounts,
-    feature: "PERMISSIONS"
+  if ("invalid" in input) return input.invalid;
+  const { api } = await authorize(args.request);
+  const result = await api.users.deleteEmployeeType({
+    id: input.params.employeeTypeId
   });
-
-  const { employeeTypeId } = params;
-  if (!employeeTypeId) {
-    throw redirect(
-      path.to.employeeTypes,
-      await flash(request, error(null, "Failed to get an employee type id"))
-    );
-  }
-
-  const { error: deleteTypeError } = await deleteEmployeeType(
-    client,
-    employeeTypeId,
-    companyId
-  );
-  if (deleteTypeError) {
-    throw redirect(
-      path.to.employeeTypes,
-      await flash(
-        request,
-        error(deleteTypeError, "Failed to delete employee type")
-      )
-    );
-  }
-
-  // TODO - delete employeeType group
-
-  throw redirect(
-    path.to.employeeTypes,
-    await flash(request, success("Successfully deleted employee type"))
-  );
+  return respond(args.request, result).redirect(path.to.employeeTypes, {
+    message: "Successfully deleted employee type"
+  });
 }
 
 export default function DeleteEmployeeTypeRoute() {

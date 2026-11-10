@@ -27,8 +27,7 @@ export const meta = newRecordMeta("Purchase Invoice");
 
 export const handle: Handle = {
   breadcrumb: msg`Purchasing`,
-  to: path.to.purchasing,
-  module: "purchasing"
+  to: path.to.purchasing
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

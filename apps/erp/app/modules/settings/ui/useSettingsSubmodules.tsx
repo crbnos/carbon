@@ -65,16 +65,16 @@ export default function useSettingsSubmodules() {
         name: t`Company`,
         routes: [
           {
+            name: t`Company`,
+            to: path.to.company,
+            icon: <LuFactory />
+          },
+          {
             name: t`Billing`,
             to: path.to.billing,
             icon: <LuCreditCard />,
             requiresOwnership: true,
             requiresCloudEnvironment: true
-          },
-          {
-            name: t`Company`,
-            to: path.to.company,
-            icon: <LuFactory />
           },
           {
             name: t`Companies`,

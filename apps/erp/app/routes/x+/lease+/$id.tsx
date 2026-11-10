@@ -34,8 +34,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Leases`, to: path.to.leases },
     (data) => data?.lease?.leaseId
-  ),
-  module: "purchasing"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

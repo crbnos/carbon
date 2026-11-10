@@ -31,8 +31,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Materials`, to: path.to.materials },
     (data) => data?.materialSummary?.readableIdWithRevision
-  ),
-  module: "items"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

@@ -25,8 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export const handle: Handle = {
   breadcrumb: msg`Quality`,
-  to: path.to.quality,
-  module: "quality"
+  to: path.to.quality
 };
 
 export default function InspectionRoute() {

@@ -27,8 +27,7 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Traceability`,
-  to: path.to.traceability,
-  module: "inventory"
+  to: path.to.traceability
 };
 
 const RECENT_SEARCHES_PREFIX = "traceability-searches";

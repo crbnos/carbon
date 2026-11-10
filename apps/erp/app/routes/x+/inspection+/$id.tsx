@@ -7,8 +7,6 @@ import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { prefillInspectionSamples } from "@carbon/database/quality";
-import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -21,8 +19,7 @@ import {
   getInspectionDocumentParameters,
   getInspectionIssues,
   getManualInspectionTrackedEntities,
-  getRecentInspectionGauges,
-  reconcileInspectionSamplingPlans
+  getRecentInspectionGauges
 } from "~/modules/quality/quality.service";
 import type {
   InspectionGauge,
@@ -40,8 +37,6 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "inspection");
-
 export const handle: Handle = {
   realtime: [
     { table: "inspection", column: "id", param: "id" },
@@ -50,8 +45,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Inspections`, to: path.to.inspections },
     (data) => data?.inspection?.inspectionId
-  ),
-  module: "quality"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>
@@ -65,26 +59,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(id, "id is required");
 
   const [inspection, settings, issueTypes] = await Promise.all([
-    // A serial lot whose plan inspects every unit gets every unit as a sample
-    // up front, so the inspector records results without scanning. Scoped to
-    // the company inside the engine; a lot of another company is left alone.
-    // It runs before the lot is read, whose embed carries the samples. A
-    // failure only leaves the scanner to add them, so it is logged, not thrown.
-    prefillInspectionSamples(getDatabaseClient(), {
-      inspectionId: id,
-      companyId,
-      userId
-    })
-      .then((prefill) => {
-        if (prefill.error) {
-          logger.error("Failed to prefill the inspection samples", {
-            companyId,
-            inspectionId: id,
-            error: prefill.error
-          });
-        }
-        return api.quality.getInspection({ id });
-      })
+    // Before the lot is read: its embed carries the samples this adds.
+    api.quality
+      .prepareInspection({ id })
+      .then(() => api.quality.getInspection({ id }))
       .then(dataOrThrow),
     api.settings.getCompanySettings({}),
     api.quality.getIssueTypesList({})
@@ -110,12 +88,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (insp.companyId !== companyId) {
     throw redirect(path.to.inspections);
-  }
-
-  // The lot references its inspection document live — resolve per-lot plan
-  // rows for any features added to the document after receipt.
-  if (insp.inspectionDocumentId) {
-    await reconcileInspectionSamplingPlans(getDatabaseClient(), id, companyId);
   }
 
   const isReceiptSource = insp.sourceDocument === "Receipt";

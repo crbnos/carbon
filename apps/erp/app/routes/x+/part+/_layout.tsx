@@ -16,8 +16,7 @@ export const meta = moduleMeta("Part");
 
 export const handle: Handle = {
   breadcrumb: msg`Items`,
-  to: path.to.items,
-  module: "items"
+  to: path.to.items
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

@@ -27,8 +27,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Transfers`, to: path.to.projectStockTransfers },
     (data) => data?.transfer?.projectStockTransferId
-  ),
-  module: "projects"
+  )
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

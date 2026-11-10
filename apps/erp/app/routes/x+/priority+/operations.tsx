@@ -77,8 +77,7 @@ const logger = getLogger("erp", "priority-operations");
 
 export const handle: Handle = {
   breadcrumb: msg`Schedule`,
-  to: path.to.priorityOperation,
-  module: "schedule"
+  to: path.to.priorityOperation
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

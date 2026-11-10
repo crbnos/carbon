@@ -33,8 +33,7 @@ const logger = getLogger("erp", "project-timesheet-approvals");
 
 export const handle: Handle = {
   breadcrumb: msg`Approvals`,
-  to: path.to.projectTimesheetApprovals,
-  module: "projects"
+  to: path.to.projectTimesheetApprovals
 };
 
 export type ApprovalsTab = "time" | "billing";

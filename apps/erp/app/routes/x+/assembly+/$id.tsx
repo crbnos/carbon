@@ -73,8 +73,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Assemblies`, to: path.to.assemblyInstructions },
     (data) => data?.instruction?.name
-  ),
-  module: "production"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

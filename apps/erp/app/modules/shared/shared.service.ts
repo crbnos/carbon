@@ -46,7 +46,7 @@ import {
   type Json,
   getCompanyTimeZone as resolveCompanyTimeZone
 } from "@carbon/database";
-import { admits, type PageGate } from "@carbon/database/access";
+import { admits, type PageGate, userActor } from "@carbon/database/access";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import type {
@@ -18690,7 +18690,7 @@ export async function authorizePostingCaller(
     userId,
     companyId
   );
-  if (!admits({ type: "user", role, permissions }, companyId, required)) {
+  if (!admits(userActor({ role, permissions }), companyId, required)) {
     throw new ForbiddenError();
   }
 }

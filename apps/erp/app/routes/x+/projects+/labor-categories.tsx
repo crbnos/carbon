@@ -20,8 +20,7 @@ const logger = getLogger("erp", "labor-categories");
 
 export const handle: Handle = {
   breadcrumb: msg`Labor Categories`,
-  to: path.to.laborCategories,
-  module: "projects"
+  to: path.to.laborCategories
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

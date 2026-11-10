@@ -52,8 +52,7 @@ export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Training`, to: path.to.trainings },
     (data) => data?.training?.name
-  ),
-  module: "resources"
+  )
 };
 
 export const meta: MetaFunction<typeof loader> = ({ data }) =>

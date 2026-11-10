@@ -20,8 +20,7 @@ const logger = getLogger("erp", "project-stock-transfers");
 
 export const handle: Handle = {
   breadcrumb: msg`Transfers`,
-  to: path.to.projectStockTransfers,
-  module: "projects"
+  to: path.to.projectStockTransfers
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

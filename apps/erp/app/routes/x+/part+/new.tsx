@@ -20,8 +20,7 @@ export const meta = newRecordMeta("Part");
 
 export const handle: Handle = {
   breadcrumb: msg`Parts`,
-  to: path.to.parts,
-  module: "items"
+  to: path.to.parts
 };
 
 export async function action(args: ActionFunctionArgs) {

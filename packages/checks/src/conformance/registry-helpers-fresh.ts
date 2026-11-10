@@ -2,12 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { REGISTRY_HELPERS_DIR } from "@carbon/database/authz-registry-sql";
 import type { Violation } from "../check";
 
 export const REGISTRY_HELPERS_FRESH = "registry-helpers-fresh";
 
-/** Where the registry helpers live, from the repo root. */
-export const REGISTRY_HELPERS_DIR = "packages/database/src/authz/helpers";
+export { REGISTRY_HELPERS_DIR };
 
 export const REGISTRY_HELPERS_FIX = "pnpm --filter @carbon/database authz sync";
 

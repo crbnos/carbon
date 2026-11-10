@@ -3,7 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { gateOfRoute, moduleLanding, routeOwnsUrl, visibleGroups } from "./nav";
+import {
+  gateOfRoute,
+  moduleLanding,
+  moduleOfMatches,
+  routeOwnsUrl,
+  visibleGroups
+} from "./nav";
 
 const none = { view: [], create: [], update: [], delete: [] };
 const viewing = (...pages: string[]) =>
@@ -106,5 +112,55 @@ describe("moduleLanding", () => {
     expect(moduleLanding("settings", viewing("settings.billing"), "c1")).toBe(
       "/x/settings/billing"
     );
+  });
+});
+
+describe("moduleOfMatches", () => {
+  const x = { pathname: "/x" };
+  const layout = (pathname: string, module: string) => ({
+    pathname,
+    handle: { module }
+  });
+
+  it("takes the module of the page the URL belongs to", () => {
+    expect(
+      moduleOfMatches([
+        x,
+        { pathname: "/x/service-job" },
+        { pathname: "/x/service-job/SJ1" }
+      ])
+    ).toBe("service");
+    expect(moduleOfMatches([x, { pathname: "/x/customer-asset/A1" }])).toBe(
+      "service"
+    );
+    expect(moduleOfMatches([x, { pathname: "/x/sales-invoice/new" }])).toBe(
+      "invoicing"
+    );
+  });
+
+  it("keeps a record's tab in the record's module", () => {
+    expect(
+      moduleOfMatches([
+        x,
+        { pathname: "/x/customer" },
+        { pathname: "/x/customer/C1" },
+        { pathname: "/x/customer/C1/bank-accounts" }
+      ])
+    ).toBe("sales");
+  });
+
+  it("takes a module layout's handle before the page below it", () => {
+    expect(
+      moduleOfMatches([
+        x,
+        layout("/x/accounting", "accounting"),
+        { pathname: "/x/accounting/activation" }
+      ])
+    ).toBe("accounting");
+    expect(moduleOfMatches([x, layout("/x/sales", "sales")])).toBe("sales");
+    expect(moduleOfMatches([x, layout("/x/credits", "invoicing")])).toBe(
+      "invoicing"
+    );
+    expect(moduleOfMatches([x, { pathname: "/x/timesheet" }])).toBeUndefined();
   });
 });
