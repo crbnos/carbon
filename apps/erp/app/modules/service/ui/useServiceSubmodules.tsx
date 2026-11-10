@@ -23,6 +23,7 @@ export default function useServiceSubmodules() {
       routes: [
         {
           name: t`Jobs`,
+          page: "service.jobs",
           to: path.to.serviceJobs,
           icon: <LuWrench />,
           table: "serviceJob",
@@ -35,6 +36,7 @@ export default function useServiceSubmodules() {
         },
         {
           name: t`Schedule`,
+          page: "service.schedule",
           to: path.to.serviceSchedule,
           icon: <LuCalendarRange />,
           isActive: (pathname: string) =>
@@ -42,6 +44,7 @@ export default function useServiceSubmodules() {
         },
         {
           name: t`Customer Assets`,
+          page: "service.customerAssets",
           to: path.to.customerAssets,
           icon: <LuServer />,
           table: "customerAsset",
@@ -54,7 +57,8 @@ export default function useServiceSubmodules() {
   ];
 
   const isVisible = (route: AuthenticatedRouteGroup["routes"][number]) =>
-    route.role ? permissions.is(route.role) : true;
+    (!route.role || permissions.is(route.role)) &&
+    (!route.page || permissions.has({ [route.page]: "View" }));
 
   return {
     groups: serviceRoutes

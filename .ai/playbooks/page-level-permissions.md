@@ -1,6 +1,6 @@
 # Page-level permissions (levels, overrides, API keys)
 
-Last tested: 2026-10-19 (the editor is a module accordion since 2026-10-19; one-page roles over single fetch)
+Last tested: 2026-11-10 (all 173 pages after the main merge; one-page roles over single fetch)
 Routes: /x/users/employee-types, /x/users/employees/<userId>, /x/settings/api-keys
 
 ## Prerequisites
@@ -45,7 +45,7 @@ Routes: /x/users/employee-types, /x/users/employees/<userId>, /x/settings/api-ke
   `{}` parses; the gate runs after input parsing), `sales/getCustomers` 403.
 
 ### 4. One-page roles (every page, over HTTP)
-Use this to test all 159 pages in minutes. A browser loop takes hours, and headless
+Use this to test every page (173 since the 2026-11-10 merge) in minutes. A browser loop takes hours, and headless
 Chrome crashes its page after about 80 navigations here.
 1. Make one employee type per page from `PAGES`, named `Only <page id>`, with one `permission`
    row: Edit on that page (its `maxLevel` when lower). A throwaway script in `scripts/.tmp/`
@@ -75,6 +75,18 @@ Common causes found on 2026-10-19:
 - A page reads a restricted table of a sibling page. The page lists the table in `readers`, the
   function gates on `{ anyOf: [owner, reader…] }`, and `authz migration` ships the rule.
 - A module's nav link opens one fixed page. `useModules` opens the first page the person can view.
+
+Found on 2026-11-10, after merging main:
+- A module main added (Projects, Service) had no `page` in `useModules`, so its link opened a page
+  that refused the role. Every module entry names its first page.
+- Its sidebar hook filtered by `role` only. Every entry has a `page`, and the hook's filter checks
+  `has({ [route.page]: "View" })`. List the entries with no `page` before a pass.
+- Module roots that a loader redirects to one page (`/x/accounting`, `/x/inventory`, `/x/items`,
+  `/x/people`, `/x/users`) refuse other pages over HTTP. That is expected: the nav link goes
+  through `useModules`. Payroll Totals opens only with DCAA timekeeping on.
+- `agent-browser` does not use `/etc/hosts`. Open the `.dev` URL with
+  `--args "--host-resolver-rules=MAP *.<slug>.dev 127.0.0.1"`; `127.0.0.1:<PORT_ERP>` fails the
+  Turnstile check at login.
 
 ### 5. Restore
 - Set the user's type back (UI or SQL), delete their `permission` rows, and if done in SQL

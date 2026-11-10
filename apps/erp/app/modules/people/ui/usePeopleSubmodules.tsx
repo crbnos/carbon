@@ -48,6 +48,7 @@ export default function usePeopleSubmodules() {
           ? [
               {
                 name: t`Payroll Totals`,
+                page: "people.payrollTotals" as const,
                 to: path.to.payrollTotals,
                 icon: <LuBanknote />
               }

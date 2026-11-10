@@ -141,8 +141,20 @@ for f in packages/database/supabase/tests/*.test.sql; do
   pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -q -v ON_ERROR_STOP=1 -f "$f"; done
 ```
 
-A browser pass is still owed: a one-page role on each new page (Projects, Service, Indirect Rates,
-Indirect Pools, Payroll Totals, Settings → Projects, Time, Service), as the PR did for the first 159.
+**One-page-role pass (2026-11-10).** All 173 pages over HTTP, against an Admin baseline, as in
+`.ai/playbooks/page-level-permissions.md`:
+- Every page, and a project, service job and customer asset record, opens for a role that holds
+  only that page. Payroll Totals was checked with DCAA timekeeping on.
+- The only differences from Admin are the five module roots that a loader redirects to one page.
+  That is expected.
+
+In the browser, the nav link and sidebar of eight new pages were checked: Approvals, Schedule,
+Indirect Rates, Indirect Pools, Settings → Time, Project Contracts, Customer Assets, and Projects
+through Approvals. Two bugs were fixed:
+- The Projects and Service nav links opened their list page, which refuses the other pages' roles.
+  `useModules` now names their first page.
+- The Projects and Service sidebars, and People's Payroll Totals entry, showed every entry to anyone
+  with the module. Each entry now has a `page`, and the filter checks View on it.
 
 ## Bugs found during the merge
 

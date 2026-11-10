@@ -136,6 +136,7 @@ function useModuleDefinitions(): ModuleDefinition[] {
     {
       key: "projects",
       module: "projects",
+      page: "projects.projects",
       name: t`Projects`,
       to: path.to.projects,
       icon: LuFolderKanban
@@ -171,6 +172,7 @@ function useModuleDefinitions(): ModuleDefinition[] {
     {
       key: "service",
       module: "service",
+      page: "service.jobs",
       name: t`Service`,
       to: path.to.serviceJobs,
       icon: LuHeadphones

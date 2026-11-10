@@ -90,6 +90,7 @@ export default function useProjectsSubmodules() {
       routes: [
         {
           name: t`Projects`,
+          page: "projects.projects",
           to: path.to.projects,
           icon: <LuFolderKanban />,
           table: "project",
@@ -105,6 +106,7 @@ export default function useProjectsSubmodules() {
           ? [
               {
                 name: t`Approvals`,
+                page: "projects.approvals" as const,
                 // Only billable items wait: open their tab, not an empty
                 // Time tab.
                 to: showsTime
@@ -123,6 +125,7 @@ export default function useProjectsSubmodules() {
           : []),
         {
           name: t`Reports`,
+          page: "projects.reports",
           to: path.to.projectReports,
           icon: <LuFileSpreadsheet />,
           role: "employee",
@@ -136,6 +139,7 @@ export default function useProjectsSubmodules() {
       routes: [
         {
           name: t`Labor Categories`,
+          page: "projects.laborCategories",
           to: path.to.laborCategories,
           icon: <LuBriefcaseBusiness />,
           role: "employee",
@@ -146,6 +150,7 @@ export default function useProjectsSubmodules() {
           // Commercial (PLANNING_GROUPS): always listed; a gated company
           // sees the upgrade overlay on the page.
           name: t`Planning Groups`,
+          page: "projects.planningGroups",
           to: path.to.planningGroups,
           icon: <LuGroup />,
           role: "employee",
@@ -157,7 +162,8 @@ export default function useProjectsSubmodules() {
   ];
 
   const isVisible = (route: AuthenticatedRouteGroup["routes"][number]) =>
-    route.role ? permissions.is(route.role) : true;
+    (!route.role || permissions.is(route.role)) &&
+    (!route.page || permissions.has({ [route.page]: "View" }));
 
   return {
     groups: projectsRoutes
