@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import type { OnshapeBomNode } from "./bom";
 import {
+  assemblyAssetRows,
   assemblyTextChanges,
   bomLineItemType,
   buildAssemblyPlan,
@@ -330,23 +331,30 @@ describe("buildPartPlan", () => {
     },
     { id: "item-2", readableId: "STD-006", revision: "0", name: "Stud" }
   ];
-
-  it("classifies create / adopt / update / unchanged / skip in request order", () => {
-    const rows = buildPartPlan({
+  /** PAD-005 linked to item-1 at microversion m1 (the part is now at m2). */
+  const linked = (microversionId = "m1") => [
+    {
+      entityId: "item-1",
+      externalId: "d:e:p1",
+      lastSyncedAt: null,
+      metadata: { microversionId }
+    }
+  ];
+  const planParts = (over: Partial<Parameters<typeof buildPartPlan>[0]>) =>
+    buildPartPlan({
       documentId: "d",
       elementId: "e",
       parts,
-      requestedPartIds: ["p4", "p1", "p2", "p3", "missing"],
-      mappings: [
-        {
-          entityId: "item-1",
-          externalId: "d:e:p1",
-          lastSyncedAt: null,
-          metadata: { microversionId: "m1" }
-        }
-      ],
+      requestedPartIds: ["p1"],
+      mappings: linked(),
       items,
-      options
+      options,
+      ...over
+    });
+
+  it("classifies create / adopt / update / unchanged / skip in request order", () => {
+    const rows = planParts({
+      requestedPartIds: ["p4", "p1", "p2", "p3", "missing"]
     });
     expect(rows.map((r) => [r.partId, r.action])).toEqual([
       ["p4", "create"],
@@ -371,21 +379,7 @@ describe("buildPartPlan", () => {
   });
 
   it("overwrites the descriptions set to Update on every push", () => {
-    const rows = buildPartPlan({
-      documentId: "d",
-      elementId: "e",
-      parts,
-      requestedPartIds: ["p1"],
-      mappings: [
-        {
-          entityId: "item-1",
-          externalId: "d:e:p1",
-          lastSyncedAt: null,
-          metadata: { microversionId: "m1" }
-        }
-      ],
-      items,
-      options,
+    const rows = planParts({
       mapping: {
         map: [],
         definitions: [],
@@ -402,41 +396,86 @@ describe("buildPartPlan", () => {
   });
 
   it("reports unchanged when the mapping's microversion matches", () => {
-    const rows = buildPartPlan({
-      documentId: "d",
-      elementId: "e",
-      parts,
-      requestedPartIds: ["p1"],
-      mappings: [
-        {
-          entityId: "item-1",
-          externalId: "d:e:p1",
-          lastSyncedAt: null,
-          metadata: { microversionId: "m2" }
-        }
-      ],
-      items,
-      options
+    const rows = planParts({
+      mappings: linked("m2")
     });
     expect(rows[0]?.action).toBe("unchanged");
     expect(rows[0]?.changes).toEqual([]);
   });
 
+  it("judges a workspace part unchanged by its workspace's source state, not Onshape's part microversion", () => {
+    expect(
+      planParts({ mappings: linked("ws-1"), sourceState: "ws-1" })[0]?.action
+    ).toBe("unchanged");
+    expect(
+      planParts({ mappings: linked("m2"), sourceState: "ws-2" })[0]?.action
+    ).toBe("update");
+    // Unread: the part exports, even though its part microversion matches.
+    expect(
+      planParts({ mappings: linked("m2"), sourceState: null })[0]
+    ).toMatchObject({ action: "update", microversionId: null });
+  });
+
+  it("judges a version part unchanged when an assembly push exported its model from that version", () => {
+    // The assembly push records the version, not the part microversion (m1 here, m2 now).
+    const exported = (modelVersionId: string) => [
+      { ...linked()[0]!, metadata: { microversionId: null, modelVersionId } }
+    ];
+    expect(
+      planParts({ mappings: exported("v3"), versionId: "v3" })[0]?.action
+    ).toBe("unchanged");
+    expect(
+      planParts({ mappings: exported("v3"), versionId: "v4" })[0]?.action
+    ).toBe("update");
+    // On a workspace the recorded version says nothing.
+    expect(
+      planParts({ mappings: exported("v3"), sourceState: "ws-1" })[0]?.action
+    ).toBe("update");
+  });
+
   it("treats a mapping whose item is gone as no link", () => {
-    const rows = buildPartPlan({
-      documentId: "d",
-      elementId: "e",
-      parts,
-      requestedPartIds: ["p1"],
+    const rows = planParts({
       mappings: [
         { entityId: "deleted", externalId: "d:e:p1", lastSyncedAt: null }
-      ],
-      items,
-      options
+      ]
     });
     expect(rows[0]?.action).toBe("adopt");
   });
 });
+
+type AssemblyInput = Parameters<typeof buildAssemblyPlan>[0];
+
+const top = node({ index: "1", partNumber: "TOP-001", name: "Top" });
+
+/** A workspace push of WB-100 whose BOM is one TOP-001 line, nothing in Carbon. */
+const planAssembly = (over: Partial<AssemblyInput> = {}) =>
+  buildAssemblyPlan({
+    documentId: "d",
+    wv: "w",
+    wvId: "w1",
+    elementId: "e",
+    root: {
+      partNumber: "WB-100",
+      name: "Workbench",
+      description: null,
+      revision: null
+    },
+    nodes: [top],
+    items: [],
+    methodByItemId: new Map(),
+    mappedLinesByMethodId: new Map(),
+    manualLinesByMethodId: new Map(),
+    options,
+    ...over
+  });
+
+/** WB-100 exists in Carbon with an Active make method. */
+const releasedRoot = {
+  items: [{ id: "root", readableId: "WB-100", revision: "0", name: "W" }],
+  methodByItemId: new Map([
+    ["root", { id: "active", status: "Active" as const }]
+  ])
+};
 
 describe("buildAssemblyPlan", () => {
   const nodes: OnshapeBomNode[] = [
@@ -468,26 +507,12 @@ describe("buildAssemblyPlan", () => {
         { id: string; version: number | null }
       >
     ) =>
-      buildAssemblyPlan({
-        documentId: "d",
-        wv: "w",
-        wvId: "w1",
-        elementId: "e",
-        root: {
-          partNumber: "WB-100",
-          name: "Workbench",
-          description: null,
-          revision: null
-        },
-        nodes: [node({ index: "1", partNumber: "TOP-001", name: "Top" })],
-        items: [{ id: "root", readableId: "WB-100", revision: "0", name: "W" }],
-        methodByItemId: new Map([["root", { id: "active", status: "Active" }]]),
+      planAssembly({
+        ...releasedRoot,
         mappedLinesByMethodId: new Map([
           ["active", [{ readableId: "OLD-1", quantity: 1 }]],
           ["draft", [{ readableId: "DRAFT-1", quantity: 2 }]]
         ]),
-        manualLinesByMethodId: new Map(),
-        options,
         reusableDraftByItemId
       });
 
@@ -510,25 +535,11 @@ describe("buildAssemblyPlan", () => {
     });
 
     it("does not refuse an Active method the push leaves unchanged", () => {
-      const built = buildAssemblyPlan({
-        documentId: "d",
-        wv: "w",
-        wvId: "w1",
-        elementId: "e",
-        root: {
-          partNumber: "WB-100",
-          name: "Workbench",
-          description: null,
-          revision: null
-        },
-        nodes: [node({ index: "1", partNumber: "TOP-001", name: "Top" })],
-        items: [{ id: "root", readableId: "WB-100", revision: "0", name: "W" }],
-        methodByItemId: new Map([["root", { id: "active", status: "Active" }]]),
+      const built = planAssembly({
+        ...releasedRoot,
         mappedLinesByMethodId: new Map([
           ["active", [{ readableId: "TOP-001", quantity: 1 }]]
-        ]),
-        manualLinesByMethodId: new Map(),
-        options
+        ])
       });
       expect(built.methods[0]?.unchanged).toBe(true);
       expect(withRefusedMethods(built, new Map([["root", "released"]]))).toBe(
@@ -545,29 +556,56 @@ describe("buildAssemblyPlan", () => {
         { readableId: "DRAFT-1", quantity: 2 }
       ]);
     });
+
+    describe("unchanged", () => {
+      const unchanged = (
+        lines: Array<{ readableId: string; quantity: number }>,
+        reusableDraftByItemId?: Map<
+          string,
+          { id: string; version: number | null }
+        >
+      ) =>
+        planAssembly({
+          ...releasedRoot,
+          nodes: [
+            node({ index: "1", partNumber: "TOP-001", name: "Top" }),
+            node({
+              index: "2",
+              partNumber: "LEG-003",
+              name: "Leg",
+              quantity: 4
+            })
+          ],
+          mappedLinesByMethodId: new Map([["active", lines]]),
+          reusableDraftByItemId
+        }).methods[0]?.unchanged;
+      const matching = [
+        { readableId: "TOP-001", quantity: 1 },
+        { readableId: "LEG-003", quantity: 4 }
+      ];
+
+      it("needs no Draft when the released method already has Onshape's lines", () => {
+        expect(unchanged(matching)).toBe(true);
+      });
+
+      it.each([
+        ["a quantity", [matching[0]!, { readableId: "LEG-003", quantity: 2 }]],
+        ["a line", [matching[0]!]],
+        ["the order", [matching[1]!, matching[0]!]]
+      ])("needs a Draft when %s differs", (_what, lines) => {
+        expect(unchanged(lines)).toBeUndefined();
+      });
+
+      it("writes into a reused Draft even when the lines match", () => {
+        expect(
+          unchanged(matching, new Map([["root", { id: "draft", version: 2 }]]))
+        ).toBeUndefined();
+      });
+    });
   });
 
   describe("depth", () => {
-    const build = (depth: "all" | "top") =>
-      buildAssemblyPlan({
-        documentId: "d",
-        wv: "w",
-        wvId: "w1",
-        elementId: "e",
-        root: {
-          partNumber: "WB-100",
-          name: "Workbench",
-          description: null,
-          revision: null
-        },
-        nodes,
-        items: [],
-        methodByItemId: new Map(),
-        mappedLinesByMethodId: new Map(),
-        manualLinesByMethodId: new Map(),
-        options,
-        depth
-      });
+    const build = (depth: "all" | "top") => planAssembly({ nodes, depth });
 
     it("defaults to the whole tree, and says so", () => {
       const plan = build("all");
@@ -616,17 +654,7 @@ describe("buildAssemblyPlan", () => {
   });
 
   it("plans creates, reuses, methods and the line diff", () => {
-    const plan = buildAssemblyPlan({
-      documentId: "d",
-      wv: "w",
-      wvId: "w1",
-      elementId: "e",
-      root: {
-        partNumber: "WB-100",
-        name: "Workbench",
-        description: null,
-        revision: null
-      },
+    const plan = planAssembly({
       nodes,
       items: [
         { id: "wb", readableId: "WB-100", revision: "0", name: "Workbench" },
@@ -638,8 +666,7 @@ describe("buildAssemblyPlan", () => {
       ]),
       manualLinesByMethodId: new Map([
         ["m-wb", [{ readableId: "PAD-005", quantity: 99 }]]
-      ]),
-      options
+      ])
     });
 
     expect(plan.root.action).toBe("reuse");
@@ -674,33 +701,16 @@ describe("buildAssemblyPlan", () => {
     expect(sub?.replaces).toEqual([]);
   });
 
+  const tool = {
+    id: "tool",
+    readableId: "TOP-001",
+    revision: "0",
+    name: "Top",
+    type: "Tool"
+  };
+
   it("skips a child whose Carbon item can never be a BOM line", () => {
-    const plan = buildAssemblyPlan({
-      documentId: "d",
-      wv: "w",
-      wvId: "w1",
-      elementId: "e",
-      root: {
-        partNumber: "WB-100",
-        name: null,
-        description: null,
-        revision: null
-      },
-      nodes: [node({ index: "1", partNumber: "TOP-001", name: "Top" })],
-      items: [
-        {
-          id: "tool",
-          readableId: "TOP-001",
-          revision: "0",
-          name: "Top",
-          type: "Tool"
-        }
-      ],
-      methodByItemId: new Map(),
-      mappedLinesByMethodId: new Map(),
-      manualLinesByMethodId: new Map(),
-      options
-    });
+    const plan = planAssembly({ items: [tool] });
     expect(plan.items).toEqual([]);
     expect(plan.methods[0]?.writes).toEqual([]);
     expect(plan.skipped).toEqual([
@@ -709,38 +719,8 @@ describe("buildAssemblyPlan", () => {
   });
 
   it("reuses the Part when a Tool shares its number", () => {
-    const plan = buildAssemblyPlan({
-      documentId: "d",
-      wv: "w",
-      wvId: "w1",
-      elementId: "e",
-      root: {
-        partNumber: "WB-100",
-        name: null,
-        description: null,
-        revision: null
-      },
-      nodes: [node({ index: "1", partNumber: "TOP-001", name: "Top" })],
-      items: [
-        {
-          id: "tool",
-          readableId: "TOP-001",
-          revision: "0",
-          name: "Top",
-          type: "Tool"
-        },
-        {
-          id: "part",
-          readableId: "TOP-001",
-          revision: "0",
-          name: "Top",
-          type: "Part"
-        }
-      ],
-      methodByItemId: new Map(),
-      mappedLinesByMethodId: new Map(),
-      manualLinesByMethodId: new Map(),
-      options
+    const plan = planAssembly({
+      items: [tool, { ...tool, id: "part", type: "Part" }]
     });
     expect(plan.skipped).toEqual([]);
     expect(plan.items.map((item) => item.itemId)).toEqual(["part"]);
@@ -750,26 +730,13 @@ describe("buildAssemblyPlan", () => {
   });
 
   it("flags released and missing methods on reused parents", () => {
-    const plan = buildAssemblyPlan({
-      documentId: "d",
-      wv: "w",
-      wvId: "w1",
-      elementId: "e",
-      root: {
-        partNumber: "WB-100",
-        name: null,
-        description: null,
-        revision: null
-      },
+    const plan = planAssembly({
       nodes,
       items: [
         { id: "wb", readableId: "WB-100", revision: "0", name: "Workbench" },
         { id: "asm", readableId: "ASM-008", revision: "0", name: "Foot" }
       ],
-      methodByItemId: new Map([["wb", { id: "m-wb", status: "Active" }]]),
-      mappedLinesByMethodId: new Map(),
-      manualLinesByMethodId: new Map(),
-      options
+      methodByItemId: new Map([["wb", { id: "m-wb", status: "Active" }]])
     });
     expect(plan.methods.map((m) => [m.parentPartNumber, m.status])).toEqual([
       ["WB-100", "active"],
@@ -795,31 +762,22 @@ describe("buildAssemblyPlan", () => {
       node({ index: "3", partNumber: "PAD-005", name: "Pad" }),
       node({ index: "4", partNumber: "TOP-001", name: "Top" })
     ];
+    const otherItems = [
+      { id: "hdw", readableId: "HDW-010", revision: "0", name: "Bolt" },
+      { id: "pad", readableId: "PAD-005", revision: "0", name: "Pad" }
+    ];
     const build = (links: Array<[string, string]>) =>
-      buildAssemblyPlan({
-        documentId: "d",
-        wv: "w",
-        wvId: "w1",
-        elementId: "e",
-        root: {
-          partNumber: "WB-100",
-          name: null,
-          description: null,
-          revision: null
-        },
+      planAssembly({
         nodes: conflictNodes,
         items: [
           { id: "wb", readableId: "WB-100", revision: "0", name: "Workbench" },
           { id: "leg", readableId: "LEG-003", revision: "0", name: "Leg" },
-          { id: "hdw", readableId: "HDW-010", revision: "0", name: "Bolt" },
-          { id: "pad", readableId: "PAD-005", revision: "0", name: "Pad" }
+          ...otherItems
         ],
-        methodByItemId: new Map(),
-        mappedLinesByMethodId: new Map(),
-        manualLinesByMethodId: new Map(),
-        options,
         linkedItemIdByExternalId: new Map(links)
       });
+    const conflicts = (plan: ReturnType<typeof build>) =>
+      Object.fromEntries(plan.items.map((i) => [i.partNumber, i.conflict]));
 
     it("marks a reuse found by part number alone, never a linked one or a create", () => {
       const plan = build([
@@ -829,9 +787,7 @@ describe("buildAssemblyPlan", () => {
         ["d2:ps:JKD", "someone-else"]
       ]);
       expect(plan.root.conflict).toBeUndefined();
-      expect(
-        Object.fromEntries(plan.items.map((i) => [i.partNumber, i.conflict]))
-      ).toEqual({
+      expect(conflicts(plan)).toEqual({
         "LEG-003": undefined,
         "HDW-010": true,
         // No itemSource, so nothing to link through.
@@ -847,51 +803,23 @@ describe("buildAssemblyPlan", () => {
     it("keeps a part linked when a release added a higher revision the mapping does not point at", () => {
       // A release made Rev B the default and left the mappings on the Rev A
       // items; a link to Rev A is still a link to the part.
-      const plan = buildAssemblyPlan({
-        documentId: "d",
-        wv: "w",
-        wvId: "w1",
-        elementId: "e",
-        root: {
-          partNumber: "WB-100",
-          name: null,
-          description: null,
-          revision: null
-        },
+      const plan = planAssembly({
         nodes: conflictNodes,
         items: [
-          {
-            id: "wb-a",
-            readableId: "WB-100",
-            revision: "A",
-            name: "Workbench"
-          },
-          {
-            id: "wb-b",
-            readableId: "WB-100",
-            revision: "B",
-            name: "Workbench"
-          },
+          { id: "wb-a", readableId: "WB-100", revision: "A", name: "W" },
+          { id: "wb-b", readableId: "WB-100", revision: "B", name: "W" },
           { id: "leg-a", readableId: "LEG-003", revision: "A", name: "Leg" },
           { id: "leg-b", readableId: "LEG-003", revision: "B", name: "Leg" },
-          { id: "hdw", readableId: "HDW-010", revision: "0", name: "Bolt" },
-          { id: "pad", readableId: "PAD-005", revision: "0", name: "Pad" }
+          ...otherItems
         ],
-        methodByItemId: new Map(),
-        mappedLinesByMethodId: new Map(),
-        manualLinesByMethodId: new Map(),
-        options,
         linkedItemIdByExternalId: new Map([
           ["d:e:assembly", "wb-a"],
           ["d2:ps:JHD", "leg-a"]
         ])
       });
       expect(plan.root.conflict).toBeUndefined();
-      expect(
-        Object.fromEntries(plan.items.map((i) => [i.partNumber, i.conflict]))
-      ).toEqual({
+      expect(conflicts(plan)).toEqual({
         "LEG-003": undefined,
-        // Linked to no item: a conflict.
         "HDW-010": true,
         "PAD-005": true,
         "TOP-001": undefined
@@ -900,85 +828,57 @@ describe("buildAssemblyPlan", () => {
   });
 });
 
+type ReleaseItem = PanelRelease["items"][number];
+
+const releaseItem = (over: Partial<ReleaseItem>): ReleaseItem => ({
+  partNumber: "WB-100",
+  revision: "A",
+  elementType: 0,
+  documentId: "d",
+  versionId: "v1",
+  elementId: "e-ps",
+  partId: null,
+  configuration: null,
+  obsolete: false,
+  state: "missing",
+  itemId: null,
+  ...over
+});
+
 describe("buildReleasePlan", () => {
+  // Assembly WB-100 with its drawing, two parts, and a drawing of nothing.
   const release: PanelRelease = {
     releaseId: "rel-1",
     releaseName: "Release WB-100 A",
     createdAt: "2026-08-26T00:00:00Z",
     state: "not-pushed",
     items: [
-      {
-        partNumber: "WB-100",
-        revision: "A",
-        elementType: 1,
-        documentId: "d",
-        versionId: "v1",
-        elementId: "e-wb",
-        partId: null,
-        configuration: null,
-        obsolete: false,
-        state: "missing",
-        itemId: null
-      },
-      {
-        partNumber: "PAD-005",
-        revision: "A",
-        elementType: 0,
-        documentId: "d",
-        versionId: "v1",
-        elementId: "e-ps",
-        partId: null,
-        configuration: null,
-        obsolete: false,
-        state: "missing",
-        itemId: null
-      },
-      {
-        partNumber: "NEW-999",
-        revision: "A",
-        elementType: 0,
-        documentId: "d",
-        versionId: "v1",
-        elementId: "e-ps",
-        partId: null,
-        configuration: null,
-        obsolete: false,
-        state: "missing",
-        itemId: null
-      },
-      {
-        partNumber: "WB-100",
-        revision: "A",
-        elementType: 2,
-        documentId: "d",
-        versionId: "v1",
-        elementId: "e-drw",
-        partId: null,
-        configuration: null,
-        obsolete: false,
-        state: "missing",
-        itemId: null
-      },
-      {
+      releaseItem({ elementType: 1, elementId: "e-wb" }),
+      releaseItem({ partNumber: "PAD-005" }),
+      releaseItem({ partNumber: "NEW-999" }),
+      releaseItem({ elementType: 2, elementId: "e-drw" }),
+      releaseItem({
         partNumber: "LONE-DRW",
-        revision: "A",
         elementType: 2,
-        documentId: "d",
-        versionId: "v1",
-        elementId: "e-drw2",
-        partId: null,
-        configuration: null,
-        obsolete: false,
-        state: "missing",
-        itemId: null
-      }
+        elementId: "e-drw2"
+      })
     ]
   };
-
-  it("classifies reuse / revision / create, children and drawings", () => {
-    const plan = buildReleasePlan({
+  const planRelease = (
+    over: Partial<Parameters<typeof buildReleasePlan>[0]> = {}
+  ) =>
+    buildReleasePlan({
       documentId: "d",
       release,
+      items: [],
+      bomLinesByElementId: {},
+      methodByItemId: new Map(),
+      options,
+      ...over
+    });
+
+  it("classifies reuse / revision / create, children and drawings", () => {
+    const plan = planRelease({
       items: [
         { id: "pad-0", readableId: "PAD-005", revision: "0", name: "Foot pad" },
         { id: "wb-a", readableId: "WB-100", revision: "A", name: "Workbench" },
@@ -1002,8 +902,7 @@ describe("buildReleasePlan", () => {
           })
         ]
       },
-      methodByItemId: new Map([["wb-a", { id: "m-wb-a", status: "Active" }]]),
-      options
+      methodByItemId: new Map([["wb-a", { id: "m-wb-a", status: "Active" }]])
     });
 
     expect(plan.items.map((i) => [i.partNumber, i.action])).toEqual([
@@ -1052,16 +951,12 @@ describe("buildReleasePlan", () => {
         }
       ]
     };
-    const plan = buildReleasePlan({
-      documentId: "d",
+    const plan = planRelease({
       release: drawingOnly,
       items: [
         { id: "wb-b", readableId: "WB-100", revision: "B", name: "Workbench" },
         { id: "wb-c", readableId: "WB-100", revision: "C", name: "Workbench" }
       ],
-      bomLinesByElementId: {},
-      methodByItemId: new Map(),
-      options,
       drawingModelByElementId: new Map([
         ["e-drw", { partNumber: "WB-100", revision: "C" }],
         // Carbon has no PAD-005 Rev C: nothing to attach to.
@@ -1086,13 +981,7 @@ describe("buildReleasePlan", () => {
   });
 
   it("prefers the model with the drawing's own number in the release", () => {
-    const plan = buildReleasePlan({
-      documentId: "d",
-      release,
-      items: [],
-      bomLinesByElementId: {},
-      methodByItemId: new Map(),
-      options,
+    const plan = planRelease({
       drawingModelByElementId: new Map([
         ["e-drw", { partNumber: "OTHER-1", revision: "A" }]
       ])
@@ -1103,16 +992,12 @@ describe("buildReleasePlan", () => {
   });
 
   it("proposes no change notice when everything is already at its letter", () => {
-    const plan = buildReleasePlan({
-      documentId: "d",
+    const plan = planRelease({
       release: { ...release, items: release.items.slice(0, 2) },
       items: [
         { id: "wb-a", readableId: "WB-100", revision: "A", name: "Workbench" },
         { id: "pad-a", readableId: "PAD-005", revision: "A", name: "Foot pad" }
-      ],
-      bomLinesByElementId: {},
-      methodByItemId: new Map(),
-      options
+      ]
     });
     expect(plan.alreadyPushed).toBe(true);
     expect(plan.changeNotice).toBeNull();
@@ -1120,8 +1005,7 @@ describe("buildReleasePlan", () => {
   });
 
   it("is not already pushed when only a BOM child is missing, and proposes no notice for it", () => {
-    const plan = buildReleasePlan({
-      documentId: "d",
+    const plan = planRelease({
       release: { ...release, items: release.items.slice(0, 1) },
       items: [
         { id: "wb-a", readableId: "WB-100", revision: "A", name: "Workbench" }
@@ -1135,8 +1019,7 @@ describe("buildReleasePlan", () => {
           })
         ]
       },
-      methodByItemId: new Map([["wb-a", { id: "m-wb-a", status: "Draft" }]]),
-      options
+      methodByItemId: new Map([["wb-a", { id: "m-wb-a", status: "Draft" }]])
     });
     expect(plan.children.map((c) => [c.partNumber, c.action])).toEqual([
       ["HDW-011", "create"]
@@ -1147,8 +1030,7 @@ describe("buildReleasePlan", () => {
   });
 
   it("copies a new revision from the newest one, even while it waits in its notice", () => {
-    const plan = buildReleasePlan({
-      documentId: "d",
+    const plan = planRelease({
       release: {
         ...release,
         items: [{ ...release.items[1]!, revision: "B" }]
@@ -1168,10 +1050,7 @@ describe("buildReleasePlan", () => {
           active: false,
           name: "Foot pad"
         }
-      ],
-      bomLinesByElementId: {},
-      methodByItemId: new Map(),
-      options
+      ]
     });
     expect(plan.items[0]).toMatchObject({
       action: "revision",
@@ -1181,8 +1060,7 @@ describe("buildReleasePlan", () => {
   });
 
   it("points a BOM child at the revision the BOM names, and says when Carbon lacks it", () => {
-    const plan = buildReleasePlan({
-      documentId: "d",
+    const plan = planRelease({
       release: { ...release, items: release.items.slice(0, 1) },
       items: [
         { id: "wb-0", readableId: "WB-100", revision: "0", name: "Workbench" },
@@ -1218,9 +1096,7 @@ describe("buildReleasePlan", () => {
             revision: "B"
           })
         ]
-      },
-      methodByItemId: new Map(),
-      options
+      }
     });
     expect(
       plan.children.map((child) => [
@@ -1237,16 +1113,11 @@ describe("buildReleasePlan", () => {
 
   it("carries each released part's partId and configuration to the export", () => {
     const released = release.items[1]!;
-    const plan = buildReleasePlan({
-      documentId: "d",
+    const plan = planRelease({
       release: {
         ...release,
         items: [{ ...released, partId: "JHD", configuration: "size%3DLarge" }]
-      },
-      items: [],
-      bomLinesByElementId: {},
-      methodByItemId: new Map(),
-      options
+      }
     });
     expect(plan.items[0]).toMatchObject({
       partNumber: "PAD-005",
@@ -1333,26 +1204,17 @@ describe("released parts in workspace pushes", () => {
   });
 
   it("writes no fields to a released root or child in an assembly push", () => {
-    const plan = buildAssemblyPlan({
-      documentId: "d",
-      wv: "w",
-      wvId: "w1",
-      elementId: "e",
+    const plan = planAssembly({
       root: {
         partNumber: "WB-100",
         name: "Workbench",
         description: "New text",
         revision: "B"
       },
-      nodes: [node({ index: "1", partNumber: "TOP-001", name: "Top" })],
       items: [
         { id: "wb-b", readableId: "WB-100", revision: "B", name: "Old text" },
         { id: "top-c", readableId: "TOP-001", revision: "C", name: "Old" }
       ],
-      methodByItemId: new Map(),
-      mappedLinesByMethodId: new Map(),
-      manualLinesByMethodId: new Map(),
-      options,
       mapping: {
         map: [],
         definitions: [],
@@ -1381,77 +1243,6 @@ describe("released parts in workspace pushes", () => {
   });
 });
 
-describe("buildAssemblyPlan unchanged released methods", () => {
-  const build = (
-    lines: Array<{ readableId: string; quantity: number }>,
-    reusableDraftByItemId = new Map<
-      string,
-      { id: string; version: number | null }
-    >()
-  ) =>
-    buildAssemblyPlan({
-      documentId: "d",
-      wv: "w",
-      wvId: "w1",
-      elementId: "e",
-      root: {
-        partNumber: "WB-100",
-        name: "Workbench",
-        description: null,
-        revision: null
-      },
-      nodes: [
-        node({ index: "1", partNumber: "TOP-001", name: "Top", quantity: 1 }),
-        node({ index: "2", partNumber: "LEG-003", name: "Leg", quantity: 4 })
-      ],
-      items: [{ id: "root", readableId: "WB-100", revision: "0", name: "W" }],
-      methodByItemId: new Map([["root", { id: "active", status: "Active" }]]),
-      mappedLinesByMethodId: new Map([["active", lines]]),
-      manualLinesByMethodId: new Map(),
-      options,
-      reusableDraftByItemId
-    }).methods[0];
-
-  it("needs no Draft when the released method already has Onshape's lines", () => {
-    expect(
-      build([
-        { readableId: "TOP-001", quantity: 1 },
-        { readableId: "LEG-003", quantity: 4 }
-      ])?.unchanged
-    ).toBe(true);
-  });
-
-  it("needs a Draft when a quantity, a line or the order differs", () => {
-    expect(
-      build([
-        { readableId: "TOP-001", quantity: 1 },
-        { readableId: "LEG-003", quantity: 2 }
-      ])?.unchanged
-    ).toBeUndefined();
-    expect(
-      build([{ readableId: "TOP-001", quantity: 1 }])?.unchanged
-    ).toBeUndefined();
-    expect(
-      build([
-        { readableId: "LEG-003", quantity: 4 },
-        { readableId: "TOP-001", quantity: 1 }
-      ])?.unchanged
-    ).toBeUndefined();
-  });
-
-  it("writes into a reused Draft as before", () => {
-    expect(
-      build(
-        [
-          { readableId: "TOP-001", quantity: 1 },
-          { readableId: "LEG-003", quantity: 4 }
-        ],
-        new Map([["root", { id: "draft", version: 2 }]])
-      )?.unchanged
-    ).toBeUndefined();
-  });
-});
-
 describe("buildAssemblyPlan descriptions", () => {
   const source = (partId: string) => ({
     documentId: "d2",
@@ -1464,22 +1255,18 @@ describe("buildAssemblyPlan descriptions", () => {
     descriptionModes: { name: "everyPush", description: "everyPush" } as const,
     heldCustomFields: new Map()
   };
+  const item = (id: string, readableId: string, name: string) => ({
+    id,
+    readableId,
+    revision: "0",
+    name
+  });
   const build = (
     linkedItemIds?: Set<string>,
     links = new Map<string, string>(),
     mapping: typeof everyPush | null = everyPush
   ) =>
-    buildAssemblyPlan({
-      documentId: "d",
-      wv: "w",
-      wvId: "w1",
-      elementId: "e",
-      root: {
-        partNumber: "WB-100",
-        name: "Workbench",
-        description: null,
-        revision: null
-      },
+    planAssembly({
       nodes: [
         node({
           index: "1",
@@ -1501,35 +1288,11 @@ describe("buildAssemblyPlan descriptions", () => {
         })
       ],
       items: [
-        {
-          id: "wb",
-          readableId: "WB-100",
-          revision: "0",
-          name: "Workbench (Carbon)"
-        },
-        {
-          id: "leg",
-          readableId: "LEG-003",
-          revision: "0",
-          name: "Leg (Carbon)"
-        },
-        {
-          id: "plt",
-          readableId: "PLT-004",
-          revision: "0",
-          name: "Plate (Carbon)"
-        },
-        {
-          id: "hdw",
-          readableId: "HDW-010",
-          revision: "0",
-          name: "Nut (Carbon)"
-        }
+        item("wb", "WB-100", "Workbench (Carbon)"),
+        item("leg", "LEG-003", "Leg (Carbon)"),
+        item("plt", "PLT-004", "Plate (Carbon)"),
+        item("hdw", "HDW-010", "Nut (Carbon)")
       ],
-      methodByItemId: new Map(),
-      mappedLinesByMethodId: new Map(),
-      manualLinesByMethodId: new Map(),
-      options,
       linkedItemIdByExternalId: links,
       linkedItemIds,
       mapping: mapping ?? undefined
@@ -1769,20 +1532,8 @@ describe("changeNoticeDescriptionJson", () => {
 });
 
 describe("buildAssemblyPlan Show Assembly only", () => {
-  const unitPlan = (
-    mapping?: Parameters<typeof buildAssemblyPlan>[0]["mapping"]
-  ) =>
-    buildAssemblyPlan({
-      documentId: "d",
-      wv: "w",
-      wvId: "w1",
-      elementId: "e",
-      root: {
-        partNumber: "WB-100",
-        name: "Workbench",
-        description: null,
-        revision: null
-      },
+  const unitPlan = (mapping?: AssemblyInput["mapping"]) =>
+    planAssembly({
       nodes: [
         node({
           index: "1",
@@ -1799,11 +1550,6 @@ describe("buildAssemblyPlan Show Assembly only", () => {
           ]
         })
       ],
-      items: [],
-      methodByItemId: new Map(),
-      mappedLinesByMethodId: new Map(),
-      manualLinesByMethodId: new Map(),
-      options,
       mapping
     });
 
@@ -2343,5 +2089,199 @@ describe("mergeExistingItemEdits on top of mapped values", () => {
       target
     );
     expect(overridden.ok && overridden.changed).toEqual({});
+  });
+});
+
+describe("assembly row assets", () => {
+  const source = (
+    over: Partial<NonNullable<OnshapeBomNode["itemSource"]>>
+  ) => ({
+    documentId: "d",
+    elementId: "ps",
+    wvmType: "w",
+    wvmId: "w1",
+    ...over
+  });
+  const nodes: OnshapeBomNode[] = [
+    node({
+      index: "1",
+      partNumber: "SUB-110",
+      name: "Frame",
+      itemSource: source({ elementId: "sub" }),
+      children: [
+        node({
+          index: "1.1",
+          level: 2,
+          partNumber: "BRK-010",
+          itemSource: source({ partId: "JHD" })
+        })
+      ]
+    }),
+    node({
+      index: "2",
+      partNumber: "PLT-020",
+      itemSource: source({ partId: "JKD" })
+    }),
+    node({
+      index: "3",
+      partNumber: "NUT-M6",
+      standardContent: true,
+      itemSource: source({ documentId: "std", elementId: "nut", partId: "N" })
+    })
+  ];
+  const plan = (over: Partial<AssemblyInput> = {}) =>
+    planAssembly({ nodes, linkedItemIds: new Set(), ...over });
+  const assetsOf = (built: ReturnType<typeof planAssembly>) =>
+    Object.fromEntries(
+      built.items.map((item) => [
+        item.partNumber,
+        item.assets ? (item.assets.model?.kind ?? "none") : "no files"
+      ])
+    );
+
+  it("offers a STEP model on new parts and sub-assemblies, none on standard content", () => {
+    expect(assetsOf(plan())).toEqual({
+      "SUB-110": "assembly",
+      "BRK-010": "partstudio",
+      "PLT-020": "partstudio",
+      "NUT-M6": "no files"
+    });
+  });
+
+  it("offers a model on an item already linked to its row, and on an unlinked item", () => {
+    const built = plan({
+      items: [
+        { id: "brk", readableId: "BRK-010", revision: "0", name: "B" },
+        { id: "plt", readableId: "PLT-020", revision: "0", name: "P" }
+      ],
+      linkedItemIdByExternalId: new Map([["d:ps:JHD", "brk"]]),
+      linkedItemIds: new Set(["brk"])
+    });
+    expect(assetsOf(built)).toMatchObject({
+      "BRK-010": "partstudio",
+      "PLT-020": "partstudio"
+    });
+  });
+
+  it("offers nothing on an item linked to another source, or a source linked to another item", () => {
+    const built = plan({
+      items: [
+        { id: "brk", readableId: "BRK-010", revision: "0", name: "B" },
+        { id: "plt", readableId: "PLT-020", revision: "0", name: "P" },
+        { id: "other", readableId: "OTHER-1", revision: "0", name: "O" }
+      ],
+      linkedItemIdByExternalId: new Map([["d:ps:JKD", "other"]]),
+      linkedItemIds: new Set(["brk", "other"])
+    });
+    expect(assetsOf(built)).toMatchObject({
+      "BRK-010": "no files",
+      "PLT-020": "no files"
+    });
+  });
+
+  it("offers nothing on a part released in Carbon", () => {
+    const built = plan({
+      ...releasedRoot,
+      items: [
+        ...releasedRoot.items,
+        { id: "brk", readableId: "BRK-010", revision: "A", name: "B" }
+      ],
+      released: new Map([
+        ["BRK-010", { itemId: "brk", revision: "A" }],
+        ["WB-100", { itemId: "root", revision: "A" }]
+      ])
+    });
+    expect(assetsOf(built)["BRK-010"]).toBe("no files");
+  });
+
+  it("offers nothing when two part numbers come from one source", () => {
+    const built = plan({
+      nodes: [
+        node({
+          index: "1",
+          partNumber: "PLT-020",
+          itemSource: source({ partId: "JKD" })
+        }),
+        node({
+          index: "2",
+          partNumber: "PLT-021",
+          itemSource: source({ partId: "JKD" })
+        })
+      ]
+    });
+    expect(assetsOf(built)).toEqual({
+      "PLT-020": "no files",
+      "PLT-021": "no files"
+    });
+  });
+
+  const exportsOf = (rows: ReturnType<typeof assemblyAssetRows>) => ({
+    models: rows.models.map((row) => [row.partNumber, row.itemId]),
+    unlinked: rows.unlinked
+  });
+  const onItems = (partNumber: string) => ({
+    itemId: `item-${partNumber}`,
+    externalId: `link-${partNumber}`
+  });
+
+  it("exports every row that offers a model when the request sends no picks, leaving out excluded rows", () => {
+    expect(
+      exportsOf(
+        assemblyAssetRows({
+          plan: plan(),
+          excluded: new Set(["SUB-110"]),
+          linkFor: onItems
+        })
+      )
+    ).toEqual({
+      models: [
+        ["BRK-010", "item-BRK-010"],
+        ["PLT-020", "item-PLT-020"]
+      ],
+      unlinked: 0
+    });
+  });
+
+  it("exports only the rows the request picks, and none for an empty pick", () => {
+    const rows = (modelRows: string[]) =>
+      exportsOf(
+        assemblyAssetRows({
+          plan: plan(),
+          modelRows: new Set(modelRows),
+          linkFor: onItems
+        })
+      );
+    expect(rows(["PLT-020", "NUT-M6"])).toEqual({
+      models: [["PLT-020", "item-PLT-020"]],
+      unlinked: 0
+    });
+    expect(rows([])).toEqual({ models: [], unlinked: 0 });
+  });
+
+  it("builds a row's export on its item and counts a row whose item ended up unlinked", () => {
+    const rows = assemblyAssetRows({
+      plan: plan(),
+      modelRows: new Set(["PLT-020", "BRK-010"]),
+      // BRK-010's item ended up linked elsewhere.
+      linkFor: (partNumber) =>
+        partNumber === "BRK-010" ? null : onItems(partNumber)
+    });
+    expect(rows).toEqual({
+      models: [
+        {
+          itemId: "item-PLT-020",
+          externalId: "link-PLT-020",
+          partNumber: "PLT-020",
+          kind: "partstudio",
+          documentId: "d",
+          wvm: "w",
+          wvmId: "w1",
+          elementId: "ps",
+          partId: "JKD",
+          configuration: null
+        }
+      ],
+      unlinked: 1
+    });
   });
 });

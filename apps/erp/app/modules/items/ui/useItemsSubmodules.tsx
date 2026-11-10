@@ -80,20 +80,6 @@ export default function useItemsSubmodules() {
           page: "parts.changeNotices",
           icon: <LuGitPullRequestArrow />,
           table: "changeOrder"
-        },
-        {
-          name: t`Change Notice Types`,
-          to: path.to.changeNoticeTypes,
-          page: "parts.changeNoticeTypes",
-          icon: <LuTags />,
-          role: "employee"
-        },
-        {
-          name: t`Change Notice Actions`,
-          to: path.to.changeNoticeRequiredActions,
-          page: "parts.changeNoticeActions",
-          icon: <LuListChecks />,
-          role: "employee"
         }
       ]
     },
@@ -147,6 +133,20 @@ export default function useItemsSubmodules() {
     {
       name: t`Configure`,
       routes: [
+        {
+          name: t`Change Notice Types`,
+          to: path.to.changeNoticeTypes,
+          page: "parts.changeNoticeTypes",
+          icon: <LuTags />,
+          role: "employee"
+        },
+        {
+          name: t`Change Notice Actions`,
+          to: path.to.changeNoticeRequiredActions,
+          page: "parts.changeNoticeActions",
+          icon: <LuListChecks />,
+          role: "employee"
+        },
         {
           name: t`Item Groups`,
           to: path.to.itemPostingGroups,

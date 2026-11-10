@@ -51,7 +51,7 @@ is the separate `job` table from `20240909194622_jobs.sql`).
    role page, role module (a key has only its own). `util.access_level` (SQL) and `resolveLevel`
    (`@carbon/database/access`) are the two copies, pinned to `access/cases.json`.
 3. `employeeTypePermission` and `userPermission` were converted to grants
-   (`20261018093518_convert-permissions-to-grants.sql`); `userPermission` is still read for
+   (`20261110050003_convert-permissions-to-grants.sql`); `userPermission` is still read for
    customer and supplier portal keys.
 4. Claims: SQL `get_claims(uid, company)` (`authz/helpers/get_claims.sql`) returns
    `{ role, admin, grants, portal }` for that company; `portal` holds the `userPermission` keys

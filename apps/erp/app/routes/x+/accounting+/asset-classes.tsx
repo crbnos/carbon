@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { authorize } from "@carbon/auth/auth.server";
 import { Button, RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -13,8 +12,9 @@ import { NewAction } from "~/components/New";
 import { usePermissions } from "~/hooks";
 import { AssetClassesTable } from "~/modules/accounting/ui/FixedAssets";
 import type { Handle } from "~/utils/handle";
+import { assetClassesList } from "~/utils/list-registry/accounting.server";
+import { loadListPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Asset Classes`,
@@ -22,39 +22,20 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "accounting.assetClasses": "View" },
-    { role: "employee" }
-  );
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const [classes, companySettings] = await Promise.all([
-    api.accounting.getFixedAssetClasses({
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }),
-    api.settings.getCompanySettings({})
-  ]);
-
-  return {
-    data: classes.data?.rows ?? [],
-    count: classes.data?.count ?? 0,
-    taxDepreciationEnabled:
-      (companySettings.data as any)?.assetTaxDepreciationEnabled ?? false
-  };
+  return loadListPage(request, assetClassesList, {
+    dataKey: "data",
+    firstPage: async ({ api }) => {
+      const companySettings = await api.settings.getCompanySettings({});
+      return {
+        taxDepreciationEnabled:
+          (companySettings.data as any)?.assetTaxDepreciationEnabled ?? false
+      };
+    }
+  });
 }
 
 export default function AssetClassesRoute() {
-  const { data, count, taxDepreciationEnabled } =
+  const { data, count, infinite, taxDepreciationEnabled } =
     useLoaderData<typeof loader>();
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -65,6 +46,7 @@ export default function AssetClassesRoute() {
       <AssetClassesTable
         data={data}
         count={count}
+        infinite={infinite}
         taxDepreciationEnabled={taxDepreciationEnabled}
         primaryAction={
           permissions.has({ "accounting.assetClasses": "Create" }) && (

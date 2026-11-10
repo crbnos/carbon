@@ -20,16 +20,21 @@ import type {
   CarbonError,
   ServiceContext
 } from "@carbon/api/service-fn.server";
-import type { Database, Json } from "@carbon/database";
 import {
+  type Database,
   fetchAllByIds,
   fetchAllFromTable,
   fetchAllRecords,
   getCompanyTimeZone,
+  type Json,
   journalReference
 } from "@carbon/database";
 import { DOCUMENT_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  type Kysely,
+  type KyselyDatabase,
+  withTransaction
+} from "@carbon/database/client";
 import {
   runConfigurationRule,
   transpileRule
@@ -66,17 +71,21 @@ import {
   many,
   maybeSingle,
   neq,
+  newIds,
   notNull,
   selectRow,
   selectRows,
   single,
-  updateRows
+  updateRows,
+  updateRowsById
 } from "@carbon/database/rows";
 import {
   getNextRevisionSequence,
   getNextSequence,
-  getNextSerialNumbers
+  getNextSerialNumbers,
+  resolveSerialNumberTiming
 } from "@carbon/database/sequence";
+import { getStrictBackflushSettings } from "@carbon/database/strict-backflush";
 import {
   buildConsumeFirstHops,
   buildConsumeFirstRules,
@@ -91,16 +100,28 @@ import {
   settleConsumeFirstLine,
   withoutStockedConsumeFirst
 } from "@carbon/database/supersession-pick";
+import { planningGroupMrpDeps } from "@carbon/ee/pegging.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
+import { TiptapText } from "@carbon/files/markdown";
 import { trigger } from "@carbon/jobs";
-import type { JobSource } from "@carbon/lib/telemetry";
-import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
+import {
+  asJobSource,
+  type JobSource,
+  trackWorkEvent
+} from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import {
+  type CalendarWindow,
+  closeHolidays,
+  downtimeOutages,
   type LadderShiftRow,
+  remainingWorkHours,
   resolveLocationWindows,
+  resolveWorkCenterWindows,
+  SCHEDULING_HORIZON_DAYS,
+  subtractDates,
   subtractIntervals
 } from "@carbon/planning";
 import type { JSONContent } from "@carbon/react";
@@ -116,6 +137,7 @@ import {
   credit,
   datetime,
   debit,
+  equals,
   getErrorMessage,
   groupBy,
   HOUR_MS,
@@ -124,19 +146,17 @@ import {
   mustViolations,
   nameSimilarity,
   planBatchCompletion,
+  requireAffected,
   resolveBatchRules,
   round,
   scrapAllowance,
-  textToTiptap,
-  tiptapToText,
+  searchFilter,
   unchecked
 } from "@carbon/utils";
-import type {
-  AssemblyGraph,
-  AssemblyGraphIndex,
-  AssemblyPlan
-} from "@carbon/viewer";
 import {
+  type AssemblyGraph,
+  type AssemblyGraphIndex,
+  type AssemblyPlan,
   buildAssemblyStepGroups,
   CURRENT_PLAN_VERSION,
   describeStep,
@@ -145,17 +165,31 @@ import {
   validateSubAssemblies
 } from "@carbon/viewer";
 import {
-  getDayOfWeek,
   parseDate,
   parseDateTime,
   toCalendarDateTime
 } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import type { ExpressionBuilder } from "kysely";
-import { type QueryCreator, sql, type Transaction } from "kysely";
+import {
+  type ExpressionBuilder,
+  type QueryCreator,
+  sql,
+  type Transaction
+} from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
+import {
+  buildProjectLedgerRow,
+  insertProjectLedgerRows,
+  loadJobProjectCharge
+} from "~/modules/projects/project-posting";
+import {
+  chargeNumberError,
+  checkProjectBudget,
+  insertTimesheetDraft
+} from "~/modules/projects/projects.service";
+import { copyDocumentEdit } from "~/modules/settings/settings.service";
 import {
   assertCompanyRecords,
   attributesContain,
@@ -166,11 +200,12 @@ import {
   TIME_ENTRY_BEFORE_CUTOVER_ERROR
 } from "~/modules/shared/shared.service";
 import type { StorageItem } from "~/types";
-import { makeDurations } from "~/utils/duration";
-import type { GenericQueryFilters } from "~/utils/query";
+import type { Cursor } from "~/utils/cursor";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
 import {
   getGenericFilter,
   LIST_COUNT,
+  listCount,
   setGenericQueryFilters
 } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
@@ -178,13 +213,13 @@ import * as inventoryPostings from "../inventory/inventory.service";
 import { getDefaultStorageUnitForJob } from "../inventory/inventory.utils";
 import { getEmployeeJob } from "../people/people.service";
 import { resolveJobConfiguration } from "../sales/sales.utils";
-import type {
-  operationParameterValidator,
-  operationStepSlideValidator,
-  operationStepValidator,
-  operationToolValidator
+import {
+  normalizeOperationSourceIds,
+  type operationParameterValidator,
+  type operationStepSlideValidator,
+  type operationStepValidator,
+  type operationToolValidator
 } from "../shared/shared.models";
-import { normalizeOperationSourceIds } from "../shared/shared.models";
 import { invokePosting } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import type { MethodType } from "../shared/types";
@@ -192,32 +227,13 @@ import {
   claimPlanningActions,
   releasePlanningActionClaims
 } from "./planning-action-claims";
-import type {
-  assemblyInstructionStatuses,
-  assemblyStepStatuses,
-  deadlineTypes,
-  failureModeValidator,
-  jobMaterialValidator,
-  jobOperationValidator,
-  jobStatus,
-  jobValidator,
-  maintenanceDispatchCommentValidator,
-  maintenanceDispatchEventValidator,
-  maintenanceDispatchItemValidator,
-  maintenanceDispatchValidator,
-  maintenanceDispatchWorkCenterValidator,
-  maintenanceScheduleItemValidator,
-  maintenanceScheduleValidator,
-  procedureParameterValidator,
-  procedureStepValidator,
-  procedureValidator,
-  productionEventValidator,
-  productionQuantityValidator,
-  scrapReasonValidator
-} from "./production.models";
 import {
   ACTIVE_JOB_STATUSES,
+  type assemblyInstructionStatuses,
+  type assemblyStepStatuses,
   type cameraSchema,
+  type deadlineTypes,
+  type failureModeValidator,
   type fastenerSchema,
   getAssemblyModelState,
   isJobLocked,
@@ -225,11 +241,28 @@ import {
   JOB_LOCKED_MESSAGE,
   JOB_LOCKED_STATUSES,
   JOB_SUPPLY_STATUS_PRIORITY,
+  type jobMaterialValidator,
+  type jobOperationValidator,
+  type jobStatus,
+  type jobValidator,
+  type maintenanceDispatchCommentValidator,
+  type maintenanceDispatchEventValidator,
+  type maintenanceDispatchItemValidator,
+  type maintenanceDispatchValidator,
+  type maintenanceDispatchWorkCenterValidator,
+  type maintenanceScheduleItemValidator,
+  type maintenanceScheduleValidator,
   makeToAssetReleaseError,
   motionSchema,
   type orientationSchema,
   PLANNING_EDITABLE_JOB_STATUSES,
   PO_STATUS_PRIORITY,
+  type procedureParameterValidator,
+  type procedureStepValidator,
+  type procedureValidator,
+  type productionEventValidator,
+  type productionQuantityValidator,
+  type scrapReasonValidator,
   WEEKDAYS_MONDAY_FIRST
 } from "./production.models";
 import type {
@@ -241,6 +274,7 @@ import type {
 } from "./types";
 import {
   makeMethodsMissingOperations,
+  materialsWithoutStorageUnit,
   outsideOperationsNeedingPurchaseOrders,
   resolveOperationSupplier
 } from "./ui/Jobs/job-release-logic";
@@ -248,6 +282,7 @@ import {
   type MachineTimeListFilters,
   machineTimeQueueKeyset
 } from "./ui/MachineTime/machine-time-filters.ee";
+import { planningSegmentFilter } from "./ui/Planning/planning-action-scope";
 
 const logger = getLogger("erp", "production");
 
@@ -640,13 +675,6 @@ const DEADLINE_TYPE_PRIORITY: Record<DeadlineType, number> = {
 };
 
 /**
- * The priority of a job placed among `siblings` — the jobs that share its due
- * date (or lack of one) at its location, in priority order. Fractional
- * indexing: before the first job whose deadline type ranks lower than this
- * one's, else at the end. Pure, so a batch can place several jobs on one date
- * in turn by appending each result to the siblings it passes for the next.
- */
-/**
  * The deadline type a job carries once planning gives it a due date. The job
  * form hides the due-date field for "No Deadline" (`deadlineRequiresDueDate`),
  * so a date written under that type is one the planner can neither see nor
@@ -659,6 +687,65 @@ export function deadlineTypeForPlanningDate(
   return deadlineType === "No Deadline" ? "Soft Deadline" : deadlineType;
 }
 
+/**
+ * The type a job carries once its due date is set or cleared outside the job
+ * form. A dated job leaves "No Deadline" (`deadlineTypeForPlanningDate`) and
+ * "ASAP" for "Soft Deadline": the scheduler ignores an ASAP job's date while
+ * MRP takes it as the supply date (`jobCompletionDate`), and the job form
+ * hides it. An undated Hard or Soft Deadline job becomes "No Deadline", since
+ * those two require a date; an undated ASAP job stays ASAP.
+ */
+export function deadlineTypeForDueDate(
+  deadlineType: DeadlineType,
+  dueDate: string | null
+): DeadlineType {
+  if (dueDate !== null) {
+    return deadlineType === "ASAP"
+      ? "Soft Deadline"
+      : deadlineTypeForPlanningDate(deadlineType);
+  }
+  return deadlineType === "Hard Deadline" || deadlineType === "Soft Deadline"
+    ? "No Deadline"
+    : deadlineType;
+}
+
+/**
+ * A job's due date and deadline type after a change to either, kept in step:
+ * a type that takes no date (ASAP, No Deadline) clears the date, which the
+ * job form hides for those; a date set on its own follows
+ * `deadlineTypeForDueDate`.
+ */
+export function nextJobDeadline(
+  job: { dueDate: string | null; deadlineType: DeadlineType },
+  change: { dueDate?: string | null; deadlineType?: DeadlineType }
+): { dueDate: string | null; deadlineType: DeadlineType } {
+  const dueDate =
+    change.dueDate !== undefined ? change.dueDate || null : job.dueDate;
+  if (change.deadlineType !== undefined) {
+    const takesDate =
+      change.deadlineType === "Hard Deadline" ||
+      change.deadlineType === "Soft Deadline";
+    return {
+      dueDate: takesDate ? dueDate : null,
+      deadlineType: change.deadlineType
+    };
+  }
+  return {
+    dueDate,
+    deadlineType:
+      change.dueDate !== undefined
+        ? deadlineTypeForDueDate(job.deadlineType, dueDate)
+        : job.deadlineType
+  };
+}
+
+/**
+ * The priority of a job placed among `siblings` — the jobs that share its due
+ * date (or lack of one) at its location, in priority order. Fractional
+ * indexing: before the first job whose deadline type ranks lower than this
+ * one's, else at the end. Pure, so a batch can place several jobs on one date
+ * in turn by appending each result to the siblings it passes for the next.
+ */
 export function nextJobPriority(
   siblings: { priority: number | null; deadlineType: DeadlineType }[],
   deadlineType: DeadlineType
@@ -692,35 +779,45 @@ export async function deleteJobOperationStep(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("jobOperationStep").delete().eq("id", id);
+  return requireAffected(
+    client.from("jobOperationStep").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteJobOperationStepSlide(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("jobOperationStepSlide").delete().eq("id", id);
+  return requireAffected(
+    client.from("jobOperationStepSlide").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteJobOperationParameter(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("jobOperationParameter").delete().eq("id", id);
+  return requireAffected(
+    client.from("jobOperationParameter").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteJobOperationTool(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("jobOperationTool").delete().eq("id", id);
+  return requireAffected(
+    client.from("jobOperationTool").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteProcedure(
   client: SupabaseClient<Database>,
   procedureId: string
 ) {
-  return client.from("procedure").delete().eq("id", procedureId);
+  return requireAffected(
+    client.from("procedure").delete().eq("id", procedureId).select("id")
+  );
 }
 
 export async function deleteProcedureStep(
@@ -728,11 +825,14 @@ export async function deleteProcedureStep(
   procedureStepId: string,
   companyId: string
 ) {
-  return client
-    .from("procedureStep")
-    .delete()
-    .eq("id", procedureStepId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("procedureStep")
+      .delete()
+      .eq("id", procedureStepId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function deleteProcedureParameter(
@@ -740,11 +840,14 @@ export async function deleteProcedureParameter(
   procedureParameterId: string,
   companyId: string
 ) {
-  return client
-    .from("procedureParameter")
-    .delete()
-    .eq("id", procedureParameterId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("procedureParameter")
+      .delete()
+      .eq("id", procedureParameterId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function deleteProductionEvent(
@@ -800,21 +903,27 @@ export async function deleteProductionEvent(
   // Recorded output quantities reference this event via ON DELETE SET NULL FKs
   // (migration below), so they survive with their link cleared — the quantities
   // are real output and outlive an individual time card.
-  return client
-    .from("productionEvent")
-    .delete()
-    .eq("id", productionEventId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("productionEvent")
+      .delete()
+      .eq("id", productionEventId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function deleteProductionQuantity(
   client: SupabaseClient<Database>,
   productionQuantityId: string
 ) {
-  return client
-    .from("productionQuantity")
-    .delete()
-    .eq("id", productionQuantityId);
+  return requireAffected(
+    client
+      .from("productionQuantity")
+      .delete()
+      .eq("id", productionQuantityId)
+      .select("id")
+  );
 }
 
 export async function getActiveJobOperationByJobId(
@@ -888,13 +997,66 @@ export async function getUnscheduledJobs(
   });
 }
 
+export type JobProject = {
+  projectId: string;
+  projectElementId: string | null;
+  // The element's readable id when the job is charged to one, else the
+  // project's identifier
+  projectReadableId: string;
+  projectName: string;
+};
+
+/**
+ * The charge number of each job that has one, keyed by job id — what the
+ * schedule cards show beside the sales order.
+ */
+export async function getJobProjects(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  jobIds: string[]
+): Promise<{
+  data: Record<string, JobProject>;
+  error: PostgrestError | null;
+}> {
+  if (jobIds.length === 0) return { data: {}, error: null };
+
+  const result = await fetchAllByIds(jobIds, (batch) =>
+    client
+      .from("job")
+      .select(
+        "id, projectId, projectElementId, project:project!job_project_fkey(identifier, name), projectElement:projectElement!job_projectElement_fkey(readableId, name)"
+      )
+      .in("id", batch)
+      .eq("companyId", companyId)
+      .not("projectId", "is", null)
+      .order("id")
+  );
+
+  if (result.error) return { data: {}, error: result.error };
+
+  const data: Record<string, JobProject> = {};
+  for (const job of result.data ?? []) {
+    const readableId =
+      job.projectElement?.readableId ?? job.project?.identifier;
+    if (!job.projectId || !job.project || !readableId) continue;
+    data[job.id] = {
+      projectId: job.projectId,
+      projectElementId: job.projectElementId,
+      projectReadableId: readableId,
+      projectName: job.projectElement?.name ?? job.project.name
+    };
+  }
+
+  return { data, error: null };
+}
+
 export async function getActiveProductionEvents(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  // TS2589 — supabase select-string instantiation depth sits on tsgo's limit;
-  // the cliff shifts as unrelated modules join the program. ts-ignore, not
-  // ts-expect-error, so it satisfies both tsc and tsgo.
+  // TS2589 — supabase select-string instantiation depth sits on TypeScript's
+  // limit; the cliff shifts as unrelated modules join the program. ts-ignore,
+  // not ts-expect-error, since the error comes and goes.
   // @ts-ignore TS2589
   return client
     .from("productionEvent")
@@ -909,66 +1071,113 @@ export async function deleteScrapReason(
   client: SupabaseClient<Database>,
   scrapReasonId: string
 ) {
-  return client.from("scrapReason").delete().eq("id", scrapReasonId);
+  return requireAffected(
+    client.from("scrapReason").delete().eq("id", scrapReasonId).select("id")
+  );
 }
 
 export async function deleteFailureMode(
   client: SupabaseClient<Database>,
   failureModeId: string
 ) {
-  return client.from("maintenanceFailureMode").delete().eq("id", failureModeId);
+  return requireAffected(
+    client
+      .from("maintenanceFailureMode")
+      .delete()
+      .eq("id", failureModeId)
+      .select("id")
+  );
 }
 
 export async function deleteMaintenanceDispatch(
   client: SupabaseClient<Database>,
   dispatchId: string
 ) {
-  return client.from("maintenanceDispatch").delete().eq("id", dispatchId);
+  return requireAffected(
+    client
+      .from("maintenanceDispatch")
+      .delete()
+      .eq("id", dispatchId)
+      .select("id")
+  );
 }
 
 export async function deleteMaintenanceDispatchComment(
   client: SupabaseClient<Database>,
   commentId: string
 ) {
-  return client.from("maintenanceDispatchComment").delete().eq("id", commentId);
+  return requireAffected(
+    client
+      .from("maintenanceDispatchComment")
+      .delete()
+      .eq("id", commentId)
+      .select("id")
+  );
 }
 
 export async function deleteMaintenanceDispatchEvent(
   client: SupabaseClient<Database>,
   eventId: string
 ) {
-  return client.from("maintenanceDispatchEvent").delete().eq("id", eventId);
+  return requireAffected(
+    client
+      .from("maintenanceDispatchEvent")
+      .delete()
+      .eq("id", eventId)
+      .select("id")
+  );
 }
 
 export async function deleteMaintenanceDispatchItem(
   client: SupabaseClient<Database>,
   itemId: string
 ) {
-  return client.from("maintenanceDispatchItem").delete().eq("id", itemId);
+  return requireAffected(
+    client
+      .from("maintenanceDispatchItem")
+      .delete()
+      .eq("id", itemId)
+      .select("id")
+  );
 }
 
 export async function deleteMaintenanceDispatchWorkCenter(
   client: SupabaseClient<Database>,
   workCenterId: string
 ) {
-  return client
-    .from("maintenanceDispatchWorkCenter")
-    .delete()
-    .eq("id", workCenterId);
+  return requireAffected(
+    client
+      .from("maintenanceDispatchWorkCenter")
+      .delete()
+      .eq("id", workCenterId)
+      .select("id")
+  );
 }
 
 export async function deleteMaintenanceSchedule(
   client: SupabaseClient<Database>,
   scheduleId: string
 ) {
-  return client.from("maintenanceSchedule").delete().eq("id", scheduleId);
+  return requireAffected(
+    client
+      .from("maintenanceSchedule")
+      .delete()
+      .eq("id", scheduleId)
+      .select("id")
+  );
 }
 
 export async function deleteMaintenanceScheduleItem(
   client: SupabaseClient<Database>,
   itemId: string
 ) {
-  return client.from("maintenanceScheduleItem").delete().eq("id", itemId);
+  return requireAffected(
+    client
+      .from("maintenanceScheduleItem")
+      .delete()
+      .eq("id", itemId)
+      .select("id")
+  );
 }
 
 export async function getDemandForecasts(
@@ -1122,6 +1331,30 @@ export async function getJob(client: SupabaseClient<Database>, id: string) {
   return client.from("jobs").select("*").eq("id", id).single();
 }
 
+/**
+ * The charge number of a job: its project and element, and whether the job
+ * consumes to the project. The `jobs` view predates these columns, so they
+ * are read from `job`.
+ */
+export async function getJobProjectCharge(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+) {
+  return client
+    .from("job")
+    .select(
+      "projectId, projectElementId, consumeToProject, receiveToProjectStock, project:project!job_project_fkey(id, identifier, name, costTreatment, projectStock), element:projectElement!job_projectElement_fkey(id, readableId, name)"
+    )
+    .eq("id", jobId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
+export type JobProjectCharge = NonNullable<
+  Awaited<ReturnType<typeof getJobProjectCharge>>["data"]
+>;
+
 // The IN-PROCESS scheduling/MRP engines need a Node Kysely handle. It is built
 // in `~/services/database.server` (getDatabaseClient) and passed in as `db` by
 // the route action — NEVER constructed here. This module is also bundled for the
@@ -1189,6 +1422,25 @@ export async function getJobByOperationId(
     .single();
 }
 
+// The file an operator recorded on a File step of the operation: the only
+// files the customer portal links to, and so the only ones it serves.
+export async function getJobOperationFileRecord(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  operationId: string,
+  path: string
+) {
+  return client
+    .from("jobOperationStepRecord")
+    .select("id, jobOperationStep!inner(operationId, type)")
+    .eq("companyId", companyId)
+    .eq("value", path)
+    .eq("jobOperationStep.operationId", operationId)
+    .eq("jobOperationStep.type", "File")
+    .limit(1)
+    .maybeSingle();
+}
+
 export async function getJobPurchaseOrderLines(
   client: SupabaseClient<Database>,
   jobId: string
@@ -1196,7 +1448,7 @@ export async function getJobPurchaseOrderLines(
   return client
     .from("purchaseOrderLine")
     .select(
-      "id, itemId, purchaseQuantity, quantityReceived, quantityShipped, purchaseOrder(id, purchaseOrderId, status, supplierId, supplierInteractionId), jobOperation(id, description, operationQuantity)"
+      "id, itemId, purchaseQuantity, quantityReceived, quantityShipped, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(id, purchaseOrderId, status, supplierId, supplierInteractionId), jobOperation!purchaseOrderLine_jobOperationId_fkey(id, description, operationQuantity)"
     )
     .eq("jobId", jobId);
 }
@@ -1281,7 +1533,7 @@ export async function getCapacityReservationsForResources(
     .select(
       `id, operationId, jobId, resourceKind, resourceId, startAt, endAt, scheduleNote, workHours, isPlaceholder, jobOperationBatchId,
        job!inner(jobId, status, dueDate, locationId),
-       jobOperation(description, hasConflict, conflictReason, jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, type))),
+       jobOperation(description, status, processId, hasConflict, conflictReason, jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, type))),
        jobOperationBatch(readableId)`
     )
     .eq("companyId", companyId)
@@ -1344,6 +1596,10 @@ export async function getProductionEventsByJob(
     .eq("jobOperation.jobId", jobId);
 }
 
+export const JOBS_PAGING: Paging = {
+  defaultSorts: [{ column: "jobId", ascending: false }]
+};
+
 export async function getJobs(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1351,8 +1607,9 @@ export async function getJobs(
 ) {
   let query = client
     .from("jobs")
+    // Later pages (`cursor`) skip the count: the first page already has it.
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1361,9 +1618,7 @@ export async function getJobs(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "jobId", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, JOBS_PAGING);
   }
 
   return query;
@@ -1445,7 +1700,7 @@ export async function getJobMaterialsWithQuantityOnHand(
 
   if (args?.search) {
     query = query.or(
-      `itemReadableId.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+      searchFilter(["itemReadableId", "name", "description"], args.search)
     );
   }
 
@@ -1556,13 +1811,36 @@ export async function getJobMaterialShortfallByItem(
       factor: Number(rule.conversionFactor ?? 1) || 1
     });
   }
-  const successorIds = Array.from(
+  let successorIds = Array.from(
     new Set(
       Array.from(successorByItem.values())
         .map((s) => s.itemId)
         .filter((id) => !onHandByItem.has(id))
     )
   );
+  // On-hand is the nettable figure, like the job's own lines
+  // (get_job_quantity_on_hand): stock in a non-nettable storage unit cannot
+  // cover the remainder.
+  const successorStock =
+    successorIds.length > 0
+      ? await client
+          .from("itemStockQuantities")
+          .select("itemId, quantityOnHand, quantityNonNettable")
+          .eq("companyId", companyId)
+          .eq("locationId", locationId)
+          .in("itemId", successorIds)
+      : { data: [], error: null };
+  if (successorStock.error) {
+    // Read as no stock, every successor would show a shortage it may not
+    // have: show the predecessor's own shortfall only.
+    logger.warn("Failed to read successor stock for the job materials", {
+      companyId,
+      jobId,
+      error: successorStock.error
+    });
+    successorByItem.clear();
+    successorIds = [];
+  }
   const successorQuantities = await async.map(
     successorIds,
     async (successorId) =>
@@ -1572,9 +1850,16 @@ export async function getJobMaterialShortfallByItem(
         item_id: successorId
       })
   );
+  // The RPC row above is physical on-hand, so only its incoming supply is used.
+  const successorOnHand = new Map(
+    (successorStock.data ?? []).map((row) => [
+      row.itemId,
+      Number(row.quantityOnHand ?? 0) - Number(row.quantityNonNettable ?? 0)
+    ])
+  );
   successorIds.forEach((successorId, index) => {
     const row = successorQuantities[index]?.data?.[0];
-    onHandByItem.set(successorId, Number(row?.quantityOnHand ?? 0));
+    onHandByItem.set(successorId, successorOnHand.get(successorId) ?? 0);
     incomingByItem.set(
       successorId,
       Number(row?.quantityOnPurchaseOrder ?? 0) +
@@ -1934,7 +2219,7 @@ export async function getJobMaterialsByMethodId(
   const result = await client
     .from("jobMaterial")
     .select(
-      "*, item(replenishmentSystem), jobMaterialStep(jobOperationStepId, quantity)"
+      "*, item(replenishmentSystem, itemTrackingType), jobMaterialStep(jobOperationStepId, quantity)"
     )
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
@@ -1942,7 +2227,7 @@ export async function getJobMaterialsByMethodId(
     return (await client
       .from("jobMaterial")
       .select(
-        "*, item(replenishmentSystem), jobMaterialStep(jobOperationStepId)"
+        "*, item(replenishmentSystem, itemTrackingType), jobMaterialStep(jobOperationStepId)"
       )
       .eq("jobMakeMethodId", jobMakeMethodId)
       .order("order", { ascending: true })) as unknown as typeof result;
@@ -1961,6 +2246,14 @@ export async function getJobOperation(
     .single();
 }
 
+export const JOB_OPERATIONS_PAGING: Paging = {
+  defaultSorts: [
+    { column: "description", ascending: true },
+    { column: "order", ascending: true },
+    { column: "createdAt", ascending: false }
+  ]
+};
+
 export async function getJobOperations(
   client: SupabaseClient<Database>,
   jobId: string,
@@ -1971,7 +2264,8 @@ export async function getJobOperations(
     .select(
       "*, jobMakeMethod(parentMaterialId, item(readableIdWithRevision))",
       {
-        count: LIST_COUNT
+        // Later pages (`cursor`) skip the count: the first page already has it.
+        count: listCount(args)
       }
     )
     .eq("jobId", jobId);
@@ -1981,11 +2275,7 @@ export async function getJobOperations(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "description", ascending: true },
-      { column: "order", ascending: true },
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, JOB_OPERATIONS_PAGING);
   }
 
   return query;
@@ -2021,12 +2311,24 @@ export async function getJobOperationAttachments(
 ): Promise<Record<string, string[]>> {
   if (jobOperationIds.length === 0) return {};
 
-  const { data: operationAttributes } = await client
-    .from("jobOperationStep")
-    .select("*, jobOperationStepRecord(*)")
-    .in("operationId", jobOperationIds);
-
-  if (!operationAttributes) return {};
+  // 100 ids per request (a long `.in()` list overflows the request URL),
+  // 8 requests at a time.
+  const results = await async.map(
+    chunkArray(jobOperationIds, 100),
+    async (ids) =>
+      await client
+        .from("jobOperationStep")
+        .select("*, jobOperationStepRecord(*)")
+        .in("operationId", ids)
+  );
+  const failed = results.find((result) => result.error);
+  if (failed) {
+    // The attachments are extras on the page: it shows without them.
+    logger.error("Failed to load job operation attachments", {
+      error: failed.error
+    });
+  }
+  const operationAttributes = results.flatMap((result) => result.data ?? []);
 
   const attachmentsByOperation: Record<string, string[]> = {};
   operationAttributes.forEach((attr) => {
@@ -2059,16 +2361,39 @@ export async function getJobOperationsList(
     .order("order", { ascending: true });
 }
 
+const JOB_OPERATION_DETAIL_COLUMNS =
+  "*, jobOperationBatch(id, readableId, status, notes), jobOperationTool(*, jobOperationToolStep(jobOperationStepId)), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*), jobOperationStepSlide(*))" as const;
+
+/**
+ * A make method's operations in order, each with its batch, tools,
+ * parameters and steps.
+ */
 export async function getJobOperationsByMethodId(
   client: SupabaseClient<Database>,
   jobMakeMethodId: string
 ) {
   return client
     .from("jobOperation")
-    .select(
-      "*, jobOperationBatch(id, readableId, status), jobOperationTool(*, jobOperationToolStep(jobOperationStepId)), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*), jobOperationStepSlide(*))"
-    )
+    .select(JOB_OPERATION_DETAIL_COLUMNS)
     .eq("jobMakeMethodId", jobMakeMethodId)
+    .order("order", { ascending: true });
+}
+
+export const JOB_OPERATION_STEP_RECORDS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
+/** `getJobOperationsByMethodId` for several make methods of one company. */
+export async function getJobOperationsByMethodIds(
+  client: SupabaseClient<Database>,
+  jobMakeMethodIds: string[],
+  companyId: string
+) {
+  return client
+    .from("jobOperation")
+    .select(JOB_OPERATION_DETAIL_COLUMNS)
+    .in("jobMakeMethodId", jobMakeMethodIds)
+    .eq("companyId", companyId)
     .order("order", { ascending: true });
 }
 
@@ -2087,15 +2412,198 @@ export async function getJobOperationStepRecords(
 
   if (args.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,operationDescription.ilike.%${args.search}%`
+      searchFilter(["name", "operationDescription"], args.search)
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(
+    query,
+    args,
+    JOB_OPERATION_STEP_RECORDS_PAGING
+  );
 
   return query;
+}
+
+type StepTimingStep = {
+  id: string;
+  name: string;
+  sortOrder: number;
+  assemblyInstructionStepId: string | null;
+  jobOperationStepRecord:
+    | { index: number; createdAt: string; createdBy: string }[]
+    | null;
+};
+
+type StepTimingClockIn = { employeeId: string | null; startTime: string };
+
+export type StepTimingRecord = {
+  jobOperationStepId: string;
+  name: string;
+  unitIndex: number;
+  recordedAt: string;
+  recordedBy: string;
+  seconds: number | null;
+  measuredFrom: "previousStep" | "clockIn" | null;
+  bulk: boolean;
+};
+
+export type StepTimingSummary = {
+  jobOperationStepId: string;
+  name: string;
+  sortOrder: number;
+  assemblyInstructionStepId: string | null;
+  timedUnits: number;
+  averageSeconds: number | null;
+  medianSeconds: number | null;
+  minSeconds: number | null;
+  maxSeconds: number | null;
+};
+
+/**
+ * How long each step of an operation took, estimated from when its records
+ * were made. Each operator's records form one timeline: a record's time is
+ * measured from that operator's previous record on the operation, or from
+ * their latest clock-in to it, whichever is later. Records that share an
+ * instant were written together (a manager's Complete All, a batch record),
+ * so they are flagged `bulk` and left out of the per-step statistics.
+ */
+export function computeStepTimings(
+  steps: StepTimingStep[],
+  clockIns: StepTimingClockIn[]
+): { steps: StepTimingSummary[]; records: StepTimingRecord[] } {
+  const sortOrderByStepId = new Map(steps.map((s) => [s.id, s.sortOrder]));
+  const records = steps
+    .flatMap((step) =>
+      (step.jobOperationStepRecord ?? []).map((record) => ({
+        jobOperationStepId: step.id,
+        name: step.name,
+        unitIndex: record.index,
+        recordedAt: record.createdAt,
+        recordedBy: record.createdBy,
+        at: Date.parse(record.createdAt)
+      }))
+    )
+    .sort(
+      (a, b) =>
+        a.at - b.at ||
+        (sortOrderByStepId.get(a.jobOperationStepId) ?? 0) -
+          (sortOrderByStepId.get(b.jobOperationStepId) ?? 0)
+    );
+
+  const recordsAtInstant = new Map<number, number>();
+  for (const record of records) {
+    recordsAtInstant.set(record.at, (recordsAtInstant.get(record.at) ?? 0) + 1);
+  }
+
+  const clockInsByEmployee = new Map<string, number[]>();
+  for (const event of clockIns) {
+    if (!event.employeeId) continue;
+    const starts = clockInsByEmployee.get(event.employeeId) ?? [];
+    starts.push(Date.parse(event.startTime));
+    clockInsByEmployee.set(event.employeeId, starts);
+  }
+
+  const previousByOperator = new Map<string, number>();
+  const timed: StepTimingRecord[] = records.map((record) => {
+    const previous = previousByOperator.get(record.recordedBy) ?? null;
+    previousByOperator.set(record.recordedBy, record.at);
+
+    const clockIn = (clockInsByEmployee.get(record.recordedBy) ?? [])
+      .filter((start) => start <= record.at)
+      .reduce<number | null>(
+        (latest, start) => (latest === null || start > latest ? start : latest),
+        null
+      );
+
+    const measuredFrom =
+      previous !== null && (clockIn === null || previous >= clockIn)
+        ? "previousStep"
+        : clockIn !== null
+          ? "clockIn"
+          : null;
+    const from = measuredFrom === "previousStep" ? previous : clockIn;
+
+    return {
+      jobOperationStepId: record.jobOperationStepId,
+      name: record.name,
+      unitIndex: record.unitIndex,
+      recordedAt: record.recordedAt,
+      recordedBy: record.recordedBy,
+      seconds: from === null ? null : (record.at - from) / 1000,
+      measuredFrom,
+      bulk: (recordsAtInstant.get(record.at) ?? 0) > 1
+    };
+  });
+
+  const secondsByStep = groupBy(
+    timed.filter((r) => r.seconds !== null && !r.bulk),
+    (r) => r.jobOperationStepId
+  );
+
+  const summaries = [...steps]
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((step) => {
+      const seconds = (secondsByStep[step.id] ?? [])
+        .map((r) => r.seconds as number)
+        .sort((a, b) => a - b);
+      const middle = seconds.length >> 1;
+      return {
+        jobOperationStepId: step.id,
+        name: step.name,
+        sortOrder: step.sortOrder,
+        assemblyInstructionStepId: step.assemblyInstructionStepId,
+        timedUnits: seconds.length,
+        averageSeconds: seconds.length
+          ? round(seconds.reduce((sum, s) => sum + s, 0) / seconds.length)
+          : null,
+        medianSeconds: seconds.length
+          ? seconds.length % 2
+            ? seconds[middle]
+            : round((seconds[middle - 1] + seconds[middle]) / 2)
+          : null,
+        minSeconds: seconds.length ? seconds[0] : null,
+        maxSeconds: seconds.length ? seconds[seconds.length - 1] : null
+      };
+    });
+
+  return { steps: summaries, records: timed };
+}
+
+export async function getJobOperationStepTimings(
+  client: SupabaseClient<Database>,
+  jobOperationId: string,
+  companyId: string
+) {
+  const [operation, steps, clockIns] = await Promise.all([
+    client
+      .from("jobOperation")
+      .select("id")
+      .eq("id", jobOperationId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    client
+      .from("jobOperationStep")
+      .select(
+        "id, name, sortOrder, assemblyInstructionStepId, jobOperationStepRecord(index, createdAt, createdBy)"
+      )
+      .eq("operationId", jobOperationId)
+      .eq("companyId", companyId),
+    client
+      .from("productionEvent")
+      .select("employeeId, startTime")
+      .eq("jobOperationId", jobOperationId)
+      .eq("companyId", companyId)
+  ]);
+
+  const error = operation.error ?? steps.error ?? clockIns.error;
+  if (error) return { data: null, error };
+  if (!operation.data) return { data: null, error: null };
+
+  return {
+    data: computeStepTimings(steps.data ?? [], clockIns.data ?? []),
+    error: null
+  };
 }
 
 export async function getOutsideOperationsByJobId(
@@ -2156,6 +2664,10 @@ export async function getProcedureVersions(
     .order("version", { ascending: false });
 }
 
+export const PROCEDURES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getProcedures(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2164,7 +2676,8 @@ export async function getProcedures(
   let query = client
     .from("procedures")
     .select("*", {
-      count: LIST_COUNT
+      // Later pages (`cursor`) skip the count: the first page already has it.
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -2173,9 +2686,7 @@ export async function getProcedures(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, PROCEDURES_PAGING);
   }
 
   return query;
@@ -2210,6 +2721,15 @@ export async function getProductionEvent(
     .single();
 }
 
+// The start time was a fixed order ahead of every sort. The cursor must follow
+// each column the list orders by, so it is the first default sort instead.
+export const PRODUCTION_EVENTS_PAGING: Paging = {
+  defaultSorts: [
+    { column: "startTime", ascending: true },
+    { column: "createdAt", ascending: false }
+  ]
+};
+
 export async function getProductionEvents(
   client: SupabaseClient<Database>,
   jobOperationIds: string[],
@@ -2220,21 +2740,17 @@ export async function getProductionEvents(
     .select(
       "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))",
       {
-        count: LIST_COUNT
+        // Later pages (`cursor`) skip the count: the first page already has it.
+        count: listCount(args)
       }
     )
-    .in("jobOperationId", jobOperationIds)
-    .order("startTime", { ascending: true });
+    .in("jobOperationId", jobOperationIds);
 
   if (args?.search) {
-    query = query.or(`jobOperation.description.ilike.%${args.search}%`);
+    query = query.or(searchFilter(["jobOperation.description"], args.search));
   }
 
-  if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
-  }
+  query = setGenericQueryFilters(query, args ?? {}, PRODUCTION_EVENTS_PAGING);
 
   return query;
 }
@@ -2252,6 +2768,19 @@ export async function getProductionEventsByOperations(
     .order("startTime", { ascending: true });
 }
 
+// What the row's Order / Make button offers (the grid RPC's orderQuantity,
+// from MRP's open new-supply actions), then the part number so a page is
+// stable when many rows have nothing to order. An item has one row per
+// netting segment ('' is common, then each project with project stock), so
+// the segment breaks the tie between its rows before the id does.
+export const PRODUCTION_PLANNING_PAGING: Paging = {
+  defaultSorts: [
+    { column: "orderQuantity", ascending: false },
+    { column: "readableIdWithRevision", ascending: true },
+    { column: "planningSegmentId", ascending: true }
+  ]
+};
+
 export async function getProductionPlanning(
   client: SupabaseClient<Database>,
   locationId: string,
@@ -2268,6 +2797,9 @@ export async function getProductionPlanning(
     /** Keep only items with such an action assigned to this user ("Assigned
      *  to me"). Combined with `actionTypes` on the SAME action. */
     actionAssignees?: string[];
+    /** Keep only the rows of these netting segments ('' is common; the
+     *  grid's Segment filter). */
+    segments?: string[];
   }
 ) {
   // The grid RPC wraps get_production_planning: same rows and projection, plus the
@@ -2286,26 +2818,29 @@ export async function getProductionPlanning(
       action_assignees: args.actionAssignees
     },
     {
-      count: LIST_COUNT
+      // Later pages (`cursor`) skip the count: the first page already has it.
+      count: listCount(args)
     }
   );
 
   if (args?.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
+      searchFilter(["name", "readableIdWithRevision"], args.search)
     );
   }
 
-  // What the row's Order / Make button offers (the grid RPC's orderQuantity,
-  // from MRP's open new-supply actions), then the part number so a page is
-  // stable when many rows have nothing to order.
-  query = setGenericQueryFilters(query, args, [
-    { column: "orderQuantity", ascending: false },
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  if (args.segments && args.segments.length > 0) {
+    query = query.or(planningSegmentFilter(args.segments));
+  }
+
+  query = setGenericQueryFilters(query, args, PRODUCTION_PLANNING_PAGING);
 
   return query;
 }
+
+export const PRODUCTION_PROJECTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
 
 export async function getProductionProjections(
   client: SupabaseClient<Database>,
@@ -2324,19 +2859,18 @@ export async function getProductionProjections(
       periods
     },
     {
-      count: LIST_COUNT
+      // Later pages (`cursor`) skip the count: the first page already has it.
+      count: listCount(args)
     }
   );
 
   if (args?.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
+      searchFilter(["name", "readableIdWithRevision"], args.search)
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, PRODUCTION_PROJECTIONS_PAGING);
 
   return query;
 }
@@ -2352,6 +2886,10 @@ export async function getProductionQuantity(
     .single();
 }
 
+export const PRODUCTION_QUANTITIES_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getProductionQuantities(
   client: SupabaseClient<Database>,
   jobOperationIds: string[],
@@ -2362,19 +2900,18 @@ export async function getProductionQuantities(
     .select(
       "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))",
       {
-        count: LIST_COUNT
+        // Later pages (`cursor`) skip the count: the first page already has it.
+        count: listCount(args)
       }
     )
     .in("jobOperationId", jobOperationIds);
 
   if (args?.search) {
-    query = query.or(`jobOperation.description.ilike.%${args.search}%`);
+    query = query.or(searchFilter(["jobOperation.description"], args.search));
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, PRODUCTION_QUANTITIES_PAGING);
   }
 
   return query;
@@ -2432,6 +2969,10 @@ export async function getScrapReason(
     .single();
 }
 
+export const SCRAP_REASONS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getScrapReasons(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2439,7 +2980,10 @@ export async function getScrapReasons(
 ) {
   let query = client
     .from("scrapReason")
-    .select("id, name, customFields", { count: LIST_COUNT })
+    // Later pages (`cursor`) skip the count: the first page already has it.
+    .select("id, name, customFields", {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -2447,9 +2991,7 @@ export async function getScrapReasons(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, SCRAP_REASONS_PAGING);
   }
 
   return query;
@@ -2849,9 +3391,13 @@ export async function runMRP(
   // Run MRP IN-PROCESS (Node). The caller's service-role client does
   // the PostgREST reads; the atomic Phase-7 write goes through the Node Kysely
   // pool. Preserves the `{ data, error }` shape the caller (api+/mrp.ts) returns.
+  // It injects the commercial planning group functions
+  // (`planningGroupMrpDeps`, `@carbon/ee/pegging.server`): `@carbon/planning`
+  // imports no `.server` module, so every server-side `runMrp` caller passes
+  // them in. Every ERP caller (routes, operations) reaches MRP through here.
   try {
     const { runMrp } = await import("@carbon/planning");
-    const data = await runMrp(client, db, params);
+    const data = await runMrp(client, db, params, planningGroupMrpDeps);
     return { data, error: null };
   } catch (err) {
     return {
@@ -2867,14 +3413,16 @@ export async function updateJobBatchNumber(
   trackedEntityId: string,
   value: string | null
 ) {
-  return client
-    .from("trackedEntity")
-    .update({
-      readableId: value
-    })
-    .eq("id", trackedEntityId)
-    .eq("companyId", companyId)
-    .select("id, readableId");
+  return requireAffected(
+    client
+      .from("trackedEntity")
+      .update({
+        readableId: value
+      })
+      .eq("id", trackedEntityId)
+      .eq("companyId", companyId)
+      .select("id, readableId")
+  );
 }
 
 export type JobReleaseReadiness = {
@@ -2897,6 +3445,7 @@ export type JobReleaseReadiness = {
     }[];
     // The suppliers this job's outside operations go on a purchase order for.
     supplierIds: string[];
+    materialsWithoutStorageUnit: { id: string; description: string }[];
   }[];
   // Suppliers whose outside operations release will put on a purchase order,
   // with the Draft POs the planner may add them to instead of a new one.
@@ -2905,6 +3454,76 @@ export type JobReleaseReadiness = {
     draftPurchaseOrders: { id: string; purchaseOrderId: string }[];
   }[];
 };
+
+async function getMaterialsWithoutStorageUnit(
+  client: SupabaseClient<Database>,
+  jobIds: string[],
+  companyId: string
+): Promise<{
+  data: Record<string, { id: string; description: string }[]>;
+  error: PostgrestError | null;
+}> {
+  const settings = await client
+    .from("companySettings")
+    .select("requireBackflushStorageUnit")
+    .eq("id", companyId)
+    .maybeSingle();
+  if (settings.error) return { data: {}, error: settings.error };
+  if (settings.data?.requireBackflushStorageUnit !== true)
+    return { data: {}, error: null };
+
+  const lines = await fetchAllByIds(jobIds, (batch) =>
+    client
+      .from("jobMaterial")
+      .select(
+        "id, jobId, description, methodType, itemType, storageUnitId, item(itemTrackingType, readableIdWithRevision), job(locationId), storageUnit(name, effectiveNettable)"
+      )
+      .in("jobId", batch)
+      .eq("companyId", companyId)
+      .order("id")
+  );
+  if (lines.error) return { data: {}, error: lines.error };
+
+  const jobLocationIds = [
+    ...new Set(
+      (lines.data ?? []).flatMap((line) =>
+        line.job?.locationId ? [line.job.locationId] : []
+      )
+    )
+  ];
+  const pullFromLocations =
+    jobLocationIds.length === 0
+      ? { data: [], error: null }
+      : await client
+          .from("location")
+          .select("id, workCenter!inner(id), storageUnit!inner(id)")
+          .in("id", jobLocationIds)
+          .eq("companyId", companyId)
+          .eq("workCenter.active", true)
+          .eq("storageUnit.active", true)
+          .limit(1, { referencedTable: "workCenter" })
+          .limit(1, { referencedTable: "storageUnit" });
+  if (pullFromLocations.error)
+    return { data: {}, error: pullFromLocations.error };
+  const strictLocationIds = new Set(
+    (pullFromLocations.data ?? []).map((location) => location.id)
+  );
+
+  const byJob: Record<string, { id: string; description: string }[]> = {};
+  for (const [jobId, jobLines] of Object.entries(
+    groupBy(
+      (lines.data ?? []).filter(
+        (line) =>
+          line.job?.locationId && strictLocationIds.has(line.job.locationId)
+      ),
+      (line) => line.jobId
+    )
+  )) {
+    const missing = materialsWithoutStorageUnit(jobLines);
+    if (missing.length > 0) byJob[jobId] = missing;
+  }
+  return { data: byJob, error: null };
+}
 
 // What stands between these jobs and release, read in one query per table for
 // any number of jobs. The job Release dialog and batch release both read it, so
@@ -2922,7 +3541,7 @@ export async function getJobReleaseReadiness(
       client
         .from("job")
         .select(
-          "id, jobId, status, quantity, scrapQuantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item(itemTrackingType, itemReplenishment(manufacturingBlocked))"
+          "id, jobId, status, quantity, scrapQuantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item!job_itemId_fkey(itemTrackingType, itemReplenishment(manufacturingBlocked))"
         )
         .in("id", batch)
         .eq("companyId", companyId)
@@ -2961,6 +3580,14 @@ export async function getJobReleaseReadiness(
   const failed =
     jobs.error ?? roots.error ?? materials.error ?? operations.error;
   if (failed) return { data: null, error: failed };
+
+  const withoutStorageUnit = await getMaterialsWithoutStorageUnit(
+    client,
+    jobIds,
+    companyId
+  );
+  if (withoutStorageUnit.error)
+    return { data: null, error: withoutStorageUnit.error };
 
   const outsideOperationIds = (operations.data ?? [])
     .filter((op) => op.operationType === "Outside Processing")
@@ -3115,7 +3742,8 @@ export async function getJobReleaseReadiness(
                 : []
             )
           )
-        ]
+        ],
+        materialsWithoutStorageUnit: withoutStorageUnit.data[job.id] ?? []
       })),
       suppliers: supplierIds.map((supplierId) => ({
         supplierId,
@@ -3146,7 +3774,8 @@ export async function updateJobStatus(
     // cancelled in between must not come back as Ready. `updated` is false
     // when the row no longer matched.
     fromStatuses?: (typeof jobStatus)[number][];
-  }
+  },
+  { source = "erp" }: { source?: JobSource } = {}
 ) {
   const { id, companyId, status, assignee, updatedBy, fromStatuses } = params;
 
@@ -3195,7 +3824,7 @@ export async function updateJobStatus(
         userId: updatedBy,
         jobId: id,
         priorStatus: prior.data.status,
-        source: "erp"
+        source
       });
     } else if (status === "Paused") {
       await raiseMoment("production.jobHeld", {
@@ -3268,11 +3897,14 @@ export async function updateKanbanJob(
   }
 ) {
   const { id, jobId, companyId, userId } = params;
-  return client
-    .from("kanban")
-    .update({ jobId, updatedBy: userId, updatedAt: new Date().toISOString() })
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("kanban")
+      .update({ jobId, updatedBy: userId, updatedAt: new Date().toISOString() })
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function updateQuoteOperationStepOrder(
@@ -3365,6 +3997,17 @@ export async function updateProcedureStepOrder(
     client.from("procedureStep").update({ sortOrder, updatedBy }).eq("id", id)
   );
   return Promise.all(updatePromises);
+}
+
+export const SECOND_OPEN_TIMER_MESSAGE =
+  "This employee already has an open event of this type on this operation. End it before adding another.";
+
+/** One open Setup or Labor event per employee per operation (productionEvent_one_open_per_operator_idx). */
+export function isSecondOpenTimer(error: { code?: string; message?: string }) {
+  return (
+    error.code === "23505" &&
+    (error.message ?? "").includes("productionEvent_one_open_per_operator_idx")
+  );
 }
 
 /** The row write only; `createProductionEvent` / `updateProductionEvent` also post the time to the GL. */
@@ -3485,6 +4128,14 @@ export async function insertJob(
     configuration?: Record<string, unknown>;
     fixedAssetClassId?: string | null;
     fixedAssetId?: string | null;
+    projectId?: string | null;
+    projectElementId?: string | null;
+    consumeToProject?: boolean;
+    receiveToProjectStock?: boolean;
+    /** Projects Phase 3: a job made for a planning group (no project). */
+    planningGroupId?: string | null;
+    /** The project contract line (CLIN) whose part the job builds. */
+    customerContractLineId?: string | null;
   },
   options?: {
     skipMethod?: boolean;
@@ -3607,6 +4258,13 @@ export async function insertJob(
       customFields: input.customFields,
       fixedAssetClassId: input.fixedAssetClassId ?? null,
       fixedAssetId: input.fixedAssetId ?? null,
+      // A form sends an empty charge number as "".
+      projectId: input.projectId || null,
+      projectElementId: input.projectElementId || null,
+      consumeToProject: input.consumeToProject ?? false,
+      receiveToProjectStock: input.receiveToProjectStock ?? false,
+      planningGroupId: input.planningGroupId ?? null,
+      customerContractLineId: input.customerContractLineId ?? null,
       configuration: (input.configuration as Json | undefined) ?? null,
       companyId: input.companyId,
       createdBy: input.createdBy,
@@ -3701,16 +4359,27 @@ export async function insertJob(
 }
 
 /**
- * Assign configured serial numbers to a freshly-created job's tracked entities.
- * Best-effort and cheap: it skips the operation entirely unless the item has
- * an `itemSerialSequence` configured. Shared by every job-creation path so serial
- * numbering is applied consistently (insertJob, sales-order conversion, ...).
+ * Assign configured serial numbers to a job's tracked entities, when the job is
+ * created (`at: "jobCreation"`, the default) or released (`at: "jobRelease"`).
+ * Best-effort and cheap: it skips the operation entirely unless the item has an
+ * `itemSerialSequence` configured. Shared by every job-creation path
+ * (insertJob, sales-order conversion, ...) and by `releaseCheckedJobs`, so
+ * serial numbering is applied consistently. The `assign-serial-numbers`
+ * posting decides whether the item's serial number timing names this moment.
+ *
+ * Returns false when numbering failed (logged), true otherwise.
  */
-async function assignJobSerialNumbers(
+export async function assignJobSerialNumbers(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  args: { jobId: string; itemId: string; companyId: string; userId: string }
-) {
+  args: {
+    jobId: string;
+    itemId: string;
+    companyId: string;
+    userId: string;
+    at?: "jobCreation" | "jobRelease";
+  }
+): Promise<boolean> {
   const serialSequence = await client
     .from("itemSerialSequence")
     .select("id")
@@ -3725,18 +4394,56 @@ async function assignJobSerialNumbers(
       itemId: args.itemId,
       companyId: args.companyId
     });
-    return;
+    return false;
   }
-  if (!serialSequence.data) return;
+  if (!serialSequence.data) return true;
   const { error } = await invokePosting(
     { client, db, companyId: args.companyId, userId: args.userId },
     "assign-serial-numbers",
-    { jobId: args.jobId },
+    { jobId: args.jobId, at: args.at ?? "jobCreation" },
     assignSerialNumbers,
     { as: assignSerialNumbersPermission }
   );
   if (error) {
     logger.error("Failed to assign serial numbers", { error });
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Number a job's units when `releaseCheckedJobs` releases it, under the
+ * `jobRelease` timing (the item's, else the company's). Returns false when
+ * numbering failed (logged): the job is already Ready, so the caller warns and
+ * the release goes on; the units then draw their numbers at their first touch
+ * or at completion (`complete_job_to_inventory`).
+ */
+export async function assignJobSerialNumbersAtRelease(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: { jobId: string; companyId: string; userId: string }
+): Promise<boolean> {
+  try {
+    const job = await client
+      .from("job")
+      .select("itemId")
+      .eq("id", args.jobId)
+      .eq("companyId", args.companyId)
+      .maybeSingle();
+    if (job.error) throw job.error;
+    if (!job.data?.itemId) return true;
+    return await assignJobSerialNumbers(client, db, {
+      ...args,
+      itemId: job.data.itemId,
+      at: "jobRelease"
+    });
+  } catch (error) {
+    logger.error("Failed to number serial units at release", {
+      error,
+      jobId: args.jobId,
+      companyId: args.companyId
+    });
+    return false;
   }
 }
 
@@ -3768,6 +4475,10 @@ export async function updateJob(
     itemId?: string;
     fixedAssetClassId?: string | null;
     fixedAssetId?: string | null;
+    projectId?: string | null;
+    projectElementId?: string | null;
+    consumeToProject?: boolean;
+    receiveToProjectStock?: boolean;
   }
 ): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
   const { id, companyId, updatedBy, ...updates } = input;
@@ -3989,7 +4700,8 @@ export async function upsertJob(
 export async function upsertJobMaterial(
   client: SupabaseClient<Database>,
   jobMaterial:
-    | (z.infer<typeof jobMaterialValidator> & {
+    | (Omit<z.infer<typeof jobMaterialValidator>, "id"> & {
+        id?: string;
         jobId: string;
         jobOperationId?: string;
         companyId: string;
@@ -4035,7 +4747,8 @@ export async function upsertJobOperation(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   jobOperation:
-    | (z.infer<typeof jobOperationValidator> & {
+    | (Omit<z.infer<typeof jobOperationValidator>, "id"> & {
+        id?: string;
         jobId: string;
         companyId: string;
         createdBy: string;
@@ -4903,12 +5616,15 @@ export async function upsertProcedure(
 
     const [updateWorkInstructions, insertAttributes, insertParameters] =
       await Promise.all([
-        client
-          .from("procedure")
-          .update({
-            content: workInstruction
-          })
-          .eq("id", insert.data.id),
+        requireAffected(
+          client
+            .from("procedure")
+            .update({
+              content: workInstruction
+            })
+            .eq("id", insert.data.id)
+            .select("id")
+        ),
         attributes.length > 0
           ? client.from("procedureStep").insert(
               attributes.map((attribute) => {
@@ -5021,10 +5737,13 @@ export async function upsertScrapReason(
   if ("createdBy" in scrapReason) {
     return client.from("scrapReason").insert([scrapReason]).select("id");
   } else {
-    return client
-      .from("scrapReason")
-      .update(sanitize(scrapReason))
-      .eq("id", scrapReason.id);
+    return requireAffected(
+      client
+        .from("scrapReason")
+        .update(sanitize(scrapReason))
+        .eq("id", scrapReason.id)
+        .select("id")
+    );
   }
 }
 
@@ -5047,10 +5766,13 @@ export async function upsertFailureMode(
   if ("createdBy" in mode) {
     return client.from("maintenanceFailureMode").insert([mode]).select("id");
   }
-  return client
-    .from("maintenanceFailureMode")
-    .update(sanitize(mode))
-    .eq("id", mode.id);
+  return requireAffected(
+    client
+      .from("maintenanceFailureMode")
+      .update(sanitize(mode))
+      .eq("id", mode.id)
+      .select("id")
+  );
 }
 
 export async function upsertMaintenanceDispatch(
@@ -5303,30 +6025,33 @@ export async function getPeopleAbsencesRange(
  * Planned jobs are excluded — only released (firm) work counts toward load,
  * matching the industry release-gating convention. Paginated — the default
  * PostgREST max_rows (1000) would silently truncate a busy location.
+ * `started` is whether any production event exists, as the scheduler asks.
  */
 export async function getPeopleCapacityOperations(
   client: SupabaseClient<Database>,
   companyId: string,
   args: { locationId: string; startDate: string | null; endDate: string }
 ) {
-  return fetchAllFromTable<{
+  const result = await fetchAllFromTable<{
     id: string;
     workCenterId: string | null;
     dueDate: string | null;
     status: string;
     operationQuantity: number | null;
+    quantityComplete: number | null;
     setupTime: number;
-    setupUnit: string;
+    setupUnit: FactorUnit;
     laborTime: number;
-    laborUnit: string;
+    laborUnit: FactorUnit;
     machineTime: number;
-    machineUnit: string;
+    machineUnit: FactorUnit;
+    productionEvent: { id: string }[];
   }>(
     client,
     "jobOperation",
-    `id, workCenterId, dueDate, status, operationQuantity,
+    `id, workCenterId, dueDate, status, operationQuantity, quantityComplete,
      setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit,
-     job!inner(status, locationId)`,
+     job!inner(status, locationId), productionEvent(id)`,
     (query) => {
       let scoped = query
         .eq("companyId", companyId)
@@ -5338,7 +6063,8 @@ export async function getPeopleCapacityOperations(
           "job.status",
           "in",
           '("Draft","Planned","Completed","Cancelled","Closed")'
-        );
+        )
+        .limit(1, { referencedTable: "productionEvent" });
       // Null start = no floor: overdue work back to the earliest open op counts
       // toward Past due (the released-only status filters already bound the set).
       if (args.startDate != null) {
@@ -5347,12 +6073,19 @@ export async function getPeopleCapacityOperations(
       return scoped.order("id");
     }
   );
+  return {
+    ...result,
+    data: result.data?.map(({ productionEvent, ...operation }) => ({
+      ...operation,
+      started: productionEvent.length > 0
+    }))
+  };
 }
 
 /**
  * The `workCenterShift` links (rung 1 of the availability ladder) for a set of
- * work centers, in ONE `.in()` query. Feeds the Capacity view's per-work-center
- * calendar-hours DISPLAY mirror of the engine ladder.
+ * work centers, in ONE `.in()` query. Feeds the stations' working windows on
+ * the People page (Capacity and Coverage).
  */
 export async function getWorkCenterShifts(
   client: SupabaseClient<Database>,
@@ -5368,7 +6101,7 @@ export async function getWorkCenterShifts(
 
 /**
  * WorkCenter-kind reservations overlapping a window — the Capacity view's
- * Scheduled series. Bounded by the window (not "recent only") so earlier days
+ * Scheduled series and the Matrix Coverage. Bounded by the window (not "recent only") so earlier days
  * of the current week keep their completed bookings, filtered to WorkCenter
  * rows server-side, and paginated past the PostgREST max_rows cap.
  */
@@ -5380,13 +6113,14 @@ export async function getWorkCenterReservationsRange(
   return fetchAllFromTable<{
     id: string;
     resourceId: string;
+    operationId: string;
     startAt: string;
     endAt: string;
     workHours: number | null;
   }>(
     client,
     "capacityReservation",
-    `id, resourceId, startAt, endAt, workHours, job!inner(status)`,
+    `id, resourceId, operationId, startAt, endAt, workHours, job!inner(status)`,
     (query) =>
       query
         .eq("companyId", companyId)
@@ -5490,6 +6224,188 @@ export async function getWorkCenterRequiredAbilities(
     }
   );
   return { data: rows, error: null };
+}
+
+/**
+ * Who is qualified for each gated process and where the manning board has
+ * them, by the scheduler's own rule: a qualification counts until the day it
+ * expires, and a board day the person is absent does not commit them. Every
+ * gated process gets an entry, so "nobody" can be shown. People sort by name,
+ * stations by name.
+ */
+export function groupQualifiedPeople(args: {
+  /** abilityId → processId, for active abilities of gated processes */
+  processByAbility: Map<string, string>;
+  qualifications: {
+    employeeId: string;
+    abilityId: string;
+    expiresAt: string | null;
+  }[];
+  nameById: Map<string, string>;
+  assignments: { employeeId: string; date: string; station: string }[];
+  absences: { employeeId: string; date: string }[];
+  fromDate: string;
+}): Map<string, { name: string; stations: string[] }[]> {
+  const absent = new Set(
+    args.absences.map((absence) => `${absence.employeeId}:${absence.date}`)
+  );
+  const stationsByEmployee = new Map<string, Set<string>>();
+  for (const row of args.assignments) {
+    if (absent.has(`${row.employeeId}:${row.date}`)) continue;
+    const stations = stationsByEmployee.get(row.employeeId) ?? new Set();
+    stations.add(row.station);
+    stationsByEmployee.set(row.employeeId, stations);
+  }
+
+  const result = new Map<string, { name: string; stations: string[] }[]>(
+    [...new Set(args.processByAbility.values())].map((processId) => [
+      processId,
+      []
+    ])
+  );
+  for (const row of args.qualifications) {
+    if (row.expiresAt && row.expiresAt.slice(0, 10) <= args.fromDate) continue;
+    const processId = args.processByAbility.get(row.abilityId);
+    if (!processId) continue;
+    result.get(processId)?.push({
+      name: args.nameById.get(row.employeeId) ?? "",
+      stations: [...(stationsByEmployee.get(row.employeeId) ?? [])].sort()
+    });
+  }
+  for (const people of result.values()) {
+    people.sort((a, b) => a.name.localeCompare(b.name));
+  }
+  return result;
+}
+
+/**
+ * For operations the scheduler could not place: per process that requires an
+ * ability, who is qualified and the stations the manning board has them at
+ * (`groupQualifiedPeople`), read across every location and the scheduling
+ * horizon, as the scheduler commits a person on the board anywhere in it.
+ */
+export async function getQualifiedPeopleByProcess(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { processIds: string[]; fromDate: string }
+): Promise<{
+  data: Map<string, { name: string; stations: string[] }[]>;
+  error: PostgrestError | null;
+}> {
+  const empty = new Map<string, { name: string; stations: string[] }[]>();
+  if (args.processIds.length === 0) return { data: empty, error: null };
+  const toDate = parseDate(args.fromDate)
+    .add({ days: SCHEDULING_HORIZON_DAYS })
+    .toString();
+
+  const abilities = await client
+    .from("ability")
+    .select("id, processId, process!inner(requiresAbility)")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .eq("process.requiresAbility", true)
+    .in("processId", args.processIds);
+  if (abilities.error) return { data: empty, error: abilities.error };
+  const processByAbility = new Map(
+    abilities.data.flatMap((ability) =>
+      ability.processId ? [[ability.id, ability.processId] as const] : []
+    )
+  );
+  if (processByAbility.size === 0) return { data: empty, error: null };
+
+  // Every qualified person company-wide: paged, and the people read in
+  // batches, so neither PostgREST's row cap nor the gateway's URL limit
+  // drops anyone.
+  const qualifications = await fetchAllByIds<{
+    id: string;
+    employeeId: string;
+    abilityId: string;
+    expiresAt: string | null;
+  }>([...processByAbility.keys()], (batch) =>
+    client
+      .from("employeeAbility")
+      .select("id, employeeId, abilityId, expiresAt")
+      .eq("companyId", companyId)
+      .in("abilityId", batch)
+      .order("id")
+  );
+  if (qualifications.error) {
+    return { data: empty, error: qualifications.error };
+  }
+  const employeeIds = [
+    ...new Set(qualifications.data.map((row) => row.employeeId))
+  ];
+
+  const [users, assignments, absences] =
+    employeeIds.length === 0
+      ? [
+          { data: [], error: null },
+          { data: [], error: null },
+          { data: [], error: null }
+        ]
+      : await Promise.all([
+          fetchAllByIds<{ id: string; fullName: string | null }>(
+            employeeIds,
+            (batch) =>
+              client
+                .from("user")
+                .select("id, fullName")
+                .in("id", batch)
+                .order("id")
+          ),
+          fetchAllByIds<{
+            employeeId: string;
+            date: string;
+            workCenter: { name: string } | null;
+          }>(employeeIds, (batch) =>
+            client
+              .from("peopleAssignment")
+              .select("id, employeeId, date, workCenter(name)")
+              .eq("companyId", companyId)
+              .gte("date", args.fromDate)
+              .lte("date", toDate)
+              .in("employeeId", batch)
+              .order("id")
+          ),
+          fetchAllByIds<{ employeeId: string; date: string }>(
+            employeeIds,
+            (batch) =>
+              client
+                .from("peopleAbsence")
+                .select("id, employeeId, date")
+                .eq("companyId", companyId)
+                .gte("date", args.fromDate)
+                .lte("date", toDate)
+                .in("employeeId", batch)
+                .order("id")
+          )
+        ]);
+  const failed = users.error ?? assignments.error ?? absences.error;
+  if (failed) return { data: empty, error: failed };
+
+  return {
+    data: groupQualifiedPeople({
+      processByAbility,
+      qualifications: qualifications.data,
+      nameById: new Map(
+        (users.data ?? []).map((user) => [user.id, user.fullName ?? ""])
+      ),
+      assignments: (assignments.data ?? []).flatMap((row) =>
+        row.workCenter?.name
+          ? [
+              {
+                employeeId: row.employeeId,
+                date: row.date,
+                station: row.workCenter.name
+              }
+            ]
+          : []
+      ),
+      absences: absences.data ?? [],
+      fromDate: args.fromDate
+    }),
+    error: null
+  };
 }
 
 export async function getActiveEmployeeAbilities(
@@ -5847,6 +6763,121 @@ export async function movePeopleAssignment(
 }
 
 /**
+ * Move one assignment row to another person and/or date at the SAME station
+ * (the matrix's drag). If the person already has a row at that station for
+ * the same effective shift on that date, the rows merge (hours add; a
+ * whole-shift row absorbs the other). Refused, with nothing written, when the
+ * person is absent that day (`"absent"`) or already holds that day's shift at
+ * another station (`"taken"` — one row per person, day and shift).
+ * Not published: `production.people.*` also checks the board's ids and reschedules.
+ */
+export async function movePeopleAssignmentCell(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string; employeeId: string; date: string }
+): Promise<
+  | { id: string; workCenterId: string; merged: boolean }
+  | { refused: "absent" | "taken" }
+> {
+  await requirePeopleBoardRefs(db, args.companyId, {
+    employeeId: args.employeeId
+  });
+  return db.transaction().execute(async (trx) => {
+    const source = await trx
+      .selectFrom("peopleAssignment")
+      .selectAll()
+      .where("id", "=", args.id)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirstOrThrow();
+
+    if (source.employeeId === args.employeeId && source.date === args.date) {
+      return {
+        id: source.id,
+        workCenterId: source.workCenterId,
+        merged: false
+      };
+    }
+
+    // the boards mark a person-day absent whatever the shift
+    const absence = await trx
+      .selectFrom("peopleAbsence")
+      .select("id")
+      .where("companyId", "=", args.companyId)
+      .where("employeeId", "=", args.employeeId)
+      .where("date", "=", args.date)
+      .executeTakeFirst();
+    if (absence) return { refused: "absent" };
+
+    // merge with target rows sharing the row's EFFECTIVE shift for the new
+    // person — a shift-less row belongs to that person's own shift
+    const effectiveShiftId =
+      source.shiftId ??
+      (
+        await trx
+          .selectFrom("employeeShift")
+          .select("shiftId")
+          .where("employeeId", "=", args.employeeId)
+          .where("companyId", "=", args.companyId)
+          .executeTakeFirst()
+      )?.shiftId ??
+      null;
+    let targetQuery = trx
+      .selectFrom("peopleAssignment")
+      .select(["id", "hours"])
+      .where("companyId", "=", args.companyId)
+      .where("employeeId", "=", args.employeeId)
+      .where("date", "=", args.date)
+      .where("workCenterId", "=", source.workCenterId);
+    targetQuery = effectiveShiftId
+      ? targetQuery.where(whereEffectiveShift(effectiveShiftId, args.companyId))
+      : targetQuery.where("shiftId", "is", null);
+    const target = await targetQuery.executeTakeFirst();
+
+    if (target) {
+      const mergedHours =
+        source.hours === null || target.hours === null
+          ? null
+          : Number(source.hours) + Number(target.hours);
+      await trx
+        .updateTable("peopleAssignment")
+        .set({ hours: mergedHours })
+        .where("id", "=", target.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      await trx
+        .deleteFrom("peopleAssignment")
+        .where("id", "=", source.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      return { id: target.id, workCenterId: source.workCenterId, merged: true };
+    }
+
+    // peopleAssignment_person_day_key: one row per person, date and stored
+    // shift — a row at another station holds the slot this one would take
+    let takenQuery = trx
+      .selectFrom("peopleAssignment")
+      .select("id")
+      .where("companyId", "=", args.companyId)
+      .where("employeeId", "=", args.employeeId)
+      .where("date", "=", args.date)
+      .where("id", "!=", source.id);
+    takenQuery = source.shiftId
+      ? takenQuery.where("shiftId", "=", source.shiftId)
+      : takenQuery.where("shiftId", "is", null);
+    if (await takenQuery.executeTakeFirst()) return { refused: "taken" };
+
+    const moved = await trx
+      .updateTable("peopleAssignment")
+      .set({ employeeId: args.employeeId, date: args.date })
+      .where("id", "=", source.id)
+      .where("companyId", "=", args.companyId)
+      .returning(["id", "workCenterId"])
+      .executeTakeFirstOrThrow();
+    return { ...moved, merged: false };
+  });
+}
+
+/**
  * Atomically make the given rows a person's day: existing rows at kept
  * stations are updated (hours/overtime), new stations inserted, stations
  * not in `rows` deleted. Scoped to the shift when one is given. One
@@ -6027,7 +7058,9 @@ export async function setPeopleOvertimeBulk(
           .where("departmentId", "=", departmentId)
       );
     }
-    return query.returning(["id", "workCenterId"]).execute();
+    return query
+      .returning(["id", "workCenterId", "employeeId", "date"])
+      .execute();
   });
 }
 
@@ -6199,7 +7232,7 @@ export async function assignPeopleWeek(
       activeWeekdays = WEEKDAYS_MONDAY_FIRST.filter((day) => shift?.[day]);
     }
     const weekEnd = addIsoDays(args.weekStart, 6);
-    const [existing, absences] = await Promise.all([
+    const [existing, absences, ownShift] = await Promise.all([
       // Company-wide (NOT location-scoped): the unique index is
       // peopleAssignment_person_day_key (companyId, employeeId, date,
       // COALESCE(shiftId,'')) — a person already booked for this day+shift at
@@ -6220,23 +7253,47 @@ export async function assignPeopleWeek(
         .where("employeeId", "=", args.employeeId)
         .where("date", ">=", args.weekStart)
         .where("date", "<=", weekEnd)
-        .execute()
+        .execute(),
+      trx
+        .selectFrom("employeeShift")
+        .select(["shiftId"])
+        .where("employeeId", "=", args.employeeId)
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst()
     ]);
-    // Key on date + shift to mirror the unique index exactly.
+    // A day is taken by a row in the same slot of the unique index, or by a
+    // row in the same EFFECTIVE shift (a shift-less row counts as the
+    // person's own), which the boards would show as a double booking.
     const slotKey = (date: string, shiftId: string | null) =>
       `${date}:${shiftId ?? ""}`;
+    const personShiftId = ownShift?.shiftId ?? null;
+    const newEffectiveShiftId = args.shiftId ?? personShiftId;
     const takenSlots = new Set(
-      existing.map((row) => slotKey(toIsoDate(row.date), row.shiftId))
+      existing.flatMap((row) => {
+        const date = toIsoDate(row.date);
+        const effective = row.shiftId ?? personShiftId;
+        return [
+          slotKey(date, row.shiftId),
+          ...(effective ? [`${date}:effective:${effective}`] : [])
+        ];
+      })
     );
+    const isTaken = (date: string) =>
+      takenSlots.has(slotKey(date, args.shiftId)) ||
+      (newEffectiveShiftId !== null &&
+        takenSlots.has(`${date}:effective:${newEffectiveShiftId}`));
     const absentDays = new Set(absences.map((row) => toIsoDate(row.date)));
 
     const rows = [];
+    let skipped = 0;
     for (let offset = 0; offset < 7; offset++) {
       const date = addIsoDays(args.weekStart, offset);
       // weekStart is a Monday, so offset maps 1:1 onto WEEKDAYS_MONDAY_FIRST
       if (!activeWeekdays.includes(WEEKDAYS_MONDAY_FIRST[offset])) continue;
-      if (absentDays.has(date)) continue;
-      if (takenSlots.has(slotKey(date, args.shiftId))) continue;
+      if (absentDays.has(date) || isTaken(date)) {
+        skipped++;
+        continue;
+      }
       rows.push({
         companyId: args.companyId,
         locationId: args.locationId,
@@ -6250,10 +7307,8 @@ export async function assignPeopleWeek(
     if (rows.length > 0) {
       await trx.insertInto("peopleAssignment").values(rows).execute();
     }
-    return {
-      assigned: rows.length,
-      skipped: takenSlots.size + absentDays.size
-    };
+    // working days left as they were: already booked, or off
+    return { assigned: rows.length, skipped };
   });
 }
 
@@ -6533,6 +7588,10 @@ export async function getUnbatchedBatchableOperationCount(
     .not("job.status", "in", "(Completed,Closed,Cancelled)");
 }
 
+export const JOB_OPERATION_BATCHES_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getJobOperationBatches(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6540,7 +7599,10 @@ export async function getJobOperationBatches(
 ) {
   let query = client
     .from("jobOperationBatch")
-    .select("*, process(name), workCenter(name)", { count: LIST_COUNT })
+    // Later pages (`cursor`) skip the count: the first page already has it.
+    .select("*, process(name), workCenter(name)", {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -6548,9 +7610,7 @@ export async function getJobOperationBatches(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, JOB_OPERATION_BATCHES_PAGING);
   }
 
   return query;
@@ -6596,6 +7656,13 @@ export function applyMachineTimeListFilters<
   return filtered;
 }
 
+export const UNATTRIBUTED_MACHINE_TIMES_PAGING: Paging = {
+  defaultSorts: [
+    { column: "startTime", ascending: false },
+    { column: "id", ascending: false }
+  ]
+};
+
 // Machine run time the OEE sync could not attribute to a loaded operation,
 // newest start first, then `id`: the review queue walks the same order.
 export async function getUnattributedMachineTimes(
@@ -6604,7 +7671,7 @@ export async function getUnattributedMachineTimes(
   args: {
     filters: MachineTimeListFilters;
     limit: number;
-    offset: number;
+    cursor?: Cursor | null;
   }
 ) {
   let query = applyMachineTimeListFilters(
@@ -6613,7 +7680,7 @@ export async function getUnattributedMachineTimes(
       .select(
         "*, workCenter!inner(name, locationId, location(name, timezone))",
         {
-          count: LIST_COUNT
+          count: listCount(args)
         }
       )
       .eq("companyId", companyId),
@@ -6624,11 +7691,9 @@ export async function getUnattributedMachineTimes(
   // and the list allows no column sort.
   query = setGenericQueryFilters(
     query,
-    { limit: args.limit, offset: args.offset },
-    [
-      { column: "startTime", ascending: false },
-      { column: "id", ascending: false }
-    ]
+    // Always cursor mode: `limit + 1` rows, even for the first page.
+    { limit: args.limit, cursor: args.cursor ?? null },
+    UNATTRIBUTED_MACHINE_TIMES_PAGING
   );
 
   // A view types every column nullable; these come from the table's own
@@ -6943,7 +8008,7 @@ export async function getJobOperationBatchMembers(
   const result = await client
     .from("jobOperation")
     .select(
-      "id, jobOperationBatchId, operationQuantity, quantityComplete, quantityScrapped, job(id, jobId), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath))"
+      "id, jobOperationBatchId, operationQuantity, quantityComplete, quantityScrapped, job(id, jobId), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, modelUpload(thumbnailPath)))"
     )
     .in("jobOperationBatchId", batchIds)
     .eq("companyId", companyId);
@@ -6957,7 +8022,10 @@ export async function getJobOperationBatchMembers(
       jobReadableId: op.job?.jobId ?? null,
       itemReadableId: op.jobMakeMethod?.item?.readableIdWithRevision ?? null,
       itemName: op.jobMakeMethod?.item?.name ?? null,
-      thumbnailPath: op.jobMakeMethod?.item?.thumbnailPath ?? null,
+      thumbnailPath:
+        op.jobMakeMethod?.item?.thumbnailPath ??
+        op.jobMakeMethod?.item?.modelUpload?.thumbnailPath ??
+        null,
       operationQuantity: op.operationQuantity ?? 0,
       quantityComplete: op.quantityComplete ?? 0,
       quantityScrapped: op.quantityScrapped ?? 0
@@ -7025,7 +8093,7 @@ export async function getJobOperationBatchWithMembers(
   const members = await client
     .from("jobOperation")
     .select(
-      "id, description, operationQuantity, quantityComplete, quantityScrapped, status, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, workCenter(name), job(id, jobId, customerId, salesOrderId, status), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath))"
+      "id, description, operationQuantity, quantityComplete, quantityScrapped, status, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, workCenter(name), job(id, jobId, customerId, salesOrderId, status), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, modelUpload(thumbnailPath)))"
     )
     .eq("jobOperationBatchId", batchId)
     .eq("companyId", companyId);
@@ -7210,10 +8278,51 @@ export async function getAssemblyInstruction(
   return client
     .from("assemblyInstruction")
     .select(
-      "*, modelUpload(id, name, modelPath, glbPath, graphPath, componentCount, processingStatus, processingError)"
+      "*, modelUpload(id, name, modelPath, glbPath, graphPath, componentCount, processingStatus, processingError), item(modelUploadId)"
     )
     .eq("id", id)
     .single();
+}
+
+// Newest first. Not `updatedAt`: it is null until the first edit, and the
+// cursor follows Postgres' order, which puts those nulls first.
+export const ASSEMBLY_INSTRUCTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
+type AssemblyInstructionsScope = {
+  companyId: string;
+  search?: string;
+  status?: (typeof assemblyInstructionStatuses)[number];
+  itemId?: string;
+};
+
+function assemblyInstructionsQuery(
+  client: SupabaseClient<Database>,
+  args: AssemblyInstructionsScope,
+  count: ReturnType<typeof listCount>
+) {
+  let query = client
+    // "assemblyInstructions" (plural) is the version-collapsing view: one row
+    // per version group (root = rootInstructionId ?? id), latest version shown,
+    // all siblings rolled into a "versions" jsonb array. See the
+    // 20260730153412_assembly-instructions-view migration.
+    .from("assemblyInstructions")
+    .select("*, modelUpload(id, name, componentCount, processingStatus)", {
+      count
+    })
+    .eq("companyId", args.companyId);
+
+  if (args.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+  if (args.status) {
+    query = query.eq("status", args.status);
+  }
+  if (args.itemId) {
+    query = query.eq("itemId", args.itemId);
+  }
+  return query;
 }
 
 export async function getAssemblyInstructions(
@@ -7227,34 +8336,28 @@ export async function getAssemblyInstructions(
     offset?: number;
   }
 ) {
-  let query = client
-    // "assemblyInstructions" (plural) is the version-collapsing view: one row
-    // per version group (root = rootInstructionId ?? id), latest version shown,
-    // all siblings rolled into a "versions" jsonb array. See the
-    // 20260730153412_assembly-instructions-view migration.
-    .from("assemblyInstructions")
-    .select("*, modelUpload(id, name, componentCount, processingStatus)", {
-      count: "exact"
-    })
-    .eq("companyId", args.companyId);
+  let query = assemblyInstructionsQuery(client, args, LIST_COUNT);
+  // With only `limit`, the read starts at offset 0.
+  query = setGenericQueryFilters(
+    query,
+    { limit: args.limit, offset: args.offset ?? 0 },
+    ASSEMBLY_INSTRUCTIONS_PAGING
+  );
+  return query;
+}
 
-  if (args.search) {
-    query = query.ilike("name", `%${args.search}%`);
-  }
-  if (args.status) {
-    query = query.eq("status", args.status);
-  }
-  if (args.itemId) {
-    query = query.eq("itemId", args.itemId);
-  }
-  if (args.limit) {
-    query = query.limit(args.limit);
-  }
-  if (args.offset) {
-    query = query.range(args.offset, args.offset + (args.limit ?? 25) - 1);
-  }
-
-  return query.order("updatedAt", { ascending: false, nullsFirst: false });
+/**
+ * One cursor page of the assembly instructions list (`limit + 1` rows for
+ * `toPage`). Not an MCP tool: MCP pages by offset through
+ * `getAssemblyInstructions`. Only the first page counts.
+ */
+export async function getAssemblyInstructionsPage(
+  client: SupabaseClient<Database>,
+  args: AssemblyInstructionsScope & Partial<GenericQueryFilters>
+) {
+  let query = assemblyInstructionsQuery(client, args, listCount(args));
+  query = setGenericQueryFilters(query, args, ASSEMBLY_INSTRUCTIONS_PAGING);
+  return query;
 }
 
 export async function getAssemblyInstructionsForItem(
@@ -7736,10 +8839,9 @@ export async function deleteAssemblyInstruction(
     .eq("id", id)
     .maybeSingle();
 
-  const deletion = await client
-    .from("assemblyInstruction")
-    .delete()
-    .eq("id", id);
+  const deletion = await requireAffected(
+    client.from("assemblyInstruction").delete().eq("id", id).select("id")
+  );
   if (deletion.error) return deletion;
 
   const modelUploadId = instruction.data?.modelUploadId;
@@ -7902,6 +9004,8 @@ export async function invalidateAssemblyModelCache(
 
   await notifyAssemblerInvalidate(modelUploadId);
 
+  // Not wrapped in requireAffected: the files are already gone, so a refusal
+  // here would stop the reconvert that rebuilds them.
   return client
     .from("modelUpload")
     .update({
@@ -7937,7 +9041,7 @@ function newAssemblyStepColumns(data: AssemblyStepFields) {
     description: data.description ?? {},
     instructionText:
       data.description !== undefined
-        ? tiptapToText(data.description as JSONContent) || null
+        ? TiptapText(data.description).toString() || null
         : null,
     required: data.required ?? false,
     unitOfMeasureCode:
@@ -7969,7 +9073,7 @@ export async function upsertAssemblyInstructionStep(
   const derivedInstructionText =
     data.description !== undefined
       ? {
-          instructionText: tiptapToText(data.description as JSONContent) || null
+          instructionText: TiptapText(data.description).toString() || null
         }
       : {};
 
@@ -8785,7 +9889,9 @@ export async function deleteAssemblyInstructionStep(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("assemblyInstructionStep").delete().eq("id", id);
+  return requireAffected(
+    client.from("assemblyInstructionStep").delete().eq("id", id).select("id")
+  );
 }
 
 export async function getAssemblyInstructionStepSlides(
@@ -8847,7 +9953,13 @@ export async function deleteAssemblyInstructionStepSlide(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("assemblyInstructionStepSlide").delete().eq("id", id);
+  return requireAffected(
+    client
+      .from("assemblyInstructionStepSlide")
+      .delete()
+      .eq("id", id)
+      .select("id")
+  );
 }
 
 export async function getAssemblyInstructionStepTools(
@@ -8926,7 +10038,13 @@ export async function deleteAssemblyInstructionStepTool(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("assemblyInstructionStepTool").delete().eq("id", id);
+  return requireAffected(
+    client
+      .from("assemblyInstructionStepTool")
+      .delete()
+      .eq("id", id)
+      .select("id")
+  );
 }
 
 export async function getAssemblyInstructionStepMaterials(
@@ -9031,7 +10149,13 @@ export async function deleteAssemblyInstructionStepMaterial(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("assemblyInstructionStepMaterial").delete().eq("id", id);
+  return requireAffected(
+    client
+      .from("assemblyInstructionStepMaterial")
+      .delete()
+      .eq("id", id)
+      .select("id")
+  );
 }
 
 type AssemblyStepMaterialSeed = {
@@ -9255,7 +10379,9 @@ export async function deleteAssemblyUnit(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("assemblyUnit").delete().eq("id", id);
+  return requireAffected(
+    client.from("assemblyUnit").delete().eq("id", id).select("id")
+  );
 }
 
 /**
@@ -9407,7 +10533,9 @@ export async function deleteAssemblyComponentMapping(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("assemblyComponentMapping").delete().eq("id", id);
+  return requireAffected(
+    client.from("assemblyComponentMapping").delete().eq("id", id).select("id")
+  );
 }
 
 export type FlattenedBomMaterial = {
@@ -10644,7 +11772,9 @@ export async function getJobMaterialPurchaseOrderLines(
 
   const { data } = await client
     .from("purchaseOrderLine")
-    .select("itemId, purchaseQuantity, quantityReceived, purchaseOrder(status)")
+    .select(
+      "itemId, purchaseQuantity, quantityReceived, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(status)"
+    )
     .in("itemId", itemIds)
     .eq("locationId", locationId);
 
@@ -10739,7 +11869,7 @@ export async function getPlanningActions(
         const query = client
           .from("planningAction")
           .select(
-            "*, item(readableIdWithRevision, name), purchaseOrderLine(purchaseOrderId, promisedDate, purchaseOrder(purchaseOrderId, status, orderDate, purchaseOrderDelivery(receiptPromisedDate))), job(jobId, status)"
+            "*, item!planningAction_itemId_fkey(readableIdWithRevision, name), purchaseOrderLine!planningAction_purchaseOrderLineId_fkey(purchaseOrderId, promisedDate, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(purchaseOrderId, status, orderDate, purchaseOrderDelivery(receiptPromisedDate))), job!planningAction_jobId_fkey(jobId, status)"
           )
           .eq("companyId", companyId)
           .eq("locationId", locationId)
@@ -10748,10 +11878,14 @@ export async function getPlanningActions(
 
         // Buy worklist = new purchase suggestions + change actions on PO lines;
         // Make worklist = new job suggestions + change actions on jobs.
+        // Transfer and Borrow move stock between owners; each page lists
+        // only its own kind's items, so they show on the item's own page.
         return (
           kind === "Buy"
-            ? query.or("type.eq.Order,purchaseOrderLineId.not.is.null")
-            : query.or("type.eq.Make,jobId.not.is.null")
+            ? query.or(
+                "type.in.(Order,Transfer,Borrow),purchaseOrderLineId.not.is.null"
+              )
+            : query.or("type.in.(Make,Transfer,Borrow),jobId.not.is.null")
         )
           .order("suggestedDate", { ascending: true })
           .order("id", { ascending: true });
@@ -10845,10 +11979,13 @@ function inPlanningWorklist(kind: PlanningActionKind) {
   return (eb: ExpressionBuilder<KyselyDatabase, "planningAction">) =>
     kind === "Buy"
       ? eb.or([
-          eb("type", "=", "Order"),
+          eb("type", "in", ["Order", "Transfer", "Borrow"]),
           eb("purchaseOrderLineId", "is not", null)
         ])
-      : eb.or([eb("type", "=", "Make"), eb("jobId", "is not", null)]);
+      : eb.or([
+          eb("type", "in", ["Make", "Transfer", "Borrow"]),
+          eb("jobId", "is not", null)
+        ]);
 }
 
 export async function dismissPlanningActions(
@@ -10912,7 +12049,7 @@ export async function markPlanningActionsActioned(
  * Order button creates PO lines (Buy) or jobs (Make) from the suggested
  * orders, which carry no action id; each one is the week of an Order / Make
  * action (both come from `computePlanningOrders`, and the natural key holds
- * one such action per item, location and week). Without this, the action
+ * one such action per item, location, segment and week). Without this, the action
  * stayed Open beside the order that answered it until the next MRP run.
  * Dismissed is settled too: the need it suppressed has now been ordered.
  * Pairs are matched as pairs, so a bulk order never settles one item's week
@@ -10925,11 +12062,15 @@ export async function settleNewSupplyPlanningActions(
     locationId: string;
     userId: string;
     type: "Order" | "Make";
-    ordered: { itemId: string; periodId: string }[];
+    /** One per order placed; the segment defaults to common (''). */
+    ordered: { itemId: string; periodId: string; planningSegmentId?: string }[];
   }
 ) {
   const byKey = new Map(
-    args.ordered.map((pair) => [`${pair.itemId}\u0000${pair.periodId}`, pair])
+    args.ordered.map((pair) => [
+      `${pair.itemId}\u0000${pair.periodId}\u0000${pair.planningSegmentId ?? ""}`,
+      pair
+    ])
   );
   const ordered = [...byKey.values()];
   return planningActionIdList([...byKey.keys()], () =>
@@ -10949,12 +12090,15 @@ export async function settleNewSupplyPlanningActions(
           ordered.map((pair) =>
             eb.and([
               eb("itemId", "=", pair.itemId),
-              eb("periodId", "=", pair.periodId)
+              eb("periodId", "=", pair.periodId),
+              eb("planningSegmentId", "=", pair.planningSegmentId ?? "")
             ])
           )
         )
       )
-      .returning("id")
+      // The key fields let a grouped order move the action's pegs to the
+      // supply it created (Projects Phase 3).
+      .returning(["id", "itemId", "periodId", "planningSegmentId"])
       .execute()
   );
 }
@@ -11086,6 +12230,66 @@ export type ProductionPlanningDateApplyResult = {
 };
 
 /**
+ * The due date, deadline type and priority each moved job is written with.
+ * A job is ranked among the jobs already on its new date at its location
+ * (`siblings`, in priority order); several jobs moved to one date are placed
+ * one after the other, each seeing the ones placed before it. An action whose
+ * job was not found is left out: it is refused, since no row changes.
+ */
+export function planJobDateMoves(
+  moves: { jobId: string; suggestedDate: string }[],
+  jobs: { id: string; locationId: string | null; deadlineType: DeadlineType }[],
+  siblings: {
+    locationId: string | null;
+    dueDate: string | null;
+    priority: number | null;
+    deadlineType: DeadlineType;
+  }[]
+): {
+  jobId: string;
+  dueDate: string;
+  deadlineType: DeadlineType;
+  priority: number;
+}[] {
+  const jobById = new Map(jobs.map((job) => [job.id, job]));
+  const siblingsByKey = new Map<
+    string,
+    { priority: number | null; deadlineType: DeadlineType }[]
+  >();
+  for (const row of siblings) {
+    const key = `${row.locationId}\u001f${row.dueDate}`;
+    const list = siblingsByKey.get(key) ?? [];
+    list.push({ priority: row.priority, deadlineType: row.deadlineType });
+    siblingsByKey.set(key, list);
+  }
+
+  const values: {
+    jobId: string;
+    dueDate: string;
+    deadlineType: DeadlineType;
+    priority: number;
+  }[] = [];
+  for (const move of moves) {
+    const job = jobById.get(move.jobId);
+    if (!job) continue;
+    const deadlineType = deadlineTypeForPlanningDate(job.deadlineType);
+    const key = `${job.locationId}\u001f${move.suggestedDate}`;
+    const placed = siblingsByKey.get(key) ?? [];
+    const priority = nextJobPriority(placed, deadlineType);
+    placed.push({ priority, deadlineType });
+    placed.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+    siblingsByKey.set(key, placed);
+    values.push({
+      jobId: move.jobId,
+      dueDate: move.suggestedDate,
+      deadlineType,
+      priority
+    });
+  }
+  return values;
+}
+
+/**
  * Apply a batch of Expedite / Defer actions to their jobs in ONE transaction,
  * set-based: the claim, two reads (the jobs, and the jobs that share their
  * new due dates) and one UPDATE for every date and priority. It used to be a
@@ -11147,7 +12351,6 @@ export async function applyProductionPlanningDateActions(
       .where("id", "in", jobIds)
       .where("companyId", "=", companyId)
       .execute();
-    const jobById = new Map(jobs.map((job) => [job.id, job]));
 
     // The jobs already on each target date, per location — the siblings a
     // moved job is ranked among. One read for every date in the batch.
@@ -11160,40 +12363,7 @@ export async function applyProductionPlanningDateActions(
       .where("id", "not in", jobIds)
       .orderBy("priority", "asc")
       .execute();
-    const siblingsByKey = new Map<
-      string,
-      { priority: number | null; deadlineType: DeadlineType }[]
-    >();
-    for (const row of siblingRows) {
-      const key = `${row.locationId}\u001f${row.dueDate}`;
-      const list = siblingsByKey.get(key) ?? [];
-      list.push({ priority: row.priority, deadlineType: row.deadlineType });
-      siblingsByKey.set(key, list);
-    }
-
-    const values: {
-      jobId: string;
-      dueDate: string;
-      deadlineType: DeadlineType;
-      priority: number;
-    }[] = [];
-    for (const action of held) {
-      const job = jobById.get(action.jobId);
-      if (!job) continue; // refused below: no row changed
-      const deadlineType = deadlineTypeForPlanningDate(job.deadlineType);
-      const key = `${job.locationId}\u001f${action.suggestedDate}`;
-      const siblings = siblingsByKey.get(key) ?? [];
-      const priority = nextJobPriority(siblings, deadlineType);
-      siblings.push({ priority, deadlineType });
-      siblings.sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
-      siblingsByKey.set(key, siblings);
-      values.push({
-        jobId: action.jobId,
-        dueDate: action.suggestedDate,
-        deadlineType,
-        priority
-      });
-    }
+    const values = planJobDateMoves(held, jobs, siblingRows);
 
     const changedJobs = new Set<string>();
     if (values.length > 0) {
@@ -11304,28 +12474,48 @@ const WEEKDAY_FLAGS = [
 
 /**
  * Non-working intervals inside [windowStartMs, windowEndMs) for the forecast
- * board's shading — the complement of the plant's operating hours. Uses the
- * SAME availability ladder the scheduler uses (the location's shifts if any,
- * else the stock Mon–Fri 08:00–16:00 week in the plant timezone), so the bars
- * and the shaded background can never disagree. Location-level, not
- * per-work-center: one plant calendar behind every lane. Per-WC shifts /
- * `alwaysOn` are a deliberate follow-up (see #3b).
+ * board's rows that are not a station (the location, operator pools) — the
+ * complement of the plant's operating hours, on the scheduler's ladder (the
+ * location's shifts if any, else the stock Mon–Fri 08:00–16:00 week in the
+ * plant timezone). A station's lane uses its own hours,
+ * `getWorkCenterNonWorkingIntervals`.
  */
 export function getForecastNonWorkingIntervals(args: {
   timeZone: string;
   shifts: ShiftRow[];
   windowStartMs: number;
   windowEndMs: number;
+  /** Company holidays ("YYYY-MM-DD"): shaded as closed all day. */
+  holidayDates?: Set<string>;
 }): { start: number; end: number }[] {
   const { timeZone, shifts, windowStartMs, windowEndMs } = args;
 
-  const locationShiftRows: LadderShiftRow[] = [];
+  const working = subtractDates(
+    resolveLocationWindows({
+      timezone: timeZone,
+      locationShiftRows: expandShiftRows(shifts, timeZone),
+      rangeStart: windowStartMs,
+      rangeEnd: windowEndMs
+    }),
+    args.holidayDates ?? new Set(),
+    timeZone
+  );
+
+  return subtractIntervals(
+    [{ start: windowStartMs, end: windowEndMs }],
+    working
+  ).map((w) => ({ start: w.start, end: w.end }));
+}
+
+/** A shift's weekday windows in the ladder's row shape (0 = Sunday). */
+function expandShiftRows(shifts: ShiftRow[], timeZone: string) {
+  const rows: LadderShiftRow[] = [];
   for (const shift of shifts) {
     if (!shift.startTime || !shift.endTime) continue;
     for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
       const flag = WEEKDAY_FLAGS[dayOfWeek];
       if (!flag || !shift[flag]) continue;
-      locationShiftRows.push({
+      rows.push({
         dayOfWeek,
         startTime: String(shift.startTime),
         endTime: String(shift.endTime),
@@ -11333,29 +12523,140 @@ export function getForecastNonWorkingIntervals(args: {
       });
     }
   }
-
-  const working = resolveLocationWindows({
-    timezone: timeZone,
-    locationShiftRows,
-    rangeStart: windowStartMs,
-    rangeEnd: windowEndMs
-  });
-
-  return subtractIntervals(
-    [{ start: windowStartMs, end: windowEndMs }],
-    working
-  ).map((w) => ({ start: w.start, end: w.end }));
+  return rows;
 }
+
+/**
+ * Each work center's working windows: the scheduler's availability ladder
+ * (`resolveWorkCenterWindows`) minus the company's holidays.
+ */
+export function getWorkCenterWorkingWindows(args: {
+  workCenters: { id: string; alwaysOn: boolean }[];
+  workCenterShifts: { workCenterId: string; shiftId: string }[];
+  /** The location's active shifts. */
+  shifts: (ShiftRow & { id: string })[];
+  /** Shifts a work center is linked to at another location. */
+  linkedShifts?: (ShiftRow & { id: string })[];
+  timeZone: string;
+  holidayDates: Set<string>;
+  rangeStart: number;
+  rangeEnd: number;
+}): Map<string, CalendarWindow[]> {
+  const { workCenters, workCenterShifts, shifts, timeZone } = args;
+  const shiftById = new Map(
+    [...shifts, ...(args.linkedShifts ?? [])].map((shift) => [shift.id, shift])
+  );
+  const ladderWorkCenters = workCenters.map((wc) => ({
+    id: wc.id,
+    alwaysOn: wc.alwaysOn,
+    locationId: "location",
+    timezone: timeZone
+  }));
+  const windows = resolveWorkCenterWindows({
+    workCenters: ladderWorkCenters,
+    workCenterShiftRows: workCenterShifts.flatMap((link) => {
+      const shift = shiftById.get(link.shiftId);
+      return shift
+        ? expandShiftRows([shift], timeZone).map((row) => ({
+            ...row,
+            workCenterId: link.workCenterId
+          }))
+        : [];
+    }),
+    locationShiftRows: expandShiftRows(shifts, timeZone).map((row) => ({
+      ...row,
+      locationId: "location"
+    })),
+    rangeStart: args.rangeStart,
+    rangeEnd: args.rangeEnd
+  });
+  return closeHolidays({
+    windowsByWorkCenter: windows,
+    workCenters: ladderWorkCenters,
+    holidayDates: args.holidayDates
+  });
+}
+
+/**
+ * One shift's own working windows (holidays closed), read through the same
+ * ladder as a work center linked to only that shift. Null when the shift is
+ * not among `shifts` / `linkedShifts`: the ladder would fall back to the
+ * location's shifts, which is not that shift.
+ */
+export function getShiftWorkingWindows(
+  args: Omit<
+    Parameters<typeof getWorkCenterWorkingWindows>[0],
+    "workCenters" | "workCenterShifts"
+  > & { shiftId: string }
+): CalendarWindow[] | null {
+  const { shiftId, ...ladder } = args;
+  const known = [...ladder.shifts, ...(ladder.linkedShifts ?? [])].some(
+    (shift) => shift.id === shiftId
+  );
+  if (!known) return null;
+  const key = `shift:${shiftId}`;
+  return (
+    getWorkCenterWorkingWindows({
+      ...ladder,
+      workCenters: [{ id: key, alwaysOn: false }],
+      workCenterShifts: [{ workCenterId: key, shiftId }]
+    }).get(key) ?? []
+  );
+}
+
+/**
+ * Each work center's non-working time inside [rangeStart, rangeEnd): the
+ * complement of its working windows (`getWorkCenterWorkingWindows`), so the
+ * forecast board shades and splits every lane on its own hours.
+ */
+export function getWorkCenterNonWorkingIntervals(
+  args: Parameters<typeof getWorkCenterWorkingWindows>[0]
+): Map<string, CalendarWindow[]> {
+  const range = [{ start: args.rangeStart, end: args.rangeEnd }];
+  return new Map(
+    [...getWorkCenterWorkingWindows(args)].map(([workCenterId, windows]) => [
+      workCenterId,
+      subtractIntervals(range, windows)
+    ])
+  );
+}
+
+/** The company's holiday dates ("YYYY-MM-DD") between two dates, inclusive. */
+export async function getHolidayDates(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { from: string; to: string }
+): Promise<{ data: Set<string>; error: PostgrestError | null }> {
+  const { data, error } = await client
+    .from("holiday")
+    .select("date")
+    .eq("companyId", companyId)
+    .gte("date", args.from)
+    .lte("date", args.to);
+  if (error) {
+    logger.error("Failed to load holidays", { companyId, error });
+    return { data: new Set(), error };
+  }
+  return {
+    data: new Set((data ?? []).map((row) => row.date.slice(0, 10))),
+    error: null
+  };
+}
+type FactorUnit = Database["public"]["Enums"]["factor"];
+
 type CapacityOperation = {
   workCenterId: string | null;
   dueDate: string | null;
   setupTime?: number;
-  setupUnit?: string;
+  setupUnit?: FactorUnit;
   laborTime?: number;
-  laborUnit?: string;
+  laborUnit?: FactorUnit;
   machineTime?: number;
-  machineUnit?: string;
+  machineUnit?: FactorUnit;
   operationQuantity: number | null;
+  quantityComplete?: number | null;
+  /** Any production event recorded: setup is done. */
+  started?: boolean;
 };
 
 type CapacityReservation = {
@@ -11365,94 +12666,288 @@ type CapacityReservation = {
   workHours: number | null;
 };
 
-/** A location shift reduced to its per-day hours and which weekdays it runs. */
-type CapacityShift = {
-  id: string;
-  /** shift hours per day (start→end duration, or the location default). */
-  hours: number;
-  /** 7 weekday flags, Sunday-first (index 0 = Sunday … 6 = Saturday). */
-  runsOn: boolean[];
-};
+/**
+ * The open maintenance outages of each work center (`downtimeOutages`), read
+ * the way the scheduler reads them, for the Capacity view.
+ */
+export async function getWorkCenterOutages(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { workCenterIds: string[]; rangeEnd: number }
+): Promise<{
+  data: Map<string, CalendarWindow[]>;
+  error: PostgrestError | null;
+}> {
+  if (args.workCenterIds.length === 0) return { data: new Map(), error: null };
+  const dispatches = await fetchAllRecords<{
+    id: string;
+    workCenterId: string | null;
+    plannedStartTime: string | null;
+    plannedEndTime: string | null;
+    actualStartTime: string | null;
+    actualEndTime: string | null;
+    createdAt: string;
+  }>(() =>
+    client
+      .from("maintenanceDispatch")
+      .select(
+        "id, workCenterId, plannedStartTime, plannedEndTime, actualStartTime, actualEndTime, createdAt"
+      )
+      .eq("companyId", companyId)
+      .eq("takesWorkCenterOffline", true)
+      .not("status", "in", '("Completed","Cancelled")')
+      .order("id")
+  );
+  if (dispatches.error) return { data: new Map(), error: dispatches.error };
+  if (dispatches.data.length === 0) return { data: new Map(), error: null };
 
-// Rung 3 of the ladder: no shifts anywhere → stock Mon–Fri, 8h/day. Mirrors the
-// engine's stock week (08:00–16:00 = 8h) so machine and people capacity assume
-// the same default day.
-const FALLBACK_SHIFT_HOURS = 8;
+  const joined = await fetchAllByIds<{
+    id: string;
+    maintenanceDispatchId: string;
+    workCenterId: string;
+  }>(
+    dispatches.data.map((dispatch) => dispatch.id),
+    (batch) =>
+      client
+        .from("maintenanceDispatchWorkCenter")
+        .select("id, maintenanceDispatchId, workCenterId")
+        .eq("companyId", companyId)
+        .in("maintenanceDispatchId", batch)
+        .order("id")
+  );
+  if (joined.error) return { data: new Map(), error: joined.error };
+
+  return {
+    data: downtimeOutages({
+      dispatches: dispatches.data,
+      dispatchWorkCenters: joined.data,
+      workCenterIds: args.workCenterIds,
+      rangeEnd: args.rangeEnd
+    }),
+    error: null
+  };
+}
 
 /**
- * DAY-granularity mirror of the engine's machine-availability ladder, for the
- * Capacity view's Available series. The engine
- * (`packages/planning/src/scheduling/machine-availability.ts`)
- * owns the AUTHORITATIVE wall-clock ladder; this is DISPLAY math and resolves the
- * same rungs at day granularity.
- *
- * Per work center, per week date, resolved in order:
- *   1. `alwaysOn` → 24h (lights-out).
- *   2. explicit `workCenterShift` rows → Σ (shift hours whose weekday flag covers
- *      that date) over the work center's shifts.
- *   3. no WC rows but the location has shifts → the same Σ over the location's
- *      shifts.
- *   4. no shifts anywhere → 8h on Mon–Fri, 0 on the weekend.
+ * The windows a station can work: its working windows with its maintenance
+ * outages taken out — what the scheduler places work in.
  */
-export function getWorkCenterCalendarHoursByDay(args: {
-  workCenters: { id: string; alwaysOn: boolean }[];
-  workCenterShifts: { workCenterId: string; shiftId: string }[];
-  locationShifts: CapacityShift[];
-  weekDates: string[];
-}): Map<string, Map<string, number>> {
-  const { workCenters, workCenterShifts, locationShifts, weekDates } = args;
-
-  const shiftById = new Map(locationShifts.map((shift) => [shift.id, shift]));
-  const shiftIdsByWorkCenter = new Map<string, string[]>();
-  for (const link of workCenterShifts) {
-    const list = shiftIdsByWorkCenter.get(link.workCenterId);
-    if (list) list.push(link.shiftId);
-    else shiftIdsByWorkCenter.set(link.workCenterId, [link.shiftId]);
+export function withoutOutages(
+  windowsByWorkCenter: Map<string, CalendarWindow[]>,
+  outagesByWorkCenter: Map<string, CalendarWindow[]>
+): Map<string, CalendarWindow[]> {
+  const result = new Map(windowsByWorkCenter);
+  for (const [workCenterId, outages] of outagesByWorkCenter) {
+    const windows = result.get(workCenterId);
+    if (windows) result.set(workCenterId, subtractIntervals(windows, outages));
   }
+  return result;
+}
 
-  // weekday index per week date — a plain calendar date, so timezone-independent
-  const dowByDate = weekDates.map((day) =>
-    getDayOfWeek(parseDate(day), "en-US")
-  );
+/** Each week date's bounds on the plant's calendar (DST-aware). */
+function plantDayBounds(weekDates: string[], timezone: string) {
+  return weekDates.map((day) => {
+    const dayDate = parseDate(day);
+    return {
+      day,
+      startMs: dayDate.toDate(timezone).getTime(),
+      endMs: dayDate.add({ days: 1 }).toDate(timezone).getTime()
+    };
+  });
+}
 
-  const sumShiftHours = (shifts: CapacityShift[], dow: number) =>
-    shifts.reduce(
-      (sum, shift) => (shift.runsOn[dow] ? sum + shift.hours : sum),
-      0
-    );
-
+/**
+ * Working hours per plant day for each work center: the Capacity view's
+ * Available series, read off the windows the scheduler places work in
+ * (shifts, holidays, maintenance downtime). A lights-out station's day is the
+ * length of that local day, 23 or 25 hours across a DST change.
+ */
+export function workingHoursByDay(args: {
+  windowsByWorkCenter: Map<string, CalendarWindow[]>;
+  weekDates: string[];
+  timezone: string;
+}): Map<string, Map<string, number>> {
+  const days = plantDayBounds(args.weekDates, args.timezone);
   const result = new Map<string, Map<string, number>>();
-  for (const workCenter of workCenters) {
-    const wcShiftIds = shiftIdsByWorkCenter.get(workCenter.id) ?? [];
-    const wcShifts = wcShiftIds.flatMap((id) => {
-      const shift = shiftById.get(id);
-      return shift ? [shift] : [];
-    });
-    const byDate = new Map<string, number>();
-    weekDates.forEach((day, i) => {
-      const dow = dowByDate[i] ?? 0;
-      let hours: number;
-      if (workCenter.alwaysOn) {
-        hours = 24;
-      } else if (wcShifts.length > 0) {
-        hours = sumShiftHours(wcShifts, dow);
-      } else if (locationShifts.length > 0) {
-        hours = sumShiftHours(locationShifts, dow);
-      } else {
-        hours = dow === 0 || dow === 6 ? 0 : FALLBACK_SHIFT_HOURS;
-      }
-      byDate.set(day, hours);
-    });
-    result.set(workCenter.id, byDate);
+  for (const [workCenterId, windows] of args.windowsByWorkCenter) {
+    result.set(
+      workCenterId,
+      new Map(
+        days.map(({ day, startMs, endMs }) => [
+          day,
+          workingOverlapMs(windows, startMs, endMs) / HOUR_MS
+        ])
+      )
+    );
   }
   return result;
 }
 
 /**
+ * Each operation's hands-on share of its booking (attended ÷ duration,
+ * `remainingWorkHours`), and whether its process needs a qualified operator.
+ * An operation with nothing left keeps the share of its full time standards:
+ * its booking stands until the next re-plan.
+ */
+export async function getOperationAttendedShares(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  operationIds: string[]
+): Promise<{
+  data: Map<string, { share: number; gated: boolean }>;
+  error: PostgrestError | null;
+}> {
+  const operations = await fetchAllByIds<{
+    id: string;
+    operationQuantity: number | null;
+    quantityComplete: number | null;
+    setupTime: number;
+    setupUnit: FactorUnit;
+    laborTime: number;
+    laborUnit: FactorUnit;
+    machineTime: number;
+    machineUnit: FactorUnit;
+    process: { requiresAbility: boolean } | null;
+    productionEvent: { id: string }[];
+  }>([...new Set(operationIds)], (batch) =>
+    client
+      .from("jobOperation")
+      .select(
+        "id, operationQuantity, quantityComplete, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, process(requiresAbility), productionEvent(id)"
+      )
+      .in("id", batch)
+      .eq("companyId", companyId)
+      .limit(1, { referencedTable: "productionEvent" })
+      .order("id")
+  );
+  if (operations.error) return { data: new Map(), error: operations.error };
+  const shares = new Map<string, { share: number; gated: boolean }>();
+  for (const { productionEvent, process, ...operation } of operations.data) {
+    const remaining = remainingWorkHours(operation, productionEvent.length > 0);
+    const hours =
+      remaining.durationHours > 0
+        ? remaining
+        : remainingWorkHours({ ...operation, quantityComplete: 0 }, false);
+    if (hours.durationHours > 0) {
+      shares.set(operation.id, {
+        share: hours.attendedHours / hours.durationHours,
+        gated: process?.requiresAbility ?? false
+      });
+    }
+  }
+  return { data: shares, error: null };
+}
+
+/**
+ * Hands-on hours booked per plant day at each work center, for the manning
+ * Matrix's Coverage. The scheduler books people for an operation's setup and
+ * labor at its START and lets the machine run the rest alone, so a booking's
+ * attended hours (its work × the operation's `share`) are laid on the
+ * station's working time from the booking's start. A lights-out station runs
+ * work alone unless its process needs a qualified operator (`gated`). With
+ * `within` (the shift the Matrix is filtered by, `getShiftWorkingWindows`),
+ * only the hours inside those windows count, each on the day its shift
+ * starts: the roster puts Friday's night shift on Friday, so its hours past
+ * midnight are Friday's too.
+ */
+export function attendedHoursByDay(args: {
+  weekDates: string[];
+  timezone: string;
+  reservations: (CapacityReservation & { operationId: string })[];
+  /** `getOperationAttendedShares` */
+  attendedShareByOperation: Map<string, { share: number; gated: boolean }>;
+  windowsByWorkCenter: Map<string, CalendarWindow[]>;
+  lightsOut: Set<string>;
+  within?: CalendarWindow[];
+}): Record<string, Record<string, number>> {
+  const days = plantDayBounds(args.weekDates, args.timezone);
+  const result: Record<string, Record<string, number>> = {};
+  for (const reservation of args.reservations) {
+    const operation = args.attendedShareByOperation.get(
+      reservation.operationId
+    );
+    if (!operation || operation.share <= 0) continue;
+    if (args.lightsOut.has(reservation.resourceId) && !operation.gated) {
+      continue;
+    }
+    const startMs = Date.parse(reservation.startAt);
+    const endMs = Date.parse(reservation.endAt);
+    const windows = args.windowsByWorkCenter.get(reservation.resourceId) ?? [];
+    // A booking without measured work holds the working time of its span.
+    const workMs =
+      reservation.workHours != null
+        ? reservation.workHours * HOUR_MS
+        : workingOverlapMs(windows, startMs, endMs);
+    let attendedMs = operation.share * workMs;
+    for (const window of windows) {
+      if (attendedMs <= 0) break;
+      const from = Math.max(startMs, window.start);
+      const to = Math.min(endMs, window.end, from + attendedMs);
+      if (to <= from) continue;
+      attendedMs -= to - from;
+      const pieces: { start: number; end: number; shiftStart?: number }[] =
+        args.within
+          ? args.within.flatMap((shift) => {
+              const start = Math.max(from, shift.start);
+              const end = Math.min(to, shift.end);
+              // A run longer than a day is back-to-back shifts merged into
+              // one window: no single start day, so split it by the clock.
+              const shiftStart =
+                shift.end - shift.start <= 24 * HOUR_MS
+                  ? shift.start
+                  : undefined;
+              return end > start ? [{ start, end, shiftStart }] : [];
+            })
+          : [{ start: from, end: to }];
+      for (const piece of pieces) {
+        if (piece.shiftStart !== undefined) {
+          const shiftStart = piece.shiftStart;
+          // a shift that started before the week belongs to no day shown
+          const shiftDay = days.find(
+            ({ startMs: dayStart, endMs: dayEnd }) =>
+              shiftStart >= dayStart && shiftStart < dayEnd
+          );
+          if (shiftDay) {
+            const byDay = (result[reservation.resourceId] ??= {});
+            byDay[shiftDay.day] =
+              (byDay[shiftDay.day] ?? 0) + (piece.end - piece.start) / HOUR_MS;
+          }
+          continue;
+        }
+        for (const { day, startMs: dayStart, endMs: dayEnd } of days) {
+          const overlap =
+            Math.min(piece.end, dayEnd) - Math.max(piece.start, dayStart);
+          if (overlap <= 0) continue;
+          const byDay = (result[reservation.resourceId] ??= {});
+          byDay[day] = (byDay[day] ?? 0) + overlap / HOUR_MS;
+        }
+      }
+    }
+  }
+  return result;
+}
+
+/** Milliseconds of `windows` inside [from, to). */
+function workingOverlapMs(
+  windows: CalendarWindow[],
+  from: number,
+  to: number
+): number {
+  let total = 0;
+  for (const window of windows) {
+    const overlap = Math.min(to, window.end) - Math.max(from, window.start);
+    if (overlap > 0) total += overlap;
+  }
+  return total;
+}
+
+/**
  * The Capacity view's week buckets.
  *
- * Demand = open job-operation hours by due date (overdue lands in `pastDue`,
- * like the classic capacity board's Past Weeks column). Scheduled = each
+ * Demand = the hours each open job operation still needs, as the scheduler
+ * counts them (`remainingWorkHours`: setup + the longer of labor and machine,
+ * netted by what is done), by due date. Overdue lands in `pastDue`, like the
+ * classic capacity board's Past Weeks column. Scheduled = each
  * reservation's actual work content distributed across its wall-clock span —
  * a reservation holds the station for its full span (including idle
  * overnight stretches), so distributing `workHours` keeps a spanning op from
@@ -11464,8 +12959,15 @@ export function buildPeopleCapacityBuckets(args: {
   timezone: string;
   operations: CapacityOperation[];
   reservations: CapacityReservation[];
-  /** per-work-center calendar hours (the ladder above) — clamps null-workHours reservations. */
+  /** per-work-center working hours (`workingHoursByDay`) — clamps null-workHours reservations. */
   calendarHoursByWorkCenter: Map<string, Map<string, number>>;
+  /**
+   * Each work center's working windows (`getWorkCenterWorkingWindows`). A
+   * booking's hours are divided over the working time inside each day, not
+   * its wall-clock span: an 8h booking from Monday 12:00 to Tuesday 11:30 on
+   * a 06:00–14:30 shift is 2.5h Monday and 5.5h Tuesday, never hours at night.
+   */
+  workingWindowsByWorkCenter?: Map<string, CalendarWindow[]>;
 }): {
   demandByWorkCenter: Record<
     string,
@@ -11478,7 +12980,8 @@ export function buildPeopleCapacityBuckets(args: {
     timezone,
     operations,
     reservations,
-    calendarHoursByWorkCenter
+    calendarHoursByWorkCenter,
+    workingWindowsByWorkCenter
   } = args;
   const weekStartDate = weekDates[0];
 
@@ -11488,12 +12991,10 @@ export function buildPeopleCapacityBuckets(args: {
   > = {};
   for (const operation of operations) {
     if (!operation.workCenterId || !operation.dueDate) continue;
-    const durations = makeDurations(operation);
-    const hours =
-      (durations.setupDuration +
-        durations.laborDuration +
-        durations.machineDuration) /
-      HOUR_MS;
+    const hours = remainingWorkHours(
+      operation,
+      operation.started ?? false
+    ).durationHours;
     if (hours <= 0) continue;
     const bucket = (demandByWorkCenter[operation.workCenterId] ??= {
       pastDue: 0,
@@ -11508,14 +13009,7 @@ export function buildPeopleCapacityBuckets(args: {
   }
 
   // day boundaries on the plant's calendar, computed once (not per reservation)
-  const dayBounds = weekDates.map((day) => {
-    const dayDate = parseDate(day);
-    return {
-      day,
-      startMs: dayDate.toDate(timezone).getTime(),
-      endMs: dayDate.add({ days: 1 }).toDate(timezone).getTime()
-    };
-  });
+  const dayBounds = plantDayBounds(weekDates, timezone);
 
   const scheduledByWorkCenter: Record<string, Record<string, number>> = {};
   for (const reservation of reservations) {
@@ -11544,14 +13038,22 @@ export function buildPeopleCapacityBuckets(args: {
       workMs = Math.min(spanMs, calendarMsWithinSpan);
     }
 
+    // A booking with no working time (a station with no windows) falls back to
+    // the wall-clock share.
+    const windows =
+      workingWindowsByWorkCenter?.get(reservation.resourceId) ?? [];
+    const workingSpanMs = workingOverlapMs(windows, startMs, endMs);
     for (const { day, startMs: dayStartMs, endMs: dayEndMs } of dayBounds) {
-      const overlapMs =
-        Math.min(endMs, dayEndMs) - Math.max(startMs, dayStartMs);
-      if (overlapMs > 0) {
-        const byDay = (scheduledByWorkCenter[reservation.resourceId] ??= {});
-        byDay[day] =
-          (byDay[day] ?? 0) + (overlapMs / spanMs) * (workMs / HOUR_MS);
-      }
+      const from = Math.max(startMs, dayStartMs);
+      const to = Math.min(endMs, dayEndMs);
+      if (to <= from) continue;
+      const share =
+        workingSpanMs > 0
+          ? workingOverlapMs(windows, from, to) / workingSpanMs
+          : (to - from) / spanMs;
+      if (share <= 0) continue;
+      const byDay = (scheduledByWorkCenter[reservation.resourceId] ??= {});
+      byDay[day] = (byDay[day] ?? 0) + share * (workMs / HOUR_MS);
     }
   }
 
@@ -11815,7 +13317,7 @@ export async function readUnlockedJobs(ctx: ServiceContext, ids: string[]) {
   const jobs = await ctx.asCaller.supabase
     .from("job")
     .select(
-      "id, status, quantity, fixedAssetClassId, fixedAssetId, dueDate, deadlineType, locationId"
+      "id, status, quantity, fixedAssetClassId, fixedAssetId, dueDate, deadlineType, locationId, consumeToProject, receiveToProjectStock"
     )
     .in("id", ids)
     .eq("companyId", ctx.company.id);
@@ -11826,6 +13328,91 @@ export async function readUnlockedJobs(ctx: ServiceContext, ids: string[]) {
     return ctx.error("rule", JOB_LOCKED_MESSAGE);
   }
   return jobs.data;
+}
+
+/**
+ * Why a job's charge number is refused, or null: the project is not this
+ * company's, the element is not one of its elements, or the project cannot
+ * take what the job asks of it (consume to a Statistical or capital project,
+ * receive into a project with no project stock). `chargeNumberError` decides;
+ * the refusal is `validation`, which the job forms show on the charge number.
+ */
+export async function jobChargeNumberRefusal(
+  ctx: ServiceContext,
+  client: SupabaseClient<Database>,
+  job: {
+    projectId?: string | null;
+    projectElementId?: string | null;
+    consumeToProject?: boolean;
+    receiveToProjectStock?: boolean;
+  }
+): Promise<CarbonError | null> {
+  const refusal = await chargeNumberError(client, ctx.company.id, job);
+  return refusal ? ctx.error("validation", refusal.message) : null;
+}
+
+/**
+ * Budget control for a job that consumes to its project (Government
+ * Contracting 5c, C4 and C5). The job charges quantity × the item's unit cost
+ * to the project; a saved job (`jobId`) less its cost already in the project
+ * ledger, which the check counts as actual cost. Burden rows are left out, as
+ * in the check (C3). Block refuses the job (`conflict`, shown on the
+ * quantity); Warn returns the overrun as a note for the success message.
+ */
+export async function jobBudgetCheck(
+  ctx: ServiceContext,
+  job: {
+    jobId?: string;
+    itemId: string;
+    quantity?: number;
+    projectId?: string | null;
+    projectElementId?: string | null;
+    consumeToProject?: boolean;
+  }
+): Promise<{ refusal: CarbonError | null; note: string }> {
+  if (!job.consumeToProject || !job.projectId) {
+    return { refusal: null, note: "" };
+  }
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const [cost, posted] = await Promise.all([
+    db
+      .selectFrom("itemCost")
+      .select("unitCost")
+      .where("itemId", "=", job.itemId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst(),
+    job.jobId
+      ? db
+          .selectFrom("projectLedger")
+          .select(sql<number>`COALESCE(SUM("amount"), 0)`.as("amount"))
+          .where("companyId", "=", companyId)
+          .where("jobId", "=", job.jobId)
+          .where("costType", "!=", "Burden")
+          .executeTakeFirst()
+      : null
+  ]);
+  const charge = (job.quantity ?? 0) * Number(cost?.unitCost ?? 0);
+  const budget = await checkProjectBudget(db, ctx.asCaller.supabase, {
+    companyId,
+    source: "job",
+    charges: [
+      {
+        projectId: job.projectId,
+        projectElementId: job.projectElementId || null,
+        amount: job.jobId
+          ? Math.max(0, charge - Number(posted?.amount ?? 0))
+          : charge
+      }
+    ]
+  });
+  if (budget.status === "block") {
+    return { refusal: ctx.error("conflict", budget.message), note: "" };
+  }
+  return {
+    refusal: null,
+    note: budget.status === "warn" ? budget.message : ""
+  };
 }
 
 /**
@@ -12249,7 +13836,7 @@ export async function getJobToResume(
   return client
     .from("job")
     .select(
-      "status, quantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item(itemTrackingType, itemReplenishment(manufacturingBlocked))"
+      "status, quantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item!job_itemId_fkey(itemTrackingType, itemReplenishment(manufacturingBlocked))"
     )
     .eq("id", jobId)
     .eq("companyId", companyId)
@@ -12264,6 +13851,14 @@ export const closeJobInput = z.object({
  * variance, so the job's WIP nets to zero. Nothing to do when the residual is
  * under a cent. The journal is Provisional before the company's accounting
  * cutover and Posted after it.
+ *
+ * A line that charged a project in place of WIP (a consume-to-project job's
+ * material, labor, overhead and scrap: every one has a projectLedger row
+ * naming it) is the project's cost, not the job's, and is left out: for a
+ * Contract project Project WIP is the WIP account, and the revenue run
+ * relieves it. A capital job keeps WIP (`keepsWip` in
+ * `loadJobProjectCharge`) and its completion sweeps it, so its project rows
+ * stay in the residual.
  */
 export async function closeJob(
   ctx: ServiceContext,
@@ -12296,6 +13891,20 @@ export async function closeJob(
     // Read inside the transaction so the FOR SHARE lock holds until commit.
     const postingStatus = await journalPostingStatus(trx, companyId);
 
+    const job = await trx
+      .selectFrom("job")
+      .where("id", "=", jobId)
+      .where("companyId", "=", companyId)
+      .select([
+        "jobId",
+        "itemId",
+        "locationId",
+        "consumeToProject",
+        "fixedAssetId"
+      ])
+      .executeTakeFirstOrThrow();
+    const keepsWip = !job.consumeToProject && Boolean(job.fixedAssetId);
+
     const wipBalance = await trx
       .selectFrom("journalLine")
       .innerJoin("journal", "journal.id", "journalLine.journalId")
@@ -12308,18 +13917,24 @@ export async function closeJob(
       .where("journalLine.documentId", "=", jobId)
       .where("journal.companyId", "=", companyId)
       .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+      .$if(!keepsWip, (qb) =>
+        qb.where((eb) =>
+          eb.not(
+            eb.exists(
+              eb
+                .selectFrom("projectLedger")
+                .select("projectLedger.id")
+                .whereRef("projectLedger.journalLineId", "=", "journalLine.id")
+                .where("projectLedger.companyId", "=", companyId)
+            )
+          )
+        )
+      )
       .executeTakeFirst();
 
     const remainingWip = Number(wipBalance?.balance ?? 0);
 
     if (Math.abs(remainingWip) < 0.01) return;
-
-    const job = await trx
-      .selectFrom("job")
-      .where("id", "=", jobId)
-      .where("companyId", "=", companyId)
-      .select(["jobId", "itemId", "locationId"])
-      .executeTakeFirstOrThrow();
 
     // Resolve the item dimensions so the WIP variance lines are attributable
     // to the finished good (mirrors the WIP lines posted during completion).
@@ -12466,14 +14081,19 @@ export async function closeJob(
   return { success: true };
 }
 export const assignSerialNumbersInput = z.object({
-  jobId: z.string()
+  jobId: z.string(),
+  // The moment calling: it numbers only when the item's timing names it.
+  at: z.enum(["jobCreation", "jobRelease"]).default("jobCreation")
 });
 
 /**
- * Assigns configured serial numbers to a job's tracked entities at creation time.
+ * Assigns configured serial numbers to a job's tracked entities, at creation or
+ * release.
  *
- * Run (best-effort) by `insertJob` only when the job's item has an
- * `itemSerialSequence`. For a Batch item it stamps one number on the single
+ * Run (best-effort) by `assignJobSerialNumbers` only when the job's item has an
+ * `itemSerialSequence`. It numbers only when the item's serial number timing
+ * (its own, else the company's) is `at`; a Batch lot is always numbered at
+ * creation, since the timing is for serial units. For a Batch item it stamps one number on the single
  * whole-quantity seed entity; for a Serial item it splits the seed into N
  * quantity-1 entities and stamps one number on each. Numbers come from the
  * item's sequence (atomic counter) with %{...} date/week/location tokens.
@@ -12488,7 +14108,7 @@ export async function assignSerialNumbers(
   ctx: ServiceContext,
   raw: z.input<typeof assignSerialNumbersInput>
 ) {
-  const { jobId } = assignSerialNumbersInput.parse(raw);
+  const { jobId, at } = assignSerialNumbersInput.parse(raw);
   const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
 
@@ -12517,11 +14137,23 @@ export async function assignSerialNumbers(
     // 3. The item's serial sequence (optional, at most one)
     const sequence = await trx
       .selectFrom("itemSerialSequence")
-      .select(["prefix", "suffix", "next", "size", "step"])
+      .select(["serialNumberTiming"])
       .where("itemId", "=", job.itemId)
       .where("companyId", "=", companyId)
       .executeTakeFirst();
     if (!sequence) return { assigned: 0 };
+
+    // 3b. Only at the moment the item's timing names. A Batch lot is numbered
+    //     at creation: the completion numbers serial units only.
+    const timing =
+      trackingType === "Batch"
+        ? "jobCreation"
+        : await resolveSerialNumberTiming(
+            trx,
+            companyId,
+            sequence.serialNumberTiming
+          );
+    if (timing !== at) return { assigned: 0 };
 
     // 4. Location context for the %{location} token (code, falling back to name)
     let locationCode: string | null = null;
@@ -12625,6 +14257,7 @@ export async function assignSerialNumbers(
     return { assigned: count };
   });
 }
+
 const sandboxLogger = getLogger("erp", "configuration-rule");
 
 /**
@@ -12673,7 +14306,7 @@ const getMethodLogger = getLogger("erp", "get-method");
 function toTiptapDoc(value: unknown): Json {
   if (value && typeof value === "object") return value as Json;
   if (typeof value === "string" && value.length > 0) {
-    return textToTiptap(value) as Json;
+    return TiptapText(value, { format: "text" }).toDocument() as Json;
   }
   return {};
 }
@@ -12696,15 +14329,13 @@ const normalizeOperationType = (value: unknown) =>
       ? "Outside Processing"
       : value) as Database["public"]["Enums"]["operationType"];
 
-// Copy an operation step's reference slides (grandchild) when a method/job/quote is
-// copied. Source slides are queried by their (old) step ids and remapped onto the freshly
-// inserted step ids — a bulk insert preserves order, so insertedStepIds[i] ↔ sourceSteps[i].
-// Guarded: a no-op when there are no slides, so it can never break step copying.
+// Copy the reference slides (grandchild) of copied operation steps: each source
+// step's slides go to every step copied from it, so an operation copied twice
+// gives both copies its slides. A no-op when there are no slides.
 // See .ai/specs/2026-07-14-mes-execution-views.md §4.
 async function copyStepSlides(
   trx: Transaction<KyselyDatabase>,
-  sourceSteps: Array<{ id?: string | null }>,
-  insertedStepIds: Array<{ id: string }>,
+  steps: { sourceStepId: string; stepId: string }[],
   sourceTable:
     | "methodOperationStepSlide"
     | "jobOperationStepSlide"
@@ -12716,43 +14347,163 @@ async function copyStepSlides(
   companyId: string,
   userId: string
 ) {
-  const sourceStepIds = sourceSteps
-    .map((s) => s.id)
-    .filter((id): id is string => !!id);
-  if (sourceStepIds.length === 0) return;
+  if (steps.length === 0) return;
 
   // The three slide tables share these columns; one name stands for all.
   const srcSlides = await selectRows(
     trx,
     sourceTable as "methodOperationStepSlide",
-    { stepId: sourceStepIds }
+    {
+      stepId: [...new Set(steps.map((step) => step.sourceStepId))],
+      companyId
+    }
+  );
+  const slidesByStep = groupBy(srcSlides, (sl) => sl.stepId);
+
+  const inserts = steps.flatMap(({ sourceStepId, stepId }) =>
+    (slidesByStep[sourceStepId] ?? []).map((sl) => ({
+      stepId,
+      imagePath: sl.imagePath,
+      modelUploadId: sl.modelUploadId,
+      caption: sl.caption,
+      sortOrder: sl.sortOrder,
+      size: sl.size,
+      // A raw array reaches Postgres as an array literal: `[]` was stored as
+      // the jsonb object `{}`, and a slide with pins failed the insert.
+      annotations: toJson(sl.annotations ?? []),
+      companyId,
+      createdBy: userId
+    }))
   );
 
-  const inserts = srcSlides.flatMap((sl) => {
-    const idx = sourceSteps.findIndex((s) => s.id === sl.stepId);
-    const newStepId = insertedStepIds[idx]?.id;
-    if (!newStepId) return [];
-    return [
-      {
-        stepId: newStepId,
-        imagePath: sl.imagePath,
-        modelUploadId: sl.modelUploadId,
-        caption: sl.caption,
-        sortOrder: sl.sortOrder,
-        size: sl.size,
-        annotations: sl.annotations,
-        companyId,
-        createdBy: userId
-      }
-    ];
-  });
-
-  if (inserts.length > 0) {
+  for (const rows of chunked(inserts)) {
     await trx
       .insertInto(targetTable as any)
-      .values(inserts as any)
+      .values(rows as any)
       .execute();
   }
+}
+
+/** The parameters, steps and tools of every operation of one method level,
+ *  collected by a get-method flow and written by insertOperationChildren. */
+type OperationChildren = {
+  parameters: Record<string, unknown>[];
+  // `row` carries its operationId; the copy gives it a new id.
+  steps: {
+    sourceStepId: string | null | undefined;
+    row: Record<string, unknown>;
+  }[];
+  // `sourceStepIds` are the source tool's step links, remapped onto the copy.
+  tools: {
+    row: Record<string, unknown>;
+    sourceStepIds: Array<string | null> | null;
+  }[];
+};
+
+const newOperationChildren = (): OperationChildren => ({
+  parameters: [],
+  steps: [],
+  tools: []
+});
+
+// The id() prefixes of the step and tool tables (their column defaults).
+const STEP_ID_PREFIX = { job: null, method: null, quote: "qoa" } as const;
+const TOOL_ID_PREFIX = { job: "jot", method: null, quote: "qot" } as const;
+
+/**
+ * Writes the collected children with one insert per table (in chunks), so a
+ * level costs the same number of statements whatever its operation count.
+ * Step and tool ids are made here: RETURNING has no order guarantee to pair
+ * them with their source rows. Returns source step id -> new step id.
+ */
+async function insertOperationChildren(
+  trx: Transaction<KyselyDatabase>,
+  target: "job" | "quote" | "method",
+  sourceSlideTable:
+    | "methodOperationStepSlide"
+    | "jobOperationStepSlide"
+    | "quoteOperationStepSlide",
+  children: OperationChildren,
+  companyId: string,
+  userId: string
+): Promise<Record<string, string>> {
+  const table = (name: string) => `${target}Operation${name}` as never;
+  for (const rows of chunked(children.parameters)) {
+    await trx
+      .insertInto(table("Parameter"))
+      .values(rows as never)
+      .execute();
+  }
+
+  const stepIds = await newIds(
+    trx,
+    STEP_ID_PREFIX[target],
+    children.steps.length
+  );
+  // A configured bill of process can copy one source operation twice, so a
+  // tool's step links are remapped within its own copied operation.
+  const stepMap: Record<string, string> = {};
+  const stepMapByOperation: Record<string, Record<string, string>> = {};
+  const copiedSteps: { sourceStepId: string; stepId: string }[] = [];
+  children.steps.forEach((step, i) => {
+    if (!step.sourceStepId) return;
+    const stepId = stepIds[i]!;
+    const operationId = step.row.operationId as string;
+    stepMap[step.sourceStepId] = stepId;
+    stepMapByOperation[operationId] ??= {};
+    stepMapByOperation[operationId][step.sourceStepId] = stepId;
+    copiedSteps.push({ sourceStepId: step.sourceStepId, stepId });
+  });
+  const stepRows = children.steps.map((step, i) => ({
+    ...step.row,
+    id: stepIds[i]!
+  }));
+  for (const rows of chunked(stepRows)) {
+    await trx
+      .insertInto(table("Step"))
+      .values(rows as never)
+      .execute();
+  }
+  await copyStepSlides(
+    trx,
+    copiedSteps,
+    sourceSlideTable,
+    `${target}OperationStepSlide`,
+    companyId,
+    userId
+  );
+
+  const toolIds = await newIds(
+    trx,
+    TOOL_ID_PREFIX[target],
+    children.tools.length
+  );
+  const toolRows = children.tools.map((tool, i) => ({
+    ...tool.row,
+    id: toolIds[i]!
+  }));
+  for (const rows of chunked(toolRows)) {
+    await trx
+      .insertInto(table("Tool"))
+      .values(rows as never)
+      .execute();
+  }
+  const toolStepRows = children.tools.flatMap((tool, i) =>
+    remapStepIds(
+      tool.sourceStepIds,
+      stepMapByOperation[tool.row.operationId as string] ?? {}
+    ).map((stepId) => ({
+      [`${target}OperationToolId`]: toolRows[i]!.id,
+      [`${target}OperationStepId`]: stepId
+    }))
+  );
+  for (const rows of chunked(toolStepRows)) {
+    await trx
+      .insertInto(table("ToolStep"))
+      .values(rows as never)
+      .execute();
+  }
+  return stepMap;
 }
 
 // Many-to-many step links (Phase 2): remap a parent's OLD operation-step ids onto the freshly
@@ -13040,7 +14791,7 @@ export async function getMethod(
         throw new Error("Failed to get source materials or operations");
       }
 
-      await db.transaction().execute(async (trx) => {
+      await withTransaction(db, async (trx) => {
         // Delete existing materials and operations from target method
         await Promise.all([
           parts.billOfMaterial
@@ -13067,31 +14818,37 @@ export async function getMethod(
           sourceOperations.data &&
           sourceOperations.data.length > 0
         ) {
-          const operationIds = await trx
+          const operationRows = sourceOperations.data.map(
+            ({
+              methodOperationTool: _tools,
+              methodOperationParameter: _parameters,
+              methodOperationStep: _attributes,
+              ...operation
+            }) => {
+              const insert = {
+                ...operation,
+                makeMethodId: targetMakeMethod.data.id!,
+                createdBy: userId
+              };
+              if (!parts.workInstructions) {
+                insert.workInstruction = {};
+              }
+              return insert;
+            }
+          );
+          const operationIds = (
+            await newIds(trx, "mop", operationRows.length)
+          ).map((id) => ({ id }));
+          await trx
             .insertInto("methodOperation")
             .values(
-              sourceOperations.data.map(
-                ({
-                  methodOperationTool: _tools,
-                  methodOperationParameter: _parameters,
-                  methodOperationStep: _attributes,
-                  ...operation
-                }) => {
-                  const insert = {
-                    ...operation,
-                    id: undefined, // Let the database generate a new ID
-                    makeMethodId: targetMakeMethod.data.id!,
-                    createdBy: userId
-                  };
-                  if (!parts.workInstructions) {
-                    insert.workInstruction = {};
-                  }
-                  return insert;
-                }
-              )
+              operationRows.map((row, i) => ({
+                ...row,
+                id: operationIds[i]!.id
+              })) as never
             )
-            .returning(["id"])
             .execute();
+          const operationChildren = newOperationChildren();
           sourceOperations.data.forEach((operation, index) => {
             const id = operationIds[index]?.id;
             if (operation.id && id) operationIdMap.set(operation.id, id);
@@ -13115,18 +14872,17 @@ export async function getMethod(
               Array.isArray(methodOperationTool) &&
               methodOperationTool.length > 0
             ) {
-              await trx
-                .insertInto("methodOperationTool")
-                .values(
-                  methodOperationTool.map((tool) => ({
+              operationChildren.tools.push(
+                ...methodOperationTool
+                  .map((tool) => ({
                     toolId: tool.toolId,
                     quantity: tool.quantity,
                     operationId,
                     companyId,
                     createdBy: userId
                   }))
-                )
-                .execute();
+                  .map((row) => ({ row, sourceStepIds: null }))
+              );
             }
 
             if (!procedureId) {
@@ -13135,18 +14891,15 @@ export async function getMethod(
                 Array.isArray(methodOperationParameter) &&
                 methodOperationParameter.length > 0
               ) {
-                await trx
-                  .insertInto("methodOperationParameter")
-                  .values(
-                    methodOperationParameter.map((param) => ({
-                      operationId: operationId!,
-                      key: param.key,
-                      value: param.value,
-                      companyId,
-                      createdBy: userId
-                    }))
-                  )
-                  .execute();
+                operationChildren.parameters.push(
+                  ...methodOperationParameter.map((param) => ({
+                    operationId: operationId!,
+                    key: param.key,
+                    value: param.value,
+                    companyId,
+                    createdBy: userId
+                  }))
+                );
               }
 
               if (
@@ -13157,32 +14910,34 @@ export async function getMethod(
                 Array.isArray(methodOperationStep) &&
                 methodOperationStep.length > 0
               ) {
-                const insertedSteps = await trx
-                  .insertInto("methodOperationStep")
-                  .values(
-                    methodOperationStep.map(({ id: _id, ...attribute }) => ({
-                      ...attribute,
-                      description: toTiptapDoc(attribute.description),
-                      operationId: operationId!,
-                      companyId,
-                      createdBy: userId
-                    }))
-                  )
-                  .returning(["id"])
-                  .execute();
-
-                await copyStepSlides(
-                  trx,
-                  methodOperationStep,
-                  insertedSteps,
-                  "methodOperationStepSlide",
-                  "methodOperationStepSlide",
-                  companyId,
-                  userId
+                const stepRows = methodOperationStep.map(
+                  ({ id: _id, ...attribute }) => ({
+                    ...attribute,
+                    description: toTiptapDoc(attribute.description),
+                    operationId: operationId!,
+                    companyId,
+                    createdBy: userId
+                  })
+                );
+                operationChildren.steps.push(
+                  ...stepRows.map((row, i) => ({
+                    sourceStepId: (
+                      methodOperationStep as Array<{ id?: string | null }>
+                    )[i]?.id,
+                    row: row as Record<string, unknown>
+                  }))
                 );
               }
             }
           }
+          await insertOperationChildren(
+            trx,
+            "method",
+            "methodOperationStepSlide",
+            operationChildren,
+            companyId,
+            userId
+          );
         }
         // Copy materials from source to target, dropping any zero-quantity
         // BOM lines.
@@ -13279,7 +15034,7 @@ export async function getMethod(
         .execute();
       const jobRow = await db
         .selectFrom("job")
-        .select(["locationId", "quantity", "startDate", "dueDate"])
+        .select(["locationId", "quantity", "startDate", "dueDate", "projectId"])
         .where("id", "=", jobId)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
@@ -13334,6 +15089,13 @@ export async function getMethod(
       const scrapPercentageByItemId = new Map<string, number>();
       const defaultStorageUnitByItemId = new Map<string, string>();
       const jobLocationId = job.locationId;
+      let fullestBinAllowed: boolean | undefined;
+      async function withFullestBin(reader: typeof db) {
+        fullestBinAllowed ??= !(
+          await getStrictBackflushSettings(reader, companyId, jobLocationId)
+        ).strict;
+        return fullestBinAllowed;
+      }
 
       const operationsByMakeMethodId = new Map<string, MethodOperationRow[]>();
 
@@ -13379,22 +15141,32 @@ export async function getMethod(
         // Default storage units at the job's location — two set-based
         // queries instead of up to two per material (getStorageUnitId):
         // pickMethod default wins, else the bin with the highest on-hand
-        // quantity.
+        // quantity — never the fullest bin under strict backflush, and never
+        // a non-nettable unit.
         if (jobLocationId) {
-          const ledgerTotals = await reader
-            .selectFrom("itemLedger")
-            .where("locationId", "=", jobLocationId)
-            .where("companyId", "=", companyId)
-            .where("itemId", "in", missing)
-            .where("storageUnitId", "is not", null)
-            .groupBy(["itemId", "storageUnitId"])
-            .select([
-              "itemId",
-              "storageUnitId",
-              (eb) => eb.fn.sum("quantity").as("totalQuantity")
-            ])
-            .having((eb) => eb.fn.sum("quantity"), ">", 0)
-            .execute();
+          const ledgerTotals = !(await withFullestBin(reader))
+            ? []
+            : await reader
+                .selectFrom("itemLedger")
+                .where("locationId", "=", jobLocationId)
+                .where("companyId", "=", companyId)
+                .where("itemId", "in", missing)
+                .where("storageUnitId", "is not", null)
+                .where("storageUnitId", "in", (eb) =>
+                  eb
+                    .selectFrom("storageUnit")
+                    .select("storageUnit.id")
+                    .where("storageUnit.companyId", "=", companyId)
+                    .where("storageUnit.effectiveNettable", "=", true)
+                )
+                .groupBy(["itemId", "storageUnitId"])
+                .select([
+                  "itemId",
+                  "storageUnitId",
+                  (eb) => eb.fn.sum("quantity").as("totalQuantity")
+                ])
+                .having((eb) => eb.fn.sum("quantity"), ">", 0)
+                .execute();
 
           const bestQuantityByItemId = new Map<string, number>();
           for (const row of ledgerTotals) {
@@ -13414,7 +15186,13 @@ export async function getMethod(
             .where("locationId", "=", jobLocationId)
             .where("companyId", "=", companyId)
             .where("itemId", "in", missing)
-            .where("defaultStorageUnitId", "is not", null)
+            .where("defaultStorageUnitId", "in", (eb) =>
+              eb
+                .selectFrom("storageUnit")
+                .select("storageUnit.id")
+                .where("storageUnit.companyId", "=", companyId)
+                .where("storageUnit.effectiveNettable", "=", true)
+            )
             .execute();
 
           for (const pickMethod of pickMethods) {
@@ -13517,7 +15295,7 @@ export async function getMethod(
         return acc;
       }, {});
 
-      await db.transaction().execute(async (trx) => {
+      await withTransaction(db, async (trx) => {
         const insertedJobMaterialIds: string[] = [];
         if (isConfigured) {
           await trx
@@ -13843,11 +15621,20 @@ export async function getMethod(
             }
 
             if (jobOperationsInserts?.length > 0) {
-              const operationIds = await trx
+              const operationRows = jobOperationsInserts;
+              const operationIds = (
+                await newIds(trx, "jo", operationRows.length)
+              ).map((id) => ({ id }));
+              await trx
                 .insertInto("jobOperation")
-                .values(jobOperationsInserts)
-                .returning(["id"])
+                .values(
+                  operationRows.map((row, i) => ({
+                    ...row,
+                    id: operationIds[i]!.id
+                  })) as never
+                )
                 .execute();
+              const operationChildren = newOperationChildren();
 
               for (const [index, operation] of sourceOperations.entries()) {
                 const operationId = operationIds[index]?.id;
@@ -13893,10 +15680,7 @@ export async function getMethod(
                         }))
                       );
 
-                      await trx
-                        .insertInto("jobOperationParameter")
-                        .values(parameters)
-                        .execute();
+                      operationChildren.parameters.push(...parameters);
                     }
 
                     if (operation.assemblyInstructionId) {
@@ -13945,30 +15729,14 @@ export async function getMethod(
                         )
                       );
 
-                      const insertedSteps = await trx
-                        .insertInto("jobOperationStep")
-                        .values(attributes)
-                        .returning(["id"])
-                        .execute();
-
-                      // Bulk insert preserves order, so insertedSteps[i] ↔
-                      // methodOperationStep[i]: record each method step -> new job step so
-                      // materials can carry the part ↔ step link onto the job (Phase 2).
-                      (methodOperationStep as Array<{ id?: string }>).forEach(
-                        (s, i) => {
-                          const newStepId = insertedSteps[i]?.id;
-                          if (s?.id && newStepId)
-                            methodStepsToJobSteps[s.id] = newStepId;
-                        }
-                      );
-                      await copyStepSlides(
-                        trx,
-                        methodOperationStep,
-                        insertedSteps,
-                        "methodOperationStepSlide",
-                        "jobOperationStepSlide",
-                        companyId,
-                        userId
+                      const stepRows = attributes;
+                      operationChildren.steps.push(
+                        ...stepRows.map((row, i) => ({
+                          sourceStepId: (
+                            methodOperationStep as Array<{ id?: string | null }>
+                          )[i]?.id,
+                          row: row as Record<string, unknown>
+                        }))
                       );
                     }
                   }
@@ -13989,48 +15757,34 @@ export async function getMethod(
                     (!node.data.isRoot || parts.tools) &&
                     toolsToCopy.length > 0
                   ) {
-                    const insertedTools = await trx
-                      .insertInto("jobOperationTool")
-                      .values(
-                        toolsToCopy.map((tool) => ({
+                    operationChildren.tools.push(
+                      ...toolsToCopy.map((tool) => ({
+                        row: {
                           toolId: tool.toolId,
                           quantity: tool.quantity,
                           operationId,
                           companyId,
                           createdBy: userId
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
-
-                    // Tool ↔ step links (Phase 2, many-to-many). Bulk insert preserves order,
-                    // so insertedTools[i] ↔ toolsToCopy[i]. A tool with no links applies
-                    // to the whole operation (shown on every step in the MES).
-                    const toolStepRows = toolsToCopy.flatMap((tool, i) => {
-                      const jobOperationToolId = insertedTools[i]?.id;
-                      if (!jobOperationToolId) return [];
-                      const oldStepIds = (
-                        (tool.methodOperationToolStep ?? []) as Array<{
-                          methodOperationStepId: string | null;
-                        }>
-                      ).map((l) => l.methodOperationStepId);
-                      return remapStepIds(
-                        oldStepIds,
-                        methodStepsToJobSteps
-                      ).map((jobOperationStepId) => ({
-                        jobOperationToolId,
-                        jobOperationStepId
-                      }));
-                    });
-                    if (toolStepRows.length > 0) {
-                      await trx
-                        .insertInto("jobOperationToolStep")
-                        .values(toolStepRows)
-                        .execute();
-                    }
+                        },
+                        sourceStepIds: (
+                          (tool.methodOperationToolStep ?? []) as Array<{
+                            methodOperationStepId: string | null;
+                          }>
+                        ).map((l) => l.methodOperationStepId)
+                      }))
+                    );
                   }
                 }
               }
+              const copiedSteps = await insertOperationChildren(
+                trx,
+                "job",
+                "methodOperationStepSlide",
+                operationChildren,
+                companyId,
+                userId
+              );
+              Object.assign(methodStepsToJobSteps, copiedSteps);
 
               methodOperationsToJobOperations = sourceOperations.reduce<
                 Record<string, string>
@@ -14416,10 +16170,20 @@ export async function getMethod(
                 // material at the successor and explode the SUCCESSOR's method
                 // (not the old part's). A Make -> Buy successor is a structural
                 // flip we leave on the old part (handled/flagged elsewhere).
-                const madeSwapHandled = await swapMadeSubAssembly({
+                // A configuration rule may have moved this line onto another
+                // made item; the sub-assembly under it is then that item's.
+                const made = await configuredMadeChild(
                   trx,
                   companyId,
                   child,
+                  material?.itemId
+                );
+                if (!made) continue;
+
+                const madeSwapHandled = await swapMadeSubAssembly({
+                  trx,
+                  companyId,
+                  child: made,
                   material,
                   materialId,
                   locationId: job.locationId ?? "",
@@ -14429,9 +16193,9 @@ export async function getMethod(
                 });
 
                 // prevent an infinite loop
-                if (!madeSwapHandled && child!.data.itemId !== itemId) {
+                if (!madeSwapHandled && made.data.itemId !== itemId) {
                   await traverseMethod(
-                    child,
+                    made,
                     newMakeMethodId,
                     childTotalForCascade || 1
                   );
@@ -14502,6 +16266,7 @@ export async function getMethod(
           jobId: jobId,
           jobMaterialIds: insertedJobMaterialIds,
           locationId: job.locationId,
+          projectId: job.projectId,
           asOfDate: jobBuildDate(job)
         });
       });
@@ -14622,7 +16387,7 @@ export async function getMethod(
         return acc;
       }, {});
 
-      await db.transaction().execute(async (trx) => {
+      await withTransaction(db, async (trx) => {
         await itemDefaults.load(
           trx,
           treeItemIds(methodTree, supersessionRedirect)
@@ -14752,11 +16517,20 @@ export async function getMethod(
 
           if (parts.billOfProcess) {
             if (jobOperationsInserts?.length > 0) {
-              const operationIds = await trx
+              const operationRows = jobOperationsInserts;
+              const operationIds = (
+                await newIds(trx, "jo", operationRows.length)
+              ).map((id) => ({ id }));
+              await trx
                 .insertInto("jobOperation")
-                .values(jobOperationsInserts)
-                .returning(["id"])
+                .values(
+                  operationRows.map((row, i) => ({
+                    ...row,
+                    id: operationIds[i]!.id
+                  })) as never
+                )
                 .execute();
+              const operationChildren = newOperationChildren();
 
               for (const [index, operation] of (
                 relatedOperations.data ?? []
@@ -14790,18 +16564,15 @@ export async function getMethod(
                       Array.isArray(methodOperationParameter) &&
                       methodOperationParameter.length > 0
                     ) {
-                      await trx
-                        .insertInto("jobOperationParameter")
-                        .values(
-                          methodOperationParameter.map((param) => ({
-                            operationId,
-                            key: param.key,
-                            value: param.value,
-                            companyId,
-                            createdBy: userId
-                          }))
-                        )
-                        .execute();
+                      operationChildren.parameters.push(
+                        ...methodOperationParameter.map((param) => ({
+                          operationId,
+                          key: param.key,
+                          value: param.value,
+                          companyId,
+                          createdBy: userId
+                        }))
+                      );
                     }
 
                     if (operation.assemblyInstructionId) {
@@ -14828,40 +16599,22 @@ export async function getMethod(
                       Array.isArray(methodOperationStep) &&
                       methodOperationStep.length > 0
                     ) {
-                      const insertedSteps = await trx
-                        .insertInto("jobOperationStep")
-                        .values(
-                          methodOperationStep.map(
-                            ({ id: _id, ...attribute }) => ({
-                              ...attribute,
-                              description: toTiptapDoc(attribute.description),
-                              operationId,
-                              companyId,
-                              createdBy: userId
-                            })
-                          )
-                        )
-                        .returning(["id"])
-                        .execute();
-
-                      // Bulk insert preserves order, so insertedSteps[i] ↔
-                      // methodOperationStep[i]: record each method step -> new job step so
-                      // materials can carry the part ↔ step link onto the job (Phase 2).
-                      (methodOperationStep as Array<{ id?: string }>).forEach(
-                        (s, i) => {
-                          const newStepId = insertedSteps[i]?.id;
-                          if (s?.id && newStepId)
-                            methodStepsToJobSteps[s.id] = newStepId;
-                        }
+                      const stepRows = methodOperationStep.map(
+                        ({ id: _id, ...attribute }) => ({
+                          ...attribute,
+                          description: toTiptapDoc(attribute.description),
+                          operationId,
+                          companyId,
+                          createdBy: userId
+                        })
                       );
-                      await copyStepSlides(
-                        trx,
-                        methodOperationStep,
-                        insertedSteps,
-                        "methodOperationStepSlide",
-                        "jobOperationStepSlide",
-                        companyId,
-                        userId
+                      operationChildren.steps.push(
+                        ...stepRows.map((row, i) => ({
+                          sourceStepId: (
+                            methodOperationStep as Array<{ id?: string | null }>
+                          )[i]?.id,
+                          row: row as Record<string, unknown>
+                        }))
                       );
                     }
                   }
@@ -14879,48 +16632,34 @@ export async function getMethod(
                       !assemblyToolIds.has(tool.toolId)
                   );
                   if (parts.tools && toolsToCopy.length > 0) {
-                    const insertedTools = await trx
-                      .insertInto("jobOperationTool")
-                      .values(
-                        toolsToCopy.map((tool) => ({
+                    operationChildren.tools.push(
+                      ...toolsToCopy.map((tool) => ({
+                        row: {
                           toolId: tool.toolId,
                           quantity: tool.quantity,
                           operationId,
                           companyId,
                           createdBy: userId
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
-
-                    // Tool ↔ step links (Phase 2, many-to-many). Bulk insert preserves order,
-                    // so insertedTools[i] ↔ toolsToCopy[i]. A tool with no links applies
-                    // to the whole operation (shown on every step in the MES).
-                    const toolStepRows = toolsToCopy.flatMap((tool, i) => {
-                      const jobOperationToolId = insertedTools[i]?.id;
-                      if (!jobOperationToolId) return [];
-                      const oldStepIds = (
-                        (tool.methodOperationToolStep ?? []) as Array<{
-                          methodOperationStepId: string | null;
-                        }>
-                      ).map((l) => l.methodOperationStepId);
-                      return remapStepIds(
-                        oldStepIds,
-                        methodStepsToJobSteps
-                      ).map((jobOperationStepId) => ({
-                        jobOperationToolId,
-                        jobOperationStepId
-                      }));
-                    });
-                    if (toolStepRows.length > 0) {
-                      await trx
-                        .insertInto("jobOperationToolStep")
-                        .values(toolStepRows)
-                        .execute();
-                    }
+                        },
+                        sourceStepIds: (
+                          (tool.methodOperationToolStep ?? []) as Array<{
+                            methodOperationStepId: string | null;
+                          }>
+                        ).map((l) => l.methodOperationStepId)
+                      }))
+                    );
                   }
                 }
               }
+              const copiedSteps = await insertOperationChildren(
+                trx,
+                "job",
+                "methodOperationStepSlide",
+                operationChildren,
+                companyId,
+                userId
+              );
+              Object.assign(methodStepsToJobSteps, copiedSteps);
 
               methodOperationsToJobOperations =
                 relatedOperations.data?.reduce<Record<string, string>>(
@@ -15172,10 +16911,20 @@ export async function getMethod(
                 // if a made component has an effective successor that is itself
                 // made, point the job material at the successor and explode the
                 // SUCCESSOR's method instead of the old part's.
-                const madeSwapHandled = await swapMadeSubAssembly({
+                // A configuration rule may have moved this line onto another
+                // made item; the sub-assembly under it is then that item's.
+                const made = await configuredMadeChild(
                   trx,
                   companyId,
                   child,
+                  material?.itemId
+                );
+                if (!made) continue;
+
+                const madeSwapHandled = await swapMadeSubAssembly({
+                  trx,
+                  companyId,
+                  child: made,
                   material,
                   materialId,
                   locationId: job.data?.locationId ?? "",
@@ -15185,9 +16934,9 @@ export async function getMethod(
                 });
 
                 // prevent an infinite loop
-                if (!madeSwapHandled && child.data.itemId !== itemId) {
+                if (!madeSwapHandled && made.data.itemId !== itemId) {
                   await traverseMethod(
-                    child,
+                    made,
                     newMakeMethodId,
                     childTotalForCascade || 1
                   );
@@ -15262,6 +17011,7 @@ export async function getMethod(
           jobId: jobMakeMethod.data.jobId,
           jobMaterialIds: insertedJobMaterialIds,
           locationId: job.data?.locationId,
+          projectId: job.data?.projectId,
           asOfDate: jobBuildDate(job.data)
         });
       });
@@ -15387,656 +17137,677 @@ export async function getMethod(
         supplierProcesses?.data
       );
 
-      await db
-        .transaction()
-        .execute(async (trx: Transaction<KyselyDatabase>) => {
-          if (isConfigured) {
-            await trx
-              .updateTable("quoteLine")
-              .set({
-                configuration: JSON.stringify(configuration),
-                updatedAt: datetime.timestamp(),
-                updatedBy: userId
-              })
-              .where("id", "=", quoteLineId)
-              .where("companyId", "=", companyId)
-              .execute();
+      await withTransaction(db, async (trx) => {
+        if (isConfigured) {
+          await trx
+            .updateTable("quoteLine")
+            .set({
+              configuration: JSON.stringify(configuration),
+              updatedAt: datetime.timestamp(),
+              updatedBy: userId
+            })
+            .where("id", "=", quoteLineId)
+            .where("companyId", "=", companyId)
+            .execute();
+        }
+
+        // Delete existing quoteMakeMethod, quoteMakeMethodOperation, quoteMakeMethodMaterial
+        await Promise.all([
+          parts.billOfMaterial
+            ? trx
+                .deleteFrom("quoteMakeMethod")
+                .where((eb) =>
+                  eb.and([
+                    eb("quoteLineId", "=", quoteLineId),
+                    eb("parentMaterialId", "is not", null)
+                  ])
+                )
+                .where("companyId", "=", companyId)
+                .execute()
+            : Promise.resolve(),
+          parts.billOfMaterial
+            ? trx
+                .deleteFrom("quoteMaterial")
+                .where("quoteLineId", "=", quoteLineId)
+                .where("companyId", "=", companyId)
+                .execute()
+            : Promise.resolve(),
+          // Prevent cascade deletion of materials when only replacing operations
+          !parts.billOfMaterial && parts.billOfProcess
+            ? trx
+                .updateTable("quoteMaterial")
+                .set({ quoteOperationId: null })
+                .where("quoteLineId", "=", quoteLineId)
+                .where("companyId", "=", companyId)
+                .execute()
+            : Promise.resolve(),
+          parts.billOfProcess
+            ? trx
+                .deleteFrom("quoteOperation")
+                .where("quoteLineId", "=", quoteLineId)
+                .where("companyId", "=", companyId)
+                .execute()
+            : Promise.resolve(),
+          trx
+            .updateTable("quoteMakeMethod")
+            .set({ version: makeMethod.data.version ?? 1 })
+            .where("id", "=", quoteMakeMethod.data!.id!)
+            .where("companyId", "=", companyId)
+            .execute()
+        ]);
+
+        async function getConfiguredValue<
+          T extends number | string | boolean | null
+        >({
+          id,
+          field,
+          defaultValue
+        }: {
+          id: string;
+          field: string;
+          defaultValue: T;
+        }): Promise<T> {
+          if (!configurationCodeByField) return defaultValue;
+
+          const fieldKey = getFieldKey(field, id);
+
+          if (configurationCodeByField[fieldKey]) {
+            try {
+              const code = configurationCodeByField[fieldKey];
+              const mod = await importTypeScript(code);
+              const result = await mod.configure(hydratedConfiguration);
+
+              return (result ?? defaultValue) as T;
+            } catch (err) {
+              getMethodLogger.error("configuration field resolver failed", {
+                error: String((err as Error)?.stack ?? err)
+              });
+              return defaultValue;
+            }
           }
 
-          // Delete existing quoteMakeMethod, quoteMakeMethodOperation, quoteMakeMethodMaterial
-          await Promise.all([
-            parts.billOfMaterial
-              ? trx
-                  .deleteFrom("quoteMakeMethod")
-                  .where((eb) =>
-                    eb.and([
-                      eb("quoteLineId", "=", quoteLineId),
-                      eb("parentMaterialId", "is not", null)
-                    ])
-                  )
-                  .where("companyId", "=", companyId)
-                  .execute()
-              : Promise.resolve(),
-            parts.billOfMaterial
-              ? trx
-                  .deleteFrom("quoteMaterial")
-                  .where("quoteLineId", "=", quoteLineId)
-                  .where("companyId", "=", companyId)
-                  .execute()
-              : Promise.resolve(),
-            // Prevent cascade deletion of materials when only replacing operations
-            !parts.billOfMaterial && parts.billOfProcess
-              ? trx
-                  .updateTable("quoteMaterial")
-                  .set({ quoteOperationId: null })
-                  .where("quoteLineId", "=", quoteLineId)
-                  .where("companyId", "=", companyId)
-                  .execute()
-              : Promise.resolve(),
-            parts.billOfProcess
-              ? trx
-                  .deleteFrom("quoteOperation")
-                  .where("quoteLineId", "=", quoteLineId)
-                  .where("companyId", "=", companyId)
-                  .execute()
-              : Promise.resolve(),
-            trx
-              .updateTable("quoteMakeMethod")
-              .set({ version: makeMethod.data.version ?? 1 })
-              .where("id", "=", quoteMakeMethod.data!.id!)
-              .where("companyId", "=", companyId)
-              .execute()
-          ]);
+          return defaultValue;
+        }
 
-          async function getConfiguredValue<
-            T extends number | string | boolean | null
-          >({
-            id,
-            field,
-            defaultValue
-          }: {
-            id: string;
-            field: string;
-            defaultValue: T;
-          }): Promise<T> {
-            if (!configurationCodeByField) return defaultValue;
+        // traverse method tree and create:
+        // - quoteMakeMethod
+        // - quoteMakeMethodOperation
+        // - quoteMakeMethodMaterial
+        async function traverseMethod(
+          node: MethodTreeItem,
+          parentQuoteMakeMethodId: string | null
+        ) {
+          getMethodLogger.debug("[traverseMethod]", {
+            isRoot: node.data.isRoot,
+            itemId: node.data.itemId,
+            methodType: node.data.methodType,
+            materialMakeMethodId: node.data.materialMakeMethodId,
+            childCount: node.children.length,
+            childMethodTypes: node.children.map((c) => ({
+              itemId: c.data.itemId,
+              methodType: c.data.methodType
+            })),
+            parentQuoteMakeMethodId
+          });
 
-            const fieldKey = getFieldKey(field, id);
+          let methodOperationsToQuoteOperations: Record<string, string> = {};
 
-            if (configurationCodeByField[fieldKey]) {
-              try {
-                const code = configurationCodeByField[fieldKey];
-                const mod = await importTypeScript(code);
-                const result = await mod.configure(hydratedConfiguration);
+          const nodeLevelConfigurationKey = `${
+            node.data.materialMakeMethodId
+          }:${node.data.isRoot ? "undefined" : node.data.methodMaterialId}`;
 
-                return (result ?? defaultValue) as T;
-              } catch (err) {
-                getMethodLogger.error("configuration field resolver failed", {
-                  error: String((err as Error)?.stack ?? err)
-                });
-                return defaultValue;
-              }
+          // For child nodes, always include operations regardless of parts flags
+          if (!node.data.isRoot || parts.billOfProcess) {
+            const relatedOperations = {
+              data: treeOperations.get(node.data.materialMakeMethodId) ?? []
+            };
+
+            let quoteOperationsInserts: Database["public"]["Tables"]["quoteOperation"]["Insert"][] =
+              [];
+            // Index-aligned with quoteOperationsInserts, as in itemToJob:
+            // a blank configured processId skips a row and a billOfProcess
+            // configuration reorders and filters them, so the returned ids
+            // cannot be paired against relatedOperations.data.
+            let sourceOperations: typeof relatedOperations.data = [];
+            for await (const op of relatedOperations?.data ?? []) {
+              const [
+                processId,
+                procedureId,
+                workCenterId,
+                description,
+                setupTime,
+                setupUnit,
+                laborTime,
+                laborUnit,
+                machineTime,
+                machineUnit,
+                operationOrder,
+                operationType
+              ] = await Promise.all([
+                getConfiguredValue({
+                  id: op.id,
+                  field: "processId",
+                  defaultValue: op.processId
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "procedureId",
+                  defaultValue: op.procedureId
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "workCenterId",
+                  defaultValue: op.workCenterId
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "description",
+                  defaultValue: op.description
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "setupTime",
+                  defaultValue: op.setupTime
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "setupUnit",
+                  defaultValue: op.setupUnit
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "laborTime",
+                  defaultValue: op.laborTime
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "laborUnit",
+                  defaultValue: op.laborUnit
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "machineTime",
+                  defaultValue: op.machineTime
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "machineUnit",
+                  defaultValue: op.machineUnit
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "operationOrder",
+                  defaultValue: op.operationOrder
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "operationType",
+                  defaultValue: op.operationType
+                })
+              ]);
+
+              if (processId === "") continue;
+
+              const operationRates = getLaborAndOverheadRates(
+                processId,
+                op.workCenterId
+              );
+              getMethodLogger.debug("traverseMethod", {
+                processId,
+                ...operationRates
+              });
+
+              sourceOperations.push(op);
+              quoteOperationsInserts.push({
+                quoteId,
+                quoteLineId,
+                quoteMakeMethodId: parentQuoteMakeMethodId!,
+                processId,
+                procedureId,
+                assemblyInstructionId: op.assemblyInstructionId,
+                inspectionDocumentId: op.inspectionDocumentId,
+                workCenterId,
+                description,
+                setupTime,
+                setupUnit,
+                laborTime,
+                laborUnit,
+                machineTime,
+                machineUnit,
+                ...getLaborAndOverheadRates(processId, op.workCenterId),
+                order: op.order,
+                operationOrder,
+                operationType: normalizeOperationType(operationType),
+                operationSupplierProcessId: op.operationSupplierProcessId,
+                operationUnitCost: op.operationUnitCost ?? 0,
+                ...getOutsideOperationRates(
+                  processId,
+                  op.operationSupplierProcessId
+                ),
+                operationMinimumCost: op.operationMinimumCost ?? 0,
+                tags: op.tags ?? [],
+                workInstruction: toJson(
+                  !node.data.isRoot || parts.workInstructions
+                    ? op.workInstruction
+                    : {}
+                ),
+                companyId,
+                createdBy: userId,
+                customFields: {}
+              });
             }
 
-            return defaultValue;
-          }
+            const bopConfigurationKey = `billOfProcess:${nodeLevelConfigurationKey}`;
+            let bopConfiguration: string[] | null = null;
 
-          // traverse method tree and create:
-          // - quoteMakeMethod
-          // - quoteMakeMethodOperation
-          // - quoteMakeMethodMaterial
-          async function traverseMethod(
-            node: MethodTreeItem,
-            parentQuoteMakeMethodId: string | null
-          ) {
-            getMethodLogger.debug("[traverseMethod]", {
-              isRoot: node.data.isRoot,
-              itemId: node.data.itemId,
-              methodType: node.data.methodType,
-              materialMakeMethodId: node.data.materialMakeMethodId,
-              childCount: node.children.length,
-              childMethodTypes: node.children.map((c) => ({
-                itemId: c.data.itemId,
-                methodType: c.data.methodType
-              })),
-              parentQuoteMakeMethodId
-            });
+            if (configurationCodeByField?.[bopConfigurationKey]) {
+              const mod = await importTypeScript(
+                configurationCodeByField[bopConfigurationKey]
+              );
+              bopConfiguration = await mod.configure(hydratedConfiguration);
+            }
 
-            let methodOperationsToQuoteOperations: Record<string, string> = {};
-
-            const nodeLevelConfigurationKey = `${
-              node.data.materialMakeMethodId
-            }:${node.data.isRoot ? "undefined" : node.data.methodMaterialId}`;
-
-            // For child nodes, always include operations regardless of parts flags
-            if (!node.data.isRoot || parts.billOfProcess) {
-              const relatedOperations = {
-                data: treeOperations.get(node.data.materialMakeMethodId) ?? []
-              };
-
-              let quoteOperationsInserts: Database["public"]["Tables"]["quoteOperation"]["Insert"][] =
-                [];
-              // Index-aligned with quoteOperationsInserts, as in itemToJob:
-              // a blank configured processId skips a row and a billOfProcess
-              // configuration reorders and filters them, so the returned ids
-              // cannot be paired against relatedOperations.data.
-              let sourceOperations: typeof relatedOperations.data = [];
-              for await (const op of relatedOperations?.data ?? []) {
-                const [
-                  processId,
-                  procedureId,
-                  workCenterId,
-                  description,
-                  setupTime,
-                  setupUnit,
-                  laborTime,
-                  laborUnit,
-                  machineTime,
-                  machineUnit,
-                  operationOrder,
-                  operationType
-                ] = await Promise.all([
-                  getConfiguredValue({
-                    id: op.id,
-                    field: "processId",
-                    defaultValue: op.processId
-                  }),
-                  getConfiguredValue({
-                    id: op.id,
-                    field: "procedureId",
-                    defaultValue: op.procedureId
-                  }),
-                  getConfiguredValue({
-                    id: op.id,
-                    field: "workCenterId",
-                    defaultValue: op.workCenterId
-                  }),
-                  getConfiguredValue({
-                    id: op.id,
-                    field: "description",
-                    defaultValue: op.description
-                  }),
-                  getConfiguredValue({
-                    id: op.id,
-                    field: "setupTime",
-                    defaultValue: op.setupTime
-                  }),
-                  getConfiguredValue({
-                    id: op.id,
-                    field: "setupUnit",
-                    defaultValue: op.setupUnit
-                  }),
-                  getConfiguredValue({
-                    id: op.id,
-                    field: "laborTime",
-                    defaultValue: op.laborTime
-                  }),
-                  getConfiguredValue({
-                    id: op.id,
-                    field: "laborUnit",
-                    defaultValue: op.laborUnit
-                  }),
-                  getConfiguredValue({
-                    id: op.id,
-                    field: "machineTime",
-                    defaultValue: op.machineTime
-                  }),
-                  getConfiguredValue({
-                    id: op.id,
-                    field: "machineUnit",
-                    defaultValue: op.machineUnit
-                  }),
-                  getConfiguredValue({
-                    id: op.id,
-                    field: "operationOrder",
-                    defaultValue: op.operationOrder
-                  }),
-                  getConfiguredValue({
-                    id: op.id,
-                    field: "operationType",
-                    defaultValue: op.operationType
-                  })
-                ]);
-
-                if (processId === "") continue;
-
-                const operationRates = getLaborAndOverheadRates(
-                  processId,
-                  op.workCenterId
+            if (bopConfiguration) {
+              const configuredInserts: typeof quoteOperationsInserts = [];
+              const configuredSources: typeof sourceOperations = [];
+              bopConfiguration.forEach((description, index) => {
+                const position = quoteOperationsInserts.findIndex(
+                  (operation) => operation.description === description
                 );
-                getMethodLogger.debug("traverseMethod", {
-                  processId,
-                  ...operationRates
-                });
+                if (position !== -1) {
+                  configuredInserts.push({
+                    ...quoteOperationsInserts[position]!,
+                    order: index + 1
+                  });
+                  configuredSources.push(sourceOperations[position]!);
+                }
+              });
+              quoteOperationsInserts = configuredInserts;
+              sourceOperations = configuredSources;
+            }
 
-                sourceOperations.push(op);
-                quoteOperationsInserts.push({
-                  quoteId,
-                  quoteLineId,
-                  quoteMakeMethodId: parentQuoteMakeMethodId!,
-                  processId,
-                  procedureId,
-                  assemblyInstructionId: op.assemblyInstructionId,
-                  inspectionDocumentId: op.inspectionDocumentId,
-                  workCenterId,
-                  description,
-                  setupTime,
-                  setupUnit,
-                  laborTime,
-                  laborUnit,
-                  machineTime,
-                  machineUnit,
-                  ...getLaborAndOverheadRates(processId, op.workCenterId),
-                  order: op.order,
-                  operationOrder,
-                  operationType: normalizeOperationType(operationType),
-                  operationSupplierProcessId: op.operationSupplierProcessId,
-                  operationUnitCost: op.operationUnitCost ?? 0,
-                  ...getOutsideOperationRates(
-                    processId,
-                    op.operationSupplierProcessId
-                  ),
-                  operationMinimumCost: op.operationMinimumCost ?? 0,
-                  tags: op.tags ?? [],
-                  workInstruction: toJson(
-                    !node.data.isRoot || parts.workInstructions
-                      ? op.workInstruction
-                      : {}
-                  ),
-                  companyId,
-                  createdBy: userId,
-                  customFields: {}
-                });
-              }
+            if (quoteOperationsInserts?.length > 0) {
+              const operationRows = quoteOperationsInserts;
+              const operationIds = (
+                await newIds(trx, "qo", operationRows.length)
+              ).map((id) => ({ id }));
+              await trx
+                .insertInto("quoteOperation")
+                .values(
+                  operationRows.map((row, i) => ({
+                    ...row,
+                    id: operationIds[i]!.id
+                  })) as never
+                )
+                .execute();
+              const operationChildren = newOperationChildren();
 
-              const bopConfigurationKey = `billOfProcess:${nodeLevelConfigurationKey}`;
-              let bopConfiguration: string[] | null = null;
+              for (const [index, operation] of sourceOperations.entries()) {
+                const operationId = operationIds[index]?.id;
 
-              if (configurationCodeByField?.[bopConfigurationKey]) {
-                const mod = await importTypeScript(
-                  configurationCodeByField[bopConfigurationKey]
-                );
-                bopConfiguration = await mod.configure(hydratedConfiguration);
-              }
+                if (operationId) {
+                  const {
+                    methodOperationTool,
+                    methodOperationParameter,
+                    methodOperationStep,
+                    procedureId
+                  } = operation;
 
-              if (bopConfiguration) {
-                const configuredInserts: typeof quoteOperationsInserts = [];
-                const configuredSources: typeof sourceOperations = [];
-                bopConfiguration.forEach((description, index) => {
-                  const position = quoteOperationsInserts.findIndex(
-                    (operation) => operation.description === description
-                  );
-                  if (position !== -1) {
-                    configuredInserts.push({
-                      ...quoteOperationsInserts[position]!,
-                      order: index + 1
-                    });
-                    configuredSources.push(sourceOperations[position]!);
+                  if (
+                    (!node.data.isRoot || parts.tools) &&
+                    Array.isArray(methodOperationTool) &&
+                    methodOperationTool.length > 0
+                  ) {
+                    operationChildren.tools.push(
+                      ...methodOperationTool
+                        .map((tool) => ({
+                          toolId: tool.toolId,
+                          quantity: tool.quantity,
+                          operationId,
+                          companyId,
+                          createdBy: userId
+                        }))
+                        .map((row) => ({ row, sourceStepIds: null }))
+                    );
                   }
-                });
-                quoteOperationsInserts = configuredInserts;
-                sourceOperations = configuredSources;
-              }
 
-              if (quoteOperationsInserts?.length > 0) {
-                const operationIds = await trx
-                  .insertInto("quoteOperation")
-                  .values(quoteOperationsInserts)
-                  .returning(["id"])
-                  .execute();
-
-                for (const [index, operation] of sourceOperations.entries()) {
-                  const operationId = operationIds[index]?.id;
-
-                  if (operationId) {
-                    const {
-                      methodOperationTool,
-                      methodOperationParameter,
-                      methodOperationStep,
-                      procedureId
-                    } = operation;
-
+                  if (!procedureId) {
                     if (
-                      (!node.data.isRoot || parts.tools) &&
-                      Array.isArray(methodOperationTool) &&
-                      methodOperationTool.length > 0
+                      (!node.data.isRoot || parts.parameters) &&
+                      Array.isArray(methodOperationParameter) &&
+                      methodOperationParameter.length > 0
                     ) {
-                      await trx
-                        .insertInto("quoteOperationTool")
-                        .values(
-                          methodOperationTool.map((tool) => ({
-                            toolId: tool.toolId,
-                            quantity: tool.quantity,
-                            operationId,
-                            companyId,
-                            createdBy: userId
-                          }))
-                        )
-                        .execute();
+                      const parameters = await Promise.all(
+                        methodOperationParameter.map(async (param) => ({
+                          operationId,
+                          key: param.key,
+                          value: await getConfiguredValue({
+                            id: operation.id,
+                            field: `parameter:${param.id}:value`,
+                            defaultValue: param.value
+                          }),
+                          companyId,
+                          createdBy: userId
+                        }))
+                      );
+
+                      operationChildren.parameters.push(...parameters);
                     }
 
-                    if (!procedureId) {
-                      if (
-                        (!node.data.isRoot || parts.parameters) &&
-                        Array.isArray(methodOperationParameter) &&
-                        methodOperationParameter.length > 0
-                      ) {
-                        const parameters = await Promise.all(
-                          methodOperationParameter.map(async (param) => ({
+                    if (
+                      (!node.data.isRoot || parts.steps) &&
+                      Array.isArray(methodOperationStep) &&
+                      methodOperationStep.length > 0
+                    ) {
+                      const attributes = await Promise.all(
+                        methodOperationStep.map(
+                          async ({
+                            id,
+                            // quoteOperationStep has no provenance marker
+                            assemblyInstructionStepId:
+                              _assemblyInstructionStepId,
+                            ...attribute
+                          }) => ({
+                            ...attribute,
+                            description: toTiptapDoc(attribute.description),
                             operationId,
-                            key: param.key,
-                            value: await getConfiguredValue({
+                            minValue: await getConfiguredValue({
                               id: operation.id,
-                              field: `parameter:${param.id}:value`,
-                              defaultValue: param.value
+                              field: `attribute:${id}:minValue`,
+                              defaultValue: attribute.minValue
+                            }),
+                            maxValue: await getConfiguredValue({
+                              id: operation.id,
+                              field: `attribute:${id}:maxValue`,
+                              defaultValue: attribute.maxValue
                             }),
                             companyId,
                             createdBy: userId
-                          }))
-                        );
+                          })
+                        )
+                      );
 
-                        await trx
-                          .insertInto("quoteOperationParameter")
-                          .values(parameters)
-                          .execute();
-                      }
-
-                      if (
-                        (!node.data.isRoot || parts.steps) &&
-                        Array.isArray(methodOperationStep) &&
-                        methodOperationStep.length > 0
-                      ) {
-                        const attributes = await Promise.all(
-                          methodOperationStep.map(
-                            async ({
-                              id,
-                              // quoteOperationStep has no provenance marker
-                              assemblyInstructionStepId:
-                                _assemblyInstructionStepId,
-                              ...attribute
-                            }) => ({
-                              ...attribute,
-                              description: toTiptapDoc(attribute.description),
-                              operationId,
-                              minValue: await getConfiguredValue({
-                                id: operation.id,
-                                field: `attribute:${id}:minValue`,
-                                defaultValue: attribute.minValue
-                              }),
-                              maxValue: await getConfiguredValue({
-                                id: operation.id,
-                                field: `attribute:${id}:maxValue`,
-                                defaultValue: attribute.maxValue
-                              }),
-                              companyId,
-                              createdBy: userId
-                            })
-                          )
-                        );
-
-                        const insertedSteps = await trx
-                          .insertInto("quoteOperationStep")
-                          .values(attributes)
-                          .returning(["id"])
-                          .execute();
-
-                        await copyStepSlides(
-                          trx,
-                          methodOperationStep,
-                          insertedSteps,
-                          "methodOperationStepSlide",
-                          "quoteOperationStepSlide",
-                          companyId,
-                          userId
-                        );
-                      }
+                      const stepRows = attributes;
+                      operationChildren.steps.push(
+                        ...stepRows.map((row, i) => ({
+                          sourceStepId: (
+                            methodOperationStep as Array<{ id?: string | null }>
+                          )[i]?.id,
+                          row: row as Record<string, unknown>
+                        }))
+                      );
                     }
                   }
                 }
-
-                methodOperationsToQuoteOperations = sourceOperations.reduce<
-                  Record<string, string>
-                >((acc, op, index) => {
-                  const operationId = operationIds[index]?.id;
-                  if (operationId) {
-                    acc[op.id!] = operationId;
-                  }
-                  return acc;
-                }, {});
               }
-            } // end if (parts.billOfProcess)
-
-            if (parts.billOfMaterial) {
-              const mapMethodMaterialToQuoteMaterial = async (
-                child: MethodTreeItem
-              ) => {
-                let [
-                  itemId,
-                  description,
-                  quantity,
-                  methodType,
-                  unitOfMeasureCode
-                ] = await Promise.all([
-                  getConfiguredValue({
-                    id: child.data.methodMaterialId,
-                    field: "itemId",
-                    defaultValue: child.data.itemId
-                  }),
-                  getConfiguredValue({
-                    id: child.data.methodMaterialId,
-                    field: "description",
-                    defaultValue: child.data.description
-                  }),
-                  getConfiguredValue({
-                    id: child.data.methodMaterialId,
-                    field: "quantity",
-                    defaultValue: child.data.quantity
-                  }),
-                  getConfiguredValue({
-                    id: child.data.methodMaterialId,
-                    field: "methodType",
-                    defaultValue: child.data.methodType
-                  }),
-                  getConfiguredValue({
-                    id: child.data.methodMaterialId,
-                    field: "unitOfMeasureCode",
-                    defaultValue: child.data.unitOfMeasureCode
-                  })
-                ]);
-
-                if (itemId === "") return null;
-                // A configured (or authored) quantity of 0 removes the line from
-                // the BOM (and its sub-tree, via configuredChildren below).
-                if (isZeroQuantity(quantity)) return null;
-
-                let itemType = child.data.itemType;
-                let unitCost = child.data.unitCost;
-
-                // TODO: if the methodType is Make and the default value is not Make, we need to do itemToQuoteMakeMethod for that material
-
-                if (itemId !== child.data.itemId) {
-                  const item = await single<
-                    "item",
-                    Tables["item"]["Row"] & {
-                      itemCost: Tables["itemCost"]["Row"][];
-                    }
-                  >(
-                    trx,
-                    "item",
-                    { id: itemId, companyId },
-                    {
-                      embed: { itemCost: { table: "itemCost", on: "itemId" } }
-                    }
-                  );
-                  if (item.data) {
-                    itemType = item.data.type;
-                    unitCost =
-                      item.data.itemCost[0]?.unitCost ?? child.data.unitCost;
-                    if (description === child.data.description) {
-                      description = item.data.name;
-                    }
-                  } else {
-                    itemId = child.data.itemId;
-                  }
-                }
-
-                return {
-                  quoteId,
-                  quoteLineId,
-                  quoteMakeMethodId: parentQuoteMakeMethodId!,
-                  quoteOperationId:
-                    methodOperationsToQuoteOperations[child.data.operationId],
-                  order: child.data.order,
-                  itemId,
-                  itemType,
-                  kit: child.data.kit,
-                  methodType,
-                  description,
-                  quantity,
-                  storageUnitId: quoteLocationId
-                    ? // @ts-ignore: storageUnitIds is a dynamic object with location keys
-                      (child.data.storageUnitIds?.[
-                        quoteLocationId
-                      ] as string) || null
-                    : null,
-                  unitOfMeasureCode,
-                  unitCost: unitCost ?? 0,
-                  companyId,
-                  createdBy: userId,
-                  customFields: {}
-                };
-              };
-
-              const quoteMaterialResults = await Promise.all(
-                node.children.map(mapMethodMaterialToQuoteMaterial)
+              await insertOperationChildren(
+                trx,
+                "quote",
+                "methodOperationStepSlide",
+                operationChildren,
+                companyId,
+                userId
               );
-              const validQuoteMaterialIndices = quoteMaterialResults.reduce<
-                number[]
-              >((acc, m, i) => {
-                if (m !== null) acc.push(i);
+
+              methodOperationsToQuoteOperations = sourceOperations.reduce<
+                Record<string, string>
+              >((acc, op, index) => {
+                const operationId = operationIds[index]?.id;
+                if (operationId) {
+                  acc[op.id!] = operationId;
+                }
                 return acc;
-              }, []);
-              let materialsWithConfiguredFields = quoteMaterialResults.filter(
-                (m): m is NonNullable<typeof m> => m !== null
-              );
-              const configuredChildren = validQuoteMaterialIndices.map(
-                (i) => node.children[i]!
-              );
+              }, {});
+            }
+          } // end if (parts.billOfProcess)
 
-              const bomConfigurationKey = `billOfMaterial:${nodeLevelConfigurationKey}`;
-              let bomConfiguration: string[] | null = null;
+          if (parts.billOfMaterial) {
+            const mapMethodMaterialToQuoteMaterial = async (
+              child: MethodTreeItem
+            ) => {
+              let [
+                itemId,
+                description,
+                quantity,
+                methodType,
+                unitOfMeasureCode
+              ] = await Promise.all([
+                getConfiguredValue({
+                  id: child.data.methodMaterialId,
+                  field: "itemId",
+                  defaultValue: child.data.itemId
+                }),
+                getConfiguredValue({
+                  id: child.data.methodMaterialId,
+                  field: "description",
+                  defaultValue: child.data.description
+                }),
+                getConfiguredValue({
+                  id: child.data.methodMaterialId,
+                  field: "quantity",
+                  defaultValue: child.data.quantity
+                }),
+                getConfiguredValue({
+                  id: child.data.methodMaterialId,
+                  field: "methodType",
+                  defaultValue: child.data.methodType
+                }),
+                getConfiguredValue({
+                  id: child.data.methodMaterialId,
+                  field: "unitOfMeasureCode",
+                  defaultValue: child.data.unitOfMeasureCode
+                })
+              ]);
 
-              if (configurationCodeByField?.[bomConfigurationKey]) {
-                const mod = await importTypeScript(
-                  configurationCodeByField[bomConfigurationKey]
+              if (itemId === "") return null;
+              // A configured (or authored) quantity of 0 removes the line from
+              // the BOM (and its sub-tree, via configuredChildren below).
+              if (isZeroQuantity(quantity)) return null;
+
+              let itemType = child.data.itemType;
+              let unitCost = child.data.unitCost;
+
+              // TODO: if the methodType is Make and the default value is not Make, we need to do itemToQuoteMakeMethod for that material
+
+              if (itemId !== child.data.itemId) {
+                const item = await single<
+                  "item",
+                  Tables["item"]["Row"] & {
+                    itemCost: Tables["itemCost"]["Row"][];
+                  }
+                >(
+                  trx,
+                  "item",
+                  { id: itemId, companyId },
+                  {
+                    embed: { itemCost: { table: "itemCost", on: "itemId" } }
+                  }
                 );
-                bomConfiguration = await mod.configure(hydratedConfiguration);
+                if (item.data) {
+                  itemType = item.data.type;
+                  unitCost =
+                    item.data.itemCost[0]?.unitCost ?? child.data.unitCost;
+                  if (description === child.data.description) {
+                    description = item.data.name;
+                  }
+                } else {
+                  itemId = child.data.itemId;
+                }
               }
 
-              if (bomConfiguration) {
-                // @ts-expect-error - we can't assign undefined to materialsWithConfiguredFields but we filter them in the next step
-                materialsWithConfiguredFields = bomConfiguration
-                  .map((readableIdWithRevision, index) => {
-                    const material = materialsWithConfiguredFields.find(
-                      (material) => material.itemId === itemId
-                    );
-                    if (material) {
-                      return {
-                        ...material,
-                        order: index + 1
-                      };
-                    }
-                  })
-                  .filter(Boolean);
-              }
+              return {
+                quoteId,
+                quoteLineId,
+                quoteMakeMethodId: parentQuoteMakeMethodId!,
+                quoteOperationId:
+                  methodOperationsToQuoteOperations[child.data.operationId],
+                order: child.data.order,
+                itemId,
+                itemType,
+                kit: child.data.kit,
+                methodType,
+                description,
+                quantity,
+                storageUnitId: quoteLocationId
+                  ? // @ts-ignore: storageUnitIds is a dynamic object with location keys
+                    (child.data.storageUnitIds?.[quoteLocationId] as string) ||
+                    null
+                  : null,
+                unitOfMeasureCode,
+                unitCost: unitCost ?? 0,
+                companyId,
+                createdBy: userId,
+                customFields: {}
+              };
+            };
 
-              const madeMaterials = materialsWithConfiguredFields.filter(
-                (material) => material.methodType === "Make to Order"
+            const quoteMaterialResults = await Promise.all(
+              node.children.map(mapMethodMaterialToQuoteMaterial)
+            );
+            const validQuoteMaterialIndices = quoteMaterialResults.reduce<
+              number[]
+            >((acc, m, i) => {
+              if (m !== null) acc.push(i);
+              return acc;
+            }, []);
+            let materialsWithConfiguredFields = quoteMaterialResults.filter(
+              (m): m is NonNullable<typeof m> => m !== null
+            );
+            const configuredChildren = validQuoteMaterialIndices.map(
+              (i) => node.children[i]!
+            );
+
+            const bomConfigurationKey = `billOfMaterial:${nodeLevelConfigurationKey}`;
+            let bomConfiguration: string[] | null = null;
+
+            if (configurationCodeByField?.[bomConfigurationKey]) {
+              const mod = await importTypeScript(
+                configurationCodeByField[bomConfigurationKey]
+              );
+              bomConfiguration = await mod.configure(hydratedConfiguration);
+            }
+
+            if (bomConfiguration) {
+              // @ts-expect-error - we can't assign undefined to materialsWithConfiguredFields but we filter them in the next step
+              materialsWithConfiguredFields = bomConfiguration
+                .map((readableIdWithRevision, index) => {
+                  const material = materialsWithConfiguredFields.find(
+                    (material) => material.itemId === itemId
+                  );
+                  if (material) {
+                    return {
+                      ...material,
+                      order: index + 1
+                    };
+                  }
+                })
+                .filter(Boolean);
+            }
+
+            const madeMaterials = materialsWithConfiguredFields.filter(
+              (material) => material.methodType === "Make to Order"
+            );
+
+            const pickedOrBoughtMaterials =
+              materialsWithConfiguredFields.filter(
+                (material) => material.methodType !== "Make to Order"
               );
 
-              const pickedOrBoughtMaterials =
-                materialsWithConfiguredFields.filter(
-                  (material) => material.methodType !== "Make to Order"
-                );
+            const madeChildren = configuredChildren.filter(
+              (child) => child!.data.methodType === "Make to Order"
+            );
 
-              const madeChildren = configuredChildren.filter(
-                (child) => child!.data.methodType === "Make to Order"
-              );
+            getMethodLogger.debug("[traverseMethod] materials", {
+              totalChildren: materialsWithConfiguredFields.length,
+              madeMaterialsCount: madeMaterials.length,
+              madeChildrenCount: madeChildren.length,
+              pickedOrBoughtCount: pickedOrBoughtMaterials.length
+            });
 
-              getMethodLogger.debug("[traverseMethod] materials", {
-                totalChildren: materialsWithConfiguredFields.length,
-                madeMaterialsCount: madeMaterials.length,
-                madeChildrenCount: madeChildren.length,
-                pickedOrBoughtCount: pickedOrBoughtMaterials.length
+            if (madeMaterials.length > 0) {
+              const madeMaterialsWithIds = madeMaterials.map((m) => ({
+                ...m,
+                id: nanoid()
+              }));
+
+              await trx
+                .insertInto("quoteMaterial")
+                .values(madeMaterialsWithIds)
+                .execute();
+
+              const newMakeMethodIds = madeChildren.map(() => nanoid());
+              await renameMakeMethods(trx, {
+                table: "quoteMakeMethod",
+                companyId,
+                rows: madeChildren.map((_, index) => ({
+                  parentMaterialId: madeMaterialsWithIds[index]!.id,
+                  id: newMakeMethodIds[index]!
+                }))
               });
 
-              if (madeMaterials.length > 0) {
-                const madeMaterialsWithIds = madeMaterials.map((m) => ({
-                  ...m,
-                  id: nanoid()
-                }));
+              for (const [index, child] of madeChildren.entries()) {
+                const materialId = madeMaterialsWithIds[index]!.id;
+                const newMakeMethodId = newMakeMethodIds[index]!;
 
-                await trx
-                  .insertInto("quoteMaterial")
-                  .values(madeMaterialsWithIds)
-                  .execute();
-
-                const newMakeMethodIds = madeChildren.map(() => nanoid());
-                await renameMakeMethods(trx, {
-                  table: "quoteMakeMethod",
-                  companyId,
-                  rows: madeChildren.map((_, index) => ({
-                    parentMaterialId: madeMaterialsWithIds[index]!.id,
-                    id: newMakeMethodIds[index]!
-                  }))
-                });
-
-                for (const [index, child] of madeChildren.entries()) {
-                  const materialId = madeMaterialsWithIds[index]!.id;
-                  const newMakeMethodId = newMakeMethodIds[index]!;
-
-                  getMethodLogger.debug(
-                    "[traverseMethod] processing made child",
-                    {
-                      index,
-                      materialId,
-                      newMakeMethodId,
-                      childItemId: child!.data.itemId,
-                      parentItemId: itemId,
-                      willRecurse: child!.data.itemId !== itemId
-                    }
-                  );
-
-                  // prevent an infinite loop
-                  if (child!.data.itemId !== itemId) {
-                    await traverseMethod(child, newMakeMethodId);
+                getMethodLogger.debug(
+                  "[traverseMethod] processing made child",
+                  {
+                    index,
+                    materialId,
+                    newMakeMethodId,
+                    childItemId: child!.data.itemId,
+                    parentItemId: itemId,
+                    willRecurse: child!.data.itemId !== itemId
                   }
+                );
+
+                // A configuration rule may have moved this line onto another
+                // made item; the sub-assembly under it is then that item's.
+                const made = await configuredMadeChild(
+                  trx,
+                  companyId,
+                  child!,
+                  madeMaterialsWithIds[index]!.itemId
+                );
+                if (!made) continue;
+                if (made !== child) {
+                  for (const [id, ops] of await readOperationsForTree(
+                    trx,
+                    made
+                  ))
+                    treeOperations.set(id, ops);
+                }
+
+                // prevent an infinite loop
+                if (made.data.itemId !== itemId) {
+                  await traverseMethod(made, newMakeMethodId);
                 }
               }
-
-              deferredQuoteMaterials.push(...pickedOrBoughtMaterials);
-            } // end if (parts.billOfMaterial)
-          }
-
-          function logTree(node: MethodTreeItem, depth = 0) {
-            getMethodLogger.debug(
-              "  ".repeat(depth) +
-                `[tree] ${node.data.itemId} (${node.data.methodType}, isRoot=${node.data.isRoot}, children=${node.children.length})`
-            );
-            for (const child of node.children) {
-              logTree(child, depth + 1);
             }
-          }
-          logTree(methodTree);
 
-          const treeOperations = await readOperationsForTree(trx, methodTree);
-          const deferredQuoteMaterials: Database["public"]["Tables"]["quoteMaterial"]["Insert"][] =
-            [];
-          await traverseMethod(methodTree, quoteMakeMethod.data!.id);
-          for (const chunk of chunked(deferredQuoteMaterials)) {
-            await trx.insertInto("quoteMaterial").values(chunk).execute();
+            deferredQuoteMaterials.push(...pickedOrBoughtMaterials);
+          } // end if (parts.billOfMaterial)
+        }
+
+        function logTree(node: MethodTreeItem, depth = 0) {
+          getMethodLogger.debug(
+            "  ".repeat(depth) +
+              `[tree] ${node.data.itemId} (${node.data.methodType}, isRoot=${node.data.isRoot}, children=${node.children.length})`
+          );
+          for (const child of node.children) {
+            logTree(child, depth + 1);
           }
-        });
+        }
+        logTree(methodTree);
+
+        const treeOperations = await readOperationsForTree(trx, methodTree);
+        const deferredQuoteMaterials: Database["public"]["Tables"]["quoteMaterial"]["Insert"][] =
+          [];
+        await traverseMethod(methodTree, quoteMakeMethod.data!.id);
+        for (const chunk of chunked(deferredQuoteMaterials)) {
+          await trx.insertInto("quoteMaterial").values(chunk).execute();
+        }
+      });
 
       await calculateQuoteLinePrices(
         db,
@@ -16116,7 +17887,7 @@ export async function getMethod(
         return acc;
       }, {});
 
-      await db.transaction().execute(async (trx) => {
+      await withTransaction(db, async (trx) => {
         // Delete existing quoteMakeMethodOperation, quoteMakeMethodMaterial
         await Promise.all([
           parts.billOfMaterial
@@ -16239,11 +18010,20 @@ export async function getMethod(
 
           if (parts.billOfProcess) {
             if (quoteOperationInserts?.length > 0) {
-              const operationIds = await trx
+              const operationRows = quoteOperationInserts;
+              const operationIds = (
+                await newIds(trx, "qo", operationRows.length)
+              ).map((id) => ({ id }));
+              await trx
                 .insertInto("quoteOperation")
-                .values(quoteOperationInserts)
-                .returning(["id"])
+                .values(
+                  operationRows.map((row, i) => ({
+                    ...row,
+                    id: operationIds[i]!.id
+                  })) as never
+                )
                 .execute();
+              const operationChildren = newOperationChildren();
 
               for (const [index, operation] of (
                 relatedOperations.data ?? []
@@ -16263,18 +18043,17 @@ export async function getMethod(
                     Array.isArray(methodOperationTool) &&
                     methodOperationTool.length > 0
                   ) {
-                    await trx
-                      .insertInto("quoteOperationTool")
-                      .values(
-                        methodOperationTool.map((tool) => ({
+                    operationChildren.tools.push(
+                      ...methodOperationTool
+                        .map((tool) => ({
                           toolId: tool.toolId,
                           quantity: tool.quantity,
                           operationId,
                           companyId,
                           createdBy: userId
                         }))
-                      )
-                      .execute();
+                        .map((row) => ({ row, sourceStepIds: null }))
+                    );
                   }
 
                   if (!procedureId) {
@@ -16283,18 +18062,15 @@ export async function getMethod(
                       Array.isArray(methodOperationParameter) &&
                       methodOperationParameter.length > 0
                     ) {
-                      await trx
-                        .insertInto("quoteOperationParameter")
-                        .values(
-                          methodOperationParameter.map((param) => ({
-                            operationId,
-                            key: param.key,
-                            value: param.value,
-                            companyId,
-                            createdBy: userId
-                          }))
-                        )
-                        .execute();
+                      operationChildren.parameters.push(
+                        ...methodOperationParameter.map((param) => ({
+                          operationId,
+                          key: param.key,
+                          value: param.value,
+                          companyId,
+                          createdBy: userId
+                        }))
+                      );
                     }
 
                     if (
@@ -16305,41 +18081,40 @@ export async function getMethod(
                       Array.isArray(methodOperationStep) &&
                       methodOperationStep.length > 0
                     ) {
-                      const insertedSteps = await trx
-                        .insertInto("quoteOperationStep")
-                        .values(
-                          methodOperationStep.map(
-                            ({
-                              id: _id,
-                              // quoteOperationStep has no provenance marker
-                              assemblyInstructionStepId:
-                                _assemblyInstructionStepId,
-                              ...attribute
-                            }) => ({
-                              ...attribute,
-                              description: toTiptapDoc(attribute.description),
-                              operationId,
-                              companyId,
-                              createdBy: userId
-                            })
-                          )
-                        )
-                        .returning(["id"])
-                        .execute();
-
-                      await copyStepSlides(
-                        trx,
-                        methodOperationStep,
-                        insertedSteps,
-                        "methodOperationStepSlide",
-                        "quoteOperationStepSlide",
-                        companyId,
-                        userId
+                      const stepRows = methodOperationStep.map(
+                        ({
+                          id: _id,
+                          // quoteOperationStep has no provenance marker
+                          assemblyInstructionStepId: _assemblyInstructionStepId,
+                          ...attribute
+                        }) => ({
+                          ...attribute,
+                          description: toTiptapDoc(attribute.description),
+                          operationId,
+                          companyId,
+                          createdBy: userId
+                        })
+                      );
+                      operationChildren.steps.push(
+                        ...stepRows.map((row, i) => ({
+                          sourceStepId: (
+                            methodOperationStep as Array<{ id?: string | null }>
+                          )[i]?.id,
+                          row: row as Record<string, unknown>
+                        }))
                       );
                     }
                   }
                 }
               }
+              await insertOperationChildren(
+                trx,
+                "quote",
+                "methodOperationStepSlide",
+                operationChildren,
+                companyId,
+                userId
+              );
 
               methodOperationsToQuoteOperations =
                 relatedOperations.data?.reduce<Record<string, string>>(
@@ -16422,9 +18197,26 @@ export async function getMethod(
               for (const [index, child] of madeChildren.entries()) {
                 const newMakeMethodId = newMakeMethodIds[index]!;
 
+                // A configuration rule may have moved this line onto another
+                // made item; the sub-assembly under it is then that item's.
+                const made = await configuredMadeChild(
+                  trx,
+                  companyId,
+                  child,
+                  madeMaterialsWithIds[index]!.itemId
+                );
+                if (!made) continue;
+                if (made !== child) {
+                  for (const [id, ops] of await readOperationsForTree(
+                    trx,
+                    made
+                  ))
+                    treeOperations.set(id, ops);
+                }
+
                 // prevent an infinite loop
-                if (child.data.itemId !== itemId) {
-                  await traverseMethod(child, newMakeMethodId);
+                if (made.data.itemId !== itemId) {
+                  await traverseMethod(made, newMakeMethodId);
                 }
               }
             }
@@ -16548,7 +18340,7 @@ export async function getMethod(
         makeMethodByItemId[m.itemId] = m.id;
       });
 
-      await db.transaction().execute(async (trx) => {
+      await withTransaction(db, async (trx) => {
         let makeMethodsToDelete: string[] = [];
         const materialInserts: Database["public"]["Tables"]["methodMaterial"]["Insert"][] =
           [];
@@ -16663,20 +18455,27 @@ export async function getMethod(
           });
 
           if (operationInserts.length > 0) {
-            const operationIds = await trx
+            const operationRows = operationInserts.map((insert) => ({
+              ...insert,
+              makeMethodId:
+                insert.makeMethodId ===
+                makeMethodByItemId[jobMakeMethod.data.itemId]
+                  ? makeMethod.data.id
+                  : insert.makeMethodId
+            }));
+            const operationIds = (
+              await newIds(trx, "mop", operationRows.length)
+            ).map((id) => ({ id }));
+            await trx
               .insertInto("methodOperation")
               .values(
-                operationInserts.map((insert) => ({
-                  ...insert,
-                  makeMethodId:
-                    insert.makeMethodId ===
-                    makeMethodByItemId[jobMakeMethod.data.itemId]
-                      ? makeMethod.data.id
-                      : insert.makeMethodId
-                }))
+                operationRows.map((row, i) => ({
+                  ...row,
+                  id: operationIds[i]!.id
+                })) as never
               )
-              .returning(["id"])
               .execute();
+            const operationChildren = newOperationChildren();
 
             for (const [index, operation] of (
               jobOperations.data ?? []
@@ -16695,18 +18494,17 @@ export async function getMethod(
                   Array.isArray(jobOperationTool) &&
                   jobOperationTool.length > 0
                 ) {
-                  await trx
-                    .insertInto("methodOperationTool")
-                    .values(
-                      jobOperationTool.map((tool) => ({
+                  operationChildren.tools.push(
+                    ...jobOperationTool
+                      .map((tool) => ({
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
                         companyId,
                         createdBy: userId
                       }))
-                    )
-                    .execute();
+                      .map((row) => ({ row, sourceStepIds: null }))
+                  );
                 }
 
                 if (!procedureId) {
@@ -16715,18 +18513,15 @@ export async function getMethod(
                     Array.isArray(jobOperationParameter) &&
                     jobOperationParameter.length > 0
                   ) {
-                    await trx
-                      .insertInto("methodOperationParameter")
-                      .values(
-                        jobOperationParameter.map((param) => ({
-                          operationId,
-                          key: param.key,
-                          value: param.value,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .execute();
+                    operationChildren.parameters.push(
+                      ...jobOperationParameter.map((param) => ({
+                        operationId,
+                        key: param.key,
+                        value: param.value,
+                        companyId,
+                        createdBy: userId
+                      }))
+                    );
                   }
 
                   if (
@@ -16739,33 +18534,44 @@ export async function getMethod(
                     Array.isArray(jobOperationStep) &&
                     jobOperationStep.length > 0
                   ) {
-                    const insertedSteps = await trx
-                      .insertInto("jobOperationStep")
-                      .values(
-                        jobOperationStep.map(({ id: _id, ...attribute }) => ({
-                          ...attribute,
-                          description: toTiptapDoc(attribute.description),
-                          operationId,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
-
-                    await copyStepSlides(
-                      trx,
-                      jobOperationStep,
-                      insertedSteps,
-                      "jobOperationStepSlide",
-                      "jobOperationStepSlide",
+                    // The method step's columns: a job step also carries its
+                    // job-only non-conformance links.
+                    const stepRows = jobOperationStep.map((step) => ({
+                      operationId,
+                      name: step.name,
+                      type: step.type,
+                      description: toTiptapDoc(step.description),
+                      required: step.required,
+                      sortOrder: step.sortOrder,
+                      unitOfMeasureCode: step.unitOfMeasureCode,
+                      minValue: step.minValue,
+                      maxValue: step.maxValue,
+                      listValues: step.listValues,
+                      fileTypes: step.fileTypes,
+                      assemblyInstructionStepId: step.assemblyInstructionStepId,
                       companyId,
-                      userId
+                      createdBy: userId
+                    }));
+                    operationChildren.steps.push(
+                      ...stepRows.map((row, i) => ({
+                        sourceStepId: (
+                          jobOperationStep as Array<{ id?: string | null }>
+                        )[i]?.id,
+                        row: row as Record<string, unknown>
+                      }))
                     );
                   }
                 }
               }
             }
+            await insertOperationChildren(
+              trx,
+              "method",
+              "jobOperationStepSlide",
+              operationChildren,
+              companyId,
+              userId
+            );
           }
         } // end if (parts.billOfProcess)
       });
@@ -16877,7 +18683,7 @@ export async function getMethod(
         }
       });
 
-      await db.transaction().execute(async (trx) => {
+      await withTransaction(db, async (trx) => {
         let makeMethodsToDelete: string[] = [];
         const materialInserts: Database["public"]["Tables"]["methodMaterial"]["Insert"][] =
           [];
@@ -16993,20 +18799,27 @@ export async function getMethod(
           });
 
           if (operationInserts.length > 0) {
-            const operationIds = await trx
+            const operationRows = operationInserts.map((insert) => ({
+              ...insert,
+              makeMethodId:
+                insert.makeMethodId ===
+                makeMethodByItemId[jobMakeMethod.data.itemId]
+                  ? makeMethod.data.id
+                  : insert.makeMethodId
+            }));
+            const operationIds = (
+              await newIds(trx, "mop", operationRows.length)
+            ).map((id) => ({ id }));
+            await trx
               .insertInto("methodOperation")
               .values(
-                operationInserts.map((insert) => ({
-                  ...insert,
-                  makeMethodId:
-                    insert.makeMethodId ===
-                    makeMethodByItemId[jobMakeMethod.data.itemId]
-                      ? makeMethod.data.id
-                      : insert.makeMethodId
-                }))
+                operationRows.map((row, i) => ({
+                  ...row,
+                  id: operationIds[i]!.id
+                })) as never
               )
-              .returning(["id"])
               .execute();
+            const operationChildren = newOperationChildren();
 
             for (const [index, operation] of (
               jobOperations.data ?? []
@@ -17025,18 +18838,17 @@ export async function getMethod(
                   Array.isArray(jobOperationTool) &&
                   jobOperationTool.length > 0
                 ) {
-                  await trx
-                    .insertInto("methodOperationTool")
-                    .values(
-                      jobOperationTool.map((tool) => ({
+                  operationChildren.tools.push(
+                    ...jobOperationTool
+                      .map((tool) => ({
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
                         companyId,
                         createdBy: userId
                       }))
-                    )
-                    .execute();
+                      .map((row) => ({ row, sourceStepIds: null }))
+                  );
                 }
 
                 if (!procedureId) {
@@ -17045,18 +18857,15 @@ export async function getMethod(
                     Array.isArray(jobOperationParameter) &&
                     jobOperationParameter.length > 0
                   ) {
-                    await trx
-                      .insertInto("methodOperationParameter")
-                      .values(
-                        jobOperationParameter.map((param) => ({
-                          operationId,
-                          key: param.key,
-                          value: param.value,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .execute();
+                    operationChildren.parameters.push(
+                      ...jobOperationParameter.map((param) => ({
+                        operationId,
+                        key: param.key,
+                        value: param.value,
+                        companyId,
+                        createdBy: userId
+                      }))
+                    );
                   }
 
                   if (
@@ -17069,41 +18878,42 @@ export async function getMethod(
                     Array.isArray(jobOperationStep) &&
                     jobOperationStep.length > 0
                   ) {
-                    const insertedSteps = await trx
-                      .insertInto("methodOperationStep")
-                      .values(
-                        jobOperationStep.map((step) => ({
-                          operationId,
-                          name: step.name,
-                          type: step.type,
-                          description: toTiptapDoc(step.description),
-                          required: step.required,
-                          sortOrder: step.sortOrder,
-                          unitOfMeasureCode: step.unitOfMeasureCode,
-                          minValue: step.minValue,
-                          maxValue: step.maxValue,
-                          listValues: step.listValues,
-                          fileTypes: step.fileTypes,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
-
-                    await copyStepSlides(
-                      trx,
-                      jobOperationStep,
-                      insertedSteps,
-                      "jobOperationStepSlide",
-                      "methodOperationStepSlide",
+                    const stepRows = jobOperationStep.map((step) => ({
+                      operationId,
+                      name: step.name,
+                      type: step.type,
+                      description: toTiptapDoc(step.description),
+                      required: step.required,
+                      sortOrder: step.sortOrder,
+                      unitOfMeasureCode: step.unitOfMeasureCode,
+                      minValue: step.minValue,
+                      maxValue: step.maxValue,
+                      listValues: step.listValues,
+                      fileTypes: step.fileTypes,
+                      assemblyInstructionStepId: step.assemblyInstructionStepId,
                       companyId,
-                      userId
+                      createdBy: userId
+                    }));
+                    operationChildren.steps.push(
+                      ...stepRows.map((row, i) => ({
+                        sourceStepId: (
+                          jobOperationStep as Array<{ id?: string | null }>
+                        )[i]?.id,
+                        row: row as Record<string, unknown>
+                      }))
                     );
                   }
                 }
               }
             }
+            await insertOperationChildren(
+              trx,
+              "method",
+              "jobOperationStepSlide",
+              operationChildren,
+              companyId,
+              userId
+            );
           }
         } // end if (parts.billOfProcess)
       });
@@ -17312,7 +19122,7 @@ export async function getMethod(
       const sourceStepsToJobSteps: Record<string, string> = {};
       const sourceOperationIdToJobOperationId: Record<string, string> = {};
 
-      await db.transaction().execute(async (trx) => {
+      await withTransaction(db, async (trx) => {
         await itemDefaults.load(
           trx,
           treeItemIds(jobMethodTree, supersessionRedirect)
@@ -17625,11 +19435,20 @@ export async function getMethod(
             });
 
           if (jobOperationInserts.length > 0) {
-            const operationIds = await trx
+            const operationRows = jobOperationInserts;
+            const operationIds = (
+              await newIds(trx, "jo", operationRows.length)
+            ).map((id) => ({ id }));
+            await trx
               .insertInto("jobOperation")
-              .values(jobOperationInserts)
-              .returning(["id"])
+              .values(
+                operationRows.map((row, i) => ({
+                  ...row,
+                  id: operationIds[i]!.id
+                })) as never
+              )
               .execute();
+            const operationChildren = newOperationChildren();
 
             for (const [index, operation] of sourceOperationRows.entries()) {
               const operationId = operationIds[index]!.id;
@@ -17660,18 +19479,15 @@ export async function getMethod(
                     Array.isArray(jobOperationParameter) &&
                     jobOperationParameter.length > 0
                   ) {
-                    await trx
-                      .insertInto("jobOperationParameter")
-                      .values(
-                        jobOperationParameter.map((param) => ({
-                          operationId,
-                          key: param.key,
-                          value: param.value,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .execute();
+                    operationChildren.parameters.push(
+                      ...jobOperationParameter.map((param) => ({
+                        operationId,
+                        key: param.key,
+                        value: param.value,
+                        companyId,
+                        createdBy: userId
+                      }))
+                    );
                   }
 
                   if (operation.assemblyInstructionId) {
@@ -17697,46 +19513,29 @@ export async function getMethod(
                     Array.isArray(jobOperationStep) &&
                     jobOperationStep.length > 0
                   ) {
-                    const insertedSteps = await trx
-                      .insertInto("jobOperationStep")
-                      .values(
-                        jobOperationStep.map((step) => ({
-                          operationId,
-                          name: step.name,
-                          type: step.type,
-                          description: toTiptapDoc(step.description),
-                          required: step.required,
-                          sortOrder: step.sortOrder,
-                          unitOfMeasureCode: step.unitOfMeasureCode,
-                          minValue: step.minValue,
-                          maxValue: step.maxValue,
-                          listValues: step.listValues,
-                          fileTypes: step.fileTypes,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
-
-                    // Bulk insert preserves order, so insertedSteps[i] ↔
-                    // jobOperationStep[i]: record old step -> new step so
-                    // material/tool ↔ step links can be remapped below.
-                    jobOperationStep.forEach((s, i) => {
-                      const newStepId = insertedSteps[i]?.id;
-                      if (s?.id && newStepId) {
-                        sourceStepsToJobSteps[s.id] = newStepId;
-                      }
-                    });
-
-                    await copyStepSlides(
-                      trx,
-                      jobOperationStep,
-                      insertedSteps,
-                      "jobOperationStepSlide",
-                      "jobOperationStepSlide",
+                    const stepRows = jobOperationStep.map((step) => ({
+                      operationId,
+                      name: step.name,
+                      type: step.type,
+                      description: toTiptapDoc(step.description),
+                      required: step.required,
+                      sortOrder: step.sortOrder,
+                      unitOfMeasureCode: step.unitOfMeasureCode,
+                      minValue: step.minValue,
+                      maxValue: step.maxValue,
+                      listValues: step.listValues,
+                      fileTypes: step.fileTypes,
+                      assemblyInstructionStepId: step.assemblyInstructionStepId,
                       companyId,
-                      userId
+                      createdBy: userId
+                    }));
+                    operationChildren.steps.push(
+                      ...stepRows.map((row, i) => ({
+                        sourceStepId: (
+                          jobOperationStep as Array<{ id?: string | null }>
+                        )[i]?.id,
+                        row: row as Record<string, unknown>
+                      }))
                     );
                   }
                 }
@@ -17749,47 +19548,34 @@ export async function getMethod(
                   Array.isArray(jobOperationTool) ? jobOperationTool : []
                 ).filter((tool) => !assemblyToolIds.has(tool.toolId));
                 if (parts.tools && toolsToCopy.length > 0) {
-                  const insertedTools = await trx
-                    .insertInto("jobOperationTool")
-                    .values(
-                      toolsToCopy.map((tool) => ({
+                  operationChildren.tools.push(
+                    ...toolsToCopy.map((tool) => ({
+                      row: {
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
                         companyId,
                         createdBy: userId
-                      }))
-                    )
-                    .returning(["id"])
-                    .execute();
-
-                  // Tool ↔ step links. Bulk insert preserves order, so
-                  // insertedTools[i] ↔ toolsToCopy[i]. A tool with no links
-                  // applies to the whole operation.
-                  const toolStepRows = toolsToCopy.flatMap((tool, i) => {
-                    const jobOperationToolId = insertedTools[i]?.id;
-                    if (!jobOperationToolId) return [];
-                    const oldStepIds = (
-                      (tool.jobOperationToolStep ?? []) as Array<{
-                        jobOperationStepId: string | null;
-                      }>
-                    ).map((l) => l.jobOperationStepId);
-                    return remapStepIds(oldStepIds, sourceStepsToJobSteps).map(
-                      (jobOperationStepId) => ({
-                        jobOperationToolId,
-                        jobOperationStepId
-                      })
-                    );
-                  });
-                  if (toolStepRows.length > 0) {
-                    await trx
-                      .insertInto("jobOperationToolStep")
-                      .values(toolStepRows)
-                      .execute();
-                  }
+                      },
+                      sourceStepIds: (
+                        (tool.jobOperationToolStep ?? []) as Array<{
+                          jobOperationStepId: string | null;
+                        }>
+                      ).map((l) => l.jobOperationStepId)
+                    }))
+                  );
                 }
               }
             }
+            const copiedSteps = await insertOperationChildren(
+              trx,
+              "job",
+              "jobOperationStepSlide",
+              operationChildren,
+              companyId,
+              userId
+            );
+            Object.assign(sourceStepsToJobSteps, copiedSteps);
           }
         } // end if (parts.billOfProcess)
 
@@ -17876,6 +19662,7 @@ export async function getMethod(
           jobId: targetJobId,
           jobMaterialIds: insertedJobMaterialIds,
           locationId: targetJob.data?.locationId,
+          projectId: targetJob.data?.projectId,
           asOfDate: jobBuildDate(targetJob.data)
         });
       });
@@ -17936,7 +19723,9 @@ export async function getMethod(
         throw new Error("Failed to get source materials or operations");
       }
 
-      await db.transaction().execute(async (trx) => {
+      // A new version inserts its header in a transaction and copies inside
+      // it, so a failed copy leaves no empty version behind.
+      await withTransaction(db, async (trx) => {
         // The lines about to be replaced, whose configuration rules go with them.
         const [targetMaterialIds, targetOperationIds] = await Promise.all([
           trx
@@ -17981,31 +19770,37 @@ export async function getMethod(
           sourceOperations.data &&
           sourceOperations.data.length > 0
         ) {
-          const operationIds = await trx
+          const operationRows = sourceOperations.data.map(
+            ({
+              methodOperationTool: _tools,
+              methodOperationParameter: _parameters,
+              methodOperationStep: _attributes,
+              ...operation
+            }) => {
+              const insert = {
+                ...operation,
+                makeMethodId: targetMakeMethod.data.id,
+                createdBy: userId
+              };
+              if (!parts.workInstructions) {
+                insert.workInstruction = {};
+              }
+              return insert;
+            }
+          );
+          const operationIds = (
+            await newIds(trx, "mop", operationRows.length)
+          ).map((id) => ({ id }));
+          await trx
             .insertInto("methodOperation")
             .values(
-              sourceOperations.data.map(
-                ({
-                  methodOperationTool: _tools,
-                  methodOperationParameter: _parameters,
-                  methodOperationStep: _attributes,
-                  ...operation
-                }) => {
-                  const insert = {
-                    ...operation,
-                    id: undefined, // Let the database generate a new ID
-                    makeMethodId: targetMakeMethod.data.id,
-                    createdBy: userId
-                  };
-                  if (!parts.workInstructions) {
-                    insert.workInstruction = {};
-                  }
-                  return insert;
-                }
-              )
+              operationRows.map((row, i) => ({
+                ...row,
+                id: operationIds[i]!.id
+              })) as never
             )
-            .returning(["id"])
             .execute();
+          const operationChildren = newOperationChildren();
           sourceOperations.data.forEach((operation, index) => {
             const id = operationIds[index]?.id;
             if (operation.id && id) operationIdMap.set(operation.id, id);
@@ -18029,18 +19824,17 @@ export async function getMethod(
               Array.isArray(methodOperationTool) &&
               methodOperationTool.length > 0
             ) {
-              await trx
-                .insertInto("methodOperationTool")
-                .values(
-                  methodOperationTool.map((tool) => ({
+              operationChildren.tools.push(
+                ...methodOperationTool
+                  .map((tool) => ({
                     toolId: tool.toolId,
                     quantity: tool.quantity,
                     operationId,
                     companyId,
                     createdBy: userId
                   }))
-                )
-                .execute();
+                  .map((row) => ({ row, sourceStepIds: null }))
+              );
             }
 
             if (!procedureId) {
@@ -18049,18 +19843,15 @@ export async function getMethod(
                 Array.isArray(methodOperationParameter) &&
                 methodOperationParameter.length > 0
               ) {
-                await trx
-                  .insertInto("methodOperationParameter")
-                  .values(
-                    methodOperationParameter.map((param) => ({
-                      operationId: operationId!,
-                      key: param.key,
-                      value: param.value,
-                      companyId,
-                      createdBy: userId
-                    }))
-                  )
-                  .execute();
+                operationChildren.parameters.push(
+                  ...methodOperationParameter.map((param) => ({
+                    operationId: operationId!,
+                    key: param.key,
+                    value: param.value,
+                    companyId,
+                    createdBy: userId
+                  }))
+                );
               }
 
               if (
@@ -18071,32 +19862,34 @@ export async function getMethod(
                 Array.isArray(methodOperationStep) &&
                 methodOperationStep.length > 0
               ) {
-                const insertedSteps = await trx
-                  .insertInto("methodOperationStep")
-                  .values(
-                    methodOperationStep.map(({ id: _id, ...attribute }) => ({
-                      ...attribute,
-                      description: toTiptapDoc(attribute.description),
-                      operationId: operationId!,
-                      companyId,
-                      createdBy: userId
-                    }))
-                  )
-                  .returning(["id"])
-                  .execute();
-
-                await copyStepSlides(
-                  trx,
-                  methodOperationStep,
-                  insertedSteps,
-                  "methodOperationStepSlide",
-                  "methodOperationStepSlide",
-                  companyId,
-                  userId
+                const stepRows = methodOperationStep.map(
+                  ({ id: _id, ...attribute }) => ({
+                    ...attribute,
+                    description: toTiptapDoc(attribute.description),
+                    operationId: operationId!,
+                    companyId,
+                    createdBy: userId
+                  })
+                );
+                operationChildren.steps.push(
+                  ...stepRows.map((row, i) => ({
+                    sourceStepId: (
+                      methodOperationStep as Array<{ id?: string | null }>
+                    )[i]?.id,
+                    row: row as Record<string, unknown>
+                  }))
                 );
               }
             }
           }
+          await insertOperationChildren(
+            trx,
+            "method",
+            "methodOperationStepSlide",
+            operationChildren,
+            companyId,
+            userId
+          );
         }
         // Copy materials from source to target, dropping any zero-quantity
         // BOM lines.
@@ -18214,7 +20007,7 @@ export async function getMethod(
 
       const existingSteps = operation.data?.jobOperationStep ?? [];
 
-      await db.transaction().execute(async (trx) => {
+      await withTransaction(db, async (trx) => {
         // Update or delete existing attributes
         for (const existingStep of existingSteps) {
           const matchingProcedureStep = procedure.data.procedureStep.find(
@@ -18418,7 +20211,7 @@ export async function getMethod(
         }
       });
 
-      await db.transaction().execute(async (trx) => {
+      await withTransaction(db, async (trx) => {
         let makeMethodsToDelete: string[] = [];
         const materialInserts: Database["public"]["Tables"]["methodMaterial"]["Insert"][] =
           [];
@@ -18537,20 +20330,27 @@ export async function getMethod(
           });
 
           if (operationInserts.length > 0) {
-            const operationIds = await trx
+            const operationRows = operationInserts.map((insert) => ({
+              ...insert,
+              makeMethodId:
+                insert.makeMethodId ===
+                makeMethodByItemId[quoteMakeMethod.data.itemId]
+                  ? makeMethod.data.id
+                  : insert.makeMethodId
+            }));
+            const operationIds = (
+              await newIds(trx, "mop", operationRows.length)
+            ).map((id) => ({ id }));
+            await trx
               .insertInto("methodOperation")
               .values(
-                operationInserts.map((insert) => ({
-                  ...insert,
-                  makeMethodId:
-                    insert.makeMethodId ===
-                    makeMethodByItemId[quoteMakeMethod.data.itemId]
-                      ? makeMethod.data.id
-                      : insert.makeMethodId
-                }))
+                operationRows.map((row, i) => ({
+                  ...row,
+                  id: operationIds[i]!.id
+                })) as never
               )
-              .returning(["id"])
               .execute();
+            const operationChildren = newOperationChildren();
 
             for (const [index, operation] of (
               quoteOperations.data ?? []
@@ -18569,18 +20369,17 @@ export async function getMethod(
                   Array.isArray(quoteOperationTool) &&
                   quoteOperationTool.length > 0
                 ) {
-                  await trx
-                    .insertInto("methodOperationTool")
-                    .values(
-                      quoteOperationTool.map((tool) => ({
+                  operationChildren.tools.push(
+                    ...quoteOperationTool
+                      .map((tool) => ({
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
                         companyId,
                         createdBy: userId
                       }))
-                    )
-                    .execute();
+                      .map((row) => ({ row, sourceStepIds: null }))
+                  );
                 }
 
                 if (!procedureId) {
@@ -18589,18 +20388,15 @@ export async function getMethod(
                     Array.isArray(quoteOperationParameter) &&
                     quoteOperationParameter.length > 0
                   ) {
-                    await trx
-                      .insertInto("methodOperationParameter")
-                      .values(
-                        quoteOperationParameter.map((param) => ({
-                          operationId,
-                          key: param.key,
-                          value: param.value,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .execute();
+                    operationChildren.parameters.push(
+                      ...quoteOperationParameter.map((param) => ({
+                        operationId,
+                        key: param.key,
+                        value: param.value,
+                        companyId,
+                        createdBy: userId
+                      }))
+                    );
                   }
 
                   if (
@@ -18611,33 +20407,35 @@ export async function getMethod(
                     Array.isArray(quoteOperationStep) &&
                     quoteOperationStep.length > 0
                   ) {
-                    const insertedSteps = await trx
-                      .insertInto("methodOperationStep")
-                      .values(
-                        quoteOperationStep.map(({ id: _id, ...attribute }) => ({
-                          ...attribute,
-                          description: toTiptapDoc(attribute.description),
-                          operationId,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
-
-                    await copyStepSlides(
-                      trx,
-                      quoteOperationStep,
-                      insertedSteps,
-                      "quoteOperationStepSlide",
-                      "methodOperationStepSlide",
-                      companyId,
-                      userId
+                    const stepRows = quoteOperationStep.map(
+                      ({ id: _id, ...attribute }) => ({
+                        ...attribute,
+                        description: toTiptapDoc(attribute.description),
+                        operationId,
+                        companyId,
+                        createdBy: userId
+                      })
+                    );
+                    operationChildren.steps.push(
+                      ...stepRows.map((row, i) => ({
+                        sourceStepId: (
+                          quoteOperationStep as Array<{ id?: string | null }>
+                        )[i]?.id,
+                        row: row as Record<string, unknown>
+                      }))
                     );
                   }
                 }
               }
             }
+            await insertOperationChildren(
+              trx,
+              "method",
+              "quoteOperationStepSlide",
+              operationChildren,
+              companyId,
+              userId
+            );
           }
         } // end if (parts.billOfProcess)
       });
@@ -18760,7 +20558,7 @@ export async function getMethod(
         }
       });
 
-      await db.transaction().execute(async (trx) => {
+      await withTransaction(db, async (trx) => {
         let makeMethodsToDelete: string[] = [];
         const materialInserts: Database["public"]["Tables"]["methodMaterial"]["Insert"][] =
           [];
@@ -18873,20 +20671,27 @@ export async function getMethod(
           });
 
           if (operationInserts.length > 0) {
-            const operationIds = await trx
+            const operationRows = operationInserts.map((insert) => ({
+              ...insert,
+              makeMethodId:
+                insert.makeMethodId ===
+                makeMethodByItemId[quoteMakeMethod.data.itemId]
+                  ? makeMethod.data.id
+                  : insert.makeMethodId
+            }));
+            const operationIds = (
+              await newIds(trx, "mop", operationRows.length)
+            ).map((id) => ({ id }));
+            await trx
               .insertInto("methodOperation")
               .values(
-                operationInserts.map((insert) => ({
-                  ...insert,
-                  makeMethodId:
-                    insert.makeMethodId ===
-                    makeMethodByItemId[quoteMakeMethod.data.itemId]
-                      ? makeMethod.data.id
-                      : insert.makeMethodId
-                }))
+                operationRows.map((row, i) => ({
+                  ...row,
+                  id: operationIds[i]!.id
+                })) as never
               )
-              .returning(["id"])
               .execute();
+            const operationChildren = newOperationChildren();
 
             for (const [index, operation] of (
               quoteOperations.data ?? []
@@ -18905,18 +20710,17 @@ export async function getMethod(
                   Array.isArray(quoteOperationTool) &&
                   quoteOperationTool.length > 0
                 ) {
-                  await trx
-                    .insertInto("methodOperationTool")
-                    .values(
-                      quoteOperationTool.map((tool) => ({
+                  operationChildren.tools.push(
+                    ...quoteOperationTool
+                      .map((tool) => ({
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
                         companyId,
                         createdBy: userId
                       }))
-                    )
-                    .execute();
+                      .map((row) => ({ row, sourceStepIds: null }))
+                  );
                 }
 
                 if (!procedureId) {
@@ -18925,18 +20729,15 @@ export async function getMethod(
                     Array.isArray(quoteOperationParameter) &&
                     quoteOperationParameter.length > 0
                   ) {
-                    await trx
-                      .insertInto("methodOperationParameter")
-                      .values(
-                        quoteOperationParameter.map((param) => ({
-                          operationId,
-                          key: param.key,
-                          value: param.value,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .execute();
+                    operationChildren.parameters.push(
+                      ...quoteOperationParameter.map((param) => ({
+                        operationId,
+                        key: param.key,
+                        value: param.value,
+                        companyId,
+                        createdBy: userId
+                      }))
+                    );
                   }
 
                   if (
@@ -18947,33 +20748,35 @@ export async function getMethod(
                     Array.isArray(quoteOperationStep) &&
                     quoteOperationStep.length > 0
                   ) {
-                    const insertedSteps = await trx
-                      .insertInto("methodOperationStep")
-                      .values(
-                        quoteOperationStep.map(({ id: _id, ...attribute }) => ({
-                          ...attribute,
-                          description: toTiptapDoc(attribute.description),
-                          operationId,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
-
-                    await copyStepSlides(
-                      trx,
-                      quoteOperationStep,
-                      insertedSteps,
-                      "quoteOperationStepSlide",
-                      "methodOperationStepSlide",
-                      companyId,
-                      userId
+                    const stepRows = quoteOperationStep.map(
+                      ({ id: _id, ...attribute }) => ({
+                        ...attribute,
+                        description: toTiptapDoc(attribute.description),
+                        operationId,
+                        companyId,
+                        createdBy: userId
+                      })
+                    );
+                    operationChildren.steps.push(
+                      ...stepRows.map((row, i) => ({
+                        sourceStepId: (
+                          quoteOperationStep as Array<{ id?: string | null }>
+                        )[i]?.id,
+                        row: row as Record<string, unknown>
+                      }))
                     );
                   }
                 }
               }
             }
+            await insertOperationChildren(
+              trx,
+              "method",
+              "quoteOperationStepSlide",
+              operationChildren,
+              companyId,
+              userId
+            );
           }
         } // end if (parts.billOfProcess)
       });
@@ -19090,7 +20893,7 @@ export async function getMethod(
         }
       > = {};
 
-      await db.transaction().execute(async (trx) => {
+      await withTransaction(db, async (trx) => {
         await itemDefaults.load(
           trx,
           treeItemIds(quoteMethodTree, supersessionRedirect)
@@ -19415,11 +21218,20 @@ export async function getMethod(
             });
 
           if (jobOperationInserts.length > 0) {
-            const operationIds = await trx
+            const operationRows = jobOperationInserts;
+            const operationIds = (
+              await newIds(trx, "jo", operationRows.length)
+            ).map((id) => ({ id }));
+            await trx
               .insertInto("jobOperation")
-              .values(jobOperationInserts)
-              .returning(["id"])
+              .values(
+                operationRows.map((row, i) => ({
+                  ...row,
+                  id: operationIds[i]!.id
+                })) as never
+              )
               .execute();
+            const operationChildren = newOperationChildren();
 
             for (const [index, operation] of (
               quoteOperations.data ?? []
@@ -19439,18 +21251,17 @@ export async function getMethod(
                   Array.isArray(quoteOperationTool) &&
                   quoteOperationTool.length > 0
                 ) {
-                  await trx
-                    .insertInto("jobOperationTool")
-                    .values(
-                      quoteOperationTool.map((tool) => ({
+                  operationChildren.tools.push(
+                    ...quoteOperationTool
+                      .map((tool) => ({
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
                         companyId,
                         createdBy: userId
                       }))
-                    )
-                    .execute();
+                      .map((row) => ({ row, sourceStepIds: null }))
+                  );
                 }
 
                 if (procedureId) {
@@ -19466,18 +21277,15 @@ export async function getMethod(
                     Array.isArray(quoteOperationParameter) &&
                     quoteOperationParameter.length > 0
                   ) {
-                    await trx
-                      .insertInto("jobOperationParameter")
-                      .values(
-                        quoteOperationParameter.map((param) => ({
-                          operationId,
-                          key: param.key,
-                          value: param.value,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .execute();
+                    operationChildren.parameters.push(
+                      ...quoteOperationParameter.map((param) => ({
+                        operationId,
+                        key: param.key,
+                        value: param.value,
+                        companyId,
+                        createdBy: userId
+                      }))
+                    );
                   }
 
                   if (operation.assemblyInstructionId) {
@@ -19500,33 +21308,35 @@ export async function getMethod(
                     Array.isArray(quoteOperationStep) &&
                     quoteOperationStep.length > 0
                   ) {
-                    const insertedSteps = await trx
-                      .insertInto("jobOperationStep")
-                      .values(
-                        quoteOperationStep.map(({ id: _id, ...attribute }) => ({
-                          ...attribute,
-                          description: toTiptapDoc(attribute.description),
-                          operationId,
-                          companyId,
-                          createdBy: userId
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
-
-                    await copyStepSlides(
-                      trx,
-                      quoteOperationStep,
-                      insertedSteps,
-                      "quoteOperationStepSlide",
-                      "jobOperationStepSlide",
-                      companyId,
-                      userId
+                    const stepRows = quoteOperationStep.map(
+                      ({ id: _id, ...attribute }) => ({
+                        ...attribute,
+                        description: toTiptapDoc(attribute.description),
+                        operationId,
+                        companyId,
+                        createdBy: userId
+                      })
+                    );
+                    operationChildren.steps.push(
+                      ...stepRows.map((row, i) => ({
+                        sourceStepId: (
+                          quoteOperationStep as Array<{ id?: string | null }>
+                        )[i]?.id,
+                        row: row as Record<string, unknown>
+                      }))
                     );
                   }
                 }
               }
             }
+            await insertOperationChildren(
+              trx,
+              "job",
+              "quoteOperationStepSlide",
+              operationChildren,
+              companyId,
+              userId
+            );
           }
         } // end if (parts.billOfProcess)
 
@@ -19544,6 +21354,7 @@ export async function getMethod(
           jobId: jobId,
           jobMaterialIds: insertedJobMaterialIds,
           locationId: job.data?.locationId,
+          projectId: job.data?.projectId,
           asOfDate: jobBuildDate(job.data)
         });
       });
@@ -19647,7 +21458,7 @@ export async function getMethod(
       const quoteMaterialIdToQuoteMaterialId: Record<string, string> = {};
       const quoteMakeMethodIdToQuoteMakeMethodId: Record<string, string> = {};
 
-      await db.transaction().execute(async (trx) => {
+      await withTransaction(db, async (trx) => {
         // Delete existing quoteMakeMethods, quoteMaterials, and quoteOperations for this quote line
         await Promise.all([
           parts.billOfMaterial
@@ -19816,11 +21627,20 @@ export async function getMethod(
             }));
 
           if (quoteOperationInserts.length > 0) {
-            const operationIds = await trx
+            const operationRows = quoteOperationInserts;
+            const operationIds = (
+              await newIds(trx, "qo", operationRows.length)
+            ).map((id) => ({ id }));
+            await trx
               .insertInto("quoteOperation")
-              .values(quoteOperationInserts)
-              .returning(["id"])
+              .values(
+                operationRows.map((row, i) => ({
+                  ...row,
+                  id: operationIds[i]!.id
+                })) as never
+              )
               .execute();
+            const operationChildren = newOperationChildren();
 
             for (const [index, operation] of (
               sourceQuoteOperations.data ?? []
@@ -19838,18 +21658,17 @@ export async function getMethod(
                   Array.isArray(quoteOperationTool) &&
                   quoteOperationTool.length > 0
                 ) {
-                  await trx
-                    .insertInto("quoteOperationTool")
-                    .values(
-                      quoteOperationTool.map((tool) => ({
+                  operationChildren.tools.push(
+                    ...quoteOperationTool
+                      .map((tool) => ({
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
                         companyId,
                         createdBy: userId
                       }))
-                    )
-                    .execute();
+                      .map((row) => ({ row, sourceStepIds: null }))
+                  );
                 }
 
                 if (
@@ -19857,18 +21676,15 @@ export async function getMethod(
                   Array.isArray(quoteOperationParameter) &&
                   quoteOperationParameter.length > 0
                 ) {
-                  await trx
-                    .insertInto("quoteOperationParameter")
-                    .values(
-                      quoteOperationParameter.map((param) => ({
-                        operationId,
-                        key: param.key,
-                        value: param.value,
-                        companyId,
-                        createdBy: userId
-                      }))
-                    )
-                    .execute();
+                  operationChildren.parameters.push(
+                    ...quoteOperationParameter.map((param) => ({
+                      operationId,
+                      key: param.key,
+                      value: param.value,
+                      companyId,
+                      createdBy: userId
+                    }))
+                  );
                 }
 
                 if (
@@ -19876,32 +21692,34 @@ export async function getMethod(
                   Array.isArray(quoteOperationStep) &&
                   quoteOperationStep.length > 0
                 ) {
-                  const insertedSteps = await trx
-                    .insertInto("quoteOperationStep")
-                    .values(
-                      quoteOperationStep.map(({ id: _id, ...attribute }) => ({
-                        ...attribute,
-                        description: toTiptapDoc(attribute.description),
-                        operationId,
-                        companyId,
-                        createdBy: userId
-                      }))
-                    )
-                    .returning(["id"])
-                    .execute();
-
-                  await copyStepSlides(
-                    trx,
-                    quoteOperationStep,
-                    insertedSteps,
-                    "quoteOperationStepSlide",
-                    "quoteOperationStepSlide",
-                    companyId,
-                    userId
+                  const stepRows = quoteOperationStep.map(
+                    ({ id: _id, ...attribute }) => ({
+                      ...attribute,
+                      description: toTiptapDoc(attribute.description),
+                      operationId,
+                      companyId,
+                      createdBy: userId
+                    })
+                  );
+                  operationChildren.steps.push(
+                    ...stepRows.map((row, i) => ({
+                      sourceStepId: (
+                        quoteOperationStep as Array<{ id?: string | null }>
+                      )[i]?.id,
+                      row: row as Record<string, unknown>
+                    }))
                   );
                 }
               }
             }
+            await insertOperationChildren(
+              trx,
+              "quote",
+              "quoteOperationStepSlide",
+              operationChildren,
+              companyId,
+              userId
+            );
           }
         } // end if (parts.billOfProcess)
       });
@@ -19923,6 +21741,7 @@ export async function getMethod(
       let newQuoteId = "";
 
       const oldLineToNewLineMap: Record<string, string> = {};
+      const newLineIds = new Map<string, string>();
 
       const [
         sourceQuote,
@@ -19956,7 +21775,7 @@ export async function getMethod(
         throw new Error("Failed to get source quote line pricing");
       }
 
-      await db.transaction().execute(async (trx) => {
+      await withTransaction(db, async (trx) => {
         let quoteId: string;
         let revisionId = 0;
         if (asRevision) {
@@ -20099,6 +21918,8 @@ export async function getMethod(
             throw new Error("Failed to insert quote line");
           }
 
+          newLineIds.set(id, newLine.id);
+
           if (line.methodType === "Make to Order") {
             // we only need further processing on make lines
             oldLineToNewLineMap[id] = newLine.id;
@@ -20141,9 +21962,21 @@ export async function getMethod(
               .execute();
           }
         }
+
+        // A revision prints like the quote it revises; a new quote starts clean.
+        if (asRevision) {
+          await copyDocumentEdit(trx, {
+            companyId,
+            documentType: "quote",
+            fromId: sourceQuoteId,
+            toId: newQuoteId,
+            userId,
+            rowIds: newLineIds
+          });
+        }
       });
 
-      await db.transaction().execute(async (trx) => {
+      await withTransaction(db, async (trx) => {
         for await (const [oldLineId, newLineId] of Object.entries(
           oldLineToNewLineMap
         )) {
@@ -20354,11 +22187,20 @@ export async function getMethod(
             }));
 
           if (quoteOperationInserts.length > 0) {
-            const operationIds = await trx
+            const operationRows = quoteOperationInserts;
+            const operationIds = (
+              await newIds(trx, "qo", operationRows.length)
+            ).map((id) => ({ id }));
+            await trx
               .insertInto("quoteOperation")
-              .values(quoteOperationInserts)
-              .returning(["id"])
+              .values(
+                operationRows.map((row, i) => ({
+                  ...row,
+                  id: operationIds[i]!.id
+                })) as never
+              )
               .execute();
+            const operationChildren = newOperationChildren();
 
             for (const [index, operation] of (
               sourceQuoteOperations.data ?? []
@@ -20375,68 +22217,66 @@ export async function getMethod(
                   Array.isArray(quoteOperationTool) &&
                   quoteOperationTool.length > 0
                 ) {
-                  await trx
-                    .insertInto("quoteOperationTool")
-                    .values(
-                      quoteOperationTool.map((tool) => ({
+                  operationChildren.tools.push(
+                    ...quoteOperationTool
+                      .map((tool) => ({
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
                         companyId,
                         createdBy: userId
                       }))
-                    )
-                    .execute();
+                      .map((row) => ({ row, sourceStepIds: null }))
+                  );
                 }
 
                 if (
                   Array.isArray(quoteOperationParameter) &&
                   quoteOperationParameter.length > 0
                 ) {
-                  await trx
-                    .insertInto("quoteOperationParameter")
-                    .values(
-                      quoteOperationParameter.map((param) => ({
-                        operationId,
-                        key: param.key,
-                        value: param.value,
-                        companyId,
-                        createdBy: userId
-                      }))
-                    )
-                    .execute();
+                  operationChildren.parameters.push(
+                    ...quoteOperationParameter.map((param) => ({
+                      operationId,
+                      key: param.key,
+                      value: param.value,
+                      companyId,
+                      createdBy: userId
+                    }))
+                  );
                 }
 
                 if (
                   Array.isArray(quoteOperationStep) &&
                   quoteOperationStep.length > 0
                 ) {
-                  const insertedSteps = await trx
-                    .insertInto("quoteOperationStep")
-                    .values(
-                      quoteOperationStep.map(({ id: _id, ...attribute }) => ({
-                        ...attribute,
-                        description: toTiptapDoc(attribute.description),
-                        operationId,
-                        companyId,
-                        createdBy: userId
-                      }))
-                    )
-                    .returning(["id"])
-                    .execute();
-
-                  await copyStepSlides(
-                    trx,
-                    quoteOperationStep,
-                    insertedSteps,
-                    "quoteOperationStepSlide",
-                    "quoteOperationStepSlide",
-                    companyId,
-                    userId
+                  const stepRows = quoteOperationStep.map(
+                    ({ id: _id, ...attribute }) => ({
+                      ...attribute,
+                      description: toTiptapDoc(attribute.description),
+                      operationId,
+                      companyId,
+                      createdBy: userId
+                    })
+                  );
+                  operationChildren.steps.push(
+                    ...stepRows.map((row, i) => ({
+                      sourceStepId: (
+                        quoteOperationStep as Array<{ id?: string | null }>
+                      )[i]?.id,
+                      row: row as Record<string, unknown>
+                    }))
                   );
                 }
               }
             }
+            await insertOperationChildren(
+              trx,
+              "quote",
+              "quoteOperationStepSlide",
+              operationChildren,
+              companyId,
+              userId
+            );
           }
         }
       });
@@ -20483,6 +22323,13 @@ function jobBuildDate(
   );
 }
 
+// The itemStockQuantities stripes a job's material may draw: common stock (''),
+// plus the job's own project's stock when the job is charged to a project.
+// Another project's stock needs a transfer or a borrow first.
+function jobStockStripes(projectId: string | null | undefined): string[] {
+  return projectId ? ["", projectId] : [""];
+}
+
 // Load every supersession for the company and collapse it into the redirect map
 // (chain-collapsed, mode-gated, conversion-factored) as-of the job's build date.
 // Every *-ToJob path needs the same map, so this is the single load point.
@@ -20494,6 +22341,7 @@ async function loadSupersessionRedirect(
         locationId?: string | null;
         startDate?: string | null;
         dueDate?: string | null;
+        projectId?: string | null;
       }
     | null
     | undefined
@@ -20524,11 +22372,19 @@ async function loadSupersessionRedirect(
     .map((r) => r.itemId);
   const consumeFirstOnHand = new Map<string, number>();
   if (consumeFirstItemIds.length > 0 && job?.locationId) {
+    // Nettable on-hand: stock in a non-nettable storage unit cannot supply
+    // the job.
     const stock = await db
       .selectFrom("itemStockQuantities")
-      .select(["itemId", "quantityOnHand"])
+      .select((eb) => [
+        "itemId",
+        eb("quantityOnHand", "-", eb.ref("quantityNonNettable")).as(
+          "quantityNettable"
+        )
+      ])
       .where("companyId", "=", companyId)
       .where("locationId", "=", job.locationId)
+      .where("projectId", "in", jobStockStripes(job.projectId))
       .where("itemId", "in", consumeFirstItemIds)
       .execute();
     const items = await db
@@ -20541,7 +22397,7 @@ async function loadSupersessionRedirect(
     for (const r of stock) {
       onHandByItem.set(
         r.itemId,
-        (onHandByItem.get(r.itemId) ?? 0) + Number(r.quantityOnHand ?? 0)
+        (onHandByItem.get(r.itemId) ?? 0) + Number(r.quantityNettable ?? 0)
       );
     }
     const madeItemIds = new Set(
@@ -20611,6 +22467,11 @@ async function itemDerivedJobMaterialFields(opts: {
   lineStorageUnitId?: string;
 }) {
   const { trx, companyId, itemId, locationId, lineStorageUnitId } = opts;
+  const { strict } = await getStrictBackflushSettings(
+    trx,
+    companyId,
+    locationId
+  );
 
   const [item, replenishment, storageUnitId] = await Promise.all([
     readItemWithCost(trx, itemId, companyId),
@@ -20620,7 +22481,13 @@ async function itemDerivedJobMaterialFields(opts: {
       .where("itemId", "=", itemId)
       .where("companyId", "=", companyId)
       .executeTakeFirst(),
-    getStorageUnitId(trx, itemId, locationId, lineStorageUnitId)
+    getStorageUnitId(trx, {
+      companyId,
+      itemId,
+      locationId,
+      storageUnitId: lineStorageUnitId,
+      allowFullestBin: !strict
+    })
   ]);
 
   if (!item) return null;
@@ -20643,6 +22510,50 @@ async function itemDerivedJobMaterialFields(opts: {
 // scaling the cascade by the conversion factor. A Make -> Buy successor is a
 // structural flip we leave on the old part (handled elsewhere). Returns true when
 // the swap was applied, so the caller can skip the default traversal.
+/**
+ * The tree a made line explodes into. A configuration rule can move a Make to
+ * Order line onto another item (a 14 ft body where the BOM names the 12 ft
+ * one); the line is then that item's, and so is the sub-assembly under it.
+ * Exploding `child` as it stood built the BOM item's sub-assembly under the
+ * configured item. The line's own fields (quantity, operation, order, the
+ * row's ids) stay the BOM line's; the item and its method become the
+ * configured item's. Undefined when the configured item has no make method:
+ * there is nothing of its own to explode, and the BOM item's would be wrong.
+ */
+async function configuredMadeChild(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  child: MethodTreeItem,
+  itemId: string | null | undefined
+): Promise<MethodTreeItem | undefined> {
+  if (!itemId || itemId === child.data.itemId) return child;
+  const method = await trx
+    .selectFrom("activeMakeMethods")
+    .select(["id"])
+    .where("itemId", "=", itemId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!method?.id) return undefined;
+  const root = (await getMethodTree(trx, method.id)).data?.[0];
+  if (!root) return undefined;
+  return {
+    id: child.id,
+    data: {
+      ...child.data,
+      itemId: root.data.itemId,
+      itemReadableId: root.data.itemReadableId,
+      itemTrackingType: root.data.itemTrackingType,
+      itemType: root.data.itemType,
+      materialMakeMethodId: root.data.materialMakeMethodId,
+      replenishmentSystem: root.data.replenishmentSystem,
+      revision: root.data.revision,
+      unitCost: root.data.unitCost,
+      version: root.data.version
+    },
+    children: root.children
+  };
+}
+
 async function swapMadeSubAssembly(opts: {
   trx: Transaction<KyselyDatabase>;
   companyId: string;
@@ -20748,9 +22659,18 @@ async function settleConsumeFirstLines(opts: {
   jobId: string;
   jobMaterialIds: string[];
   locationId: string | null | undefined;
+  projectId: string | null | undefined;
   asOfDate: string;
 }) {
-  const { trx, companyId, jobId, jobMaterialIds, locationId, asOfDate } = opts;
+  const {
+    trx,
+    companyId,
+    jobId,
+    jobMaterialIds,
+    locationId,
+    projectId,
+    asOfDate
+  } = opts;
   if (!locationId || jobMaterialIds.length === 0) return;
 
   const rules = await trx
@@ -20803,18 +22723,25 @@ async function settleConsumeFirstLines(opts: {
       predecessorIds.add(id);
     }
   }
+  // Nettable on-hand, the same figure loadSupersessionRedirect reads.
   const stock = await trx
     .selectFrom("itemStockQuantities")
-    .select(["itemId", "quantityOnHand"])
+    .select((eb) => [
+      "itemId",
+      eb("quantityOnHand", "-", eb.ref("quantityNonNettable")).as(
+        "quantityNettable"
+      )
+    ])
     .where("companyId", "=", companyId)
     .where("locationId", "=", locationId)
+    .where("projectId", "in", jobStockStripes(projectId))
     .where("itemId", "in", [...predecessorIds])
     .execute();
   const onHandByItem = new Map<string, number>();
   for (const row of stock) {
     onHandByItem.set(
       row.itemId,
-      (onHandByItem.get(row.itemId) ?? 0) + Number(row.quantityOnHand ?? 0)
+      (onHandByItem.get(row.itemId) ?? 0) + Number(row.quantityNettable ?? 0)
     );
   }
 
@@ -21052,6 +22979,7 @@ function createItemDefaults(
   const scrapByItemId = new Map<string, number>();
   const binByItemId = new Map<string, string>();
   const loaded = new Set<string>();
+  let fullestBinAllowed: boolean | undefined;
 
   async function load(
     reader: Kysely<KyselyDatabase>,
@@ -21072,25 +23000,38 @@ function createItemDefaults(
       scrapByItemId.set(row.itemId, Number(row.scrapPercentage ?? 0));
     }
 
-    // The pick method's default bin wins, else the bin holding the most.
+    // The pick method's default bin wins, else the bin holding the most (never
+    // under strict backflush). A non-nettable unit is neither.
     if (locationId) {
-      const ledgerTotals = await reader
-        .selectFrom("itemLedger")
-        .where("locationId", "=", locationId)
-        .where("companyId", "=", companyId)
-        .where("itemId", "in", missing)
-        .where("storageUnitId", "is not", null)
-        .groupBy(["itemId", "storageUnitId"])
-        .select([
-          "itemId",
-          "storageUnitId",
-          (eb) => eb.fn.sum("quantity").as("totalQuantity")
-        ])
-        .having((eb) => eb.fn.sum("quantity"), ">", 0)
-        .orderBy("itemId")
-        .orderBy("totalQuantity", "desc")
-        .orderBy("storageUnitId")
-        .execute();
+      fullestBinAllowed ??= !(
+        await getStrictBackflushSettings(reader, companyId, locationId)
+      ).strict;
+      const ledgerTotals = !fullestBinAllowed
+        ? []
+        : await reader
+            .selectFrom("itemLedger")
+            .where("locationId", "=", locationId)
+            .where("companyId", "=", companyId)
+            .where("itemId", "in", missing)
+            .where("storageUnitId", "is not", null)
+            .where("storageUnitId", "in", (eb) =>
+              eb
+                .selectFrom("storageUnit")
+                .select("storageUnit.id")
+                .where("storageUnit.companyId", "=", companyId)
+                .where("storageUnit.effectiveNettable", "=", true)
+            )
+            .groupBy(["itemId", "storageUnitId"])
+            .select([
+              "itemId",
+              "storageUnitId",
+              (eb) => eb.fn.sum("quantity").as("totalQuantity")
+            ])
+            .having((eb) => eb.fn.sum("quantity"), ">", 0)
+            .orderBy("itemId")
+            .orderBy("totalQuantity", "desc")
+            .orderBy("storageUnitId")
+            .execute();
       for (const row of ledgerTotals) {
         // Ordered by quantity: the first row for an item is its fullest bin.
         if (row.storageUnitId && !binByItemId.has(row.itemId)) {
@@ -21104,7 +23045,13 @@ function createItemDefaults(
         .where("locationId", "=", locationId)
         .where("companyId", "=", companyId)
         .where("itemId", "in", missing)
-        .where("defaultStorageUnitId", "is not", null)
+        .where("defaultStorageUnitId", "in", (eb) =>
+          eb
+            .selectFrom("storageUnit")
+            .select("storageUnit.id")
+            .where("storageUnit.companyId", "=", companyId)
+            .where("storageUnit.effectiveNettable", "=", true)
+        )
         .execute();
       for (const pickMethod of pickMethods) {
         if (pickMethod.defaultStorageUnitId) {
@@ -22202,10 +24149,14 @@ export async function rescheduleJob(
     );
 
     // 6. Batch update all operations
+    const jobOperationUpdates: {
+      id: string;
+      data: Database["public"]["Tables"]["jobOperation"]["Update"];
+    }[] = [];
     for (const op of prioritizedOps) {
-      await trx
-        .updateTable("jobOperation")
-        .set({
+      jobOperationUpdates.push({
+        id: op.id,
+        data: {
           startDate: op.startDate,
           dueDate: op.dueDate,
           priority: op.priority!,
@@ -22213,11 +24164,10 @@ export async function rescheduleJob(
           conflictReason: op.conflictReason,
           updatedAt: datetime.timestamp(),
           updatedBy: userId
-        })
-        .where("id", "=", op.id)
-        .where("companyId", "=", companyId)
-        .execute();
+        }
+      });
     }
+    await updateRowsById(trx, "jobOperation", companyId, jobOperationUpdates);
 
     rescheduleJobLogger.info(`✅ Updated ${prioritizedOps.length} operations`);
 
@@ -22274,6 +24224,23 @@ export const postProductionEventPermission = {
   "production.jobs": "Edit"
 } satisfies PermissionRule<z.output<typeof postProductionEventInput>>;
 
+export const SHOP_LABOR_CATEGORY_REQUIRED =
+  "Set a labor category on this person before they record project time";
+
+/** DCAA: shop labor on a project is a person's certified time. */
+export const SHOP_LABOR_EMPLOYEE_REQUIRED =
+  "Set the person on this event: project time under DCAA belongs to a person's timesheet";
+
+/** A shop-time edit that would change hours the employee has submitted but
+ *  not posted: the entry goes back to the employee first. */
+export const SHOP_TIMESHEET_SUBMITTED =
+  "These hours are on a submitted timesheet. Reject the entry, then save the event again.";
+
+/** A shop-time edit that would change posted hours: only a correction
+ *  changes them (to 0 hours when the event moves to another person). */
+export const shopTimesheetPostedMessage = (hours: number) =>
+  `These hours are posted. Correct the timesheet entry to ${hours} hours first.`;
+
 /** Posts (or reverses) a production event's labor/machine and overhead cost to WIP. */
 export async function postProductionEvent(
   ctx: ServiceContext,
@@ -22284,9 +24251,8 @@ export async function postProductionEvent(
   const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
-  const today = datetime
-    .today(await getCompanyTimeZone(db, companyId))
-    .toString();
+  const timeZone = await getCompanyTimeZone(db, companyId);
+  const today = datetime.today(timeZone).toString();
 
   const companyRecord = await single(
     db,
@@ -22337,7 +24303,9 @@ export async function postProductionEvent(
                 "Location",
                 "Employee",
                 "WorkCenter",
-                "Process"
+                "Process",
+                "Project",
+                "ProjectElement"
               ]
             },
             { columns: ["id", "entityType"] }
@@ -22389,6 +24357,60 @@ export async function postProductionEvent(
 
   const jobId = (event.jobOperation as any).jobId as string;
 
+  // A consume-to-project job charges its project account instead of WIP.
+  const projectCharge = await loadJobProjectCharge(db, companyId, jobId);
+  const costAccount =
+    projectCharge?.accountId ?? accountDefaults.data.workInProgressAccount;
+
+  // Shop labor on a project is priced by the employee's labor category
+  // (D37), and under DCAA it is the employee's certified time (D38). Read
+  // once per event with a project charge — a Machine event too, so an edit
+  // that turns labor into machine time removes the labor's timesheet entry.
+  const shopLabor = projectCharge
+    ? await loadShopLabor(db, { companyId, productionEventId, timeZone })
+    : null;
+  const isLabor = event.type !== "Machine";
+
+  // DCAA timekeeping (D38): project labor is certified time. The Labor leg
+  // is skipped; the hours go to the employee's timesheet as a Draft entry
+  // with the job operation, and post-timesheet posts their cost when the
+  // week is certified. The Machine and Overhead legs post as before. The
+  // entry is linked to the event, so every post and reversal brings it in
+  // step with the event (`syncShopTimesheet`): its hours, day, person and
+  // operation.
+  const timesheetLabor = (shopLabor?.isDcaa ?? false) && isLabor;
+  const timesheetSync =
+    shopLabor?.isDcaa && projectCharge
+      ? (() => {
+          const hours =
+            reverse || !isLabor ? 0 : round((event.duration ?? 0) / 3600);
+          if (hours > 0 && !event.employeeId) {
+            throw new InvalidInputError(SHOP_LABOR_EMPLOYEE_REQUIRED);
+          }
+          if (hours > 0 && !shopLabor.laborCategoryId) {
+            throw new InvalidInputError(SHOP_LABOR_CATEGORY_REQUIRED);
+          }
+          return {
+            companyId,
+            productionEventId,
+            createdBy: userId,
+            wanted:
+              hours > 0 && event.employeeId && shopLabor.laborCategoryId
+                ? {
+                    employeeId: event.employeeId,
+                    entryDate: shopLabor.entryDate,
+                    projectId: projectCharge.projectId,
+                    projectElementId: projectCharge.projectElementId,
+                    laborCategoryId: shopLabor.laborCategoryId,
+                    hours,
+                    jobId,
+                    jobOperationId: event.jobOperationId
+                  }
+                : null
+          };
+        })()
+      : null;
+
   let cost = 0;
   let overheadCost = 0;
   if (!reverse) {
@@ -22410,7 +24432,7 @@ export async function postProductionEvent(
         ? Number(workCenter.data.machineRate ?? 0)
         : Number(workCenter.data.laborRate ?? 0);
 
-    cost = durationHours * rate;
+    cost = timesheetLabor ? 0 : durationHours * rate;
     overheadCost = durationHours * Number(workCenter.data.overheadRate ?? 0);
 
     if (
@@ -22499,6 +24521,18 @@ export async function postProductionEvent(
   if (cost <= 0 && overheadCost <= 0 && reversalLines.length === 0) {
     // Nothing to post and nothing to reverse. On a reversal this clears the
     // flag so the event can be deleted; on a post it marks it done.
+    if (timesheetSync) {
+      await db.transaction().execute(async (trx) => {
+        await syncShopTimesheet(trx, timesheetSync);
+        await trx
+          .updateTable("productionEvent")
+          .set({ postedToGL: !reverse })
+          .where("id", "=", productionEventId)
+          .where("companyId", "=", companyId)
+          .execute();
+      });
+      return { success: true } as PostProductionEventResult;
+    }
     await updateRows(
       db,
       "productionEvent",
@@ -22572,9 +24606,12 @@ export async function postProductionEvent(
     ...(laborAbsorption
       ? [
           {
-            accountId: accountDefaults.data.workInProgressAccount,
+            accountId: costAccount,
             accountDefaultRole: null,
-            description: "WIP Account",
+            description:
+              projectCharge && !projectCharge.keepsWip
+                ? "Project Labor"
+                : "WIP Account",
             amount: round(debit("asset", cost)),
             quantity: 1,
             documentType: "Production Event" as const,
@@ -22600,9 +24637,12 @@ export async function postProductionEvent(
     ...(overheadAbsorption
       ? [
           {
-            accountId: accountDefaults.data.workInProgressAccount,
+            accountId: costAccount,
             accountDefaultRole: null,
-            description: "WIP Account (Overhead)",
+            description:
+              projectCharge && !projectCharge.keepsWip
+                ? "Project Overhead"
+                : "WIP Account (Overhead)",
             amount: round(debit("asset", overheadCost)),
             quantity: 1,
             documentType: "Production Event" as const,
@@ -22707,7 +24747,7 @@ export async function postProductionEvent(
         companyId: string;
       }[] = [];
 
-      journalLineResults.forEach((jl) => {
+      journalLineResults.forEach((jl, index) => {
         if (
           finishedItemCost?.data?.itemPostingGroupId &&
           dimensionMap.has("ItemPostingGroup")
@@ -22762,6 +24802,31 @@ export async function postProductionEvent(
             companyId
           });
         }
+        // The project lines (new and reversing) carry the project tags.
+        if (
+          projectCharge &&
+          journalLineInserts[index]?.accountId === projectCharge.accountId
+        ) {
+          if (dimensionMap.has("Project")) {
+            dimensionInserts.push({
+              journalLineId: jl.id,
+              dimensionId: dimensionMap.get("Project")!,
+              valueId: projectCharge.projectId,
+              companyId
+            });
+          }
+          if (
+            projectCharge.projectElementId &&
+            dimensionMap.has("ProjectElement")
+          ) {
+            dimensionInserts.push({
+              journalLineId: jl.id,
+              dimensionId: dimensionMap.get("ProjectElement")!,
+              valueId: projectCharge.projectElementId,
+              companyId
+            });
+          }
+        }
       });
 
       if (dimensionInserts.length > 0) {
@@ -22772,6 +24837,123 @@ export async function postProductionEvent(
       }
     }
 
+    // The project ledger mirrors the journal: reverse what this event wrote
+    // before, then write its current cost.
+    const priorProjectRows = await trx
+      .selectFrom("projectLedger")
+      .selectAll()
+      .where("documentType", "=", "Production Event")
+      .where("documentId", "=", productionEventId)
+      .where("companyId", "=", companyId)
+      .execute();
+    const reversedIds = new Set(
+      priorProjectRows
+        .map((row) => row.reversalOfId)
+        .filter((id): id is string => Boolean(id))
+    );
+    const openProjectRows = priorProjectRows.filter(
+      (row) => !row.reversalOfId && !reversedIds.has(row.id)
+    );
+    // A reversal row names this journal's reversal line on its original
+    // line's account, so the revenue run relieves it like the original.
+    // The reversal lines net per account, so rows on one account share it.
+    const originalLineIds = openProjectRows
+      .map((row) => row.journalLineId)
+      .filter((id): id is string => Boolean(id));
+    const originalLineAccounts = new Map(
+      originalLineIds.length > 0
+        ? (
+            await trx
+              .selectFrom("journalLine")
+              .select(["id", "accountId"])
+              .where("id", "in", originalLineIds)
+              .where("companyId", "=", companyId)
+              .execute()
+          ).map((line) => [line.id, line.accountId])
+        : []
+    );
+    const reversalLineFor = (journalLineId: string | null) => {
+      const accountId = journalLineId
+        ? originalLineAccounts.get(journalLineId)
+        : undefined;
+      if (!accountId) return null;
+      const index = reversalLines.findIndex(
+        (line) => line.accountId === accountId
+      );
+      return index < 0 ? null : (journalLineResults[index]?.id ?? null);
+    };
+    const hours = (event.duration ?? 0) / 3600;
+    const projectLedgerInserts = [
+      ...openProjectRows.map((row) =>
+        buildProjectLedgerRow({
+          companyId,
+          projectId: row.projectId,
+          projectElementId: row.projectElementId,
+          postingDate: today,
+          costType: row.costType,
+          documentType: "Production Event",
+          documentId: productionEventId,
+          jobId: row.jobId,
+          employeeId: row.employeeId,
+          laborCategoryId: row.laborCategoryId,
+          quantity: row.quantity === null ? null : -Number(row.quantity),
+          amount: -Number(row.amount),
+          reversalOfId: row.id,
+          journalLineId: reversalLineFor(row.journalLineId),
+          unallowable: row.unallowable,
+          createdBy: userId
+        })
+      ),
+      ...(projectCharge && !reverse
+        ? (
+            [
+              [
+                event.type === "Machine" ? "Machine" : "Labor",
+                cost,
+                reversalLines.length
+              ],
+              [
+                "Overhead",
+                overheadCost,
+                reversalLines.length + (cost > 0 ? 2 : 0)
+              ]
+            ] as const
+          )
+            .filter(([, amount]) => amount > 0)
+            .map(([costType, amount, lineIndex]) =>
+              buildProjectLedgerRow({
+                companyId,
+                projectId: projectCharge.projectId,
+                projectElementId: projectCharge.projectElementId,
+                postingDate: today,
+                costType,
+                documentType: "Production Event",
+                documentId: productionEventId,
+                jobId,
+                employeeId: event.employeeId,
+                laborCategoryId:
+                  costType === "Labor"
+                    ? (shopLabor?.laborCategoryId ?? null)
+                    : null,
+                quantity: hours,
+                amount,
+                journalLineId: journalLineResults[lineIndex]?.id ?? null,
+                unallowable: projectCharge.unallowable,
+                createdBy: userId
+              })
+            )
+        : [])
+    ];
+    if (projectLedgerInserts.length > 0) {
+      await insertProjectLedgerRows(trx, {
+        companyId,
+        userId,
+        rows: projectLedgerInserts
+      });
+    }
+
+    if (timesheetSync) await syncShopTimesheet(trx, timesheetSync);
+
     await trx
       .updateTable("productionEvent")
       .set({ postedToGL: !reverse })
@@ -22781,6 +24963,166 @@ export async function postProductionEvent(
   });
 
   return { success: true };
+}
+
+/**
+ * The employee's labor category, the company's timekeeping controls and the
+ * day the event's work began on the company's calendar, in one read.
+ */
+async function loadShopLabor(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; productionEventId: string; timeZone: string }
+) {
+  const row = await db
+    .selectFrom("productionEvent as pe")
+    .leftJoin("employeeJob as ej", (join) =>
+      join
+        .onRef("ej.id", "=", "pe.employeeId")
+        .onRef("ej.companyId", "=", "pe.companyId")
+    )
+    .leftJoin("companySettings as cs", "cs.id", "pe.companyId")
+    .select([
+      "ej.laborCategoryId",
+      "cs.timekeepingControls",
+      sql<string>`(("pe"."startTime" AT TIME ZONE ${args.timeZone})::date)::text`.as(
+        "entryDate"
+      )
+    ])
+    .where("pe.id", "=", args.productionEventId)
+    .where("pe.companyId", "=", args.companyId)
+    .executeTakeFirstOrThrow();
+  return {
+    laborCategoryId: row.laborCategoryId ?? null,
+    isDcaa: row.timekeepingControls === "DCAA",
+    entryDate: row.entryDate
+  };
+}
+
+/**
+ * Brings the timesheet entries of a production event in step with it (D38).
+ * The event's hours are the truth while its entries are the employee's to
+ * edit (Draft or Rejected): they become one Draft entry with the wanted
+ * hours, day, person and operation, or go when `wanted` is null. Hours the
+ * employee has submitted (Submitted, Approved, Posted) stand: when their net
+ * already matches the event (same person, same hours) the open entries go
+ * and nothing else changes; a net of 0 (a posted entry corrected to 0) no
+ * longer counts; otherwise the post is refused — a submitted entry is
+ * rejected first, a posted one corrected (`createTimesheetCorrection` copies
+ * the link).
+ */
+async function syncShopTimesheet(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    companyId: string;
+    productionEventId: string;
+    createdBy: string;
+    wanted: {
+      employeeId: string;
+      entryDate: string;
+      projectId: string;
+      projectElementId: string | null;
+      laborCategoryId: string;
+      hours: number;
+      jobId: string;
+      jobOperationId: string | null;
+    } | null;
+  }
+): Promise<void> {
+  const { companyId, productionEventId, wanted } = args;
+  // The event row's lock serializes two posts of one event, which could
+  // otherwise both find no entry and both insert one.
+  await trx
+    .selectFrom("productionEvent")
+    .select("id")
+    .where("id", "=", productionEventId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .execute();
+  const linked = await trx
+    .selectFrom("timesheetEntry")
+    .select(["id", "status", "hours", "employeeId"])
+    .where("productionEventId", "=", productionEventId)
+    .where("companyId", "=", companyId)
+    .orderBy("createdAt")
+    .orderBy("id")
+    .forUpdate()
+    .execute();
+  const isOpen = (entry: (typeof linked)[number]) =>
+    entry.status === "Draft" || entry.status === "Rejected";
+  const open = linked.filter(isOpen);
+  const certified = linked.filter((entry) => !isOpen(entry));
+  const certifiedNet = certified.reduce(
+    (sum, entry) => sum + Number(entry.hours),
+    0
+  );
+
+  const deleteOpen = async (entries: typeof open) => {
+    if (entries.length === 0) return;
+    await trx
+      .deleteFrom("timesheetEntry")
+      .where(
+        "id",
+        "in",
+        entries.map((entry) => entry.id)
+      )
+      .where("companyId", "=", companyId)
+      .execute();
+  };
+
+  if (!equals(certifiedNet, 0)) {
+    const matches =
+      wanted !== null &&
+      equals(certifiedNet, wanted.hours) &&
+      certified.every((entry) => entry.employeeId === wanted.employeeId);
+    if (matches) {
+      await deleteOpen(open);
+      return;
+    }
+    if (certified.some((entry) => entry.status === "Posted")) {
+      const sameEmployee =
+        wanted !== null &&
+        certified.every((entry) => entry.employeeId === wanted.employeeId);
+      throw new InvalidInputError(
+        shopTimesheetPostedMessage(sameEmployee ? wanted.hours : 0)
+      );
+    }
+    throw new InvalidInputError(SHOP_TIMESHEET_SUBMITTED);
+  }
+
+  const [kept, ...rest] = open;
+  await deleteOpen(wanted ? rest : open);
+  if (!wanted) return;
+  if (kept) {
+    // Updated in place, so a revision written on it keeps its entry. A
+    // rejected entry is the employee's Draft again.
+    await trx
+      .updateTable("timesheetEntry")
+      .set({
+        employeeId: wanted.employeeId,
+        entryDate: wanted.entryDate,
+        projectId: wanted.projectId,
+        projectElementId: wanted.projectElementId,
+        laborCategoryId: wanted.laborCategoryId,
+        hours: wanted.hours,
+        jobId: wanted.jobId,
+        jobOperationId: wanted.jobOperationId,
+        status: "Draft",
+        submittedAt: null,
+        rejectionNote: null,
+        updatedBy: args.createdBy,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", kept.id)
+      .where("companyId", "=", companyId)
+      .execute();
+    return;
+  }
+  await insertTimesheetDraft(trx, {
+    companyId,
+    ...wanted,
+    productionEventId,
+    createdBy: args.createdBy
+  });
 }
 const recalculateRequirementsLogger = getLogger(
   "server-functions",
@@ -23216,17 +25558,19 @@ async function cloneReworkOperations(
       .execute();
 
     const isSerial = trackedEntityIds.length > 1 || quantity === 1;
+    const trackedActivityInputInserts: Database["public"]["Tables"]["trackedActivityInput"]["Insert"][] =
+      [];
     for (const entityId of trackedEntityIds) {
-      await trx
-        .insertInto("trackedActivityInput")
-        .values({
-          trackedActivityId: activityId,
-          trackedEntityId: entityId,
-          quantity: isSerial ? 1 : quantity,
-          companyId,
-          createdBy: userId
-        })
-        .execute();
+      trackedActivityInputInserts.push({
+        trackedActivityId: activityId,
+        trackedEntityId: entityId,
+        quantity: isSerial ? 1 : quantity,
+        companyId,
+        createdBy: userId
+      });
+    }
+    for (const rows of chunked(trackedActivityInputInserts)) {
+      await trx.insertInto("trackedActivityInput").values(rows).execute();
     }
   }
 
@@ -23905,6 +26249,28 @@ async function completeBatch(
   // inside the transaction: freshly sliced on the first attempt, re-loaded on resume.
   let glEvents: { id: string; postedToGL: boolean }[] = [];
 
+  // Strict backflush: refuse before phase 1 writes, since phase 2 issues after
+  // it commits. Every member is checked in one dry run, so members sharing a
+  // bin are held to their combined demand. A completed batch skips this, so a
+  // retry still gets the "already completed" answer.
+  const batchStatus = await db
+    .selectFrom("jobOperationBatch")
+    .select("status")
+    .where("id", "=", batchId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (batchStatus?.status !== "Completed") {
+    await inventoryPostings.dryRunJobOperationIssues(db, {
+      companyId,
+      userId,
+      operations: members.map((m) => ({
+        id: m.jobOperationId,
+        quantity: m.quantity
+      }))
+    });
+  }
+  const system = { db, companyId, userId };
+
   await db.transaction().execute(async (trx) => {
     const batch = await trx
       .selectFrom("jobOperationBatch")
@@ -24158,7 +26524,6 @@ async function completeBatch(
   // Phase 2 (post-commit, idempotent). Any throw leaves the batch Completing; a
   // retry re-runs these steps alone. Runs as the system: the batch completion
   // itself was authorized.
-  const system = { db, companyId, userId };
   for (const m of members) {
     if (m.quantity <= 0) continue;
     const issued = await invokePosting(
@@ -24172,8 +26537,10 @@ async function completeBatch(
       inventoryPostings.issueMaterial
     );
     if (issued.error) {
-      throw new Error(
-        `Failed to issue materials for operation ${m.jobOperationId}: ${issued.error.message}`
+      // Keep a strict backflush refusal's 409; completing again resumes.
+      throw new ServerFnError(
+        `Failed to issue materials for operation ${m.jobOperationId}: ${issued.error.message}`,
+        issued.error instanceof ServerFnError ? issued.error.status : 500
       );
     }
   }
@@ -24441,14 +26808,22 @@ export async function batchOperation(
           .returning(["id", "readableId"])
           .executeTakeFirstOrThrow();
 
+        const trackedEntityUpdates: {
+          id: string;
+          data: Database["public"]["Tables"]["trackedEntity"]["Update"];
+        }[] = [];
         for (const write of lotWrites) {
-          await trx
-            .updateTable("trackedEntity")
-            .set({ readableId: write.lotNumber, updatedBy: userId })
-            .where("id", "=", write.trackedEntityId)
-            .where("companyId", "=", companyId)
-            .execute();
+          trackedEntityUpdates.push({
+            id: write.trackedEntityId,
+            data: { readableId: write.lotNumber, updatedBy: userId }
+          });
         }
+        await updateRowsById(
+          trx,
+          "trackedEntity",
+          companyId,
+          trackedEntityUpdates
+        );
 
         const memberUpdate: Record<string, unknown> = {
           jobOperationBatchId: batch.id,

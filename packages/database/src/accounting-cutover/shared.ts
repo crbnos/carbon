@@ -20,14 +20,6 @@ export const ACCOUNTING_ALREADY_SET_UP = "Accounting is already set up.";
 
 export const OPENING_BALANCE_SOURCE = "Opening Balance" as const;
 
-export async function withTransaction<T>(
-  db: CutoverDb,
-  fn: (trx: Transaction<KyselyDatabase>) => Promise<T>
-): Promise<T> {
-  if (db.isTransaction) return fn(db as Transaction<KyselyDatabase>);
-  return db.transaction().execute(fn);
-}
-
 export async function getCompany(db: CutoverDb, companyId: string) {
   const company = await db
     .selectFrom("company")
@@ -130,10 +122,36 @@ export const ACCOUNT_DEFAULT_COLUMNS = [
   "variableLeaseExpenseAccount",
   "rightOfUseAmortizationExpenseAccount",
   "leaseInterestExpenseAccount",
-  "migrationClearingAccount"
+  "migrationClearingAccount",
+  "projectWorkInProgressAccount",
+  "projectExpenseAccount",
+  "warrantyExpenseAccount",
+  "contractLossProvisionAccount",
+  "costOfServiceAccount",
+  "serviceRevenueAccount"
 ] as const satisfies readonly (keyof AccountDefaults)[];
 
 export type AccountDefaultColumn = (typeof ACCOUNT_DEFAULT_COLUMNS)[number];
+
+/**
+ * The account defaults of Projects and Field Service. A posting that needs
+ * one and finds it empty refuses (`ProjectChargeError`, server-functions
+ * lib/project-posting.ts) in every company state: it never writes a
+ * stand-in line, so the enable has nothing to re-point. The readiness check
+ * therefore lets them stay empty, and a company that does not use these
+ * features is not blocked. A set one must still name an active account.
+ */
+export const FEATURE_ACCOUNT_DEFAULTS = [
+  "projectWorkInProgressAccount",
+  "projectExpenseAccount",
+  "warrantyExpenseAccount",
+  "contractLossProvisionAccount"
+] as const satisfies readonly AccountDefaultColumn[];
+
+/** May the readiness check leave `column` empty (a feature default)? */
+export function isFeatureAccountDefault(column: string): boolean {
+  return (FEATURE_ACCOUNT_DEFAULTS as readonly string[]).includes(column);
+}
 
 /** The `accountDefault` columns that are not accounts. */
 type AccountDefaultKey = "companyId" | "updatedBy";

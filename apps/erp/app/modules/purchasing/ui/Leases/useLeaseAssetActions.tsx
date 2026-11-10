@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useState } from "react";
-import { usePermissions } from "~/hooks";
+import { useDrawerItem, usePermissions } from "~/hooks";
 import LeasePurchaseModal from "./LeasePurchaseModal";
 import LeaseTerminateModal from "./LeaseTerminateModal";
 import type {
@@ -36,10 +35,16 @@ export function useLeaseAssetActions({
   schedule: LeaseScheduleLine[];
 }) {
   const permissions = usePermissions();
-  const [pending, setPending] = useState<{
+  const {
+    item: pending,
+    isOpen,
+    key,
+    open: openPending,
+    close
+  } = useDrawerItem<{
     action: LeaseAssetAction;
     line: LeaseLine;
-  } | null>(null);
+  }>();
 
   const canChange =
     lease.status === "Active" &&
@@ -53,12 +58,13 @@ export function useLeaseAssetActions({
     };
   };
 
-  const close = () => setPending(null);
   const offer = pending ? leasePurchaseOffer(lease, pending.line) : null;
 
   const modals =
     pending?.action === "terminate" ? (
       <LeaseTerminateModal
+        key={key}
+        open={isOpen}
         lease={lease}
         line={pending.line}
         payments={payments}
@@ -67,6 +73,8 @@ export function useLeaseAssetActions({
       />
     ) : pending?.action === "purchase" && offer ? (
       <LeasePurchaseModal
+        key={key}
+        open={isOpen}
         lease={lease}
         line={pending.line}
         offer={offer}
@@ -79,7 +87,7 @@ export function useLeaseAssetActions({
   return {
     stateOf,
     open: (action: LeaseAssetAction, line: LeaseLine) =>
-      setPending({ action, line }),
+      openPending({ action, line }),
     modals
   };
 }

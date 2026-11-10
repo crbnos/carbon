@@ -26,6 +26,7 @@ import {
   PrefetchLink,
   TrackedEntityPicker,
   toast,
+  toastError,
   useDisclosure,
   useMount,
   VStack
@@ -70,6 +71,7 @@ import type {
 type PurchaseReturnOrderLineFormProps = {
   initialValues: z.infer<typeof purchaseReturnOrderLineValidator>;
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
   /** Full line row when editing (drives short close and tracking) */
   line?: PurchaseReturnOrderLine;
@@ -118,6 +120,7 @@ function SourceReference({
 const PurchaseReturnOrderLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose,
   line,
   returnReasons,
@@ -172,7 +175,7 @@ const PurchaseReturnOrderLineForm = ({
       .order("name")
       .then(({ data, error }) => {
         if (error) {
-          toast.error(t`Failed to load return reasons`);
+          toastError(t`Failed to load return reasons`, error);
           return;
         }
         setReasons(data ?? []);
@@ -206,7 +209,7 @@ const PurchaseReturnOrderLineForm = ({
     ]);
 
     if (item.error) {
-      toast.error(t`Failed to load item data`);
+      toastError(t`Failed to load item data`, item.error);
       return;
     }
 
@@ -550,7 +553,7 @@ const PurchaseReturnOrderLineForm = ({
   return (
     <ModalCardProvider type={type}>
       {type === "modal" ? (
-        <ModalCard onClose={onClose} isCollapsible={isEditing}>
+        <ModalCard open={open} onClose={onClose} isCollapsible={isEditing}>
           <ModalCardContent size="xxlarge">
             <ValidatedForm
               defaultValues={initialValues}
@@ -590,23 +593,22 @@ const PurchaseReturnOrderLineForm = ({
           {serialsCard}
         </ValidatedForm>
       )}
-      {pickerDisclosure.isOpen && (
-        <TrackedEntityPicker
-          trackingType={itemData.trackingType === "Serial" ? "Serial" : "Batch"}
-          entities={pickerEntities}
-          title={t`Pick serials/batches to return`}
-          description={t`Serials and batches on hand that were received from this supplier`}
-          onSelect={(selection) => {
-            setSelectedEntityIds((ids) =>
-              ids.includes(selection.trackedEntityId)
-                ? ids
-                : [...ids, selection.trackedEntityId]
-            );
-            pickerDisclosure.onClose();
-          }}
-          onClose={pickerDisclosure.onClose}
-        />
-      )}
+      <TrackedEntityPicker
+        open={pickerDisclosure.isOpen}
+        trackingType={itemData.trackingType === "Serial" ? "Serial" : "Batch"}
+        entities={pickerEntities}
+        title={t`Pick serials/batches to return`}
+        description={t`Serials and batches on hand that were received from this supplier`}
+        onSelect={(selection) => {
+          setSelectedEntityIds((ids) =>
+            ids.includes(selection.trackedEntityId)
+              ? ids
+              : [...ids, selection.trackedEntityId]
+          );
+          pickerDisclosure.onClose();
+        }}
+        onClose={pickerDisclosure.onClose}
+      />
     </ModalCardProvider>
   );
 };

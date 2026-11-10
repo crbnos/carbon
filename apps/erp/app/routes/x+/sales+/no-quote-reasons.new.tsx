@@ -6,7 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { noQuoteReasonValidator } from "~/modules/sales/sales.models";
@@ -67,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewCustomerStatusesRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const initialValues = {
     name: ""
   };
@@ -75,7 +75,8 @@ export default function NewCustomerStatusesRoute() {
   return (
     <NoQuoteReasonForm
       initialValues={initialValues}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

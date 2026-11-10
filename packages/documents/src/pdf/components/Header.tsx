@@ -53,7 +53,7 @@ const Header = ({
       {/* Unconstrained flex children overlap in react-pdf when both sides are
           wide (long titles like "Return Merchandise Authorization") — bound
           each side so the title wraps instead of colliding. */}
-      <View style={tw("flex flex-row shrink pr-3")}>
+      <View style={tw("flex flex-row grow shrink items-center pr-3")}>
         {showLogo ? (
           <LogoImage
             src={logoSrc!}
@@ -67,7 +67,11 @@ const Header = ({
           </Text>
         ) : null}
         {opts.showCompanyDetails ? (
-          <View style={tw("flex flex-col text-[9px] text-gray-800")}>
+          <View
+            style={tw(
+              "flex flex-col grow items-center text-[9px] text-gray-800"
+            )}
+          >
             {company.name ? (
               <Text style={tw("font-bold")}>{company.name}</Text>
             ) : null}

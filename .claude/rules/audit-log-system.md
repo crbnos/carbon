@@ -70,7 +70,7 @@ and direct Postgres connections pass. **Never swap it for `REVOKE EXECUTE`**: on
 15.14.1.112, calling any function the caller lacks EXECUTE on, as `anon`/`authenticated`, segfaults the
 backend (see `.ai/lessons.md`). The controlled-environment auto-enable in the `settings+/audit-logs.tsx`
 loader therefore runs as the service role, because that loader only requires View on Audit Logs.
-`20261019053223_module-keys-to-pages.sql` rewrote every existing table's policy from the module
+`20261110050010_module-keys-to-pages.sql` rewrote every existing table's policy from the module
 key to the page key; `create_audit_log_table` re-secures a table whose policy does not name
 `settings.auditLogs_view`.
 
@@ -150,8 +150,7 @@ lookup per target table), and writes via `client.rpc("insert_audit_log_batch", {
 `auditArchiveFunction` in `packages/jobs/src/inngest/functions/scheduled/audit-archive.ts`
 (Inngest id `audit-log-archive`, cron `0 2 * * *`): per company, fetch rows older than `retentionDays`,
 gzip to JSONL, upload to the company's own bucket, record an `auditLogArchive` row, then delete the rows.
-`getArchiveDownloadUrl` reads the company bucket only. Archives written to the retired shared `private`
-bucket were moved there, and their `archivePath` rewritten, by `scripts/one-off/relocate-legacy-audit-archives.ts`.
+`getArchiveDownloadUrl` reads the company bucket only.
 
 GOTCHA: the runtime path is `{companyId}/audit-logs/{year}/{month}/{YYYY-MM-DD}.jsonl.gz`, which does
 **not** match `auditConfig.archivePath` (`.../{month}.jsonl.gz`) — the job builds the path inline rather

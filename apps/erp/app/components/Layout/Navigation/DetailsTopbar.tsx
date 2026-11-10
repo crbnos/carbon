@@ -117,7 +117,7 @@ const DetailTopbar = ({
       <span
         ref={cardRef}
         aria-hidden
-        className="pointer-events-none absolute left-0 top-0 rounded-[6px] bg-active opacity-0 transition-[transform,width,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+        className="pointer-events-none absolute left-0 top-0 rounded-[6px] bg-active opacity-0 transition-[transform,width,opacity] duration-150 ease-out motion-reduce:transition-none"
       />
       {links.map((route) => {
         const isActive = route.isActive
@@ -130,12 +130,13 @@ const DetailTopbar = ({
 
         return (
           <Tooltip key={route.name}>
-            <TooltipTrigger className="w-full">
+            <TooltipTrigger asChild>
               <PrefetchLink
                 to={linkTo}
                 data-nav-item=""
+                aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "relative inline-flex items-center justify-center whitespace-nowrap rounded-[6px] border border-transparent px-3 py-1 text-sm font-medium transition-[background-color,color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring",
+                  "relative w-full inline-flex items-center justify-center whitespace-nowrap rounded-[6px] border border-transparent px-3 py-1 text-sm font-medium transition-[background-color,color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring",
                   isActive
                     ? "bg-background text-foreground shadow-button-base"
                     : "hover:text-foreground"

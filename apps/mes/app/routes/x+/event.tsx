@@ -7,22 +7,40 @@ import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { datetime } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { productionEventValidator } from "~/services/models";
 import {
+  abilityBlockRefusal,
   endMachineProductionEvent,
   endProductionEvent,
-  getOperationEligibility,
   postEndedProductionEvents,
   startMachineProductionEvent,
   startProductionEvent
 } from "~/services/operations.service";
+import { assignSerialNumberOnFirstTouch } from "~/services/serial-number.server";
 import { OUTSIDE_PROCESSING_REFUSAL } from "~/utils/operationView";
+import { path, requestReferrer } from "~/utils/path";
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action(args: ActionFunctionArgs) {
+  const result = await productionEventAction(args);
+  // A press before the page hydrates submits the start/stop form as a full
+  // page POST, which would leave the operator on this resource route with a
+  // bare JSON body. Send them back to the page they came from, keeping the
+  // flash cookie, so the outcome shows as a toast there.
+  if (args.request.headers.get("Sec-Fetch-Mode") === "navigate") {
+    const headers =
+      result instanceof Response ? result.headers : result.init?.headers;
+    throw redirect(requestReferrer(args.request) ?? path.to.operations, {
+      headers
+    });
+  }
+  return result;
+}
+
+async function productionEventAction({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {});
 
@@ -93,16 +111,12 @@ export async function action({ request }: ActionFunctionArgs) {
       return refused(OUTSIDE_PROCESSING_REFUSAL);
     }
 
-    const eligibility = await getOperationEligibility(serviceRole, {
+    const abilityRefusal = await abilityBlockRefusal(serviceRole, {
       operationId: d.jobOperationId,
       employeeId: userId,
       companyId
     });
-    if (!eligibility.eligible) {
-      return refused(
-        eligibility.reason ?? "Not qualified to start this operation"
-      );
-    }
+    if (abilityRefusal) return refused(abilityRefusal);
 
     // Single-phase (assembly) clocking: end any other open work type for this
     // operator on this operation before starting, so Setup and Labor can never
@@ -160,14 +174,23 @@ export async function action({ request }: ActionFunctionArgs) {
       await postEnded(startEvent.data.endedEventIds);
     }
 
+    // First touch: number the unit if it has no serial number yet.
+    if (trackedEntityId) {
+      await assignSerialNumberOnFirstTouch({
+        trackedEntityId,
+        jobOperationId: d.jobOperationId,
+        companyId
+      });
+    }
+
     return data(
       startEvent.data,
-      await flash(request, success(`Started ${d.type.toLowerCase()} operation`))
+      await flash(request, success(`Started ${d.type.toLowerCase()}`))
     );
   }
 
   if (!id) {
-    return data({}, await flash(request, error("No event id provided")));
+    return data({}, await flash(request, error(null, "No event id provided")));
   }
   // End on the event's own work center and type, not the form's.
   const event = await client
@@ -212,7 +235,7 @@ export async function action({ request }: ActionFunctionArgs) {
       .eq("companyId", companyId);
     return data(
       ended.data,
-      await flash(request, success(`Ended ${typeLabel} operation`))
+      await flash(request, success(`Paused ${typeLabel}`))
     );
   }
 
@@ -240,6 +263,6 @@ export async function action({ request }: ActionFunctionArgs) {
   await postEnded([ended.id]);
   return data(
     endEvent.data,
-    await flash(request, success(`Ended ${typeLabel} operation`))
+    await flash(request, success(`Paused ${typeLabel}`))
   );
 }

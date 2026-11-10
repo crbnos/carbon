@@ -242,12 +242,12 @@ function materialChips(candidate: BatchCandidate): string[] {
   return [...signatures, ...fallbacks];
 }
 
-// Numbered wizard step marker (StockTransferWizard precedent).
+// Numbered wizard step marker (StockTransferBuilder precedent).
 function StepBadge({ step, active }: { step: number; active: boolean }) {
   return (
     <span
       className={cn(
-        "flex items-center justify-center size-5 rounded-full text-[11px] font-semibold flex-shrink-0",
+        "flex items-center justify-center size-5 rounded-full text-[0.6875rem] font-semibold flex-shrink-0",
         active
           ? "bg-primary text-primary-foreground"
           : "bg-muted text-muted-foreground"
@@ -299,6 +299,7 @@ type CandidatesResponse = {
 };
 
 export function BatchBuilder({
+  open = true,
   onClose,
   defaultLocationId,
   initialLocationId,
@@ -308,6 +309,7 @@ export function BatchBuilder({
   workCenters,
   batch
 }: {
+  open?: boolean;
   onClose: () => void;
   defaultLocationId: string;
   initialLocationId?: string | null;
@@ -873,7 +875,7 @@ export function BatchBuilder({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -1039,18 +1041,17 @@ export function BatchBuilder({
           </HStack>
         </DrawerFooter>
       </DrawerContent>
-      {createReleaseOpen && (
-        <BatchReleaseModal
-          target={{ jobIds: [...new Set(selected.map((c) => c.jobId))] }}
-          title={t`Create & release batch`}
-          confirmLabel={t`Create & Release`}
-          onClose={() => setCreateReleaseOpen(false)}
-          onConfirm={(purchaseOrdersBySupplierId) => {
-            submit(undefined, { release: true, purchaseOrdersBySupplierId });
-            setCreateReleaseOpen(false);
-          }}
-        />
-      )}
+      <BatchReleaseModal
+        open={createReleaseOpen}
+        target={{ jobIds: [...new Set(selected.map((c) => c.jobId))] }}
+        title={t`Create & release batch`}
+        confirmLabel={t`Create & Release`}
+        onClose={() => setCreateReleaseOpen(false)}
+        onConfirm={(purchaseOrdersBySupplierId) => {
+          submit(undefined, { release: true, purchaseOrdersBySupplierId });
+          setCreateReleaseOpen(false);
+        }}
+      />
     </Drawer>
   );
 }
@@ -1505,7 +1506,7 @@ function SuggestionsBanner({
             ? t`due in 1 day`
             : t`due in ${days} days`;
       return (
-        <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[11px] tabular-nums text-amber-600 dark:text-amber-400">
+        <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[0.6875rem] tabular-nums text-amber-600 dark:text-amber-400">
           <LuCalendarClock className="size-3" />
           {label}
         </span>
@@ -1513,7 +1514,7 @@ function SuggestionsBanner({
     }
     if (s.reason === "fills" && s.fillRatio != null) {
       return (
-        <span className="flex items-center gap-1 rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[11px] text-sky-600 dark:text-sky-400">
+        <span className="flex items-center gap-1 rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[0.6875rem] text-sky-600 dark:text-sky-400">
           <LuLayers className="size-3" />
           {t`fills a run`}
         </span>
@@ -1549,7 +1550,7 @@ function SuggestionsBanner({
             onClick={() => onApply(s.members)}
             className="group flex w-full items-center gap-3 border-t border-border/60 px-3.5 py-2.5 text-left transition-colors hover:bg-emerald-500/[0.06] active:bg-emerald-500/10"
           >
-            <span className="flex size-7 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-[13px] font-semibold tabular-nums text-emerald-700 transition-transform group-active:scale-95 dark:text-emerald-300">
+            <span className="flex size-7 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-[0.8125rem] font-semibold tabular-nums text-emerald-700 transition-transform group-active:scale-95 dark:text-emerald-300">
               {s.members.length}
             </span>
             <div className="min-w-0 flex-1">
@@ -1701,6 +1702,7 @@ function ComposePanel({
               <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px]" />
             </InputLeftElement>
             <Input
+              aria-label={t`Search jobs or items`}
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={t`Search jobs or items`}
@@ -1826,24 +1828,28 @@ function CandidateTable({
           const locked =
             compat.lockedById.has(row.original.id) &&
             !selectedById.has(row.original.id);
+          const operationName = [
+            row.original.jobReadableId,
+            row.original.description
+          ]
+            .filter(Boolean)
+            .join(" ");
+          // A label, not a button: the padding stays a hit area for the
+          // checkbox without nesting one control inside another.
           return (
-            <button
-              type="button"
+            <label
               className={cn(
                 "flex items-center p-3 -m-3",
                 locked ? "cursor-not-allowed" : "cursor-pointer"
               )}
-              onClick={() => !locked && onToggle(row.original)}
-              disabled={locked}
-              aria-label={t`Select operation`}
             >
               <Checkbox
                 checked={selectedById.has(row.original.id)}
                 disabled={locked}
-                className="pointer-events-none"
-                tabIndex={-1}
+                onCheckedChange={() => !locked && onToggle(row.original)}
+                aria-label={t`Select ${operationName}`}
               />
-            </button>
+            </label>
           );
         }
       },
@@ -2178,13 +2184,16 @@ function CandidateGroup({
           const isSelected = selectedById.has(c.id);
           const isLocked = compat.lockedById.has(c.id) && !isSelected;
           const due = dueDateOf(c);
+          const operationName = [c.jobReadableId, c.description]
+            .filter(Boolean)
+            .join(" ");
+          // The card is the checkbox's label: clicking anywhere toggles it,
+          // and the checkbox is the one control (no button around it).
           return (
-            <button
+            <label
               key={c.id}
-              type="button"
-              onClick={() => !isLocked && onToggle(c)}
-              disabled={isLocked}
               className={cn(
+                "block",
                 "w-full min-w-0 rounded-lg border p-2.5 text-left transition-colors",
                 isLocked ? "cursor-not-allowed opacity-60" : "cursor-pointer",
                 isSelected
@@ -2196,8 +2205,9 @@ function CandidateGroup({
                 <Checkbox
                   checked={isSelected}
                   disabled={isLocked}
-                  className="pointer-events-none flex-shrink-0"
-                  tabIndex={-1}
+                  onCheckedChange={() => !isLocked && onToggle(c)}
+                  aria-label={t`Select ${operationName}`}
+                  className="flex-shrink-0"
                 />
                 <ItemThumbnail
                   thumbnailPath={c.thumbnailPath}
@@ -2235,7 +2245,7 @@ function CandidateGroup({
                   </span>
                 </VStack>
               </HStack>
-            </button>
+            </label>
           );
         })}
       </VStack>
@@ -2487,6 +2497,7 @@ function ReviewPanel({
             />
           ) : null}
           <Input
+            aria-label={t`Notes`}
             size="sm"
             value={notes}
             onChange={(e) => onNotesChange(e.target.value)}

@@ -4,6 +4,7 @@
 
 "use client";
 import { useCarbon } from "@carbon/auth";
+import { needsPullFrom } from "@carbon/database/strict-backflush";
 import { ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -24,6 +25,7 @@ import {
   IconButton,
   Label,
   toast,
+  toastError,
   useDebounce,
   useDisclosure,
   useViewport
@@ -79,6 +81,7 @@ import {
   useUrlParams,
   useUser
 } from "~/hooks";
+import { usePullFromLocationIds } from "~/hooks/usePullFromLocationIds";
 import { ItemTrackingType } from "~/modules/items/items.models";
 import {
   MaterialRowDetails,
@@ -103,6 +106,7 @@ type Material = z.infer<typeof jobMaterialValidator> & {
   quantityIssued?: number | null;
   item?: {
     replenishmentSystem: string | null;
+    itemTrackingType?: string | null;
   } | null;
 };
 
@@ -138,14 +142,21 @@ function makeItems(
   items: ItemType[],
   materials: Material[],
   orderState: OrderState,
-  checkedState: CheckedState
+  checkedState: CheckedState,
+  missingPullFrom?: (material: Material) => boolean
 ): ItemWithData[] {
   return materials.map((material) => {
     const order = material.id
       ? (orderState[material.id] ?? material.order)
       : material.order;
     const checked = material.id ? (checkedState[material.id] ?? false) : false;
-    return makeItem(items, material, order, checked);
+    return makeItem(
+      items,
+      material,
+      order,
+      checked,
+      missingPullFrom?.(material) ?? false
+    );
   });
 }
 
@@ -153,7 +164,8 @@ function makeItem(
   items: ItemType[],
   material: Material,
   order: number,
-  checked: boolean
+  checked: boolean,
+  missingPullFrom = false
 ): ItemWithData {
   const itemReadableId = getItemReadableId(items, material.itemId);
   return {
@@ -167,6 +179,7 @@ function makeItem(
         supersessionMode={
           items.find((i) => i.id === material.itemId)?.supersessionMode
         }
+        missingPullFrom={missingPullFrom}
       />
     ),
     checked: checked,
@@ -244,6 +257,7 @@ const JobBillOfMaterial = ({
 
   const fetcher = useAction();
   const permissions = usePermissions();
+  const { t } = useLingui();
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
   const { isPhone } = useViewport();
@@ -286,14 +300,26 @@ const JobBillOfMaterial = ({
   });
 
   const [storeItems] = useItems();
+  const jobData = useRouteData<{ job: Job }>(path.to.job(jobId));
+  const pullFromLocationIds = usePullFromLocationIds();
+  const jobLocationId = jobData?.job?.locationId;
+  const missingPullFrom = (material: Material) =>
+    pullFromLocationIds !== null &&
+    !!jobLocationId &&
+    pullFromLocationIds.includes(jobLocationId) &&
+    !material.storageUnitId &&
+    needsPullFrom({
+      methodType: material.methodType ?? null,
+      itemType: material.itemType ?? null,
+      itemTrackingType: material.item?.itemTrackingType ?? null
+    });
   const items = makeItems(
     storeItems,
     Array.from(materialsById.values()),
     orderState,
-    checkedState
+    checkedState,
+    missingPullFrom
   ).sort((a, b) => a.data.order - b.data.order);
-
-  const jobData = useRouteData<{ job: Job }>(path.to.job(jobId));
   const isDisabled = ["Completed", "Cancelled"].includes(
     jobData?.job?.status ?? ""
   );
@@ -546,6 +572,7 @@ const JobBillOfMaterial = ({
       </HStack>
       <CardContent>
         <SortableList
+          label={t`Bill of Materials`}
           isReadOnly={isReadOnly}
           items={items}
           onReorder={onReorder}
@@ -688,6 +715,11 @@ function MaterialForm({
     });
   };
 
+  const [changedItemTracking, setChangedItemTracking] = useState<{
+    itemId: string;
+    itemTrackingType: string | null;
+  } | null>(null);
+
   const onItemChange = async (itemId: string) => {
     if (!carbon) return;
     if (itemId === params.itemId) {
@@ -715,7 +747,7 @@ function MaterialForm({
     ]);
 
     if (item.error) {
-      toast.error(t`Failed to load item details`);
+      toastError(t`Failed to load item details`, item.error);
       return;
     }
 
@@ -733,6 +765,10 @@ function MaterialForm({
       storageUnitId: pickMethod.data?.defaultStorageUnitId ?? "",
       itemReplenishmentSystem: item.data?.replenishmentSystem ?? "Buy"
     }));
+    setChangedItemTracking({
+      itemId,
+      itemTrackingType: item.data?.itemTrackingType ?? null
+    });
 
     if (item.data?.type) {
       setItemType(item.data.type as MethodItemType);
@@ -748,6 +784,21 @@ function MaterialForm({
   });
   const locationId = routeData?.job?.locationId ?? undefined;
   const storageUnits = useStorageUnits(locationId);
+
+  const pullFromLocationIds = usePullFromLocationIds();
+  const itemTrackingType =
+    changedItemTracking?.itemId === itemData.itemId
+      ? changedItemTracking.itemTrackingType
+      : (item.data.item?.itemTrackingType ?? null);
+  const requiresPullFrom =
+    pullFromLocationIds !== null &&
+    !!locationId &&
+    pullFromLocationIds.includes(locationId) &&
+    needsPullFrom({
+      methodType: itemData.methodType,
+      itemType,
+      itemTrackingType
+    });
 
   const isTracked =
     itemData.requiresBatchTracking || itemData.requiresSerialTracking;
@@ -873,16 +924,24 @@ function MaterialForm({
                   : ""
               )}
             />
-            <Badge variant="secondary">
-              <LuGitPullRequest className="size-3 mr-1" />
-              {storageUnits.options?.find(
-                (s) => s.value === itemData.storageUnitId
-              )?.label ??
-                (itemData.methodType === "Make to Order"
-                  ? t`WIP`
-                  : t`Default Storage Unit`)}
-            </Badge>
+            {requiresPullFrom && !itemData.storageUnitId ? (
+              <Badge variant="red">
+                <LuGitPullRequest className="size-3 mr-1" />
+                <Trans>No storage unit</Trans>
+              </Badge>
+            ) : (
+              <Badge variant="secondary">
+                <LuGitPullRequest className="size-3 mr-1" />
+                {storageUnits.options?.find(
+                  (s) => s.value === itemData.storageUnitId
+                )?.label ??
+                  (itemData.methodType === "Make to Order"
+                    ? t`WIP`
+                    : t`Default Storage Unit`)}
+              </Badge>
+            )}
             <IconButton
+              aria-expanded={sourceDisclosure.isOpen}
               icon={<LuChevronRight />}
               aria-label={
                 sourceDisclosure.isOpen ? "Collapse Source" : "Expand Source"
@@ -928,6 +987,7 @@ function MaterialForm({
             }}
             locationId={locationId}
             itemId={itemData.itemId}
+            isOptional={!requiresPullFrom}
           />
         </div>
       </div>
@@ -954,6 +1014,7 @@ function MaterialForm({
                 : t`First Operation`}
             </Badge>
             <IconButton
+              aria-expanded={backflushDisclosure.isOpen}
               icon={<LuChevronRight />}
               aria-label={
                 backflushDisclosure.isOpen
@@ -1000,16 +1061,7 @@ function MaterialForm({
         </div>
       </div>
 
-      <motion.div
-        className="flex flex-1 items-center justify-end w-full pt-2"
-        initial={{ opacity: 0, filter: "blur(4px)" }}
-        animate={{ opacity: 1, filter: "blur(0px)" }}
-        transition={{
-          type: "spring",
-          bounce: 0,
-          duration: 0.25
-        }}
-      >
+      <div className="flex flex-1 items-center justify-end w-full pt-2">
         <motion.div
           layout
           className="flex items-center justify-between gap-2 w-full"
@@ -1058,7 +1110,7 @@ function MaterialForm({
             <Trans>Save</Trans>
           </Submit>
         </motion.div>
-      </motion.div>
+      </div>
     </ValidatedForm>
   );
 }

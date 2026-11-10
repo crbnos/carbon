@@ -16,6 +16,7 @@ import {
   CommandInput,
   CommandItem
 } from "./Command";
+import { useDensityScale } from "./hooks/useUiScale";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
 import { optionLabelText } from "./utils/react";
@@ -47,17 +48,12 @@ export type PickerListProps = {
   /** The picker's own matching; each picker keeps its own rules. */
   filter: PickerListFilter;
   itemHeight: number;
-  /** "single" ends a row with ✓; "multiple" starts it with a checkbox. */
+  /** "single" starts a row with ✓; "multiple" starts it with a checkbox. */
   selectionMode: "single" | "multiple";
   /** The cmdk item value of a row (each picker escapes it differently). */
   getItemValue: (option: PickerListOption) => string | undefined;
   /** Whether the row shows as chosen (✓ or a checked box). */
   isChecked: (
-    option: PickerListOption,
-    itemValue: string | undefined
-  ) => boolean;
-  /** Single mode: pads the helper column of the row (`pr-2`). */
-  isHelperPadded?: (
     option: PickerListOption,
     itemValue: string | undefined
   ) => boolean;
@@ -76,6 +72,8 @@ export type PickerListProps = {
   /** Names the thing created while the search is empty. */
   createLabel?: string;
   showCreateOptionOnEmpty?: boolean;
+  /** The field the picker fills; names the search box "Search {label}". */
+  label?: string;
 };
 
 const COMPACT_ITEM_HEIGHT = 44;
@@ -97,7 +95,6 @@ function PickerList({
   selectionMode,
   getItemValue,
   isChecked,
-  isHelperPadded,
   value,
   onSelect,
   search: searchProp,
@@ -105,11 +102,15 @@ function PickerList({
   emptyMessage,
   creatable = false,
   createLabel,
-  showCreateOptionOnEmpty = false
+  showCreateOptionOnEmpty = false,
+  label
 }: PickerListProps) {
   const { t } = useLingui();
   const { isPhone } = useViewport();
-  const itemHeight = isPhone ? COMPACT_ITEM_HEIGHT : itemHeightProp;
+  // Heights are px at the default density; scale them with the spacing.
+  const densityScale = useDensityScale();
+  const itemHeight =
+    (isPhone ? COMPACT_ITEM_HEIGHT : itemHeightProp) * densityScale;
   const [ownSearch, setOwnSearch] = useState("");
   const search = searchProp ?? ownSearch;
   const setSearch = onSearchChange ?? setOwnSearch;
@@ -188,6 +189,12 @@ function PickerList({
       <CommandItem
         key={item.value}
         value={itemValue}
+        // Only the options in view render: each says where it sits in the
+        // whole list, and whether it is chosen (cmdk's aria-selected marks
+        // the highlighted option, not the chosen one).
+        aria-setsize={filteredOptions.length}
+        aria-posinset={virtualRow.index + 1}
+        aria-checked={isCreateOption ? undefined : checked}
         onSelect={() => {
           onSelect(item, { search, setSearch, isCreateOption });
         }}
@@ -207,17 +214,20 @@ function PickerList({
       >
         {selectionMode === "single" ? (
           <>
+            {/* The ✓ leads the row in a fixed slot, so a checked row's text
+                and helperRight stay aligned with every other row. */}
+            <LuCheck
+              className={cn(
+                "mr-2 h-4 w-4 flex-shrink-0",
+                checked && !isCreateOption ? "opacity-100" : "opacity-0"
+              )}
+            />
             {isCreateOption ? (
               <div className="flex items-center min-w-0 flex-1">
                 <span>{createText}</span>
               </div>
             ) : item.helper ? (
-              <div
-                className={cn(
-                  "flex flex-col min-w-0 flex-1",
-                  isHelperPadded?.(item, itemValue) && "pr-2"
-                )}
-              >
+              <div className="flex flex-col min-w-0 flex-1">
                 <TruncatedTooltipText
                   className="block w-full truncate"
                   tooltip={itemHoverText}
@@ -246,15 +256,6 @@ function PickerList({
               >
                 {item.label}
               </TruncatedTooltipText>
-            )}
-            {!isCreateOption && (
-              <LuCheck
-                className={cn(
-                  "ml-auto h-4 w-4",
-                  creatable && "flex-shrink-0",
-                  checked ? "opacity-100" : "opacity-0 hidden"
-                )}
-              />
             )}
           </>
         ) : creatable ? (
@@ -328,7 +329,10 @@ function PickerList({
   const emptyInsideScroller = creatable && selectionMode === "multiple";
 
   return (
-    <Command shouldFilter={false}>
+    <Command
+      shouldFilter={false}
+      label={label ? t`Search ${label}` : t`Search`}
+    >
       <CommandInput
         value={search}
         onValueChange={setSearch}

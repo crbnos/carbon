@@ -5,20 +5,23 @@
 import { respond } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
-import { useNavigate } from "react-router";
 import { useUser } from "~/hooks";
-import { workCenterValidator } from "~/modules/resources/resources.models";
+import {
+  withoutOperatingHours,
+  workCenterFormValidator
+} from "~/modules/resources/resources.models";
 import { WorkCenterForm } from "~/modules/resources/ui";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator(workCenterValidator).request(args);
+  const input = await validator(workCenterFormValidator).request(args);
   if ("invalid" in input) return input.invalid;
   const { api } = await authorize(args.request);
   const result = await api.resources.createWorkCenter({
-    ...input.data,
+    ...withoutOperatingHours(input.data),
     customFields: input.formData && setCustomFields(input.formData)
   });
   // The modal form reads the result and closes itself.
@@ -27,8 +30,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function NewWorkCenterRoute() {
-  const navigate = useNavigate();
-  const onClose = () => navigate(path.to.workCenters);
+  const dialog = useRouteDialog(path.to.workCenters);
   const { defaults } = useUser();
 
   const initialValues = {
@@ -47,5 +49,11 @@ export default function NewWorkCenterRoute() {
     minimumBatchQuantity: undefined as number | undefined
   };
 
-  return <WorkCenterForm onClose={onClose} initialValues={initialValues} />;
+  return (
+    <WorkCenterForm
+      open={dialog.open}
+      onClose={dialog.close}
+      initialValues={initialValues}
+    />
+  );
 }

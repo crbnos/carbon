@@ -11,10 +11,14 @@ import {
   useEnumerableAsText
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
+import { Link } from "react-router";
 import { Enumerable } from "./Enumerable";
 
 type EnumerableGroupItem = {
   label: string;
+  /** Where the chip links to. Prefer this over `onClick` for navigation: a
+   * link is reachable by keyboard and named for assistive tech. */
+  to?: string;
   onClick?: () => void;
 };
 
@@ -53,14 +57,14 @@ const EnumerableGroup = ({
     );
   }
 
-  const renderChip = (item: EnumerableGroupItem) =>
+  const renderBadge = (item: EnumerableGroupItem, clickable: boolean) =>
     chip === "outline" ? (
       <Badge
         key={item.label}
         variant="outline"
         onClick={item.onClick}
         title={item.label}
-        className={cn(item.onClick && "cursor-pointer", chipClassName)}
+        className={cn(clickable && "cursor-pointer", chipClassName)}
       >
         {item.label}
       </Badge>
@@ -69,8 +73,22 @@ const EnumerableGroup = ({
         key={item.label}
         value={item.label}
         onClick={item.onClick}
-        className={cn(item.onClick && "cursor-pointer", chipClassName)}
+        className={cn(clickable && "cursor-pointer", chipClassName)}
       />
+    );
+
+  const renderChip = (item: EnumerableGroupItem) =>
+    item.to ? (
+      <Link
+        key={item.label}
+        to={item.to}
+        onClick={(e) => e.stopPropagation()}
+        className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        {renderBadge({ ...item, to: undefined, onClick: undefined }, true)}
+      </Link>
+    ) : (
+      renderBadge(item, !!item.onClick)
     );
 
   return (
@@ -81,7 +99,7 @@ const EnumerableGroup = ({
           <PopoverTrigger
             aria-label={t`Show ${overflow.length} more`}
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex min-h-[1.5rem] items-center rounded-md border bg-secondary px-2 text-[12px] font-bold tabular-nums text-secondary-foreground outline-none transition-colors hover:bg-secondary/80 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            className="inline-flex min-h-[1.5rem] items-center rounded-md border bg-secondary px-2 text-[0.75rem] font-bold tabular-nums text-secondary-foreground outline-none transition-colors hover:bg-secondary/80 focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             +{overflow.length}
           </PopoverTrigger>

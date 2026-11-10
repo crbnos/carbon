@@ -23,6 +23,8 @@ import {
   LuCircleStop,
   LuCreditCard,
   LuEllipsisVertical,
+  LuFileText,
+  LuLandmark,
   LuListChecks,
   LuPanelLeft,
   LuPencilLine,
@@ -31,8 +33,10 @@ import {
 } from "react-icons/lu";
 import { Link } from "react-router";
 import { usePanels } from "~/components/Layout";
+import DetailTopbar from "~/components/Layout/Navigation/DetailsTopbar";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { useCompanyToday, useDateFormatter, usePermissions } from "~/hooks";
+import { useGovernmentContracting } from "~/modules/projects/ui/useGovernmentContracting";
 import { path } from "~/utils/path";
 import ContractAmendModal from "./ContractAmendModal";
 import ContractCancelModal from "./ContractCancelModal";
@@ -74,6 +78,22 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
   const canRevertCancellation =
     isActive && isCancelled && !!contract.endDate && contract.endDate >= today;
 
+  // The route tabs: the contract's Financing needs the government contracting
+  // fields, and with only Details there is nothing to switch between.
+  const governmentContracting = useGovernmentContracting();
+  const navigation = [
+    { name: t`Details`, to: path.to.contractDetails(id), icon: LuFileText },
+    ...(governmentContracting
+      ? [
+          {
+            name: t`Financing`,
+            to: path.to.contractFinancing(id),
+            icon: LuLandmark
+          }
+        ]
+      : [])
+  ];
+
   const open = (next: PendingAction) => {
     setAction(next);
     confirm.onOpen();
@@ -111,7 +131,11 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
               variant="ghost"
             />
             <Link to={path.to.contractDetails(id)} className="min-w-0">
-              <Heading size="h4" className="flex items-center gap-2 min-w-0">
+              <Heading
+                as="h1"
+                size="h4"
+                className="flex items-center gap-2 min-w-0"
+              >
                 <span className="whitespace-nowrap">{readableId}</span>
                 {contract.name && (
                   <span className="text-muted-foreground font-normal truncate">
@@ -152,6 +176,7 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
             )}
           </HStack>
           <HStack>
+            {navigation.length > 1 && <DetailTopbar links={navigation} />}
             {canRevertCancellation && (
               <Button
                 variant="secondary"
@@ -217,9 +242,10 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
         </HStack>
       </div>
 
-      {current && confirm.isOpen && (
+      {current && (
         <Confirm
           action={current.action}
+          isOpen={confirm.isOpen}
           title={current.title}
           text={current.text}
           confirmText={current.confirmText}
@@ -228,40 +254,35 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
         />
       )}
 
-      {confirmContract.isOpen && (
-        <ContractConfirmModal
-          contract={contract}
-          onClose={confirmContract.onClose}
-        />
-      )}
+      <ContractConfirmModal
+        contract={contract}
+        open={confirmContract.isOpen}
+        onClose={confirmContract.onClose}
+      />
 
-      {amendDisclosure.isOpen && (
-        <ContractAmendModal
-          contract={contract}
-          lines={lines}
-          action={path.to.contractAmend(id)}
-          onClose={amendDisclosure.onClose}
-        />
-      )}
+      <ContractAmendModal
+        contract={contract}
+        lines={lines}
+        action={path.to.contractAmend(id)}
+        open={amendDisclosure.isOpen}
+        onClose={amendDisclosure.onClose}
+      />
 
-      {cancelDisclosure.isOpen && (
-        <ContractCancelModal
-          contract={contract}
-          action={path.to.contractCancel(id)}
-          onClose={cancelDisclosure.onClose}
-        />
-      )}
+      <ContractCancelModal
+        contract={contract}
+        action={path.to.contractCancel(id)}
+        open={cancelDisclosure.isOpen}
+        onClose={cancelDisclosure.onClose}
+      />
 
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteContract(id)}
-          isOpen={deleteDisclosure.isOpen}
-          name={readableId}
-          text={t`Are you sure you want to delete ${readableId}? This cannot be undone.`}
-          onCancel={deleteDisclosure.onClose}
-          onSubmit={deleteDisclosure.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteContract(id)}
+        isOpen={deleteDisclosure.isOpen}
+        name={readableId}
+        text={t`Are you sure you want to delete ${readableId}? This cannot be undone.`}
+        onCancel={deleteDisclosure.onClose}
+        onSubmit={deleteDisclosure.onClose}
+      />
     </>
   );
 };

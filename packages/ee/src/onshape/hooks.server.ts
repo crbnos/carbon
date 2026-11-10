@@ -120,8 +120,13 @@ export async function registerOnshapeWebhook(
   const path = callbackPath(companyId);
   try {
     const existing = await onshape.client.getWebhooks();
+    // The element sync's transient translation webhooks share the path.
     const alreadyRegistered = (existing.items ?? []).some(
-      (webhook) => typeof webhook.url === "string" && webhook.url.includes(path)
+      (webhook) =>
+        typeof webhook.url === "string" &&
+        webhook.url.includes(path) &&
+        Array.isArray(webhook.events) &&
+        webhook.events.includes("onshape.revision.created")
     );
     if (alreadyRegistered) return { ok: true };
 

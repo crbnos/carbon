@@ -6,96 +6,34 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { holdsGate } from "@carbon/database/access";
 import { validationError, validator } from "@carbon/form";
-import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { erpPosting } from "~/services/erp";
-import { nonScrapQuantityValidator } from "~/services/models";
+import { completeQuantityValidator } from "~/services/models";
 import {
+  abilityBlockRefusal,
   finishJobOperation,
-  insertProductionQuantity
+  insertProductionQuantity,
+  insertProductionQuantityIfCurrent
 } from "~/services/operations.service";
+import { autoPrintFirstOperationLabel } from "~/services/printing.server";
+import { checkStrictBackflush } from "~/services/quality.server";
 import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
 const log = getLogger("mes");
 
-/**
- * Triggers an auto-print of the entity's label when this is its first
- * operation (i.e. the entity was just minted) and the work center's
- * printer assignment has auto-print enabled.
- */
-async function autoPrintFirstOperationLabel({
-  serviceRole,
-  trackedEntityId,
-  workCenterId,
-  companyId,
-  userId
-}: {
-  serviceRole: ReturnType<typeof getCarbonServiceRole>;
-  trackedEntityId: string;
-  workCenterId: string | undefined;
-  companyId: string;
-  userId: string;
-}) {
-  try {
-    const { data: entity } = await serviceRole
-      .from("trackedEntity")
-      .select("attributes")
-      .eq("id", trackedEntityId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    // Service-role read: an entity outside the caller's company prints nothing.
-    if (!entity) return;
-
-    const attributes = (entity?.attributes ?? {}) as Record<string, unknown>;
-    const operationCount = Object.keys(attributes).filter((k) =>
-      k.startsWith("Operation ")
-    ).length;
-    if (operationCount > 1) return;
-
-    if (!workCenterId) return;
-    const { data: workCenter } = await serviceRole
-      .from("workCenter")
-      .select("locationId")
-      .eq("id", workCenterId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    const locationId = workCenter?.locationId ?? undefined;
-    if (!locationId) return;
-
-    const config = await getCachedPrinterConfig(
-      serviceRole,
-      companyId,
-      locationId,
-      "workCenter",
-      workCenterId
-    );
-    if (config?.autoPrint ?? true) {
-      await trigger("print-job", {
-        sourceDocument: "Job",
-        sourceDocumentId: trackedEntityId,
-        companyId,
-        userId,
-        locationId,
-        workCenterId
-      });
-    }
-  } catch (e) {
-    log.error("Auto-print failed", { error: e });
-  }
-}
-
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {});
+  const { client, companyId, userId, permissions } = await authorize(request);
 
   const formData = await request.formData();
-  const validation = await validator(nonScrapQuantityValidator).validate(
+  const validation = await validator(completeQuantityValidator).validate(
     formData
   );
 
@@ -127,6 +65,18 @@ export async function action({ request }: ActionFunctionArgs) {
         ...error(jobOperation.error, "Failed to fetch job operation"),
         flash: "error"
       })
+    );
+  }
+
+  const refusal = await abilityBlockRefusal(serviceRole, {
+    operationId: jobOperation.data.id,
+    employeeId: userId,
+    companyId
+  });
+  if (refusal) {
+    return data(
+      {},
+      await flash(request, { ...error(null, refusal), flash: "error" })
     );
   }
 
@@ -191,6 +141,19 @@ export async function action({ request }: ActionFunctionArgs) {
     const newTrackedEntityId = response.data?.newTrackedEntityId as
       | string
       | undefined;
+    if (response.error) {
+      return data(
+        {},
+        await flash(request, {
+          ...error(
+            response.error,
+            response.error.message || "Failed to complete job operation"
+          ),
+          flash: "error"
+        })
+      );
+    }
+
     // Print the entity that was just completed (from form), not the new reserved one
     const completedEntityId = validation.data.trackedEntityId;
 
@@ -200,20 +163,12 @@ export async function action({ request }: ActionFunctionArgs) {
       await autoPrintFirstOperationLabel({
         serviceRole,
         trackedEntityId: printEntityId,
+        jobOperationId: jobOperation.data.id,
+        jobMakeMethodId: jobOperation.data.jobMakeMethodId,
         workCenterId: jobOperation.data.workCenterId ?? undefined,
         companyId,
         userId
       });
-    }
-
-    if (response.error) {
-      return data(
-        {},
-        await flash(request, {
-          ...error(response.error, "Failed to complete job operation"),
-          flash: "error"
-        })
-      );
     }
 
     if (willBeFinished) {
@@ -272,7 +227,10 @@ export async function action({ request }: ActionFunctionArgs) {
       return data(
         {},
         await flash(request, {
-          ...error(response.error, "Failed to complete job operation"),
+          ...error(
+            response.error,
+            response.error.message || "Failed to complete job operation"
+          ),
           flash: "error"
         })
       );
@@ -283,6 +241,8 @@ export async function action({ request }: ActionFunctionArgs) {
       await autoPrintFirstOperationLabel({
         serviceRole,
         trackedEntityId: validation.data.trackedEntityId,
+        jobOperationId: jobOperation.data.id,
+        jobMakeMethodId: jobOperation.data.jobMakeMethodId,
         workCenterId: jobOperation.data.workCenterId ?? undefined,
         companyId,
         userId
@@ -318,25 +278,95 @@ export async function action({ request }: ActionFunctionArgs) {
     const operationPath = path.to.operation(validation.data.jobOperationId);
     return redirect(withOrigin(operationPath, origin));
   } else {
-    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-    const { trackedEntityId, trackingType, ...d } = validation.data;
-    const insertProduction = await insertProductionQuantity(client, {
-      ...d,
+    const {
+      // biome-ignore lint/correctness/noUnusedVariables: not a productionQuantity column
+      trackedEntityId,
+      // biome-ignore lint/correctness/noUnusedVariables: not a productionQuantity column
+      trackingType,
+      expectedQuantityComplete,
+      ...d
+    } = validation.data;
+
+    const check = await checkStrictBackflush({
+      jobOperationId: validation.data.jobOperationId,
+      quantity: validation.data.quantity,
       companyId,
-      createdBy: userId
+      userId
     });
 
-    if (insertProduction.error) {
+    if (check.error) {
       return data(
         {},
         await flash(request, {
-          ...error(
-            insertProduction.error,
-            "Failed to record production quantity"
-          ),
+          ...error(check.error, check.message!),
           flash: "error"
         })
       );
+    }
+
+    let recorded: unknown;
+    if (expectedQuantityComplete !== undefined) {
+      // The page sent the completed quantity it showed: record the unit only
+      // if no other request (a second tab, a resend) recorded it meanwhile.
+      if (!holdsGate(permissions, { "production.jobs": "Create" }, companyId)) {
+        return data(
+          {},
+          await flash(request, {
+            ...error(null, "You do not have permission to record production"),
+            flash: "error"
+          })
+        );
+      }
+      let inserted: { id: string } | null;
+      try {
+        inserted = await insertProductionQuantityIfCurrent(
+          getDatabaseClient(),
+          { ...d, companyId, createdBy: userId },
+          expectedQuantityComplete
+        );
+      } catch (err) {
+        log.error("Failed to record production quantity", {
+          companyId,
+          jobOperationId: jobOperation.data.id,
+          error: err
+        });
+        return data(
+          {},
+          await flash(request, {
+            ...error(err, "Failed to record production quantity"),
+            flash: "error"
+          })
+        );
+      }
+      if (!inserted) {
+        log.info("Completion skipped: the unit is already recorded", {
+          companyId,
+          jobOperationId: jobOperation.data.id,
+          expectedQuantityComplete
+        });
+        return data({ alreadyRecorded: true });
+      }
+      recorded = [inserted];
+    } else {
+      const insertProduction = await insertProductionQuantity(client, {
+        ...d,
+        companyId,
+        createdBy: userId
+      });
+
+      if (insertProduction.error) {
+        return data(
+          {},
+          await flash(request, {
+            ...error(
+              insertProduction.error,
+              "Failed to record production quantity"
+            ),
+            flash: "error"
+          })
+        );
+      }
+      recorded = insertProduction.data;
     }
 
     const issued = await erpPosting(
@@ -353,7 +383,10 @@ export async function action({ request }: ActionFunctionArgs) {
       return data(
         {},
         await flash(request, {
-          ...error(issued.error, "Failed to issue materials"),
+          ...error(
+            issued.error,
+            `Units completed, but ${issued.error.message || "failed to issue materials"}`
+          ),
           flash: "error"
         })
       );
@@ -386,7 +419,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     return data(
-      insertProduction.data,
+      recorded,
       await flash(request, {
         ...success("Successfully completed part"),
         flash: "success"

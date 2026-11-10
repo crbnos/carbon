@@ -24,6 +24,7 @@ import { useNavigate } from "react-router";
 import { Hyperlink, New, SupplierAvatar, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import Money from "~/components/Money";
+import type { InfiniteOptions } from "~/components/Table";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useSuppliers } from "~/stores";
@@ -36,9 +37,10 @@ import type { Lease } from "./types";
 type LeasesTableProps = {
   data: Lease[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const LeasesTable = memo(({ data, count }: LeasesTableProps) => {
+const LeasesTable = memo(({ data, count, infinite }: LeasesTableProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -246,6 +248,7 @@ const LeasesTable = memo(({ data, count }: LeasesTableProps) => {
         count={count}
         columns={columns}
         data={data}
+        infinite={infinite}
         defaultColumnPinning={{
           left: ["leaseId"]
         }}
@@ -268,11 +271,9 @@ const LeasesTable = memo(({ data, count }: LeasesTableProps) => {
           text={t`Are you sure you want to delete ${selected.leaseId ?? ""}? This cannot be undone.`}
           onCancel={() => {
             deleteModal.onClose();
-            setSelected(null);
           }}
           onSubmit={() => {
             deleteModal.onClose();
-            setSelected(null);
           }}
         />
       )}

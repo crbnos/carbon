@@ -31,7 +31,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
         success: false,
         error: update.error
       },
-      await flash(request, error(update.error, "Failed to update item group"))
+      await flash(
+        request,
+        error(update.error, "Failed to update default revision")
+      )
     );
   }
 

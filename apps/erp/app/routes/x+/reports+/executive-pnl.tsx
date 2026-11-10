@@ -33,14 +33,14 @@ import { months } from "~/modules/shared/shared.models";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import { revalidateIgnoringOffset } from "~/utils/revalidate";
+import { revalidateOnSearchChange } from "~/utils/revalidate";
 
 export const handle: Handle = {
   breadcrumb: msg`Executive P&L`,
   to: path.to.executivePnl
 };
 
-export const shouldRevalidate = revalidateIgnoringOffset;
+export const shouldRevalidate = revalidateOnSearchChange;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId, api } = await authorize(
@@ -212,6 +212,7 @@ export default function ExecutivePnlRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
+      <h1 className="sr-only">{t`Executive P&L`}</h1>
       <ReportFilters
         companies={companies}
         selectedCompanyIds={selectedCompanyIds}

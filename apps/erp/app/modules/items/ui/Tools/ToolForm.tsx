@@ -19,6 +19,7 @@ import {
   ModalCardProvider,
   ModalCardTitle,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { getFileSizeLimit, INPUT_FORMAT } from "@carbon/utils";
@@ -67,6 +68,7 @@ import ItemStorageFields from "../Item/ItemStorageFields";
 type ToolFormProps = {
   initialValues: z.infer<typeof toolValidator> & { tags: string[] };
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
@@ -76,7 +78,12 @@ function startsWithLetter(value: string) {
   return /^[A-Za-z]/.test(value);
 }
 
-const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
+const ToolForm = ({
+  initialValues,
+  type = "card",
+  open = true,
+  onClose
+}: ToolFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
@@ -122,7 +129,7 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
         });
 
     if (uploadError || !recordInsert || recordInsert.error) {
-      toast.error(t`Failed to upload model`);
+      toastError(t`Failed to upload model`, uploadError ?? recordInsert?.error);
     } else {
       setModelUploadId(modelId);
       setModelFile(file);
@@ -171,7 +178,8 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
   });
 
   useEffect(() => {
-    if (type !== "modal") return;
+    // Stays mounted while it animates closed: close and toast once.
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
@@ -179,7 +187,7 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(t`Failed to create tool: ${fetcher.data.error.message}`);
     }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
+  }, [fetcher.data, fetcher.state, onClose, open, type, t]);
 
   const { id, onIdChange, loading } = useNextItemId("Tool");
   const permissions = usePermissions();
@@ -229,7 +237,7 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
 
   return (
     <ModalCardProvider type={type}>
-      <ModalCard onClose={onClose}>
+      <ModalCard open={open} onClose={onClose}>
         <ModalCardContent>
           <ValidatedForm
             action={isEditing ? undefined : path.to.newTool}
@@ -239,7 +247,9 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
             fetcher={fetcher}
           >
             <ModalCardHeader>
-              <ModalCardTitle>
+              <ModalCardTitle
+                aria-level={type === "card" && !isEditing ? 1 : undefined}
+              >
                 {isEditing ? (
                   <Trans>Tool Details</Trans>
                 ) : (

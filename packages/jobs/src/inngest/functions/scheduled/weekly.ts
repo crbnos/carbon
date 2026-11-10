@@ -16,8 +16,8 @@ import {
   NotificationEvent
 } from "@carbon/notifications";
 import { chunkArray, datetime, Edition, formatDate } from "@carbon/utils";
-import { render } from "@react-email/components";
 import type { Kysely } from "kysely";
+import { render } from "react-email";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import {

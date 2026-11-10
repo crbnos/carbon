@@ -60,6 +60,7 @@ export const trackingLabelBlockRegistry: Record<
   associations: () => null,
   actionTasks: () => null,
   reviewers: () => null,
+  approval: () => null,
   // Single-line fields are supported (and mirrored in ZPL). Rich text /
   // key-value lists / spacers / shared sections are not.
   field: ({ block, data }) =>

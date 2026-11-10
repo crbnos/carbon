@@ -21,7 +21,7 @@ import { getLocalTimeZone, parseDate } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo } from "react";
 import {
   LuBookMarked,
   LuEllipsisVertical,
@@ -34,12 +34,16 @@ import { useLocations } from "~/components/Form/Location";
 import ItemThumbnail from "~/components/ItemThumbnail";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
+import { usePlanningWeekLabel } from "~/modules/production/ui/Planning/usePlanningWeekLabel";
 import { path } from "~/utils/path";
 import type { DemandProjection } from "../../types";
 
 type DemandProjectionsTableProps = {
   data: DemandProjection[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   locationId: string;
   periods: { id: string; startDate: string; endDate: string }[];
 };
@@ -50,7 +54,13 @@ const defaultColumnPinning = {
 };
 
 const DemandProjectionsTable = memo(
-  ({ data, count, locationId, periods }: DemandProjectionsTableProps) => {
+  ({
+    data,
+    count,
+    nextCursor,
+    locationId,
+    periods
+  }: DemandProjectionsTableProps) => {
     const numberFormatter = useNumberFormatter();
     const dateFormatter = useDateFormatter({
       month: "short",
@@ -58,19 +68,18 @@ const DemandProjectionsTable = memo(
     });
     const [params] = useUrlParams();
     const { t } = useLingui();
+    const weekLabel = usePlanningWeekLabel();
     const { isPhone } = useViewport();
     const permissions = usePermissions();
     const locations = useLocations();
-    const [selectedItem, setSelectedItem] = useState<DemandProjection | null>(
-      null
-    );
+    const selectedItem = useDrawerItem<DemandProjection>();
+    const { open: openSelectedItem } = selectedItem;
 
     const columns = useMemo<ColumnDef<DemandProjection>[]>(() => {
       const periodColumns: ColumnDef<DemandProjection>[] = periods.map(
         (period, index) => {
-          const isCurrentWeek = index === 0;
-          const weekNumber = index + 1;
-          const weekKey = `week${weekNumber}` as keyof DemandProjection;
+          const weekKey = `week${index + 1}` as keyof DemandProjection;
+          const label = weekLabel(period.startDate, index);
           const startDate = parseDate(period.startDate).toDate(
             getLocalTimeZone()
           );
@@ -80,9 +89,7 @@ const DemandProjectionsTable = memo(
             accessorKey: weekKey,
             header: () => (
               <VStack spacing={0}>
-                <div>
-                  {isCurrentWeek ? "Present Week" : `Week ${weekNumber}`}
-                </div>
+                <div>{label}</div>
                 <div className="text-xs text-muted-foreground">
                   {dateFormatter.format(startDate)} -{" "}
                   {dateFormatter.format(endDate)}
@@ -96,9 +103,7 @@ const DemandProjectionsTable = memo(
               return <span>{numberFormatter.format(value)}</span>;
             },
             meta: {
-              filterHeader: isCurrentWeek
-                ? t`Present Week`
-                : t`Week ${weekNumber}`,
+              filterHeader: label,
               exportValue: (row: DemandProjection) => {
                 const value = row[weekKey] as number | undefined | null;
                 return value === undefined || value === null || value === 0
@@ -189,7 +194,7 @@ const DemandProjectionsTable = memo(
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       shortcut={MENU_ITEM_SHORTCUTS.delete}
-                      onSelect={() => setSelectedItem(row.original)}
+                      onSelect={() => openSelectedItem(row.original)}
                       destructive
                     >
                       <DropdownMenuIcon icon={<LuTrash2 />} />
@@ -202,7 +207,16 @@ const DemandProjectionsTable = memo(
           }
         }
       ];
-    }, [periods, dateFormatter, numberFormatter, locationId, permissions, t]);
+    }, [
+      periods,
+      dateFormatter,
+      numberFormatter,
+      locationId,
+      permissions,
+      t,
+      weekLabel,
+      openSelectedItem
+    ]);
 
     return (
       <>
@@ -211,6 +225,8 @@ const DemandProjectionsTable = memo(
           data={data}
           columns={columns}
           count={count}
+          // Location-scoped: no list registry entry, so no `listKey`.
+          infinite={{ dataKey: "projections", nextCursor }}
           defaultColumnPinning={defaultColumnPinning}
           title={t`Demand Forecasts`}
           table="demand-projection"
@@ -220,6 +236,7 @@ const DemandProjectionsTable = memo(
           primaryAction={
             <div className="flex items-center gap-2">
               <Combobox
+                aria-label={t`Location`}
                 asButton
                 size="sm"
                 value={locationId}
@@ -236,16 +253,17 @@ const DemandProjectionsTable = memo(
           }
         />
 
-        {selectedItem && (
+        {selectedItem.item && (
           <ConfirmDelete
             action={path.to.deleteDemandProjections(
-              selectedItem.id!,
+              selectedItem.item.id!,
               locationId
             )}
-            name={`${selectedItem.readableIdWithRevision} forecasts`}
-            text={`Are you sure you want to delete all forecasts for ${selectedItem.readableIdWithRevision}? This action cannot be undone.`}
-            onCancel={() => setSelectedItem(null)}
-            onSubmit={() => setSelectedItem(null)}
+            isOpen={selectedItem.isOpen}
+            name={`${selectedItem.item.readableIdWithRevision} forecasts`}
+            text={`Are you sure you want to delete all forecasts for ${selectedItem.item.readableIdWithRevision}? This action cannot be undone.`}
+            onCancel={selectedItem.close}
+            onSubmit={selectedItem.close}
           />
         )}
       </>

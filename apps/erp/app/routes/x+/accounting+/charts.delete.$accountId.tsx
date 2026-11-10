@@ -7,10 +7,11 @@ import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { isAccountInUse } from "@carbon/database/account-import-reads";
 import { getLogger } from "@carbon/logger";
+import { useRouteDialog } from "@carbon/react";
 import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteAccount,
@@ -72,7 +73,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!accountId) {
     throw redirect(
       path.to.chartOfAccounts,
-      await flash(request, error(params, "Failed to get an account id"))
+      await flash(request, error(null, "Failed to get an account id"))
     );
   }
 
@@ -110,12 +111,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteAccountRoute() {
   const { accountId } = useParams();
   const { account, inUse } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.chartOfAccounts);
   const { t } = useLingui();
 
   if (!accountId || !account) return null; // TODO - handle this better (404?)
 
-  const onCancel = () => navigate(path.to.chartOfAccounts);
   const label = `${account.name}${account.number ? ` (${account.number})` : ""}`;
 
   return (
@@ -128,7 +128,8 @@ export default function DeleteAccountRoute() {
           : t`Are you sure you want to delete the account: ${label}? This cannot be undone.`
       }
       isDisabled={inUse}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

@@ -54,6 +54,14 @@ export const ACCOUNTING_PAGES = [
     paths: ["/x/accounting/depreciation-runs", "/x/depreciation-run/"]
   },
   {
+    // Government contracting: the indirect rate runs and the incurred cost statement.
+    id: "accounting.indirectRates",
+    label: "Indirect Rates",
+    maxLevel: "Full",
+    tables: ["indirectRate", "indirectRateRun", "indirectExpenseStatement"],
+    paths: ["/x/accounting/indirect-rates"]
+  },
+  {
     id: "accounting.leases",
     label: "Leases",
     maxLevel: "Full",
@@ -67,7 +75,11 @@ export const ACCOUNTING_PAGES = [
     id: "accounting.revenueRecognition",
     label: "Revenue Recognition",
     maxLevel: "Full",
-    tables: ["revenueRecognitionRun", "revenueRecognitionSchedule"],
+    tables: [
+      "revenueRecognitionRun",
+      "revenueRecognitionSchedule",
+      "projectCostRelief"
+    ],
     where: {
       table: "revenueRecognitionRun",
       column: "type",
@@ -148,6 +160,13 @@ export const ACCOUNTING_PAGES = [
     paths: ["/x/accounting/years"]
   },
   {
+    id: "accounting.indirectPools",
+    label: "Indirect Pools",
+    maxLevel: "Full",
+    tables: ["indirectPool", "indirectPoolAccount"],
+    paths: ["/x/accounting/indirect-pools"]
+  },
+  {
     id: "accounting.paymentTerms",
     label: "Payment Terms",
     maxLevel: "Full",
@@ -164,12 +183,5 @@ export const ACCOUNTING_PAGES = [
       "/x/supplier/$supplierId/bank-accounts",
       "/x/customer/$customerId/bank-accounts"
     ]
-  },
-  {
-    id: "accounting.projects",
-    label: "Projects",
-    maxLevel: "Full",
-    tables: ["project"],
-    paths: ["/x/accounting/projects"]
   }
 ] as const satisfies readonly Page[];

@@ -8,6 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -17,14 +18,14 @@ import ChartOfAccountsTableFilters from "~/modules/accounting/ui/ChartOfAccounts
 import { months } from "~/modules/shared/shared.models";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import { revalidateIgnoringOffset } from "~/utils/revalidate";
+import { revalidateOnSearchChange } from "~/utils/revalidate";
 
 export const handle: Handle = {
   breadcrumb: msg`Chart of Accounts`,
   to: path.to.chartOfAccounts
 };
 
-export const shouldRevalidate = revalidateIgnoringOffset;
+export const shouldRevalidate = revalidateOnSearchChange;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { api } = await authorize(
@@ -71,6 +72,9 @@ export default function ChartOfAccountsRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
+      <h1 className="sr-only">
+        <Trans>Chart of Accounts</Trans>
+      </h1>
       <ChartOfAccountsTableFilters
         fiscalStartMonth={fiscalStartMonth}
         search={search}

@@ -12,24 +12,35 @@ import {
   datetime,
   EPSILON,
   pick,
+  requireAffected,
   resolveTrackedEntityBin,
-  round
+  round,
+  searchFilter
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import { receiptLotIssueType } from "./quality.utils";
 
 const logger = getLogger("erp", "quality");
 
 import { openai } from "@ai-sdk/openai";
-import { NotFoundError } from "@carbon/api/errors";
+import { NotFoundError, raisedMessage } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
-import type { ServiceContext } from "@carbon/api/service-fn.server";
+import type {
+  CarbonError,
+  ServiceContext
+} from "@carbon/api/service-fn.server";
+import {
+  loadTrackedEntityStripes,
+  trackedEntityStripe
+} from "@carbon/api/stock-stripes";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { withTransaction } from "@carbon/database/client";
 import {
   assertPostingStatusUnchanged,
   journalPostingStatus,
@@ -39,13 +50,17 @@ import * as engine from "@carbon/database/quality";
 import {
   errResult,
   lockIssueDispositions,
-  type Result
+  type Result,
+  setInspectionRelease,
+  withInspectionRelease
 } from "@carbon/database/quality";
 import { inOrder, many, single } from "@carbon/database/rows";
 import { openApprovalRequests } from "@carbon/ee/approvals/document.server";
+import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { trigger } from "@carbon/jobs";
 import { NotificationEvent } from "@carbon/notifications";
 import { generateText, Output } from "ai";
+import { sql } from "kysely";
 import template from "lodash.template";
 import { nanoid } from "nanoid";
 import { systemContext } from "~/modules/service-context.server";
@@ -58,9 +73,12 @@ import {
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
   getExternalLink,
+  getLocationTimeZone,
   invokeCreate,
   invokePosting
 } from "~/modules/shared/shared.service";
+import { getUserDefaults } from "~/modules/users/users.service";
+import { ERP_URL, path } from "~/utils/path";
 import type { inspectionStatus } from "../shared/shared.models";
 import type {
   gaugeCalibrationRecordValidator,
@@ -97,51 +115,70 @@ export async function activateGauge(
   client: SupabaseClient<Database>,
   gaugeId: string
 ) {
-  return client
-    .from("gauges")
-    .update({ gaugeStatus: "Active" })
-    .eq("id", gaugeId);
+  return requireAffected(
+    client
+      .from("gauges")
+      .update({ gaugeStatus: "Active" })
+      .eq("id", gaugeId)
+      .select("id")
+  );
 }
 
 export async function deactivateGauge(
   client: SupabaseClient<Database>,
   gaugeId: string
 ) {
-  return client
-    .from("gauges")
-    .update({ gaugeStatus: "Inactive" })
-    .eq("id", gaugeId);
+  return requireAffected(
+    client
+      .from("gauges")
+      .update({ gaugeStatus: "Inactive" })
+      .eq("id", gaugeId)
+      .select("id")
+  );
 }
 
 export async function deleteGauge(
   client: SupabaseClient<Database>,
   gaugeId: string
 ) {
-  return client.from("gauges").delete().eq("id", gaugeId);
+  return requireAffected(
+    client.from("gauges").delete().eq("id", gaugeId).select("id")
+  );
 }
 
 export async function deleteGaugeCalibrationRecord(
   client: SupabaseClient<Database>,
   gaugeCalibrationRecordId: string
 ) {
-  return client
-    .from("gaugeCalibrationRecord")
-    .delete()
-    .eq("id", gaugeCalibrationRecordId);
+  return requireAffected(
+    client
+      .from("gaugeCalibrationRecord")
+      .delete()
+      .eq("id", gaugeCalibrationRecordId)
+      .select("id")
+  );
 }
 
 export async function deleteGaugeType(
   client: SupabaseClient<Database>,
   gaugeTypeId: string
 ) {
-  return client.from("gaugeType").delete().eq("id", gaugeTypeId);
+  return requireAffected(
+    client.from("gaugeType").delete().eq("id", gaugeTypeId).select("id")
+  );
 }
 
 export async function deleteIssue(
   client: SupabaseClient<Database>,
   nonConformanceId: string
 ) {
-  return client.from("nonConformance").delete().eq("id", nonConformanceId);
+  return requireAffected(
+    client
+      .from("nonConformance")
+      .delete()
+      .eq("id", nonConformanceId)
+      .select("id")
+  );
 }
 
 export async function deleteIssueAssociation(
@@ -151,50 +188,77 @@ export async function deleteIssueAssociation(
 ) {
   switch (type) {
     case "items":
-      return await client
-        .from("nonConformanceItem")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceItem")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "customers":
-      return await client
-        .from("nonConformanceCustomer")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceCustomer")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "suppliers":
-      return await client
-        .from("nonConformanceSupplier")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceSupplier")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "jobOperations":
-      return await client
-        .from("nonConformanceJobOperation")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceJobOperation")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "purchaseOrderLines":
-      return await client
-        .from("nonConformancePurchaseOrderLine")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformancePurchaseOrderLine")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "salesOrderLines":
-      return await client
-        .from("nonConformanceSalesOrderLine")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceSalesOrderLine")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "shipmentLines":
-      return await client
-        .from("nonConformanceShipmentLine")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceShipmentLine")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "receiptLines":
-      return await client
-        .from("nonConformanceReceiptLine")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceReceiptLine")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "salesReturnOrderLines":
-      return await client
-        .from("nonConformanceSalesReturnOrderLine")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceSalesReturnOrderLine")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "purchaseReturnOrderLines": {
       // This association row carries the per-quantity coverage that reduces
       // closeIssue's write-off. Deleting it after the linked return line has
@@ -223,21 +287,30 @@ export async function deleteIssueAssociation(
           } as PostgrestError
         };
       }
-      return await client
-        .from("nonConformancePurchaseReturnOrderLine")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformancePurchaseReturnOrderLine")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     }
     case "trackedEntities":
-      return await client
-        .from("nonConformanceTrackedEntity")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        client
+          .from("nonConformanceTrackedEntity")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     case "inspections":
-      return await (client as any)
-        .from("nonConformanceInspection")
-        .delete()
-        .eq("id", associationId);
+      return await requireAffected(
+        (client as any)
+          .from("nonConformanceInspection")
+          .delete()
+          .eq("id", associationId)
+          .select("id")
+      );
     default:
       throw new Error(`Invalid type: ${type}`);
   }
@@ -247,44 +320,61 @@ export async function deleteIssueType(
   client: SupabaseClient<Database>,
   nonConformanceTypeId: string
 ) {
-  return client
-    .from("nonConformanceType")
-    .delete()
-    .eq("id", nonConformanceTypeId);
+  return requireAffected(
+    client
+      .from("nonConformanceType")
+      .delete()
+      .eq("id", nonConformanceTypeId)
+      .select("id")
+  );
 }
 
 export async function deleteIssueWorkflow(
   client: SupabaseClient<Database>,
   nonConformanceWorkflowId: string
 ) {
-  return client
-    .from("nonConformanceWorkflow")
-    .update({ active: false })
-    .eq("id", nonConformanceWorkflowId);
+  return requireAffected(
+    client
+      .from("nonConformanceWorkflow")
+      .update({ active: false })
+      .eq("id", nonConformanceWorkflowId)
+      .select("id")
+  );
 }
 
 export async function deleteRequiredAction(
   client: SupabaseClient<Database>,
   requiredActionId: string
 ) {
-  return client
-    .from("nonConformanceRequiredAction")
-    .delete()
-    .eq("id", requiredActionId);
+  return requireAffected(
+    client
+      .from("nonConformanceRequiredAction")
+      .delete()
+      .eq("id", requiredActionId)
+      .select("id")
+  );
 }
 
 export async function deleteQualityDocument(
   client: SupabaseClient<Database>,
   qualityDocumentId: string
 ) {
-  return client.from("qualityDocument").delete().eq("id", qualityDocumentId);
+  return requireAffected(
+    client
+      .from("qualityDocument")
+      .delete()
+      .eq("id", qualityDocumentId)
+      .select("id")
+  );
 }
 
 export async function deleteRisk(
   client: SupabaseClient<Database>,
   riskId: string
 ) {
-  return client.from("riskRegister").delete().eq("id", riskId);
+  return requireAffected(
+    client.from("riskRegister").delete().eq("id", riskId).select("id")
+  );
 }
 
 export async function getIssueFromExternalLink(
@@ -305,6 +395,10 @@ export async function getGauge(
   return client.from("gauges").select("*").eq("id", gaugeId).single();
 }
 
+export const GAUGES_PAGING: Paging = {
+  defaultSorts: [{ column: "gaugeId", ascending: false }]
+};
+
 export async function getGauges(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -312,19 +406,26 @@ export async function getGauges(
 ) {
   let query = client
     .from("gauges")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
     query = query.or(
-      `gaugeId.ilike.%${args.search}%,description.ilike.%${args.search}%,modelNumber.ilike.%${args.search}%,serialNumber.ilike.%${args.search}%`
+      searchFilter(
+        [
+          "gaugeId",
+          "description",
+          "manufacturer",
+          "modelNumber",
+          "serialNumber"
+        ],
+        args.search
+      )
     );
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "gaugeId", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, GAUGES_PAGING);
   }
 
   return query;
@@ -355,6 +456,13 @@ export async function getGaugeCalibrationRecord(
     .single();
 }
 
+export const GAUGE_CALIBRATION_RECORDS_PAGING: Paging = {
+  defaultSorts: [
+    { column: "createdAt", ascending: false },
+    { column: "dateCalibrated", ascending: false }
+  ]
+};
+
 export async function getGaugeCalibrationRecords(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -362,20 +470,19 @@ export async function getGaugeCalibrationRecords(
 ) {
   let query = client
     .from("gaugeCalibrationRecords")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
-    query = query.or(
-      `gaugeId.ilike.%${args.search}%,description.ilike.%${args.search}%,modelNumber.ilike.%${args.search}%,serialNumber.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["gaugeId", "description"], args.search));
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false },
-      { column: "dateCalibrated", ascending: false }
-    ]);
+    query = setGenericQueryFilters(
+      query,
+      args,
+      GAUGE_CALIBRATION_RECORDS_PAGING
+    );
   }
 
   return query;
@@ -410,6 +517,10 @@ export async function getGaugeType(
   return client.from("gaugeType").select("*").eq("id", gaugeTypeId).single();
 }
 
+export const GAUGE_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getGaugeTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -417,7 +528,7 @@ export async function getGaugeTypes(
 ) {
   let query = client
     .from("gaugeType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -425,9 +536,7 @@ export async function getGaugeTypes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, GAUGE_TYPES_PAGING);
   }
 
   return query;
@@ -444,6 +553,10 @@ export async function getIssue(
     .single();
 }
 
+export const ISSUES_PAGING: Paging = {
+  defaultSorts: [{ column: "nonConformanceId", ascending: false }]
+};
+
 export async function getIssues(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -451,19 +564,15 @@ export async function getIssues(
 ) {
   let query = client
     .from("issues")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
-    query = query.or(
-      `nonConformanceId.ilike.%${args.search}%,name.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["nonConformanceId", "name"], args.search));
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "nonConformanceId", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, ISSUES_PAGING);
   }
 
   return query;
@@ -516,12 +625,14 @@ export async function getIssueActionTasks(
         .select("entityId, metadata")
         .eq("entityType", "nonConformanceActionTask")
         .eq("integration", "linear")
+        .eq("companyId", companyId)
         .in("entityId", taskIds),
       client
         .from("externalIntegrationMapping")
         .select("entityId, metadata")
         .eq("entityType", "nonConformanceActionTask")
         .eq("integration", "jira")
+        .eq("companyId", companyId)
         .in("entityId", taskIds)
     ]);
 
@@ -995,6 +1106,10 @@ export async function getIssueTypeByName(
   return query.limit(1).maybeSingle();
 }
 
+export const ISSUE_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getIssueTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1002,7 +1117,7 @@ export async function getIssueTypes(
 ) {
   let query = client
     .from("nonConformanceType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1010,13 +1125,15 @@ export async function getIssueTypes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, ISSUE_TYPES_PAGING);
   }
 
   return query;
 }
+
+export const ISSUE_WORKFLOWS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
 
 export async function getIssueWorkflows(
   client: SupabaseClient<Database>,
@@ -1025,7 +1142,7 @@ export async function getIssueWorkflows(
 ) {
   let query = client
     .from("nonConformanceWorkflow")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId)
     .eq("active", true);
 
@@ -1034,9 +1151,7 @@ export async function getIssueWorkflows(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, ISSUE_WORKFLOWS_PAGING);
   }
 
   return query;
@@ -1065,6 +1180,10 @@ export async function getIssueTypesList(
     .order("name");
 }
 
+export const QUALITY_ACTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getQualityActions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1072,19 +1191,20 @@ export async function getQualityActions(
 ) {
   let query = client
     .from("qualityActions")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
     query = query.or(
-      `readableNonConformanceId.ilike.%${args.search}%,nonConformanceName.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+      searchFilter(
+        ["readableNonConformanceId", "nonConformanceName"],
+        args.search
+      )
     );
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, QUALITY_ACTIONS_PAGING);
   }
 
   return query;
@@ -1125,6 +1245,10 @@ export async function getQualityDocumentVersions(
     .order("version", { ascending: false });
 }
 
+export const QUALITY_DOCUMENTS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getQualityDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1133,7 +1257,7 @@ export async function getQualityDocuments(
   let query = client
     .from("qualityDocuments")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1142,9 +1266,7 @@ export async function getQualityDocuments(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, QUALITY_DOCUMENTS_PAGING);
   }
 
   return query;
@@ -1173,6 +1295,10 @@ export async function getRequiredActionsList(
     .order("name");
 }
 
+export const REQUIRED_ACTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getRequiredActions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1180,7 +1306,7 @@ export async function getRequiredActions(
 ) {
   let query = client
     .from("nonConformanceRequiredAction")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1188,9 +1314,7 @@ export async function getRequiredActions(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, REQUIRED_ACTIONS_PAGING);
   }
 
   return query;
@@ -1214,6 +1338,10 @@ export async function getRisk(
   return client.from("riskRegister").select("*").eq("id", riskId).single();
 }
 
+export const RISKS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getRisks(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1228,14 +1356,12 @@ export async function getRisks(
   let query = client
     .from("riskRegisters")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
   if (args?.search) {
-    query = query.or(
-      `title.ilike.%${args.search}%,description.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["title", "description"], args.search));
   }
 
   if (args?.status && args.status.length > 0) {
@@ -1251,9 +1377,7 @@ export async function getRisks(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, RISKS_PAGING);
   }
 
   return query;
@@ -1408,7 +1532,7 @@ export async function insertGauge(
     gaugeTypeId: string;
     gaugeRole: (typeof gaugeRole)[number];
     gaugeCalibrationStatus: (typeof gaugeCalibrationStatus)[number];
-    supplierId?: string;
+    manufacturer?: string;
     modelNumber?: string;
     serialNumber?: string;
     description?: string;
@@ -1452,7 +1576,7 @@ export async function insertGauge(
       gaugeTypeId: input.gaugeTypeId,
       gaugeRole: input.gaugeRole,
       gaugeCalibrationStatus: input.gaugeCalibrationStatus,
-      supplierId: input.supplierId ?? null,
+      manufacturer: input.manufacturer ?? null,
       modelNumber: input.modelNumber ?? null,
       serialNumber: input.serialNumber ?? null,
       description: input.description ?? null,
@@ -1487,7 +1611,7 @@ export async function updateGauge(
     gaugeTypeId?: string;
     gaugeRole?: (typeof gaugeRole)[number];
     gaugeCalibrationStatus?: (typeof gaugeCalibrationStatus)[number];
-    supplierId?: string | null;
+    manufacturer?: string | null;
     modelNumber?: string | null;
     serialNumber?: string | null;
     description?: string | null;
@@ -1554,24 +1678,27 @@ export async function upsertGaugeCalibrationRecord(
       })
       .toString();
 
-    const update = await client
-      .from("gauge")
-      .update({
-        gaugeCalibrationStatus:
-          gaugeCalibrationRecord.inspectionStatus === "Pass"
-            ? "In-Calibration"
-            : "Out-of-Calibration",
-        lastCalibrationDate: gaugeCalibrationRecord.dateCalibrated,
-        nextCalibrationDate: nextCalibrationDate,
-        // Reset lastCalibrationStatus when gauge passes calibration to allow future notifications
-        lastCalibrationStatus:
-          gaugeCalibrationRecord.inspectionStatus === "Pass"
-            ? "In-Calibration"
-            : gauge.data.lastCalibrationStatus,
-        updatedBy: userId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", gaugeCalibrationRecord.gaugeId);
+    const update = await requireAffected(
+      client
+        .from("gauge")
+        .update({
+          gaugeCalibrationStatus:
+            gaugeCalibrationRecord.inspectionStatus === "Pass"
+              ? "In-Calibration"
+              : "Out-of-Calibration",
+          lastCalibrationDate: gaugeCalibrationRecord.dateCalibrated,
+          nextCalibrationDate: nextCalibrationDate,
+          // Reset lastCalibrationStatus when gauge passes calibration to allow future notifications
+          lastCalibrationStatus:
+            gaugeCalibrationRecord.inspectionStatus === "Pass"
+              ? "In-Calibration"
+              : gauge.data.lastCalibrationStatus,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", gaugeCalibrationRecord.gaugeId)
+        .select("id")
+    );
 
     if (update.error) return update;
   }
@@ -1616,10 +1743,13 @@ export async function upsertGaugeType(
   if ("createdBy" in gaugeType) {
     return client.from("gaugeType").insert([gaugeType]).select("id");
   } else {
-    return client
-      .from("gaugeType")
-      .update(sanitize(gaugeType))
-      .eq("id", gaugeType.id);
+    return requireAffected(
+      client
+        .from("gaugeType")
+        .update(sanitize(gaugeType))
+        .eq("id", gaugeType.id)
+        .select("id")
+    );
   }
 }
 
@@ -1645,6 +1775,7 @@ export async function insertIssue(
     items?: string[];
     jobOperationId?: string;
     customerId?: string;
+    supplierId?: string;
     salesOrderLineId?: string;
     operationSupplierProcessId?: string;
     customFields?: Json;
@@ -1678,6 +1809,7 @@ export async function insertIssue(
     items,
     jobOperationId,
     customerId,
+    supplierId,
     salesOrderLineId,
     operationSupplierProcessId,
     ...data
@@ -1788,6 +1920,24 @@ export async function insertIssue(
     }
   }
 
+  // The outside-processing operation's supplier (below) is skipped when it is
+  // this one, so the issue never lists a supplier twice.
+  if (supplierId) {
+    const supplierInsert = await client.from("nonConformanceSupplier").insert([
+      {
+        companyId: input.companyId,
+        createdBy: input.createdBy,
+        supplierId,
+        nonConformanceId: ncrId
+      }
+    ]);
+    if (supplierInsert.error) {
+      logger.error("Failed to insert non-conformance supplier", {
+        error: supplierInsert.error
+      });
+    }
+  }
+
   if (salesOrderLineId) {
     const salesOrderLine = await client
       .from("salesOrderLine")
@@ -1824,7 +1974,10 @@ export async function insertIssue(
       .eq("companyId", input.companyId)
       .single();
 
-    if (operationSupplierProcess.data) {
+    if (
+      operationSupplierProcess.data &&
+      operationSupplierProcess.data.supplierId !== supplierId
+    ) {
       const nonConformanceSupplierInsert = await client
         .from("nonConformanceSupplier")
         .insert([
@@ -1959,10 +2112,13 @@ export async function upsertIssueType(
       .insert([nonConformanceType])
       .select("id");
   } else {
-    return client
-      .from("nonConformanceType")
-      .update(sanitize(nonConformanceType))
-      .eq("id", nonConformanceType.id);
+    return requireAffected(
+      client
+        .from("nonConformanceType")
+        .update(sanitize(nonConformanceType))
+        .eq("id", nonConformanceType.id)
+        .select("id")
+    );
   }
 }
 
@@ -1986,10 +2142,13 @@ export async function upsertRequiredAction(
       .insert([requiredAction])
       .select("id");
   } else {
-    return client
-      .from("nonConformanceRequiredAction")
-      .update(sanitize(requiredAction))
-      .eq("id", requiredAction.id);
+    return requireAffected(
+      client
+        .from("nonConformanceRequiredAction")
+        .update(sanitize(requiredAction))
+        .eq("id", requiredAction.id)
+        .select("id")
+    );
   }
 }
 
@@ -2041,13 +2200,16 @@ export async function upsertQualityDocument(
     const workInstruction = (qualityDocument.data.content ?? {}) as JSONContent;
 
     const [updateWorkInstructions, insertSteps] = await Promise.all([
-      client
-        .from("qualityDocument")
-        .update({
-          content: workInstruction,
-          tags: qualityDocument.data.tags
-        })
-        .eq("id", insert.data.id),
+      requireAffected(
+        client
+          .from("qualityDocument")
+          .update({
+            content: workInstruction,
+            tags: qualityDocument.data.tags
+          })
+          .eq("id", insert.data.id)
+          .select("id")
+      ),
       steps.length > 0
         ? client.from("qualityDocumentStep").insert(
             steps.map((step) => {
@@ -2125,6 +2287,10 @@ export async function upsertRisk(
 // Inbound Inspections (lot-based)
 // -------------------------------------------------------------
 
+export const INSPECTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getInspections(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2140,13 +2306,16 @@ export async function getInspections(
     .from("inspection")
     .select(
       "*, item(readableId, name), supplier(name), inspectionSample(status)",
-      { count: LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyId", companyId);
 
   if (args?.search) {
     query = query.or(
-      `itemReadableId.ilike.%${args.search}%,sourceDocumentReadableId.ilike.%${args.search}%,notes.ilike.%${args.search}%`
+      searchFilter(
+        ["itemReadableId", "sourceDocumentReadableId", "notes"],
+        args.search
+      )
     );
   }
 
@@ -2161,9 +2330,7 @@ export async function getInspections(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, INSPECTIONS_PAGING);
   }
 
   return query;
@@ -2173,13 +2340,19 @@ export async function getInspection(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return (client as any)
-    .from("inspection")
-    .select(
-      "*, item(readableId, name, type, itemTrackingType), supplier(name), inspectionSample(*, trackedEntity(id, readableId, attributes, status, sourceDocumentReadableId))"
-    )
-    .eq("id", id)
-    .single();
+  return (
+    (client as any)
+      .from("inspection")
+      .select(
+        "*, item(readableId, name, type, itemTrackingType), supplier(name), inspectionSample(*, trackedEntity(id, readableId, attributes, status, sourceDocumentReadableId))"
+      )
+      .eq("id", id)
+      // Samples in the order they were made: an embed has no order of its own,
+      // and an UPDATE moves a row, so the grids' positions would shift.
+      .order("createdAt", { referencedTable: "inspectionSample" })
+      .order("id", { referencedTable: "inspectionSample" })
+      .single()
+  );
 }
 
 // All inspection lots created for a receipt (one per inspected receipt line),
@@ -2192,7 +2365,9 @@ export async function getReceiptInspections(
 ) {
   return client
     .from("inspection")
-    .select("id, inspectionId, itemId, itemReadableId, status")
+    .select(
+      "id, inspectionId, itemId, itemReadableId, sourceDocumentLineId, status"
+    )
     .eq("sourceDocument", "Receipt")
     .eq("sourceDocumentId", receiptId)
     .eq("companyId", companyId)
@@ -2213,6 +2388,20 @@ export async function getInspectionTrackedEntities(
     .eq("companyId", companyId);
 }
 
+/** The issues an inspection is linked to (a rejected lot's NCR, or a manual link). */
+export async function getInspectionIssues(
+  client: SupabaseClient<Database>,
+  inspectionId: string,
+  companyId: string
+) {
+  return client
+    .from("nonConformanceInspection")
+    .select("id, nonConformance(id, nonConformanceId, name, status)")
+    .eq("inspectionId", inspectionId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true });
+}
+
 export async function getInspectionSamplingPlans(
   client: SupabaseClient<Database>,
   inspectionId: string,
@@ -2223,7 +2412,7 @@ export async function getInspectionSamplingPlans(
   return client
     .from("inspectionSamplingPlan")
     .select(
-      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit, gaugeTypeId, gaugeType(name))"
+      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit, gaugeTypeId, pmiItemId, gaugeType(name))"
     )
     .eq("inspectionId", inspectionId)
     .eq("companyId", companyId);
@@ -2374,6 +2563,17 @@ function mapInspectionDocument(row: Record<string, unknown>) {
       annotations: [],
       features: []
     },
+    // A plan made from a model's PMI holds the model instead of a PDF.
+    // `modelPath` comes from the `modelUpload(modelPath)` embed when the read
+    // asked for it.
+    model: row.modelUploadId
+      ? {
+          modelUploadId: String(row.modelUploadId),
+          modelPath:
+            ((row.modelUpload as { modelPath?: string | null } | null)
+              ?.modelPath as string | null) ?? null
+        }
+      : null,
     // The document's default sampling rule (feature rule -> document default
     // -> All). NUMERIC columns arrive as strings from PostgREST — coerce.
     sampling: {
@@ -2389,6 +2589,10 @@ function mapInspectionDocument(row: Record<string, unknown>) {
   };
 }
 
+export const INSPECTION_DOCUMENTS_PAGING: Paging = {
+  defaultSorts: [{ column: "drawingNumber", ascending: true }]
+};
+
 export async function getInspectionDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2396,27 +2600,73 @@ export async function getInspectionDocuments(
 ) {
   let query = client
     .from("inspectionDocuments")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
     query = query.or(
-      `drawingNumber.ilike.%${args.search}%,fileName.ilike.%${args.search}%,partReadableId.ilike.%${args.search}%`
+      searchFilter(["drawingNumber", "fileName", "partReadableId"], args.search)
     );
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "drawingNumber", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, INSPECTION_DOCUMENTS_PAGING);
   }
 
   const result = await query;
 
   return {
-    data: (result.data ?? []).map((row: Record<string, unknown>) =>
-      mapInspectionDocument(row)
-    ),
+    // The cursor reads the default sort column from the row.
+    data: (result.data ?? []).map((row: Record<string, unknown>) => ({
+      ...mapInspectionDocument(row),
+      drawingNumber: (row.drawingNumber as string | null) ?? null
+    })),
+    count: result.count ?? 0,
+    error: result.error
+  };
+}
+
+export const INSPECTION_PLAN_PARTS_PAGING: Paging = {
+  defaultSorts: [{ column: "partReadableId", ascending: true }]
+};
+
+/** One plan in a part's `plans` rollup (the `inspectionPlanParts` view). */
+export type InspectionPlanSummary = {
+  id: string;
+  name: string | null;
+  modelUploadId: string | null;
+  createdBy: string;
+  createdAt: string;
+};
+
+/** The Inspection Plans list: one row per part, with its plans. */
+export async function getInspectionPlanParts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: { search: string | null } & GenericQueryFilters
+) {
+  let query = client
+    .from("inspectionPlanParts")
+    .select("*", { count: listCount(args) })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.or(
+      searchFilter(["partReadableId", "partName", "planNames"], args.search)
+    );
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, INSPECTION_PLAN_PARTS_PAGING);
+  }
+
+  const result = await query;
+
+  return {
+    data: (result.data ?? []).map((row) => ({
+      ...row,
+      plans: (row.plans as InspectionPlanSummary[] | null) ?? []
+    })),
     count: result.count ?? 0,
     error: result.error
   };
@@ -2442,7 +2692,7 @@ export async function getInspectionDocument(
 ) {
   const result = await client
     .from("inspectionDocument")
-    .select("*")
+    .select("*, modelUpload(modelPath)")
     .eq("id", id)
     .eq("companyId", companyId)
     .single();
@@ -2452,6 +2702,151 @@ export async function getInspectionDocument(
     error: result.error
   };
 }
+
+function lotStateKey(
+  lots: Array<{
+    inspectionId: string;
+    status: string | null;
+    storageUnitId: string | null;
+    acceptedQuantity: number | string | null;
+  }>
+): string {
+  return lots
+    .map(
+      (lot) =>
+        `${lot.inspectionId}:${
+          lot.status === "Pending" || lot.status === "In Progress"
+            ? "open"
+            : (lot.status ?? "")
+        }:${lot.storageUnitId ?? ""}:${
+          lot.acceptedQuantity === null
+            ? ""
+            : round(Number(lot.acceptedQuantity))
+        }`
+    )
+    .sort()
+    .join(",");
+}
+
+async function readRejectWriteOffs(
+  handle: Kysely<KyselyDatabase>,
+  companyId: string,
+  lotIds: string[]
+) {
+  const rows = await handle
+    .selectFrom("itemLedger")
+    .select([
+      "itemId",
+      "locationId",
+      "storageUnitId",
+      "projectId",
+      sql<number>`-SUM("quantity")`.as("quantity")
+    ])
+    .where("companyId", "=", companyId)
+    .where("documentType", "=", "Inbound Inspection")
+    .where("documentId", "in", lotIds)
+    .where("trackedEntityId", "is", null)
+    .groupBy(["itemId", "locationId", "storageUnitId", "projectId"])
+    .execute();
+  return rows
+    .map((row) => ({ ...row, quantity: round(Number(row.quantity)) }))
+    .filter((row) => row.quantity > EPSILON)
+    .sort(
+      (a, b) =>
+        b.quantity - a.quantity ||
+        `${a.locationId}:${a.storageUnitId}:${a.projectId}`.localeCompare(
+          `${b.locationId}:${b.storageUnitId}:${b.projectId}`
+        )
+    );
+}
+
+async function readTrackedEntityBins(
+  handle: Kysely<KyselyDatabase>,
+  companyId: string,
+  entityIds: string[]
+) {
+  const bins = new Map<
+    string,
+    {
+      locationId: string | null;
+      storageUnitId: string | null;
+      quantity: number;
+    }[]
+  >();
+  const stocked = new Set<string>();
+  if (entityIds.length === 0) return { bins, stocked };
+  const balances = await handle
+    .selectFrom("itemLedger")
+    .select([
+      "trackedEntityId",
+      "locationId",
+      "storageUnitId",
+      sql<number>`SUM("quantity")`.as("quantity")
+    ])
+    .where("companyId", "=", companyId)
+    .where("trackedEntityId", "in", entityIds)
+    .groupBy(["trackedEntityId", "locationId", "storageUnitId"])
+    .orderBy(sql`SUM("quantity")`, "desc")
+    .orderBy("locationId")
+    .orderBy("storageUnitId")
+    .execute();
+  for (const balance of balances) {
+    if (!balance.trackedEntityId) continue;
+    stocked.add(balance.trackedEntityId);
+    const quantity = round(Number(balance.quantity));
+    if (quantity <= EPSILON) continue;
+    const list = bins.get(balance.trackedEntityId) ?? [];
+    list.push({
+      locationId: balance.locationId,
+      storageUnitId: balance.storageUnitId,
+      quantity
+    });
+    bins.set(balance.trackedEntityId, list);
+  }
+  return { bins, stocked };
+}
+
+const trackedEntityBinsKey = (read: {
+  bins: Map<string, unknown>;
+  stocked: Set<string>;
+}) => readKey(read.bins) + readKey([...read.stocked].sort());
+
+async function readLinkedLotStates(
+  handle: Kysely<KyselyDatabase>,
+  companyId: string,
+  nonConformanceId: string,
+  options: { lock?: boolean } = {}
+) {
+  const query = handle
+    .selectFrom("nonConformanceInspection as nci")
+    .innerJoin("inspection as i", (join) =>
+      join
+        .onRef("i.id", "=", "nci.inspectionId")
+        .onRef("i.companyId", "=", "nci.companyId")
+    )
+    .select([
+      "nci.inspectionId",
+      "i.status",
+      "i.storageUnitId",
+      "i.acceptedQuantity",
+      "i.sourceDocument",
+      "i.sourceDocumentId",
+      "i.itemId",
+      "i.lotSize"
+    ])
+    .where("nci.nonConformanceId", "=", nonConformanceId)
+    .where("nci.companyId", "=", companyId)
+    .orderBy("nci.createdAt")
+    .orderBy("nci.id");
+  return (options.lock ? query.forShare("i") : query).execute();
+}
+
+const readKey = (value: unknown) =>
+  JSON.stringify(
+    value instanceof Map
+      ? [...value].sort(([a], [b]) => String(a).localeCompare(String(b)))
+      : value
+  );
 
 /**
  * When an inspection plan is created without a drawing number, fall back to the
@@ -2648,11 +3043,14 @@ export async function deleteInspectionDocument(
   const storagePath =
     (existingResult.data.storagePath as string | null) ?? null;
 
-  const deleteResult = await client
-    .from("inspectionDocument")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  const deleteResult = await requireAffected(
+    client
+      .from("inspectionDocument")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 
   if (deleteResult.error) {
     return { data: null, error: deleteResult.error };
@@ -2690,6 +3088,7 @@ function mapInspectionFeature(row: Record<string, unknown>) {
       (row.samplingInspectionLevel as string | null) ?? null,
     samplingSeverity: (row.samplingSeverity as string | null) ?? null,
     gaugeTypeId: (row.gaugeTypeId as string | null) ?? null,
+    pmiItemId: (row.pmiItemId as string | null) ?? null,
     balloonId:
       typeof balloonIdRaw === "string"
         ? balloonIdRaw
@@ -2841,15 +3240,18 @@ export async function updateInspectionDocumentSampling(
   }
 ) {
   const { inspectionDocumentId, companyId, userId, ...sampling } = args;
-  return client
-    .from("inspectionDocument")
-    .update({
-      ...sampling,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", inspectionDocumentId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("inspectionDocument")
+      .update({
+        ...sampling,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", inspectionDocumentId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function saveInspectionDocumentAtomic(
@@ -3313,11 +3715,13 @@ async function subdivideBatchEntity(
   // against it so per-storage-unit on-hand stays consistent.
   const sourceLedgerRows = await trx
     .selectFrom("itemLedger")
-    .select(["trackedEntityId", "storageUnitId", "quantity"])
+    .select(["trackedEntityId", "storageUnitId", "quantity", "projectId"])
     .where("trackedEntityId", "=", source.id)
     .where("companyId", "=", companyId)
     .execute();
   const storageUnitId = resolveTrackedEntityBin(sourceLedgerRows, source.id);
+  // The split stays in the source lot's stock stripe (Projects Phase 2a).
+  const projectId = trackedEntityStripe(sourceLedgerRows, source.id);
 
   const split = buildBatchSplitRecords({
     parent: {
@@ -3425,6 +3829,7 @@ async function subdivideBatchEntity(
         ...ledger,
         // Non-null in the node Insert type; the builder types it nullable.
         itemId,
+        projectId,
         comment: `NC ${readableNc} batch split`
       }))
     )
@@ -3718,7 +4123,7 @@ export async function closeIssue(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   args: { nonConformanceId: string; companyId: string; userId: string }
-): Promise<Result<{ id: string }>> {
+): Promise<Result<{ id: string; warning?: string }>> {
   const { nonConformanceId, companyId, userId } = args;
 
   // Preflight reads via Supabase (uses nested selects / RLS-aware service role)
@@ -3899,31 +4304,163 @@ export async function closeIssue(
 
   // Non-tracked origin: an inspection-rejected Inventory lot was already written
   // off at reject (so Use As Is / Rework restores value); a MES/manual non-tracked
-  // scrap must be written off now. Detected via the NCR's inspection link (only
-  // the reject route creates one).
+  // scrap must be written off now. Detected via the NCR's inspection link.
+  const linkedLots = await readLinkedLotStates(
+    db,
+    companyId,
+    nonConformanceId
+  ).catch((error) => {
+    logger.error("closeIssue: failed to read the linked lots", {
+      companyId,
+      nonConformanceId,
+      error
+    });
+    return null;
+  });
+  if (linkedLots === null) {
+    return errResult("Failed to load the disposition origin");
+  }
+  const partialLot = linkedLots.find(
+    (row) => row.sourceDocument === "Receipt" && row.status === "Partial"
+  );
+  if (partialLot && linkedLots.length > 1) {
+    return errResult(
+      "A Partial inspection lot must be the only lot on its NCR. Remove the other lots from this NCR, then close it."
+    );
+  }
+  if (partialLot && !plan.some((row) => row.itemId === partialLot.itemId)) {
+    const partialItem = await db
+      .selectFrom("item")
+      .select("itemTrackingType")
+      .where("id", "=", partialLot.itemId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst()
+      .catch((error) => {
+        logger.error("closeIssue: failed to read the lot's item", {
+          companyId,
+          nonConformanceId,
+          error
+        });
+        return null;
+      });
+    if (partialItem === null) {
+      return errResult("Failed to load the disposition origin");
+    }
+    if (partialItem?.itemTrackingType === "Inventory") {
+      return errResult(
+        "Add a disposition for the rejected part of the lot, then close this NCR."
+      );
+    }
+  }
+
   const linklessRows = plan.filter((r) => r.links.length === 0);
   const inventoryItemIds = new Set<string>();
   let inspectionOriginated = false;
+  // A Partial receipt lot's rejected remainder is still on hand, held at the
+  // lot's storage unit until this NCR closes: Scrap writes it off from there,
+  // Use As Is / Rework just release it. Other items post at the NCR's location.
+  let heldPartial: {
+    itemId: string;
+    locationId: string | null;
+    storageUnitId: string | null;
+    documentIds: string[];
+    remainder: number;
+    requested: number;
+  } | null = null;
+  let fromPartialReceiptLot = false;
+  const plannedLots = lotStateKey(linkedLots);
+  let writtenOffLotIds: string[] | null = null;
+  let writtenOffKey = "";
+  let writtenOffAtReject: {
+    itemId: string;
+    locationId: string | null;
+    storageUnitId: string | null;
+    projectId: string | null;
+    quantity: number;
+  }[] = [];
+  let restoreCappedAtWriteOff = false;
   if (linklessRows.length > 0) {
     const linklessItemIds = [...new Set(linklessRows.map((r) => r.itemId))];
-    const [trackingRes, inspectionRes] = await Promise.all([
-      client
-        .from("item")
-        .select("id, itemTrackingType")
-        .in("id", linklessItemIds)
-        .eq("companyId", companyId),
-      client
-        .from("nonConformanceInspection")
-        .select("id")
-        .eq("nonConformanceId", nonConformanceId)
-        .eq("companyId", companyId)
-        .limit(1)
-    ]);
+    const trackingRes = await client
+      .from("item")
+      .select("id, itemTrackingType")
+      .in("id", linklessItemIds)
+      .eq("companyId", companyId);
+    if (trackingRes.error) {
+      return errResult("Failed to load the disposition origin");
+    }
     for (const it of trackingRes.data ?? []) {
       if (it.itemTrackingType === "Inventory") inventoryItemIds.add(it.id);
     }
-    inspectionOriginated = (inspectionRes.data?.length ?? 0) > 0;
+    const linkedLot = partialLot ?? null;
+    fromPartialReceiptLot = !!linkedLot;
+    if (linkedLot) {
+      const receiptLine = await inspectionReceiptLine(
+        db,
+        companyId,
+        linkedLot.inspectionId
+      );
+      const storageUnitId =
+        linkedLot.storageUnitId ?? receiptLine.storageUnitId;
+      const lotLocationId =
+        receiptLine.locationId ??
+        receiptLine.unitLocationId ??
+        (storageUnitId
+          ? await engine.storageUnitLocationId(db, companyId, storageUnitId)
+          : null);
+      const remainder = round(
+        Math.max(
+          Number(linkedLot.lotSize ?? 0) -
+            Number(linkedLot.acceptedQuantity ?? 0),
+          0
+        )
+      );
+      heldPartial = {
+        itemId: linkedLot.itemId,
+        locationId: lotLocationId,
+        storageUnitId,
+        documentIds: [linkedLot.inspectionId, linkedLot.sourceDocumentId ?? ""],
+        remainder,
+        requested: 0
+      };
+    }
+    inspectionOriginated = linkedLots.length > 0 && !fromPartialReceiptLot;
+    if (inspectionOriginated) {
+      restoreCappedAtWriteOff = linkedLots.every(
+        (row) => row.sourceDocument === "Receipt"
+      );
+      writtenOffLotIds = linkedLots.map((row) => row.inspectionId);
+      writtenOffAtReject = await readRejectWriteOffs(
+        db,
+        companyId,
+        writtenOffLotIds
+      );
+      writtenOffKey = readKey(writtenOffAtReject);
+    }
   }
+
+  const linkedEntityIds = [
+    ...new Set(
+      plan.flatMap((row) => row.links.map((link) => link.trackedEntityId))
+    )
+  ];
+  const entityStock = await readTrackedEntityBins(
+    db,
+    companyId,
+    linkedEntityIds
+  );
+  const entityBinsKey = trackedEntityBinsKey(entityStock);
+  const hasNoStockLeft = (trackedEntityId: string) =>
+    entityStock.stocked.has(trackedEntityId) &&
+    !entityStock.bins.has(trackedEntityId);
+  const drawable = new Map(
+    [...entityStock.bins].map(([id, list]) => [
+      id,
+      list.map((bin) => ({ ...bin }))
+    ])
+  );
+  const writtenOffShort = new Set<string>();
+  const keptWithoutStock = new Set<string>();
 
   // Build the inventory value movements: tracked Scrap/Return → one −qty per
   // linked entity; non-tracked Inventory → −qty write-off (MES/manual scrap) or
@@ -3932,7 +4469,9 @@ export async function closeIssue(
   const movements: {
     itemId: string;
     locationId: string | null;
+    storageUnitId?: string | null;
     trackedEntityId: string | null;
+    projectId?: string | null;
     quantity: number;
     comment: string;
   }[] = [];
@@ -3957,13 +4496,33 @@ export async function closeIssue(
           ) {
             continue;
           }
-          movements.push({
-            itemId: row.itemId,
-            locationId,
-            trackedEntityId: link.trackedEntityId,
-            quantity: -link.quantity,
-            comment: `NC ${readableNc} ${suffix}`
-          });
+          if (!entityStock.stocked.has(link.trackedEntityId)) {
+            movements.push({
+              itemId: row.itemId,
+              locationId,
+              storageUnitId: null,
+              trackedEntityId: link.trackedEntityId,
+              quantity: -link.quantity,
+              comment: `NC ${readableNc} ${suffix}`
+            });
+            continue;
+          }
+          let left = round(link.quantity);
+          for (const bin of drawable.get(link.trackedEntityId) ?? []) {
+            if (left <= EPSILON) break;
+            const take = round(Math.min(left, bin.quantity));
+            bin.quantity = round(bin.quantity - take);
+            left = round(left - take);
+            movements.push({
+              itemId: row.itemId,
+              locationId: bin.locationId ?? locationId,
+              storageUnitId: bin.storageUnitId,
+              trackedEntityId: link.trackedEntityId,
+              quantity: -take,
+              comment: `NC ${readableNc} ${suffix}`
+            });
+          }
+          if (left > EPSILON) writtenOffShort.add(link.trackedEntityId);
         }
       }
       continue;
@@ -3980,9 +4539,15 @@ export async function closeIssue(
         }
       }
       if (writeOff <= EPSILON) continue;
+      const held = heldPartial?.itemId === row.itemId ? heldPartial : null;
+      if (held) {
+        held.requested = round(held.requested + writeOff);
+        continue;
+      }
       movements.push({
         itemId: row.itemId,
         locationId,
+        storageUnitId: null,
         trackedEntityId: null,
         quantity: -writeOff,
         comment: `NC ${readableNc} scrap`
@@ -3990,50 +4555,49 @@ export async function closeIssue(
       continue;
     }
     if (isKeep && inspectionOriginated) {
-      movements.push({
-        itemId: row.itemId,
-        locationId,
-        trackedEntityId: null,
-        quantity: row.quantity,
-        comment: `NC ${readableNc} ${
-          row.disposition === "Rework" ? "rework" : "use as is"
-        } — restore on-hand`
-      });
-    }
-  }
-
-  // Post the inventory value movements (itemLedger + cost relief + GL) through
-  // the operation BEFORE flipping statuses / closing. Idempotent per NCR, so
-  // a retry after a later failure is safe; a posting failure aborts the close.
-  if (movements.length > 0) {
-    const post = await invokePosting(
-      { db, companyId, userId },
-      "post-nonconformance",
-      {
-        documentType: "Non-Conformance",
-        documentId: nonConformanceId,
-        description: `NC ${readableNc} disposition`,
-        movements
-      },
-      postNonconformance
-    );
-    if (post.error) {
-      return errResult(
-        post.error.message || "Failed to post disposition to the ledger"
-      );
+      const comment = `NC ${readableNc} ${
+        row.disposition === "Rework" ? "rework" : "use as is"
+      } — restore on-hand`;
+      let remaining = round(row.quantity);
+      for (const source of writtenOffAtReject) {
+        if (remaining <= EPSILON) break;
+        if (source.itemId !== row.itemId || source.quantity <= EPSILON) {
+          continue;
+        }
+        const take = round(Math.min(remaining, source.quantity));
+        source.quantity = round(source.quantity - take);
+        remaining = round(remaining - take);
+        movements.push({
+          itemId: row.itemId,
+          locationId: source.locationId ?? locationId,
+          storageUnitId: source.storageUnitId,
+          trackedEntityId: null,
+          projectId: source.projectId,
+          quantity: take,
+          comment
+        });
+      }
+      if (remaining > EPSILON && !restoreCappedAtWriteOff) {
+        movements.push({
+          itemId: row.itemId,
+          locationId,
+          trackedEntityId: null,
+          quantity: remaining,
+          comment
+        });
+      }
     }
   }
 
   try {
+    let warning: string | undefined;
     const result = await db.transaction().execute(async (trx) => {
-      const issue = await trx
-        .selectFrom("nonConformance")
-        .select(["id", "status"])
-        .where("id", "=", nonConformanceId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst();
-      if (!issue) throw new Error("Issue not found");
-      if (issue.status === "Closed") return { id: issue.id };
+      const { status } = await lockIssueDispositions(trx, {
+        nonConformanceId,
+        companyId
+      });
+      if (status === "Closed")
+        return { id: nonConformanceId, closedNow: false };
 
       const nowIso = datetime.timestamp();
       const today = nowIso.slice(0, 10);
@@ -4136,8 +4700,57 @@ export async function closeIssue(
         links: linksByItem.get(row.id) ?? []
       }));
 
+      const plannedRows = new Map(plan.map((row) => [row.id, row]));
+      if (freshPlan.length !== plan.length) {
+        throw new Error("Disposition changed while closing; please retry.");
+      }
+      const linkKey = (links: DispositionLink[]) =>
+        links
+          .map((l) => `${l.trackedEntityId}:${round(l.quantity)}`)
+          .sort()
+          .join(",");
+      const lots = await readLinkedLotStates(trx, companyId, nonConformanceId, {
+        lock: true
+      });
+      if (lotStateKey(lots) !== plannedLots) {
+        throw new Error("Disposition changed while closing; please retry.");
+      }
+      if (
+        writtenOffLotIds &&
+        readKey(await readRejectWriteOffs(trx, companyId, writtenOffLotIds)) !==
+          writtenOffKey
+      ) {
+        throw new Error("Disposition changed while closing; please retry.");
+      }
+      if (linkedEntityIds.length > 0) {
+        await trx
+          .selectFrom("trackedEntity")
+          .select("id")
+          .where("id", "in", linkedEntityIds)
+          .where("companyId", "=", companyId)
+          .orderBy("id")
+          .forUpdate()
+          .execute();
+        const fresh = await readTrackedEntityBins(
+          trx,
+          companyId,
+          linkedEntityIds
+        );
+        if (trackedEntityBinsKey(fresh) !== entityBinsKey) {
+          throw new Error("Disposition changed while closing; please retry.");
+        }
+      }
       for (const row of freshPlan) {
         if (!row.disposition || row.disposition === "Pending") {
+          throw new Error("Disposition changed while closing; please retry.");
+        }
+        const planned = plannedRows.get(row.id);
+        if (
+          !planned ||
+          planned.disposition !== row.disposition ||
+          Math.abs(planned.quantity - row.quantity) > EPSILON ||
+          linkKey(planned.links) !== linkKey(row.links)
+        ) {
           throw new Error("Disposition changed while closing; please retry.");
         }
         if (row.links.length === 0) continue;
@@ -4158,10 +4771,135 @@ export async function closeIssue(
         }
       }
 
-      // Inventory value movements (write-offs / restores) were already posted by
-      // post-nonconformance above. Here we only write disposition genealogy and
-      // flip tracked-entity statuses; non-tracked rows have no entities, so they
-      // need nothing further.
+      const updated = await withInspectionRelease(trx, () =>
+        trx
+          .updateTable("nonConformance")
+          .set({
+            status: "Closed",
+            closeDate: today,
+            updatedBy: userId,
+            updatedAt: nowIso
+          })
+          .where("id", "=", nonConformanceId)
+          .where("companyId", "=", companyId)
+          .returning(["id"])
+          .executeTakeFirstOrThrow()
+      );
+
+      if (heldPartial && heldPartial.requested > EPSILON) {
+        const remainderLocationId =
+          heldPartial.locationId ??
+          (heldPartial.storageUnitId ? null : locationId);
+        if (!remainderLocationId) {
+          throw new Error(
+            "Where the rejected part of the lot is cannot be found. Set the issue's location, then close it again."
+          );
+        }
+        const pairs = new Map<string, { itemId: string; locationId: string }>();
+        for (const m of movements) {
+          if (m.locationId) {
+            pairs.set(`${m.itemId}\u0000${m.locationId}`, {
+              itemId: m.itemId,
+              locationId: m.locationId
+            });
+          }
+        }
+        pairs.set(`${heldPartial.itemId}\u0000${remainderLocationId}`, {
+          itemId: heldPartial.itemId,
+          locationId: remainderLocationId
+        });
+        await engine.lockItemStockRows(trx, companyId, [...pairs.values()]);
+        const unit = {
+          companyId,
+          itemId: heldPartial.itemId,
+          storageUnitId: heldPartial.storageUnitId
+        };
+        const claimable = unit.storageUnitId
+          ? await engine.lotClaimableAtUnit(trx, {
+              ...unit,
+              storageUnitId: unit.storageUnitId,
+              ownHeld: 0,
+              locationId: remainderLocationId,
+              stockRowsLocked: true
+            })
+          : Number.POSITIVE_INFINITY;
+        const stripes = await engine.heldStockStripes(trx, {
+          ...unit,
+          locationId: remainderLocationId,
+          documentIds: heldPartial.documentIds
+        });
+        const scrap = round(
+          Math.min(heldPartial.requested, heldPartial.remainder)
+        );
+        const draws = engine.drawHeldStripes(
+          Math.min(scrap, claimable),
+          stripes,
+          { overflow: false }
+        );
+        const writtenOff = round(
+          draws.reduce((sum, draw) => sum + draw.quantity, 0)
+        );
+        const missing = round(scrap - writtenOff);
+        const overRemainder = round(heldPartial.requested - scrap);
+        if (missing > EPSILON || overRemainder > EPSILON) {
+          const unitName = heldPartial.storageUnitId
+            ? (
+                await trx
+                  .selectFrom("storageUnit")
+                  .select("name")
+                  .where("id", "=", heldPartial.storageUnitId)
+                  .where("companyId", "=", companyId)
+                  .executeTakeFirst()
+              )?.name
+            : undefined;
+          const why = [
+            overRemainder > EPSILON
+              ? `the lot holds only ${scrap} rejected`
+              : null,
+            missing > EPSILON
+              ? `${missing} ${missing === 1 ? "is" : "are"} not in ${
+                  unitName ?? "the location's stock"
+                }, or another lot holds ${missing === 1 ? "it" : "them"}`
+              : null
+          ].filter(Boolean);
+          warning = `${writtenOff} of ${heldPartial.requested} set to Scrap written off: ${why.join("; ")}.`;
+        }
+        for (const draw of draws) {
+          movements.push({
+            itemId: heldPartial.itemId,
+            locationId: remainderLocationId,
+            storageUnitId: heldPartial.storageUnitId,
+            trackedEntityId: null,
+            projectId: draw.projectId,
+            quantity: -draw.quantity,
+            comment: `NC ${readableNc} scrap`
+          });
+        }
+      }
+
+      if (movements.length > 0) {
+        const post = await invokePosting(
+          { db: trx, companyId, userId },
+          "post-nonconformance",
+          {
+            documentType: "Non-Conformance",
+            documentId: nonConformanceId,
+            description: `NC ${readableNc} disposition`,
+            movements
+          },
+          postNonconformance
+        );
+        if (post.error) {
+          const cause = (post.error as { cause?: unknown }).cause;
+          if (post.error.status >= 500 && engine.isDatabaseError(cause)) {
+            throw cause;
+          }
+          throw new Error(
+            post.error.message || "Failed to post disposition to the ledger"
+          );
+        }
+      }
+
       for (const row of freshPlan) {
         if (row.links.length === 0) continue;
 
@@ -4198,7 +4936,14 @@ export async function closeIssue(
 
         if (row.disposition === "Use As Is" || row.disposition === "Rework") {
           const idsToFlip = row.links
-            .filter((l) => l.trackedEntityStatus !== "Available")
+            .filter((l) => {
+              if (l.trackedEntityStatus === "Available") return false;
+              if (hasNoStockLeft(l.trackedEntityId)) {
+                keptWithoutStock.add(l.trackedEntityId);
+                return false;
+              }
+              return true;
+            })
             .map((l) => l.trackedEntityId);
           if (idsToFlip.length > 0) {
             await trx
@@ -4238,27 +4983,32 @@ export async function closeIssue(
         }
       }
 
-      const updated = await trx
-        .updateTable("nonConformance")
-        .set({
-          status: "Closed",
-          closeDate: today,
-          updatedBy: userId,
-          updatedAt: nowIso
-        })
-        .where("id", "=", nonConformanceId)
-        .where("companyId", "=", companyId)
-        .returning(["id"])
-        .executeTakeFirstOrThrow();
-
-      return { id: updated.id };
+      return { id: updated.id, closedNow: true };
     });
 
-    return { data: result, error: null };
+    const { closedNow, ...closed } = result;
+    if (closedNow) {
+      const notes = [warning];
+      if (writtenOffShort.size > 0) {
+        const n = writtenOffShort.size;
+        notes.push(
+          `${n} tracked ${n === 1 ? "unit" : "units"} set to Scrap or Return had less stock than linked: only what was there was written off.`
+        );
+      }
+      if (keptWithoutStock.size > 0) {
+        const n = keptWithoutStock.size;
+        notes.push(
+          `${n} tracked ${n === 1 ? "unit was" : "units were"} left as ${n === 1 ? "it was" : "they were"}: no stock left (written off, shipped or consumed).`
+        );
+      }
+      warning = notes.filter(Boolean).join(" ") || undefined;
+    } else {
+      warning = undefined;
+    }
+    return { data: { ...closed, warning }, error: null };
   } catch (err) {
-    return errResult(
-      err instanceof Error ? err.message : "Failed to close NCR"
-    );
+    logger.error("closeIssue failed", { companyId, nonConformanceId, err });
+    return engine.engineErrResult(err, "Failed to close NCR");
   }
 }
 export type { Result } from "@carbon/database/quality";
@@ -4278,7 +5028,10 @@ export async function dispositionInspection(
   args: z.infer<typeof inspectionDispositionValidator> & {
     companyId: string;
     dispositionedBy: string;
-  } & Pick<engine.InspectionDispositionInput, "requireOpen" | "requireSource">
+  } & Pick<
+      engine.InspectionDispositionInput,
+      "requireOpen" | "requireSource" | "acceptedQuantity"
+    >
 ) {
   return engine.dispositionInspection(db, args);
 }
@@ -4670,6 +5423,121 @@ export function createIssueTasks(ctx: ServiceContext, issueId: string) {
   );
 }
 
+export async function linkIssueTrackedEntities(
+  ctx: ServiceContext,
+  args: { nonConformanceId: string; trackedEntityIds: string[] }
+): Promise<void> {
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const { nonConformanceId, trackedEntityIds } = args;
+  if (trackedEntityIds.length === 0) return;
+  const nowIso = datetime.timestamp();
+  await withTransaction(ctx.asSystem.pg, async (trx) => {
+    await lockIssueDispositions(trx, { nonConformanceId, companyId });
+    await trx
+      .insertInto("nonConformanceTrackedEntity")
+      .values(
+        trackedEntityIds.map((trackedEntityId) => ({
+          nonConformanceId,
+          trackedEntityId,
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .execute();
+
+    const units = await trx
+      .selectFrom("trackedEntity as te")
+      .innerJoin(
+        (eb) =>
+          eb
+            .selectFrom("itemLedger")
+            .select([
+              "trackedEntityId",
+              sql<number>`SUM("quantity")`.as("onHand")
+            ])
+            .where("trackedEntityId", "in", trackedEntityIds)
+            .where("companyId", "=", companyId)
+            .groupBy("trackedEntityId")
+            .as("b"),
+        (join) => join.onRef("b.trackedEntityId", "=", "te.id")
+      )
+      .select([
+        "te.id",
+        "te.itemId",
+        sql<number>`LEAST(b."onHand", te."quantity")`.as("quantity")
+      ])
+      .where("te.id", "in", trackedEntityIds)
+      .where("te.companyId", "=", companyId)
+      .where("te.itemId", "is not", null)
+      .where(sql<boolean>`LEAST(b."onHand", te."quantity") > 0`)
+      .orderBy("te.id")
+      .execute()
+      .then((rows) =>
+        rows.filter((row) => round(Number(row.quantity)) > EPSILON)
+      );
+    if (units.length === 0) return;
+
+    const itemIds = [...new Set(units.map((u) => u.itemId as string))];
+    const existing = await trx
+      .selectFrom("nonConformanceItem")
+      .select(["id", "itemId"])
+      .where("nonConformanceId", "=", nonConformanceId)
+      .where("companyId", "=", companyId)
+      .where("itemId", "in", itemIds)
+      .orderBy("createdAt")
+      .orderBy("id")
+      .execute();
+    const rowByItem = new Map<string, string>();
+    for (const row of existing) {
+      if (!rowByItem.has(row.itemId)) rowByItem.set(row.itemId, row.id);
+    }
+    const missing = itemIds.filter((itemId) => !rowByItem.has(itemId));
+    if (missing.length > 0) {
+      const inserted = await trx
+        .insertInto("nonConformanceItem")
+        .values(
+          missing.map((itemId) => ({
+            nonConformanceId,
+            itemId,
+            quantity: 0,
+            companyId,
+            createdBy: userId
+          }))
+        )
+        .returning(["id", "itemId"])
+        .execute();
+      for (const row of inserted) rowByItem.set(row.itemId, row.id);
+    }
+
+    await trx
+      .insertInto("nonConformanceItemTrackedEntity")
+      .values(
+        units.map((u) => ({
+          nonConformanceItemId: rowByItem.get(u.itemId as string) as string,
+          nonConformanceId,
+          trackedEntityId: u.id,
+          quantity: round(Number(u.quantity)),
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .execute();
+    await sql`
+      UPDATE "nonConformanceItem" r
+      SET "quantity" = s.total, "updatedBy" = ${userId}, "updatedAt" = ${nowIso}
+      FROM (
+        SELECT "nonConformanceItemId" AS id, SUM("quantity") AS total
+        FROM "nonConformanceItemTrackedEntity"
+        WHERE "nonConformanceId" = ${nonConformanceId} AND "companyId" = ${companyId}
+        GROUP BY "nonConformanceItemId"
+      ) s
+      WHERE r."id" = s.id AND r."companyId" = ${companyId}
+        AND r."id" = ANY(${[...new Set(rowByItem.values())]}::text[])
+    `.execute(trx);
+  });
+}
+
 /**
  * Links the lot a job operation's make method produced to a new issue: the
  * issue-level tracked-entity links, then the item's disposition row (found
@@ -4914,44 +5782,48 @@ export async function linkJobOperationContext(
     .select("id")
     .eq("attributes->>Job Make Method", jobMakeMethodId)
     .eq("companyId", ctx.company.id);
-  await linkMissingTrackedEntities(ctx, {
+  await linkMissingTrackedEntities(ctx.asSystem.pg, {
     nonConformanceId,
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId,
     trackedEntityIds: (entities.data ?? []).map((e) => e.id)
+  }).catch((error) => {
+    logger.error("Failed to create association", { error });
   });
 }
 
 async function linkMissingTrackedEntities(
-  ctx: ServiceContext,
-  {
-    nonConformanceId,
-    trackedEntityIds
-  }: { nonConformanceId: string; trackedEntityIds: string[] }
-) {
-  if (trackedEntityIds.length === 0) return;
-  const client = ctx.asCaller.supabase;
-
-  const existing = await client
-    .from("nonConformanceTrackedEntity")
-    .select("trackedEntityId")
-    .eq("nonConformanceId", nonConformanceId)
-    .in("trackedEntityId", trackedEntityIds);
-  const already = new Set(
-    (existing.data ?? []).map((r) => r.trackedEntityId as string)
-  );
-  const rows = trackedEntityIds
-    .filter((id) => !already.has(id))
-    .map((trackedEntityId) => ({
-      nonConformanceId,
-      trackedEntityId,
-      createdBy: ctx.auditUserId,
-      companyId: ctx.company.id
-    }));
-  if (rows.length === 0) return;
-
-  const result = await client.from("nonConformanceTrackedEntity").insert(rows);
-  if (result.error) {
-    logger.error("Failed to create association", { error: result.error });
+  db: Kysely<KyselyDatabase>,
+  args: {
+    nonConformanceId: string;
+    companyId: string;
+    userId: string;
+    trackedEntityIds: string[];
   }
+) {
+  const { nonConformanceId, companyId, userId, trackedEntityIds } = args;
+  if (trackedEntityIds.length === 0) return;
+  const existing = await db
+    .selectFrom("nonConformanceTrackedEntity")
+    .select("trackedEntityId")
+    .where("nonConformanceId", "=", nonConformanceId)
+    .where("companyId", "=", companyId)
+    .where("trackedEntityId", "in", trackedEntityIds)
+    .execute();
+  const linked = new Set(existing.map((row) => row.trackedEntityId));
+  const missing = trackedEntityIds.filter((id) => !linked.has(id));
+  if (missing.length === 0) return;
+  await db
+    .insertInto("nonConformanceTrackedEntity")
+    .values(
+      missing.map((trackedEntityId) => ({
+        nonConformanceId,
+        trackedEntityId,
+        companyId,
+        createdBy: userId
+      }))
+    )
+    .execute();
 }
 
 /**
@@ -4959,7 +5831,7 @@ async function linkMissingTrackedEntities(
  * disposition row with it. The inspection link and the row writes share one
  * transaction under the issue lock, so a concurrent quantity edit either
  * lands before (and the row write overwrites it) or sees the inspection link
- * and is refused. False when any step failed.
+ * and is refused. `refusal` carries the words of a link the database refused.
  */
 export async function linkInspectionToIssue(
   ctx: ServiceContext,
@@ -4967,7 +5839,7 @@ export async function linkInspectionToIssue(
     nonConformanceId,
     inspectionId
   }: { nonConformanceId: string; inspectionId: string }
-): Promise<boolean> {
+): Promise<{ ok: true } | { ok: false; refusal?: string }> {
   const client = ctx.asCaller.supabase;
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
@@ -4983,7 +5855,7 @@ export async function linkInspectionToIssue(
     .single();
   if (inspection.error) {
     logger.error("Failed to create association", { error: inspection.error });
-    return false;
+    return { ok: false };
   }
 
   const sampledIds = (
@@ -5010,7 +5882,7 @@ export async function linkInspectionToIssue(
       logger.error("Failed to create association", {
         error: receiptLineEntities.error
       });
-      return false;
+      return { ok: false };
     }
     lotEntityIds = [
       ...new Set([
@@ -5034,13 +5906,8 @@ export async function linkInspectionToIssue(
     logger.error("Failed to create association", {
       error: entityQuantities.error
     });
-    return false;
+    return { ok: false };
   }
-
-  await linkMissingTrackedEntities(ctx, {
-    nonConformanceId,
-    trackedEntityIds: lotEntityIds
-  });
 
   const quantityById = new Map(
     (entityQuantities.data ?? []).map((e) => [e.id, Number(e.quantity ?? 1)])
@@ -5065,6 +5932,13 @@ export async function linkInspectionToIssue(
         })
         .execute();
 
+      await linkMissingTrackedEntities(trx, {
+        nonConformanceId,
+        companyId,
+        userId,
+        trackedEntityIds: lotEntityIds
+      });
+
       if (itemId) {
         await linkEntitiesToIssueItemRow(trx, {
           nonConformanceId,
@@ -5079,11 +5953,13 @@ export async function linkInspectionToIssue(
         });
       }
     });
-    return true;
   } catch (err) {
+    const refusal = raisedMessage(err);
+    if (refusal) return { ok: false, refusal };
     logger.error("Failed to create association", { error: err });
-    return false;
+    return { ok: false };
   }
+  return { ok: true };
 }
 
 /** A document-driven lot's failed features, measured values against spec. */
@@ -5378,6 +6254,8 @@ export const postNonConformanceInput = z.object({
       z.object({
         itemId: z.string(),
         locationId: z.string().optional().nullable(),
+        storageUnitId: z.string().optional().nullable(),
+        projectId: z.string().optional().nullable(),
         trackedEntityId: z.string().optional().nullable(),
         // SIGNED: < 0 removes value (scrap/return), > 0 restores value (kept).
         quantity: z.number(),
@@ -5442,6 +6320,17 @@ export async function postNonconformance(
   );
 
   const itemIds = [...new Set(effectiveMovements.map((m) => m.itemId))];
+
+  // A movement of a tracked entity books in the entity's stock stripe
+  // (Projects Phase 2a); an untracked movement names no stripe and books
+  // common stock.
+  const entityStripes = await loadTrackedEntityStripes(
+    db,
+    companyId,
+    effectiveMovements
+      .map((m) => m.trackedEntityId)
+      .filter((id): id is string => Boolean(id))
+  );
 
   const [itemsResult, itemCostsResult] = await inOrder([
     () =>
@@ -5535,10 +6424,6 @@ export async function postNonconformance(
     }
   }
 
-  // Resolve the accounting period BEFORE opening the transaction —
-  // getCurrentAccountingPeriod uses the REST client and calling it
-  // mid-transaction parks the (size 1) pool in idle-in-transaction. A
-  // Provisional journal has no accounting period.
   const accountingPeriodId =
     postingStatus === "Posted"
       ? await getCurrentAccountingPeriod(companyId, db, postingDate)
@@ -5552,7 +6437,7 @@ export async function postNonconformance(
 
   let journalId: string | null = null;
 
-  await db.transaction().execute(async (trx) => {
+  await withTransaction(db, async (trx) => {
     // Idempotent per (documentType, documentId): a reject posts one write-off
     // per inspection, a disposition close posts once per NCR (reopen is blocked
     // after posting). A retry after a partial route failure — e.g. the caller's
@@ -5630,8 +6515,11 @@ export async function postNonconformance(
           itemId: movement.itemId,
           quantity: movement.quantity,
           locationId: movement.locationId ?? null,
-          storageUnitId: null,
+          storageUnitId: movement.storageUnitId ?? null,
           trackedEntityId: movement.trackedEntityId ?? null,
+          projectId: movement.trackedEntityId
+            ? (entityStripes.get(movement.trackedEntityId) ?? null)
+            : (movement.projectId ?? null),
           entryType:
             movement.quantity < 0 ? "Negative Adjmt." : "Positive Adjmt.",
           documentType,
@@ -5652,4 +6540,408 @@ export async function postNonconformance(
   });
 
   return { journalId: journalId as string | null };
+}
+
+export async function inspectionReceiptLine(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  inspectionId: string
+): Promise<{
+  locationId: string | null;
+  storageUnitId: string | null;
+  unitLocationId: string | null;
+}> {
+  const row = await db
+    .selectFrom("inspection as i")
+    .innerJoin("receiptLine as rl", (join) =>
+      join
+        .onRef("rl.id", "=", "i.sourceDocumentLineId")
+        .onRef("rl.companyId", "=", "i.companyId")
+    )
+    .leftJoin("storageUnit as su", (join) =>
+      join
+        .on(
+          sql`su."id"`,
+          "=",
+          sql`COALESCE(i."storageUnitId", rl."storageUnitId")`
+        )
+        .onRef("su.companyId", "=", "i.companyId")
+    )
+    .select([
+      "rl.locationId",
+      "rl.storageUnitId",
+      "su.locationId as unitLocationId"
+    ])
+    .where("i.id", "=", inspectionId)
+    .where("i.companyId", "=", companyId)
+    .where("i.sourceDocument", "=", "Receipt")
+    .executeTakeFirst();
+  return {
+    locationId: row?.locationId ?? null,
+    storageUnitId: row?.storageUnitId ?? null,
+    unitLocationId: row?.unitLocationId ?? null
+  };
+}
+
+/**
+ * Why an inspection lot's NCR cannot open now (no issue type or no location),
+ * or null. Mirrors `openInspectionNcr`'s refusals, to check before a lot closes.
+ */
+export async function inspectionNcrPrerequisite(
+  ctx: ServiceContext,
+  args: { id: string; nonConformanceTypeId: string | null | undefined }
+): Promise<string | null> {
+  const client = ctx.asCaller.supabase;
+  const [lotLocationId, userDefaults, issueTypes] = await Promise.all([
+    inspectionReceiptLine(ctx.asSystem.pg, ctx.company.id, args.id).then(
+      (line) => line.locationId
+    ),
+    getUserDefaults(client, ctx.auditUserId, ctx.company.id),
+    getIssueTypesList(client, ctx.company.id)
+  ]);
+  // The same choice openInspectionNcr makes.
+  const issueType =
+    issueTypes.data?.find((type) => type.id === args.nonConformanceTypeId) ??
+    receiptLotIssueType(issueTypes.data);
+  if (!issueType) {
+    return "Configure an issue type first. The rejected part of the lot needs an NCR.";
+  }
+  if (!lotLocationId && !userDefaults.data?.locationId) {
+    return "Set your default location. The rejected part of the lot needs an NCR.";
+  }
+  return null;
+}
+
+class LotHasNcrError extends Error {
+  constructor() {
+    super("This lot already has its NCR.");
+  }
+}
+
+export async function getInspectionNcrLink(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  inspectionId: string
+) {
+  return db
+    .selectFrom("nonConformanceInspection")
+    .select("nonConformanceId")
+    .where("inspectionId", "=", inspectionId)
+    .where("companyId", "=", companyId)
+    .orderBy("createdAt")
+    .orderBy("id")
+    .executeTakeFirst();
+}
+/**
+ * Opens the NCR of a rejected or partly rejected receipt inspection lot, with a
+ * Scrap row for `quantity` and `trackedEntityIds` (null: the whole lot). A
+ * failure after the issue was inserted deletes it again.
+ */
+export async function openInspectionNcr(
+  ctx: ServiceContext,
+  args: {
+    id: string;
+    nonConformanceTypeId?: string | null;
+    reason?: string | null;
+    /** The issue title's first words, e.g. "Rejected lot". */
+    title: string;
+    /** What happened to the lot, for error messages, e.g. "Lot rejected". */
+    outcome: string;
+    quantity: number | null;
+    trackedEntityIds: string[] | null;
+  }
+): Promise<{ issueId: string } | CarbonError> {
+  const { id, nonConformanceTypeId, reason } = args;
+  const client = ctx.asCaller.supabase;
+  const serviceRole = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+
+  const [inspection, lotLocationId, userDefaults, issueTypes] =
+    await Promise.all([
+      getInspection(client, id),
+      inspectionReceiptLine(ctx.asSystem.pg, companyId, id).then(
+        (line) => line.locationId
+      ),
+      getUserDefaults(client, userId, companyId),
+      getIssueTypesList(client, companyId)
+    ]);
+  if (inspection.error || !inspection.data) {
+    return ctx.error(
+      "internal",
+      `${args.outcome}, but failed to load it for NCR`,
+      inspection.error
+    );
+  }
+  // The inspection view embeds joins its generated type does not carry.
+  const insp = inspection.data as any;
+  const quantity = args.quantity ?? Number(insp.lotSize ?? 0);
+
+  const issueType =
+    issueTypes.data?.find((t) => t.id === nonConformanceTypeId) ??
+    receiptLotIssueType(issueTypes.data);
+  const locationId = lotLocationId ?? userDefaults.data?.locationId ?? null;
+  if (!issueType || !locationId) {
+    return ctx.error(
+      "rule",
+      `${args.outcome}. Configure at least one Issue Type and a default user location to auto-create an NCR.`
+    );
+  }
+
+  const supplierName = insp.supplier?.name ?? "supplier";
+  const sourceReadableId = insp.sourceDocumentReadableId ?? "";
+  const itemReadableId =
+    insp.item?.readableId ?? insp.itemReadableId ?? insp.itemId;
+  const inspectionReadableId = insp.inspectionId ?? "";
+  const issueTitle = [
+    args.title,
+    inspectionReadableId,
+    itemReadableId && `— ${itemReadableId}`,
+    sourceReadableId && `on ${sourceReadableId}`
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const [failedFeatures, timeZone] = await Promise.all([
+    failedFeatureLines(ctx, id),
+    getLocationTimeZone(client, locationId, companyId)
+  ]);
+  const failedFeaturesBlock =
+    failedFeatures.length > 0
+      ? `\n\nFailed features:\n${failedFeatures.join("\n")}`
+      : "";
+
+  const created = await insertIssue(serviceRole, {
+    name: issueTitle,
+    description: `Auto-created from inbound inspection ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}. Supplier: ${supplierName}.${reason ? `\n\nReason: ${reason}` : ""}${failedFeaturesBlock}`,
+    priority: "Medium",
+    source: "Internal",
+    locationId,
+    nonConformanceTypeId: issueType.id,
+    openDate: datetime.today(timeZone).toString(),
+    quantity,
+    items: insp.itemId ? [insp.itemId] : [],
+    // The lot's supplier, stamped from the PO at receipt: it drives the
+    // SCAR report, the action-task supplier picker and the explorer.
+    supplierId: insp.supplierId ?? undefined,
+    companyId,
+    createdBy: userId
+  });
+  if (created.error || !created.data) {
+    return ctx.error(
+      "internal",
+      `${args.outcome}, but failed to create NCR`,
+      created.error
+    );
+  }
+  const { id: issueId, nonConformanceId } = created.data;
+  const removeOpenedIssue = async () => {
+    try {
+      await ctx.asSystem.pg.transaction().execute(async (trx) => {
+        await setInspectionRelease(trx);
+        await trx
+          .deleteFrom("nonConformance")
+          .where("id", "=", issueId)
+          .where("companyId", "=", companyId)
+          .execute();
+      });
+    } catch (error) {
+      logger.error("Failed to delete an inspection NCR that did not open", {
+        companyId,
+        issueId,
+        error
+      });
+    }
+  };
+  const abandon = async (message: string, cause: unknown) => {
+    await removeOpenedIssue();
+    return ctx.error("internal", message, cause);
+  };
+
+  // Every tracked entity in the lot: the sampled ones plus the un-sampled
+  // ones, which the cascade also Rejected. A failed read would link only
+  // part of the lot, so the issue is rolled back and the reject can retry.
+  const sampledIds = (
+    (insp.inspectionSample ?? []) as {
+      trackedEntityId: string | null;
+    }[]
+  )
+    .map((s) => s.trackedEntityId)
+    .filter((id): id is string => Boolean(id));
+  let lotEntityIds = args.trackedEntityIds;
+  if (!lotEntityIds) {
+    const receiptLineEntities = await serviceRole
+      .from("trackedEntity")
+      .select("id")
+      .eq("attributes ->> Receipt Line", insp.sourceDocumentLineId ?? "")
+      .eq("companyId", companyId);
+    if (receiptLineEntities.error) {
+      return abandon(
+        `${args.outcome}, but failed to read the lot for the NCR`,
+        receiptLineEntities.error
+      );
+    }
+    lotEntityIds = [
+      ...new Set([
+        ...sampledIds,
+        ...(receiptLineEntities.data ?? []).map((r) => r.id)
+      ])
+    ];
+  }
+  const entityQuantities =
+    lotEntityIds.length > 0
+      ? await serviceRole
+          .from("trackedEntity")
+          .select("id, quantity")
+          .in("id", lotEntityIds)
+          .eq("companyId", companyId)
+      : { data: [], error: null };
+  if (entityQuantities.error) {
+    return abandon(
+      `${args.outcome}, but failed to read the lot for the NCR`,
+      entityQuantities.error
+    );
+  }
+
+  // insertIssue inserted the item's disposition row at quantity 0 and
+  // Pending. Now it takes the lot quantity and Scrap (the most conservative
+  // start; the MRB can downgrade or split later), the inspection link, and
+  // a link per entity — under the issue lock every disposition writer
+  // shares, so a quantity edit cannot land between them.
+  try {
+    await ctx.asSystem.pg.transaction().execute(async (trx) => {
+      await trx
+        .selectFrom("inspection")
+        .select("id")
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      const existing = await getInspectionNcrLink(trx, companyId, id);
+      if (existing) throw new LotHasNcrError();
+      await lockIssueDispositions(trx, {
+        nonConformanceId: issueId,
+        companyId
+      });
+
+      let scrapRowId: string | null = null;
+      if (insp.itemId) {
+        const scrapRow = await trx
+          .updateTable("nonConformanceItem")
+          .set({
+            quantity,
+            disposition: "Scrap",
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("nonConformanceId", "=", issueId)
+          .where("itemId", "=", insp.itemId)
+          .where("companyId", "=", companyId)
+          .returning(["id"])
+          .executeTakeFirst();
+        // insertIssue only logs a failed item insert. With no row the NCR
+        // would have no disposition to decide and close with nothing to post.
+        if (!scrapRow) {
+          throw new Error("The NCR's item row was not created");
+        }
+        scrapRowId = scrapRow.id;
+      }
+
+      await trx
+        .insertInto("nonConformanceInspection")
+        .values({
+          nonConformanceId: issueId,
+          inspectionId: insp.id,
+          companyId,
+          createdBy: userId
+        })
+        .execute();
+
+      const entityRows = entityQuantities.data ?? [];
+      if (scrapRowId && entityRows.length > 0) {
+        await trx
+          .insertInto("nonConformanceItemTrackedEntity")
+          .values(
+            entityRows.map((e) => ({
+              nonConformanceItemId: scrapRowId!,
+              nonConformanceId: issueId,
+              trackedEntityId: e.id,
+              quantity: Number(e.quantity ?? 1),
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      }
+
+      // In the NCR's transaction, so a failed link deletes it and a retry opens it whole.
+      if (
+        insp.sourceDocument === "Receipt" &&
+        insp.sourceDocumentLineId &&
+        insp.sourceDocumentId
+      ) {
+        await trx
+          .insertInto("nonConformanceReceiptLine")
+          .values({
+            nonConformanceId: issueId,
+            receiptLineId: insp.sourceDocumentLineId,
+            receiptId: insp.sourceDocumentId,
+            receiptReadableId: insp.sourceDocumentReadableId ?? null,
+            companyId,
+            createdBy: userId
+          })
+          .execute();
+      }
+      if (lotEntityIds && lotEntityIds.length > 0) {
+        await trx
+          .insertInto("nonConformanceTrackedEntity")
+          .values(
+            lotEntityIds.map((trackedEntityId) => ({
+              nonConformanceId: issueId,
+              trackedEntityId,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      }
+    });
+  } catch (err) {
+    if (err instanceof LotHasNcrError) {
+      await removeOpenedIssue();
+      return ctx.error("conflict", err.message);
+    }
+    return abandon(
+      `${args.outcome}, but failed to link the NCR to the lot`,
+      err
+    );
+  }
+
+  const tasks = await createIssueTasks(ctx, issueId);
+  if (tasks.error) {
+    return abandon(
+      `${args.outcome}, but failed to create NCR tasks`,
+      tasks.error
+    );
+  }
+
+  await notifyIssue(
+    ctx,
+    (integrations) =>
+      notifyIssueCreated({ client, serviceRole }, integrations, {
+        companyId,
+        userId,
+        carbonUrl: `${ERP_URL}${path.to.issue(issueId)}`,
+        issue: {
+          id: issueId,
+          nonConformanceId,
+          title: issueTitle,
+          description: `Auto-created from inbound inspection ${inspectionReadableId || id}`,
+          severity: "Medium"
+        }
+      }),
+    "Failed to send NCR notifications"
+  );
+
+  return { issueId };
 }

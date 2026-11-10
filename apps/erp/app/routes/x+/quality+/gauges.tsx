@@ -2,15 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { authorize } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import GaugesTable from "~/modules/quality/ui/Gauge/GaugesTable";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { gaugesList } from "~/utils/list-registry/quality.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Gauges`,
@@ -18,42 +18,26 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "quality.gauges": "View" },
-    { role: "employee" }
-  );
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const [gauges, gaugeTypes] = await Promise.all([
-    api.quality.getGauges({
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }),
-    api.quality.getGaugeTypesList({})
-  ]);
-
-  return {
-    gauges: gauges.data?.rows ?? [],
-    count: gauges.data?.count ?? 0,
-    gaugeTypes: gaugeTypes.data ?? []
-  };
+  return loadListPage(request, gaugesList, {
+    dataKey: "gauges",
+    firstPage: async ({ api }) => ({
+      gaugeTypes: (await api.quality.getGaugeTypesList({})).data ?? []
+    })
+  });
 }
 
 export default function GaugesRoute() {
-  const { gauges, count, gaugeTypes } = useLoaderData<typeof loader>();
+  const { gauges, count, infinite, gaugeTypes } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <GaugesTable data={gauges} count={count} types={gaugeTypes} />
+      <GaugesTable
+        data={gauges}
+        count={count}
+        infinite={infinite}
+        types={gaugeTypes}
+      />
       <RecordOutlet />
     </VStack>
   );

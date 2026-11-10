@@ -44,6 +44,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { useWorkCenters } from "~/components/Form/WorkCenter";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Process } from "~/modules/resources/types";
@@ -58,6 +59,7 @@ import { path } from "~/utils/path";
 type ProcessesTableProps = {
   data: Process[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {
@@ -67,7 +69,8 @@ const defaultColumnVisibility = {
   updatedBy: false
 };
 
-const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
+const ProcessesTable = memo((props: ProcessesTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -154,7 +157,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
                 if (!workCenter) return [];
                 return {
                   label: workCenter.label,
-                  onClick: () => navigate(path.to.workCenter(workCenter.value))
+                  to: path.to.workCenter(workCenter.value)
                 };
               }
             )}
@@ -221,7 +224,10 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         header: t`Complete All`,
         cell: ({ row }) => (
           <div className="flex w-full items-center justify-center">
-            <Checkbox isChecked={row.original.completeAllOnScan ?? false} />
+            <Checkbox
+              aria-label={t`Complete All`}
+              isChecked={row.original.completeAllOnScan ?? false}
+            />
           </div>
         ),
         meta: {
@@ -240,7 +246,10 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         header: t`Batchable`,
         cell: ({ row }) => (
           <div className="flex w-full items-center justify-center">
-            <Checkbox isChecked={row.original.batchable ?? false} />
+            <Checkbox
+              aria-label={t`Batchable`}
+              isChecked={row.original.batchable ?? false}
+            />
           </div>
         ),
         meta: {
@@ -259,7 +268,10 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         header: t`Requires Ability`,
         cell: ({ row }) => (
           <div className="flex w-full items-center justify-center">
-            <Checkbox isChecked={row.original.requiresAbility ?? false} />
+            <Checkbox
+              aria-label={t`Requires Ability`}
+              isChecked={row.original.requiresAbility ?? false}
+            />
           </div>
         ),
         meta: {
@@ -278,7 +290,10 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         header: t`Active`,
         cell: ({ row }) => (
           <div className="flex w-full items-center justify-center">
-            <Checkbox isChecked={row.original.active ?? true} />
+            <Checkbox
+              aria-label={t`Active`}
+              isChecked={row.original.active ?? true}
+            />
           </div>
         ),
         meta: {
@@ -329,7 +344,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [workCenters, people, customColumns, navigate, t]);
+  }, [workCenters, people, customColumns, t]);
 
   const renderContextMenu = useCallback(
     (row: (typeof data)[number]) => {
@@ -391,6 +406,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
   return (
     <Table<Process>
       data={data}
+      infinite={infinite}
       count={count}
       columns={columns}
       defaultColumnVisibility={defaultColumnVisibility}

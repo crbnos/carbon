@@ -28,7 +28,7 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -66,12 +66,14 @@ type SupplierQuoteLineFormProps = {
     itemType: MethodItemType;
   };
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const SupplierQuoteLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose
 }: SupplierQuoteLineFormProps) => {
   const { t } = useLingui();
@@ -138,7 +140,7 @@ const SupplierQuoteLineForm = ({
       .maybeSingle();
 
     if (supplierPart.error) {
-      toast.error(t`Failed to load supplier part details`);
+      toastError(t`Failed to load supplier part details`, supplierPart.error);
       return;
     }
 
@@ -166,7 +168,7 @@ const SupplierQuoteLineForm = ({
     ]);
 
     if (item.error) {
-      toast.error(t`Failed to load item details`);
+      toastError(t`Failed to load item details`, item.error);
       return;
     }
 
@@ -211,6 +213,7 @@ const SupplierQuoteLineForm = ({
       >
         <ModalCardProvider type={type}>
           <ModalCard
+            open={open}
             onClose={onClose}
             defaultCollapsed={false}
             isCollapsible={isEditing}
@@ -496,8 +499,9 @@ const SupplierQuoteLineForm = ({
           </ModalCard>
         </ModalCardProvider>
       </Tabs>
-      {isEditing && deleteDisclosure.isOpen && initialValues.id && (
+      {isEditing && initialValues.id && (
         <DeleteSupplierQuoteLine
+          isOpen={deleteDisclosure.isOpen}
           line={{
             itemId: itemData.itemId ?? "",
             id: initialValues.id

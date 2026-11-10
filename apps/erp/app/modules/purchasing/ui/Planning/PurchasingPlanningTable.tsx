@@ -18,6 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { distinctItemText } from "@carbon/utils";
@@ -46,6 +47,7 @@ import {
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { useInfiniteRows } from "~/components/Table/useInfiniteRows";
 import {
   useLinkedDrawerItem,
   useMrpScheduleDescription,
@@ -53,7 +55,6 @@ import {
   useQuantityFormatter,
   useUser
 } from "~/hooks";
-import type { SupplierPart } from "~/modules/items/types";
 import {
   PLANNING_ACTIONS_COLUMN,
   PLANNING_ASSIGNEE_COLUMN,
@@ -74,9 +75,17 @@ import {
   plannedOrdersFromActions,
   supplierConversionFactor
 } from "~/modules/production/ui/Planning/planned-orders-from-actions";
+import {
+  PLANNING_SEGMENT_COLUMN,
+  planningRowKey
+} from "~/modules/production/ui/Planning/planning-action-scope";
 import { splitOrdersByFence } from "~/modules/production/ui/Planning/planning-fence";
-import { planningColumns } from "~/modules/production/ui/Planning/planningColumns";
+import {
+  type PlanningSegmentProject,
+  planningColumns
+} from "~/modules/production/ui/Planning/planningColumns";
 import { usePlanningActions } from "~/modules/production/ui/Planning/usePlanningActions";
+import { usePlanningWeekLabel } from "~/modules/production/ui/Planning/usePlanningWeekLabel";
 import type { action as mrpAction } from "~/routes/api+/mrp";
 import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
 import { useItems, usePeople } from "~/stores";
@@ -87,20 +96,30 @@ import type { PurchasingPlanningItem } from "../../types";
 import { PurchasingPlanningOrderDrawer } from "./PurchasingPlanningOrderDrawer";
 import { usePurchaseOrderPlanningCommands } from "./usePurchaseOrderPlanningCommands";
 
+/** A grid row with its persisted MRP worklist (spec §P1.7), rendered as the
+ *  Actions column + the item's expanded row. Every action is here whatever
+ *  its date; the row's time fence decides what shows. */
+type PlanningRow = PurchasingPlanningItem & {
+  planningActions: PlanningAction[];
+};
+
 type PlanningTableProps = {
-  data: PurchasingPlanningItem[];
+  data: PlanningRow[];
   /** The row a `?item=` link opens the drawer on when it is not in `data`. */
-  drawerItem: PurchasingPlanningItem | null;
+  drawerItem: PlanningRow | null;
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   locationId: string;
   periods: { id: string; startDate: string; endDate: string }[];
-  /** The persisted MRP worklist for the rows on this page (spec §P1.7),
-   *  rendered as the Actions column + each item's expanded row. Every action
-   *  is here whatever its date; the row's time fence decides what shows. */
-  planningActions: PlanningAction[];
   /** The Actions-column filter in effect; null when the grid is not filtered
    *  by action type. */
   actionTypes: string[] | null;
+  /** The projects that net in their own segment, for the Segment column. */
+  segmentProjects: PlanningSegmentProject[];
+  /** The suppliers the Supplier filter offers: those the plan lists. Null
+   *  offers every supplier. */
+  supplierIds: string[] | null;
   /** Today on the location's calendar (ISO date). */
   locationToday: string;
 };
@@ -110,13 +129,16 @@ const PlanningTable = memo(
     data,
     drawerItem,
     count,
+    nextCursor,
     locationId,
     periods,
-    planningActions,
     actionTypes,
+    segmentProjects,
+    supplierIds,
     locationToday
   }: PlanningTableProps) => {
     const { t, i18n } = useLingui();
+    const weekLabel = usePlanningWeekLabel();
     const permissions = usePermissions();
 
     // Memoized on the locale, so it never rebuilds `columns` on its own.
@@ -125,6 +147,21 @@ const PlanningTable = memo(
     const unitOfMeasures = useUnitOfMeasure();
     const [suppliers] = useSuppliers();
     const itemPostingGroups = useItemPostingGroups();
+
+    // The Supplier filter offers only the suppliers the plan's rows order
+    // from (their default supplier), not every supplier of the company.
+    const supplierOptions = useMemo(() => {
+      if (!supplierIds) {
+        return suppliers.map((supplier) => ({
+          label: supplier.name,
+          value: supplier.id
+        }));
+      }
+      const listed = new Set(supplierIds);
+      return suppliers
+        .filter((supplier) => listed.has(supplier.id))
+        .map((supplier) => ({ label: supplier.name, value: supplier.id }));
+    }, [suppliers, supplierIds]);
 
     const mrpFetcher = useAction<typeof mrpAction>({
       onSettled: (data) => {
@@ -135,11 +172,30 @@ const PlanningTable = memo(
     const mrpScheduleDescription = useMrpScheduleDescription();
     const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
 
-    // What the order drawer can open on: the page's rows, plus the row a link
-    // names when it is not on this page.
+    // Every loaded row, each with its own actions. The open drawer's param
+    // does not change the list.
+    const infiniteRows = useInfiniteRows({
+      initialRows: data,
+      infinite: {
+        dataKey: "items",
+        nextCursor,
+        ignoreParams: [PLANNING_DRAWER_PARAM]
+      }
+    });
+    const { rows } = infiniteRows;
+
+    // What the order drawer can open on: the loaded rows, plus the row a link
+    // names when it is not loaded. A loaded row is never counted twice.
     const drawerRows = useMemo(
-      () => (drawerItem ? [...data, drawerItem] : data),
-      [data, drawerItem]
+      () =>
+        drawerItem && !rows.some((row) => row.id === drawerItem.id)
+          ? [...rows, drawerItem]
+          : rows,
+      [rows, drawerItem]
+    );
+    const planningActions = useMemo(
+      () => drawerRows.flatMap((row) => row.planningActions),
+      [drawerRows]
     );
 
     // ── Planning actions (the MRP worklist) ──────────────────────────────────
@@ -153,9 +209,9 @@ const PlanningTable = memo(
       actionHandlers: changeActionHandlers,
       isActionsBusy,
       timeFence,
-      actionsByItemId,
-      fencedActionsByItemId,
-      visibleActionsByItemId,
+      actionsByRowKey,
+      fencedActionsByRowKey,
+      visibleActionsByRowKey,
       submitActions
     } = usePlanningActions({
       data: drawerRows,
@@ -198,7 +254,7 @@ const PlanningTable = memo(
         bulkUpdateFetcher.data?.success === false &&
         bulkUpdateFetcher.data?.message
       ) {
-        toast.error(bulkUpdateFetcher.data.message);
+        toastError(bulkUpdateFetcher.data.message, bulkUpdateFetcher.data);
       }
 
       if (bulkUpdateFetcher.data?.success === true) {
@@ -239,17 +295,10 @@ const PlanningTable = memo(
       () => {
         const initial: Record<string, string> = {};
         data.forEach((item) => {
-          // If there's a preferred supplier, use it
-          if (item.preferredSupplierId) {
-            initial[item.id] = item.preferredSupplierId;
-          }
-          // If there's only one supplier, auto-select it regardless of preference
-          else if ((item.suppliers as SupplierPart[])?.length === 1) {
-            initial[item.id] = (item.suppliers as SupplierPart[])[0].supplierId;
-          }
-          // Otherwise, use the first available supplier if any
-          else if ((item.suppliers as SupplierPart[])?.length > 0) {
-            initial[item.id] = (item.suppliers as SupplierPart[])[0].supplierId;
+          // The preferred supplier, else the earliest supplier part — the
+          // same supplier the Supplier column filters on.
+          if (item.defaultSupplierId) {
+            initial[item.id] = item.defaultSupplierId;
           }
         });
 
@@ -271,9 +320,7 @@ const PlanningTable = memo(
         let changed = false;
         for (const item of drawerRows) {
           if (next[item.id]) continue;
-          const seed =
-            item.preferredSupplierId ??
-            (item.suppliers as SupplierPart[] | null)?.[0]?.supplierId;
+          const seed = item.defaultSupplierId;
           if (seed) {
             next[item.id] = seed;
             changed = true;
@@ -299,7 +346,10 @@ const PlanningTable = memo(
         const supplierId = suppliersMap[row.id];
         const item = items.find((item) => item.id === row.id);
         return plannedOrdersFromActions(
-          openNewSupplyActions(actionsByItemId.get(row.id), "Order"),
+          openNewSupplyActions(
+            actionsByRowKey.get(planningRowKey(row)),
+            "Order"
+          ),
           {
             conversionFactor: supplierConversionFactor(
               row.suppliers,
@@ -313,12 +363,15 @@ const PlanningTable = memo(
           }
         );
       },
-      [actionsByItemId, items, suppliersMap]
+      [actionsByRowKey, items, suppliersMap]
     );
 
-    const ordersByItemId = useMemo(
-      () => new Map(data.map((row) => [row.id, plannedOrdersFor(row)])),
-      [data, plannedOrdersFor]
+    const ordersByRowKey = useMemo(
+      () =>
+        new Map(
+          rows.map((row) => [planningRowKey(row), plannedOrdersFor(row)])
+        ),
+      [rows, plannedOrdersFor]
     );
 
     // Store orders in a map keyed by item id - calculate on-demand instead of eagerly
@@ -346,7 +399,7 @@ const PlanningTable = memo(
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const onBulkUpdate = useCallback(
-      (selectedRows: typeof data, action: "order") => {
+      (selectedRows: PurchasingPlanningItem[], action: "order") => {
         // Filter out rows without suppliers and track them for error reporting
         const rowsWithoutSuppliers = selectedRows.filter(
           (row) => row.id && !suppliersMap[row.id]
@@ -382,10 +435,10 @@ const PlanningTable = memo(
               // raises what is due inside the planning horizon, not the whole
               // planning window.
               const sourceOrders =
-                row.id! in ordersMap
-                  ? ordersMap[row.id!]!
+                planningRowKey(row) in ordersMap
+                  ? ordersMap[planningRowKey(row)]!
                   : splitOrdersByFence(
-                      ordersByItemId.get(row.id!) ?? [],
+                      ordersByRowKey.get(planningRowKey(row)) ?? [],
                       timeFence.fenceDateFor(row)
                     ).inside;
               const ordersWithPeriods = sourceOrders.map((order) => {
@@ -417,6 +470,7 @@ const PlanningTable = memo(
 
               return {
                 id: row.id,
+                planningSegmentId: row.planningSegmentId ?? "",
                 orders: ordersWithPeriods
               };
             }),
@@ -433,7 +487,7 @@ const PlanningTable = memo(
         bulkUpdateFetcher,
         locationId,
         ordersMap,
-        ordersByItemId,
+        ordersByRowKey,
         suppliersMap,
         t,
         timeFence
@@ -449,9 +503,12 @@ const PlanningTable = memo(
       (itemId: string, date: string | null) => {
         setFenceDate(itemId, date);
         setOrdersMap((prev) => {
-          if (!(itemId in prev)) return prev;
-          const { [itemId]: _dropped, ...rest } = prev;
-          return rest;
+          // the fence is per item, so every segment row of the item re-seeds
+          const kept = Object.entries(prev).filter(
+            ([key]) => key.split("\u001f")[0] !== itemId
+          );
+          if (kept.length === Object.keys(prev).length) return prev;
+          return Object.fromEntries(kept);
         });
       },
       [setFenceDate]
@@ -465,7 +522,7 @@ const PlanningTable = memo(
       key: drawerKey,
       open: openDrawer,
       close: closeDrawer
-    } = useLinkedDrawerItem({
+    } = useLinkedDrawerItem<PurchasingPlanningItem>({
       param: PLANNING_DRAWER_PARAM,
       rows: drawerRows
     });
@@ -475,7 +532,7 @@ const PlanningTable = memo(
         if (item.id) {
           setOrdersMap((prev) => ({
             ...prev,
-            [item.id!]: orders
+            [planningRowKey(item)]: orders
           }));
         }
       },
@@ -511,11 +568,11 @@ const PlanningTable = memo(
     const selectedActions = useMemo(
       () =>
         selectedItem?.id
-          ? (fencedActionsByItemId.get(selectedItem.id) ?? []).filter(
-              (action) => !isNewSupplyAction(action)
-            )
+          ? (
+              fencedActionsByRowKey.get(planningRowKey(selectedItem)) ?? []
+            ).filter((action) => !isNewSupplyAction(action))
           : [],
-      [selectedItem, fencedActionsByItemId]
+      [selectedItem, fencedActionsByRowKey]
     );
 
     // The drawer's Open Orders rows carry the same Apply / Dismiss / Reopen /
@@ -526,12 +583,14 @@ const PlanningTable = memo(
       const shared = planningColumns<PurchasingPlanningItem>({
         i18n,
         periods,
+        weekLabel,
         locationToday,
         formatQuantity,
         unitOfMeasures,
         itemPostingGroups,
         timeFence,
-        onFenceChange
+        onFenceChange,
+        segmentProjects
       });
 
       return [
@@ -577,12 +636,15 @@ const PlanningTable = memo(
           header: t`Item Name`,
           value: (row) => row.name ?? null
         }),
+        shared.segment,
         {
           id: PLANNING_ACTIONS_COLUMN,
           header: t`Actions`,
           cell: ({ row }) => (
             <PlanningActionsCell
-              actions={visibleActionsByItemId.get(row.original.id) ?? []}
+              actions={
+                visibleActionsByRowKey.get(planningRowKey(row.original)) ?? []
+              }
             />
           ),
           meta: {
@@ -594,7 +656,7 @@ const PlanningTable = memo(
             },
             exportValue: (row: PurchasingPlanningItem) =>
               planningActionsExportValue(
-                visibleActionsByItemId.get(row.id) ?? []
+                visibleActionsByRowKey.get(planningRowKey(row)) ?? []
               )
           }
         },
@@ -605,8 +667,11 @@ const PlanningTable = memo(
             <EmployeeAvatarGroup
               employeeIds={[
                 ...new Set(
-                  (visibleActionsByItemId.get(row.original.id) ?? []).flatMap(
-                    (action) => (action.assignee ? [action.assignee] : [])
+                  (
+                    visibleActionsByRowKey.get(planningRowKey(row.original)) ??
+                    []
+                  ).flatMap((action) =>
+                    action.assignee ? [action.assignee] : []
                   )
                 )
               ]}
@@ -625,8 +690,10 @@ const PlanningTable = memo(
             exportValue: (row: PurchasingPlanningItem) =>
               [
                 ...new Set(
-                  (visibleActionsByItemId.get(row.id) ?? []).flatMap(
-                    (action) => (action.assignee ? [action.assignee] : [])
+                  (
+                    visibleActionsByRowKey.get(planningRowKey(row)) ?? []
+                  ).flatMap((action) =>
+                    action.assignee ? [action.assignee] : []
                   )
                 )
               ]
@@ -639,7 +706,7 @@ const PlanningTable = memo(
         ...shared.periods,
         shared.reorderPolicy,
         {
-          accessorKey: "preferredSupplierId",
+          accessorKey: "defaultSupplierId",
           header: t`Supplier`,
           cell: ({ row }) => {
             const supplierId = suppliersMap[row.original.id];
@@ -663,10 +730,7 @@ const PlanningTable = memo(
             mobile: "P3",
             filter: {
               type: "static",
-              options: suppliers.map((supplier) => ({
-                label: supplier.name,
-                value: supplier.id
-              }))
+              options: supplierOptions
             },
             icon: <LuContainer />
           }
@@ -701,7 +765,7 @@ const PlanningTable = memo(
             // only what is due inside the row's time fence
             const orders = row.original.id
               ? splitOrdersByFence(
-                  ordersByItemId.get(row.original.id) ?? [],
+                  ordersByRowKey.get(planningRowKey(row.original)) ?? [],
                   timeFence.fenceDateFor(row.original)
                 ).inside
               : [];
@@ -718,7 +782,7 @@ const PlanningTable = memo(
             // the dot too; a Decrease, Defer or Cancel does not.
             const dot =
               planningActionDot(
-                visibleActionsByItemId.get(row.original.id) ?? []
+                visibleActionsByRowKey.get(planningRowKey(row.original)) ?? []
               ) ?? (hasOrders ? "green" : null);
             return (
               <div className="flex justify-end">
@@ -735,7 +799,10 @@ const PlanningTable = memo(
                     t`Blocked`
                   ) : dot ? (
                     <HStack>
-                      <PulsingDot variant={dot} />
+                      <PulsingDot
+                        variant={dot}
+                        label={dot === "red" ? t`Urgent` : t`Action needed`}
+                      />
                       <span>{hasOrders ? t`Order ${quantity}` : t`Order`}</span>
                     </HStack>
                   ) : (
@@ -753,27 +820,29 @@ const PlanningTable = memo(
     }, [
       t,
       i18n,
-      suppliers,
+      supplierOptions,
       formatQuantity,
       unitOfMeasures,
       suppliersMap,
       isDisabled,
-      visibleActionsByItemId,
+      visibleActionsByRowKey,
       actionTypeOptions,
       people,
       itemPostingGroups,
-      ordersByItemId,
+      ordersByRowKey,
       timeFence,
-      locationToday
+      segmentProjects,
+      locationToday,
+      weekLabel
       // Note: ordersMap is intentionally not in deps to avoid column regeneration
       // getOrdersForItem inside the cell will access the latest ordersMap via closure
     ]);
 
     const renderActions = useCallback(
-      (selectedRows: typeof data) => {
+      (selectedRows: PurchasingPlanningItem[]) => {
         // inside each row's time fence only — what the row is showing
         const applyableIds = selectedRows.flatMap((row) =>
-          (visibleActionsByItemId.get(row.id) ?? [])
+          (visibleActionsByRowKey.get(planningRowKey(row)) ?? [])
             .filter(isApplyablePlanningAction)
             .map((action) => action.id)
         );
@@ -816,7 +885,7 @@ const PlanningTable = memo(
       [
         bulkUpdateFetcher.state,
         onBulkUpdate,
-        visibleActionsByItemId,
+        visibleActionsByRowKey,
         canUpdateActions,
         isActionsBusy,
         submitActions
@@ -825,25 +894,27 @@ const PlanningTable = memo(
 
     const canExpandRow = useCallback(
       (row: PurchasingPlanningItem) =>
-        (visibleActionsByItemId.get(row.id)?.length ?? 0) > 0,
-      [visibleActionsByItemId]
+        (visibleActionsByRowKey.get(planningRowKey(row))?.length ?? 0) > 0,
+      [visibleActionsByRowKey]
     );
 
     const renderExpandedRow = useCallback(
       (row: PurchasingPlanningItem) => (
         <PlanningActionLines
-          actions={visibleActionsByItemId.get(row.id) ?? []}
+          actions={visibleActionsByRowKey.get(planningRowKey(row)) ?? []}
           todayIso={locationToday}
           {...actionHandlers}
           onOrder={() => openDrawer(row)}
         />
       ),
-      [visibleActionsByItemId, locationToday, actionHandlers, openDrawer]
+      [visibleActionsByRowKey, locationToday, actionHandlers, openDrawer]
     );
 
     const defaultColumnVisibility = {
       // carries the Assignee filter; the avatars are opt-in
       [PLANNING_ASSIGNEE_COLUMN]: false,
+      // only a company with project stock has more than one segment
+      [PLANNING_SEGMENT_COLUMN]: segmentProjects.length > 0,
       active: false,
       type: false
     };
@@ -859,12 +930,14 @@ const PlanningTable = memo(
           count={count}
           columns={columns}
           data={data}
+          infiniteRows={infiniteRows}
           defaultColumnVisibility={defaultColumnVisibility}
           defaultColumnPinning={defaultColumnPinning}
           primaryAction={
             <div className="flex items-center gap-2">
               <Combobox
                 asButton
+                aria-label={t`Location`}
                 size="sm"
                 value={locationId}
                 options={locations}
@@ -931,7 +1004,8 @@ const PlanningTable = memo(
             selectedSupplier={suppliersMap[selectedItem.id]}
             orders={
               selectedItem.id
-                ? ordersMap[selectedItem.id] || selectedOrders.inside
+                ? ordersMap[planningRowKey(selectedItem)] ||
+                  selectedOrders.inside
                 : []
             }
             beyondFenceOrders={selectedOrders.beyond}

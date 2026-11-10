@@ -25,7 +25,7 @@ leaf (see `run-trigger.ts` and `catalog/moments.ts` below).
 builds on a canvas. It is **not** the generic sense used by the `.claude/rules/workflow-*.md`
 developer-procedure files, and unrelated to `nonConformanceWorkflow`.
 
-Specs: `.ai/specs/2026-07-30-workflows-foundation.md` (schema, validator, runtime) and
+Specs: `.ai/specs/implemented/2026-07-30-workflows-foundation.md` (schema, validator, runtime) and
 `.ai/specs/implemented/2026-07-30-workflows-catalogs.md` (actions and operations).
 
 ## Always
@@ -173,7 +173,7 @@ Five exports, all re-exported from the package root:
 Kysely is imported **type-only** (`import type { Kysely, Transaction } from "kysely"`), so
 it stays a devDependency and this package keeps its four runtime dependencies
 (`zod`, `@carbon/utils`, `@lingui/core`, `@internationalized/date`). Kysely also **bypasses
-RLS** — the caller authorizes first (the activation route gates on `workflows_update`).
+RLS** — the caller authorizes first (the activation route gates on `workflows.workflows_update`).
 
 This is the one thing here that lives in this package for a dependency reason rather than a
 conceptual one: it needs `WORKFLOW_EVENTS`, and `@carbon/database` (its more natural home,
@@ -334,7 +334,7 @@ event id still exists in the catalog.
 
 ```bash
 pnpm --filter @carbon/ee test                      # vitest
-pnpm --filter @carbon/ee exec tsgo --noEmit        # typecheck
+pnpm --filter @carbon/ee exec tsc --noEmit        # typecheck
 pnpm exec biome check packages/ee/src/workflows    # lint
 pnpm run generate:workflow-catalog                 # after editing entities/moments/actions/operations.ts
 pnpm run check:workflow-catalog                    # the CI `catalog` job
@@ -362,13 +362,19 @@ global; custom fields are runtime and per company, so they are merged in rather 
   synthetic `CatalogEvent`. `WORKFLOW_EVENTS` stays closed and drift-checked. `sync.ts` uses it
   too, which is what gives a custom-field trigger its `UPDATE` subscription.
 
-## `linkify` and `ctx.linkFor`
+## `links` and `ctx.linkFor`
 
-`CatalogInput.linkify` marks an input as prose a person reads. `renderTemplate(template, ctx,
-{ linkFor })` wraps an entity part as `[readableId](url)`; `actionExecutor` passes the callback
-only for `linkify` inputs, so a webhook body still renders a bare readable id. This package
-constructs no URL — it is bundled for the browser with four runtime dependencies and cannot
-import `@carbon/env`; the engine supplies `ctx.linkFor`.
+`CatalogInput.links` (`LinksDeclaration`: a `format` of `markdown`, `slack` or `html`, plus an
+optional `when: { input, equals }` gate on a sibling input) marks an input as prose that its
+destination renders with links. `resolveStepInputs` (`runtime/resolve.ts`, shared by the action
+and integration executors) asks `linkState` (`definition/links.ts`) per input; only a `linked`
+input goes through `renderTemplate(template, ctx, { linkFor, format })`, which wraps a record
+part in that dialect's renderer (`LINK_RENDERERS`) and escapes every other value for it
+(`TEXT_ESCAPERS`: html and Slack mrkdwn; a value is customer data, never markup, so
+`AT&T <Sales>` or `<!channel>` reads as written). Every other input, a webhook body included,
+renders the record's plain name. The builder's hints (`notices.ts`) read the same `linkState`.
+This package constructs no URL — it is bundled for the browser with four runtime dependencies
+and cannot import `@carbon/env`; the engine supplies `ctx.linkFor`.
 
 `rendersAsText` now accepts a whole record (it prints as its readable id) and still refuses a
 LIST of records.

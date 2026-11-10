@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { upsertDemandProjections } from "@carbon/ee/forecast.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute, useRouteData } from "@carbon/react";
+import { useRouteData, useRouteDialog } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -114,7 +114,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewProjectionRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const routeData = useRouteData<{
     locationId: string;
   }>(path.to.demandProjections);
@@ -127,7 +127,8 @@ export default function NewProjectionRoute() {
 
   return (
     <DemandProjectionForm
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
       initialValues={initialValues}
     />
   );

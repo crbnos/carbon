@@ -283,10 +283,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         {},
         await flash(
           request,
-          error(
-            assignment.error,
-            `Failed to assign machine time: ${assignment.error}`
-          )
+          error(assignment.error, "Failed to assign machine time")
         )
       );
     }
@@ -315,10 +312,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         {},
         await flash(
           request,
-          error(
-            dismissal.error,
-            `Failed to dismiss machine time: ${dismissal.error}`
-          )
+          error(dismissal.error, "Failed to dismiss machine time")
         )
       );
     }

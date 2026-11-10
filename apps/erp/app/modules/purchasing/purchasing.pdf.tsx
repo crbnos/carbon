@@ -2,19 +2,22 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import {
   ensureFont,
   getPurchaseOrderDisplayId,
   PurchaseOrderPDF,
-  PurchaseReturnOrderPDF
+  PurchaseReturnOrderPDF,
+  PurchasingRfqPDF
 } from "@carbon/documents/pdf";
 import {
   collectSectionIds,
-  resolveTemplate,
+  type DocumentEdit,
   templateShowsThumbnails,
-  toDocumentTemplate
+  type ValueCollector
 } from "@carbon/documents/template";
+import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
@@ -28,16 +31,19 @@ import {
   getAccountsPayableBillingAddress,
   getCompany,
   getCompanySettings,
-  getDocumentTemplate,
   resolveSections
 } from "~/modules/settings/settings.service";
 import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
+import { getUser } from "~/modules/users/users.service";
 import {
   getPurchaseOrder,
+  getPurchaseOrderApproval,
   getPurchaseOrderLines,
   getPurchaseOrderLocations,
   getPurchaseReturnOrder,
   getPurchaseReturnOrderLines,
+  getPurchasingRFQ,
+  getPurchasingRFQLines,
   getPurchasingTerms,
   getSupplier,
   getSupplierLocation,
@@ -75,12 +81,17 @@ export async function renderPurchaseOrderPdf(
     companyId,
     companyGroupId,
     purchaseOrderId,
-    locale
+    locale,
+    edit,
+    valueCollector
   }: {
     companyId: string;
     companyGroupId: string;
     purchaseOrderId: string;
     locale: string;
+    /** Draft edits to preview; omitted, the saved ones are read. */
+    edit?: DocumentEdit | null;
+    valueCollector?: ValueCollector;
   }
 ): Promise<Rendered> {
   const [
@@ -92,7 +103,7 @@ export async function renderPurchaseOrderPdf(
     purchaseOrderLocations,
     terms,
     paymentTerms,
-    documentTemplate
+    templateConfig
   ] = await Promise.all([
     getCompany(client, companyId),
     getCompanySettings(client, companyId),
@@ -102,7 +113,11 @@ export async function renderPurchaseOrderPdf(
     getPurchaseOrderLocations(client, purchaseOrderId),
     getPurchasingTerms(client, companyId),
     getPaymentTermsList(client, companyId),
-    getDocumentTemplate(client, companyId, "purchaseOrder")
+    getPrintedTemplate(
+      client,
+      { companyId, documentType: "purchaseOrder", documentId: purchaseOrderId },
+      edit
+    )
   ]);
 
   if (company.error) {
@@ -141,10 +156,6 @@ export async function renderPurchaseOrderPdf(
     throw new Error("Failed to load purchase order");
   }
 
-  const templateConfig = toDocumentTemplate(
-    documentTemplate.data,
-    "purchaseOrder"
-  );
   const showThumbnails = templateShowsThumbnails(
     templateConfig,
     "purchaseOrder"
@@ -184,28 +195,38 @@ export async function renderPurchaseOrderPdf(
       }, {}) ?? {};
   }
 
-  const resolved = resolveTemplate("purchaseOrder", templateConfig);
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolved.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
   // Settlement decimals from the document currency's row (authoritative over
   // CLDR); null keeps the PDF's historical 2dp fallback.
-  const currencyRow = purchaseOrder.data?.currencyCode
-    ? await getCurrencyByCode(
-        client,
-        companyGroupId,
-        purchaseOrder.data.currencyCode
-      )
-    : null;
+  const [currencyRow, approval] = await Promise.all([
+    purchaseOrder.data?.currencyCode
+      ? getCurrencyByCode(
+          client,
+          companyGroupId,
+          purchaseOrder.data.currencyCode
+        )
+      : null,
+    // approvalRequest is service-only; the order read above already proved
+    // this caller can see the order.
+    getPurchaseOrderApproval(getCarbonServiceRole(), {
+      companyId,
+      purchaseOrderId,
+      timezone: company.data.timezone,
+      withSignature: true
+    })
+  ]);
   const currencyDecimals = currencyRow?.data?.decimalPlaces ?? null;
 
   const body = await collect(
     await renderToStream(
       <PurchaseOrderPDF
+        valueCollector={valueCollector}
         company={company.data as any}
         companySettings={companySettings.data}
         accountsPayableBillingAddress={
@@ -215,6 +236,7 @@ export async function renderPurchaseOrderPdf(
         }
         locale={locale}
         currencyDecimals={currencyDecimals}
+        approval={approval}
         paymentTerms={paymentTerms.data ?? []}
         purchaseOrder={purchaseOrder.data}
         purchaseOrderLines={purchaseOrderLines.data ?? []}
@@ -240,12 +262,17 @@ export async function renderPurchaseReturnOrderPdf(
     companyId,
     companyGroupId,
     purchaseReturnOrderId,
-    locale
+    locale,
+    edit,
+    valueCollector
   }: {
     companyId: string;
     companyGroupId: string;
     purchaseReturnOrderId: string;
     locale: string;
+    /** Draft edits to preview; omitted, the saved ones are read. */
+    edit?: DocumentEdit | null;
+    valueCollector?: ValueCollector;
   }
 ): Promise<Rendered> {
   const [
@@ -254,14 +281,22 @@ export async function renderPurchaseReturnOrderPdf(
     purchaseReturnOrder,
     purchaseReturnOrderLines,
     terms,
-    documentTemplate
+    templateConfig
   ] = await Promise.all([
     getCompany(client, companyId),
     getCompanySettings(client, companyId),
     getPurchaseReturnOrder(client, purchaseReturnOrderId),
     getPurchaseReturnOrderLines(client, purchaseReturnOrderId, companyId),
     getPurchasingTerms(client, companyId),
-    getDocumentTemplate(client, companyId, "purchaseReturnOrder")
+    getPrintedTemplate(
+      client,
+      {
+        companyId,
+        documentType: "purchaseReturnOrder",
+        documentId: purchaseReturnOrderId
+      },
+      edit
+    )
   ]);
 
   if (company.error) {
@@ -354,17 +389,12 @@ export async function renderPurchaseReturnOrderPdf(
       }
     : null;
 
-  const templateConfig = toDocumentTemplate(
-    documentTemplate.data,
-    "purchaseReturnOrder"
-  );
-  const resolved = resolveTemplate("purchaseReturnOrder", templateConfig);
   const sections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolved)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolved.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
   // Settlement decimals from the document currency's row (authoritative over
   // CLDR); null keeps the PDF's historical 2dp fallback.
@@ -373,6 +403,7 @@ export async function renderPurchaseReturnOrderPdf(
   const body = await collect(
     await renderToStream(
       <PurchaseReturnOrderPDF
+        valueCollector={valueCollector}
         company={company.data as any}
         companySettings={companySettings.data}
         locale={locale}
@@ -387,7 +418,6 @@ export async function renderPurchaseReturnOrderPdf(
         shipFromAddress={shipFromAddress}
         supplierAddress={supplierAddress}
         terms={(terms?.data?.purchasingTerms ?? {}) as JSONContent}
-        title="Return to Supplier"
         template={templateConfig}
         sections={sections}
       />
@@ -397,5 +427,154 @@ export async function renderPurchaseReturnOrderPdf(
   return {
     body,
     fileName: `${company.data.name} - ${purchaseReturnOrder.data.purchaseReturnOrderId}.pdf`
+  };
+}
+
+/** A purchasing RFQ's PDF ("Request for Quote"), for suppliers who quote on paper. */
+export async function renderPurchasingRfqPdf(
+  client: SupabaseClient<Database>,
+  {
+    companyId,
+    purchasingRfqId,
+    locale,
+    edit,
+    valueCollector
+  }: {
+    companyId: string;
+    purchasingRfqId: string;
+    locale: string;
+    /** Draft edits to preview; omitted, the saved ones are read. */
+    edit?: DocumentEdit | null;
+    valueCollector?: ValueCollector;
+  }
+): Promise<Rendered> {
+  const [
+    company,
+    companySettings,
+    purchasingRfq,
+    purchasingRfqLines,
+    terms,
+    templateConfig
+  ] = await Promise.all([
+    getCompany(client, companyId),
+    getCompanySettings(client, companyId),
+    getPurchasingRFQ(client, purchasingRfqId),
+    getPurchasingRFQLines(client, purchasingRfqId),
+    getPurchasingTerms(client, companyId),
+    getPrintedTemplate(
+      client,
+      { companyId, documentType: "purchasingRfq", documentId: purchasingRfqId },
+      edit
+    )
+  ]);
+
+  if (company.error) {
+    logger.error("Failed to load company", { error: company.error });
+  }
+
+  if (purchasingRfq.error) {
+    logger.error("Failed to load purchasingRfq", {
+      error: purchasingRfq.error
+    });
+  }
+
+  if (purchasingRfqLines.error) {
+    logger.error("Failed to load purchasingRfqLines", {
+      error: purchasingRfqLines.error
+    });
+  }
+
+  if (terms.error) {
+    logger.error("Failed to load terms", { error: terms.error });
+  }
+
+  if (
+    company.error ||
+    purchasingRfq.error ||
+    purchasingRfqLines.error ||
+    terms.error
+  ) {
+    throw new Error("Failed to load request for quote");
+  }
+
+  const showThumbnails = templateShowsThumbnails(
+    templateConfig,
+    "purchasingRfq"
+  );
+
+  // The buyer the supplier answers: the RFQ's assignee, else its author.
+  const buyerId = purchasingRfq.data.assignee ?? purchasingRfq.data.createdBy;
+
+  const [location, buyer, thumbnailRows] = await Promise.all([
+    purchasingRfq.data.locationId
+      ? getLocation(client, purchasingRfq.data.locationId)
+      : null,
+    buyerId ? getUser(client, buyerId) : null,
+    showThumbnails
+      ? Promise.all(
+          (purchasingRfqLines.data ?? []).map((line) =>
+            line.id && line.thumbnailPath
+              ? getBase64ImageFromSupabase(client, line.thumbnailPath).then(
+                  (data) => ({ id: line.id!, data })
+                )
+              : null
+          )
+        )
+      : []
+  ]);
+
+  const thumbnails = thumbnailRows.reduce<Record<string, string | null>>(
+    (acc, thumbnail) => {
+      if (thumbnail) acc[thumbnail.id] = thumbnail.data;
+      return acc;
+    },
+    {}
+  );
+
+  const shipToAddress = location?.data
+    ? {
+        name: location.data.name,
+        addressLine1: location.data.addressLine1,
+        addressLine2: location.data.addressLine2,
+        city: location.data.city,
+        stateProvince: location.data.stateProvince,
+        postalCode: location.data.postalCode,
+        countryCode: location.data.countryCode
+      }
+    : null;
+
+  const sections = await resolveSections(
+    client,
+    companyId,
+    collectSectionIds(templateConfig)
+  );
+  await ensureFont(templateConfig.settings.fontFamily);
+
+  const body = await collect(
+    await renderToStream(
+      <PurchasingRfqPDF
+        valueCollector={valueCollector}
+        company={company.data as any}
+        companySettings={companySettings.data}
+        locale={locale}
+        purchasingRfq={purchasingRfq.data}
+        purchasingRfqLines={purchasingRfqLines.data ?? []}
+        shipToAddress={shipToAddress}
+        contact={
+          buyer?.data
+            ? { name: buyer.data.fullName, email: buyer.data.email }
+            : null
+        }
+        thumbnails={thumbnails}
+        terms={(terms?.data?.purchasingTerms ?? {}) as JSONContent}
+        template={templateConfig}
+        sections={sections}
+      />
+    )
+  );
+
+  return {
+    body,
+    fileName: `${company.data.name} - ${purchasingRfq.data.rfqId}.pdf`
   };
 }

@@ -406,13 +406,11 @@ export const cleanupFunction = inngest.createFunction(
         return;
       }
 
-      // Rule 1 — RELOCATED: the compact pipeline copies survivors to `private`
-      // under the same key (copy, not move — a move races concurrent jobs
-      // holding a temp-staging source pointer). Once the durable copy exists,
-      // the staged one is redundant regardless of size or references: every
-      // reader probes/falls back to `private`.
-      // A durable copy may live in the company's own bucket (current pipeline)
-      // or the legacy shared `private` bucket (pre-migration relocations).
+      // Rule 1 — RELOCATED: the compact pipeline copies survivors to the
+      // company's own bucket under the same key (copy, not move — a move races
+      // concurrent jobs holding a temp-staging source pointer). Once the durable
+      // copy exists, the staged one is redundant regardless of size or
+      // references: every reader looks in the company bucket first.
       // Object keys start with the companyId segment, and a key without one
       // can't have a durable copy anywhere.
       let relocated: Set<string>;
@@ -486,10 +484,8 @@ export const cleanupFunction = inngest.createFunction(
         Date.now() - TMP_STAGING_TTL_HOURS * 60 * 60 * 1000
       ).toISOString();
 
-      // Staging now lives in each company's own bucket (bucket id = companyId),
-      // with the legacy shared `private` bucket still holding pre-migration
-      // objects — so select the bucket alongside the name and prune per bucket
-      // rather than assuming one shared bucket.
+      // Staging lives in each company's own bucket (bucket id = companyId), so
+      // select the bucket alongside the name and prune per bucket.
       const stale = await listStorageObjects(
         sql`name LIKE '%/tmp/%' AND created_at < ${cutoff}`
       );

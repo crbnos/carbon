@@ -77,7 +77,9 @@ The **order** field sets each operation's position, and operation order (*After 
 
 ### Time and output
 
-The floor records time and output separately. A <Term id="production-event">production event</Term> records **Setup**, **Labor**, or **Machine** time with start, end, and employee. A production quantity records **Production**, [**Scrap**](/docs/reference/scrap), or **Rework** units and updates operation totals. Scrap does not satisfy the target quantity. Untracked materials are <Term id="backflush">backflushed</Term> when output is reported; tracked materials are issued explicitly.
+The floor records time and output separately. A <Term id="production-event">production event</Term> records **Setup**, **Labor**, or **Machine** time with start, end, and employee. A production quantity records **Production**, [**Scrap**](/docs/reference/scrap), or **Rework** units and updates operation totals. Scrap does not satisfy the target quantity.
+
+Untracked materials are <Term id="backflush">backflushed</Term> when output is reported; tracked materials are issued explicitly. [Strict backflush](/docs/reference/strict-backflush) limits each material to the storage unit on its line.
 
 ### Procedures
 

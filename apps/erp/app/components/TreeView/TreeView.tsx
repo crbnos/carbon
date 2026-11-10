@@ -10,7 +10,12 @@ import type { MutableRefObject, RefObject } from "react";
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import type { NodeState, NodesState } from "./reducer";
 import { reducer } from "./reducer";
-import { concreteStateFromInput, selectedIdFromState } from "./utils";
+import {
+  applyFilterToState,
+  concreteStateFromInput,
+  rovingTabStopId,
+  selectedIdFromState
+} from "./utils";
 
 export type TreeViewProps<TData> = {
   tree: FlatTree<TData>;
@@ -131,13 +136,14 @@ export function TreeView<TData>({
             const state = nodes[node.id];
             if (!state) return null;
             if (!state.visible) return null;
+            const nodeProps = getNodeProps(node.id);
             return (
               <div
                 key={node.id}
                 data-index={virtualItem.index}
                 ref={virtualizer.measureElement}
-                className="overflow-clip"
-                {...getNodeProps(node.id)}
+                {...nodeProps}
+                className={cn("overflow-clip", nodeProps.className)}
               >
                 {renderNode({
                   node,
@@ -225,9 +231,12 @@ export function useTree<TData, TFilterValue>({
   const previousTreeShape = useRef(treeShape);
   const previousSelectedId = useRef<string | undefined>(selectedId);
 
+  // A filter set at mount (a search kept in the URL) applies at once.
   const [state, dispatch] = useReducer(
     reducer,
-    concreteStateFromInput({ tree, selectedId, collapsedIds, filter })
+    applyFilterToState(
+      concreteStateFromInput({ tree, selectedId, collapsedIds, filter })
+    )
   );
 
   //fire onSelectedIdChanged()
@@ -560,7 +569,8 @@ export function useTree<TData, TFilterValue>({
       const treeItemIndex = tree.findIndex((node) => node.id === id);
       const treeItem = tree[treeItemIndex];
       return {
-        "aria-expanded": node.expanded,
+        // A leaf has nothing to expand, so it must not report collapsed.
+        "aria-expanded": treeItem.hasChildren ? node.expanded : undefined,
         "aria-level": treeItem.level + 1,
         role: "treeitem",
         tabIndex: node.selected ? -1 : undefined
@@ -594,6 +604,98 @@ export function useTree<TData, TFilterValue>({
     scrollToNode: scrollToNodeFn,
     virtualizer
   };
+}
+
+/**
+ * A focusable row's focus ring. It is drawn by a pseudo-element above the
+ * row's cells, inside the row, so neither a sticky cell's background nor the
+ * node wrapper's `overflow-clip` hides it.
+ */
+export const treeRowFocusClassName =
+  "relative outline-none after:pointer-events-none after:absolute after:inset-0 after:z-[3] focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring";
+
+// Renders that may pass before the newly selected row is in the DOM (a far
+// jump scrolls the virtualizer first) and still take the focus.
+const PENDING_FOCUS_RENDERS = 10;
+
+/**
+ * Opt-in roving focus for a tree whose rows are focusable (the ARIA tree and
+ * treegrid patterns). Only one row is in the tab order: the selected one, else
+ * the first rendered row. A key the tree container handles (arrows, Home, End)
+ * moves DOM focus to the row it selects, and a row that takes focus itself
+ * (Tab, a click) becomes the selected row, so Enter acts on the focused row.
+ *
+ * Spread `getTreeProps()` on the container and `getRowProps(id)` on the
+ * element that is the row.
+ */
+export function useRovingTreeFocus({
+  selected,
+  selectNode,
+  getTreeProps,
+  parentRef,
+  virtualizer
+}: Pick<
+  UseTreeStateOutput,
+  "selected" | "selectNode" | "getTreeProps" | "virtualizer"
+> & {
+  parentRef: RefObject<HTMLElement | null>;
+}) {
+  const pendingFocus = useRef(0);
+  const tabStopId = rovingTabStopId(
+    virtualizer.getVirtualItems().map((item) => String(item.key)),
+    selected
+  );
+
+  // Runs after every render: the row to focus may only be rendered after the
+  // virtualizer has scrolled to it.
+  useEffect(() => {
+    if (pendingFocus.current === 0) return;
+    pendingFocus.current -= 1;
+    const container = parentRef.current;
+    const active = document.activeElement;
+    // Nothing to focus, or the user has moved the focus elsewhere since.
+    if (
+      !selected ||
+      !container ||
+      (active && active !== document.body && !container.contains(active))
+    ) {
+      pendingFocus.current = 0;
+      return;
+    }
+    const row = container.querySelector<HTMLElement>(
+      `[data-tree-row="${CSS.escape(selected)}"]`
+    );
+    if (!row) return;
+    pendingFocus.current = 0;
+    if (row !== active) row.focus();
+  });
+
+  const getRovingTreeProps = useCallback(() => {
+    const props = getTreeProps();
+    return {
+      ...props,
+      onKeyDown: (e: React.KeyboardEvent<HTMLElement>) => {
+        // A key a row or a cell already handled is not the tree's.
+        const handledBefore = e.defaultPrevented;
+        props.onKeyDown?.(e);
+        if (!handledBefore && e.defaultPrevented) {
+          pendingFocus.current = PENDING_FOCUS_RENDERS;
+        }
+      }
+    };
+  }, [getTreeProps]);
+
+  const getRowProps = (id: string) => ({
+    "data-tree-row": id,
+    tabIndex: id === tabStopId ? 0 : -1,
+    onFocus: (e: React.FocusEvent<HTMLElement>) => {
+      if (e.target === e.currentTarget && id !== selected) {
+        selectNode(id, false);
+      }
+    }
+  });
+
+  return { getTreeProps: getRovingTreeProps, getRowProps };
 }
 
 /** An actual tree structure with custom data */

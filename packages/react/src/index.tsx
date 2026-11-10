@@ -122,6 +122,7 @@ import {
   DatePicker,
   DateRangePicker,
   DateTimePicker,
+  TimeCombobox,
   TimePicker
 } from "./Date";
 import type { DateTimeProps } from "./DateTime";
@@ -135,9 +136,6 @@ import {
   DockFinderItem,
   DockFinderSeparator,
   DockItem,
-  DockMenu,
-  DockMenuContent,
-  DockMenuPanel,
   DockMenuSection,
   DockSeparator,
   DockSwitcher,
@@ -176,6 +174,7 @@ import {
   EnumerableAsText,
   useEnumerableAsText
 } from "./Enumerable";
+import { ErrorReason, errorDescription, toastError } from "./ErrorReason";
 import { File } from "./File";
 import {
   FormControl,
@@ -183,6 +182,7 @@ import {
   FormHelperText,
   FormLabel
 } from "./Form";
+import { useFormControl, useInlineTriggerLabel } from "./Form/useFormControl";
 import { Heading } from "./Heading";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./HoverCard";
 import { HStack } from "./HStack";
@@ -279,8 +279,11 @@ import {
   NavRailItem,
   NavRailLink,
   NavRailSwitcher,
-  navRailItemClasses
+  navRailItemClasses,
+  pulseNavIcon
 } from "./NavRail";
+import { NavSheet } from "./NavSheet";
+import { NonNettableBadge } from "./NonNettableBadge";
 import type { NumberFieldProps } from "./Number";
 import {
   NumberDecrementStepper,
@@ -357,6 +360,12 @@ import {
   SidebarTrigger,
   useSidebar
 } from "./Sidebar";
+import type {
+  SignatureContext,
+  SignaturePadHandle,
+  SignaturePadProps
+} from "./SignaturePad";
+import { createSignatureDrawing, SignaturePad } from "./SignaturePad";
 import { Skeleton } from "./Skeleton";
 import { Slider } from "./Slider";
 import { Spinner } from "./Spinner";
@@ -396,9 +405,13 @@ import {
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { TVColorBars } from "./TVColorBars";
 import { cn } from "./utils/cn";
-import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
+import {
+  afterDialogCloses,
+  hasOpenDialog,
+  isInsideTopmostDialog
+} from "./utils/dialog";
 import { copyToClipboard } from "./utils/dom";
-import { isEditableTarget } from "./utils/keyboard";
+import { isBareKeyForAnotherControl, isEditableTarget } from "./utils/keyboard";
 import {
   getValidChildren,
   optionLabelText,
@@ -410,7 +423,10 @@ import { VStack } from "./VStack";
 export * from "./Acknowledge";
 export * from "./ColorPicker";
 export * from "./hooks";
+export * from "./ImageZoomViewer";
+export * from "./InlineTrigger";
 export * from "./RecordOutlet";
+export { useReportUnsavedChanges } from "./RouteDialogScope";
 export type {
   ActionPresentation,
   AvatarProps,
@@ -437,6 +453,9 @@ export type {
   ShortcutHelpEntry,
   ShortcutInput,
   ShortcutKeyMapEntry,
+  SignatureContext,
+  SignaturePadHandle,
+  SignaturePadProps,
   SubheadingProps,
   TextareaProps,
   TrackedEntityOption,
@@ -463,6 +482,7 @@ export {
   AvatarGroup,
   AvatarGroupList,
   AvatarOverflowIndicator,
+  afterDialogCloses,
   Badge,
   BadgeCloseButton,
   BarProgress,
@@ -533,6 +553,7 @@ export {
   CreatableMultiSelect,
   cn,
   copyToClipboard,
+  createSignatureDrawing,
   DatePicker,
   DateRangePicker,
   DateTime,
@@ -545,9 +566,6 @@ export {
   DockFinderItem,
   DockFinderSeparator,
   DockItem,
-  DockMenu,
-  DockMenuContent,
-  DockMenuPanel,
   DockMenuSection,
   DockSeparator,
   DockSwitcher,
@@ -578,6 +596,8 @@ export {
   dockMenuRowClassName,
   Enumerable,
   EnumerableAsText,
+  ErrorReason,
+  errorDescription,
   File,
   FormControl,
   FormErrorMessage,
@@ -605,6 +625,7 @@ export {
   InputOTPSlot,
   InputRightAddon,
   InputRightElement,
+  isBareKeyForAnotherControl,
   isEditableTarget,
   isInsideTopmostDialog,
   isRichTextEmpty,
@@ -668,6 +689,8 @@ export {
   NavRailItem,
   NavRailLink,
   NavRailSwitcher,
+  NavSheet,
+  NonNettableBadge,
   NumberDecrementStepper,
   NumberField,
   NumberIncrementStepper,
@@ -688,6 +711,7 @@ export {
   PrefetchLink,
   Progress,
   PulsingDot,
+  pulseNavIcon,
   RadioGroup,
   RadioGroupButton,
   RadioGroupItem,
@@ -737,6 +761,7 @@ export {
   SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
+  SignaturePad,
   Skeleton,
   Slider,
   Spinner,
@@ -761,6 +786,7 @@ export {
   Tfoot,
   Th,
   Thead,
+  TimeCombobox,
   TimePicker,
   Toaster,
   Toggle,
@@ -775,8 +801,11 @@ export {
   TruncatedTooltipText,
   TVColorBars,
   toast,
+  toastError,
   useBotProtection,
   useEnumerableAsText,
+  useFormControl,
+  useInlineTriggerLabel,
   useModalCardType,
   useModalDrawerType,
   useOperatingSystem,

@@ -1,0 +1,58 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { authorize } from "@carbon/auth/auth.server";
+import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
+import { isServiceJobLocked } from "@carbon/utils";
+import type { ActionFunctionArgs } from "react-router";
+import { useParams } from "react-router";
+import { useRouteData } from "~/hooks";
+import { serviceJobEstimateLineValidator } from "~/modules/service/service.models";
+import type { ServiceJobDetail } from "~/modules/service/types";
+import ServiceJobEstimateLineForm from "~/modules/service/ui/ServiceJob/ServiceJobEstimateLineForm";
+import { path } from "~/utils/path";
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(serviceJobEstimateLineValidator).request(args, {
+    params: ["jobId"]
+  });
+  if ("invalid" in input) return input.invalid;
+  const { api } = await authorize(args.request, { "service.jobs": "Edit" });
+  return api.service.upsertServiceJobEstimateLine({
+    ...input.data,
+    id: undefined,
+    serviceJobId: input.params.jobId
+  });
+}
+
+export default function NewServiceJobEstimateLineRoute() {
+  const { jobId } = useParams();
+  if (!jobId) throw new Error("Could not find jobId");
+  const dialog = useRouteDialog(path.to.serviceJob(jobId));
+  const routeData = useRouteData<{ job: ServiceJobDetail }>(
+    path.to.serviceJob(jobId)
+  );
+  const job = routeData?.job;
+
+  return (
+    <ServiceJobEstimateLineForm
+      initialValues={{
+        serviceJobId: jobId,
+        itemId: undefined,
+        description: "",
+        quantity: 1,
+        unitPrice: 0
+      }}
+      laborBillRate={job?.laborBillRate ?? null}
+      isLocked={
+        isServiceJobLocked(job?.status) ||
+        job?.estimateStatus === "Sent" ||
+        job?.estimateStatus === "Accepted"
+      }
+      open={dialog.open}
+      onClose={dialog.close}
+    />
+  );
+}

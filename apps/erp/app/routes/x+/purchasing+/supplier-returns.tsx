@@ -2,18 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
-import { authorize } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { PurchaseReturnOrdersTable } from "~/modules/purchasing/ui/PurchaseReturnOrders";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { purchaseReturnOrdersList } from "~/utils/list-registry/purchasing.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   realtime: ["purchaseReturnOrder"],
@@ -22,52 +19,26 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, { "purchasing.returns": "View" });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const status = searchParams.get("status");
-  const supplierId = searchParams.get("supplierId");
-
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const purchaseReturnOrders = await api.purchasing.getPurchaseReturnOrders({
-    search,
-    status,
-    supplierId,
-    limit,
-    offset,
-    sorts,
-    filters
+  return loadListPage(request, purchaseReturnOrdersList, {
+    dataKey: "purchaseReturnOrders",
+    onError: {
+      redirectTo: path.to.authenticatedRoot,
+      message: "Failed to fetch purchase return orders"
+    }
   });
-
-  if (purchaseReturnOrders.error) {
-    throw redirect(
-      path.to.authenticatedRoot,
-      await flash(
-        request,
-        error(
-          purchaseReturnOrders.error,
-          "Failed to fetch purchase return orders"
-        )
-      )
-    );
-  }
-
-  return {
-    count: purchaseReturnOrders.data?.count ?? 0,
-    purchaseReturnOrders: purchaseReturnOrders.data?.rows ?? []
-  };
 }
 
 export default function PurchaseReturnOrdersSearchRoute() {
-  const { count, purchaseReturnOrders } = useLoaderData<typeof loader>();
+  const { count, purchaseReturnOrders, infinite } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <PurchaseReturnOrdersTable data={purchaseReturnOrders} count={count} />
+      <PurchaseReturnOrdersTable
+        data={purchaseReturnOrders}
+        count={count}
+        infinite={infinite}
+      />
       <RecordOutlet />
     </VStack>
   );

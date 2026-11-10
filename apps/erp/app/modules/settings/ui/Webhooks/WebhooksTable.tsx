@@ -49,6 +49,7 @@ import {
 } from "react-icons/lu";
 import { Outlet, useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import type { Webhook } from "~/modules/settings/types";
 import { usePeople } from "~/stores";
@@ -58,9 +59,11 @@ import { useWebhookTables } from "./WebhookForm";
 type WebhooksTableProps = {
   data: Webhook[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
+const WebhooksTable = memo((props: WebhooksTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const [params] = useUrlParams();
@@ -208,6 +211,7 @@ const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
     <>
       <Table<Webhook>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count ?? 0}
         defaultColumnVisibility={{
@@ -318,6 +322,7 @@ fetch(url, {
 };
 
 function WebhookDocs({ open, onClose }: WebhookDocsProps) {
+  const { t } = useLingui();
   const webhookTables = useWebhookTables();
   const [activeTable, setActiveTable] = useState<string>("quote");
   const { company } = useUser();
@@ -350,7 +355,11 @@ function WebhookDocs({ open, onClose }: WebhookDocsProps) {
                   value={activeTable}
                   onValueChange={(val) => setActiveTable(val)}
                 >
-                  <SelectTrigger id="table" className="min-w-[200px]">
+                  <SelectTrigger
+                    id="table"
+                    className="min-w-[200px]"
+                    aria-label={t`Table`}
+                  >
                     <SelectValue placeholder="Select a table" />
                   </SelectTrigger>
                   <SelectContent>

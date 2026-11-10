@@ -14,7 +14,10 @@ import { changeNoticeValidator } from "~/modules/items/items.models";
 import { ChangeNoticeForm } from "~/modules/items/ui/ChangeNotice";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("Change Notice");
 
 export const handle: Handle = {
   breadcrumb: msg`Change Notices`,

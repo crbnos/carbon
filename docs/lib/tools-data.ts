@@ -15,6 +15,8 @@ export interface ToolItem {
   /** Response `data` shape, reflected from the service's return type. Absent when
    *  the return type yielded nothing usable (an `any`, a void, an opaque shape). */
   responseSchema?: unknown;
+  /** Input field → the operations that list the ids it takes. */
+  lookups?: Record<string, string[]>;
   /** The HTTP path under /api/v1 when it is not `/{module}/{id}`: a service
    *  function's router path (`/production/job/cancel`). */
   path?: string;

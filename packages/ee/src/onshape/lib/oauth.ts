@@ -43,7 +43,7 @@ export type OnshapeOAuthConfig = {
   baseUrl: string;
 };
 
-// Read for models/revisions/documents; Write to create translation (GLTF/PDF
+// Read for models/revisions/documents; Write to create translation (STEP/PDF
 // export) jobs and manage the release webhook subscription. Both must be
 // granted to the OAuth application (the dev portal for the public app, the
 // Enterprise's Developer settings for a private one), or Onshape refuses the

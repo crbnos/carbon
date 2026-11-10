@@ -30,6 +30,7 @@ import {
   ScrollArea,
   Skeleton,
   toast,
+  toastError,
   useDisclosure,
   useMount,
   VStack
@@ -106,7 +107,6 @@ export function IssueAssociationsTree({
   };
 
   const onDeleteCancel = () => {
-    setSelectedChild(null);
     deleteDisclosure.onClose();
   };
 
@@ -119,6 +119,7 @@ export function IssueAssociationsTree({
               <LuSearch className="h-4 w-4" />
             </InputLeftElement>
             <Input
+              aria-label={t`Search associations`}
               placeholder={t`Search...`}
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
@@ -150,7 +151,7 @@ export function IssueAssociationsTree({
             ))}
         </VStack>
       </VStack>
-      {deleteDisclosure.isOpen && selectedChild?.id && (
+      {selectedChild?.id && (
         <ConfirmDelete
           action={path.to.deleteIssueAssociation(
             nonConformanceId,
@@ -200,6 +201,8 @@ export function IssueAssociationItem({
     <>
       <div className="flex h-8 items-center overflow-hidden rounded-sm px-2 gap-2 text-sm w-full hover:bg-accent">
         <button
+          aria-expanded={isExpanded}
+          type="button"
           className="flex flex-grow cursor-pointer items-center overflow-hidden font-medium"
           onClick={(e) => {
             e.stopPropagation();
@@ -282,7 +285,7 @@ export function IssueAssociationItem({
                           icon={<LuEllipsisVertical />}
                           variant="ghost"
                           size="sm"
-                          className="absolute right-1 top-1 flex-shrink-0 md:opacity-0 group-hover/association:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
+                          className="absolute right-1 top-1 flex-shrink-0 md:opacity-0 group-hover/association:opacity-100 group-focus-within/association:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
                         />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
@@ -304,7 +307,7 @@ export function IssueAssociationItem({
           )}
         </div>
       )}
-      {newAssociationModal.isOpen && !node.readOnly && (
+      {!node.readOnly && (
         <NewAssociationModal
           open={newAssociationModal.isOpen}
           onClose={newAssociationModal.onClose}
@@ -412,7 +415,7 @@ function NewJobOperationAssociation({ items }: { items?: string[] }) {
     }
     const { data, error } = await carbon.from("job").select("id, jobId");
     if (error) {
-      toast.error(t`Failed to load jobs`);
+      toastError(t`Failed to load jobs`, error);
     }
     setJobs(data?.map((job) => ({ label: job.jobId, value: job.id })) ?? []);
     setJobsAreLoading(false);
@@ -429,7 +432,7 @@ function NewJobOperationAssociation({ items }: { items?: string[] }) {
       .eq("jobId", jobId);
 
     if (error) {
-      toast.error(t`Failed to load job operations`);
+      toastError(t`Failed to load job operations`, error);
     }
 
     setJobOperations(
@@ -495,7 +498,7 @@ function NewPurchaseOrderLineAssociation({ items }: { items?: string[] }) {
       .select("id, purchaseOrderId");
 
     if (error) {
-      toast.error(t`Failed to load purchase orders`);
+      toastError(t`Failed to load purchase orders`, error);
       return;
     }
 
@@ -522,7 +525,7 @@ function NewPurchaseOrderLineAssociation({ items }: { items?: string[] }) {
 
     let query = carbon
       .from("purchaseOrderLine")
-      .select("id, itemId, item(name)")
+      .select("id, itemId, item!purchaseOrderLine_itemId_fkey(name)")
       .eq("purchaseOrderId", purchaseOrderId);
 
     if (items) {
@@ -532,7 +535,7 @@ function NewPurchaseOrderLineAssociation({ items }: { items?: string[] }) {
     const { data, error } = await query;
 
     if (error) {
-      toast.error(t`Failed to load purchase order lines`);
+      toastError(t`Failed to load purchase order lines`, error);
     }
 
     setPurchaseOrderLines(
@@ -599,7 +602,7 @@ function NewSalesOrderLineAssociation({ items }: { items?: string[] }) {
       .select("id, salesOrderId");
 
     if (error) {
-      toast.error(t`Failed to load sales orders`);
+      toastError(t`Failed to load sales orders`, error);
     }
 
     setSalesOrders(
@@ -635,7 +638,7 @@ function NewSalesOrderLineAssociation({ items }: { items?: string[] }) {
     const { data, error } = await query;
 
     if (error) {
-      toast.error(t`Failed to load sales order lines`);
+      toastError(t`Failed to load sales order lines`, error);
     }
 
     setSalesOrderLines(
@@ -702,7 +705,7 @@ function NewShipmentLineAssociation({ items }: { items?: string[] }) {
       .select("id, shipmentId");
 
     if (error) {
-      toast.error(t`Failed to load shipments`);
+      toastError(t`Failed to load shipments`, error);
     }
 
     setShipments(
@@ -732,7 +735,7 @@ function NewShipmentLineAssociation({ items }: { items?: string[] }) {
     const { data, error } = await query;
 
     if (error) {
-      toast.error(t`Failed to load shipment lines`);
+      toastError(t`Failed to load shipment lines`, error);
     }
 
     setShipmentLines(
@@ -799,7 +802,7 @@ function NewReceiptLineAssociation({ items }: { items?: string[] }) {
       .select("id, receiptId");
 
     if (error) {
-      toast.error(t`Failed to load receipts`);
+      toastError(t`Failed to load receipts`, error);
     }
 
     setReceipts(
@@ -829,7 +832,7 @@ function NewReceiptLineAssociation({ items }: { items?: string[] }) {
     const { data, error } = await query;
 
     if (error) {
-      toast.error(t`Failed to load receipt lines`);
+      toastError(t`Failed to load receipt lines`, error);
     }
 
     setReceiptLines(
@@ -897,7 +900,7 @@ function NewSalesReturnOrderLineAssociation({ items }: { items?: string[] }) {
       .select("id, salesReturnOrderId");
 
     if (error) {
-      toast.error(t`Failed to load RMAs`);
+      toastError(t`Failed to load RMAs`, error);
     }
 
     setSalesReturnOrders(
@@ -933,7 +936,7 @@ function NewSalesReturnOrderLineAssociation({ items }: { items?: string[] }) {
     const { data, error } = await query;
 
     if (error) {
-      toast.error(t`Failed to load RMA lines`);
+      toastError(t`Failed to load RMA lines`, error);
     }
 
     setSalesReturnOrderLines(
@@ -1007,7 +1010,7 @@ function NewPurchaseReturnOrderLineAssociation({
       .select("id, purchaseReturnOrderId");
 
     if (error) {
-      toast.error(t`Failed to load supplier returns`);
+      toastError(t`Failed to load supplier returns`, error);
     }
 
     setPurchaseReturnOrders(
@@ -1043,7 +1046,7 @@ function NewPurchaseReturnOrderLineAssociation({
     const { data, error } = await query;
 
     if (error) {
-      toast.error(t`Failed to load supplier return lines`);
+      toastError(t`Failed to load supplier return lines`, error);
     }
 
     setPurchaseReturnOrderLines(
@@ -1113,7 +1116,7 @@ function NewTrackedEntityAssociation({ items }: { items?: string[] }) {
       .in("sourceDocumentId", items!);
 
     if (error) {
-      toast.error(t`Failed to load tracked entities`);
+      toastError(t`Failed to load tracked entities`, error);
     }
 
     setTrackedEntities(
@@ -1156,7 +1159,7 @@ function NewInspectionAssociation() {
       .select("id, inspectionId, itemId, status");
 
     if (error) {
-      toast.error(t`Failed to load inbound inspections`);
+      toastError(t`Failed to load inbound inspections`, error);
     }
 
     setInspections(
@@ -1188,19 +1191,41 @@ function NewInspectionAssociation() {
   );
 }
 
-function NewAssociationModal({
-  open,
-  onClose,
-  type,
-  name,
-  items
-}: {
+type NewAssociationModalProps = {
   open: boolean;
   onClose: () => void;
   type: IssueAssociationKey;
   name: string;
   items?: string[];
-}) {
+};
+
+function NewAssociationModal({
+  open,
+  onClose,
+  ...props
+}: NewAssociationModalProps) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent>
+        <NewAssociationBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function NewAssociationBody({
+  onClose,
+  type,
+  name,
+  items
+}: Omit<NewAssociationModalProps, "open">) {
   const { id } = useParams();
   if (!id) throw new Error("No issue ID found");
 
@@ -1238,39 +1263,28 @@ function NewAssociationModal({
   }
 
   return (
-    <Modal
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
+    <ValidatedForm
+      method="post"
+      action={path.to.newIssueAssociation(id)}
+      validator={issueAssociationValidator}
+      fetcher={fetcher}
     >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.newIssueAssociation(id)}
-          validator={issueAssociationValidator}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>New {name}</ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="type" value={type} />
-            <VStack spacing={4}>{renderFields(type)}</VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit>
-              <Trans>Add</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+      <ModalHeader>
+        <ModalTitle>New {name}</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="type" value={type} />
+        <VStack spacing={4}>{renderFields(type)}</VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit>
+          <Trans>Add</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 

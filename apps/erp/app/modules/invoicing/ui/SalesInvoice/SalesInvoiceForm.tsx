@@ -13,6 +13,7 @@ import {
   CardTitle,
   cn,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -105,9 +106,8 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
       const [customerData, paymentTermData] = await Promise.all([
         // instantiation-depth cliff — the cliff shifts as unrelated modules
         // join the program (same class as the purchasing.service
-        // suppression). ts-ignore (not ts-expect-error) is used so it
-        // satisfies both checkers — tsgo would flag an unused expect-error
-        // directive in CI — and it survives the cliff receding.
+        // suppression). ts-ignore, not ts-expect-error: an unused
+        // expect-error directive fails the typecheck when the cliff recedes.
         carbon
           ?.from("customer")
           .select(
@@ -123,7 +123,10 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
       ]);
 
       if (customerData.error || paymentTermData.error) {
-        toast.error(t`Error fetching customer data`);
+        toastError(
+          t`Error fetching customer data`,
+          customerData.error ?? paymentTermData.error
+        );
       } else {
         setInvoiceCustomer((prev) => ({
           ...prev,
@@ -161,7 +164,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
     >
       <Card>
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? (
               <Trans>Sales Invoice</Trans>
             ) : (

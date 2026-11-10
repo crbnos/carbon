@@ -38,6 +38,10 @@ const PRESERVED_TABLES = new Set([
   "nonConformanceType",
   "paymentTerm",
   "periodCloseTaskDefinition",
+  // Company-wide project states and labels (Settings → Projects, seeded by
+  // seed-company): configuration, like the units of measure
+  "projectLabel",
+  "projectState",
   "returnReason",
   "scrapReason",
   "sequence",
@@ -106,8 +110,16 @@ const MODEL_SLIDE_TABLES = [
 const PARENT_CHECK_TABLES = [
   // customerContractInvoiceLine_parent_check: an invoice OR a credit memo
   "customerContractInvoiceLine",
+  // projectStockTransfer_owner_check: fromProjectId IS DISTINCT FROM
+  // toProjectId, which nulling both project FKs breaks. Its lines cascade;
+  // projectBorrow references a line with no cascade, so it goes first.
+  "projectBorrow",
+  "projectStockTransfer",
   // trainingAssignment_training_or_name: a training OR an external name
-  "trainingAssignment"
+  "trainingAssignment",
+  // projectCostRelief_source_check: a Cost Relief schedule row OR a project
+  // close journal (journal is preserved, the schedule row is not)
+  "projectCostRelief"
 ];
 
 type ForeignKey = {
@@ -302,7 +314,8 @@ const DOCUMENT_JOURNAL_SOURCES = [
   "Purchase Receipt",
   "Sales Shipment",
   "Inventory Adjustment",
-  "Reimbursement"
+  "Reimbursement",
+  "Service Job"
 ];
 
 /**
@@ -333,6 +346,7 @@ async function reverseDocumentJournals(ctx: Ctx): Promise<void> {
              UNION ALL SELECT id FROM receipt WHERE "companyId" = $1
              UNION ALL SELECT id FROM shipment WHERE "companyId" = $1
              UNION ALL SELECT id FROM "reimbursement" WHERE "companyId" = $1
+             UNION ALL SELECT id FROM "serviceJob" WHERE "companyId" = $1
              UNION ALL SELECT id FROM "itemLedger" WHERE "companyId" = $1))
          -- a zero-cash payment's journal has no lines to match on
          OR j.id IN (SELECT "journalId" FROM payment WHERE "companyId" = $1)

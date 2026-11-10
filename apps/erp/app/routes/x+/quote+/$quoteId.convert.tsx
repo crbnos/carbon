@@ -3,9 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
-import { getPreferenceHeaders } from "@carbon/utils";
+import { getPreferenceHeaders, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -37,6 +39,13 @@ export async function action(args: ActionFunctionArgs) {
     locale: getPreferenceHeaders(args.request).locale
   });
   if (result.data && "violations" in result.data) return result.data;
+  // A failed email does not undo the conversion.
+  if (result.data?.warning) {
+    throw redirect(
+      path.to.salesOrder(result.data.salesOrderId),
+      await flash(args.request, error(null, result.data.warning))
+    );
+  }
   return respond(args.request, result).redirect(
     result.data
       ? path.to.salesOrder(result.data.salesOrderId)

@@ -18,7 +18,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useFetcher, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { useImageUpload, usePermissions } from "~/hooks";
@@ -28,6 +28,7 @@ import ProcedureProperties from "~/modules/production/ui/Procedures/ProcedurePro
 import type { action } from "~/routes/x+/procedure+/update";
 import { useDocumentStore } from "~/stores";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "procedure-detail");
@@ -39,6 +40,9 @@ export const handle: Handle = {
   ),
   module: "production"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.procedure?.name, "Procedure");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId, api } = await authorize(
@@ -200,6 +204,7 @@ function ProcedureEditor() {
     <div className="flex flex-col w-full h-full">
       {canEdit ? (
         <Editor
+          label={t`Procedure content`}
           toolbar
           title={{
             value: procedureName,

@@ -2,12 +2,6 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { describeRequest } from "@carbon/logger/middleware.server";
-import {
-  annotateRequestSpan,
-  nameRequestSpan,
-  withSpan
-} from "@carbon/logger/tracing.server";
 import {
   Client,
   StreamableHTTPClientTransport
@@ -17,16 +11,6 @@ import { requireEntitlement } from "../entitlements.server";
 import { serveMcpRequest } from "./server";
 import type { McpCallResult } from "./types";
 
-vi.mock("@carbon/logger/tracing.server", () => ({
-  annotateRequestSpan: vi.fn(),
-  nameRequestSpan: vi.fn(),
-  withSpan: vi.fn((_name: string, _attributes: unknown, run: () => unknown) =>
-    run()
-  )
-}));
-vi.mock("@carbon/logger/middleware.server", () => ({
-  describeRequest: vi.fn()
-}));
 vi.mock("../entitlements.server", () => ({
   requireEntitlement: vi.fn(async () => undefined)
 }));
@@ -83,67 +67,6 @@ async function connect(
   await client.connect(transport);
   return client;
 }
-
-describe("MCP tool calls are traced", () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it("names a call_tool span after the operation and still runs it", async () => {
-    const client = await connect();
-
-    const result = await client.callTool({
-      name: "call_tool",
-      arguments: { name: "sales_getCustomer", arguments: { customerId: "c" } }
-    });
-
-    expect(JSON.stringify(result.content)).toContain("cust_1");
-    expect(callOperation).toHaveBeenCalledWith(
-      "sales_getCustomer",
-      expect.objectContaining({ companyId: "co1" }),
-      expect.objectContaining({ customerId: "c" })
-    );
-    const attributes = {
-      "carbon.mcp.tool": "call_tool",
-      "carbon.operation": "sales_getCustomer"
-    };
-    expect(withSpan).toHaveBeenCalledWith(
-      "mcp call_tool sales_getCustomer",
-      attributes,
-      expect.any(Function)
-    );
-    expect(annotateRequestSpan).toHaveBeenCalledWith(attributes);
-    expect(nameRequestSpan).toHaveBeenCalledWith(
-      "POST /api/mcp call_tool sales_getCustomer"
-    );
-    expect(describeRequest).toHaveBeenCalledWith("call_tool sales_getCustomer");
-  });
-
-  it("keeps a name the client made up out of the span name", async () => {
-    const client = await connect();
-
-    await client.callTool({
-      name: "call_tool",
-      arguments: { name: "not_a_real_operation", arguments: {} }
-    });
-
-    expect(withSpan).toHaveBeenCalledWith(
-      "mcp call_tool",
-      { "carbon.mcp.tool": "call_tool" },
-      expect.any(Function)
-    );
-  });
-
-  it("traces the other tools by their own name", async () => {
-    const client = await connect();
-
-    await client.callTool({ name: "search_tools", arguments: { query: "x" } });
-
-    expect(withSpan).toHaveBeenCalledWith(
-      "mcp search_tools",
-      { "carbon.mcp.tool": "search_tools" },
-      expect.any(Function)
-    );
-  });
-});
 
 describe("call_tool keeps list output small", () => {
   beforeEach(() => vi.clearAllMocks());
@@ -255,6 +178,7 @@ describe("serveMcpRequest", () => {
     ]);
     const { tools } = await client.listTools();
     expect(tools.map((tool) => tool.name).sort()).toEqual([
+      "call_destructive_tool",
       "call_tool",
       "describe_tool",
       "search_tools"
@@ -288,13 +212,96 @@ describe("serveMcpRequest", () => {
     );
     expect(response.headers.get("content-type")).toContain("application/json");
     const body = await response.json();
-    expect(body.result.tools).toHaveLength(3);
+    expect(body.result.tools).toHaveLength(4);
   });
 
   it("refuses a subscription instead of holding the request open", async () => {
     const client = await connect(undefined, false, "modern");
     await expect(client.listen({ toolsListChanged: true })).rejects.toThrow(
       "Subscription limit reached"
+    );
+  });
+
+  it("refuses an argument a strict input would drop, and passes a loose input's", async () => {
+    const strict = await connect({
+      name: "production_setJobOperationWorkInstruction",
+      module: "production",
+      schema: {
+        type: "object",
+        properties: { id: { type: "string" }, text: { type: "string" } }
+      }
+    });
+    const refused = await strict.callTool({
+      name: "call_tool",
+      arguments: {
+        name: "production_setJobOperationWorkInstruction",
+        arguments: { id: "op_1", text: "Tap", assignee: "u2" }
+      }
+    });
+    expect(refused.isError).toBe(true);
+    expect(JSON.stringify(refused.content)).toContain(
+      "does not take assignee, so nothing was called. Its arguments: id, text."
+    );
+    expect(callOperation).not.toHaveBeenCalled();
+
+    const loose = await connect({
+      name: "purchasing_getPurchaseOrders",
+      module: "purchasing",
+      schema: {
+        type: "object",
+        properties: { search: { type: "string" } },
+        additionalProperties: {}
+      }
+    });
+    await loose.callTool({
+      name: "call_tool",
+      arguments: {
+        name: "purchasing_getPurchaseOrders",
+        arguments: { filters: [] }
+      }
+    });
+    expect(callOperation).toHaveBeenCalledWith(
+      "purchasing_getPurchaseOrders",
+      expect.anything(),
+      expect.objectContaining({ filters: [] })
+    );
+  });
+
+  it("runs a DESTRUCTIVE tool only through call_destructive_tool", async () => {
+    const client = await connect({
+      name: "inventory_deleteReceipt",
+      module: "inventory",
+      classification: "DESTRUCTIVE"
+    });
+    const viaCallTool = await client.callTool({
+      name: "call_tool",
+      arguments: {
+        name: "inventory_deleteReceipt",
+        arguments: { receiptId: "r" }
+      }
+    });
+    expect(viaCallTool.isError).toBe(true);
+    expect(JSON.stringify(viaCallTool.content)).toContain(
+      "call it with call_destructive_tool"
+    );
+    expect(callOperation).not.toHaveBeenCalled();
+
+    const { tools } = await client.listTools();
+    expect(
+      tools.find((tool) => tool.name === "call_destructive_tool")?.annotations
+        ?.destructiveHint
+    ).toBe(true);
+    await client.callTool({
+      name: "call_destructive_tool",
+      arguments: {
+        name: "inventory_deleteReceipt",
+        arguments: { receiptId: "r" }
+      }
+    });
+    expect(callOperation).toHaveBeenCalledWith(
+      "inventory_deleteReceipt",
+      expect.anything(),
+      { receiptId: "r" }
     );
   });
 

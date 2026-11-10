@@ -25,7 +25,9 @@ import {
 import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople, useSuppliers } from "~/stores";
@@ -37,10 +39,11 @@ import { PurchasingRFQStatus } from ".";
 type PurchasingRFQsTableProps = {
   data: PurchasingRFQ[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const PurchasingRFQsTable = memo(
-  ({ data, count }: PurchasingRFQsTableProps) => {
+  ({ data, count, infinite }: PurchasingRFQsTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
@@ -274,12 +277,16 @@ const PurchasingRFQsTable = memo(
       );
     }, [deletePurchasingRFQModal, navigate, permissions]);
 
+    const lineItemRows = useLineItemRows<PurchasingRFQ>("purchasing-rfqs");
+
     return (
       <>
         <Table<PurchasingRFQ>
           count={count}
           columns={columns}
           data={data}
+          {...lineItemRows}
+          infinite={infinite}
           defaultColumnPinning={{
             left: ["rfqId"]
           }}
@@ -306,11 +313,9 @@ const PurchasingRFQsTable = memo(
             text={`Are you sure you want to delete ${selectedPurchasingRFQ.rfqId!}? This cannot be undone.`}
             onCancel={() => {
               deletePurchasingRFQModal.onClose();
-              setSelectedPurchasingRFQ(null);
             }}
             onSubmit={() => {
               deletePurchasingRFQModal.onClose();
-              setSelectedPurchasingRFQ(null);
             }}
           />
         )}

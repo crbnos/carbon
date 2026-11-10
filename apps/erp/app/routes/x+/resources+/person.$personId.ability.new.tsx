@@ -5,9 +5,10 @@
 import { respond } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { employeeAbilityCellValidator } from "~/modules/resources/resources.models";
 import { EmployeeAbilityForm } from "~/modules/resources/ui";
 import { path } from "~/utils/path";
@@ -45,9 +46,7 @@ export default function NewPersonAbilityRoute() {
   if (!personId) throw new Error("Invalid person id");
 
   const { t } = useLingui();
-  const navigate = useNavigate();
-
-  const onClose = () => navigate(path.to.personAbilities(personId));
+  const dialog = useRouteDialog(path.to.personAbilities(personId));
 
   const initialValues = {
     employeeId: personId,
@@ -62,7 +61,8 @@ export default function NewPersonAbilityRoute() {
       action={path.to.newPersonAbility(personId)}
       title={t`Add Ability`}
       initialValues={initialValues}
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

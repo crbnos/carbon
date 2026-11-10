@@ -9,8 +9,13 @@ import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import {
   integrations as availableIntegrations,
+  Email,
+  emailSettingsForm,
+  Gmail,
   getIntegrationConfigById,
   type IntegrationID,
+  picksCredentialFreeEmail,
+  picksServerMail,
   resolveIntegrationTopology
 } from "@carbon/ee";
 import {
@@ -49,6 +54,7 @@ import {
   getIntegrationServerHooks,
   onshapeConnectionHasWriteScope
 } from "@carbon/ee/hooks.server";
+import { readConnections } from "@carbon/ee/integrations/connections";
 import {
   getPath,
   patchIntegrationState,
@@ -66,8 +72,10 @@ import { requireFeature } from "@carbon/ee/plan.server";
 import { LEDGER_FAMILY_KEYS, type LedgerFamilyKey } from "@carbon/ee/sync";
 import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
+import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
+import { SERVER_MAIL_CONFIGURED } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
-import { Badge } from "@carbon/react";
+import { Badge, useRouteDialog } from "@carbon/react";
 import {
   getConnectAccountStatus,
   isConnectAccountStillLinked
@@ -80,7 +88,6 @@ import {
   data,
   Link,
   useLoaderData,
-  useNavigate,
   useParams,
   useSearchParams
 } from "react-router";
@@ -105,20 +112,27 @@ import {
   getIntegration,
   getOeeDevicesTabData,
   getProviderDimensionTargets,
-  getSyncOperationReadableIds,
   invalidateIntegrationHealthCache,
-  upsertCompanyIntegration
+  isIntegrationInstallWithheld,
+  upsertCompanyIntegration,
+  withSyncOperationReferences
 } from "~/modules/settings/settings.service";
 import { IntegrationForm, SyncActivity } from "~/modules/settings/ui";
 import { AccountingSyncControl } from "~/modules/settings/ui/Integrations/AccountingSyncControl";
 import { AccountMapping } from "~/modules/settings/ui/Integrations/AccountMapping";
+import { ConnectionsTab } from "~/modules/settings/ui/Integrations/ConnectionsTab";
 import { DimensionMapping } from "~/modules/settings/ui/Integrations/DimensionMapping";
 import type { IntegrationFormTab } from "~/modules/settings/ui/Integrations/IntegrationForm";
 import { useMountActionStates } from "~/modules/settings/ui/Integrations/MountPublishStatus";
 import { OeeDevices } from "~/modules/settings/ui/Integrations/OeeDevices.ee";
 import { PostingSyncSettings } from "~/modules/settings/ui/Integrations/PostingSyncSettings";
-import type { SyncReconciliationReport } from "~/modules/settings/ui/Integrations/SyncActivity";
+import {
+  SYNC_ACTIVITY_SORTS,
+  type SyncReconciliationReport
+} from "~/modules/settings/ui/Integrations/SyncActivity";
 import { getDatabaseClient } from "~/services/database.server";
+import { toPage } from "~/utils/cursor";
+import { PAGE_SIZE } from "~/utils/pagination";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "integrations-id");
@@ -257,7 +271,7 @@ function unfoldRampCredentials(
  * The @carbon/ee account-mapping services are Kysely-based (DISTINCT +
  * unbounded reads that supabase-js can't express), so they get the app's
  * Kysely client. Kysely bypasses RLS — safe here because the route has
- * already passed requirePermissions and every query is companyId-scoped.
+ * already passed authorize and every query is companyId-scoped.
  */
 async function getAccountMappingTabData(
   client: SupabaseClient<Database>,
@@ -509,6 +523,31 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     dynamicOptions.reimbursementBankAccountId = assetOptions;
   }
 
+  // A failed read still opens the page, with no Gmail accounts to pick.
+  const gmailAccounts =
+    integrationId === Email.id
+      ? await readConnections(client, companyId, Gmail.id).catch((error) => {
+          logger.error("Failed to read the company's Gmail accounts", {
+            companyId,
+            error
+          });
+          return [];
+        })
+      : [];
+
+  // Server mail is offered only where the server has mail settings.
+  const emailForm = emailSettingsForm(
+    integrationId,
+    SERVER_MAIL_CONFIGURED,
+    gmailAccounts
+  );
+  if (emailForm?.providerOptions) {
+    dynamicOptions.provider = emailForm.providerOptions;
+  }
+  if (emailForm) {
+    dynamicOptions.gmailConnectionId = emailForm.gmailConnectionOptions;
+  }
+
   const integrationData = await getIntegration(
     client,
     integrationId,
@@ -518,13 +557,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (integrationData.error || !integrationData.data) {
     return {
       installed: false,
-      metadata: {},
+      // A fresh Email install starts on server mail where the server has it.
+      metadata: emailForm?.initialMetadata ?? {},
       dynamicOptions,
       syncActivity: null,
       accountMapping: null,
       accountingSync: null,
       postingSync: null,
       dimensionSync: null,
+      connections: null,
       devices: null
     };
   }
@@ -555,21 +596,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     integrationData.data.active;
 
   // Sync-operation inbox (RLS SELECT covers employees, so the user-scoped
-  // client is enough). Params are prefixed (syncStatus/syncPage) to avoid
-  // clashing with other search params.
+  // client is enough). The status param is prefixed (syncStatus) to avoid
+  // clashing with other search params. Later pages come from
+  // `api+/integrations.$id.sync-activity` as the tab scrolls.
   let syncActivity: {
-    operations: SyncOperation[];
     /**
-     * `entityType:entityId` -> the document number a human reads
-     * (`PO000001`) plus the Carbon row id to link to. Sparse: a pulled
-     * record that never landed a Carbon row is keyed by the provider's
-     * remote id, and the table falls back to it.
+     * Each with its `reference`: the document number a human reads
+     * (`PO000001`) plus the Carbon row id to link to. Null for a pulled
+     * record that never landed a Carbon row: the table falls back to the
+     * provider's remote id.
      */
-    readableIds: Record<string, { label: string; recordId: string }>;
+    operations: (SyncOperation & {
+      reference: { label: string; recordId: string } | null;
+    })[];
     count: number;
     status: SyncOperationStatus | null;
-    page: number;
-    pageSize: number;
+    nextCursor: string | null;
     lastReconciliation: SyncReconciliationReport | null;
     /** Failed + Warning operations — the tab-label badge. */
     failingCount: number;
@@ -591,19 +633,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const statusFilter = SyncOperationStatusSchema.safeParse(
       url.searchParams.get("syncStatus")
     );
-    const page = Math.max(
-      1,
-      Number.parseInt(url.searchParams.get("syncPage") ?? "1", 10) || 1
-    );
-    const pageSize = 25;
 
     const [operations, failingOps, tieOutRows] = await Promise.all([
       getSyncOperations(client, {
         companyId,
         integration: integrationId,
         status: statusFilter.success ? statusFilter.data : undefined,
-        limit: pageSize,
-        offset: (page - 1) * pageSize
+        // One extra row tells whether a next page exists.
+        limit: PAGE_SIZE + 1
       }),
       // Failed + Warning count for the tab badge — only the exact count is
       // used, so fetch a single row.
@@ -673,17 +710,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ? (storedReconciliation as SyncReconciliationReport)
         : null;
 
+    const firstPage = toPage(operations.data, {
+      limit: PAGE_SIZE,
+      sorts: SYNC_ACTIVITY_SORTS
+    });
+
     syncActivity = {
-      operations: operations.data,
-      readableIds: await getSyncOperationReadableIds(
+      operations: await withSyncOperationReferences(
         client,
         companyId,
-        operations.data
+        firstPage.rows
       ),
       count: operations.count ?? 0,
       status: statusFilter.success ? statusFilter.data : null,
-      page,
-      pageSize,
+      nextCursor: firstPage.nextCursor,
       lastReconciliation,
       failingCount: failingOps.error ? 0 : (failingOps.count ?? 0),
       tieOut
@@ -979,6 +1019,46 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       })
     : null;
 
+  // An allowlisted workflow piece has no settings — what it has is the accounts a
+  // workflow step can act as, so its card gets that list as a tab.
+  const piece = allowlistEntry(integrationId);
+  const [connectionRows, requiredScopes] = piece
+    ? await Promise.all([
+        readConnections(client, companyId, integrationId),
+        requiredScopesFor(integrationId)
+      ])
+    : [[], []];
+  const connections = piece
+    ? {
+        pieceName: integrationId,
+        defaultName: piece.label,
+        // Only what the tab renders. `metadata` can carry workspace facts that
+        // are not for the browser; `scopes` is the one key the tab compares.
+        rows: connectionRows.map(
+          ({
+            id,
+            pieceName,
+            name,
+            accountLabel,
+            status,
+            lastError,
+            metadata
+          }) => ({
+            id,
+            pieceName,
+            name,
+            accountLabel,
+            status,
+            lastError,
+            metadata: { scopes: metadata.scopes }
+          })
+        ),
+        // What a connection must hold for this piece's steps; an account that
+        // predates a scope shows "Reconnect needed".
+        requiredScopes: [...requiredScopes]
+      }
+    : null;
+
   // The header's sync switch: off on a new connection, and only switchable on
   // once every required account is mapped.
   const accountingSync = accountMapping
@@ -999,6 +1079,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     accountingSync,
     postingSync,
     dimensionSync,
+    connections,
     devices
   };
 }
@@ -1122,7 +1203,7 @@ export async function action(args: ActionFunctionArgs) {
  */
 async function installIntegration({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await authorize(request, {
+  const { client, companyId, userId, email } = await authorize(request, {
     "settings.integrations": "Edit"
   });
 
@@ -1144,6 +1225,21 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
   const integration = availableIntegrations.find((i) => i.id === integrationId);
 
   if (!integration) throw new Error("Integration not found");
+
+  if (
+    await isIntegrationInstallWithheld(client, {
+      companyId,
+      integrationId,
+      email,
+      userId
+    })
+  ) {
+    // The connect route's refusal: the integrations page resolves the code to
+    // translated copy (`integration-errors.ts`).
+    throw redirect(
+      `${path.to.integrations}?integration=${integrationId}&error=coming-soon`
+    );
+  }
 
   const validation = await validator(
     // integration.schema is a union across all integrations (incl. a
@@ -1250,6 +1346,18 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
   // integration active but non-functional, so require one here. Scoped to
   // form-entered secrets — OAuth providers get their credentials via the
   // callback, so they are never blocked here.
+  if (picksServerMail(integrationId, metadata) && !SERVER_MAIL_CONFIGURED) {
+    return data(
+      {},
+      await flash(
+        request,
+        error(
+          null,
+          "This server has no mail settings. Ask your administrator to set them up, or pick Resend, Custom SMTP or Gmail."
+        )
+      )
+    );
+  }
   const FORM_SECRET_INTEGRATIONS = new Set([
     "linear",
     "mount",
@@ -1260,7 +1368,9 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
     "sense"
   ]);
   if (
-    FORM_SECRET_INTEGRATIONS.has(integrationId) ||
+    // Email's Server mail and Gmail have no credential to enter.
+    (FORM_SECRET_INTEGRATIONS.has(integrationId) &&
+      !picksCredentialFreeEmail(integrationId, metadata)) ||
     integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID
   ) {
     const alreadyVaulted = existing.data?.secretRef != null;
@@ -1383,7 +1493,8 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
     // Settings save on an already-installed integration: run `onUpdate` so
     // derived server state (e.g. accounting event subscriptions) converges
     // without a reinstall. Best-effort — the save is already persisted, so
-    // a hook failure is logged rather than surfaced as a save failure.
+    // a hook failure doesn't roll that back — just surface it as a flashed
+    // error, since a save can be the repair the user was told to make.
     const onUpdate = getIntegrationServerHooks(integrationId)?.onUpdate;
     if (onUpdate) {
       try {
@@ -1393,6 +1504,17 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
           integrationId,
           error: hookError
         });
+        await invalidateIntegrationHealthCache(integrationId, companyId);
+        throw redirect(
+          path.to.integrations,
+          await flash(
+            request,
+            error(
+              hookError,
+              `Saved ${integration.name} settings, but setup hook failed`
+            )
+          )
+        );
       }
     }
   }
@@ -1452,7 +1574,7 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
         await flash(
           request,
           error(
-            "onshape connection is read-only",
+            null,
             `${integration.name} is connected with read-only access. ${reconnect}, then enable asset sync.`
           )
         )
@@ -1501,10 +1623,11 @@ export default function IntegrationRoute() {
     accountingSync,
     postingSync,
     dimensionSync,
+    connections,
     devices
   } = useLoaderData<typeof loader>();
 
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.integrations);
   const [searchParams] = useSearchParams();
   const { id: integrationId } = useParams();
 
@@ -1515,6 +1638,21 @@ export default function IntegrationRoute() {
   // and Sync Activity tabs next to the Settings form (deep-linkable via
   // ?tab=<value>).
   const tabs: IntegrationFormTab[] = [];
+  if (connections) {
+    tabs.push({
+      value: "connections",
+      label: <Trans>Accounts</Trans>,
+      content: (tabBar) => (
+        <ConnectionsTab
+          tabs={tabBar}
+          pieceName={connections.pieceName}
+          defaultName={connections.defaultName}
+          connections={connections.rows}
+          requiredScopes={connections.requiredScopes}
+        />
+      )
+    });
+  }
   if (devices) {
     tabs.push({
       value: "devices",
@@ -1596,9 +1734,7 @@ export default function IntegrationRoute() {
           operations={syncActivity.operations}
           count={syncActivity.count}
           status={syncActivity.status}
-          page={syncActivity.page}
-          pageSize={syncActivity.pageSize}
-          readableIds={syncActivity.readableIds}
+          nextCursor={syncActivity.nextCursor}
           lastReconciliation={syncActivity.lastReconciliation}
           tieOut={syncActivity.tieOut}
         />
@@ -1648,7 +1784,8 @@ export default function IntegrationRoute() {
             onActionStarted: mountActions.onActionStarted
           }
         : {})}
-      onClose={() => navigate(path.to.integrations)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

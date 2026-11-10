@@ -2,13 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import type {
   BuyPriceBreak,
   CurrencyRate,
   SupplierPriceBreak,
   SupplierPriceMap
 } from "@carbon/database/supplier-part-price";
-import { textToTiptap } from "@carbon/utils";
+import { TiptapText } from "@carbon/files/markdown";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
@@ -138,7 +139,7 @@ export const noteValidator = z.object({
 // === "Outside Processing"; in-house logic keys on !== "Outside Processing"
 // (never an enumeration of the in-house values) so future in-house types inherit
 // costing/scheduling/PO behavior unchanged.
-// See .ai/specs/2026-07-20-operation-type-consolidation.md.
+// See .ai/specs/implemented/2026-07-20-operation-type-consolidation.md.
 export const operationTypes = [
   "Process",
   "Assembly",
@@ -152,10 +153,37 @@ export type OperationType = (typeof operationTypes)[number];
 // procedureId, Assembly → assemblyInstructionId, Inspection →
 // inspectionDocumentId. Writes go through this so a stale pointer can't survive
 // a type change (sanitize() only nullifies present-undefined keys — it never
-// clears an omitted field). See .ai/specs/2026-07-21-operation-instruction-sources.md.
+// clears an omitted field). See .ai/specs/implemented/2026-07-21-operation-instruction-sources.md.
 // The same holds for the work center: Outside Processing runs at the supplier,
 // and a work center left over from an in-house type put the operation on the
 // MES Work Centers board.
+/**
+ * A yes/no field. An API caller sends a JSON boolean and a form posts
+ * `"true"` / `"false"`; both parse to a boolean. Typed as taking a boolean, so
+ * the published API schema says `boolean`: the form's strings are its own.
+ */
+export const booleanField = () =>
+  z.preprocess(
+    (value) => (value === "true" ? true : value === "false" ? false : value),
+    z.boolean()
+  ) as unknown as z.ZodType<boolean, boolean>;
+
+/**
+ * A JSON value. A form posts it as text in a hidden field; an API caller sends
+ * the value itself. Typed as the value, so the published API schema describes
+ * it instead of "anything". Text that is not JSON is left for `schema` to refuse.
+ */
+export const jsonInput = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((value) => {
+    if (typeof value !== "string") return value;
+    if (value.trim() === "") return undefined;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  }, schema) as unknown as T;
+
 export function normalizeOperationSourceIds<
   T extends {
     operationType?: string;
@@ -165,23 +193,22 @@ export function normalizeOperationSourceIds<
     workCenterId?: string | null;
   }
 >(operation: T): T {
+  // The type's own pointer is written only when the caller sent it (a form
+  // clearing it sends the key); a partial update that left it out keeps it.
+  const own = <K extends keyof T>(key: K, type: string) =>
+    operation.operationType !== type
+      ? { [key]: null }
+      : key in operation
+        ? { [key]: operation[key] || null }
+        : {};
   return {
     ...operation,
     ...(operation.operationType === "Outside Processing"
       ? { workCenterId: null }
       : {}),
-    procedureId:
-      operation.operationType === "Process"
-        ? operation.procedureId || null
-        : null,
-    assemblyInstructionId:
-      operation.operationType === "Assembly"
-        ? operation.assemblyInstructionId || null
-        : null,
-    inspectionDocumentId:
-      operation.operationType === "Inspection"
-        ? operation.inspectionDocumentId || null
-        : null
+    ...own("procedureId", "Process"),
+    ...own("assemblyInstructionId", "Assembly"),
+    ...own("inspectionDocumentId", "Inspection")
   };
 }
 
@@ -227,8 +254,9 @@ export const oAuthCallbackSchema = z.object({
 
 /**
  * Coerces whatever a caller sent for a rich-text column into a tiptap document
- * object. Accepts plain text, a JSON-encoded document (a form post), or the
- * document itself (an MCP / API JSON body).
+ * object. Accepts Markdown text, a JSON-encoded document (a form post), or the
+ * document itself (an MCP / API JSON body). `format: "text"` stores text as
+ * typed instead of reading it as Markdown.
  *
  * Rich-text columns (`internalNotes`, `externalNotes`, step descriptions) are
  * `json`, and they MUST hold an object. A JSON string scalar stored there is
@@ -242,24 +270,11 @@ export const oAuthCallbackSchema = z.object({
  * Returns `any`: the doc is consumed both as a DB Json value and as editor
  * JSONContent, and a narrower type breaks one of the two call sites.
  */
-export function toTiptapDoc(value: unknown): any {
-  if (typeof value === "string") {
-    let parsed: unknown = value;
-    try {
-      parsed = JSON.parse(value);
-    } catch {
-      // raw text, not JSON
-    }
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      return parsed;
-    }
-    // Anything else the caller typed is literal text — including text that
-    // happens to parse as JSON (`"quoted"`, `123`, `[1,2]`). Wrap the ORIGINAL
-    // value so no characters are lost to the parse.
-    return textToTiptap(value);
-  }
-  if (value && typeof value === "object" && !Array.isArray(value)) return value;
-  return textToTiptap(String(value));
+export function toTiptapDoc(
+  value: unknown,
+  format: "markdown" | "text" = "markdown"
+): any {
+  return TiptapText(value, { format }).toDocument();
 }
 
 /**
@@ -269,12 +284,61 @@ export function toTiptapDoc(value: unknown): any {
  * INPUT schema) tells a caller both shapes are accepted, instead of the bare
  * `{}` a `z.any()` produced.
  */
-export const optionalTiptapDoc = z
-  .union([z.string(), z.record(z.string(), z.unknown())])
-  .transform((value): any => (value === "" ? undefined : toTiptapDoc(value)))
-  // `.optional()` LAST so the inferred key is optional (`notes?:`) — placing it
-  // before the transform makes zod infer a required key and every caller that
-  // omits `notes` stops compiling.
+// A node's `content` must be a list of nodes, at every depth: a document
+// whose content was a string reached the editor and RichTextView, which walk
+// it as an array.
+type TiptapNodeInput = { type: string; content?: TiptapNodeInput[] };
+const tiptapNodeInput: z.ZodType<TiptapNodeInput> = z.lazy(() =>
+  z.looseObject({
+    type: z.string().min(1),
+    text: z.string().optional(),
+    content: z.array(tiptapNodeInput).optional()
+  })
+);
+const tiptapDocumentInput = z.looseObject({
+  type: z.literal("doc"),
+  content: z.array(tiptapNodeInput).optional()
+});
+
+const tiptapDocInput = (format?: "markdown" | "text") =>
+  z
+    .union([
+      z.string(),
+      // A Tiptap document, or `{}` to clear; any other object is refused.
+      tiptapDocumentInput,
+      z.strictObject({})
+    ])
+    .transform((value): any =>
+      value === "" ? undefined : toTiptapDoc(value, format)
+    )
+    // `.optional()` LAST so the inferred key is optional (`notes?:`) — placing
+    // it before the transform makes zod infer a required key and every caller
+    // that omits `notes` stops compiling.
+    .optional();
+
+/** Text read as Markdown. */
+export const optionalTiptapDoc = tiptapDocInput();
+
+/**
+ * Text stored as typed, for a field edited in a plain textarea that reads it
+ * back with `TiptapText(…).toString()`: Markdown markers would not survive that
+ * round trip (`1. Ship` would come back as `Ship`).
+ */
+export const optionalPlainTextDoc = tiptapDocInput("text");
+
+/** Required rich text: Markdown, or a Tiptap document. */
+export const requiredTiptapDoc = z
+  .union([z.string().trim().min(1), tiptapDocumentInput])
+  .transform((value): any => toTiptapDoc(value));
+
+/**
+ * A List step's options. Blank rows (the empty row "Add option" leaves) are
+ * dropped before the step's refine runs, so a trailing empty row never blocks a
+ * save and is never stored.
+ */
+export const stepListValues = z
+  .array(z.string())
+  .transform((values) => values.filter((value) => value.trim() !== ""))
   .optional();
 
 export const operationStepValidator = z
@@ -292,7 +356,7 @@ export const operationStepValidator = z
     unitOfMeasureCode: zfd.text(z.string().optional()),
     minValue: zfd.numeric(z.number().min(0).optional()),
     maxValue: zfd.numeric(z.number().min(0).optional()),
-    listValues: z.array(z.string()).optional(),
+    listValues: stepListValues,
     sortOrder: zfd.numeric(z.number().min(0).optional())
   })
   .refine(
@@ -310,17 +374,13 @@ export const operationStepValidator = z
   .refine(
     (data) => {
       if (data.type === "List") {
-        return (
-          Array.isArray(data.listValues) &&
-          data.listValues.length > 0 &&
-          data.listValues.every((option) => option.trim() !== "")
-        );
+        return Array.isArray(data.listValues) && data.listValues.length > 0;
       }
       return true;
     },
     {
       message: "List options are required",
-      path: ["listOptions"]
+      path: ["listValues"]
     }
   )
   .refine(
@@ -436,6 +496,23 @@ export const savedViewStateValidator = z.object({
   sorts: z.array(z.string()).optional()
 });
 
+/**
+ * An Inspection operation needs its inspection plan: unlike times, units and
+ * rates, nothing can fill it in. Spread into `.refine(...)`.
+ */
+export const inspectionPlanRequired: [
+  (operation: {
+    operationType: string;
+    inspectionDocumentId?: string;
+  }) => boolean,
+  { message: string; path: string[] }
+] = [
+  (operation) =>
+    operation.operationType !== "Inspection" ||
+    !!operation.inspectionDocumentId,
+  { message: "Inspection Plan is required", path: ["inspectionDocumentId"] }
+];
+
 export const standardFactorType = [
   "Hours/Piece",
   "Hours/100 Pieces",
@@ -464,3 +541,82 @@ export type SupplierPartPricing = {
   supplierUnitPrice: number | null;
   currency: CurrencyRate;
 };
+
+export type NoteField = "internalNotes" | "externalNotes" | "notes";
+type PublicTables = Database["public"]["Tables"];
+
+/**
+ * The notes fields a person edits in the app, per table: what `setNotes` may
+ * set. Each one is a column of its table (checked below).
+ */
+export const noteFields = {
+  salesRfq: ["internalNotes", "externalNotes"],
+  salesRfqLine: ["internalNotes", "externalNotes"],
+  quote: ["internalNotes", "externalNotes"],
+  quoteLine: ["internalNotes", "externalNotes"],
+  salesOrder: ["internalNotes", "externalNotes"],
+  salesOrderLine: ["internalNotes", "externalNotes"],
+  salesInvoice: ["internalNotes", "externalNotes"],
+  salesInvoiceLine: ["internalNotes", "externalNotes"],
+  purchasingRfq: ["internalNotes"],
+  purchasingRfqLine: ["internalNotes", "externalNotes"],
+  supplierQuote: ["internalNotes", "externalNotes"],
+  supplierQuoteLine: ["internalNotes", "externalNotes"],
+  purchaseOrder: ["internalNotes", "externalNotes"],
+  purchaseOrderLine: ["internalNotes", "externalNotes"],
+  purchaseInvoice: ["internalNotes"],
+  purchaseInvoiceLine: ["internalNotes"],
+  receipt: ["internalNotes"],
+  shipment: ["internalNotes", "externalNotes"],
+  job: ["notes"],
+  item: ["notes"],
+  fixedAsset: ["notes"],
+  pickingList: ["notes"],
+  stockTransfer: ["notes"]
+} as const satisfies {
+  readonly [T in keyof PublicTables]?: readonly (keyof PublicTables[T]["Row"] &
+    NoteField)[];
+};
+
+export type NoteTable = keyof typeof noteFields;
+export const noteTables = Object.keys(noteFields) as [
+  NoteTable,
+  ...NoteTable[]
+];
+
+/** The tables with an `assignee` column: what `assignRecord` may assign. */
+export const assignableTables = [
+  "changeOrder",
+  "changeOrderActionTask",
+  "customer",
+  "item",
+  "job",
+  "jobOperation",
+  "lease",
+  "maintenanceDispatch",
+  "nonConformance",
+  "nonConformanceActionTask",
+  "nonConformanceApprovalTask",
+  "nonConformanceReviewer",
+  "pickingList",
+  "planningAction",
+  "procedure",
+  "purchaseInvoice",
+  "purchaseOrder",
+  "purchaseReturnOrder",
+  "purchasingRfq",
+  "qualityDocument",
+  "quote",
+  "receipt",
+  "riskRegister",
+  "salesInvoice",
+  "salesOrder",
+  "salesOrderShipment",
+  "salesReturnOrder",
+  "salesRfq",
+  "shipment",
+  "stockTransfer",
+  "supplier",
+  "supplierQuote",
+  "training"
+] as const;

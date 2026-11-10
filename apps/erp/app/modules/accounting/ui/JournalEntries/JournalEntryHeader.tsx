@@ -155,28 +155,24 @@ const JournalEntryHeader = () => {
         }
       />
 
-      {reverseModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.reverseJournalEntry(journalEntryId)}
-          isOpen={reverseModal.isOpen}
-          name={journalEntry.journalEntryId}
-          title={t`Reverse ${journalEntry.journalEntryId}`}
-          deleteText={t`Reverse Entry`}
-          text={t`Are you sure you want to reverse this journal entry? This will create a new posted entry with negated amounts and mark this entry as Reversed.`}
-          onCancel={reverseModal.onClose}
-          onSubmit={reverseModal.onClose}
-        />
-      )}
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteJournalEntry(journalEntryId)}
-          isOpen={deleteModal.isOpen}
-          name={journalEntry.journalEntryId}
-          text={t`Are you sure you want to delete ${journalEntry.journalEntryId}? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={deleteModal.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.reverseJournalEntry(journalEntryId)}
+        isOpen={reverseModal.isOpen}
+        name={journalEntry.journalEntryId}
+        title={t`Reverse ${journalEntry.journalEntryId}`}
+        deleteText={t`Reverse Entry`}
+        text={t`Are you sure you want to reverse this journal entry? This will create a new posted entry with negated amounts and mark this entry as Reversed.`}
+        onCancel={reverseModal.onClose}
+        onSubmit={reverseModal.onClose}
+      />
+      <ConfirmDelete
+        action={path.to.deleteJournalEntry(journalEntryId)}
+        isOpen={deleteModal.isOpen}
+        name={journalEntry.journalEntryId}
+        text={t`Are you sure you want to delete ${journalEntry.journalEntryId}? This cannot be undone.`}
+        onCancel={deleteModal.onClose}
+        onSubmit={deleteModal.onClose}
+      />
     </>
   );
 };

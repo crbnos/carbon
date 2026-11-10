@@ -14,8 +14,10 @@ import { VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { useRouteData } from "~/hooks";
 import { itemUnitSalePriceValidator } from "~/modules/items/items.models";
 import { upsertItemUnitSalePrice } from "~/modules/items/items.service";
+import type { ConsumableSummary } from "~/modules/items/types";
 import { ItemSalePriceForm } from "~/modules/items/ui/Item";
 import { SalesRuleAssignmentsList } from "~/modules/sales/ui/SalesRules";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -61,7 +63,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await authorize(request, {
+  const { client, companyId, userId } = await authorize(request, {
     "parts.consumables": "Edit"
   });
 
@@ -79,6 +81,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const updateConsumableUnitSalePrice = await upsertItemUnitSalePrice(client, {
     ...validation.data,
+    companyId,
     itemId,
     updatedBy: userId,
     customFields: setCustomFields(formData)
@@ -109,9 +112,18 @@ export default function ConsumableSalesRoute() {
     salesRuleLibrary,
     itemId
   } = useLoaderData<typeof loader>();
+  const consumableData = useRouteData<{ consumableSummary: ConsumableSummary }>(
+    path.to.consumable(itemId)
+  );
+  const isSerialTracked =
+    consumableData?.consumableSummary?.itemTrackingType === "Serial";
 
   const initialValues = {
     ...consumableUnitSalePrice,
+    laborWarrantyMonths:
+      consumableUnitSalePrice?.laborWarrantyMonths ?? undefined,
+    partsWarrantyMonths:
+      consumableUnitSalePrice?.partsWarrantyMonths ?? undefined,
     salesUnitOfMeasureCode:
       consumableUnitSalePrice?.salesUnitOfMeasureCode ?? "",
     ...getCustomFields(consumableUnitSalePrice.customFields),
@@ -123,6 +135,7 @@ export default function ConsumableSalesRoute() {
       <ItemSalePriceForm
         key={initialValues.itemId}
         initialValues={initialValues}
+        isSerialTracked={isSerialTracked}
       />
       <SalesRuleAssignmentsList
         itemId={itemId}

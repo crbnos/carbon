@@ -7,13 +7,19 @@ import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { isUniqueViolation, redirect } from "@carbon/utils";
+import { useRouteDialog } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, useNavigate, useParams } from "react-router";
-import { customerContactValidator } from "~/modules/sales/sales.models";
+import { data, useParams } from "react-router";
+import { useCompanySettings } from "~/hooks";
+import {
+  CUSTOMER_CONTACT_EMAIL_REQUIRED,
+  customerContactValidator
+} from "~/modules/sales/sales.models";
 import { insertCustomerContact } from "~/modules/sales/sales.service";
 import { CustomerContactForm } from "~/modules/sales/ui/Customer";
 import { requireCompanyRecord } from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -23,7 +29,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     "sales.customers": "Create"
   });
 
-  // RLS doesn't work for selecting a contact with no customer
   const client = getCarbonServiceRole();
 
   const { customerId } = params;
@@ -55,60 +60,44 @@ export async function action({ request, params }: ActionFunctionArgs) {
       : null
   ]);
 
-  const createCustomerContact = await insertCustomerContact(client, {
-    customerId,
-    companyId,
-    contact,
-    customerLocationId,
-    customFields: setCustomFields(formData)
-  });
-  if (createCustomerContact.error) {
-    let errorMessage = "Failed to create customer contact";
-    if (isUniqueViolation(createCustomerContact.error)) {
-      const contact = await client
-        .from("contact")
-        .select("id")
-        .eq("email", validation.data.email)
-        .eq("companyId", companyId)
-        .single();
-      if (contact.data) {
-        const customerContact = await client
-          .from("customerContact")
-          .select("customerId")
-          .eq("contactId", contact.data.id)
-          .single();
-        if (customerContact.data) {
-          const customer = await client
-            .from("customer")
-            .select("name")
-            .eq("id", customerContact.data.customerId)
-            .single();
-          errorMessage = `Contact ${validation.data.email} already exists for ${customer.data?.name}`;
-        } else {
-          const supplierContact = await client
-            .from("supplierContact")
-            .select("supplierId")
-            .eq("contactId", contact.data.id)
-            .single();
-          if (supplierContact.data) {
-            const supplier = await client
-              .from("supplier")
-              .select("name")
-              .eq("id", supplierContact.data.supplierId)
-              .single();
-            errorMessage = `Contact ${validation.data.email} already exists for ${supplier.data?.name}`;
-          }
-        }
-      }
+  const createCustomerContact = await insertCustomerContact(
+    getDatabaseClient(),
+    {
+      customerId,
+      companyId,
+      contact,
+      customerLocationId,
+      customFields: setCustomFields(formData)
     }
+  );
+  if (
+    createCustomerContact.error?.message === CUSTOMER_CONTACT_EMAIL_REQUIRED
+  ) {
+    return validationError({
+      fieldErrors: { email: CUSTOMER_CONTACT_EMAIL_REQUIRED }
+    });
+  }
 
+  if (createCustomerContact.error) {
     return modal
-      ? data(error(createCustomerContact.error, errorMessage), {
-          status: 400
-        })
+      ? data(
+          error(
+            createCustomerContact.error,
+            "Failed to create customer contact"
+          ),
+          {
+            status: 400
+          }
+        )
       : redirect(
           path.to.customerContacts(customerId),
-          await flash(request, error(createCustomerContact.error, errorMessage))
+          await flash(
+            request,
+            error(
+              createCustomerContact.error,
+              "Failed to create customer contact"
+            )
+          )
         );
   }
 
@@ -121,9 +110,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function CustomerContactsNewRoute() {
-  const navigate = useNavigate();
   const { customerId } = useParams();
   if (!customerId) throw new Error("customerId not found");
+  const dialog = useRouteDialog(path.to.customerContacts(customerId));
+  const companySettings = useCompanySettings();
 
   const initialValues = {
     firstName: "",
@@ -133,9 +123,11 @@ export default function CustomerContactsNewRoute() {
 
   return (
     <CustomerContactForm
+      requireEmail={!!companySettings?.requireCustomerContactEmail}
       customerId={customerId}
       initialValues={initialValues}
-      onClose={() => navigate(path.to.customerContacts(customerId))}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

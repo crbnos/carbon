@@ -2,13 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { toIsoDate } from "./date-utils.ts";
 import type {
   CrossJobOperation,
   LiveReservation
 } from "./master-data-provider.ts";
 import {
+  type BaseOperation,
   capacityHoldingJobStatuses,
-  type PlannedReservation
+  type PlannedReservation,
+  type ScheduledOperation
 } from "./types.ts";
 
 /**
@@ -45,6 +48,45 @@ export type JobWrites = {
   reservations: PlannedReservation[];
   projectedCompletionAt: string | null;
 };
+
+/**
+ * The `jobOperation` columns one job's run writes, per operation.
+ *
+ * - `workCenterId` is the one `applyWorkCenterSelections` settled on.
+ * - `dueDate` (the backward need-by target) is diff-written: only when it
+ *   changed, so a quiet regen writes none, and never for a pinned op
+ *   (`manuallyScheduled`: a human owns that target).
+ */
+export function placementWrites(args: {
+  scheduled: Iterable<ScheduledOperation>;
+  /** The stored operations, as the run loaded them. */
+  originals: Pick<
+    BaseOperation,
+    "id" | "workCenterId" | "dueDate" | "manuallyScheduled"
+  >[];
+  needByByOperation: Map<string, string | null>;
+}): JobWrites["placements"] {
+  const originalById = new Map(args.originals.map((op) => [op.id, op]));
+  const placements: JobWrites["placements"] = [];
+  for (const op of args.scheduled) {
+    const original = originalById.get(op.id);
+    const needBy = args.needByByOperation.get(op.id) ?? null;
+    const writeDueDate =
+      !(original?.manuallyScheduled ?? false) &&
+      needBy !== toIsoDate(original?.dueDate ?? null);
+    const placement: PlacementWrite = {
+      startDate: op.startDate,
+      projectedCompletionAt: op.projectedCompletionAt ?? null,
+      ...(writeDueDate ? { dueDate: needBy } : {}),
+      ...(op.priority != null ? { priority: op.priority } : {}),
+      workCenterId: op.workCenterId ?? original?.workCenterId ?? null,
+      hasConflict: op.hasConflict,
+      conflictReason: op.conflictReason
+    };
+    placements.push({ id: op.id, placement });
+  }
+  return placements;
+}
 
 export function dependencyEdgesEqual(
   stored: DependencyEdge[],

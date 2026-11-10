@@ -6,6 +6,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
 import { chunkArray } from "@carbon/utils";
 import { sql } from "kysely";
+import {
+  groupConflictClause,
+  rebuildDerivedGroups
+} from "../../../backups/derived-groups";
 import { applyTableRenames } from "../../../backups/renames";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
@@ -299,6 +303,7 @@ export const companyImportFunction = inngest.createFunction(
             trx
           );
         }
+        await sql`SET LOCAL app.inspection_release = 'on'`.execute(trx);
 
         const ledger: LedgerRow[] = [];
 
@@ -376,7 +381,7 @@ export const companyImportFunction = inngest.createFunction(
                       columns.map((c) => sql`${bindValue(row[c.name], c)}`)
                     )})`
                 )
-              )}
+              )}${groupConflictClause(table.name)}
             `.execute(trx);
           }
 
@@ -431,6 +436,10 @@ export const companyImportFunction = inngest.createFunction(
             )}
           `.execute(trx);
         }
+
+        // Triggers were off: the imported customers, suppliers and types have
+        // no groups yet.
+        await rebuildDerivedGroups(trx, companyId);
       });
 
       if (unresolvedRefs.size > 0) {
@@ -445,7 +454,7 @@ export const companyImportFunction = inngest.createFunction(
 
       // Storage files travel outside the transaction — failures here leave the
       // imported rows intact and are surfaced as warnings. Copy them server-side
-      // from the artifact's `.assets/` folder into the shared `private` bucket,
+      // from the artifact's `.assets/` folder into the company's own bucket,
       // with the path rewritten for the target company (and remapped ids on
       // reseed) to match the path columns rewritten above.
       //

@@ -23,7 +23,7 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  toast,
+  toastError,
   useDisclosure,
   useMount
 } from "@carbon/react";
@@ -37,6 +37,7 @@ import {
   LuDollarSign,
   LuLocateFixed,
   LuPencil,
+  LuPower,
   LuRedoDot,
   LuTrash,
   LuTriangleAlert,
@@ -48,6 +49,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { useProcesses } from "~/components/Form/Process";
 import { Confirm } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import {
   useCurrencyFormatter,
   usePermissions,
@@ -65,6 +67,7 @@ const logger = getLogger("erp", "workcenterstable");
 type WorkCentersTableProps = {
   data: WorkCenter[];
   count: number;
+  infinite: InfiniteOptions;
   departments: ListItem[];
   locations: ListItem[];
 };
@@ -78,14 +81,20 @@ const defaultColumnVisibility = {
 };
 
 const WorkCentersTable = memo(
-  ({ data, count, departments, locations }: WorkCentersTableProps) => {
+  ({
+    data,
+    count,
+    infinite,
+    departments,
+    locations
+  }: WorkCentersTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const [params] = useUrlParams();
     const [people] = usePeople();
 
     const permissions = usePermissions();
-    const deleteModal = useDisclosure();
+    const deactivateModal = useDisclosure();
     const activateModal = useDisclosure();
     const [selectedWorkCenter, setSelectedWorkCenter] =
       useState<WorkCenter | null>(null);
@@ -98,14 +107,13 @@ const WorkCentersTable = memo(
       activateModal.onOpen();
     };
 
-    const onDelete = (data: WorkCenter) => {
+    const onDeactivate = (data: WorkCenter) => {
       setSelectedWorkCenter(data);
-      deleteModal.onOpen();
+      deactivateModal.onOpen();
     };
 
     const onCancel = () => {
-      setSelectedWorkCenter(null);
-      deleteModal.onClose();
+      deactivateModal.onClose();
       activateModal.onClose();
     };
 
@@ -150,7 +158,7 @@ const WorkCentersTable = memo(
                   if (!process) return [];
                   return {
                     label: process.label,
-                    onClick: () => navigate(path.to.process(process.value))
+                    to: path.to.process(process.value)
                   };
                 }
               )}
@@ -202,7 +210,12 @@ const WorkCentersTable = memo(
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => (
+            <Checkbox
+              aria-label={t`Active`}
+              isChecked={item.getValue<boolean>()}
+            />
+          ),
           meta: {
             filter: {
               type: "static",
@@ -303,7 +316,6 @@ const WorkCentersTable = memo(
       people,
       formatter,
       customColumns,
-      navigate,
       t
     ]);
 
@@ -322,11 +334,10 @@ const WorkCentersTable = memo(
           </MenuItem>
           {row.active ? (
             <MenuItem
-              destructive
               disabled={!permissions.has({ "resources.workCenters": "Full" })}
-              onClick={() => onDelete(row)}
+              onClick={() => onDeactivate(row)}
             >
-              <MenuIcon icon={<LuTrash />} />
+              <MenuIcon icon={<LuPower />} />
               <Trans>Deactivate Work Center</Trans>
             </MenuItem>
           ) : (
@@ -338,6 +349,19 @@ const WorkCentersTable = memo(
               <Trans>Activate Work Center</Trans>
             </MenuItem>
           )}
+          <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
+            destructive
+            disabled={!permissions.has({ "resources.workCenters": "Full" })}
+            onClick={() => {
+              navigate(
+                `${path.to.deleteWorkCenter(row.id!)}?${params?.toString()}`
+              );
+            }}
+          >
+            <MenuIcon icon={<LuTrash />} />
+            <Trans>Delete Work Center</Trans>
+          </MenuItem>
         </>
       ),
 
@@ -348,6 +372,7 @@ const WorkCentersTable = memo(
       <>
         <Table<WorkCenter>
           data={data}
+          infinite={infinite}
           defaultColumnVisibility={defaultColumnVisibility}
           columns={columns}
           count={count ?? 0}
@@ -369,9 +394,9 @@ const WorkCentersTable = memo(
         />
 
         {selectedWorkCenter && selectedWorkCenter.id && (
-          <DeleteWorkCenterModal
+          <DeactivateWorkCenterModal
             workCenter={selectedWorkCenter}
-            isOpen={deleteModal.isOpen}
+            isOpen={deactivateModal.isOpen}
             onCancel={onCancel}
             onSubmit={onCancel}
           />
@@ -396,7 +421,7 @@ const WorkCentersTable = memo(
 WorkCentersTable.displayName = "WorkCentersTable";
 export default WorkCentersTable;
 
-function DeleteWorkCenterModal({
+function DeactivateWorkCenterModal({
   workCenter,
   isOpen,
   onCancel,
@@ -404,6 +429,34 @@ function DeleteWorkCenterModal({
 }: {
   workCenter: WorkCenter;
   isOpen: boolean;
+  onCancel: () => void;
+  onSubmit: () => void;
+}) {
+  return (
+    <Modal
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <DeactivateWorkCenterBody
+          workCenter={workCenter}
+          onCancel={onCancel}
+          onSubmit={onSubmit}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function DeactivateWorkCenterBody({
+  workCenter,
+  onCancel,
+  onSubmit
+}: {
+  workCenter: WorkCenter;
   onCancel: () => void;
   onSubmit: () => void;
 }) {
@@ -444,7 +497,7 @@ function DeleteWorkCenterModal({
       );
       setHasNoActiveOperations(data.length === 0);
     } else {
-      toast.error("Failed to check active operations");
+      toastError("Failed to check active operations", error);
     }
   };
 
@@ -462,71 +515,71 @@ function DeleteWorkCenterModal({
   });
 
   return (
-    <Modal
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) onCancel();
-      }}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Deactivate {workCenter.name}</Trans>
-          </ModalTitle>
-        </ModalHeader>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Deactivate {workCenter.name}</Trans>
+        </ModalTitle>
+      </ModalHeader>
 
-        <ModalBody>
-          {uniqueJobsWithActiveOperations.length > 0 ? (
-            <Alert variant="destructive">
-              <LuTriangleAlert className="h-4 w-4" />
-              <AlertTitle>
+      <ModalBody>
+        {uniqueJobsWithActiveOperations.length > 0 ? (
+          <Alert variant="destructive">
+            <LuTriangleAlert className="h-4 w-4" />
+            <AlertTitle>
+              <Trans>
+                These jobs have operations assigned to this work center:
+              </Trans>
+            </AlertTitle>
+            <AlertDescription>
+              <ul className="list-disc pl-4 mt-2 space-y-1">
+                {uniqueJobsWithActiveOperations.map((job, index) => (
+                  <li key={index} className="text-sm font-medium flex gap-2">
+                    <Hyperlink to={path.to.jobDetails(job.id)}>
+                      {job.jobId}
+                    </Hyperlink>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2">
                 <Trans>
-                  These jobs have operations assigned to this work center:
+                  Move these operations to another work center, or finish them,
+                  before you deactivate it.
                 </Trans>
-              </AlertTitle>
-              <AlertDescription>
-                <ul className="list-disc pl-4 mt-2 space-y-1">
-                  {uniqueJobsWithActiveOperations.map((job, index) => (
-                    <li key={index} className="text-sm font-medium flex gap-2">
-                      <Hyperlink to={path.to.jobDetails(job.id)}>
-                        {job.jobId}
-                      </Hyperlink>
-                    </li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <p>
+              </p>
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <p>
+            <Trans>
               Are you sure you want to deactivate the {workCenter.name} work
               center?
-            </p>
-          )}
-        </ModalBody>
+            </Trans>
+          </p>
+        )}
+      </ModalBody>
 
-        <ModalFooter>
-          <Button variant="secondary" onClick={onCancel}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <fetcher.Form
-            method="post"
-            action={path.to.deleteWorkCenter(workCenter.id!)}
-            onSubmit={() => (submitted.current = true)}
+      <ModalFooter>
+        <Button variant="secondary" onClick={onCancel}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <fetcher.Form
+          method="post"
+          action={path.to.workCenterDeactivate(workCenter.id!)}
+          onSubmit={() => (submitted.current = true)}
+        >
+          <Button
+            variant="destructive"
+            isLoading={fetcher.state !== "idle"}
+            isDisabled={
+              fetcher.state !== "idle" || hasNoActiveOperations === false
+            }
+            type="submit"
           >
-            <Button
-              variant="destructive"
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={
-                fetcher.state !== "idle" || hasNoActiveOperations === false
-              }
-              type="submit"
-            >
-              <Trans>Deactivate</Trans>
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+            <Trans>Deactivate</Trans>
+          </Button>
+        </fetcher.Form>
+      </ModalFooter>
+    </>
   );
 }

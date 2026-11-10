@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getLogger } from "@carbon/logger";
+import { isZodError, summarizeZodIssues } from "@carbon/utils";
 
 const logger = getLogger("server-functions");
 
@@ -46,6 +47,16 @@ export class NotFoundError extends ServerFnError {
 /** SQLSTATE of a plpgsql `RAISE EXCEPTION`: a message our own SQL wrote for
  *  the person (e.g. "Job J000343 has 6 serial unit(s) left to receive…"). */
 export const RAISED_EXCEPTION = "P0001";
+
+/** The text of a RAISE in our own SQL, written for the person; else null. */
+export function raisedMessage(error: unknown): string | null {
+  const raised = error as { code?: unknown; message?: unknown } | null;
+  return raised?.code === RAISED_EXCEPTION &&
+    typeof raised.message === "string" &&
+    raised.message !== ""
+    ? raised.message
+    : null;
+}
 
 /** SQLSTATE classes that are the server's failure, never the request's:
  *  connection, transaction rollback (deadlock, serialization), insufficient
@@ -110,27 +121,6 @@ export function isDataLayerError(err: unknown): boolean {
   return typeof e.code === "string" && typeof e.severity === "string";
 }
 
-type ZodLikeError = {
-  name: "ZodError";
-  issues: Array<{ path?: unknown[]; message?: unknown }>;
-};
-
-function isZodError(err: unknown): err is ZodLikeError {
-  const e = err as { name?: unknown; issues?: unknown } | null;
-  return e?.name === "ZodError" && Array.isArray(e.issues);
-}
-
-function summarizeIssues({ issues }: ZodLikeError): string {
-  const shown = issues.slice(0, 5).map(({ path, message }) => {
-    const text = typeof message === "string" ? message : "invalid";
-    return Array.isArray(path) && path.length > 0
-      ? `${path.join(".")}: ${text}`
-      : text;
-  });
-  const more = issues.length - shown.length;
-  return `Invalid input — ${shown.join("; ")}${more > 0 ? `; +${more} more` : ""}`;
-}
-
 export function toServerFnError(
   name: string,
   err: unknown,
@@ -163,7 +153,7 @@ function toError(err: unknown, defaultStatus: number): ServerFnError {
       ? new ServerFnError("", err.status, err.body, { cause: err })
       : err;
   }
-  if (isZodError(err)) return new InvalidInputError(summarizeIssues(err));
+  if (isZodError(err)) return new InvalidInputError(summarizeZodIssues(err));
   if (
     PROGRAMMING_ERRORS.some((type) => err instanceof type) ||
     isServerFailure(err)

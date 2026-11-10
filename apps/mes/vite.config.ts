@@ -11,6 +11,13 @@ import { defineConfig } from "vite";
 export default defineConfig(({ command, mode, isSsrBuild }) => {
   applyDotenvToProcessEnv(mode, import.meta.dirname);
 
+  // root.tsx loads Vercel Web Analytics only in a build Vercel ran: its script
+  // is served nowhere else. Vercel's React Router preset exposes no VITE_ copy
+  // of its system variables, so make the one Vercel's Vite preset would.
+  if (process.env.VERCEL === "1") {
+    process.env.VITE_VERCEL_ENV ??= process.env.VERCEL_ENV;
+  }
+
   /**
    * Dev-server SSR dependencies that must be inlined rather than left as bare
    * `import`s. A production build inlines every dependency (see the ERP's
@@ -33,7 +40,6 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
      * asset pipeline. The production build is unaffected either way.
      */
     "sonner",
-    "react-icons",
     "react-phone-number-input",
     "tailwind-merge",
     /**
@@ -61,14 +67,6 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
       : { noExternal: ssrNoExternal };
 
   return {
-    // ASSETS_URL bakes a CDN asset base into the client build (Dockerfile
-    // build arg). Vite's base is build-time only, so an image built without
-    // it serves assets same-origin — that IS the controlled/air-gapped
-    // variant, not a fallback. Normalized: Vite requires the trailing slash.
-    base:
-      command === "build" && process.env.ASSETS_URL
-        ? process.env.ASSETS_URL.replace(/\/*$/, "/")
-        : undefined,
     // Build analysis (plugin hook cost, chunks, duplicate packages). Opt-in,
     // because each build writes gigabytes to node_modules/.rolldown:
     // `VITE_DEVTOOLS=1 pnpm build`, then `pnpm exec vite-devtools`.

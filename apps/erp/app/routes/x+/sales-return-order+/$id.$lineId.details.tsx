@@ -11,8 +11,13 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { salesReturnOrderLineValidator } from "~/modules/sales/sales.models";
+import {
+  isServiceReturnLine,
+  salesReturnOrderLineFormValidator
+} from "~/modules/sales/sales.models";
+import { getServiceJobsForReturnLine } from "~/modules/sales/sales.service";
 import { SalesReturnOrderLineForm } from "~/modules/sales/ui/SalesReturnOrders";
+import SalesReturnOrderLineServiceJobs from "~/modules/sales/ui/SalesReturnOrders/SalesReturnOrderLineServiceJobs";
 import type { SalesReturnOrderLine } from "~/modules/sales/ui/SalesReturnOrders/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -26,9 +31,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw notFound("orderId not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const [line, returnReasons] = await Promise.all([
+  const [line, returnReasons, serviceJobs] = await Promise.all([
     api.sales.getSalesReturnOrderLine({ lineId }),
-    api.sales.getReturnReasonsList({})
+    api.sales.getReturnReasonsList({}),
+    getServiceJobsForReturnLine(client, lineId, companyId)
   ]);
 
   if (line.error) {
@@ -108,6 +114,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     line: line.data,
     returnReasons: returnReasons.data ?? [],
+    serviceJobs: serviceJobs.data ?? [],
     linkage: {
       shipmentId,
       shipmentReadableId,
@@ -120,9 +127,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator(salesReturnOrderLineValidator).request(args, {
-    params: ["id", "lineId"]
-  });
+  const input = await validator(salesReturnOrderLineFormValidator).request(
+    args,
+    {
+      params: ["id", "lineId"]
+    }
+  );
   if ("invalid" in input) return input.invalid;
   const { id: orderId, lineId } = input.params;
   const { api } = await authorize(args.request);
@@ -141,7 +151,8 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function SalesReturnOrderLineDetailsRoute() {
-  const { line, returnReasons, linkage } = useLoaderData<typeof loader>();
+  const { line, returnReasons, serviceJobs, linkage } =
+    useLoaderData<typeof loader>();
   const { id: orderId, lineId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
   if (!lineId) throw new Error("Could not find lineId");
@@ -165,16 +176,24 @@ export default function SalesReturnOrderLineDetailsRoute() {
     salesOrderLineId: line.salesOrderLineId ?? undefined,
     shipmentLineId: line.shipmentLineId ?? undefined,
     salesInvoiceLineId: line.salesInvoiceLineId ?? undefined,
+    returnType: line.returnType,
+    customerAssetId: line.customerAssetId ?? undefined,
+    problem: line.problem ?? undefined,
     ...getCustomFields(line.customFields)
   };
 
   return (
-    <SalesReturnOrderLineForm
-      key={lineId}
-      initialValues={initialValues}
-      line={fullLine}
-      returnReasons={returnReasons}
-      linkage={linkage}
-    />
+    <>
+      <SalesReturnOrderLineForm
+        key={lineId}
+        initialValues={initialValues}
+        line={fullLine}
+        returnReasons={returnReasons}
+        linkage={linkage}
+      />
+      {isServiceReturnLine(line.returnType) && (
+        <SalesReturnOrderLineServiceJobs serviceJobs={serviceJobs} />
+      )}
+    </>
   );
 }

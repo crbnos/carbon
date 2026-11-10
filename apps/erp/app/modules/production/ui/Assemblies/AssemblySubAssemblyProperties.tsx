@@ -173,6 +173,7 @@ export default function AssemblySubAssemblyProperties({
                 <Trans>Instruction</Trans>
               </Label>
               <Editor
+                label={t`Instruction`}
                 initialValue={(step.description as JSONContent) ?? {}}
                 onUpload={onUploadImage}
                 onChange={setDescription}
@@ -341,18 +342,17 @@ export default function AssemblySubAssemblyProperties({
         </div>
       )}
 
-      {isDeleting && (
-        <ConfirmDelete
-          action={path.to.assemblySubAssemblyDelete(instructionId, step.id)}
-          name={name}
-          text={t`Delete this sub-assembly and all of its steps? This cannot be undone.`}
-          onCancel={() => setIsDeleting(false)}
-          onSubmit={() => {
-            closeIfOpen();
-            setIsDeleting(false);
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.assemblySubAssemblyDelete(instructionId, step.id)}
+        isOpen={isDeleting}
+        name={name}
+        text={t`Delete this sub-assembly and all of its steps? This cannot be undone.`}
+        onCancel={() => setIsDeleting(false)}
+        onSubmit={() => {
+          closeIfOpen();
+          setIsDeleting(false);
+        }}
+      />
     </VStack>
   );
 }

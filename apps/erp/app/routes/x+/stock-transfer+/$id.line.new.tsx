@@ -5,7 +5,7 @@
 import { respond } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
-import { useCloseRoute, useRouteData } from "@carbon/react";
+import { useRouteData, useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { stockTransferLineValidator } from "~/modules/inventory/inventory.models";
@@ -36,8 +36,8 @@ export async function action(args: ActionFunctionArgs) {
     ...line,
     // The line goes on the transfer in the URL, the one whose lock is checked.
     stockTransferId: id,
-    requiresBatchTracking: requiresBatchTracking ? "true" : "false",
-    requiresSerialTracking: requiresSerialTracking ? "true" : "false"
+    requiresBatchTracking: Boolean(requiresBatchTracking),
+    requiresSerialTracking: Boolean(requiresSerialTracking)
   });
   // An error is toasted and the drawer stays open.
   if (result.error) return result;
@@ -49,7 +49,7 @@ export async function action(args: ActionFunctionArgs) {
 export default function NewStockTransferLinesRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const routeData = useRouteData<{
     stockTransfer: StockTransfer;
   }>(path.to.stockTransfer(id));
@@ -68,7 +68,8 @@ export default function NewStockTransferLinesRoute() {
   return (
     <StockTransferLineForm
       locationId={routeData?.stockTransfer.locationId}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
       // @ts-expect-error TS2739 - TODO: fix type
       initialValues={initialValues}
     />

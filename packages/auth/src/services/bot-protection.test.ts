@@ -17,7 +17,6 @@ vi.mock("../config/env", () => env);
 
 const checkBotId = vi.hoisted(() => vi.fn());
 vi.mock("botid/server", () => ({ checkBotId }));
-vi.mock("./auth-events.server", () => ({ logAuthEvent: vi.fn() }));
 
 async function load(overrides: Partial<typeof env>) {
   Object.assign(env, {

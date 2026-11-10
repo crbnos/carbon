@@ -16,7 +16,7 @@ import {
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { useSetAppBarOverride } from "~/components/Layout/Mobile";
 import { RecordHero } from "~/components/Layout/RecordHeader";
@@ -24,7 +24,14 @@ import { useUrlParams } from "~/hooks";
 import InventoryItemHeader from "~/modules/inventory/ui/Inventory/InventoryItemHeader";
 import { getPickMethod, upsertPickMethod } from "~/modules/items/items.service";
 import { resolveLocationId } from "~/modules/shared/shared.service";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(
+    data?.item?.readableIdWithRevision ?? data?.item?.readableId,
+    "Inventory"
+  );
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId, api } = await authorize(request, {
@@ -123,6 +130,8 @@ export default function ItemInventoryRoute() {
         minSize={25}
         className="bg-muted"
         compactFocus
+        role="region"
+        aria-label={t`Quantities for ${itemReadableId}`}
       >
         <ScrollArea className="h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
           <RecordHero subtitle={item.name} />

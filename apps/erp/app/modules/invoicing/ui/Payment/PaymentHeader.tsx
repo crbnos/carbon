@@ -128,27 +128,24 @@ const PaymentHeader = () => {
         }
       />
 
-      {voidModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.paymentVoid(payment.id)}
-          name={payment.paymentId}
-          title={t`Void ${payment.paymentId}`}
-          text={t`Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone.`}
-          deleteText={t`Void`}
-          onCancel={voidModal.onClose}
-          onSubmit={voidModal.onClose}
-        />
-      )}
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.paymentDelete(payment.id)}
-          isOpen={deleteModal.isOpen}
-          name={payment.paymentId}
-          text={t`Are you sure you want to delete ${payment.paymentId}? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={deleteModal.onClose}
-        />
-      )}
+      <ConfirmDelete
+        isOpen={voidModal.isOpen}
+        action={path.to.paymentVoid(payment.id)}
+        name={payment.paymentId}
+        title={t`Void ${payment.paymentId}`}
+        text={t`Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone.`}
+        deleteText={t`Void`}
+        onCancel={voidModal.onClose}
+        onSubmit={voidModal.onClose}
+      />
+      <ConfirmDelete
+        isOpen={deleteModal.isOpen}
+        action={path.to.paymentDelete(payment.id)}
+        name={payment.paymentId}
+        text={t`Are you sure you want to delete ${payment.paymentId}? This cannot be undone.`}
+        onCancel={deleteModal.onClose}
+        onSubmit={deleteModal.onClose}
+      />
     </>
   );
 };

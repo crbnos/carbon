@@ -39,6 +39,8 @@ import { path } from "~/utils/path";
 type SupplierAccountsTableProps = {
   data: Supplier[];
   count: number;
+  // The loader read SINGLE_LOAD_LIMIT rows: more may match.
+  isTruncated?: boolean;
   supplierTypes: ListItem[];
   unrevokedInviteEmails: string[];
 };
@@ -52,6 +54,7 @@ const SupplierAccountsTable = memo(
   ({
     data,
     count,
+    isTruncated,
     supplierTypes,
     unrevokedInviteEmails
   }: SupplierAccountsTableProps) => {
@@ -183,7 +186,15 @@ const SupplierAccountsTable = memo(
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => {
+            const email = item.row.original.user?.email;
+            return (
+              <Checkbox
+                isChecked={item.getValue<boolean>()}
+                aria-label={t`Active: ${email}`}
+              />
+            );
+          },
           meta: {
             mobile: "P2",
             icon: <LuUserCheck />,
@@ -280,29 +291,36 @@ const SupplierAccountsTable = memo(
                 <MenuIcon icon={<LuBan />} />
                 <Trans>Deactivate Account</Trans>
               </MenuItem>
-            ) : hasUnrevokedInvite ? (
-              permissions.has({ "users.accounts": "Full" }) && (
+            ) : (
+              <>
                 <MenuItem
+                  disabled={!permissions.has({ "users.accounts": "Create" })}
                   onClick={() => {
                     setSelectedUserIds([row.user.id]);
-                    revokeInviteModal.onOpen();
+                    resendInviteModal.onOpen();
                   }}
-                  destructive
                 >
-                  <MenuIcon icon={<LuBan />} />
-                  <Trans>Revoke Invite</Trans>
+                  <MenuIcon icon={<LuMailCheck />} />
+                  {hasUnrevokedInvite ? (
+                    <Trans>Resend Invite</Trans>
+                  ) : (
+                    <Trans>Send Invite</Trans>
+                  )}
                 </MenuItem>
-              )
-            ) : (
-              <MenuItem
-                onClick={() => {
-                  setSelectedUserIds([row.user.id]);
-                  resendInviteModal.onOpen();
-                }}
-              >
-                <MenuIcon icon={<LuMailCheck />} />
-                <Trans>Send Invite</Trans>
-              </MenuItem>
+                {hasUnrevokedInvite &&
+                  permissions.has({ "users.accounts": "Full" }) && (
+                    <MenuItem
+                      onClick={() => {
+                        setSelectedUserIds([row.user.id]);
+                        revokeInviteModal.onOpen();
+                      }}
+                      destructive
+                    >
+                      <MenuIcon icon={<LuBan />} />
+                      <Trans>Revoke Invite</Trans>
+                    </MenuItem>
+                  )}
+              </>
             )}
           </>
         );
@@ -320,6 +338,7 @@ const SupplierAccountsTable = memo(
       <>
         <Table<(typeof rows)[number]>
           count={count}
+          isTruncated={isTruncated}
           columns={columns}
           data={rows}
           defaultColumnVisibility={defaultColumnVisibility}
@@ -334,28 +353,22 @@ const SupplierAccountsTable = memo(
           withSelectableRows={canEdit}
         />
 
-        {deactivateSupplierModal.isOpen && (
-          <DeactivateUsersModal
-            userIds={selectedUserIds}
-            isOpen={deactivateSupplierModal.isOpen}
-            redirectTo={path.to.supplierAccounts}
-            onClose={deactivateSupplierModal.onClose}
-          />
-        )}
-        {resendInviteModal.isOpen && (
-          <ResendInviteModal
-            userIds={selectedUserIds}
-            isOpen={resendInviteModal.isOpen}
-            onClose={resendInviteModal.onClose}
-          />
-        )}
-        {revokeInviteModal.isOpen && (
-          <RevokeInviteModal
-            userIds={selectedUserIds}
-            isOpen={revokeInviteModal.isOpen}
-            onClose={revokeInviteModal.onClose}
-          />
-        )}
+        <DeactivateUsersModal
+          userIds={selectedUserIds}
+          isOpen={deactivateSupplierModal.isOpen}
+          redirectTo={path.to.supplierAccounts}
+          onClose={deactivateSupplierModal.onClose}
+        />
+        <ResendInviteModal
+          userIds={selectedUserIds}
+          isOpen={resendInviteModal.isOpen}
+          onClose={resendInviteModal.onClose}
+        />
+        <RevokeInviteModal
+          userIds={selectedUserIds}
+          isOpen={revokeInviteModal.isOpen}
+          onClose={revokeInviteModal.onClose}
+        />
       </>
     );
   }

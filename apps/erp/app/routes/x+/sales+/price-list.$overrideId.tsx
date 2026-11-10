@@ -7,7 +7,7 @@ import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -77,6 +77,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const {
     customerId,
     customerTypeId,
+    allCustomers,
     itemId,
     active,
     applyRulesOnTop,
@@ -110,6 +111,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       id: overrideId,
       customerId: customerId || undefined,
       customerTypeId: customerTypeId || undefined,
+      allCustomers,
       itemId,
       breaks,
       active,
@@ -138,7 +140,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditPriceOverrideRoute() {
   const { override } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   if (!override) return null;
 
@@ -150,6 +152,7 @@ export default function EditPriceOverrideRoute() {
         itemId: override.itemId,
         customerId: override.customerId ?? undefined,
         customerTypeId: override.customerTypeId ?? undefined,
+        allCustomers: !override.customerId && !override.customerTypeId,
         active: override.active,
         applyRulesOnTop: override.applyRulesOnTop ?? true,
         validFrom: override.validFrom ?? undefined,
@@ -166,7 +169,8 @@ export default function EditPriceOverrideRoute() {
             }[])
           : []
       }
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

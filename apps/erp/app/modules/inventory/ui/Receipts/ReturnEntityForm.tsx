@@ -53,6 +53,7 @@ export function ReturnEntityForm({
   const candidatesFetcher = useFetcher<{
     candidates: CandidateEntity[];
     assigned: AssignedRow[];
+    error: string | null;
   }>();
   const assignFetcher = useAction<typeof trackingAction>({
     onError: () => {
@@ -98,7 +99,18 @@ export function ReturnEntityForm({
     return map;
   }, [candidatesFetcher.data?.assigned]);
 
-  if (!line.lineId || (candidates && candidates.length === 0)) {
+  if (candidatesFetcher.data?.error) {
+    return (
+      <span className="text-xs text-destructive">
+        {candidatesFetcher.data.error}
+      </span>
+    );
+  }
+
+  if (
+    !line.lineId ||
+    (candidates && candidates.length === 0 && assignedByEntityId.size === 0)
+  ) {
     // Blind return: nothing shipped on record — standard serial/batch entry
     return <>{children}</>;
   }
@@ -154,6 +166,7 @@ export function ReturnEntityForm({
           {t`Returned batch`}
         </label>
         <Combobox
+          aria-label={t`Returned batch`}
           size="sm"
           value={current ?? ""}
           options={options}
@@ -184,6 +197,7 @@ export function ReturnEntityForm({
       </label>
       {Array.from({ length: slots }, (_, index) => {
         const current = assignedByIndex.get(index);
+        const slotNumber = index + 1;
         const usedElsewhere = new Set(
           [...assignedByIndex.entries()]
             .filter(([i]) => i !== index)
@@ -195,6 +209,7 @@ export function ReturnEntityForm({
               {index + 1}
             </span>
             <Combobox
+              aria-label={t`Returned serial number ${slotNumber}`}
               size="sm"
               value={current ?? ""}
               options={options.filter((o) => !usedElsewhere.has(o.value))}

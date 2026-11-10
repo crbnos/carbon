@@ -47,6 +47,7 @@ type LeaseTerminateModalProps = {
   line: LeaseLine;
   payments: LeasePayment[];
   schedule: LeaseScheduleLine[];
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -59,6 +60,7 @@ const LeaseTerminateModal = ({
   line,
   payments,
   schedule,
+  open = true,
   onClose
 }: LeaseTerminateModalProps) => {
   const { t } = useLingui();
@@ -98,7 +100,7 @@ const LeaseTerminateModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

@@ -3,10 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
+import { isSyncedEntityType } from "@carbon/ee/issue-sync";
 import { getCompanyEmployees, getLinearClient } from "@carbon/ee/linear.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunction } from "react-router";
 import { createLinearIssue } from "~/modules/shared/shared.server";
+import { getNewIssueDefaults } from "~/modules/shared/shared.service";
 
 const linear = getLinearClient();
 
@@ -21,6 +23,15 @@ export const loader: LoaderFunction = async ({ request }) => {
   const { companyId, client } = await authorize(request);
 
   const url = new URL(request.url);
+
+  // The record the dialog was opened from: its title and description
+  // prefill the form (getNewIssueDefaults).
+  const actionId = url.searchParams.get("actionId");
+  const entityType = url.searchParams.get("entityType");
+  const defaults =
+    actionId && isSyncedEntityType(entityType)
+      ? await getNewIssueDefaults(client, entityType, actionId, companyId)
+      : null;
 
   const teamId = url.searchParams.get("teamId") as string;
   const teams = await linear.listTeams(companyId);
@@ -37,6 +48,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 
     // I am sure we can improve this filtering step
     return {
+      defaults,
       teams,
       members: members.filter((m) =>
         employees.some((v) => {
@@ -49,5 +61,5 @@ export const loader: LoaderFunction = async ({ request }) => {
     };
   }
 
-  return { teams };
+  return { teams, defaults };
 };

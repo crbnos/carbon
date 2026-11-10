@@ -21,12 +21,18 @@ import {
   ModalTitle,
   Spinner,
   toast,
+  toastError,
   useDisclosure,
   useMode,
   useViewport
 } from "@carbon/react";
-import { getFileSizeLimit, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
+import {
+  getFileSizeLimit,
+  MODEL_RAW_KEEP_MAX_BYTES,
+  requireAffected
+} from "@carbon/utils";
 import { ModelPreview } from "@carbon/viewer/model-preview";
+import { modelPreviewUrls } from "@carbon/viewer/model-upload-preview";
 import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
 import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -37,7 +43,7 @@ import { useModelUpload, useUser } from "~/hooks";
 import type { ModelUpload } from "~/types";
 import type { ViewDirection } from "~/utils/model-thumbnail";
 import { regenerateModelThumbnail } from "~/utils/model-thumbnail";
-import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
 import type { InterruptedUpload } from "~/utils/resumable-upload";
 import { InterruptedUploadNotice, UploadProgress } from "./UploadProgress";
 
@@ -154,36 +160,51 @@ const CadModel = ({
 
     let result;
     if (metadata?.itemId) {
-      result = await carbon
-        .from("item")
-        .update({ modelUploadId: null })
-        .eq("id", metadata.itemId);
+      result = await requireAffected(
+        carbon
+          .from("item")
+          .update({ modelUploadId: null })
+          .eq("id", metadata.itemId)
+          .select("id")
+      );
     } else if (metadata?.salesRfqLineId) {
-      result = await carbon
-        .from("salesRfqLine")
-        .update({ modelUploadId: null })
-        .eq("id", metadata.salesRfqLineId);
+      result = await requireAffected(
+        carbon
+          .from("salesRfqLine")
+          .update({ modelUploadId: null })
+          .eq("id", metadata.salesRfqLineId)
+          .select("id")
+      );
     } else if (metadata?.quoteLineId) {
-      result = await carbon
-        .from("quoteLine")
-        .update({ modelUploadId: null })
-        .eq("id", metadata.quoteLineId);
+      result = await requireAffected(
+        carbon
+          .from("quoteLine")
+          .update({ modelUploadId: null })
+          .eq("id", metadata.quoteLineId)
+          .select("id")
+      );
     } else if (metadata?.salesOrderLineId) {
-      result = await carbon
-        .from("salesOrderLine")
-        .update({ modelUploadId: null })
-        .eq("id", metadata.salesOrderLineId);
+      result = await requireAffected(
+        carbon
+          .from("salesOrderLine")
+          .update({ modelUploadId: null })
+          .eq("id", metadata.salesOrderLineId)
+          .select("id")
+      );
     } else if (metadata?.jobId) {
-      result = await carbon
-        .from("job")
-        .update({ modelUploadId: null })
-        .eq("id", metadata.jobId);
+      result = await requireAffected(
+        carbon
+          .from("job")
+          .update({ modelUploadId: null })
+          .eq("id", metadata.jobId)
+          .select("id")
+      );
     }
 
     setIsDeleting(false);
 
     if (result?.error) {
-      toast.error("Failed to delete model");
+      toastError("Failed to delete model", result.error);
       return;
     }
 
@@ -277,36 +298,9 @@ const CadModel = ({
                 optimizing={backgroundOptimizing}
                 optimizeFailed={optimizeFailed}
                 sourceMissing={artifacts?.sourceAvailable === false}
-                optimizedUrl={
-                  artifacts?.optimizedModelPath
-                    ? // ?v= busts the immutable preview cache on the STABLE
-                      // optimized.glb path when a re-optimise lands.
-                      `${getPrivateUrl(artifacts.optimizedModelPath)}${
-                        artifacts.optimizedAt
-                          ? `?v=${encodeURIComponent(artifacts.optimizedAt)}`
-                          : ""
-                      }`
-                    : null
-                }
-                glbUrl={
-                  artifacts?.glbPath ? getPrivateUrl(artifacts.glbPath) : null
-                }
-                lodUrl={
-                  artifacts?.lodPath ? getPrivateUrl(artifacts.lodPath) : null
-                }
-                rawUrl={
-                  artifacts?.rawPath &&
-                  (artifacts.size ?? 0) <= MODEL_RAW_KEEP_MAX_BYTES
-                    ? getRawModelUrl(artifacts.rawBucket, artifacts.rawPath)
-                    : null
-                }
+                {...modelPreviewUrls(artifacts)}
                 rawFile={
                   file && file.size <= MODEL_RAW_KEEP_MAX_BYTES ? file : null
-                }
-                thumbnailUrl={
-                  artifacts?.thumbnailPath
-                    ? getPrivateUrl(artifacts.thumbnailPath)
-                    : null
                 }
                 mode={mode}
                 className={viewerClassName}
@@ -387,45 +381,43 @@ const CadModel = ({
                 </div>
               ) : null}
             </div>
-            {deleteModal.isOpen && (
-              <Modal
-                open
-                onOpenChange={(open) => {
-                  if (!open) deleteModal.onClose();
-                }}
-              >
-                <ModalOverlay />
-                <ModalContent>
-                  <ModalHeader>
-                    <ModalTitle>Delete 3D model</ModalTitle>
-                  </ModalHeader>
-                  <ModalBody>
-                    <p className="text-sm text-muted-foreground">
-                      Are you sure you want to delete this 3D file and image?
-                      Continuing will remove both the preview image and the 3D
-                      file from this record. This action cannot be undone.
-                    </p>
-                  </ModalBody>
-                  <ModalFooter>
-                    <Button
-                      variant="secondary"
-                      onClick={deleteModal.onClose}
-                      isDisabled={isDeleting}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={onDelete}
-                      isLoading={isDeleting}
-                      isDisabled={isDeleting}
-                    >
-                      Delete
-                    </Button>
-                  </ModalFooter>
-                </ModalContent>
-              </Modal>
-            )}
+            <Modal
+              open={deleteModal.isOpen}
+              onOpenChange={(open) => {
+                if (!open) deleteModal.onClose();
+              }}
+            >
+              <ModalOverlay />
+              <ModalContent>
+                <ModalHeader>
+                  <ModalTitle>Delete 3D model</ModalTitle>
+                </ModalHeader>
+                <ModalBody>
+                  <p className="text-sm text-muted-foreground">
+                    Are you sure you want to delete this 3D file and image?
+                    Continuing will remove both the preview image and the 3D
+                    file from this record. This action cannot be undone.
+                  </p>
+                </ModalBody>
+                <ModalFooter>
+                  <Button
+                    variant="secondary"
+                    onClick={deleteModal.onClose}
+                    isDisabled={isDeleting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={onDelete}
+                    isLoading={isDeleting}
+                    isDisabled={isDeleting}
+                  >
+                    Delete
+                  </Button>
+                </ModalFooter>
+              </ModalContent>
+            </Modal>
           </>
         ) : (
           <CadModelUpload

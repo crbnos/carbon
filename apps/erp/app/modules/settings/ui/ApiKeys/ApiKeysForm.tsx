@@ -33,7 +33,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuCheck, LuClipboard, LuLock } from "react-icons/lu";
 import type { z } from "zod";
-import { Hidden, Input, Submit } from "~/components/Form";
+import { Hidden, Input, Number, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import {
   apiKeyModules,
@@ -61,12 +61,17 @@ const selectAllGrants = (): AccessGrant[] =>
 type ApiKeyFormProps = {
   initialValues: Omit<z.infer<typeof apiKeyValidator>, "grants">;
   existingGrants?: AccessGrant[];
+  /** A single-tenant deployment's admins set the limit; Carbon Cloud sets it. */
+  canSetRateLimit?: boolean;
+  open?: boolean;
   onClose: () => void;
 };
 
 const ApiKeyForm = ({
   initialValues,
   existingGrants = [],
+  canSetRateLimit,
+  open = true,
   onClose
 }: ApiKeyFormProps) => {
   const { t } = useLingui();
@@ -88,7 +93,7 @@ const ApiKeyForm = ({
   return (
     <>
       <Modal
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose?.();
         }}
@@ -124,6 +129,15 @@ const ApiKeyForm = ({
                   minValue={toCalendarDateTime(today(getLocalTimeZone()))}
                 />
 
+                {canSetRateLimit && (
+                  <Number
+                    name="rateLimit"
+                    label={t`Requests per minute`}
+                    minValue={1}
+                    maxValue={1_000_000}
+                  />
+                )}
+
                 <div className="flex w-full justify-end">
                   <Button
                     variant="secondary"
@@ -157,7 +171,7 @@ const ApiKeyForm = ({
           </ValidatedForm>
         </ModalContent>
       </Modal>
-      {key && <ApiKeyView apiKey={key} onClose={onClose} />}
+      {key && <ApiKeyView apiKey={key} open={open} onClose={onClose} />}
     </>
   );
 };
@@ -166,10 +180,11 @@ export default ApiKeyForm;
 
 type ApiKeyViewProps = {
   apiKey: string;
+  open?: boolean;
   onClose: () => void;
 };
 
-function ApiKeyView({ apiKey, onClose }: ApiKeyViewProps) {
+function ApiKeyView({ apiKey, open = true, onClose }: ApiKeyViewProps) {
   const { t } = useLingui();
   const [copied, setCopied] = useState<"key" | "mcp" | null>(null);
   useEffect(() => {
@@ -185,7 +200,7 @@ function ApiKeyView({ apiKey, onClose }: ApiKeyViewProps) {
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

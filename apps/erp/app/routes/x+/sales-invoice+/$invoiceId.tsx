@@ -8,11 +8,17 @@ import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { createMappingService } from "@carbon/ee/accounting";
+import { getExpectedLiquidation } from "@carbon/ee/contract-financing.server";
+import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { STRIPE_CONNECT_INTEGRATION } from "@carbon/stripe/send-sales-invoice.server";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
@@ -23,6 +29,7 @@ import { getCustomer, getOpportunity } from "~/modules/sales/sales.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path, requestReferrer } from "~/utils/path";
 
 export const handle: Handle = {
@@ -44,6 +51,11 @@ export const handle: Handle = {
   ),
   module: "invoicing"
 };
+
+const logger = getLogger("erp", "sales-invoice");
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.salesInvoice?.invoiceId, "Sales Invoice");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId, api } = await authorize(request, {
@@ -112,8 +124,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
+  // A delivery invoice of a financed contract: the liquidation the
+  // government will take from it. Degrades to null without the feature.
+  let expectedLiquidation: number | null = null;
+  if (
+    salesInvoice.data?.status &&
+    !["Draft", "Voided", "Paid"].includes(salesInvoice.data.status)
+  ) {
+    try {
+      const liquidation = await getExpectedLiquidation(
+        client,
+        getDatabaseClient(),
+        { companyId, salesInvoiceId: invoiceId }
+      );
+      expectedLiquidation = liquidation?.amount ?? null;
+    } catch (err) {
+      logger.error("Failed to read the expected liquidation", {
+        companyId,
+        invoiceId,
+        error: err
+      });
+    }
+  }
+
   return {
     salesInvoice: salesInvoice.data,
+    expectedLiquidation,
     currency: currency?.data ?? null,
     salesInvoiceLines: salesInvoiceLines.data ?? [],
     salesInvoiceShipment: salesInvoiceShipment.data,

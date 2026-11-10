@@ -24,6 +24,7 @@ import {
 } from "~/modules/settings/settings.models";
 import { getItemPostingGroupResponsibilities } from "~/modules/settings/settings.service";
 import {
+  CalendarWeeksCard,
   ForecastConsumptionCard,
   MrpScheduleCard,
   PlanningHorizonCard,
@@ -102,6 +103,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     mrpRunTime: companySettings.data.mrpRunTime ?? null,
     skipApprovalForPlanningPurchaseOrders:
       companySettings.data.skipApprovalForPlanningPurchaseOrders ?? true,
+    useCalendarWeeks: companySettings.data.useCalendarWeeks ?? false,
     locations: locations.data ?? [],
     itemGroups: itemGroups.data ?? [],
     responsibilities: responsibilities.data ?? []
@@ -153,6 +155,7 @@ const planningSettingsForm = z.discriminatedUnion("intent", [
     "setPlanningPurchaseOrderApproval",
     "skipApprovalForPlanningPurchaseOrders"
   ),
+  settingsToggle("setCalendarWeeks", "useCalendarWeeks"),
   rescheduleToleranceValidator
     .extend({ intent: z.literal("setTolerance") })
     .transform(({ days }) => ({ rescheduleToleranceDays: days })),
@@ -188,6 +191,7 @@ export default function PlanningSettingsRoute() {
     forecastConsumptionForwardPeriods,
     mrpRunTime,
     skipApprovalForPlanningPurchaseOrders,
+    useCalendarWeeks,
     locations,
     itemGroups,
     responsibilities
@@ -199,7 +203,7 @@ export default function PlanningSettingsRoute() {
         spacing={4}
         className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
       >
-        <Heading size="h3">
+        <Heading as="h1" size="h3">
           <Trans>Planning</Trans>
         </Heading>
 
@@ -217,6 +221,7 @@ export default function PlanningSettingsRoute() {
           backwardPeriods={forecastConsumptionBackwardPeriods}
           forwardPeriods={forecastConsumptionForwardPeriods}
         />
+        <CalendarWeeksCard useCalendarWeeks={useCalendarWeeks} />
         <PlanningPurchaseOrderApprovalCard
           skipApprovalForPlanningPurchaseOrders={
             skipApprovalForPlanningPurchaseOrders

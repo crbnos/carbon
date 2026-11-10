@@ -8,9 +8,12 @@ import {
   LuArrowRightLeft,
   LuClipboardCheck,
   LuClipboardList,
+  LuClipboardX,
   LuHandCoins,
   LuListChecks,
   LuNetwork,
+  LuPackageCheck,
+  LuPackageMinus,
   LuQrCode,
   LuScanQrCode,
   LuShieldCheck,
@@ -24,6 +27,14 @@ import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
+import type { receiptInspectionStatusType } from "../inventory.models";
+
+const receiptsByInspectionStatus = (
+  statuses: (typeof receiptInspectionStatusType)[number][]
+) =>
+  `${path.to.receipts}?filter=${encodeURIComponent(
+    `inspectionStatus:in:${statuses.join(",")}`
+  )}`;
 
 export default function useInventorySubmodules() {
   const permissions = usePermissions();
@@ -58,6 +69,12 @@ export default function useInventorySubmodules() {
           table: "inventoryCount"
         },
         {
+          name: t`Issue to Project`,
+          to: path.to.projectIssue,
+          page: "projects.projects",
+          icon: <LuPackageMinus />
+        },
+        {
           name: t`Kanbans`,
           to: path.to.kanbans,
           page: "inventory.kanbans",
@@ -75,6 +92,30 @@ export default function useInventorySubmodules() {
           page: "inventory.receipts",
           icon: <LuHandCoins />,
           table: "receipt"
+        },
+        {
+          name: t`Pending inspection`,
+          to: receiptsByInspectionStatus([
+            "Pending Inspection",
+            "Inspection In Progress"
+          ]),
+          page: "inventory.receipts",
+          icon: <LuClipboardCheck />
+        },
+        {
+          name: t`Ready for putaway`,
+          to: receiptsByInspectionStatus([
+            "Inspection Passed",
+            "Partially Passed"
+          ]),
+          page: "inventory.receipts",
+          icon: <LuPackageCheck />
+        },
+        {
+          name: t`Inspection failed`,
+          to: receiptsByInspectionStatus(["Inspection Failed"]),
+          page: "inventory.receipts",
+          icon: <LuClipboardX />
         },
         {
           name: t`Shipments`,
@@ -172,21 +213,11 @@ export default function useInventorySubmodules() {
 
   return {
     groups: inventoryRoutes
-      .filter((group) => {
-        const filteredRoutes = group.routes.filter((route) => {
-          return isRouteVisible(route);
-        });
-
-        return filteredRoutes.length > 0;
-      })
       .map((group) => ({
         ...group,
-        routes: group.routes
-          .filter((route) => {
-            return isRouteVisible(route);
-          })
-          .map(addSavedViewsToRoutes)
+        routes: group.routes.filter(isRouteVisible).map(addSavedViewsToRoutes)
       }))
+      .filter((group) => group.routes.length > 0)
   };
 }
 

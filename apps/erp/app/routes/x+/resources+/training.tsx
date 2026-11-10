@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -12,8 +11,9 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { TrainingsTable } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { trainingsList } from "~/utils/list-registry/resources.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Training`,
@@ -21,56 +21,36 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "resources.training": "View" },
-    { role: "employee" }
-  );
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const [trainings, tags] = await Promise.all([
-    api.resources.getTrainings({
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }),
-    api.shared.getTagsList({ table: "training" })
-  ]);
-
-  if (trainings.error) {
-    throw redirect(
-      path.to.authenticatedRoot,
-      await flash(request, error(trainings.error, "Error loading trainings"))
-    );
-  }
-
-  if (tags.error) {
-    throw redirect(
-      path.to.authenticatedRoot,
-      await flash(request, error(tags.error, "Error loading tags"))
-    );
-  }
-
-  return {
-    trainings: trainings.data?.rows ?? [],
-    count: trainings.data?.count ?? 0,
-    tags: tags.data ?? []
-  };
+  return loadListPage(request, trainingsList, {
+    dataKey: "trainings",
+    firstPage: async ({ api, request }) => {
+      const tags = await api.shared.getTagsList({ table: "training" });
+      if (tags.error) {
+        throw redirect(
+          path.to.authenticatedRoot,
+          await flash(request, error(tags.error, "Error loading tags"))
+        );
+      }
+      return { tags: tags.data ?? [] };
+    },
+    onError: {
+      redirectTo: path.to.authenticatedRoot,
+      message: "Error loading trainings"
+    }
+  });
 }
 
 export default function TrainingsRoute() {
-  const { trainings, count, tags } = useLoaderData<typeof loader>();
+  const { trainings, count, infinite, tags } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <TrainingsTable data={trainings} count={count} tags={tags} />
+      <TrainingsTable
+        data={trainings}
+        count={count}
+        infinite={infinite}
+        tags={tags}
+      />
       <RecordOutlet />
     </VStack>
   );

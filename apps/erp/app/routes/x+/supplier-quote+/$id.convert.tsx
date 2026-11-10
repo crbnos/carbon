@@ -36,7 +36,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (typeof selectedLinesRaw !== "string") {
     throw redirect(
       path.to.supplierQuoteDetails(id),
-      await flash(request, error("Invalid selected lines data"))
+      await flash(request, error(null, "Invalid selected lines data"))
     );
   }
 
@@ -48,7 +48,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     logger.error("Validation error:", parseResult.error);
     throw redirect(
       path.to.supplierQuoteDetails(id),
-      await flash(request, error("Invalid selected lines data"))
+      await flash(request, error(null, "Invalid selected lines data"))
     );
   }
 
@@ -82,7 +82,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
         path.to.supplierQuoteDetails(id),
         await flash(
           request,
-          error("Cannot convert to order: supplier is not approved (Active)")
+          error(
+            null,
+            "Cannot convert to order: supplier is not approved (Active)"
+          )
         )
       );
     }

@@ -11,7 +11,7 @@ import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useMemo } from "react";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { ExplorerSkeleton } from "~/components/Skeletons";
@@ -20,7 +20,8 @@ import { getConfigurationParameters } from "~/modules/items/items.utils";
 import {
   type getJob,
   getJobMaterialsWithQuantityOnHand,
-  getJobOrderStatusMap
+  getJobOrderStatusMap,
+  getJobProjectCharge
 } from "~/modules/production/production.service";
 import type { JobMethodTreeItem } from "~/modules/production/production.utils";
 import { getJobMethodTree } from "~/modules/production/production.utils";
@@ -32,6 +33,7 @@ import {
 import type { JobOrderStatusData } from "~/modules/production/ui/Jobs/JobBoMExplorer";
 import { getLocationTimeZone } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 // Resolves each job material's procurement status for the BoM explorer badge:
@@ -94,6 +96,9 @@ export const handle: Handle = {
   ]
 };
 
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.job?.jobId, "Job");
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(
     request,
@@ -104,9 +109,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const [job, tags] = await Promise.all([
+  const [job, tags, projectCharge] = await Promise.all([
     api.production.getJob({ id: jobId }),
-    api.shared.getTagsList({ table: "job" })
+    api.shared.getTagsList({ table: "job" }),
+    getJobProjectCharge(client, jobId, companyId)
   ]);
 
   if (companyId !== job.data?.companyId) {
@@ -142,6 +148,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     job: job.data,
+    projectCharge: projectCharge.data ?? null,
     unbatchedBatchableOperations,
     tags: tags.data ?? [],
     trackedEntities: api.production.getTrackedEntitiesByJobId({ jobId }),

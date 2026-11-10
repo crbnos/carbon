@@ -10,7 +10,7 @@ import { zfd } from "zod-form-data";
 
 const linesUpdate = z.object({
   ids: zfd.repeatableOfType(z.string()),
-  field: z.enum(["storageUnitId", "shippedQuantity"]),
+  field: z.enum(["storageUnitId", "shippedQuantity", "serialNumber"]),
   value: zfd.text(z.string().optional())
 });
 

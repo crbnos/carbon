@@ -6,6 +6,7 @@ import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { flags } from "@carbon/env/flags.server";
 import {
   HStack,
   RecordOutlet,
@@ -19,9 +20,10 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate, useSearchParams } from "react-router";
 import { New } from "~/components";
 import { SettingsPageHeading } from "~/components/SettingsPage";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import { getSubsidiaries } from "~/modules/settings/settings.service";
 import {
   CompaniesListView,
@@ -29,19 +31,26 @@ import {
 } from "~/modules/settings/ui/Companies";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { revalidateIgnoringTabDisplay } from "~/utils/revalidate";
 
 export const handle: Handle = {
   breadcrumb: msg`Companies`,
   to: path.to.companies
 };
 
+export const shouldRevalidate = revalidateIgnoringTabDisplay;
+
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyGroupId, email } = await authorize(request, {
+  const { companyGroupId, companyId, email } = await authorize(request, {
     "settings.companies": "View"
   });
 
-  // Multi-company management is gated to internal (Carbon) users for now.
-  if (!isInternalEmail(email)) {
+  // Multi-company management: Carbon staff, and the companies the
+  // `multi-company-management` flag turns it on for.
+  if (
+    !isInternalEmail(email) &&
+    !(await flags.bool("multi-company-management", { companyId, email }))
+  ) {
     throw redirect(path.to.settings);
   }
 
@@ -64,6 +73,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function SubsidiariesRoute() {
   const { t } = useLingui();
+  const [, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = usePersistentPageTab(
+    "view",
+    ["tree", "list"],
+    "tree",
+    "tab"
+  );
   const { companies } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
@@ -82,7 +98,22 @@ export default function SubsidiariesRoute() {
   );
 
   return (
-    <Tabs defaultValue="tree" className="w-full">
+    <Tabs
+      value={activeTab}
+      onValueChange={(tab) => {
+        setActiveTab(tab);
+        setSearchParams(
+          (previous) => {
+            const next = new URLSearchParams(previous);
+            if (tab === "list") next.set("tab", "list");
+            else next.delete("tab");
+            return next;
+          },
+          { replace: true, preventScrollReset: true }
+        );
+      }}
+      className="w-full"
+    >
       <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full max-md:justify-start max-md:p-0 max-md:border-b-0">
         <SettingsPageHeading>
           <Trans>Companies</Trans>

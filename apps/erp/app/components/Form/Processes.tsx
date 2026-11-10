@@ -5,25 +5,33 @@
 import type { CreatableMultiSelectProps } from "@carbon/form";
 import { CreatableMultiSelect } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
+import { useDrawerItem } from "~/hooks";
 import { batchRuleInitialValues } from "~/modules/resources/resources.models";
 import type { getProcessesList } from "~/modules/resources/resources.service";
 import ProcessForm from "~/modules/resources/ui/Processes/ProcessForm";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
 
-type ProcessSelectProps = Omit<CreatableMultiSelectProps, "options">;
+type ProcessSelectProps = Omit<CreatableMultiSelectProps, "options"> & {
+  /** Leave out Outside Processing — work a station or person never runs. */
+  inHouseOnly?: boolean;
+  /** Processes already saved: shown whatever their type, so they can be removed. */
+  saved?: string[];
+};
 
-const Processes = (props: ProcessSelectProps) => {
-  const newProcessModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+const Processes = ({
+  inHouseOnly = false,
+  saved,
+  ...props
+}: ProcessSelectProps) => {
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const options = useProcesses();
+  const options = useProcesses({ inHouseOnly, keep: saved });
 
   const emptyMessage = useEmptyState("process", {
-    onCreate: () => newProcessModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -35,20 +43,20 @@ const Processes = (props: ProcessSelectProps) => {
         label={props?.label ?? "Work Center"}
         emptyMessage={emptyMessage}
         onCreateOption={(option) => {
-          newProcessModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newProcessModal.isOpen && (
+      {create.item !== null && (
         <ProcessForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newProcessModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created,
+            name: create.item,
             defaultStandardFactor: "Minutes/Piece",
             processType: "Process",
             workCenters: [],
@@ -68,20 +76,32 @@ Processes.displayName = "Process";
 
 export default Processes;
 
-export const useProcesses = () => {
+export const useProcesses = ({
+  inHouseOnly = false,
+  keep
+}: {
+  inHouseOnly?: boolean;
+  /** Ids shown whatever their type. */
+  keep?: string[];
+} = {}) => {
   const fetcher = useLoaderQuery<Awaited<ReturnType<typeof getProcessesList>>>(
     path.to.api.processes
   );
 
   const options = useMemo(
     () =>
-      fetcher.data?.data
-        ? fetcher.data?.data.map((c) => ({
-            value: c.id,
-            label: c.name
-          }))
-        : [],
-    [fetcher.data]
+      (fetcher.data?.data ?? [])
+        .filter(
+          (process) =>
+            !inHouseOnly ||
+            process.processType !== "Outside Processing" ||
+            keep?.includes(process.id)
+        )
+        .map((process) => ({
+          value: process.id,
+          label: process.name
+        })),
+    [fetcher.data, inHouseOnly, keep]
   );
 
   return options;

@@ -2,15 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
@@ -18,8 +18,11 @@ import {
   getReceipt,
   getReceiptFiles,
   getReceiptLines,
+  getReceiptPutAwayLines,
+  getReceiptRelatedItems,
   getRentalReceiptLines,
-  getShelfLifeForItems
+  getShelfLifeForItems,
+  receiptLinesOpeningLots
 } from "~/modules/inventory/inventory.service";
 import { getReceiptTracking } from "~/modules/inventory/inventory.utils";
 import type { RentalReceiptLine } from "~/modules/inventory/types";
@@ -29,8 +32,12 @@ import {
 } from "~/modules/inventory/ui/Receipts";
 import { getReceiptInspections } from "~/modules/quality/quality.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "receipt");
 
 export const handle: Handle = {
   realtime: [
@@ -44,8 +51,11 @@ export const handle: Handle = {
   module: "inventory"
 };
 
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.receipt?.receiptId, "Receipt");
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, api } = await authorize(request, {
+  const { client, companyId } = await authorize(request, {
     "inventory.receipts": "View"
   });
 
@@ -108,7 +118,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const faLineRecords = await serviceRole
       .from("receiptFixedAssetLine")
       .select(
-        "id, purchaseOrderLineId, received, serialNumber, purchaseOrderLine:purchaseOrderLineId(assetId, description, fixedAsset:assetId(name, fixedAssetId, serialNumber))"
+        "id, purchaseOrderLineId, received, serialNumber, purchaseOrderLine!receiptFixedAssetLine_purchaseOrderLineId_fkey(assetId, description, fixedAsset!purchaseOrderLine_assetId_fkey(name, fixedAssetId, serialNumber))"
       )
       .eq("receiptId", receiptId)
       .eq("companyId", companyId)
@@ -132,6 +142,92 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           serialNumber: row.serialNumber ?? pol.fixedAsset?.serialNumber ?? null
         };
       });
+  }
+
+  // Only a purchase receipt opens inspection lots. Once posted, the lots
+  // themselves (receiptInspections) say which lines were inspected.
+  const receiptLinesToMark = (receiptLines.data ?? []).flatMap((line) =>
+    line.itemId && line.id
+      ? [{ id: line.id, itemId: line.itemId, lineId: line.lineId }]
+      : []
+  );
+  // Before posting, the location's non-nettable units: an inspected line must
+  // post into one.
+  const isPosted = receipt.data.status === "Posted";
+  // The marks only inform: a failed lookup leaves them off rather than
+  // failing the receipt, but it must not pass silently for "none needed".
+  const [
+    putAwayLines,
+    putAwayTransfers,
+    nonNettableStorageUnits,
+    linesOpeningLots
+  ] = await Promise.all([
+    isPosted &&
+    !["Not Required", "Put Away"].includes(receipt.data.inspectionStatus)
+      ? getReceiptPutAwayLines(getDatabaseClient(), companyId, receiptId).catch(
+          (putAwayError: unknown) => {
+            logger.error("Failed to load the receipt's putaway lines", {
+              companyId,
+              receiptId,
+              error: putAwayError
+            });
+            return [];
+          }
+        )
+      : Promise.resolve([]),
+    serviceRole
+      .from("stockTransfer")
+      .select("id, stockTransferId, status")
+      .eq("receiptId", receiptId)
+      .eq("companyId", companyId)
+      .order("createdAt"),
+    !isPosted
+      ? serviceRole
+          .from("storageUnit")
+          .select("id")
+          .in("locationId", [
+            ...new Set([
+              ...(receipt.data.locationId ? [receipt.data.locationId] : []),
+              ...(receiptLines.data ?? []).flatMap(
+                (line) => line.locationId ?? []
+              )
+            ])
+          ])
+          .eq("companyId", companyId)
+          .eq("effectiveNettable", false)
+      : Promise.resolve({ data: [] as { id: string }[], error: null }),
+    receipt.data.sourceDocument === "Purchase Order" &&
+    receipt.data.status !== "Posted" &&
+    receipt.data.status !== "Voided"
+      ? receiptLinesOpeningLots(getDatabaseClient(), companyId, {
+          purchaseOrderId: receipt.data.sourceDocumentId,
+          lines: receiptLinesToMark
+        })
+          .then((lines) => {
+            if (lines === null) {
+              logger.warn(
+                "A line's project cannot take the charge: no inspection marks",
+                { companyId, receiptId }
+              );
+            }
+            return lines;
+          })
+          .catch((error: unknown) => {
+            logger.error("Failed to load the receipt's inspected lines", {
+              companyId,
+              receiptId,
+              error
+            });
+            return null;
+          })
+      : Promise.resolve([])
+  ]);
+  if (putAwayTransfers.error || nonNettableStorageUnits.error) {
+    logger.error("Failed to load the receipt's putaway state", {
+      companyId,
+      receiptId,
+      error: putAwayTransfers.error ?? nonNettableStorageUnits.error
+    });
   }
 
   let rentalLines: RentalReceiptLine[] = [];
@@ -192,6 +288,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     receipt: receipt.data,
     receiptLines: receiptLines.data ?? [],
     receiptInspections: receiptInspections.data ?? [],
+    inspectedLineIds: (linesOpeningLots ?? []).map((line) => line.id),
+    heldLineIds: (linesOpeningLots ?? [])
+      .filter((line) => line.holdsStock)
+      .map((line) => line.id),
+    putAwayReadyCount: putAwayLines.length,
+    putAwayTransfers: putAwayTransfers.data ?? [],
+    nonNettableStorageUnitIds: (nonNettableStorageUnits.data ?? []).map(
+      (unit) => unit.id
+    ),
     fixedAssetLines,
     rentalLines,
     receiptFiles: getReceiptFiles(serviceRole, companyId, receiptLineIds) ?? [],
@@ -201,15 +306,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       [],
     companySettings: getCompanySettings(serviceRole, companyId),
     itemShelfLife: await getShelfLifeForItems(serviceRole, trackedItemIds),
-    relatedItems: api.inventory
-      .getReceiptRelatedItems({
-        supplierInteractionId: receipt.data.supplierInteractionId,
-        salesReturnOrderId:
-          receipt.data.sourceDocument === "Sales Return Order"
-            ? receipt.data.sourceDocumentId
-            : null
-      })
-      .then(dataOrThrow)
+    relatedItems: getReceiptRelatedItems(
+      client,
+      companyId,
+      receipt.data.supplierInteractionId,
+      receipt.data.sourceDocument === "Sales Return Order"
+        ? receipt.data.sourceDocumentId
+        : null,
+      receipt.data.sourceDocument === "Sales Return Order"
+        ? (receiptLines.data ?? []).flatMap((line) =>
+            line.lineId ? [line.lineId] : []
+          )
+        : []
+    )
   };
 }
 

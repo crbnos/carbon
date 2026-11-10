@@ -17,6 +17,7 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { Sequence } from "~/modules/settings/types";
 import { path } from "~/utils/path";
@@ -24,9 +25,11 @@ import { path } from "~/utils/path";
 type SequencesTableProps = {
   data: Sequence[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
+const SequencesTable = memo((props: SequencesTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -115,6 +118,7 @@ const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
   return (
     <Table<(typeof data)[number]>
       data={data}
+      infinite={infinite}
       columns={columns}
       count={count}
       renderContextMenu={renderContextMenu}

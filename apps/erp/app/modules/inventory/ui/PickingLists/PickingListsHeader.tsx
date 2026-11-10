@@ -104,6 +104,7 @@ export function PickingListsHeader({
               </span>
               <div className="w-full">
                 <Combobox
+                  aria-label={t`Location`}
                   asButton
                   size="sm"
                   value={locationId}

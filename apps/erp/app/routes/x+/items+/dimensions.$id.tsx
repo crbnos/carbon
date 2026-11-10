@@ -6,7 +6,7 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
@@ -32,7 +32,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.materialDimensions,
       await flash(
         request,
-        error(new Error("Access denied"), "Cannot edit global material grade")
+        error(
+          new Error("Access denied"),
+          "Cannot edit global material dimension"
+        )
       )
     );
   }
@@ -71,7 +74,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       {},
       await flash(
         request,
-        error(updateMaterialDimension.error, "Failed to update material grade")
+        error(
+          updateMaterialDimension.error,
+          "Failed to update material dimension"
+        )
       )
     );
   }
@@ -84,7 +90,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditMaterialDimensionsRoute() {
   const { materialDimension } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const initialValues = {
     id: materialDimension?.id ?? undefined,
@@ -96,7 +102,8 @@ export default function EditMaterialDimensionsRoute() {
     <MaterialDimensionForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

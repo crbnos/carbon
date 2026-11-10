@@ -30,6 +30,7 @@ import {
   LuFactory,
   LuFileX,
   LuSatellite,
+  LuShield,
   LuUpload,
   LuWrench
 } from "react-icons/lu";
@@ -78,6 +79,7 @@ const INDUSTRY_ICONS: Record<string, ReactNode> = {
   bot: <LuBot className="h-5 w-5" />,
   cog: <LuCog className="h-5 w-5" />,
   satellite: <LuSatellite className="h-5 w-5" />,
+  shield: <LuShield className="h-5 w-5" />,
   wrench: <LuWrench className="h-5 w-5" />
 };
 

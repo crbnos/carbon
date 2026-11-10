@@ -31,6 +31,7 @@ import {
   generateHTML,
   HStack,
   IconButton,
+  ImageZoomViewer,
   Label,
   Loading,
   MENU_ITEM_SHORTCUTS,
@@ -41,6 +42,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   toast,
+  toastError,
   useDebounce,
   useDisclosure,
   useThrottle,
@@ -111,6 +113,7 @@ import Procedure from "~/components/Form/Procedure";
 import { getUnitHint } from "~/components/Form/UnitHint";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { OperationTypeIcon, ProcedureStepTypeIcon } from "~/components/Icons";
+import { MeasurementLimits } from "~/components/MeasurementLimits";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   SlidePinOverlay,
@@ -587,6 +590,7 @@ const BillOfProcess = ({
             <div>
               {!isReadOnly ? (
                 <Editor
+                  label={t`Work Instructions`}
                   initialValue={
                     workInstructions[item.id] ?? ({} as JSONContent)
                   }
@@ -907,6 +911,7 @@ const BillOfProcess = ({
           <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
         )}
         <SortableList
+          label={t`Bill of Process`}
           emptyState={
             isPhone ? (
               <CompactEmpty
@@ -936,7 +941,7 @@ const BillOfProcess = ({
           renderItem={renderListItem}
         />
       </CardContent>
-      {configuratorDisclosure.isOpen && configuration && (
+      {configuration && (
         <ConfigurationEditor
           configuration={configuration}
           open={configuratorDisclosure.isOpen}
@@ -1367,6 +1372,7 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
+                  aria-expanded={setupDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     setupDisclosure.isOpen ? t`Collapse Setup` : t`Expand Setup`
@@ -1482,6 +1488,7 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
+                  aria-expanded={laborDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     laborDisclosure.isOpen ? t`Collapse Labor` : t`Expand Labor`
@@ -1597,6 +1604,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={machineDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       machineDisclosure.isOpen
@@ -1714,6 +1722,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={procedureDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       procedureDisclosure.isOpen
@@ -1792,6 +1801,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={assemblyDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       assemblyDisclosure.isOpen
@@ -1867,16 +1877,7 @@ function OperationForm({
           )}
         </>
       )}
-      <motion.div
-        className="flex w-full items-center justify-end p-2"
-        initial={{ opacity: 0, filter: "blur(4px)" }}
-        animate={{ opacity: 1, filter: "blur(0px)" }}
-        transition={{
-          type: "spring",
-          bounce: 0,
-          duration: 0.25
-        }}
-      >
+      <div className="flex w-full items-center justify-end p-2">
         <motion.div layout className="ml-auto mr-1 pt-2">
           <Submit
             isDisabled={isReadOnly || methodOperationFetcher.state !== "idle"}
@@ -1885,7 +1886,7 @@ function OperationForm({
             Save
           </Submit>
         </motion.div>
-      </motion.div>
+      </div>
     </ValidatedForm>
   );
 }
@@ -2068,7 +2069,7 @@ function AttributesForm({
         .company(companyId)
         .upload(fileName, upload);
       if (result.error || !result.data) {
-        toast.error(t`Failed to upload image`);
+        toastError(t`Failed to upload image`, result.error);
         return;
       }
       setDraftSlides((prev) => [
@@ -2142,7 +2143,7 @@ function AttributesForm({
         .insert(slideRows);
       if (cancelled) return;
       if (error) {
-        toast.error(t`Failed to save slides`);
+        toastError(t`Failed to save slides`, error);
         return;
       }
       setDraftSlides([]);
@@ -2173,7 +2174,7 @@ function AttributesForm({
       );
       if (cancelled) return;
       if (error) {
-        toast.error(t`Failed to save parts`);
+        toastError(t`Failed to save parts`, error);
         return;
       }
       setDraftParts([]);
@@ -2293,6 +2294,7 @@ function AttributesForm({
               >
                 <Label>Description</Label>
                 <Editor
+                  label={t`Description`}
                   initialValue={description}
                   onUpload={onUploadImage}
                   onChange={(value) => {
@@ -2349,7 +2351,11 @@ function AttributesForm({
                 </div>
               )}
               {type === "List" && (
-                <ArrayInput name="listValues" label={t`List Options`} />
+                <ArrayInput
+                  name="listValues"
+                  label={t`List Options`}
+                  isRequired
+                />
               )}
 
               <SlidesEditor
@@ -2654,6 +2660,7 @@ function AttributesListItem({
             >
               <Label>Description</Label>
               <Editor
+                label={t`Description`}
                 initialValue={description}
                 onUpload={onUploadImage}
                 onChange={(value) => {
@@ -2762,7 +2769,11 @@ function AttributesListItem({
               </div>
             )}
             {type === "List" && (
-              <ArrayInput name="listValues" label={t`List Options`} />
+              <ArrayInput
+                name="listValues"
+                label={t`List Options`}
+                isRequired
+              />
             )}
             <StepSlides step={attribute} isDisabled={isDisabled} />
             <StepParts
@@ -2826,27 +2837,15 @@ function AttributesListItem({
                 </HStack>
                 {attribute.type === "Measurement" && (
                   <span className="text-xs text-muted-foreground">
-                    {attribute.minValue !== null && attribute.maxValue !== null
-                      ? `Must be between ${attribute.minValue} and ${
-                          attribute.maxValue
-                        } ${
-                          unitOfMeasures.find(
-                            (u) => u.value === unitOfMeasureCode
-                          )?.label
-                        }`
-                      : attribute.minValue !== null
-                        ? `Must be > ${attribute.minValue} ${
-                            unitOfMeasures.find(
-                              (u) => u.value === unitOfMeasureCode
-                            )?.label
-                          }`
-                        : attribute.maxValue !== null
-                          ? `Must be < ${attribute.maxValue} ${
-                              unitOfMeasures.find(
-                                (u) => u.value === unitOfMeasureCode
-                              )?.label
-                            }`
-                          : null}
+                    <MeasurementLimits
+                      minValue={attribute.minValue}
+                      maxValue={attribute.maxValue}
+                      unit={
+                        unitOfMeasures.find(
+                          (u) => u.value === unitOfMeasureCode
+                        )?.label
+                      }
+                    />
                   </span>
                 )}
               </VStack>
@@ -2935,20 +2934,18 @@ function AttributesListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteMethodOperationStep(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={name}
-          text={`Are you sure you want to delete the ${name} attribute from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteMethodOperationStep(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={name}
+        text={`Are you sure you want to delete the ${name} attribute from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }
@@ -3149,7 +3146,7 @@ function StepSlides({
         .company(companyId)
         .upload(fileName, upload);
       if (result.error || !result.data) {
-        toast.error(t`Failed to upload image`);
+        toastError(t`Failed to upload image`, result.error);
         return;
       }
       const fd = new FormData();
@@ -3533,20 +3530,18 @@ function ParametersListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteMethodOperationParameter(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={key}
-          text={`Are you sure you want to delete the ${key} parameter from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteMethodOperationParameter(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={key}
+        text={`Are you sure you want to delete the ${key} parameter from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }
@@ -3565,6 +3560,7 @@ function OperationPreview({
   const allTools = useTools();
   const [current, setCurrent] = useState(0);
   const [slideIdx, setSlideIdx] = useState(0);
+  const [isViewingSlide, setIsViewingSlide] = useState(false);
 
   // Move to a step and reset to its first slide.
   const goToStep = (next: number) => {
@@ -3710,17 +3706,25 @@ function OperationPreview({
             ) : (
               <LuBox className="size-10 text-muted-foreground" />
             )}
-            <span className="pointer-events-none absolute left-2 top-2 rounded bg-background/80 px-1 text-[10px] font-semibold text-muted-foreground">
+            <span className="pointer-events-none absolute left-2 top-2 rounded bg-background/80 px-1 text-[0.625rem] font-semibold text-muted-foreground">
               3D
             </span>
           </>
         ) : slideImage ? (
           <div className="relative inline-block">
-            <img
-              src={slideImage}
-              alt={slide.caption ?? ""}
-              className="block max-h-[520px] w-auto max-w-full rounded-md"
-            />
+            <button
+              type="button"
+              aria-label={t`View full size`}
+              title={t`View full size`}
+              className="block cursor-zoom-in rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={() => setIsViewingSlide(true)}
+            >
+              <img
+                src={slideImage}
+                alt={slide.caption ?? ""}
+                className="block max-h-[520px] w-auto max-w-full rounded-md"
+              />
+            </button>
             <SlidePinOverlay pins={slide.annotations ?? []} />
           </div>
         ) : (
@@ -3734,12 +3738,25 @@ function OperationPreview({
         <p className="text-xs text-muted-foreground">{slide.caption}</p>
       ) : null}
 
+      <ImageZoomViewer
+        open={isViewingSlide && !!slideImage && !slide?.modelUploadId}
+        src={slideImage}
+        caption={slide?.caption}
+        annotations={slide?.annotations ?? []}
+        toolNameById={
+          isViewingSlide
+            ? new Map(allTools.map((tool) => [tool.id, tool.name]))
+            : undefined
+        }
+        onClose={() => setIsViewingSlide(false)}
+      />
+
       {pinLegend.length > 0 && (
         <div className="flex flex-col gap-1">
           {pinLegend.map(({ pin, index, toolId, toolName }) => (
             <div key={pin.id} className="flex items-start gap-2">
               <span
-                className="mt-px flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
+                className="mt-px flex size-4 shrink-0 items-center justify-center rounded-full text-[0.5625rem] font-semibold text-white"
                 style={{ backgroundColor: pin.color ?? "#ef4444" }}
               >
                 {index + 1}
@@ -3797,7 +3814,7 @@ function OperationPreview({
                   <LuBox className="size-5 text-muted-foreground" />
                 )}
                 {s.modelUploadId && (
-                  <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-background/80 px-0.5 text-[8px] font-semibold text-muted-foreground">
+                  <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-background/80 px-0.5 text-[0.5rem] font-semibold text-muted-foreground">
                     3D
                   </span>
                 )}
@@ -3842,7 +3859,7 @@ function OperationPreview({
                     {tool?.readableIdWithRevision ?? tl.toolId}
                   </span>
                   {tool?.name ? (
-                    <span className="truncate text-[11px] text-muted-foreground">
+                    <span className="truncate text-[0.6875rem] text-muted-foreground">
                       {tool.name}
                     </span>
                   ) : null}
@@ -4097,20 +4114,18 @@ function ToolsListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteMethodOperationTool(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={tool.readableIdWithRevision}
-          text={`Are you sure you want to delete ${tool.readableIdWithRevision} from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteMethodOperationTool(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={tool.readableIdWithRevision}
+        text={`Are you sure you want to delete ${tool.readableIdWithRevision} from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }

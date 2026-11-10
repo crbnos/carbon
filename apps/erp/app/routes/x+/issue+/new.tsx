@@ -15,7 +15,10 @@ import { issueValidator } from "~/modules/quality/quality.models";
 import IssueForm from "~/modules/quality/ui/Issue/IssueForm";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("Issue");
 
 export const handle: Handle = {
   breadcrumb: msg`Issues`,

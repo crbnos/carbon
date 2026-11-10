@@ -19,7 +19,7 @@ import {
   buildManifestDigest,
   serializeManifestDigest
 } from "./lib/manifest-digest";
-import { buildManifest } from "./lib/service-fn-metadata";
+import { buildManifest } from "./lib/build-manifest";
 
 const ROOT = path.resolve(__dirname, "..");
 const METADATA_FILE = path.join(
@@ -37,7 +37,7 @@ export const DIGEST_FILE = path.join(
 
 export async function generateToolMetadata(): Promise<void> {
   console.log("Generating tool metadata from the service functions...");
-  const tools = buildManifest();
+  const tools = await buildManifest();
 
   // The tables a tenant's rows live in. Every update and delete an API caller
   // makes on one of them is filtered by the caller's company

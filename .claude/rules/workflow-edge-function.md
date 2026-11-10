@@ -110,8 +110,11 @@ const { data, error } = await client.functions.invoke("embedding", {
 
 ## 6. Local dev and CI
 
-Functions are served by the Docker `edge-runtime` container (`pnpm dev` / `crbn up`),
-which live-mounts `packages/database/supabase/functions/` — no per-edit deploy step.
+`crbn up` serves functions from the shared `carbon-edge-runtime` (`crbn-shared`), which
+runs the copy of `packages/database/supabase/functions/` the `crbn` code last made
+(usually the main checkout's). To work on a function, run `crbn up --full`: the
+worktree's own `edge-runtime` live-mounts its checkout's functions — no per-edit
+deploy step — and its gateway prefers it (`.claude/rules/dev-shared-services.md`).
 Exercise a function through the app or job path that invokes it.
 
 CI (`.github/workflows/check.yml`, job `edge-functions`, Deno v2) runs

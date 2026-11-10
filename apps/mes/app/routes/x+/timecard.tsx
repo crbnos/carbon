@@ -11,7 +11,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
   cn,
   DateTimePicker,
   DropdownMenu,
@@ -37,7 +36,14 @@ import {
   Tr,
   useViewport
 } from "@carbon/react";
-import { datetime, fromLocalDateTime, toLocalDateTime } from "@carbon/utils";
+import {
+  datetime,
+  formatDate,
+  formatDateTime,
+  fromLocalDateTime,
+  requireAffected,
+  toLocalDateTime
+} from "@carbon/utils";
 import type { CalendarDateTime } from "@internationalized/date";
 import { toCalendarDateTime } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -51,7 +57,11 @@ import {
   LuPlay,
   LuTrash
 } from "react-icons/lu";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { DateTime } from "~/components";
 import { MesAppBar } from "~/components/MesAppBar";
@@ -62,6 +72,7 @@ import {
   getOpenClockEntry,
   updateTimeCardEntry
 } from "~/services/people.service";
+import { pageMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 function formatDuration(clockInStr: string, clockOutStr: string | null) {
@@ -88,12 +99,14 @@ function formatTotalHours(
 }
 
 function formatDay(dateStr: string, locale: string) {
-  return new Date(dateStr).toLocaleDateString(locale, {
-    weekday: "short",
-    month: "short",
-    day: "numeric"
-  });
+  return formatDate(
+    dateStr,
+    { weekday: "short", month: "short", day: "numeric" },
+    locale
+  );
 }
+
+export const meta: MetaFunction = () => pageMeta("My Hours");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await authorize(request, {});
@@ -146,10 +159,13 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (intent === "clockOut") {
+    // "Forgot to clock out?" sends the time the person stopped working.
+    const at = formData.get("clockOut");
     const result = await clockOut(client, {
       employeeId: userId,
       companyId,
-      updatedBy: userId
+      updatedBy: userId,
+      clockOut: typeof at === "string" && at ? at : undefined
     });
     return { success: !result.error, error: result.error?.message };
   }
@@ -169,10 +185,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (intent === "deleteEntry") {
     const entryId = formData.get("entryId") as string;
-    const result = await client
-      .from("timeCardEntry")
-      .delete()
-      .eq("id", entryId);
+    const result = await requireAffected(
+      client.from("timeCardEntry").delete().eq("id", entryId).select("id")
+    );
     return { success: !result.error, error: result.error?.message };
   }
 
@@ -203,6 +218,7 @@ export default function MESTimecardPage() {
     id: string;
     clockIn: string;
   } | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const isCurrentWeek = weekOffset === 0;
 
@@ -284,7 +300,7 @@ export default function MESTimecardPage() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <IconButton
-          aria-label={t`More options`}
+          aria-label={t`More options for ${formatDateTime(entry.clockIn, locale)}`}
           variant="ghost"
           size={size}
           icon={<LuEllipsisVertical />}
@@ -300,12 +316,13 @@ export default function MESTimecardPage() {
         </DropdownMenuItem>
         <DropdownMenuItem
           shortcut={MENU_ITEM_SHORTCUTS.delete}
-          onClick={() =>
+          onClick={() => {
             setDeletingEntry({
               id: entry.id,
               clockIn: entry.clockIn
-            })
-          }
+            });
+            setIsDeleteOpen(true);
+          }}
           className="text-destructive"
         >
           <DropdownMenuIcon icon={<LuTrash />} />
@@ -323,9 +340,10 @@ export default function MESTimecardPage() {
           <Card className="overflow-hidden">
             <CardHeader className={cn(!openEntry && "max-md:hidden")}>
               <HStack className="justify-between items-center">
-                <CardTitle className="max-md:hidden">
+                {/* The page's h1 from md (phones get it from MesAppBar). */}
+                <h1 className="text-base font-medium leading-none tracking-tight text-foreground/90 text-pretty line-clamp-2 max-md:hidden">
                   <Trans>My Hours</Trans>
-                </CardTitle>
+                </h1>
                 {!isPhone && (
                   <HStack className="gap-1 max-md:hidden">
                     {renderClockForm("md")}
@@ -609,9 +627,9 @@ export default function MESTimecardPage() {
         </div>
         {deletingEntry && (
           <Modal
-            open
+            open={isDeleteOpen}
             onOpenChange={(open) => {
-              if (!open) setDeletingEntry(null);
+              if (!open) setIsDeleteOpen(false);
             }}
           >
             <ModalOverlay />
@@ -637,7 +655,7 @@ export default function MESTimecardPage() {
               <ModalFooter>
                 <Button
                   variant="secondary"
-                  onClick={() => setDeletingEntry(null)}
+                  onClick={() => setIsDeleteOpen(false)}
                 >
                   <Trans>Cancel</Trans>
                 </Button>
@@ -648,7 +666,7 @@ export default function MESTimecardPage() {
                     formData.append("intent", "deleteEntry");
                     formData.append("entryId", deletingEntry.id);
                     fetcher.submit(formData, { method: "post" });
-                    setDeletingEntry(null);
+                    setIsDeleteOpen(false);
                   }}
                 >
                   <Trans>Delete</Trans>

@@ -9,6 +9,7 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
+  Badge,
   Button,
   DropdownMenu,
   DropdownMenuContent,
@@ -56,6 +57,7 @@ import {
   LuCircleStop,
   LuClipboardList,
   LuClock,
+  LuFolderKanban,
   LuList,
   LuLoaderCircle,
   LuQrCode,
@@ -65,6 +67,7 @@ import {
   LuTable,
   LuTrash,
   LuTriangleAlert,
+  LuTvMinimalPlay,
   LuWorkflow,
   LuZap
 } from "react-icons/lu";
@@ -72,6 +75,10 @@ import { RiProgress8Line } from "react-icons/ri";
 import type { FetcherWithComponents } from "react-router";
 import { Link, useFetcher, useNavigate, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
+import {
+  EditDocumentMenuItem,
+  useDocumentEditModal
+} from "~/components/DocumentEditModal";
 import { Location, StorageUnit } from "~/components/Form";
 import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
@@ -85,23 +92,34 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import { useCompanySettings } from "~/hooks/useCompanySettings";
+import { usePullFromLocationIds } from "~/hooks/usePullFromLocationIds";
 import type { action as cancelAction } from "~/routes/x+/job+/$jobId.cancel";
 import type { action as completeAction } from "~/routes/x+/job+/$jobId.complete";
 import type { action as statusAction } from "~/routes/x+/job+/$jobId.status";
 import { useSuppliers } from "~/stores";
 import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
-import { isJobLocked, jobCompleteValidator } from "../../production.models";
+import {
+  deadlineRequiresDueDate,
+  isJobDeletable,
+  jobCompleteValidator
+} from "../../production.models";
+import type { JobProjectCharge } from "../../production.service";
 import { getJobMethodTree } from "../../production.utils";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
 import {
   getDefaultSerialCompleteQuantity,
   getFinishedUnreceivedQuantity,
-  getReceivableSerialUnits,
-  type JobReceiptSnapshot
+  getSerialCompleteChoice,
+  type JobReceiptSnapshot,
+  type SerialCompleteChoice
 } from "./job-complete-logic";
-import { makeMethodsMissingOperations } from "./job-release-logic";
+import {
+  makeMethodsMissingOperations,
+  materialsWithoutStorageUnit
+} from "./job-release-logic";
 import { type JobRelease, useJobRelease } from "./useJobRelease";
 
 const JobHeader = () => {
@@ -129,6 +147,7 @@ const JobHeader = () => {
   const { isPhone } = useViewport();
   const { jobId } = useParams();
   if (!jobId) throw new Error("jobId not found");
+  const documentEdit = useDocumentEditModal("jobTraveler", jobId);
 
   const { company } = useUser();
   const location = useOptimisticLocation();
@@ -147,8 +166,10 @@ const JobHeader = () => {
   const expediteModal = useDisclosure();
   const routeData = useRouteData<{
     job: Job;
+    projectCharge?: JobProjectCharge | null;
     unbatchedBatchableOperations?: number;
   }>(path.to.job(jobId));
+  const projectCharge = routeData?.projectCharge;
 
   const statusFetcher = useAction<typeof statusAction>({
     onSuccess: () => toast.success(t`Updated job status`)
@@ -209,7 +230,10 @@ const JobHeader = () => {
   // Forecast slack: calendar days between the projected completion (forward-ASAP
   // finish) and the promised due date. Positive = late, negative = early.
   const projectedCompletionAt = routeData?.job?.projectedCompletionAt;
-  const jobDueDate = routeData?.job?.dueDate;
+  // Only a Hard or Soft Deadline promises a date; the form hides the rest.
+  const jobDueDate = deadlineRequiresDueDate(routeData?.job?.deadlineType)
+    ? routeData?.job?.dueDate
+    : null;
   const slack = useMemo(() => {
     if (!projectedCompletionAt || !jobDueDate) return null;
     const days = parseDate(projectedCompletionAt.slice(0, 10)).compare(
@@ -226,6 +250,18 @@ const JobHeader = () => {
   const menuItems = (
     <>
       {auditLogTrigger}
+      {["Ready", "In Progress", "Paused"].includes(status ?? "") && (
+        <DropdownMenuItem asChild>
+          <a
+            href={path.to.external.mesJob(jobId)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <DropdownMenuIcon icon={<LuTvMinimalPlay />} />
+            <Trans>Open in MES</Trans>
+          </a>
+        </DropdownMenuItem>
+      )}
       <DropdownMenuSeparator />
       <DropdownMenuItem
         disabled={
@@ -272,7 +308,7 @@ const JobHeader = () => {
         disabled={
           !permissions.has({ "production.jobs": "Full" }) ||
           !permissions.is("employee") ||
-          isJobLocked(routeData?.job?.status)
+          !isJobDeletable(routeData?.job?.status)
         }
         destructive
         onClick={deleteJobModal.onOpen}
@@ -290,14 +326,12 @@ const JobHeader = () => {
         routeData?.job?.status ?? ""
       ) && (
         <>
-          {routeData?.job?.dueDate &&
-            isSameDay(parseDate(routeData?.job?.dueDate), todaysDate) && (
-              <JobStatus status="Due Today" />
-            )}
-          {routeData?.job?.dueDate &&
-            parseDate(routeData?.job?.dueDate) < todaysDate && (
-              <JobStatus status="Overdue" />
-            )}
+          {jobDueDate && isSameDay(parseDate(jobDueDate), todaysDate) && (
+            <JobStatus status="Due Today" />
+          )}
+          {jobDueDate && parseDate(jobDueDate).compare(todaysDate) < 0 && (
+            <JobStatus status="Overdue" />
+          )}
           {slack && (
             <Status
               color={slack.late ? "red" : "green"}
@@ -309,6 +343,16 @@ const JobHeader = () => {
             </Status>
           )}
         </>
+      )}
+      {projectCharge?.consumeToProject && (
+        <Badge variant="secondary">
+          <Trans>Consumes to project</Trans>
+        </Badge>
+      )}
+      {projectCharge?.receiveToProjectStock && (
+        <Badge variant="secondary">
+          <Trans>Receives to project stock</Trans>
+        </Badge>
       )}
       {unbatchedBatchableOperations > 0 && (
         <Status
@@ -348,6 +392,30 @@ const JobHeader = () => {
         onToggleProperties={toggleProperties}
         actions={
           <>
+            {projectCharge?.project && (
+              <RecordAction slot="overflow">
+                <Button
+                  leftIcon={<LuFolderKanban />}
+                  variant="secondary"
+                  asChild
+                >
+                  <Link
+                    to={
+                      projectCharge.element
+                        ? path.to.projectElement(
+                            projectCharge.project.id,
+                            projectCharge.element.id
+                          )
+                        : path.to.projectElements(projectCharge.project.id)
+                    }
+                  >
+                    {projectCharge.element?.readableId ??
+                      projectCharge.project.identifier ??
+                      projectCharge.project.name}
+                  </Link>
+                </Button>
+              </RecordAction>
+            )}
             {routeData?.job?.salesOrderId &&
               routeData?.job.salesOrderLineId && (
                 <RecordAction slot="overflow">
@@ -391,6 +459,9 @@ const JobHeader = () => {
                       <Trans>Job Traveler</Trans>
                     </a>
                   </DropdownMenuItem>
+                  {documentEdit.canEdit && (
+                    <EditDocumentMenuItem onSelect={documentEdit.openEditor} />
+                  )}
                   <DropdownMenuRadioGroup
                     value={currentValue}
                     onValueChange={(option) => {
@@ -540,50 +611,51 @@ const JobHeader = () => {
           </>
         }
       />
-      {releaseModal.isOpen && (
+      {releaseModal.openCount > 0 && (
         <JobStartModal
+          key={`releaseModal-${releaseModal.openCount}`}
+          open={releaseModal.isOpen}
           job={routeData?.job}
           onClose={releaseModal.onClose}
           release={release}
         />
       )}
-      {cancelModal.isOpen && (
-        <JobCancelModal
-          job={routeData?.job}
-          onClose={cancelModal.onClose}
-          cancel={cancel}
-        />
-      )}
-      {completeModal.isOpen && (
+      <JobCancelModal
+        open={cancelModal.isOpen}
+        job={routeData?.job}
+        onClose={cancelModal.onClose}
+        cancel={cancel}
+      />
+      {completeModal.openCount > 0 && (
         <JobCompleteModal
+          key={`completeModal-${completeModal.openCount}`}
+          open={completeModal.isOpen}
           job={routeData?.job}
           onClose={completeModal.onClose}
           fetcher={complete}
         />
       )}
-      {expediteModal.isOpen && (
-        <JobExpediteModal
-          job={routeData?.job}
-          onClose={expediteModal.onClose}
-          fetcher={expediteFetcher}
-        />
-      )}
-      {deleteJobModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteJob(jobId)}
-          isOpen={deleteJobModal.isOpen}
-          name={routeData?.job?.jobId!}
-          text={`Are you sure you want to delete ${routeData?.job
-            ?.jobId!}? This cannot be undone.`}
-          onCancel={() => {
-            deleteJobModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteJobModal.onClose();
-          }}
-        />
-      )}
+      <JobExpediteModal
+        open={expediteModal.isOpen}
+        job={routeData?.job}
+        onClose={expediteModal.onClose}
+        fetcher={expediteFetcher}
+      />
+      <ConfirmDelete
+        action={path.to.deleteJob(jobId)}
+        isOpen={deleteJobModal.isOpen}
+        name={routeData?.job?.jobId!}
+        text={`Are you sure you want to delete ${routeData?.job
+          ?.jobId!}? This cannot be undone.`}
+        onCancel={() => {
+          deleteJobModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteJobModal.onClose();
+        }}
+      />
       {auditLogDrawer}
+      {documentEdit.modal}
     </>
   );
 };
@@ -629,17 +701,34 @@ const getExplorePath = (jobId: string, type: string) => {
 };
 
 export function JobStartModal({
+  open = true,
   job,
   onClose,
   release
 }: {
+  open?: boolean;
   job?: Job;
   release: JobRelease;
   onClose: () => void;
 }) {
+  const { t } = useLingui();
   const { carbon } = useCarbon();
   const [suppliers] = useSuppliers();
+  const companySettings = useCompanySettings();
+  const strictBackflush = companySettings?.requireBackflushStorageUnit === true;
   const [loading, setLoading] = useState(true);
+  // Assumed to apply while the locations load, so the dialog never offers a
+  // release the route refuses.
+  const pullFromLocationIds = usePullFromLocationIds();
+  const strictAtJobLocation =
+    strictBackflush &&
+    (pullFromLocationIds === null ||
+      (!!job?.locationId && pullFromLocationIds.includes(job.locationId)));
+  const [storageUnitGaps, setStorageUnitGaps] = useState<
+    { id: string; description: string }[]
+  >([]);
+  const [storageUnitCheckFailed, setStorageUnitCheckFailed] = useState(false);
+  const missingStorageUnits = strictAtJobLocation ? storageUnitGaps : [];
   const [missingOperationAssemblies, setMissingOperationAssemblies] = useState<
     { bomId: string; description: string }[]
   >([]);
@@ -673,20 +762,30 @@ export function JobStartModal({
 
   const validate = async (choicesOverride?: Record<string, string>) => {
     if (!carbon || !job) return;
-    const [makeMethod, materials, operations, methodTree] = await Promise.all([
-      carbon
-        .from("jobMakeMethod")
-        .select("*")
-        .eq("jobId", job.id!)
-        .is("parentMaterialId", null)
-        .single(),
-      carbon
-        .from("jobMaterialWithMakeMethodId")
-        .select("*")
-        .eq("jobId", job.id!),
-      carbon.from("jobOperation").select("*").eq("jobId", job.id!),
-      getJobMethodTree(carbon, job.id!)
-    ]);
+    const [makeMethod, materials, operations, methodTree, storageUnitLines] =
+      await Promise.all([
+        carbon
+          .from("jobMakeMethod")
+          .select("*")
+          .eq("jobId", job.id!)
+          .is("parentMaterialId", null)
+          .single(),
+        carbon
+          .from("jobMaterialWithMakeMethodId")
+          .select("*")
+          .eq("jobId", job.id!),
+        carbon.from("jobOperation").select("*").eq("jobId", job.id!),
+        getJobMethodTree(carbon, job.id!),
+        strictBackflush
+          ? carbon
+              .from("jobMaterial")
+              .select(
+                "id, description, methodType, itemType, storageUnitId, item(itemTrackingType, readableIdWithRevision), storageUnit(name, effectiveNettable)"
+              )
+              .eq("jobId", job.id!)
+              .eq("companyId", job.companyId!)
+          : Promise.resolve({ data: [], error: null })
+      ]);
 
     // Check for existing purchase order lines for outside operations
     const outsideOperations =
@@ -887,6 +986,10 @@ export function JobStartModal({
 
     flushSync(() => {
       setMissingOperationAssemblies(missingAssemblies);
+      setStorageUnitGaps(
+        materialsWithoutStorageUnit(storageUnitLines.data ?? [])
+      );
+      setStorageUnitCheckFailed(!!storageUnitLines.error);
 
       // Show the release UI whenever there are outside operations still needing handling,
       // whether or not they have a supplier yet
@@ -908,14 +1011,14 @@ export function JobStartModal({
   };
 
   useMount(() => {
-    validate();
+    if (open) validate();
   });
 
   if (!job) return null;
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
@@ -948,6 +1051,8 @@ export function JobStartModal({
             <ModalBody>
               <VStack>
                 {missingOperationAssemblies.length === 0 &&
+                  missingStorageUnits.length === 0 &&
+                  !(strictAtJobLocation && storageUnitCheckFailed) &&
                   eachOutsideOperationHasASupplier && (
                     <p className="text-sm">
                       <Trans>
@@ -990,6 +1095,7 @@ export function JobStartModal({
                               {operation.description}
                             </span>
                             <Select
+                              aria-label={t`Supplier process for ${operation.description}`}
                               size="sm"
                               value={
                                 selectedSupplierProcessByOperationId[
@@ -1020,6 +1126,9 @@ export function JobStartModal({
                       ([supplierId, purchaseOrderId]) => {
                         const purchaseOrders =
                           existingPurchaseOrdersBySupplierId[supplierId] ?? [];
+                        const supplierName =
+                          suppliers.find((s) => s.id === supplierId)?.name ??
+                          "";
                         return (
                           <div
                             key={supplierId}
@@ -1028,6 +1137,7 @@ export function JobStartModal({
                             <SupplierAvatar supplierId={supplierId} />
 
                             <Select
+                              aria-label={t`Purchase order for ${supplierName}`}
                               size="sm"
                               value={purchaseOrderId}
                               isReadOnly={
@@ -1089,6 +1199,40 @@ export function JobStartModal({
                     </AlertDescription>
                   </Alert>
                 )}
+                {strictAtJobLocation && storageUnitCheckFailed && (
+                  <Alert variant="destructive">
+                    <LuTriangleAlert />
+                    <AlertTitle>
+                      <Trans>Storage Units Not Checked</Trans>
+                    </AlertTitle>
+                    <AlertDescription>
+                      <Trans>
+                        Could not check the storage units of this job's
+                        materials. Close this dialog and open it again to try
+                        again.
+                      </Trans>
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {missingStorageUnits.length > 0 && (
+                  <Alert variant="warning">
+                    <LuTriangleAlert />
+                    <AlertTitle>
+                      <Trans>Missing Storage Units</Trans>
+                    </AlertTitle>
+                    <AlertDescription>
+                      <Trans>
+                        Strict backflush is on. Set a Pull From storage unit on
+                        these materials before releasing:
+                      </Trans>
+                      <ul className="mt-2 list-disc pl-4 space-y-1 max-h-48 overflow-y-auto">
+                        {missingStorageUnits.map((material) => (
+                          <li key={material.id}>{material.description}</li>
+                        ))}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                )}
                 {!eachOutsideOperationHasASupplier && hasOutsideOperations && (
                   <Alert variant="warning">
                     <LuTriangleAlert />
@@ -1116,6 +1260,8 @@ export function JobStartModal({
                 isDisabled={
                   release.isPending ||
                   missingOperationAssemblies.length > 0 ||
+                  missingStorageUnits.length > 0 ||
+                  (strictAtJobLocation && storageUnitCheckFailed) ||
                   !eachOutsideOperationHasASupplier
                 }
                 onClick={() => {
@@ -1139,10 +1285,12 @@ export function JobStartModal({
 }
 
 function JobCancelModal({
+  open = true,
   job,
   onClose,
   cancel
 }: {
+  open?: boolean;
   job?: Job;
   cancel: ReturnType<typeof useAction<typeof cancelAction>>;
   onClose: () => void;
@@ -1151,7 +1299,7 @@ function JobCancelModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
@@ -1195,10 +1343,12 @@ function JobCancelModal({
 }
 
 function JobExpediteModal({
+  open = true,
   job,
   onClose,
   fetcher
 }: {
+  open?: boolean;
   job?: Job;
   fetcher: FetcherWithComponents<{
     expedite: {
@@ -1224,7 +1374,7 @@ function JobExpediteModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
@@ -1314,10 +1464,12 @@ async function getJobReceipts(
 }
 
 function JobCompleteModal({
+  open = true,
   job,
   onClose,
   fetcher
 }: {
+  open?: boolean;
   job?: Job;
   fetcher: FetcherWithComponents<unknown>;
   onClose: () => void;
@@ -1334,12 +1486,19 @@ function JobCompleteModal({
     job?.quantityComplete ?? 0
   );
   const [hasTrackedQuantity, setHasTrackedQuantity] = useState<boolean>(false);
-  // Serial units the completion can still receive, in the order
-  // complete_job_to_inventory receives them. Null when the quantity is not
-  // chosen per serial unit.
-  const [receivableSerials, setReceivableSerials] = useState<string[] | null>(
-    null
-  );
+  // How the quantity is chosen for a serial job: the serials a completion
+  // takes, units numbered as they are received, or locked.
+  const [serialChoice, setSerialChoice] = useState<SerialCompleteChoice>({
+    mode: "locked"
+  });
+  const receivableSerials =
+    serialChoice.mode === "serials" ? serialChoice.serials : null;
+  const receivableUnitCount =
+    serialChoice.mode === "serials"
+      ? serialChoice.serials.length
+      : serialChoice.mode === "numberOnReceipt"
+        ? serialChoice.receivableCount
+        : null;
   // The completed quantity is cumulative; this much was already received.
   // Refreshed when the dialog opens, since the route's job may be stale.
   const [priorReceivedQuantity, setPriorReceivedQuantity] = useState<number>(
@@ -1367,29 +1526,36 @@ function JobCompleteModal({
   const hasLeftover = leftoverQuantity > 0;
   // Serial units are received one at a time; the database refuses a fraction.
   const hasFractionalSerialQuantity =
-    receivableSerials !== null &&
+    serialChoice.mode !== "locked" &&
     Number.isFinite(quantityComplete) &&
     !Number.isInteger(quantityComplete);
 
   const getJobData = async () => {
     if (!carbon) return;
 
-    const [pickMethod, makeMethod, receipts] = await Promise.all([
-      carbon
-        .from("pickMethod")
-        .select("*")
-        .eq("locationId", job?.locationId!)
-        .eq("itemId", job?.itemId!)
-        .single(),
-      carbon
-        .from("jobMakeMethod")
-        .select("*")
-        .eq("jobId", job?.id!)
-        .eq("companyId", company.id)
-        .is("parentMaterialId", null)
-        .single(),
-      getJobReceipts(job?.id!)
-    ]);
+    const [pickMethod, makeMethod, receipts, serialSequence] =
+      await Promise.all([
+        carbon
+          .from("pickMethod")
+          .select("*")
+          .eq("locationId", job?.locationId!)
+          .eq("itemId", job?.itemId!)
+          .single(),
+        carbon
+          .from("jobMakeMethod")
+          .select("*")
+          .eq("jobId", job?.id!)
+          .eq("companyId", company.id)
+          .is("parentMaterialId", null)
+          .single(),
+        getJobReceipts(job?.id!),
+        carbon
+          .from("itemSerialSequence")
+          .select("id")
+          .eq("itemId", job?.itemId!)
+          .eq("companyId", company.id)
+          .maybeSingle()
+      ]);
 
     // Read now rather than from the job route: a receipt may have been made
     // since the page loaded. When the read fails, fall back to the route's job
@@ -1424,17 +1590,29 @@ function JobCompleteModal({
         }, 0);
 
         const receivedEntityIds = new Set(receipts?.trackedEntityIds ?? []);
-        // Only unlock per-serial entry when the receipts are known: without them
-        // the list could offer a unit the job already received.
-        const serialUnits =
-          receipts && makeMethod.data?.requiresSerialTracking
-            ? getReceivableSerialUnits(trackedEntities.data, receivedEntityIds)
-            : null;
+        // Only unlock the quantity when the receipts are known: without them
+        // the dialog could offer a unit the job already received.
+        const choice = makeMethod.data?.requiresSerialTracking
+          ? getSerialCompleteChoice({
+              trackedEntities: trackedEntities.data,
+              receivedEntityIds: receipts ? receivedEntityIds : null,
+              // complete_job_to_inventory numbers what the completion takes
+              // whenever the item has a sequence. A failed read keeps the
+              // quantity locked.
+              hasSerialSequence: !serialSequence.error && !!serialSequence.data,
+              jobQuantity: job?.quantity ?? 0
+            })
+          : ({ mode: "locked" } as const);
 
-        if (serialUnits) {
-          // Every unit already exists as a numbered serial, so the quantity can
-          // be chosen here even when nothing was finished on the shop floor.
-          setReceivableSerials(serialUnits);
+        setSerialChoice(choice);
+        if (choice.mode !== "locked") {
+          // Every unit is a numbered serial, or the completion numbers the
+          // units it receives: either way the quantity can be chosen here even
+          // when nothing was finished on the shop floor.
+          const receivableCount =
+            choice.mode === "serials"
+              ? choice.serials.length
+              : choice.receivableCount;
           setHasTrackedQuantity(false);
           setQuantityComplete(
             getDefaultSerialCompleteQuantity({
@@ -1444,7 +1622,7 @@ function JobCompleteModal({
               ),
               jobQuantity: job?.quantity ?? 0,
               priorReceivedQuantity: currentReceivedQuantity,
-              receivableSerialCount: serialUnits.length
+              receivableSerialCount: receivableCount
             })
           );
         } else {
@@ -1466,7 +1644,7 @@ function JobCompleteModal({
   };
 
   useMount(() => {
-    if (!job) return;
+    if (!job || !open) return;
     getJobData();
   });
 
@@ -1495,7 +1673,7 @@ function JobCompleteModal({
   if (!job) return null;
 
   return (
-    <Modal open onOpenChange={onClose}>
+    <Modal open={open} onOpenChange={onClose}>
       <ModalContent size={hasLeftover ? "large" : "medium"}>
         {loading ? (
           <ModalBody>
@@ -1582,8 +1760,8 @@ function JobCompleteModal({
                   isDisabled={hasTrackedQuantity}
                   minValue={minimumQuantityComplete}
                   maxValue={
-                    receivableSerials
-                      ? priorReceivedQuantity + receivableSerials.length
+                    receivableUnitCount !== null
+                      ? priorReceivedQuantity + receivableUnitCount
                       : undefined
                   }
                   helperText={
@@ -1610,6 +1788,16 @@ function JobCompleteModal({
                     </AlertDescription>
                   </Alert>
                 )}
+
+                {serialChoice.mode === "numberOnReceipt" &&
+                  quantityComplete > priorReceivedQuantity &&
+                  !hasFractionalSerialQuantity && (
+                    <span className="text-sm text-muted-foreground w-full">
+                      <Trans>
+                        Serial numbers are drawn when the units are received.
+                      </Trans>
+                    </span>
+                  )}
 
                 {receivableSerials &&
                   quantityComplete > priorReceivedQuantity &&

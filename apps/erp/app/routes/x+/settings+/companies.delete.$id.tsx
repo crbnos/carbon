@@ -6,10 +6,12 @@ import { error, notFound, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { flags } from "@carbon/env/flags.server";
 import { getLogger } from "@carbon/logger";
+import { useRouteDialog } from "@carbon/react";
 import { isInternalEmail, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteSubsidiary,
@@ -20,12 +22,16 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "settings-companies-delete");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, email } = await authorize(request, {
+  const { client, companyId, email } = await authorize(request, {
     "settings.companies": "View"
   });
 
-  // Multi-company management is gated to internal (Carbon) users for now.
-  if (!isInternalEmail(email)) {
+  // Multi-company management: Carbon staff, and the companies the
+  // `multi-company-management` flag turns it on for.
+  if (
+    !isInternalEmail(email) &&
+    !(await flags.bool("multi-company-management", { companyId, email }))
+  ) {
     throw redirect(path.to.settings);
   }
 
@@ -44,12 +50,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { companyGroupId, email } = await authorize(request, {
+  const { companyGroupId, companyId, email } = await authorize(request, {
     "settings.companies": "Full"
   });
 
-  // Multi-company management is gated to internal (Carbon) users for now.
-  if (!isInternalEmail(email)) {
+  // Multi-company management: Carbon staff, and the companies the
+  // `multi-company-management` flag turns it on for.
+  if (
+    !isInternalEmail(email) &&
+    !(await flags.bool("multi-company-management", { companyId, email }))
+  ) {
     throw redirect(path.to.settings);
   }
 
@@ -57,7 +67,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) {
     throw redirect(
       path.to.companies,
-      await flash(request, error(params, "Failed to get subsidiary id"))
+      await flash(request, error(null, "Failed to get subsidiary id"))
     );
   }
 
@@ -100,7 +110,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteSubsidiaryRoute() {
   const { id } = useParams();
   const { subsidiary } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.companies);
 
   if (!id || !subsidiary) return null;
 
@@ -109,7 +119,8 @@ export default function DeleteSubsidiaryRoute() {
       action={path.to.deleteCompany(id)}
       name={subsidiary.name}
       text={`Are you sure you want to delete ${subsidiary.name}? Any child companies will be promoted to this company's parent level. This cannot be undone.`}
-      onCancel={() => navigate(path.to.companies)}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

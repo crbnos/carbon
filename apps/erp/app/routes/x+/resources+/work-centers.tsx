@@ -2,18 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
-import { authorize } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { WorkCentersTable } from "~/modules/resources/ui";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { workCentersList } from "~/utils/list-registry/resources.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Work Centers`,
@@ -21,50 +18,28 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "resources.workCenters": "View" },
-    { role: "employee", bypassRls: true }
-  );
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const [workCenters, departments, locations] = await Promise.all([
-    api.resources.getWorkCenters({
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }),
-    api.people.getDepartmentsList({}),
-    api.resources.getLocationsList({})
-  ]);
-
-  if (workCenters.error) {
-    redirect(
-      path.to.resources,
-      await flash(
-        request,
-        error(workCenters.error, "Failed to fetch work centers")
-      )
-    );
-  }
-
-  return {
-    count: workCenters.data?.count ?? 0,
-    departments: departments.data ?? [],
-    workCenters: workCenters.data?.rows ?? [],
-    locations: locations.data ?? []
-  };
+  return loadListPage(request, workCentersList, {
+    dataKey: "workCenters",
+    bypassRls: true,
+    firstPage: async ({ api }) => {
+      const [departments, locations] = await Promise.all([
+        api.people.getDepartmentsList({}),
+        api.resources.getLocationsList({})
+      ]);
+      return {
+        departments: departments.data ?? [],
+        locations: locations.data ?? []
+      };
+    },
+    onError: {
+      redirectTo: path.to.resources,
+      message: "Failed to fetch work centers"
+    }
+  });
 }
 
 export default function WorkCentersRoute() {
-  const { count, departments, locations, workCenters } =
+  const { count, departments, locations, workCenters, infinite } =
     useLoaderData<typeof loader>();
 
   return (
@@ -72,6 +47,7 @@ export default function WorkCentersRoute() {
       <WorkCentersTable
         data={workCenters}
         count={count}
+        infinite={infinite}
         departments={departments}
         locations={locations}
       />

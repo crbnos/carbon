@@ -41,7 +41,7 @@ import {
   ChartTooltip,
   ChartTooltipContent
 } from "@carbon/react/Chart";
-import { formatDurationMilliseconds } from "@carbon/utils";
+import { formatDurationMilliseconds, round } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
@@ -310,6 +310,14 @@ export default function MaintenanceDashboard() {
     return numberFormatter.format(value);
   };
 
+  const formattedTotal = formatValue(total);
+  const kpiLabel = kpiLabels[selectedKpiData.key];
+  const chartLabel = ["week", "month"].includes(interval)
+    ? t`${kpiLabel} by day`
+    : t`${kpiLabel} by month`;
+  const chartChange = `${percentageChange >= 0 ? "+" : ""}${round(percentageChange, 0)}%`;
+  const chartSummary = t`Total ${formattedTotal}, ${chartChange} versus the previous period`;
+
   const csvData = useMemo(() => {
     if (!kpiFetcher.data?.data) return [];
 
@@ -356,6 +364,9 @@ export default function MaintenanceDashboard() {
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-card">
+      <h1 className="sr-only">
+        <Trans>Maintenance Dashboard</Trans>
+      </h1>
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
         <MetricCard
           icon={<LuWrench />}
@@ -400,7 +411,7 @@ export default function MaintenanceDashboard() {
                     className={cn(
                       "hover:bg-background/80",
                       // Phones: the KPI picker reads as the section title.
-                      "max-md:px-0 max-md:bg-transparent max-md:shadow-none max-md:dark:bg-transparent max-md:text-[17px] max-md:font-semibold max-md:text-foreground"
+                      "max-md:px-0 max-md:bg-transparent max-md:shadow-none max-md:dark:bg-transparent max-md:text-[1.0625rem] max-md:font-semibold max-md:text-foreground"
                     )}
                   >
                     <span>{kpiLabels[selectedKpiData.key]}</span>
@@ -422,6 +433,7 @@ export default function MaintenanceDashboard() {
 
               <Combobox
                 asButton
+                aria-label={t`Work center`}
                 value={workCenterId}
                 onChange={setWorkCenterId}
                 options={workCenterOptions}
@@ -494,6 +506,7 @@ export default function MaintenanceDashboard() {
             {selectedKpi === "worstPerformingMachines" ? (
               <ChartContainer
                 config={chartConfig}
+                aria-label={t`Failures by work center`}
                 className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
               >
                 <BarChart
@@ -526,6 +539,8 @@ export default function MaintenanceDashboard() {
             ) : (
               <ChartContainer
                 config={chartConfig}
+                aria-label={chartLabel}
+                summary={chartSummary}
                 className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
               >
                 <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>
@@ -694,7 +709,7 @@ function DispatchTable({ data }: { data: DispatchRow[] }) {
                   {dispatch.maintenanceDispatchId}
                 </span>
               </span>
-              <span className="truncate text-[13px] text-muted-foreground">
+              <span className="truncate text-[0.8125rem] text-muted-foreground">
                 {getWorkCenterName(dispatch.workCenterId)}
               </span>
               <span className="flex items-center gap-2">

@@ -35,6 +35,7 @@ import {
   Thead,
   Tr,
   toast,
+  toastError,
   useDebounce,
   useViewport
 } from "@carbon/react";
@@ -68,6 +69,7 @@ export function MaintenanceDispatchNotes({
   content: JSONContent;
   isDisabled: boolean;
 }) {
+  const { t } = useLingui();
   const { id: userId } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
@@ -103,6 +105,7 @@ export function MaintenanceDispatchNotes({
       <CardContent>
         {permissions.has({ "resources.dispatches": "Edit" }) && !isDisabled ? (
           <Editor
+            label={t`Notes`}
             initialValue={(content ?? {}) as JSONContent}
             onUpload={onUploadImage}
             onChange={(value) => {
@@ -221,7 +224,7 @@ function MaintenanceFilesContent({
       try {
         await downloadUrl(url, file.name);
       } catch (error) {
-        toast.error(t`Error downloading file`);
+        toastError(t`Error downloading file`, error);
         logger.error("Error", { error: error });
       }
     },
@@ -241,7 +244,7 @@ function MaintenanceFilesContent({
         .remove([filePath]);
 
       if (error) {
-        toast.error(error.message || "Error deleting file");
+        toastError("Error deleting file", error);
         return;
       }
 
@@ -289,23 +292,30 @@ function MaintenanceFilesContent({
         <Tbody>
           {files.map((file) => {
             const type = getDocumentType(file.name);
+            const openFile = () => {
+              if (isPreviewableDocumentType(type)) {
+                window.open(
+                  path.to.file.previewFile(`private/${getFilePath(file.name)}`),
+                  "_blank"
+                );
+              } else {
+                download(file);
+              }
+            };
             return (
               <Tr key={file.id}>
                 <Td>
                   <HStack>
                     <DocumentIcon type={type} />
                     <span
+                      role="button"
+                      tabIndex={0}
                       className="font-medium cursor-pointer"
-                      onClick={() => {
-                        if (isPreviewableDocumentType(type)) {
-                          window.open(
-                            path.to.file.previewFile(
-                              `private/${getFilePath(file.name)}`
-                            ),
-                            "_blank"
-                          );
-                        } else {
-                          download(file);
+                      onClick={openFile}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          openFile();
                         }
                       }}
                     >

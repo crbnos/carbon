@@ -5,10 +5,11 @@
 import { error, notFound, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { deleteChangeNoticeType } from "~/modules/items/items.service";
 import { getParams, path } from "~/utils/path";
@@ -47,7 +48,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       `${path.to.changeNoticeTypes}?${getParams(request)}`,
       await flash(
         request,
-        error(params, "Failed to get a change notice category id")
+        error(null, "Failed to get a change notice category id")
       )
     );
   }
@@ -79,19 +80,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteChangeNoticeTypeRoute() {
   const { id } = useParams();
   const { changeNoticeType } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.changeNoticeTypes);
   const { t } = useLingui();
 
   if (!changeNoticeType) return null;
   if (!id) throw notFound("id not found");
 
-  const onCancel = () => navigate(path.to.changeNoticeTypes);
   return (
     <ConfirmDelete
       action={path.to.deleteChangeNoticeType(id)}
       name={changeNoticeType.name}
       text={t`Are you sure you want to delete the change notice category: ${changeNoticeType.name}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

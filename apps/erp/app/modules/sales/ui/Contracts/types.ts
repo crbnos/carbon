@@ -12,7 +12,8 @@ import type {
 import type {
   getContractAmendments,
   getContractInvoiceSchedule,
-  getContractLines
+  getContractLines,
+  getContracts
 } from "../../sales.service";
 
 type Enums = Database["public"]["Enums"];
@@ -31,7 +32,9 @@ export type Contract = Omit<ContractView, "currencyCode"> & {
   currencyCode: string;
 };
 
-export type ContractListItem = ContractView;
+export type ContractListItem = NonNullable<
+  Awaited<ReturnType<typeof getContracts>>["data"]
+>[number];
 
 export type ContractLine = NonNullable<
   Awaited<ReturnType<typeof getContractLines>>["data"]
@@ -106,4 +109,11 @@ export type ContractRouteData = {
   revenueIsStored: boolean;
   /** Per line: what it bills − Σ its revenue rows. Non-zero blocks Confirm. */
   revenueResiduals: Record<string, number>;
+  /** The R&D tax facts (Government Contracting 5d). The `customerContracts`
+   *  view predates them, so the loader reads them from the table. */
+  researchFlags: {
+    researchFunded: boolean | null;
+    paymentContingentOnSuccess: boolean;
+    contractorRetainsRights: boolean;
+  };
 };

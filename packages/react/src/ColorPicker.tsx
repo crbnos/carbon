@@ -2,7 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useLingui } from "@lingui/react/macro";
 import { HexColorInput, HexColorPicker } from "react-colorful";
+import { useOptionalFormControlContext } from "./Form/FormControl";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import { cn } from "./utils/cn";
 
@@ -31,19 +33,35 @@ const SWATCHES = [
 export function ColorPicker({
   value,
   onChange,
-  placeholder
+  placeholder,
+  label,
+  "aria-label": ariaLabel
 }: {
   /** A hex color, or `""` for no color (pass `placeholder` to label it). */
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  /**
+   * The field's name ("Primary color"). Inside a FormControl it defaults to
+   * the FormControl's label.
+   */
+  label?: string;
+  /** The trigger's name, when no `<label>` names it; the value is read after it. */
+  "aria-label"?: string;
 }) {
+  const { t } = useLingui();
+  const field = useOptionalFormControlContext();
   const isEmpty = value === "";
+  const fieldLabel = ariaLabel || label || field?.labelText;
+  const valueText = isEmpty ? (placeholder ?? t`No color`) : value;
+  const selected = value.toLowerCase();
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
+          // The trigger shows only the value; say which field it is too.
+          aria-label={fieldLabel ? `${fieldLabel}: ${valueText}` : undefined}
           className="flex h-9 w-full items-center gap-2 rounded-md border border-input bg-background px-2 text-sm outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
         >
           <span
@@ -77,6 +95,9 @@ export function ColorPicker({
             />
             <HexColorInput
               prefixed
+              aria-label={
+                fieldLabel ? t`${fieldLabel} hex value` : t`Hex value`
+              }
               color={value}
               onChange={onChange}
               className="h-8 w-full rounded-md border border-input bg-background px-2 font-mono text-xs uppercase outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
@@ -89,10 +110,11 @@ export function ColorPicker({
                 key={swatch}
                 type="button"
                 aria-label={swatch}
+                aria-pressed={selected === swatch}
                 onClick={() => onChange(swatch)}
                 className={cn(
                   "size-5 rounded ring-1 ring-inset ring-black/10 transition-transform hover:scale-110",
-                  value.toLowerCase() === swatch && "ring-2 ring-primary"
+                  selected === swatch && "ring-2 ring-primary"
                 )}
                 style={{ backgroundColor: swatch }}
               />

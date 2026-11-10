@@ -27,7 +27,7 @@ import { formatDate } from "@carbon/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { parseDate } from "@internationalized/date";
-import { useLingui } from "@lingui/react/macro";
+import { Plural, useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
 import { memo } from "react";
 import {
@@ -37,6 +37,7 @@ import {
   LuEllipsisVertical,
   LuFlashlight,
   LuFlashlightOff,
+  LuFolderKanban,
   LuGripVertical,
   LuPencil,
   LuPlay,
@@ -238,8 +239,18 @@ const OperationCardBody = memo(function OperationCardBody({
           <HStack spacing={1} className="flex-shrink-0 -mr-2">
             {item.hasConflict && (
               <Tooltip>
-                <TooltipTrigger>
-                  <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                <TooltipTrigger asChild>
+                  <span className="inline-flex">
+                    <LuTriangleAlert
+                      aria-hidden
+                      className="h-4 w-4 text-red-500 flex-shrink-0"
+                    />
+                    {/* The tooltip is pointer-only; this reads the warning
+                        as part of the card for keyboard and screen readers. */}
+                    <span className="sr-only">
+                      {item.conflictReason ?? t`Scheduling conflict`}
+                    </span>
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent>
                   {item.conflictReason ?? t`Scheduling conflict`}
@@ -420,7 +431,11 @@ const OperationCardBody = memo(function OperationCardBody({
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent side="right">
-                  {t`Behind target by ${daysBehindTarget} day(s)`}
+                  <Plural
+                    value={daysBehindTarget}
+                    one="Behind target by # day"
+                    other="Behind target by # days"
+                  />
                 </TooltipContent>
               </Tooltip>
             ) : (
@@ -445,6 +460,33 @@ const OperationCardBody = memo(function OperationCardBody({
                 className="text-sm"
               >
                 {item.salesOrderReadableId}
+              </Link>
+            </HStack>
+          )}
+
+        {displaySettings.showProject &&
+          item.projectId &&
+          item.projectReadableId && (
+            <HStack className="justify-start space-x-2 min-w-0">
+              <LuFolderKanban className="text-muted-foreground shrink-0" />
+              <Link
+                to={
+                  item.projectElementId
+                    ? path.to.projectElement(
+                        item.projectId,
+                        item.projectElementId
+                      )
+                    : path.to.project(item.projectId)
+                }
+                className="text-sm truncate"
+              >
+                {item.projectReadableId}
+                {item.projectName && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    {item.projectName}
+                  </span>
+                )}
               </Link>
             </HStack>
           )}

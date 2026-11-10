@@ -6,7 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { gaugeTypeValidator } from "~/modules/quality/quality.models";
@@ -67,12 +67,16 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewCustomerStatusesRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const initialValues = {
     name: ""
   };
 
   return (
-    <GaugeTypeForm initialValues={initialValues} onClose={() => closeRoute()} />
+    <GaugeTypeForm
+      initialValues={initialValues}
+      open={dialog.open}
+      onClose={dialog.close}
+    />
   );
 }

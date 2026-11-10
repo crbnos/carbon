@@ -160,7 +160,7 @@ export function NodeSearchDialog({
                     <span className="text-sm font-medium truncate">
                       {label}
                     </span>
-                    <span className="text-[11px] text-muted-foreground truncate">
+                    <span className="text-[0.6875rem] text-muted-foreground truncate">
                       {entity.sourceDocument ?? "—"}
                     </span>
                   </div>
@@ -207,7 +207,7 @@ export function NodeSearchDialog({
                     <span className="text-sm font-medium truncate">
                       {label}
                     </span>
-                    <span className="text-[11px] text-muted-foreground truncate">
+                    <span className="text-[0.6875rem] text-muted-foreground truncate">
                       {activity.sourceDocumentReadableId ??
                         activity.sourceDocument ??
                         "—"}
@@ -228,7 +228,7 @@ function StatusPill({ status }: { status: string | null | undefined }) {
   if (!status) return null;
   const color = entityStatusMeta(status).color;
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-foreground bg-muted/60 rounded px-1.5 py-0.5 leading-none">
+    <span className="inline-flex items-center gap-1 text-[0.625rem] uppercase tracking-wide text-foreground bg-muted/60 rounded px-1.5 py-0.5 leading-none">
       <span
         className="w-1.5 h-1.5 rounded-full"
         style={{ background: color }}
@@ -240,7 +240,7 @@ function StatusPill({ status }: { status: string | null | undefined }) {
 
 function OpenBadge() {
   return (
-    <span className="text-[9px] uppercase tracking-wider font-medium text-muted-foreground border border-border rounded px-1 py-0.5 leading-none">
+    <span className="text-[0.5625rem] uppercase tracking-wider font-medium text-muted-foreground border border-border rounded px-1 py-0.5 leading-none">
       Open
     </span>
   );

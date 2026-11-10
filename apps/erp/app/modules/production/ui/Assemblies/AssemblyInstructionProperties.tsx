@@ -583,6 +583,7 @@ function StepForm({
             <Trans>Instruction</Trans>
           </Label>
           <Editor
+            label={t`Instruction`}
             initialValue={(step.description as JSONContent) ?? {}}
             onUpload={onUploadImage}
             onChange={(value) => {
@@ -620,7 +621,7 @@ function StepForm({
           </VStack>
         )}
         {stepType === "List" && (
-          <ArrayInput name="listValues" label={t`List Options`} />
+          <ArrayInput name="listValues" label={t`List Options`} isRequired />
         )}
         <BooleanInput
           name="required"

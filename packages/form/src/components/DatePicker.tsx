@@ -21,6 +21,7 @@ import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { useField } from "../hooks";
 import { useFormStateContext } from "../internal/formStateContext";
+import { useInlineField } from "../internal/inlineField";
 
 const log = getLogger("form");
 
@@ -115,6 +116,12 @@ const DatePicker = ({
   };
 
   const utcValue = date ? date.toString() : "";
+  const inlineField = useInlineField({
+    inline,
+    label,
+    isEmpty: !date,
+    isReadOnly: isDisabled
+  });
 
   const DatePickerPreview = (
     <span className="flex flex-grow line-clamp-1 items-center">
@@ -124,7 +131,7 @@ const DatePicker = ({
 
   return (
     <FormControl isInvalid={!!error} isRequired={isRequired}>
-      {label && (
+      {label && inlineField.showLabel && (
         <FormLabel
           htmlFor={name}
           isOptional={isRequired ? false : (fieldIsOptional ?? false)}
@@ -140,6 +147,7 @@ const DatePicker = ({
         maxValue={maxValue}
         onChange={handleChange as any}
         inline={inline ? DatePickerPreview : undefined}
+        inlinePlaceholder={inlineField.placeholder}
         helperText={inline ? helperText : undefined}
         label={label}
       />

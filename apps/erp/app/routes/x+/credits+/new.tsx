@@ -17,7 +17,11 @@ import {
 import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
 import { useLoaderData } from "react-router";
 import { NewRecordPage } from "~/components/NewRecordPage";
 import { memoValidator } from "~/modules/invoicing/invoicing.models";
@@ -27,11 +31,19 @@ import { getNextSequence } from "~/modules/settings/settings.service";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 // One create route, two presentations. ?party (from the originating list)
 // picks the type; Supplier Credit is a supplier Debit, Credit Memo a customer
-// Credit. The breadcrumb links back to the matching list.
+// Credit. The title and breadcrumb follow it; the breadcrumb links back to the matching list.
+export const meta: MetaFunction<typeof loader> = (args) =>
+  newRecordMeta(
+    args.loaderData?.type === "supplierCredit"
+      ? "Supplier Credit"
+      : "Credit Memo"
+  )(args);
+
 export const handle: Handle = {
   breadcrumb: (_params: unknown, data: unknown) => {
     const isVendor =
@@ -146,7 +158,7 @@ export default function NewMemoRoute() {
     <NewRecordPage>
       <Card>
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={1}>
             {isVendor ? (
               <Trans>New Supplier Credit</Trans>
             ) : (

@@ -38,8 +38,10 @@ import {
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
+import type { InfiniteOptions } from "~/components/Table";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { salesInvoiceStatusType } from "~/modules/invoicing/invoicing.models";
 import type { SalesInvoiceListItem } from "~/modules/invoicing/types";
@@ -50,10 +52,11 @@ import SalesInvoiceStatus from "./SalesInvoiceStatus";
 type SalesInvoicesTableProps = {
   data: SalesInvoiceListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
-  useRealtime("salesInvoice", `id=in.(${data.map((d) => d.id).join(",")})`);
+const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
+  const { data, count, infinite } = props;
 
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -172,7 +175,15 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       {
         accessorKey: "needsReview",
         header: t`Needs Review`,
-        cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+        cell: (item) => {
+          const invoiceId = item.row.original.invoiceId;
+          return (
+            <Checkbox
+              isChecked={item.getValue<boolean>()}
+              aria-label={t`Needs review: ${invoiceId}`}
+            />
+          );
+        },
         meta: {
           filter: {
             type: "static",
@@ -371,12 +382,17 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
     );
   }, [closeSalesInvoiceModal, navigate, permissions]);
 
+  const lineItemRows = useLineItemRows<SalesInvoiceListItem>("sales-invoices");
+
   return (
     <>
       <Table<SalesInvoiceListItem>
+        getRowLabel={(row) => row.invoiceId ?? undefined}
         count={count}
         columns={columns}
         data={data}
+        {...lineItemRows}
+        infinite={infinite}
         defaultColumnPinning={{
           left: ["invoiceId"]
         }}
@@ -411,11 +427,9 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           text={t`Are you sure you want to permanently delete ${selectedSalesInvoice.invoiceId!}?`}
           onCancel={() => {
             closeSalesInvoiceModal.onClose();
-            setSelectedSalesInvoice(null);
           }}
           onSubmit={() => {
             closeSalesInvoiceModal.onClose();
-            setSelectedSalesInvoice(null);
           }}
         />
       )}

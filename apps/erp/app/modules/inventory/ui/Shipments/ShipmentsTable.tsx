@@ -36,7 +36,8 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { NewAction } from "~/components/New";
-import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
+import type { InfiniteOptions } from "~/components/Table";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -75,10 +76,13 @@ function NewShipment() {
 type ShipmentsTableProps = {
   data: Shipment[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
-  useRealtime("shipment", `id=in.(${data.map((d) => d.id).join(",")})`);
+const ShipmentsTable = memo((props: ShipmentsTableProps) => {
+  const { data, count, infinite } = props;
+  // The route's `handle.realtime` follows every shipment of the company, so
+  // the rows of a later page refresh too.
 
   const [params] = useUrlParams();
   const { t } = useLingui();
@@ -175,6 +179,14 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
                   {row.original.sourceDocumentReadableId}
                 </Hyperlink>
               );
+            case "Customer Contract":
+              return (
+                <Hyperlink
+                  to={path.to.contractDetails(row.original.sourceDocumentId!)}
+                >
+                  {row.original.sourceDocumentReadableId}
+                </Hyperlink>
+              );
             default:
               return null;
           }
@@ -212,7 +224,15 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
       {
         accessorKey: "invoiced",
         header: t`Invoiced`,
-        cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+        cell: (item) => {
+          const shipmentId = item.row.original.shipmentId;
+          return (
+            <Checkbox
+              isChecked={item.getValue<boolean>()}
+              aria-label={t`Invoiced: ${shipmentId}`}
+            />
+          );
+        },
         meta: {
           filter: {
             type: "static",
@@ -406,7 +426,9 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
   return (
     <>
       <Table<(typeof data)[number]>
+        getRowLabel={(row) => row.shipmentId ?? undefined}
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         defaultColumnPinning={{
@@ -436,11 +458,9 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
           text={`Are you sure you want to delete ${selectedShipment.shipmentId!}? This cannot be undone.`}
           onCancel={() => {
             deleteShipmentModal.onClose();
-            setSelectedShipment(null);
           }}
           onSubmit={() => {
             deleteShipmentModal.onClose();
-            setSelectedShipment(null);
           }}
         />
       )}

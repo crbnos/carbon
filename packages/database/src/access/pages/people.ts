@@ -46,5 +46,13 @@ export const PEOPLE_PAGES = [
     maxLevel: "Full",
     tables: ["shift"],
     paths: ["/x/people/shifts"]
+  },
+  {
+    // Government contracting: the payroll check of the labor distribution report.
+    id: "people.payrollTotals",
+    label: "Payroll Totals",
+    maxLevel: "Full",
+    tables: ["payrollPeriodTotal"],
+    paths: ["/x/people/payroll-totals"]
   }
 ] as const satisfies readonly Page[];

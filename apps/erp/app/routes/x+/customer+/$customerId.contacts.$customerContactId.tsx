@@ -12,10 +12,15 @@ import {
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
-import { customerContactValidator } from "~/modules/sales/sales.models";
+import { useLoaderData, useParams } from "react-router";
+import { useCompanySettings } from "~/hooks";
+import {
+  CUSTOMER_CONTACT_EMAIL_REQUIRED,
+  customerContactValidator
+} from "~/modules/sales/sales.models";
 import { updateCustomerContact } from "~/modules/sales/sales.service";
 import { CustomerContactForm } from "~/modules/sales/ui/Customer";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -46,7 +51,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await authorize(request, { "sales.customers": "Edit" });
+  const { client, companyId } = await authorize(request, {
+    "sales.customers": "Edit"
+  });
 
   const { customerId, customerContactId } = params;
   if (!customerId) throw notFound("customerId not found");
@@ -70,11 +77,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw badRequest("contactId is undefined from form data");
 
   const update = await updateCustomerContact(client, {
+    companyId,
     contactId,
     contact,
     customerLocationId,
     customFields: setCustomFields(formData)
   });
+
+  if (update.error?.message === CUSTOMER_CONTACT_EMAIL_REQUIRED) {
+    return validationError({
+      fieldErrors: { email: CUSTOMER_CONTACT_EMAIL_REQUIRED }
+    });
+  }
 
   if (update.error) {
     throw redirect(
@@ -94,10 +108,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditCustomerContactRoute() {
   const { contact } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
-
   const { customerId } = useParams();
   if (!customerId) throw new Error("customerId not found");
+  const dialog = useRouteDialog(path.to.customerContacts(customerId));
+  const companySettings = useCompanySettings();
 
   const initialValues = {
     id: contact?.id ?? undefined,
@@ -117,10 +131,12 @@ export default function EditCustomerContactRoute() {
 
   return (
     <CustomerContactForm
+      requireEmail={!!companySettings?.requireCustomerContactEmail}
       key={initialValues.id}
       customerId={customerId}
       initialValues={initialValues}
-      onClose={() => navigate(path.to.customerContacts(customerId))}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

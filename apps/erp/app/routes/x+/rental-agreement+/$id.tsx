@@ -8,9 +8,10 @@ import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useMatches, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
+import { getRentalAgreementContacts } from "~/modules/sales/sales.service";
 import type {
   RentalInvoiceLinks,
   RentalLeaseLineInputs
@@ -21,6 +22,7 @@ import {
   RentalAgreementProperties
 } from "~/modules/sales/ui/Rentals";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -30,6 +32,9 @@ export const handle: Handle = {
   ),
   module: "sales"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.rentalAgreement?.rentalAgreementId, "Rental Agreement");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {
@@ -56,26 +61,51 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const customerContactId = rentalAgreement.data.customerContactId;
-  const [lines, charges, periods, deposits, rentableAssets, contact, related] =
-    await Promise.all([
-      api.sales.getRentalAgreementLines({ rentalAgreementId: id }),
-      api.sales.getRentalAgreementCharges({ rentalAgreementId: id }),
-      api.sales.getRentalBillingPeriods({ rentalAgreementId: id }),
-      api.sales.getRentalAgreementDeposits({ rentalAgreementId: id }),
-      rentalAgreement.data.status === "Draft"
-        ? api.sales.getRentableFleetAssets({})
-        : Promise.resolve({ data: [], error: null }),
-      // Whether invoices can be emailed: the contact's email.
-      customerContactId
-        ? client
-            .from("customerContact")
-            .select("contact(email)")
-            .eq("id", customerContactId)
-            .eq("companyId", companyId)
-            .maybeSingle()
-        : Promise.resolve({ data: null, error: null }),
-      api.sales.getRentalAgreementRelatedDocuments({ rentalAgreementId: id })
-    ]);
+  const [
+    lines,
+    charges,
+    periods,
+    deposits,
+    rentableAssets,
+    contact,
+    related,
+    contacts
+  ] = await Promise.all([
+    api.sales.getRentalAgreementLines({ rentalAgreementId: id }),
+    api.sales.getRentalAgreementCharges({ rentalAgreementId: id }),
+    api.sales.getRentalBillingPeriods({ rentalAgreementId: id }),
+    api.sales.getRentalAgreementDeposits({ rentalAgreementId: id }),
+    rentalAgreement.data.status === "Draft"
+      ? api.sales.getRentableFleetAssets({})
+      : Promise.resolve({ data: [], error: null }),
+    // Whether invoices can be emailed: the primary contact's email.
+    customerContactId
+      ? client
+          .from("customerContact")
+          .select("contact(email)")
+          .eq("id", customerContactId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    api.sales.getRentalAgreementRelatedDocuments({ rentalAgreementId: id }),
+    getRentalAgreementContacts(client, id, companyId)
+  ]);
+
+  // A Draft or Active agreement saves the whole contact list on each change,
+  // so a list that did not load must not be shown as empty. Elsewhere the
+  // table is read-only and says the contacts could not be loaded.
+  const contactsEditable =
+    rentalAgreement.data.status === "Draft" ||
+    rentalAgreement.data.status === "Active";
+  if (contacts.error && contactsEditable) {
+    throw redirect(
+      path.to.rentalAgreements,
+      await flash(
+        request,
+        error(contacts.error, "Failed to load the rental agreement's contacts")
+      )
+    );
+  }
 
   // `salesInvoiceLineId` on periods and charges has no foreign key, so the
   // invoice behind each billed row is read in one batch rather than embedded.
@@ -160,6 +190,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     charges: charges.data ?? [],
     periods: periods.data ?? [],
     deposits: deposits.data ?? [],
+    contacts: contacts.error ? null : contacts.data,
     // A failed read leaves the lists empty rather than failing the page.
     shipments: related.error ? [] : related.data.shipments,
     receipts: related.error ? [] : related.data.receipts,

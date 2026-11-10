@@ -7,13 +7,14 @@ A <Term>kanban</Term> is a physical pull signal represented by a printed card, Q
 
 A [reordering policy](/docs/reference/reordering) calculates suggestions from on-hand quantity, demand, and reorder points. Kanban replenishment is direct: a signal creates a real document immediately. Use policies for planning-driven replenishment and kanban for shop-floor pull.
 
-<Screenshot label="Kanbans list with the Replenishment Level and Projected (To) columns, one transfer kanban showing the Below level pill" />
+<Screenshot label="Kanbans list, one row per item, with an item expanded to show its kanbans and a transfer kanban showing the Below level pill" />
 
 ## What a kanban holds
 
 Each kanban is a small record: an item, where it lives, how much to reorder, and how to reorder it. For a `Transfer` kanban, the form shows Item, Replenishment System, Location, From Storage Unit, To Storage Unit, Quantity, and Replenishment Level, in that order.
 
 <FieldTable>
+  <Field name="Kanban ID">The card's number, such as `KB000001`, from the `kanban` [sequence](/docs/reference/sequences). Carbon assigns it when the kanban is created and prints it on the label, so you can find one particular card or bin. It never changes.</Field>
   <Field name="Item" required>The part, material, tool, or consumable this card replenishes.</Field>
   <Field name="Quantity" required>How much to reorder on each signal (at least 1). On a `Transfer` kanban, this is the quantity moved from the From storage unit.</Field>
   <Field name="Replenishment system" required>How the signal replenishes: `Buy` (raise a purchase order), `Make` (create a job), or `Transfer` (create a stock transfer between two storage units in the location). See <Term>replenishment system</Term>.</Field>
@@ -24,8 +25,8 @@ Each kanban is a small record: an item, where it lives, how much to reorder, and
   <Field name="Replenishment level">The <Term id="kanban-replenishment-level">replenishment level</Term> for the To storage unit, 0 or more. Leave it blank for a scan-only kanban. (`Transfer` only.)</Field>
   <Field name="Supplier">Who to buy from. **Required for `Buy` kanbans.**</Field>
   <Field name="Purchase unit of measure / Conversion factor">The unit you buy in and how many stock units that equals. Carbon applies both to the PO line. (`Buy` only.)</Field>
-  <Field name="Auto Release">On a `Make` scan, release the created job to the floor immediately instead of leaving it in draft. (`Make` only.)</Field>
-  <Field name="Auto Start Job">On a `Make` scan, drop the operator straight into the first operation in MES. Requires Auto Release. (`Make` only.)</Field>
+  <Field name="Auto Release">On a `Make` scan, release the created job to the floor when it passes the release checks, instead of leaving it in draft. (`Make` only.)</Field>
+  <Field name="Auto Start Job">On a `Make` scan, drop the operator straight into the first operation in MES. Requires Auto Release, and applies only when the job was released. (`Make` only.)</Field>
   <Field name="Completion Barcode">The code operators scan to mark the job complete; auto-generated when left blank. (`Make` only.)</Field>
 </FieldTable>
 
@@ -37,9 +38,15 @@ The **order** scan (the create signal) branches on the replenishment system:
 
 <StatusFlow>
   <Status name="Buy" accent>The scan finds an open (`Draft` or `Planned`) purchase order for that supplier and adds a line for the kanban's quantity. If none exists, it creates a new draft PO. It applies the kanban's conversion factor, purchase unit, and storage unit to the line, then drops you on the purchase order.</Status>
-  <Status name="Make">The scan creates a <Term id="job">job</Term> for the item at the kanban's quantity, copies the item's method onto it, and links the job back to the card. With **Auto Release** on, it also runs planning and scheduling and marks the job `Ready`; with **Auto Start Job** on, it sends the operator straight into the first operation in MES.</Status>
+  <Status name="Make">The scan creates a <Term id="job">job</Term> for the item at the kanban's quantity, copies the item's method onto it, and links the job back to the card. With **Auto Release** on, it runs the release checks, then releases the job: it recalculates and plans it, marks it `Ready`, and schedules it. With **Auto Start Job** on, a released job sends the operator straight into the first operation in MES.</Status>
   <Status name="Transfer">The scan creates a `Released` stock transfer for the kanban's quantity, from the From storage unit to the To storage unit, then drops you on the transfer. A scan always creates a transfer, whether or not the kanban has a replenishment level.</Status>
 </StatusFlow>
+
+<Callout type="warn" title="Auto Release can leave the job in Draft">
+The scan runs the same checks as the job's **Release** dialog. When one fails, for example a material with no storage unit under [strict backflush](/docs/reference/strict-backflush), the job stays `Draft` and linked to the card. The scan opens the job page with the reason, so you can fix it and release the job from there. The same happens when the item's method could not be copied onto the job.
+
+Outside operations go on the supplier's newest `Draft` purchase order, or a new one. Nobody at the card can choose an order, so an existing draft does not stop the release.
+</Callout>
 
 **Start** and **complete** scans only apply to `Make` kanbans. They resolve the linked job's active operation and hand off to the MES operation start / complete screens, so an operator can drive the whole build from the same card that created the job.
 
@@ -60,10 +67,20 @@ How a card is rendered is a per-company setting, **Kanban Output**, with three m
 | Mode | What a card is |
 | --- | --- |
 | QR code | A scannable QR code (the default), color-coded per action. |
-| Label | A printed PDF label, six to a page, with the QR, item thumbnail, name, storage unit, quantity, and supplier. When the kanban has a replenishment level, a `MIN:` line prints under `QTY:`. |
+| Label | A printed label with one QR code, the item name and ID, storage unit, quantity, kanban ID, and supplier. When the kanban has a replenishment level, a `MIN:` line prints with `QTY:`. A `Make` kanban has three separate cards (create, start and complete), so a scan can only take the action its card is for. |
 | URL | A copyable link that hits the same scan endpoint directly. |
 
-For `Make` kanbans, the list view also surfaces the **start** and **complete** affordances. `Buy` and `Transfer` kanbans show only the order signal, since there's no job to start. Two columns are hidden by default: **Replenishment Level** and **Projected (To)**. Turn them on from the column picker. **Projected (To)** shows a **Below level** pill when the projected quantity is under the level.
+With **Label**, a **Label Size** setting picks what the label prints on:
+
+| Label Size | Prints |
+| --- | --- |
+| Letter, 6 per page | Six cards to a letter page, with the item thumbnail, to cut out (the default). |
+| 4" x 2" label | One card per label, for a thermal printer such as a Zebra. The QR code fills the right side, colored like the QR codes on screen (green for start, blue for complete), with a caption under it (**CREATE**, **START** or **COMPLETE**): a black-only printer prints the caption, not the color. |
+| 3" x 2" label | The same card on a 3" x 2" label. |
+
+**Print Labels** on the selected items prints the cards of every kanban they hold; **Print Label** on one kanban's menu prints that kanban's cards. It sends them to a printer when one is set up under [printing settings](/docs/reference/printing): the location's **Kanbans** printer is picked first, else the location default. Each card is its own label: a `Make` kanban prints its create, start and complete cards, and a `Buy` or `Transfer` kanban its create card. A Zebra prints a card at its media size (3" x 2" or larger) as ZPL. With no printer, it opens the create cards as a PDF at the Label Size. A new kanban's cards print on their own when the location's Kanbans printer has **Auto-print** on.
+
+The Kanbans list has one row per item at the location. Click a row to open its kanbans. Each one shows its ID, replenishment, supplier, storage unit, reorder quantity and its cards. For `Make` kanbans, that includes the **start** and **complete** cards. `Buy` and `Transfer` kanbans show only the order signal, since there's no job to start. A `Transfer` kanban with a replenishment level shows its **Min** and **Projected** quantity, with a **Below level** pill when the projected quantity is under the level. A search opens every row and marks the matches.
 
 ## Kanban vs. reordering policy
 
@@ -92,6 +109,9 @@ Exact errors from saving and scanning kanban cards.
 ### "… is not supported"
 The **order** scan hit a kanban whose replenishment system is **`Buy and Make`**. A single card fires one clear action, so only `Buy`, `Make`, and `Transfer` are supported at scan. Set the kanban to one of those.
 
+### "… is non-nettable. A kanban cannot replenish into or from a non-nettable storage unit."
+The kanban's storage unit, or a Transfer kanban's From storage unit, is <Term id="non-nettable">non-nettable</Term> (a quarantine or hold area). Choose another storage unit. A scan of a kanban whose storage unit became non-nettable later is refused too, whatever its replenishment system. A Transfer kanban's scan reads "A kanban cannot replenish into or from a non-nettable storage unit".
+
 ### "Supplier is required"
 A `Buy` kanban has no supplier. The order scan needs to know who to raise the purchase order against — set the supplier on the kanban.
 
@@ -100,6 +120,15 @@ The reorder quantity is below 1. Each scan reorders a fixed amount, which must b
 
 ### "There's already a job for this kanban."
 You scanned **order** on a `Make` kanban that already created a job (it's linked by `jobId`). Carbon won't make a duplicate — it routes you to the collision screen showing the existing job, where you can view it or remove the link so a fresh scan can start over. The link clears automatically once the job is completed or cancelled.
+
+### "J… was created but not released: …"
+An **order** scan on a `Make` kanban with Auto Release created the job, but it failed the release checks: nothing to make, manufacturing blocked, an assembly without operations, an outside operation without a supplier, or, under strict backflush, "set a Pull From storage unit on …". The job stays `Draft` and linked to the kanban, and the scan opens the job. Fix the named problem, then release the job from its **Release** dialog. The next scan of the card is a collision until the job is completed, cancelled or unlinked.
+
+### "J… was created, but its method could not be copied. Use Get Method on the job before releasing it."
+The `Make` scan created and linked the job, but copying the item's make method failed, so the job has no materials or operations. It is not released. Run **Get Method** on the job, then release it.
+
+### "J…: The job is no longer Draft or Planned"
+Someone released or cancelled the job while the scan was releasing it. Nothing else changed; open the job to see its status.
 
 ### "No job found for kanban"
 A **start** or **complete** scan ran on a kanban that has no linked job yet. Those actions only work on `Make` kanbans after an **order** scan has created the job — scan order first.

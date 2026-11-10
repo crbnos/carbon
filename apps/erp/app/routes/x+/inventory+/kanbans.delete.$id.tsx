@@ -7,10 +7,11 @@ import { error, notFound } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { getParams, path } from "~/utils/path";
 
@@ -48,12 +49,11 @@ export default function DeleteKanbanRoute() {
   if (!id) throw notFound("id not found");
 
   const { kanban } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.kanbans);
   const { t } = useLingui();
 
   if (!id) return null;
 
-  const onCancel = () => navigate(path.to.kanbans);
   const kanbanName = kanban.name || kanban.itemId;
 
   return (
@@ -61,7 +61,8 @@ export default function DeleteKanbanRoute() {
       action={path.to.deleteKanban(id)}
       name={t`Kanban for ${kanbanName}`}
       text={t`Are you sure you want to delete this kanban card? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  CarbonEdition,
   CONTROLLED_ENVIRONMENT,
   error,
   getAppUrl,
@@ -18,29 +17,26 @@ import {
   updateCompanySession
 } from "@carbon/auth/session.server";
 import { InviteEmail } from "@carbon/documents/email";
-import { insertAuditLogEntries } from "@carbon/ee/audit.server";
+import { trigger } from "@carbon/jobs";
 import { Ratelimit, redis } from "@carbon/kv";
-import { sendEmail } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
-import { Button as _Button, Heading as _Heading, VStack } from "@carbon/react";
-import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
+import { Heading as _Heading, Button, VStack } from "@carbon/react";
 import {
   datetime,
-  Edition,
   getClientIp,
   redirect,
   redirectExternal
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { render } from "@react-email/components";
 import { AnimatePresence, motion } from "motion/react";
 import { nanoid } from "nanoid";
+import { render } from "react-email";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction
 } from "react-router";
-import { Form, Link, useLoaderData } from "react-router";
+import { Form, Link, useLoaderData, useNavigation } from "react-router";
 import {
   acceptInvite,
   isControlledInviteExpired
@@ -48,6 +44,7 @@ import {
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
+// A public page: errors are logged here and the toast stays generic.
 const logger = getLogger("erp", "invite");
 
 export const meta: MetaFunction = () => {
@@ -101,41 +98,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     serviceRole,
     getDatabaseClient(),
     code,
-    authSession?.email
+    authSession?.email,
+    request
   );
   if (accept.error) {
+    logger.error("Failed to accept invite", { error: accept.error });
     throw redirect(
       path.to.root,
       await flash(
         request,
-        error(accept.error, accept.error.message ?? "Failed to accept invite")
+        error(null, accept.error.message ?? "Failed to accept invite")
       )
     );
-  }
-
-  // Best-effort audit of the acceptance, with request metadata.
-  try {
-    await insertAuditLogEntries(serviceRole, accept.data.companyId, [
-      {
-        tableName: "invite",
-        entityType: "invite",
-        entityId: accept.data.id,
-        recordId: accept.data.id,
-        operation: "UPDATE",
-        actorId: null,
-        diff: { acceptedAt: { old: null, new: accept.data.acceptedAt } },
-        metadata: {
-          ipAddress: getClientIp(request) ?? undefined,
-          userAgent: request.headers.get("user-agent") ?? undefined
-        }
-      }
-    ]);
-  } catch (err) {
-    logger.warn("[invite] audit write skipped for accept", { error: err });
-  }
-
-  if (CarbonEdition === Edition.Cloud) {
-    await updateSubscriptionQuantityForCompany(accept.data.companyId);
   }
 
   if (authSession) {
@@ -200,9 +174,12 @@ async function requestNewInvite(
     .maybeSingle();
 
   if (invite.error || !invite.data) {
+    if (invite.error) {
+      logger.error("Failed to read invite", { error: invite.error });
+    }
     throw redirect(
       path.to.root,
-      await flash(request, error(invite.error, "Invite not found"))
+      await flash(request, error(null, "Invite not found"))
     );
   }
 
@@ -254,12 +231,12 @@ async function requestNewInvite(
     .single();
 
   if (refreshed.error || !refreshed.data) {
+    if (refreshed.error) {
+      logger.error("Failed to create a new invite", { error: refreshed.error });
+    }
     throw redirect(
       path.to.root,
-      await flash(
-        request,
-        error(refreshed.error, "Failed to create a new invite")
-      )
+      await flash(request, error(null, "Failed to create a new invite"))
     );
   }
 
@@ -269,24 +246,33 @@ async function requestNewInvite(
     .eq("id", invite.data.createdBy)
     .single();
 
-  await sendEmail({
-    to: invite.data.email,
-    subject: `You have been invited to join ${invite.data.company?.name} on Carbon`,
-    headers: { "X-Entity-Ref-ID": nanoid() },
-    html: await render(
-      InviteEmail({
-        invitedByEmail: inviter.data?.email ?? invite.data.email,
-        invitedByName: inviter.data?.fullName ?? "",
-        email: invite.data.email,
-        name: "",
-        companyName: invite.data.company?.name ?? "Carbon",
-        inviteLink: `${getAppUrl()}/invite/${refreshed.data.code}`,
-        ip,
-        location,
-        controlledEnvironment: CONTROLLED_ENVIRONMENT
-      })
-    )
+  const email = InviteEmail({
+    invitedByEmail: inviter.data?.email ?? invite.data.email,
+    invitedByName: inviter.data?.fullName ?? "",
+    email: invite.data.email,
+    name: "",
+    companyName: invite.data.company?.name ?? "Carbon",
+    inviteLink: `${getAppUrl()}/invite/${refreshed.data.code}`,
+    ip,
+    location,
+    controlledEnvironment: CONTROLLED_ENVIRONMENT
   });
+  // Queued so it follows the company's Email settings; a failed dispatch only logs.
+  try {
+    await trigger("send-email", {
+      to: invite.data.email,
+      subject: `You have been invited to join ${invite.data.company?.name} on Carbon`,
+      headers: { "X-Entity-Ref-ID": nanoid() },
+      html: await render(email),
+      text: await render(email, { plainText: true }),
+      companyId: invite.data.companyId
+    });
+  } catch (cause) {
+    logger.error("Failed to queue the refreshed invite email", {
+      companyId: invite.data.companyId,
+      error: cause
+    });
+  }
 
   throw redirect(
     path.to.root,
@@ -303,7 +289,6 @@ const fade = {
 };
 
 const Heading = motion.create(_Heading);
-const Button = motion.create(_Button);
 
 export default function Invite() {
   const data = useLoaderData<typeof loader>();
@@ -311,6 +296,7 @@ export default function Invite() {
   const controlledEnvironment =
     "controlledEnvironment" in data ? data.controlledEnvironment : false;
   const { t } = useLingui();
+  const navigation = useNavigation();
 
   if (expired) {
     return (
@@ -328,7 +314,7 @@ export default function Invite() {
           />
         </div>
         <VStack spacing={2} className="text-center w-full">
-          <Heading className="w-full text-center">
+          <Heading as="h1" className="w-full text-center">
             <Trans>Invite Expired</Trans>
           </Heading>
           <p>
@@ -387,14 +373,17 @@ export default function Invite() {
     <AnimatePresence>
       <VStack spacing={4} className="max-w-lg items-center text-center">
         <motion.img
-          initial={{ opacity: 0, scale: 0.4 }}
+          initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 2, ease: "easeInOut" }}
+          transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
           src="/carbon-mark-light.svg"
           alt="Carbon Logo"
           className="w-24 dark:hidden"
         />
-        <img
+        <motion.img
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
           src="/carbon-mark-dark.svg"
           alt="Carbon Logo"
           className="w-24 hidden dark:block"
@@ -402,7 +391,8 @@ export default function Invite() {
 
         <Heading
           {...fade}
-          transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
+          transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1], delay: 0.15 }}
+          as="h1"
           size="h1"
           className="mb-4"
         >
@@ -411,11 +401,10 @@ export default function Invite() {
 
         <Form method="post">
           <Button
-            {...fade}
-            transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
             size="lg"
             type="submit"
             autoFocus
+            isLoading={navigation.state !== "idle"}
           >
             <Trans>Join {company?.name ?? "Company"}</Trans>
           </Button>

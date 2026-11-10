@@ -11,6 +11,7 @@ import {
   HStack,
   Switch,
   toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -498,7 +499,11 @@ function TypedDisplay(
             <p className="self-center">{displayValue}</p>
           ) : (
             <div>
-              <Switch disabled checked={displayValue === true} />
+              <Switch
+                aria-label={attribute.name ?? undefined}
+                disabled
+                checked={displayValue === true}
+              />
             </div>
           )}
           <HStack className="justify-end w-full self-center">
@@ -790,7 +795,7 @@ function FileAttributeForm({
       });
 
     if (upload.error) {
-      toast.error(t`Failed to upload file: ${fileUpload.name}`);
+      toastError(t`Failed to upload file: ${fileUpload.name}`, upload.error);
     } else if (upload.data?.path) {
       toast.success(t`Uploaded: ${fileUpload.name}`);
       setFilePath(upload.data.path);

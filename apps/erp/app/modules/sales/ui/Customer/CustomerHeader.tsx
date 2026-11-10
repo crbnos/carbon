@@ -125,8 +125,12 @@ const CustomerHeader = () => {
         <Card>
           <HStack className="justify-between items-start max-md:hidden">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span>{routeData?.customer?.name}</span>
+              {/* The title row holds the ⋯ menu and Copy too: only the name is
+                  the page's heading, or its name would include theirs. */}
+              <CardTitle role="none" className="flex items-center gap-2">
+                <span role="heading" aria-level={1}>
+                  {routeData?.customer?.name}
+                </span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <IconButton
@@ -229,16 +233,14 @@ const CustomerHeader = () => {
           </CardContent>
         </Card>
       </VStack>
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteCustomer(customerId)}
-          isOpen={deleteModal.isOpen}
-          name={routeData?.customer?.name!}
-          text={t`Are you sure you want to delete ${routeData?.customer?.name!}? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={deleteModal.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteCustomer(customerId)}
+        isOpen={deleteModal.isOpen}
+        name={routeData?.customer?.name!}
+        text={t`Are you sure you want to delete ${routeData?.customer?.name!}? This cannot be undone.`}
+        onCancel={deleteModal.onClose}
+        onSubmit={deleteModal.onClose}
+      />
       {auditLogDrawer}
     </>
   );

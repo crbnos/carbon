@@ -68,7 +68,12 @@ export const INVOICING_PAGES = [
     id: "invoicing.salesInvoices",
     label: "Sales Invoices",
     maxLevel: "Full",
-    tables: ["salesInvoice", "salesInvoiceLine", "salesInvoiceShipment"],
+    tables: [
+      "salesInvoice",
+      "salesInvoiceLine",
+      "salesInvoiceShipment",
+      "salesInvoiceFundingAllocation"
+    ],
     readers: ["salesOrder"],
     paths: ["/x/invoicing/sales", "/x/sales-invoice/"]
   },

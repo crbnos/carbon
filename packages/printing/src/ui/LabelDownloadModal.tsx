@@ -25,6 +25,9 @@ import { LuDownload, LuInfo } from "react-icons/lu";
 import { Link } from "react-router";
 import { usePrinting } from "./PrintingProvider";
 
+const metricSizes = labelSizes.filter((s) => s.metric);
+const imperialSizes = labelSizes.filter((s) => !s.metric);
+
 type FileRoutes = {
   pdf: (id: string, opts?: { labelSize?: string }) => string;
   zpl: (id: string, opts?: { labelSize?: string }) => string;
@@ -42,8 +45,6 @@ export function LabelDownloadModal({
   onClose: () => void;
 }) {
   const { useMetric, settingsPath, settingsExternal } = usePrinting();
-
-  if (!isOpen) return null;
 
   const openFile = (url: string) => {
     window.open(window.location.origin + url, "_blank");
@@ -93,11 +94,8 @@ export function LabelDownloadModal({
     </div>
   );
 
-  const metricSizes = labelSizes.filter((s) => s.metric);
-  const imperialSizes = labelSizes.filter((s) => !s.metric);
-
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <ModalHeader>
           <ModalTitle>

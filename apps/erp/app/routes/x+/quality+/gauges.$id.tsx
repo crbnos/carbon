@@ -7,7 +7,7 @@ import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
@@ -95,7 +95,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     gaugeCalibrationStatus,
     gaugeTypeId: d.gaugeTypeId,
     gaugeRole: d.gaugeRole,
-    supplierId: d.supplierId || null,
+    manufacturer: d.manufacturer || null,
     modelNumber: d.modelNumber || null,
     serialNumber: d.serialNumber || null,
     description: d.description || null,
@@ -134,7 +134,7 @@ export default function GaugeRoute() {
   const initialValues = {
     id: gauge.id,
     gaugeId: gauge.gaugeId,
-    supplierId: gauge.supplierId ?? "",
+    manufacturer: gauge.manufacturer ?? "",
     modelNumber: gauge.modelNumber ?? "",
     serialNumber: gauge.serialNumber ?? "",
     description: gauge.description ?? "",
@@ -151,7 +151,7 @@ export default function GaugeRoute() {
     ...getCustomFields(gauge.customFields)
   };
 
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   return (
     <GaugeForm
@@ -160,7 +160,8 @@ export default function GaugeRoute() {
       initialValues={initialValues}
       records={records}
       gaugeTypes={routeData?.gaugeTypes ?? []}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

@@ -31,6 +31,7 @@ import {
   Table
 } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople, useSuppliers } from "~/stores";
@@ -42,10 +43,11 @@ import type { PurchaseReturnOrderListItem } from "./types";
 type PurchaseReturnOrdersTableProps = {
   data: PurchaseReturnOrderListItem[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const PurchaseReturnOrdersTable = memo(
-  ({ data, count }: PurchaseReturnOrdersTableProps) => {
+  ({ data, count, infinite }: PurchaseReturnOrdersTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
@@ -232,6 +234,7 @@ const PurchaseReturnOrdersTable = memo(
           count={count}
           columns={columns}
           data={data}
+          infinite={infinite}
           defaultColumnPinning={{
             left: ["purchaseReturnOrderId"]
           }}
@@ -259,11 +262,9 @@ const PurchaseReturnOrdersTable = memo(
             text={t`Are you sure you want to delete ${selectedPurchaseReturnOrder.purchaseReturnOrderId!}? This cannot be undone.`}
             onCancel={() => {
               deletePurchaseReturnOrderModal.onClose();
-              setSelectedPurchaseReturnOrder(null);
             }}
             onSubmit={() => {
               deletePurchaseReturnOrderModal.onClose();
-              setSelectedPurchaseReturnOrder(null);
             }}
           />
         )}

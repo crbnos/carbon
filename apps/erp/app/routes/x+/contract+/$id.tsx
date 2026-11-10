@@ -12,6 +12,7 @@ import {
   contractPositionPreview,
   datetime,
   horizon,
+  isProgressRevenueMethod,
   lineRevenueDates,
   lineTotals,
   planInvoiceSchedule,
@@ -25,6 +26,7 @@ import {
 import { msg } from "@lingui/core/macro";
 import type {
   LoaderFunctionArgs,
+  MetaFunction,
   ShouldRevalidateFunction
 } from "react-router";
 import { useLoaderData, useMatches, useParams } from "react-router";
@@ -45,17 +47,31 @@ import {
 } from "~/modules/sales/ui/Contracts";
 import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "contract");
 
+const serviceContractsCrumb = detailBreadcrumb(
+  { breadcrumb: msg`Service Contracts`, to: path.to.contracts },
+  (data) => data?.contract?.customerContractId
+);
+const projectContractsCrumb = detailBreadcrumb(
+  { breadcrumb: msg`Project Contracts`, to: path.to.projectContracts },
+  (data) => data?.contract?.customerContractId
+);
+
 export const handle: Handle = {
-  breadcrumb: detailBreadcrumb(
-    { breadcrumb: msg`Service Contracts`, to: path.to.contracts },
-    (data) => data?.contract?.customerContractId
-  ),
+  // The list the contract belongs to, by its billing basis.
+  breadcrumb: (params: unknown, data: ContractRouteData | undefined) =>
+    data?.contract?.billingBasis === "Project"
+      ? projectContractsCrumb(params, data)
+      : serviceContractsCrumb(params, data),
   module: "sales"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.contract?.customerContractId, "Service Contract");
 
 // An amend / cancel preview posts but commits nothing, so it never refreshes
 // the page; every other submission and navigation does.
@@ -75,22 +91,35 @@ export async function loader({
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [contract, lines, schedule, amendments, storedRevenue, timeZone] =
-    await Promise.all([
-      api.sales.getContract({ customerContractId: id }),
-      api.sales.getContractLines({ customerContractId: id }),
-      api.sales.getContractInvoiceSchedule({ customerContractId: id }),
-      api.sales.getContractAmendments({ customerContractId: id }),
-      client
-        .from("customerContractRevenue")
-        .select(
-          "customerContractLineId, periodStart, periodEnd, amount, status"
-        )
-        .eq("customerContractId", id)
-        .eq("companyId", companyId)
-        .order("periodStart", { ascending: true }),
-      getCompanyTimeZone(client, companyId)
-    ]);
+  const [
+    contract,
+    lines,
+    schedule,
+    amendments,
+    storedRevenue,
+    timeZone,
+    researchFlags
+  ] = await Promise.all([
+    api.sales.getContract({ customerContractId: id }),
+    api.sales.getContractLines({ customerContractId: id }),
+    api.sales.getContractInvoiceSchedule({ customerContractId: id }),
+    api.sales.getContractAmendments({ customerContractId: id }),
+    client
+      .from("customerContractRevenue")
+      .select("customerContractLineId, periodStart, periodEnd, amount, status")
+      .eq("customerContractId", id)
+      .eq("companyId", companyId)
+      .order("periodStart", { ascending: true }),
+    getCompanyTimeZone(client, companyId),
+    client
+      .from("customerContract")
+      .select(
+        "researchFunded, paymentContingentOnSuccess, contractorRetainsRights"
+      )
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
 
   if (contract.error || !contract.data) {
     throw redirect(
@@ -101,12 +130,17 @@ export async function loader({
   if (contract.data.companyId !== companyId) {
     throw redirect(path.to.contracts);
   }
+  // A failure past this point returns to the list of the contract's basis.
+  const contractsPath =
+    contract.data.billingBasis === "Project"
+      ? path.to.projectContracts
+      : path.to.contracts;
   // NOT NULL on the table; the view types it nullable.
   const { currencyCode } = contract.data;
   if (!currencyCode) {
     logger.error("Contract has no currency", { companyId, id });
     throw redirect(
-      path.to.contracts,
+      contractsPath,
       await flash(request, error(null, "Failed to load contract"))
     );
   }
@@ -118,7 +152,7 @@ export async function loader({
     storedRevenue.error
   ) {
     throw redirect(
-      path.to.contracts,
+      contractsPath,
       await flash(
         request,
         error(
@@ -130,6 +164,15 @@ export async function loader({
         )
       )
     );
+  }
+
+  if (researchFlags.error) {
+    // The panel then shows the defaults; the contract still opens.
+    logger.error("Failed to load the contract's R&D tax flags", {
+      companyId,
+      id,
+      error: researchFlags.error
+    });
   }
 
   const contractLines = lines.data ?? [];
@@ -209,7 +252,7 @@ export async function loader({
   ]);
   if (salesInvoices.error || memos.error) {
     throw redirect(
-      path.to.contracts,
+      contractsPath,
       await flash(
         request,
         error(salesInvoices.error ?? memos.error, "Failed to load contract")
@@ -242,6 +285,9 @@ export async function loader({
   let revenueLines: ReturnType<typeof revenuePreview> = [];
   try {
     revenueLines = contractLines.flatMap((line) => {
+      // Right to Invoice and Percent Complete lines have no planned revenue:
+      // the monthly recognition run computes it from progress.
+      if (isProgressRevenueMethod(line.revenueMethod)) return [];
       const dates = lineRevenueDates(line);
       // A Recurring line with no end (open-ended, or running to the contract's
       // end) earns over the periods the schedule bills it for — not all at once,
@@ -302,12 +348,20 @@ export async function loader({
         fallbackEnds: lastPeriodEndByLine,
         recognizeRevenueFrom: current.recognizeRevenueFrom
       });
-  // Per line: billed − Σ revenue. Non-zero blocks Confirm.
+  // Per line: billed − Σ revenue. Non-zero blocks Confirm. A progress line
+  // has no planned revenue (above), so a Fixed Percent Complete line's
+  // billed total has nothing to match.
+  const progressLineIds = new Set(
+    contractLines
+      .filter((line) => isProgressRevenueMethod(line.revenueMethod))
+      .map((line) => line.id)
+  );
   const revenueResiduals: Record<string, number> = {};
   for (const [lineId, residual] of validateRevenueEdit(
     billedTotals,
     revenueRows
   ).residuals) {
+    if (progressLineIds.has(lineId)) continue;
     revenueResiduals[lineId] = residual;
   }
 
@@ -325,7 +379,14 @@ export async function loader({
     lineTotals: plannedTotals,
     revenueRows,
     revenueIsStored,
-    revenueResiduals
+    revenueResiduals,
+    researchFlags: {
+      researchFunded: researchFlags.data?.researchFunded ?? null,
+      paymentContingentOnSuccess:
+        researchFlags.data?.paymentContingentOnSuccess ?? false,
+      contractorRetainsRights:
+        researchFlags.data?.contractorRetainsRights ?? false
+    }
   };
 }
 

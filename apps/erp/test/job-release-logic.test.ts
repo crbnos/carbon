@@ -9,7 +9,9 @@ vi.mock("@lingui/core/macro", () => ({
   msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
 }));
 import {
+  startingPurchaseOrders,
   jobReleaseProblems,
+  materialsWithoutStorageUnit,
   makeMethodsMissingOperations,
   outsideOperationsNeedingPurchaseOrders,
   resolveOperationSupplier,
@@ -114,7 +116,8 @@ describe("jobReleaseProblems", () => {
   const ready = {
     manufacturingBlocked: false,
     missingAssemblies: [],
-    outsideOperationsWithoutSupplier: []
+    outsideOperationsWithoutSupplier: [],
+    materialsWithoutStorageUnit: []
   };
 
   it("finds nothing to fix on a job that is ready", () => {
@@ -132,13 +135,77 @@ describe("jobReleaseProblems", () => {
         outsideOperationsWithoutSupplier: [
           { description: "Heat Treat", missing: "choose" },
           { description: "Paint", missing: "none" }
+        ],
+        materialsWithoutStorageUnit: [
+          { description: "BOLT-10" },
+          { description: "NUT-10" }
         ]
       })
     ).toEqual([
       "manufacturing is blocked",
       "no operations on Bracket, Housing",
       "choose a supplier for Heat Treat on the job",
-      "Paint has no supplier"
+      "Paint has no supplier",
+      "set a Pull From storage unit on BOLT-10; NUT-10"
+    ]);
+  });
+});
+
+describe("startingPurchaseOrders", () => {
+  it("starts every supplier on a new PO and asks for a choice when Drafts exist", () => {
+    const result = startingPurchaseOrders([
+      { supplierId: "s1", draftPurchaseOrders: [] },
+      { supplierId: "s2", draftPurchaseOrders: [{ id: "po-a" }] }
+    ]);
+    expect(result.purchaseOrders).toEqual({ s1: "new", s2: "new" });
+    expect([...result.suppliersToChoose]).toEqual(["s2"]);
+  });
+
+  it("keeps the PO an earlier slice created, with no choice to make", () => {
+    // Slice 1 created po-1 for s1; slice 2 now reads it as a Draft of s1.
+    const result = startingPurchaseOrders(
+      [{ supplierId: "s1", draftPurchaseOrders: [{ id: "po-1" }] }],
+      { carried: { s1: "po-1" } }
+    );
+    expect(result.purchaseOrders).toEqual({ s1: "po-1" });
+    expect(result.suppliersToChoose.size).toBe(0);
+  });
+
+  it("ignores a carried PO that is no longer a Draft of the supplier", () => {
+    const result = startingPurchaseOrders(
+      [{ supplierId: "s1", draftPurchaseOrders: [{ id: "po-other" }] }],
+      { carried: { s1: "po-1" } }
+    );
+    expect(result.purchaseOrders).toEqual({ s1: "new" });
+    expect([...result.suppliersToChoose]).toEqual(["s1"]);
+  });
+
+  it("takes a chosen Draft, and asks nobody once a choice is sent", () => {
+    const result = startingPurchaseOrders(
+      [
+        { supplierId: "s1", draftPurchaseOrders: [{ id: "po-a" }] },
+        { supplierId: "s2", draftPurchaseOrders: [{ id: "po-b" }] }
+      ],
+      { chosen: { s1: "po-a", s2: "po-not-a-draft" } }
+    );
+    expect(result.purchaseOrders).toEqual({ s1: "po-a", s2: "new" });
+    expect(result.suppliersToChoose.size).toBe(0);
+  });
+});
+
+describe("jobReleaseProblems with a long BoM", () => {
+  it("names the first five parts and counts the rest", () => {
+    expect(
+      jobReleaseProblems({
+        manufacturingBlocked: false,
+        missingAssemblies: [],
+        outsideOperationsWithoutSupplier: [],
+        materialsWithoutStorageUnit: Array.from({ length: 40 }, (_, i) => ({
+          description: `PART-${i + 1}`
+        }))
+      })
+    ).toEqual([
+      "set a Pull From storage unit on PART-1; PART-2; PART-3; PART-4; PART-5; and 35 more"
     ]);
   });
 });
@@ -147,7 +214,8 @@ describe("jobReleaseProblems: what the job page also refuses", () => {
   const base = {
     manufacturingBlocked: false,
     missingAssemblies: [],
-    outsideOperationsWithoutSupplier: []
+    outsideOperationsWithoutSupplier: [],
+    materialsWithoutStorageUnit: []
   };
 
   it("names a job with nothing to make and one that cannot complete to its asset", () => {
@@ -161,6 +229,76 @@ describe("jobReleaseProblems: what the job page also refuses", () => {
       "nothing to make",
       "Make to Asset needs a serialized item or a quantity of one"
     ]);
+  });
+});
+
+describe("materialsWithoutStorageUnit", () => {
+  const line = {
+    methodType: "Pull from Inventory",
+    itemType: "Part",
+    storageUnitId: null,
+    item: { itemTrackingType: "Inventory", readableIdWithRevision: "BOLT-10" }
+  };
+
+  it("names each part once, even when it is on several lines", () => {
+    expect(
+      materialsWithoutStorageUnit([
+        { ...line, id: "jm-1", description: "Bolt" },
+        { ...line, id: "jm-2", description: "Bolt" }
+      ])
+    ).toEqual([{ id: "jm-1", description: "BOLT-10" }]);
+  });
+
+  it("skips lines with a storage unit, built lines and non-stock items", () => {
+    expect(
+      materialsWithoutStorageUnit([
+        { ...line, id: "jm-1", description: "Bolt", storageUnitId: "bin-1" },
+        {
+          ...line,
+          id: "jm-2",
+          description: "Bracket",
+          methodType: "Make to Order"
+        },
+        {
+          ...line,
+          id: "jm-3",
+          description: "Paint",
+          item: { itemTrackingType: "Non-Inventory", readableIdWithRevision: "PAINT" }
+        }
+      ])
+    ).toEqual([]);
+  });
+
+  it("names a part whose bin is non-nettable, with the bin", () => {
+    expect(
+      materialsWithoutStorageUnit([
+        {
+          ...line,
+          id: "jm-1",
+          description: "Bolt",
+          storageUnitId: "mrb",
+          storageUnit: { name: "MRB-Hold", effectiveNettable: false }
+        },
+        {
+          ...line,
+          id: "jm-2",
+          description: "Nut",
+          storageUnitId: "bin-1",
+          storageUnit: { name: "A1", effectiveNettable: true },
+          item: { itemTrackingType: "Inventory", readableIdWithRevision: "NUT-10" }
+        }
+      ])
+    ).toEqual([
+      { id: "jm-1", description: "BOLT-10 (MRB-Hold is non-nettable)" }
+    ]);
+  });
+
+  it("falls back to the line description when the item has no readable id", () => {
+    expect(
+      materialsWithoutStorageUnit([
+        { ...line, id: "jm-1", description: "Bolt", item: null }
+      ])
+    ).toEqual([{ id: "jm-1", description: "Bolt" }]);
   });
 });
 

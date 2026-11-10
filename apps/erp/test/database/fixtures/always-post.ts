@@ -495,7 +495,19 @@ export async function stockPart(
 
 export async function receiveFromPurchaseOrder(
   f: Fixture,
-  key = "1"
+  key = "1",
+  unitPrice = 10
+): Promise<string> {
+  const receiptId = await draftReceiptFromPurchaseOrder(f, key, unitPrice);
+  unwrap(await invokePosting(handlesOf(f.ctx), "post-receipt", { type: "post", receiptId }, postReceipt));
+  return receiptId;
+}
+
+/** A Draft receipt for 10 of the part, on a new purchase order. */
+export async function draftReceiptFromPurchaseOrder(
+  f: Fixture,
+  key = "1",
+  unitPrice = 10
 ): Promise<string> {
   const purchaseOrderId = `${f.prefix}-po-${key}`;
   await seed(f, async (trx) => {
@@ -532,7 +544,7 @@ export async function receiveFromPurchaseOrder(
         purchaseOrderLineType: "Part",
         itemId: f.partId,
         purchaseQuantity: 10,
-        supplierUnitPrice: 10,
+        supplierUnitPrice: unitPrice,
         exchangeRate: 1,
         conversionFactor: 1,
         inventoryUnitOfMeasureCode: "EA",
@@ -549,7 +561,6 @@ export async function receiveFromPurchaseOrder(
                   locationId: f.locationId
                 })
   );
-  unwrap(await invokePosting(handlesOf(f.ctx), "post-receipt", { type: "post", receiptId: receipt.id }, postReceipt));
   return receipt.id;
 }
 

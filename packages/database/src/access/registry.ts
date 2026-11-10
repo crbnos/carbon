@@ -10,10 +10,12 @@ import { INVOICING_PAGES } from "./pages/invoicing";
 import { PARTS_PAGES } from "./pages/parts";
 import { PEOPLE_PAGES } from "./pages/people";
 import { PRODUCTION_PAGES } from "./pages/production";
+import { PROJECTS_PAGES } from "./pages/projects";
 import { PURCHASING_PAGES } from "./pages/purchasing";
 import { QUALITY_PAGES } from "./pages/quality";
 import { RESOURCES_PAGES } from "./pages/resources";
 import { SALES_PAGES } from "./pages/sales";
+import { SERVICE_PAGES } from "./pages/service";
 import { SETTINGS_PAGES } from "./pages/settings";
 import { USERS_PAGES } from "./pages/users";
 import { WORKFLOWS_PAGES } from "./pages/workflows";
@@ -64,10 +66,12 @@ export const MODULES: readonly { id: string; label: string }[] = [
   { id: "parts", label: "Items" },
   { id: "people", label: "People" },
   { id: "production", label: "Production" },
+  { id: "projects", label: "Projects" },
   { id: "purchasing", label: "Purchasing" },
   { id: "quality", label: "Quality" },
   { id: "resources", label: "Resources" },
   { id: "sales", label: "Sales" },
+  { id: "service", label: "Service" },
   { id: "settings", label: "Settings" },
   { id: "users", label: "Users" },
   { id: "workflows", label: "Workflows" }
@@ -82,10 +86,12 @@ export const PAGES = [
   ...PARTS_PAGES,
   ...PEOPLE_PAGES,
   ...PRODUCTION_PAGES,
+  ...PROJECTS_PAGES,
   ...PURCHASING_PAGES,
   ...QUALITY_PAGES,
   ...RESOURCES_PAGES,
   ...SALES_PAGES,
+  ...SERVICE_PAGES,
   ...SETTINGS_PAGES,
   ...USERS_PAGES,
   ...WORKFLOWS_PAGES

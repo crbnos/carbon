@@ -33,7 +33,8 @@ import {
   Th,
   Thead,
   Tr,
-  toast
+  toast,
+  toastError
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
@@ -134,6 +135,16 @@ const SupplierInteractionDocuments = ({
                       <HStack>
                         <DocumentIcon type={getDocumentType(attachment.name)} />
                         <span
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(
+                            e: React.KeyboardEvent<HTMLSpanElement>
+                          ) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              e.currentTarget.click();
+                            }
+                          }}
                           className="font-medium"
                           onClick={() => download(attachment)}
                         >
@@ -265,7 +276,7 @@ export const useSupplierInteractionDocuments = ({
         .remove([getPath(attachment)]);
 
       if (error) {
-        toast.error(error.message || "Error deleting file");
+        toastError("Error deleting file", error);
         return;
       }
 
@@ -281,7 +292,7 @@ export const useSupplierInteractionDocuments = ({
       try {
         await downloadUrl(url, attachment.name);
       } catch (error) {
-        toast.error(t`Error downloading file`);
+        toastError(t`Error downloading file`, error);
         logger.error("Error", { error: error });
       }
     },

@@ -32,7 +32,9 @@ import {
   SupplierAvatar,
   Table
 } from "~/components";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople, useSuppliers } from "~/stores";
@@ -47,10 +49,11 @@ import {
 type SupplierQuotesTableProps = {
   data: SupplierQuote[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const SupplierQuotesTable = memo(
-  ({ data, count }: SupplierQuotesTableProps) => {
+  ({ data, count, infinite }: SupplierQuotesTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
@@ -266,12 +269,16 @@ const SupplierQuotesTable = memo(
       );
     }, [deleteSupplierQuoteModal, navigate, permissions]);
 
+    const lineItemRows = useLineItemRows<SupplierQuote>("supplier-quotes");
+
     return (
       <>
         <Table<SupplierQuote>
           count={count}
           columns={columns}
           data={data}
+          {...lineItemRows}
+          infinite={infinite}
           defaultColumnPinning={{
             left: ["supplierQuoteId"]
           }}
@@ -299,11 +306,9 @@ const SupplierQuotesTable = memo(
             text={`Are you sure you want to delete ${selectedSupplierQuote.supplierQuoteId!}? This cannot be undone.`}
             onCancel={() => {
               deleteSupplierQuoteModal.onClose();
-              setSelectedSupplierQuote(null);
             }}
             onSubmit={() => {
               deleteSupplierQuoteModal.onClose();
-              setSelectedSupplierQuote(null);
             }}
           />
         )}

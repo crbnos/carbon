@@ -90,6 +90,7 @@ export default function QualityDocumentEditor() {
     <div className="flex flex-col w-full h-full">
       {canEdit ? (
         <Editor
+          label={t`Document content`}
           toolbar
           title={{
             value: documentName,

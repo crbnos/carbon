@@ -93,7 +93,8 @@ function kept its logic as is:
   it checks the caller behind `client` first.
 - The operation keeps the function's permission exactly: a `<name>Permission`
   constant beside the body, passed as `as`. `apps/erp/test/posting-permissions.test.ts`
-  pins them. A row rule passed as `as` is read by `authorizePostingCaller`
+  checks every one names a real page and none is open to every member
+  without review. A row rule passed as `as` is read by `authorizePostingCaller`
   through `readRowRequirement`, as the gate reads it.
 - Its live-database tests move to `apps/erp/test/database/`, on the fixtures in
   `apps/erp/test/database/fixtures/` (`always-post.ts`, whose `service` is a

@@ -66,7 +66,7 @@ export async function action({ request }: ActionFunctionArgs) {
       path.to.partners,
       await flash(
         request,
-        error(updatePartner.error, "Failed to create partner")
+        error(updatePartner.error, "Failed to update partner")
       )
     );
   }

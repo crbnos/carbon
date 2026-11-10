@@ -24,7 +24,9 @@ function renderCell<T>(row: Row<T>, column: Column<T, unknown> | undefined) {
   if (!meta?.mobileLabel || typeof header !== "string") return value;
   return (
     <>
-      <span className="mr-1 text-[13px] text-muted-foreground">{header}</span>
+      <span className="mr-1 text-[0.8125rem] text-muted-foreground">
+        {header}
+      </span>
       {value}
     </>
   );
@@ -33,7 +35,7 @@ function renderCell<T>(row: Row<T>, column: Column<T, unknown> | undefined) {
 type CompactRowProps<T> = {
   row: Row<T>;
   slots: CompactSlots<T>;
-  selection?: { selected: boolean; onToggle: () => void };
+  selection?: { selected: boolean; onToggle: () => void; label?: string };
   expansion?: { expanded: boolean; onToggle: () => void };
   className?: string;
 };
@@ -98,7 +100,7 @@ export function CompactRow<T>({
           <div
             data-p1
             className={cn(
-              "min-w-0 flex-1 truncate text-[15px] font-medium text-foreground",
+              "min-w-0 flex-1 truncate text-[0.9375rem] font-medium text-foreground",
               // Stretch the identity link over the whole row; with selection
               // active a tap toggles the row instead.
               !selection &&
@@ -112,7 +114,7 @@ export function CompactRow<T>({
             {renderCell(row, slots.p1)}
           </div>
           {p2 !== null ? (
-            <div className="max-w-[45%] shrink-0 truncate text-right text-[15px] tabular-nums text-foreground [&_*]:truncate [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10">
+            <div className="max-w-[45%] shrink-0 truncate text-right text-[0.9375rem] tabular-nums text-foreground [&_*]:truncate [&_a]:relative [&_a]:z-10 [&_button]:relative [&_button]:z-10">
               {p2}
             </div>
           ) : null}
@@ -123,7 +125,7 @@ export function CompactRow<T>({
           // into a row here, so their parts need a gap.
           <div
             data-line
-            className="min-w-0 truncate text-[13px] text-muted-foreground [&_*]:truncate [&>*]:!flex-row [&>*]:items-center [&>[class~=flex-col]]:!gap-x-1.5"
+            className="min-w-0 truncate text-[0.8125rem] text-muted-foreground [&_*]:truncate [&>*]:!flex-row [&>*]:items-center [&>[class~=flex-col]]:!gap-x-1.5"
           >
             <EnumerableAsText value>{p3}</EnumerableAsText>
           </div>
@@ -168,7 +170,9 @@ export function CompactRow<T>({
       {selection ? (
         <button
           type="button"
-          aria-label={t`Select row`}
+          aria-label={
+            selection.label ? t`Select ${selection.label}` : t`Select row`
+          }
           className="absolute inset-0"
           onClick={selection.onToggle}
         />

@@ -117,9 +117,26 @@ export const SALES_PAGES = [
       "customerContractInvoiceLine",
       "customerContractLedgerEntry",
       "customerContractLine",
-      "customerContractRevenue"
+      "customerContractRevenue",
+      "customerContractFinancing",
+      "customerContractFinancingRate",
+      "customerContractFunding",
+      "customerContractLaborRate",
+      "customerContractRateCeiling",
+      "contractFinancingRequest",
+      "contractFinancingRequestEvent",
+      "performanceBasedPaymentEvent"
     ],
     paths: ["/x/sales/contracts", "/x/contract/"]
+  },
+  {
+    // The Project billing basis contracts: their records open under /x/contract
+    // and write as Service Contracts.
+    id: "sales.projectContracts",
+    label: "Project Contracts",
+    maxLevel: "View",
+    tables: [],
+    paths: ["/x/sales/project-contracts"]
   },
   {
     id: "sales.rentalAgreements",
@@ -128,6 +145,7 @@ export const SALES_PAGES = [
     tables: [
       "rentalAgreement",
       "rentalAgreementCharge",
+      "rentalAgreementContact",
       "rentalAgreementLine",
       "rentalBillingPeriod",
       "rentalLeaseScheduleLine",

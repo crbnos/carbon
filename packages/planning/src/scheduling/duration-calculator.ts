@@ -7,6 +7,19 @@ import type { BaseOperation, FactorUnit } from "./types.ts";
 
 const HOURS_PER_WORKDAY = 8;
 
+/** The fields of an operation its time standards are read from. */
+type OperationTimes = Pick<
+  BaseOperation,
+  | "operationQuantity"
+  | "quantityComplete"
+  | "setupTime"
+  | "setupUnit"
+  | "laborTime"
+  | "laborUnit"
+  | "machineTime"
+  | "machineUnit"
+>;
+
 /**
  * Convert time value to hours based on the unit type
  */
@@ -174,7 +187,7 @@ export function calculateDurationMs(operation: BaseOperation): number {
 /**
  * Calculate detailed duration breakdown for an operation
  */
-export function calculateDurationBreakdown(operation: BaseOperation): {
+export function calculateDurationBreakdown(operation: OperationTimes): {
   setupHours: number;
   laborHours: number;
   machineHours: number;
@@ -239,6 +252,37 @@ export function remainingFractions(
   const work = Math.min(Math.max(1 - complete / total, 0), 1);
   const setup = hasProductionEvent ? 0 : 1;
   return { setup, work };
+}
+
+/**
+ * The hours a (possibly started) operation still needs, split the way the
+ * scheduler books them: `remainingFractions` nets each part, `durationHours`
+ * is setup + max(labor, machine) and `attendedHours` the hands-on part
+ * (setup + labor, never more than the duration).
+ */
+export function remainingWorkHours(
+  op: OperationTimes,
+  hasProductionEvent: boolean
+): {
+  setupHours: number;
+  laborHours: number;
+  machineHours: number;
+  durationHours: number;
+  attendedHours: number;
+} {
+  const { setup, work } = remainingFractions(op, hasProductionEvent);
+  const breakdown = calculateDurationBreakdown(op);
+  const setupHours = breakdown.setupHours * setup;
+  const laborHours = breakdown.laborHours * work;
+  const machineHours = breakdown.machineHours * work;
+  const durationHours = setupHours + Math.max(laborHours, machineHours);
+  return {
+    setupHours,
+    laborHours,
+    machineHours,
+    durationHours,
+    attendedHours: Math.min(setupHours + laborHours, durationHours)
+  };
 }
 
 export { convertToHours, convertToMilliseconds, HOURS_PER_WORKDAY };

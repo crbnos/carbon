@@ -22,6 +22,7 @@ import {
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import type { IssueWorkflow } from "../../types";
@@ -30,10 +31,11 @@ import { getPriorityIcon, getSourceIcon } from "../Issue/IssueIcons";
 type IssueWorkflowsTableProps = {
   data: IssueWorkflow[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const IssueWorkflowsTable = memo(
-  ({ data, count }: IssueWorkflowsTableProps) => {
+  ({ data, count, infinite }: IssueWorkflowsTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
     const permissions = usePermissions();
@@ -128,6 +130,7 @@ const IssueWorkflowsTable = memo(
       <>
         <Table<IssueWorkflow>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           primaryAction={
@@ -140,18 +143,12 @@ const IssueWorkflowsTable = memo(
           table="nonConformanceWorkflow"
           withSavedView
         />
-        {deleteDisclosure.isOpen && selectedIssueWorkflow && (
+        {selectedIssueWorkflow && (
           <ConfirmDelete
             action={path.to.deleteIssueWorkflow(selectedIssueWorkflow.id!)}
-            isOpen
-            onCancel={() => {
-              setSelectedIssueWorkflow(null);
-              deleteDisclosure.onClose();
-            }}
-            onSubmit={() => {
-              setSelectedIssueWorkflow(null);
-              deleteDisclosure.onClose();
-            }}
+            isOpen={deleteDisclosure.isOpen}
+            onCancel={deleteDisclosure.onClose}
+            onSubmit={deleteDisclosure.onClose}
             name={selectedIssueWorkflow.name ?? "issue workflow"}
             text={t`Are you sure you want to delete this issue workflow?`}
           />

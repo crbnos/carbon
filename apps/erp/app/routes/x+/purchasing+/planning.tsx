@@ -18,9 +18,18 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   PLANNING_DRAWER_PARAM,
-  resolvePlanningActionScope
+  resolvePlanningActionScope,
+  resolvePlanningSegmentScope
 } from "~/modules/production/production.models";
 import { getPlanningActions } from "~/modules/production/production.service";
+import { PlanningOverdueBorrows } from "~/modules/production/ui/Planning/PlanningOverdueBorrows";
+import { withPlanningActions } from "~/modules/production/ui/Planning/planning-action-scope";
+import { getProjectBorrows } from "~/modules/projects/projects.service";
+import {
+  getPurchasingPlanning,
+  getPurchasingPlanningSuppliers,
+  PURCHASING_PLANNING_PAGING
+} from "~/modules/purchasing/purchasing.service";
 import type { PurchasingPlanningItem } from "~/modules/purchasing/types";
 import PurchasingPlanningTable from "~/modules/purchasing/ui/Planning/PurchasingPlanningTable";
 import {
@@ -29,7 +38,9 @@ import {
   resolveLocationId
 } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
+import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
+import { listErrorPage } from "~/utils/list-registry/list-error";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -44,7 +55,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId, api } = await authorize(
+  const { client, companyId, userId } = await authorize(
     request,
     { "purchasing.materialPlanning": "View" },
     { bypassRls: true }
@@ -54,7 +65,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
 
-  const { limit, offset, sorts, filters } =
+  const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
   const locationId = await resolveLocationId(client, request, {
@@ -77,8 +88,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // The grid's Actions and Assignee filters are not RPC
   // columns: they go to the RPC as arguments, which keeps the items with a
   // matching OPEN action inside each item's planning horizon.
-  const { gridFilters, actionTypes, actionAssignees } =
-    resolvePlanningActionScope({ filters });
+  const actionScope = resolvePlanningActionScope({ filters });
+  const { actionTypes, actionAssignees } = actionScope;
+  // The Segment filter is not an RPC column either: Common is the empty
+  // segment id, which a URL filter cannot carry.
+  const { gridFilters, segments } = resolvePlanningSegmentScope({
+    filters: actionScope.gridFilters
+  });
 
   const periodIds = periods.map((p) => p.id);
   const asOf = locationToday.toString();
@@ -86,37 +102,47 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // A link to a row's order drawer (`?item=`) opens it even when the row is
   // not on this page — the plan has changed since the link was made, or it
   // came from another page. That row is read on its own, alongside the page.
-  const drawerItemId = searchParams.get(PLANNING_DRAWER_PARAM);
+  // A later page (`?after=`) is read for its rows and their actions only.
+  const drawerItemId = cursor ? null : searchParams.get(PLANNING_DRAWER_PARAM);
 
-  const [items, drawerItemRead] = await Promise.all([
-    api.purchasing.getPurchasingPlanning({
+  // The Supplier filter's options: the suppliers the plan lists. A later page
+  // keeps the first page's filter, so only the first page reads them.
+  const [items, drawerItemRead, supplierRead] = await Promise.all([
+    getPurchasingPlanning(client, locationId, companyId, periodIds, {
       search,
       limit,
-      offset,
+      cursor,
       sorts,
       filters: gridFilters,
       asOf,
       actionTypes,
       actionAssignees,
-      locationId,
-      periods: periodIds
+      segments
     }),
     drawerItemId
-      ? api.purchasing.getPurchasingPlanning({
+      ? getPurchasingPlanning(client, locationId, companyId, periodIds, {
           search: null,
           limit: 1,
-          offset: 0,
+          cursor: null,
           sorts: [],
           filters: [{ column: "id", operator: "eq", value: drawerItemId }],
-          asOf,
-          locationId,
-          periods: periodIds
+          asOf
         })
-      : null
+      : null,
+    cursor
+      ? null
+      : getPurchasingPlanningSuppliers(client, locationId, companyId, periodIds)
   ]);
 
   if (items.error) {
-    redirect(
+    logger.error("Failed to load the planning items", {
+      companyId,
+      locationId,
+      laterPage: Boolean(cursor),
+      error: items.error
+    });
+    if (cursor) return listErrorPage("items");
+    throw redirect(
       path.to.purchasing,
       await flash(request, error(items.error, "Failed to fetch planning items"))
     );
@@ -132,8 +158,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
       error: drawerItemRead.error
     });
   }
-  const pageItems = (items.data?.rows ?? []) as PurchasingPlanningItem[];
-  const linkedItem = (drawerItemRead?.data?.rows?.[0] ??
+  // A failed read leaves the filter offering every supplier, as it did before.
+  if (supplierRead?.error) {
+    logger.error("Failed to load the planning suppliers", {
+      companyId,
+      locationId,
+      error: supplierRead.error
+    });
+  }
+  const supplierIds =
+    supplierRead && !supplierRead.error
+      ? (supplierRead.data ?? []).map((row) => row.supplierId)
+      : null;
+
+  const page = toPage(
+    (items.data ?? []) as PurchasingPlanningItem[],
+    { limit, sorts },
+    PURCHASING_PLANNING_PAGING
+  );
+  const pageItems = page.rows;
+  const linkedItem = (drawerItemRead?.data?.[0] ??
     null) as PurchasingPlanningItem | null;
   const drawerItem =
     linkedItem && !pageItems.some((item) => item.id === linkedItem.id)
@@ -144,6 +188,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // drawer's row). Every action is loaded, whatever its date: the grid hides
   // the ones beyond each row's time fence, and a planner can widen one row's
   // fence without a reload.
+  // The projects that are netting segments (a project with project stock),
+  // for the Segment column's names and its filter. One read of a bounded set.
+  const segmentProjectsRead = client
+    .from("project")
+    .select("id, identifier, name")
+    .eq("companyId", companyId)
+    .eq("projectStock", true)
+    .order("identifier");
+
   const planningActions = await getPlanningActions(client, {
     companyId,
     locationId,
@@ -161,20 +214,64 @@ export async function loader({ request }: LoaderFunctionArgs) {
       locationId,
       error: planningActions.error
     });
+    if (cursor) return listErrorPage("items");
     throw new Response("Failed to load planning actions", { status: 500 });
   }
 
+  // Open borrows at the location past their payback date: the worklist's
+  // read-only Overdue borrows group, under the Segment filter (a borrow is in
+  // the segments of its borrower and its lender; common holds none).
+  const [segmentProjects, overdueBorrowsRead] = await Promise.all([
+    segmentProjectsRead,
+    getProjectBorrows(client, companyId, {
+      status: ["Open"],
+      locationId,
+      dueBefore: asOf
+    })
+  ]);
+  if (overdueBorrowsRead.error) {
+    logger.error("Failed to load overdue project borrows", {
+      companyId,
+      locationId,
+      error: overdueBorrowsRead.error
+    });
+  }
+  const overdueBorrows = (overdueBorrowsRead.data ?? []).filter(
+    (borrow) =>
+      !segments ||
+      segments.includes(borrow.borrowerProjectId) ||
+      segments.includes(borrow.lenderProjectId)
+  );
+  if (segmentProjects.error) {
+    logger.error("Failed to load the planning segment projects", {
+      companyId,
+      error: segmentProjects.error
+    });
+    if (cursor) return listErrorPage("items");
+    throw new Response("Failed to load planning segments", { status: 500 });
+  }
+
+  // Each row carries its own actions (per item and netting segment), so a
+  // later page brings its rows' actions.
+  const actions = planningActions.data ?? [];
   return {
-    items: pageItems,
+    items: withPlanningActions(pageItems, actions),
     // The row a `?item=` link opens the drawer on, when it is not in `items`.
-    drawerItem,
-    count: items.data?.count ?? 0,
-    planningActions: planningActions.data ?? [],
+    drawerItem: drawerItem
+      ? (withPlanningActions([drawerItem], actions)[0] ?? null)
+      : null,
+    count: items.count ?? 0,
+    nextCursor: page.nextCursor,
     // The Actions-column filter the rows were matched on: each row shows only
     // its actions of these types.
     actionTypes: actionTypes ?? null,
+    // The projects that net in their own segment ('' is common).
+    segmentProjects: segmentProjects.data ?? [],
+    overdueBorrows,
     periods,
     locationId,
+    // The Supplier filter's options; null offers every supplier.
+    supplierIds,
     // Planned-order date defaults are business dates on the plant's calendar —
     // the drawer must not seed them from the planner's browser zone.
     locationToday: locationToday.toString()
@@ -186,10 +283,13 @@ export default function PurchasingPlanningRoute() {
     items,
     drawerItem,
     count,
+    nextCursor,
     locationId,
     periods,
-    planningActions,
     actionTypes,
+    segmentProjects,
+    overdueBorrows,
+    supplierIds,
     locationToday
   } = useLoaderData<typeof loader>();
 
@@ -202,16 +302,23 @@ export default function PurchasingPlanningRoute() {
           minSize={25}
           className="bg-background"
         >
-          <PurchasingPlanningTable
-            data={items}
-            drawerItem={drawerItem}
-            count={count}
-            locationId={locationId}
-            periods={periods}
-            planningActions={planningActions}
-            actionTypes={actionTypes}
-            locationToday={locationToday}
-          />
+          <div className="flex h-full flex-col">
+            <PlanningOverdueBorrows borrows={overdueBorrows} />
+            <div className="min-h-0 flex-1">
+              <PurchasingPlanningTable
+                data={items}
+                drawerItem={drawerItem}
+                count={count}
+                nextCursor={nextCursor}
+                locationId={locationId}
+                periods={periods}
+                actionTypes={actionTypes}
+                segmentProjects={segmentProjects}
+                supplierIds={supplierIds}
+                locationToday={locationToday}
+              />
+            </div>
+          </div>
         </ResizablePanel>
         <RecordOutlet />
       </ResizablePanelGroup>

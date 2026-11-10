@@ -719,8 +719,8 @@ pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1 -
 
 **As built (Tasks 18 to 22, 2026-10-19):**
 1. Task 18 converts every rule, not only rules that name the page's module. The page that owns the table decides. The 5 pending tables went to `settings.company` (`tag` and the 3 Implementation Hub tables) or to the service role (`warehouse`).
-2. Printing grants move to the Settings page Printing (`20261018205305_printing-grants-to-settings-page.sql`).
-3. Bank Accounts is a 159th page with no sidebar entry. It owns `supplierBankAccount` and `customerBankAccount` (`20261019042439_bank-accounts-permission.sql`). The user chose it, so bank details keep needing Accounting.
+2. Printing grants move to the Settings page Printing (`20261110050005_printing-grants-to-settings-page.sql`).
+3. Bank Accounts is a 159th page with no sidebar entry. It owns `supplierBankAccount` and `customerBankAccount` (`20261110050006_bank-accounts-permission.sql`). The user chose it, so bank details keep needing Accounting.
 4. A gate on a shared table can read the row: `{ row }` picks the page from the item's type, the memo's party or the run's type, and `{ anyOf }` admits any of the pages for a list. Built by `rowRule` and `anyOfRule` (`@carbon/api/permissions`).
 5. `authorize(request, gate, options)` takes a page gate or a list of gates (any one passes). `role`, `bypassRls` and `allowPortalAccounts` moved to `options`.
 6. MES batches gate on `production.batches`, not `production.jobs`: the `batch-operations` posting requires Batches.
@@ -909,12 +909,12 @@ pnpm --filter @carbon/checks test
 2. The five create actions take the page of the record they create. Notify takes Accounts or Groups. Webhook takes Workflows.
 3. The generator gives each `<entity>.update` action, each operation and each lookup the page of the entity's table (`tablePages`). Entity pages ship as `WORKFLOW_ENTITY_PAGES`, and `check-workflow-catalog.ts` compares them.
 4. `RegistryEntry.permission` and the module argument of `operation()` are gone. The engine (`execute.ts`) checks a node as it checks an event.
-5. The managed functions name pages: `get_claims` (Accounts), the five audit log functions (Audit Logs) and `util.can_manage_event_subscription` (Webhooks). They ship in `20261019053151_page-keys-in-functions.sql`, which `authz migration` wrote.
-6. `20261019053223_module-keys-to-pages.sql` redefines `is_claims_admin` (Accounts) and the two storage requirement functions (Stock Transfers) from their live definitions. It also moves six storage policies to pages, and writes the read policy of every audit log table again.
+5. The managed functions name pages: `get_claims` (Accounts), the five audit log functions (Audit Logs) and `util.can_manage_event_subscription` (Webhooks). They ship in `20261110050009_page-keys-in-functions.sql`, which `authz migration` wrote.
+6. `20261110050010_module-keys-to-pages.sql` redefines `is_claims_admin` (Accounts) and the two storage requirement functions (Stock Transfers) from their live definitions. It also moves six storage policies to pages, and writes the read policy of every audit log table again.
 7. The storage policies are new scope: the public bucket now needs Logos, and staged models need any item page. Their old names held a module key, so they are renamed.
 8. `hasPermission` (`@carbon/auth`) takes a page gate. Its five callers name Service Contracts, Rental Agreements, Leases, Accounts with Employees, and Integrations.
 9. `expandClaims` emits page keys only; `MODULE_KEYS` is gone. Three tests changed: `resolve.test.ts`, `api-key-cache.test.ts` and `users.server.test.ts`.
-10. The check is `no-module-permission-key`, with an empty baseline. It reads TS under `MODULE_KEY_ROOTS`, the managed function files, and migrations after `20261019053223`.
+10. The check is `no-module-permission-key`, with an empty baseline. It reads TS under `MODULE_KEY_ROOTS`, the managed function files, and migrations after `20261110050010`.
 11. The check skips `manifest.ts`, portal keys, `hasAny`, `holdsAny`, `pagesOf("<module>")` and `documents`, whose one page has the module's id.
 12. About 128 lines in `AGENTS.md` files and rules still name module keys in prose. Code comments were fixed; the prose is a follow-up. The portal keys in `makeCustomerPermissions` stay (out of scope).
 

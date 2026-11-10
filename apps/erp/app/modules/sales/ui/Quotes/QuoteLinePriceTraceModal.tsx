@@ -34,6 +34,7 @@ type QuoteLinePriceTraceModalProps = {
   isEditable: boolean;
   isRepricing: boolean;
   onReprice: () => void;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -45,6 +46,7 @@ const QuoteLinePriceTraceModal = ({
   isEditable,
   isRepricing,
   onReprice,
+  open = true,
   onClose
 }: QuoteLinePriceTraceModalProps) => {
   const unitPriceFormatter = useCurrencyFormatter({
@@ -59,7 +61,7 @@ const QuoteLinePriceTraceModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

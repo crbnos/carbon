@@ -35,6 +35,7 @@ export type ModelUploadRow = {
   glbPath: string | null;
   graphPath: string | null;
   thumbnailPath: string | null;
+  pmiPath: string | null;
 };
 
 export async function getModelUpload(
@@ -54,7 +55,8 @@ export async function getModelUpload(
       "optimizedModelPath",
       "glbPath",
       "graphPath",
-      "thumbnailPath"
+      "thumbnailPath",
+      "pmiPath"
     ])
     .where("id", "=", modelUploadId)
     .where("companyId", "=", companyId)

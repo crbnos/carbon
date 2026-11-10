@@ -90,12 +90,18 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
       "scheduling",
       "batching",
       "kanban",
+      "strict-backflush",
       "work-centers",
       "maintenance",
       "mes",
       "assembly-instructions",
     ],
   },
+  {
+    label: "Projects",
+    slugs: ["projects", "project-billing", "government-contracting"],
+  },
+  { label: "Service", slugs: ["service-jobs", "customer-assets"] },
   {
     label: "Inventory",
     slugs: [
@@ -124,6 +130,7 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
     label: "Accounting",
     slugs: [
       "accounting",
+      "accounting-workflows",
       "financial-reports",
       "period-close",
       "dimensions",

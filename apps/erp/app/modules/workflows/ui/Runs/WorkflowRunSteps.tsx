@@ -21,6 +21,7 @@ import {
   NODE_KIND_META
 } from "../Builder/nodes/meta";
 import { ConditionDetail } from "./ConditionDetail";
+import { DataDetail } from "./DataDetail";
 import { StepStatus } from "./RunStatus";
 import { ValueMap } from "./RuntimeValueView";
 import { useNodeLabel } from "./useNodeLabel";
@@ -179,6 +180,7 @@ function StepRow({
   return (
     <div className="border-b border-border/50">
       <button
+        aria-expanded={hasDetail ? expanded : undefined}
         type="button"
         className="w-full flex items-center gap-3 py-3 px-3 hover:bg-muted/50 transition-colors text-left max-md:flex-wrap max-md:gap-y-1"
         onClick={() => hasDetail && setToggled(!expanded)}
@@ -277,10 +279,12 @@ function StepRow({
               )}
               {step.detail !== null && (
                 <ExpandedSection label={t`Why`}>
+                  {/* Each answers only for its own detail kind. */}
                   <ConditionDetail
                     detail={step.detail}
                     node={node?.type === "condition" ? node : undefined}
                   />
+                  <DataDetail detail={step.detail} />
                 </ExpandedSection>
               )}
             </>
@@ -386,7 +390,7 @@ export function WorkflowRunSteps({
       {compacted && (
         <div className="px-4 py-2 text-xs text-muted-foreground border-b border-border/50">
           <Trans>
-            Values in this run have been summarised. Full detail is kept for 7
+            Values in this run have been summarized. Full detail is kept for 7
             days.
           </Trans>
         </div>

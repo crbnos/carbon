@@ -337,6 +337,7 @@ const MachineTimeDrawer = ({
                   <Trans>Another job or operation</Trans>
                 </span>
                 <Combobox
+                  aria-label={t`Another job or operation`}
                   size="sm"
                   value=""
                   options={searchOptions}

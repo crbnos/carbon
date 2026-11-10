@@ -5,17 +5,26 @@
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { useMount, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
+import {
+  getJobOperations,
+  JOB_OPERATIONS_PAGING
+} from "~/modules/production/production.service";
 import { JobOperationsTable } from "~/modules/production/ui/Jobs";
+import { toPage } from "~/utils/cursor";
+import { listErrorPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
+const logger = getLogger("erp", "job-operations");
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(
+  const { client, companyId, api } = await authorize(
     request,
     { "production.jobs": "View" },
     { role: "employee" }
@@ -27,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
+  const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
   const job = await api.production.getJob({ id: jobId });
@@ -38,17 +47,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const operations = await api.production.getJobOperations({
+  const operations = await getJobOperations(client, jobId, {
     search,
     limit,
-    offset,
+    cursor,
     sorts,
-    filters,
-    jobId
+    filters
   });
 
   if (operations.error) {
-    redirect(
+    if (cursor) {
+      logger.error("Failed to load a later page of job operations", {
+        companyId,
+        error: operations.error
+      });
+      return listErrorPage("operations");
+    }
+    throw redirect(
       path.to.production,
       await flash(
         request,
@@ -57,14 +72,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const page = toPage(
+    operations.data ?? [],
+    { limit, sorts },
+    JOB_OPERATIONS_PAGING
+  );
+
   return {
-    count: operations.data?.count ?? 0,
-    operations: operations.data?.rows ?? []
+    count: operations.count ?? 0,
+    operations: page.rows,
+    nextCursor: page.nextCursor
   };
 }
 
 export default function JobOperationsRoute() {
-  const { count, operations } = useLoaderData<typeof loader>();
+  const { count, operations, nextCursor } = useLoaderData<typeof loader>();
 
   const { setIsExplorerCollapsed } = usePanels();
 
@@ -77,7 +99,11 @@ export default function JobOperationsRoute() {
       spacing={0}
       className="h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))]"
     >
-      <JobOperationsTable data={operations} count={count} />
+      <JobOperationsTable
+        data={operations}
+        count={count}
+        nextCursor={nextCursor}
+      />
     </VStack>
   );
 }

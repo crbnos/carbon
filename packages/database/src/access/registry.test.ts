@@ -11,18 +11,20 @@ import { childPath, MODULES, moduleOf, PAGES } from "./registry";
 
 /** The spec's page table (`.ai/specs/2026-10-18-page-level-permissions.md`, "The pages"). */
 const SPEC_PAGE_COUNTS: Record<string, number> = {
-  accounting: 20,
+  accounting: 21,
   documents: 1,
   inventory: 15,
   invoicing: 9,
   parts: 16,
-  people: 6,
+  people: 7,
   production: 12,
+  projects: 5,
   purchasing: 8,
   quality: 12,
   resources: 10,
-  sales: 15,
-  settings: 29,
+  sales: 16,
+  service: 3,
+  settings: 32,
   users: 4,
   workflows: 2
 };
@@ -33,7 +35,7 @@ const SPEC_PAGE_COUNTS: Record<string, number> = {
  */
 export const UNPAGED_ROUTES: Record<string, string> = {
   "/x": "The app shell and the home page.",
-  // Documents and Workflows have a page at their root.
+  // Documents, Workflows, Projects and Service have a page at their root.
   ...Object.fromEntries(
     [
       "accounting",
@@ -53,6 +55,10 @@ export const UNPAGED_ROUTES: Record<string, string> = {
       "The module's layout; its index redirects to the module's first page."
     ])
   ),
+  "/x/timesheet": "My Time: every employee's own timesheet.",
+  "/x/timesheet/": "My Time: every employee's own timesheet.",
+  "/x/accounting/projects": "Redirects to Projects.",
+  "/x/settings/timekeeping": "Redirects to Time settings.",
   "/x/account/": "The signed-in person's own account.",
   "/x/account": "The signed-in person's own account.",
   "/x/acknowledge": "The ITAR acknowledgment every person signs.",
@@ -195,14 +201,14 @@ describe("PAGES", () => {
     expect(ids.length - new Set(ids).size).toBe(0);
   });
 
-  it("has the spec's pages in each module, 159 in all", () => {
+  it("has the spec's pages in each module, 173 in all", () => {
     const counts: Record<string, number> = {};
     for (const page of PAGES) {
       const module = moduleOf(page.id);
       counts[module] = (counts[module] ?? 0) + 1;
     }
     expect(counts).toEqual(SPEC_PAGE_COUNTS);
-    expect(PAGES.length).toBe(159);
+    expect(PAGES.length).toBe(173);
   });
 
   it("lists the modules in sidebar order, each with its pages", () => {

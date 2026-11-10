@@ -45,7 +45,7 @@ const NAMES = MODULE_IDS.join("|");
 const ACTIONS = "view|create|update|delete";
 
 /** The last migration that may name a module key: it renames the storage policies whose names held one. */
-export const LAST_MODULE_KEY_MIGRATION = "20261019053223";
+export const LAST_MODULE_KEY_MIGRATION = "20261110050010";
 
 const TS_KEY = new RegExp(
   String.raw`(["'\`])(?:${NAMES})_(?:${ACTIONS})\1`,

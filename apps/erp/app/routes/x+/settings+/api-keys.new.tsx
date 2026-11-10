@@ -3,9 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { authorize } from "@carbon/auth/auth.server";
+import { SINGLE_TENANT } from "@carbon/env";
 import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   apiKeyFields,
   apiKeyValidator
@@ -15,7 +17,7 @@ import { ApiKeyForm } from "~/modules/settings/ui";
 export async function loader({ request }: LoaderFunctionArgs) {
   await authorize(request, { "settings.apiKeys": "Edit" });
 
-  return null;
+  return { canSetRateLimit: SINGLE_TENANT };
 }
 
 export async function action(args: ActionFunctionArgs) {
@@ -26,8 +28,21 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function NewApiKeyRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
+  const { canSetRateLimit } = useLoaderData<typeof loader>();
+
+  const initialValues = {
+    name: "",
+    // The column's default for a new key.
+    rateLimit: 20
+  };
+
   return (
-    <ApiKeyForm onClose={() => closeRoute()} initialValues={{ name: "" }} />
+    <ApiKeyForm
+      open={dialog.open}
+      onClose={dialog.close}
+      initialValues={initialValues}
+      canSetRateLimit={canSetRateLimit}
+    />
   );
 }

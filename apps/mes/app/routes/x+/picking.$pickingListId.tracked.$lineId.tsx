@@ -29,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const lineResult = await client
     .from("pickingListLine")
     .select(
-      "id, itemId, quantityToPick, quantityPicked, pickingList(locationId), item(itemTrackingType)"
+      "id, itemId, projectId, quantityToPick, quantityPicked, pickingList(locationId), item(itemTrackingType)"
     )
     .eq("id", lineId)
     .eq("companyId", companyId)
@@ -58,8 +58,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           companyId,
           locationId,
           excludeLineside: true,
+          excludeNonNettable: true,
           excludeAllocated: true,
-          excludeLineId: lineId
+          excludeLineId: lineId,
+          // A pick line draws one stock stripe: list the lots in it.
+          projectIds: [line.projectId ?? null]
         })
       : { data: [] },
     getCompanySettings(client, companyId),

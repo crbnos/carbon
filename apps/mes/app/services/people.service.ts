@@ -3,6 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { requireAffected } from "@carbon/utils";
+import { parseAbsolute } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sanitize } from "~/utils/supabase";
 
@@ -58,18 +60,32 @@ export async function clockOut(
   if (!open.data) {
     return { data: null, error: { message: "Not currently clocked in" } };
   }
+  const at = args.clockOut ?? new Date().toISOString();
+  // The table refuses it too (timeCardEntry_clockOut_after_clockIn); say why.
+  if (
+    parseAbsolute(at, "UTC").compare(parseAbsolute(open.data.clockIn, "UTC")) <=
+    0
+  ) {
+    return {
+      data: null,
+      error: { message: "Clock out must be after you clocked in" }
+    };
+  }
 
-  return client
-    .from("timeCardEntry")
-    .update(
-      sanitize({
-        clockOut: args.clockOut ?? new Date().toISOString(),
-        note: args.note,
-        updatedBy: args.updatedBy,
-        updatedAt: new Date().toISOString()
-      })
-    )
-    .eq("id", open.data.id);
+  return requireAffected(
+    client
+      .from("timeCardEntry")
+      .update(
+        sanitize({
+          clockOut: at,
+          note: args.note,
+          updatedBy: args.updatedBy,
+          updatedAt: new Date().toISOString()
+        })
+      )
+      .eq("id", open.data.id)
+      .select("id")
+  );
 }
 
 export async function updateTimeCardEntry(
@@ -82,16 +98,19 @@ export async function updateTimeCardEntry(
     updatedBy: string;
   }
 ) {
-  return client
-    .from("timeCardEntry")
-    .update(
-      sanitize({
-        clockIn: args.clockIn,
-        clockOut: args.clockOut,
-        note: args.note,
-        updatedBy: args.updatedBy,
-        updatedAt: new Date().toISOString()
-      })
-    )
-    .eq("id", args.entryId);
+  return requireAffected(
+    client
+      .from("timeCardEntry")
+      .update(
+        sanitize({
+          clockIn: args.clockIn,
+          clockOut: args.clockOut,
+          note: args.note,
+          updatedBy: args.updatedBy,
+          updatedAt: new Date().toISOString()
+        })
+      )
+      .eq("id", args.entryId)
+      .select("id")
+  );
 }

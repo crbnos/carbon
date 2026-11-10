@@ -6,9 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { datetime, getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { fixedAssetAdjustCostValidator } from "~/modules/accounting/accounting.models";
 import { invokeAssetTransfer } from "~/modules/accounting/accounting.service";
 import { FixedAssetAdjustCostForm } from "~/modules/accounting/ui/FixedAssets";
@@ -121,7 +122,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function AdjustFixedAssetCostRoute() {
   const { acquisitionCost, netBookValue, hasLocation, initialValues } =
     useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog();
 
   return (
     <FixedAssetAdjustCostForm
@@ -129,7 +130,8 @@ export default function AdjustFixedAssetCostRoute() {
       acquisitionCost={acquisitionCost}
       netBookValue={netBookValue}
       hasLocation={hasLocation}
-      onClose={() => navigate(-1)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

@@ -6,6 +6,7 @@ import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 import type { TextareaHTMLAttributes } from "react";
 import { forwardRef } from "react";
+import { useFormControl } from "./Form/useFormControl";
 import { cn } from "./utils/cn";
 import { usePhoneAutoFocus } from "./Viewport";
 
@@ -32,11 +33,13 @@ export interface TextareaProps
 const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, size, ...props }, ref) => {
     const autoFocus = usePhoneAutoFocus(props.autoFocus);
+    const { ariaProps } = useFormControl(props);
     return (
       <textarea
         className={cn(textareaVariants({ size }), className)}
         ref={ref}
         {...props}
+        {...ariaProps}
         autoFocus={autoFocus}
       />
     );

@@ -16,6 +16,7 @@ import {
   SalesRulesUpgradeOverlay
 } from "~/modules/sales/ui/SalesRules";
 import type { Handle } from "~/utils/handle";
+import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -32,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const rules = await api.shared.getEnforcementRules({
     search: null,
-    limit: 1000,
+    limit: SINGLE_LOAD_LIMIT,
     offset: 0,
     sorts: [],
     family: "sales"

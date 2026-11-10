@@ -12,6 +12,7 @@ import {
   LuLandmark,
   LuMapPin,
   LuReceipt,
+  LuServer,
   LuShieldAlert,
   LuTruck
 } from "react-icons/lu";
@@ -99,6 +100,13 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
       to: path.to.customerRisks(customerId),
       role: ["employee"],
       icon: <LuShieldAlert />
+    },
+    {
+      name: t`Assets`,
+      to: path.to.customerAssetsTab(customerId),
+      role: ["employee"],
+      gate: { "service.customerAssets": "View" } as Gate,
+      icon: <LuServer />
     },
     {
       name: t`RFQs`,

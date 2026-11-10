@@ -2,15 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { authorize } from "@carbon/auth/auth.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import PricingRulesTable from "~/modules/sales/ui/Pricing/PricingRulesTable";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { pricingRulesList } from "~/utils/list-registry/sales.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Pricing Rules`,
@@ -18,38 +18,15 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(
-    request,
-    { "sales.pricingRules": "View" },
-    { role: "employee" }
-  );
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const page = await api.sales.getPricingRules({
-    search: search ?? undefined,
-    limit,
-    offset,
-    sorts,
-    filters
-  });
-  return {
-    data: page.data?.rows ?? null,
-    count: page.data?.count ?? null,
-    error: page.error
-  };
+  return loadListPage(request, pricingRulesList, { dataKey: "data" });
 }
 
 export default function PricingRulesRoute() {
-  const { data, count } = useLoaderData<typeof loader>();
+  const { data, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <PricingRulesTable data={data ?? []} count={count ?? 0} />
+      <PricingRulesTable data={data} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

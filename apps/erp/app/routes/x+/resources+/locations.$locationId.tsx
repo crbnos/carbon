@@ -7,7 +7,7 @@ import { error, notFound } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -55,8 +55,8 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function LocationRoute() {
   const { location } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
-  const onClose = () => closeRoute();
+  const dialog = useRouteDialog();
+  const onClose = dialog.close;
 
   const initialValues = {
     id: location.id,
@@ -74,5 +74,11 @@ export default function LocationRoute() {
     ...getCustomFields(location.customFields)
   };
 
-  return <LocationForm initialValues={initialValues} onClose={onClose} />;
+  return (
+    <LocationForm
+      initialValues={initialValues}
+      open={dialog.open}
+      onClose={onClose}
+    />
+  );
 }

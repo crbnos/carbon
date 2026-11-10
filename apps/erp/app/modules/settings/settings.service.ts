@@ -11,6 +11,7 @@ import type {
   ServiceContext
 } from "@carbon/api/service-fn.server";
 import {
+  CarbonEdition,
   CONTROLLED_ENVIRONMENT,
   getPermissionCacheKey,
   SUPABASE_INTERNAL_URL,
@@ -20,9 +21,15 @@ import {
 import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
-import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
+import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
 import { ACCOUNT_DEFAULT_COLUMNS } from "@carbon/database/account-import";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  type Kysely,
+  type KyselyDatabase,
+  type KyselyTx,
+  withTransaction
+} from "@carbon/database/client";
 import { single } from "@carbon/database/rows";
 import {
   accountDefaults,
@@ -42,24 +49,35 @@ import {
   nonConformanceTypes,
   paymentTerms,
   periodCloseTaskDefinitions,
+  projectStates,
   returnReasons,
   scrapReasons,
   sequences,
   unitOfMeasures
 } from "@carbon/database/seed-data";
+import {
+  getPullFromLocations,
+  missingPullFromLocations,
+  PULLED_ITEM_TYPES
+} from "@carbon/database/strict-backflush";
 import type {
   DocumentBlock,
+  DocumentEdit,
+  DocumentEditType,
   DocumentSectionPlacement,
   DocumentSettings,
   DocumentTemplate,
   DocumentTemplateType,
   DocumentTheme,
-  ResolvedSection
+  ResolvedSection,
+  ValueEdits
 } from "@carbon/documents/template";
 import {
   CURRENT_TEMPLATE_FORMAT_VERSION,
   getBuiltInSection,
   isBuiltInSectionId,
+  isEmptyDocumentEdit,
+  rewriteValueEditRowKeys,
   toDocumentTemplate
 } from "@carbon/documents/template";
 import { withRevisionSuffix } from "@carbon/documents/utils";
@@ -82,6 +100,9 @@ import type {
   StandardFieldWriter
 } from "@carbon/ee";
 import {
+  assemblyAssetRows,
+  integrations as availableIntegrations,
+  bomAssemblySources,
   bomLineItemType,
   CUSTOM_FIELD_TYPE_LABELS,
   changeNoticeDescriptionJson,
@@ -111,6 +132,7 @@ import {
   pickBomChildRow,
   pickReuseRow,
   pickRevisionBase,
+  picksCredentialFreeEmail,
   proposeItem,
   reconcilePushDefaults,
   releaseBomKey,
@@ -145,6 +167,11 @@ import {
   getIntegrationServerHooks,
   onshapeConnectionHasWriteScope
 } from "@carbon/ee/hooks.server";
+import {
+  connectionsHealthy,
+  needsReconnect,
+  readConnections
+} from "@carbon/ee/integrations/connections";
 import type { OeeDevice } from "@carbon/ee/oee";
 import { getOeeProvider } from "@carbon/ee/oee.server";
 import type {
@@ -152,6 +179,7 @@ import type {
   ManualLineRow,
   MappedLineRow,
   ReleaseExportSelection,
+  StoredAssemblyPlan,
   StoredReleasePlan
 } from "@carbon/ee/onshape";
 import {
@@ -180,10 +208,18 @@ import {
   patchOnshapeOAuthGrant,
   patchOnshapeSettings
 } from "@carbon/ee/onshape.server";
-import { companyHasFeature } from "@carbon/ee/plan.server";
+import {
+  isIntegrationComingSoon,
+  isIntegrationWhitelisted
+} from "@carbon/ee/plan";
+import {
+  companyHasFeature,
+  hasIntegrationEarlyAccess
+} from "@carbon/ee/plan.server";
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { resolveCapabilities } from "@carbon/ee/sync";
-import { trigger } from "@carbon/jobs";
+import { flags } from "@carbon/env/flags.server";
+import { type Events, trigger } from "@carbon/jobs";
 import {
   compatibilityStatus,
   getCompanyTableCatalog,
@@ -191,10 +227,18 @@ import {
   reportBackupCompatibility,
   selectExportableTables
 } from "@carbon/jobs/backups";
+import { packBySize } from "@carbon/jobs/events";
+import { allowlistEntry, requiredScopesFor } from "@carbon/jobs/integrations";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { datetime, isInternalEmail, labelSizes } from "@carbon/utils";
+import {
+  datetime,
+  isInternalEmail,
+  labelSizes,
+  requireAffected,
+  searchFilter
+} from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { type Insertable, type Selectable, sql } from "kysely";
@@ -205,6 +249,7 @@ import { z } from "zod";
 import { getPaymentTermsList } from "~/modules/accounting/accounting.service";
 import {
   getShippingMethodsList,
+  getShippingTermsList,
   getStockTransfer,
   getStockTransferLines
 } from "~/modules/inventory/inventory.service";
@@ -216,8 +261,7 @@ import {
 } from "~/modules/invoicing/invoicing.service";
 import { canEditChangeNoticeEngineering } from "~/modules/items/items.models";
 import {
-  cascadeItemTrackingType,
-  copyMakeMethod,
+  createMakeMethodVersion,
   createRevision,
   deleteChangeNotice,
   deleteItem,
@@ -228,12 +272,12 @@ import {
   requireChangeNoticeEditable,
   updateDefaultRevision,
   updateItemMethodAndSourcing,
-  upsertMakeMethodVersion,
   upsertPart
 } from "~/modules/items/items.service";
 import { insertEmployeeJob } from "~/modules/people/people.service";
 import {
   getPurchaseOrder,
+  getPurchaseOrderApproval,
   getPurchaseOrderLines,
   getPurchaseOrderLocations,
   getPurchasingTerms
@@ -253,20 +297,27 @@ import {
   getQuoteLinePricesByQuoteId,
   getQuoteLines
 } from "~/modules/sales/sales.utils";
-import type { Integration } from "~/modules/settings/types";
+import type {
+  Integration,
+  JobMissingStorageUnit,
+  MethodMissingPullFrom
+} from "~/modules/settings/types";
 import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import * as sharedService from "~/modules/shared/shared.service";
 import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { interpolateSequenceDate } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import {
   type CompanyBackupSummary,
   listCompanyBackupFolders
 } from "./backups.service";
-import type { IntegrationErrorCode } from "./integration-errors";
+import type {
+  IntegrationErrorCode,
+  SharedIntegrationErrorCode
+} from "./integration-errors";
 import { integrationErrorSearch } from "./integration-errors";
 import type { OAuthPopupOutcome, OAuthPopupResult } from "./oauth-popup";
 import { OAUTH_POPUP_MESSAGE } from "./oauth-popup";
@@ -277,6 +328,9 @@ import type {
   subsidiaryValidator
 } from "./settings.models";
 import { companyValidator, type customFieldValidator } from "./settings.models";
+import { DOCUMENT_EDIT_RECORDS } from "./settings.utils";
+
+const jsonb = (value: unknown) => sql<Json>`${JSON.stringify(value)}::jsonb`;
 
 const PUBLIC_STORAGE_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/public/`;
 
@@ -306,8 +360,30 @@ export async function deleteSubsidiary(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client.from("company").delete().eq("id", companyId);
+  return requireAffected(
+    client.from("company").delete().eq("id", companyId).select("id")
+  );
 }
+
+// The key hash never leaves the server.
+export async function getApiKey(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("apiKey")
+    .select(
+      "id, name, expiresAt, keyPreview, lastUsedAt, rateLimit, rateLimitWindow, createdAt, createdBy, updatedBy, companyId, permission(module, page, level)"
+    )
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export const API_KEYS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: true }]
+};
 
 export async function getApiKeys(
   client: SupabaseClient<Database>,
@@ -316,7 +392,7 @@ export async function getApiKeys(
 ) {
   let query = client
     .from("apiKey")
-    .select("*, permission(module, page, level)", { count: LIST_COUNT })
+    .select("*, permission(module, page, level)", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -324,9 +400,7 @@ export async function getApiKeys(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, API_KEYS_PAGING);
   }
 
   return query;
@@ -524,6 +598,12 @@ export async function getCustomFields(
     .single();
 }
 
+// The `customFieldTables` view has no `id`; one row is one table.
+export const CUSTOM_FIELD_TABLES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }],
+  idColumn: "table"
+};
+
 export async function getCustomFieldsTables(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -534,7 +614,7 @@ export async function getCustomFieldsTables(
   let query = client
     .from("customFieldTables")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -542,9 +622,7 @@ export async function getCustomFieldsTables(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, CUSTOM_FIELD_TABLES_PAGING);
   return query;
 }
 
@@ -561,6 +639,76 @@ export async function getIntegration(
     .maybeSingle();
 }
 
+const integrationInstallLogger = getLogger("erp", "settings", "integrations");
+
+/** The install action's checks, for the piece connect route and callback, which install without it. */
+export async function pieceConnectRefusal(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    integrationId: string;
+    email: string;
+    userId: string;
+  }
+): Promise<"unavailable" | SharedIntegrationErrorCode | null> {
+  const integration = availableIntegrations.find(
+    (i) => i.id === args.integrationId
+  );
+  if (!integration?.active) return "unavailable";
+  if (
+    !isIntegrationWhitelisted(args.integrationId) &&
+    !(await companyHasFeature(client, args.companyId, {
+      feature: "INTEGRATIONS"
+    }))
+  ) {
+    return "plan-required";
+  }
+  if (await isIntegrationInstallWithheld(client, args)) return "coming-soon";
+  return null;
+}
+
+/**
+ * Whether a new install is refused: an `internalOnly` integration this user
+ * sees as "Coming soon" (`isIntegrationComingSoon`), in a company that does not
+ * have it installed. A failed read refuses.
+ */
+export async function isIntegrationInstallWithheld(
+  client: SupabaseClient<Database>,
+  {
+    companyId,
+    integrationId,
+    email,
+    userId
+  }: { companyId: string; integrationId: string; email: string; userId: string }
+): Promise<boolean> {
+  const integration = availableIntegrations.find((i) => i.id === integrationId);
+  if (
+    !integration ||
+    !isIntegrationComingSoon(integration, {
+      edition: CarbonEdition,
+      email,
+      hasEarlyAccess: await hasIntegrationEarlyAccess({
+        companyId,
+        userId,
+        email
+      })
+    })
+  ) {
+    return false;
+  }
+
+  const existing = await getIntegration(client, integrationId, companyId);
+  if (existing.error) {
+    integrationInstallLogger.error("Failed to read the integration install", {
+      companyId,
+      integrationId,
+      error: existing.error
+    });
+    return true;
+  }
+  return existing.data?.active !== true;
+}
+
 export async function getIntegrations(
   client: SupabaseClient<Database>,
   companyId: string
@@ -574,7 +722,7 @@ export async function getKanbanOutputSetting(
 ) {
   return client
     .from("companySettings")
-    .select("kanbanOutput")
+    .select("kanbanOutput, kanbanLabelSize")
     .eq("id", companyId)
     .single();
 }
@@ -614,6 +762,10 @@ export async function getSequence(
     .single();
 }
 
+export const SEQUENCES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getSequences(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -624,7 +776,7 @@ export async function getSequences(
   let query = client
     .from("sequence")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -632,9 +784,7 @@ export async function getSequences(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, SEQUENCES_PAGING);
   return query;
 }
 
@@ -651,6 +801,10 @@ export async function getSequencesList(
     .order("table");
 }
 
+export const ITEM_SERIAL_SEQUENCES_PAGING: Paging = {
+  defaultSorts: [{ column: "itemReadableId", ascending: true }]
+};
+
 export async function getItemSerialSequences(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -661,22 +815,15 @@ export async function getItemSerialSequences(
   let query = client
     .from("itemSerialSequences")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
   if (args.search) {
-    // Strip PostgREST filter-grammar characters so a search term can't alter the
-    // `or` expression or filter unintended columns (mirrors inventory.service.ts).
-    const search = args.search.replace(/[,()\\]/g, " ");
-    query = query.or(
-      `itemReadableId.ilike.%${search}%,itemName.ilike.%${search}%`
-    );
+    query = query.or(searchFilter(["itemReadableId", "itemName"], args.search));
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "itemReadableId", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, ITEM_SERIAL_SEQUENCES_PAGING);
   return query;
 }
 
@@ -741,11 +888,14 @@ export async function deleteItemSerialSequence(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("itemSerialSequence")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("itemSerialSequence")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function getSubsidiaries(
@@ -802,9 +952,15 @@ export async function getDocumentTemplateConfig(
   return toDocumentTemplate(stored.data, documentType);
 }
 
-/** The template row only: `settings.documentTemplate.save` also saves the header layout onto its section. */
+/**
+ * The template row and, when given, its header section's layout, in one
+ * transaction: `settings.documentTemplate.save` is the operation. The header
+ * row is inserted when the company has none under that id (a built-in header
+ * is forked into the company's copy); an existing row takes only the new
+ * `config`.
+ */
 export async function upsertDocumentTemplate(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   documentTemplate: {
     companyId: string;
     documentType: DocumentTemplateType;
@@ -813,19 +969,65 @@ export async function upsertDocumentTemplate(
     settings: DocumentSettings;
     headerSectionId: string | null;
     footerSectionId: string | null;
-    createdBy: string;
-    updatedBy: string;
+    userId: string;
+  },
+  header?: {
+    id: string;
+    name: string;
+    content: JSONContent;
+    config: Record<string, unknown>;
   }
 ) {
-  return client.from("documentTemplate").upsert(
-    {
-      ...documentTemplate,
+  const { companyId, userId } = documentTemplate;
+  const now = datetime.timestamp();
+
+  await withTransaction(db, async (trx) => {
+    if (header) {
+      await trx
+        .insertInto("documentSection")
+        .values({
+          id: header.id,
+          companyId,
+          name: header.name,
+          placement: "header",
+          content: jsonb(header.content),
+          config: jsonb(header.config),
+          createdBy: userId
+        })
+        .onConflict((oc) =>
+          oc.columns(["id", "companyId"]).doUpdateSet({
+            config: jsonb(header.config),
+            updatedBy: userId,
+            updatedAt: now
+          })
+        )
+        .execute();
+    }
+
+    const template = {
+      blocks: jsonb(documentTemplate.blocks),
+      theme: jsonb(documentTemplate.theme),
+      settings: jsonb(documentTemplate.settings),
+      headerSectionId: documentTemplate.headerSectionId,
+      footerSectionId: documentTemplate.footerSectionId,
       // Always persist the current schema version of the JSON we're writing.
       formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
-      updatedAt: new Date().toISOString()
-    },
-    { onConflict: "companyId,documentType" }
-  );
+      updatedBy: userId,
+      updatedAt: now
+    };
+    await trx
+      .insertInto("documentTemplate")
+      .values({
+        ...template,
+        companyId,
+        documentType: documentTemplate.documentType,
+        createdBy: userId
+      })
+      .onConflict((oc) =>
+        oc.columns(["companyId", "documentType"]).doUpdateSet(template)
+      )
+      .execute();
+  });
 }
 
 export async function getDocumentSections(
@@ -914,17 +1116,19 @@ export async function upsertDocumentSection(
       .select("id");
   }
   const { id, companyId, ...update } = documentSection;
-  return client
-    .from("documentSection")
-    .update({
-      ...update,
-      content: update.content as Json,
-      config: (update.config ?? {}) as Json,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", id ?? "")
-    .eq("companyId", companyId)
-    .select("id");
+  return requireAffected(
+    client
+      .from("documentSection")
+      .update({
+        ...update,
+        content: update.content as Json,
+        config: (update.config ?? {}) as Json,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", id ?? "")
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 /** The section row: `settings.documentSection.delete` is the operation. */
@@ -933,11 +1137,14 @@ export async function deleteDocumentSection(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("documentSection")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("documentSection")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 /**
@@ -976,6 +1183,10 @@ export async function getWebhook(client: SupabaseClient<Database>, id: string) {
   return client.from("webhook").select("*").eq("id", id).single();
 }
 
+export const WEBHOOKS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: true }]
+};
+
 export async function getWebhooks(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -984,7 +1195,7 @@ export async function getWebhooks(
   let query = client
     .from("webhook")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -993,9 +1204,7 @@ export async function getWebhooks(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, WEBHOOKS_PAGING);
   }
 
   return query;
@@ -1039,7 +1248,9 @@ export async function updateSubsidiary(
   }
 ) {
   const { id: _, ...data } = subsidiary;
-  return client.from("company").update(data).eq("id", id);
+  return requireAffected(
+    client.from("company").update(data).eq("id", id).select("id")
+  );
 }
 
 export async function updateCompanyPlan(
@@ -1055,7 +1266,13 @@ export async function updateCompanyPlan(
   // Extract companyId and build the update data without it
   const { companyId, ...updateData } = data;
 
-  return client.from("companyPlan").update(updateData).eq("id", companyId);
+  return requireAffected(
+    client
+      .from("companyPlan")
+      .update(updateData)
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 /** Only the company row: `settings.company.update` also handles a base-currency change and the cached time zone. */
@@ -1066,7 +1283,13 @@ export async function updateCompany(
     updatedBy: string;
   }
 ) {
-  return client.from("company").update(sanitize(company)).eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize(company))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 /**
@@ -1080,17 +1303,19 @@ export async function updateCompany(
 export async function updateCompanyWithBaseCurrencyChange(
   db: Kysely<KyselyDatabase>,
   companyId: string,
-  company: Partial<z.infer<typeof companyValidator>> & {
+  company: Partial<z.infer<typeof subsidiaryValidator>> & {
     updatedBy: string;
-  }
+  },
+  // The subsidiary update also writes `parentCompanyId`.
+  allowedFields: readonly string[] = Object.keys(companyValidator.shape)
 ) {
   // An explicit allow-list of the company form's fields, never the caller's
   // object: Kysely bypasses RLS and the API passes `company` through with
   // whatever keys were sent, so a spread would reach any column of the row.
-  const allowed = new Set<string>(Object.keys(companyValidator.shape));
+  const allowed = new Set<string>(allowedFields);
   const fields = Object.fromEntries(
     Object.entries(sanitize(company)).filter(([key]) => allowed.has(key))
-  ) as Partial<z.infer<typeof companyValidator>>;
+  ) as Partial<z.infer<typeof subsidiaryValidator>>;
 
   return db.transaction().execute(async (trx) => {
     await trx
@@ -1115,14 +1340,17 @@ export async function updateLogoDark(
   companyId: string,
   logoDark: string | null
 ) {
-  return client
-    .from("company")
-    .update(
-      sanitize({
-        logoDark
-      })
-    )
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(
+        sanitize({
+          logoDark
+        })
+      )
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateLogoDarkIcon(
@@ -1130,10 +1358,13 @@ export async function updateLogoDarkIcon(
   companyId: string,
   logoDarkIcon: string | null
 ) {
-  return client
-    .from("company")
-    .update(sanitize({ logoDarkIcon }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize({ logoDarkIcon }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateLogoLight(
@@ -1141,10 +1372,13 @@ export async function updateLogoLight(
   companyId: string,
   logoLight: string | null
 ) {
-  return client
-    .from("company")
-    .update(sanitize({ logoLight }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize({ logoLight }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateLogoLightIcon(
@@ -1152,10 +1386,13 @@ export async function updateLogoLightIcon(
   companyId: string,
   logoLightIcon: string | null
 ) {
-  return client
-    .from("company")
-    .update(sanitize({ logoLightIcon }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize({ logoLightIcon }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateLogoWatermark(
@@ -1163,10 +1400,13 @@ export async function updateLogoWatermark(
   companyId: string,
   logoWatermark: string | null
 ) {
-  return client
-    .from("company")
-    .update(sanitize({ logoWatermark }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("company")
+      .update(sanitize({ logoWatermark }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateProductLabelSize(
@@ -1174,10 +1414,13 @@ export async function updateProductLabelSize(
   companyId: string,
   productLabelSize: string
 ) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ productLabelSize }))
-    .eq("id", companyId);
+  return requireAffected(
+    client
+      .from("companySettings")
+      .update(sanitize({ productLabelSize }))
+      .eq("id", companyId)
+      .select("id")
+  );
 }
 
 export async function updateSequence(
@@ -1229,6 +1472,58 @@ export async function setLocationResponsibleEmployee(
     .eq("id", args.locationId)
     .eq("companyId", args.companyId)
     .select("id");
+}
+
+/**
+ * Set a location's goods-in storage units (null clears one). The Kysely handle
+ * bypasses row-level security, so the caller checks `resources` update.
+ * Undefined when the location is not the company's; "sameUnit" when the two
+ * would be one unit.
+ */
+export async function setLocationGoodsInStorage(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    inspectionStorageUnitId?: string | null;
+    rejectedStorageUnitId?: string | null;
+    userId: string;
+  }
+) {
+  return withTransaction(db, async (trx) => {
+    const stored = await trx
+      .selectFrom("location")
+      .select(["inspectionStorageUnitId", "rejectedStorageUnitId"])
+      .where("id", "=", args.locationId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!stored) return undefined;
+    const inspection =
+      args.inspectionStorageUnitId === undefined
+        ? stored.inspectionStorageUnitId
+        : args.inspectionStorageUnitId;
+    const rejected =
+      args.rejectedStorageUnitId === undefined
+        ? stored.rejectedStorageUnitId
+        : args.rejectedStorageUnitId;
+    if (inspection && inspection === rejected) return "sameUnit" as const;
+    return trx
+      .updateTable("location")
+      .set({
+        ...(args.inspectionStorageUnitId !== undefined
+          ? { inspectionStorageUnitId: args.inspectionStorageUnitId }
+          : {}),
+        ...(args.rejectedStorageUnitId !== undefined
+          ? { rejectedStorageUnitId: args.rejectedStorageUnitId }
+          : {}),
+        updatedBy: args.userId
+      })
+      .where("id", "=", args.locationId)
+      .where("companyId", "=", args.companyId)
+      .returning("id")
+      .executeTakeFirst();
+  });
 }
 
 /**
@@ -1701,6 +1996,7 @@ export async function buildPreviewProps(
         terms,
         payment,
         shipping,
+        shippingTerms,
         ar
       ] = await Promise.all([
         getSalesInvoice(client, id),
@@ -1710,6 +2006,7 @@ export async function buildPreviewProps(
         getSalesTerms(client, companyId),
         getPaymentTermsList(client, companyId),
         getShippingMethodsList(client, companyId),
+        getShippingTermsList(client, companyId),
         getAccountsReceivableBillingAddress(client, companyId)
       ]);
       if (!invoice.data) return null;
@@ -1725,7 +2022,8 @@ export async function buildPreviewProps(
           : null,
         terms: (terms?.data?.salesTerms ?? {}) as JSONContent,
         paymentTerms: payment.data ?? [],
-        shippingMethods: shipping.data ?? []
+        shippingMethods: shipping.data ?? [],
+        shippingTerms: shippingTerms.data ?? []
       };
     }
     case "salesOrder": {
@@ -1755,17 +2053,25 @@ export async function buildPreviewProps(
       };
     }
     case "purchaseOrder": {
-      const [order, lines, locations, terms, payment, ap] = await Promise.all([
-        getPurchaseOrder(client, id),
-        getPurchaseOrderLines(client, id),
-        getPurchaseOrderLocations(client, id),
-        getPurchasingTerms(client, companyId),
-        getPaymentTermsList(client, companyId),
-        getAccountsPayableBillingAddress(client, companyId)
-      ]);
+      const [order, lines, locations, terms, payment, ap, approval] =
+        await Promise.all([
+          getPurchaseOrder(client, id),
+          getPurchaseOrderLines(client, id),
+          getPurchaseOrderLocations(client, id),
+          getPurchasingTerms(client, companyId),
+          getPaymentTermsList(client, companyId),
+          getAccountsPayableBillingAddress(client, companyId),
+          getPurchaseOrderApproval(getCarbonServiceRole(), {
+            companyId,
+            purchaseOrderId: id,
+            timezone: company.data.timezone,
+            withSignature: true
+          })
+        ]);
       if (!order.data) return null;
       return {
         ...base,
+        approval,
         purchaseOrder: order.data,
         purchaseOrderLines: lines.data ?? [],
         purchaseOrderLocations: locations.data,
@@ -1787,7 +2093,8 @@ export async function buildPreviewProps(
         shipment,
         terms,
         paymentTerms,
-        shipping
+        shipping,
+        timeZone
       ] = await Promise.all([
         getQuote(client, id),
         getQuoteLines(client, id),
@@ -1797,7 +2104,8 @@ export async function buildPreviewProps(
         getQuoteShipment(client, id),
         getSalesTerms(client, companyId),
         getPaymentTermsList(client, companyId),
-        getShippingMethodsList(client, companyId)
+        getShippingMethodsList(client, companyId),
+        getCompanyTimeZone(client, companyId)
       ]);
       if (!quote.data) return null;
       // The document's own stamped rate — never a live lookup, so a reprint
@@ -1807,6 +2115,7 @@ export async function buildPreviewProps(
       return {
         ...base,
         exchangeRate,
+        printDate: datetime.today(timeZone).toString(),
         quote: quote.data,
         quoteLines: lines.data ?? [],
         quoteLinePrices: prices.data ?? [],
@@ -1848,6 +2157,10 @@ export {
 type CompanyLogoPaths = {
   logoLight: string | null;
   logoLightIcon: string | null;
+  /** The label's `company.*` variables, read in the same query. */
+  name: string;
+  city: string | null;
+  countryCode: string | null;
 };
 
 /**
@@ -1865,7 +2178,7 @@ export async function getCompanyLogoForLabel(
 ): Promise<CompanyLogoPaths | null> {
   const { data } = await client
     .from("company")
-    .select("logoLight, logoLightIcon")
+    .select("logoLight, logoLightIcon, name, city, countryCode")
     .eq("id", companyId)
     .maybeSingle();
 
@@ -1878,7 +2191,10 @@ export async function getCompanyLogoForLabel(
 
   return {
     logoLight: expand(data.logoLight),
-    logoLightIcon: expand(data.logoLightIcon)
+    logoLightIcon: expand(data.logoLightIcon),
+    name: data.name,
+    city: data.city,
+    countryCode: data.countryCode
   };
 }
 const logger = getLogger("erp", "oee-devices");
@@ -2024,6 +2340,7 @@ export async function getOeeDevicesTabData(
 }
 
 const INTEGRATION_CACHE_TTL = 3600;
+const PIECE_HEALTHY_CACHE_TTL = 300;
 
 /**
  * Drop the cached auth record for an API key so a scope change or revocation
@@ -2185,15 +2502,18 @@ export async function deactivateIntegration(
 ) {
   const { id, companyId, updatedBy } = args;
 
-  const result = await client
-    .from("companyIntegration")
-    .update({
-      active: false,
-      updatedBy,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", id)
-    .eq("companyId", companyId);
+  const result = await requireAffected(
+    client
+      .from("companyIntegration")
+      .update({
+        active: false,
+        updatedBy,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 
   if (result.error) {
     return result;
@@ -2212,7 +2532,9 @@ export async function deleteCustomField(
   try {
     clearCustomFieldsCache(companyId);
   } finally {
-    return client.from("customField").delete().eq("id", id);
+    return requireAffected(
+      client.from("customField").delete().eq("id", id).select("id")
+    );
   }
 }
 
@@ -2355,51 +2677,6 @@ export async function getCompanyIntegration(
   );
 }
 
-export async function getSlackIntegration(
-  client: SupabaseClient<Database>,
-  companyId: string
-): Promise<{ token: string; channelId?: string } | null> {
-  // The Redis cache (getCompanyIntegration) no longer holds secret material, so
-  // read the row directly with a service-role client — required both to resolve
-  // the vaulted access_token and, in the transitional window, to see the plaintext
-  // still in the column.
-  const serviceRole = getCarbonServiceRole();
-  const { data: integration } = await serviceRole
-    .from("companyIntegration")
-    .select("metadata, secretRef, active")
-    .eq("companyId", companyId)
-    .eq("id", "slack")
-    .maybeSingle();
-
-  if (!integration?.active || !integration.metadata) {
-    return null;
-  }
-
-  const metadata = (await resolveIntegrationSecrets(
-    serviceRole,
-    companyId,
-    "slack",
-    integration.metadata,
-    integration.secretRef
-  )) as any;
-
-  if (!metadata.access_token) {
-    return null;
-  }
-
-  return {
-    token: metadata.access_token,
-    channelId: metadata.channel_id || metadata.default_channel_id
-  };
-}
-
-export async function hasSlackIntegration(
-  client: SupabaseClient<Database>,
-  companyId: string
-): Promise<boolean> {
-  return hasIntegration(client, companyId, "slack");
-}
-
 export async function upsertCompanyIntegration(
   client: SupabaseClient<Database>,
   update: {
@@ -2503,6 +2780,43 @@ export async function upsertCompanyIntegration(
   return result;
 }
 
+/**
+ * Flip an integration to installed without touching anything else on the row. The
+ * piece callback marks its card installed after a connection is saved; an upsert
+ * that UPDATES on conflict would write empty metadata over whatever settings the
+ * row already holds.
+ */
+export async function markIntegrationInstalled(
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; updatedBy: string }
+): Promise<{ error: PostgrestError | null }> {
+  // Two statements that are each safe against a concurrent callback, instead of
+  // read-then-insert (two callbacks both read "absent" and the second insert
+  // failed on the primary key): insert only when absent, then activate only
+  // when inactive. Neither touches `metadata`.
+  const inserted = await client.from("companyIntegration").upsert(
+    {
+      id: args.id,
+      companyId: args.companyId,
+      active: true,
+      metadata: {},
+      updatedBy: args.updatedBy
+    },
+    { onConflict: "id,companyId", ignoreDuplicates: true }
+  );
+  let error: PostgrestError | null = inserted.error;
+  if (error === null) {
+    ({ error } = await client
+      .from("companyIntegration")
+      .update({ active: true, updatedBy: args.updatedBy })
+      .eq("id", args.id)
+      .eq("companyId", args.companyId)
+      .eq("active", false));
+  }
+  if (error === null) await clearCompanyIntegrationCache(args.companyId);
+  return { error };
+}
+
 export async function upsertCustomField(
   client: SupabaseClient<Database>,
   customField:
@@ -2533,15 +2847,18 @@ export async function upsertCustomField(
         .from("customField")
         .insert([{ ...customField, sortOrder: maxSortOrder + 1 }]);
     }
-    return client
-      .from("customField")
-      .update(
-        sanitize({
-          ...customField,
-          updatedBy: customField.updatedBy
-        })
-      )
-      .eq("id", customField.id);
+    return requireAffected(
+      client
+        .from("customField")
+        .update(
+          sanitize({
+            ...customField,
+            updatedBy: customField.updatedBy
+          })
+        )
+        .eq("id", customField.id)
+        .select("id")
+    );
   }
 }
 
@@ -2613,6 +2930,53 @@ async function getConnectionHealth(
     };
   }
 
+  const key = `integrations:${companyId}:${integration.id}:health`;
+
+  // A workflow-piece card's health is its accounts: none revoked/expired, and none
+  // predating a scope the piece now needs (its steps would fail with
+  // `missing_scope`). One read serves both questions. Decided here rather than in
+  // an ee hook because only this side can see the allowlist's required list, and
+  // an ee hook would read the same rows a second time.
+  if (allowlistEntry(integration.id!) !== undefined) {
+    const cached = await redis.get(key);
+    if (cached === "1")
+      return { ...integration, health: "healthy", healthReason: null };
+    if (cached === "0")
+      return { ...integration, health: "unhealthy", healthReason: null };
+
+    // A failed read is one unhealthy card, never a crashed Settings page —
+    // `getIntegrationsWithHealth` runs these in a Promise.all with no catch. It
+    // is not cached: the next load should re-ask rather than pin a transient
+    // failure for the TTL.
+    let healthy: boolean;
+    try {
+      const [rows, required] = await Promise.all([
+        readConnections(getCarbonServiceRole(), companyId, integration.id!),
+        requiredScopesFor(integration.id!)
+      ]);
+      healthy =
+        connectionsHealthy(rows) &&
+        !rows.some((row) => needsReconnect(row, required));
+    } catch {
+      return { ...integration, health: "unhealthy", healthReason: null };
+    }
+    // The callback, disconnect and uninstall invalidate this key. A refresh the
+    // vendor rejects does not: ee's `markExpired` sets the connection Expired and
+    // cannot reach this key. So a healthy answer is kept for five minutes, not
+    // hours, and an unhealthy one for a minute.
+    await redis.set(
+      key,
+      healthy ? "1" : "0",
+      "EX",
+      healthy ? PIECE_HEALTHY_CACHE_TTL : 60
+    );
+    return {
+      ...integration,
+      health: healthy ? "healthy" : "unhealthy",
+      healthReason: null
+    };
+  }
+
   const serverHooks = getIntegrationServerHooks(integration.id!);
   const config = getIntegrationConfigById(integration.id as IntegrationID);
   const healthcheck = serverHooks?.onHealthcheck ?? config?.onHealthcheck;
@@ -2624,8 +2988,6 @@ async function getConnectionHealth(
       healthReason: null
     };
   }
-
-  const key = `integrations:${companyId}:${integration.id}:health`;
 
   const cached = await redis.get(key);
 
@@ -2646,14 +3008,18 @@ async function getConnectionHealth(
   // the row's `secretRef` itself (the `integrations` view doesn't expose it) and
   // throws when the secret can't be read — treat that as unhealthy rather than
   // crashing the whole settings page.
+  const metadata = (integration.metadata as Record<string, any>) ?? {};
   let resolvedMetadata: Record<string, any>;
   try {
-    resolvedMetadata = (await resolveIntegrationSecrets(
-      getCarbonServiceRole(),
-      companyId,
-      integration.id!,
-      (integration.metadata as Record<string, any>) ?? {}
-    )) as Record<string, any>;
+    // Email's server mail and Gmail store no secret for the vault to return.
+    resolvedMetadata = picksCredentialFreeEmail(integration.id!, metadata)
+      ? metadata
+      : ((await resolveIntegrationSecrets(
+          getCarbonServiceRole(),
+          companyId,
+          integration.id!,
+          metadata
+        )) as Record<string, any>);
   } catch {
     return {
       ...integration,
@@ -2766,17 +3132,20 @@ export async function updateIntegrationMetadata(
     }
   }
 
-  return client
-    .from("companyIntegration")
-    .update(
-      sanitize({
-        metadata: config as Json,
-        updatedAt: new Date().toISOString(),
-        updatedBy
-      })
-    )
-    .eq("companyId", companyId)
-    .eq("id", integrationId);
+  return requireAffected(
+    client
+      .from("companyIntegration")
+      .update(
+        sanitize({
+          metadata: config as Json,
+          updatedAt: new Date().toISOString(),
+          updatedBy
+        })
+      )
+      .eq("companyId", companyId)
+      .eq("id", integrationId)
+      .select("id")
+  );
 }
 
 /**
@@ -2963,6 +3332,28 @@ export async function getSyncOperationReadableIds(
   return Object.fromEntries(results.flat());
 }
 
+/**
+ * Each operation with its `reference` (`getSyncOperationReadableIds`), or
+ * null when it has none. Every page of the Sync Activity tab carries its own.
+ */
+export async function withSyncOperationReferences<
+  T extends SyncOperationReference
+>(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  operations: T[]
+): Promise<(T & { reference: { label: string; recordId: string } | null })[]> {
+  const readableIds = await getSyncOperationReadableIds(
+    client,
+    companyId,
+    operations
+  );
+  return operations.map((operation) => ({
+    ...operation,
+    reference: readableIds[syncOperationReadableIdKey(operation)] ?? null
+  }));
+}
+
 /** One provider analytics target with its selectable option values. */
 export type DimensionTargetWithValues = {
   id: string;
@@ -3141,15 +3532,136 @@ export async function saveCompanySettings(
 ): Promise<CarbonError | null> {
   const changes = sentFields(fields);
   if (Object.keys(changes).length === 0) return null;
-  const { error } = await ctx.asCaller.supabase
-    .from("companySettings")
-    .update(changes)
-    .eq("id", ctx.company.id);
+  const { error } = await requireAffected(
+    ctx.asCaller.supabase
+      .from("companySettings")
+      .update(changes)
+      .eq("id", ctx.company.id)
+      .select("id")
+  );
   return error ? ctx.error("internal", failure, error) : null;
 }
 
-/** Multi-company management is open to internal (Carbon) users only, for now. */
-export async function refuseUnlessInternalUser(
+/**
+ * Writes the company's settings row on a Kysely handle, so an operation can
+ * write it in one transaction with another table. Bypasses row-level security:
+ * the operation's permission is the gate. False when the row was not written.
+ */
+export async function saveCompanySettingsIn(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  fields: CompanySettingsUpdate
+): Promise<boolean> {
+  const changes = sentFields(fields);
+  if (Object.keys(changes).length === 0) return true;
+  const row = await db
+    .updateTable("companySettings")
+    .set(changes)
+    .where("id", "=", companyId)
+    .returning("id")
+    .executeTakeFirst();
+  return row !== undefined;
+}
+
+const timekeepingLogger = getLogger("erp", "settings", "time");
+
+/**
+ * Why the company cannot turn DCAA timekeeping on, or null. DCAA mode needs a
+ * cost objective on every Released project, so each charge lands in a known
+ * pool, and the certification text each employee signs at submit (the sent
+ * text, else the stored one). The projects are checked only when the mode
+ * turns on.
+ */
+export async function dcaaTimekeepingRefusal(
+  ctx: ServiceContext,
+  sent: {
+    certificationTextExempt?: string | null;
+    certificationTextNonExempt?: string | null;
+  }
+): Promise<CarbonError | null> {
+  const client = ctx.asCaller.supabase;
+  const companyId = ctx.company.id;
+  const current = await client
+    .from("companySettings")
+    .select(
+      "timekeepingControls, certificationTextExempt, certificationTextNonExempt"
+    )
+    .eq("id", companyId)
+    .maybeSingle();
+  if (current.error) {
+    timekeepingLogger.error("Failed to read the timekeeping settings", {
+      companyId,
+      error: current.error
+    });
+    return ctx.error(
+      "internal",
+      "Failed to read the timekeeping settings",
+      current.error
+    );
+  }
+
+  const exempt =
+    sent.certificationTextExempt !== undefined
+      ? sent.certificationTextExempt
+      : current.data?.certificationTextExempt;
+  if (!exempt) {
+    return ctx.error(
+      "validation",
+      "DCAA mode needs the certification text for exempt staff"
+    );
+  }
+  const nonExempt =
+    sent.certificationTextNonExempt !== undefined
+      ? sent.certificationTextNonExempt
+      : current.data?.certificationTextNonExempt;
+  if (!nonExempt) {
+    return ctx.error(
+      "validation",
+      "DCAA mode needs the certification text for non-exempt staff"
+    );
+  }
+
+  if (current.data?.timekeepingControls === "DCAA") return null;
+  const missing = await client
+    .from("project")
+    .select("identifier", { count: "exact" })
+    .eq("companyId", companyId)
+    .eq("status", "Released")
+    .is("costObjective", null)
+    .order("identifier")
+    .limit(3);
+  if (missing.error) {
+    timekeepingLogger.error("Failed to count projects with no cost objective", {
+      companyId,
+      error: missing.error
+    });
+    return ctx.error(
+      "internal",
+      "Failed to check the projects' cost objectives",
+      missing.error
+    );
+  }
+  const count = missing.count ?? 0;
+  if (count > 0) {
+    // Name the projects, so the person can find them: a Released project
+    // with none shows the field on its Settings page.
+    const named = (missing.data ?? [])
+      .map((project) => project.identifier)
+      .filter(Boolean)
+      .join(", ");
+    const more = count > 3 ? ` and ${count - 3} more` : "";
+    return ctx.error(
+      "rule",
+      `Set a cost objective on ${count} ${
+        count === 1 ? "project" : "projects"
+      } first${named ? ` (${named}${more})` : ""}`
+    );
+  }
+  return null;
+}
+
+/** Multi-company management: Carbon staff, and the companies the `multi-company-management` flag turns it on for. */
+export async function refuseUnlessCanManageCompanies(
   ctx: ServiceContext
 ): Promise<CarbonError | null> {
   const refused = ctx.error(
@@ -3162,7 +3674,15 @@ export async function refuseUnlessInternalUser(
     .select("email")
     .eq("id", ctx.actor.userId)
     .maybeSingle();
-  return isInternalEmail(data?.email ?? "") ? null : refused;
+  const email = data?.email ?? "";
+  if (isInternalEmail(email)) return null;
+  // The same rule as the Settings → Companies pages: Carbon staff, and the
+  // companies the `multi-company-management` flag turns it on for.
+  const enabled = await flags.bool("multi-company-management", {
+    companyId: ctx.company.id,
+    email
+  });
+  return enabled ? null : refused;
 }
 
 /** The headquarters location and the creator's job at it: what a new company starts with. */
@@ -3621,6 +4141,19 @@ export async function seedCompany(
         .values(sequences.map((s) => ({ ...s, companyId })))
         .execute();
 
+      // project states: company-wide, shared by every project and service
+      // order (Settings → Projects)
+      await trx
+        .insertInto("projectState")
+        .values(
+          projectStates.map((state) => ({
+            ...state,
+            companyId,
+            createdBy: "system"
+          }))
+        )
+        .execute();
+
       // period-close checklist definitions (system template rows). The table is
       // new on this branch and not yet in the cloud-generated Kysely types, so
       // the insert goes through a cast (mirrors accounting.service.ts).
@@ -4038,8 +4571,8 @@ export async function loadMethodWriteRefusals(
 
 /**
  * The Draft a push writes into when the item's method is Active: the one this
- * integration made from that method (`pickReusableDraft`), else a new copy. The
- * reusable marker is written last; a failure before it deletes the new Draft.
+ * integration made from that method (`pickReusableDraft`), else a new copy. A
+ * new copy, its line ownership and its reusable marker are one transaction.
  */
 export async function ensureDraftMakeMethod(
   client: Client,
@@ -4099,187 +4632,128 @@ export async function ensureDraftMakeMethod(
   }
   const version = (highest.data?.version ?? 0) + 1;
 
-  const draft = await upsertMakeMethodVersion(client, {
-    copyFromId: activeMethodId,
-    // No `activeVersionId`: it sets a version Active, and the push leaves live methods alone.
-    version,
-    companyId,
-    createdBy: userId
-  });
-  if (draft.error || !draft.data?.id) {
-    return {
-      ok: false,
-      error: draft.error?.message ?? "could not create a draft version"
-    };
-  }
-  const draftId = draft.data.id;
-
-  // `upsertMakeMethodVersion` copies only the method row; the BOM and routing come here.
-  const copied = await copyMakeMethod(client, db, {
-    sourceId: activeMethodId,
-    targetId: draftId,
-    companyId,
-    userId,
-    billOfMaterial: true,
-    billOfProcess: true,
-    parameters: true,
-    tools: true,
-    steps: true,
-    workInstructions: true
-  });
-  const failure = copied.error
-    ? `its method could not be copied (${copied.error.message})`
-    : await carryLineOwnership(client, serviceRole, {
-        sourceMethodId: activeMethodId,
-        targetMethodId: draftId,
-        companyId,
-        userId
-      });
-  const marked = failure
-    ? null
-    : await client.from("externalIntegrationMapping").insert({
-        entityType: DRAFT_MARKER_ENTITY_TYPE,
-        entityId: draftId,
-        integration: ONSHAPE_V2_INTEGRATION_ID,
-        // Not the source id: two Drafts of one method would collide on the unique index.
-        externalId: draftId,
-        metadata: { sourceMethodId: activeMethodId, itemId } as Json,
-        lastSyncedAt: datetime.timestamp(),
+  // The Draft, its copied BOM and routing, the line ownership and the marker
+  // are one transaction: a failure in any of them leaves no Draft behind.
+  try {
+    const draftId = await withTransaction(db, async (trx) => {
+      const draft = await createMakeMethodVersion(client, trx, {
+        copyFromId: activeMethodId,
+        // No `activate`: the push leaves live methods alone.
+        version,
         companyId,
         createdBy: userId
       });
-  const problem =
-    failure ??
-    (marked?.error
-      ? `it could not be marked as Onshape's (${marked.error.message})`
-      : null);
-  if (!problem) {
-    return { ok: true, id: draftId, created: true, version };
-  }
-
-  // A half-built Draft, released, would ship without what failed to copy. Service
-  // role: line mappings have no user DELETE policy. The lines cascade.
-  const discarded = await discardDraft(serviceRole, {
-    draftId,
-    companyId
-  });
-  return {
-    ok: false,
-    error: discarded
-      ? `a draft version was created but ${problem}, so it was removed; push again`
-      : `a draft version was created but ${problem}, and it could not be removed — delete version ${version} before pushing again`
-  };
-}
-
-async function discardDraft(
-  serviceRole: Client,
-  args: { draftId: string; companyId: string }
-): Promise<boolean> {
-  const { draftId, companyId } = args;
-  const mappings = await serviceRole
-    .from("externalIntegrationMapping")
-    .delete()
-    .eq("companyId", companyId)
-    .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
-    .eq("entityType", "methodMaterial")
-    .eq("metadata->>makeMethodId", draftId);
-  const removed = await serviceRole
-    .from("makeMethod")
-    .delete()
-    .eq("id", draftId)
-    .eq("companyId", companyId);
-  const error = mappings.error ?? removed.error;
-  if (error) {
-    onshapeDraftMethodLogger.error(
-      "Failed to discard a half-built Onshape Draft",
-      {
-        companyId,
-        draftId,
-        error
+      if (draft.error) {
+        throw new Error(
+          draft.error.message || "could not create a draft version"
+        );
       }
-    );
-    return false;
+      await carryLineOwnership(trx, {
+        sourceMethodId: activeMethodId,
+        targetMethodId: draft.data.id,
+        companyId,
+        userId
+      });
+      await trx
+        .insertInto("externalIntegrationMapping")
+        .values({
+          entityType: DRAFT_MARKER_ENTITY_TYPE,
+          entityId: draft.data.id,
+          integration: ONSHAPE_V2_INTEGRATION_ID,
+          // Not the source id: two Drafts of one method would collide on the unique index.
+          externalId: draft.data.id,
+          metadata: { sourceMethodId: activeMethodId, itemId } as Json,
+          lastSyncedAt: datetime.timestamp(),
+          companyId,
+          createdBy: userId
+        })
+        .execute();
+      return draft.data.id;
+    });
+    return { ok: true, id: draftId, created: true, version };
+  } catch (error) {
+    onshapeDraftMethodLogger.error("Failed to create an Onshape Draft", {
+      companyId,
+      activeMethodId,
+      version,
+      error
+    });
+    return {
+      ok: false,
+      error:
+        error instanceof Error && error.message
+          ? error.message
+          : "could not create a draft version"
+    };
   }
-  return true;
 }
 
 /**
  * Copy this integration's line mappings onto the copied lines: ownership is
  * keyed on line id, and unmapped copies would read as manual and be duplicated.
+ * Runs in the transaction that copied the lines, so it reads them there.
  */
 async function carryLineOwnership(
-  client: Client,
-  serviceRole: Client,
+  trx: KyselyTx,
   args: {
     sourceMethodId: string;
     targetMethodId: string;
     companyId: string;
     userId: string;
   }
-): Promise<string | null> {
+): Promise<void> {
   const { sourceMethodId, targetMethodId, companyId, userId } = args;
 
-  const mappings = await serviceRole
-    .from("externalIntegrationMapping")
-    .select("entityId, externalId, metadata, lastSyncedAt")
-    .eq("companyId", companyId)
-    .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
-    .eq("entityType", "methodMaterial")
-    .eq("metadata->>makeMethodId", sourceMethodId);
-  if (mappings.error) return mappings.error.message;
-  if ((mappings.data ?? []).length === 0) return null;
+  const mappings = await trx
+    .selectFrom("externalIntegrationMapping")
+    .select(["entityId", "externalId", "metadata", "lastSyncedAt"])
+    .where("companyId", "=", companyId)
+    .where("integration", "=", ONSHAPE_V2_INTEGRATION_ID)
+    .where("entityType", "=", "methodMaterial")
+    .where(sql<string>`"metadata"->>'makeMethodId'`, "=", sourceMethodId)
+    .execute();
+  if (mappings.length === 0) return;
 
-  const [sourceLines, targetLines] = await Promise.all([
-    client
-      .from("methodMaterial")
-      .select("id, itemId, order, quantity")
-      .eq("makeMethodId", sourceMethodId)
-      .eq("companyId", companyId),
-    client
-      .from("methodMaterial")
-      .select("id, itemId, order")
-      .eq("makeMethodId", targetMethodId)
-      .eq("companyId", companyId)
-  ]);
-  if (sourceLines.error) return sourceLines.error.message;
-  if (targetLines.error) return targetLines.error.message;
+  const lines = (makeMethodId: string) =>
+    trx
+      .selectFrom("methodMaterial")
+      .select(["id", "itemId", "order", "quantity"])
+      .where("makeMethodId", "=", makeMethodId)
+      .where("companyId", "=", companyId)
+      .execute();
+  const [sourceLines, targetLines] = [
+    await lines(sourceMethodId),
+    await lines(targetMethodId)
+  ];
 
-  const owned = new Set((mappings.data ?? []).map((row) => row.entityId));
   const paired = pairOwnedCopiedLines(
-    sourceLines.data ?? [],
-    targetLines.data ?? [],
-    owned
+    sourceLines,
+    targetLines,
+    new Set(mappings.map((row) => row.entityId))
   );
 
   const inserts = [];
-  for (const mapping of mappings.data ?? []) {
+  for (const mapping of mappings) {
     const targetLineId = paired.get(mapping.entityId);
     // Unpaired: left unmapped, so it reads as manual and is kept, not duplicated.
     if (!targetLineId) continue;
-    const metadata = {
-      ...((mapping.metadata as Record<string, unknown> | null) ?? {}),
-      makeMethodId: targetMethodId
-    };
     inserts.push({
       entityType: "methodMaterial",
       entityId: targetLineId,
       integration: ONSHAPE_V2_INTEGRATION_ID,
       externalId: mapping.externalId,
-      metadata: metadata as Json,
+      metadata: {
+        ...((mapping.metadata as Record<string, unknown> | null) ?? {}),
+        makeMethodId: targetMethodId
+      } as Json,
       lastSyncedAt: mapping.lastSyncedAt,
       companyId,
       createdBy: userId
     });
   }
-  if (inserts.length === 0) return null;
+  if (inserts.length === 0) return;
 
-  const written = await client
-    .from("externalIntegrationMapping")
-    .insert(inserts);
-  if (written.error) {
-    return `${inserts.length} of its lines could not be linked to Onshape (${written.error.message})`;
-  }
-  return null;
+  await trx.insertInto("externalIntegrationMapping").values(inserts).execute();
 }
 
 type MethodMaterialInsert =
@@ -4760,14 +5234,9 @@ const STANDARD_FIELD_WRITERS: Record<
       })
       .eq("id", ctx.itemId)
       .eq("companyId", ctx.companyId);
-    if (updated.error) return updated.error.message;
-    await cascadeItemTrackingType(ctx.db, {
-      itemIds: [ctx.itemId],
-      companyId: ctx.companyId,
-      newType: write.itemTrackingType,
-      userId: ctx.userId
-    });
-    return null;
+    // The database gives the new flags to the open documents in the same
+    // statement (`sync_item_tracking_type_change`), or refuses the change.
+    return updated.error ? updated.error.message : null;
   },
   itemColumn: async (ctx, write) => {
     const updated = await updateItemColumns(ctx.client, {
@@ -5069,7 +5538,8 @@ export async function completeOnshapeAuthorization({
   }
 }
 
-function withCookie(response: Response, cookie: string) {
+/** Sets the OAuth state cookie a consume rewrote on the reply that ends the flow. */
+export function withCookie(response: Response, cookie: string) {
   response.headers.append("Set-Cookie", cookie);
   return response;
 }
@@ -5583,7 +6053,12 @@ function existingCustomFieldValues(row: PartPlanRow): {
 export const onshapeAssemblyPushInput = z.object({
   planId: z.string().min(1),
   edits: z.record(z.string(), itemEditSchema).default({}),
-  excluded: z.array(z.string().min(1)).default([])
+  excluded: z.array(z.string().min(1)).default([]),
+  /**
+   * Part numbers whose STEP model to export. Omitted: every row that offers
+   * one and is not excluded.
+   */
+  modelRows: z.array(z.string().min(1)).optional()
 });
 
 type AssemblyPushSummary = {
@@ -5600,6 +6075,10 @@ type AssemblyPushSummary = {
   methodsTouched: number;
   /** Parent part numbers whose BOM went into a new Draft. */
   draftVersionsCreated: string[];
+  /** Child rows' STEP models queued for export from Onshape. */
+  modelsQueued: number;
+  /** Rows whose item did not end up linked to the row's source. */
+  assetsSkipped: number;
   skipped: string[];
   errors: string[];
 };
@@ -5693,6 +6172,8 @@ export async function pushOnshapeAssembly(
     fieldsUpdated: 0,
     methodsTouched: 0,
     draftVersionsCreated: [],
+    modelsQueued: 0,
+    assetsSkipped: 0,
     skipped: [...plan.skipped],
     errors: []
   };
@@ -6461,13 +6942,25 @@ export async function pushOnshapeAssembly(
     summary.skipped.push(
       `${root.partNumber}: released in Carbon as Rev ${root.released.revision}; its fields, link and model stay as its release left them`
     );
-    const childLinkProblems = await linkChildParts(client, serviceRole, {
+    const childLinks = await linkChildParts(client, serviceRole, {
       companyId,
       userId,
       nodes: allNodes,
       itemByReadableId
     });
-    summary.errors.push(...childLinkProblems);
+    summary.errors.push(...childLinks.problems);
+    await queueAssemblyAssets({
+      companyId,
+      userId,
+      planId,
+      plan,
+      excluded,
+      modelRows: input.modelRows,
+      itemByReadableId,
+      linkedSourceByItemId: childLinks.linkedSourceByItemId,
+      root: null,
+      summary
+    });
     return panelReply(
       { summary },
       { headers: { "Cache-Control": "no-store" } }
@@ -6504,13 +6997,13 @@ export async function pushOnshapeAssembly(
     );
   }
 
-  const childLinkProblems = await linkChildParts(client, serviceRole, {
+  const childLinks = await linkChildParts(client, serviceRole, {
     companyId,
     userId,
     nodes: allNodes,
     itemByReadableId
   });
-  summary.errors.push(...childLinkProblems);
+  summary.errors.push(...childLinks.problems);
 
   try {
     await trigger(
@@ -6535,9 +7028,236 @@ export async function pushOnshapeAssembly(
     );
   }
 
+  await queueAssemblyAssets({
+    companyId,
+    userId,
+    planId,
+    plan,
+    excluded,
+    modelRows: input.modelRows,
+    itemByReadableId,
+    linkedSourceByItemId: childLinks.linkedSourceByItemId,
+    // Its drawings go where its model goes: only when the link holds.
+    root:
+      assemblyMapping.error === null
+        ? {
+            itemId: rootItem.id,
+            partNumber: root.partNumber,
+            kind: "assembly",
+            documentId,
+            wvm: wv,
+            wvmId: wvId,
+            elementId,
+            configuration: normalizeConfiguration(configuration)
+          }
+        : null,
+    summary
+  });
+
   return panelReply({ summary }, { headers: { "Cache-Control": "no-store" } });
 }
 
+// Model rows per `onshape-panel-assets` event: each row's export is a step of
+// the run, and a run has a step limit.
+const ASSET_ROWS_PER_EVENT = 100;
+
+// Bytes of drawing targets per `onshape-panel-assets` event, under Inngest's
+// 256 KB event limit with room for the rest of the event. One event is one
+// search for drawings, so a push's targets share one event whenever they fit
+// (about 800 rows): a drawing showing rows of two events would be exported
+// once per event, and one whose document only the other event reads missed.
+const DRAWING_TARGET_BYTES = 150_000;
+
+// Every drawing event repeats `assemblies` and `skipElementIds`. The targets
+// get what those leave under this budget for the whole event (Inngest takes at
+// most 256 KB), never less than the floor: a shared payload that large still
+// sends, and a rejected event is reported as not queued.
+const DRAWING_EVENT_BYTES = 240_000;
+const MIN_DRAWING_TARGET_BYTES = 10_000;
+
+/** Sends a push's drawings, every target in as few events as fit. */
+async function queueDrawingEvents(input: {
+  companyId: string;
+  userId: string;
+  planId: string;
+  /** The event ids' prefix, `<planId>:<kind>`. */
+  idPrefix: string;
+  targets: DrawingTargetRow[];
+  assemblies: NonNullable<
+    Events["carbon/onshape-panel-assets"]["data"]["drawings"]
+  >["assemblies"];
+  skipElementIds?: string[];
+}): Promise<boolean> {
+  const sharedBytes = Buffer.byteLength(
+    JSON.stringify({
+      assemblies: input.assemblies,
+      skipElementIds: input.skipElementIds ?? []
+    })
+  );
+  const events = packBySize(
+    input.targets,
+    Math.max(
+      Math.min(DRAWING_TARGET_BYTES, DRAWING_EVENT_BYTES - sharedBytes),
+      MIN_DRAWING_TARGET_BYTES
+    )
+  );
+  let queued = true;
+  for (const [index, targets] of events.entries()) {
+    try {
+      await trigger(
+        "onshape-panel-assets",
+        {
+          companyId: input.companyId,
+          userId: input.userId,
+          planId: input.planId,
+          models: [],
+          drawings: {
+            targets,
+            assemblies: input.assemblies,
+            ...(input.skipElementIds
+              ? { skipElementIds: input.skipElementIds }
+              : {})
+          }
+        },
+        // A retried apply sends the same events once.
+        { id: `${input.idPrefix}:${index}` }
+      );
+    } catch (error) {
+      onshapePushLogger.error("Failed to queue the Onshape drawings", {
+        companyId: input.companyId,
+        planId: input.planId,
+        error
+      });
+      queued = false;
+    }
+  }
+  return queued;
+}
+
+type DrawingTargetRow = NonNullable<
+  Events["carbon/onshape-panel-assets"]["data"]["drawings"]
+>["targets"][number];
+
+/**
+ * Queues the child rows' STEP models and every row's drawing PDFs: the rows
+ * in `modelRows`, or with none given, every row that offers a model and is
+ * not excluded. A row is queued only when its item ended up linked to the
+ * row's Onshape source; any other counts in `assetsSkipped`. A part number
+ * the plan did not offer is ignored. `root` takes the drawings of the
+ * assembly itself; its model is queued with every push, not here.
+ */
+async function queueAssemblyAssets(input: {
+  companyId: string;
+  userId: string;
+  planId: string;
+  plan: StoredAssemblyPlan;
+  excluded: Set<string>;
+  modelRows: string[] | undefined;
+  itemByReadableId: Map<string, { id: string }>;
+  linkedSourceByItemId: Map<string, string>;
+  /** Null when the push leaves the root as its release left it. */
+  root: DrawingTargetRow | null;
+  summary: AssemblyPushSummary;
+}): Promise<void> {
+  const { plan, summary } = input;
+
+  const picked =
+    input.modelRows?.length === 0
+      ? { models: [], unlinked: 0 }
+      : assemblyAssetRows({
+          plan,
+          modelRows: input.modelRows ? new Set(input.modelRows) : undefined,
+          excluded: input.excluded,
+          linkFor: (partNumber, source) => {
+            const item = input.itemByReadableId.get(partNumber);
+            const externalId = externalIdForBomLine({
+              documentId: source.documentId,
+              elementId: source.elementId,
+              partId: source.partId,
+              configuration: source.configuration ?? undefined
+            });
+            return item &&
+              externalId &&
+              input.linkedSourceByItemId.get(item.id) === externalId
+              ? { itemId: item.id, externalId }
+              : null;
+          }
+        });
+  summary.assetsSkipped += picked.unlinked;
+
+  // Every assembly of the push, so a drawing of one never lands on its parts.
+  const assemblies = [
+    {
+      documentId: plan.documentId,
+      wvm: plan.wv,
+      wvmId: plan.wvId,
+      elementId: plan.elementId,
+      configuration: normalizeConfiguration(plan.configuration)
+    },
+    ...bomAssemblySources(plan.nodes).map(
+      ({ kind: _kind, ...source }) => source
+    )
+  ];
+
+  let failed = false;
+  for (
+    let start = 0;
+    start < picked.models.length;
+    start += ASSET_ROWS_PER_EVENT
+  ) {
+    const models = picked.models.slice(start, start + ASSET_ROWS_PER_EVENT);
+    try {
+      await trigger(
+        "onshape-panel-assets",
+        {
+          companyId: input.companyId,
+          userId: input.userId,
+          planId: input.planId,
+          models
+        },
+        // A retried apply sends the same events once.
+        { id: `${input.planId}:assets:${start / ASSET_ROWS_PER_EVENT}` }
+      );
+      summary.modelsQueued += models.length;
+    } catch (error) {
+      onshapePushLogger.error("Failed to queue the Onshape assembly files", {
+        companyId: input.companyId,
+        planId: input.planId,
+        error
+      });
+      failed = true;
+    }
+  }
+  // Every row's drawings in one search, apart from the models' batches.
+  const drawingTargets: DrawingTargetRow[] = [
+    ...(input.root ? [input.root] : []),
+    ...picked.models.map(({ externalId: _externalId, ...row }) => row)
+  ];
+  if (
+    drawingTargets.length > 0 &&
+    !(await queueDrawingEvents({
+      companyId: input.companyId,
+      userId: input.userId,
+      planId: input.planId,
+      idPrefix: `${input.planId}:drawings`,
+      targets: drawingTargets,
+      assemblies
+    }))
+  ) {
+    failed = true;
+  }
+  if (failed) {
+    summary.errors.push(
+      "STEP models and drawings of the parts couldn't be queued. Push again to retry."
+    );
+  }
+}
+
+/**
+ * `linkedSourceByItemId`: each item now linked to its row's Onshape source, by
+ * the link it had or the one this call wrote. A row whose link failed is left
+ * out, so nothing is exported onto it.
+ */
 async function linkChildParts(
   client: SupabaseClient<Database>,
   serviceRole: SupabaseClient<Database>,
@@ -6547,7 +7267,11 @@ async function linkChildParts(
     nodes: OnshapeBomNode[];
     itemByReadableId: Map<string, { id: string; readableId: string }>;
   }
-) {
+): Promise<{
+  problems: string[];
+  linkedSourceByItemId: Map<string, string>;
+}> {
+  const linkedSourceByItemId = new Map<string, string>();
   // Links only where neither the item nor the source is linked: a part push owns that link.
   const candidates: Array<{
     itemId: string;
@@ -6571,7 +7295,7 @@ async function linkChildParts(
       source
     });
   }
-  if (candidates.length === 0) return [];
+  if (candidates.length === 0) return { problems: [], linkedSourceByItemId };
 
   // One Onshape source claimed by two items is reported, not guessed at.
   const itemsByExternalId = new Map<string, Set<string>>();
@@ -6597,15 +7321,13 @@ async function linkChildParts(
   const unambiguous = candidates.filter(
     (candidate) => !ambiguous.has(candidate.externalId)
   );
-  if (unambiguous.length === 0) return problems;
-
   const [byEntity, byExternal] = await Promise.all([
     selectInBatches(
-      unambiguous.map((candidate) => candidate.itemId),
+      candidates.map((candidate) => candidate.itemId),
       (batch) =>
         serviceRole
           .from("externalIntegrationMapping")
-          .select("entityId")
+          .select("entityId, externalId")
           .eq("companyId", input.companyId)
           .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
           .eq("entityType", "item")
@@ -6625,16 +7347,28 @@ async function linkChildParts(
   ]);
   // A failed read is not "no links": that would claim links a part push owns.
   if (byEntity.error || byExternal.error) {
-    return [
-      ...problems,
-      `child parts were not linked to Onshape: ${
-        (byEntity.error ?? byExternal.error)?.message ?? "lookup failed"
-      }`
-    ];
+    return {
+      problems: [
+        ...problems,
+        `child parts were not linked to Onshape: ${
+          (byEntity.error ?? byExternal.error)?.message ?? "lookup failed"
+        }`
+      ],
+      linkedSourceByItemId
+    };
   }
   const linkedItemIds = new Set(
     (byEntity.data ?? []).map((row) => row.entityId)
   );
+  const existingSourceByItemId = new Map(
+    (byEntity.data ?? []).map((row) => [row.entityId, row.externalId])
+  );
+  for (const candidate of candidates) {
+    if (existingSourceByItemId.get(candidate.itemId) === candidate.externalId) {
+      linkedSourceByItemId.set(candidate.itemId, candidate.externalId);
+    }
+  }
+  if (unambiguous.length === 0) return { problems, linkedSourceByItemId };
   const usedExternalIds = new Set(
     (byExternal.data ?? []).map((row) => row.externalId)
   );
@@ -6666,17 +7400,26 @@ async function linkChildParts(
       companyId: input.companyId,
       createdBy: input.userId
     }));
-  if (rows.length === 0) return problems;
+  if (rows.length === 0) return { problems, linkedSourceByItemId };
 
   // The bulk insert is all-or-nothing; on refusal retry row by row, so one
   // conflicting row (a concurrent push's link) does not block the rest.
   const linked = await client.from("externalIntegrationMapping").insert(rows);
-  if (!linked.error) return problems;
+  if (!linked.error) {
+    for (const row of rows) {
+      linkedSourceByItemId.set(row.entityId, row.externalId);
+    }
+    return { problems, linkedSourceByItemId };
+  }
 
   const failed: string[] = [];
   for (const row of rows) {
     const single = await client.from("externalIntegrationMapping").insert(row);
-    if (single.error) failed.push(row.metadata.partNumber);
+    if (single.error) {
+      failed.push(row.metadata.partNumber);
+    } else {
+      linkedSourceByItemId.set(row.entityId, row.externalId);
+    }
   }
   if (failed.length > 0) {
     problems.push(
@@ -6685,7 +7428,7 @@ async function linkChildParts(
         .join(", ")}${failed.length > 5 ? ", …" : ""}); push again to retry`
     );
   }
-  return problems;
+  return { problems, linkedSourceByItemId };
 }
 
 export const onshapeReleasePushInput = z.object({
@@ -7976,6 +8719,59 @@ export async function pushOnshapeRelease(
     }
   }
 
+  // Every other drawing of a released model at the released version, on each
+  // model it shows. The release's own drawings went above, under their own
+  // part number and revision.
+  type ReleaseDrawingTarget = NonNullable<
+    Events["carbon/onshape-panel-assets"]["data"]["drawings"]
+  >["targets"][number];
+  const drawingTargets = assetTargets.flatMap(
+    (target): ReleaseDrawingTarget[] => {
+      if (target.kind === "drawing") return [];
+      const selection = releaseExportSelection(target.item);
+      if (!selection.ok) return [];
+      return [
+        {
+          itemId: target.itemId,
+          partNumber: target.item.partNumber,
+          kind: target.kind,
+          documentId: plan.documentId,
+          wvm: "v",
+          wvmId: target.item.versionId,
+          elementId: target.item.elementId,
+          ...(selection.partId ? { partId: selection.partId } : {}),
+          configuration: normalizeConfiguration(target.item.configuration)
+        }
+      ];
+    }
+  );
+  const releasedAssemblies = modelItems
+    .filter((item) => item.elementType === 1)
+    .map((item) => ({
+      documentId: plan.documentId,
+      wvm: "v" as const,
+      wvmId: item.versionId,
+      elementId: item.elementId,
+      configuration: normalizeConfiguration(item.configuration)
+    }));
+  const releasedDrawingIds = drawingItems.map((item) => item.elementId);
+  if (
+    drawingTargets.length > 0 &&
+    !(await queueDrawingEvents({
+      companyId,
+      userId,
+      planId,
+      idPrefix: `${planId}:release-drawings`,
+      targets: drawingTargets,
+      assemblies: releasedAssemblies,
+      skipElementIds: releasedDrawingIds
+    }))
+  ) {
+    summary.errors.push(
+      "The drawings of the released parts couldn't be queued. Push again to retry."
+    );
+  }
+
   return panelReply({ summary }, { headers: { "Cache-Control": "no-store" } });
 }
 export const onshapePanelFieldsLogger = getLogger(
@@ -8307,4 +9103,463 @@ export function panelResponse(
         { status: result.error.status, headers }
       )
     : data(result.data.body, { status: result.data.status, headers });
+}
+
+// Strict backflush gaps. Each count and its drawer list share one query, the
+// SQL form of `needsPullFrom`, so they cannot disagree.
+
+function methodLinesMissingPullFrom(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  locationIds: string[]
+) {
+  // A line with no Pull From at a location, or a non-nettable (quarantine) one.
+  return db
+    .selectFrom("methodMaterial")
+    .innerJoin("makeMethod", (join) =>
+      join
+        .onRef("makeMethod.id", "=", "methodMaterial.makeMethodId")
+        .on("makeMethod.companyId", "=", companyId)
+        .on("makeMethod.status", "=", "Active")
+    )
+    .innerJoin("item as component", (join) =>
+      join
+        .onRef("component.id", "=", "methodMaterial.itemId")
+        .on("component.companyId", "=", companyId)
+    )
+    .where("methodMaterial.companyId", "=", companyId)
+    .where("methodMaterial.methodType", "!=", "Make to Order")
+    .where("methodMaterial.itemType", "in", [...PULLED_ITEM_TYPES])
+    .where(
+      sql<boolean>`COALESCE("component"."itemTrackingType", 'Inventory') <> 'Non-Inventory'`
+    )
+    .where(
+      sql<boolean>`EXISTS (
+        SELECT 1 FROM unnest(${locationIds}::text[]) AS loc
+        WHERE COALESCE("methodMaterial"."storageUnitIds" ->> loc, '') = ''
+          OR EXISTS (
+            SELECT 1 FROM "storageUnit" su
+            WHERE su."id" = "methodMaterial"."storageUnitIds" ->> loc
+              AND su."companyId" = ${companyId}
+              AND su."effectiveNettable" = false
+          )
+      )`
+    );
+}
+
+function jobLinesMissingStorageUnit(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  locationIds: string[]
+) {
+  // A line with no storage unit, or a non-nettable (quarantine) one.
+  return db
+    .selectFrom("jobMaterial")
+    .innerJoin("job", (join) =>
+      join
+        .onRef("job.id", "=", "jobMaterial.jobId")
+        .on("job.companyId", "=", companyId)
+        .on("job.status", "in", [...activeJobStatuses])
+    )
+    .innerJoin("item as component", (join) =>
+      join
+        .onRef("component.id", "=", "jobMaterial.itemId")
+        .on("component.companyId", "=", companyId)
+    )
+    .where("job.locationId", "in", locationIds)
+    .where("jobMaterial.companyId", "=", companyId)
+    .where((eb) =>
+      eb.or([
+        eb("jobMaterial.storageUnitId", "is", null),
+        eb(
+          "jobMaterial.storageUnitId",
+          "in",
+          eb
+            .selectFrom("storageUnit")
+            .select("storageUnit.id")
+            .where("storageUnit.companyId", "=", companyId)
+            .where("storageUnit.effectiveNettable", "=", false)
+        )
+      ])
+    )
+    .where("jobMaterial.methodType", "!=", "Make to Order")
+    .where("jobMaterial.itemType", "in", [...PULLED_ITEM_TYPES])
+    .where("jobMaterial.requiresBatchTracking", "=", false)
+    .where("jobMaterial.requiresSerialTracking", "=", false)
+    .where("jobMaterial.quantityToIssue", ">", 0)
+    .where(
+      sql<boolean>`COALESCE("component"."itemTrackingType", 'Inventory') <> 'Non-Inventory'`
+    );
+}
+
+export async function getStrictBackflushGapCounts(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<{
+  data: { methods: number; jobs: number } | null;
+  error: Error | null;
+}> {
+  try {
+    // One query at a time: each would otherwise take its own pooled connection.
+    const locationIds = (await getPullFromLocations(db, companyId)).map(
+      (location) => location.id
+    );
+    if (locationIds.length === 0) {
+      return { data: { methods: 0, jobs: 0 }, error: null };
+    }
+    const methods = await methodLinesMissingPullFrom(db, companyId, locationIds)
+      .select(
+        sql<string>`count(DISTINCT "methodMaterial"."makeMethodId")`.as("count")
+      )
+      .executeTakeFirst();
+    const jobs = await jobLinesMissingStorageUnit(db, companyId, locationIds)
+      .select(sql<string>`count(DISTINCT "job"."id")`.as("count"))
+      .executeTakeFirst();
+    return {
+      data: {
+        methods: Number(methods?.count ?? 0),
+        jobs: Number(jobs?.count ?? 0)
+      },
+      error: null
+    };
+  } catch (error) {
+    return { data: null, error: error as Error };
+  }
+}
+
+export async function getActiveMethodsMissingPullFrom(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<{ data: MethodMissingPullFrom[] | null; error: Error | null }> {
+  try {
+    const locations = await getPullFromLocations(db, companyId);
+    if (locations.length === 0) return { data: [], error: null };
+    const locationIds = locations.map((location) => location.id);
+    const locationName = new Map(
+      locations.map((location) => [location.id, location.name])
+    );
+
+    const lines = await methodLinesMissingPullFrom(db, companyId, locationIds)
+      .innerJoin("item as parent", (join) =>
+        join
+          .onRef("parent.id", "=", "makeMethod.itemId")
+          .on("parent.companyId", "=", companyId)
+      )
+      .select([
+        "makeMethod.id as makeMethodId",
+        "makeMethod.version",
+        "parent.id as itemId",
+        "parent.type as itemType",
+        "parent.readableIdWithRevision as readableId",
+        "parent.name",
+        "methodMaterial.storageUnitIds",
+        "component.id as componentId",
+        "component.readableIdWithRevision as componentReadableId"
+      ])
+      .execute();
+
+    // The Pull Froms at these locations that are non-nettable (quarantine),
+    // which count as missing too.
+    const pullFromAt = (storageUnitIds: unknown, locationId: string) => {
+      const value =
+        storageUnitIds && typeof storageUnitIds === "object"
+          ? (storageUnitIds as Record<string, unknown>)[locationId]
+          : undefined;
+      return typeof value === "string" && value.length > 0 ? value : null;
+    };
+    const namedIds = [
+      ...new Set(
+        lines.flatMap((line) =>
+          locationIds.flatMap((id) => pullFromAt(line.storageUnitIds, id) ?? [])
+        )
+      )
+    ];
+    const nonNettable = new Set(
+      namedIds.length === 0
+        ? []
+        : (
+            await db
+              .selectFrom("storageUnit")
+              .where("companyId", "=", companyId)
+              // One array parameter: a large company can name more units
+              // than Postgres allows bound parameters.
+              .where(sql<boolean>`"id" = ANY(${namedIds}::text[])`)
+              .where("effectiveNettable", "=", false)
+              .select("id")
+              .execute()
+          ).map((unit) => unit.id)
+    );
+
+    const methods = new Map<
+      string,
+      Omit<MethodMissingPullFrom, "materials" | "locations"> & {
+        materials: Set<string>;
+        locations: Set<string>;
+      }
+    >();
+    for (const line of lines) {
+      const method = methods.get(line.makeMethodId) ?? {
+        makeMethodId: line.makeMethodId,
+        itemId: line.itemId,
+        itemType: line.itemType,
+        readableId: line.readableId ?? line.itemId,
+        name: line.name,
+        version: Number(line.version),
+        materials: new Set<string>(),
+        locations: new Set<string>()
+      };
+      method.materials.add(line.componentReadableId ?? line.componentId);
+      for (const id of missingPullFromLocations(
+        line.storageUnitIds,
+        locationIds
+      ))
+        method.locations.add(locationName.get(id) ?? id);
+      for (const id of locationIds) {
+        const pullFrom = pullFromAt(line.storageUnitIds, id);
+        if (pullFrom && nonNettable.has(pullFrom)) {
+          method.locations.add(locationName.get(id) ?? id);
+        }
+      }
+      methods.set(line.makeMethodId, method);
+    }
+
+    return {
+      data: [...methods.values()]
+        .map((method) => ({
+          ...method,
+          materials: [...method.materials].sort(),
+          locations: [...method.locations].sort()
+        }))
+        .sort((a, b) => a.readableId.localeCompare(b.readableId)),
+      error: null
+    };
+  } catch (error) {
+    return { data: null, error: error as Error };
+  }
+}
+
+export async function getOpenJobsMissingStorageUnit(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<{ data: JobMissingStorageUnit[] | null; error: Error | null }> {
+  try {
+    const locationIds = (await getPullFromLocations(db, companyId)).map(
+      (location) => location.id
+    );
+    if (locationIds.length === 0) return { data: [], error: null };
+
+    const lines = await jobLinesMissingStorageUnit(db, companyId, locationIds)
+      .leftJoin("item as jobItem", (join) =>
+        join
+          .onRef("jobItem.id", "=", "job.itemId")
+          .on("jobItem.companyId", "=", companyId)
+      )
+      .leftJoin("location", (join) =>
+        join
+          .onRef("location.id", "=", "job.locationId")
+          .on("location.companyId", "=", companyId)
+      )
+      .select([
+        "job.id",
+        "job.jobId",
+        "job.status",
+        "jobItem.readableIdWithRevision as readableId",
+        "location.name as locationName",
+        "component.id as componentId",
+        "component.readableIdWithRevision as componentReadableId"
+      ])
+      .execute();
+
+    const jobs = new Map<
+      string,
+      Omit<JobMissingStorageUnit, "materials"> & { materials: Set<string> }
+    >();
+    for (const line of lines) {
+      const job = jobs.get(line.id) ?? {
+        id: line.id,
+        jobId: line.jobId,
+        status: line.status,
+        readableId: line.readableId,
+        locationName: line.locationName,
+        materials: new Set<string>()
+      };
+      job.materials.add(line.componentReadableId ?? line.componentId);
+      jobs.set(line.id, job);
+    }
+
+    return {
+      data: [...jobs.values()]
+        .map((job) => ({ ...job, materials: [...job.materials].sort() }))
+        .sort((a, b) => a.jobId.localeCompare(b.jobId)),
+      error: null
+    };
+  } catch (error) {
+    return { data: null, error: error as Error };
+  }
+}
+
+/**
+ * The record a document prints, for the "Edit document" modal: its readable
+ * number, whether it is locked, and the notes its Notes block prints. Read with
+ * the caller's client, so a record the caller cannot see is not found.
+ */
+export async function getDocumentEditRecord(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  documentType: DocumentEditType,
+  documentId: string
+) {
+  const record = DOCUMENT_EDIT_RECORDS[documentType];
+  const { data, error } = await client
+    .from(record.table as "purchaseOrder")
+    .select(
+      ["status", record.readableId, record.notesColumn]
+        .filter(Boolean)
+        .join(", ")
+    )
+    .eq("id", documentId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (error || !data) return { data: null, error };
+  const row = data as unknown as Record<string, unknown>;
+  return {
+    data: {
+      label: String(row[record.readableId] ?? documentId),
+      locked: record.isLocked(row.status as string | null),
+      notes: record.notesColumn
+        ? ((row[record.notesColumn] as JSONContent | null) ?? null)
+        : null
+    },
+    error: null
+  };
+}
+
+/**
+ * Save one document's edits and, when given, its notes, together. An empty edit
+ * deletes the row, so the document follows the template again. Writes nothing and
+ * says why when the record is locked or gone.
+ */
+export async function saveDocumentEditRow(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    documentType: DocumentEditType;
+    documentId: string;
+    edit: DocumentEdit;
+    notes?: JSONContent | null;
+    userId: string;
+  }
+) {
+  const { companyId, documentType, documentId, edit, userId } = args;
+  const now = datetime.timestamp();
+  const record = DOCUMENT_EDIT_RECORDS[documentType];
+
+  return withTransaction(db, async (trx) => {
+    // Lock the record row while the edit is written: a finalize that runs at the
+    // same time waits for this save, or this save sees the record locked.
+    const current = await trx
+      .selectFrom(record.table as "purchaseOrder")
+      .select("status")
+      .where("id", "=", documentId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!current) return "notFound" as const;
+    if (record.isLocked(current.status)) return "locked" as const;
+
+    if (isEmptyDocumentEdit(edit)) {
+      await trx
+        .deleteFrom("documentEdit")
+        .where("companyId", "=", companyId)
+        .where("documentType", "=", documentType)
+        .where("documentId", "=", documentId)
+        .execute();
+    } else {
+      await trx
+        .insertInto("documentEdit")
+        .values({
+          companyId,
+          documentType,
+          documentId,
+          blocks: jsonb(edit.blocks),
+          settings: jsonb(edit.settings),
+          createdBy: userId
+        })
+        .onConflict((oc) =>
+          oc.columns(["companyId", "documentType", "documentId"]).doUpdateSet({
+            blocks: jsonb(edit.blocks),
+            settings: jsonb(edit.settings),
+            updatedBy: userId,
+            updatedAt: now
+          })
+        )
+        .execute();
+    }
+
+    if (args.notes !== undefined && record.notesColumn) {
+      // The record's own notes column: the same text its page edits.
+      await trx
+        .updateTable(record.table as "purchaseOrder")
+        .set({
+          [record.notesColumn]: jsonb(args.notes ?? {}),
+          updatedBy: userId,
+          updatedAt: now
+        } as never)
+        .where("id", "=", documentId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    return "saved" as const;
+  });
+}
+
+/**
+ * Give a new copy of a document the same edits (a quote revision prints like
+ * the quote it revises). Nothing happens when the source has none.
+ */
+export async function copyDocumentEdit(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    documentType: DocumentEditType;
+    fromId: string;
+    toId: string;
+    userId: string;
+    /** The copy's id for each of the record's row ids. */
+    rowIds: ReadonlyMap<string, string>;
+  }
+) {
+  const source = await db
+    .selectFrom("documentEdit")
+    .select(["blocks", "settings"])
+    .where("companyId", "=", args.companyId)
+    .where("documentType", "=", args.documentType)
+    .where("documentId", "=", args.fromId)
+    .executeTakeFirst();
+  if (!source) return;
+
+  const settings = (source.settings ?? {}) as { valueEdits?: ValueEdits };
+  await db
+    .insertInto("documentEdit")
+    .values({
+      companyId: args.companyId,
+      documentType: args.documentType,
+      documentId: args.toId,
+      blocks: jsonb(source.blocks),
+      settings: jsonb(
+        settings.valueEdits
+          ? {
+              ...settings,
+              valueEdits: rewriteValueEditRowKeys(settings.valueEdits, (id) =>
+                args.rowIds.get(id)
+              )
+            }
+          : settings
+      ),
+      createdBy: args.userId
+    })
+    .onConflict((oc) =>
+      oc.columns(["companyId", "documentType", "documentId"]).doNothing()
+    )
+    .execute();
 }

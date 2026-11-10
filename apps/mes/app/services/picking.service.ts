@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { getErrorMessage } from "@carbon/utils";
+import { getErrorMessage, requireAffected } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type ErpPostingInput, erpPosting } from "~/services/erp";
 import { isPickingListLocked } from "~/services/models";
@@ -38,8 +38,11 @@ export async function getPickingListForExecution(
       "*, item:item(name, readableId, unitOfMeasureCode), jobMaterial:jobMaterial(itemId, quantity, substitutionFactor, item(readableId, itemSupersession!itemSupersession_itemId_fkey(conversionFactor))), job:job(jobId), jobOperation:jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name)"
     )
     .eq("pickingListId", pickingListId)
+    // The ERP picking list reads the same order: line numbers are positions.
     .order("jobOperationId")
-    .order("storageUnitId");
+    .order("storageUnitId")
+    .order("itemId")
+    .order("id");
 
   if (lineError) return { data: null, error: lineError };
 
@@ -89,15 +92,18 @@ export async function updatePickingListStatus(
   updatedBy: string,
   companyId: string
 ) {
-  return client
-    .from("pickingList")
-    .update({
-      status,
-      updatedBy,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", pickingListId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("pickingList")
+      .update({
+        status,
+        updatedBy,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", pickingListId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export type UnresolvedPickingListLine = {
@@ -260,15 +266,18 @@ export async function setPickingListLineQuantity(
 
   // Short overrides the status the posting derived from quantities.
   if (args.markShort) {
-    const update = await client
-      .from("pickingListLine")
-      .update({
-        status: "Short",
-        quantityPicked: target,
-        updatedBy: args.userId,
-        updatedAt: new Date().toISOString()
-      })
-      .eq("id", args.pickingListLineId);
+    const update = await requireAffected(
+      client
+        .from("pickingListLine")
+        .update({
+          status: "Short",
+          quantityPicked: target,
+          updatedBy: args.userId,
+          updatedAt: new Date().toISOString()
+        })
+        .eq("id", args.pickingListLineId)
+        .select("id")
+    );
     if (update.error) {
       return { data: null, error: update.error };
     }

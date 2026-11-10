@@ -42,12 +42,14 @@ type AttributeFormProps = {
     isText: boolean;
     isFile: boolean;
   }[];
+  open?: boolean;
   onClose: () => void;
 };
 
 const AttributeForm = ({
   initialValues,
   dataTypes,
+  open = true,
   onClose
 }: AttributeFormProps) => {
   const { t } = useLingui();
@@ -85,7 +87,7 @@ const AttributeForm = ({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

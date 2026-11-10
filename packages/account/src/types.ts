@@ -11,7 +11,11 @@ export type Account = Database["public"]["Tables"]["user"]["Row"];
  * these, so the panes and the routes cannot drift; the MES and the starter
  * read the same routes through their proxy.
  */
-export type AccountProfileData = { user: Account | null };
+export type AccountProfileData = {
+  user: Account | null;
+  /** A short-lived link to the user's signature image, if they have one. */
+  signatureUrl: string | null;
+};
 
 export type AccountNotificationsData = {
   preferences: Pick<

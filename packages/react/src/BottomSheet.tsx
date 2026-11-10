@@ -19,6 +19,13 @@ import { ActionPresentationBoundary } from "./ActionPresentation";
 import { ClientOnly } from "./ClientOnly";
 import { DialogRoot, useDialogDismissable } from "./Modal";
 import { cn } from "./utils/cn";
+import {
+  addDragSample,
+  type DragSample,
+  releaseVelocity,
+  rubberBand,
+  shouldDismissSheet
+} from "./utils/drag";
 import { mergeRefs } from "./utils/react";
 import { usePhoneOpenAutoFocus, useViewport } from "./Viewport";
 
@@ -58,8 +65,14 @@ type BottomSheetContentProps = ComponentPropsWithoutRef<
 };
 
 const SHEET_SPRING = "transform 200ms cubic-bezier(0.32, 0.72, 0, 1)";
-/** px per ms: a flick this fast dismisses whatever the distance. */
-const FLICK_VELOCITY = 0.5;
+const BACKDROP_SPRING = "opacity 200ms cubic-bezier(0.32, 0.72, 0, 1)";
+const OVERDRAG_LIMIT_PX = 32;
+
+function restore(sheet: HTMLElement, backdrop: HTMLElement | null) {
+  sheet.style.transform = "";
+  sheet.style.removeProperty("--tw-exit-translate-y");
+  if (backdrop) backdrop.style.opacity = "";
+}
 
 const BottomSheetContent = forwardRef<
   ElementRef<typeof DialogPrimitive.Content>,
@@ -70,10 +83,13 @@ const BottomSheetContent = forwardRef<
   const onOpenAutoFocus = usePhoneOpenAutoFocus(props.onOpenAutoFocus);
   const dismissable = useDialogDismissable();
   const sheetRef = useRef<HTMLDivElement | null>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const drag = useRef<{ startY: number; lastY: number; lastT: number } | null>(
-    null
-  );
+  const drag = useRef<{
+    startY: number;
+    height: number;
+    samples: DragSample[];
+  } | null>(null);
   const canDrag = isPhone && dismissable;
 
   // Phones: drag the grabber down to dismiss, past a third of the sheet or
@@ -83,34 +99,63 @@ const BottomSheetContent = forwardRef<
     event.currentTarget.setPointerCapture(event.pointerId);
     drag.current = {
       startY: event.clientY,
-      lastY: event.clientY,
-      lastT: event.timeStamp
+      height: sheetRef.current.offsetHeight,
+      samples: [{ y: event.clientY, t: event.timeStamp }]
     };
     sheetRef.current.style.transition = "none";
+    if (backdropRef.current) backdropRef.current.style.transition = "none";
   };
   const onDragMove = (event: PointerEvent<HTMLDivElement>) => {
     const state = drag.current;
     const sheet = sheetRef.current;
     if (!state || !sheet) return;
-    const offset = Math.max(0, event.clientY - state.startY);
+    const delta = event.clientY - state.startY;
+    const offset = delta < 0 ? -rubberBand(-delta, OVERDRAG_LIMIT_PX) : delta;
     sheet.style.transform = `translateY(${offset}px)`;
-    drag.current = { ...state, lastY: event.clientY, lastT: event.timeStamp };
+    if (backdropRef.current) {
+      backdropRef.current.style.opacity = String(
+        1 - Math.min(1, Math.max(0, offset) / state.height)
+      );
+    }
+    state.samples = addDragSample(state.samples, {
+      y: event.clientY,
+      t: event.timeStamp
+    });
   };
   const onDragEnd = (event: PointerEvent<HTMLDivElement>) => {
     const state = drag.current;
     const sheet = sheetRef.current;
+    const backdrop = backdropRef.current;
     drag.current = null;
     if (!state || !sheet) return;
     const offset = Math.max(0, event.clientY - state.startY);
-    const velocity =
-      (event.clientY - state.lastY) /
-      Math.max(1, event.timeStamp - state.lastT);
     sheet.style.transition = SHEET_SPRING;
-    if (offset > sheet.offsetHeight / 3 || velocity > FLICK_VELOCITY) {
+    if (backdrop) backdrop.style.transition = BACKDROP_SPRING;
+    if (
+      event.type === "pointerup" &&
+      shouldDismissSheet({
+        offset,
+        height: state.height,
+        velocity: releaseVelocity(state.samples, event.timeStamp)
+      })
+    ) {
+      // Reduced motion zeroes the exit movement, which would slide the sheet
+      // back up before it closes.
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        sheet.style.setProperty(
+          "--tw-exit-translate-y",
+          `${offset}px`,
+          "important"
+        );
+      }
       // The exit animation starts from where the finger left the sheet.
       closeRef.current?.click();
+      // A controlled sheet may refuse to close.
+      requestAnimationFrame(() => {
+        if (sheet.dataset.state === "open") restore(sheet, backdrop);
+      });
     } else {
-      sheet.style.transform = "";
+      restore(sheet, backdrop);
     }
   };
 
@@ -118,15 +163,17 @@ const BottomSheetContent = forwardRef<
     <ClientOnly fallback={null}>
       {() => (
         <DialogPrimitive.Portal>
-          <BottomSheetOverlay />
+          <BottomSheetOverlay ref={backdropRef} />
           <DialogPrimitive.Content
             ref={mergeRefs(ref, sheetRef)}
             className={cn(
-              "fixed inset-x-0 bottom-0 z-[70] flex flex-col rounded-t-2xl bg-background shadow-lg duration-300",
+              "fixed inset-x-0 bottom-0 z-[70] flex flex-col rounded-t-2xl bg-background shadow-lg data-[state=open]:duration-300 data-[state=closed]:duration-200",
               "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+              "motion-reduce:data-[state=closed]:fade-out-0 motion-reduce:data-[state=open]:fade-in-0",
               // Phones: a sheet settles in on the iOS curve and leaves faster.
-              "max-md:ease-[cubic-bezier(0.32,0.72,0,1)] max-md:data-[state=open]:[animation-duration:300ms] max-md:data-[state=closed]:[animation-duration:200ms]",
+              "max-md:ease-drawer",
               "max-md:max-h-[88dvh] max-md:rounded-t-[14px] max-md:bg-popover max-md:pb-safe",
+              "max-md:after:absolute max-md:after:inset-x-0 max-md:after:top-full max-md:after:h-10 max-md:after:bg-popover",
               size === "full" &&
                 "max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:max-h-none",
               className
@@ -138,7 +185,9 @@ const BottomSheetContent = forwardRef<
               aria-hidden
               className={cn(
                 "flex shrink-0 justify-center pt-3 pb-2 max-md:pt-2 max-md:pb-1",
-                canDrag && "touch-none cursor-grab active:cursor-grabbing"
+                canDrag && "touch-none cursor-grab active:cursor-grabbing",
+                canDrag &&
+                  "relative has-[+[data-bottom-sheet-header]]:after:absolute has-[+[data-bottom-sheet-header]]:after:inset-x-14 has-[+[data-bottom-sheet-header]]:after:top-0 has-[+[data-bottom-sheet-header]]:after:z-[1] has-[+[data-bottom-sheet-header]]:after:h-11"
               )}
               onPointerDown={onDragStart}
               onPointerMove={onDragMove}
@@ -170,6 +219,7 @@ const BottomSheetHeader = ({
   ...props
 }: HTMLAttributes<HTMLDivElement>) => (
   <div
+    data-bottom-sheet-header=""
     className={cn(
       "px-6 pb-2 text-center",
       "max-md:relative max-md:flex max-md:min-h-11 max-md:shrink-0 max-md:items-center max-md:justify-center max-md:px-14 max-md:pb-2",
@@ -243,7 +293,7 @@ const BottomSheetTitle = forwardRef<
     ref={ref}
     className={cn(
       "text-sm font-medium text-muted-foreground",
-      "max-md:truncate max-md:text-[17px] max-md:font-semibold max-md:text-foreground",
+      "max-md:truncate max-md:text-[1.0625rem] max-md:font-semibold max-md:text-foreground",
       className
     )}
     {...props}
@@ -265,7 +315,7 @@ BottomSheetDescription.displayName = "BottomSheetDescription";
 
 /** One 48pt row of a phone sheet: a menu item, an option or a link. */
 const sheetRowClassName =
-  "relative flex min-h-12 w-full select-none items-center gap-3 rounded-sm px-3 text-left text-[15px] text-foreground outline-none transition-colors hover:bg-accent focus-visible:bg-accent active:bg-accent disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50";
+  "relative flex min-h-12 w-full select-none items-center gap-3 rounded-sm px-3 text-left text-[0.9375rem] text-foreground outline-none transition-colors hover:bg-accent focus-visible:bg-accent active:bg-accent disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50";
 
 /** The uppercase label over a section of sheet rows. */
 const SheetSectionLabel = forwardRef<

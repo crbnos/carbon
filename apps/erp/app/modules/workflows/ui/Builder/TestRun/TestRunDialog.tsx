@@ -197,7 +197,9 @@ function Dialog({
               </Trans>
             </p>
             <p className="text-xs text-muted-foreground">
-              <Trans>The result will not appear on the Runs page.</Trans>
+              <Trans>
+                Test runs are saved to the run history, marked as tests.
+              </Trans>
             </p>
 
             {!isScheduleMode && events.length > 1 && (

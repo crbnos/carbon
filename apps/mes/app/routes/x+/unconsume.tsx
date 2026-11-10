@@ -11,6 +11,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { erpPosting } from "~/services/erp";
 import { issueTrackedEntityValidator } from "~/services/models";
+import { abilityBlockRefusal } from "~/services/operations.service";
 
 const log = getLogger("mes", "unconsume");
 
@@ -60,6 +61,15 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (matRow.jobOperationId) {
+    const refusal = await abilityBlockRefusal(serviceRole, {
+      operationId: matRow.jobOperationId,
+      employeeId: userId,
+      companyId
+    });
+    if (refusal) {
+      return data({ success: false, message: refusal }, { status: 403 });
+    }
+
     // `workInstructionId` is in the runtime row but absent from the generated
     // DB types (stale until next regen). Select only the typed column;
     // pick up `workInstructionId` via cast below.

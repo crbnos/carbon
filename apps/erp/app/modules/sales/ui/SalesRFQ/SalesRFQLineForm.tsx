@@ -23,7 +23,7 @@ import {
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
-  toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -52,12 +52,14 @@ import DeleteSalesRFQLine from "./DeleteSalesRFQLine";
 type SalesRFQLineFormProps = {
   initialValues: z.infer<typeof salesRfqLineValidator>;
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const SalesRFQLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose
 }: SalesRFQLineFormProps) => {
   const { t } = useLingui();
@@ -111,7 +113,7 @@ const SalesRFQLineForm = ({
       .maybeSingle();
 
     if (customerPart.error) {
-      toast.error(t`Failed to load customer part details`);
+      toastError(t`Failed to load customer part details`, customerPart.error);
       return;
     }
 
@@ -137,7 +139,7 @@ const SalesRFQLineForm = ({
       .maybeSingle();
 
     if (customerPart.error) {
-      toast.error("Failed to load customer part details");
+      toastError("Failed to load customer part details", customerPart.error);
       return;
     }
 
@@ -165,7 +167,7 @@ const SalesRFQLineForm = ({
     ]);
 
     if (item.error) {
-      toast.error(t`Failed to load item details`);
+      toastError(t`Failed to load item details`, item.error);
       return;
     }
 
@@ -195,6 +197,7 @@ const SalesRFQLineForm = ({
     <>
       <ModalCardProvider type={type}>
         <ModalCard
+          open={open}
           onClose={onClose}
           isCollapsible={isEditing}
           defaultCollapsed={false}
@@ -368,8 +371,9 @@ const SalesRFQLineForm = ({
           </ModalCardContent>
         </ModalCard>
       </ModalCardProvider>
-      {isEditing && deleteDisclosure.isOpen && (
+      {isEditing && (
         <DeleteSalesRFQLine
+          isOpen={deleteDisclosure.isOpen}
           line={initialValues as SalesRFQLine}
           onCancel={deleteDisclosure.onClose}
         />

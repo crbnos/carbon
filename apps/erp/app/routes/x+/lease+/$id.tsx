@@ -9,7 +9,7 @@ import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useMatches, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import { leaseOpeningAsOf } from "~/modules/purchasing/purchasing.service";
@@ -25,6 +25,7 @@ import {
 } from "~/modules/purchasing/ui/Leases";
 import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "lease");
@@ -36,6 +37,9 @@ export const handle: Handle = {
   ),
   module: "purchasing"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.lease?.leaseId, "Lease");
 
 export async function loader({
   request,

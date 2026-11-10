@@ -24,8 +24,10 @@ import {
   ModalOverlay,
   ModalTitle,
   toast,
+  toastError,
   useDebounce,
   useDisclosure,
+  usePaneResize,
   VStack
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -44,12 +46,14 @@ import {
   BALLOON_W_NORM,
   clippedBalloonToAnchorLine
 } from "@carbon/utils";
+import { ModelUploadPreview } from "@carbon/viewer/model-upload-preview";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   LuChevronDown,
   LuChevronLeft,
   LuChevronRight,
   LuChevronUp,
+  LuCrosshair,
   LuEllipsisVertical,
   LuExternalLink,
   LuFileDown,
@@ -69,7 +73,7 @@ import { EditableList, EditableText } from "~/components/Editable";
 import Grid from "~/components/Grid";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useUser } from "~/hooks";
+import { useDrawerItem, usePermissions, useUser } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { BalloonRegionAnalysis } from "~/modules/quality/quality.models";
 import type { SamplingStandard } from "~/modules/quality/samplingStandards";
@@ -158,6 +162,9 @@ type InspectionDocumentEditorProps = {
   // rule) and the company's sampling standard for previews.
   sampling: SamplingRule | null;
   samplingStandard: SamplingStandard;
+  // A plan made from a model's PMI holds the model instead of a PDF: the top
+  // pane shows the model and the PDF tools are hidden.
+  model: { modelUploadId: string; modelPath: string | null } | null;
 };
 
 type PdfMetrics = {
@@ -340,6 +347,8 @@ type FeatureRow = {
   samplingSeverity: SamplingRule["samplingSeverity"];
   /** Optional gauge type the feature must be measured with. */
   gaugeTypeId: string | null;
+  /** The PMI item a model plan's feature was made from (read-only). */
+  pmiItemId: string | null;
   featureDirty?: boolean;
   geometryDirty?: boolean;
 };
@@ -410,11 +419,13 @@ const EditableGaugeType =
     value,
     row,
     accessorKey,
+    label,
     onUpdate
   }: EditableTableCellComponentProps<FeatureRow>) => (
     <Combobox
       autoFocus
       isClearable
+      aria-label={label}
       className="rounded-none"
       size="sm"
       value={(value as string | null) ?? undefined}
@@ -588,6 +599,7 @@ function mapFeatureRowFromRecords(
     samplingSeverity:
       (feature.samplingSeverity as SamplingRule["samplingSeverity"]) ?? null,
     gaugeTypeId: (feature.gaugeTypeId as string | null) ?? null,
+    pmiItemId: (feature.pmiItemId as string | null) ?? null,
     featureDirty: false,
     geometryDirty: false
   };
@@ -643,13 +655,16 @@ export default function InspectionDocumentEditor({
   unitOfMeasures,
   gaugeTypes,
   sampling,
-  samplingStandard
+  samplingStandard,
+  model
 }: InspectionDocumentEditorProps) {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
   const [items] = useItems();
   const deleteDisclosure = useDisclosure();
+  // A model plan: the characteristic whose PMI item the model shows.
+  const [modelFeatureId, setModelFeatureId] = useState<string | null>(null);
 
   const part = partId ? items.find((i) => i.id === partId) : undefined;
   const itemMasterLink =
@@ -679,9 +694,8 @@ export default function InspectionDocumentEditor({
   const [docSampling, setDocSampling] = useState<SamplingRule>(
     sampling ?? EMPTY_SAMPLING_RULE
   );
-  const [samplingTarget, setSamplingTarget] = useState<
-    "document" | string | null
-  >(null);
+  const samplingModal = useDrawerItem<"document" | string>();
+  const { item: samplingTarget, open: openSamplingModal } = samplingModal;
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [replacePdfConfirmOpen, setReplacePdfConfirmOpen] = useState(false);
@@ -697,6 +711,15 @@ export default function InspectionDocumentEditor({
   );
   const [featureRows, setFeatureRows] = useState<FeatureRow[]>(() =>
     buildFeatureRowsFromLoader(initialFeatures, balloons)
+  );
+  // A model plan: each characteristic's PMI item, for the model pane.
+  const pmiLinks = useMemo(
+    () =>
+      featureRows.map((row) => ({
+        id: row.featureId,
+        pmiItemId: row.pmiItemId
+      })),
+    [featureRows]
   );
   const [placing, setPlacing] = useState(false);
   const [placingAnnotation, setPlacingAnnotation] = useState(false);
@@ -718,7 +741,6 @@ export default function InspectionDocumentEditor({
   /** Height of PDF block when table is expanded (px); drag the splitter to adjust. */
   const [pdfPaneHeightPx, setPdfPaneHeightPx] = useState(360);
   const [editorStackHeightPx, setEditorStackHeightPx] = useState(0);
-  const [isResizingPdfFeatures, setIsResizingPdfFeatures] = useState(false);
   const [pdfExporting, setPdfExporting] = useState(false);
   const [pdfPageRendered, setPdfPageRendered] = useState(false);
   const prevPdfViewPageRef = useRef(pdfViewPage);
@@ -748,9 +770,6 @@ export default function InspectionDocumentEditor({
       "x" | "y" | "width" | "height" | "pageNumber"
     >;
   } | null>(null);
-  const splitDragRef = useRef<{ startY: number; startPdfPx: number } | null>(
-    null
-  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfReplaceToastRef = useRef(false);
   /** A replaced drawing's page metrics still need saving once it renders. */
@@ -861,44 +880,13 @@ export default function InspectionDocumentEditor({
     return () => ro.disconnect();
   }, [featuresTableExpanded]);
 
-  useEffect(() => {
-    if (!isResizingPdfFeatures) return;
-    const onMove = (e: MouseEvent) => {
-      const start = splitDragRef.current;
-      if (!start) return;
-      const dy = e.clientY - start.startY;
-      setPdfPaneHeightPx(
-        clampPdfPaneHeight(
-          start.startPdfPx + dy,
-          editorStackHeightPx,
-          featuresTableExpanded
-        )
-      );
-    };
-    const onUp = () => {
-      setIsResizingPdfFeatures(false);
-      splitDragRef.current = null;
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, [isResizingPdfFeatures, editorStackHeightPx, featuresTableExpanded]);
-
-  const onSplitResizeMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (!featuresTableExpanded) return;
-      e.preventDefault();
-      splitDragRef.current = {
-        startY: e.clientY,
-        startPdfPx: pdfPaneHeightPx
-      };
-      setIsResizingPdfFeatures(true);
-    },
-    [featuresTableExpanded, pdfPaneHeightPx]
-  );
+  const splitResize = usePaneResize({
+    height: pdfPaneHeightPx,
+    clamp: (height) =>
+      clampPdfPaneHeight(height, editorStackHeightPx, featuresTableExpanded),
+    enabled: featuresTableExpanded && editorStackHeightPx > 0,
+    onCommit: setPdfPaneHeightPx
+  });
 
   // Measure container width and keep it up to date on resize
   useEffect(() => {
@@ -1288,7 +1276,8 @@ export default function InspectionDocumentEditor({
               samplingAql: null,
               samplingInspectionLevel: null,
               samplingSeverity: null,
-              gaugeTypeId: null
+              gaugeTypeId: null,
+              pmiItemId: null
             }
           ];
         });
@@ -2350,7 +2339,7 @@ export default function InspectionDocumentEditor({
       setUploading(false);
 
       if (result.error) {
-        toast.error(t`Failed to upload PDF`);
+        toastError(t`Failed to upload PDF`, result.error);
         return;
       }
 
@@ -2465,7 +2454,8 @@ export default function InspectionDocumentEditor({
           samplingAql: null,
           samplingInspectionLevel: null,
           samplingSeverity: null,
-          gaugeTypeId: null
+          gaugeTypeId: null,
+          pmiItemId: null
         }
       ];
     });
@@ -2685,7 +2675,7 @@ export default function InspectionDocumentEditor({
               className="text-left text-sm underline-offset-2 hover:underline"
               onClick={(e) => {
                 e.stopPropagation();
-                setSamplingTarget(row.original.featureId);
+                openSamplingModal(row.original.featureId);
               }}
             >
               {summary ?? (
@@ -2701,7 +2691,25 @@ export default function InspectionDocumentEditor({
         size: 148,
         cell: ({ row }) => (
           <HStack spacing={1} className="items-center">
-            {!row.original.balloonId && (
+            {model && row.original.pmiItemId && (
+              <Button
+                type="button"
+                variant={
+                  modelFeatureId === row.original.featureId
+                    ? "primary"
+                    : "outline"
+                }
+                size="sm"
+                leftIcon={<LuCrosshair className="h-3.5 w-3.5" />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setModelFeatureId(row.original.featureId);
+                }}
+              >
+                {t`Show`}
+              </Button>
+            )}
+            {!model && !row.original.balloonId && (
               <Button
                 type="button"
                 variant="outline"
@@ -2754,6 +2762,9 @@ export default function InspectionDocumentEditor({
       handlePlaceFeatureOnDrawing,
       handleUnballoon,
       isOverlayReady,
+      model,
+      modelFeatureId,
+      openSamplingModal,
       uomCodeToName,
       gaugeTypeIdToName,
       t
@@ -2878,6 +2889,7 @@ export default function InspectionDocumentEditor({
       <div className="flex min-h-[var(--header-height)] flex-shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 overflow-x-auto border-b border-border bg-card px-4 py-2 scrollbar-hide">
         <div className="flex min-w-0 items-center gap-1 pr-2">
           <Input
+            aria-label={t`Diagram title`}
             borderless
             value={title}
             placeholder={t`Untitled Diagram`}
@@ -2955,131 +2967,137 @@ export default function InspectionDocumentEditor({
           ) : hasSaved ? (
             <span className="text-xs text-muted-foreground">{t`Saved`}</span>
           ) : null}
-          <Button
-            variant={placing ? "primary" : "secondary"}
-            leftIcon={<LuRectangleHorizontal />}
-            onClick={() => {
-              setPlacing((v) => {
-                const next = !v;
-                if (next) {
-                  setPlacingAnnotation(false);
-                  setZoomBoxMode(false);
-                  setPlacingFeatureId(null);
-                }
-                return next;
-              });
-            }}
-            isDisabled={!isOverlayReady}
-          >
-            {placing ? t`Drag to place on drawing` : t`Add Selector`}
-          </Button>
+          {!model && (
+            <Button
+              variant={placing ? "primary" : "secondary"}
+              leftIcon={<LuRectangleHorizontal />}
+              onClick={() => {
+                setPlacing((v) => {
+                  const next = !v;
+                  if (next) {
+                    setPlacingAnnotation(false);
+                    setZoomBoxMode(false);
+                    setPlacingFeatureId(null);
+                  }
+                  return next;
+                });
+              }}
+              isDisabled={!isOverlayReady}
+            >
+              {placing ? t`Drag to place on drawing` : t`Add Selector`}
+            </Button>
+          )}
           <Button
             type="button"
             variant="secondary"
             leftIcon={<LuSlidersHorizontal className="h-4 w-4" />}
-            onClick={() => setSamplingTarget("document")}
+            onClick={() => openSamplingModal("document")}
           >
             {samplingRuleSummary(docSampling) ?? t`Sampling`}
           </Button>
-          <HStack
-            spacing={0}
-            className="ml-1 rounded-md border bg-background px-1 py-1"
-          >
-            <IconButton
-              type="button"
-              variant={zoomBoxMode ? "active" : "ghost"}
-              size="sm"
-              aria-label={zoomBoxMode ? t`Drag to zoom` : t`Zoom Box`}
-              icon={<LuScan />}
-              isDisabled={!isOverlayReady}
-              onClick={() =>
-                setZoomBoxMode((v) => {
-                  const next = !v;
-                  if (next) {
-                    setPlacing(false);
-                    setPlacingAnnotation(false);
-                  }
-                  return next;
-                })
-              }
-            />
-            <span className="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />
-            <IconButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-label={t`Zoom out`}
-              icon={<LuMinus />}
-              onClick={() =>
-                setZoomScale((z) => Math.max(0.5, Number((z - 0.1).toFixed(2))))
-              }
-            />
-            <span className="min-w-14 select-none text-center text-sm font-medium">
-              {Math.round(zoomScale * 100)}%
-            </span>
-            <IconButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-label={t`Zoom in`}
-              icon={<LuPlus />}
-              onClick={() =>
-                setZoomScale((z) => Math.min(3, Number((z + 0.1).toFixed(2))))
-              }
-            />
-            <span className="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />
-            <IconButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              aria-label={t`Reset view`}
-              icon={<LuMaximize />}
-              onClick={() => {
-                setZoomScale(1);
-                requestAnimationFrame(() => {
-                  if (!containerRef.current) return;
-                  containerRef.current.scrollLeft = 0;
-                  containerRef.current.scrollTop = 0;
-                });
-              }}
-            />
-          </HStack>
+          {/* A model plan has no drawing to zoom. */}
+          {!model && (
+            <HStack
+              spacing={0}
+              className="ml-1 rounded-md border bg-background px-1 py-1"
+            >
+              <IconButton
+                type="button"
+                variant={zoomBoxMode ? "active" : "ghost"}
+                size="sm"
+                aria-label={zoomBoxMode ? t`Drag to zoom` : t`Zoom Box`}
+                icon={<LuScan />}
+                isDisabled={!isOverlayReady}
+                onClick={() =>
+                  setZoomBoxMode((v) => {
+                    const next = !v;
+                    if (next) {
+                      setPlacing(false);
+                      setPlacingAnnotation(false);
+                    }
+                    return next;
+                  })
+                }
+              />
+              <span className="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />
+              <IconButton
+                type="button"
+                variant="ghost"
+                size="sm"
+                aria-label={t`Zoom out`}
+                icon={<LuMinus />}
+                onClick={() =>
+                  setZoomScale((z) =>
+                    Math.max(0.5, Number((z - 0.1).toFixed(2)))
+                  )
+                }
+              />
+              <span className="min-w-14 select-none text-center text-sm font-medium">
+                {Math.round(zoomScale * 100)}%
+              </span>
+              <IconButton
+                type="button"
+                variant="ghost"
+                size="sm"
+                aria-label={t`Zoom in`}
+                icon={<LuPlus />}
+                onClick={() =>
+                  setZoomScale((z) => Math.min(3, Number((z + 0.1).toFixed(2))))
+                }
+              />
+              <span className="mx-0.5 h-4 w-px bg-border" aria-hidden="true" />
+              <IconButton
+                type="button"
+                variant="ghost"
+                size="sm"
+                aria-label={t`Reset view`}
+                icon={<LuMaximize />}
+                onClick={() => {
+                  setZoomScale(1);
+                  requestAnimationFrame(() => {
+                    if (!containerRef.current) return;
+                    containerRef.current.scrollLeft = 0;
+                    containerRef.current.scrollTop = 0;
+                  });
+                }}
+              />
+            </HStack>
+          )}
         </HStack>
       </div>
 
-      {isLeaving && saveFailed && (
-        <Modal open onOpenChange={(open) => !open && blocker.reset?.()}>
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>{t`Unsaved changes`}</ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <p className="text-sm text-muted-foreground">
-                {t`Your latest changes could not be saved. Are you sure you want to leave this page?`}
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={() => blocker.reset?.()}>
-                {t`Stay on this page`}
-              </Button>
-              <Button onClick={() => blocker.proceed?.()}>
-                {t`Leave this page`}
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={isLeaving && saveFailed}
+        onOpenChange={(open) => !open && blocker.reset?.()}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>{t`Unsaved changes`}</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-muted-foreground">
+              {t`Your latest changes could not be saved. Are you sure you want to leave this page?`}
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={() => blocker.reset?.()}>
+              {t`Stay on this page`}
+            </Button>
+            <Button onClick={() => blocker.proceed?.()}>
+              {t`Leave this page`}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteInspectionDocument(diagramId)}
-          isOpen
-          name={title || t`this inspection plan`}
-          text={t`Are you sure you want to delete this inspection plan? This cannot be undone.`}
-          onCancel={() => deleteDisclosure.onClose()}
-          onSubmit={() => deleteDisclosure.onClose()}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteInspectionDocument(diagramId)}
+        isOpen={deleteDisclosure.isOpen}
+        name={title || t`this inspection plan`}
+        text={t`Are you sure you want to delete this inspection plan? This cannot be undone.`}
+        onCancel={() => deleteDisclosure.onClose()}
+        onSubmit={() => deleteDisclosure.onClose()}
+      />
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2">
         <div
@@ -3088,6 +3106,7 @@ export default function InspectionDocumentEditor({
         >
           {/* PDF viewer — outer measures width, inner fills container */}
           <div
+            ref={splitResize.paneRef}
             className={`flex min-h-0 min-w-full flex-col overflow-hidden rounded-lg border bg-muted ${
               featuresTableExpanded ? "shrink-0" : "min-h-[220px] flex-1"
             }`}
@@ -3140,6 +3159,7 @@ export default function InspectionDocumentEditor({
               }}
             >
               {hasPdf ? (
+                // biome-ignore lint/a11y/noStaticElementInteractions: mouse-leave only resets in-progress pointer drag state; not a control
                 <div
                   ref={overlayRef}
                   className="relative select-none"
@@ -3481,6 +3501,18 @@ export default function InspectionDocumentEditor({
                       </div>
                     )}
                 </div>
+              ) : model ? (
+                <div className="h-full w-full">
+                  <ModelUploadPreview
+                    modelUploadId={model.modelUploadId}
+                    modelPath={model.modelPath}
+                    companyId={companyId}
+                    pmiLinks={pmiLinks}
+                    selectedLinkId={modelFeatureId}
+                    onLinkSelect={setModelFeatureId}
+                    className="h-full rounded-none"
+                  />
+                </div>
               ) : (
                 <button
                   type="button"
@@ -3521,6 +3553,7 @@ export default function InspectionDocumentEditor({
                   >
                     <VStack spacing={2} className="w-52">
                       <input
+                        aria-label={t`Annotation text`}
                         className="h-8 w-full rounded border bg-background px-2 text-xs"
                         placeholder={t`Annotation text`}
                         value={annotationDraft.text}
@@ -3531,6 +3564,7 @@ export default function InspectionDocumentEditor({
                         }
                       />
                       <input
+                        aria-label={t`Annotation text size`}
                         type="text"
                         inputMode="numeric"
                         className="h-8 w-full rounded border bg-background px-2 text-xs"
@@ -3609,6 +3643,7 @@ export default function InspectionDocumentEditor({
                   >
                     <VStack spacing={2} className="w-52">
                       <input
+                        aria-label={t`Annotation text`}
                         className="h-8 w-full rounded border bg-background px-2 text-xs"
                         placeholder={t`Annotation text`}
                         value={annotationEditDraft.text}
@@ -3619,6 +3654,7 @@ export default function InspectionDocumentEditor({
                         }
                       />
                       <input
+                        aria-label={t`Annotation text size`}
                         type="text"
                         inputMode="numeric"
                         className="h-8 w-full rounded border bg-background px-2 text-xs"
@@ -3697,10 +3733,10 @@ export default function InspectionDocumentEditor({
               aria-orientation="horizontal"
               aria-label={t`Drag to resize diagram and characteristics`}
               aria-valuenow={Math.round(pdfPaneHeightPx)}
-              className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 ${
-                isResizingPdfFeatures ? "bg-muted" : ""
+              className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 pointer-coarse:h-6 pointer-coarse:hit-area ${
+                splitResize.isResizing ? "bg-muted" : ""
               }`}
-              onMouseDown={onSplitResizeMouseDown}
+              {...splitResize.handleProps}
             >
               <span className="h-1 w-14 shrink-0 rounded-full bg-muted-foreground/40 group-hover:bg-muted-foreground/65" />
             </div>
@@ -3774,6 +3810,7 @@ export default function InspectionDocumentEditor({
 
       {samplingTarget !== null && (
         <SamplingRuleModal
+          open={samplingModal.isOpen}
           context={samplingTarget === "document" ? "document" : "feature"}
           featureLabel={
             samplingTarget === "document"
@@ -3807,7 +3844,7 @@ export default function InspectionDocumentEditor({
               updateFeatureSampling(samplingTarget, rule);
             }
           }}
-          onClose={() => setSamplingTarget(null)}
+          onClose={samplingModal.close}
         />
       )}
     </div>

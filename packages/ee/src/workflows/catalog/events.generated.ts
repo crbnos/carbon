@@ -1052,7 +1052,13 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     scheduleOutdatedAt: { kind: "primitive", of: "date" },
     productionQuantity: { kind: "primitive", of: "number" },
     fixedAssetClassId: { kind: "primitive", of: "string" },
-    fixedAssetId: { kind: "primitive", of: "string" }
+    fixedAssetId: { kind: "primitive", of: "string" },
+    projectId: { kind: "primitive", of: "string" },
+    projectElementId: { kind: "primitive", of: "string" },
+    consumeToProject: { kind: "primitive", of: "boolean" },
+    receiveToProjectStock: { kind: "primitive", of: "boolean" },
+    planningGroupId: { kind: "primitive", of: "string" },
+    customerContractLineId: { kind: "primitive", of: "string" }
   },
   jobOperation: {
     id: { kind: "primitive", of: "string" },
@@ -1119,7 +1125,9 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     tags: { kind: "list", of: { kind: "primitive", of: "string" } },
     code: { kind: "primitive", of: "string" },
     requiresStaffing: { kind: "primitive", of: "boolean" },
-    responsibleEmployee: { kind: "entity", of: "user" }
+    responsibleEmployee: { kind: "entity", of: "user" },
+    inspectionStorageUnitId: { kind: "primitive", of: "string" },
+    rejectedStorageUnitId: { kind: "primitive", of: "string" }
   },
   nonConformance: {
     id: { kind: "primitive", of: "string" },
@@ -1259,7 +1267,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     tags: { kind: "list", of: { kind: "primitive", of: "string" } },
     internalNotes: { kind: "primitive", of: "string" },
     supplierInteractionId: { kind: "primitive", of: "string" },
-    postedBy: { kind: "entity", of: "user" }
+    postedBy: { kind: "entity", of: "user" },
+    inspectionStatus: { kind: "primitive", of: "string" }
   },
   salesInvoice: {
     id: { kind: "primitive", of: "string" },
@@ -1385,7 +1394,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     acknowledgedITAR: { kind: "primitive", of: "boolean" },
     flags: { kind: "primitive", of: "string" },
     isConsoleOperator: { kind: "primitive", of: "boolean" },
-    phone: { kind: "primitive", of: "string" }
+    phone: { kind: "primitive", of: "string" },
+    signaturePath: { kind: "primitive", of: "string" }
   }
 };
 
@@ -1556,7 +1566,16 @@ export const WORKFLOW_ENTITY_ENUMS: Record<
       "Manufacturing Output",
       "Rental Agreement"
     ],
-    status: ["Draft", "Pending", "Posted", "Voided"]
+    status: ["Draft", "Pending", "Posted", "Voided"],
+    inspectionStatus: [
+      "Not Required",
+      "Pending Inspection",
+      "Inspection In Progress",
+      "Inspection Passed",
+      "Inspection Failed",
+      "Partially Passed",
+      "Put Away"
+    ]
   },
   salesInvoice: {
     status: [
@@ -1596,7 +1615,8 @@ export const WORKFLOW_ENTITY_ENUMS: Record<
       "Purchase Return Order",
       "Inbound Transfer",
       "Outbound Transfer",
-      "Rental Agreement"
+      "Rental Agreement",
+      "Customer Contract"
     ],
     status: ["Draft", "Pending", "Posted", "Voided"]
   },

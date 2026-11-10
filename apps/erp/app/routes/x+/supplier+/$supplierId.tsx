@@ -10,10 +10,11 @@ import { getDocumentApprovalState } from "@carbon/ee/approvals/document.server";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import SupplierHeader from "~/modules/purchasing/ui/Supplier/SupplierHeader";
 import SupplierSidebar from "~/modules/purchasing/ui/Supplier/SupplierSidebar";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -23,6 +24,9 @@ export const handle: Handle = {
   ),
   module: "purchasing"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.supplier?.name, "Supplier");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId, userId, api } = await authorize(request, {

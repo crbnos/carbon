@@ -18,6 +18,7 @@ import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { RequiredAction } from "../../types";
@@ -25,10 +26,11 @@ import type { RequiredAction } from "../../types";
 type RequiredActionsTableProps = {
   data: RequiredAction[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const RequiredActionsTable = memo(
-  ({ data, count }: RequiredActionsTableProps) => {
+  ({ data, count, infinite }: RequiredActionsTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -55,7 +57,9 @@ const RequiredActionsTable = memo(
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: ({ row }) => <Checkbox checked={row.original.active} />,
+          cell: ({ row }) => (
+            <Checkbox aria-label={t`Active`} checked={row.original.active} />
+          ),
           meta: {
             mobile: "P2"
           }
@@ -103,6 +107,7 @@ const RequiredActionsTable = memo(
       <>
         <Table<RequiredAction>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           primaryAction={
@@ -116,18 +121,12 @@ const RequiredActionsTable = memo(
           renderContextMenu={renderContextMenu}
           title={t`Required Actions`}
         />
-        {deleteDisclosure.isOpen && selectedRequiredAction && (
+        {selectedRequiredAction && (
           <ConfirmDelete
             action={path.to.deleteRequiredAction(selectedRequiredAction.id)}
-            isOpen
-            onCancel={() => {
-              setSelectedRequiredAction(null);
-              deleteDisclosure.onClose();
-            }}
-            onSubmit={() => {
-              setSelectedRequiredAction(null);
-              deleteDisclosure.onClose();
-            }}
+            isOpen={deleteDisclosure.isOpen}
+            onCancel={deleteDisclosure.onClose}
+            onSubmit={deleteDisclosure.onClose}
             name={selectedRequiredAction.name ?? "required action"}
             text={t`Are you sure you want to delete this required action?`}
           />

@@ -57,7 +57,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     labelItem!,
     labelSize,
     template,
-    logo
+    logo,
+    companyLogo
   );
 
   const headers = new Headers({

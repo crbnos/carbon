@@ -12,7 +12,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
-  useCloseRoute,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -29,8 +29,8 @@ type GroupFormProps = {
 const GroupForm = ({ initialValues }: GroupFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const closeRoute = useCloseRoute();
-  const onClose = () => closeRoute();
+  const dialog = useRouteDialog();
+  const onClose = dialog.close;
 
   const isEditing = !!initialValues.id;
 
@@ -40,7 +40,7 @@ const GroupForm = ({ initialValues }: GroupFormProps) => {
 
   return (
     <Drawer
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

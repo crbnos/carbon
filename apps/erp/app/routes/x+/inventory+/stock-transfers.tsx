@@ -11,9 +11,15 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import {
+  getStockTransfers,
+  STOCK_TRANSFERS_PAGING
+} from "~/modules/inventory/inventory.service";
 import StockTransfersTable from "~/modules/inventory/ui/StockTransfers/StockTransfersTable";
 import { getUserDefaults } from "~/modules/users/users.service";
+import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
+import { listErrorPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -33,7 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
+  const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
   let locationId = searchParams.get("location");
@@ -67,38 +73,57 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const stockTransfers = await api.inventory.getStockTransfers({
+  const stockTransfers = await getStockTransfers(client, companyId, {
     locationId,
     search,
     limit,
-    offset,
+    cursor,
     sorts,
     filters
   });
 
   if (stockTransfers.error) {
+    if (cursor) {
+      logger.error("Failed to load a later page of stock transfers", {
+        companyId,
+        error: stockTransfers.error
+      });
+      return listErrorPage("stockTransfers");
+    }
     logger.error(stockTransfers.error);
     throw redirect(
       path.to.authenticatedRoot,
-      await flash(request, error(null, "Error loading stock transfers"))
+      await flash(
+        request,
+        error(stockTransfers.error, "Error loading stock transfers")
+      )
     );
   }
 
+  const page = toPage(
+    stockTransfers.data ?? [],
+    { limit, sorts },
+    STOCK_TRANSFERS_PAGING
+  );
+
   return {
-    stockTransfers: stockTransfers.data?.rows ?? [],
-    count: stockTransfers.data?.count ?? 0,
+    stockTransfers: page.rows,
+    count: stockTransfers.count ?? 0,
+    nextCursor: page.nextCursor,
     locationId
   };
 }
 
 export default function StockTransfersRoute() {
-  const { stockTransfers, count, locationId } = useLoaderData<typeof loader>();
+  const { stockTransfers, count, nextCursor, locationId } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
       <StockTransfersTable
         data={stockTransfers}
-        count={count ?? 0}
+        count={count}
+        nextCursor={nextCursor}
         locationId={locationId}
       />
       <RecordOutlet />

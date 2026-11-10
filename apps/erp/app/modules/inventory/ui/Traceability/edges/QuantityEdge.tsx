@@ -124,7 +124,7 @@ function QuantityEdgeImpl({
               textAlign: "center",
               zIndex: 1000
             }}
-            className={`text-[11px] font-medium leading-none px-2 py-1 rounded-full border-2 ${
+            className={`text-[0.6875rem] font-medium leading-none px-2 py-1 rounded-full border-2 ${
               data.labelText ? "" : "tabular-nums"
             } ${
               isReject

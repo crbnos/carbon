@@ -2,25 +2,31 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { createHmac, randomBytes } from "node:crypto";
+import { createHash, createHmac, randomBytes } from "node:crypto";
 import {
   existsSync,
+  linkSync,
   mkdirSync,
   readFileSync,
   realpathSync,
   renameSync,
   rmdirSync,
+  rmSync,
   statSync,
+  unlinkSync,
   writeFileSync
 } from "node:fs";
 import net from "node:net";
-import { homedir } from "node:os";
-import { execa } from "execa";
 import { basename, dirname, join, normalize } from "pathe";
-
-// ---------------------------------------------------------------------------
-// Types & constants
-// ---------------------------------------------------------------------------
+import { paths } from "./paths.js";
+import {
+  ISOLATED_DATABASE,
+  REDIS_DB_MAX,
+  SHARED_DB_PORT,
+  SHARED_INBUCKET_PORT,
+  SHARED_POOLER_PORT,
+  type StackMode
+} from "./topology.js";
 
 export const PORT_NAMES = [
   "PORT_DB",
@@ -31,30 +37,112 @@ export const PORT_NAMES = [
   "PORT_ERP",
   "PORT_MES",
   "PORT_ASSEMBLER",
-  "PORT_EMAIL"
+  "PORT_EMAIL",
+  "PORT_POOLER"
 ] as const;
 type PortName = (typeof PORT_NAMES)[number];
 
-const OPTIONAL_PORT_NAMES: readonly PortName[] = ["PORT_EMAIL"];
+const OPTIONAL_PORT_NAMES: readonly PortName[] = ["PORT_EMAIL", "PORT_POOLER"];
 
 export type PortMap = Record<PortName, number>;
 export type JwtCreds = { secret: string; anonKey: string; serviceKey: string };
-type RegistryEntry = {
+export type Slot = {
   worktreeRoot: string;
   ports: PortMap;
   redisDb: number;
   jwt: JwtCreds;
 };
-type Registry = Record<string, RegistryEntry>;
+type Registry = Record<string, Slot>;
 
-export const SHARED_REDIS_PORT = 6379;
-const REDIS_DB_MAX = 16;
 const SLUG_FILE = ".carbon-worktree";
-const REGISTRY_PATH = join(homedir(), ".carbon", "dev-ports.json");
 
 // ---------------------------------------------------------------------------
-// Worktree identity (slug)
+// Shared dev stack: the machine-wide JWT, the worktree database, the mode
 // ---------------------------------------------------------------------------
+// None of these live in the registry's own fields. Older crbn versions in
+// other worktrees rewrite ~/.carbon/dev-ports.json: they drop an entry without
+// `jwt` and write back only the fields they know.
+
+// Postgres caps identifiers at 63 bytes.
+const MAX_DB_NAME = 63;
+
+export function worktreeDatabaseName(slug: string): string {
+  const name = `wt_${slug.replace(/[^a-z0-9]/g, "_")}`;
+  // A slug from `slugify` maps to a unique name. Anything else, or a name
+  // that is too long, gets a hash so two slugs can't share a database.
+  if (/^[a-z0-9-]+$/.test(slug) && name.length <= MAX_DB_NAME) return name;
+  const hash = createHash("sha1").update(slug).digest("hex").slice(0, 6);
+  return `${name.slice(0, MAX_DB_NAME - hash.length - 1)}_${hash}`;
+}
+
+/** The database a stack runs: the worktree's own in shared mode. */
+export function stackDatabase(slug: string, mode: StackMode): string {
+  return mode === "shared" ? worktreeDatabaseName(slug) : ISOLATED_DATABASE;
+}
+
+/** The ports a stack uses: the shared containers own 3 of them. */
+export function stackPorts(ports: PortMap, mode: StackMode): PortMap {
+  return mode === "shared"
+    ? {
+        ...ports,
+        PORT_DB: SHARED_DB_PORT,
+        PORT_POOLER: SHARED_POOLER_PORT,
+        PORT_INBUCKET: SHARED_INBUCKET_PORT
+      }
+    : ports;
+}
+
+// One JWT secret and key pair for every worktree, so the shared Storage
+// registers each tenant with the same keys. 2 first boots may both mint a
+// pair: the hard link publishes only the first, and both return it.
+export function readDevJwt(): JwtCreds {
+  const path = paths.devJwt();
+  if (!existsSync(path)) {
+    const creds = generateJwtCreds();
+    mkdirSync(dirname(path), { recursive: true });
+    const tmp = `${path}.${process.pid}.tmp`;
+    writeFileSync(tmp, JSON.stringify(creds, null, 2), { mode: 0o600 });
+    try {
+      linkSync(tmp, path);
+    } catch (err) {
+      if ((err as { code?: string }).code !== "EEXIST") throw err;
+    } finally {
+      unlinkSync(tmp);
+    }
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(path, "utf8"));
+  } catch {
+    parsed = null;
+  }
+  // New keys would sign every worktree's users out, so never replace a file
+  // we can't read.
+  if (!isJwtCreds(parsed)) {
+    throw new Error(`${path} is not valid JWT creds. Fix it or delete it.`);
+  }
+  return parsed;
+}
+
+/** The mode `crbn up` last wrote. null when no version with modes ran `up`
+ *  here (such a worktree has no wt_ database, and its volumes are live), or
+ *  when the file holds neither mode: commands that delete data need a mode. */
+export function recordedStackMode(slug: string): StackMode | null {
+  try {
+    const mode = readFileSync(paths.stackMode(slug), "utf8").trim();
+    return mode === "isolated" || mode === "shared" ? mode : null;
+  } catch {
+    return null;
+  }
+}
+
+export function writeStackMode(slug: string, mode: StackMode): void {
+  const path = paths.stackMode(slug);
+  mkdirSync(dirname(path), { recursive: true });
+  const tmp = `${path}.${process.pid}.tmp`;
+  writeFileSync(tmp, `${mode}\n`);
+  renameSync(tmp, path);
+}
 
 export function resolveSlug(worktreeRoot: string): string {
   const fromEnv = process.env.CARBON_WORKTREE?.trim();
@@ -73,38 +161,36 @@ export function persistSlug(worktreeRoot: string, slug: string) {
   writeFileSync(join(worktreeRoot, SLUG_FILE), `${slug}\n`);
 }
 
-// Canonical, branch-derived slug: "<repoBase>-<branch>" — the same directory
-// name `crbn new` derives (new.ts). Path-independent, so a worktree created by
-// Conductor (a codename dir like `moscow`) or a bare `git worktree add` gets the
-// SAME slug a native `crbn` worktree would, instead of `basename` colliding with
-// the main checkout's `carbon`. Falls back to the worktree dir basename when the
-// branch is missing / HEAD-detached.
+/** A worktree's directory name: `<repo>-<branch>`, beside the main checkout
+ *  (`crbn new`, `crbn checkout`). `<repo>` drops a suffix the main
+ *  checkout's own directory may carry. */
+export function worktreeDirName(mainRoot: string, branch: string): string {
+  const repoBase = basename(mainRoot).replace(/-[a-z0-9-]+$/i, "");
+  return `${repoBase}-${slugify(branch)}`;
+}
+
+/** Where `crbn new` and `crbn checkout` put a branch's worktree: beside the
+ *  main checkout. */
+export const worktreePath = (mainRoot: string, branch: string) =>
+  join(dirname(mainRoot), worktreeDirName(mainRoot, branch));
+
+// The slug `crbn init` gives a worktree: its directory name as crbn would
+// name it, whatever it is really called (a Conductor codename like `moscow`,
+// a bare `git worktree add`), so it never collides with the main checkout's.
+// The directory's own name when HEAD is detached.
 export function canonicalSlug(opts: {
   worktreeRoot: string;
   mainRoot: string;
   branch: string;
 }): string {
-  const repoBase = basename(opts.mainRoot).replace(/-[a-z0-9-]+$/i, "");
-  return opts.branch
-    ? slugify(`${repoBase}-${opts.branch}`)
-    : slugify(basename(opts.worktreeRoot));
+  return slugify(
+    opts.branch
+      ? worktreeDirName(opts.mainRoot, opts.branch)
+      : basename(opts.worktreeRoot)
+  );
 }
 
-export async function getWorktreeRoot(): Promise<string> {
-  try {
-    const r = await execa("git", ["rev-parse", "--show-toplevel"]);
-    return r.stdout.trim();
-  } catch {
-    return process.cwd();
-  }
-}
-
-export function projectName(slug: string): string {
-  return `carbon-${slug}`;
-}
-
-// Resolve symlinks + normalize separators / trailing slashes so two strings
-// pointing at the same worktree compare equal (e.g. /tmp/x vs symlinked path).
+// So a worktree reached through a symlink compares equal to its real path.
 function canonicalWorktreePath(input: string): string {
   let p = input.trim();
   try {
@@ -119,33 +205,6 @@ export function sameWorktreePath(a: string, b: string): boolean {
   return canonicalWorktreePath(a) === canonicalWorktreePath(b);
 }
 
-export async function ensureSlugAvailable(slug: string, worktreeRoot: string) {
-  const project = projectName(slug);
-  let runningPath: string | null = null;
-  try {
-    const r = await execa(
-      "docker",
-      [
-        "ps",
-        "--filter",
-        `label=com.docker.compose.project=${project}`,
-        "--format",
-        '{{.Label "com.docker.compose.project.working_dir"}}'
-      ],
-      { reject: false }
-    );
-    const out = r.stdout.trim();
-    if (out) runningPath = out.split("\n")[0] ?? null;
-  } catch {
-    return;
-  }
-  if (runningPath && !sameWorktreePath(runningPath, worktreeRoot)) {
-    throw new Error(
-      `Slug "${slug}" is already in use by another worktree at:\n  ${runningPath}\n\nSet CARBON_WORKTREE to a unique slug for this worktree, or stop the other stack.`
-    );
-  }
-}
-
 export function slugify(input: string): string {
   return input
     .toLowerCase()
@@ -153,10 +212,6 @@ export function slugify(input: string): string {
     .replace(/^-+|-+$/g, "")
     .replace(/-+/g, "-");
 }
-
-// ---------------------------------------------------------------------------
-// Per-worktree slot (ports + redis db + jwt creds)
-// ---------------------------------------------------------------------------
 
 export async function resolveSlot(
   slug: string,
@@ -176,29 +231,25 @@ async function resolveSlotLocked(
 ): Promise<{ ports: PortMap; redisDb: number; jwt: JwtCreds }> {
   const registry = readRegistry();
   const existing = registry[slug];
+  // The entry keeps a copy of the machine-wide creds: older crbn versions
+  // drop an entry without `jwt`.
+  const jwt = readDevJwt();
 
-  // Fast path: registry entry is valid, points at this worktree, and all
-  // ports are still available (no stale processes holding them).
   if (existing && sameWorktreePath(existing.worktreeRoot, worktreeRoot)) {
     await backfillMissingPorts(registry, slug, existing);
+    if (existing.jwt.secret !== jwt.secret) {
+      existing.jwt = jwt;
+      writeRegistry(registry);
+    }
     const allFree = await portsAvailable(Object.values(existing.ports));
     if (allFree) {
-      return {
-        ports: existing.ports,
-        redisDb: existing.redisDb,
-        jwt: existing.jwt
-      };
+      return { ports: existing.ports, redisDb: existing.redisDb, jwt };
     }
-    // Some cached ports are taken — fall through to re-allocate.
   }
 
-  // Slug collision (different path) or no entry — allocate fresh.
-  // JWT creds tie to data signed/stored in postgres; reuse when present so
-  // existing sessions stay valid.
   const { claimedPorts, claimedDbs } = collectClaims(registry, slug);
   const ports = await pickPorts(claimedPorts);
   const redisDb = pickRedisDb(claimedDbs);
-  const jwt = existing?.jwt ?? generateJwtCreds();
 
   registry[slug] = { worktreeRoot, ports, redisDb, jwt };
   writeRegistry(registry);
@@ -208,7 +259,7 @@ async function resolveSlotLocked(
 async function backfillMissingPorts(
   registry: Registry,
   slug: string,
-  entry: RegistryEntry
+  entry: Slot
 ): Promise<void> {
   const missing = OPTIONAL_PORT_NAMES.filter(
     (n) => entry.ports[n] === undefined
@@ -236,7 +287,7 @@ function collectClaims(
   return { claimedPorts, claimedDbs };
 }
 
-export function getSlot(slug: string): RegistryEntry | null {
+export function getSlot(slug: string): Slot | null {
   return readRegistry()[slug] ?? null;
 }
 
@@ -244,10 +295,8 @@ export function listSlugs(): Registry {
   return readRegistry();
 }
 
-// Find the slug whose registry entry points at `worktreeRoot`. Uses canonical
-// path comparison (resolves symlinks / trailing slashes) like `resolveSlot` —
-// a raw `===` misses worktrees under symlinked parents (e.g. macOS /var, /tmp),
-// so `crbn remove`/`list` wouldn't find the slug and would leak the stack/ports.
+// A raw `===` misses worktrees under symlinked parents (macOS /var, /tmp), so
+// `crbn remove`/`list` wouldn't find the slug and would leak the stack/ports.
 export function slugForWorktreePath(
   worktreeRoot: string,
   registry: Registry = readRegistry()
@@ -259,6 +308,10 @@ export function slugForWorktreePath(
 }
 
 export function removeSlot(slug: string) {
+  // The mode and hibernation state go with the slot: a stale `shared` would
+  // make a later prune treat a private stack an older crbn starts here as an
+  // old volume.
+  rmSync(paths.stackDir(slug), { recursive: true, force: true });
   const unlock = lockRegistry();
   try {
     const registry = readRegistry();
@@ -270,15 +323,11 @@ export function removeSlot(slug: string) {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Private helpers
-// ---------------------------------------------------------------------------
-
 function readRegistry(): Registry {
-  if (!existsSync(REGISTRY_PATH)) return {};
+  if (!existsSync(paths.registry())) return {};
   let raw: unknown;
   try {
-    raw = JSON.parse(readFileSync(REGISTRY_PATH, "utf8"));
+    raw = JSON.parse(readFileSync(paths.registry(), "utf8"));
   } catch {
     return {};
   }
@@ -293,13 +342,13 @@ function parseRegistry(raw: unknown): Registry {
   if (!raw || typeof raw !== "object") return {};
   const out: Registry = {};
   for (const [slug, value] of Object.entries(raw as Record<string, unknown>)) {
-    const entry = parseRegistryEntry(value);
+    const entry = parseSlot(value);
     if (entry) out[slug] = entry;
   }
   return out;
 }
 
-function parseRegistryEntry(raw: unknown): RegistryEntry | null {
+function parseSlot(raw: unknown): Slot | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
   if (typeof r.worktreeRoot !== "string") return null;
@@ -338,26 +387,26 @@ function isJwtCreds(v: unknown): v is JwtCreds {
 
 // Temp file + rename, so a reader never sees a half-written registry.
 function writeRegistry(registry: Registry) {
-  mkdirSync(dirname(REGISTRY_PATH), { recursive: true });
-  const tmp = `${REGISTRY_PATH}.${process.pid}.tmp`;
+  mkdirSync(dirname(paths.registry()), { recursive: true });
+  const tmp = `${paths.registry()}.${process.pid}.tmp`;
   writeFileSync(tmp, JSON.stringify(registry, null, 2));
-  renameSync(tmp, REGISTRY_PATH);
+  renameSync(tmp, paths.registry());
 }
 
 // Every change to the registry is read → decide → write, and several `crbn up`
 // start at once (Conductor boots workspaces concurrently). Without a lock two
 // of them read the same file and hand out the same ports and redis db. `mkdir`
 // is the lock: it is atomic, and it either creates the directory or fails.
-const LOCK_PATH = `${REGISTRY_PATH}.lock`;
+const lockPath = () => `${paths.registry()}.lock`;
 const LOCK_STALE_MS = 10_000;
 const LOCK_WAIT_MS = 20_000;
 
 function lockRegistry(): () => void {
-  mkdirSync(dirname(LOCK_PATH), { recursive: true });
+  mkdirSync(dirname(lockPath()), { recursive: true });
   const deadline = Date.now() + LOCK_WAIT_MS;
   for (;;) {
     try {
-      mkdirSync(LOCK_PATH);
+      mkdirSync(lockPath());
       break;
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== "EEXIST") throw err;
@@ -365,8 +414,8 @@ function lockRegistry(): () => void {
     // A holder that was killed leaves the directory behind. Nothing holds the
     // lock for more than a second, so one this old has no owner.
     try {
-      if (Date.now() - statSync(LOCK_PATH).mtimeMs > LOCK_STALE_MS) {
-        rmdirSync(LOCK_PATH);
+      if (Date.now() - statSync(lockPath()).mtimeMs > LOCK_STALE_MS) {
+        rmdirSync(lockPath());
         continue;
       }
     } catch {
@@ -374,14 +423,14 @@ function lockRegistry(): () => void {
     }
     if (Date.now() > deadline) {
       throw new Error(
-        `Timed out waiting for the slot registry lock (${LOCK_PATH}). If no other crbn is running, delete that directory.`
+        `Timed out waiting for the slot registry lock (${lockPath()}). If no other crbn is running, delete that directory.`
       );
     }
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
   }
   return () => {
     try {
-      rmdirSync(LOCK_PATH);
+      rmdirSync(lockPath());
     } catch {
       // already gone (taken over as stale) — nothing to release
     }
@@ -393,7 +442,7 @@ function pickRedisDb(taken: Set<number>): number {
     if (!taken.has(i)) return i;
   }
   throw new Error(
-    `Redis DB pool exhausted (max ${REDIS_DB_MAX}). Free a slot via \`crbn remove\`.`
+    `Redis DB pool exhausted (max ${REDIS_DB_MAX}). Free a slot with \`crbn down --purge\` in a worktree you no longer use, \`crbn remove\`, or \`crbn prune\` (worktrees whose folder is gone).`
   );
 }
 
@@ -422,8 +471,6 @@ async function pickPorts(claimed: Set<number>): Promise<PortMap> {
 }
 
 async function pickFreePort(taken: Set<number>): Promise<number> {
-  // OS-assigned ephemeral via listen(0); retry on collision with other
-  // worktrees' claimed-set.
   for (let attempt = 0; attempt < 100; attempt++) {
     const port = await new Promise<number>((resolve, reject) => {
       const server = net.createServer();
@@ -448,14 +495,12 @@ async function pickFreePort(taken: Set<number>): Promise<number> {
   throw new Error("Failed to allocate a free port after 100 attempts");
 }
 
-// Mint a fresh JWT_SECRET + the matching `anon` and `service_role` HS256 JWTs.
-// Mirrors supabase's well-known dev token shape so all downstream services
-// (gotrue, postgrest, kong, storage, studio) accept them without further config.
+// Supabase's well-known dev token shape, so all downstream services
+// (gotrue, postgrest, the API gateway, storage, studio) accept them without further config.
 function generateJwtCreds(): JwtCreds {
-  // 32-byte (256-bit) secret, hex-encoded — matches HS256 key strength.
   const secret = randomBytes(32).toString("hex");
   const iat = Math.floor(Date.now() / 1000);
-  const exp = iat + 10 * 365 * 24 * 60 * 60; // 10 years
+  const exp = iat + 10 * 365 * 24 * 60 * 60;
   const anonKey = signJwt(
     { iss: "supabase-demo", role: "anon", iat, exp },
     secret

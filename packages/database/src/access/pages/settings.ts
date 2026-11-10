@@ -43,7 +43,7 @@ export const SETTINGS_PAGES = [
     id: "settings.documentTemplates",
     label: "Document Templates",
     maxLevel: "Full",
-    tables: ["documentTemplate", "documentSection", "terms"],
+    tables: ["documentTemplate", "documentSection", "terms", "documentEdit"],
     paths: ["/x/templates"]
   },
   {
@@ -117,6 +117,27 @@ export const SETTINGS_PAGES = [
     paths: ["/x/settings/production"]
   },
   {
+    id: "settings.projects",
+    label: "Projects",
+    maxLevel: "Full",
+    tables: [],
+    paths: ["/x/settings/projects"]
+  },
+  {
+    id: "settings.time",
+    label: "Time",
+    maxLevel: "Full",
+    tables: [],
+    paths: ["/x/settings/time"]
+  },
+  {
+    id: "settings.service",
+    label: "Service",
+    maxLevel: "Full",
+    tables: [],
+    paths: ["/x/settings/service"]
+  },
+  {
     id: "settings.quality",
     label: "Quality",
     maxLevel: "Full",
@@ -184,7 +205,11 @@ export const SETTINGS_PAGES = [
     id: "settings.integrations",
     label: "Integrations",
     maxLevel: "Full",
-    tables: ["companyIntegration", "accountingSyncOperation"],
+    tables: [
+      "companyIntegration",
+      "accountingSyncOperation",
+      "integrationConnection"
+    ],
     paths: ["/x/settings/integrations"]
   },
   {

@@ -28,7 +28,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 export const SECRET_KEYS: Record<string, string[]> = {
   linear: ["apiKey", "webhookSigningSecret"],
   mount: ["clientSecret"],
-  slack: ["access_token"],
+  // slack: none — its token lives on integrationConnection (piece "slack").
   jira: [
     "credentials.accessToken",
     "credentials.refreshToken",
@@ -53,7 +53,8 @@ export const SECRET_KEYS: Record<string, string[]> = {
   ],
   rillet: ["credentials.apiKey", "credentials.providerMetadata.webhookToken"],
   "paperless-parts": ["apiKey", "secretKey"],
-  sense: ["apiKey"],
+  // The webhook secret is Carbon's to set (`ensureSenseWebhook`), not a form field.
+  sense: ["apiKey", "webhookSigningSecret"],
   resend: ["apiKey"],
   // email carries a secret in EITHER variant: Resend `apiKey` or SMTP `password`
   // (top-level). splitSecrets omits whichever is absent for the active provider.

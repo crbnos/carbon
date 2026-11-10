@@ -5,10 +5,14 @@
 import { useLoaderQuery } from "@carbon/query";
 import { Trans } from "@lingui/react/macro";
 import type { AccountProfileData } from "../types";
-import { AccountSettingsPane } from "./AccountSettingsLayout";
+import {
+  AccountSettingsPane,
+  AccountSettingsSection
+} from "./AccountSettingsLayout";
 import AccountSettingsSkeleton from "./AccountSettingsSkeleton";
 import { useAccountEndpoints, useAccountSettingsConfig } from "./context";
 import ProfileForm from "./ProfileForm";
+import SignatureForm from "./SignatureForm";
 
 export default function ProfileSettings() {
   const { companyId } = useAccountSettingsConfig();
@@ -28,12 +32,30 @@ export default function ProfileSettings() {
       {!data ? (
         <AccountSettingsSkeleton />
       ) : data.user ? (
-        <ProfileForm
-          user={data.user}
-          action={endpoints.profile}
-          photo={{ action: endpoints.profile, companyId }}
-          variant="plain"
-        />
+        <>
+          <ProfileForm
+            user={data.user}
+            action={endpoints.profile}
+            photo={{ action: endpoints.profile, companyId }}
+            variant="plain"
+          />
+          <AccountSettingsSection
+            title={<Trans>Signature</Trans>}
+            description={
+              <Trans>
+                Printed on the purchase orders you approve. Only you can see it
+                here.
+              </Trans>
+            }
+          >
+            <SignatureForm
+              user={data.user}
+              signatureUrl={data.signatureUrl}
+              action={endpoints.profile}
+              companyId={companyId}
+            />
+          </AccountSettingsSection>
+        </>
       ) : (
         <p className="text-sm text-muted-foreground">
           <Trans>Your profile could not be loaded.</Trans>

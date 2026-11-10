@@ -28,6 +28,7 @@ import { useNavigate } from "react-router";
 import { DateTime, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 
@@ -48,6 +49,7 @@ type TimeCardEntry = {
 type TimecardsTableProps = {
   data: TimeCardEntry[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 function formatTime(dateStr: string, locale: string) {
@@ -65,7 +67,8 @@ function formatDuration(clockInStr: string, clockOutStr: string | null) {
   return `${hours}h ${minutes}m`;
 }
 
-const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
+const TimecardsTable = memo((props: TimecardsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const { locale } = useLocale();
   const navigate = useNavigate();
@@ -267,6 +270,7 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
   return (
     <Table<TimeCardEntry>
       data={data}
+      infinite={infinite}
       count={count}
       columns={columns}
       primaryAction={

@@ -25,6 +25,7 @@ import {
   Thead,
   Tr,
   toast,
+  toastError,
   useDisclosure
 } from "@carbon/react";
 import {
@@ -387,8 +388,9 @@ export const PurchasingPlanningOrderDrawer = memo(
             void revalidate();
             return true;
           }
-          toast.error(
-            result?.message ?? t`Failed to update purchase order line`
+          toastError(
+            result?.message ?? t`Failed to update purchase order line`,
+            result
           );
           return false;
         } catch {
@@ -532,6 +534,9 @@ export const PurchasingPlanningOrderDrawer = memo(
           items: [
             {
               id: id,
+              // the row's netting segment: a project segment's order is the
+              // project's ('' is common)
+              planningSegmentId: selectedItem.planningSegmentId ?? "",
               orders: ordersWithPeriods
             }
           ],
@@ -543,7 +548,13 @@ export const PurchasingPlanningOrderDrawer = memo(
           encType: "application/json"
         });
       },
-      [fetcher, locationId, periods, selectedSupplier]
+      [
+        fetcher,
+        locationId,
+        periods,
+        selectedSupplier,
+        selectedItem.planningSegmentId
+      ]
     );
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -553,7 +564,7 @@ export const PurchasingPlanningOrderDrawer = memo(
       }
 
       if (fetcher.data?.success === false && fetcher?.data?.message) {
-        toast.error(fetcher.data.message);
+        toastError(fetcher.data.message, fetcher.data);
       }
 
       if (fetcher.data?.success === true) {
@@ -606,7 +617,10 @@ export const PurchasingPlanningOrderDrawer = memo(
                     selectedItem.id
                   )}
                 >
-                  <LuExternalLink />
+                  <LuExternalLink aria-hidden />
+                  <span className="sr-only">
+                    <Trans>Open item planning</Trans>
+                  </span>
                 </Link>
               </DrawerTitle>
               {distinctItemText(
@@ -710,8 +724,10 @@ export const PurchasingPlanningOrderDrawer = memo(
                     >
                       <Trans>Add Supplier</Trans>
                     </Button>
-                    {supplierDisclosure.isOpen && (
+                    {supplierDisclosure.openCount > 0 && (
                       <SupplierPartForm
+                        key={`supplierDisclosure-${supplierDisclosure.openCount}`}
+                        open={supplierDisclosure.isOpen}
                         type="Part"
                         initialValues={{
                           itemId: selectedItem.id,

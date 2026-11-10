@@ -8,7 +8,9 @@ import { Number, SelectControlled, Submit, ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
   Alert,
+  AlertDescription,
   AlertTitle,
+  afterDialogCloses,
   Badge,
   Button,
   Checkbox,
@@ -55,6 +57,7 @@ import {
   LuGitFork,
   LuGitMerge,
   LuGitPullRequestArrow,
+  LuInfo,
   LuStar,
   LuTriangleAlert
 } from "react-icons/lu";
@@ -70,6 +73,7 @@ import {
   getMethodValidator,
   makeMethodVersionValidator
 } from "../../items.models";
+import type { ChangeNoticeForItem } from "../../items.service";
 import type { MakeMethod } from "../../types";
 import {
   CreateChangeNoticeModal,
@@ -136,6 +140,16 @@ const MakeMethodTools = ({
 
   const activeMethod =
     makeMethods.find((m) => m.id === activeMethodId) ?? makeMethods[0];
+
+  // New jobs take the Active version over any Draft (`activeMakeMethods`), so
+  // edits to a Draft reach them only once it is made Active. Like that view,
+  // take the highest Active version if more than one is Active.
+  const liveMethod =
+    activeMethod.status === "Draft"
+      ? makeMethods
+          .filter((m) => m.status === "Active" && m.id !== activeMethod.id)
+          .sort((a, b) => b.version - a.version)[0]
+      : undefined;
 
   const maxVersion = Math.max(...makeMethods.map((m) => m.version));
   const [selectedVersion, setSelectedVersion] =
@@ -312,6 +326,11 @@ const MakeMethodTools = ({
                         <ItemChangeNoticeLock
                           changeNotices={openChangeNotices}
                           isLocked={isChangeNoticeLocked}
+                          reason={
+                            <ActiveVersionLockReason
+                              changeNotices={openChangeNotices}
+                            />
+                          }
                         >
                           <DropdownMenuItem
                             disabled={
@@ -379,7 +398,11 @@ const MakeMethodTools = ({
                   activeMethod.status !== "Draft" // Can only overwrite Draft versions
                 }
                 leftIcon={<LuGitBranch />}
-                onClick={getMethodModal.onOpen}
+                onClick={() => {
+                  setSourceMakeMethods([]);
+                  setSelectedSourceMethod(null);
+                  getMethodModal.onOpen();
+                }}
               >
                 <Trans>Get Method</Trans>
               </MenubarItem>
@@ -393,7 +416,11 @@ const MakeMethodTools = ({
                 }
                 isLoading={isSaveMethodLoading}
                 leftIcon={<LuGitMerge />}
-                onClick={saveMethodModal.onOpen}
+                onClick={() => {
+                  setTargetMakeMethods([]);
+                  setSelectedTargetMethod(null);
+                  saveMethodModal.onOpen();
+                }}
               >
                 <Trans>Save Method</Trans>
               </MenubarItem>
@@ -421,295 +448,377 @@ const MakeMethodTools = ({
         </HStack>
       </Menubar>
 
-      {getMethodModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) {
-              getMethodModal.onClose();
-              setSourceMakeMethods([]);
-              setSelectedSourceMethod(null);
-            }
+      {liveMethod && (
+        <DraftMethodNotice
+          draftVersion={activeMethod.version}
+          activeVersion={liveMethod.version}
+          isDisabled={
+            !permissions.has({ [ITEM_TYPE_PAGES[type]]: "Edit" }) ||
+            isChangeNoticeLocked
+          }
+          lock={{
+            changeNotices: openChangeNotices,
+            isLocked: isChangeNoticeLocked
           }}
-        >
-          <ModalContent>
-            <ValidatedForm
-              method="post"
-              fetcher={fetcher}
-              action={path.to.makeMethodGet}
-              validator={getMethodValidator}
-              onSubmit={getMethodModal.onClose}
-            >
-              <ModalHeader>
-                <ModalTitle>Get Method</ModalTitle>
-                <ModalDescription>
-                  Overwrite the current version with the source method
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                <Hidden name="targetId" value={activeMethodId} />
-                <VStack spacing={4}>
-                  <Alert variant="destructive" className="mt-4">
+          onMakeActive={() => {
+            flushSync(() => {
+              setSelectedVersion(activeMethod);
+            });
+            activeMethodModal.onOpen();
+          }}
+        />
+      )}
+
+      <Modal
+        open={getMethodModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) getMethodModal.onClose();
+        }}
+      >
+        <ModalContent>
+          <ValidatedForm
+            method="post"
+            fetcher={fetcher}
+            action={path.to.makeMethodGet}
+            validator={getMethodValidator}
+            onSubmit={getMethodModal.onClose}
+          >
+            <ModalHeader>
+              <ModalTitle>Get Method</ModalTitle>
+              <ModalDescription>
+                Overwrite the current version with the source method
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <Hidden name="targetId" value={activeMethodId} />
+              <VStack spacing={4}>
+                <Alert variant="destructive" className="mt-4">
+                  <LuTriangleAlert className="h-4 w-4" />
+                  <AlertTitle>
+                    This will overwrite version {activeMethod.version} of this
+                    manufacturing method
+                  </AlertTitle>
+                </Alert>
+                <Item
+                  name="itemId"
+                  label={t`Source Item`}
+                  type={type}
+                  blacklist={[itemId, ...configurableItemIds]}
+                  includeInactive={includeInactive}
+                  replenishmentSystem="Make"
+                  onChange={(value) => {
+                    if (value) {
+                      getSourceMakeMethods(value?.value);
+                    } else {
+                      setSourceMakeMethods([]);
+                      setSelectedSourceMethod(null);
+                    }
+                  }}
+                />
+                <SelectControlled
+                  name="sourceId"
+                  options={sourceMakeMethods}
+                  label={t`Source Version`}
+                  value={selectedSourceMethod ?? undefined}
+                  onChange={(value) => {
+                    if (value) {
+                      setSelectedSourceMethod(value?.value);
+                    } else {
+                      setSelectedSourceMethod(null);
+                    }
+                  }}
+                  placeholder={
+                    sourceMakeMethods.length === 0
+                      ? t`Select an item first`
+                      : undefined
+                  }
+                />
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="include-inactive"
+                    checked={includeInactive}
+                    onCheckedChange={(checked) => setIncludeInactive(!!checked)}
+                  />
+                  <label
+                    htmlFor="include-inactive"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Include Inactive
+                  </label>
+                </div>
+
+                <AdvancedSection onChange={setHasMethodParts} />
+              </VStack>
+            </ModalBody>
+            <ModalFooter>
+              <Button onClick={getMethodModal.onClose} variant="secondary">
+                Cancel
+              </Button>
+              <Submit
+                isDisabled={!hasMethodParts || !selectedSourceMethod}
+                variant="destructive"
+              >
+                Confirm
+              </Submit>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        open={saveMethodModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) saveMethodModal.onClose();
+        }}
+      >
+        <ModalContent>
+          <ValidatedForm
+            method="post"
+            fetcher={fetcher}
+            action={path.to.makeMethodSave}
+            validator={getMethodValidator}
+            onSubmit={saveMethodModal.onClose}
+          >
+            <ModalHeader>
+              <ModalTitle>Save Method</ModalTitle>
+              <ModalDescription>
+                Save version {activeMethod.version} to another item's method
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <Hidden name="sourceId" value={activeMethodId} />
+              <VStack spacing={4}>
+                <Item
+                  name="itemId"
+                  label={t`Target Item`}
+                  type={type}
+                  includeInactive={includeInactive}
+                  blacklist={[itemId, ...configurableItemIds]}
+                  replenishmentSystem="Make"
+                  onChange={(value) => {
+                    if (value) {
+                      getTargetMakeMethods(value?.value);
+                    } else {
+                      setTargetMakeMethods([]);
+                      setSelectedTargetMethod(null);
+                    }
+                  }}
+                />
+                <SelectControlled
+                  name="targetId"
+                  options={targetMakeMethods}
+                  label={t`Target Version`}
+                  value={selectedTargetMethod ?? undefined}
+                  onChange={(value) => {
+                    if (value) {
+                      setSelectedTargetMethod(value?.value);
+                    } else {
+                      setSelectedTargetMethod(null);
+                    }
+                  }}
+                  placeholder={
+                    targetMakeMethods.length === 0
+                      ? t`No draft versions available`
+                      : undefined
+                  }
+                />
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="include-inactive"
+                    checked={includeInactive}
+                    onCheckedChange={(checked) => setIncludeInactive(!!checked)}
+                  />
+                  <label
+                    htmlFor="include-inactive"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Include Inactive
+                  </label>
+                </div>
+                <AdvancedSection onChange={setHasMethodParts} />
+              </VStack>
+            </ModalBody>
+            <ModalFooter>
+              <Button onClick={saveMethodModal.onClose} variant="secondary">
+                Cancel
+              </Button>
+              <Submit isDisabled={!hasMethodParts || !selectedTargetMethod}>
+                <Trans>Confirm</Trans>
+              </Submit>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
+
+      <Modal
+        open={newVersionModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            newVersionModal.onClose();
+          }
+        }}
+      >
+        <ModalContent>
+          <ValidatedForm
+            method="post"
+            fetcher={fetcher}
+            action={`${path.to.newMakeMethodVersion}?methodToReplace=${activeMethodId}`}
+            validator={makeMethodVersionValidator}
+            defaultValues={{
+              copyFromId: selectedVersion.id,
+              activeVersionId:
+                makeMethods.length === 1 ? selectedVersion.id : undefined,
+              version: maxVersion + 1
+            }}
+            onSubmit={newVersionModal.onClose}
+          >
+            <ModalHeader>
+              <ModalTitle>New Version</ModalTitle>
+              <ModalDescription>
+                Create a new version of the manufacturing method
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <Hidden name="copyFromId" />
+              <Hidden name="activeVersionId" />
+              <VStack spacing={4}>
+                {makeMethods.length == 1 && (
+                  <Alert variant="warning">
                     <LuTriangleAlert className="h-4 w-4" />
                     <AlertTitle>
-                      This will overwrite version {activeMethod.version} of this
-                      manufacturing method
+                      This will set the current version of the make method to{" "}
+                      <MakeMethodVersionStatus status="Active" /> making it
+                      read-only.
                     </AlertTitle>
                   </Alert>
-                  <Item
-                    name="itemId"
-                    label={t`Source Item`}
-                    type={type}
-                    blacklist={[itemId, ...configurableItemIds]}
-                    includeInactive={includeInactive}
-                    replenishmentSystem="Make"
-                    onChange={(value) => {
-                      if (value) {
-                        getSourceMakeMethods(value?.value);
-                      } else {
-                        setSourceMakeMethods([]);
-                        setSelectedSourceMethod(null);
-                      }
-                    }}
-                  />
-                  <SelectControlled
-                    name="sourceId"
-                    options={sourceMakeMethods}
-                    label={t`Source Version`}
-                    value={selectedSourceMethod ?? undefined}
-                    onChange={(value) => {
-                      if (value) {
-                        setSelectedSourceMethod(value?.value);
-                      } else {
-                        setSelectedSourceMethod(null);
-                      }
-                    }}
-                    placeholder={
-                      sourceMakeMethods.length === 0
-                        ? t`Select an item first`
-                        : undefined
-                    }
-                  />
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="include-inactive"
-                      checked={includeInactive}
-                      onCheckedChange={(checked) =>
-                        setIncludeInactive(!!checked)
-                      }
-                    />
-                    <label
-                      htmlFor="include-inactive"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Include Inactive
-                    </label>
-                  </div>
+                )}
+                <Number
+                  name="version"
+                  label={t`New Version`}
+                  helperText={t`The new version number of the method`}
+                  minValue={maxVersion + 1}
+                  maxValue={100000}
+                  step={1}
+                />
+              </VStack>
+            </ModalBody>
+            <ModalFooter>
+              <Button onClick={newVersionModal.onClose} variant="secondary">
+                Cancel
+              </Button>
+              <Submit>
+                <Trans>Create Version</Trans>
+              </Submit>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
 
-                  <AdvancedSection onChange={setHasMethodParts} />
-                </VStack>
-              </ModalBody>
-              <ModalFooter>
-                <Button onClick={getMethodModal.onClose} variant="secondary">
-                  Cancel
-                </Button>
-                <Submit
-                  isDisabled={!hasMethodParts || !selectedSourceMethod}
-                  variant="destructive"
-                >
-                  Confirm
-                </Submit>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
+      <Confirm
+        action={`${path.to.activeMethodVersion(
+          selectedVersion.id
+        )}?methodToReplace=${activeMethodId}`}
+        confirmText={t`Make Active`}
+        title={t`Set Version ${selectedVersion.version} as Active Version?`}
+        text={t`This will make this version read-only and replace any material make methods with this version.`}
+        isOpen={activeMethodModal.isOpen}
+        onSubmit={() => {
+          activeMethodModal.onClose();
+          // After it has closed: its title names the selected version.
+          afterDialogCloses(() => setSelectedVersion(activeMethod));
+        }}
+        onCancel={activeMethodModal.onClose}
+      />
 
-      {saveMethodModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) {
-              saveMethodModal.onClose();
-              setTargetMakeMethods([]);
-              setSelectedTargetMethod(null);
-            }
-          }}
-        >
-          <ModalContent>
-            <ValidatedForm
-              method="post"
-              fetcher={fetcher}
-              action={path.to.makeMethodSave}
-              validator={getMethodValidator}
-              onSubmit={saveMethodModal.onClose}
-            >
-              <ModalHeader>
-                <ModalTitle>Save Method</ModalTitle>
-                <ModalDescription>
-                  Save version {activeMethod.version} to another item's method
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                <Hidden name="sourceId" value={activeMethodId} />
-                <VStack spacing={4}>
-                  <Item
-                    name="itemId"
-                    label={t`Target Item`}
-                    type={type}
-                    includeInactive={includeInactive}
-                    blacklist={[itemId, ...configurableItemIds]}
-                    replenishmentSystem="Make"
-                    onChange={(value) => {
-                      if (value) {
-                        getTargetMakeMethods(value?.value);
-                      } else {
-                        setTargetMakeMethods([]);
-                        setSelectedTargetMethod(null);
-                      }
-                    }}
-                  />
-                  <SelectControlled
-                    name="targetId"
-                    options={targetMakeMethods}
-                    label={t`Target Version`}
-                    value={selectedTargetMethod ?? undefined}
-                    onChange={(value) => {
-                      if (value) {
-                        setSelectedTargetMethod(value?.value);
-                      } else {
-                        setSelectedTargetMethod(null);
-                      }
-                    }}
-                    placeholder={
-                      targetMakeMethods.length === 0
-                        ? t`No draft versions available`
-                        : undefined
-                    }
-                  />
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="include-inactive"
-                      checked={includeInactive}
-                      onCheckedChange={(checked) =>
-                        setIncludeInactive(!!checked)
-                      }
-                    />
-                    <label
-                      htmlFor="include-inactive"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Include Inactive
-                    </label>
-                  </div>
-                  <AdvancedSection onChange={setHasMethodParts} />
-                </VStack>
-              </ModalBody>
-              <ModalFooter>
-                <Button onClick={saveMethodModal.onClose} variant="secondary">
-                  Cancel
-                </Button>
-                <Submit isDisabled={!hasMethodParts || !selectedTargetMethod}>
-                  <Trans>Confirm</Trans>
-                </Submit>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
-
-      {newVersionModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) {
-              newVersionModal.onClose();
-            }
-          }}
-        >
-          <ModalContent>
-            <ValidatedForm
-              method="post"
-              fetcher={fetcher}
-              action={`${path.to.newMakeMethodVersion}?methodToReplace=${activeMethodId}`}
-              validator={makeMethodVersionValidator}
-              defaultValues={{
-                copyFromId: selectedVersion.id,
-                activeVersionId:
-                  makeMethods.length === 1 ? selectedVersion.id : undefined,
-                version: maxVersion + 1
-              }}
-              onSubmit={newVersionModal.onClose}
-            >
-              <ModalHeader>
-                <ModalTitle>New Version</ModalTitle>
-                <ModalDescription>
-                  Create a new version of the manufacturing method
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                <Hidden name="copyFromId" />
-                <Hidden name="activeVersionId" />
-                <VStack spacing={4}>
-                  {makeMethods.length == 1 && (
-                    <Alert variant="warning">
-                      <LuTriangleAlert className="h-4 w-4" />
-                      <AlertTitle>
-                        This will set the current version of the make method to{" "}
-                        <MakeMethodVersionStatus status="Active" /> making it
-                        read-only.
-                      </AlertTitle>
-                    </Alert>
-                  )}
-                  <Number
-                    name="version"
-                    label={t`New Version`}
-                    helperText={t`The new version number of the method`}
-                    minValue={maxVersion + 1}
-                    maxValue={100000}
-                    step={1}
-                  />
-                </VStack>
-              </ModalBody>
-              <ModalFooter>
-                <Button onClick={newVersionModal.onClose} variant="secondary">
-                  Cancel
-                </Button>
-                <Submit>
-                  <Trans>Create Version</Trans>
-                </Submit>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
-
-      {activeMethodModal.isOpen && (
-        <Confirm
-          action={`${path.to.activeMethodVersion(
-            selectedVersion.id
-          )}?methodToReplace=${activeMethodId}`}
-          confirmText={t`Make Active`}
-          title={t`Set Version ${selectedVersion.version} as Active Version?`}
-          text={t`This will make this version read-only and replace any material make methods with this version.`}
-          isOpen
-          onSubmit={() => {
-            activeMethodModal.onClose();
-            setSelectedVersion(activeMethod);
-          }}
-          onCancel={activeMethodModal.onClose}
-        />
-      )}
-
-      {changeNoticeModal.isOpen && (
-        <CreateChangeNoticeModal
-          itemId={itemId}
-          onClose={changeNoticeModal.onClose}
-        />
-      )}
+      <CreateChangeNoticeModal
+        itemId={itemId}
+        open={changeNoticeModal.isOpen}
+        onClose={changeNoticeModal.onClose}
+      />
     </Fragment>
   );
 };
+
+// Shown on a Draft version while another version is Active: new jobs are made
+// from the Active one, so nothing edited here reaches them yet.
+function DraftMethodNotice({
+  draftVersion,
+  activeVersion,
+  isDisabled,
+  lock,
+  onMakeActive
+}: {
+  draftVersion: number;
+  activeVersion: number;
+  isDisabled: boolean;
+  lock: { changeNotices: ChangeNoticeForItem[]; isLocked: boolean };
+  onMakeActive: () => void;
+}) {
+  return (
+    <Alert variant="info">
+      <LuInfo />
+      <AlertTitle>
+        <Trans>New jobs use version {activeVersion}</Trans>
+      </AlertTitle>
+      <AlertDescription>
+        <Trans>
+          You are editing draft version {draftVersion}. Its changes reach new
+          jobs once it is the Active version.
+        </Trans>
+        <div className="mt-2">
+          <ItemChangeNoticeLock
+            changeNotices={lock.changeNotices}
+            isLocked={lock.isLocked}
+            className="w-fit"
+            reason={
+              <ActiveVersionLockReason changeNotices={lock.changeNotices} />
+            }
+          >
+            <Button
+              size="sm"
+              variant="secondary"
+              leftIcon={<LuStar />}
+              isDisabled={isDisabled}
+              onClick={onMakeActive}
+            >
+              <Trans>Make Active</Trans>
+            </Button>
+          </ItemChangeNoticeLock>
+        </div>
+      </AlertDescription>
+    </Alert>
+  );
+}
+
+// Why the active version can't change: the lock's default wording is about
+// creating new versions, which is not what Make Active does.
+function ActiveVersionLockReason({
+  changeNotices
+}: {
+  changeNotices: ChangeNoticeForItem[];
+}) {
+  const ids = changeNotices.map((co) => co.changeOrderId).join(", ");
+  if (changeNotices.length === 0) {
+    return (
+      <Trans>
+        Change notices could not be loaded, so the active version cannot be
+        changed. Reload to try again.
+      </Trans>
+    );
+  }
+  if (changeNotices.length === 1) {
+    return (
+      <Trans>
+        Open in change notice {ids}. Release it to change the active version.
+      </Trans>
+    );
+  }
+  return (
+    <Trans>
+      Open in change notices {ids}. Release them to change the active version.
+    </Trans>
+  );
+}
 
 function AdvancedSection({
   onChange

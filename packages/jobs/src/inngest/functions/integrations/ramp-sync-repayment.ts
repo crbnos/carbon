@@ -29,6 +29,12 @@ const REPAYMENT_REPAID_STATUS = "REPAID";
 // Ramp's OpenAPI example (2026-09-11). Do not guess an offset for other values.
 const REPAYMENT_BANK_FUNDING = "ach";
 
+export function isVerifiedRepaymentFunding(
+  method: string | null | undefined
+): boolean {
+  return method === REPAYMENT_BANK_FUNDING;
+}
+
 function instantMinusOneSecond(iso: string): string {
   const ms = Date.parse(iso);
   if (Number.isNaN(ms)) return iso;
@@ -112,7 +118,7 @@ export async function syncRampRepayments(
           if (repaidAt) failedRepaidAt.push(repaidAt);
           repaymentFailures.push({ id: repayment.id, message });
         };
-        if (repayment.funding_method !== REPAYMENT_BANK_FUNDING) {
+        if (!isVerifiedRepaymentFunding(repayment.funding_method)) {
           const message = `Unsupported funding method: ${repayment.funding_method || "missing"}`;
           failRepayment(message);
           result.error ??= `Repayment ${repayment.id} has ${message}`;

@@ -6,6 +6,7 @@ import { PreviewCard } from "@base-ui-components/react/preview-card";
 import { hasOnshapeIntegration } from "@carbon/ee";
 import {
   Badge,
+  Button,
   ContextMenu,
   ContextMenuContent,
   ContextMenuTrigger,
@@ -121,6 +122,8 @@ type BoMExplorerProviderProps<T extends BoMExplorerNodeData> = {
   ) => string | number | null | undefined;
   /** Controlled filter text (e.g. from an external search input). */
   filterText?: string;
+  /** Nodes collapsed on the first render (default: every node expanded). */
+  collapsedIds?: string[];
   children: ReactNode;
 };
 
@@ -129,6 +132,7 @@ export function BoMExplorerProvider<T extends BoMExplorerNodeData>({
   getNodePath: getNodePathProp,
   getRootVersion: getRootVersionProp,
   filterText: filterTextProp,
+  collapsedIds,
   children
 }: BoMExplorerProviderProps<T>) {
   const tree = treeProp as FlatTree<BoMExplorerNodeData>;
@@ -160,6 +164,7 @@ export function BoMExplorerProvider<T extends BoMExplorerNodeData>({
     virtualizer
   } = useTree({
     tree,
+    collapsedIds,
     // biome-ignore lint/suspicious/noEmptyBlockStatements: selection is URL-driven
     onSelectedIdChanged: () => {},
     estimatedRowHeight: () => (isPhone ? 48 : 32),
@@ -246,6 +251,7 @@ export function BoMExplorerSearch() {
         <LuSearch className="h-4 w-4" />
       </InputLeftElement>
       <Input
+        aria-label={t`Search bill of materials`}
         placeholder={t`Search...`}
         value={filterText}
         onChange={(e) => setFilterText(e.target.value)}
@@ -445,7 +451,12 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
             className={rowHeight}
           />
         ))}
-        <div
+        <button
+          type="button"
+          tabIndex={-1}
+          // Pointer-only: the treeitem exposes aria-expanded and expands with
+          // ArrowRight/ArrowLeft, so a name here would be read into the row's.
+          aria-hidden
           className={cn(
             "flex items-center",
             rowHeight,
@@ -482,9 +493,9 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
               />
             )
           ) : (
-            <div className={cn(rowHeight, "w-4")} />
+            <span className={cn(rowHeight, "w-4")} />
           )}
-        </div>
+        </button>
       </div>
 
       <div className="flex w-full min-w-0 items-center justify-between gap-2">
@@ -533,6 +544,7 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
     return (
       <ContextMenu>
         <ContextMenuTrigger asChild>
+          {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: click surface of the role="treeitem" wrapper (TreeView getNodeProps); keyboard navigation lives on the role="tree" container */}
           <div className={rowClassName} onClick={() => onNodeClick(node)}>
             {content}
           </div>
@@ -553,6 +565,7 @@ export function BoMExplorerRow({ node, state, children }: BoMExplorerRowProps) {
         delay={200}
         closeDelay={100}
         render={
+          // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: click surface of the role="treeitem" wrapper (TreeView getNodeProps); keyboard navigation lives on the role="tree" container
           <div
             key={node.id}
             className={rowClassName}
@@ -646,20 +659,19 @@ function BoMNodePreview({ node }: { node: BoMNode }) {
           <span>{node.data.itemReadableId}</span>
           <HStack spacing={1}>
             <Copy text={node.data.itemReadableId} tooltipClassName="z-[110]" />
-            <Link
-              to={getLinkToItemDetails(
-                node.data.itemType as "Part",
-                node.data.itemId
-              )}
-              target="_blank"
-            >
-              <IconButton
+            {/* One control: the link styled as the icon button. */}
+            <Button asChild isIcon size="sm" variant="secondary">
+              <Link
+                to={getLinkToItemDetails(
+                  node.data.itemType as "Part",
+                  node.data.itemId
+                )}
+                target="_blank"
                 aria-label={t`View Item Master`}
-                size="sm"
-                variant="secondary"
-                icon={<LuExternalLink />}
-              />
-            </Link>
+              >
+                <LuExternalLink aria-hidden className="size-3.5" />
+              </Link>
+            </Button>
           </HStack>
         </HStack>
       </VStack>

@@ -97,7 +97,10 @@ const ItemQualityView = ({
                       {doc.drawingNumber ?? doc.fileName ?? doc.id}
                     </span>
                   </Hyperlink>
-                  <Badge variant="secondary" className="font-mono text-[10px]">
+                  <Badge
+                    variant="secondary"
+                    className="font-mono text-[0.625rem]"
+                  >
                     v{doc.version}
                   </Badge>
                 </HStack>
@@ -158,12 +161,11 @@ const ItemQualityView = ({
         </CardContent>
       </Card>
 
-      {newDocumentDisclosure.isOpen && (
-        <InspectionDocumentForm
-          initialValues={{ name: "", partId: itemId, drawingNumber: "" }}
-          onClose={newDocumentDisclosure.onClose}
-        />
-      )}
+      <InspectionDocumentForm
+        open={newDocumentDisclosure.isOpen}
+        initialValues={{ name: "", partId: itemId, drawingNumber: "" }}
+        onClose={newDocumentDisclosure.onClose}
+      />
     </VStack>
   );
 };

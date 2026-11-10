@@ -8,9 +8,10 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { BsPeopleFill } from "react-icons/bs";
 import { LuPencil, LuShapes, LuTrash } from "react-icons/lu";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -19,9 +20,11 @@ import type { CustomerType } from "../../types";
 type CustomerTypesTableProps = {
   data: CustomerType[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const CustomerTypesTable = memo(({ data, count }: CustomerTypesTableProps) => {
+const CustomerTypesTable = memo((props: CustomerTypesTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -34,11 +37,12 @@ const CustomerTypesTable = memo(({ data, count }: CustomerTypesTableProps) => {
         accessorKey: "name",
         header: t`Customer Type`,
         cell: ({ row }) => (
-          <Enumerable
-            value={row.original.name}
-            onClick={() => navigate(row.original.id)}
-            className="cursor-pointer"
-          />
+          <Link
+            to={row.original.id}
+            className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Enumerable value={row.original.name} className="cursor-pointer" />
+          </Link>
         ),
         meta: {
           mobile: "P1",
@@ -47,7 +51,7 @@ const CustomerTypesTable = memo(({ data, count }: CustomerTypesTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [navigate, customColumns, t]);
+  }, [customColumns, t]);
 
   const renderContextMenu = useCallback(
     (row: (typeof data)[number]) => {
@@ -100,6 +104,7 @@ const CustomerTypesTable = memo(({ data, count }: CustomerTypesTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      infinite={infinite}
       primaryAction={
         permissions.has({ "sales.types": "Create" }) && (
           <New

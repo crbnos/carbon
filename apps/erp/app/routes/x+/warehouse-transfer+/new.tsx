@@ -16,7 +16,10 @@ import { warehouseTransferValidator } from "~/modules/inventory/inventory.models
 import { WarehouseTransferForm } from "~/modules/inventory/ui/WarehouseTransfers";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("Warehouse Transfer");
 
 export const handle: Handle = {
   breadcrumb: msg`New Transfer`,

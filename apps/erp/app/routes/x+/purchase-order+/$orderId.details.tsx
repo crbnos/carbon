@@ -44,10 +44,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const [purchaseOrder, purchaseOrderPayment] = await Promise.all([
-    api.purchasing.getPurchaseOrder({ purchaseOrderId: orderId }),
-    api.purchasing.getPurchaseOrderPayment({ purchaseOrderId: orderId })
-  ]);
+  // The order itself (and its notes) comes from the parent route's loader.
+  const purchaseOrderPayment = await api.purchasing.getPurchaseOrderPayment({
+    purchaseOrderId: orderId
+  });
 
   if (purchaseOrderPayment.error) {
     throw redirect(
@@ -62,11 +62,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return {
-    purchaseOrderPayment: purchaseOrderPayment.data,
-    internalNotes: (purchaseOrder.data?.internalNotes ?? {}) as JSONContent,
-    externalNotes: (purchaseOrder.data?.externalNotes ?? {}) as JSONContent
-  };
+  return { purchaseOrderPayment: purchaseOrderPayment.data };
 }
 
 export async function action(args: ActionFunctionArgs) {
@@ -95,8 +91,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function PurchaseOrderBasicRoute() {
-  const { purchaseOrderPayment, internalNotes, externalNotes } =
-    useLoaderData<typeof loader>();
+  const { purchaseOrderPayment } = useLoaderData<typeof loader>();
 
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
@@ -110,6 +105,10 @@ export default function PurchaseOrderBasicRoute() {
     };
   }>(path.to.purchaseOrder(orderId));
   if (!orderData) throw new Error("Could not find order data");
+  const internalNotes = (orderData.purchaseOrder?.internalNotes ??
+    {}) as JSONContent;
+  const externalNotes = (orderData.purchaseOrder?.externalNotes ??
+    {}) as JSONContent;
 
   const deliveryFormRef = useRef<PurchaseOrderDeliveryFormRef>(null);
 

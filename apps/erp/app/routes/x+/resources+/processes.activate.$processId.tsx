@@ -5,10 +5,11 @@
 import { error, notFound, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { Confirm } from "~/components/Modals";
 import { activateProcess } from "~/modules/resources/resources.service";
 import { path } from "~/utils/path";
@@ -45,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!processId) {
     throw redirect(
       path.to.processes,
-      await flash(request, error(params, "Failed to get process id"))
+      await flash(request, error(null, "Failed to get process id"))
     );
   }
 
@@ -72,13 +73,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function ActivateProcessRoute() {
   const { processId } = useParams();
   const { process } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.processes);
   const { t } = useLingui();
 
   if (!process) return null;
   if (!processId) throw new Error("processId is not found");
 
-  const onCancel = () => navigate(path.to.processes);
   const name = process.name;
   return (
     <Confirm
@@ -86,9 +86,9 @@ export default function ActivateProcessRoute() {
       title={t`Activate ${name}`}
       text={t`Are you sure you want to activate the process: ${name}? It will appear in dropdowns again.`}
       confirmText={t`Activate`}
-      isOpen={true}
-      onCancel={onCancel}
-      onSubmit={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
+      onSubmit={dialog.close}
     />
   );
 }

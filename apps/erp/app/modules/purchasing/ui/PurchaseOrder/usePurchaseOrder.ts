@@ -3,9 +3,10 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { toast } from "@carbon/react";
+import { toastError } from "@carbon/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSubmit } from "react-router";
+import { useUser } from "~/hooks";
 import type { Receipt, Shipment } from "~/modules/inventory/types";
 import type { PurchaseInvoice } from "~/modules/invoicing/types";
 import type { PurchaseOrder } from "~/modules/purchasing/types";
@@ -83,6 +84,7 @@ export const usePurchaseOrderRelatedDocuments = (
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   const { carbon } = useCarbon();
+  const { company } = useUser();
 
   const getRelatedDocuments = useCallback(
     async (supplierInteractionId: string, attempt = 0) => {
@@ -93,10 +95,12 @@ export const usePurchaseOrderRelatedDocuments = (
             .from("receipt")
             .select("id, receiptId, status")
             .eq("supplierInteractionId", supplierInteractionId),
+          // The view derives Paid, Partially Paid and Overdue from settlements
           carbon
-            .from("purchaseInvoice")
-            .select("id, invoiceId, status, datePaid, dateDue")
-            .eq("supplierInteractionId", supplierInteractionId),
+            .from("purchaseInvoices")
+            .select("id, invoiceId, status")
+            .eq("supplierInteractionId", supplierInteractionId)
+            .eq("companyId", company.id),
           isOutsideProcessing
             ? carbon
                 .from("shipment")
@@ -128,27 +132,18 @@ export const usePurchaseOrderRelatedDocuments = (
       const willRetry = failed && attempt < MAX_RELATED_DOCS_RETRIES;
 
       if (receipts.error) {
-        if (!willRetry) toast.error("Failed to load receipts");
+        if (!willRetry) toastError("Failed to load receipts", receipts.error);
       } else {
         setReceipts(receipts.data);
       }
 
       if (invoices.error) {
-        if (!willRetry) toast.error("Failed to load invoices");
+        if (!willRetry) toastError("Failed to load invoices", invoices.error);
       } else {
-        setInvoices(
-          invoices.data?.map((invoice) => ({
-            ...invoice,
-            status: invoice.dateDue
-              ? !invoice.datePaid && new Date(invoice.dateDue) < new Date()
-                ? "Overdue"
-                : invoice.status
-              : invoice.status
-          })) ?? []
-        );
+        setInvoices(invoices.data ?? []);
       }
       if (shipments.error) {
-        if (!willRetry) toast.error("Failed to load shipments");
+        if (!willRetry) toastError("Failed to load shipments", shipments.error);
       } else {
         setShipments(shipments.data);
       }
@@ -176,7 +171,7 @@ export const usePurchaseOrderRelatedDocuments = (
 
       setHasError(failed);
     },
-    [carbon, isOutsideProcessing, purchaseOrderId]
+    [carbon, company.id, isOutsideProcessing, purchaseOrderId]
   );
 
   useEffect(() => {

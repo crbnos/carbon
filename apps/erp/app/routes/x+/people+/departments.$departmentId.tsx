@@ -6,7 +6,7 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -64,7 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
       path.to.departments,
       await flash(
         request,
-        error(updateDepartment.error, "Failed to create department.")
+        error(updateDepartment.error, "Failed to update department")
       )
     );
   }
@@ -77,7 +77,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function DepartmentRoute() {
   const { department } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const initialValues = {
     id: department.id,
@@ -88,7 +88,8 @@ export default function DepartmentRoute() {
 
   return (
     <DepartmentForm
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
       key={initialValues.id}
       initialValues={initialValues}
     />

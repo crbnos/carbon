@@ -4,10 +4,9 @@
 
 import type { CreatableComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useMemo, useRef, useState } from "react";
-import { useUser } from "~/hooks";
+import { useMemo, useRef } from "react";
+import { useDrawerItem, useUser } from "~/hooks";
 import CustomerForm from "~/modules/sales/ui/Customer/CustomerForm";
 import { useCustomers } from "~/stores";
 import CustomerAvatar from "../CustomerAvatar";
@@ -31,8 +30,7 @@ const CustomerPreview = (
 const Customer = (props: CustomerSelectProps) => {
   const { t } = useLingui();
   const [customers] = useCustomers();
-  const newCustomersModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useMemo(() => {
@@ -49,7 +47,7 @@ const Customer = (props: CustomerSelectProps) => {
   const { company } = useUser();
 
   const emptyMessage = useEmptyState("customer", {
-    onCreate: () => newCustomersModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -63,20 +61,20 @@ const Customer = (props: CustomerSelectProps) => {
         placeholder={props?.placeholder ?? t`Select`}
         inline={props?.inline ? CustomerPreview : undefined}
         onCreateOption={(option) => {
-          newCustomersModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newCustomersModal.isOpen && (
+      {create.item !== null && (
         <CustomerForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newCustomersModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created,
+            name: create.item,
             currencyCode: company.baseCurrencyCode,
             taxPercent: 0
           }}

@@ -9,13 +9,11 @@ import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getAccountLedgerSummary } from "~/modules/accounting/accounting.service";
+import { getAccountLedgerPage } from "~/modules/accounting/accounting.service";
 import { AccountLedgerDrawer } from "~/modules/accounting/ui/Reports";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "accounting-charts-ledger");
-
-const LEDGER_PAGE_SIZE = 50;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // bypassRls matches the chart of accounts page, whose balances span every
@@ -33,7 +31,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   const startDate = searchParams.get("startDate") || null;
   const endDate = searchParams.get("endDate") || null;
-  const offset = Math.max(0, Number(searchParams.get("offset")) || 0);
 
   // bypassRls makes `client` the service role and the ledger read below is
   // unscoped by company, so the account must be proven to be this group's
@@ -53,35 +50,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.chartOfAccounts);
   }
 
-  const [ledger, summary] = await Promise.all([
-    api.accounting.getAccountLedger({
-      accountId,
-      companyId: null,
-      startDate,
-      endDate,
-      limit: LEDGER_PAGE_SIZE,
-      offset
-    }),
-    getAccountLedgerSummary(client, companyGroupId, null, {
-      accountId,
-      startDate,
-      endDate
-    })
-  ]);
+  // A later page (`?after=`) is read for its lines only.
+  const ledger = await getAccountLedgerPage(client, {
+    accountId,
+    companyGroupId,
+    companyId: null,
+    startDate,
+    endDate,
+    after: searchParams.get("after")
+  });
 
   return {
     account: account.data,
-    lines: ledger.data?.rows ?? [],
-    count: ledger.data?.count ?? 0,
-    summary: summary.data ?? { opening: 0, netChange: 0, closing: 0 },
+    ...ledger,
     startDate,
-    endDate,
-    offset
+    endDate
   };
 }
 
 export default function ChartOfAccountsLedgerRoute() {
-  const { account, lines, count, summary, startDate, endDate, offset } =
+  const { account, lines, count, nextCursor, summary, startDate, endDate } =
     useLoaderData<typeof loader>();
 
   return (
@@ -92,8 +80,7 @@ export default function ChartOfAccountsLedgerRoute() {
       summary={summary}
       startDate={startDate}
       endDate={endDate}
-      offset={offset}
-      limit={LEDGER_PAGE_SIZE}
+      nextCursor={nextCursor}
       backTo={path.to.chartOfAccounts}
     />
   );

@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
+import { serialNumberTimings } from "@carbon/database/serial-number-timing";
 import {
   blockSchema,
   documentSectionPlacementSchema,
@@ -10,7 +12,12 @@ import {
   sectionConfigSchema,
   themeSchema
 } from "@carbon/documents/template";
-import { isValidTimeZone, labelSizes } from "@carbon/utils";
+import {
+  isValidTimeZone,
+  labelSizes,
+  type ThemeName,
+  themeColorValidator
+} from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { plmReleaseControl } from "~/modules/items/items.models";
@@ -31,6 +38,10 @@ export const modulesType = [
 ] as const;
 
 export const kanbanOutputTypes = ["label", "qrcode", "url"] as const;
+
+// Mirrors the `kanbanLabelSize` DB enum. `letter` is a sheet of six; the
+// others are thermal label ids in @carbon/utils `labelSizes`.
+export const kanbanLabelSizes = ["letter", "label4x2", "label3x2"] as const;
 
 // Mirrors the `invoiceAutomation` DB enum: what happens to a recurring
 // invoice (rental agreements today) when the daily job creates it.
@@ -55,10 +66,12 @@ export const apiKeyModules = [
   "parts",
   "people",
   "production",
+  "projects",
   "purchasing",
   "quality",
   "resources",
   "sales",
+  "service",
   "settings",
   "users"
 ] as const;
@@ -68,6 +81,15 @@ export const apiKeyValidator = z.object({
   name: z.string().trim().min(1, { message: "Name is required" }),
   /** The key's grants, as JSON. */
   grants: zfd.text(z.string().optional()),
+  /** Requests per minute. Saved on a single-tenant deployment only. */
+  rateLimit: zfd.numeric(
+    z
+      .number()
+      .int({ message: "Must be a whole number" })
+      .min(1, { message: "Must be at least 1" })
+      .max(1_000_000, { message: "Must be at most 1,000,000" })
+      .optional()
+  ),
   expiresAt: zfd.text(
     z
       .string()
@@ -86,7 +108,22 @@ export function apiKeyFields({
   return { ...form, grants: grants ? JSON.parse(grants) : [] };
 }
 
-const ssoDomainRegex = /^[a-z0-9.-]+\.[a-z]{2,}$/;
+export const integrationConnectionActionValidator = z.discriminatedUnion(
+  "intent",
+  [
+    z.object({
+      intent: z.literal("rename"),
+      id: z.string().min(1, { message: "No connection was named" }),
+      name: z.string().trim().min(1, { message: "A connection needs a name" })
+    }),
+    z.object({
+      intent: z.literal("disconnect"),
+      id: z.string().min(1, { message: "No connection was named" })
+    })
+  ]
+);
+
+const ssoDomainRegex = /^[a-z0-9.-]+\.([a-z]{2,}|xn--[a-z0-9-]+)$/;
 
 /**
  * Consumer email providers no company can own. The DNS TXT challenge is the
@@ -268,6 +305,12 @@ export const invoiceAutomationValidator = z.object({
   invoiceAutomation: z.enum(invoiceAutomations)
 });
 
+/** The company's service labor rates: cost per hour and default bill rate. */
+export const serviceSettingsValidator = z.object({
+  serviceLaborCostRate: zfd.numeric(z.number().min(0).optional()),
+  serviceLaborBillRate: zfd.numeric(z.number().min(0).optional())
+});
+
 export const mrpScheduleTypes = ["Every 3 Hours", "Daily"] as const;
 
 // "Every 3 Hours" is the default cadence and ignores the time; "Daily" runs
@@ -293,7 +336,9 @@ export const mrpScheduleValidator = z
   );
 
 export const kanbanOutputValidator = z.object({
-  kanbanOutput: z.enum(kanbanOutputTypes)
+  kanbanOutput: z.enum(kanbanOutputTypes),
+  // Only on the form while the output is a label.
+  kanbanLabelSize: z.enum(kanbanLabelSizes).optional()
 });
 
 export const plmReleaseControlValidator = z.object({
@@ -314,6 +359,53 @@ export const expiredEntityPolicies = [
   "Block",
   "BlockWithOverride"
 ] as const;
+
+// Government Contracting 5a: the switch on Settings → Projects turns DCAA
+// on, and Settings → Time holds its rules.
+export const timekeepingControlsModes = [
+  "Standard",
+  "DCAA"
+] as const satisfies readonly Database["public"]["Enums"]["timekeepingControls"][];
+
+export const timesheetTimecardChecks = ["Off", "Warn", "Block"] as const;
+
+/** DCAA is refused without both texts, so turning it on asks for them. */
+export const certificationTextsValidator = z.object({
+  certificationTextExempt: zfd.text(
+    z
+      .string({
+        error: "DCAA mode needs the certification text for exempt staff"
+      })
+      .trim()
+      .min(1, {
+        message: "DCAA mode needs the certification text for exempt staff"
+      })
+  ),
+  certificationTextNonExempt: zfd.text(
+    z
+      .string({
+        error: "DCAA mode needs the certification text for non-exempt staff"
+      })
+      .trim()
+      .min(1, {
+        message: "DCAA mode needs the certification text for non-exempt staff"
+      })
+  )
+});
+
+/** Settings → Time's DCAA rules, shown only while DCAA is on. */
+export const timekeepingSettingsValidator =
+  certificationTextsValidator.safeExtend({
+    timesheetEntryWindowDays: zfd.numeric(
+      z.number().int().min(0, { message: "The window cannot be negative" })
+    ),
+    timesheetTimecardCheck: z.enum(timesheetTimecardChecks, {
+      error: "The timecard check is required"
+    }),
+    standardWeeklyHours: zfd.numeric(
+      z.number().gt(0, { message: "Weekly hours must be greater than 0" })
+    )
+  });
 
 // Planning settings (MRP suggestions). Whole days / whole weekly buckets.
 export const rescheduleToleranceValidator = z.object({
@@ -383,6 +475,21 @@ export type ReturnPickedMaterialTiming =
 
 export const returnPickedMaterialTimingValidator = z.object({
   returnPickedMaterialTiming: z.enum(returnPickedMaterialTimings).default("job")
+});
+
+// When a produced unit's serial number is drawn from the item's serial sequence.
+// 'jobCreation' (default) reserves one number per unit as soon as the job exists;
+// 'jobRelease' when the job is released to the shop floor; 'production' waits
+// until the unit is first touched on the floor — its first production event,
+// its first operation completion, its scrap, or its receipt. The company's
+// choice is the default; an item's serial sequence can override it.
+export {
+  type SerialNumberTiming,
+  serialNumberTimings
+} from "@carbon/database/serial-number-timing";
+
+export const serialNumberTimingValidator = z.object({
+  serialNumberTiming: z.enum(serialNumberTimings).default("jobCreation")
 });
 
 export const updateLeadTimesOnReceiptValidator = z.object({
@@ -494,26 +601,15 @@ export const itemSerialSequenceValidator = z.object({
   suffix: zfd.text(z.string().optional()),
   next: zfd.numeric(z.number().min(0)),
   step: zfd.numeric(z.number().min(1)),
-  size: zfd.numeric(z.number().min(1).max(20))
+  size: zfd.numeric(z.number().min(1).max(20)),
+  // Empty follows the company's serial number timing.
+  serialNumberTiming: zfd.text(z.enum(serialNumberTimings).optional())
 });
 
-export const themes = [
-  "zinc",
-  "neutral",
-  "red",
-  "orange",
-  "yellow",
-  "green",
-  "blue",
-  "violet"
-] as const;
-export type Theme = (typeof themes)[number];
+export type Theme = ThemeName;
 
-export const themeValidator = z.object({
-  next: zfd.text(z.string().optional()),
-  theme: z.enum(themes, {
-    error: "Theme is required"
-  })
+export const themeValidator = themeColorValidator.extend({
+  next: zfd.text(z.string().optional())
 });
 
 export const webhookValidator = z
@@ -521,7 +617,12 @@ export const webhookValidator = z
     id: zfd.text(z.string().optional()),
     name: z.string().trim().min(1, { message: "Name is required" }),
     table: z.string().min(1, { message: "Table is required" }),
-    url: z.string().url({ message: "Must be a valid URL" }),
+    url: z
+      .string()
+      .url({ message: "Must be a valid URL" })
+      .refine((url) => /^https?:\/\//i.test(url), {
+        message: "Must be an http or https URL"
+      }),
     onInsert: zfd.checkbox(),
     onUpdate: zfd.checkbox(),
     onDelete: zfd.checkbox(),
@@ -829,6 +930,11 @@ export const timeCardSettingsValidator = z.object({
   timeCardEnabled: zfd.checkbox()
 });
 
+export const projectSettingsValidator = z.object({
+  timesheetApprovalRequired: zfd.checkbox(),
+  requireProjectElement: zfd.checkbox()
+});
+
 // The editor submits the block list as a JSON string in a hidden field; we
 // parse it and validate every block against the shared schema.
 const jsonField = <T>(schema: z.ZodType<T>, message: string) =>
@@ -855,6 +961,16 @@ export const documentTemplateValidator = zfd.formData({
   headerConfig: jsonField(
     sectionConfigSchema,
     "Invalid header config"
+  ).optional()
+});
+
+/** One document's draft as the editor holds it; the server keeps only what differs. */
+export const documentEditValidator = zfd.formData({
+  blocks: jsonField(z.array(blockSchema), "Invalid document blocks"),
+  settings: jsonField(documentSettingsSchema, "Invalid document settings"),
+  notes: jsonField(
+    z.record(z.string(), z.unknown()).nullable(),
+    "Invalid notes"
   ).optional()
 });
 

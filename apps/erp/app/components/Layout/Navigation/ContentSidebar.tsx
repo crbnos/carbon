@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Button, cn, PrefetchLink, VStack } from "@carbon/react";
+import { Button, cn, PrefetchLink, pulseNavIcon, VStack } from "@carbon/react";
 import { useUrlParams } from "~/hooks";
 import type { Route } from "~/types";
 import { SidebarLinks, useSidebarLocation } from "./CollapsibleSidebar";
@@ -37,6 +37,7 @@ const ContentSidebar = ({ links }: { links: Route[] }) => {
             icon={route.icon}
             label={route.name}
             isActive={isActive(route)}
+            restoreRememberedTable
           />
         ))}
       </SheetNavGroup>
@@ -55,13 +56,18 @@ const ContentSidebar = ({ links }: { links: Route[] }) => {
                 asChild
                 leftIcon={route.icon}
                 variant={active ? "active" : "ghost"}
+                aria-current={active ? "page" : undefined}
                 data-nav-item=""
+                onClick={(event) => pulseNavIcon(event)}
                 className={cn(
-                  "w-full justify-start",
+                  "w-full justify-start active:scale-100",
                   !active && "hover:bg-transparent hover:text-active-foreground"
                 )}
               >
-                <PrefetchLink to={route.to + (route.q ? `?q=${route.q}` : "")}>
+                <PrefetchLink
+                  to={route.to + (route.q ? `?q=${route.q}` : "")}
+                  state={{ restoreRememberedTable: true }}
+                >
                   {route.name}
                 </PrefetchLink>
               </Button>

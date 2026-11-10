@@ -42,7 +42,7 @@ import {
   useUser
 } from "~/hooks";
 import PaymentTermForm from "~/modules/accounting/ui/PaymentTerms/PaymentTermForm";
-import { ShippingMethodForm } from "~/modules/inventory/ui";
+import ShippingMethodForm from "~/modules/inventory/ui/ShippingMethods/ShippingMethodForm";
 import type {
   CreatableForm,
   CreatableLookup,
@@ -655,8 +655,10 @@ function EnumMappingStep({
           );
         })}
       </div>
-      {formModal.isOpen && creatableForm === "paymentTerm" && (
+      {formModal.openCount > 0 && creatableForm === "paymentTerm" && (
         <PaymentTermForm
+          key={`paymentTerm-${formModal.openCount}`}
+          open={formModal.isOpen}
           type="modal"
           onClose={() => {
             formModal.onClose();
@@ -671,8 +673,10 @@ function EnumMappingStep({
           }}
         />
       )}
-      {formModal.isOpen && creatableForm === "shippingMethod" && (
+      {formModal.openCount > 0 && creatableForm === "shippingMethod" && (
         <ShippingMethodForm
+          key={`shippingMethod-${formModal.openCount}`}
+          open={formModal.isOpen}
           type="modal"
           onClose={() => {
             formModal.onClose();

@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { error } from "@carbon/auth";
-import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -12,8 +11,9 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { TimecardsTable } from "~/modules/people/ui/Timecards";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { timecardEntriesList } from "~/utils/list-registry/people.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Timecards`,
@@ -21,58 +21,36 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, { "people.timecards": "View" });
-
-  const companySettings = await api.settings.getCompanySettings({});
-  if (!companySettings.data?.timeCardEnabled) {
-    throw redirect(
-      path.to.people,
-      await flash(
-        request,
-        error(
-          null,
-          "Timecards are not enabled. To enable this feature, go to Settings → People to enable Timecards."
-        )
-      )
-    );
-  }
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const entries = await api.people.getTimecardEntries({
-    search,
-    limit,
-    offset,
-    sorts,
-    filters
+  return loadListPage(request, timecardEntriesList, {
+    dataKey: "entries",
+    guard: async ({ api, request }) => {
+      const companySettings = await api.settings.getCompanySettings({});
+      if (!companySettings.data?.timeCardEnabled) {
+        throw redirect(
+          path.to.people,
+          await flash(
+            request,
+            error(
+              null,
+              "Timecards are not enabled. To enable this feature, go to Settings → Time to enable Timecards."
+            )
+          )
+        );
+      }
+    },
+    onError: {
+      redirectTo: path.to.people,
+      message: "Failed to load timecard entries"
+    }
   });
-
-  if (entries.error) {
-    throw redirect(
-      path.to.people,
-      await flash(
-        request,
-        error(entries.error, "Failed to load timecard entries")
-      )
-    );
-  }
-
-  return {
-    entries: entries.data?.rows ?? [],
-    count: entries.data?.count ?? 0
-  };
 }
 
 export default function Route() {
-  const { entries, count } = useLoaderData<typeof loader>();
+  const { entries, count, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <TimecardsTable data={entries} count={count} />
+      <TimecardsTable data={entries} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

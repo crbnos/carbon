@@ -16,7 +16,10 @@ import { upsertConsumable } from "~/modules/items/items.service";
 import { ConsumableForm } from "~/modules/items/ui/Consumables";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("Consumable");
 
 export const handle: Handle = {
   breadcrumb: msg`Consumables`,

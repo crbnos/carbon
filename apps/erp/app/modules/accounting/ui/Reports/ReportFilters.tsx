@@ -38,6 +38,8 @@ type ReportFiltersProps = {
   companies: Company[];
   selectedCompanyIds: string[];
   isMultiCompany: boolean;
+  /** Offers "All Companies" in the company selector */
+  allowAllCompanies?: boolean;
   isForeignCurrency?: boolean;
   parentCurrency?: string | null;
   periodVariant?: "range" | "asOf";
@@ -59,6 +61,7 @@ const ReportFilters = ({
   companies,
   selectedCompanyIds,
   isMultiCompany,
+  allowAllCompanies = true,
   isForeignCurrency = false,
   parentCurrency,
   periodVariant = "range",
@@ -99,6 +102,7 @@ const ReportFilters = ({
                 <LuSearch className="h-4 w-4 text-muted-foreground" />
               </InputLeftElement>
               <Input
+                aria-label={t`Search accounts`}
                 placeholder={t`Search accounts...`}
                 value={search}
                 onChange={(e) => onSearchChange?.(e.target.value)}
@@ -110,6 +114,7 @@ const ReportFilters = ({
           <CompanySelector
             companies={companies}
             selectedCompanyIds={selectedCompanyIds}
+            allowAll={allowAllCompanies}
           />
           <PeriodSelector
             variant={periodVariant}

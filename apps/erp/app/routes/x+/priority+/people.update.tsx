@@ -15,6 +15,7 @@ import {
   peopleAssignmentValidator,
   peopleDayValidator,
   peopleHoursValidator,
+  peopleMoveCellValidator,
   peopleMoveValidator,
   peopleOvertimeBulkValidator,
   peopleWeekAssignValidator,
@@ -36,6 +37,7 @@ const peopleForm = z.discriminatedUnion("intent", [
     date: zfd.text(z.string().optional())
   }),
   peopleMoveValidator.extend({ intent: z.literal("move") }),
+  peopleMoveCellValidator.extend({ intent: z.literal("move-cell") }),
   peopleDayValidator.extend({ intent: z.literal("day-hours") }),
   peopleHoursValidator.extend({ intent: z.literal("hours") }),
   peopleOvertimeBulkValidator.safeExtend({
@@ -74,6 +76,8 @@ export async function action(args: ActionFunctionArgs) {
       });
     case "move":
       return people.movePerson(form);
+    case "move-cell":
+      return people.movePersonCell(form);
     case "day-hours":
       return people.setPersonDay(form);
     case "hours":

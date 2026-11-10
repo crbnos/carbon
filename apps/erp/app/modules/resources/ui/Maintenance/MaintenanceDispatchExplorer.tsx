@@ -121,7 +121,6 @@ export function MaintenanceDispatchExplorer({
   };
 
   const onDeleteCancel = () => {
-    setSelectedChild(null);
     deleteDisclosure.onClose();
   };
 
@@ -133,7 +132,6 @@ export function MaintenanceDispatchExplorer({
   };
 
   const onEditClose = () => {
-    setSelectedChild(null);
     editDisclosure.onClose();
   };
 
@@ -182,6 +180,7 @@ export function MaintenanceDispatchExplorer({
               <LuSearch className="h-4 w-4" />
             </InputLeftElement>
             <Input
+              aria-label={t`Search maintenance dispatches`}
               placeholder={t`Search...`}
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
@@ -202,7 +201,7 @@ export function MaintenanceDispatchExplorer({
           ))}
         </VStack>
       </VStack>
-      {deleteDisclosure.isOpen && selectedChild?.id && (
+      {selectedChild?.id && (
         <ConfirmDelete
           action={getDeleteAction()}
           name={getDeleteName()}
@@ -214,16 +213,14 @@ export function MaintenanceDispatchExplorer({
           onSubmit={onDeleteCancel}
         />
       )}
-      {editDisclosure.isOpen &&
-        selectedChild?.id &&
-        selectedChild.type === "event" && (
-          <EditTimecardModal
-            open={editDisclosure.isOpen}
-            onClose={onEditClose}
-            dispatchId={dispatchId}
-            event={selectedChild}
-          />
-        )}
+      {selectedChild?.id && selectedChild.type === "event" && (
+        <EditTimecardModal
+          open={editDisclosure.isOpen}
+          onClose={onEditClose}
+          dispatchId={dispatchId}
+          event={selectedChild}
+        />
+      )}
     </ScrollArea>
   );
 }
@@ -260,6 +257,8 @@ function MaintenanceExplorerItem({
     <>
       <div className="flex h-8 items-center overflow-hidden rounded-sm px-2 gap-2 text-sm w-full hover:bg-accent">
         <button
+          type="button"
+          aria-expanded={isExpanded}
           className="flex flex-grow cursor-pointer items-center overflow-hidden font-medium"
           onClick={(e) => {
             e.stopPropagation();
@@ -285,9 +284,7 @@ function MaintenanceExplorerItem({
             variant="ghost"
             icon={<LuCirclePlus />}
             className="ml-auto"
-            onClick={() => {
-              newModal.onOpen();
-            }}
+            onClick={newModal.onOpen}
           />
         )}
       </div>
@@ -317,13 +314,14 @@ function MaintenanceExplorerItem({
         </div>
       )}
 
-      {newModal.isOpen && node.key === "items" && (
+      {node.key === "items" && (
         <MaintenanceAddPartModal
+          open={newModal.isOpen}
           dispatchId={dispatchId}
           onClose={newModal.onClose}
         />
       )}
-      {newModal.isOpen && node.key === "events" && (
+      {node.key === "events" && (
         <NewTimecardModal
           open={newModal.isOpen}
           onClose={newModal.onClose}
@@ -385,7 +383,7 @@ function MaintenanceExplorerChildItem({
               icon={<LuEllipsisVertical />}
               variant="ghost"
               size="sm"
-              className="absolute right-1 top-1 flex-shrink-0 md:opacity-0 group-hover/child:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
+              className="absolute right-1 top-1 flex-shrink-0 md:opacity-0 group-hover/child:opacity-100 group-focus-within/child:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
             />
           </DropdownMenuTrigger>
           <DropdownMenuContent>
@@ -428,6 +426,27 @@ function NewTimecardModal({
   onClose: () => void;
   dispatchId: string;
 }) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalContent>
+        <NewTimecardBody onClose={onClose} dispatchId={dispatchId} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function NewTimecardBody({
+  onClose,
+  dispatchId
+}: {
+  onClose: () => void;
+  dispatchId: string;
+}) {
   const { t } = useLingui();
   const fetcher = useAction<typeof newEventAction>({
     onSuccess: ({ data }) => {
@@ -437,49 +456,40 @@ function NewTimecardModal({
   });
 
   return (
-    <Modal
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
+    <ValidatedForm
+      method="post"
+      action={path.to.newMaintenanceDispatchEvent(dispatchId)}
+      validator={maintenanceDispatchEventValidator}
+      fetcher={fetcher}
     >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.newMaintenanceDispatchEvent(dispatchId)}
-          validator={maintenanceDispatchEventValidator}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Add Timecard</Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="maintenanceDispatchId" value={dispatchId} />
-            <VStack spacing={4}>
-              <Employee name="employeeId" label={t`Employee`} />
-              <WorkCenter
-                name="workCenterId"
-                label={t`Work Center`}
-                termId="work-center"
-              />
-              <DateTimePicker name="startTime" label={t`Start Time`} />
-              <DateTimePicker name="endTime" label={t`End Time`} />
-              <TextArea name="notes" label={t`Notes`} />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit>
-              <Trans>Add</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Add Timecard</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="maintenanceDispatchId" value={dispatchId} />
+        <VStack spacing={4}>
+          <Employee name="employeeId" label={t`Employee`} />
+          <WorkCenter
+            name="workCenterId"
+            label={t`Work Center`}
+            termId="work-center"
+          />
+          <DateTimePicker name="startTime" label={t`Start Time`} />
+          <DateTimePicker name="endTime" label={t`End Time`} />
+          <TextArea name="notes" label={t`Notes`} />
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit>
+          <Trans>Add</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 

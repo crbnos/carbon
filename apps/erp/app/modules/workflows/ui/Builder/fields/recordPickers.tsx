@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Combobox } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import type { ComponentType } from "react";
 import { useMemo } from "react";
 import { Enumerable } from "~/components/Enumerable";
@@ -11,6 +12,7 @@ import { useLocations } from "~/components/Form/Location";
 import { UserSelect } from "~/components/Selectors";
 import type { IndividualOrGroup } from "~/components/Selectors/UserSelect/types";
 import { useCustomers, useItems, useSuppliers } from "~/stores";
+import type { RecordPickerEntity } from "./recordPickerEntities";
 
 // Plain Combobox, never CreatableCombobox: a workflow picks an existing record,
 // so a "Create <whatever you typed>" row would be an offer we cannot honor.
@@ -23,6 +25,7 @@ export type RecordPickerProps = {
 // ── Customer ────────────────────────────────────────────────────────────────
 
 const CustomerPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
+  const { t } = useLingui();
   const [customers] = useCustomers();
   const options = useMemo(
     () => customers.map((c) => ({ value: c.id, label: c.name })),
@@ -30,6 +33,7 @@ const CustomerPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
   );
   return (
     <Combobox
+      aria-label={t`Customer`}
       options={options}
       value={value}
       isClearable
@@ -43,6 +47,7 @@ const CustomerPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
 // ── Supplier ─────────────────────────────────────────────────────────────────
 
 const SupplierPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
+  const { t } = useLingui();
   const [suppliers] = useSuppliers();
   const options = useMemo(
     () => suppliers.map((s) => ({ value: s.id, label: s.name })),
@@ -50,6 +55,7 @@ const SupplierPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
   );
   return (
     <Combobox
+      aria-label={t`Supplier`}
       options={options}
       value={value}
       isClearable
@@ -63,6 +69,7 @@ const SupplierPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
 // ── Item (all types) ─────────────────────────────────────────────────────────
 
 const ItemPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
+  const { t } = useLingui();
   const [items] = useItems();
   const options = useMemo(
     () =>
@@ -77,6 +84,7 @@ const ItemPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
   );
   return (
     <Combobox
+      aria-label={t`Item`}
       options={options}
       value={value}
       isClearable
@@ -90,9 +98,11 @@ const ItemPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
 // ── Location ─────────────────────────────────────────────────────────────────
 
 const LocationPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => {
+  const { t } = useLingui();
   const locations = useLocations();
   return (
     <Combobox
+      aria-label={t`Location`}
       options={locations}
       value={value}
       isClearable
@@ -110,9 +120,11 @@ const IssueTypePicker = ({
   onChange,
   isDisabled
 }: RecordPickerProps) => {
+  const { t } = useLingui();
   const options = useIssueTypes();
   return (
     <Combobox
+      aria-label={t`Issue type`}
       options={options.map((o) => ({
         value: o.value,
         label: <Enumerable value={o.label} />
@@ -170,11 +182,7 @@ const GroupPicker = ({ value, onChange, isDisabled }: RecordPickerProps) => (
  * nonConformance, jobOperation, salesInvoice, purchaseInvoice) fall back to a
  * plain text Input in LiteralControl — no store is available for those.
  */
-export const hasRecordPicker = (entity: string) => entity in RECORD_PICKERS;
-
-export const RECORD_PICKERS: Partial<
-  Record<string, ComponentType<RecordPickerProps>>
-> = {
+const PICKERS: Record<RecordPickerEntity, ComponentType<RecordPickerProps>> = {
   customer: CustomerPicker,
   supplier: SupplierPicker,
   item: ItemPicker,
@@ -183,3 +191,7 @@ export const RECORD_PICKERS: Partial<
   user: UserPicker,
   group: GroupPicker
 };
+
+export const RECORD_PICKERS: Partial<
+  Record<string, ComponentType<RecordPickerProps>>
+> = PICKERS;

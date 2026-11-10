@@ -23,11 +23,13 @@ import { fixedAssetAttachJobValidator } from "../../accounting.models";
 
 type FixedAssetAttachJobFormProps = {
   jobs: { value: string; label: string; helper?: string }[];
+  open?: boolean;
   onClose: () => void;
 };
 
 const FixedAssetAttachJobForm = ({
   jobs,
+  open = true,
   onClose
 }: FixedAssetAttachJobFormProps) => {
   const { t } = useLingui();
@@ -37,7 +39,7 @@ const FixedAssetAttachJobForm = ({
   return (
     <ModalDrawerProvider type="modal">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose?.();
         }}

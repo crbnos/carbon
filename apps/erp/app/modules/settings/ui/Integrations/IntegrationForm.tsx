@@ -58,6 +58,8 @@ import { Processes } from "~/components/Form";
 import { MethodIcon, TrackingTypeIcon } from "~/components/Icons";
 import { usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
+import { InstallButton } from "./InstallButton";
+import { useInstallGate } from "./useInstallGate";
 
 /**
  * Live state an installed integration supplies for one of its actions. With it
@@ -609,6 +611,7 @@ interface IntegrationFormProps {
   installed: boolean;
   collapseSettings?: boolean;
   settingsLabel?: ReactNode;
+  open?: boolean;
   onClose: () => void;
   /** Dynamic options to merge into settings (e.g., fetched from external APIs) */
   dynamicOptions?: Record<
@@ -639,6 +642,7 @@ export function IntegrationForm({
   metadata,
   collapseSettings = false,
   settingsLabel,
+  open = true,
   onClose,
   dynamicOptions = {},
   tabs = [],
@@ -671,6 +675,7 @@ export function IntegrationForm({
   const integration = integrationId
     ? availableIntegrations.find((i) => i.id === integrationId)
     : undefined;
+  const installGate = useInstallGate(integration, installed);
 
   // Extract connected organisation name from metadata (e.g. Xero tenant
   // name). New credentials keep provider fields under providerMetadata;
@@ -811,6 +816,18 @@ export function IntegrationForm({
 
   const integrationActions =
     (integration as { actions?: IntegrationAction[] })?.actions ?? [];
+
+  // An integration with no settings has no form to submit, so Install is a button rather
+  // than a Submit — the same one the card offers, so the drawer is never a dead end when
+  // it is opened by URL on something that isn't installed yet. The card's checks
+  // hold here too: a withheld install, a role another integration holds, and a
+  // mode to choose (the card asks it) are installed from the card or not at all.
+  const canInstallHere =
+    !installed &&
+    integration?.settings.length === 0 &&
+    !installGate.comingSoon &&
+    !installGate.conflictsWith &&
+    !installGate.needsModeChoice;
 
   if (!integrationId) {
     throw new Error("Integration ID is required");
@@ -1030,6 +1047,20 @@ export function IntegrationForm({
                 integration.description}
             </p>
 
+            {canInstallHere && (
+              <p className="text-sm text-muted-foreground">
+                <Trans>
+                  {integration.name} isn't installed yet. There's nothing to
+                  configure — install it to connect an account.
+                </Trans>
+              </p>
+            )}
+            {!installed && installGate.conflictsWith && (
+              <p className="text-sm text-muted-foreground">
+                <Trans>Uninstall {installGate.conflictsWith} first</Trans>
+              </p>
+            )}
+
             {!collapseSettings && setupInstructions}
 
             {collapseSettings && actionsSection}
@@ -1061,10 +1092,19 @@ export function IntegrationForm({
                 <Trans>Update</Trans>
               </Submit>
             ) : (
-              <Submit isDisabled={isDisabled}>
+              <Submit
+                isDisabled={
+                  isDisabled ||
+                  installGate.comingSoon ||
+                  !!installGate.conflictsWith ||
+                  installGate.needsModeChoice
+                }
+              >
                 <Trans>Install</Trans>
               </Submit>
             )
+          ) : canInstallHere ? (
+            <InstallButton integration={integration} isDisabled={isDisabled} />
           ) : null}
 
           <Button variant="solid" onClick={onClose}>
@@ -1077,7 +1117,7 @@ export function IntegrationForm({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

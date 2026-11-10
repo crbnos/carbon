@@ -16,7 +16,7 @@ import {
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { DateTime, Hyperlink } from "~/components";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
@@ -28,6 +28,7 @@ import {
   DepreciationRunHeader
 } from "~/modules/accounting/ui/FixedAssets";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 /**
@@ -46,6 +47,9 @@ export const handle: Handle = {
   ),
   module: "accounting"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.run?.depreciationRunId, "Depreciation Run");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { api } = await authorize(request, {

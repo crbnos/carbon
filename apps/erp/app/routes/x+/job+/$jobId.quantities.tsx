@@ -5,17 +5,28 @@
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { RecordOutlet, useMount, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
+import {
+  getProductionQuantities,
+  PRODUCTION_QUANTITIES_PAGING
+} from "~/modules/production/production.service";
 import { ProductionQuantitiesTable } from "~/modules/production/ui/Jobs";
+import { toPage } from "~/utils/cursor";
+import { listErrorPage } from "~/utils/list-registry/load.server";
 import { path, requestReferrer } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
+const logger = getLogger("erp", "job-quantities");
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, { "production.jobs": "View" });
+  const { client, companyId, api } = await authorize(request, {
+    "production.jobs": "View"
+  });
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
@@ -23,12 +34,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
+  const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
   const operations = await api.production.getJobOperationsList({ jobId });
   if (operations.error) {
-    redirect(
+    throw redirect(
       requestReferrer(request) ?? path.to.job(jobId),
       await flash(
         request,
@@ -41,40 +52,55 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return {
       count: 0,
       events: [],
+      nextCursor: null,
       operations: [],
       scrapReasons: []
     };
   }
 
+  // A later page (`?after=`) is read for its rows only: skip the scrap reasons.
   const [events, scrapReasons] = await Promise.all([
-    api.production.getProductionQuantities({
+    getProductionQuantities(client, operations.data?.map((o) => o.id) ?? [], {
       search,
       limit,
-      offset,
+      cursor,
       sorts,
-      filters,
-      jobOperationIds: operations.data?.map((o) => o.id) ?? []
+      filters
     }),
-    api.production.getScrapReasons({})
+    cursor ? null : api.production.getScrapReasons({})
   ]);
 
   if (events.error) {
-    redirect(
+    if (cursor) {
+      logger.error("Failed to load a later page of production quantities", {
+        companyId,
+        error: events.error
+      });
+      return listErrorPage("events");
+    }
+    throw redirect(
       path.to.production,
       await flash(request, error(events.error, "Failed to fetch job events"))
     );
   }
 
+  const page = toPage(
+    events.data ?? [],
+    { limit, sorts },
+    PRODUCTION_QUANTITIES_PAGING
+  );
+
   return {
-    count: events.data?.count ?? 0,
-    events: events.data?.rows ?? [],
+    count: events.count ?? 0,
+    events: page.rows,
+    nextCursor: page.nextCursor,
     operations: operations.data ?? [],
-    scrapReasons: scrapReasons.data?.rows ?? []
+    scrapReasons: scrapReasons?.data?.rows ?? []
   };
 }
 
 export default function ProductionQuantitiesRoute() {
-  const { count, events, operations, scrapReasons } =
+  const { count, events, nextCursor, operations, scrapReasons } =
     useLoaderData<typeof loader>();
 
   const { setIsExplorerCollapsed } = usePanels();
@@ -92,6 +118,7 @@ export default function ProductionQuantitiesRoute() {
         <ProductionQuantitiesTable
           data={events}
           count={count}
+          nextCursor={nextCursor}
           operations={operations}
           scrapReasons={scrapReasons}
         />

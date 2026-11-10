@@ -2,10 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { journalReference } from "@carbon/database";
 import { dayBeforeCutover } from "@carbon/database/accounting-cutover";
-import { credit, debit, equals, round, toStoredAmount } from "@carbon/utils";
 import {
-  type CalendarDate,
+  credit,
+  debit,
+  equals,
+  type PeriodPostingSource,
+  round,
+  toStoredAmount
+} from "@carbon/utils";
+import {
+  CalendarDate,
   endOfMonth,
   parseDate,
   startOfMonth,
@@ -536,6 +544,40 @@ export function runPostingTargets(args: {
   );
 }
 
+/**
+ * Straight Line on a remaining-life basis: each month takes the remaining
+ * depreciable amount over the months left in the useful life, so a cost
+ * added after the asset went into service (a capital project's late cost)
+ * spreads over the rest of its life. With no addition it gives the same
+ * monthly amount as `depreciableBase / life`. `monthsElapsed` counts the
+ * months from the start month to the period's last month.
+ */
+function remainingLifeStraightLine(args: {
+  remainingDepreciable: number;
+  usefulLifeMonths: number;
+  monthsElapsed: number;
+  monthsToDepreciate: number;
+}): number {
+  let total = 0;
+  let remaining = args.remainingDepreciable;
+  for (let i = 0; i < args.monthsToDepreciate; i++) {
+    // The window's months run up to the period's month; month i of it has
+    // this many months of life left, itself included.
+    const remainingMonths = Math.max(
+      1,
+      args.usefulLifeMonths -
+        args.monthsElapsed +
+        args.monthsToDepreciate -
+        1 -
+        i
+    );
+    const monthly = remaining / remainingMonths;
+    total += monthly;
+    remaining -= monthly;
+  }
+  return total;
+}
+
 export function calculateDepreciation(
   asset: {
     acquisitionCost: number;
@@ -546,6 +588,12 @@ export function calculateDepreciation(
     depreciationStartDate: string | null;
     acquisitionDate: string | null;
     assetLifetimeUsage: number | null;
+    /**
+     * Straight Line on the remaining life: set for an asset with a cost added
+     * after it went into service. Every other asset keeps the plain
+     * `depreciableBase / life` schedule, unchanged.
+     */
+    remainingLifeBasis?: boolean;
   },
   periodEnd: string,
   lastPostedPeriodEnd: string | null,
@@ -570,11 +618,20 @@ export function calculateDepreciation(
 
   switch (asset.depreciationMethod) {
     case "Straight Line": {
-      const monthlyAmount = depreciableBase / asset.usefulLifeMonths;
       const from = lastPostedPeriodEnd
         ? addOneMonth(lastPostedPeriodEnd)
         : startDate;
       const monthsToDepreciate = getMonthsBetween(from, periodEndDate);
+      if (asset.remainingLifeBasis) {
+        const total = remainingLifeStraightLine({
+          remainingDepreciable,
+          usefulLifeMonths: asset.usefulLifeMonths,
+          monthsElapsed: getMonthsElapsed(startDate, periodEndDate),
+          monthsToDepreciate
+        });
+        return Math.min(round(total, decimalPlaces), remainingDepreciable);
+      }
+      const monthlyAmount = depreciableBase / asset.usefulLifeMonths;
       const amount = monthlyAmount * monthsToDepreciate;
       return Math.min(round(amount, decimalPlaces), remainingDepreciable);
     }
@@ -633,6 +690,8 @@ export function calculateTaxDepreciation(
     macrsPropertyClass: string | null;
     macrsConvention: string | null;
     bonusDepreciationPercent: number | null;
+    /** As for `calculateDepreciation`: Straight Line on the remaining life. */
+    remainingLifeBasis?: boolean;
   },
   periodEnd: string,
   lastPostedPeriodEnd: string | null,
@@ -693,6 +752,15 @@ export function calculateTaxDepreciation(
   const monthsToDepreciate = getMonthsBetween(from, periodEndDate);
 
   if (taxMethod === "Straight Line") {
+    if (asset.remainingLifeBasis) {
+      const total = remainingLifeStraightLine({
+        remainingDepreciable,
+        usefulLifeMonths: taxLife,
+        monthsElapsed: getMonthsElapsed(depStartDate, periodEndDate),
+        monthsToDepreciate
+      });
+      return Math.min(round(total, decimalPlaces), remainingDepreciable);
+    }
     const monthlyAmount = depreciableBase / taxLife;
     const amount = monthlyAmount * monthsToDepreciate;
     return Math.min(round(amount, decimalPlaces), remainingDepreciable);
@@ -785,6 +853,10 @@ export function straightLineShortfall(args: {
  * shortfall to the run's first month, so the asset still ends on its original
  * schedule. Declining Balance and MACRS need nothing: both depreciate what is
  * left over the life that is left. Units of Production does not catch up.
+ *
+ * An asset with a capital project's late cost (`remainingLifeBasis`)
+ * depreciates Straight Line on its remaining life instead, and takes no
+ * catch-up.
  */
 export function buildDepreciationLines(
   assets: Array<{
@@ -804,6 +876,8 @@ export function buildDepreciationLines(
     macrsPropertyClass: string | null;
     macrsConvention: string | null;
     bonusDepreciationPercent: number | null;
+    /** A cost was added after the asset went into service. */
+    remainingLifeBasis?: boolean;
     costAdjusted?: boolean;
   }>,
   periodEnd: string,
@@ -841,7 +915,9 @@ export function buildDepreciationLines(
 
     let catchUp = 0;
     let taxCatchUp = 0;
-    if (asset.costAdjusted && start) {
+    // A remaining-life asset already spreads all that is left over the life
+    // that is left, so it takes no catch-up.
+    if (asset.costAdjusted && !asset.remainingLifeBasis && start) {
       if (asset.depreciationMethod === "Straight Line") {
         catchUp = straightLineShortfall({
           acquisitionCost: Number(asset.acquisitionCost),
@@ -888,7 +964,8 @@ export function buildDepreciationLines(
           acquisitionDate: asset.acquisitionDate,
           assetLifetimeUsage: asset.assetLifetimeUsage
             ? Number(asset.assetLifetimeUsage)
-            : null
+            : null,
+          remainingLifeBasis: asset.remainingLifeBasis
         },
         monthEnd,
         previous,
@@ -918,7 +995,8 @@ export function buildDepreciationLines(
             taxResidualValuePercent: asset.taxResidualValuePercent,
             macrsPropertyClass: asset.macrsPropertyClass,
             macrsConvention: asset.macrsConvention,
-            bonusDepreciationPercent: asset.bonusDepreciationPercent
+            bonusDepreciationPercent: asset.bonusDepreciationPercent,
+            remainingLifeBasis: asset.remainingLifeBasis
           },
           monthEnd,
           previous,
@@ -1130,3 +1208,183 @@ function isCalendarDateString(value: string): boolean {
 // lock/unlock instead of a generic "Mark Done". Identified by name (a stable,
 // non-deletable system definition).
 export const LOCK_PERIOD_TASK_NAME = "Lock the period";
+
+/**
+ * What the document behind a general ledger line says about who it was with.
+ * Keyed by the document's id: every posting writes the record's `id`
+ * (an `xid()`, unique across tables) into `journalLine.documentId`.
+ */
+export type GeneralLedgerDocument = {
+  invoiceNumber: string | null;
+  supplierInvoiceNumber: string | null;
+  customerId: string | null;
+  supplierId: string | null;
+  // A card charge with no supplier still names who was paid
+  merchantName: string | null;
+  // A purchase order line's order number
+  purchaseOrderNumber: string | null;
+};
+
+export type GeneralLedgerCounterparty = {
+  party: string | null;
+  invoiceNumber: string | null;
+  supplierInvoiceNumber: string | null;
+  purchaseOrderNumber: string | null;
+};
+
+const PURCHASE_ORDER_LINE_REFERENCE_PREFIXES = [
+  journalReference.to.receipt(""),
+  journalReference.to.purchaseInvoice("")
+];
+
+/**
+ * The purchase order line a GR/IR line names in `documentLineReference`
+ * (`receipt:<poLineId>`, `purchase-invoice:<poLineId>`). The opening
+ * journal's GR/IR lines name nothing else: no document type, no document.
+ * Some `receipt:` references name a return line instead, which no purchase
+ * order line matches.
+ */
+export function purchaseOrderLineIdOf(
+  documentLineReference: string | null
+): string | null {
+  if (!documentLineReference) return null;
+  const prefix = PURCHASE_ORDER_LINE_REFERENCE_PREFIXES.find((p) =>
+    documentLineReference.startsWith(p)
+  );
+  return prefix ? documentLineReference.slice(prefix.length) || null : null;
+}
+
+/**
+ * The customer or supplier and the invoice of a general ledger line. An
+ * invoice line names its invoice in `documentId`; a payment line names the
+ * payment there and the invoice it settles in `documentLineReference`. A
+ * GR/IR line names its purchase order line there, which gives the purchase
+ * order and, when the line has no document, the supplier.
+ */
+export function generalLedgerCounterparty(
+  line: {
+    documentType: string | null;
+    documentId: string | null;
+    documentLineReference: string | null;
+  },
+  documents: ReadonlyMap<string, GeneralLedgerDocument>,
+  partyNames: ReadonlyMap<string, string>
+): GeneralLedgerCounterparty {
+  const document = line.documentId ? documents.get(line.documentId) : undefined;
+  const invoice =
+    line.documentType === "Payment" && line.documentLineReference
+      ? documents.get(line.documentLineReference)
+      : document;
+  const orderLineId = purchaseOrderLineIdOf(line.documentLineReference);
+  const orderLine = orderLineId ? documents.get(orderLineId) : undefined;
+
+  const partyId =
+    document?.customerId ??
+    document?.supplierId ??
+    invoice?.customerId ??
+    invoice?.supplierId ??
+    orderLine?.supplierId;
+
+  return {
+    party:
+      (partyId ? partyNames.get(partyId) : undefined) ??
+      document?.merchantName ??
+      null,
+    invoiceNumber: invoice?.invoiceNumber ?? null,
+    supplierInvoiceNumber: invoice?.supplierInvoiceNumber ?? null,
+    purchaseOrderNumber: orderLine?.purchaseOrderNumber ?? null
+  };
+}
+
+/** The companies a financial report covers: every company for "all", the one
+ *  named, else the user's own. Null when the selection is empty or names a
+ *  company outside the group, so a report never reads another group's ledger. */
+export function selectReportCompanyIds(
+  companiesParam: string | null,
+  groupCompanyIds: string[],
+  companyId: string
+): string[] | null {
+  const selected =
+    companiesParam === "all"
+      ? groupCompanyIds
+      : companiesParam
+        ? [companiesParam]
+        : [companyId];
+  if (
+    selected.length === 0 ||
+    selected.some((id) => !groupCompanyIds.includes(id))
+  ) {
+    return null;
+  }
+  return selected;
+}
+
+/** A Superseded journal is a Provisional one the opening journal replaced at
+ *  the cutover. The journal list hides it unless a status filter asks for it. */
+export function hidesSupersededJournals(args: {
+  status: string | null;
+  filters?: { column: string; value?: unknown }[];
+}): boolean {
+  return !(
+    Boolean(args.status) ||
+    (args.filters ?? []).some(
+      (filter) => filter.column === "status" && Boolean(filter.value)
+    )
+  );
+}
+
+/** Why a posting dated in a period is refused, or null when it may post. A
+ *  Closed period takes nothing; a Locked one takes accounting adjustments but
+ *  not operational postings. */
+export function periodPostingRefusal(
+  closeStatus: string,
+  source: PeriodPostingSource
+): string | null {
+  if (closeStatus === "Closed") {
+    return "Accounting period is closed. Reopen it before posting.";
+  }
+  if (closeStatus === "Locked" && source === "operational") {
+    return "Accounting period is locked. Post as an accounting adjustment or unlock the period first.";
+  }
+  return null;
+}
+
+/** Why a period cannot be deleted, or null: only an Open period with no
+ *  journals posted to it can go. */
+export function periodDeletionRefusal(
+  closeStatus: string,
+  journalCount: number
+): string | null {
+  if (closeStatus !== "Open") {
+    return `Only open periods can be deleted — this period is ${closeStatus}.`;
+  }
+  if (journalCount > 0) {
+    return `This period has ${journalCount} journal ${
+      journalCount === 1 ? "entry" : "entries"
+    } posted to it and cannot be deleted.`;
+  }
+  return null;
+}
+
+/** The months of a fiscal year not yet created. A fiscal year is named by
+ *  its ending calendar year, so a non-January start begins the year before. */
+export function fiscalYearPeriodDates(
+  fiscalYear: number,
+  startMonth: number,
+  existingPeriodNumbers: Set<number | null>
+): { periodNumber: number; startDate: string; endDate: string }[] {
+  const firstYear = startMonth === 1 ? fiscalYear : fiscalYear - 1;
+  const rows = [];
+  for (let p = 1; p <= 12; p++) {
+    if (existingPeriodNumbers.has(p)) continue;
+    const start = new CalendarDate(firstYear, startMonth, 1).add({
+      months: p - 1
+    });
+    rows.push({
+      periodNumber: p,
+      startDate: start.toString(),
+      endDate: endOfMonth(start).toString()
+    });
+  }
+  return rows;
+}

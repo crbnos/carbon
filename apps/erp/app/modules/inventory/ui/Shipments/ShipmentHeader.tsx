@@ -156,18 +156,16 @@ const ShipmentHeader = () => {
         }
       />
 
-      {postModal.isOpen && <ShipmentPostModal onClose={postModal.onClose} />}
-      {voidModal.isOpen && <ShipmentVoidModal onClose={voidModal.onClose} />}
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteShipment(shipmentId)}
-          isOpen={deleteDisclosure.isOpen}
-          name={shipment.shipmentId ?? "shipment"}
-          text={t`Are you sure you want to delete ${shipment.shipmentId}? This cannot be undone.`}
-          onCancel={deleteDisclosure.onClose}
-          onSubmit={deleteDisclosure.onClose}
-        />
-      )}
+      <ShipmentPostModal open={postModal.isOpen} onClose={postModal.onClose} />
+      <ShipmentVoidModal open={voidModal.isOpen} onClose={voidModal.onClose} />
+      <ConfirmDelete
+        action={path.to.deleteShipment(shipmentId)}
+        isOpen={deleteDisclosure.isOpen}
+        name={shipment.shipmentId ?? "shipment"}
+        text={t`Are you sure you want to delete ${shipment.shipmentId}? This cannot be undone.`}
+        onCancel={deleteDisclosure.onClose}
+        onSubmit={deleteDisclosure.onClose}
+      />
     </>
   );
 };

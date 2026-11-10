@@ -6,6 +6,7 @@ import { dataOrThrow } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getQuoteDisplayId } from "@carbon/documents/utils";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { DragEndEvent } from "@dnd-kit/core";
@@ -13,17 +14,20 @@ import { DndContext } from "@dnd-kit/core";
 import { msg } from "@lingui/core/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useParams, useSubmit } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
+import { usePermissions } from "~/hooks";
 import { getExchangeRate } from "~/modules/accounting/accounting.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
+import { isQuoteLocked } from "~/modules/sales/sales.models";
 import { getSalesOrderLines } from "~/modules/sales/sales.service";
 import {
   getQuoteLinePricesByQuoteId,
   getQuoteLines
 } from "~/modules/sales/sales.utils";
 import type { SalesOrderLine } from "~/modules/sales/types";
+import { DocumentDropTargetsProvider } from "~/modules/sales/ui/Opportunity/OpportunityDocuments";
 import {
   QuoteExplorer,
   QuoteHeader,
@@ -31,6 +35,7 @@ import {
 } from "~/modules/sales/ui/Quotes";
 import { useOptimisticDocumentDrag } from "~/modules/sales/ui/Quotes/QuoteExplorer";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -49,6 +54,9 @@ export const handle: Handle = {
   ),
   module: "sales"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(getQuoteDisplayId(data?.quote), "Quote");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(
@@ -201,8 +209,15 @@ export default function QuoteRoute() {
   const params = useParams();
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
-  const { methods } = useLoaderData<typeof loader>();
+  const { methods, lines, quote } = useLoaderData<typeof loader>();
+  const permissions = usePermissions();
   const submit = useSubmit();
+  // A file adds or changes a line, so it takes what the explorer's own
+  // add-line controls take: an unlocked quote and sales edit rights.
+  const canDropDocuments =
+    !isQuoteLocked(quote.status) &&
+    permissions.has({ "sales.quotes": "Edit" }) &&
+    permissions.has({ "sales.quotes": "Create" });
   const pendingItems = useOptimisticDocumentDrag();
 
   const handleDrop = (
@@ -237,6 +252,7 @@ export default function QuoteRoute() {
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { over, active } = event;
+    if (!canDropDocuments) return;
     if (over && active.data.current?.type === "opportunityDocument") {
       handleDrop(
         active.data.current as unknown as FileObject & { path: string },
@@ -247,26 +263,41 @@ export default function QuoteRoute() {
 
   return (
     <DndContext onDragEnd={handleDragEnd}>
-      <PanelProvider key={quoteId}>
-        <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full ">
-          <QuoteHeader />
-          <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
-            <div className="flex flex-grow overflow-hidden">
-              <ResizablePanels
-                explorer={<QuoteExplorer methods={methods} />}
-                content={
-                  <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
-                    <VStack spacing={4} className="p-4">
-                      <RecordOutlet />
-                    </VStack>
-                  </div>
-                }
-                properties={<QuoteProperties key={quoteId} />}
-              />
+      <DocumentDropTargetsProvider
+        value={
+          canDropDocuments
+            ? {
+                listTargetId: "quote-explorer",
+                lines: lines.map((line) => ({
+                  targetId: `quote-line-${line.id}`,
+                  label: line.itemReadableId || line.description || line.id!
+                })),
+                onDrop: handleDrop
+              }
+            : null
+        }
+      >
+        <PanelProvider key={quoteId}>
+          <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full ">
+            <QuoteHeader />
+            <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
+              <div className="flex flex-grow overflow-hidden">
+                <ResizablePanels
+                  explorer={<QuoteExplorer methods={methods} />}
+                  content={
+                    <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
+                      <VStack spacing={4} className="p-4">
+                        <RecordOutlet />
+                      </VStack>
+                    </div>
+                  }
+                  properties={<QuoteProperties key={quoteId} />}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </PanelProvider>
+        </PanelProvider>
+      </DocumentDropTargetsProvider>
     </DndContext>
   );
 }

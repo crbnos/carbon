@@ -6,6 +6,7 @@ import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { flags } from "@carbon/env/flags.server";
 import { validator } from "@carbon/form";
 import { isInternalEmail, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -16,12 +17,16 @@ import { CompanyForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, email } = await authorize(request, {
+  const { client, companyId, email } = await authorize(request, {
     "settings.companies": "View"
   });
 
-  // Multi-company management is gated to internal (Carbon) users for now.
-  if (!isInternalEmail(email)) {
+  // Multi-company management: Carbon staff, and the companies the
+  // `multi-company-management` flag turns it on for.
+  if (
+    !isInternalEmail(email) &&
+    !(await flags.bool("multi-company-management", { companyId, email }))
+  ) {
     throw redirect(path.to.settings);
   }
 

@@ -45,14 +45,17 @@ A **price override** pins a negotiated price for a specific item, optionally wit
 
 - **Customer** — this item, this customer.
 - **Customer type** — this item, everyone of this customer type.
-- **All customers** — this item, every customer (both customer and customer type left blank).
+- **All customers** — this item, every customer. Choose **All Customers** in the override form; through the API, send `allCustomers: true`.
 
-An override can't set both a customer and a customer type; the database enforces the exclusive scope. Each override carries a list of **quantity breaks** — rungs of `quantity` → `override price`. For a given line quantity Carbon picks the highest break whose quantity is at or below the ordered quantity. Order eight when the rungs are 1, 5, and 10, and you get the price on the 5-rung.
+An override names exactly one scope. Leaving the customer and the customer type blank is refused rather than read as all customers, because a price for every customer replaces the item's list price on every quote.
+
+Overrides are listed in **Sales → Price List**. Pick a customer, a customer type, or **All Customers** in the scope picker. A customer's list also shows the overrides it inherits from its customer type and from all customers, each tagged with the scope it comes from (`Override`, `Type Override`, `All Override`), so every item priced differently for that customer appears there. Each override carries a list of **quantity breaks** — rungs of `quantity` → `override price`. For a given line quantity Carbon picks the highest break whose quantity is at or below the ordered quantity. Order eight when the rungs are 1, 5, and 10, and you get the price on the 5-rung.
 
 <FieldTable>
   <Field name="Item" type="reference" required>The item this override prices.</Field>
   <Field name="Customer" type="reference">Scope to one customer. Mutually exclusive with customer type.</Field>
   <Field name="Customer type" type="reference">Scope to a customer type. Mutually exclusive with customer.</Field>
+  <Field name="All customers" type="boolean">Scope to every customer. Mutually exclusive with customer and customer type.</Field>
   <Field name="Quantity breaks" type="list" required>One or more `quantity` → `override price` rungs. Duplicate quantities are rejected.</Field>
   <Field name="Apply rules on top" type="boolean">When on (the default), pricing rules still layer onto the override price. When off, the override price is final and rules are skipped.</Field>
   <Field name="Valid from / valid to" type="date">The date window the override is active in.</Field>
@@ -74,7 +77,7 @@ Resolution runs top to bottom. The result, plus every step, is stored on the lin
 **Start from the base price.** The item's unit sale price, or the cost-rollup price the quote already computed. Trace source: `Base`.
 </Step>
 <Step>
-**Apply the best-matching override, if any.** Carbon checks the three scopes in strict precedence and commits to the first that yields a break: **customer override, then customer-type override, then all-customers override.** Once a scope matches, it never falls through to a lower one. If the ordered quantity is below the override's smallest break, that scope doesn't match and Carbon tries the next. The winning override sets the starting price. Trace source: `Override`, `Type Override`, or `All Override`.
+**Apply the best-matching override, if any.** Carbon checks the three scopes in strict precedence and commits to the first that yields a break: **customer override, then customer-type override, then all-customers override.** Once a scope matches, it never falls through to a lower one. If the ordered quantity is below the override's smallest break, that scope doesn't match and Carbon tries the next. The winning override sets the starting price. Trace source: `Override`, `Type Override`, or `All Override`. In the price trace, the step links to the override it applied (traces stored before this link existed show plain text).
 </Step>
 <Step>
 **Layer on pricing rules**, unless the winning override set `Apply rules on top` to off. All matching active rules apply here, in the order below. Trace source: `Rule`.
@@ -127,8 +130,14 @@ On a pricing rule with `Amount type` = `Percentage`, the amount is stored as a f
 ### "Duplicate quantity across breaks"
 A price override's quantity-break table has two rungs with the same quantity. Each break must have a unique quantity — merge or renumber the duplicate rung.
 
-### "Cannot set both Customer and Customer Type" / "Cannot set both customerId and customerTypeId"
-A price override targets exactly one scope. You set both a customer and a customer type on the same override. Clear one — leave both blank only for an all-customers override. (The first string is the form message; the second is the service-level guard.)
+### "Cannot set both Customer and Customer Type"
+A price override targets exactly one scope. You set both a customer and a customer type on the same override. Clear one.
+
+### "Choose a customer, a customer type, or All Customers"
+The override names no scope. Pick a customer or a customer type, or choose **All Customers** (`allCustomers: true` through the API) to price the item for everyone.
+
+### "All Customers cannot also name a customer or type"
+The override is marked for all customers and also names a customer or a customer type. Keep one scope.
 
 ### "At least one break is required"
 A price override was saved with no quantity breaks. Add at least one `quantity` → `override price` rung.

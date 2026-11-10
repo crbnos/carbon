@@ -2,8 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { resolveDate, resolveTimestamp } from "../dates.ts";
+import {
+  resolveDate,
+  resolveLocalTimestamp,
+  resolveTimestamp,
+  workdayBefore
+} from "../dates.ts";
 import { bootstrapIdByName } from "../helpers/bootstrap-lookup.ts";
+import { allItemSpecs, extensionTableFor } from "../item-tables.ts";
 import {
   insertId,
   insertRow,
@@ -59,11 +65,13 @@ export async function runTier10(ctx: Ctx): Promise<void> {
   }
 
   ctx.log(`timecards — ${data.timecards.length}`);
+  // Working days only, on the company's clock: a 7 am shift is 7 am there.
   for (const card of data.timecards) {
+    const day = workdayBefore(ctx.anchor, card.workdaysBack);
     await insertRow(ctx, "timeCardEntry", {
       employeeId: ctx.userId,
-      clockIn: resolveTimestamp(ctx.anchor, card.dayOffset, card.clockIn),
-      clockOut: resolveTimestamp(ctx.anchor, card.dayOffset, card.clockOut),
+      clockIn: resolveLocalTimestamp(day, card.clockIn, ctx.timeZone),
+      clockOut: resolveLocalTimestamp(day, card.clockOut, ctx.timeZone),
       note: card.note
     });
   }
@@ -129,6 +137,7 @@ export async function runTier10(ctx: Ctx): Promise<void> {
     await seedAttributeCategory(ctx, spec);
   }
   await seedCustomFields(ctx, data.customFields);
+  await seedCustomFieldValues(ctx);
 
   ctx.log(`item serial sequences — ${data.serialSequences.length}`);
   for (const spec of data.serialSequences) {
@@ -292,6 +301,61 @@ async function seedCustomFields(
           "sortOrder" = EXCLUDED."sortOrder", active = true, "updatedBy" = EXCLUDED."createdBy"`
       }
     );
+  }
+}
+
+/**
+ * Writes `ItemSpec.customFieldValues` into each item's type table, keyed by the
+ * custom field's id — the shape the item form saves (`setCustomFields`). One
+ * UPDATE per type table; the type row's id is the item's readableId.
+ */
+async function seedCustomFieldValues(ctx: Ctx): Promise<void> {
+  const specs = allItemSpecs(ctx.dataset.items).filter(
+    (spec) => spec.customFieldValues
+  );
+  if (specs.length === 0) return;
+
+  const { rows: fields } = await ctx.client.query<{
+    id: string;
+    table: string;
+    name: string;
+  }>(`SELECT id, "table", name FROM "customField" WHERE "companyId" = $1`, [
+    ctx.companyId
+  ]);
+  const fieldId = new Map(fields.map((f) => [`${f.table}:${f.name}`, f.id]));
+
+  const byTable = new Map<string, { ids: string[]; values: string[] }>();
+  for (const spec of specs) {
+    const table = extensionTableFor(spec.type);
+    const values: Record<string, string | number | boolean> = {};
+    for (const [name, value] of Object.entries(spec.customFieldValues ?? {})) {
+      const id = fieldId.get(`${table}:${name}`);
+      if (!id) {
+        throw new Error(
+          `Seed: custom field "${name}" not found on ${table} (item ${spec.readableId})`
+        );
+      }
+      values[id] = value;
+    }
+    const batch = byTable.get(table) ?? { ids: [], values: [] };
+    batch.ids.push(spec.readableId);
+    batch.values.push(JSON.stringify(values));
+    byTable.set(table, batch);
+  }
+
+  for (const [table, batch] of byTable) {
+    const result = await ctx.client.query(
+      `UPDATE "${table}" t
+          SET "customFields" = COALESCE(t."customFields", '{}'::jsonb) || v.vals
+         FROM (SELECT unnest($1::text[]) AS id, unnest($2::jsonb[]) AS vals) v
+        WHERE t.id = v.id AND t."companyId" = $3`,
+      [batch.ids, batch.values, ctx.companyId]
+    );
+    if (result.rowCount !== new Set(batch.ids).size) {
+      throw new Error(
+        `Seed: custom field values matched ${result.rowCount} of ${batch.ids.length} ${table} rows`
+      );
+    }
   }
 }
 

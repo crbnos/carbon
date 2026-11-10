@@ -17,6 +17,7 @@ import { useEffect } from "react";
 import { flushSync } from "react-dom";
 import { useControlField, useField } from "../hooks";
 import { useFormStateContext } from "../internal/formStateContext";
+import { useInlineField } from "../internal/inlineField";
 
 export type ComboboxProps = Omit<ComboboxBaseProps, "onChange"> & {
   name: string;
@@ -58,6 +59,12 @@ const Combobox = ({
     formState.isReadOnly || formState.isDisabled || props.isReadOnly;
   const resolvedIsOptional =
     isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
+  const inlineField = useInlineField({
+    inline: !!props.inline,
+    label,
+    isEmpty: !value,
+    isReadOnly
+  });
 
   useEffect(() => {
     if (props.value !== null && props.value !== undefined)
@@ -74,7 +81,7 @@ const Combobox = ({
 
   return (
     <FormControl isInvalid={!!error} isRequired={isRequired}>
-      {label && (
+      {label && inlineField.showLabel && (
         <FormLabel htmlFor={name} isOptional={resolvedIsOptional}>
           <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
         </FormLabel>
@@ -101,6 +108,7 @@ const Combobox = ({
         isReadOnly={isReadOnly}
         isLoading={isLoading}
         emptyMessage={isLoading ? undefined : emptyMessage}
+        inlinePlaceholder={inlineField.placeholder}
         className="w-full"
       />
       {error ? (

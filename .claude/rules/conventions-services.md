@@ -76,7 +76,9 @@ export const cancelJob = defineServiceFn({
   RLS filters the rows). An id `run` alone can name (one inside a list of
   objects, or an item OR a make method) is checked there with
   `refusalOf(ctx, rule, input)`.
-  `permission: {}` is refused by `service-fn-file`: write `"employee"`. The
+  `permission: {}` is refused by `service-fn-file`: write `"employee"`. Any
+  key of the company passes `"employee"`, even a read-only one, so a write on
+  it also calls `refuseKeyWithout` (`shared/shared.service.ts`). The
   user actor carries `role` for this check: `requirePermissions` returns it,
   and a workflow runs only while its owner is an employee
   (`readOwnerPermissions`). A call made from inside another function's
@@ -164,6 +166,11 @@ export async function getCustomers(
   return query;
 }
 ```
+
+Searching several columns at once is `query.or(searchFilter(["name", "readableId"], args.search))`
+(`@carbon/utils`), never a template literal: `.or()` parses the text as filter
+syntax, so a comma in a search ended the filter and the request failed. The
+`no-raw-or-search` check (`@carbon/checks`) fails the template form.
 
 For an unpaginated full list (e.g. a select dropdown), use
 `fetchAllFromTable(client, table, columns, qb)` from `@carbon/database`, which pages

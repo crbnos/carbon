@@ -39,6 +39,7 @@ import { DateTime, Table } from "~/components";
 type PrintJobsTableProps = {
   jobs: PrintJob[];
   count: number;
+  nextCursor: string | null;
 };
 
 type ViewContent = {
@@ -236,9 +237,11 @@ function ZplPreview({ zpl }: { zpl: string }) {
   );
 }
 
-const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
+const PrintJobsTable = memo((props: PrintJobsTableProps) => {
+  const { jobs, count, nextCursor } = props;
   const { t } = useLingui();
   const [viewContent, setViewContent] = useState<ViewContent | null>(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const fetcher = useAction({
     onSuccess: ({ data }) => {
       if (!data) return;
@@ -249,6 +252,7 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
             contentType: data.contentType as string,
             printJobId: data.printJobId as string
           });
+          setIsViewOpen(true);
         }
       } else if ("printJobId" in data) {
         toast.success(t`Reprint job created`);
@@ -445,14 +449,15 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
         table="printJob"
         withSearch
         withPagination
+        infinite={{ dataKey: "jobs", nextCursor }}
         renderExpandedRow={renderExpandedRow}
         renderContextMenu={renderContextMenu}
       />
       {viewContent && (
         <Modal
-          open
+          open={isViewOpen}
           onOpenChange={(open) => {
-            if (!open) setViewContent(null);
+            if (!open) setIsViewOpen(false);
           }}
         >
           <ModalContent size="large">
@@ -475,7 +480,7 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
               ) : null}
             </ModalBody>
             <ModalFooter>
-              <Button variant="secondary" onClick={() => setViewContent(null)}>
+              <Button variant="secondary" onClick={() => setIsViewOpen(false)}>
                 <Trans>Close</Trans>
               </Button>
             </ModalFooter>

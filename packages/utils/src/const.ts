@@ -51,6 +51,13 @@ export const FILE_SIZE_LIMIT_MB = {
 export const MODEL_RAW_KEEP_MAX_BYTES = 50 * 1024 * 1024;
 
 export const PO_EMAIL_ATTACHMENT_LIMIT_MB = 25;
+
+/**
+ * How long a signed file URL in an email works. The send job fetches each
+ * attachment when it runs, which can be late or a retry, and a supplier may
+ * open a download link days later.
+ */
+export const EMAIL_ATTACHMENT_URL_SECONDS = 7 * 24 * 60 * 60;
 export const PO_EMAIL_ATTACHMENT_WARN_MB = 20;
 
 export const getFileSizeLimit = (type: keyof typeof FILE_SIZE_LIMIT_MB) => {

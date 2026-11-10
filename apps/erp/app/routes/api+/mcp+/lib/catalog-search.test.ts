@@ -249,4 +249,14 @@ describe("createNameComparator", () => {
   test("leaves the BM25 order when the query has no usable words", () => {
     expect(createNameComparator("the of", actions)).toBe(null);
   });
+
+  test("a document verb ranks that document's tools first", async () => {
+    const { matches } = await catalog.search({
+      query: "receive a purchase order",
+      ...page
+    });
+    expect(matches.slice(0, 4).every((tool) => /Receipt/.test(tool.name))).toBe(
+      true
+    );
+  });
 });

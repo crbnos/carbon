@@ -36,11 +36,13 @@ import { path } from "~/utils/path";
 
 type InventoryCountFormProps = {
   initialValues: z.infer<typeof inventoryCountValidator>;
+  open?: boolean;
   onClose: () => void;
 };
 
 const InventoryCountForm = ({
   initialValues,
+  open = true,
   onClose
 }: InventoryCountFormProps) => {
   const { t } = useLingui();
@@ -58,7 +60,7 @@ const InventoryCountForm = ({
   return (
     <ModalDrawerProvider type="drawer">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose();
         }}

@@ -54,7 +54,7 @@ const UnitOfMeasureForm = ({
   const [code, setCode] = useState<string>(initialValues.code);
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
@@ -64,7 +64,7 @@ const UnitOfMeasureForm = ({
         `Failed to create unit of measure: ${fetcher.data.error.message}`
       );
     }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
+  }, [fetcher.data, fetcher.state, onClose, open, type, t]);
 
   const isEditing = initialValues.id !== undefined;
   // Each is built in: the database refuses to rename it (custom fields stay

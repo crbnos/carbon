@@ -6,7 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -41,17 +41,10 @@ export async function action({ request }: ActionFunctionArgs) {
   let contentJSON;
   try {
     contentJSON = content ? JSON.parse(content) : {};
-    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   } catch (e) {
     return data(
       {},
-      await flash(
-        request,
-        error(
-          "Invalid quality document content format",
-          "Failed to parse quality document content"
-        )
-      )
+      await flash(request, error(e, "Failed to parse quality document content"))
     );
   }
 
@@ -79,7 +72,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewQualityDocumentRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const initialValues = {
     name: "",
     version: 0,
@@ -90,7 +83,8 @@ export default function NewQualityDocumentRoute() {
     <QualityDocumentForm
       initialValues={initialValues}
       type="new"
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

@@ -16,6 +16,7 @@ import { LuBookMarked, LuCircleSlash, LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -25,9 +26,11 @@ type ReturnReason = Database["public"]["Tables"]["returnReason"]["Row"];
 type ReturnReasonsTableProps = {
   data: ReturnReason[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const ReturnReasonsTable = memo(({ data, count }: ReturnReasonsTableProps) => {
+const ReturnReasonsTable = memo((props: ReturnReasonsTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -52,7 +55,12 @@ const ReturnReasonsTable = memo(({ data, count }: ReturnReasonsTableProps) => {
       {
         accessorKey: "inventoryValueZero",
         header: t`Zero Inventory Value`,
-        cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+        cell: (item) => (
+          <Checkbox
+            aria-label={t`Zero Inventory Value`}
+            isChecked={item.getValue<boolean>()}
+          />
+        ),
         meta: {
           filter: {
             type: "static",
@@ -111,6 +119,7 @@ const ReturnReasonsTable = memo(({ data, count }: ReturnReasonsTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      infinite={infinite}
       primaryAction={
         permissions.has({ "sales.returnReasons": "Create" }) && (
           <New

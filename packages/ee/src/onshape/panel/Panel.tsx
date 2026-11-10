@@ -34,9 +34,10 @@ import {
   TabsList,
   TabsTrigger,
   TruncatedTooltipText,
+  useDisclosure,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { datetime, formatDate } from "@carbon/utils";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -44,6 +45,7 @@ import {
   LuChevronRight,
   LuCircleCheck,
   LuCircleDashed,
+  LuCopy,
   LuInfo,
   LuListChecks,
   LuLock,
@@ -169,7 +171,12 @@ export type PanelAssemblyStatus = {
 };
 
 /** forbidden: a Retry cannot fix it, so it renders as a warning with no Retry. */
-type LoadFailure = { message: string; forbidden: boolean };
+type LoadFailure = {
+  message: string;
+  forbidden: boolean;
+  /** What Carbon and Onshape answered, for the Details section. */
+  diagnostics?: unknown;
+};
 
 // refreshing / refreshFailure: a re-read keeps the rows on screen; only a first
 // read shows a skeleton.
@@ -193,7 +200,12 @@ type PanelStatusState =
       refreshing?: boolean;
       refreshFailure?: LoadFailure;
     }
-  | { status: "error"; message: string; forbidden?: boolean };
+  | {
+      status: "error";
+      message: string;
+      forbidden?: boolean;
+      diagnostics?: unknown;
+    };
 
 type PanelReleasesState =
   | { status: "idle" }
@@ -206,7 +218,12 @@ type PanelReleasesState =
       refreshing?: boolean;
       refreshFailure?: LoadFailure;
     }
-  | { status: "error"; message: string; forbidden?: boolean };
+  | {
+      status: "error";
+      message: string;
+      forbidden?: boolean;
+      diagnostics?: unknown;
+    };
 
 /**
  * push: the current element. releases: the whole document, so it shows on an
@@ -254,14 +271,20 @@ type PanelFieldsState =
       /** Per-property 422 errors, keyed by onshapePropertyId. */
       fieldErrors: Record<string, string[]>;
     }
-  | { status: "error"; message: string; forbidden?: boolean };
+  | {
+      status: "error";
+      message: string;
+      forbidden?: boolean;
+      diagnostics?: unknown;
+    };
 
 // Every push reads these four itself: the Fields page shows them as fixed rows, never as a mapping.
+// Lower case, since a template can relabel them in any case.
 const FIXED_PROPERTY_NAMES = new Set([
-  "Part number",
-  "Revision",
-  "Name",
-  "Description"
+  "part number",
+  "revision",
+  "name",
+  "description"
 ]);
 
 // hasOwn: MAPPABLE_VALUE_TYPES is a plain object, so "constructor" would resolve to Object.prototype's.
@@ -329,12 +352,16 @@ type PlanResponse<P> = {
   planId: string;
   expiresAt: string;
   plan: P;
+  /** plan-release only: what Onshape returned for the BOMs it couldn't read. */
+  diagnostics?: unknown;
   /** plan-release only: assemblies whose BOM could not be read. */
   warnings?: unknown;
 };
 
 type PanelErrorResponse = {
   error: string;
+  /** What Carbon asked Onshape and what it answered, for the Details section. */
+  diagnostics?: unknown;
   fieldErrors?: ApplyFieldError[];
   /** too-large: the panel offers a push of the top level only. */
   code?: "too-large";
@@ -427,6 +454,8 @@ type PushOutcome = {
   text: string;
   skipped: string[];
   errors: string[];
+  /** What Carbon and Onshape answered, for the Details section. */
+  diagnostics?: unknown;
   /** Done, but worth knowing: a new Draft version, lines taken over. */
   notes?: string[];
 };
@@ -480,8 +509,8 @@ function releaseOutcomeText(s: ReleasePushSummary): PushOutcome {
   return { text: releaseResultText(s), skipped: s.skipped, errors: s.errors };
 }
 
-function failedOutcome(message: string): PushOutcome {
-  return { text: "", skipped: [], errors: [message] };
+function failedOutcome(message: string, diagnostics?: unknown): PushOutcome {
+  return { text: "", skipped: [], errors: [message], diagnostics };
 }
 
 function PushOutcomeView({ outcome }: { outcome: PushOutcome }) {
@@ -542,6 +571,9 @@ function PushOutcomeView({ outcome }: { outcome: PushOutcome }) {
                 <li key={problem}>{problem}</li>
               ))}
             </ul>
+            {outcome.diagnostics ? (
+              <PanelDiagnostics diagnostics={outcome.diagnostics} />
+            ) : null}
           </AlertDescription>
         </Alert>
       ) : null}
@@ -632,6 +664,134 @@ function CappedWarningList({
   );
 }
 
+/**
+ * The Clipboard API first. Inside Onshape's frame the browser can refuse it
+ * (the frame is not granted clipboard-write), so a selected textarea and
+ * `execCommand("copy")` next, which a click still allows there.
+ */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // Refused or unavailable: try the selection fallback.
+  }
+  const area = document.createElement("textarea");
+  area.value = text;
+  area.setAttribute("readonly", "");
+  area.style.position = "fixed";
+  area.style.top = "0";
+  area.style.opacity = "0";
+  document.body.appendChild(area);
+  area.select();
+  try {
+    return document.execCommand("copy");
+  } catch {
+    return false;
+  } finally {
+    area.remove();
+  }
+}
+
+/**
+ * The panel URL parameters a report carries: the ones the action URL asks
+ * Onshape to fill, plus `server`. Raw values, so an unfilled `{$elementId}`
+ * shows; any other parameter is left out.
+ */
+const REPORTED_PANEL_PARAMS = [
+  "documentId",
+  "wv",
+  "wvId",
+  "elementId",
+  "partNumber",
+  "revision",
+  "nodeId",
+  "occurrencePath",
+  "configuration",
+  "companyId",
+  "userId",
+  "locale",
+  "clientId",
+  "server"
+] as const satisfies readonly (keyof OnshapePanelContext | "server")[];
+
+function reportedPanelParams(search: string): Record<string, string> {
+  const params = new URLSearchParams(search);
+  const reported: Record<string, string> = {};
+  for (const name of REPORTED_PANEL_PARAMS) {
+    const value = params.get(name);
+    if (value !== null) reported[name] = value;
+  }
+  return reported;
+}
+
+/**
+ * What Carbon asked Onshape and what it answered, plus the panel's own URL
+ * parameters, so a failure can be reported as it happened. Never a token.
+ */
+function PanelDiagnostics({ diagnostics }: { diagnostics: unknown }) {
+  const [open, setOpen] = useState(false);
+  // The report last copied: a new review's diagnostics read "Copy details" again.
+  const [copiedReport, setCopiedReport] = useState<string | null>(null);
+  // Keyed on content, so a re-render with equal diagnostics keeps capturedAt.
+  const details = JSON.stringify(diagnostics ?? null);
+  const report = useMemo(
+    () =>
+      JSON.stringify(
+        {
+          capturedAt: datetime.timestamp(),
+          carbonHost:
+            typeof window === "undefined" ? null : window.location.host,
+          panel:
+            typeof window === "undefined"
+              ? {}
+              : reportedPanelParams(window.location.search),
+          details: JSON.parse(details) as unknown
+        },
+        null,
+        2
+      ),
+    [details]
+  );
+  const copied = copiedReport === report;
+  const copy = async () => {
+    if (await copyText(report)) {
+      setCopiedReport(report);
+    } else {
+      // Nothing could write the clipboard: show the text to select instead.
+      setOpen(true);
+    }
+  };
+  return (
+    <div className="mt-2 w-full">
+      <HStack spacing={3}>
+        <Button
+          variant="link"
+          size="sm"
+          className="h-auto p-0"
+          onClick={() => setOpen((current) => !current)}
+        >
+          {open ? "Hide details" : "Show details"}
+        </Button>
+        <Button
+          variant="link"
+          size="sm"
+          className="h-auto p-0"
+          leftIcon={<LuCopy />}
+          onClick={copy}
+        >
+          {copied ? "Copied" : "Copy details"}
+        </Button>
+      </HStack>
+      {open ? (
+        <pre className="mt-1 max-h-64 select-all overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted p-2 font-mono text-[0.6875rem] text-foreground">
+          {report}
+        </pre>
+      ) : null}
+    </div>
+  );
+}
+
 /** stale: a failed Refresh over rows still on screen. */
 function PanelLoadError({
   title,
@@ -663,6 +823,9 @@ function PanelLoadError({
         {failure.message}
         {stale ? (
           <span className="mt-1 block">Showing what was loaded before.</span>
+        ) : null}
+        {failure.diagnostics ? (
+          <PanelDiagnostics diagnostics={failure.diagnostics} />
         ) : null}
       </AlertDescription>
       {onRetry ? (
@@ -772,7 +935,11 @@ export function OnshapePanel({
     async (token: string) => {
       if (!canLoadParts) return;
       setAssemblyTooLarge(null);
-      const fail = (message: string, forbidden: boolean) =>
+      const fail = (
+        message: string,
+        forbidden: boolean,
+        diagnostics?: unknown
+      ) =>
         setParts((current) =>
           current.status === "ready" ||
           current.status === "ready-assembly" ||
@@ -780,9 +947,9 @@ export function OnshapePanel({
             ? {
                 ...current,
                 refreshing: false,
-                refreshFailure: { message, forbidden }
+                refreshFailure: { message, forbidden, diagnostics }
               }
-            : { status: "error", message, forbidden }
+            : { status: "error", message, forbidden, diagnostics }
         );
       setParts((current) =>
         current.status === "ready" ||
@@ -807,11 +974,12 @@ export function OnshapePanel({
           | { kind: "partstudio"; parts: PanelPartStatus[] }
           | { kind: "assembly"; assembly: PanelAssemblyStatus }
           | { kind: "other" }
-          | { error: string };
+          | { error: string; diagnostics?: unknown };
         if (!response.ok || "error" in body) {
           fail(
             "error" in body ? body.error : `Carbon answered ${response.status}`,
-            response.status === 403
+            response.status === 403,
+            "error" in body ? body.diagnostics : undefined
           );
           return;
         }
@@ -837,15 +1005,19 @@ export function OnshapePanel({
   const loadReleases = useCallback(
     async (token: string) => {
       if (!context.documentId) return;
-      const fail = (message: string, forbidden: boolean) =>
+      const fail = (
+        message: string,
+        forbidden: boolean,
+        diagnostics?: unknown
+      ) =>
         setReleases((current) =>
           current.status === "ready"
             ? {
                 ...current,
                 refreshing: false,
-                refreshFailure: { message, forbidden }
+                refreshFailure: { message, forbidden, diagnostics }
               }
-            : { status: "error", message, forbidden }
+            : { status: "error", message, forbidden, diagnostics }
         );
       setReleases((current) =>
         current.status === "ready"
@@ -857,11 +1029,12 @@ export function OnshapePanel({
         const response = await panelFetch(token, `${paths.releases}?${query}`);
         const body = (await response.json()) as
           | { releases: PanelRelease[]; releaseManagementAvailable?: boolean }
-          | { error: string };
+          | { error: string; diagnostics?: unknown };
         if (!response.ok || "error" in body) {
           fail(
             "error" in body ? body.error : `Carbon answered ${response.status}`,
-            response.status === 403
+            response.status === 403,
+            "error" in body ? body.diagnostics : undefined
           );
           return;
         }
@@ -966,7 +1139,8 @@ export function OnshapePanel({
             failedOutcome(
               "error" in body
                 ? body.error
-                : `Carbon answered ${response.status}`
+                : `Carbon answered ${response.status}`,
+              "error" in body ? body.diagnostics : undefined
             )
           );
           return;
@@ -1032,7 +1206,8 @@ export function OnshapePanel({
             failedOutcome(
               "error" in body
                 ? body.error
-                : `Carbon answered ${response.status}`
+                : `Carbon answered ${response.status}`,
+              "error" in body ? body.diagnostics : undefined
             )
           );
           return;
@@ -1078,7 +1253,8 @@ export function OnshapePanel({
             [releaseId]: failedOutcome(
               "error" in body
                 ? body.error
-                : `Carbon answered ${response.status}`
+                : `Carbon answered ${response.status}`,
+              "error" in body ? body.diagnostics : undefined
             )
           }));
           return;
@@ -1089,7 +1265,8 @@ export function OnshapePanel({
             expiresAt: body.expiresAt,
             scope: documentScope,
             plan: body.plan,
-            warnings: normalizeWarnings(body.warnings)
+            warnings: normalizeWarnings(body.warnings),
+            diagnostics: body.diagnostics
           })
         );
       } catch (error) {
@@ -1280,16 +1457,20 @@ export function OnshapePanel({
       if (!canLoadParts) return;
       // A landing commits only while the page still waits for this read: a move to
       // another element leaves `closed`, which the answer must not undo.
-      const fail = (message: string, forbidden: boolean) =>
+      const fail = (
+        message: string,
+        forbidden: boolean,
+        diagnostics?: unknown
+      ) =>
         setFields((current) =>
           current.status === "ready" && current.refreshing
             ? {
                 ...current,
                 refreshing: false,
-                refreshFailure: { message, forbidden }
+                refreshFailure: { message, forbidden, diagnostics }
               }
             : current.status === "loading"
-              ? { status: "error", message, forbidden }
+              ? { status: "error", message, forbidden, diagnostics }
               : current
         );
       setFields((current) =>
@@ -1307,11 +1488,12 @@ export function OnshapePanel({
         const response = await panelFetch(token, `${paths.fields}?${query}`);
         const body = (await response.json()) as
           | PanelFieldsData
-          | { error: string };
+          | { error: string; diagnostics?: unknown };
         if (!response.ok || "error" in body) {
           fail(
             "error" in body ? body.error : `Carbon answered ${response.status}`,
-            response.status === 403
+            response.status === 403,
+            "error" in body ? body.diagnostics : undefined
           );
           return;
         }
@@ -2109,7 +2291,12 @@ function PartsSection({
         refreshing?: boolean;
         refreshFailure?: LoadFailure;
       }
-    | { status: "error"; message: string; forbidden?: boolean };
+    | {
+        status: "error";
+        message: string;
+        forbidden?: boolean;
+        diagnostics?: unknown;
+      };
   canPush: boolean;
   pushing: Set<string> | null;
   locked: boolean;
@@ -2162,7 +2349,11 @@ function PartsSection({
       {parts.status === "error" ? (
         <PanelLoadError
           title="Couldn't load part status"
-          failure={{ message: parts.message, forbidden: !!parts.forbidden }}
+          failure={{
+            message: parts.message,
+            forbidden: !!parts.forbidden,
+            diagnostics: parts.diagnostics
+          }}
           onRetry={onRefresh}
         />
       ) : null}
@@ -2300,7 +2491,8 @@ function ReleasesSection({
           title="Couldn't load releases"
           failure={{
             message: releases.message,
-            forbidden: !!releases.forbidden
+            forbidden: !!releases.forbidden,
+            diagnostics: releases.diagnostics
           }}
           onRetry={onRefresh}
         />
@@ -2460,37 +2652,35 @@ function FieldsSection({
   const header = (
     <HStack className="w-full justify-between">
       <span className="text-sm font-medium">Fields</span>
-      {confirmingRefresh ? (
-        <Modal
-          open
-          onOpenChange={(open) =>
-            open ? undefined : setConfirmingRefresh(false)
-          }
-        >
-          <ModalContent size="small" aria-describedby={undefined}>
-            <ModalHeader>
-              <ModalTitle>Discard unsaved changes?</ModalTitle>
-            </ModalHeader>
-            <ModalFooter>
-              <Button
-                variant="secondary"
-                onClick={() => setConfirmingRefresh(false)}
-              >
-                Keep editing
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  setConfirmingRefresh(false);
-                  onRefresh();
-                }}
-              >
-                Discard and refresh
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      ) : null}
+      <Modal
+        open={confirmingRefresh}
+        onOpenChange={(open) =>
+          open ? undefined : setConfirmingRefresh(false)
+        }
+      >
+        <ModalContent size="small" aria-describedby={undefined}>
+          <ModalHeader>
+            <ModalTitle>Discard unsaved changes?</ModalTitle>
+          </ModalHeader>
+          <ModalFooter>
+            <Button
+              variant="secondary"
+              onClick={() => setConfirmingRefresh(false)}
+            >
+              Keep editing
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setConfirmingRefresh(false);
+                onRefresh();
+              }}
+            >
+              Discard and refresh
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
       <Button
         variant="ghost"
         size="sm"
@@ -2521,7 +2711,11 @@ function FieldsSection({
         {header}
         <PanelLoadError
           title="Couldn't load properties"
-          failure={{ message: state.message, forbidden: !!state.forbidden }}
+          failure={{
+            message: state.message,
+            forbidden: !!state.forbidden,
+            diagnostics: state.diagnostics
+          }}
           onRetry={onRefresh}
         />
       </VStack>
@@ -2542,7 +2736,8 @@ function FieldsSection({
   const offered = data.properties
     .filter(
       (property) =>
-        property.mappable && !FIXED_PROPERTY_NAMES.has(property.name)
+        property.mappable &&
+        !FIXED_PROPERTY_NAMES.has(property.name.trim().toLowerCase())
     )
     .sort((a, b) => a.name.localeCompare(b.name));
   // Item fields with a row of their own are set in that row.
@@ -3133,7 +3328,7 @@ function ValuesButton({
     patch: Partial<Pick<FieldsDraftEntry, "mode" | "translations">>
   ) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const values = useDisclosure();
   const options = onshapeValueOptions(entry.valueType, property?.options);
   const translations = entry.translations ?? [];
   const untranslated = options
@@ -3156,26 +3351,25 @@ function ValuesButton({
             : undefined
         }
         isDisabled={disabled}
-        onClick={() => setOpen(true)}
+        onClick={values.onOpen}
       />
-      {open ? (
-        <ValuesModal
-          title={`${entry.onshapeName} → ${field.label}`}
-          field={field}
-          options={options}
-          translations={translations}
-          units={units}
-          fallback={fallback}
-          onApply={(next, fallbackValue) => {
-            onEdit({ translations: next });
-            if (fallback && fallbackValue !== undefined) {
-              fallback.onChange(fallbackValue);
-            }
-            setOpen(false);
-          }}
-          onClose={() => setOpen(false)}
-        />
-      ) : null}
+      <ValuesModal
+        open={values.isOpen}
+        title={`${entry.onshapeName} → ${field.label}`}
+        field={field}
+        options={options}
+        translations={translations}
+        units={units}
+        fallback={fallback}
+        onApply={(next, fallbackValue) => {
+          onEdit({ translations: next });
+          if (fallback && fallbackValue !== undefined) {
+            fallback.onChange(fallbackValue);
+          }
+          values.onClose();
+        }}
+        onClose={values.onClose}
+      />
     </>
   );
 }
@@ -3534,6 +3728,48 @@ function ValuesModal({
   units,
   fallback,
   onApply,
+  open,
+  onClose
+}: {
+  title: string;
+  field: StandardField;
+  options: string[] | null;
+  translations: ValueTranslation[];
+  units: PlanUnitOfMeasure[];
+  fallback?: { options: SelectOption[]; value: string };
+  onApply: (translations: ValueTranslation[], fallback?: string) => void;
+  open: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(isOpen) => (isOpen ? undefined : onClose())}
+    >
+      <ModalContent size="medium" aria-describedby={undefined}>
+        <ValuesBody
+          title={title}
+          field={field}
+          options={options}
+          translations={translations}
+          units={units}
+          fallback={fallback}
+          onApply={onApply}
+          onClose={onClose}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function ValuesBody({
+  title,
+  field,
+  options,
+  translations,
+  units,
+  fallback,
+  onApply,
   onClose
 }: {
   title: string;
@@ -3625,133 +3861,128 @@ function ValuesModal({
     ];
   };
   return (
-    <Modal open onOpenChange={(open) => (open ? undefined : onClose())}>
-      <ModalContent size="medium" aria-describedby={undefined}>
-        <ModalHeader>
-          <ModalTitle>{title}</ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <div className="flex w-full flex-col gap-3">
-            <div className="flex w-full flex-col gap-1">
-              <div
-                className={cn(
-                  VALUES_ROW_GRID,
-                  "px-3 text-xs font-medium text-muted-foreground"
-                )}
-              >
-                <span className="px-1">Onshape value</span>
-                <span />
-                <span>Carbon value</span>
-                <span />
-              </div>
-              <ul className="flex w-full flex-col divide-y divide-border rounded-lg border border-border">
-                {rows.map((row, index) => (
-                  // Rows have no id of their own; their order is stable while editing.
-                  <li
-                    key={index}
-                    className={cn(VALUES_ROW_GRID, "px-3 py-1.5")}
-                  >
-                    {row.fixed ? (
-                      <SourceText>{row.onshape}</SourceText>
-                    ) : (
-                      <Input
+    <>
+      <ModalHeader>
+        <ModalTitle>{title}</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <div className="flex w-full flex-col gap-3">
+          <div className="flex w-full flex-col gap-1">
+            <div
+              className={cn(
+                VALUES_ROW_GRID,
+                "px-3 text-xs font-medium text-muted-foreground"
+              )}
+            >
+              <span className="px-1">Onshape value</span>
+              <span />
+              <span>Carbon value</span>
+              <span />
+            </div>
+            <ul className="flex w-full flex-col divide-y divide-border rounded-lg border border-border">
+              {rows.map((row, index) => (
+                // Rows have no id of their own; their order is stable while editing.
+                <li key={index} className={cn(VALUES_ROW_GRID, "px-3 py-1.5")}>
+                  {row.fixed ? (
+                    <SourceText>{row.onshape}</SourceText>
+                  ) : (
+                    <Input
+                      size="sm"
+                      value={row.onshape}
+                      placeholder="Onshape value"
+                      aria-label={`Onshape value ${index + 1}`}
+                      onChange={(event) =>
+                        update(index, { onshape: event.target.value })
+                      }
+                    />
+                  )}
+                  <LuArrowRight
+                    aria-hidden
+                    className="size-3.5 justify-self-center text-muted-foreground"
+                  />
+                  <Combobox
+                    size="sm"
+                    className={`min-w-[160px] ${PANEL_CONTROL}`}
+                    value={
+                      row.carbon === TRANSLATION_UNSET
+                        ? TRANSLATION_UNSET
+                        : (row.carbon ?? TRANSLATION_NO_VALUE)
+                    }
+                    options={optionsFor(row)}
+                    aria-label={`Carbon value for ${row.onshape || "this row"}`}
+                    onChange={(value) => {
+                      if (!value) return;
+                      update(index, {
+                        carbon: value === TRANSLATION_NO_VALUE ? null : value
+                      });
+                    }}
+                  />
+                  <div className="flex size-8 items-center justify-center">
+                    {row.fixed ? null : (
+                      <IconButton
+                        aria-label={`Remove ${row.onshape || "row"}`}
+                        icon={<LuTrash />}
+                        variant="ghost"
                         size="sm"
-                        value={row.onshape}
-                        placeholder="Onshape value"
-                        aria-label={`Onshape value ${index + 1}`}
-                        onChange={(event) =>
-                          update(index, { onshape: event.target.value })
+                        onClick={() =>
+                          setRows((current) =>
+                            current.filter((_, at) => at !== index)
+                          )
                         }
                       />
                     )}
-                    <LuArrowRight
-                      aria-hidden
-                      className="size-3.5 justify-self-center text-muted-foreground"
-                    />
-                    <Combobox
-                      size="sm"
-                      className={`min-w-[160px] ${PANEL_CONTROL}`}
-                      value={
-                        row.carbon === TRANSLATION_UNSET
-                          ? TRANSLATION_UNSET
-                          : (row.carbon ?? TRANSLATION_NO_VALUE)
-                      }
-                      options={optionsFor(row)}
-                      aria-label={`Carbon value for ${row.onshape || "this row"}`}
-                      onChange={(value) => {
-                        if (!value) return;
-                        update(index, {
-                          carbon: value === TRANSLATION_NO_VALUE ? null : value
-                        });
-                      }}
-                    />
-                    <div className="flex size-8 items-center justify-center">
-                      {row.fixed ? null : (
-                        <IconButton
-                          aria-label={`Remove ${row.onshape || "row"}`}
-                          icon={<LuTrash />}
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            setRows((current) =>
-                              current.filter((_, at) => at !== index)
-                            )
-                          }
-                        />
-                      )}
-                    </div>
-                    {repeated.includes(index) ? (
-                      <span className="col-span-full px-1 text-xs text-destructive">
-                        "{row.onshape.trim()}" is already listed above
-                      </span>
-                    ) : null}
-                  </li>
-                ))}
-                {fallback ? (
-                  <li className={cn(VALUES_ROW_GRID, "px-3 py-1.5")}>
-                    <span className="px-1 text-sm text-muted-foreground">
-                      No Onshape value or unmapped value: new items get
+                  </div>
+                  {repeated.includes(index) ? (
+                    <span className="col-span-full px-1 text-xs text-destructive">
+                      "{row.onshape.trim()}" is already listed above
                     </span>
-                    <LuArrowRight
-                      aria-hidden
-                      className="size-3.5 justify-self-center text-muted-foreground"
-                    />
-                    <DefaultValueSelect
-                      options={fallback.options}
-                      value={fallbackValue ?? fallback.value}
-                      label="Value a new item gets when Onshape gives none or an unmapped one"
-                      disabled={false}
-                      onChange={setFallbackValue}
-                    />
-                    <span />
-                  </li>
-                ) : null}
-              </ul>
-            </div>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="self-start"
-              leftIcon={<LuPlus />}
-              onClick={() =>
-                setRows((current) => [
-                  ...current,
-                  { onshape: "", carbon: null, fixed: false }
-                ])
-              }
-            >
-              Add value
-            </Button>
+                  ) : null}
+                </li>
+              ))}
+              {fallback ? (
+                <li className={cn(VALUES_ROW_GRID, "px-3 py-1.5")}>
+                  <span className="px-1 text-sm text-muted-foreground">
+                    No Onshape value or unmapped value: new items get
+                  </span>
+                  <LuArrowRight
+                    aria-hidden
+                    className="size-3.5 justify-self-center text-muted-foreground"
+                  />
+                  <DefaultValueSelect
+                    options={fallback.options}
+                    value={fallbackValue ?? fallback.value}
+                    label="Value a new item gets when Onshape gives none or an unmapped one"
+                    disabled={false}
+                    onChange={setFallbackValue}
+                  />
+                  <span />
+                </li>
+              ) : null}
+            </ul>
           </div>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
+          <Button
+            variant="secondary"
+            size="sm"
+            className="self-start"
+            leftIcon={<LuPlus />}
+            onClick={() =>
+              setRows((current) => [
+                ...current,
+                { onshape: "", carbon: null, fixed: false }
+              ])
+            }
+          >
+            Add value
           </Button>
-          <Button onClick={apply}>Apply</Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button onClick={apply}>Apply</Button>
+      </ModalFooter>
+    </>
   );
 }
 
@@ -4607,6 +4838,9 @@ function ReleaseReviewSection({
             <p className="mt-1">
               Their BOM lines stay as they are. Review again to retry.
             </p>
+            {review.diagnostics ? (
+              <PanelDiagnostics diagnostics={review.diagnostics} />
+            ) : null}
           </AlertDescription>
         </Alert>
       ) : null}

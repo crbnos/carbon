@@ -112,7 +112,7 @@ export const riskRegisterType = ["Risk", "Opportunity"] as const;
 export const gaugeValidator = z.object({
   id: zfd.text(z.string().optional()),
   gaugeId: zfd.text(z.string().optional()),
-  supplierId: zfd.text(z.string().optional()),
+  manufacturer: zfd.text(z.string().optional()),
   modelNumber: zfd.text(z.string().optional()),
   serialNumber: zfd.text(z.string().optional()),
   description: zfd.text(z.string().optional()),
@@ -219,6 +219,7 @@ export const issueValidator = z.object({
   items: z.array(z.string()).optional(),
   jobOperationId: z.string().optional(),
   customerId: z.string().optional(),
+  supplierId: z.string().optional(),
   salesOrderLineId: z.string().optional(),
   operationSupplierProcessId: z.string().optional()
 });
@@ -431,7 +432,8 @@ export const inspectionStatusType = [
   "In Progress",
   "Passed",
   "Failed",
-  "Partial"
+  "Partial",
+  "Cancelled"
 ] as const;
 
 export const inspectionSampleStatusType = [

@@ -23,15 +23,21 @@ import {
   Spinner,
   useDisclosure,
   useMode,
+  usePaneResize,
   useViewport,
   VStack
 } from "@carbon/react";
+import {
+  formatSpecLabel,
+  INSPECTION_DRAWING_HIDDEN_STORAGE_KEY
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   lazy,
   Suspense,
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState
@@ -43,6 +49,8 @@ import {
   LuChevronUp,
   LuContrast,
   LuEllipsisVertical,
+  LuEye,
+  LuEyeOff,
   LuFlag,
   LuGitPullRequest,
   LuPause,
@@ -52,12 +60,14 @@ import {
   LuX
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import { AbilityWarning } from "~/components/AbilityWarning";
 import { QualityIssueModal } from "~/components/JobOperation/components/QualityIssueModal";
 import { QuantityModal } from "~/components/JobOperation/components/QuantityModal";
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { useUser } from "~/hooks";
+import type { AbilityShortfall } from "~/services/operations.service";
 import type {
   InspectionGauge,
   InspectionMeasurement,
@@ -79,6 +89,9 @@ import InspectionMeasurementMatrix from "./InspectionMeasurementMatrix";
 import ScanInspectionSample from "./ScanInspectionSample";
 
 const InspectionDrawingPane = lazy(() => import("./InspectionDrawingPane"));
+const ModelUploadPreview = lazy(
+  () => import("@carbon/viewer/model-upload-preview")
+);
 
 // Vertical-stack sizing, mirrored from the ERP quality InspectionView: the PDF
 // pane keeps a pinned height while the features table is expanded; a draggable
@@ -115,6 +128,7 @@ type DrawingBalloonRow = {
 type WorkType = "Setup" | "Labor" | "Machine";
 
 type InspectionViewProps = {
+  abilityWarning?: AbilityShortfall | null;
   operationId: string;
   job: Job;
   operation: OperationWithDetails;
@@ -136,6 +150,8 @@ type InspectionViewProps = {
   balloons: DrawingBalloonRow[];
   documentName: string | null;
   pdfUrl: string | null;
+  /** A plan made from a model's PMI: the drawing pane shows the model. */
+  model: { modelUploadId: string; modelPath: string | null } | null;
   issueTypes: IssueTypeListItem[];
   trackedEntities: TrackedEntity[];
   requiresSerialTracking: boolean;
@@ -155,6 +171,7 @@ type InspectionViewProps = {
 // Accept/Reject disposition) in the MES AssemblyView shell, with the standard
 // shop-floor actions (timer, complete, scrap, rework, quality issue).
 export function InspectionView({
+  abilityWarning,
   operationId,
   job,
   operation,
@@ -167,6 +184,7 @@ export function InspectionView({
   balloons,
   documentName,
   pdfUrl,
+  model,
   issueTypes,
   trackedEntities,
   requiresSerialTracking,
@@ -194,7 +212,40 @@ export function InspectionView({
     [features]
   );
   const hasFeatures = liveFeatures.length > 0;
-  const showDrawing = pdfUrl != null;
+  const hasDrawing = pdfUrl != null || model != null;
+  // "Hide drawing" gives the matrix the whole body (a large batch needs the
+  // rows); the choice persists per browser.
+  const [drawingHidden, setDrawingHidden] = useState(false);
+  useEffect(() => {
+    try {
+      setDrawingHidden(
+        window.localStorage.getItem(INSPECTION_DRAWING_HIDDEN_STORAGE_KEY) ===
+          "true"
+      );
+    } catch {
+      // Storage unavailable: keep the drawing shown.
+    }
+  }, []);
+  const toggleDrawing = useCallback(() => {
+    setDrawingHidden((hidden) => {
+      try {
+        window.localStorage.setItem(
+          INSPECTION_DRAWING_HIDDEN_STORAGE_KEY,
+          String(!hidden)
+        );
+      } catch {
+        // Storage unavailable: the choice lasts for this page only.
+      }
+      return !hidden;
+    });
+  }, []);
+  const showDrawing = hasDrawing && !drawingHidden;
+  // Matrix position -> sample id, kept here so it survives the matrix
+  // remount when the drawing is hidden or shown.
+  const placementRef = useRef<Record<number, string>>({});
+  // A save or bulk run in flight: the disposition buttons wait until every
+  // reading has landed, and the drawing toggle waits so no save is cut off.
+  const [gridBusy, setGridBusy] = useState(false);
 
   const scannerDisclosure = useDisclosure();
   const rejectDisclosure = useDisclosure();
@@ -213,15 +264,12 @@ export function InspectionView({
   const [gridExpanded, setGridExpanded] = useState(true);
   const [pdfPaneHeightPx, setPdfPaneHeightPx] = useState(360);
   const [stackHeightPx, setStackHeightPx] = useState(0);
-  const [isResizingSplit, setIsResizingSplit] = useState(false);
-  const splitDragRef = useRef<{ startY: number; startPdfPx: number } | null>(
-    null
-  );
   // Until the user drags the splitter, the PDF takes ~45% of the measured stack
   // (capped by the table's half-stack minimum) instead of a fixed pixel default.
   const hasUserResizedRef = useRef(false);
   const stackRef = useRef<HTMLDivElement>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: showDrawing re-attaches the observer when hiding and showing the drawing replaces the stack element.
   useEffect(() => {
     if (!stackRef.current) return;
     const el = stackRef.current;
@@ -238,43 +286,17 @@ export function InspectionView({
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [gridExpanded]);
+  }, [gridExpanded, showDrawing]);
 
-  useEffect(() => {
-    if (!isResizingSplit) return;
-    const onMove = (e: MouseEvent) => {
-      const start = splitDragRef.current;
-      if (!start) return;
-      const dy = e.clientY - start.startY;
-      setPdfPaneHeightPx(
-        clampPdfPaneHeight(start.startPdfPx + dy, stackHeightPx, gridExpanded)
-      );
-    };
-    const onUp = () => {
-      setIsResizingSplit(false);
-      splitDragRef.current = null;
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, [isResizingSplit, stackHeightPx, gridExpanded]);
-
-  const onSplitResizeMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (!gridExpanded) return;
-      e.preventDefault();
+  const splitResize = usePaneResize({
+    height: pdfPaneHeightPx,
+    clamp: (height) => clampPdfPaneHeight(height, stackHeightPx, gridExpanded),
+    enabled: gridExpanded && stackHeightPx > 0,
+    onStart: () => {
       hasUserResizedRef.current = true;
-      splitDragRef.current = {
-        startY: e.clientY,
-        startPdfPx: pdfPaneHeightPx
-      };
-      setIsResizingSplit(true);
     },
-    [gridExpanded, pdfPaneHeightPx]
-  );
+    onCommit: setPdfPaneHeightPx
+  });
 
   // Per-cell saves are quiet (no revalidation), so measurement + derived
   // sample statuses are mirrored locally from the save responses and merged
@@ -372,6 +394,11 @@ export function InspectionView({
       inspection.status === "Failed" ||
       inspection.status === "Partial");
 
+  // The process requires an ability this operator lacks and its policy is
+  // Block: the lot is read-only for them, as if closed. The routes refuse too.
+  const abilityBlocked = abilityWarning?.policy === "Block";
+  const isLocked = lotClosed || abilityBlocked;
+
   // Outcome bookkeeping, mirrored from the disposition route's server-side
   // buckets (which recompute and clamp — these drive the header affordances).
   const opAttrKey = `Operation ${operationId}`;
@@ -434,7 +461,7 @@ export function InspectionView({
         Math.max(0, passes - linkedProductionQuantity),
         Math.max(0, opRemaining)
       );
-  const showCompletePassed = !lotClosed && completablePassed > 0;
+  const showCompletePassed = !isLocked && completablePassed > 0;
 
   // What Accept will complete: the open remainder, minus failed units.
   const acceptRemaining = isSerial
@@ -470,7 +497,7 @@ export function InspectionView({
 
   // Partial is the terminal mixed close — only once every unit has a verdict.
   const canPartial =
-    !lotClosed && inspected >= inspection.lotSize && passes > 0 && fails > 0;
+    !isLocked && inspected >= inspection.lotSize && passes > 0 && fails > 0;
 
   // Serial lots build their sample columns by scanning tracked entities. The
   // header "Add Sample" button stays primary until the plan's sample size is
@@ -480,21 +507,22 @@ export function InspectionView({
   const hasAutoOpenedScanRef = useRef(false);
   useEffect(() => {
     if (hasAutoOpenedScanRef.current) return;
-    if (isSerial && samples.length === 0 && !lotClosed) {
+    if (isSerial && samples.length === 0 && !isLocked) {
       hasAutoOpenedScanRef.current = true;
       scannerDisclosure.onOpen();
     }
-  }, [isSerial, samples.length, lotClosed, scannerDisclosure]);
+  }, [isSerial, samples.length, isLocked, scannerDisclosure]);
 
   const maxSampleSize = hasFeatures
     ? Math.max(1, ...liveFeatures.map((f) => f.sampleSize))
     : inspection.sampleSize;
 
-  // Gating mirrors the server-side disposition guards: feature-driven lots
-  // gate per feature; lots without features gate at the lot level on
-  // the "Overall result" pass/fail counts.
+  // Accept gating: feature-driven lots gate per feature; lots without
+  // features gate at the lot level on the "Overall result" pass/fail counts.
+  // Reject is open at any time — an inspector can condemn a lot for reasons
+  // no characteristic captures (damage, wrong part, contamination).
   let canAccept: boolean;
-  let canReject: boolean;
+  let failedStatistically: boolean;
   if (hasFeatures) {
     const allFeaturesSatisfied = liveFeatures.every((feature) => {
       const counts = featureCounts.get(feature.inspectionFeatureId) ?? {
@@ -510,15 +538,19 @@ export function InspectionView({
       const counts = featureCounts.get(feature.inspectionFeatureId);
       return counts != null && counts.failed >= feature.rejectionNumber;
     });
-    canAccept = !lotClosed && allFeaturesSatisfied;
-    canReject = !lotClosed && (anyFeatureRejectable || fails > 0);
+    canAccept = !isLocked && allFeaturesSatisfied;
+    failedStatistically = anyFeatureRejectable || fails > 0;
   } else {
     canAccept =
-      !lotClosed &&
+      !isLocked &&
       inspected >= inspection.sampleSize &&
       fails <= inspection.acceptanceNumber;
-    canReject = !lotClosed && fails > inspection.acceptanceNumber;
+    failedStatistically = fails > inspection.acceptanceNumber;
   }
+  // No disposition while a reading is still saving: the lot would close
+  // before it lands.
+  if (gridBusy) canAccept = false;
+  const canReject = !isLocked && !gridBusy;
 
   const failedFeatureSummary = useMemo<FailedFeatureSummary[]>(() => {
     if (!hasFeatures) return [];
@@ -531,20 +563,23 @@ export function InspectionView({
           failedValues.push(m.value == null ? "F" : String(m.value));
         }
         if (failedValues.length === 0) return null;
-        const spec = [
-          feature.nominalValue,
-          feature.tolerancePlus != null || feature.toleranceMinus != null
-            ? `+${feature.tolerancePlus ?? "0"}/−${feature.toleranceMinus ?? "0"}`
-            : null,
-          feature.unit
-        ]
-          .filter(Boolean)
-          .join(" ");
-        return { label: feature.label, spec, failedValues };
+        return {
+          label: feature.label,
+          spec: formatSpecLabel(feature),
+          failedValues
+        };
       })
       .filter(Boolean) as FailedFeatureSummary[];
   }, [hasFeatures, liveFeatures, effectiveMeasurements]);
 
+  const pmiLinks = useMemo(
+    () =>
+      liveFeatures.map((f) => ({
+        id: f.inspectionFeatureId,
+        pmiItemId: f.inspectionFeature!.pmiItemId ?? null
+      })),
+    [liveFeatures]
+  );
   const drawingBalloons = useMemo(() => {
     const labelByFeatureId = new Map(
       liveFeatures.map((f) => [
@@ -635,6 +670,7 @@ export function InspectionView({
                 workCenterId={operation.workCenterId ?? undefined}
                 openEvent={openEventForWorkType(wt)}
                 workType={wt}
+                startDisabled={abilityBlocked}
               />
             ))}
             <IconButton
@@ -662,20 +698,26 @@ export function InspectionView({
           ) : null}
 
           <div className="flex h-full min-w-0 items-center gap-2 border-r border-border px-3 md:px-5">
-            <span className="truncate text-sm font-semibold">
+            {/* The lot number and status never give way to the actions. */}
+            <h1 className="shrink-0 text-sm font-semibold">
               {inspection.inspectionId}
-            </span>
-            <Badge variant={statusBadgeVariant}>{inspection.status}</Badge>
-            <span className="hidden text-muted-foreground md:inline">·</span>
-            <span className="hidden truncate text-sm text-foreground/90 md:inline">
+            </h1>
+            <Badge
+              variant={statusBadgeVariant}
+              className="shrink-0 max-lg:hidden"
+            >
+              {inspection.status}
+            </Badge>
+            <span className="hidden text-muted-foreground xl:inline">·</span>
+            <span className="hidden truncate text-sm text-foreground/90 xl:inline">
               {inspection.itemReadableId ?? job?.itemReadableIdWithRevision}
             </span>
             {operation?.description ? (
               <>
-                <span className="hidden text-muted-foreground lg:inline">
+                <span className="hidden text-muted-foreground xl:inline">
                   ·
                 </span>
-                <span className="hidden truncate text-sm text-foreground/90 lg:inline">
+                <span className="hidden truncate text-sm text-foreground/90 xl:inline">
                   {operation.description}
                 </span>
               </>
@@ -684,7 +726,7 @@ export function InspectionView({
 
           <div className="flex-1" />
 
-          {isSerial && !lotClosed ? (
+          {isSerial && !isLocked ? (
             <button
               type="button"
               onClick={scannerDisclosure.onOpen}
@@ -697,45 +739,53 @@ export function InspectionView({
               <Trans>Add Sample</Trans>
             </button>
           ) : null}
-          {!lotClosed && completablePassed > 0 ? (
+          {!isLocked && completablePassed > 0 ? (
             <CompletePassedButton
               inspectionId={inspection.id}
               operationId={operationId}
               count={completablePassed}
               eventIds={eventIds}
+              gridBusy={gridBusy}
             />
           ) : null}
           <button
+            title={t`Reject`}
+            aria-label={t`Reject`}
             type="button"
             onClick={rejectDisclosure.onOpen}
             disabled={!canReject}
             className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-red-600 transition-colors hover:bg-accent active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-400 md:gap-2 md:px-4"
           >
             <LuX className="size-4" />
-            <span className="hidden sm:inline">
+            <span className="hidden lg:inline">
               <Trans>Reject</Trans>
             </span>
           </button>
           {canPartial ? (
             <button
+              title={t`Partial`}
+              aria-label={t`Partial`}
               type="button"
               onClick={partialDisclosure.onOpen}
+              disabled={gridBusy}
               className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-amber-600 transition-colors hover:bg-accent active:scale-[0.98] dark:text-amber-400 md:gap-2 md:px-4"
             >
               <LuContrast className="size-4" />
-              <span className="hidden sm:inline">
+              <span className="hidden lg:inline">
                 <Trans>Partial</Trans>
               </span>
             </button>
           ) : null}
           <button
+            title={t`Accept`}
+            aria-label={t`Accept`}
             type="button"
             onClick={acceptDisclosure.onOpen}
             disabled={!canAccept}
             className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-emerald-600 transition-colors hover:bg-accent active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:text-emerald-400 md:gap-2 md:px-4"
           >
             <LuCheck className="size-4" />
-            <span className="hidden sm:inline">
+            <span className="hidden lg:inline">
               <Trans>Accept</Trans>
             </span>
           </button>
@@ -755,16 +805,23 @@ export function InspectionView({
               workCenterId={operation.workCenterId ?? undefined}
               openEvent={openEventForWorkType(wt)}
               workType={wt}
+              startDisabled={abilityBlocked}
             />
           ))}
         </header>
+      )}
+
+      {abilityWarning && (
+        <div className="shrink-0 px-4 pt-3">
+          <AbilityWarning warning={abilityWarning} />
+        </div>
       )}
 
       {/* Phones: the meta bar scrolls away with the body. */}
       <div className="contents max-md:flex max-md:min-h-0 max-md:flex-1 max-md:flex-col max-md:overflow-y-auto">
         {/* ── META BAR ── */}
         <div className="flex h-9 shrink-0 items-center gap-3 overflow-x-auto bg-card border-b border-border px-5 scrollbar-hide max-md:h-auto max-md:flex-wrap max-md:gap-x-3 max-md:gap-y-1 max-md:px-4 max-md:py-1.5">
-          <Badge variant={statusBadgeVariant} className="shrink-0 md:hidden">
+          <Badge variant={statusBadgeVariant} className="shrink-0 lg:hidden">
             {inspection.status}
           </Badge>
           <span className="whitespace-nowrap text-xs text-muted-foreground tabular-nums">
@@ -800,6 +857,7 @@ export function InspectionView({
             >
               {/* PDF viewer — pinned height while the features table is expanded */}
               <div
+                ref={splitResize.paneRef}
                 className={cn(
                   "flex min-h-0 min-w-full flex-col overflow-hidden rounded-lg border bg-muted",
                   gridExpanded ? "shrink-0" : "min-h-[220px] flex-1"
@@ -824,12 +882,24 @@ export function InspectionView({
                         </div>
                       }
                     >
-                      <InspectionDrawingPane
-                        pdfUrl={pdfUrl!}
-                        balloons={drawingBalloons}
-                        activeFeatureId={activeFeatureId}
-                        onBalloonClick={setActiveFeatureId}
-                      />
+                      {model ? (
+                        <ModelUploadPreview
+                          modelUploadId={model.modelUploadId}
+                          modelPath={model.modelPath}
+                          companyId={user.company.id}
+                          pmiLinks={pmiLinks}
+                          selectedLinkId={activeFeatureId}
+                          onLinkSelect={setActiveFeatureId}
+                          className="h-full rounded-none"
+                        />
+                      ) : (
+                        <InspectionDrawingPane
+                          pdfUrl={pdfUrl!}
+                          balloons={drawingBalloons}
+                          activeFeatureId={activeFeatureId}
+                          onBalloonClick={setActiveFeatureId}
+                        />
+                      )}
                     </Suspense>
                   )}
                 </ClientOnly>
@@ -842,10 +912,10 @@ export function InspectionView({
                   aria-label={t`Drag to resize drawing and characteristics`}
                   aria-valuenow={Math.round(pdfPaneHeightPx)}
                   className={cn(
-                    "group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80",
-                    isResizingSplit && "bg-muted"
+                    "group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 pointer-coarse:h-6 pointer-coarse:hit-area",
+                    splitResize.isResizing && "bg-muted"
                   )}
-                  onMouseDown={onSplitResizeMouseDown}
+                  {...splitResize.handleProps}
                 >
                   <span className="h-1 w-14 shrink-0 rounded-full bg-muted-foreground/40 group-hover:bg-muted-foreground/65" />
                 </div>
@@ -863,32 +933,9 @@ export function InspectionView({
                     : undefined
                 }
               >
-                <div className="flex min-h-10 flex-shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-2">
-                  <span className="truncate text-sm font-medium text-foreground">
-                    {t`Characteristics`}
-                  </span>
-                  <IconButton
-                    type="button"
-                    variant="ghost"
-                    aria-expanded={gridExpanded}
-                    aria-label={
-                      gridExpanded
-                        ? t`Collapse characteristics table`
-                        : t`Expand characteristics table`
-                    }
-                    icon={
-                      gridExpanded ? (
-                        <LuChevronDown className="h-4 w-4" />
-                      ) : (
-                        <LuChevronUp className="h-4 w-4" />
-                      )
-                    }
-                    onClick={() => setGridExpanded((v) => !v)}
-                  />
-                </div>
                 <InspectionMeasurementMatrix
                   inspectionId={inspection.id}
-                  isReadOnly={lotClosed}
+                  isReadOnly={isLocked}
                   isSerial={isSerial}
                   features={features}
                   samples={samples}
@@ -902,6 +949,39 @@ export function InspectionView({
                   activeFeatureId={activeFeatureId}
                   onActiveFeatureChange={setActiveFeatureId}
                   onMeasurementSaved={onMeasurementSaved}
+                  placementRef={placementRef}
+                  onBusyChange={setGridBusy}
+                  toolbarActions={
+                    <>
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        aria-label={t`Hide drawing`}
+                        title={t`Hide drawing`}
+                        icon={<LuEyeOff className="h-4 w-4" />}
+                        isDisabled={gridBusy}
+                        onClick={toggleDrawing}
+                      />
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        aria-expanded={gridExpanded}
+                        aria-label={
+                          gridExpanded
+                            ? t`Collapse characteristics table`
+                            : t`Expand characteristics table`
+                        }
+                        icon={
+                          gridExpanded ? (
+                            <LuChevronDown className="h-4 w-4" />
+                          ) : (
+                            <LuChevronUp className="h-4 w-4" />
+                          )
+                        }
+                        onClick={() => setGridExpanded((v) => !v)}
+                      />
+                    </>
+                  }
                 />
               </div>
             </div>
@@ -911,7 +991,7 @@ export function InspectionView({
             <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border bg-card max-md:flex-initial">
               <InspectionMeasurementMatrix
                 inspectionId={inspection.id}
-                isReadOnly={lotClosed}
+                isReadOnly={isLocked}
                 isSerial={isSerial}
                 features={features}
                 samples={samples}
@@ -925,6 +1005,21 @@ export function InspectionView({
                 activeFeatureId={activeFeatureId}
                 onActiveFeatureChange={setActiveFeatureId}
                 onMeasurementSaved={onMeasurementSaved}
+                placementRef={placementRef}
+                onBusyChange={setGridBusy}
+                toolbarActions={
+                  hasDrawing ? (
+                    <IconButton
+                      type="button"
+                      variant="ghost"
+                      aria-label={t`Show drawing`}
+                      title={t`Show drawing`}
+                      icon={<LuEye className="h-4 w-4" />}
+                      isDisabled={gridBusy}
+                      onClick={toggleDrawing}
+                    />
+                  ) : undefined
+                }
               />
             </div>
           </div>
@@ -946,6 +1041,7 @@ export function InspectionView({
                 operationId={operationId}
                 count={completablePassed}
                 eventIds={eventIds}
+                gridBusy={gridBusy}
                 variant="bar"
               />
             </div>
@@ -968,6 +1064,7 @@ export function InspectionView({
               variant="secondary"
               leftIcon={<LuContrast />}
               onClick={partialDisclosure.onOpen}
+              isDisabled={gridBusy}
               className="h-12 text-amber-600 dark:text-amber-400"
             >
               <span className="truncate">
@@ -990,65 +1087,65 @@ export function InspectionView({
       )}
 
       {/* ── MODALS ── */}
-      {scannerDisclosure.isOpen && (
-        <ScanInspectionSample
-          inspectionId={inspection.id}
-          isSerial={isSerial}
-          remaining={remaining}
-          inspected={inspected}
-          sampleSize={inspection.sampleSize}
-          fails={fails}
-          acceptanceNumber={inspection.acceptanceNumber}
-          onClose={scannerDisclosure.onClose}
-        />
-      )}
+      <ScanInspectionSample
+        open={scannerDisclosure.isOpen}
+        inspectionId={inspection.id}
+        isSerial={isSerial}
+        remaining={remaining}
+        inspected={inspected}
+        sampleSize={inspection.sampleSize}
+        fails={fails}
+        acceptanceNumber={inspection.acceptanceNumber}
+        onClose={scannerDisclosure.onClose}
+      />
 
-      {acceptDisclosure.isOpen && (
-        <AcceptLotModal
-          inspectionId={inspection.id}
-          operationId={operationId}
-          fails={fails}
-          remaining={acceptRemaining}
-          eventIds={eventIds}
-          onClose={acceptDisclosure.onClose}
-        />
-      )}
+      <AcceptLotModal
+        open={acceptDisclosure.isOpen}
+        inspectionId={inspection.id}
+        operationId={operationId}
+        fails={fails}
+        remaining={acceptRemaining}
+        eventIds={eventIds}
+        onClose={acceptDisclosure.onClose}
+      />
 
-      {rejectDisclosure.isOpen && (
-        <DispositionModal
-          decision="Reject"
-          inspectionId={inspection.id}
-          operationId={operationId}
-          isSerial={isSerial}
-          units={allocatableUnits}
-          maxAllocatable={opRemaining}
-          completions={0}
-          issueTypes={issueTypes}
-          summary={t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s). Route the units below to scrap or rework, or record the verdict only.`}
-          failedFeatureSummary={failedFeatureSummary}
-          eventIds={eventIds}
-          onCancel={rejectDisclosure.onClose}
-          onSubmit={rejectDisclosure.onClose}
-        />
-      )}
+      <DispositionModal
+        open={rejectDisclosure.isOpen}
+        decision="Reject"
+        inspectionId={inspection.id}
+        operationId={operationId}
+        isSerial={isSerial}
+        units={allocatableUnits}
+        maxAllocatable={opRemaining}
+        completions={0}
+        issueTypes={issueTypes}
+        summary={
+          failedStatistically
+            ? t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s). Route the units below to scrap or rework, or record the verdict only.`
+            : t`The entire lot of ${inspection.lotSize} will be rejected as non-conforming — ${passes} sampled pass(es) and ${fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only.`
+        }
+        failedFeatureSummary={failedFeatureSummary}
+        eventIds={eventIds}
+        onCancel={rejectDisclosure.onClose}
+        onSubmit={rejectDisclosure.onClose}
+      />
 
-      {partialDisclosure.isOpen && (
-        <DispositionModal
-          decision="Partial"
-          inspectionId={inspection.id}
-          operationId={operationId}
-          isSerial={isSerial}
-          units={allocatableUnits.filter((unit) => unit.failed)}
-          maxAllocatable={isSerial ? fails : Math.min(fails, opRemaining)}
-          completions={completablePassed}
-          issueTypes={issueTypes}
-          summary={t`Every unit has a verdict: ${passes} passed and ${fails} failed. The lot closes with each unit routed to its own outcome.`}
-          failedFeatureSummary={failedFeatureSummary}
-          eventIds={eventIds}
-          onCancel={partialDisclosure.onClose}
-          onSubmit={partialDisclosure.onClose}
-        />
-      )}
+      <DispositionModal
+        open={partialDisclosure.isOpen}
+        decision="Partial"
+        inspectionId={inspection.id}
+        operationId={operationId}
+        isSerial={isSerial}
+        units={allocatableUnits.filter((unit) => unit.failed)}
+        maxAllocatable={isSerial ? fails : Math.min(fails, opRemaining)}
+        completions={completablePassed}
+        issueTypes={issueTypes}
+        summary={t`Every unit has a verdict: ${passes} passed and ${fails} failed. The lot closes with each unit routed to its own outcome.`}
+        failedFeatureSummary={failedFeatureSummary}
+        eventIds={eventIds}
+        onCancel={partialDisclosure.onClose}
+        onSubmit={partialDisclosure.onClose}
+      />
 
       <QualityIssueModal
         operationId={operationId}
@@ -1059,8 +1156,10 @@ export function InspectionView({
         onClose={qualityModal.onClose}
       />
 
-      {scrapModal.isOpen && operation && (
+      {operation && scrapModal.openCount > 0 && (
         <QuantityModal
+          key={`scrap-${scrapModal.openCount}`}
+          open={scrapModal.isOpen}
           type="scrap"
           operation={operation}
           parentIsSerial={requiresSerialTracking}
@@ -1073,8 +1172,10 @@ export function InspectionView({
         />
       )}
 
-      {finishModal.isOpen && operation && (
+      {operation && finishModal.openCount > 0 && (
         <QuantityModal
+          key={`finish-${finishModal.openCount}`}
+          open={finishModal.isOpen}
           type="finish"
           operation={operation}
           parentIsSerial={requiresSerialTracking}
@@ -1088,8 +1189,9 @@ export function InspectionView({
         />
       )}
 
-      {reworkModal.isOpen && operation && jobId && (
+      {operation && jobId && reworkModal.openCount > 0 && (
         <ReworkModal
+          key={`rework-${reworkModal.openCount}`}
           operation={operation}
           jobId={jobId}
           isOpen={reworkModal.isOpen}
@@ -1112,6 +1214,7 @@ export function InspectionView({
               <ActionSheetButton
                 icon={<LuTrash className="size-4 shrink-0" />}
                 label={t`Scrap`}
+                disabled={abilityBlocked}
                 onClick={() => {
                   actionsSheet.onClose();
                   scrapModal.onOpen();
@@ -1120,6 +1223,7 @@ export function InspectionView({
               <ActionSheetButton
                 icon={<LuGitPullRequest className="size-4 shrink-0" />}
                 label={t`Rework`}
+                disabled={abilityBlocked}
                 onClick={() => {
                   actionsSheet.onClose();
                   reworkModal.onOpen();
@@ -1128,6 +1232,7 @@ export function InspectionView({
               <ActionSheetButton
                 icon={<LuCheck className="size-4 shrink-0" />}
                 label={t`Mark as Done`}
+                disabled={abilityBlocked}
                 onClick={() => {
                   actionsSheet.onClose();
                   finishModal.onOpen();
@@ -1141,7 +1246,7 @@ export function InspectionView({
                   qualityModal.onOpen();
                 }}
               />
-              {isSerial && !lotClosed ? (
+              {isSerial && !isLocked ? (
                 <ActionSheetButton
                   icon={<LuScan className="size-4 shrink-0" />}
                   label={t`Add Sample`}
@@ -1160,16 +1265,18 @@ export function InspectionView({
           is running (any work type — the exclusive start would end it).
           Always on for inspections, independent of the company-level
           autoStartOperationTimer setting. */}
-      <AutoTimer
-        operationId={operationId}
-        workType={workTypes.includes("Labor") ? "Labor" : workTypes[0]}
-        workCenterId={operation.workCenterId ?? undefined}
-        openEvent={
-          (events.find((e) => !e.endTime) as
-            | { id: string; startTime: string }
-            | undefined) ?? null
-        }
-      />
+      {!abilityBlocked && (
+        <AutoTimer
+          operationId={operationId}
+          workType={workTypes.includes("Labor") ? "Labor" : workTypes[0]}
+          workCenterId={operation.workCenterId ?? undefined}
+          openEvent={
+            (events.find((e) => !e.endTime) as
+              | { id: string; startTime: string }
+              | undefined) ?? null
+          }
+        />
+      )}
     </div>
   );
 }
@@ -1214,16 +1321,21 @@ function CompletePassedButton({
   operationId,
   count,
   eventIds,
+  gridBusy,
   variant = "header"
 }: {
   inspectionId: string;
   operationId: string;
   count: number;
   eventIds: ProductionEventIdFields;
+  // A reading still saving could turn a passed unit into a failed one.
+  gridBusy: boolean;
   variant?: "header" | "bar";
 }) {
+  const { t } = useLingui();
   const fetcher = useFetcher();
-  const busy = fetcher.state !== "idle";
+  const busy = fetcher.state !== "idle" || gridBusy;
+  const label = t`Complete (${count} passed)`;
 
   if (variant === "bar") {
     return (
@@ -1243,9 +1355,7 @@ function CompletePassedButton({
           leftIcon={<LuCheckCheck />}
           className="h-12 w-full text-emerald-600 dark:text-emerald-400"
         >
-          <span className="truncate">
-            <Trans>Complete passed</Trans> {count}
-          </span>
+          <span className="truncate">{label}</span>
         </Button>
       </fetcher.Form>
     );
@@ -1263,18 +1373,60 @@ function CompletePassedButton({
       <button
         type="submit"
         disabled={busy}
+        aria-label={label}
+        title={label}
         className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-emerald-600 transition-colors hover:bg-accent active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:text-emerald-400 md:gap-2 md:px-4"
       >
         <LuCheckCheck className="size-4" />
-        <span className="hidden tabular-nums sm:inline">
-          <Trans>Complete passed</Trans> {count}
-        </span>
+        {/* The label only where the header has room for it; the count
+            always. */}
+        <span className="hidden tabular-nums xl:inline">{label}</span>
+        <span className="tabular-nums xl:hidden">{count}</span>
       </button>
     </fetcher.Form>
   );
 }
 
 function AcceptLotModal({
+  inspectionId,
+  operationId,
+  fails,
+  remaining,
+  eventIds,
+  open,
+  onClose
+}: {
+  inspectionId: string;
+  operationId: string;
+  fails: number;
+  remaining: number;
+  eventIds: ProductionEventIdFields;
+  open: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <AcceptLotBody
+          inspectionId={inspectionId}
+          operationId={operationId}
+          fails={fails}
+          remaining={remaining}
+          eventIds={eventIds}
+          onClose={onClose}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function AcceptLotBody({
   inspectionId,
   operationId,
   fails,
@@ -1300,77 +1452,72 @@ function AcceptLotModal({
   const submitted = useRef(false);
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Accept lot?</Trans>
-          </ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <VStack spacing={2}>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Accept lot?</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={2}>
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              The lot will be marked Passed and {remaining} remaining unit(s)
+              will be completed at this operation.
+            </Trans>
+          </p>
+          {fails > 0 ? (
             <p className="text-sm text-muted-foreground">
               <Trans>
-                The lot will be marked Passed and {remaining} remaining unit(s)
-                will be completed at this operation.
+                {fails} sampled failure(s) are recorded and will NOT be
+                completed — resolve them from the actions menu.
               </Trans>
             </p>
-            {fails > 0 ? (
-              <p className="text-sm text-muted-foreground">
-                <Trans>
-                  {fails} sampled failure(s) are recorded and will NOT be
-                  completed — resolve them from the actions menu.
-                </Trans>
-              </p>
-            ) : null}
-          </VStack>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <fetcher.Form
-            method="post"
-            action={path.to.inspectionDisposition(inspectionId)}
-            onSubmit={() => (submitted.current = true)}
+          ) : null}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <fetcher.Form
+          method="post"
+          action={path.to.inspectionDisposition(inspectionId)}
+          onSubmit={() => (submitted.current = true)}
+        >
+          <input type="hidden" name="decision" value="Accept" />
+          <input type="hidden" name="operationId" value={operationId} />
+          <EventIdInputs eventIds={eventIds} />
+          <OriginInput />
+          <Button
+            type="submit"
+            isLoading={fetcher.state !== "idle"}
+            isDisabled={fetcher.state !== "idle"}
           >
-            <input type="hidden" name="decision" value="Accept" />
-            <input type="hidden" name="operationId" value={operationId} />
-            <EventIdInputs eventIds={eventIds} />
-            <OriginInput />
-            <Button
-              type="submit"
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-            >
-              <Trans>Accept Lot</Trans>
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+            <Trans>Accept Lot</Trans>
+          </Button>
+        </fetcher.Form>
+      </ModalFooter>
+    </>
   );
 }
 
 function ActionSheetButton({
   icon,
   label,
-  onClick
+  onClick,
+  disabled = false
 }: {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
-      className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 transition-transform active:scale-[0.98]"
+      disabled={disabled}
+      className="flex items-center gap-3 rounded-lg bg-accent px-4 py-4 text-accent-foreground ring-1 ring-black/5 transition-transform active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
       onClick={onClick}
     >
       {icon}
@@ -1393,11 +1540,22 @@ function AutoTimer({
   workCenterId?: string;
   openEvent: { id: string; startTime: string } | null;
 }) {
+  const { t } = useLingui();
   const fetcher = useFetcher();
   const startedRef = useRef(false);
+  // "submitted" once the auto-start is sent, "announced" once it landed;
+  // "done" after the first pause, so a later manual start isn't re-announced.
+  const [phase, setPhase] = useState<
+    "idle" | "submitted" | "announced" | "done"
+  >("idle");
 
   const busy = fetcher.state !== "idle";
   const running = !!openEvent;
+  const workTypeLabel = {
+    Setup: t`Setup`,
+    Labor: t`Labor`,
+    Machine: t`Machine`
+  }[workType];
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot on open
   useEffect(() => {
@@ -1411,9 +1569,21 @@ function AutoTimer({
     fd.set("exclusive", "true");
     if (workCenterId) fd.set("workCenterId", workCenterId);
     fetcher.submit(fd, { method: "post", action: path.to.productionEvent });
+    setPhase("submitted");
   }, []);
 
-  return null;
+  useEffect(() => {
+    if (phase === "submitted" && !busy && running) setPhase("announced");
+    if (phase === "announced" && !running) setPhase("done");
+  }, [phase, busy, running]);
+
+  // The start happens without a press, so say so once it has landed. The
+  // region is mounted empty first: a live region announces changes only.
+  return (
+    <div role="status" className="sr-only">
+      {phase === "announced" ? t`${workTypeLabel} timer started` : ""}
+    </div>
+  );
 }
 
 function formatElapsed(s: number) {
@@ -1447,15 +1617,25 @@ function TimerControl({
   operationId,
   workCenterId,
   openEvent,
-  workType
+  workType,
+  startDisabled = false
 }: {
   operationId: string;
   workCenterId?: string;
   openEvent: { id: string; startTime: string } | null;
   workType: WorkType;
+  // Starting is refused (ability policy Block); a running timer can still be
+  // paused.
+  startDisabled?: boolean;
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher();
+  const workTypeLabel = {
+    Setup: t`Setup`,
+    Labor: t`Labor`,
+    Machine: t`Machine`
+  }[workType];
+  const elapsedId = useId();
 
   // Optimistic state: flip the moment Start/End is submitted instead of
   // waiting for the post-production-event round-trip.
@@ -1466,6 +1646,19 @@ function TimerControl({
       : pendingAction === "End"
         ? false
         : !!openEvent;
+
+  // A disabled button drops focus to the page: when the press settles, put
+  // focus back on the button the user pressed.
+  const timerButtonRef = useRef<HTMLButtonElement>(null);
+  const refocusTimer = useRef(false);
+  const isTimerBusy = fetcher.state !== "idle";
+  useEffect(() => {
+    if (isTimerBusy || !refocusTimer.current) return;
+    refocusTimer.current = false;
+    if (!document.activeElement || document.activeElement === document.body) {
+      timerButtonRef.current?.focus();
+    }
+  }, [isTimerBusy]);
 
   const liveElapsed = useElapsed(pendingAction === "End" ? null : openEvent);
   const elapsed = pendingAction === "End" ? 0 : liveElapsed;
@@ -1487,21 +1680,38 @@ function TimerControl({
         <input type="hidden" name="id" value={openEvent.id} />
       ) : null}
       <button
-        disabled={fetcher.state !== "idle"}
+        ref={timerButtonRef}
+        // Disabled while the press is in flight, so a second press can't post
+        // again; the effect above gives focus back once it settles.
+        disabled={isTimerBusy || (startDisabled && !openEvent)}
+        onClick={() => {
+          refocusTimer.current =
+            document.activeElement === timerButtonRef.current;
+        }}
         type="submit"
-        aria-label={active ? t`Pause timer` : t`Start timer`}
+        aria-label={
+          active
+            ? t`Pause ${workTypeLabel} timer`
+            : t`Start ${workTypeLabel} timer`
+        }
+        // The elapsed time, which the label above replaces as the name.
+        aria-describedby={elapsedId}
         className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] max-md:border-l-0 md:gap-2 md:px-4"
       >
         <span className="flex flex-col items-end leading-none">
-          <span className="text-sm font-medium tabular-nums">
+          <span id={elapsedId} className="text-sm font-medium tabular-nums">
             {/* The clock moves between the server render and hydration, so the
                 elapsed time is only rendered in the browser. */}
             <ClientOnly fallback={formatElapsed(0)}>
               {() => formatElapsed(elapsed)}
             </ClientOnly>
+            {/* The running state, read with the elapsed time. */}
+            <span className="sr-only">
+              {active ? t`, running` : t`, not running`}
+            </span>
           </span>
-          <span className="text-[9px] max-md:text-xs uppercase tracking-wider text-muted-foreground">
-            {workType}
+          <span className="text-[0.5625rem] max-md:text-xs uppercase tracking-wider text-muted-foreground">
+            {workTypeLabel}
           </span>
         </span>
         {active ? (

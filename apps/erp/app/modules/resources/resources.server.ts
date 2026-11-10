@@ -10,12 +10,13 @@ import { trigger } from "@carbon/jobs";
 import { postSuggestionToCarbonSlack } from "@carbon/lib/slack.server";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { datetime, unchecked } from "@carbon/utils";
+import { datetime, requireAffected, unchecked } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { notifyScheduleInputsChanged } from "~/modules/production/production.service";
 import { getCompany } from "~/modules/settings/settings.service";
+import { optionalTiptapDoc } from "~/modules/shared/shared.models";
 import {
   invalidateLocationTimeZone,
   refuseUnlessOwned
@@ -25,6 +26,7 @@ import { invokePosting } from "../shared/shared.service";
 import {
   abilityValidator,
   employeeAbilityCellValidator,
+  getYouTubeVideoId,
   isMaintenanceDispatchLocked,
   isValidTrainingGuideKey,
   locationValidator,
@@ -35,7 +37,8 @@ import {
   processValidator,
   trainingAssignmentValidator,
   trainingGuideKeyPrefix,
-  workCenterValidator
+  workCenterValidator,
+  youTubeWatchUrl
 } from "./resources.models";
 import * as service from "./resources.service";
 
@@ -199,12 +202,15 @@ export const removeEmployeeAbility = defineServiceFn({
   permission: { "resources.abilities": "Edit" },
 
   async run(ctx, { abilityId, employeeAbilityId }) {
-    const removed = await ctx.asCaller.supabase
-      .from("employeeAbility")
-      .delete()
-      .eq("id", employeeAbilityId)
-      .eq("abilityId", abilityId)
-      .eq("companyId", ctx.company.id);
+    const removed = await requireAffected(
+      ctx.asCaller.supabase
+        .from("employeeAbility")
+        .delete()
+        .eq("id", employeeAbilityId)
+        .eq("abilityId", abilityId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (removed.error) {
       return ctx.error(
         "internal",
@@ -253,7 +259,8 @@ export const createLocation = defineServiceFn({
  * Update a location.
  *
  * @remarks
- * The location's timezone may change, so its cached timezone is dropped.
+ * The location's timezone may change, so its cached timezone is dropped, and
+ * a new timezone re-plans the schedule: shifts are local times.
  *
  * @mcp
  */
@@ -266,6 +273,19 @@ export const updateLocation = defineServiceFn({
   permission: { "resources.locations": "Edit" },
 
   async run(ctx, { id, ...location }) {
+    const previous = await ctx.asCaller.supabase
+      .from("location")
+      .select("timezone")
+      .eq("id", id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (previous.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update location.",
+        previous.error
+      );
+    }
     const update = await service.upsertLocation(ctx.asCaller.supabase, {
       id,
       ...location,
@@ -276,6 +296,17 @@ export const updateLocation = defineServiceFn({
     }
 
     await invalidateLocationTimeZone(id, ctx.company.id);
+    if (
+      previous.data !== null &&
+      previous.data.timezone !== location.timezone
+    ) {
+      await notifyScheduleInputsChanged(
+        ctx.company.id,
+        "location",
+        "Location timezone changed",
+        id
+      );
+    }
     return { id };
   }
 });
@@ -306,11 +337,32 @@ export const createProcess = defineServiceFn({
   async run(ctx, { id: _id, ...process }) {
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
+    const taken = await service.findProcessNamed(
+      client,
+      companyId,
+      process.name
+    );
+    if (taken.error) {
+      return ctx.error("internal", "Failed to create process.", taken.error);
+    }
+    if (taken.data) {
+      return ctx.error(
+        "conflict",
+        service.processNameTakenMessage(process.name, taken.data.active)
+      );
+    }
     const insert = await service.insertProcess(client, {
       ...process,
       companyId,
       createdBy: ctx.auditUserId
     });
+    // 23505: another request created the same name since the check above.
+    if (insert.error?.code === "23505") {
+      return ctx.error(
+        "conflict",
+        service.processNameTakenMessage(process.name)
+      );
+    }
     if (insert.error || !insert.data?.id) {
       return ctx.error("internal", "Failed to create process.", insert.error);
     }
@@ -373,12 +425,35 @@ export const updateProcess = defineServiceFn({
     if (!existing.data) return ctx.error("notFound", "Process not found");
     const previouslyRequiredAbility = existing.data.requiresAbility ?? false;
 
+    const taken = await service.findProcessNamed(
+      client,
+      companyId,
+      process.name,
+      id
+    );
+    if (taken.error) {
+      return ctx.error("internal", "Failed to update process.", taken.error);
+    }
+    if (taken.data) {
+      return ctx.error(
+        "conflict",
+        service.processNameTakenMessage(process.name, taken.data.active)
+      );
+    }
+
     const update = await service.updateProcess(ctx.asSystem.pg, {
       id,
       ...process,
       companyId,
       updatedBy: ctx.auditUserId
     });
+    // 23505: another request took the name since the check above.
+    if (update.code === "23505") {
+      return ctx.error(
+        "conflict",
+        service.processNameTakenMessage(process.name)
+      );
+    }
     if (update.error) {
       return ctx.error("internal", "Failed to update process.", update.error);
     }
@@ -569,7 +644,7 @@ export const deactivateWorkCenter = defineServiceFn({
   permission: { "resources.workCenters": "Full" },
 
   async run(ctx, { id }) {
-    const deactivated = await service.deleteWorkCenter(
+    const deactivated = await service.deactivateWorkCenter(
       ctx.asCaller.supabase,
       id
     );
@@ -588,6 +663,63 @@ export const deactivateWorkCenter = defineServiceFn({
       id
     );
     return { id };
+  }
+});
+
+/**
+ * Delete a work center.
+ *
+ * @remarks
+ * Refused while anything references it: operations on a method, quote or
+ * job, production events, maintenance, lineside storage units, fixed assets
+ * or machine devices. Deactivate it instead. Its process links, shifts and
+ * rule assignments go with it, and the scheduler is told.
+ *
+ * @mcp destructive
+ */
+export const deleteWorkCenter = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { "resources.workCenters": "Full" },
+
+  async run(ctx, { id }) {
+    const result = await ctx.transaction(async (tx) => {
+      const deleted = await service.deleteWorkCenter(tx.asSystem.pg, {
+        id,
+        companyId: ctx.company.id
+      });
+      if (!deleted.found) return ctx.error("notFound", "Work center not found");
+      if (!deleted.deleted) {
+        return ctx.error(
+          "conflict",
+          service.referencedRefusal("work center", deleted.references)
+        );
+      }
+      return { id };
+    });
+    if (result.error) return result.error;
+
+    await notifyScheduleInputsChanged(
+      ctx.company.id,
+      "work-center",
+      "Work center deleted",
+      id
+    );
+    return { id };
+  }
+});
+
+/**
+ * What references a work center: the rows that block deleting it.
+ */
+export const getWorkCenterReferences = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { "resources.workCenters": "View" },
+
+  async run(ctx, { id }) {
+    return service.getWorkCenterReferences(ctx.asSystem.pg, {
+      id,
+      companyId: ctx.company.id
+    });
   }
 });
 
@@ -686,18 +818,13 @@ export const updateMaintenanceSchedule = defineServiceFn({
  * @mcp
  */
 export const createMaintenanceDispatch = defineServiceFn({
-  input: maintenanceDispatchValidator,
+  input: maintenanceDispatchValidator.extend({
+    content: optionalTiptapDoc
+  }),
   permission: { "resources.dispatches": "Create" },
 
   async run(ctx, input) {
-    let content: Json | undefined;
-    if (input.content) {
-      try {
-        content = JSON.parse(input.content);
-      } catch {
-        return ctx.error("validation", "The dispatch notes are not valid");
-      }
-    }
+    const content: Json | undefined = input.content;
 
     const result = await service.insertMaintenanceDispatch(
       ctx.asCaller.supabase,
@@ -1049,12 +1176,15 @@ export const deleteMaintenanceEvent = defineServiceFn({
     const dispatch = await service.editableDispatch(ctx, dispatchId);
     if (dispatch instanceof CarbonError) return dispatch;
 
-    const removed = await ctx.asCaller.supabase
-      .from("maintenanceDispatchEvent")
-      .delete()
-      .eq("id", eventId)
-      .eq("maintenanceDispatchId", dispatchId)
-      .eq("companyId", ctx.company.id);
+    const removed = await requireAffected(
+      ctx.asCaller.supabase
+        .from("maintenanceDispatchEvent")
+        .delete()
+        .eq("id", eventId)
+        .eq("maintenanceDispatchId", dispatchId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (removed.error) {
       return ctx.error("internal", "Failed to delete timecard", removed.error);
     }
@@ -1370,7 +1500,8 @@ const trainingFields = [
   "estimatedDuration",
   "description",
   "grantsAbilityId",
-  "guidePath"
+  "guidePath",
+  "videoUrl"
 ] as const;
 
 /**
@@ -1382,7 +1513,10 @@ const trainingFields = [
  * as well. An empty `grantsAbilityId` clears it. `guidePath` is the PDF that
  * replaces the written content: it takes one training, must be a key under
  * that training's folder (empty clears it), and changes only while the
- * training is Draft. Refused when a training is not the company's.
+ * training is Draft. `videoUrl` is a YouTube video that replaces the written
+ * content the same way: any YouTube link is stored as its watch link. Setting
+ * the PDF clears the video and setting the video clears the PDF. Refused when
+ * a training is not the company's.
  *
  * @mcp
  */
@@ -1407,24 +1541,48 @@ export const updateTrainingField = defineServiceFn({
       updatedAt: datetime.timestamp()
     };
 
-    if (field === "guidePath") {
+    if (field === "guidePath" || field === "videoUrl") {
       const [trainingId] = ids;
-      if (
-        ids.length !== 1 ||
-        !trainingId ||
-        (value !== "" &&
+      const isGuide = field === "guidePath";
+      if (ids.length !== 1 || !trainingId) {
+        return ctx.error(
+          "validation",
+          isGuide ? "Invalid guide file" : "Invalid video link"
+        );
+      }
+
+      // A training's content is one PDF or one video, never both: setting
+      // either clears the other.
+      let content: { guidePath?: string | null; videoUrl?: string | null };
+      if (isGuide) {
+        if (
+          value !== "" &&
           !isValidTrainingGuideKey(
             value,
             trainingGuideKeyPrefix(companyId, trainingId)
-          ))
-      ) {
-        return ctx.error("validation", "Invalid guide file");
+          )
+        ) {
+          return ctx.error("validation", "Invalid guide file");
+        }
+        content = value
+          ? { guidePath: value, videoUrl: null }
+          : { guidePath: null };
+      } else {
+        const videoId = value === "" ? null : getYouTubeVideoId(value);
+        if (value !== "" && !videoId) {
+          return ctx.error("validation", "Enter a YouTube video link");
+        }
+        content = videoId
+          ? { videoUrl: youTubeWatchUrl(videoId), guidePath: null }
+          : { videoUrl: null };
       }
-      // The guide is the training's content, so it changes only while Draft.
-      // Filtering the update on status makes the check and the write one step.
+
+      // The guide and the video are the training's content, so they change
+      // only while Draft. Filtering the update on status makes the check and
+      // the write one step.
       const updated = await client
         .from("training")
-        .update({ guidePath: value || null, ...audit })
+        .update({ ...content, ...audit })
         .eq("id", trainingId)
         .eq("companyId", companyId)
         .eq("status", "Draft")
@@ -1439,7 +1597,9 @@ export const updateTrainingField = defineServiceFn({
       if (updated.data.length === 0) {
         return ctx.error(
           "rule",
-          "The guide can only change while the training is Draft"
+          isGuide
+            ? "The guide can only change while the training is Draft"
+            : "The video can only change while the training is Draft"
         );
       }
       return { ids };
@@ -1847,19 +2007,48 @@ export const processDeactivate = defineServiceFn({
 /**
  * Delete process
  *
+ * @remarks
+ * Refused while anything references it: operations on a method, quote or
+ * job, procedures, trainings, issue actions, supplier processes, shelf life
+ * rules, or employees, contractors, partners and work centers holding its
+ * ability. Deactivate it instead. Its work center links go with it.
+ *
  * @mcp destructive
  */
 export const deleteProcess = defineServiceFn({
-  input: z.looseObject({ processId: z.string() }),
+  input: z.object({ processId: z.string() }),
   permission: { "resources.processes": "Full" },
-  async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.deleteProcess(
-        ctx.asCaller.supabase,
-        input.processId as never
-      )
-    );
+  async run(ctx, { processId }) {
+    const result = await ctx.transaction(async (tx) => {
+      const deleted = await service.deleteProcess(tx.asSystem.pg, {
+        id: processId,
+        companyId: ctx.company.id
+      });
+      if (!deleted.found) return ctx.error("notFound", "Process not found");
+      if (!deleted.deleted) {
+        return ctx.error(
+          "conflict",
+          service.referencedRefusal("process", deleted.references)
+        );
+      }
+      return { processId };
+    });
+    if (result.error) return result.error;
+    return { processId };
+  }
+});
+
+/**
+ * What references a process: the rows that block deleting it.
+ */
+export const getProcessReferences = defineServiceFn({
+  input: z.object({ processId: z.string() }),
+  permission: { "resources.processes": "View" },
+  async run(ctx, { processId }) {
+    return service.getProcessReferences(ctx.asSystem.pg, {
+      id: processId,
+      companyId: ctx.company.id
+    });
   }
 });
 
@@ -2963,7 +3152,12 @@ export const createContractor = defineServiceFn({
         "Updates the existing record with this key; creates one when there is none."
       ),
     hoursPerWeek: z.number().optional(),
-    abilities: z.array(z.string()),
+    abilities: z
+      .array(z.string())
+      .optional()
+      .describe(
+        "Replaces the contractor's abilities when sent; left out, they are kept."
+      ),
     customFields: z.unknown().optional()
   }),
   permission: { "resources.abilities": "Create" },
@@ -2994,7 +3188,12 @@ export const updateContractor = defineServiceFn({
         "Updates the existing record with this key; creates one when there is none."
       ),
     hoursPerWeek: z.number().optional(),
-    abilities: z.array(z.string()),
+    abilities: z
+      .array(z.string())
+      .optional()
+      .describe(
+        "Replaces the contractor's abilities when sent; left out, they are kept."
+      ),
     customFields: z.unknown().optional()
   }),
   permission: { "resources.abilities": "Edit" },
@@ -3293,7 +3492,7 @@ export const updatePartner = defineServiceFn({
 export const createTraining = defineServiceFn({
   input: z.looseObject({
     name: z.string().min(1),
-    content: z.string().optional(),
+    content: optionalTiptapDoc,
     grantsAbilityId: z.string().optional(),
     id: z
       .string()
@@ -3324,7 +3523,7 @@ export const updateTraining = defineServiceFn({
   input: z
     .looseObject({
       name: z.string().min(1),
-      content: z.string().optional(),
+      content: optionalTiptapDoc,
       grantsAbilityId: z.string().optional(),
       id: z
         .string()

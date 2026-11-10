@@ -5,10 +5,11 @@
 import { error, notFound, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { deleteMaintenanceDispatch } from "~/modules/resources/resources.service";
 import { getParams, path } from "~/utils/path";
@@ -45,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!dispatchId) {
     throw redirect(
       `${path.to.maintenanceDispatches}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get a dispatch id"))
+      await flash(request, error(null, "Failed to get a dispatch id"))
     );
   }
 
@@ -75,19 +76,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteMaintenanceDispatchRoute() {
   const { dispatchId } = useParams();
   const { dispatch } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.maintenanceDispatches);
   const { t } = useLingui();
 
   if (!dispatch) return null;
   if (!dispatchId) throw notFound("dispatchId not found");
 
-  const onCancel = () => navigate(path.to.maintenanceDispatches);
   return (
     <ConfirmDelete
       action={path.to.deleteMaintenanceDispatch(dispatchId)}
       name={dispatch.maintenanceDispatchId}
       text={t`Are you sure you want to delete this maintenance dispatch? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

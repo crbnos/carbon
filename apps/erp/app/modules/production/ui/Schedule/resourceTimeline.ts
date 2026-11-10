@@ -72,6 +72,10 @@ export type ResourceTimelineReservation = {
   scheduleNote?: string | null;
   /** Actual work content (hours) inside the interval, excluding pauses */
   workHours?: number | null;
+  /** The operation is In Progress: what the board's In Process switch shows. */
+  inProgress?: boolean;
+  /** `TimelineNodeDetail.qualifiedPeople` */
+  qualifiedPeople?: { name: string; stations: string[] }[];
 };
 
 export type ResourceTimeline = {
@@ -85,6 +89,11 @@ const ROOT_ID = "resources-root";
 
 /** The lane-id prefix for a work-center row: `lane:WorkCenter:<workCenterId>`. */
 const WORK_CENTER_LANE_PREFIX = "lane:WorkCenter:";
+
+/** A work center's lane node id. */
+export function workCenterLaneId(workCenterId: string): string {
+  return `${WORK_CENTER_LANE_PREFIX}${workCenterId}`;
+}
 
 /**
  * Recover a work center's id from its lane node id (built as
@@ -414,10 +423,13 @@ export function buildResourceTimeline(input: {
       employeeName: r.resourceKind === "Employee" ? r.resourceName : null,
       conflictReason: r.hasConflict ? r.conflictReason : null,
       unschedulable: r.unschedulable,
+      qualifiedPeople: r.qualifiedPeople,
       scheduleNote: r.scheduleNote ?? null,
       workMs: r.workHours ? r.workHours * 3_600_000 : undefined,
       jobId: r.jobId,
       jobReadableId: r.jobReadableId,
+      operationId: r.operationId,
+      resourceId: r.resourceId,
       operationDescription: r.operationDescription ?? null,
       itemReadableId: r.itemReadableId ?? null,
       itemName: r.itemName ?? null,
@@ -442,7 +454,7 @@ export function buildResourceTimeline(input: {
         // op: same red bar (isError), but a "can't be scheduled" alert in the
         // status column instead of the generic conflict triangle.
         isUnschedulable: r.unschedulable,
-        isPartial: false,
+        isPartial: r.inProgress ?? false,
         isCancelled: false,
         // Always TRACE: only TRACE nodes render as duration bars.
         level: "TRACE" as GanttEvent["data"]["level"],
@@ -661,4 +673,59 @@ export function collapseToLanes(events: GanttEvent[]): GanttEvent[] {
   }
 
   return root ? [root, ...lanes] : lanes;
+}
+
+export type ForecastCounts = {
+  resources: number;
+  reservations: number;
+  jobs: number;
+  conflicts: number;
+  unschedulable: number;
+};
+
+/**
+ * The board's header counts over what it shows: the rows and inline bars a
+ * filter leaves on screen (`visibleUnderFilter`), in the view the board draws.
+ * Resources are the lanes shown plus the operators booked on shown work,
+ * each once.
+ */
+export function forecastCounts(
+  events: GanttEvent[],
+  detailsById: Record<string, TimelineNodeDetail>,
+  visibility: { rows: Set<string>; bars: Set<string> }
+): ForecastCounts {
+  const resources = new Set<string>();
+  const jobs = new Set<string>();
+  const conflicts = new Set<string>();
+  const unschedulable = new Set<string>();
+  let reservations = 0;
+  const count = (event: GanttEvent) => {
+    const detail = detailsById[event.id];
+    if (detail?.kind !== "reservation") return;
+    reservations++;
+    if (detail.jobId) jobs.add(detail.jobId);
+    if (detail.resourceKind === "Employee" && detail.resourceId) {
+      resources.add(`Employee:${detail.resourceId}`);
+    }
+    const operationId = detail.operationId ?? event.id;
+    if (detail.unschedulable) unschedulable.add(operationId);
+    else if (event.data.isError) conflicts.add(operationId);
+  };
+  for (const event of events) {
+    if (!visibility.rows.has(event.id)) continue;
+    if (event.level === 1 && event.id.startsWith("lane:")) {
+      resources.add(event.id.slice("lane:".length));
+    }
+    count(event);
+    for (const item of event.data.items ?? []) {
+      if (visibility.bars.has(item.id)) count(item);
+    }
+  }
+  return {
+    resources: resources.size,
+    reservations,
+    jobs: jobs.size,
+    conflicts: conflicts.size,
+    unschedulable: unschedulable.size
+  };
 }

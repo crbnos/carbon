@@ -2,49 +2,30 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-// Same simulation preamble as the sibling auth tests: @carbon/kv is wrapped in
-// withResilience(), and env is validated at import time, so both are stubbed
-// rather than requiring Redis and a full environment in the test run.
-const { redisDel } = vi.hoisted(() => ({
-  redisDel: vi.fn().mockResolvedValue(null)
-}));
-
-vi.mock("@carbon/kv", () => ({
-  redis: {
-    get: vi.fn().mockResolvedValue(null),
-    set: vi.fn().mockResolvedValue(null),
-    del: redisDel,
-    getdel: vi.fn().mockResolvedValue(null)
-  }
-}));
-
-vi.mock("../config/env", () => ({
-  RESEND_DOMAIN: "test.dev",
-  DOMAIN: "localhost",
-  ERP_URL: "http://localhost:3000",
-  MES_URL: "http://localhost:3001",
-  VERCEL_URL: "",
-  CarbonEdition: "Community",
-  REFRESH_ACCESS_TOKEN_THRESHOLD: 60,
-  SESSION_KEY: "auth",
-  SESSION_MAX_AGE: 60 * 60 * 24 * 7,
-  SESSION_SECRET: "test-session-secret",
-  SUPABASE_URL: "http://localhost:54321",
-  SUPABASE_INTERNAL_URL: "http://localhost:54321",
-  SUPABASE_ANON_KEY: "test-anon-key",
-  SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
-  SUPABASE_JWT_SECRET: "test-jwt-secret"
-}));
-
-vi.mock("./auth-events.server", () => ({
-  logRoleChange: vi.fn(),
-  logPermissionChange: vi.fn()
-}));
-
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { getPermissionCacheKey } from "./users";
 import { deactivateEmployee } from "./users.server";
+
+// Import-safety: the module builds a Supabase client at import.
+vi.hoisted(() => {
+  vi.stubEnv("SUPABASE_URL", "http://supabase.test");
+  vi.stubEnv("SUPABASE_ANON_KEY", "anon-key");
+});
+
+afterAll(() => vi.unstubAllEnvs());
+
+// Redis as an in-memory map.
+const kv = vi.hoisted(() => new Map<string, string>());
+vi.mock("@carbon/kv", () => ({
+  redis: {
+    get: async (key: string) => kv.get(key) ?? null,
+    set: async (key: string, value: string) => {
+      kv.set(key, value);
+      return "OK";
+    },
+    del: async (key: string) => Number(kv.delete(key))
+  }
+}));
 
 const USER = "usr_1";
 const COMPANY = "cmp_1";
@@ -89,7 +70,7 @@ function makeClient(reads: Record<string, unknown>) {
 
 beforeEach(() => {
   ops = [];
-  redisDel.mockClear();
+  kv.clear();
 });
 
 describe("deactivateEmployee", () => {
@@ -105,8 +86,7 @@ describe("deactivateEmployee", () => {
   it("keeps the employeeJob row so org placement survives", async () => {
     await deactivateEmployee(client(), USER, COMPANY);
 
-    // Regression guard: deleting employeeJob here made deactivation lossy —
-    // title, start date, department, shift, manager, location, tags and custom
+    // Deleting employeeJob made deactivation lossy: title, start date, department, shift, manager, location, tags and custom
     // fields cannot be reconstructed when the person is re-invited.
     expect(ops.filter((o) => o.table === "employeeJob")).toEqual([]);
   });
@@ -134,12 +114,14 @@ describe("deactivateEmployee", () => {
   });
 
   it("invalidates the cached claims itself, for callers that skip deactivateUser", async () => {
+    kv.set(getPermissionCacheKey(USER), "{}");
+
     await deactivateEmployee(client(), USER, COMPANY);
 
     // requirePermissions reads this cache (1h TTL) before the database, and the
     // create*Account rollbacks call this function directly rather than through
     // deactivateUser — so the invalidation has to live here.
-    expect(redisDel).toHaveBeenCalledWith(getPermissionCacheKey(USER));
+    expect(kv.has(getPermissionCacheKey(USER))).toBe(false);
   });
 
   it("strips only the deactivating company from the permission map", async () => {

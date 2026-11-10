@@ -57,8 +57,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const updateContractor = await upsertContractor(client, {
     id,
     ...d,
-    // @ts-expect-error TS2339 - TODO: fix type
-    abilities: d.abilities ?? [],
     customFields: setCustomFields(formData),
     companyId,
     updatedBy: userId
@@ -69,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
       path.to.contractors,
       await flash(
         request,
-        error(updateContractor.error, "Failed to create contractor")
+        error(updateContractor.error, "Failed to update contractor")
       )
     );
   }

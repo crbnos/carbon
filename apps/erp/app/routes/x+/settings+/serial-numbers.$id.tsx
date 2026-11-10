@@ -9,7 +9,10 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
-import { itemSerialSequenceValidator } from "~/modules/settings/settings.models";
+import {
+  itemSerialSequenceValidator,
+  type SerialNumberTiming
+} from "~/modules/settings/settings.models";
 import { upsertItemSerialSequence } from "~/modules/settings/settings.service";
 import { ItemSerialSequenceForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
@@ -90,7 +93,10 @@ export default function EditSerialNumberRoute() {
     suffix: itemSerialSequence.suffix ?? "",
     next: itemSerialSequence.next ?? 0,
     size: itemSerialSequence.size ?? 5,
-    step: itemSerialSequence.step ?? 1
+    step: itemSerialSequence.step ?? 1,
+    serialNumberTiming:
+      (itemSerialSequence.serialNumberTiming as SerialNumberTiming | null) ??
+      undefined
   };
 
   return (

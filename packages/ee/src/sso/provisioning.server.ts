@@ -11,6 +11,7 @@ import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 import { sql } from "kysely";
+import { getSsoSignIn } from "./session.server";
 
 const logger = getLogger("ee");
 
@@ -153,11 +154,22 @@ export async function seedSsoIdentityForUser(
 }
 
 /**
- * Backfill SSO identities for EVERY existing non-SSO user whose email is on the
- * domain — run when a domain is verified. Not company-scoped: the adopted policy
+ * Backfill SSO identities for EVERY existing user whose email is on the domain
+ * — run when a domain is verified. A user GoTrue created through an earlier SSO
+ * connection (`is_sso_user`) is included only when no other user holds its
+ * email: GoTrue lets an SSO user share an email with another account, and the
+ * seed keys on the email, so it must land on the one account that owns it.
+ * Skipping them all left such a member with no identity for the new provider,
+ * which GoTrue refuses when sign-ups are disabled. Not company-scoped: the adopted policy
  * is that the verified domain owner controls identity for that domain
  * instance-wide (GoTrue keys linking on domain, not company). Returns the linked
  * user ids so the caller can write an audit record. Idempotent.
+ *
+ * It first deletes the domain's users' "sso:" identities whose GoTrue provider
+ * no longer exists. Re-creating a connection always re-verifies its domains, so
+ * this is where an identity left by an earlier deactivate is cleared; left in
+ * place beside the new one, getSsoProviderIdFromUser could resolve the dead
+ * provider and refuse every SAML sign-in as "connection is not active".
  */
 export async function backfillSsoIdentitiesForDomain(
   db: Kysely<KyselyDatabase>,
@@ -173,6 +185,17 @@ export async function backfillSsoIdentitiesForDomain(
   const provider = ssoProviderColumn(providerId);
   try {
     const result = await sql<{ user_id: string }>`
+      WITH dead AS (
+        DELETE FROM auth.identities i
+        USING auth.users u
+        WHERE i.user_id = u.id
+          AND i.provider LIKE 'sso:%'
+          AND lower(split_part(u.email, '@', 2)) = ${lowerDomain}
+          AND NOT EXISTS (
+            SELECT 1 FROM auth.sso_providers p
+            WHERE i.provider = 'sso:' || p.id::text
+          )
+      )
       INSERT INTO auth.identities
         (provider_id, user_id, identity_data, provider, created_at, updated_at)
       SELECT
@@ -184,8 +207,14 @@ export async function backfillSsoIdentitiesForDomain(
         now()
       FROM auth.users u
       WHERE u.email IS NOT NULL
-        AND u.is_sso_user = false
         AND lower(split_part(u.email, '@', 2)) = ${lowerDomain}
+        AND (
+          u.is_sso_user = false
+          OR NOT EXISTS (
+            SELECT 1 FROM auth.users o
+            WHERE lower(o.email) = lower(u.email) AND o.id <> u.id
+          )
+        )
       ON CONFLICT (provider_id, provider) DO NOTHING
       RETURNING user_id
     `.execute(db);
@@ -249,6 +278,123 @@ export async function removeSsoIdentitiesForDomain(
 }
 
 /**
+ * GoTrue providers that belong only to an INACTIVE connection — of `companyId`,
+ * or holding `domain`. Deactivating deletes the provider; when that delete
+ * failed and restoring the row also failed, the connection is left inactive
+ * with its provider alive. GoTrue then refuses both reconnecting the same IdP
+ * (one provider per IdP entity id) and verifying the domain for any new
+ * connection (one provider per domain). Such a provider can route no sign-in
+ * Carbon accepts, so it is safe to delete.
+ */
+export async function findOrphanedSsoProviders(
+  db: Kysely<KyselyDatabase>,
+  filter: { domain: string } | { companyId: string }
+): Promise<{ data: string[] | null; error: string | null }> {
+  const scope =
+    "domain" in filter
+      ? sql`EXISTS (
+          SELECT 1 FROM auth.sso_domains d
+          WHERE d.sso_provider_id = p.id
+            AND lower(d.domain) = ${filter.domain.toLowerCase()}
+        )`
+      : sql`c."companyId" = ${filter.companyId}`;
+  try {
+    const result = await sql<{ id: string }>`
+      SELECT DISTINCT p.id::text AS id
+      FROM auth.sso_providers p
+      JOIN public."ssoConnection" c ON c."providerId" = p.id::text
+      WHERE c.active = false
+        AND ${scope}
+        AND NOT EXISTS (
+          SELECT 1 FROM public."ssoConnection" a
+          WHERE a."providerId" = p.id::text AND a.active = true
+        )
+    `.execute(db);
+    return { data: result.rows.map((r) => r.id), error: null };
+  } catch (err) {
+    logger.error("Failed to look up orphaned SSO providers", {
+      ...filter,
+      error: err
+    });
+    return {
+      data: null,
+      error:
+        err instanceof Error ? err.message : "Failed to look up SSO providers"
+    };
+  }
+}
+
+/**
+ * Remove every identity of a deleted GoTrue provider — run when a connection is
+ * deactivated. No sign-in can use them again, and a user who keeps one beside a
+ * later connection's identity can be resolved to the dead provider.
+ */
+export async function removeSsoIdentitiesForProvider(
+  db: Kysely<KyselyDatabase>,
+  { providerId }: { providerId: string }
+): Promise<{ data: { removed: number } | null; error: string | null }> {
+  try {
+    const result = await sql`
+      DELETE FROM auth.identities
+      WHERE provider = ${ssoProviderColumn(providerId)}
+    `.execute(db);
+    return {
+      data: { removed: Number(result.numAffectedRows ?? 0) },
+      error: null
+    };
+  } catch (err) {
+    logger.error("Failed to remove SSO identities for provider", {
+      providerId,
+      error: err
+    });
+    return {
+      data: null,
+      error:
+        err instanceof Error ? err.message : "Failed to remove SSO identities"
+    };
+  }
+}
+
+// The longest a SAML sign-in that created an account can take to reach the
+// callback: GoTrue creates the user at the ACS and records the session's
+// `sso/saml` time when the PKCE code is exchanged, and that code expires after
+// five minutes. The same bound says the session is the sign-in happening now.
+const JIT_SSO_SIGN_IN_WINDOW_MS = 5 * 60 * 1000;
+// `amr` times are whole seconds; the user row's are not.
+const AMR_TIMESTAMP_RESOLUTION_MS = 1000;
+
+/**
+ * Whether the sign-in being refused created this account — GoTrue's throwaway
+ * JIT user: every identity is "sso:", the account was created within
+ * `JIT_SSO_SIGN_IN_WINDOW_MS` before this session authenticated, and that
+ * authentication is itself recent. Having no company membership is not enough
+ * — with sign-ups disabled GoTrue creates no user, so the account a refusal
+ * reaches is usually a real one: invited then revoked, removed from every
+ * company, or a fresh instance's seed admin. Those carry an email identity, or
+ * existed before this sign-in. Without the sign-in time there is no evidence,
+ * and the account is kept.
+ */
+export function isThrowawaySsoAccount(
+  user: { created_at: string; identities?: { provider: string }[] | null },
+  { signedInAtMs, nowMs }: { signedInAtMs: number | null; nowMs: number }
+): boolean {
+  if (signedInAtMs === null) return false;
+  const identities = user.identities ?? [];
+  if (identities.length === 0) return false;
+  if (!identities.every((identity) => identity.provider.startsWith("sso:"))) {
+    return false;
+  }
+  // Absolute instants compared in epoch ms (date-handling's exception).
+  const createdMs = Date.parse(user.created_at);
+  if (!Number.isFinite(createdMs)) return false;
+  return (
+    createdMs <= signedInAtMs + AMR_TIMESTAMP_RESOLUTION_MS &&
+    signedInAtMs - createdMs <= JIT_SSO_SIGN_IN_WINDOW_MS &&
+    nowMs - signedInAtMs <= JIT_SSO_SIGN_IN_WINDOW_MS
+  );
+}
+
+/**
  * Remove a throwaway JIT SSO auth user COMPLETELY — the auth user AND the
  * `public."user"` / `userPermission` rows the `on_auth_user_created` trigger
  * auto-created for it. `public."user".id` has no FK to `auth.users`, so
@@ -258,15 +404,17 @@ export async function removeSsoIdentitiesForDomain(
  *
  * Guarded on zero `userToCompany` memberships — re-checked here, not just at
  * the caller — so a linked or real account can never be deleted: a membership
- * means the id was attached to a company and is not a throwaway. Public rows
- * are deleted BEFORE the auth user: if the auth delete then fails, the remnant
- * is auth-only, which the next SSO attempt (or invite) resolves by itself —
- * never the un-invitable orphan.
+ * means the id was attached to a company and is not a throwaway. Also guarded
+ * on `isThrowawaySsoAccount`, with the sign-in time read from `accessToken`,
+ * the refused session's own token. Public rows are deleted BEFORE the auth
+ * user: if the auth delete then fails, the remnant is auth-only, which the
+ * next SSO attempt (or invite) resolves by itself — never the un-invitable
+ * orphan.
  */
 export async function deleteJitSsoUser(
   serviceRole: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  userId: string
+  { userId, accessToken }: { userId: string; accessToken: string }
 ): Promise<{ data: { deleted: boolean } | null; error: string | null }> {
   try {
     const membership = await db
@@ -280,6 +428,34 @@ export async function deleteJitSsoUser(
       logger.warn("Refused to delete JIT SSO user with a company membership", {
         userId
       });
+      return { data: { deleted: false }, error: null };
+    }
+
+    const authUser = await serviceRole.auth.admin.getUserById(userId);
+    if (authUser.error) {
+      logger.error("Failed to read the user before a JIT SSO cleanup", {
+        userId,
+        error: authUser.error
+      });
+      return { data: null, error: authUser.error.message };
+    }
+    // The sign-in's own record of when it authenticated, from the session
+    // being refused — never another user's token.
+    const signIn = getSsoSignIn(accessToken);
+    const signedInAtMs = signIn?.userId === userId ? signIn.atMs : null;
+    if (
+      !authUser.data.user ||
+      !isThrowawaySsoAccount(authUser.data.user, {
+        signedInAtMs,
+        nowMs: Date.now()
+      })
+    ) {
+      logger.warn(
+        "Refused to delete an account this SSO sign-in did not create",
+        {
+          userId
+        }
+      );
       return { data: { deleted: false }, error: null };
     }
 
@@ -342,12 +518,14 @@ export function mergeInvitePermissions(
  * company's active SSO connection, or null when the invite may proceed. Match
  * is exact per domain (a connection covering example.com does not cover
  * sub.example.com — GoTrue routes SSO logins the same way). Stored domains are
- * lowercased by the settings validator; the email is lowercased here.
+ * lowercased by the settings validator; the email is lowercased here. With no
+ * verified domain the connection routes no sign-in, so nothing is refused.
  */
 export function uncoveredSsoDomainError(
   domains: string[],
   email: string
 ): string | null {
+  if (domains.length === 0) return null;
   const domain = email.split("@")[1]?.trim().toLowerCase();
   if (domain && domains.includes(domain)) {
     return null;

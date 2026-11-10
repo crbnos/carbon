@@ -394,6 +394,7 @@ for (const t of allTools) {
     description: t.description || "",
     schema: t.schema || {},
     responseSchema: t.responseSchema,
+    lookups: t.lookups,
     path: `/${t.serviceFn.path.join("/")}`,
   });
 }

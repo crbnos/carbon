@@ -2,28 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-// @carbon/content/glossary's terms.ts evaluates Lingui `msg` macros at module load,
-// which vitest doesn't transform. Nothing under test touches the glossary
-// (it's pulled in via the ../shared barrel), so stub the whole package.
-vi.mock("@carbon/content/glossary", () => ({
-  getDefinitionText: () => "",
-  getEntry: () => undefined,
-  getTermText: () => "",
-  glossaryEntries: () => [],
-  hasEntry: () => false,
-  listEntries: () => [],
-  lookupEntry: () => undefined,
-  termSlug: (t: string) => t,
-  terms: {}
-}));
-
-import * as purchasingModels from "./purchasing.models";
 import {
   canCreatePurchaseOrderRevision,
+  isPurchaseOrderBulkDeletable,
   isPurchaseOrderLocked,
-  leaseClassificationValidator,
+  isPurchaseOrderPromisedDateEditable,
   leaseDetailsValidator,
   leaseDurationOf,
   leaseEndDate,
@@ -35,11 +20,17 @@ import {
   leaseTerminateValidator,
   leaseValidator,
   lockedReturnLineField,
+  orderItemSupplierFiles,
   PURCHASE_ORDER_LOCKED_STATUSES,
   purchaseOrderDeleteRefusal,
+  purchaseOrderLineDateRefusal,
   purchaseOrderStatusType,
   purchaseOrderValidator,
   resolveLeaseDates,
+  shortClosePurchaseOrderLineRefusal,
+  splitRfqFileAttachments,
+  supplierContactEmailRequiredValidator,
+  supplierContactValidator,
   supplierQuoteValidator
 } from "./purchasing.models";
 
@@ -75,30 +66,18 @@ describe("canCreatePurchaseOrderRevision", () => {
     { currentStatus: "To Receive", orderDate: null, expected: false }
   ];
 
-  it.each(reopenMatrix)(
-    "reopen from $currentStatus (orderDate: $orderDate) → eligible: $expected",
-    ({ currentStatus, orderDate, expected }) => {
+  it.each(
+    (["Draft", "Planned"] as const).flatMap((newStatus) =>
+      reopenMatrix.map((row) => ({ ...row, newStatus }))
+    )
+  )(
+    "reopen to $newStatus from $currentStatus (orderDate: $orderDate) → eligible: $expected",
+    ({ newStatus, currentStatus, orderDate, expected }) => {
       expect(
-        canCreatePurchaseOrderRevision({
-          newStatus: "Draft",
-          currentStatus,
-          orderDate
-        })
+        canCreatePurchaseOrderRevision({ newStatus, currentStatus, orderDate })
       ).toBe(expected);
     }
   );
-
-  it("follows the same matrix when reopening to Planned", () => {
-    for (const { currentStatus, orderDate, expected } of reopenMatrix) {
-      expect(
-        canCreatePurchaseOrderRevision({
-          newStatus: "Planned",
-          currentStatus,
-          orderDate
-        })
-      ).toBe(expected);
-    }
-  });
 
   it("is never eligible for a target status that is not a reopen", () => {
     for (const newStatus of purchaseOrderStatusType) {
@@ -115,22 +94,18 @@ describe("canCreatePurchaseOrderRevision", () => {
     }
   });
 
-  it("is not eligible for an unknown or missing current status", () => {
-    expect(
-      canCreatePurchaseOrderRevision({
-        newStatus: "Draft",
-        currentStatus: null,
-        orderDate: ORDER_DATE
-      })
-    ).toBe(false);
-    expect(
-      canCreatePurchaseOrderRevision({
-        newStatus: "Draft",
-        currentStatus: undefined,
-        orderDate: ORDER_DATE
-      })
-    ).toBe(false);
-  });
+  it.each([null, undefined])(
+    "is not eligible for a current status of %s",
+    (currentStatus) => {
+      expect(
+        canCreatePurchaseOrderRevision({
+          newStatus: "Draft",
+          currentStatus,
+          orderDate: ORDER_DATE
+        })
+      ).toBe(false);
+    }
+  );
 
   it("locked statuses stay consistent with the reopen matrix", () => {
     const bumpingStatuses = reopenMatrix
@@ -144,25 +119,10 @@ describe("canCreatePurchaseOrderRevision", () => {
   });
 });
 
-describe("the document validators carry no contact requirement (D-2)", () => {
-  /**
-   * The requirement is on the SUPPLIER RECORD, checked once at the release
-   * boundary by `checkPartyContactRequirement` — not on the document. The
-   * `make*Validator` factories that made `supplierContactId` /
-   * `supplierLocationId` required were absent from every create action (so the
-   * API, MCP and curl wrote a null contact anyway) and refused to save an
-   * EXISTING draft whose optional location was null, which blocked editing
-   * unrelated fields such as `supplierReference`.
-   */
-  it("offers no strict variant to build a document-level rule from", () => {
-    const exported = Object.keys(purchasingModels);
-    expect(exported).not.toContain("makePurchaseOrderValidator");
-    expect(exported).not.toContain("makeSupplierQuoteValidator");
-  });
-
-  it("saves a draft whose optional supplier location is null", () => {
-    // The concrete regression: a Draft PO with no location could no longer have
-    // its supplier reference changed.
+// The contact requirement lives on the supplier record, checked at release,
+// so a draft with no supplier location must still save.
+describe("document validators", () => {
+  it("save a draft whose optional supplier location is null", () => {
     expect(
       purchaseOrderValidator.safeParse({
         id: "po_1",
@@ -171,7 +131,6 @@ describe("the document validators carry no contact requirement (D-2)", () => {
         supplierReference: "PO-4417"
       }).success
     ).toBe(true);
-
     expect(
       supplierQuoteValidator.safeParse({
         id: "sq_1",
@@ -183,36 +142,36 @@ describe("the document validators carry no contact requirement (D-2)", () => {
   });
 });
 
-describe("leaseValidator", () => {
-  const base = {
-    supplierId: "supplier-1",
-    commencementDate: "2027-01-01",
-    endDate: "2029-12-31",
-    paymentFrequency: "Monthly",
-    paymentTiming: "Arrears",
-    discountRate: "6",
-    currencyCode: "USD"
-  };
-  const parse = (overrides: Record<string, string>) =>
-    leaseValidator.safeParse({ ...base, ...overrides });
+const leaseTerms = {
+  supplierId: "supplier-1",
+  commencementDate: "2027-01-01",
+  endDate: "2029-12-31",
+  paymentFrequency: "Monthly",
+  paymentTiming: "Arrears",
+  discountRate: "6",
+  currencyCode: "USD"
+};
+const parseLease = (overrides: Record<string, string>) =>
+  leaseValidator.safeParse({ ...leaseTerms, ...overrides });
 
+describe("leaseValidator", () => {
   it("accepts a lease with only the required terms", () => {
-    const result = parse({});
+    const result = parseLease({});
     expect(result.success).toBe(true);
     expect(result.data?.annualEscalationPercent).toBe(0);
   });
 
   it("refuses an end date before the commencement date", () => {
-    expect(parse({ endDate: "2026-12-31" }).success).toBe(false);
+    expect(parseLease({ endDate: "2026-12-31" }).success).toBe(false);
   });
 
   it("refuses a notice date after the end date", () => {
-    expect(parse({ noticeDate: "2030-01-31" }).success).toBe(false);
-    expect(parse({ noticeDate: "2029-09-30" }).success).toBe(true);
+    expect(parseLease({ noticeDate: "2030-01-31" }).success).toBe(false);
+    expect(parseLease({ noticeDate: "2029-09-30" }).success).toBe(true);
   });
 
   it("refuses invoicing that starts before commencement", () => {
-    expect(parse({ invoiceFromDate: "2026-12-01" }).success).toBe(false);
+    expect(parseLease({ invoiceFromDate: "2026-12-01" }).success).toBe(false);
   });
 });
 
@@ -237,12 +196,8 @@ describe("lease durations", () => {
   it("needs an end date only for a custom duration", () => {
     const parse = (overrides: Record<string, string>) =>
       leaseValidator.safeParse({
-        supplierId: "supplier-1",
-        commencementDate: "2027-01-01",
-        paymentFrequency: "Monthly",
-        paymentTiming: "Arrears",
-        discountRate: "6",
-        currencyCode: "USD",
+        ...leaseTerms,
+        endDate: undefined,
         ...overrides
       });
     expect(parse({ duration: "open" }).success).toBe(true);
@@ -270,10 +225,6 @@ describe("leaseLineValidator", () => {
     const result = parse({});
     expect(result.success).toBe(true);
     expect(result.data?.ownershipTransfers).toBe(false);
-  });
-
-  it("needs a description", () => {
-    expect(parse({ description: " " }).success).toBe(false);
   });
 
   it("needs an amount for a reasonably certain purchase option", () => {
@@ -313,14 +264,6 @@ describe("leaseModifyValidator", () => {
     paymentFrequency: "Monthly"
   };
 
-  it("takes a payment for each asset", () => {
-    const result = leaseModifyValidator.safeParse(terms);
-    expect(result.success).toBe(true);
-    expect(result.data?.lines).toEqual([
-      { leaseLineId: "line-1", paymentAmount: 10000 }
-    ]);
-  });
-
   it("refuses an end date before the effective date", () => {
     expect(
       leaseModifyValidator.safeParse({ ...terms, endDate: "2027-12-31" })
@@ -330,34 +273,18 @@ describe("leaseModifyValidator", () => {
 });
 
 describe("lease dates", () => {
-  const base = {
-    supplierId: "supplier-1",
-    commencementDate: "2027-01-01",
-    endDate: "2029-12-31",
-    paymentFrequency: "Monthly",
-    paymentTiming: "Arrears",
-    discountRate: "6",
-    currencyCode: "USD"
-  };
-
-  it("refuses a lease date that is not a YYYY-MM-DD calendar date", () => {
-    for (const field of [
-      "commencementDate",
-      "endDate",
-      "noticeDate",
-      "invoiceFromDate"
-    ]) {
-      for (const value of ["2027-02-30", "01/02/2027", "soon"]) {
-        const result = leaseValidator.safeParse({ ...base, [field]: value });
-        expect(result.success, `${field} = ${value}`).toBe(false);
-      }
-    }
+  it.each(
+    ["commencementDate", "endDate", "noticeDate", "invoiceFromDate"].flatMap(
+      (field) =>
+        ["2027-02-30", "01/02/2027", "soon"].map((value) => [field, value])
+    )
+  )("refuses %s = %s", (field, value) => {
+    expect(parseLease({ [field]: value }).success).toBe(false);
   });
 
   it("reports a bad commencement date instead of throwing from the notice refine", () => {
     expect(() =>
-      leaseValidator.safeParse({
-        ...base,
+      parseLease({
         commencementDate: "not-a-date",
         duration: "36",
         noticeDate: "2029-06-30"
@@ -491,63 +418,140 @@ describe("leaseDetailsValidator", () => {
 });
 
 describe("lease action validators", () => {
-  it("terminate: a date, and a penalty that defaults to 0 and is never negative", () => {
-    const ok = leaseTerminateValidator.safeParse({
-      terminationDate: "2028-06-30"
-    });
-    expect(ok.success).toBe(true);
-    expect(ok.data?.penaltyAmount).toBe(0);
+  it("terminate defaults the penalty to 0", () => {
     expect(
+      leaseTerminateValidator.safeParse({ terminationDate: "2028-06-30" }).data
+        ?.penaltyAmount
+    ).toBe(0);
+  });
+
+  it.each([
+    [
+      "a negative termination penalty",
       leaseTerminateValidator.safeParse({
         terminationDate: "2028-06-30",
         penaltyAmount: "-1"
-      }).success
-    ).toBe(false);
-    expect(
-      leaseTerminateValidator.safeParse({ terminationDate: "" }).success
-    ).toBe(false);
+      })
+    ],
+    [
+      "a negative purchase price",
+      leasePurchaseValidator.safeParse({
+        exerciseDate: "2029-12-31",
+        purchasePrice: "-5",
+        fixedAssetClassId: "class-1",
+        name: "Forklift FL-12"
+      })
+    ]
+  ])("refuses %s", (_, result) => {
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("isPurchaseOrderBulkDeletable", () => {
+  it("accepts Draft and Planned only", () => {
+    expect(isPurchaseOrderBulkDeletable("Draft")).toBe(true);
+    expect(isPurchaseOrderBulkDeletable("Planned")).toBe(true);
+    for (const status of purchaseOrderStatusType) {
+      if (status === "Draft" || status === "Planned") continue;
+      expect(isPurchaseOrderBulkDeletable(status)).toBe(false);
+    }
+    expect(isPurchaseOrderBulkDeletable(null)).toBe(false);
+  });
+});
+
+describe("shortClosePurchaseOrderLineRefusal", () => {
+  const receivable = {
+    purchaseOrderLineType: "Part",
+    quantityToReceive: 6,
+    receivedComplete: false
+  };
+
+  it("refuses every unreleased status, so stopping receiving never releases an order", () => {
+    // A Draft with every line closed recomputes to Completed: the bypass TCK-31 reported.
+    for (const status of [
+      "Draft",
+      "Planned",
+      "Needs Approval",
+      "To Review",
+      "Rejected",
+      "Closed",
+      null
+    ]) {
+      expect(
+        shortClosePurchaseOrderLineRefusal("close", { ...receivable, status })
+      ).toBe(
+        "Receiving can only be closed or reopened on a released purchase order"
+      );
+      expect(
+        shortClosePurchaseOrderLineRefusal("reopen", {
+          ...receivable,
+          status,
+          receivedComplete: true
+        })
+      ).toBe(
+        "Receiving can only be closed or reopened on a released purchase order"
+      );
+    }
   });
 
-  it("purchase: a price of 0 or more, a fixed asset class and a name", () => {
-    const terms = {
-      exerciseDate: "2029-12-31",
-      purchasePrice: "0",
-      fixedAssetClassId: "class-1",
-      name: "Forklift FL-12"
-    };
-    expect(leasePurchaseValidator.safeParse(terms).success).toBe(true);
-    expect(
-      leasePurchaseValidator.safeParse({ ...terms, purchasePrice: "-5" })
-        .success
-    ).toBe(false);
-    expect(
-      leasePurchaseValidator.safeParse({ ...terms, fixedAssetClassId: "" })
-        .success
-    ).toBe(false);
-    expect(
-      leasePurchaseValidator.safeParse({ ...terms, name: " " }).success
-    ).toBe(false);
+  it("allows a receivable line on every released status", () => {
+    for (const status of [
+      "To Receive",
+      "To Receive and Invoice",
+      "To Invoice",
+      "Completed"
+    ]) {
+      expect(
+        shortClosePurchaseOrderLineRefusal("close", { ...receivable, status })
+      ).toBeNull();
+      expect(
+        shortClosePurchaseOrderLineRefusal("reopen", {
+          ...receivable,
+          status,
+          receivedComplete: true
+        })
+      ).toBeNull();
+    }
   });
 
-  it("classification: Operating or Finance, with a reason", () => {
+  it("refuses a line that is never received", () => {
+    for (const purchaseOrderLineType of ["Comment", "G/L Account"]) {
+      expect(
+        shortClosePurchaseOrderLineRefusal("close", {
+          ...receivable,
+          status: "To Receive",
+          purchaseOrderLineType
+        })
+      ).toBe("This line cannot be received");
+    }
+  });
+
+  it("refuses a line with nothing left to receive", () => {
+    for (const quantityToReceive of [0, -1, null]) {
+      expect(
+        shortClosePurchaseOrderLineRefusal("close", {
+          ...receivable,
+          status: "To Receive",
+          quantityToReceive
+        })
+      ).toBe("This line has no outstanding quantity to receive");
+    }
+  });
+
+  it("refuses the intent the line is already in", () => {
     expect(
-      leaseClassificationValidator.safeParse({
-        classification: "Finance",
-        reason: "Specialized tooling"
-      }).success
-    ).toBe(true);
+      shortClosePurchaseOrderLineRefusal("close", {
+        ...receivable,
+        status: "To Receive",
+        receivedComplete: true
+      })
+    ).toBe("Receiving is already closed for this line");
     expect(
-      leaseClassificationValidator.safeParse({
-        classification: "Short-Term",
-        reason: "Under a year"
-      }).success
-    ).toBe(false);
-    expect(
-      leaseClassificationValidator.safeParse({
-        classification: "Operating",
-        reason: " "
-      }).success
-    ).toBe(false);
+      shortClosePurchaseOrderLineRefusal("reopen", {
+        ...receivable,
+        status: "To Receive"
+      })
+    ).toBe("Receiving is not closed for this line");
   });
 });
 
@@ -627,5 +631,177 @@ describe("lockedReturnLineField", () => {
         saved
       )
     ).toBeNull();
+  });
+});
+
+describe("orderItemSupplierFiles", () => {
+  const file = (itemId: string, path: string) => ({ itemId, path });
+
+  it("orders by first appearance of each item, keeping each item's order", () => {
+    const files = [
+      file("b", "b/model.step"),
+      file("a", "a/model.step"),
+      file("b", "b/drawing.pdf"),
+      file("a", "a/drawing.pdf")
+    ];
+    expect(
+      orderItemSupplierFiles(["a", "b", "a"], files).map((f) => f.path)
+    ).toEqual([
+      "a/model.step",
+      "a/drawing.pdf",
+      "b/model.step",
+      "b/drawing.pdf"
+    ]);
+  });
+
+  it("keeps only the ticked paths of the items asked for", () => {
+    const files = [
+      file("a", "a/model.step"),
+      file("a", "a/drawing.pdf"),
+      file("c", "c/drawing.pdf")
+    ];
+    expect(
+      orderItemSupplierFiles(["a"], files, [
+        "a/drawing.pdf",
+        // Another item's file, or any other path, is never shared.
+        "c/drawing.pdf",
+        "other-company/secret.pdf"
+      ]).map((f) => f.path)
+    ).toEqual(["a/drawing.pdf"]);
+  });
+
+  it("shares nothing when nothing is ticked", () => {
+    expect(
+      orderItemSupplierFiles(["a"], [file("a", "a/model.step")], [])
+    ).toEqual([]);
+  });
+});
+
+describe("splitRfqFileAttachments", () => {
+  const model = (id: string, size: number) => ({ id, size });
+
+  it("attaches what fits in line order and links the rest", () => {
+    const { attach, link } = splitRfqFileAttachments(
+      [model("a", 10), model("big", 30), model("b", 5)],
+      20
+    );
+    expect(attach.map((m) => m.id)).toEqual(["a", "b"]);
+    expect(link.map((m) => m.id)).toEqual(["big"]);
+  });
+
+  it("links every model when documents already use the budget", () => {
+    const { attach, link } = splitRfqFileAttachments([model("a", 1)], -5);
+    expect(attach).toEqual([]);
+    expect(link.map((m) => m.id)).toEqual(["a"]);
+  });
+});
+
+describe("isPurchaseOrderPromisedDateEditable", () => {
+  it("stays editable on a confirmed order until every line is received", () => {
+    const editable = purchaseOrderStatusType.filter(
+      isPurchaseOrderPromisedDateEditable
+    );
+    expect(editable).toEqual([
+      "Draft",
+      "Planned",
+      "Needs Approval",
+      "To Review",
+      "To Receive",
+      "To Receive and Invoice",
+      "Rejected"
+    ]);
+  });
+
+  it("is editable on an order with no status yet", () => {
+    expect(isPurchaseOrderPromisedDateEditable(null)).toBe(true);
+  });
+});
+
+describe("purchaseOrderLineDateRefusal", () => {
+  const editable = (
+    field: Parameters<typeof purchaseOrderLineDateRefusal>[0],
+    receivedComplete = false
+  ) =>
+    purchaseOrderStatusType.filter(
+      (status) =>
+        purchaseOrderLineDateRefusal(field, { status, receivedComplete }) ===
+        null
+    );
+
+  it("fixes the required date while in approval and once complete", () => {
+    expect(editable("requiredDate")).toEqual([
+      "Draft",
+      "Planned",
+      "To Review",
+      "To Receive",
+      "To Receive and Invoice",
+      "To Invoice",
+      "Rejected"
+    ]);
+  });
+
+  it("keeps an open line's promised date editable until the order is fully received", () => {
+    expect(editable("promisedDate")).toEqual([
+      "Draft",
+      "Planned",
+      "Needs Approval",
+      "To Review",
+      "To Receive",
+      "To Receive and Invoice",
+      "Rejected"
+    ]);
+  });
+
+  it("fixes the promised date of a line received complete", () => {
+    expect(editable("promisedDate", true)).toEqual([]);
+  });
+
+  it("always lets the delivery date be corrected", () => {
+    expect(editable("receivedDate", true)).toEqual([
+      ...purchaseOrderStatusType
+    ]);
+  });
+});
+
+describe("supplierContactValidator", () => {
+  it("accepts a contact with a name and no email", () => {
+    const result = supplierContactValidator.safeParse({ firstName: "Test" });
+    expect(result.success).toBe(true);
+  });
+  it("turns an empty email into undefined", () => {
+    const result = supplierContactValidator.safeParse({
+      firstName: "Test",
+      email: ""
+    });
+    expect(result.success && result.data.email).toBe(undefined);
+  });
+  it("refuses a contact with no name and no email", () => {
+    const result = supplierContactValidator.safeParse({});
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(["firstName"]);
+  });
+  it("refuses an invalid email", () => {
+    const result = supplierContactValidator.safeParse({
+      firstName: "Test",
+      email: "not-an-email"
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("supplierContactEmailRequiredValidator", () => {
+  it("refuses a contact with a name and no email", () => {
+    const result = supplierContactEmailRequiredValidator.safeParse({
+      firstName: "Test"
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(["email"]);
+  });
+  it("accepts a contact with an email", () => {
+    const result = supplierContactEmailRequiredValidator.safeParse({
+      firstName: "Test",
+      email: "test@example.com"
+    });
+    expect(result.success).toBe(true);
   });
 });

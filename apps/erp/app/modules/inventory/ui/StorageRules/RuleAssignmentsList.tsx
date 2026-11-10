@@ -157,6 +157,7 @@ export default function RuleAssignmentsList({
       <div className="flex shrink-0 items-center gap-2">
         {availableOptions.length > 0 && (
           <Combobox
+            aria-label={t`Add rule from library`}
             size="md"
             value=""
             options={availableOptions}
@@ -284,7 +285,7 @@ export default function RuleAssignmentsList({
                   {isBroadcast && (
                     <Badge
                       variant="outline"
-                      className="ml-6 text-[10px] uppercase tracking-wide"
+                      className="ml-6 text-[0.625rem] uppercase tracking-wide"
                     >
                       <Trans>Applies to all</Trans>
                     </Badge>
@@ -422,6 +423,7 @@ function EmptyState({
           {availableOptions.length > 0 ? (
             <>
               <Combobox
+                aria-label={t`Add rule from library`}
                 value=""
                 options={availableOptions}
                 onChange={onAssign}

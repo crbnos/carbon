@@ -51,7 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await authorize(request, {
+  const { client, companyId, userId } = await authorize(request, {
     "parts.services": "Edit"
   });
 
@@ -69,6 +69,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const updateServiceUnitSalePrice = await upsertItemUnitSalePrice(client, {
     ...validation.data,
+    companyId,
     itemId,
     updatedBy: userId,
     customFields: setCustomFields(formData)
@@ -97,6 +98,8 @@ export default function ServiceSalesRoute() {
 
   const initialValues = {
     ...serviceUnitSalePrice,
+    laborWarrantyMonths: serviceUnitSalePrice?.laborWarrantyMonths ?? undefined,
+    partsWarrantyMonths: serviceUnitSalePrice?.partsWarrantyMonths ?? undefined,
     salesUnitOfMeasureCode: serviceUnitSalePrice?.salesUnitOfMeasureCode ?? "",
     ...getCustomFields(serviceUnitSalePrice.customFields),
     itemId: itemId

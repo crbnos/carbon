@@ -9,6 +9,7 @@ import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { isOwnSignaturePath, SIGNATURES_BUCKET } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -17,19 +18,43 @@ const logger = getLogger("erp", "account-profile");
 
 // Data and writes for the Profile pane of the account settings modal.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { userId, api } = await authorize(request);
+  const { client, userId, api } = await authorize(request);
   const user = await api.users.getAccount({ id: userId });
 
   if (user.error) {
     logger.error("Failed to get user", { userId, error: user.error });
   }
 
-  return { user: user.data ?? null } satisfies AccountProfileData;
+  // The bucket is private: the pane shows the signature through a short-lived
+  // link the owner's own client signs.
+  const signaturePath = user.data?.signaturePath;
+  let signatureUrl: string | null = null;
+  if (isOwnSignaturePath(userId, signaturePath)) {
+    const signed = await client.storage
+      .from(SIGNATURES_BUCKET)
+      .createSignedUrl(signaturePath, 300);
+    if (signed.error) {
+      logger.error("Failed to sign the signature link", {
+        userId,
+        error: signed.error
+      });
+    }
+    signatureUrl = signed.data?.signedUrl ?? null;
+  }
+
+  return {
+    user: user.data ?? null,
+    signatureUrl
+  } satisfies AccountProfileData;
 }
 
 const profileForm = z.discriminatedUnion("intent", [
   accountProfileValidator.extend({ intent: z.literal("about") }),
-  z.object({ intent: z.literal("photo"), path: z.string() })
+  z.object({ intent: z.literal("photo"), path: z.string() }),
+  z.object({
+    intent: z.literal("signature"),
+    path: z.string().optional()
+  })
 ]);
 
 export async function action(args: ActionFunctionArgs) {
@@ -41,6 +66,9 @@ export async function action(args: ActionFunctionArgs) {
   if (form.intent === "photo") {
     return api.users.updateOwnAvatar({ path: form.path });
   }
+  if (form.intent === "signature") {
+    return api.users.updateOwnSignature({ path: form.path || null });
+  }
 
   const { intent: _, ...profile } = form;
   const result = await api.users.updateOwnProfile(profile);
@@ -49,7 +77,7 @@ export async function action(args: ActionFunctionArgs) {
     await flash(
       args.request,
       result.error
-        ? error(null, result.error.message)
+        ? error(result.error, result.error.title ?? result.error.message)
         : success("Updated profile")
     )
   );

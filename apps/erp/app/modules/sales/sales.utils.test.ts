@@ -7,11 +7,20 @@ import {
   applyPriceRules,
   configurationSurcharge,
   configuredQuoteBasePrice,
+  customerPortalEarliestExpiry,
+  customerPortalExpired,
+  customerPortalExpiresAt,
+  customerPortalExpiryDate,
+  customerPortalExpiryRefused,
+  customerPortalRefusal,
+  customerPortalServesFile,
   decideRecalcPricing,
   getEffectiveDefaultMarkups,
   leaseCommencementPreview,
   leaseTermMonths,
   previewLeaseClassification,
+  priceListOverrideScopes,
+  priceOverrideScopeError,
   readLeaseClassification,
   reconcileQuantityBreaks,
   rentalEquipmentStatus,
@@ -769,5 +778,176 @@ describe("rentalLineDocuments", () => {
       []
     );
     expect(result.shipment).toBeNull();
+  });
+});
+
+describe("priceOverrideScopeError", () => {
+  it("refuses an override with no scope", () => {
+    expect(priceOverrideScopeError({})).toBe(
+      "Choose a customer, a customer type, or All Customers"
+    );
+  });
+
+  it("refuses All Customers together with a customer or a type", () => {
+    const message = "All Customers cannot also name a customer or type";
+    expect(
+      priceOverrideScopeError({ allCustomers: true, customerId: "c" })
+    ).toBe(message);
+    expect(
+      priceOverrideScopeError({ allCustomers: true, customerTypeId: "t" })
+    ).toBe(message);
+  });
+
+  it("refuses a customer together with a type", () => {
+    expect(
+      priceOverrideScopeError({ customerId: "c", customerTypeId: "t" })
+    ).toBe("Cannot set both Customer and Customer Type");
+  });
+
+  it("accepts exactly one scope", () => {
+    expect(priceOverrideScopeError({ customerId: "c" })).toBeNull();
+    expect(priceOverrideScopeError({ customerTypeId: "t" })).toBeNull();
+    expect(priceOverrideScopeError({ allCustomers: true })).toBeNull();
+  });
+});
+
+describe("priceListOverrideScopes", () => {
+  it("lists a customer's own, its type's and the all-customers overrides", () => {
+    expect(priceListOverrideScopes({ customerId: "c" }, "t")).toEqual([
+      { customerId: "c" },
+      { customerTypeId: "t" },
+      { allCustomers: true }
+    ]);
+  });
+
+  it("skips the type of a customer that has none", () => {
+    expect(priceListOverrideScopes({ customerId: "c" }, null)).toEqual([
+      { customerId: "c" },
+      { allCustomers: true }
+    ]);
+  });
+
+  it("lists a type's own and the all-customers overrides", () => {
+    expect(priceListOverrideScopes({ customerTypeId: "t" }, null)).toEqual([
+      { customerTypeId: "t" },
+      { allCustomers: true }
+    ]);
+  });
+
+  it("lists only the all-customers overrides for All Customers", () => {
+    expect(priceListOverrideScopes({ allCustomers: true }, null)).toEqual([
+      { allCustomers: true }
+    ]);
+  });
+
+  it("lists nothing without a scope", () => {
+    expect(priceListOverrideScopes({}, null)).toEqual([]);
+  });
+});
+
+describe("customerPortalServesFile", () => {
+  it.each([
+    ["co/job/op/step/abc/photo.png", true],
+    ["co/job/op/step/abc/PHOTO.JPEG", true],
+    ["co/job/op/step/abc/scan.heic", true],
+    ["co/job/op/step/abc/report.pdf", true],
+    // CAD and drawings can be export-controlled.
+    ["co/job/op/step/abc/housing.step", false],
+    ["co/job/op/step/abc/housing.stl", false],
+    ["co/job/op/step/abc/layout.dwg", false],
+    ["co/job/op/step/abc/layout.dxf", false],
+    ["co/job/op/step/abc/model.glb", false],
+    // An SVG can carry script and is served from the app's origin.
+    ["co/job/op/step/abc/logo.svg", false],
+    ["co/job/op/step/abc/clip.mp4", false],
+    ["co/job/op/step/abc/noextension", false]
+  ])("%s → %s", (path, expected) => {
+    expect(customerPortalServesFile(path)).toBe(expected);
+  });
+});
+
+describe("customer portal expiry", () => {
+  it("expires at the start of the chosen day in the company's timezone", () => {
+    expect(customerPortalExpiresAt("2026-12-01", "America/New_York")).toBe(
+      "2026-12-01T05:00:00.000Z"
+    );
+    expect(customerPortalExpiresAt("2026-12-01", "UTC")).toBe(
+      "2026-12-01T00:00:00.000Z"
+    );
+  });
+
+  it("stores no expiry for a blank date", () => {
+    expect(customerPortalExpiresAt(undefined, "UTC")).toBeNull();
+    expect(customerPortalExpiresAt("", "UTC")).toBeNull();
+  });
+
+  it("reads the stored instant back as the same day", () => {
+    // Postgres returns timestamptz with an offset, not "Z".
+    expect(
+      customerPortalExpiryDate("2026-12-01T05:00:00+00:00", "America/New_York")
+    ).toBe("2026-12-01");
+    expect(customerPortalExpiryDate(null, "UTC")).toBeUndefined();
+  });
+
+  it.each([
+    [null, false],
+    ["2026-12-01T05:00:00+00:00", false],
+    ["2026-11-30T05:00:00+00:00", true],
+    // The expiry instant itself is expired.
+    ["2026-11-30T12:00:00+00:00", true]
+  ])("%s expired at 2026-11-30T12:00Z → %s", (expiresAt, expected) => {
+    expect(customerPortalExpired(expiresAt, "2026-11-30T12:00:00.000Z")).toBe(
+      expected
+    );
+  });
+});
+
+describe("customerPortalRefusal", () => {
+  const now = "2026-11-30T12:00:00.000Z";
+  const base = (
+    overrides: Partial<Parameters<typeof customerPortalRefusal>[0]> = {}
+  ) => ({ expiresAt: null, ...overrides });
+
+  it("lets an open portal through", () => {
+    expect(customerPortalRefusal(base(), now)).toBeNull();
+  });
+
+  it("refuses a portal whose expiry has passed", () => {
+    expect(
+      customerPortalRefusal(
+        base({ expiresAt: "2026-11-30T05:00:00+00:00" }),
+        now
+      )
+    ).toBe("expired");
+  });
+});
+
+describe("customerPortalExpiryRefused", () => {
+  const now = "2026-11-30T12:00:00.000Z";
+
+  it.each([
+    // [new expiry, stored expiry, refused]
+    [null, null, false],
+    ["2026-12-01T06:00:00.000Z", null, false],
+    ["2026-11-30T06:00:00.000Z", null, true],
+    // Saving an expired portal without touching its date is allowed.
+    ["2026-11-01T05:00:00.000Z", "2026-11-01T05:00:00+00:00", false],
+    ["2026-10-01T05:00:00.000Z", "2026-11-01T05:00:00+00:00", true]
+  ])("%s over %s → %s", (next, stored, refused) => {
+    expect(customerPortalExpiryRefused(next, stored, now)).toBe(refused);
+  });
+});
+
+describe("customerPortalEarliestExpiry", () => {
+  it.each([
+    // [company today, stored Expires On, earliest pickable day]
+    ["2026-11-05", undefined, "2026-11-06"],
+    ["2026-12-31", undefined, "2027-01-01"],
+    // A later stored date changes nothing.
+    ["2026-11-05", "2026-12-01", "2026-11-06"],
+    // An expired portal can keep its own date when edited.
+    ["2026-11-05", "2026-10-01", "2026-10-01"]
+  ])("today %s, stored %s → %s", (today, stored, earliest) => {
+    expect(customerPortalEarliestExpiry(today, stored)).toBe(earliest);
   });
 });

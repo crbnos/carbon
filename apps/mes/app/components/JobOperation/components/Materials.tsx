@@ -8,6 +8,7 @@ import {
   cn,
   HStack,
   IconButton,
+  NonNettableBadge,
   Table,
   Tbody,
   Td,
@@ -247,6 +248,8 @@ type OperationMaterialsProps = {
   /** Only for batched operations. */
   batchMaterialTotals?: Record<string, BatchMaterialTotal> | null;
   onIssue: (material: JobMaterial) => void;
+  // The operator may not issue on this operation (ability policy 'block')
+  disabled?: boolean;
 };
 
 /** The operation's materials: a table from md, a list on phones. */
@@ -262,25 +265,40 @@ export function OperationMaterials(props: OperationMaterialsProps) {
 
 type LayoutProps = OperationMaterialsProps & { groups: MaterialGroup[] };
 
-function MaterialsTable({ groups, parentIsSerial, onIssue }: LayoutProps) {
+function MaterialsTable({
+  groups,
+  parentIsSerial,
+  onIssue,
+  disabled
+}: LayoutProps) {
   const { t } = useLingui();
   const [items] = useItems();
+  // Every row has an Issue button: name each by its material.
+  const issueLabel = (material: JobMaterial) => {
+    const item =
+      getItemReadableId(items, material.itemId ?? "") ||
+      material.description ||
+      "";
+    return t`Issue ${item}`;
+  };
 
   const issueButton = (row: MaterialRow) =>
     row.issue === "direct" ? (
       <IconButton
-        aria-label={t`Issue Material`}
+        aria-label={issueLabel(row.material)}
         variant="ghost"
         icon={<LuGitBranchPlus />}
         className="h-8 w-8"
+        isDisabled={disabled}
         onClick={() => onIssue(row.material)}
       />
     ) : row.issue === "scan" && row.isKitChild ? (
       <IconButton
-        aria-label={t`Issue Material`}
+        aria-label={issueLabel(row.material)}
         variant="secondary"
         icon={<LuQrCode />}
         className="h-8 w-8"
+        isDisabled={disabled}
         onClick={() => onIssue(row.material)}
       />
     ) : row.issue === "scan" ? (
@@ -289,7 +307,9 @@ function MaterialsTable({ groups, parentIsSerial, onIssue }: LayoutProps) {
         size="lg"
         variant={row.isPrimaryIssue ? "primary" : "secondary"}
         leftIcon={<LuQrCode />}
+        isDisabled={disabled}
         onClick={() => onIssue(row.material)}
+        aria-label={issueLabel(row.material)}
       >
         <Trans>Issue</Trans>
       </Button>
@@ -386,6 +406,9 @@ function MaterialsTable({ groups, parentIsSerial, onIssue }: LayoutProps) {
                               ? t`WIP`
                               : t`Default Storage Unit`)}
                         </Badge>
+                        {material.storageUnit?.effectiveNettable === false && (
+                          <NonNettableBadge />
+                        )}
                       </div>
                     </Td>
                     <Td>
@@ -463,9 +486,22 @@ function MaterialsTable({ groups, parentIsSerial, onIssue }: LayoutProps) {
   );
 }
 
-function MaterialsList({ groups, parentIsSerial, onIssue }: LayoutProps) {
+function MaterialsList({
+  groups,
+  parentIsSerial,
+  onIssue,
+  disabled
+}: LayoutProps) {
   const { t } = useLingui();
   const [items] = useItems();
+  // Every row has an Issue button: name each by its material.
+  const issueLabel = (material: JobMaterial) => {
+    const item =
+      getItemReadableId(items, material.itemId ?? "") ||
+      material.description ||
+      "";
+    return t`Issue ${item}`;
+  };
 
   const renderRow = (row: MaterialRow) => {
     const { material, batchTotal } = row;
@@ -516,10 +552,11 @@ function MaterialsList({ groups, parentIsSerial, onIssue }: LayoutProps) {
         <div className="flex min-w-28 shrink-0 justify-end">
           {row.issue === "scan" && row.isKitChild ? (
             <IconButton
-              aria-label={t`Issue Material`}
+              aria-label={issueLabel(material)}
               variant="secondary"
               size="lg"
               icon={<LuQrCode />}
+              isDisabled={disabled}
               onClick={() => onIssue(material)}
             />
           ) : row.issue ? (
@@ -530,7 +567,9 @@ function MaterialsList({ groups, parentIsSerial, onIssue }: LayoutProps) {
               leftIcon={
                 row.issue === "scan" ? <LuQrCode /> : <LuGitBranchPlus />
               }
+              isDisabled={disabled}
               onClick={() => onIssue(material)}
+              aria-label={issueLabel(material)}
             >
               <Trans>Issue</Trans>
             </Button>

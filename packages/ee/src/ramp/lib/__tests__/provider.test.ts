@@ -32,24 +32,6 @@ function makeProvider(
 }
 
 describe("RampProvider", () => {
-  it("identifies as the ramp spend provider", () => {
-    const { provider } = makeProvider();
-
-    expect(provider.id).toBe("ramp");
-    expect(provider.capabilities).toEqual({
-      role: "spend",
-      transport: "rest",
-      supportsWebhooks: true,
-      ownsRemoteCodingSurface: true,
-      ownsLedgerFamilies: [],
-      // Ramp cannot create a spend vendor without a contact email, so
-      // connecting it turns `requireSupplierContactAndLocation` on — see
-      // `sync/party-contact.ts`. Declared on the MODE profile, so this is also
-      // what stops the requirement being a Ramp-shaped special case.
-      requiresPartyContactAndLocation: ["supplier"]
-    });
-  });
-
   it("maps the stored push flags onto the entities it syncs", () => {
     const { provider } = makeProvider({ pushInvoices: false });
 

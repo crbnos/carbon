@@ -16,15 +16,20 @@ import {
   resolveIntegrationSecrets
 } from "../../integrations/secrets";
 import { normalizeConfiguration } from "../panel/status";
+import { apiCallPathKey, isBilledCall } from "./api-call-key";
 import {
   getOnshapeIntegration,
   isOnshapeIntegrationId,
   ONSHAPE_DEFAULT_BASE_URL
 } from "./connection";
-import type { OnshapeDocument } from "./document.type";
+import { type OnshapeDocument, OnshapeWVMType } from "./document.type";
 import type { OnshapeElementType } from "./element.type";
 import type { OnshapeOAuthIntegrationId } from "./integration-id";
 import { getOnshapeOAuthConfig, refreshOnshapeAccessToken } from "./oauth";
+import {
+  type WorkspaceSourceStates,
+  workspaceSourceStates
+} from "./source-state";
 import { patchOnshapeRefreshedTokens } from "./state";
 import {
   isFresh,
@@ -75,7 +80,11 @@ const DOCUMENT_REVISION_MAX_PAGES = 20;
 export interface OnshapeElementRow {
   id: string;
   name: string;
-  elementType: string; // "PARTSTUDIO" | "ASSEMBLY" | "DRAWING" | ...
+  elementType: string; // "PARTSTUDIO" | "ASSEMBLY" | "APPLICATION" | ...
+  /** An APPLICATION element's app, e.g. "onshape-app/drawing". */
+  dataType?: string;
+  /** Changes with the element's own content. */
+  microversionId?: string;
   [key: string]: unknown;
 }
 
@@ -84,7 +93,10 @@ export interface OnshapeElementRow {
 const DEV_CACHEABLE_PATHS = [
   /^\/api\/v\d+\/parts\//,
   /^\/api\/v\d+\/partstudios\/.*\/massproperties/,
-  /^\/api\/v\d+\/documents\//,
+  // Not currentmicroversion or the element lists: the export skips compare
+  // their microversions (`getWorkspaceSourceStates`), and a cached value would
+  // skip a changed export.
+  /^\/api\/v\d+\/documents\/(?!.*\/currentmicroversion)(?!.*\/elements)/,
   /^\/api\/v\d+\/assemblies\/.*\/bom/,
   /^\/api\/v\d+\/metadata\//,
   // A new release shows after the TTL; flush onshape-dev-cache:* for sooner.
@@ -111,19 +123,14 @@ export interface OnshapeCompany {
   [key: string]: unknown;
 }
 
-// The only export formats Carbon ingests: GLTF for models (compressed to a
-// viewer-renderable GLB before attaching) and PDF for drawings. Onshape's API
-// supports more (STEP, PARASOLID, IGES, ...) but they are deliberately not
-// accepted here — real assemblies export to multi-GB STEP files, and Onshape
-// stays the CAD system of record.
-export type OnshapeModelTranslationFormat = "GLTF";
+// The only export formats Carbon ingests: STEP for models and PDF for
+// drawings. A STEP model is what a manual upload is: the assembler builds the
+// viewer GLB from it, and assembly instructions can convert and plan it. A
+// mesh export (GLTF) could do neither, and left no STEP to download.
+export type OnshapeModelTranslationFormat = "STEP";
 export type OnshapeDrawingTranslationFormat = "PDF";
 
-// Tessellation presets Onshape accepts for mesh exports (mirrors the UI's
-// resolution picker). Mesh translations fail without one.
-export type OnshapeMeshResolution = "coarse" | "medium" | "fine";
-
-// Async translation job (GLTF / PDF export). requestState transitions
+// Async translation job (STEP / PDF export). requestState transitions
 // ACTIVE -> DONE | FAILED. When storeInDocument=false the result is fetched via
 // resultExternalDataIds; when true, via resultElementIds (a blob element).
 export interface OnshapeTranslation {
@@ -179,12 +186,24 @@ function configurationQuery(configuration?: string | null): string {
 export class OnshapeApiError extends Error {
   status?: number;
   retryAfterSeconds?: number;
+  /** The `message` of Onshape's error body, when it sent one. */
+  onshapeMessage?: string;
+  /** The Onshape origin the failed call went to. */
+  apiOrigin?: string;
 
-  constructor(message: string, status?: number, retryAfterSeconds?: number) {
+  constructor(
+    message: string,
+    status?: number,
+    retryAfterSeconds?: number,
+    onshapeMessage?: string,
+    apiOrigin?: string
+  ) {
     super(message);
     this.name = "OnshapeApiError";
     this.status = status;
     this.retryAfterSeconds = retryAfterSeconds;
+    this.onshapeMessage = onshapeMessage;
+    this.apiOrigin = apiOrigin;
   }
 }
 
@@ -197,6 +216,12 @@ export class OnshapeAssetTooLargeError extends Error {
     super(message);
     this.name = "OnshapeAssetTooLargeError";
   }
+}
+
+/** The status Onshape answered a failed request with; undefined when no
+ *  answer arrived. */
+function answeredStatus(error: unknown): number | undefined {
+  return axios.isAxiosError(error) ? error.response?.status : undefined;
 }
 
 export class OnshapeClient {
@@ -219,6 +244,11 @@ export class OnshapeClient {
       // indefinitely (e.g. webhook reconcile during the settings-save request).
       timeout: 60_000
     });
+  }
+
+  /** The Onshape origin this client calls, e.g. `https://cad.onshape.com`. */
+  get apiOrigin(): string {
+    return this.baseUrl;
   }
 
   private getAuthHeaders(): Record<string, string> {
@@ -257,7 +287,7 @@ export class OnshapeClient {
         url: path,
         data: body
       });
-      void this.countLiveCall(path);
+      void this.countLiveCall(path, response.status);
       if (cacheKey) {
         try {
           await redis.set(
@@ -272,7 +302,7 @@ export class OnshapeClient {
       }
       return response.data;
     } catch (error) {
-      void this.countLiveCall(path);
+      void this.countLiveCall(path, answeredStatus(error));
 
       if (
         axios.isAxiosError(error) &&
@@ -296,11 +326,38 @@ export class OnshapeClient {
     }
   }
 
-  /** Counts in Redis `onshape:api-calls:<year>`; never awaited. */
-  private async countLiveCall(path: string) {
+  /**
+   * Where a translation result downloads from and the bearer to send, for a
+   * caller that downloads it elsewhere (the assembler's `fetch`, so a large
+   * export never passes through this process). The token is the one this
+   * client holds: build the client right before handing it on. Counted as a
+   * billed call when handed on, since the download happens elsewhere and its
+   * answer never comes back here.
+   */
+  externalDataDownload(
+    documentId: string,
+    foreignId: string
+  ): { url: string; authorization: string } {
+    const path = `/api/v10/documents/d/${documentId}/externaldata/${foreignId}`;
+    void this.countLiveCall(path, 200);
+    return {
+      url: `${this.baseUrl.replace(/\/+$/, "")}${path}`,
+      authorization: `Bearer ${this.accessToken}`
+    };
+  }
+
+  /** Counts a call Onshape bills (`isBilledCall`) in Redis
+   *  `onshape:api-calls:<year>`, and per endpoint in the hash
+   *  `onshape:api-calls:<year>:paths`; never awaited. */
+  private async countLiveCall(path: string, status: number | undefined) {
+    if (!isBilledCall(status)) return;
     try {
       const year = new Date().getUTCFullYear();
-      await redis.incr(`onshape:api-calls:${year}`);
+      await redis
+        .multi()
+        .incr(`onshape:api-calls:${year}`)
+        .hincrby(`onshape:api-calls:${year}:paths`, apiCallPathKey(path), 1)
+        .exec();
     } catch {
       // Never let accounting break a real request.
     }
@@ -313,17 +370,28 @@ export class OnshapeClient {
       // own message (e.g. "timeout of 60000ms exceeded") instead of the useless
       // "Onshape API error (undefined): undefined".
       if (status === undefined) {
-        return new OnshapeApiError(`Onshape request failed: ${error.message}`);
+        return new OnshapeApiError(
+          `Onshape request failed: ${error.message}`,
+          undefined,
+          undefined,
+          undefined,
+          this.baseUrl
+        );
       }
       const parsedRetryAfter = Number(error.response?.headers?.["retry-after"]);
+      const data = error.response?.data as unknown;
+      const onshapeMessage =
+        data && typeof data === "object"
+          ? (data as { message?: unknown }).message
+          : undefined;
       return new OnshapeApiError(
         `Onshape API error (${status}): ${
-          typeof error.response?.data === "string"
-            ? error.response.data
-            : JSON.stringify(error.response?.data)
+          typeof data === "string" ? data : JSON.stringify(data)
         }`,
         status,
-        Number.isFinite(parsedRetryAfter) ? parsedRetryAfter : undefined
+        Number.isFinite(parsedRetryAfter) ? parsedRetryAfter : undefined,
+        typeof onshapeMessage === "string" ? onshapeMessage : undefined,
+        this.baseUrl
       );
     }
     return error instanceof Error ? error : new Error(String(error));
@@ -347,28 +415,75 @@ export class OnshapeClient {
     return Array.isArray(response) ? response : (response.items ?? []);
   }
 
-  // Register a webhook subscription so Onshape POSTs lifecycle events to Carbon.
-  // Used to subscribe to onshape.revision.created (go-forward asset sync) on
-  // connect. Requires a publicly reachable callback URL and an OAuth app that
+  // Register a webhook subscription so Onshape POSTs events to Carbon: the
+  // release webhook (onshape.revision.created, company scope) and the element
+  // sync's translation webhook (onshape.model.translation.complete, document
+  // scope). Requires a publicly reachable callback URL and an OAuth app that
   // permits webhook management. The API also REQUIRES `options` and a scope
   // (`companyId` or `documentId`) — omitting either is a 400 ("options field is
-  // required" / "company id or document id required").
-  async createWebhook(params: {
-    url: string;
-    events: string[];
-    companyId: string; // Onshape company id — scopes the subscription
-    collapseEvents?: boolean;
-  }): Promise<{ id: string } & Record<string, unknown>> {
+  // required" / "company id or document id required"). A transient webhook is
+  // cleaned up by Onshape after a period of inactivity.
+  async createWebhook(
+    params: {
+      url: string;
+      events: string[];
+      collapseEvents?: boolean;
+      isTransient?: boolean;
+    } & ({ companyId: string } | { documentId: string })
+  ): Promise<{ id: string } & Record<string, unknown>> {
     return this.request<{ id: string } & Record<string, unknown>>(
       "POST",
       "/api/v10/webhooks",
       {
         url: params.url,
         events: params.events,
-        companyId: params.companyId,
+        ...("companyId" in params
+          ? { companyId: params.companyId }
+          : { documentId: params.documentId }),
+        ...(params.isTransient === undefined
+          ? {}
+          : { isTransient: params.isTransient }),
         options: { collapseEvents: params.collapseEvents ?? false }
       }
     );
+  }
+
+  /** The workspace's current microversion: it changes on every edit to the
+   *  document, so it names the workspace's exact state. */
+  async getCurrentMicroversion(
+    documentId: string,
+    workspaceId: string
+  ): Promise<string> {
+    const response = await this.request<{ microversion?: string }>(
+      "GET",
+      `/api/v10/documents/d/${documentId}/w/${workspaceId}/currentmicroversion`
+    );
+    if (!response.microversion) {
+      throw new Error("Onshape returned no current microversion");
+    }
+    return response.microversion;
+  }
+
+  /**
+   * What the workspace's parts and assemblies are made from
+   * (`workspaceSourceStates`): one element list read. Unlike the current
+   * microversion, a drawing edit leaves both unchanged, and an assembly edit
+   * leaves `parts` unchanged.
+   */
+  async getWorkspaceSourceStates(
+    documentId: string,
+    workspaceId: string
+  ): Promise<WorkspaceSourceStates> {
+    const elements = await this.getElementsIn({
+      documentId,
+      wvm: OnshapeWVMType.WORKSPACE,
+      wvmId: workspaceId
+    });
+    const states = workspaceSourceStates(elements);
+    if (!states) {
+      throw new Error("Onshape returned no element microversions");
+    }
+    return states;
   }
 
   // List the webhook subscriptions visible to the authenticated principal. Used
@@ -663,6 +778,21 @@ export class OnshapeClient {
     );
   }
 
+  /**
+   * What an app element (a drawing) references, resolved in bulk:
+   * `{ resolvedReferences: [{ targetDocumentId, targetElementId, idTag, … }] }`,
+   * read by `parseDrawingReferences` (`panel/drawings.ts`).
+   */
+  async resolveAppElementReferences(
+    document: OnshapeDocument,
+    elementId: string
+  ): Promise<unknown> {
+    return this.request<unknown>(
+      "GET",
+      `/api/v10/appelements/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/resolvereferences`
+    );
+  }
+
   async getPartsInElement(
     document: OnshapeDocument,
     elementId: string,
@@ -682,7 +812,6 @@ export class OnshapeClient {
       formatName?: OnshapeModelTranslationFormat;
       storeInDocument?: boolean;
       configuration?: string;
-      resolution?: OnshapeMeshResolution;
       // FLAGGED: single-part export support unverified. Omit to export the whole
       // Part Studio; the reliable documented path is a whole-Part-Studio translation.
       partIds?: string;
@@ -693,12 +822,8 @@ export class OnshapeClient {
       "POST",
       `/api/v10/partstudios/d/${documentId}/${options.wvm ?? "v"}/${versionId}/e/${elementId}/translations`,
       {
-        formatName: options.formatName ?? "GLTF",
+        formatName: options.formatName ?? "STEP",
         storeInDocument: options.storeInDocument ?? false,
-        // Mesh exports (GLTF) REQUIRE tessellation detail — without it Onshape
-        // fails the translation with "Invalid GLTF detail parameters were
-        // specified" (verified live). "medium" mirrors the Onshape UI default.
-        resolution: options.resolution ?? "medium",
         ...(options.configuration
           ? { configuration: options.configuration }
           : {}),
@@ -715,7 +840,6 @@ export class OnshapeClient {
       formatName?: OnshapeModelTranslationFormat;
       storeInDocument?: boolean;
       configuration?: string;
-      resolution?: OnshapeMeshResolution;
       wvm?: "w" | "v";
     } = {}
   ): Promise<OnshapeTranslation> {
@@ -723,10 +847,8 @@ export class OnshapeClient {
       "POST",
       `/api/v10/assemblies/d/${documentId}/${options.wvm ?? "v"}/${versionId}/e/${elementId}/translations`,
       {
-        formatName: options.formatName ?? "GLTF",
+        formatName: options.formatName ?? "STEP",
         storeInDocument: options.storeInDocument ?? false,
-        // Same requirement as the Part Studio path — see comment there.
-        resolution: options.resolution ?? "medium",
         ...(options.configuration
           ? { configuration: options.configuration }
           : {})
@@ -761,7 +883,7 @@ export class OnshapeClient {
     );
   }
 
-  // Binary download for storeInDocument=false results (GLTF/PDF bytes). Uses the
+  // Binary download for storeInDocument=false results (STEP/PDF bytes). Uses the
   // axios instance directly with arraybuffer — the shared `request` helper is
   // JSON-oriented and would corrupt binary. `maxBytes` bounds the download via
   // axios maxContentLength: when Onshape sends Content-Length the request
@@ -772,20 +894,25 @@ export class OnshapeClient {
     foreignId: string,
     options: { maxBytes?: number } = {}
   ): Promise<ArrayBuffer> {
+    const path = `/api/v10/documents/d/${documentId}/externaldata/${foreignId}`;
     try {
       const response = await this.axiosInstance.request<ArrayBuffer>({
         method: "GET",
-        url: `/api/v10/documents/d/${documentId}/externaldata/${foreignId}`,
+        url: path,
         responseType: "arraybuffer",
         ...(options.maxBytes ? { maxContentLength: options.maxBytes } : {})
       });
+      void this.countLiveCall(path, response.status);
       return response.data;
     } catch (error) {
-      if (
-        options.maxBytes &&
+      const tooLarge =
+        !!options.maxBytes &&
         error instanceof Error &&
-        /maxContentLength/i.test(error.message)
-      ) {
+        /maxContentLength/i.test(error.message);
+      // An oversized body is refused after Onshape answered, so that call is
+      // billed although axios reports no response.
+      void this.countLiveCall(path, tooLarge ? 200 : answeredStatus(error));
+      if (tooLarge && options.maxBytes) {
         throw new OnshapeAssetTooLargeError(
           `Onshape external data ${foreignId} exceeds the ${Math.round(
             options.maxBytes / (1024 * 1024)
@@ -796,32 +923,8 @@ export class OnshapeClient {
     }
   }
 
-  // Onshape-rendered element thumbnail at a version (shaded view PNG). Lets the
-  // sync set an item thumbnail with one small API call instead of screenshotting
-  // the viewer against the full decoded mesh (the model-thumbnail pipeline).
-  // `size` is a WxH string from Onshape's fixed set (e.g. "300x300").
-  async getElementThumbnail(
-    documentId: string,
-    versionId: string,
-    elementId: string,
-    size: string = "300x300",
-    wvm: "w" | "v" = "v"
-  ): Promise<ArrayBuffer> {
-    try {
-      const response = await this.axiosInstance.request<ArrayBuffer>({
-        method: "GET",
-        url: `/api/v10/thumbnails/d/${documentId}/${wvm}/${versionId}/e/${elementId}/s/${size}`,
-        responseType: "arraybuffer",
-        headers: { Accept: "image/png" }
-      });
-      return response.data;
-    } catch (error) {
-      throw this.toApiError(error);
-    }
-  }
-
   // Stream external data to a file on disk — for results too large to buffer
-  // in memory (e.g. a multi-GB GLTF export destined for compression, not
+  // in memory (e.g. a multi-GB STEP export destined for compression, not
   // attachment). Aborts with OnshapeAssetTooLargeError as soon as the
   // Content-Length header (or the byte count, when the header is absent)
   // crosses `maxBytes`. Returns the number of bytes written.
@@ -836,16 +939,20 @@ export class OnshapeClient {
     const { Transform } = await import("node:stream");
 
     let response: {
+      status: number;
       headers: Record<string, unknown>;
       data: NodeJS.ReadableStream;
     };
+    const path = `/api/v10/documents/d/${documentId}/externaldata/${foreignId}`;
     try {
       response = await this.axiosInstance.request({
         method: "GET",
-        url: `/api/v10/documents/d/${documentId}/externaldata/${foreignId}`,
+        url: path,
         responseType: "stream"
       });
+      void this.countLiveCall(path, response.status);
     } catch (error) {
+      void this.countLiveCall(path, answeredStatus(error));
       throw this.toApiError(error);
     }
 

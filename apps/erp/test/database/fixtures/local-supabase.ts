@@ -5,14 +5,10 @@
 import { existsSync, readFileSync } from "node:fs";
 import type { Database } from "@carbon/database";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { it } from "vitest";
+import { hasLocalDatabase } from "./local-database";
 
-/**
- * The local stack's PostgREST, as the service role, from the `.env.local` that
- * `crbn up` writes. The unit-test config stubs SUPABASE_URL and the key, so a
- * service function's Supabase reads need the real values from that file. Null
- * when there is no local stack: the tests that need it skip.
- */
-export function localServiceRoleClient(): SupabaseClient<Database> | null {
+function localEnv(): Record<string, string> | null {
   const file = [".env.local", "../../.env.local"].find((path) =>
     existsSync(path)
   );
@@ -22,10 +18,55 @@ export function localServiceRoleClient(): SupabaseClient<Database> | null {
     const match = line.match(/^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(.*)$/);
     if (match?.[1] && match[2] !== undefined) env[match[1]] = match[2].trim();
   }
-  const port = env.PORT_API;
-  const key = env.SUPABASE_SERVICE_ROLE_KEY;
+  return env;
+}
+
+/** The unit-test config stubs the service-role key; a test that runs a
+ *  posting through the local client mocks `@carbon/env` with this one. */
+export function localServiceRoleKey(): string | null {
+  return localEnv()?.SUPABASE_SERVICE_ROLE_KEY ?? null;
+}
+
+/**
+ * The local stack's PostgREST, as the service role, from the `.env.local` that
+ * `crbn up` writes. The unit-test config stubs SUPABASE_URL and the key, so a
+ * service function's Supabase reads need the real values from that file. Null
+ * when there is no local stack: the tests that need it skip.
+ */
+export function localServiceRoleClient(): SupabaseClient<Database> | null {
+  return localClient("SUPABASE_SERVICE_ROLE_KEY");
+}
+
+/** The same PostgREST with the anonymous key: a caller with no permissions. */
+export function localAnonClient(): SupabaseClient<Database> | null {
+  return localClient("SUPABASE_ANON_KEY");
+}
+
+/** A local caller whose permissions come from its API key. */
+export function localApiKeyClient(rawKey: string): SupabaseClient<Database> | null {
+  return localClient("SUPABASE_ANON_KEY", {"carbon-key": rawKey});
+}
+
+function localClient(
+  keyName: "SUPABASE_SERVICE_ROLE_KEY" | "SUPABASE_ANON_KEY",
+  headers: Record<string, string> = {}
+): SupabaseClient<Database> | null {
+  const env = localEnv();
+  const port = env?.PORT_API;
+  const key = env?.[keyName];
   if (!port || !key) return null;
   return createClient<Database>(`http://localhost:${port}`, key, {
-    auth: { autoRefreshToken: false, persistSession: false }
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: {headers}
   });
+}
+
+/** A database case that also reads through the local PostgREST: it skips when
+ *  there is no local stack to build the service-role client from. */
+export function postgrestTest(
+  name: string,
+  fn: (client: SupabaseClient<Database>) => void | Promise<void>
+): void {
+  const client = hasLocalDatabase ? localServiceRoleClient() : null;
+  it.skipIf(!client)(name, () => fn(client!), 60_000);
 }

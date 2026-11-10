@@ -333,6 +333,7 @@ export function TaskItem({
           </span>
         </div>
         <IconButton
+          aria-expanded={disclosure.isOpen}
           icon={<LuChevronRight />}
           variant="ghost"
           onClick={disclosure.onToggle}
@@ -345,6 +346,7 @@ export function TaskItem({
         <div className="px-4 py-2 rounded">
           {!isDisabled ? (
             <Editor
+              label={t`Notes for ${taskTitle}`}
               className="w-full min-h-[100px]"
               initialValue={content}
               disableFileUpload

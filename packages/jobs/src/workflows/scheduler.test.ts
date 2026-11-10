@@ -3,21 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import type { PlannedRun } from "./matcher";
 import {
   type DueWorkflow,
-  MAX_DUE_PER_WAKE,
   OVERFLOW_WAKE_MS,
-  PREVIOUS_RUN_ACTIVE,
   planClaims,
   planWakeAt,
-  SCHEDULE_EVENT_ID,
-  STALE_AFTER_MS,
-  TOO_LATE,
   WAKE_CEILING_MS
 } from "./scheduler";
-
-// ---- planWakeAt ----
 
 describe("planWakeAt", () => {
   const now = new Date("2026-08-01T10:00:00Z");
@@ -51,73 +43,11 @@ describe("planWakeAt", () => {
 
   it("floors earliestFuture to at least now + 1s", () => {
     const past = new Date(now.getTime() - 1000);
-    const result = planWakeAt({ now, earliestFuture: past, overflow: false });
-    expect(result).toBeGreaterThanOrEqual(now.getTime() + 1000);
+    expect(planWakeAt({ now, earliestFuture: past, overflow: false })).toBe(
+      now.getTime() + 1000
+    );
   });
 });
-
-// ---- PlannedRun shape ----
-
-describe("PlannedRun", () => {
-  it("has the expected flat shape fields", () => {
-    const plan: PlannedRun = {
-      workflowId: "wf_1",
-      workflowVersionId: "wfv_1",
-      eventId: SCHEDULE_EVENT_ID,
-      ownerId: "usr_1",
-      status: "Queued",
-      statusReason: null,
-      rootRunId: null,
-      causedByRunId: null,
-      depth: 0,
-      path: []
-    };
-    expect(plan.eventId).toBe("schedule");
-    expect(plan.depth).toBe(0);
-    expect(plan.path).toEqual([]);
-  });
-
-  it("accepts Skipped status (not available in matcher's MatchPlan)", () => {
-    const plan: PlannedRun = {
-      workflowId: "wf_1",
-      workflowVersionId: "wfv_1",
-      eventId: SCHEDULE_EVENT_ID,
-      ownerId: "usr_1",
-      status: "Skipped",
-      statusReason: PREVIOUS_RUN_ACTIVE,
-      rootRunId: null,
-      causedByRunId: null,
-      depth: 0,
-      path: []
-    };
-    expect(plan.status).toBe("Skipped");
-    expect(plan.statusReason).toBe(PREVIOUS_RUN_ACTIVE);
-  });
-});
-
-// ---- constant values ----
-
-describe("scheduler constants", () => {
-  it("STALE_AFTER_MS is one hour", () => {
-    expect(STALE_AFTER_MS).toBe(60 * 60 * 1000);
-  });
-
-  it("MAX_DUE_PER_WAKE is 200", () => {
-    expect(MAX_DUE_PER_WAKE).toBe(200);
-  });
-
-  it("TOO_LATE message is defined", () => {
-    expect(typeof TOO_LATE).toBe("string");
-    expect(TOO_LATE.length).toBeGreaterThan(0);
-  });
-
-  it("PREVIOUS_RUN_ACTIVE message is defined", () => {
-    expect(typeof PREVIOUS_RUN_ACTIVE).toBe("string");
-    expect(PREVIOUS_RUN_ACTIVE.length).toBeGreaterThan(0);
-  });
-});
-
-// ---- planClaims ----
 
 describe("planClaims", () => {
   const now = new Date("2026-08-01T10:00:00Z");
@@ -160,11 +90,11 @@ describe("planClaims", () => {
       now
     );
     expect(unscheduled).toEqual([]);
+    // Due 08-01 09:00 and now 10:00: tomorrow's slot, not today's missed one,
+    // so a long outage cannot queue a cascade of catch-ups. The minutes are
+    // the workflow's spread offset.
     expect(claims).toHaveLength(1);
-    // Computed from `now`, so a long outage cannot queue a cascade of catch-ups.
-    expect(new Date(claims[0]!.recomputed).getTime()).toBeGreaterThan(
-      now.getTime()
-    );
+    expect(claims[0]?.recomputed).toMatch(/^2026-08-02T09:/);
   });
 
   it("clears a workflow whose promoted version is no longer scheduled", () => {

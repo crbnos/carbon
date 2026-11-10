@@ -7,10 +7,11 @@ import { error, notFound } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { employeeAbilityCellValidator } from "~/modules/resources/resources.models";
 import type { Ability } from "~/modules/resources/types";
@@ -69,10 +70,8 @@ export default function EmployeeAbilityRoute() {
   if (!id || !employeeAbilityId) throw new Error("Invalid employee ability id");
 
   const { t } = useLingui();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.ability(id));
   const routeData = useRouteData<{ ability: Ability }>(path.to.ability(id));
-
-  const onClose = () => navigate(path.to.ability(id));
 
   const initialValues = {
     employeeId: employeeAbility.employeeId,
@@ -88,7 +87,8 @@ export default function EmployeeAbilityRoute() {
       action={path.to.employeeAbility(id, employeeAbilityId)}
       title={routeData?.ability?.name ?? t`Edit Employee Ability`}
       initialValues={initialValues}
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

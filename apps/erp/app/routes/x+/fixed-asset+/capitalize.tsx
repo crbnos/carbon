@@ -7,9 +7,10 @@ import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { useRouteDialog } from "@carbon/react";
 import { datetime, getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
 import { fixedAssetCapitalizeValidator } from "~/modules/accounting/accounting.models";
 import {
   getCapitalizationCost,
@@ -195,7 +196,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function CapitalizeFixedAssetRoute() {
   const { initialValues, assetClasses, item, serialNumber, cost } =
     useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog();
 
   return (
     <FixedAssetCapitalizeForm
@@ -204,7 +205,8 @@ export default function CapitalizeFixedAssetRoute() {
       item={item}
       serialNumber={serialNumber}
       cost={cost}
-      onClose={() => navigate(-1)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

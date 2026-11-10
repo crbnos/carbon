@@ -9,7 +9,7 @@ import type { JSONContent } from "@carbon/react";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import StockTransferDocuments from "~/modules/inventory/ui/StockTransfers/StockTransferDocuments";
@@ -17,6 +17,7 @@ import StockTransferHeader from "~/modules/inventory/ui/StockTransfers/StockTran
 import StockTransferLines from "~/modules/inventory/ui/StockTransfers/StockTransferLines";
 import StockTransferNotes from "~/modules/inventory/ui/StockTransfers/StockTransferNotes";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -30,6 +31,9 @@ export const handle: Handle = {
   ),
   module: "inventory"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.stockTransfer?.stockTransferId, "Stock Transfer");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId, api } = await authorize(request, {

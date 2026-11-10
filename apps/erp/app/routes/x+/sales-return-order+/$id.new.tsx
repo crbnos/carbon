@@ -7,14 +7,17 @@ import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { salesReturnOrderLineValidator } from "~/modules/sales/sales.models";
+import { salesReturnOrderLineFormValidator } from "~/modules/sales/sales.models";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator(salesReturnOrderLineValidator).request(args, {
-    params: ["id"]
-  });
+  const input = await validator(salesReturnOrderLineFormValidator).request(
+    args,
+    {
+      params: ["id"]
+    }
+  );
   if ("invalid" in input) return input.invalid;
   const orderId = input.params.id;
   const { api } = await authorize(args.request);

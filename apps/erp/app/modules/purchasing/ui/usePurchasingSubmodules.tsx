@@ -56,18 +56,6 @@ export default function usePurchasingSubmodules() {
       ]
     },
     {
-      name: t`Agreements`,
-      routes: [
-        {
-          name: t`Leases`,
-          to: path.to.leases,
-          page: "purchasing.leases",
-          icon: <LuKeyRound />,
-          table: "lease"
-        }
-      ]
-    },
-    {
       name: t`Planning`,
       routes: [
         {
@@ -76,6 +64,18 @@ export default function usePurchasingSubmodules() {
           page: "purchasing.materialPlanning",
           icon: <LuListTodo />,
           table: "planning"
+        }
+      ]
+    },
+    {
+      name: t`Agreements`,
+      routes: [
+        {
+          name: t`Leases`,
+          to: path.to.leases,
+          page: "purchasing.leases",
+          icon: <LuKeyRound />,
+          table: "lease"
         }
       ]
     },

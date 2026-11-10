@@ -5,6 +5,8 @@ paths:
   - "packages/ee/src/mcp/**"
   - "scripts/generate-mcp.ts"
   - "scripts/lib/service-fn-metadata.ts"
+  - "scripts/lib/build-manifest.ts"
+  - "scripts/lib/id-lookups.ts"
 ---
 
 # Carbon ERP MCP Server
@@ -33,8 +35,9 @@ Don't list individual tools in docs: they go stale. `search_tools` and
 `CI`; Vercel still runs it), and the `typecheck`, `build` and `test` of `erp` and
 `docs` depend on it. The task is cached on the inputs in `turbo.json`: the
 module sources, the app's `types`, `utils` and `services`, the generated DB
-types, `scripts/lib` and the package sources the modules' types reach
-(`@carbon/ee` included: published inputs use its validators).
+types, the migrations (the id lookups read view SQL), `scripts/lib` and the
+package sources the modules' types reach (`@carbon/ee` included: published
+inputs use its validators).
 `apps/erp/test/mcp-manifest-cache-inputs.test.ts` fails when a models file or a
 module's `<module>.server.ts` imports something those inputs do not cover.
 
@@ -46,14 +49,59 @@ regenerates without the cache and fails when the digest is stale. Pre-commit
 the same inputs; its path pattern mirrors the turbo list, so change both.
 
 Each entry (`ManifestEntry`, `@carbon/api`): `{ name, module, classification,
-title, description, permission, paginates, schema, responseSchema?, serviceFn }`.
+title, description, permission, paginates, schema, responseSchema?, lookups?,
+serviceFn }`.
 `serviceFn.path` is the operation's path in the router
 (`["production", "cancelJob"]`). The file also carries `companyTables`, read from
 the generated DB types (generation fails if it comes back short).
 
+## Id lookups
+
+`lookups` maps an id input to the READ operations that list its ids
+(`nonConformanceTypeId` → `["quality_getIssueTypesList"]`), and the field's
+description gets "See …" so `describe_tool` and the API docs say
+where a valid value comes from. `linkIdLookups` (`scripts/lib/id-lookups.ts`)
+decides it after the entries are built:
+
+- **The field's table.** `id`/`ids`: the only table the operation reads, when
+  all its reads are known. Otherwise a foreign key of that column on a table the
+  operation touches; only when its own tables are unknown, the only table any
+  foreign key of that column points at; then a table named after the field
+  (`salesInvoiceId` → `salesInvoice`). Foreign keys come from the generated DB
+  types, tables only (the types repeat each key per view).
+- **The operation's reads** (`queriedRelations`, `scripts/lib/service-ast.ts`):
+  `.from()`, Kysely calls and the `@carbon/database/rows` helpers in `run` and
+  every app-code building block it reaches (six calls deep, through imports and
+  re-exports, syntactically: the type checker took the build past its 4 GB
+  heap). Package code is plumbing and is not walked. An `.rpc()`, `rpcRows`,
+  raw `` sql`…` ``, a relation passed as a variable (`client.from(table)`), an
+  app call it cannot follow or a deeper chain makes the reads unknown, and an
+  operation with unknown reads is never a lookup. A capitalised global's
+  `from` (`Array.from`, `Buffer.from`) is not a query.
+- **The lookup.** A general list READ returning rows with an `id` — paged,
+  filterable, a `…List`, or scoped only by parents the table points at
+  (`getJobOperationsList(jobId)`) — whose every read is that table or a view
+  whose `id` IS that table's id. A special-purpose list with no inputs
+  (`getUnbatchedBatchableOperationCount`) is a subset and never a lookup.
+  Ranked by fewest required inputs, then a `…List`, then paged, then shortest
+  name. Several are named only when the best tier's lists slice the table on
+  one column (`parts`, `materials`, `tools` filter `item.type`); a subset view
+  (`invitable` beside `employees`) is not named.
+- **Views.** Every migration is parsed with `libpg-query` (`viewBaseTables`,
+  about 0.4 s for all of them), in timestamp order, so each view's latest
+  definition wins. A view's id source follows aliases, stars, CTEs and views on
+  views, and keeps the `col = 'text'` filters on the way. A union, a computed
+  id, or an unqualified id beside a subquery or function leaves the view out.
+  Migrations that do not parse (five from 2025, none defining a view) are
+  listed in one warning and skipped.
+
+A field it cannot place gets no lookup. Pinned by
+`packages/checks/src/id-lookups.test.ts`.
+
 ## How the generator reads a service function
 
-`buildManifest()` (`scripts/lib/service-fn-metadata.ts`) walks
+`buildManifest()` (`scripts/lib/build-manifest.ts`) runs
+`buildServiceFnTools` (`scripts/lib/service-fn-metadata.ts`), which walks
 `apps/erp/app/modules/router.server.ts` with ts-morph. Each module is a namespace
 import of its server file, and each exported `defineServiceFn` const is a leaf;
 any other value export in a server file fails generation.
@@ -91,7 +139,12 @@ any other value export in a server file fails generation.
 - **Input schema**: the TYPE of `run`'s input parameter, through
   `typeToJsonSchema` (`scripts/lib/response-schema.ts`). A field whose type
   admits `undefined` is optional. Enum members are sorted, so the hash does not
-  move with the checker's type ids.
+  move with the checker's type ids. The type carries no descriptions, so
+  `inputFieldDescriptions` (`scripts/lib/input-docs.ts`) reads each top-level
+  field's `.describe("…")` from the source, following the validator an input
+  extends; `@param` overrides it. A loose input whose `run` calls a building
+  block of its module that runs `setGenericQueryFilters`
+  (`appliesGenericFilters`) also publishes `filters` and `sorts`.
 - **Response schema**: `run`'s return type, with `Promise` and `{ data, error }`
   peeled off. A `paged` result (`{ rows, count }`, `@carbon/api/service-tools.server`)
   is published as its rows with `paginates: true`; rows that are not a list
@@ -129,7 +182,11 @@ The procedure (`api+/v1+/lib/router.server.ts`) is the same one HTTP serves:
 4. A refusal (`CarbonError`) becomes an `ORPCError` with the category's code and
    status, and `data.category`. The message is the function's own; a throw
    inside `run` arrives as `internal` with the cause logged, not returned.
-5. `shapeHttpBody`: a list (`isListOperation`, an array response schema) goes
+5. The spec (`openapi[.]json.ts`) adds every refusal beside the 200 body
+   (`withErrorResponses`, `spec-options.server.ts`): a JSON `Error`
+   (`{ code, status, message, data: { category } }`) from the operation, plain
+   text for the API key's own 401 / 403 / 429.
+6. `shapeHttpBody`: a list (`isListOperation`, an array response schema) goes
    out as `{ results, count }`, anything else as the bare value.
    `callOperation` reverses it with `unshapeHttpBody`.
 
@@ -183,20 +240,31 @@ engine: `serveMcpRequest` throws `EntitlementError`, which the route turns into
 a 402 (`makeMcpDisabledResponse`). One check covers both auth paths, the
 Community edition and Cloud Starter. The discovery endpoints are not gated.
 
-## The 3 meta-tools
+## The 4 meta-tools
 
-Only three tools are registered (`packages/ee/src/mcp/server.ts`); every ERP
+Only four tools are registered (`packages/ee/src/mcp/server.ts`); every ERP
 operation is reached through them.
 
 | Tool | Purpose |
 |------|---------|
 | `search_tools` | Ranked discovery. Filters: `query`, `module` (substring), `classification`, `limit` (default 10) / `offset`. |
 | `describe_tool` | The contract for one `name` or up to 10 `names`: description, permission, list marker, input and response schema. |
-| `call_tool` | Run a tool: `{ name, arguments, fields? }`. `arguments` may arrive as a JSON string. Parameters go flat, exactly as `describe_tool` lists them. |
+| `call_tool` | Run a READ or WRITE tool: `{ name, arguments, fields? }`. `arguments` may arrive as a JSON string. Parameters go flat, exactly as `describe_tool` lists them. |
+| `call_destructive_tool` | The same, for a DESTRUCTIVE tool, with `destructiveHint: true`. Each refuses the other's tools, so a client can ask before a delete runs; one handler (`runCall`) serves both. |
 
 An unknown name in `call_tool` or `describe_tool` is answered with the three
 closest tools from catalog search ("Did you mean: …"); `call_tool` does not
 dispatch it.
+
+`call_tool` also refuses, without dispatching, a top-level argument a STRICT
+input would drop (`unknownArguments`, `describe-format.ts`): one whose schema
+lists `properties` and publishes no `additionalProperties` (a `z.object`; a
+`z.looseObject` publishes `additionalProperties` and is left alone). The HTTP
+API keeps accepting and dropping such a field; an agent reads that success as
+"saved". The call is logged with its argument KEYS only (values are customer
+data). It was found when the refactor's strict inputs silently dropped the
+`workInstruction` and `assignee` that the old pass-through tools wrote
+(`.ai/runs/2026-10-19-api-refactor-lost-mcp-writes.md`).
 
 ### Catalog search (`packages/ee/src/mcp/catalog-search.ts`)
 
@@ -224,6 +292,9 @@ the manifest.
   measured 22/34 at best against 33/34. Pinning cannot hold the exact-name rule
   because it matches the expanded term, not the query. `stemInflection` leaves
   "materials" unstemmed, so `sameWord` also accepts a plain -s/-es plural.
+- `DOCUMENT_VERBS` (receive → receipt, ship → shipment) ranks tools named for
+  that document first, before name coverage: "receive a purchase order" asks
+  for a receipt, and the order's two words otherwise outranked it.
 - `module` keeps substring semantics; filter-only calls bypass the index.
 - `search_tools` output (`formatSearchResults`, `describe-format.ts`): one
   line per tool in rank order, `name [READ] (requiredParams, +N optional)`
@@ -301,19 +372,22 @@ knowingly accepted. Seed first (`pnpm db:seed:dev`). Not part of `pnpm test`.
 ## The agent evaluation
 
 `apps/erp/test/mcp-eval/satellite.xml`: ten read-only, multi-hop questions in
-the mcp-builder skill's format, answered only through the three meta-tools,
+the mcp-builder skill's format, answered only through the meta-tools,
 each with one answer checked by string comparison. The answers come from the
 satellite demo dataset (no dates or sequence ids), so they hold for any company
 seeded with it; the file's header names the traps it sets on purpose. Run it
 with that skill's `scripts/evaluation.py` and a `crbn_` key holding the view
 scopes. Not part of `pnpm test`.
 
-## The 14 modules
+## The 16 modules
 
 `accounting` · `documents` · `inventory` · `invoicing` · `items` · `people` ·
-`production` · `purchasing` · `quality` · `resources` · `sales` · `settings` ·
-`shared` · `users`. Each is one namespace in `modules/router.server.ts`. The
-caller's own account (`users_getAccount`, `users_updatePublicAccount`, …) is
+`production` · `projects` · `purchasing` · `quality` · `resources` · `sales` ·
+`service` · `settings` · `shared` · `users`. Each is one namespace in
+`modules/router.server.ts`. The router also holds `agent` and `workflows`, which
+publish no tool. An API key holds only the scopes in `apiKeyPermissionModules`
+(`settings.models.ts`), so a module whose tools gate on its own permission must be
+listed there, or a key can never call them. The caller's own account (`users_getAccount`, `users_updatePublicAccount`, …) is
 part of `users` and gates on company membership.
 
 ## File uploads (two-step, signed URL)
@@ -344,6 +418,24 @@ salesOrderLineId?, convert? }`). The `temp-staging` storage policies read the ke
 scopes (Create / Edit on any item page, `parts.parts_create` … `parts.services_update`), so an API key with those scopes can mint
 the URL and upload — unlike the document pair above, which signs into a company bucket.
 
+## Rich text is Markdown
+
+A rich-text column (notes, work instructions, change-notice text) holds a
+TipTap document. A tool takes it as Markdown and stores it with
+`TiptapText(text).toDocument()` (`@carbon/files/markdown`, CommonMark, raw HTML
+kept as text, no DOM), so headings, bold, italic, lists, links, quotes and code render
+in the editor. The entry points: `toTiptapDoc` / `optionalTiptapDoc`
+(`shared.models.ts`; a JSON document string or object passes through), the
+three `set…WorkInstruction` tools, and `shared_setNotes`, which writes the
+notes a person edits in the app (`noteFields`: internal / external notes on
+sales and purchasing documents and lines, `notes` on jobs, items, fixed
+assets, picking lists and stock transfers) as the caller, like the editors.
+Empty text stores `{}`. `TiptapText(text, { format: "text" })` stores text as
+typed, for imported text that is not ours to read as Markdown (Paperless Parts)
+and for contract notes (`optionalPlainTextDoc`): the app edits them in a plain
+textarea read back with `TiptapText(doc).toString()`, which would drop the
+Markdown markers.
+
 ## Gotchas
 
 - **Renaming or moving a service function renames its tool**, and there are no
@@ -354,5 +446,16 @@ the URL and upload — unlike the document pair above, which signs into a compan
   runs the gate and `run`; nothing a route does around the call.
 - A function gated on several modules publishes `module: null` in the
   manifest; its own gate decides, as for every function.
+- A write gated on `{}` admits an API key with any scope, even a read-only one.
+  It starts with `refuseKeyWithout(ctx, required)` (`shared.service.ts`), and its
+  `@remarks` name what a key needs: the manifest shows no permission.
+- **A form validator's `.refine()` checks are invisible in the published
+  schema**: the manifest says a field is optional, and the call refuses it
+  anyway. Give the API input the base object and fill or keep what a caller
+  leaves out. The job and quote operations do: `baseJobOperationValidator` /
+  `baseQuoteOperationValidator`, a create filled by `withOperationStandards`
+  (`shared.service.ts`, as the bill of process form fills it), an update
+  leaving out what it was not sent; only the inspection plan stays required
+  (`inspectionPlanRequired`). Pinned by `apps/erp/test/operation-api-input.test.ts`.
 - "Shelf" was renamed to **storage unit** (`inventory_*StorageUnit*`). "Shelf
   life" (`*ShelfLife*`) is a different, current concept.

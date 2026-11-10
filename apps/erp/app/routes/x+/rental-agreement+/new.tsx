@@ -21,7 +21,10 @@ import {
 } from "~/modules/sales/ui/Rentals";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("Rental Agreement");
 
 export const handle: Handle = {
   breadcrumb: msg`Rental Agreements`,

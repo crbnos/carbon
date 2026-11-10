@@ -13,6 +13,7 @@
 
 import { today } from "@internationalized/date";
 import type { PoolClient } from "pg";
+import { defense } from "./data/defense/index.ts";
 import { motor } from "./data/motor/index.ts";
 import { precision } from "./data/precision/index.ts";
 import { robotics } from "./data/robotics/index.ts";
@@ -35,7 +36,8 @@ export const DATASETS: Record<DatasetKey, Dataset> = {
   satellite,
   robotics,
   precision,
-  motor
+  motor,
+  defense
 };
 
 export function getDataset(key: string): Dataset | null {
@@ -117,8 +119,14 @@ export async function applyDatasetTiers(
   } = opts;
 
   const anchor = today(timeZone);
-  const ctx = await buildCtx(client, companyId, userId, dataset, anchor, (m) =>
-    log(`  ${m}`)
+  const ctx = await buildCtx(
+    client,
+    companyId,
+    userId,
+    dataset,
+    anchor,
+    timeZone,
+    (m) => log(`  ${m}`)
   );
   const selected = selectTiers(tiers ?? null);
 

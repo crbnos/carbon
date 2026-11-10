@@ -4,13 +4,13 @@
 
 import {
   Badge,
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
   HStack,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   useDisclosure
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -33,6 +33,7 @@ import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useProcesses } from "~/components/Form/Process";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Procedures } from "../../types";
@@ -42,9 +43,11 @@ type ProceduresTableProps = {
   data: Procedures[];
   tags: { name: string }[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
+const ProceduresTable = memo((props: ProceduresTableProps) => {
+  const { data, tags, count, infinite } = props;
   const navigate = useNavigate();
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -150,15 +153,18 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
           }>;
 
           return (
-            <HoverCard>
-              <HoverCardTrigger>
+            <Popover>
+              <PopoverTrigger
+                aria-label={t`Versions of ${row.original.name} (${versions?.length ?? 0})`}
+                className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
                 <Badge variant="secondary" className="cursor-pointer">
                   {versions?.length ?? 0} Version
                   {versions?.length === 1 ? "" : "s"}
                   <LuEllipsisVertical className="w-3 h-3 ml-2" />
                 </Badge>
-              </HoverCardTrigger>
-              <HoverCardContent>
+              </PopoverTrigger>
+              <PopoverContent aria-label={t`Versions of ${row.original.name}`}>
                 <div className="flex flex-col w-full gap-4 text-sm">
                   {(versions ?? [])
                     .sort((a, b) => a.version - b.version)
@@ -179,8 +185,8 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
                       </div>
                     ))}
                 </div>
-              </HoverCardContent>
-            </HoverCard>
+              </PopoverContent>
+            </Popover>
           );
         },
         meta: {
@@ -231,6 +237,7 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
         data={data}
         columns={columns}
         count={count}
+        infinite={infinite}
         primaryAction={
           permissions.has({ "production.procedures": "Create" }) && (
             <New label={t`Procedure`} to={path.to.newProcedure} />
@@ -241,18 +248,12 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
         table="procedure"
         withSavedView
       />
-      {deleteDisclosure.isOpen && selectedProcedure && (
+      {selectedProcedure && (
         <ConfirmDelete
           action={path.to.deleteProcedure(selectedProcedure.id!)}
-          isOpen
-          onCancel={() => {
-            setSelectedProcedure(null);
-            deleteDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            setSelectedProcedure(null);
-            deleteDisclosure.onClose();
-          }}
+          isOpen={deleteDisclosure.isOpen}
+          onCancel={deleteDisclosure.onClose}
+          onSubmit={deleteDisclosure.onClose}
           name={selectedProcedure.name ?? "procedure"}
           text="Are you sure you want to delete this procedure?"
         />

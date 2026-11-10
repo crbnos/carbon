@@ -89,7 +89,8 @@ export function MaterialRowTitle({
   itemId,
   itemType,
   supersessionMode,
-  hasRules
+  hasRules,
+  missingPullFrom
 }: {
   readableId?: string | null;
   description?: string | null;
@@ -97,12 +98,18 @@ export function MaterialRowTitle({
   itemType?: string | null;
   supersessionMode?: Parameters<typeof ItemLifecycleBadge>[0]["mode"];
   hasRules?: boolean;
+  missingPullFrom?: boolean;
 }) {
   return (
     <VStack spacing={0} className="py-1 cursor-pointer max-md:py-0">
       <div className="flex w-full min-w-0 items-center gap-2 group">
         <h3 className="font-semibold min-w-0 truncate">{readableId ?? ""}</h3>
         <ItemLifecycleBadge mode={supersessionMode} />
+        {missingPullFrom && (
+          <Badge variant="red" className="shrink-0">
+            <Trans>No storage unit</Trans>
+          </Badge>
+        )}
         {hasRules && (
           <LuSquareFunction className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
         )}
@@ -112,7 +119,13 @@ export function MaterialRowTitle({
             onClick={(e) => e.stopPropagation()}
             className="max-md:hit-area shrink-0"
           >
-            <LuExternalLink className="h-4 w-4 md:opacity-0 group-hover:opacity-100" />
+            <LuExternalLink
+              aria-hidden
+              className="h-4 w-4 md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+            />
+            <span className="sr-only">
+              <Trans>Open {readableId ?? ""} details</Trans>
+            </span>
           </Link>
         )}
       </div>
@@ -171,7 +184,7 @@ export function MaterialRowDetails({
 
   if (isPhone) {
     return (
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8125rem] text-muted-foreground">
         <span className="font-medium text-foreground tabular-nums">
           <Trans>Qty {quantity}</Trans>
         </span>
@@ -262,7 +275,7 @@ export function OperationRowDetails({
 
   if (isPhone) {
     return (
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.8125rem] text-muted-foreground">
         {times.map(([type, time, unit]) => (
           <span key={type} className="inline-flex items-center gap-1">
             <TimeTypeIcon type={type} className="size-3.5" />

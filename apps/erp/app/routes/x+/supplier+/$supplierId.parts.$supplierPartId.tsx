@@ -5,9 +5,10 @@
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { isSupplierPartItemType } from "~/modules/items/ui/Item/SupplierPartForm";
 import { getCustomFields } from "~/utils/form";
@@ -65,7 +66,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const purchasingHistory = await client
     .from("purchaseOrderLine")
     .select(
-      "id, purchaseQuantity, supplierUnitPrice, purchaseOrderId, purchaseOrder!inner(purchaseOrderId, supplierId, orderDate, currencyCode)"
+      "id, purchaseQuantity, supplierUnitPrice, purchaseOrderId, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey!inner(purchaseOrderId, supplierId, orderDate, currencyCode)"
     )
     .eq("itemId", supplierPart.itemId)
     .eq("purchaseOrder.supplierId", supplierPart.supplierId)
@@ -93,8 +94,7 @@ export default function SupplierEditSupplierPartRoute() {
     purchasingHistory
   } = useLoaderData<typeof loader>();
 
-  const navigate = useNavigate();
-  const onClose = () => navigate(path.to.supplierParts(supplierId));
+  const dialog = useRouteDialog(path.to.supplierParts(supplierId));
 
   const initialValues = {
     id: supplierPart.id,
@@ -117,7 +117,8 @@ export default function SupplierEditSupplierPartRoute() {
       unitOfMeasureCode={unitOfMeasureCode}
       priceBreaks={priceBreaks}
       purchasingHistory={purchasingHistory}
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

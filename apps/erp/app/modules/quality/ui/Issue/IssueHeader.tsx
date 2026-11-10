@@ -24,6 +24,10 @@ import {
   LuTrash
 } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
+import {
+  EditDocumentMenuItem,
+  useDocumentEditModal
+} from "~/components/DocumentEditModal";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -36,6 +40,7 @@ import IssueStatus from "./IssueStatus";
 const IssueHeader = () => {
   const { id } = useParams();
   if (!id) throw new Error("id not found");
+  const documentEdit = useDocumentEditModal("issue", id);
 
   const routeData = useRouteData<{
     nonConformance: Issue;
@@ -146,6 +151,9 @@ const IssueHeader = () => {
                       <Trans>Report</Trans>
                     </a>
                   </DropdownMenuItem>
+                  {documentEdit.canEdit && (
+                    <EditDocumentMenuItem onSelect={documentEdit.openEditor} />
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </RecordAction>
@@ -201,21 +209,20 @@ const IssueHeader = () => {
           </>
         }
       />
-      {deleteIssueModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteIssue(id)}
-          isOpen={deleteIssueModal.isOpen}
-          name={routeData?.nonConformance?.nonConformanceId!}
-          text={t`Are you sure you want to delete ${routeData?.nonConformance
-            ?.nonConformanceId!}? This cannot be undone.`}
-          onCancel={() => {
-            deleteIssueModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteIssueModal.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteIssue(id)}
+        isOpen={deleteIssueModal.isOpen}
+        name={routeData?.nonConformance?.nonConformanceId!}
+        text={t`Are you sure you want to delete ${routeData?.nonConformance
+          ?.nonConformanceId!}? This cannot be undone.`}
+        onCancel={() => {
+          deleteIssueModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteIssueModal.onClose();
+        }}
+      />
+      {documentEdit.modal}
     </>
   );
 };

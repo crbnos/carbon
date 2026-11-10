@@ -130,7 +130,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (quantities.error) {
     throw redirect(
       path.to.items,
-      await flash(request, error(quantities, "Failed to load tool quantities"))
+      await flash(
+        request,
+        error(quantities.error, "Failed to load tool quantities")
+      )
     );
   }
 
@@ -139,7 +142,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.items,
       await flash(
         request,
-        error(itemStorageUnitQuantities, "Failed to load tool quantities")
+        error(itemStorageUnitQuantities.error, "Failed to load tool quantities")
       )
     );
   }

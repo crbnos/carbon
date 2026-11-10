@@ -23,7 +23,7 @@ import {
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
-  toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -63,12 +63,14 @@ type PurchasingRFQLineFormProps = {
     itemType: ItemType;
   };
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const PurchasingRFQLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose
 }: PurchasingRFQLineFormProps) => {
   const { t } = useLingui();
@@ -117,7 +119,7 @@ const PurchasingRFQLineForm = ({
       .single();
 
     if (item.error) {
-      toast.error(t`Failed to load item details`);
+      toastError(t`Failed to load item details`, item.error);
       return;
     }
 
@@ -151,6 +153,7 @@ const PurchasingRFQLineForm = ({
     <>
       <ModalCardProvider type={type}>
         <ModalCard
+          open={open}
           onClose={onClose}
           isCollapsible={isEditing}
           defaultCollapsed={false}
@@ -357,8 +360,9 @@ const PurchasingRFQLineForm = ({
           </ModalCardContent>
         </ModalCard>
       </ModalCardProvider>
-      {isEditing && deleteDisclosure.isOpen && (
+      {isEditing && (
         <DeletePurchasingRFQLine
+          isOpen={deleteDisclosure.isOpen}
           line={initialValues as PurchasingRFQLine}
           onCancel={deleteDisclosure.onClose}
         />

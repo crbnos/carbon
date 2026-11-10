@@ -398,7 +398,7 @@ async function getIssuesQuery(
   let query = client
     .from("issues")
     .select(
-      "id, status, priority, source, openDate, closeDate, nonConformanceTypeId, containmentStatus, createdAt"
+      "id, status, priority, source, openDate, closeDate, nonConformanceTypeId"
     )
     .eq("companyId", companyId);
 
@@ -426,7 +426,7 @@ async function getFilteredIssuesQuery(
   let query = client
     .from("issues")
     .select(
-      "id, status, priority, source, openDate, closeDate, nonConformanceTypeId, containmentStatus, createdAt"
+      "id, status, priority, source, openDate, closeDate, nonConformanceTypeId"
     )
     .eq("companyId", companyId)
     .gte("openDate", start)

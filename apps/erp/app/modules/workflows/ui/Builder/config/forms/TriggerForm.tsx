@@ -254,7 +254,11 @@ function ScheduleEditor({
           onValueChange={(v) => onChange({ freq: v as Schedule["freq"] })}
           disabled={isReadOnly}
         >
-          <SelectTrigger className="w-full" disabled={isReadOnly}>
+          <SelectTrigger
+            aria-label={t`Frequency`}
+            className="w-full"
+            disabled={isReadOnly}
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -323,7 +327,11 @@ function ScheduleEditor({
             }
             disabled={isReadOnly}
           >
-            <SelectTrigger className="w-full" disabled={isReadOnly}>
+            <SelectTrigger
+              aria-label={t`On day`}
+              className="w-full"
+              disabled={isReadOnly}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -351,7 +359,11 @@ function ScheduleEditor({
             onValueChange={(v) => onChange({ hour: Number(v) })}
             disabled={isReadOnly}
           >
-            <SelectTrigger className="flex-1" disabled={isReadOnly}>
+            <SelectTrigger
+              aria-label={t`Hour`}
+              className="flex-1"
+              disabled={isReadOnly}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -368,7 +380,11 @@ function ScheduleEditor({
             onValueChange={(v) => onChange({ minute: Number(v) })}
             disabled={isReadOnly}
           >
-            <SelectTrigger className="flex-1" disabled={isReadOnly}>
+            <SelectTrigger
+              aria-label={t`Minute`}
+              className="flex-1"
+              disabled={isReadOnly}
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -392,7 +408,11 @@ function ScheduleEditor({
           onValueChange={(v) => onChange({ tz: v })}
           disabled={isReadOnly}
         >
-          <SelectTrigger className="w-full" disabled={isReadOnly}>
+          <SelectTrigger
+            aria-label={t`Timezone`}
+            className="w-full"
+            disabled={isReadOnly}
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

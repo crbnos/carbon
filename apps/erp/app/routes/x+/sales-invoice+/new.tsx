@@ -23,7 +23,10 @@ import SalesInvoiceForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceFo
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path, requestReferrer } from "~/utils/path";
+
+export const meta = newRecordMeta("Sales Invoice");
 
 export const handle: Handle = {
   breadcrumb: msg`Sales`,

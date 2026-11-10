@@ -70,7 +70,8 @@ in the migrations — **newest wins**; core tables created in
   `nonConformanceItem.quantity` takes it first, inside its transaction, before touching
   any item row: the quantity edit, `assignEntitiesToIssueItem`, `splitIssueItem`, the
   inspection association (`createIssueAssociation`), the job-operation auto-link of
-  `createIssue`, the ERP inspection reject (`rejectInspection`), sales-return
+  `createIssue` and its tracked-entity link (`linkIssueTrackedEntities`: only a
+  unit in stock goes on a row, at what it holds), the ERP inspection reject (`rejectInspection`), sales-return
   escalation, and MES
   `linkIssueDispositionContext` (which also writes the MES reject's inspection link, via
   `createQualityIssue({ inspectionId })`). `linkEntitiesToIssueItemRow` is the shared
@@ -86,12 +87,22 @@ in the migrations — **newest wins**; core tables created in
   `accountDefault.scrapAccount` for every company — Provisional before the accounting
   cutover, when an empty `scrapAccount` becomes a stand-in line on retained earnings;
   after it an empty one falls back to `inventoryAdjustmentVarianceAccount`), **not** raw `itemLedger`
-  inserts. `closeIssue` builds `movements[]` and invokes it BEFORE the status-flip
-  transaction (idempotent per `(documentType,documentId)`, so a retry is safe; a GL
-  failure aborts the close). Movement rules: tracked Scrap/Return → `-link.qty` per
-  entity; non-tracked `Inventory` **non-inspection** Scrap → `-row.qty` write-off;
+  inserts. `closeIssue` builds `movements[]` and invokes it INSIDE the status-flip
+  transaction, after the plan is re-read and checked, so a write-off never commits
+  while the NCR stays open (idempotent per `(documentType,documentId)`; a GL failure
+  rolls the close back). A tracked Scrap or Return draws each unit from the bins it
+  has stock in and never writes off more than it has: a unit with no stock left
+  (written off by another issue, shipped, consumed) books nothing, a Use As Is or
+  Rework leaves such a unit as it is, and the close's `warning` says so. An NCR can hold several inspection lots: every linked lot's
+  write-off is restored on Use As Is / Rework. Movement rules: tracked Scrap/Return → for a unit with ledger
+  rows, up to `link.qty` drawn from the bins it has stock in (largest first); for
+  a unit with none (job work in progress), `-link.qty` at the NCR's location; non-tracked `Inventory` **non-inspection** Scrap → `-row.qty` write-off;
   non-tracked `Inventory` **inspection-originated** Use-As-Is/Rework → `+row.qty` restore
-  (undoing the reject write-off); tracked Use-As-Is/Rework and any `Non-Inventory` move
+  (undoing the reject write-off); inspection-originated Return to Supplier → nothing, because
+  the supplier return shipment puts those units back before it ships them
+  (`getReturnLineWriteOffs` in `postShipment`, at the write-off's own cost, Dr Inventory /
+  Cr Scrap; voiding the shipment writes them off again) — without it the shipment relieved
+  units the reject had already written off; tracked Use-As-Is/Rework and any `Non-Inventory` move
   no value. Origin detected via the `nonConformanceInspection` link. Reopen is blocked
   once a `Non-Conformance` `itemLedger` row exists (`setIssueStatus`). See
   `.claude/rules/inspection-system.md` and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
@@ -102,7 +113,7 @@ in the migrations — **newest wins**; core tables created in
 - **Start** (when `Registered`) → POST `path.to.issueStatus(id)` `{status:"In Progress"}`
   → `setIssueStatus`, which takes only Registered / In Progress.
 - **Complete** (when `In Progress`) → `path.to.closeIssue(id)` → `completeIssue`
-  (posts the dispositions, sets `Closed`, clears assignee, sets `closeDate`).
+  (posts the dispositions, sets `Closed`, sets `closeDate`).
 - **Reopen** (when `In Progress`/`Closed`, not locked) → `issueStatus` `{status:"Registered"}`.
 - **Delete Issue** → `path.to.deleteIssue(id)`.
 
@@ -194,7 +205,9 @@ Reviewers managed in `ReviewersList.tsx` (`nonConformanceReviewerValidator` = ju
   longer exists; treat the `type: "investigation"` UI path as vestigial.
 - The module is `quality`, not `issue`; permission key is `quality`. Routes are split
   (`x+/quality+/` for list/types/workflows, `x+/issue+/` for the detail + actions).
-- Slack NC notifications are config on the `integration` row (`20250810203046`):
-  `nonconformance_channel_id`, `nonconformance_notifications_enabled` — no extra tables.
+- Slack NC notifications post to the channel picked at Slack install, read off the company's
+  Slack connection (`getSlackWorkspace().channelId`, `integrationConnection` metadata) — the old
+  `nonconformance_channel_id` / `nonconformance_notifications_enabled` jsonschema fields were
+  dropped in `20261026151304` (they had no readers).
 - Filename `20251114222648_supplier_id.sql` is non-conformance work (supplier links +
   disposition enum), not a generic "supplier" change.

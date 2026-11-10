@@ -31,7 +31,8 @@ import {
   Th,
   Thead,
   Tr,
-  toast
+  toast,
+  toastError
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
@@ -101,7 +102,7 @@ const useSupplierInteractionLineDocuments = ({
         .remove([getPath(file)]);
 
       if (error) {
-        toast.error(error.message || "Error deleting file");
+        toastError("Error deleting file", error);
         return;
       }
 
@@ -117,7 +118,7 @@ const useSupplierInteractionLineDocuments = ({
       try {
         await downloadUrl(url, file.name);
       } catch (error) {
-        toast.error(t`Error downloading file`);
+        toastError(t`Error downloading file`, error);
         logger.error("Error", { error: error });
       }
     },
@@ -261,6 +262,16 @@ const SupplierInteractionLineDocuments = ({
                       <HStack>
                         <DocumentIcon type={type} />
                         <span
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(
+                            e: React.KeyboardEvent<HTMLSpanElement>
+                          ) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              e.currentTarget.click();
+                            }
+                          }}
                           className="font-medium"
                           onClick={() => {
                             if (["PDF", "Image"].includes(type)) {

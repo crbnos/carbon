@@ -3,29 +3,51 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ServiceContext } from "@carbon/api/service-fn.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
+import { fetchAllByIds } from "@carbon/database";
+import type { Gate } from "@carbon/database/access";
 import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  needsReconnect,
+  readConnections,
+  usableConnections
+} from "@carbon/ee/integrations/connections";
 import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import type { CompanyLock, WorkflowIssue } from "@carbon/ee/workflows";
 import {
   createWorkflowCatalog,
+  INTEGRATION_CONNECTION_INPUT,
   readWorkflowVersion,
   syncWorkflowTriggers,
   validateDefinition
 } from "@carbon/ee/workflows";
 import { requireWorkflowsEntitlement } from "@carbon/ee/workflows.server";
 import { trigger } from "@carbon/jobs";
+import {
+  CONNECTION_PROVIDER,
+  getPieceAction,
+  PROPERTY_PROVIDER,
+  requiredScopesFor,
+  resolvePieceAuth
+} from "@carbon/jobs/integrations";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
+import { datetime, requireAffected } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
-import type { Filter, GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import { path } from "~/utils/path";
+import type { Filter, GenericQueryFilters, Paging } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
+import type { OptionsErrorCode } from "./types";
 import type { workflowValidator } from "./workflows.models";
 import { MAX_RUN_STEPS } from "./workflows.utils";
+
+export const WORKFLOWS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
 
 export async function getWorkflows(
   client: SupabaseClient<Database>,
@@ -36,7 +58,7 @@ export async function getWorkflows(
     .from("workflow")
     .select(
       "id, name, description, ownerId, publishedVersionId, createdAt, updatedAt",
-      { count: LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyId", companyId);
 
@@ -63,9 +85,11 @@ export async function getWorkflows(
       }
     }
 
-    query = setGenericQueryFilters(query, { ...args, filters: columnFilters }, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(
+      query,
+      { ...args, filters: columnFilters },
+      WORKFLOWS_PAGING
+    );
   }
 
   return query;
@@ -108,11 +132,14 @@ export async function getWorkflowVersionNumbers(
   versionIds: string[],
   companyId: string
 ) {
-  return client
-    .from("workflowVersion")
-    .select("id, versionNumber")
-    .in("id", versionIds)
-    .eq("companyId", companyId);
+  return fetchAllByIds(versionIds, (batch) =>
+    client
+      .from("workflowVersion")
+      .select("id, versionNumber")
+      .in("id", batch)
+      .eq("companyId", companyId)
+      .order("id", { ascending: true })
+  );
 }
 
 export async function getWorkflowVersion(
@@ -158,16 +185,19 @@ export async function updateWorkflow(
     updatedBy: string;
   }
 ) {
-  return client
-    .from("workflow")
-    .update({
-      name: workflow.name,
-      description: workflow.description ?? null,
-      updatedBy: workflow.updatedBy,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", workflow.id)
-    .eq("companyId", workflow.companyId);
+  return requireAffected(
+    client
+      .from("workflow")
+      .update({
+        name: workflow.name,
+        description: workflow.description ?? null,
+        updatedBy: workflow.updatedBy,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", workflow.id)
+      .eq("companyId", workflow.companyId)
+      .select("id")
+  );
 }
 
 export async function insertWorkflowVersion(
@@ -208,17 +238,20 @@ export async function updateWorkflowDefinition(
     updatedBy: string;
   }
 ) {
-  return client
-    .from("workflowVersion")
-    .update({
-      nodes: definition.nodes,
-      edges: definition.edges,
-      formatVersion: definition.formatVersion,
-      updatedBy: definition.updatedBy,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", definition.versionId)
-    .eq("companyId", definition.companyId);
+  return requireAffected(
+    client
+      .from("workflowVersion")
+      .update({
+        nodes: definition.nodes,
+        edges: definition.edges,
+        formatVersion: definition.formatVersion,
+        updatedBy: definition.updatedBy,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", definition.versionId)
+      .eq("companyId", definition.companyId)
+      .select("id")
+  );
 }
 
 /**
@@ -267,11 +300,14 @@ export async function updateWorkflowNodePositions(
       : { ...(node as object), position: { x: position.x, y: position.y } };
   });
 
-  return client
-    .from("workflowVersion")
-    .update({ nodes: nodes as unknown as Json })
-    .eq("id", versionId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("workflowVersion")
+      .update({ nodes: nodes as unknown as Json })
+      .eq("id", versionId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 // No audit bump: panning the canvas is not an edit to the workflow, and stamping
@@ -284,11 +320,14 @@ export async function updateWorkflowCanvasState(
     canvasState
   }: { id: string; companyId: string; canvasState: Json }
 ) {
-  return client
-    .from("workflow")
-    .update({ canvasState })
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("workflow")
+      .update({ canvasState })
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function deleteWorkflow(
@@ -296,12 +335,19 @@ export async function deleteWorkflow(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("workflow")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("workflow")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
+
+export const WORKFLOW_RUNS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
 
 export async function getWorkflowRuns(
   client: SupabaseClient<Database>,
@@ -314,14 +360,12 @@ export async function getWorkflowRuns(
       "id, workflowId, workflowVersionId, eventId, sourceEventId, triggerTable, triggerRecordId, ownerId, status, statusReason, isTest, rootRunId, causedByRunId, depth, path, startedAt, completedAt, durationMs, error, createdAt, workflow(name)",
       // Estimated, not exact: this table grows with event volume, and `exact` is a
       // COUNT(*) over the company's whole retained history on every page load.
-      { count: LIST_COUNT }
+      { count: listCount(args) }
     )
     .eq("companyId", companyId);
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, WORKFLOW_RUNS_PAGING);
   }
 
   return query;
@@ -381,12 +425,14 @@ export async function getWorkflowLastRuns(
   workflowIds: string[],
   companyId: string
 ) {
-  if (workflowIds.length === 0) return { data: [], error: null };
-  return client
-    .from("workflowLastRun")
-    .select("workflowId, runId, status, createdAt, completedAt, durationMs")
-    .in("workflowId", workflowIds)
-    .eq("companyId", companyId);
+  return fetchAllByIds(workflowIds, (batch) =>
+    client
+      .from("workflowLastRun")
+      .select("workflowId, runId, status, createdAt, completedAt, durationMs")
+      .in("workflowId", batch)
+      .eq("companyId", companyId)
+      .order("workflowId", { ascending: true })
+  );
 }
 
 /** Tables in `fkDisplayRegistry` that have no `companyId` column; the resolver
@@ -498,7 +544,11 @@ export async function getWorkflowVersionOwnership(
 ) {
   return client
     .from("workflowVersion")
-    .select("workflowId, workflow(publishedVersionId)")
+    .select(
+      // Two FKs join these tables — this one and workflow."publishedVersionId" —
+      // so the embed must name which, or PostgREST refuses it (PGRST201).
+      "workflowId, workflow!workflowVersion_workflowId_companyId_fkey(publishedVersionId)"
+    )
     .eq("id", versionId)
     .eq("companyId", companyId)
     .maybeSingle();
@@ -549,7 +599,7 @@ const lockCompany: CompanyLock = (trx, companyId) =>
  * than waiting for the hourly backstop.
  *
  * DANGER: `syncWorkflowTriggers` uses Kysely and bypasses RLS entirely, so the
- * calling route's `requirePermissions` is the only authorization gate on it.
+ * calling route's `authorize` is the only authorization gate on it.
  */
 async function syncAndWake(
   db: Kysely<KyselyDatabase>,
@@ -614,15 +664,18 @@ export async function publishWorkflowVersion(
     return { ok: false, issues };
   }
 
-  const promoted = await client
-    .from("workflow")
-    .update({
-      publishedVersionId: versionId,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", workflowId)
-    .eq("companyId", companyId);
+  const promoted = await requireAffected(
+    client
+      .from("workflow")
+      .update({
+        publishedVersionId: versionId,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", workflowId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 
   if (promoted.error) {
     return { ok: false, issues: [], message: promoted.error.message };
@@ -650,15 +703,18 @@ export async function unpublishWorkflow(
     userId: string;
   }
 ): Promise<WorkflowSyncResult> {
-  const updated = await client
-    .from("workflow")
-    .update({
-      publishedVersionId: null,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", workflowId)
-    .eq("companyId", companyId);
+  const updated = await requireAffected(
+    client
+      .from("workflow")
+      .update({
+        publishedVersionId: null,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", workflowId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 
   if (updated.error) {
     return { ok: false, issues: [], message: updated.error.message };
@@ -711,3 +767,214 @@ export async function refuseUnlessWorkflowsEnabled(ctx: ServiceContext) {
     defaultUpgradeMessage(resolveRequirement({ feature: "WORKFLOWS" }))
   );
 }
+
+const optionsLogger = getLogger("erp", "workflows", "options");
+
+export type OptionsProviderContext = {
+  companyId: string;
+  /** Fixed arguments from the catalog entry. */
+  params: Record<string, string>;
+  /** Current values of the input's `dependsOn` inputs. */
+  values: Record<string, string>;
+};
+
+export type ProviderOption = { label: string; value: string };
+
+export type OptionsProviderResult = {
+  options: ProviderOption[];
+  /** Where the author can go to create the first one, when there are none. */
+  emptyHref?: string;
+  /** Why this list could not be loaded, when we know a reason worth saying.
+   * A CODE, not a sentence: the wording is the builder's, so it goes through
+   * Lingui like every other string the author reads. */
+  errorCode?: OptionsErrorCode;
+  /** Where to go and do it. */
+  errorHref?: string;
+  /** Something worth saying beside a list that DID load — an account that was
+   * left out because it needs reconnecting. Same code vocabulary as errors. */
+  noticeCode?: OptionsErrorCode;
+  noticeHref?: string;
+};
+
+export type OptionsProvider = {
+  /** Checked before the provider runs, so a provider can never be a way around a
+   * permission the equivalent action carries. A page gate, e.g.
+   * `{ "workflows.workflows": "Edit" }`. */
+  permission: Gate;
+  resolve: (context: OptionsProviderContext) => Promise<OptionsProviderResult>;
+};
+
+/**
+ * The company's connections for one piece. Non-secret fields only.
+ *
+ * Read through the SERVICE role, then scoped to `companyId` here. The row's RLS
+ * SELECT policy demands Settings → Integrations, but this provider is gated on
+ * Workflows at View — a workflow author who cannot administer Settings would
+ * otherwise get an empty list and be told the app "isn't connected yet", with
+ * nothing anywhere reporting that the rows had been filtered away. The company
+ * scope is not weakened: `authorize` resolved `companyId` for this
+ * request, and only non-secret columns leave here.
+ *
+ * Only USABLE accounts are offered. A revoked account in a dropdown is a trap —
+ * picking it builds a workflow that cannot run.
+ */
+const connectionProvider: OptionsProvider = {
+  permission: { "workflows.workflows": "View" },
+  resolve: async ({ companyId, params }) => {
+    const piece = params.piece;
+    if (!piece) return { options: [] };
+
+    const usable = usableConnections(
+      await readConnections(getCarbonServiceRole(), companyId, piece)
+    );
+    const required = await requiredScopesFor(piece);
+    const ready = usable.filter((row) => !needsReconnect(row, required));
+    const accountsHref = path.to.integrationAccounts(piece);
+
+    // Connected, but every account predates a scope this piece now needs: the fix
+    // is a re-consent, not a new account — say so instead of offering nothing.
+    if (ready.length === 0 && usable.length > 0) {
+      return { options: [], errorCode: "reconnect", errorHref: accountsHref };
+    }
+
+    return {
+      options: ready.map((row) => ({
+        value: row.id,
+        label: row.accountLabel ? `${row.name} · ${row.accountLabel}` : row.name
+      })),
+      emptyHref: accountsHref,
+      // Some accounts are ready and some are not: offer the ready ones, but say
+      // that one is missing rather than letting it vanish from the list.
+      ...(ready.length < usable.length
+        ? { noticeCode: "reconnect" as const, noticeHref: accountsHref }
+        : {})
+    };
+  }
+};
+
+/**
+ * One piece property's own `options()`, run against a chosen connection — "pick a
+ * calendar". Gated on Workflows at Edit, the same permission the action carries,
+ * so it cannot reach a vendor a user could not otherwise call.
+ */
+const propertyProvider: OptionsProvider = {
+  permission: { "workflows.workflows": "Edit" },
+  resolve: async ({ companyId, params, values }) => {
+    const { piece, action: actionName, prop } = params;
+    const connectionId = values[INTEGRATION_CONNECTION_INPUT];
+    if (!piece || !actionName || !prop || !connectionId) return { options: [] };
+
+    // Read through the SERVICE role for the same reason `connectionProvider` does:
+    // the row's RLS demands Settings → Integrations, this provider is gated on
+    // Workflows at Edit, and a workflow author without Settings access would
+    // otherwise see every dependent list come back empty. `companyId` came from
+    // `authorize`, and scopes every read the resolver makes.
+    const auth = await resolvePieceAuth(
+      getCarbonServiceRole(),
+      companyId,
+      piece,
+      connectionId
+    );
+    if (!auth.ok) {
+      switch (auth.reason) {
+        case "no-connection":
+          return { options: [] };
+        // A connection problem is not a generic lookup failure: the author cannot
+        // fix "couldn't load the choices", but they can reconnect an account.
+        // An under-scoped account reads the same way it does in the connection
+        // dropdown, which leaves it out for that reason.
+        case "missing-scopes":
+        case "reconnect":
+          return {
+            options: [],
+            errorCode: "reconnect",
+            errorHref: path.to.integrationAccounts(piece)
+          };
+        case "refreshing":
+          return { options: [], errorCode: "refreshing" };
+        // Loading the piece to read its token URL failed for a reason that has
+        // nothing to do with the account — a missing package, an unset OAuth env
+        // var. Named in the log rather than swallowed: it looks identical to a
+        // dead account from the outside, and telling them apart is the whole
+        // difference between "reconnect" and "fix the server's OAuth config".
+        case "misconfigured":
+          optionsLogger.error(
+            "Could not build the refresh config for {piece}: {cause}",
+            {
+              piece,
+              cause:
+                auth.cause instanceof Error
+                  ? auth.cause.message
+                  : String(auth.cause)
+            }
+          );
+          return { options: [], errorCode: "failed" };
+        case "failed":
+          throw auth.cause;
+      }
+    }
+
+    const action = await getPieceAction(piece, actionName);
+    const property = action.props[prop];
+    if (property === undefined || typeof property.options !== "function") {
+      throw new Error(
+        `${piece}.${actionName}.${prop} has no options to fetch.`
+      );
+    }
+
+    // A dropdown's `refreshers` may name sibling props, so pass what the node has.
+    const propsValue: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(values)) {
+      if (key in action.props) propsValue[key] = value;
+    }
+
+    const resolved = await (
+      property.options as (context: unknown) => Promise<unknown>
+    )({
+      auth: { access_token: auth.accessToken },
+      propsValue
+    });
+
+    return { options: optionRows(resolved) };
+  }
+};
+
+/**
+ * A piece's `options()` answer as dropdown rows. A stored choice is text, so only
+ * a scalar value can be one: an object value would be stored as
+ * "[object Object]", which the piece could never read back, so that row is left
+ * out rather than offered.
+ */
+function optionRows(answer: unknown): ProviderOption[] {
+  if (answer === null || typeof answer !== "object" || !("options" in answer))
+    return [];
+  const rows = answer.options;
+  if (!Array.isArray(rows)) return [];
+  return rows.flatMap((row: unknown) => {
+    if (row === null || typeof row !== "object") return [];
+    if (!("label" in row) || typeof row.label !== "string") return [];
+    const value = "value" in row ? row.value : undefined;
+    if (typeof value === "string") return [{ label: row.label, value }];
+    if (
+      (typeof value === "number" && Number.isFinite(value)) ||
+      typeof value === "boolean"
+    ) {
+      return [{ label: row.label, value: String(value) }];
+    }
+    return [];
+  });
+}
+
+/**
+ * Every list the workflow builder fetches while a node is being edited.
+ *
+ * A catalog input names a provider by id and the builder forwards it verbatim, so
+ * this registry is the only place that knows what a provider id MEANS. Nothing here
+ * is integration-specific by construction: a provider backed by Carbon's own data
+ * is one more entry, and needs no change to the catalog format, the endpoint or the
+ * field that renders it.
+ */
+export const OPTIONS_PROVIDERS: Record<string, OptionsProvider> = {
+  [CONNECTION_PROVIDER]: connectionProvider,
+  [PROPERTY_PROVIDER]: propertyProvider
+};

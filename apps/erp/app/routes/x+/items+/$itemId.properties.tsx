@@ -15,7 +15,7 @@ import {
   getUnreleasedChangeOrderForItem
 } from "~/modules/items/items.service";
 import type {
-  Consumable,
+  ConsumableSummary,
   ItemFile,
   MakeMethod,
   MaterialSummary,
@@ -43,7 +43,7 @@ export type ItemPropertiesResult = CommonFields &
     | { type: "Part"; summary: PartSummary; makeMethods: MakeMethod[] }
     | { type: "Material"; summary: MaterialSummary }
     | { type: "Tool"; summary: Tool; makeMethods: MakeMethod[] }
-    | { type: "Consumable"; summary: Consumable }
+    | { type: "Consumable"; summary: ConsumableSummary }
   );
 
 const typeConfig = {
@@ -131,7 +131,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       return {
         ...common,
         type,
-        summary: summary.data as unknown as Consumable
+        summary: summary.data as unknown as ConsumableSummary
       };
     case "Tool":
       return {

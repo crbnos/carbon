@@ -14,12 +14,16 @@ const RETRY_AFTER_SECONDS = "300";
  * `/health` answers 200 without probing anything. The load balancer and the
  * Swarm healthcheck replace a task that fails it, and the usual probe fails
  * while the database is down for the maintenance itself.
+ *
+ * `/templates/` goes through: Auth downloads its email templates from there
+ * when it sends mail, and they read no data, so a sign-in email sent during
+ * maintenance still uses Carbon's template.
  */
 export function maintenanceVerdict(
   enabled: boolean,
   pathname: string
 ): null | "healthy" | "refuse" {
-  if (!enabled) return null;
+  if (!enabled || pathname.startsWith("/templates/")) return null;
   return pathname === "/health" ? "healthy" : "refuse";
 }
 

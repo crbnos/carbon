@@ -5,7 +5,7 @@
 import { respond } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useSearchParams } from "react-router";
 import { useUser } from "~/hooks";
@@ -38,7 +38,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function NewStorageUnitRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const [searchParams] = useSearchParams();
   const { defaults } = useUser();
   const locationId =
@@ -49,14 +49,16 @@ export default function NewStorageUnitRoute() {
     name: "",
     locationId,
     parentId,
-    storageTypeIds: []
+    storageTypeIds: [],
+    nonNettable: false
   };
 
   return (
     <StorageUnitForm
       initialValues={initialValues}
       locationId={locationId}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

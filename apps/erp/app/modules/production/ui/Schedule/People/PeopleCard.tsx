@@ -59,13 +59,19 @@ export type PeopleCardItem = {
   dayEndTime: string | null;
   /** day-scoped note (first non-empty across the day's rows) */
   note: string | null;
+  /**
+   * Booked for the whole shift at stations the department filter hides. Shown
+   * in Unassigned so the filter never hides a person; no drag, since a drop
+   * would replace that day.
+   */
+  bookedElsewhere?: boolean;
 };
 
 /** stable sortable/React id — assignment cards are keyed by the ROW, so one
  * person can appear in several columns (split days) */
 export function cardId(item: PeopleCardItem) {
   if (item.assignment && !item.isAbsent) return item.assignment.id;
-  return `${item.isAbsent ? "absent" : "free"}:${item.employee.id}`;
+  return `${item.isAbsent ? "absent" : item.bookedElsewhere ? "elsewhere" : "free"}:${item.employee.id}`;
 }
 
 export function PeopleCard({
@@ -129,13 +135,20 @@ export function PeopleCard({
   const otherStationNames = otherStations
     .map((row) => stationName(row.workCenterId))
     .join(", ");
+  const elsewhereStationNames = item.bookedElsewhere
+    ? item.dayRows.map((row) => stationName(row.workCenterId)).join(", ")
+    : "";
+
+  const canOpen = !isOverlay && !isDisabled;
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a tap anywhere on the card opens it; the name button is the keyboard/AT control
     <div
       ref={isOverlay ? undefined : setNodeRef}
       style={style}
-      onClick={() => {
-        if (!isOverlay && !isDisabled) onOpen(item);
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest("a, button")) return;
+        if (canOpen) onOpen(item);
       }}
       className={cn(
         // the schedule board's card shell, so both boards read the same
@@ -145,13 +158,13 @@ export function PeopleCard({
         isDragging && !isOverlay && "border-dashed bg-muted",
         isOverlay &&
           "ring-2 ring-primary opacity-100 !bg-card shadow-lg cursor-grabbing",
-        item.isAbsent && "opacity-60"
+        (item.isAbsent || item.bookedElsewhere) && "opacity-60"
       )}
     >
       {/* drag lives on the handle only — the rest of the card is tap-to-open.
           Ghost variant so it picks up the same hover fill as the schedule
           board's grip, but kept 44px tall for tablets. */}
-      {!isDisabled && !item.isAbsent && (
+      {!isDisabled && !item.isAbsent && !item.bookedElsewhere && (
         <IconButton
           aria-label={t`Drag to assign`}
           variant="ghost"
@@ -174,7 +187,17 @@ export function PeopleCard({
         />
       </div>
       <div className="min-w-[7rem] flex-1">
-        <p className="truncate text-sm font-medium">{item.employee.name}</p>
+        {canOpen ? (
+          <button
+            type="button"
+            className="block max-w-full truncate rounded-sm text-left text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            onClick={() => onOpen(item)}
+          >
+            {item.employee.name}
+          </button>
+        ) : (
+          <p className="truncate text-sm font-medium">{item.employee.name}</p>
+        )}
         {/* one fact per line — nothing shares a row, so nothing truncates */}
         {!item.isAbsent && shiftWindow && (
           <p className="truncate text-xs tabular-nums text-muted-foreground">
@@ -184,6 +207,11 @@ export function PeopleCard({
         {otherStationNames && (
           <p className="truncate text-xs text-muted-foreground">
             <Trans>also at {otherStationNames}</Trans>
+          </p>
+        )}
+        {elsewhereStationNames && (
+          <p className="truncate text-xs text-muted-foreground">
+            <Trans>working at {elsewhereStationNames}</Trans>
           </p>
         )}
         {item.note && (
@@ -199,7 +227,7 @@ export function PeopleCard({
             {item.abilities.map((ability) => (
               <span
                 key={ability}
-                className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+                className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[0.6875rem] font-medium text-muted-foreground"
               >
                 {ability}
               </span>
@@ -247,8 +275,11 @@ export function PeopleCard({
             <Trans>Absent</Trans>
           </PeoplePill>
         )}
-        {!isDisabled && !isOverlay && (
-          <LuChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground/60" />
+        {canOpen && (
+          <LuChevronRight
+            aria-hidden
+            className="h-4 w-4 flex-shrink-0 text-muted-foreground/60"
+          />
         )}
       </div>
     </div>

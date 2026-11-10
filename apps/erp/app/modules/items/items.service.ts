@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { NotFoundError } from "@carbon/api/errors";
+import { NotFoundError, ServerFnError } from "@carbon/api/errors";
 import {
   type GateLevel,
   type PermissionRule,
@@ -24,14 +24,20 @@ import {
   getCompanyTimeZone
 } from "@carbon/database";
 import { type Action, ITEM_TYPE_PAGES } from "@carbon/database/access";
-import type {
-  ExpressionBuilder,
-  Kysely,
-  KyselyDatabase,
-  KyselyTx
+import {
+  type ExpressionBuilder,
+  type Kysely,
+  type KyselyDatabase,
+  type KyselyTx,
+  withTransaction
 } from "@carbon/database/client";
-import { insertRows, many, maybeSingle } from "@carbon/database/rows";
-import { hasPendingApproval } from "@carbon/ee/approvals.server";
+import { toJson } from "@carbon/database/json";
+import { deleteUnusedPmiInspectionPlans } from "@carbon/database/quality";
+import { insertRows, many, maybeSingle, newIds } from "@carbon/database/rows";
+import {
+  hasPendingApproval,
+  pendingApprovalDocumentIds
+} from "@carbon/ee/approvals.server";
 import {
   isUnsafeStoragePath,
   storage,
@@ -48,6 +54,8 @@ import {
   isUniqueViolation,
   pick,
   pluckUnique,
+  requireAffected,
+  searchFilter,
   withPathIds
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -57,9 +65,9 @@ import { data } from "react-router";
 import { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
-import type { GenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
 import {
-  LIST_COUNT,
+  listCount,
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
@@ -67,6 +75,12 @@ import { ruleError, SERVICE_RULE_ERROR_CODE, sanitize } from "~/utils/supabase";
 import { makeToAssetItemError } from "../production/production.models";
 import * as productionPostings from "../production/production.service";
 import type { nonConformancePriority } from "../quality/quality.models";
+import {
+  BASE_IGNORED_FIELDS,
+  comparedFields,
+  diffRows,
+  valuesEqual
+} from "../shared/diff";
 import type {
   operationParameterValidator,
   operationStepSlideValidator,
@@ -100,7 +114,6 @@ import {
   type customerPartValidator,
   EACH_UNIT_OF_MEASURE_CODE,
   type getMethodValidator,
-  ItemTrackingType,
   isAllowedChangeNoticeTransition,
   type itemCostValidator,
   type itemManufacturingValidator,
@@ -112,8 +125,6 @@ import {
   type itemUnitSalePriceValidator,
   type itemValidator,
   type MethodDiffEntry,
-  type MethodDiffStatus,
-  type makeMethodVersionValidator,
   type materialDimensionValidator,
   type materialFinishValidator,
   type materialFormValidator,
@@ -151,7 +162,6 @@ import {
   sentFields,
   sentMaterialProperties
 } from "./material-properties";
-import type { InventoryItemType } from "./types";
 
 const PARTS_LIST_COLUMNS =
   "active,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,unitOfMeasureCode,revision,readableId,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn,suppliers" as const;
@@ -641,7 +651,9 @@ export async function deleteConfigurationParameter(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("configurationParameter").delete().eq("id", id);
+  return requireAffected(
+    client.from("configurationParameter").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteConfigurationRule(
@@ -661,11 +673,14 @@ export async function deleteItemCustomerPart(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("customerPartToItem")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("customerPartToItem")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function deleteSupplierPart(
@@ -673,11 +688,14 @@ export async function deleteSupplierPart(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("supplierPart")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("supplierPart")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export async function deleteConfigurationParameterGroup(
@@ -706,7 +724,13 @@ export async function deleteConfigurationParameterGroup(
         .eq("configurationParameterGroupId", id);
     }
   }
-  return client.from("configurationParameterGroup").delete().eq("id", id);
+  return requireAffected(
+    client
+      .from("configurationParameterGroup")
+      .delete()
+      .eq("id", id)
+      .select("id")
+  );
 }
 
 // An item delete cascades to its supplier parts, and a price break restricts
@@ -731,6 +755,9 @@ async function deleteItemsWithPriceBreaks(
         .where("companyId", "=", companyId)
     )
     .execute();
+
+  // Plans made from the items' model PMI must not block the delete.
+  await deleteUnusedPmiInspectionPlans(trx, { companyId, itemIds });
 
   await trx
     .deleteFrom("item")
@@ -771,49 +798,63 @@ export async function deleteItemPostingGroup(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("itemPostingGroup").delete().eq("id", id);
+  return requireAffected(
+    client.from("itemPostingGroup").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteMaterialDimension(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("materialDimension").delete().eq("id", id);
+  return requireAffected(
+    client.from("materialDimension").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteMaterialFinish(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("materialFinish").delete().eq("id", id);
+  return requireAffected(
+    client.from("materialFinish").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteMaterialForm(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("materialForm").delete().eq("id", id);
+  return requireAffected(
+    client.from("materialForm").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteMaterialGrade(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("materialGrade").delete().eq("id", id);
+  return requireAffected(
+    client.from("materialGrade").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteMaterialSubstance(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("materialSubstance").delete().eq("id", id);
+  return requireAffected(
+    client.from("materialSubstance").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteMethodMaterial(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("methodMaterial").delete().eq("id", id);
+  return requireAffected(
+    client.from("methodMaterial").delete().eq("id", id).select("id")
+  );
 }
 
 export async function assertMethodOperationIsDraft(
@@ -842,42 +883,58 @@ export async function deleteMethodOperation(
   client: SupabaseClient<Database>,
   methodOperationId: string
 ) {
-  return client.from("methodOperation").delete().eq("id", methodOperationId);
+  return requireAffected(
+    client
+      .from("methodOperation")
+      .delete()
+      .eq("id", methodOperationId)
+      .select("id")
+  );
 }
 
 export async function deleteMethodOperationStep(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("methodOperationStep").delete().eq("id", id);
+  return requireAffected(
+    client.from("methodOperationStep").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteMethodOperationStepSlide(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("methodOperationStepSlide").delete().eq("id", id);
+  return requireAffected(
+    client.from("methodOperationStepSlide").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteMethodOperationParameter(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("methodOperationParameter").delete().eq("id", id);
+  return requireAffected(
+    client.from("methodOperationParameter").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteMethodOperationTool(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("methodOperationTool").delete().eq("id", id);
+  return requireAffected(
+    client.from("methodOperationTool").delete().eq("id", id).select("id")
+  );
 }
 
 export async function deleteUnitOfMeasure(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("unitOfMeasure").delete().eq("id", id);
+  return requireAffected(
+    client.from("unitOfMeasure").delete().eq("id", id).select("id")
+  );
 }
 
 export async function getConfigurationRules(
@@ -909,6 +966,10 @@ export async function getConsumable(
     .single();
 }
 
+export const CONSUMABLES_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getConsumables(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -920,7 +981,7 @@ export async function getConsumables(
   let query = client
     .from("consumables")
     .select(CONSUMABLES_LIST_COLUMNS, {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -936,9 +997,7 @@ export async function getConsumables(
     query = query.contains("suppliers", [args.supplierId]);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, CONSUMABLES_PAGING);
   return query;
 }
 
@@ -1171,6 +1230,10 @@ export async function getItemPostingGroup(
   return client.from("itemPostingGroup").select("*").eq("id", id).single();
 }
 
+export const ITEM_POSTING_GROUPS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getItemPostingGroups(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1179,7 +1242,7 @@ export async function getItemPostingGroups(
   let query = client
     .from("itemPostingGroup")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1188,9 +1251,7 @@ export async function getItemPostingGroups(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, ITEM_POSTING_GROUPS_PAGING);
   }
 
   return query;
@@ -1235,22 +1296,44 @@ export async function getItemPlanning(
     .maybeSingle();
 }
 
-export async function getItemQuantities(
+/**
+ * An item's on-hand at a location from the aggregate MRP reads, with the part
+ * that sits in non-nettable storage units: MRP and the planning screens count
+ * `quantityOnHand - quantityNonNettable` as supply.
+ */
+export async function getItemNettableQuantities(
   client: SupabaseClient<Database>,
   itemId: string,
   companyId: string,
   locationId: string
 ) {
+  return client
+    .from("itemStockQuantities")
+    .select("quantityOnHand, quantityNonNettable")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .eq("locationId", locationId)
+    .maybeSingle();
+}
+
+export async function getItemQuantities(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string,
+  locationId: string,
+  // The stock stripe (Projects Phase 2a): a project id, '' for common stock,
+  // or omitted for every stripe.
+  projectId?: string | null
+) {
   // item_id restricts the RPC to one item so it doesn't aggregate the whole
-  // location's ledger/PO/SO/job history for a single detail page (added in
-  // migration 20260713231142; the committed DB types regenerate from the
-  // cloud DB after deploy, hence the cast).
+  // location's ledger/PO/SO/job history for a single detail page.
   return client
     .rpc("get_inventory_quantities", {
       location_id: locationId,
       company_id: companyId,
-      item_id: itemId
-    } as { location_id: string; company_id: string })
+      item_id: itemId,
+      project_id: projectId ?? undefined
+    })
     .eq("id", itemId)
     .maybeSingle();
 }
@@ -1279,7 +1362,8 @@ export async function getItemStockQuantitiesByLocation(
       // Total order across the whole key: fetchAllFromTable pages, and without
       // one a concurrent write can shift a row across a page boundary.
       .order("itemId")
-      .order("locationId");
+      .order("locationId")
+      .order("projectId");
 
     return locationId === "all" ? scoped : scoped.eq("locationId", locationId);
   });
@@ -1471,6 +1555,10 @@ export async function getMaterial(
     .single();
 }
 
+export const MATERIALS_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getMaterials(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1482,7 +1570,7 @@ export async function getMaterials(
   let query = client
     .from("materials")
     .select(MATERIALS_LIST_COLUMNS, {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1498,9 +1586,7 @@ export async function getMaterials(
     query = query.contains("suppliers", [args.supplierId]);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, MATERIALS_PAGING);
   return query;
 }
 
@@ -1516,6 +1602,13 @@ export async function getMaterialDimension(
   return client.from("materialDimension").select("*").eq("id", id).single();
 }
 
+export const MATERIAL_DIMENSIONS_PAGING: Paging = {
+  defaultSorts: [
+    { column: "formName", ascending: true },
+    { column: "name", ascending: true }
+  ]
+};
+
 export async function getMaterialDimensions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1524,7 +1617,7 @@ export async function getMaterialDimensions(
   let query = client
     .from("materialDimensions")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("isMetric", args?.isMetric ?? false)
     .or(`companyId.eq.${companyId},companyId.is.null`);
@@ -1536,10 +1629,7 @@ export async function getMaterialDimensions(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "formName", ascending: true },
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, MATERIAL_DIMENSIONS_PAGING);
   }
 
   return query;
@@ -1566,6 +1656,13 @@ export async function getMaterialFinish(
   return client.from("materialFinish").select("*").eq("id", id).single();
 }
 
+export const MATERIAL_FINISHES_PAGING: Paging = {
+  defaultSorts: [
+    { column: "substanceName", ascending: true },
+    { column: "name", ascending: true }
+  ]
+};
+
 export async function getMaterialFinishes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1574,7 +1671,7 @@ export async function getMaterialFinishes(
   let query = client
     .from("materialFinishes")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1585,10 +1682,7 @@ export async function getMaterialFinishes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "substanceName", ascending: true },
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, MATERIAL_FINISHES_PAGING);
   }
 
   return query;
@@ -1613,6 +1707,10 @@ export async function getMaterialForm(
   return client.from("materialForm").select("*").eq("id", id).single();
 }
 
+export const MATERIAL_FORMS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getMaterialForms(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1621,7 +1719,7 @@ export async function getMaterialForms(
   let query = client
     .from("materialForm")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1630,9 +1728,7 @@ export async function getMaterialForms(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, MATERIAL_FORMS_PAGING);
   }
 
   return query;
@@ -1649,6 +1745,13 @@ export async function getMaterialFormsList(
     .order("name");
 }
 
+export const MATERIAL_GRADES_PAGING: Paging = {
+  defaultSorts: [
+    { column: "substanceName", ascending: true },
+    { column: "name", ascending: true }
+  ]
+};
+
 export async function getMaterialGrades(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1657,7 +1760,7 @@ export async function getMaterialGrades(
   let query = client
     .from("materialGrades")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1668,10 +1771,7 @@ export async function getMaterialGrades(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "substanceName", ascending: true },
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, MATERIAL_GRADES_PAGING);
   }
 
   return query;
@@ -1703,6 +1803,10 @@ export async function getMaterialSubstance(
   return client.from("materialSubstance").select("*").eq("id", id).single();
 }
 
+export const MATERIAL_SUBSTANCES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getMaterialSubstances(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1711,7 +1815,7 @@ export async function getMaterialSubstances(
   let query = client
     .from("materialSubstance")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1720,9 +1824,7 @@ export async function getMaterialSubstances(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, MATERIAL_SUBSTANCES_PAGING);
   }
 
   return query;
@@ -1739,6 +1841,19 @@ export async function getMaterialSubstancesList(
     .order("name");
 }
 
+export async function getMethodMaterial(
+  client: SupabaseClient<Database>,
+  materialId: string
+) {
+  return client
+    .from("methodMaterial")
+    .select("*, item(name)")
+    .eq("id", materialId)
+    .single();
+}
+
+export const METHOD_MATERIALS_PAGING: Paging = { defaultSorts: [] };
+
 export async function getMethodMaterials(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1749,7 +1864,7 @@ export async function getMethodMaterials(
     .select(
       "*, item(name, readableIdWithRevision), makeMethod!makeMethodId(item(id, type, name, readableIdWithRevision))",
       {
-        count: LIST_COUNT
+        count: listCount(args)
       }
     )
     .eq("companyId", companyId);
@@ -1759,7 +1874,7 @@ export async function getMethodMaterials(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, []);
+    query = setGenericQueryFilters(query, args, METHOD_MATERIALS_PAGING);
   }
 
   return query;
@@ -1800,6 +1915,10 @@ export async function getMethodMaterialsByMakeMethod(
   return result;
 }
 
+export const METHOD_OPERATIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "order", ascending: true }]
+};
+
 export async function getMethodOperations(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1810,7 +1929,7 @@ export async function getMethodOperations(
     .select(
       "*, makeMethod!makeMethodId(item(id, type, name, readableIdWithRevision))",
       {
-        count: LIST_COUNT
+        count: listCount(args)
       }
     )
     .eq("companyId", companyId);
@@ -1820,9 +1939,7 @@ export async function getMethodOperations(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "order", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, METHOD_OPERATIONS_PAGING);
   }
 
   return query;
@@ -2077,6 +2194,10 @@ export async function getPart(
     .single();
 }
 
+export const PARTS_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getParts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2087,8 +2208,9 @@ export async function getParts(
 ) {
   let query = client
     .from("parts")
+    // Later pages (`cursor`) skip the count: the first page already has it.
     .select(PARTS_LIST_COLUMNS, {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -2104,9 +2226,7 @@ export async function getParts(
     query = query.contains("suppliers", [args.supplierId]);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, PARTS_PAGING);
   return query;
 }
 
@@ -2261,6 +2381,10 @@ export async function getPickMethods(
     .eq("companyId", companyId);
 }
 
+export const SERVICES_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getServices(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2273,7 +2397,7 @@ export async function getServices(
   let query = client
     .from("services")
     .select(SERVICES_LIST_COLUMNS, {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -2292,9 +2416,7 @@ export async function getServices(
     query = query.contains("suppliers", [args.supplierId]);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, SERVICES_PAGING);
   return query;
 }
 
@@ -2375,6 +2497,10 @@ export async function getTool(
     .single();
 }
 
+export const TOOLS_PAGING: Paging = {
+  defaultSorts: [{ column: "readableIdWithRevision", ascending: true }]
+};
+
 export async function getTools(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2386,7 +2512,7 @@ export async function getTools(
   let query = client
     .from("tools")
     .select(TOOLS_LIST_COLUMNS, {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -2402,9 +2528,7 @@ export async function getTools(
     query = query.contains("suppliers", [args.supplierId]);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, TOOLS_PAGING);
   return query;
 }
 
@@ -2433,6 +2557,10 @@ export async function getUnitOfMeasureUsage(
   return client.rpc("get_unit_of_measure_usage", { p_id: id });
 }
 
+export const UNIT_OF_MEASURES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getUnitOfMeasures(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2441,17 +2569,15 @@ export async function getUnitOfMeasures(
   let query = client
     .from("unitOfMeasure")
     .select("*", {
-      count: LIST_COUNT
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
   if (args.search) {
-    query = query.or(`name.ilike.%${args.search}%,code.ilike.%${args.search}%`);
+    query = query.or(searchFilter(["name", "code"], args.search));
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, UNIT_OF_MEASURES_PAGING);
   return query;
 }
 
@@ -2470,10 +2596,13 @@ export async function updateConfigurationParameterGroupOrder(
   client: SupabaseClient<Database>,
   data: z.infer<typeof configurationParameterGroupOrderValidator>
 ) {
-  return client
-    .from("configurationParameterGroup")
-    .update(sanitize(data))
-    .eq("id", data.id);
+  return requireAffected(
+    client
+      .from("configurationParameterGroup")
+      .update(sanitize(data))
+      .eq("id", data.id)
+      .select("id")
+  );
 }
 
 export async function updateDefaultRevision(
@@ -2526,10 +2655,13 @@ export async function updateConfigurationParameterOrder(
     updatedBy: string;
   }
 ) {
-  return client
-    .from("configurationParameter")
-    .update(sanitize(data))
-    .eq("id", data.id);
+  return requireAffected(
+    client
+      .from("configurationParameter")
+      .update(sanitize(data))
+      .eq("id", data.id)
+      .select("id")
+  );
 }
 
 export async function updateItemCost(
@@ -2559,13 +2691,16 @@ export async function updateRevision(
     updatedBy: string;
   }
 ) {
-  return client
-    .from("item")
-    .update({
-      ...revision,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", revision.id);
+  return requireAffected(
+    client
+      .from("item")
+      .update({
+        ...revision,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", revision.id)
+      .select("id")
+  );
 }
 
 export async function upsertConfigurationParameter(
@@ -2577,16 +2712,19 @@ export async function upsertConfigurationParameter(
 ) {
   const { userId, ...data } = configurationParameter;
   if (configurationParameter.id) {
-    return client
-      .from("configurationParameter")
-      .update(
-        sanitize({
-          ...data,
-          updatedBy: userId,
-          updatedAt: datetime.timestamp()
-        })
-      )
-      .eq("id", configurationParameter.id);
+    return requireAffected(
+      client
+        .from("configurationParameter")
+        .update(
+          sanitize({
+            ...data,
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+        )
+        .eq("id", configurationParameter.id)
+        .select("id")
+    );
   }
 
   let ungroupedGroupId: string | null = null;
@@ -2641,12 +2779,15 @@ export async function upsertConfigurationParameterGroup(
 ) {
   const { itemId, ...data } = configurationParameterGroup;
   if (configurationParameterGroup.id) {
-    return client
-      .from("configurationParameterGroup")
-      .update({
-        name: data.name
-      })
-      .eq("id", configurationParameterGroup.id);
+    return requireAffected(
+      client
+        .from("configurationParameterGroup")
+        .update({
+          name: data.name
+        })
+        .eq("id", configurationParameterGroup.id)
+        .select("id")
+    );
   }
 
   const existingGroups = await client
@@ -3097,149 +3238,6 @@ export async function upsertPickMethodWithShelfLife(
         companyId: args.companyId,
         createdBy: args.userId
       })
-      .execute();
-  });
-}
-
-/**
- * Cascades a change to item.itemTrackingType onto the snapshot columns
- * `requiresSerialTracking` and `requiresBatchTracking` on child rows that
- * belong to OPEN parents (jobs, receipts, shipments, stock transfers).
- *
- * Without this, snapshot flags drift from the live item value and leave the
- * UI reading stale (often sticky-true) tracking flags after an item is
- * flipped back to Inventory / Non-Inventory. The cascade only:
- * `setItemTrackingType` also writes the item.
- */
-export async function cascadeItemTrackingType(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    itemIds: string[];
-    companyId: string;
-    newType: InventoryItemType;
-    userId: string;
-  }
-) {
-  if (args.itemIds.length === 0) return;
-
-  const requiresSerialTracking = args.newType === ItemTrackingType.Serial;
-  const requiresBatchTracking = args.newType === ItemTrackingType.Batch;
-  const updatedAt = datetime.timestamp();
-
-  return db.transaction().execute(async (trx) => {
-    await trx
-      .updateTable("jobMakeMethod")
-      .set({
-        requiresSerialTracking,
-        requiresBatchTracking,
-        updatedBy: args.userId,
-        updatedAt
-      })
-      .where("itemId", "in", args.itemIds)
-      .where("companyId", "=", args.companyId)
-      .where((eb) =>
-        eb(
-          "jobId",
-          "in",
-          eb
-            .selectFrom("job")
-            .select("id")
-            .where("companyId", "=", args.companyId)
-            .where("status", "in", ["Draft", "Planned"])
-        )
-      )
-      .execute();
-
-    await trx
-      .updateTable("jobMaterial")
-      .set({
-        requiresSerialTracking,
-        requiresBatchTracking,
-        updatedBy: args.userId,
-        updatedAt
-      })
-      .where("itemId", "in", args.itemIds)
-      .where("companyId", "=", args.companyId)
-      .where((eb) =>
-        eb(
-          "jobId",
-          "in",
-          eb
-            .selectFrom("job")
-            .select("id")
-            .where("companyId", "=", args.companyId)
-            .where("status", "in", ["Draft", "Planned"])
-        )
-      )
-      .execute();
-
-    await trx
-      .updateTable("receiptLine")
-      .set({
-        requiresSerialTracking,
-        requiresBatchTracking,
-        updatedBy: args.userId,
-        updatedAt
-      })
-      .where("itemId", "in", args.itemIds)
-      .where("companyId", "=", args.companyId)
-      .where((eb) =>
-        eb(
-          "receiptId",
-          "in",
-          eb
-            .selectFrom("receipt")
-            .select("id")
-            .where("companyId", "=", args.companyId)
-            .where("status", "=", "Draft")
-        )
-      )
-      .execute();
-
-    await trx
-      .updateTable("shipmentLine")
-      .set({
-        requiresSerialTracking,
-        requiresBatchTracking,
-        updatedBy: args.userId,
-        updatedAt
-      })
-      .where("itemId", "in", args.itemIds)
-      .where("companyId", "=", args.companyId)
-      .where((eb) =>
-        eb(
-          "shipmentId",
-          "in",
-          eb
-            .selectFrom("shipment")
-            .select("id")
-            .where("companyId", "=", args.companyId)
-            .where("status", "=", "Draft")
-        )
-      )
-      .execute();
-
-    await trx
-      .updateTable("stockTransferLine")
-      .set({
-        requiresSerialTracking,
-        requiresBatchTracking,
-        updatedBy: args.userId,
-        updatedAt
-      })
-      .where("itemId", "in", args.itemIds)
-      .where("companyId", "=", args.companyId)
-      .where((eb) =>
-        eb(
-          "stockTransferId",
-          "in",
-          eb
-            .selectFrom("stockTransfer")
-            .select("id")
-            .where("companyId", "=", args.companyId)
-            .where("status", "=", "Draft")
-        )
-      )
       .execute();
   });
 }
@@ -3946,6 +3944,12 @@ export async function upsertPart(
   return updated;
 }
 
+/**
+ * Writes the item row's own fields. Never the readable id or the type: the
+ * type row (`part`, `tool`, …) is keyed by the readable id, so changing either
+ * here would orphan it. Refused when the item is not of `type`, or when
+ * `readableId` differs from the item's (`setItemReadableId` changes it).
+ */
 export async function updateItem(
   client: SupabaseClient<Database>,
   item: z.infer<typeof itemValidator> & {
@@ -3964,13 +3968,38 @@ export async function updateItem(
     shelfLifeTriggerProcessId: _shelfLifeTriggerProcessId,
     shelfLifeTriggerTiming: _shelfLifeTriggerTiming,
     shelfLifeCalculateFromBom: _shelfLifeCalculateFromBom,
+    readableId,
+    type,
     ...row
   } = item;
+
+  const current = await client
+    .from("item")
+    .select("readableId")
+    .eq("id", item.id)
+    .eq("companyId", item.companyId)
+    .eq("type", type)
+    .maybeSingle();
+  if (current.error) return current;
+  if (!current.data) {
+    return { data: null, error: ruleError(`${type} ${item.id} not found`) };
+  }
+  if (readableId !== undefined && readableId !== current.data.readableId) {
+    return {
+      data: null,
+      error: ruleError(
+        `updateItem does not change the readable id ${current.data.readableId}; use setItemReadableId`
+      )
+    };
+  }
+
   return client
     .from("item")
     .update(sanitize(row))
     .eq("id", item.id)
-    .eq("companyId", item.companyId);
+    .eq("companyId", item.companyId)
+    .select("id")
+    .single();
 }
 
 export async function upsertItemCost(
@@ -4336,57 +4365,156 @@ export async function upsertItemCustomerPart(
 export async function upsertItemUnitSalePrice(
   client: SupabaseClient<Database>,
   itemUnitSalePrice: z.infer<typeof itemUnitSalePriceValidator> & {
+    companyId: string;
     updatedBy: string;
     customFields?: Json;
   }
 ) {
+  const { companyId, laborWarrantyMonths, partsWarrantyMonths, ...rest } =
+    itemUnitSalePrice;
   return client
     .from("itemUnitSalePrice")
-    .update(sanitize(itemUnitSalePrice))
-    .eq("itemId", itemUnitSalePrice.itemId);
+    .update({
+      ...sanitize(rest),
+      ...("laborWarrantyMonths" in itemUnitSalePrice
+        ? { laborWarrantyMonths: laborWarrantyMonths ?? null }
+        : {}),
+      ...("partsWarrantyMonths" in itemUnitSalePrice
+        ? { partsWarrantyMonths: partsWarrantyMonths ?? null }
+        : {})
+    })
+    .eq("itemId", itemUnitSalePrice.itemId)
+    .eq("companyId", companyId);
 }
 
-/** The header insert only; `createMethodVersion` also copies the method. */
-export async function upsertMakeMethodVersion(
+/**
+ * A new Draft version of a make method with `copyFromId`'s header, bill of
+ * materials and bill of process. With `activate`, a Draft source is set Active
+ * first, so the new Draft never outranks it. The insert, the activation and the
+ * copy run in one transaction, or in the one `db` already is: a failed copy
+ * leaves no empty version and no source set Active. Kysely bypasses RLS, so the
+ * caller's client is checked for what the makeMethod policies ask; the copy then
+ * runs as the system, since the method line policies ask for no more than
+ * create on the item's page, while get-method's own gate asks for production update.
+ */
+export async function createMakeMethodVersion(
   client: SupabaseClient<Database>,
-  makeMethodVersion: z.infer<typeof makeMethodVersionValidator> & {
+  db: Kysely<KyselyDatabase>,
+  args: {
+    copyFromId: string;
+    version: number;
+    /** Set a Draft source Active. An Active or Archived source is left alone. */
+    activate?: boolean;
+    /** The change notice the new Draft belongs to; else the source's. */
+    changeOrderId?: string;
     companyId: string;
     createdBy: string;
   }
-) {
-  const currentMakeMethod = await client
+): Promise<
+  | {
+      data: {
+        id: string;
+        itemId: string;
+        type: Database["public"]["Tables"]["item"]["Row"]["type"];
+      };
+      error: null;
+    }
+  | { data: null; error: ServiceError | ServerFnError }
+> {
+  const { copyFromId, version, companyId, createdBy } = args;
+
+  const source = await client
     .from("makeMethod")
-    .select("*")
-    .eq("id", makeMethodVersion.copyFromId)
-    .eq("companyId", makeMethodVersion.companyId)
+    .select("itemId, status, customFields, tags, changeOrderId, ...item(type)")
+    .eq("id", copyFromId)
+    .eq("companyId", companyId)
     .single();
+  if (source.error) return { data: null, error: source.error };
 
-  if (currentMakeMethod.error) return currentMakeMethod;
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, version, ...data } = currentMakeMethod.data;
-
-  const insert = await client
-    .from("makeMethod")
-    .insert({
-      ...data,
-      status: "Draft",
-      version: makeMethodVersion.version,
-      createdBy: makeMethodVersion.createdBy
-    })
-    .select("id, ...item(itemId:id, type)")
-    .single();
-
-  if (insert.error) return insert;
-
-  if (makeMethodVersion.activeVersionId) {
-    await client
-      .from("makeMethod")
-      .update({ status: "Active" })
-      .eq("id", makeMethodVersion.activeVersionId);
+  // The makeMethod policies ask for create on the page of the item's type to
+  // insert, and update to set a version Active.
+  const activate = args.activate === true && source.data.status === "Draft";
+  const permitted = await requireItemPagePermission(
+    client,
+    companyId,
+    [source.data.itemId],
+    "create"
+  );
+  if (permitted.error) return { data: null, error: permitted.error };
+  if (activate) {
+    const canActivate = await requireItemPagePermission(
+      client,
+      companyId,
+      [source.data.itemId],
+      "update"
+    );
+    if (canActivate.error) return { data: null, error: canActivate.error };
   }
 
-  return insert;
+  try {
+    const draftId = await withTransaction(db, async (trx) => {
+      const draft = await trx
+        .insertInto("makeMethod")
+        .values({
+          itemId: source.data.itemId,
+          customFields: toJson(source.data.customFields),
+          tags: source.data.tags,
+          changeOrderId: args.changeOrderId ?? source.data.changeOrderId,
+          status: "Draft",
+          version,
+          companyId,
+          createdBy
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      if (activate) {
+        // A source set Active meanwhile, or archived behind a newer Active, is
+        // not outranked by the new Draft either: nothing to refuse.
+        await trx
+          .updateTable("makeMethod")
+          .set({ status: "Active" })
+          .where("id", "=", copyFromId)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "Draft")
+          .execute();
+      }
+
+      const copy = await copyMakeMethod(getCarbonServiceRole(), trx, {
+        sourceId: copyFromId,
+        targetId: draft.id,
+        billOfMaterial: true,
+        billOfProcess: true,
+        parameters: true,
+        tools: true,
+        steps: true,
+        workInstructions: true,
+        companyId,
+        userId: createdBy
+      });
+      if (copy.error) throw copy.error;
+
+      return draft.id;
+    });
+
+    return {
+      data: { id: draftId, itemId: source.data.itemId, type: source.data.type },
+      error: null
+    };
+  } catch (error) {
+    // The copy's refusal, with the status its category is read from.
+    if (error instanceof ServerFnError) return { data: null, error };
+    // A taken version number is the caller's to retry.
+    if (!isUniqueViolation(error)) {
+      logger.error("Failed to create make method version", {
+        companyId,
+        copyFromId,
+        version,
+        error
+      });
+    }
+    return { data: null, error: writeError(error) };
+  }
 }
 
 /**
@@ -4440,16 +4568,23 @@ async function resolveMethodMaterialStorageUnitIds(
   client: SupabaseClient<Database>,
   args: {
     itemId?: string | null;
+    companyId: string;
     current?: Record<string, string>;
   }
 ): Promise<Record<string, string>> {
   const current = { ...(args.current ?? {}) };
   if (!args.itemId) return current;
 
+  // A non-nettable (quarantine) default is not seeded: the line would then
+  // name it, and jobs would consume quarantined stock as named.
   const pickMethods = await client
     .from("pickMethod")
-    .select("locationId, defaultStorageUnitId")
-    .eq("itemId", args.itemId);
+    .select(
+      "locationId, defaultStorageUnitId, storageUnit!inner(effectiveNettable)"
+    )
+    .eq("itemId", args.itemId)
+    .eq("companyId", args.companyId)
+    .eq("storageUnit.effectiveNettable", true);
 
   for (const row of pickMethods.data ?? []) {
     if (
@@ -4468,7 +4603,8 @@ export async function upsertMethodMaterial(
   client: SupabaseClient<Database>,
 
   methodMaterial:
-    | (z.infer<typeof methodMaterialValidator> & {
+    | (Omit<z.infer<typeof methodMaterialValidator>, "id"> & {
+        id?: string;
         companyId: string;
         createdBy: string;
         customFields?: Json;
@@ -4481,8 +4617,10 @@ export async function upsertMethodMaterial(
 ) {
   // The MCP/API path skips methodMaterialValidator, and the insert spreads the
   // id over the column default — so a blank id was stored as "" and the next
-  // blank create collided with it.
-  if (!methodMaterial.id?.trim()) {
+  // blank create collided with it. A create may leave the id out: the column
+  // default makes one.
+  const blankId = methodMaterial.id !== undefined && !methodMaterial.id.trim();
+  if (blankId || ("updatedBy" in methodMaterial && !methodMaterial.id)) {
     return {
       data: null,
       error: { message: "Material ID is required" }
@@ -4526,6 +4664,7 @@ export async function upsertMethodMaterial(
       client,
       {
         itemId: methodMaterial.itemId,
+        companyId: methodMaterial.companyId,
         current: normalizeStorageUnitIds(methodMaterial.storageUnitIds)
       }
     );
@@ -5869,8 +6008,12 @@ export async function deleteMaterialType(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("materialType").delete().eq("id", id);
+  return requireAffected(
+    client.from("materialType").delete().eq("id", id).select("id")
+  );
 }
+
+export const MATERIAL_TYPES_PAGING: Paging = { defaultSorts: [] };
 
 export async function getMaterialTypes(
   client: SupabaseClient<Database>,
@@ -5879,7 +6022,7 @@ export async function getMaterialTypes(
 ) {
   let query = client
     .from("materialTypes")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
   if (args?.search) {
@@ -5893,7 +6036,7 @@ export async function getMaterialTypes(
     );
   }
 
-  query = setGenericQueryFilters(query, args ?? {});
+  query = setGenericQueryFilters(query, args ?? {}, MATERIAL_TYPES_PAGING);
   return query;
 }
 
@@ -6365,6 +6508,10 @@ export async function getChangeNotice(
     .single();
 }
 
+export const CHANGE_NOTICES_PAGING: Paging = {
+  defaultSorts: [{ column: "changeOrderId", ascending: false }]
+};
+
 export async function getChangeNotices(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6372,19 +6519,15 @@ export async function getChangeNotices(
 ) {
   let query = client
     .from("changeOrders")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
-    query = query.or(
-      `changeOrderId.ilike.%${args.search}%,name.ilike.%${args.search}%`
-    );
+    query = query.or(searchFilter(["changeOrderId", "name"], args.search));
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "changeOrderId", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, CHANGE_NOTICES_PAGING);
   }
 
   return query;
@@ -6557,11 +6700,14 @@ export async function deleteChangeNotice(
   if (discarded.error) return { data: null, error: discarded.error };
 
   // Remaining children (affected items, action tasks) cascade via ON DELETE CASCADE.
-  return client
-    .from("changeOrder")
-    .delete()
-    .eq("id", changeNoticeId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("changeOrder")
+      .delete()
+      .eq("id", changeNoticeId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 // -----------------------------------------------------------------------------
@@ -6634,6 +6780,10 @@ export async function updateChangeNoticeStatus(
 // -----------------------------------------------------------------------------
 // Change Notice Types (the "Category" lookup — configured like Issue Types)
 // -----------------------------------------------------------------------------
+export const CHANGE_NOTICE_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getChangeNoticeTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6641,7 +6791,7 @@ export async function getChangeNoticeTypes(
 ) {
   let query = client
     .from("changeOrderType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -6649,9 +6799,7 @@ export async function getChangeNoticeTypes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, CHANGE_NOTICE_TYPES_PAGING);
   }
 
   return query;
@@ -6723,11 +6871,14 @@ export async function deleteChangeNoticeType(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("changeOrderType")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("changeOrderType")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 // =============================================================================
@@ -6896,18 +7047,18 @@ export async function createChangeNoticeDraftMethod(
     // highest-version draft when there is no Active — and `get-method` would hand
     // the CO's UNRELEASED edits to jobs/quotes. Freezing the base as Active keeps
     // production on the current method until the CO is released.
-    const activeVersionId = base.status === "Draft" ? base.id : undefined;
-    // New Draft version on the same item, then copy the BoM/BoP rows (the
-    // canonical new-version flow: header insert + copyMakeMethod). Number it
+    // `createMakeMethodVersion` activates only a Draft base, and writes the new
+    // Draft with the CO's id and its BoM/BoP rows in one transaction. Number it
     // above ALL existing versions (maxVersion + 1), not the Active one, so a
     // second CO on the same part doesn't collide on (itemId, version). Retry on
     // a concurrent unique-violation by recomputing the next free version.
     let draftId: string | null = null;
     let nextVersion = base.maxVersion + 1;
     for (let attempt = 0; attempt < 3; attempt++) {
-      const res = await upsertMakeMethodVersion(client, {
+      const res = await createMakeMethodVersion(client, db, {
         copyFromId: base.id,
-        activeVersionId,
+        activate: true,
+        changeOrderId: changeNoticeId,
         version: nextVersion,
         companyId,
         createdBy: userId
@@ -6934,22 +7085,6 @@ export async function createChangeNoticeDraftMethod(
         error: { message: "Failed to create draft version" }
       };
     }
-    // @ts-expect-error TS2345 - getMethodValidator flags default in get-method
-    const copy = await copyMakeMethod(client, db, {
-      sourceId: base.id,
-      targetId: draftId,
-      companyId,
-      userId
-    });
-    if (copy.error) {
-      return { data: null, error: { message: "Failed to copy make method" } };
-    }
-    const stamp = await client
-      .from("makeMethod")
-      .update({ changeOrderId: changeNoticeId })
-      .eq("id", draftId)
-      .eq("companyId", companyId);
-    if (stamp.error) return { data: null, error: stamp.error };
     return {
       data: {
         draftMakeMethodId: draftId,
@@ -6996,11 +7131,14 @@ export async function createChangeNoticeDraftMethod(
       newItemId,
       companyId
     );
-    const stampItem = await client
-      .from("item")
-      .update({ changeOrderId: changeNoticeId })
-      .eq("id", newItemId)
-      .eq("companyId", companyId);
+    const stampItem = await requireAffected(
+      client
+        .from("item")
+        .update({ changeOrderId: changeNoticeId })
+        .eq("id", newItemId)
+        .eq("companyId", companyId)
+        .select("id")
+    );
     if (stampItem.error) return { data: null, error: stampItem.error };
     if (draftId) {
       await client
@@ -7031,11 +7169,14 @@ export async function createChangeNoticeDraftMethod(
       companyId
     );
     if (draftId) {
-      const stamp = await client
-        .from("makeMethod")
-        .update({ changeOrderId: changeNoticeId })
-        .eq("id", draftId)
-        .eq("companyId", companyId);
+      const stamp = await requireAffected(
+        client
+          .from("makeMethod")
+          .update({ changeOrderId: changeNoticeId })
+          .eq("id", draftId)
+          .eq("companyId", companyId)
+          .select("id")
+      );
       if (stamp.error) return { data: null, error: stamp.error };
     }
     return {
@@ -7446,17 +7587,20 @@ export async function updateChangeNoticeAffectedItemChangeType(
     return { data: null, error: draft.error };
   }
 
-  const updated = await client
-    .from("changeOrderAffectedItem")
-    .update({
-      changeType,
-      draftMakeMethodId: draft.data.draftMakeMethodId,
-      baseMakeMethodId: draft.data.baseMakeMethodId,
-      newItemId: draft.data.newItemId,
-      updatedBy: userId
-    })
-    .eq("id", id)
-    .eq("companyId", companyId);
+  const updated = await requireAffected(
+    client
+      .from("changeOrderAffectedItem")
+      .update({
+        changeType,
+        draftMakeMethodId: draft.data.draftMakeMethodId,
+        baseMakeMethodId: draft.data.baseMakeMethodId,
+        newItemId: draft.data.newItemId,
+        updatedBy: userId
+      })
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
   if (updated.error) return { data: null, error: updated.error };
 
   // Swap succeeded — now safe to discard the superseded draft. The type has
@@ -7609,11 +7753,14 @@ export async function removeChangeNoticeAffectedItem(
     );
     if (discarded.error) return { data: null, error: discarded.error };
   }
-  return client
-    .from("changeOrderAffectedItem")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("changeOrderAffectedItem")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 // =============================================================================
@@ -7776,7 +7923,9 @@ export async function deleteChangeNoticeAction(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("changeOrderActionTask").delete().eq("id", id);
+  return requireAffected(
+    client.from("changeOrderActionTask").delete().eq("id", id).select("id")
+  );
 }
 
 export async function updateChangeNoticeActionOrder(
@@ -7800,6 +7949,10 @@ export async function updateChangeNoticeActionOrder(
 // Change Notice Required Actions (the configurable default-action templates the
 // config CRUD page manages, and the source new change notices are seeded from).
 // =============================================================================
+export const CHANGE_NOTICE_REQUIRED_ACTIONS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getChangeNoticeRequiredActions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -7807,7 +7960,7 @@ export async function getChangeNoticeRequiredActions(
 ) {
   let query = client
     .from("changeOrderRequiredAction")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -7815,9 +7968,11 @@ export async function getChangeNoticeRequiredActions(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(
+      query,
+      args,
+      CHANGE_NOTICE_REQUIRED_ACTIONS_PAGING
+    );
   }
 
   return query;
@@ -7889,11 +8044,14 @@ export async function deleteChangeNoticeRequiredAction(
   id: string,
   companyId: string
 ) {
-  return client
-    .from("changeOrderRequiredAction")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("changeOrderRequiredAction")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 // Reconcile a change notice's action tasks to a chosen set of required-action
@@ -7989,13 +8147,12 @@ const MATERIAL_SOURCE_KEY = "sourceMaterialId";
 const OPERATION_SOURCE_KEY = "sourceOperationId";
 const CHILD_SOURCE_KEY = "sourceId";
 
-// Never compared — audit / linkage / tenancy columns. The compared set for every
-// staged entity is derived as (staged row keys − this set), so adding a mirrored
+// Never compared — the change-notice linkage columns, on top of the shared
+// audit / tenancy set (`BASE_IGNORED_FIELDS`). The compared set for every staged
+// entity is derived as (staged row keys − both sets), so adding a mirrored
 // business column to a staged table automatically includes it in the diff; only
 // genuine noise columns need listing here.
-const IGNORED_FIELDS = new Set<string>([
-  "id",
-  "companyId",
+const ITEM_IGNORED_FIELDS = [
   "changeOrderId",
   "affectedItemId",
   "sourceMaterialId",
@@ -8005,115 +8162,21 @@ const IGNORED_FIELDS = new Set<string>([
   // v2: base and draft rows live on different real methods/operations, so these
   // linkage columns always differ and must never count as a business change.
   "makeMethodId",
-  "operationId",
-  // The customFields JSON bag differs as a copy artifact (null vs {}), surfacing
-  // a meaningless "— → Set" on unrelated edits — never diff it as a whole column.
-  "customFields",
-  "createdAt",
-  "createdBy",
-  "updatedAt",
-  "updatedBy"
+  "operationId"
+];
+
+const ITEM_COMPARE_IGNORED: ReadonlySet<string> = new Set([
+  ...BASE_IGNORED_FIELDS,
+  ...ITEM_IGNORED_FIELDS
 ]);
 
-// Loose equality tolerant of the numeric-string ↔ number skew that Supabase
-// returns for NUMERIC columns (a live `quantity` may be `"1"` while a staged one
-// is `1`). null and undefined are the same "empty" value. JSON/array columns
-// (workInstruction, step description, listValues/fileTypes) are separate object
-// instances on the live vs staged side, so they're compared structurally — a
-// reference check would report every non-null one as changed.
-function valuesEqual(a: unknown, b: unknown): boolean {
-  if (a === b) return true;
-  if (a == null && b == null) return true;
-  if (a == null || b == null) return false;
-  if (typeof a === "number" || typeof b === "number") {
-    const na = typeof a === "number" ? a : Number(a);
-    const nb = typeof b === "number" ? b : Number(b);
-    if (!Number.isNaN(na) && !Number.isNaN(nb)) return na === nb;
-  }
-  if (typeof a === "object" && typeof b === "object") {
-    return JSON.stringify(a) === JSON.stringify(b);
-  }
-  return false;
-}
-
-// The business columns to compare for a matched (base, target) pair: every key
-// the CO actually STAGED (the target row), minus the audit/linkage/tenancy set.
-// Deriving from the staged row — not a hand-maintained per-entity list, and not
-// the union with the live row — is what keeps the diff in lockstep with the
-// mirrored schema: staging copies exactly the changeable columns, live rows carry
-// extra columns (makeMethodId, …) that must NOT be compared against `undefined`.
-function comparedFields(target: Row): string[] {
-  return Object.keys(target).filter((k) => !IGNORED_FIELDS.has(k));
-}
-
-// Build the field-level change map for a matched (base, target) pair. Returns
-// undefined when nothing changed.
-function diffFields(
-  base: Row,
-  target: Row
-): Record<string, { before: unknown; after: unknown }> | undefined {
-  const changed: Record<string, { before: unknown; after: unknown }> = {};
-  for (const field of comparedFields(target)) {
-    if (!valuesEqual(base[field], target[field])) {
-      changed[field] = {
-        before: base[field] ?? null,
-        after: target[field] ?? null
-      };
-    }
-  }
-  return Object.keys(changed).length > 0 ? changed : undefined;
-}
-
-// Match target rows to base rows by the given source-pointer key, then classify.
-//   - base row with no target pointing at it            ⇒ removed
-//   - target row with a null/absent source pointer      ⇒ added
-//   - target whose source pointer references a base row  ⇒ modified | unchanged
-function diffRows(
-  base: Row[],
-  target: Row[],
-  sourceKey: string
-): MethodDiffEntry<Row>[] {
-  const entries: MethodDiffEntry<Row>[] = [];
-
-  // Index base rows by their id for O(1) lookup, and track which get matched.
-  const baseById = new Map<string, Row>();
-  for (const row of base) {
-    const id = row.id;
-    if (typeof id === "string") baseById.set(id, row);
-  }
-  const matchedBaseIds = new Set<string>();
-
-  for (const targetRow of target) {
-    const sourceId = targetRow[sourceKey];
-    const baseRow =
-      typeof sourceId === "string" ? baseById.get(sourceId) : undefined;
-
-    if (!baseRow) {
-      // No live counterpart — a newly-added line.
-      entries.push({ status: "added", before: null, after: targetRow });
-      continue;
-    }
-
-    matchedBaseIds.add(baseRow.id as string);
-    const changedFields = diffFields(baseRow, targetRow);
-    const status: MethodDiffStatus = changedFields ? "modified" : "unchanged";
-    entries.push({
-      status,
-      before: baseRow,
-      after: targetRow,
-      ...(changedFields ? { changedFields } : {})
-    });
-  }
-
-  // Any base row nothing pointed at was dropped from the staged end-state.
-  for (const baseRow of base) {
-    const id = baseRow.id;
-    if (typeof id === "string" && !matchedBaseIds.has(id)) {
-      entries.push({ status: "removed", before: baseRow, after: null });
-    }
-  }
-
-  return entries;
+// Match target rows to base rows by the given source-pointer key (see
+// `diffRows` in `../shared/diff`), ignoring the change-notice linkage columns.
+function diffItemRows(base: Row[], target: Row[], sourceKey: string) {
+  return diffRows(base, target, {
+    key: sourceKey,
+    ignoredFields: ITEM_IGNORED_FIELDS
+  });
 }
 
 // -----------------------------------------------------------------------------
@@ -8151,9 +8214,13 @@ function diffOperationChildren(
   target: OperationChildren
 ): OperationChildrenDiff {
   return {
-    steps: diffRows(base.steps, target.steps, CHILD_SOURCE_KEY),
-    parameters: diffRows(base.parameters, target.parameters, CHILD_SOURCE_KEY),
-    tools: diffRows(base.tools, target.tools, CHILD_SOURCE_KEY)
+    steps: diffItemRows(base.steps, target.steps, CHILD_SOURCE_KEY),
+    parameters: diffItemRows(
+      base.parameters,
+      target.parameters,
+      CHILD_SOURCE_KEY
+    ),
+    tools: diffItemRows(base.tools, target.tools, CHILD_SOURCE_KEY)
   };
 }
 
@@ -8170,7 +8237,7 @@ function diffOperations(
   baseChildren?: ChildrenByOperationId,
   targetChildren?: ChildrenByOperationId
 ): OperationDiffEntry[] {
-  const entries = diffRows(
+  const entries = diffItemRows(
     base,
     target,
     OPERATION_SOURCE_KEY
@@ -8211,7 +8278,7 @@ function diffAttributes(
   // Compare only the columns the CO staged (target), minus audit/linkage — the
   // live source select carries extra columns (e.g. modelUploadId) the staged row
   // doesn't mirror, and comparing those against `undefined` would be spurious.
-  const keys = target ? comparedFields(target) : [];
+  const keys = target ? comparedFields(target, ITEM_COMPARE_IGNORED) : [];
 
   const entries: MethodDiffEntry<Row>[] = [];
   for (const key of keys) {
@@ -8247,7 +8314,7 @@ function diffSupplierParts(
   const baseRows = (base ?? []).map(withoutItem);
   const targetRows = target.map(withoutItem);
   correlate(baseRows, targetRows, "supplierId", CHILD_SOURCE_KEY);
-  return diffRows(baseRows, targetRows, CHILD_SOURCE_KEY);
+  return diffItemRows(baseRows, targetRows, CHILD_SOURCE_KEY);
 }
 
 // -----------------------------------------------------------------------------
@@ -8290,7 +8357,7 @@ export type DiffMethodResult = {
 // two items' supplier parts.
 export function diffMethod(input: DiffMethodInput): DiffMethodResult {
   return {
-    materials: diffRows(
+    materials: diffItemRows(
       input.baseMaterials,
       input.targetMaterials,
       MATERIAL_SOURCE_KEY
@@ -9515,20 +9582,54 @@ async function getChangeNoticeEngineeringLock(
   changeNoticeId: string,
   status: string | null | undefined
 ): Promise<string | null> {
+  return engineeringLockMessage(
+    status,
+    needsApprovalLookup(status) &&
+      (await hasPendingApproval(
+        getCarbonServiceRole(),
+        "changeOrder",
+        changeNoticeId
+      ))
+  );
+}
+
+/**
+ * getChangeNoticeEngineeringLock for several notices, with one approval
+ * lookup for all of them: notice id → why it is locked, or null.
+ */
+export async function getChangeNoticeEngineeringLocks(
+  companyId: string,
+  notices: Array<{ id: string; status: string | null }>
+): Promise<Map<string, string | null>> {
+  const awaitingApproval = await pendingApprovalDocumentIds(
+    getCarbonServiceRole(),
+    {
+      documentType: "changeOrder",
+      documentIds: notices
+        .filter((notice) => needsApprovalLookup(notice.status))
+        .map((notice) => notice.id),
+      companyId
+    }
+  );
+  return new Map(
+    notices.map((notice) => [
+      notice.id,
+      engineeringLockMessage(notice.status, awaitingApproval.has(notice.id))
+    ])
+  );
+}
+
+const needsApprovalLookup = (status: string | null | undefined) =>
+  status === "Engineering Complete";
+
+function engineeringLockMessage(
+  status: string | null | undefined,
+  awaitingApproval: boolean
+): string | null {
   if (!canEditChangeNoticeEngineering(status)) {
     return changeNoticeLockedMessage(status);
   }
-  if (
-    status === "Engineering Complete" &&
-    (await hasPendingApproval(
-      getCarbonServiceRole(),
-      "changeOrder",
-      changeNoticeId
-    ))
-  ) {
-    return changeNoticeAwaitingApprovalMessage;
-  }
-  return null;
+  return awaitingApproval ? changeNoticeAwaitingApprovalMessage : null;
 }
 
 // One status read + predicate. Mutation routes call this before writing; the
@@ -9928,21 +10029,28 @@ async function releaseAffectedItem(
     userId
   });
   if (activated.error) {
-    return { error: { message: "Failed to activate method" } };
+    return {
+      error: {
+        message: activated.error.message || "Failed to activate method"
+      }
+    };
   }
 
   // Reveal the new item for Revision / New Part (Version edits the same item).
   if (newItemId) {
-    const reveal = await client
-      .from("item")
-      .update({
-        active: true,
-        changeOrderId: changeNoticeId,
-        updatedBy: userId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", newItemId)
-      .eq("companyId", companyId);
+    const reveal = await requireAffected(
+      client
+        .from("item")
+        .update({
+          active: true,
+          changeOrderId: changeNoticeId,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .eq("id", newItemId)
+        .eq("companyId", companyId)
+        .select("id")
+    );
     if (reveal.error) return { error: reveal.error };
   }
 
@@ -10251,16 +10359,6 @@ export function itemOrMethodRule<
 
 // ── Change notices ──────────────────────────────────────────────────────────
 
-// Reason and description arrive as plain text; the columns are tiptap JSON, so
-// non-empty text becomes a one-paragraph doc the detail page's editor can edit.
-export function toRichText(value: string | undefined): Json | undefined {
-  if (!value) return undefined;
-  return {
-    type: "doc",
-    content: [{ type: "paragraph", content: [{ type: "text", text: value }] }]
-  } as unknown as Json;
-}
-
 const onShapeDataValidator = z.object({
   index: z.string(),
   id: z.string().optional(),
@@ -10309,111 +10407,109 @@ async function copyMakeMethodOperations(
 
   if (sourceOperations.length === 0) return;
 
-  // Insert operations and copy related records
-  for (const operation of sourceOperations) {
-    const {
-      id: oldOpId,
-      createdAt: _createdAt,
-      updatedAt: _updatedAt,
-      updatedBy: _updatedBy,
-      ...opData
-    } = operation;
+  // New ids are made here so each table is copied with one insert.
+  const operationIds = await newIds(trx, "mop", sourceOperations.length);
+  const newOperationId = new Map(
+    sourceOperations.map((operation, i) => [operation.id, operationIds[i]!])
+  );
+  const oldOperationIds = [...newOperationId.keys()];
+  const tools = await trx
+    .selectFrom("methodOperationTool")
+    .selectAll()
+    .where("operationId", "in", oldOperationIds)
+    .execute();
+  const parameters = await trx
+    .selectFrom("methodOperationParameter")
+    .selectAll()
+    .where("operationId", "in", oldOperationIds)
+    .execute();
+  const steps = await trx
+    .selectFrom("methodOperationStep")
+    .selectAll()
+    .where("operationId", "in", oldOperationIds)
+    .execute();
 
-    const newOperation = await trx
-      .insertInto("methodOperation")
-      .values({
-        ...opData,
-        makeMethodId: targetMakeMethodId,
-        createdBy: userId
-      })
-      .returning(["id"])
-      .executeTakeFirst();
+  await trx
+    .insertInto("methodOperation")
+    .values(
+      sourceOperations.map(
+        ({
+          id: oldOpId,
+          createdAt: _createdAt,
+          updatedAt: _updatedAt,
+          updatedBy: _updatedBy,
+          ...opData
+        }) => ({
+          ...opData,
+          id: newOperationId.get(oldOpId)!,
+          makeMethodId: targetMakeMethodId,
+          createdBy: userId
+        })
+      )
+    )
+    .execute();
 
-    if (!newOperation) continue;
-
-    // Copy tools
-    const tools = await trx
-      .selectFrom("methodOperationTool")
-      .selectAll()
-      .where("operationId", "=", oldOpId)
-      .execute();
-
-    if (tools.length > 0) {
-      await trx
-        .insertInto("methodOperationTool")
-        .values(
-          tools.map(
-            ({
-              id: _id,
-              createdAt: _createdAt,
-              updatedAt: _updatedAt,
-              updatedBy: _updatedBy,
-              ...tool
-            }) => ({
-              ...tool,
-              operationId: newOperation.id,
-              createdBy: userId
-            })
-          )
+  if (tools.length > 0) {
+    await trx
+      .insertInto("methodOperationTool")
+      .values(
+        tools.map(
+          ({
+            id: _id,
+            createdAt: _createdAt,
+            updatedAt: _updatedAt,
+            updatedBy: _updatedBy,
+            ...tool
+          }) => ({
+            ...tool,
+            operationId: newOperationId.get(tool.operationId)!,
+            createdBy: userId
+          })
         )
-        .execute();
-    }
-
-    // Copy parameters
-    const parameters = await trx
-      .selectFrom("methodOperationParameter")
-      .selectAll()
-      .where("operationId", "=", oldOpId)
+      )
       .execute();
+  }
 
-    if (parameters.length > 0) {
-      await trx
-        .insertInto("methodOperationParameter")
-        .values(
-          parameters.map(
-            ({
-              id: _id,
-              createdAt: _createdAt,
-              updatedAt: _updatedAt,
-              updatedBy: _updatedBy,
-              ...param
-            }) => ({
-              ...param,
-              operationId: newOperation.id,
-              createdBy: userId
-            })
-          )
+  if (parameters.length > 0) {
+    await trx
+      .insertInto("methodOperationParameter")
+      .values(
+        parameters.map(
+          ({
+            id: _id,
+            createdAt: _createdAt,
+            updatedAt: _updatedAt,
+            updatedBy: _updatedBy,
+            ...param
+          }) => ({
+            ...param,
+            operationId: newOperationId.get(param.operationId)!,
+            createdBy: userId
+          })
         )
-        .execute();
-    }
-
-    // Copy steps
-    const steps = await trx
-      .selectFrom("methodOperationStep")
-      .selectAll()
-      .where("operationId", "=", oldOpId)
+      )
       .execute();
+  }
 
-    if (steps.length > 0) {
-      await trx
-        .insertInto("methodOperationStep")
-        .values(
-          steps.map(
-            ({
-              id: _id,
-              createdAt: _createdAt,
-              updatedAt: _updatedAt,
-              updatedBy: _updatedBy,
-              ...step
-            }) => ({
-              ...step,
-              operationId: newOperation.id,
-              createdBy: userId
-            })
-          )
+  if (steps.length > 0) {
+    await trx
+      .insertInto("methodOperationStep")
+      .values(
+        steps.map(
+          ({
+            id: _id,
+            createdAt: _createdAt,
+            updatedAt: _updatedAt,
+            updatedBy: _updatedBy,
+            ...step
+          }) => ({
+            ...step,
+            operationId: newOperationId.get(step.operationId)!,
+            createdBy: userId
+          })
         )
-        .execute();
-    }
+      )
+      .execute();
   }
 }
 

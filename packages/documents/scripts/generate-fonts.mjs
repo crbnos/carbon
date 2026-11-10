@@ -10,17 +10,29 @@
 // woff2/brotli decoder corrupts shared state across many decodes → DataView range
 // errors at embed. woff (zlib) is stateless.
 import { createRequire } from "node:module";
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { deflateSync, inflateSync } from "node:zlib";
 
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
 const OUT = join(here, "..", "src", "pdf", "fonts.data.ts");
 
-// "latin" subset = Western European, keeps the bundle small. Mirrors the bundled
-// fonts in DOCUMENT_FONTS (template/schema.ts).
-const SUBSET = "latin";
+// Mirrors the bundled fonts in DOCUMENT_FONTS (template/schema.ts). Fontsource
+// splits each face by unicode range, and react-pdf has no unicode-range, so each
+// subset is registered as its own family: "Inter" holds "latin" (Western European)
+// and "Inter Latin Ext" holds "latin-ext" (Central European: ś, ł, ő, č…). fonts.ts
+// stacks them, and react-pdf picks per glyph. Without latin-ext a Polish city like
+// "Przemyśl" printed as "Przemy[".
+//
+// Both subsets of a face carry the same PostScript name, and pdfkit reuses an
+// embedded font by that name, so a Latin Ext glyph id was drawn from the latin
+// subset (wrong letters). `psSuffix` renames the Latin Ext face (renamePostScript).
+const SUBSETS = [
+  { subset: "latin", suffix: "", psSuffix: "" },
+  { subset: "latin-ext", suffix: " Latin Ext", psSuffix: "-LatinExt" },
+];
 const FAMILIES = [
   { family: "Inter", pkg: "@fontsource/inter", weights: [300, 400, 500, 700, 900] },
   { family: "Roboto", pkg: "@fontsource/roboto", weights: [400, 700] },
@@ -46,13 +58,111 @@ function filesDir(pkg) {
   return join(dirname(pkgJson), "files");
 }
 
-function findWoff(dir, id, weight) {
-  const exact = join(dir, `${id}-${SUBSET}-${weight}-normal.woff`);
-  if (existsSync(exact)) return exact;
-  const all = readdirSync(dir);
-  const re = new RegExp(`^${id}-${SUBSET}.*-${weight}-normal\\.woff$`);
-  const hit = all.find((f) => re.test(f)) ?? all.find((f) => f.includes(`-${SUBSET}-`) && f.endsWith(`-${weight}-normal.woff`));
-  return hit ? join(dir, hit) : null;
+function findWoff(dir, id, subset, weight) {
+  const exact = join(dir, `${id}-${subset}-${weight}-normal.woff`);
+  return existsSync(exact) ? exact : null;
+}
+
+const align4 = (n) => (n + 3) & ~3;
+
+function sfntChecksum(buf) {
+  const padded = Buffer.alloc(align4(buf.length));
+  buf.copy(padded);
+  let sum = 0;
+  for (let i = 0; i < padded.length; i += 4) sum = (sum + padded.readUInt32BE(i)) >>> 0;
+  return sum;
+}
+
+// Appends `suffix` to every PostScript name record (nameID 6) of an sfnt `name`
+// table. The new strings go at the end of the string storage and the records are
+// repointed, so no other offset moves.
+function renameNameTable(table, suffix) {
+  const count = table.readUInt16BE(2);
+  const storage = table.readUInt16BE(4);
+  const out = Buffer.from(table);
+  const added = [];
+  let end = table.length - storage;
+  for (let i = 0; i < count; i++) {
+    const rec = 6 + i * 12;
+    if (out.readUInt16BE(rec + 6) !== 6) continue;
+    const platform = out.readUInt16BE(rec);
+    const length = out.readUInt16BE(rec + 8);
+    const offset = storage + out.readUInt16BE(rec + 10);
+    const old = table.subarray(offset, offset + length);
+    // Windows/Unicode names are UTF-16BE; Macintosh names are one byte per char.
+    const name =
+      platform === 1 ? Buffer.from(old.toString("latin1") + suffix, "latin1") : utf16be(utf16beString(old) + suffix);
+    out.writeUInt16BE(name.length, rec + 8);
+    out.writeUInt16BE(end, rec + 10);
+    added.push(name);
+    end += name.length;
+  }
+  if (!added.length) throw new Error("font has no PostScript name to rename");
+  return Buffer.concat([out, ...added]);
+}
+
+function utf16beString(buf) {
+  let s = "";
+  for (let i = 0; i + 1 < buf.length; i += 2) s += String.fromCharCode(buf.readUInt16BE(i));
+  return s;
+}
+
+function utf16be(s) {
+  const buf = Buffer.alloc(s.length * 2);
+  for (let i = 0; i < s.length; i++) buf.writeUInt16BE(s.charCodeAt(i), i * 2);
+  return buf;
+}
+
+// Rewrites a WOFF 1.0 file with its PostScript name suffixed. Every table is kept
+// byte for byte except `name`; metadata and private blocks are dropped.
+function renamePostScript(woff, suffix) {
+  if (woff.toString("latin1", 0, 4) !== "wOFF") throw new Error("not a WOFF 1.0 file");
+  const numTables = woff.readUInt16BE(12);
+  const tables = [];
+  for (let i = 0; i < numTables; i++) {
+    const dir = 44 + i * 20;
+    const tag = woff.toString("latin1", dir, dir + 4);
+    const offset = woff.readUInt32BE(dir + 4);
+    const compLength = woff.readUInt32BE(dir + 8);
+    const origLength = woff.readUInt32BE(dir + 12);
+    let data = woff.subarray(offset, offset + compLength);
+    let checksum = woff.readUInt32BE(dir + 16);
+    if (tag === "name") {
+      const raw = compLength < origLength ? inflateSync(data) : data;
+      const renamed = renameNameTable(raw, suffix);
+      checksum = sfntChecksum(renamed);
+      const packed = deflateSync(renamed);
+      tables.push({ tag, data: packed.length < renamed.length ? packed : renamed, origLength: renamed.length, checksum });
+      continue;
+    }
+    tables.push({ tag, data, origLength, checksum });
+  }
+
+  let offset = 44 + numTables * 20;
+  let sfntSize = 12 + numTables * 16;
+  const placed = tables.map((t) => {
+    const at = offset;
+    offset += align4(t.data.length);
+    sfntSize += align4(t.origLength);
+    return { ...t, at };
+  });
+
+  const out = Buffer.alloc(offset);
+  woff.copy(out, 0, 0, 12); // signature, flavor, (length rewritten below)
+  out.writeUInt32BE(offset, 8);
+  out.writeUInt16BE(numTables, 12);
+  out.writeUInt32BE(sfntSize, 16);
+  woff.copy(out, 20, 20, 24); // font version
+  placed.forEach((t, i) => {
+    const dir = 44 + i * 20;
+    out.write(t.tag, dir, "latin1");
+    out.writeUInt32BE(t.at, dir + 4);
+    out.writeUInt32BE(t.data.length, dir + 8);
+    out.writeUInt32BE(t.origLength, dir + 12);
+    out.writeUInt32BE(t.checksum, dir + 16);
+    t.data.copy(out, t.at);
+  });
+  return out;
 }
 
 const entries = [];
@@ -67,18 +177,21 @@ for (const { family, pkg, weights } of FAMILIES) {
     warnings.push(`MISSING package ${pkg} — run pnpm install. Skipped ${family}.`);
     continue;
   }
-  const fonts = [];
-  for (const weight of weights) {
-    const file = findWoff(dir, pkg.split("/")[1], weight);
-    if (!file) {
-      warnings.push(`No woff for ${family} ${weight} (${SUBSET}) in ${dir}`);
-      continue;
+  for (const { subset, suffix, psSuffix } of SUBSETS) {
+    const fonts = [];
+    for (const weight of weights) {
+      const file = findWoff(dir, pkg.split("/")[1], subset, weight);
+      if (!file) {
+        warnings.push(`No woff for ${family} ${weight} (${subset}) in ${dir}`);
+        continue;
+      }
+      const raw = readFileSync(file);
+      const buf = psSuffix ? renamePostScript(raw, psSuffix) : raw;
+      totalBytes += buf.length;
+      fonts.push({ src: `data:font/woff;base64,${buf.toString("base64")}`, fontWeight: weight });
     }
-    const buf = readFileSync(file);
-    totalBytes += buf.length;
-    fonts.push({ src: `data:font/woff;base64,${buf.toString("base64")}`, fontWeight: weight });
+    if (fonts.length) entries.push({ family: `${family}${suffix}`, fonts });
   }
-  if (fonts.length) entries.push({ family, fonts });
 }
 
 const body = entries

@@ -14,7 +14,7 @@ import {
   ModalDrawerProvider,
   ModalDrawerTitle,
   toast,
-  useCloseRoute,
+  toastError,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT } from "@carbon/utils";
@@ -54,22 +54,21 @@ const SupplierProcessForm = ({
   const fetcher = useFetcher<PostgrestResponse<SupplierProcess>>();
   const { supplierId } = useParams();
   const [supplier, setSupplier] = useState<string | undefined>(supplierId);
-  const closeRoute = useCloseRoute();
 
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
       toast.success(`Created supplier process`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(`Failed to create supplier process`);
+      toastError(`Failed to create supplier process`, fetcher.data.error);
     }
-  }, [fetcher.data, fetcher.state, onClose, type]);
+  }, [fetcher.data, fetcher.state, onClose, open, type]);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
@@ -81,13 +80,7 @@ const SupplierProcessForm = ({
       <ModalDrawer
         open={open}
         onOpenChange={(isOpen) => {
-          if (!isOpen) {
-            if (type === "modal") {
-              onClose?.();
-            } else {
-              closeRoute();
-            }
-          }
+          if (!isOpen) onClose();
         }}
       >
         <ModalDrawerContent>

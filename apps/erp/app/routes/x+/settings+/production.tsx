@@ -5,7 +5,13 @@
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { Submit, ValidatedForm, validator } from "@carbon/form";
+import {
+  Hidden,
+  Submit,
+  useControlField,
+  ValidatedForm,
+  validator
+} from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
   Card,
@@ -14,6 +20,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  ChoiceSelect,
   HStack,
   Label,
   ScrollArea,
@@ -26,7 +33,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
-import { LuMapPin } from "react-icons/lu";
+import { LuFactory, LuMapPin, LuSend, LuTicket } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { z } from "zod";
@@ -34,9 +41,12 @@ import { Users } from "~/components/Form";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import {
   jobCompletedValidator,
+  type SerialNumberTiming,
+  serialNumberTimingValidator,
   settingsToggle
 } from "~/modules/settings/settings.models";
 import type { updateProductionSettings } from "~/modules/settings/settings.server";
+import { useSerialNumberTimingLabels } from "~/modules/settings/ui/SerialNumbers/useSerialNumberTimingLabels";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -91,6 +101,9 @@ const productionSettingsForm = z.discriminatedUnion("intent", [
     "autoSelectMaterialWithoutPickingListToggle",
     "autoSelectMaterialWithoutPickingList"
   ),
+  serialNumberTimingValidator.extend({
+    intent: z.literal("serialNumberTiming")
+  }),
   z
     .object({
       intent: z.literal("locationRequiresStaffing"),
@@ -148,6 +161,14 @@ export default function ProductionSettingsRoute() {
       return data.autoSelectMaterialWithoutPickingList
         ? t`Material pre-selection enabled`
         : t`Material pre-selection disabled`;
+    }
+    if (data.serialNumberTiming !== undefined) {
+      if (data.serialNumberTiming === "production") {
+        return t`Serial numbers are drawn when a unit is produced`;
+      }
+      return data.serialNumberTiming === "jobRelease"
+        ? t`Serial numbers are drawn when the job is released`
+        : t`Serial numbers are drawn when the job is created`;
     }
     if (data.locationStaffing) {
       return data.locationStaffing.requiresStaffing
@@ -270,6 +291,7 @@ export default function ProductionSettingsRoute() {
                 </VStack>
                 <Switch
                   checked={includeOperationsOnTraveler}
+                  aria-label={t`Include operations on the traveler`}
                   onCheckedChange={handleTravelerOperationsToggle}
                   disabled={isToggling}
                 />
@@ -302,6 +324,7 @@ export default function ProductionSettingsRoute() {
                 </VStack>
                 <Switch
                   checked={includeMaterialsOnTraveler}
+                  aria-label={t`Include materials on the traveler`}
                   onCheckedChange={handleTravelerMaterialsToggle}
                   disabled={isToggling}
                 />
@@ -349,6 +372,7 @@ export default function ProductionSettingsRoute() {
                 </VStack>
                 <Switch
                   checked={autoStartOperationTimer}
+                  aria-label={t`Start the timer automatically`}
                   onCheckedChange={handleOperationTimerToggle}
                   disabled={isToggling}
                 />
@@ -381,12 +405,54 @@ export default function ProductionSettingsRoute() {
                 </VStack>
                 <Switch
                   checked={autoSelectMaterialWithoutPickingList}
+                  aria-label={t`Pre-select material`}
                   onCheckedChange={handleAutoSelectMaterialToggle}
                   disabled={isToggling}
                 />
               </HStack>
             </VStack>
           </CardContent>
+        </Card>
+
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={serialNumberTimingValidator}
+            defaultValues={{
+              serialNumberTiming:
+                (companySettings.serialNumberTiming as
+                  | SerialNumberTiming
+                  | null
+                  | undefined) ?? "jobCreation"
+            }}
+            fetcher={fetcher}
+          >
+            <CardHeader>
+              <CardTitle>
+                <Trans>Serial Numbers</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Decide when a produced unit draws its number from the item's
+                  serial sequence. Items without a sequence are unaffected.
+                </Trans>{" "}
+                <Trans>
+                  An item's serial number sequence can override this choice.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Hidden name="intent" value="serialNumberTiming" />
+              <div className="flex flex-col gap-3 max-w-[640px]">
+                <SerialNumberTimingChoice />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit>
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
         </Card>
 
         <Card>
@@ -429,6 +495,7 @@ export default function ProductionSettingsRoute() {
                       </span>
                       <Switch
                         checked={location.requiresStaffing ?? false}
+                        aria-label={t`Require staffing at ${location.name}`}
                         onCheckedChange={(checked) =>
                           handleStaffingToggle(location.id, checked)
                         }
@@ -505,5 +572,46 @@ export default function ProductionSettingsRoute() {
         </Card>
       </SettingsPage>
     </ScrollArea>
+  );
+}
+
+// ChoiceSelect for when a produced unit draws its serial number. Mirrors the
+// timing choices in Settings → Inventory: a compact trigger plus a hidden input
+// so the value posts with the surrounding ValidatedForm.
+function SerialNumberTimingChoice() {
+  const { t } = useLingui();
+  const labels = useSerialNumberTimingLabels();
+  const [value, setValue] =
+    useControlField<SerialNumberTiming>("serialNumberTiming");
+  const current: SerialNumberTiming = value ?? "jobCreation";
+  return (
+    <>
+      <ChoiceSelect<SerialNumberTiming>
+        aria-label={t`When serial numbers are assigned`}
+        value={current}
+        onChange={setValue}
+        options={[
+          {
+            value: "jobCreation",
+            title: labels.jobCreation,
+            description: t`Every unit is numbered up front, so serials can be printed before work starts.`,
+            icon: <LuTicket />
+          },
+          {
+            value: "jobRelease",
+            title: labels.jobRelease,
+            description: t`Every unit is numbered when the job goes to the shop floor, so travelers can still be printed and jobs cancelled before release burn none.`,
+            icon: <LuSend />
+          },
+          {
+            value: "production",
+            title: labels.production,
+            description: t`A unit draws its number the first time it is worked on, scrapped or received, so cancelled jobs burn none.`,
+            icon: <LuFactory />
+          }
+        ]}
+      />
+      <input type="hidden" name="serialNumberTiming" value={current} />
+    </>
   );
 }

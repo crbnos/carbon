@@ -23,17 +23,17 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
+  toastError,
   useDisclosure
 } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import type {
   Column,
   ColumnOrderState,
   ColumnPinningState
 } from "@tanstack/react-table";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import {
   LuCheck,
@@ -48,17 +48,15 @@ import { zfd } from "zod-form-data";
 import { SearchFilter } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { CollapsibleSidebarTrigger } from "~/components/Layout/Navigation";
-import { useUrlParams } from "~/hooks";
+import { useDrawerItem, useUrlParams } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { fieldMappings } from "~/modules/shared/imports.models";
 import type { action as savedViewAction } from "~/routes/x+/shared+/views";
 import { path } from "~/utils/path";
 import Columns from "./Columns";
-import Download from "./Download";
+import Download, { type InfiniteExport } from "./Download";
 import { ActiveFilters, Filter } from "./Filter";
 import type { ColumnFilter } from "./Filter/types";
-import type { PaginationProps } from "./Pagination";
-import { PaginationButtons } from "./Pagination";
 import Sort from "./Sort";
 
 type HeaderProps<T> = {
@@ -72,7 +70,13 @@ type HeaderProps<T> = {
   columnVisibility: Record<string, boolean>;
   columns: Column<T, unknown>[];
   compact?: boolean;
+  // The number of matching rows. Exact below 1,000; above, an estimate
+  // until the exact count arrives (`useExactCount`).
+  count: number;
+  countIsExact: boolean;
   data: object[];
+  // Infinite lists: the export loads the rest first, or hands it to a job.
+  infiniteExport?: InfiniteExport;
   editMode: boolean;
   filters: ColumnFilter[];
   // True when the table has no rows and no active filter/sort/search — hides the
@@ -86,8 +90,12 @@ type HeaderProps<T> = {
   // Extra controls in the toolbar row next to search/filter (e.g. quick
   // filter toggles that write their own `filter` URL params).
   headerActions?: ReactNode;
-  pagination: PaginationProps;
   selectedRows: T[];
+  // The selection's size: the matching count when every matching row is
+  // selected, else `selectedRows.length`.
+  selectedCount?: number;
+  hasRememberedChanges: boolean;
+  onResetRememberedState: () => void;
   setColumnOrder: (newOrder: ColumnOrderState) => void;
   setEditMode: (editMode: boolean) => void;
   table?: string;
@@ -119,15 +127,20 @@ const TableHeader = <T extends object>({
   columnPinning,
   columnVisibility,
   columns,
+  count,
+  countIsExact,
   data,
+  infiniteExport,
   editMode,
   filters,
   isEmpty,
   importCSV,
   primaryAction,
   headerActions,
-  pagination,
   selectedRows,
+  selectedCount,
+  hasRememberedChanges,
+  onResetRememberedState,
   renderActions,
   setColumnOrder,
   setEditMode,
@@ -150,9 +163,7 @@ const TableHeader = <T extends object>({
   const currentFilters = params.getAll("filter").filter(Boolean);
   const currentSorts = params.getAll("sort").filter(Boolean);
 
-  const [importCSVTable, setImportCSVTable] = useState<
-    keyof typeof fieldMappings | null
-  >(null);
+  const importCSVModal = useDrawerItem<keyof typeof fieldMappings>();
 
   const savedViewDisclosure = useDisclosure();
   const canSaveView = withSavedView && !!table;
@@ -165,7 +176,7 @@ const TableHeader = <T extends object>({
       setParams({ view: fetcher.data.id });
       savedViewDisclosure.onClose();
     } else if (fetcher.data?.success === false) {
-      toast.error(fetcher.data.message);
+      toastError(fetcher.data.message, fetcher.data);
     }
   }, [fetcher.state, fetcher.data?.success]);
 
@@ -188,6 +199,8 @@ const TableHeader = <T extends object>({
       }),
     [t]
   );
+
+  const selectedTotal = selectedCount ?? selectedRows.length;
 
   const hideTitleBar =
     !viewTitle && !primaryAction && !canSaveView && !titleBadge;
@@ -273,7 +286,13 @@ const TableHeader = <T extends object>({
             <HStack spacing={2}>
               {withSidebarTrigger && <CollapsibleSidebarTrigger />}
               {viewTitle && (
-                <Heading size={compact ? "h3" : "h2"}>{viewTitle}</Heading>
+                // A list page's title is its h1; a compact table sits inside a page.
+                <Heading
+                  as={compact ? "h2" : "h1"}
+                  size={compact ? "h3" : "h2"}
+                >
+                  {viewTitle}
+                </Heading>
               )}
               {titleBadge}
             </HStack>
@@ -301,7 +320,7 @@ const TableHeader = <T extends object>({
                       <DropdownMenuItem
                         key={table}
                         onClick={() => {
-                          setImportCSVTable(table);
+                          importCSVModal.open(table);
                         }}
                       >
                         <DropdownMenuIcon icon={<LuDownload />} />
@@ -315,7 +334,7 @@ const TableHeader = <T extends object>({
           </HStack>
         )
       )}
-      {!isEmpty && !hideToolbar && (
+      {(!isEmpty || hasRememberedChanges) && !hideToolbar && (
         <HStack
           className={cn(
             compact
@@ -333,9 +352,10 @@ const TableHeader = <T extends object>({
                       className="pl-2 pr-1"
                       leftIcon={<LuCheck />}
                       variant="secondary"
+                      aria-label={t`${selectedTotal} selected — actions`}
                     >
                       <Badge variant="secondary">
-                        <span>{selectedRows.length}</span>
+                        <span>{selectedTotal}</span>
                       </Badge>
                     </Button>
                   </DropdownMenuTrigger>
@@ -349,6 +369,15 @@ const TableHeader = <T extends object>({
             {headerActions}
           </HStack>
           <HStack>
+            {hasRememberedChanges && table && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onResetRememberedState}
+              >
+                <Trans>Reset</Trans>
+              </Button>
+            )}
             {sort === undefined ? (
               <Sort sortKeyToLabel={sortKeyToLabel} />
             ) : (
@@ -365,32 +394,42 @@ const TableHeader = <T extends object>({
             )}
 
             {canSaveView && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <IconButton
-                    aria-label={hasView ? t`Edit View` : t`Save View`}
-                    variant={
-                      savedViewDisclosure.isOpen || hasView ? "active" : "ghost"
-                    }
-                    icon={<LuLayers />}
-                    onClick={savedViewDisclosure.onToggle}
-                  />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    {hasView ? (
-                      <Trans>Edit View</Trans>
-                    ) : (
-                      <Trans>Save View</Trans>
-                    )}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+              <>
+                {hasRememberedChanges && !hasView && (
+                  <span className="text-xs text-muted-foreground">
+                    <Trans>Save View</Trans>
+                  </span>
+                )}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <IconButton
+                      aria-label={hasView ? t`Edit View` : t`Save View`}
+                      variant={
+                        savedViewDisclosure.isOpen || hasView
+                          ? "active"
+                          : "ghost"
+                      }
+                      icon={<LuLayers />}
+                      onClick={savedViewDisclosure.onToggle}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {hasView ? (
+                        <Trans>Edit View</Trans>
+                      ) : (
+                        <Trans>Save View</Trans>
+                      )}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </>
             )}
 
             {withCsvExport && (
               <Download
                 data={data}
+                infinite={infiniteExport}
                 columnAccessors={columnAccessors}
                 exportValues={exportValues}
                 exportOnlyColumns={exportOnlyColumns}
@@ -399,10 +438,9 @@ const TableHeader = <T extends object>({
               />
             )}
 
-            {withPagination &&
-              (pagination.canNextPage || pagination.canPreviousPage) && (
-                <PaginationButtons {...pagination} condensed />
-              )}
+            {withPagination && count > 0 && (
+              <RowCount count={count} isExact={countIsExact} />
+            )}
 
             {withInlineEditing &&
               !forceEditMode &&
@@ -442,14 +480,30 @@ const TableHeader = <T extends object>({
           <ActiveFilters filters={filters} />
         </HStack>
       )}
-      {importCSVTable && (
+      {importCSVModal.item && (
         <ImportCSVModal
-          table={importCSVTable}
-          onClose={() => setImportCSVTable(null)}
+          key={importCSVModal.key}
+          open={importCSVModal.isOpen}
+          table={importCSVModal.item}
+          onClose={importCSVModal.close}
         />
       )}
     </div>
   );
 };
+
+// The list's total in place of the pager. `LIST_COUNT` is an estimate from
+// 1,000 rows up, so the number says "about" until the exact count arrives.
+function RowCount({ count, isExact }: { count: number; isExact: boolean }) {
+  return (
+    <span className="whitespace-nowrap px-2 text-sm text-muted-foreground tabular-nums">
+      {isExact ? (
+        <Plural value={count} one="# row" other="# rows" />
+      ) : (
+        <Plural value={count} one="about # row" other="about # rows" />
+      )}
+    </span>
+  );
+}
 
 export default TableHeader;

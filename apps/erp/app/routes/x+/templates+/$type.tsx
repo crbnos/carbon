@@ -17,6 +17,7 @@ import { DocumentTemplateEditor } from "~/components/DocumentTemplateEditor";
 import { usePermissions } from "~/hooks";
 import { documentTemplateValidator } from "~/modules/settings/settings.models";
 import { listPreviewEntities } from "~/modules/settings/settings.service";
+import { DOCUMENT_TERMS_FIELD } from "~/modules/settings/settings.utils";
 import { getCustomFieldsSchemas } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -57,18 +58,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     api.settings.getCompanySettings({})
   ]);
 
-  // Map the document type to the relevant company terms setting (the Terms
-  // block's default/fallback). Internal docs have no terms.
-  const TERMS_FIELD: Partial<
-    Record<typeof documentType, "salesTerms" | "purchasingTerms">
-  > = {
-    salesInvoice: "salesTerms",
-    salesOrder: "salesTerms",
-    quote: "salesTerms",
-    packingSlip: "salesTerms",
-    purchaseOrder: "purchasingTerms"
-  };
-  const termsField = TERMS_FIELD[documentType];
+  const termsField = DOCUMENT_TERMS_FIELD[documentType];
   const termsSeed = termsField
     ? ((terms.data as Record<string, JSONContent> | null)?.[termsField] ??
       undefined)

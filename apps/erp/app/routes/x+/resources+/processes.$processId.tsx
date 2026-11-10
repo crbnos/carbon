@@ -6,8 +6,8 @@ import { respond } from "@carbon/api/carbon.server";
 import { error, notFound } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import type { BatchRules } from "@carbon/utils";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -51,6 +51,10 @@ export async function action(args: ActionFunctionArgs) {
     id: input.params.processId,
     customFields: input.formData && setCustomFields(input.formData)
   });
+  // A taken name stays on the form, as a field error.
+  if (result.error?.category === "conflict") {
+    return validationError({ fieldErrors: { name: result.error.message } });
+  }
   // The modal form reads the result and closes itself.
   if (input.formData?.get("type") === "modal") return result;
   return respond(args.request, result).redirect(path.to.processes);
@@ -58,8 +62,8 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function ProcessRoute() {
   const { process } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
-  const onClose = () => closeRoute();
+  const dialog = useRouteDialog();
+  const onClose = dialog.close;
 
   const initialValues = {
     id: process.id!,
@@ -74,8 +78,15 @@ export default function ProcessRoute() {
     batchable: process.batchable ?? false,
     batchType: process.batchType ?? ("Sequential" as const),
     requiresAbility: process.requiresAbility ?? false,
+    abilityPolicy: process.abilityPolicy ?? "Warn",
     ...batchRuleInitialValues(process.batchRules as BatchRules | null)
   };
 
-  return <ProcessForm initialValues={initialValues} onClose={onClose} />;
+  return (
+    <ProcessForm
+      initialValues={initialValues}
+      open={dialog.open}
+      onClose={onClose}
+    />
+  );
 }

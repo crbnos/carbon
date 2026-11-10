@@ -130,6 +130,7 @@ const OpportunityNotes = ({
             <TabsContent value="internal">
               {canEdit ? (
                 <Editor
+                  label={t`Internal notes`}
                   initialValue={(internalNotes ?? {}) as JSONContent}
                   onUpload={onUploadImage}
                   onChange={(value) => {
@@ -147,6 +148,7 @@ const OpportunityNotes = ({
             <TabsContent value="external">
               {canEdit ? (
                 <Editor
+                  label={t`External notes`}
                   initialValue={(externalNotes ?? {}) as JSONContent}
                   onUpload={onUploadImage}
                   onChange={(value) => {

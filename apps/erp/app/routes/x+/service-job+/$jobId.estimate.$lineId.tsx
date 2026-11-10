@@ -1,0 +1,67 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { authorize } from "@carbon/auth/auth.server";
+import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
+import { isServiceJobLocked } from "@carbon/utils";
+import type { ActionFunctionArgs } from "react-router";
+import { Navigate, useParams } from "react-router";
+import { useRouteData } from "~/hooks";
+import { serviceJobEstimateLineValidator } from "~/modules/service/service.models";
+import type {
+  ServiceJobDetail,
+  ServiceJobEstimateLine
+} from "~/modules/service/types";
+import ServiceJobEstimateLineForm from "~/modules/service/ui/ServiceJob/ServiceJobEstimateLineForm";
+import { path } from "~/utils/path";
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(serviceJobEstimateLineValidator).request(args, {
+    params: ["jobId", "lineId"]
+  });
+  if ("invalid" in input) return input.invalid;
+  const { api } = await authorize(args.request, { "service.jobs": "Edit" });
+  return api.service.upsertServiceJobEstimateLine({
+    ...input.data,
+    id: input.params.lineId,
+    serviceJobId: input.params.jobId
+  });
+}
+
+export default function ServiceJobEstimateLineRoute() {
+  const { jobId, lineId } = useParams();
+  if (!jobId || !lineId) throw new Error("Could not find jobId or lineId");
+  const dialog = useRouteDialog(path.to.serviceJob(jobId));
+  const routeData = useRouteData<{
+    job: ServiceJobDetail;
+    estimateLines: ServiceJobEstimateLine[];
+  }>(path.to.serviceJob(jobId));
+  const job = routeData?.job;
+
+  const line = routeData?.estimateLines.find((row) => row.id === lineId);
+  if (!line) return <Navigate to={path.to.serviceJob(jobId)} replace />;
+
+  return (
+    <ServiceJobEstimateLineForm
+      key={line.id}
+      initialValues={{
+        id: line.id,
+        serviceJobId: jobId,
+        itemId: line.itemId ?? undefined,
+        description: line.description ?? "",
+        quantity: line.quantity,
+        unitPrice: line.unitPrice
+      }}
+      laborBillRate={job?.laborBillRate ?? null}
+      isLocked={
+        isServiceJobLocked(job?.status) ||
+        job?.estimateStatus === "Sent" ||
+        job?.estimateStatus === "Accepted"
+      }
+      open={dialog.open}
+      onClose={dialog.close}
+    />
+  );
+}

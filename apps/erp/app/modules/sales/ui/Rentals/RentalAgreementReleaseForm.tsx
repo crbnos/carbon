@@ -29,6 +29,7 @@ type RentalAgreementReleaseFormProps = {
   /** Where the form posts when it is opened from a page rather than as its
    *  own route; it then also closes on submit. */
   action?: string;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -36,6 +37,7 @@ const RentalAgreementReleaseForm = ({
   initialValues,
   unitLabel,
   action,
+  open = true,
   onClose
 }: RentalAgreementReleaseFormProps) => {
   const { t } = useLingui();
@@ -46,7 +48,7 @@ const RentalAgreementReleaseForm = ({
   return (
     <ModalDrawerProvider type="modal">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose();
         }}

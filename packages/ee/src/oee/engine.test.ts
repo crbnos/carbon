@@ -30,6 +30,47 @@ const base = (
 });
 
 describe("planMachineTime", () => {
+  it("names a change that has not lasted the minimum as pending", () => {
+    const result = planMachineTime(
+      base({ changes: [{ state: "Running", changedAt: t("11:59:30") }] })
+    );
+    expect(result.pendingSince).toBe(t("11:59:30"));
+    expect(result.appliedThrough).toBeNull();
+    expect(result.writes).toEqual([]);
+  });
+
+  it("dates a pending change from the first of its repeated reports", () => {
+    const result = planMachineTime(
+      base({
+        changes: [
+          { state: "Running", changedAt: t("11:59:20") },
+          { state: "Running", changedAt: t("11:59:40") }
+        ]
+      })
+    );
+    expect(result.pendingSince).toBe(t("11:59:20"));
+  });
+
+  it("has nothing pending once the last change has lasted the minimum", () => {
+    const result = planMachineTime(
+      base({ changes: [{ state: "Running", changedAt: t("11:59:00") }] })
+    );
+    expect(result.pendingSince).toBeNull();
+    expect(result.appliedThrough).toBe(t("11:59:00"));
+  });
+
+  it("has nothing pending when a short state is followed by a longer one", () => {
+    const result = planMachineTime(
+      base({
+        changes: [
+          { state: "Running", changedAt: t("10:00:00") },
+          { state: "Idle", changedAt: t("10:00:10") }
+        ]
+      })
+    );
+    expect(result.pendingSince).toBeNull();
+  });
+
   it("opens a Machine event on the loaded operation when the machine runs", () => {
     const result = planMachineTime(
       base({ changes: [{ state: "Running", changedAt: t("10:00:00") }] })

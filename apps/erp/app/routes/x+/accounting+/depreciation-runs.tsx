@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { authorize } from "@carbon/auth/auth.server";
 import {
   Button,
   DatePicker,
@@ -26,8 +25,9 @@ import { usePermissions } from "~/hooks";
 import { getNextPeriodEnd } from "~/modules/accounting/accounting.utils";
 import { DepreciationRunTable } from "~/modules/accounting/ui/FixedAssets";
 import type { Handle } from "~/utils/handle";
+import { depreciationRunsList } from "~/utils/list-registry/accounting.server";
+import { loadListPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Depreciation`,
@@ -35,51 +35,39 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, api } = await authorize(
-    request,
-    { "accounting.depreciation": "View" },
-    { role: "employee" }
-  );
+  return loadListPage(request, depreciationRunsList, {
+    dataKey: "data",
+    firstPage: async ({ client, companyId }) => {
+      const lastRun = await client
+        .from("depreciationRun")
+        .select("periodEnd, status")
+        .eq("companyId", companyId)
+        .order("periodEnd", { ascending: false })
+        .limit(1);
 
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
+      const lastRunData =
+        lastRun.data && lastRun.data.length > 0 ? lastRun.data[0] : null;
+      const nextPeriodEnd = getNextPeriodEnd(lastRunData?.periodEnd ?? null);
+      const hasDraftBlocking = lastRunData?.status === "Draft";
 
-  const [runs, lastRun] = await Promise.all([
-    api.accounting.getDepreciationRuns({
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }),
-    client
-      .from("depreciationRun")
-      .select("periodEnd, status")
-      .eq("companyId", companyId)
-      .order("periodEnd", { ascending: false })
-      .limit(1)
-  ]);
-
-  const lastRunData =
-    lastRun.data && lastRun.data.length > 0 ? lastRun.data[0] : null;
-  const nextPeriodEnd = getNextPeriodEnd(lastRunData?.periodEnd ?? null);
-  const hasDraftBlocking = lastRunData?.status === "Draft";
-
-  return {
-    data: runs.data?.rows ?? [],
-    count: runs.data?.count ?? 0,
-    lastPeriodEnd: lastRunData?.periodEnd ?? null,
-    nextPeriodEnd,
-    hasDraftBlocking
-  };
+      return {
+        lastPeriodEnd: lastRunData?.periodEnd ?? null,
+        nextPeriodEnd,
+        hasDraftBlocking
+      };
+    }
+  });
 }
 
 export default function DepreciationRunsRoute() {
-  const { data, count, lastPeriodEnd, nextPeriodEnd, hasDraftBlocking } =
-    useLoaderData<typeof loader>();
+  const {
+    data,
+    count,
+    infinite,
+    lastPeriodEnd,
+    nextPeriodEnd,
+    hasDraftBlocking
+  } = useLoaderData<typeof loader>();
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -100,6 +88,7 @@ export default function DepreciationRunsRoute() {
       <DepreciationRunTable
         data={data}
         count={count}
+        infinite={infinite}
         primaryAction={
           permissions.has({ "accounting.depreciation": "Create" }) && (
             <TooltipProvider>

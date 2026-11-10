@@ -31,7 +31,8 @@ export {
 export {
   ModelCanvas,
   type ModelCanvasProps,
-  type ModelMetrics
+  type ModelMetrics,
+  type PmiFocusRequest
 } from "./ModelCanvas";
 export {
   type BuildTurn,
@@ -43,6 +44,7 @@ export {
   turnOrientation,
   upForOrientation
 } from "./orientation";
+export { PmiLayer, type PmiLayerProps } from "./PmiLayer";
 export {
   type AssemblyPlan,
   type AssemblyPlanComponent,
@@ -54,6 +56,31 @@ export {
   planMotionForComponents,
   type StepPhase
 } from "./plan";
+export {
+  formatPmiItem,
+  groupPmiItems,
+  PMI_VERSION,
+  type PmiBounds,
+  type PmiDatum,
+  type PmiDimension,
+  type PmiDimensionType,
+  type PmiDisplayUnit,
+  type PmiDocument,
+  type PmiGroup,
+  type PmiGroupTitle,
+  type PmiItem,
+  type PmiItemLabel,
+  type PmiKind,
+  type PmiMesh,
+  type PmiPlane,
+  type PmiTolerance,
+  type PmiToleranceType,
+  type PmiView,
+  parsePmiDocument,
+  pmiItemBounds,
+  pmiViewBounds,
+  visibleItemIds
+} from "./pmi";
 export { IDENTITY_QUAT as IDENTITY_ORIENTATION, sameOrientation } from "./quat";
 export { hasCustomMotion, isPlanFlagged, isSavedView } from "./step-flags";
 export {

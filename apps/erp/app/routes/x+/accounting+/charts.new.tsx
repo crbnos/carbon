@@ -6,14 +6,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  data,
-  useLoaderData,
-  useNavigate,
-  useSearchParams
-} from "react-router";
+import { data, useLoaderData, useSearchParams } from "react-router";
 import { accountValidator } from "~/modules/accounting/accounting.models";
 import { upsertAccount } from "~/modules/accounting/accounting.service";
 import type {
@@ -73,7 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!accountId) {
     return data(
       {},
-      await flash(request, error(insertAccount, "Failed to insert account"))
+      await flash(request, error(null, "Failed to insert account"))
     );
   }
 
@@ -85,7 +81,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function NewAccountRoute() {
   const { groupAccounts } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.chartOfAccounts);
   const [searchParams] = useSearchParams();
   const parentId = searchParams.get("parentId") ?? undefined;
 
@@ -97,14 +93,16 @@ export default function NewAccountRoute() {
     accountType: undefined,
     class: "Asset" as AccountClass,
     incomeBalance: "Balance Sheet" as AccountIncomeBalance,
-    consolidatedRate: "Average" as const
+    consolidatedRate: "Average" as const,
+    allowability: "Allowable" as const
   };
 
   return (
     <ChartOfAccountForm
       initialValues={initialValues}
       groupAccounts={groupAccounts}
-      onClose={() => navigate(path.to.chartOfAccounts)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

@@ -23,19 +23,28 @@ import {
   Toaster,
   TooltipProvider,
   useMode,
+  useThemeContent,
+  useUiScale,
   ViewportProvider
 } from "@carbon/react";
+import { DocumentHiddenMotion } from "@carbon/react/DocumentHidden";
 import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
-import type { Theme } from "@carbon/utils";
+import { RouteAnnouncer } from "@carbon/react/RouteAnnouncer";
+import type { UiScale } from "@carbon/utils";
 import {
   colorSchemeHintScript,
+  DENSITY_COOKIE,
+  densityValidator,
   getPreferenceHeaders,
   getViewportHint,
-  isSearchParamOnlyNavigation,
   modeValidator,
   prefetchCacheMiddleware,
+  rootShouldRevalidate,
+  TEXT_SIZE_COOKIE,
+  textSizeValidator,
+  themeByName,
   themeColorValidator,
-  themes
+  uiScaleStyle
 } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
 import { I18nProvider } from "@react-aria/i18n";
@@ -43,7 +52,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -62,7 +71,12 @@ import {
 } from "react-router";
 import SonnerStyle from "sonner/dist/styles.css?url";
 import { preloadCatalog, useCatalog } from "~/services/lingui";
-import { getMode, setMode } from "~/services/mode.server";
+import {
+  getMode,
+  getUiScale,
+  setMode,
+  setUiScale
+} from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
@@ -86,7 +100,8 @@ export const clientMiddleware = [
   flashClientMiddleware,
   createInvalidationMiddleware({
     getCache: () => window.clientCache,
-    skipPaths: [path.to.refreshSession]
+    // The root action only writes appearance cookies: no cached data changed.
+    skipPaths: [path.to.refreshSession, path.to.root]
   })
 ];
 
@@ -109,8 +124,7 @@ export const meta: MetaFunction = () => {
 // Root data is cookies + env + the flash result. A same-pathname GET (table
 // filter, sort, page, useRevalidator from realtime hooks) can change none of
 // it; actions still revalidate so the flash toast is surfaced.
-export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
-  isSearchParamOnlyNavigation(args) ? false : args.defaultShouldRevalidate;
+export const shouldRevalidate: ShouldRevalidateFunction = rootShouldRevalidate;
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const {
@@ -126,6 +140,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     SUPABASE_URL,
+    TENANT_TYPE,
     SUPABASE_ANON_KEY,
     VERCEL_ENV,
     VERCEL_URL
@@ -150,11 +165,13 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY,
         SUPABASE_URL,
+        TENANT_TYPE,
         SUPABASE_ANON_KEY,
         VERCEL_ENV,
         VERCEL_URL
       },
       ...getMode(request),
+      ...getUiScale(request),
       viewport: getViewportHint(request),
       theme: getTheme(request),
       preferences,
@@ -189,7 +206,50 @@ export async function action({ request }: ActionFunctionArgs) {
     return data(
       {},
       {
-        headers: { "Set-Cookie": setTheme(themeValidation.data.theme) }
+        headers: setTheme(themeValidation.data.theme, { inApp: true })
+      }
+    );
+  }
+
+  // The Appearance pane posts its text size and density here too.
+  if (formData.has("textSize")) {
+    const textSizeValidation =
+      await validator(textSizeValidator).validate(formData);
+    if (textSizeValidation.error) {
+      return data(error(textSizeValidation.error, "Invalid text size"), {
+        status: 400
+      });
+    }
+    return data(
+      {},
+      {
+        headers: {
+          "Set-Cookie": setUiScale(
+            TEXT_SIZE_COOKIE,
+            textSizeValidation.data.textSize
+          )
+        }
+      }
+    );
+  }
+
+  if (formData.has("density")) {
+    const densityValidation =
+      await validator(densityValidator).validate(formData);
+    if (densityValidation.error) {
+      return data(error(densityValidation.error, "Invalid density"), {
+        status: 400
+      });
+    }
+    return data(
+      {},
+      {
+        headers: {
+          "Set-Cookie": setUiScale(
+            DENSITY_COOKIE,
+            densityValidation.data.density
+          )
+        }
       }
     );
   }
@@ -216,6 +276,8 @@ function Document({
   lang = "en",
   mode = "light",
   theme = "zinc",
+  uiScale,
+  themeContent,
   env
 }: {
   children: React.ReactNode;
@@ -223,35 +285,30 @@ function Document({
   lang?: string;
   mode?: "light" | "dark";
   theme?: string;
+  uiScale?: UiScale;
+  themeContent?: Record<string, string>;
   env?: Record<string, unknown>;
 }) {
   const nonce = useContext(UNSAFE_FrameworkContext)?.nonce;
-  const selectedTheme = themes.find((t) => t.name === theme) as
-    | Theme
-    | undefined;
+  const selectedTheme = themeByName(theme);
 
   // Create style objects for both light and dark modes
   const lightVars: Record<string, string> = {};
   const darkVars: Record<string, string> = {};
 
-  if (selectedTheme) {
-    // Set light mode variables
-    Object.entries(selectedTheme.cssVars.light).forEach(([key, value]) => {
-      const cssKey = `--${key}`;
-      lightVars[cssKey] = `${value}`;
-    });
-
-    // Set dark mode variables
-    Object.entries(selectedTheme.cssVars.dark).forEach(([key, value]) => {
-      const cssKey = `--${key}`;
-      darkVars[cssKey] = `${value}`;
-    });
-  }
+  Object.entries(selectedTheme.cssVars.light).forEach(([key, value]) => {
+    lightVars[`--${key}`] = `${value}`;
+  });
+  Object.entries(selectedTheme.cssVars.dark).forEach(([key, value]) => {
+    darkVars[`--${key}`] = `${value}`;
+  });
 
   // Combine the styles with proper selectors
   const themeStyle = {
     ...(mode === "dark" ? darkVars : lightVars),
-    "--radius": "0.4375rem"
+    ...themeContent,
+    "--radius": "0.4375rem",
+    ...(uiScale ? uiScaleStyle(uiScale) : {})
   } as React.CSSProperties;
 
   return (
@@ -296,10 +353,25 @@ function Document({
         <Toaster position="bottom-left" visibleToasts={5} />
         <ScrollRestoration />
         <Scripts />
-        {!CONTROLLED_ENVIRONMENT && import.meta.env.PROD && <Analytics />}
+        {!CONTROLLED_ENVIRONMENT &&
+          import.meta.env.PROD &&
+          import.meta.env.VITE_VERCEL_ENV && <Analytics />}
       </body>
     </html>
   );
+}
+
+/**
+ * The query devtools button floats over form controls, so a browser driven by
+ * automation (`navigator.webdriver`) does not get it. Developers still do.
+ */
+function QueryDevtools() {
+  const [automated, setAutomated] = useState(true);
+  useEffect(() => {
+    setAutomated(navigator.webdriver === true);
+  }, []);
+  if (automated) return null;
+  return <ReactQueryDevtools buttonPosition="bottom-right" />;
 }
 
 export default function App() {
@@ -312,6 +384,8 @@ export default function App() {
 
   /* Dark/Light Mode */
   const mode = useMode();
+  const uiScale = useUiScale();
+  const themeContent = useThemeContent(mode);
 
   // One client for hook-based useQuery and for code outside React (the live
   // lists, the invalidation middleware), which reaches it as window.clientCache.
@@ -341,12 +415,18 @@ export default function App() {
                   <Document
                     mode={mode}
                     theme={theme}
+                    uiScale={uiScale}
+                    themeContent={themeContent}
                     lang={appLanguage}
                     env={env}
                   >
                     <Outlet />
-                    {/* Renders nothing outside development; the package strips itself. */}
-                    <ReactQueryDevtools buttonPosition="bottom-right" />
+                    {/* Says which page opened and moves focus to it on navigation. */}
+                    <RouteAnnouncer />
+                    {/* Closed menus and dialogs unmount at once in a hidden tab. */}
+                    <DocumentHiddenMotion />
+                    {/* Renders nothing outside development or in an automated browser. */}
+                    <QueryDevtools />
                   </Document>
                 </MotionConfig>
               </TooltipProvider>

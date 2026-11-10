@@ -40,11 +40,13 @@ import type { Attribute, AttributeCategoryDetailType } from "../../types";
 
 type AttributeCategoryDetailProps = {
   attributeCategory: AttributeCategoryDetailType;
+  open?: boolean;
   onClose: () => void;
 };
 
 const AttributeCategoryDetail = ({
   attributeCategory,
+  open = true,
   onClose
 }: AttributeCategoryDetailProps) => {
   const { t } = useLingui();
@@ -119,7 +121,6 @@ const AttributeCategoryDetail = ({
   };
 
   const onDeleteCancel = () => {
-    setSelectedAttribute(undefined);
     deleteModal.onClose();
   };
 
@@ -147,7 +148,7 @@ const AttributeCategoryDetail = ({
   return (
     <>
       <Drawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose();
         }}
@@ -181,6 +182,7 @@ const AttributeCategoryDetail = ({
                 className="space-y-2 w-full"
               >
                 {sortOrder.map((sortId) => {
+                  const attributeName = attributeMap[sortId]?.name;
                   return (
                     <Reorder.Item
                       key={sortId}
@@ -210,7 +212,9 @@ const AttributeCategoryDetail = ({
                               t`Unknown`
                           }
                         </Button>
-                        <ActionMenu>{renderContextMenu(sortId)}</ActionMenu>
+                        <ActionMenu label={t`Actions for ${attributeName}`}>
+                          {renderContextMenu(sortId)}
+                        </ActionMenu>
                       </HStack>
                     </Reorder.Item>
                   );

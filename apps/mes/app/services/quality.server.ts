@@ -16,6 +16,7 @@ import {
   getTrackedEntitiesByMakeMethodId,
   insertProductionQuantity
 } from "~/services/operations.service";
+import { autoPrintFirstOperationLabel } from "~/services/printing.server";
 import {
   getInspection,
   getInspectionMeasurements,
@@ -506,13 +507,18 @@ export async function postSerialCompletions(
       inspectionSampleId: string | null;
     }[];
     jobOperationId: string;
+    // The operation's make method and work center, for the first-operation
+    // label auto-print.
+    jobMakeMethodId: string | null;
+    workCenterId: string | null;
     inspectionId: string;
     eventIds: ProductionEventIds;
     companyId: string;
     userId: string;
   }
 ): Promise<{ completed: number; error: unknown | null }> {
-  let completed = 0;
+  const completedEntityIds: string[] = [];
+  let error: unknown | null = null;
   for (const candidate of args.candidates) {
     const response = await erpPosting(
       "issue",
@@ -529,10 +535,29 @@ export async function postSerialCompletions(
         ...args.eventIds
       }
     );
-    if (response.error) return { completed, error: response.error };
-    completed += 1;
+    if (response.error) {
+      error = response.error;
+      break;
+    }
+    completedEntityIds.push(candidate.trackedEntityId);
   }
-  return { completed, error: null };
+
+  // Labels go out after the postings, so a slow print enqueue never delays
+  // a unit's completion. Units completed before a failure still get theirs.
+  for (const trackedEntityId of completedEntityIds) {
+    // Auto-print label on first operation only (entity was just minted)
+    await autoPrintFirstOperationLabel({
+      serviceRole,
+      trackedEntityId,
+      jobOperationId: args.jobOperationId,
+      jobMakeMethodId: args.jobMakeMethodId,
+      workCenterId: args.workCenterId ?? undefined,
+      companyId: args.companyId,
+      userId: args.userId
+    });
+  }
+
+  return { completed: completedEntityIds.length, error };
 }
 
 // Non-serial completion: one bulk Production posting (batch entities
@@ -570,8 +595,21 @@ export async function postBulkCompletion(
       }
     );
     if (response.error) {
-      return { error: response.error, message: "Failed to complete units" };
+      return {
+        error: response.error,
+        message: response.error.message || "Failed to complete units"
+      };
     }
+    // Auto-print label on first operation only (batch entity was just minted)
+    await autoPrintFirstOperationLabel({
+      serviceRole,
+      trackedEntityId: state.batchTrackedEntityId,
+      jobOperationId: state.jobOperationId,
+      jobMakeMethodId: state.operation.jobMakeMethodId,
+      workCenterId: state.operation.workCenterId ?? undefined,
+      companyId: args.companyId,
+      userId: args.userId
+    });
     return { error: null, message: null };
   }
 
@@ -603,10 +641,37 @@ export async function postBulkCompletion(
   if (issued.error) {
     return {
       error: issued.error,
-      message: "Units completed, but failed to issue materials"
+      message: `Units completed, but ${issued.error.message || "failed to issue materials"}`
     };
   }
 
+  return { error: null, message: null };
+}
+
+/** Strict backflush dry run of the operation's backflush. Call it before a
+ *  completion's first write; a no-op when the setting is off. */
+export async function checkStrictBackflush(args: {
+  jobOperationId: string;
+  quantity: number;
+  companyId: string;
+  userId: string;
+}): Promise<{ error: unknown | null; message: string | null }> {
+  if (args.quantity <= 0) return { error: null, message: null };
+  const check = await erpPosting(
+    "issue",
+    { companyId: args.companyId, userId: args.userId },
+    {
+      id: args.jobOperationId,
+      type: "jobOperationDryRun",
+      quantity: args.quantity
+    }
+  );
+  if (check.error) {
+    return {
+      error: check.error,
+      message: check.error.message || "Failed to issue materials"
+    };
+  }
   return { error: null, message: null };
 }
 

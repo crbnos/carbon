@@ -98,6 +98,15 @@ const purchasingSettingsForm = z.discriminatedUnion("intent", [
     "requireSupplierContactAndLocationToggle",
     "requireSupplierContactAndLocation"
   ),
+  settingsToggle(
+    "requireSupplierContactEmailToggle",
+    "requireSupplierContactEmail"
+  ),
+  settingsToggle("includeSupplierPartFilesToggle", "includeSupplierPartFiles"),
+  settingsToggle(
+    "requirePurchaseOrderApprovalSignatureToggle",
+    "requirePurchaseOrderApprovalSignature"
+  ),
   purchasePriceUpdateTimingValidator.extend({
     intent: z.literal("purchasePriceUpdateTiming")
   }),
@@ -159,6 +168,24 @@ export default function PurchasingSettingsRoute() {
             ? t`Supplier contact requirement enabled`
             : t`Supplier contact requirement disabled`
         );
+      } else if (data.includeSupplierPartFiles !== undefined) {
+        toast.success(
+          data.includeSupplierPartFiles
+            ? t`Part files attached automatically`
+            : t`Part files attached only when picked`
+        );
+      } else if (data.requireSupplierContactEmail !== undefined) {
+        toast.success(
+          data.requireSupplierContactEmail
+            ? t`Supplier contact email required`
+            : t`Supplier contact email optional`
+        );
+      } else if (data.requirePurchaseOrderApprovalSignature !== undefined) {
+        toast.success(
+          data.requirePurchaseOrderApprovalSignature
+            ? t`Approval signature requirement enabled`
+            : t`Approval signature requirement disabled`
+        );
       } else if (data.updateLeadTimesOnReceipt !== undefined) {
         toast.success(
           data.updateLeadTimesOnReceipt
@@ -188,6 +215,25 @@ export default function PurchasingSettingsRoute() {
       .requireSupplierContactAndLocation ?? false
   );
 
+  const requireApprovalSignature = useSavedToggle(
+    toggleFetcher,
+    "requirePurchaseOrderApprovalSignatureToggle",
+    companySettings.requirePurchaseOrderApprovalSignature ?? false
+  );
+
+  const handleRequireApprovalSignatureToggle = useCallback(
+    (checked: boolean) => {
+      toggleFetcher.submit(
+        {
+          intent: "requirePurchaseOrderApprovalSignatureToggle",
+          enabled: checked.toString()
+        },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
   const leadTimesOnReceiptEnabled = useSavedToggle(
     toggleFetcher,
     "updateLeadTimesOnReceipt",
@@ -205,6 +251,44 @@ export default function PurchasingSettingsRoute() {
     (checked: boolean) => {
       toggleFetcher.submit(
         { intent: "showSupplierReadableIdToggle", enabled: checked.toString() },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
+  const requireSupplierContactEmail = useSavedToggle(
+    toggleFetcher,
+    "requireSupplierContactEmailToggle",
+    companySettings.requireSupplierContactEmail ?? false
+  );
+
+  const handleRequireSupplierContactEmailToggle = useCallback(
+    (checked: boolean) => {
+      toggleFetcher.submit(
+        {
+          intent: "requireSupplierContactEmailToggle",
+          enabled: checked.toString()
+        },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
+  const includeSupplierPartFiles = useSavedToggle(
+    toggleFetcher,
+    "includeSupplierPartFilesToggle",
+    companySettings.includeSupplierPartFiles ?? true
+  );
+
+  const handleIncludeSupplierPartFilesToggle = useCallback(
+    (checked: boolean) => {
+      toggleFetcher.submit(
+        {
+          intent: "includeSupplierPartFilesToggle",
+          enabled: checked.toString()
+        },
         { method: "POST" }
       );
     },
@@ -307,6 +391,52 @@ export default function PurchasingSettingsRoute() {
         <Card>
           <CardHeader>
             <CardTitle>
+              <Trans>Attach Part Files Automatically</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Sending an RFQ or a supplier quote lists each line item's model
+                and the files on its Files tab, such as drawings. Only the files
+                ticked there are attached to the email and shown on the
+                supplier's quote page.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {includeSupplierPartFiles ? (
+                    <Trans>Part files are attached automatically</Trans>
+                  ) : (
+                    <Trans>Part files are attached only when picked</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {includeSupplierPartFiles ? (
+                    <Trans>
+                      Every part file starts ticked; untick any you don't want
+                      to send.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Every part file starts unticked; tick the ones to send.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
+              <Switch
+                checked={includeSupplierPartFiles}
+                onCheckedChange={handleIncludeSupplierPartFilesToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
               <Trans>Require a Supplier Contact and Location</Trans>
             </CardTitle>
             <CardDescription>
@@ -346,8 +476,90 @@ export default function PurchasingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Require a Supplier Contact and Location`}
                 checked={requireSupplierContactAndLocation}
                 onCheckedChange={handleRequireSupplierContactToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Require an Email on Supplier Contacts</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Every supplier contact must have an email address. A contact
+                with no email cannot be saved or imported. Existing contacts are
+                not changed until they are next edited.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {requireSupplierContactEmail ? (
+                    <Trans>An email is required on supplier contacts</Trans>
+                  ) : (
+                    <Trans>An email is optional on supplier contacts</Trans>
+                  )}
+                </span>
+              </VStack>
+              <Switch
+                aria-label={t`Require an Email on Supplier Contacts`}
+                checked={requireSupplierContactEmail}
+                onCheckedChange={handleRequireSupplierContactEmailToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Require a Signature to Approve Purchase Orders</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                An approver must have a signature in Account → Profile before
+                they can approve a purchase order. The purchase order PDF prints
+                the signature of the person who approved it.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {requireApprovalSignature ? (
+                    <Trans>A signature is required to approve</Trans>
+                  ) : (
+                    <Trans>A signature is optional to approve</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {requireApprovalSignature ? (
+                    <Trans>
+                      An approver with no signature on file is asked to add one
+                      before they approve.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Enable to block approval from anyone with no signature on
+                      file.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
+              <Switch
+                aria-label={t`Require a Signature to Approve Purchase Orders`}
+                checked={requireApprovalSignature}
+                onCheckedChange={handleRequireApprovalSignatureToggle}
                 disabled={toggleFetcher.state !== "idle"}
               />
             </HStack>
@@ -390,6 +602,7 @@ export default function PurchasingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Centralized Billing Address`}
                 checked={apAddressEnabled}
                 onCheckedChange={handleApAddressToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -548,6 +761,7 @@ export default function PurchasingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Automatic Lead Time Updates`}
                 checked={leadTimesOnReceiptEnabled}
                 onCheckedChange={handleLeadTimesOnReceiptToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -597,6 +811,7 @@ export default function PurchasingSettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Show Supplier IDs`}
                 checked={showSupplierReadableIdEnabled}
                 onCheckedChange={handleShowSupplierReadableIdToggle}
                 disabled={toggleFetcher.state !== "idle"}

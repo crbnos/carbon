@@ -28,6 +28,7 @@ type FixedAssetReturnToInventoryFormProps = {
   initialValues: z.infer<typeof fixedAssetReturnToInventoryValidator>;
   currentNBV: number;
   itemId: string;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -35,6 +36,7 @@ const FixedAssetReturnToInventoryForm = ({
   initialValues,
   currentNBV,
   itemId,
+  open = true,
   onClose
 }: FixedAssetReturnToInventoryFormProps) => {
   const { t } = useLingui();
@@ -49,7 +51,7 @@ const FixedAssetReturnToInventoryForm = ({
   return (
     <ModalDrawerProvider type="modal">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose?.();
         }}

@@ -5,7 +5,7 @@
 import { respond } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { storageTypeValidator } from "~/modules/inventory/inventory.models";
 import StorageTypeForm from "~/modules/inventory/ui/StorageTypes/StorageTypeForm";
@@ -35,12 +35,13 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function NewStorageTypeRoute() {
-  const closeRoute = useCloseRoute();
-  const initialValues = { name: "" };
+  const dialog = useRouteDialog();
+  const initialValues = { name: "", nonNettable: false };
 
   return (
     <StorageTypeForm
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
       initialValues={initialValues}
     />
   );

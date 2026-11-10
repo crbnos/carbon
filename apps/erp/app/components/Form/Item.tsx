@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ComboboxProps } from "@carbon/form";
-import { useControlField, useField } from "@carbon/form";
+import { useControlField, useField, useInlineField } from "@carbon/form";
 import { RefreshRate, useLoaderQuery } from "@carbon/query";
 import {
   Button,
@@ -33,6 +33,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuFilter, LuTriangleAlert } from "react-icons/lu";
+import { useDrawerItem } from "~/hooks";
 import ConsumableForm from "~/modules/items/ui/Consumables/ConsumableForm";
 import MaterialForm from "~/modules/items/ui/Materials/MaterialForm";
 import PartForm from "~/modules/items/ui/Parts/PartForm";
@@ -222,7 +223,7 @@ const Item = ({
   ]);
 
   const selectTypeModal = useDisclosure();
-  const newItemsModal = useDisclosure();
+  const newItem = useDrawerItem<ItemType | "Item">();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -267,6 +268,12 @@ const Item = ({
             : label === "Consumable"
               ? t`Consumable`
               : (label ?? translateItemType(type));
+  const inlineField = useInlineField({
+    inline: !!props.inline,
+    label: fieldLabel,
+    isEmpty: !value,
+    isReadOnly
+  });
 
   const entityKey: EntityKey =
     type === "Part"
@@ -281,10 +288,11 @@ const Item = ({
 
   const storeEmptyMessage = useEmptyState(entityKey, {
     onCreate: () => {
+      setCreated("");
       if (type === "Item") {
         selectTypeModal.onOpen();
       } else {
-        newItemsModal.onOpen();
+        newItem.open(type);
       }
     }
   });
@@ -296,7 +304,7 @@ const Item = ({
   return (
     <>
       <FormControl isInvalid={!!error} className="w-full">
-        {type && (
+        {type && inlineField.showLabel && (
           <FormLabel
             htmlFor={name}
             isConfigured={isConfigured}
@@ -329,6 +337,7 @@ const Item = ({
             {...props}
             isReadOnly={isReadOnly}
             inline={props.inline ? ItemPreview : undefined}
+            inlinePlaceholder={inlineField.placeholder}
             value={value?.replace(/"/g, '\\"')}
             onChange={(newValue) => {
               setValue(newValue?.replace(/"/g, '\\"') ?? "");
@@ -354,7 +363,7 @@ const Item = ({
                 selectTypeModal.onOpen();
                 setCreated(option);
               } else {
-                newItemsModal.onOpen();
+                newItem.open(type);
                 setCreated(option);
               }
             }}
@@ -469,80 +478,79 @@ const Item = ({
           helperText && <FormHelperText>{helperText}</FormHelperText>
         )}
       </FormControl>
-      {selectTypeModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) {
-              selectTypeModal.onClose();
-            }
-          }}
-        >
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Select Item Type</Trans>
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <div className="grid grid-cols-1 gap-4">
-                {itemType
-                  .filter((option) =>
-                    // Same narrowing as the dropdown above: BOM/method pickers
-                    // never surface Tool or Service; order-line forms opt in
-                    // via validItemTypes.
-                    (validItemTypes ?? methodItemType).some((t) => t === option)
-                  )
-                  .map((option) => (
-                    <Button
-                      key={option}
-                      leftIcon={<MethodItemTypeIcon type={option} />}
-                      className="flex w-full"
-                      variant={type === option ? "primary" : "secondary"}
-                      size="lg"
-                      onClick={() => {
-                        // Same contravariance cast as the dropdown emit above.
-                        onTypeChange?.(option as MethodItemType);
-                        setTimeout(() => {
-                          submitRef.current?.focus();
-                        }, 0);
-                      }}
-                    >
-                      {translateItemType(option)}
-                    </Button>
-                  ))}
-              </div>
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  selectTypeModal.onClose();
-                }}
-              >
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button
-                ref={submitRef}
-                isDisabled={type === "Item"}
-                onClick={() => {
-                  selectTypeModal.onClose();
-                  newItemsModal.onOpen();
-                }}
-              >
-                <Trans>Create</Trans>
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
-      {type === "Part" && newItemsModal.isOpen && (
+      <Modal
+        open={selectTypeModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            selectTypeModal.onClose();
+          }
+        }}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Select Item Type</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <div className="grid grid-cols-1 gap-4">
+              {itemType
+                .filter((option) =>
+                  // Same narrowing as the dropdown above: BOM/method pickers
+                  // never surface Tool or Service; order-line forms opt in
+                  // via validItemTypes.
+                  (validItemTypes ?? methodItemType).some((t) => t === option)
+                )
+                .map((option) => (
+                  <Button
+                    key={option}
+                    leftIcon={<MethodItemTypeIcon type={option} />}
+                    className="flex w-full"
+                    variant={type === option ? "primary" : "secondary"}
+                    size="lg"
+                    onClick={() => {
+                      // Same contravariance cast as the dropdown emit above.
+                      onTypeChange?.(option as MethodItemType);
+                      setTimeout(() => {
+                        submitRef.current?.focus();
+                      }, 0);
+                    }}
+                  >
+                    {translateItemType(option)}
+                  </Button>
+                ))}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                selectTypeModal.onClose();
+              }}
+            >
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              ref={submitRef}
+              isDisabled={type === "Item"}
+              onClick={() => {
+                selectTypeModal.onClose();
+                newItem.open(type);
+              }}
+            >
+              <Trans>Create</Trans>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+      {newItem.item === "Part" && (
         <PartForm
+          key={newItem.key}
+          open={newItem.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newItemsModal.onClose();
-            triggerRef.current?.click();
+            newItem.close();
+            newItem.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
             id: "",
@@ -563,13 +571,14 @@ const Item = ({
           }}
         />
       )}
-      {type === "Consumable" && newItemsModal.isOpen && (
+      {newItem.item === "Consumable" && (
         <ConsumableForm
+          key={newItem.key}
+          open={newItem.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newItemsModal.onClose();
-            triggerRef.current?.click();
+            newItem.close();
+            newItem.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
             id: "",
@@ -585,13 +594,14 @@ const Item = ({
           }}
         />
       )}
-      {type === "Material" && newItemsModal.isOpen && (
+      {newItem.item === "Material" && (
         <MaterialForm
+          key={newItem.key}
+          open={newItem.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newItemsModal.onClose();
-            triggerRef.current?.click();
+            newItem.close();
+            newItem.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
             id: "",
@@ -609,13 +619,14 @@ const Item = ({
           }}
         />
       )}
-      {type === "Service" && newItemsModal.isOpen && (
+      {newItem.item === "Service" && (
         <ServiceForm
+          key={newItem.key}
+          open={newItem.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newItemsModal.onClose();
-            triggerRef.current?.click();
+            newItem.close();
+            newItem.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
             name: created,
@@ -633,13 +644,14 @@ const Item = ({
           }}
         />
       )}
-      {type === "Tool" && newItemsModal.isOpen && (
+      {newItem.item === "Tool" && (
         <ToolForm
+          key={newItem.key}
+          open={newItem.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newItemsModal.onClose();
-            triggerRef.current?.click();
+            newItem.close();
+            newItem.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
             id: "",

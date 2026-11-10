@@ -34,12 +34,20 @@ import type { ProductionEvent } from "../../types";
 type ProductionEventsTableProps = {
   data: ProductionEvent[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   operations: { id: string; description: string | null }[];
   workCenters: WorkCenter[];
 };
 
 const ProductionEventsTable = memo(
-  ({ data, count, operations, workCenters }: ProductionEventsTableProps) => {
+  ({
+    data,
+    count,
+    nextCursor,
+    operations,
+    workCenters
+  }: ProductionEventsTableProps) => {
     const { jobId } = useParams();
     const { t } = useLingui();
     if (!jobId) throw new Error("Job ID is required");
@@ -202,7 +210,6 @@ const ProductionEventsTable = memo(
     };
 
     const onDeleteCancel = () => {
-      setSelectedEvent(null);
       deleteModal.onClose();
     };
 
@@ -270,6 +277,8 @@ const ProductionEventsTable = memo(
         <Table<ProductionEvent>
           compact
           count={count}
+          // Scoped to one job: no list registry entry, so no `listKey`.
+          infinite={{ dataKey: "events", nextCursor }}
           columns={columns}
           data={data}
           emptyState={emptyState}
@@ -284,10 +293,10 @@ const ProductionEventsTable = memo(
           renderContextMenu={renderContextMenu}
           title={t`Production Events`}
         />
-        {deleteModal.isOpen && selectedEvent && (
+        {selectedEvent && (
           <ConfirmDelete
             action={path.to.deleteProductionEvent(selectedEvent.id)}
-            isOpen
+            isOpen={deleteModal.isOpen}
             name={`${
               selectedEvent.jobOperation?.description ?? "Operation"
             } by ${

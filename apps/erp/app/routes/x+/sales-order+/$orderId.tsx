@@ -10,9 +10,13 @@ import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
+import {
+  type SalesOrderInvoiceSummary,
+  summarizeSalesOrderInvoices
+} from "~/modules/sales/sales.utils";
 import {
   SalesOrderExplorer,
   SalesOrderHeader,
@@ -20,6 +24,7 @@ import {
 } from "~/modules/sales/ui/SalesOrder";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -52,6 +57,9 @@ export const handle: Handle = {
   ),
   module: "sales"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.salesOrder?.salesOrderId, "Sales Order");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId, api } = await authorize(
@@ -140,9 +148,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ? await api.sales.getQuote({ quoteId: opportunity.data.quotes[0].id })
     : null;
 
-  let invoicedAmount = 0;
-  let paidAmount = 0;
-  let currencyMismatchCount = 0;
+  let invoiceSummary: SalesOrderInvoiceSummary = {
+    invoicedAmount: 0,
+    paidAmount: 0,
+    currencyMismatchCount: 0
+  };
 
   if (invoices && payments) {
     if (invoices.error) {
@@ -165,45 +175,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     }
 
-    const paidBaseByInvoiceId = new Map<string, number>();
-    for (const payment of payments.data ?? []) {
-      if (!payment.targetSalesInvoiceId) continue;
-      paidBaseByInvoiceId.set(
-        payment.targetSalesInvoiceId,
-        (paidBaseByInvoiceId.get(payment.targetSalesInvoiceId) ?? 0) +
-          payment.appliedAmount
-      );
-    }
-
-    const orderCurrency = salesOrder.data?.currencyCode;
-
-    for (const invoice of invoices.data ?? []) {
-      // A voided invoice was never billed — it must not inflate the invoiced
-      // total, nor contribute any payments to the paid total.
-      if (invoice.status === "Voided") {
-        continue;
-      }
-
-      const invoiceTotal = invoice.invoiceTotal ?? 0;
-      const invoiceCurrency = invoice.currencyCode;
-
-      // Avoid mixing currencies in the same displayed number.
-      if (
-        orderCurrency &&
-        invoiceCurrency &&
-        invoiceCurrency !== orderCurrency
-      ) {
-        currencyMismatchCount += 1;
-        continue;
-      }
-
-      invoicedAmount += invoiceTotal * (invoice.exchangeRate ?? 1);
-      if (invoice.id) {
-        paidAmount +=
-          (paidBaseByInvoiceId.get(invoice.id) ?? 0) *
-          (invoice.exchangeRate ?? 1);
-      }
-    }
+    invoiceSummary = summarizeSalesOrderInvoices(
+      salesOrder.data?.currencyCode,
+      invoices.data ?? [],
+      payments.data ?? []
+    );
   }
 
   const defaultCc = customer?.data?.defaultCc?.length
@@ -225,11 +201,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     opportunity: opportunity.data,
     customer: customer?.data ?? null,
     quote: quote?.data ?? null,
-    invoiceSummary: {
-      invoicedAmount,
-      paidAmount,
-      currencyMismatchCount
-    },
+    invoiceSummary,
     originatedFromQuote: !!opportunity.data.quotes[0]?.id,
     defaultCc
   };

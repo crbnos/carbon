@@ -12,13 +12,14 @@
 //!   - `zstd` (mesh sources: glTF/GLB/STL): plain zstd of the raw — nothing to
 //!            re-topologise, but reoptimise still needs the bytes.
 //!
-//! Async job; the single compressed `raw` output is late-mint uploaded. The
+//! Async job; the single compressed `raw` output is uploaded to its
+//! submit-time URL. The
 //! caller then repoints `modelUpload.modelPath` at it and deletes the fat
 //! original. `download_hashed` decompresses any `.zst` source transparently, so
 //! re-running compact on an already-compacted model is a no-op-safe passthrough.
 
 use crate::jobs::{Done, Output};
-use crate::{admission, http, telemetry, AppState};
+use crate::{admission, compute, http, telemetry, AppState};
 use serde_json::json;
 use std::time::Instant;
 
@@ -44,7 +45,7 @@ pub struct CompactReq {
     pub source_url: String,
     pub mode: Mode,
     /// Storage path recorded in the completion pointer (the app persists it and
-    /// repoints modelPath); the signed PUT URL is late-minted per poll, key `raw`.
+    /// repoints modelPath); the signed PUT URL comes with the submit, key `raw`.
     pub raw_path: Option<String>,
 }
 
@@ -55,6 +56,7 @@ pub(crate) const ZSTD_LEVEL: i32 = 12;
 pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
     let jobs = state.jobs.clone();
     let admission = state.admission.clone();
+    let sources = state.sources.clone();
     let job_id = job_id.to_string();
     telemetry::spawn_job(&job_id.clone(), "compact", async move {
         if jobs.is_canceled(&job_id).await {
@@ -62,33 +64,33 @@ pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
         }
         let started = Instant::now();
 
-        let src = http::temp_path("src");
-        if let Err(e) = http::download_hashed(&req.source_url, &src, None).await {
-            let _ = tokio::fs::remove_file(&src).await;
-            eprintln!("[{job_id}] compact failed: source download: {}", e.message);
-            jobs.set_error(&job_id, &e.code, e.message).await;
-            return;
-        }
-        let src_str = src.to_string_lossy().to_string();
+        let src = match sources.download(&req.source_url, "src", None).await {
+            Ok(src) => src,
+            Err(e) => {
+                eprintln!("[{job_id}] compact failed: source download: {}", e.message);
+                jobs.set_error(&job_id, &e.code, e.message).await;
+                return;
+            }
+        };
+        let src_str = src.path_string();
         let mode = req.mode;
         let level = ZSTD_LEVEL;
 
         let res = {
-            let _grant = admission
-                .acquire(admission::estimate_mb(http::file_len(&src).await))
+            let grant = admission
+                .acquire(admission::estimate_mb(http::file_len(src.path()).await))
                 .await;
             // The wait may have been long: a job cancelled meanwhile is dropped
             // before it takes the memory it was granted.
             if jobs.is_canceled(&job_id).await {
-                let _ = tokio::fs::remove_file(&src).await;
                 return;
             }
             // Running from here on: the wait for memory is queue time, not work.
             jobs.set_status(&job_id, "running").await;
             eprintln!("[{job_id}] compact running");
-            telemetry::in_span("compute", tokio::task::spawn_blocking(move || compress(&src_str, mode, level))).await
+            compute::run(Some(grant), move || compress(&src_str, mode, level)).await
         };
-        let _ = tokio::fs::remove_file(&src).await;
+        drop(src);
 
         let out = match res {
             Ok(Ok(o)) => o,
@@ -98,9 +100,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
                 return;
             }
             Err(e) => {
-                let msg = format!("compact panicked: {e}");
+                let msg = format!("compact {e}");
                 eprintln!("[{job_id}] {msg}");
-                jobs.set_error(&job_id, "compact_failed", msg).await;
+                jobs.set_error(&job_id, e.code("compact_failed"), msg).await;
                 return;
             }
         };
@@ -127,7 +129,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
         let outputs = vec![Output {
             name: "raw".into(),
             content_type: "application/zstd".into(),
-            bytes: out.bytes.into(),
+            bytes: out.bytes,
         }];
         jobs.finish(&job_id, outputs, done, None).await;
     });
@@ -139,7 +141,7 @@ struct CompactErr {
 }
 
 struct Compacted {
-    bytes: Vec<u8>,
+    bytes: bytes::Bytes,
     input_bytes: u64,
     kind: &'static str,
 }
@@ -158,7 +160,7 @@ fn compress(src_path: &str, mode: Mode, level: i32) -> Result<Compacted, Compact
                 let _ = std::fs::remove_file(&xbf);
                 return Err(e);
             }
-            let bytes = zstd_file(&xbf_str, level).map_err(|e| CompactErr {
+            let bytes = zstd_file_mapped(&xbf_str, level).map_err(|e| CompactErr {
                 code: "compact_failed",
                 message: e,
             });
@@ -170,7 +172,7 @@ fn compress(src_path: &str, mode: Mode, level: i32) -> Result<Compacted, Compact
             })
         }
         Mode::Zstd => {
-            let bytes = zstd_file(src_path, level).map_err(|e| CompactErr {
+            let bytes = zstd_file_mapped(src_path, level).map_err(|e| CompactErr {
                 code: "compact_failed",
                 message: e,
             })?;
@@ -183,10 +185,20 @@ fn compress(src_path: &str, mode: Mode, level: i32) -> Result<Compacted, Compact
     }
 }
 
-/// Stream a file through zstd into an owned buffer (the compressed artifact is
-/// small — read is streaming, only the result is held).
-pub(crate) fn zstd_file(path: &str, level: i32) -> Result<Vec<u8>, String> {
-    let file = std::fs::File::open(path).map_err(|e| format!("open {path}: {e}"))?;
-    zstd::stream::encode_all(std::io::BufReader::new(file), level)
-        .map_err(|e| format!("zstd encode: {e}"))
+/// zstd `path` into a temp file and hand it back memory-mapped: the page cache
+/// holds the compressed bytes, not the heap. The file is unlinked at once; the
+/// map keeps it readable until the bytes drop.
+pub(crate) fn zstd_file_mapped(path: &str, level: i32) -> Result<bytes::Bytes, String> {
+    let out = http::temp_path("zst");
+    let written = (|| {
+        let input = std::fs::File::open(path).map_err(|e| format!("open {path}: {e}"))?;
+        let output = std::fs::File::create(&out).map_err(|e| format!("create temp: {e}"))?;
+        let mut writer = std::io::BufWriter::new(output);
+        zstd::stream::copy_encode(std::io::BufReader::new(input), &mut writer, level)
+            .map_err(|e| format!("zstd encode: {e}"))?;
+        std::io::Write::flush(&mut writer).map_err(|e| format!("flush temp: {e}"))?;
+        http::map_file(&out).map_err(|e| format!("map temp: {e}"))
+    })();
+    let _ = std::fs::remove_file(&out);
+    written
 }

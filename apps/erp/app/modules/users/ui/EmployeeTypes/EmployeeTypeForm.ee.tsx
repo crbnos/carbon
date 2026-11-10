@@ -15,7 +15,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  useCloseRoute
+  useRouteDialog
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
@@ -45,8 +45,8 @@ const EmployeeTypeForm = ({
 }: EmployeeTypeFormProps) => {
   const { t } = useLingui();
   const userPermissions = usePermissions();
-  const closeRoute = useCloseRoute();
-  const onClose = () => closeRoute();
+  const dialog = useRouteDialog();
+  const onClose = dialog.close;
 
   // The person's edits; the route remounts the form for another type.
   const [grants, setGrants] = useState(initialValues.grants);
@@ -58,7 +58,7 @@ const EmployeeTypeForm = ({
 
   return (
     <Modal
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

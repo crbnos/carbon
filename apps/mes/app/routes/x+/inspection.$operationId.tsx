@@ -13,12 +13,13 @@ import {
 } from "@carbon/database/quality";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { InspectionView } from "~/components/Inspection/InspectionView";
 import { getDatabaseClient } from "~/services/database.server";
 import {
-  getJobByOperationId,
+  getAbilityShortfall,
+  getJob,
   getJobMakeMethod,
   getJobOperationById,
   getProductionEventsForJobOperation,
@@ -36,6 +37,7 @@ import {
 import type { InspectionSample, OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
 import type { Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
 
@@ -59,6 +61,15 @@ export const handle: Handle = {
 
 const logger = getLogger("mes", "inspection");
 
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(
+    [
+      data?.inspection?.inspectionId ?? data?.operation?.jobReadableId,
+      data?.operation?.description
+    ],
+    "Inspection"
+  );
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { userId, companyId } = await authorize(request, {});
 
@@ -72,7 +83,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // this company before any of them runs.
   const scopedOperation = await serviceRole
     .from("jobOperation")
-    .select("id")
+    .select("id, jobId")
     .eq("id", operationId)
     .eq("companyId", companyId)
     .maybeSingle();
@@ -92,7 +103,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [job, operation] = await Promise.all([
-    getJobByOperationId(serviceRole, operationId),
+    getJob(serviceRole, scopedOperation.data.jobId),
     getJobOperationById(serviceRole, operationId)
   ]);
 
@@ -221,7 +232,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       a.id.localeCompare(b.id)
   );
 
+  const abilityWarning = await getAbilityShortfall(serviceRole, {
+    operationId,
+    employeeId: userId,
+    companyId
+  });
+
   return {
+    abilityWarning,
     job: job.data,
     operation: makeDurations(op) as OperationWithDetails,
     inspection,
@@ -246,7 +264,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     jobId: job.data.id ?? null,
     balloons: document?.data?.balloons ?? [],
     documentName: document?.data?.name ?? null,
-    pdfUrl: document?.data?.pdfUrl ?? null
+    pdfUrl: document?.data?.pdfUrl ?? null,
+    model: document?.data?.model ?? null
   };
 }
 

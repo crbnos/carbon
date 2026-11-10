@@ -8,16 +8,12 @@ import {
   DndContext,
   DragOverlay,
   KeyboardSensor,
-  MeasuringStrategy,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable
-} from "@dnd-kit/sortable";
+import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -27,16 +23,16 @@ import { useSubmit } from "react-router";
 import { EmployeeAvatar } from "~/components";
 import { type MoveTarget, MoveToMenu } from "~/components/MoveToSubmenu";
 import { usePermissions } from "~/hooks";
+import {
+  ALWAYS_MEASURE_DROPPABLES,
+  MOUSE_SENSOR_OPTIONS,
+  SORTABLE_KEYBOARD_SENSOR_OPTIONS,
+  TOUCH_SENSOR_OPTIONS
+} from "~/utils/drag-sensors";
 import { path } from "~/utils/path";
 import { BoardContainer } from "../Kanban/components/ColumnCard";
 import { hasDraggableData } from "../Kanban/utils";
 import { assignmentMatchesShift } from "./peopleShared";
-
-// Module constants: a new options object makes a new sensor, and with it new
-// listeners for every draggable on every render.
-const KEYBOARD_SENSOR_OPTIONS = {
-  coordinateGetter: sortableKeyboardCoordinates
-};
 
 const UNASSIGNED = "unassigned";
 
@@ -62,6 +58,8 @@ type WeekCardItem = {
   days: number;
   /** distinct absence days this week */
   daysOff: number;
+  /** distinct days at stations the department filter hides */
+  daysElsewhere: number;
   /** the person's qualified (non-expired) abilities — badged on the card */
   abilities: string[];
 };
@@ -73,6 +71,11 @@ type PeopleWeekBoardProps = {
   employees: WeekEmployee[];
   workCenters: { id: string; name: string }[];
   assignments: WeekAssignment[];
+  /**
+   * The week's rows at stations the department filter hides: the person is
+   * committed on those days, and assigning the week skips them.
+   */
+  assignmentsElsewhere?: WeekAssignment[];
   absences: { employeeId: string; date: string }[];
   /** each person's own shift — what new assignments get stamped with */
   employeeShiftId: Record<string, string>;
@@ -127,7 +130,8 @@ function WeekCard({
       {...(isOverlay ? {} : listeners)}
       className={cn(
         "flex flex-col gap-2 rounded-lg border bg-card p-3 dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]",
-        !isDisabled && "cursor-grab",
+        !isDisabled &&
+          "cursor-grab touch-manipulation pointer-coarse:select-none [-webkit-touch-callout:none]",
         isDragging && !isOverlay && "border-dashed bg-muted",
         isOverlay &&
           "ring-2 ring-primary opacity-100 !bg-card shadow-lg cursor-grabbing"
@@ -142,13 +146,18 @@ function WeekCard({
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {item.workCenterId && (
-            <span className="inline-flex items-center rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[11px] font-medium text-blue-700 dark:text-blue-400 tabular-nums">
+            <span className="inline-flex items-center rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[0.6875rem] font-medium text-blue-700 dark:text-blue-400 tabular-nums">
               <Trans>{item.days}d</Trans>
             </span>
           )}
           {item.daysOff > 0 && (
-            <span className="inline-flex items-center rounded-md bg-red-500/15 px-1.5 py-0.5 text-[11px] font-medium text-red-700 dark:text-red-400 tabular-nums">
+            <span className="inline-flex items-center rounded-md bg-red-500/15 px-1.5 py-0.5 text-[0.6875rem] font-medium text-red-700 dark:text-red-400 tabular-nums">
               <Trans>{item.daysOff}d off</Trans>
+            </span>
+          )}
+          {item.daysElsewhere > 0 && (
+            <span className="inline-flex items-center rounded-md border border-dashed border-border px-1.5 py-0.5 text-[0.6875rem] font-medium text-muted-foreground tabular-nums">
+              <Trans>{item.daysElsewhere}d elsewhere</Trans>
             </span>
           )}
           {item.workCenterId && !isDisabled && !isOverlay && (
@@ -157,6 +166,7 @@ function WeekCard({
               aria-label="Remove"
               className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-red-600 dark:hover:text-red-400 max-md:hit-area"
               onPointerDown={(e) => e.stopPropagation()}
+              onTouchStart={(e) => e.stopPropagation()}
               onClick={() => onRemove(item)}
             >
               <LuX className="h-3.5 w-3.5" />
@@ -177,7 +187,7 @@ function WeekCard({
           {item.abilities.map((ability) => (
             <span
               key={ability}
-              className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground"
+              className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[0.6875rem] font-medium text-muted-foreground"
             >
               {ability}
             </span>
@@ -293,6 +303,7 @@ const PeopleWeekBoard = ({
   employees,
   workCenters,
   assignments,
+  assignmentsElsewhere = [],
   absences,
   employeeShiftId,
   employeeAbilityNames
@@ -308,8 +319,9 @@ const PeopleWeekBoard = ({
   const [activeItem, setActiveItem] = useState<WeekCardItem | null>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
+    useSensor(MouseSensor, MOUSE_SENSOR_OPTIONS),
+    useSensor(TouchSensor, TOUCH_SENSOR_OPTIONS),
+    useSensor(KeyboardSensor, SORTABLE_KEYBOARD_SENSOR_OPTIONS)
   );
 
   // shift-less rows resolve through the person's own shift, like the hours do
@@ -322,6 +334,23 @@ const PeopleWeekBoard = ({
         : assignments,
     [assignments, shiftId, employeeShiftId]
   );
+
+  const daysElsewhereByEmployee = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const assignment of assignmentsElsewhere) {
+      // the shift filter applies here as it does to the visible rows
+      if (
+        shiftId &&
+        !assignmentMatchesShift(assignment, shiftId, employeeShiftId)
+      ) {
+        continue;
+      }
+      const set = map.get(assignment.employeeId) ?? new Set<string>();
+      set.add(assignment.date);
+      map.set(assignment.employeeId, set);
+    }
+    return map;
+  }, [assignmentsElsewhere, shiftId, employeeShiftId]);
 
   const daysOffByEmployee = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -353,6 +382,7 @@ const PeopleWeekBoard = ({
     for (const employee of employees) {
       const stations = byEmployeeStation.get(employee.id);
       const daysOff = daysOffByEmployee.get(employee.id)?.size ?? 0;
+      const daysElsewhere = daysElsewhereByEmployee.get(employee.id)?.size ?? 0;
       const abilities = employeeAbilityNames[employee.id] ?? [];
       if (!stations || stations.size === 0) {
         map.get(UNASSIGNED)!.push({
@@ -360,6 +390,7 @@ const PeopleWeekBoard = ({
           workCenterId: null,
           days: 0,
           daysOff,
+          daysElsewhere,
           abilities
         });
         continue;
@@ -371,6 +402,7 @@ const PeopleWeekBoard = ({
           workCenterId,
           days: days.size,
           daysOff,
+          daysElsewhere,
           abilities
         });
       }
@@ -381,6 +413,7 @@ const PeopleWeekBoard = ({
     workCenters,
     scopedAssignments,
     daysOffByEmployee,
+    daysElsewhereByEmployee,
     employeeAbilityNames
   ]);
 
@@ -477,7 +510,8 @@ const PeopleWeekBoard = ({
       weekStart,
       ...(weekShiftId ? { shiftId: weekShiftId } : {})
     });
-    toast.success(t`Assigned ${employeeName} to ${targetName} for the week`);
+    // the toast comes from the answer (usePeopleBoardFeedback): only the
+    // server knows which days it left as they were
   }
 
   const columnTargets: MoveTarget[] = [
@@ -503,7 +537,7 @@ const PeopleWeekBoard = ({
   return (
     <DndContext
       sensors={sensors}
-      measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+      measuring={ALWAYS_MEASURE_DROPPABLES}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
     >

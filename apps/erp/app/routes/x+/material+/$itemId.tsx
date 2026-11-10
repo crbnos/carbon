@@ -12,7 +12,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { Suspense } from "react";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { ResizablePanels } from "~/components/Layout";
 import { streamItemSupersession } from "~/modules/items/items.service";
@@ -24,6 +24,7 @@ import {
   MaterialProperties
 } from "~/modules/items/ui/Materials";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -33,6 +34,9 @@ export const handle: Handle = {
   ),
   module: "items"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.materialSummary?.readableIdWithRevision, "Material");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(

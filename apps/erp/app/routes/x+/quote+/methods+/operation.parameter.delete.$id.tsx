@@ -31,7 +31,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(
           deleteOperationParameter.error,
-          "Failed to delete quote operation tool"
+          "Failed to delete quote operation parameter"
         )
       )
     );

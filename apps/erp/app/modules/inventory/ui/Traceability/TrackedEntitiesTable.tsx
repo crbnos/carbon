@@ -7,7 +7,7 @@ import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo } from "react";
 import {
   LuBookMarked,
   LuCalendarClock,
@@ -23,7 +23,8 @@ import {
 import { useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { useDateFormatter, usePermissions } from "~/hooks";
+import type { InfiniteOptions } from "~/components/Table";
+import { useDateFormatter, useDrawerItem, usePermissions } from "~/hooks";
 import { trackedEntityStatus } from "~/modules/inventory/inventory.models";
 import type { TrackedEntity } from "~/modules/inventory/types";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
@@ -41,19 +42,25 @@ type ShelfLifePolicy = {
   calculateFromBom?: boolean | null;
 };
 
+// A row of the list, with its item's shelf-life policy (from the loader), so
+// the Expiry trace popover can show the Policy step.
+type TrackedEntityRow = TrackedEntity & {
+  shelfLifePolicy: ShelfLifePolicy | null;
+};
+
 type TrackedEntitiesTableProps = {
-  data: TrackedEntity[];
+  data: TrackedEntityRow[];
   count: number;
+  infinite: InfiniteOptions;
   nearExpiryWarningDays: number | null;
-  shelfLifePolicies?: Record<string, ShelfLifePolicy>;
 };
 
 const TrackedEntitiesTable = memo(
   ({
     data,
     count,
-    nearExpiryWarningDays,
-    shelfLifePolicies
+    infinite,
+    nearExpiryWarningDays
   }: TrackedEntitiesTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -65,10 +72,11 @@ const TrackedEntitiesTable = memo(
     // Edit-expiry modal state. Holds the entity being edited so the modal
     // can pre-fill its form. Lives at table level so the row context-menu
     // action can open it.
-    const [unscrapping, setUnscrapping] = useState<TrackedEntity | null>(null);
-    const [editingExpiry, setEditingExpiry] = useState<TrackedEntity | null>(
-      null
-    );
+    const unscrap = useDrawerItem<TrackedEntity>();
+    const unscrapping = unscrap.item;
+
+    const editExpiry = useDrawerItem<TrackedEntity>();
+    const editingExpiry = editExpiry.item;
 
     const columns = useMemo<ColumnDef<(typeof data)[number]>[]>(
       () => [
@@ -183,8 +191,7 @@ const TrackedEntitiesTable = memo(
                   {formatted}
                 </span>
               );
-            const itemId = (row.original as { itemId?: string | null }).itemId;
-            const policy = itemId ? shelfLifePolicies?.[itemId] : undefined;
+            const policy = row.original.shelfLifePolicy;
             return (
               <ExpiryTracePopover
                 entity={row.original}
@@ -223,14 +230,7 @@ const TrackedEntitiesTable = memo(
           }
         }
       ],
-      [
-        numberFormatter,
-        items,
-        t,
-        nearExpiryWarningDays,
-        shelfLifePolicies,
-        formatDate
-      ]
+      [numberFormatter, items, t, nearExpiryWarningDays, formatDate]
     );
 
     const renderContextMenu = useCallback(
@@ -255,7 +255,7 @@ const TrackedEntitiesTable = memo(
                 !permissions.has({ "inventory.traceability": "Edit" }) ||
                 row.status === "Consumed"
               }
-              onClick={() => setEditingExpiry(row)}
+              onClick={() => editExpiry.open(row)}
             >
               <MenuIcon icon={<LuCalendarCog />} />
               <Trans>Edit Expiry</Trans>
@@ -266,7 +266,7 @@ const TrackedEntitiesTable = memo(
                   !permissions.has({ "inventory.traceability": "Edit" }) ||
                   !row.itemId
                 }
-                onClick={() => setUnscrapping(row)}
+                onClick={() => unscrap.open(row)}
               >
                 <MenuIcon icon={<LuRotateCcw />} />
                 <Trans>Unscrap</Trans>
@@ -275,13 +275,14 @@ const TrackedEntitiesTable = memo(
           </>
         );
       },
-      [navigate, permissions]
+      [navigate, permissions, editExpiry.open, unscrap.open]
     );
 
     return (
       <>
         <Table<(typeof data)[number]>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           renderContextMenu={renderContextMenu}
@@ -289,8 +290,8 @@ const TrackedEntitiesTable = memo(
         />
         {editingExpiry && editingExpiry.status !== "Consumed" && (
           <EditExpiryModal
-            open={!!editingExpiry}
-            onClose={() => setEditingExpiry(null)}
+            open={editExpiry.isOpen}
+            onClose={editExpiry.close}
             trackedEntityId={editingExpiry.id}
             expirationDate={editingExpiry.expirationDate ?? null}
             label={editingExpiry.sourceDocumentReadableId ?? editingExpiry.id}
@@ -301,8 +302,8 @@ const TrackedEntitiesTable = memo(
           Number.isFinite(Number(unscrapping.quantity)) &&
           Number(unscrapping.quantity) > 0 && (
             <UnscrapModal
-              open={!!unscrapping}
-              onClose={() => setUnscrapping(null)}
+              open={unscrap.isOpen}
+              onClose={unscrap.close}
               itemId={unscrapping.itemId}
               trackedEntityId={unscrapping.id}
               quantity={Number(unscrapping.quantity)}

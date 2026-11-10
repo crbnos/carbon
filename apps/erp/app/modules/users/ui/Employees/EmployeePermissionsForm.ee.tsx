@@ -17,7 +17,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  useCloseRoute
+  useRouteDialog
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
@@ -77,9 +77,9 @@ const EmployeePermissionsForm = ({
   initialValues
 }: EmployeePermissionsFormProps) => {
   const { t } = useLingui();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const permissions = usePermissions();
-  const onClose = () => closeRoute();
+  const onClose = dialog.close;
 
   const canEdit = permissions.has({ "users.accounts": "Edit" });
 
@@ -108,7 +108,7 @@ const EmployeePermissionsForm = ({
 
   return (
     <Modal
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

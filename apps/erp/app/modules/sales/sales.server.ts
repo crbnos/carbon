@@ -3,12 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
-import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
+import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
+import { generateCostPlusItems } from "@carbon/ee/project-revenue.server";
 import { safeStorageFileName, storage } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
+import { TiptapText } from "@carbon/files/markdown";
 import { validator } from "@carbon/form";
 import { batchTrigger, trigger } from "@carbon/jobs";
 import { checkPartyContactRequirement } from "@carbon/lib/party-contact.server";
@@ -21,9 +24,9 @@ import {
   datetime,
   getErrorMessage,
   getSalesOrderStatus,
+  requireAffected,
   round,
   suggestContractType,
-  textToTiptap,
   unchecked
 } from "@carbon/utils";
 import { z } from "zod";
@@ -38,15 +41,22 @@ import {
 } from "~/modules/items/items.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
 import { runMRP } from "~/modules/production/production.service";
+import { createProjectJob } from "~/modules/projects/projects.service";
 import {
   deleteIssue,
   getIssueTypesList,
   insertIssue
 } from "~/modules/quality/quality.service";
+import { postServiceJob } from "~/modules/service/service.service";
 import {
   getCompanySettings,
   getNextSequence as getNextSequenceNumber
 } from "~/modules/settings/settings.service";
+import {
+  inspectionPlanRequired,
+  optionalTiptapDoc,
+  requiredTiptapDoc
+} from "~/modules/shared/shared.models";
 import {
   getCompanyTimeZone,
   getLocationTimeZone,
@@ -58,11 +68,21 @@ import { resolveBuyUnitCost } from "~/modules/shared/shared.utils";
 import { getUserDefaults } from "~/modules/users/users.service";
 import { stripSpecialCharacters } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
-import { invokeCreate, invokePosting } from "../shared/shared.service";
 import {
+  invokeCreate,
+  invokePosting,
+  setOperationWorkInstruction,
+  withOperationStandards
+} from "../shared/shared.service";
+import {
+  baseQuoteOperationValidator,
   contractAmendmentChangeValidator,
   contractDurationOf,
+  contractLaborRateValidator,
+  contractLineBuildValidator,
+  contractLineFundingValidator,
   customerContractAmendmentValidator,
+  customerContractFundingValidator,
   customerContractTypes,
   customerContractValidator,
   invoiceAutomations,
@@ -70,16 +90,18 @@ import {
   isSalesOrderLocked,
   isSalesReturnOrderLocked,
   isSalesRfqLocked,
+  projectContractTermDefaults,
   quoteLineValidator,
   quoteMaterialValidator,
-  quoteOperationValidator,
   quoteStatusType,
   quoteValidator,
+  rentalAgreementContactRowValidator,
   rentalAgreementLineClassificationValidator,
   rentalAgreementValidator,
   salesOrderLineValidator,
   salesOrderStatusType,
   salesOrderValidator,
+  salesReturnOrderFromAssetsValidator,
   salesReturnOrderLineValidator,
   salesRFQStatusType,
   salesRfqDragValidator,
@@ -141,9 +163,9 @@ export const createSalesRfq = defineServiceFn({
     lines: z
       .array(
         z.object({
-          partNumber: z.coerce.string().nullish(),
-          description: z.coerce.string().nullish(),
-          quantity: z.coerce.number().nullish()
+          partNumber: z.coerce.string<string>().nullish(),
+          description: z.coerce.string<string>().nullish(),
+          quantity: z.coerce.number<number>().nullish()
         })
       )
       .default([]),
@@ -514,11 +536,14 @@ export const attachSalesRfqFile = defineServiceFn({
       size: input.size,
       documentFolder: `opportunity-line/${lineId}`,
       setModel: (modelUploadId) =>
-        client
-          .from("salesRfqLine")
-          .update({ modelUploadId })
-          .eq("id", lineId)
-          .eq("companyId", companyId),
+        requireAffected(
+          client
+            .from("salesRfqLine")
+            .update({ modelUploadId })
+            .eq("id", lineId)
+            .eq("companyId", companyId)
+            .select("id")
+        ),
       lineName: "RFQ line"
     });
     if (moved) return moved;
@@ -1078,6 +1103,21 @@ export const finalizeAndSendQuote = defineServiceFn({
       return ctx.error("validation", "Customer contact is required for email");
     }
 
+    if (
+      notification === "Email" &&
+      customerContact &&
+      !(await service.customerContactHasEmail(
+        serviceRole,
+        customerContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The customer contact has no email address. Pick another contact, or send without email."
+      );
+    }
+
     const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
     if (refused) return refused;
     const quote = await service.getQuote(serviceRole, quoteId);
@@ -1193,7 +1233,8 @@ export const finalizeAndSendQuote = defineServiceFn({
  * `acknowledged`, returns `violations` and converts nothing). Then the
  * `convert` server function creates the order with `purchaseOrderNumber`.
  * Its PDF is filed on the opportunity and, with `notification` Email,
- * emailed to `customerContact`; those two never fail the conversion.
+ * emailed to `customerContact`; those two never fail the conversion, and a
+ * requested email that was not sent comes back as `warning`.
  *
  * @mcp
  */
@@ -1216,6 +1257,25 @@ export const convertQuote = defineServiceFn({
 
     const refused = await refuseUnlessOwned(ctx, "quote", { id: quoteId });
     if (refused) return refused;
+
+    if (notification === "Email" && !customerContact) {
+      return ctx.error("validation", "Customer contact is required for email");
+    }
+
+    if (
+      notification === "Email" &&
+      customerContact &&
+      !(await service.customerContactHasEmail(
+        serviceRole,
+        customerContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The customer contact has no email address. Pick another contact, or send without email."
+      );
+    }
 
     // A deselected line never becomes an order line, so its violations
     // neither block nor leave evidence.
@@ -1257,6 +1317,7 @@ export const convertQuote = defineServiceFn({
     });
 
     // Neither the PDF nor the email holds up the new order.
+    let warning: string | null = null;
     try {
       const pdf = await service.attachSalesOrderPdf(ctx, {
         salesOrderId,
@@ -1264,7 +1325,7 @@ export const convertQuote = defineServiceFn({
       });
       if (pdf instanceof Error) throw pdf;
       if (notification === "Email" && customerContact) {
-        await sendSalesOrderEmail({
+        const sent = await sendSalesOrderEmail({
           salesOrderId,
           companyId,
           companyGroupId: ctx.company.groupId,
@@ -1276,6 +1337,9 @@ export const convertQuote = defineServiceFn({
           serviceRole,
           locales: [input.locale]
         });
+        if (!sent.success) {
+          warning = `Quote converted, but the email was not sent: ${sent.message ?? "unknown error"}`;
+        }
       }
     } catch (err) {
       logger.error("Failed to generate PDF or send email after conversion", {
@@ -1283,9 +1347,12 @@ export const convertQuote = defineServiceFn({
         salesOrderId,
         error: err
       });
+      if (notification === "Email") {
+        warning = "Quote converted, but the email was not sent";
+      }
     }
 
-    return { salesOrderId };
+    return { salesOrderId, warning };
   }
 });
 /**
@@ -1317,14 +1384,17 @@ export const configureQuoteLine = defineServiceFn({
     if (refused) return refused;
 
     const [updated, quoteLine] = await Promise.all([
-      client
-        .from("quoteLine")
-        .update({
-          configuration: configuration as Json,
-          updatedAt: datetime.timestamp(),
-          updatedBy: userId
-        })
-        .eq("id", lineId),
+      requireAffected(
+        client
+          .from("quoteLine")
+          .update({
+            configuration: configuration as Json,
+            updatedAt: datetime.timestamp(),
+            updatedBy: userId
+          })
+          .eq("id", lineId)
+          .select("id")
+      ),
       client.from("quoteLine").select("itemId").eq("id", lineId).single(),
       client.from("quoteLinePrice").delete().eq("quoteLineId", lineId)
     ]);
@@ -1644,15 +1714,18 @@ export const rejectDigitalQuote = defineServiceFn({
     const quote = await service.sentQuote(ctx, quoteId);
     if (quote instanceof Error) return quote;
 
-    const rejected = await ctx.asSystem.supabase
-      .from("quote")
-      .update({
-        status: "Lost",
-        digitalQuoteRejectedBy: rejectedBy,
-        digitalQuoteRejectedByEmail: rejectedByEmail
-      })
-      .eq("id", quoteId)
-      .eq("companyId", ctx.company.id);
+    const rejected = await requireAffected(
+      ctx.asSystem.supabase
+        .from("quote")
+        .update({
+          status: "Lost",
+          digitalQuoteRejectedBy: rejectedBy,
+          digitalQuoteRejectedByEmail: rejectedByEmail
+        })
+        .eq("id", quoteId)
+        .eq("companyId", ctx.company.id)
+        .select("id")
+    );
     if (rejected.error) {
       return ctx.error("internal", "Failed to reject quote", rejected.error);
     }
@@ -1964,6 +2037,25 @@ export const confirmSalesOrder = defineServiceFn({
       id: salesOrderId
     });
     if (refused) return refused;
+
+    if (notification === "Email" && !customerContact) {
+      return ctx.error("validation", "Customer contact is required for email");
+    }
+
+    if (
+      notification === "Email" &&
+      customerContact &&
+      !(await service.customerContactHasEmail(
+        serviceRole,
+        customerContact,
+        companyId
+      ))
+    ) {
+      return ctx.error(
+        "validation",
+        "The customer contact has no email address. Pick another contact, or send without email."
+      );
+    }
     const order = await service.getSalesOrder(serviceRole, salesOrderId);
     if (order.error) {
       return ctx.error("internal", "Failed to get sales order", order.error);
@@ -2024,19 +2116,22 @@ export const confirmSalesOrder = defineServiceFn({
 
     const lines = await service.getSalesOrderLines(serviceRole, salesOrderId);
     const { status } = getSalesOrderStatus(lines.data || []);
-    const confirmed = await client
-      .from("salesOrder")
-      .update({
-        status,
-        orderDate:
-          order.data.orderDate ??
-          datetime
-            .today(await getCompanyTimeZone(client, companyId))
-            .toString(),
-        updatedAt: datetime.timestamp(),
-        updatedBy: userId
-      })
-      .eq("id", salesOrderId);
+    const confirmed = await requireAffected(
+      client
+        .from("salesOrder")
+        .update({
+          status,
+          orderDate:
+            order.data.orderDate ??
+            datetime
+              .today(await getCompanyTimeZone(client, companyId))
+              .toString(),
+          updatedAt: datetime.timestamp(),
+          updatedBy: userId
+        })
+        .eq("id", salesOrderId)
+        .select("id")
+    );
     if (confirmed.error) {
       return ctx.error(
         "internal",
@@ -2542,6 +2637,11 @@ export const createReturnOrderLine = defineServiceFn({
         "Lines can only be added while the return order is Draft"
       );
     }
+    const refusedLine = await service.refuseReturnLine(ctx, {
+      customerId: order.data.customerId,
+      line
+    });
+    if (refusedLine) return refusedLine;
 
     const created = await service.upsertSalesReturnOrderLine(client, {
       ...line,
@@ -2640,7 +2740,6 @@ export const escalateReturnOrderLine = defineServiceFn({
         "Cannot set a disposition before any quantity is received"
       );
     }
-
     const entityIds = await service.returnedOnHoldEntityIds(ctx, {
       id,
       lineId
@@ -2820,7 +2919,7 @@ export const updateReturnOrderLine = defineServiceFn({
     const existing = await client
       .from("salesReturnOrderLine")
       .select(
-        "salesReturnOrderId, quantity, itemId, unitPrice, restockFeePercent, unitOfMeasureCode, salesOrderLineId, shipmentLineId, salesInvoiceLineId"
+        "salesReturnOrderId, quantity, itemId, unitPrice, restockFeePercent, unitOfMeasureCode, salesOrderLineId, shipmentLineId, salesInvoiceLineId, returnType, customerAssetId, quantityReceived"
       )
       .eq("id", lineId)
       .eq("companyId", ctx.company.id)
@@ -2830,6 +2929,34 @@ export const updateReturnOrderLine = defineServiceFn({
         "notFound",
         "This line does not belong to this return order"
       );
+    }
+
+    // The receipt made a service job of the line's type and asset, so both
+    // are fixed once anything is received.
+    if (Number(existing.data.quantityReceived) > 0) {
+      if (line.returnType && line.returnType !== existing.data.returnType) {
+        return ctx.error("rule", "Return type is locked after receipt");
+      }
+      if (
+        line.customerAssetId &&
+        line.customerAssetId !== existing.data.customerAssetId
+      ) {
+        return ctx.error("rule", "Customer asset is locked after receipt");
+      }
+    }
+    if (order.data) {
+      const refusedLine = await service.refuseReturnLine(ctx, {
+        customerId: order.data.customerId,
+        line: {
+          ...line,
+          returnType: line.returnType ?? existing.data.returnType,
+          customerAssetId:
+            line.customerAssetId === existing.data.customerAssetId
+              ? undefined
+              : line.customerAssetId
+        }
+      });
+      if (refusedLine) return refusedLine;
     }
 
     if (order.data?.status !== "Draft") {
@@ -2888,6 +3015,230 @@ export const updateReturnOrderLine = defineServiceFn({
       );
     }
     return { salesReturnOrderLineId: lineId };
+  }
+});
+
+/**
+ * Add one sales return order (RMA) line per customer asset.
+ *
+ * @remarks
+ * Only while the RMA is Draft. Each line is one unit of the asset's item and
+ * names the asset. Its return type follows the asset's warranty on the
+ * company's today: Return for Warranty while the labor or parts warranty
+ * runs, else Return for Service. The unit stays the customer's and is never
+ * credited, so the unit price is 0. Refused when an asset is not the RMA
+ * customer's or is on the RMA already. One insert for all the lines.
+ *
+ * @mcp
+ */
+export const createReturnOrderLinesFromAssets = defineServiceFn({
+  input: salesReturnOrderFromAssetsValidator.extend({
+    salesReturnOrderId: z.string().min(1)
+  }),
+  permission: { "sales.returns": "Create" },
+
+  async run(ctx, { salesReturnOrderId, customerAssetIds }) {
+    const refused = await refuseUnlessOwned(ctx, "salesReturnOrder", {
+      id: salesReturnOrderId
+    });
+    if (refused) return refused;
+    const today = datetime
+      .today(await getCompanyTimeZone(ctx.asSystem.supabase, ctx.company.id))
+      .toString();
+    return run(ctx, "create-return-order-lines-from-assets", () =>
+      service.insertSalesReturnOrderLinesFromAssets(ctx.asSystem.pg, {
+        salesReturnOrderId,
+        customerAssetIds,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        today
+      })
+    );
+  }
+});
+
+const returnLineInput = z.object({
+  salesReturnOrderId: z.string().min(1),
+  lineId: z.string().min(1)
+});
+
+/**
+ * Scrap the unit of a Return for Service or Return for Warranty line.
+ *
+ * @remarks
+ * With the customer's consent, or after a no-charge replacement. The line's
+ * disposition becomes Scrap, its serial Scrapped and its customer asset
+ * Returned. The unit was never valued, so nothing posts. Refused before the
+ * line's service job is Completed or Invoiced, and once the unit has shipped
+ * back. The RMA status follows.
+ *
+ * @mcp
+ */
+export const scrapReturnedUnit = defineServiceFn({
+  input: returnLineInput,
+  permission: { "sales.returns": "Edit" },
+
+  async run(ctx, { salesReturnOrderId, lineId }) {
+    const refused = await refuseUnlessOwned(ctx, "salesReturnOrder", {
+      id: salesReturnOrderId
+    });
+    if (refused) return refused;
+    return run(ctx, "scrap-returned-unit", () =>
+      service.scrapServiceReturnLine(ctx.asSystem.pg, {
+        salesReturnOrderId,
+        lineId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Replace the unit of a Return for Warranty line at no charge.
+ *
+ * @remarks
+ * For a unit its service job found not repairable: the job must be Completed
+ * with Repairable set to no. Adds a line at unit price 0 that names this RMA
+ * line to the RMA's replacement order while it is Draft, else creates a new
+ * Draft order. When the replacement ships, its cost goes to warranty expense.
+ * The old unit is then scrapped (`scrapReturnedUnit`). Returns the sales
+ * order.
+ *
+ * @mcp
+ */
+export const replaceReturnedUnit = defineServiceFn({
+  input: returnLineInput,
+  permission: { "sales.returns": "Edit", "sales.salesOrders": "Create" },
+
+  async run(ctx, { salesReturnOrderId, lineId }) {
+    const refused = await refuseUnlessOwned(ctx, "salesReturnOrder", {
+      id: salesReturnOrderId
+    });
+    if (refused) return refused;
+    const client = ctx.asCaller.supabase;
+    const [line, job] = await Promise.all([
+      client
+        .from("salesReturnOrderLine")
+        .select("id, returnType, salesReturnOrderId")
+        .eq("id", lineId)
+        .eq("companyId", ctx.company.id)
+        .maybeSingle(),
+      client
+        .from("serviceJob")
+        .select("serviceJobId, status, repairable")
+        .eq("salesReturnOrderLineId", lineId)
+        .eq("companyId", ctx.company.id)
+        .neq("status", "Cancelled")
+        .order("createdAt", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    ]);
+    if (line.error || job.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the return line",
+        line.error ?? job.error
+      );
+    }
+    if (!line.data || line.data.salesReturnOrderId !== salesReturnOrderId) {
+      return ctx.error(
+        "notFound",
+        "This line does not belong to this return order"
+      );
+    }
+    if (line.data.returnType !== "Return for Warranty") {
+      return ctx.error(
+        "rule",
+        "Only a Return for Warranty line is replaced at no charge"
+      );
+    }
+    if (job.data?.status !== "Completed" || job.data.repairable !== false) {
+      return ctx.error(
+        "rule",
+        "Complete the service job as not repairable before replacing the unit"
+      );
+    }
+
+    const replacement = await service.createReplacementSalesOrder(client, {
+      salesReturnOrderId,
+      companyId: ctx.company.id,
+      companyGroupId: ctx.company.groupId,
+      userId: ctx.auditUserId,
+      lineIds: [lineId]
+    });
+    if (replacement.error || !replacement.data) {
+      return ctx.error(
+        "rule",
+        replacement.error?.message ?? "Failed to create the replacement"
+      );
+    }
+    await ctx.asSystem.pg
+      .transaction()
+      .execute((trx) =>
+        service.refreshSalesReturnOrderStatus(
+          trx,
+          salesReturnOrderId,
+          ctx.company.id,
+          ctx.auditUserId
+        )
+      );
+    return { salesOrderId: replacement.data.id };
+  }
+});
+
+/**
+ * Change a Return for Warranty line to Return for Service: the warranty is
+ * denied.
+ *
+ * @remarks
+ * Runs `post-service-job` `set-coverage` on the line's service job: the job
+ * becomes Billable, and the cost of the parts already issued moves from
+ * warranty expense to the cost of service in one journal. Then the line
+ * becomes Return for Service. Refused before the unit is received (change
+ * the line's return type instead) and once the job is Completed.
+ *
+ * @mcp
+ */
+export const changeReturnLineToService = defineServiceFn({
+  input: returnLineInput,
+  permission: { "sales.returns": "Edit", "service.jobs": "Edit" },
+
+  async run(ctx, { salesReturnOrderId, lineId }) {
+    const refused = await refuseUnlessOwned(ctx, "salesReturnOrder", {
+      id: salesReturnOrderId
+    });
+    if (refused) return refused;
+    const args = {
+      salesReturnOrderId,
+      lineId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    };
+    const job = await run(ctx, "change-return-line-to-service", () =>
+      service.warrantyReturnLineJob(ctx.asSystem.pg, args)
+    );
+    if (job instanceof CarbonError) return job;
+
+    const coverage = await invokePosting(
+      ctx,
+      "post-service-job",
+      {
+        action: "set-coverage" as const,
+        serviceJobId: job.serviceJobId,
+        coverage: "Billable" as const
+      },
+      postServiceJob
+    );
+    if (coverage.error) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(coverage.error, "Failed to change the job's coverage")
+      );
+    }
+    return run(ctx, "change-return-line-to-service", () =>
+      service.setReturnLineToService(ctx.asSystem.pg, args)
+    );
   }
 });
 
@@ -3078,7 +3429,7 @@ const quoteMaterialInput = z.object({
  * @mcp
  */
 export const createQuoteMaterial = defineServiceFn({
-  input: quoteMaterialInput,
+  input: quoteMaterialInput.extend({ id: z.string().min(1).optional() }),
   permission: { "sales.quotes": "Create" },
 
   async run(ctx, { customFields, ...material }) {
@@ -3267,25 +3618,41 @@ export const deleteQuoteMaterialsAndReprice = defineServiceFn({
     return { ids };
   }
 });
-const quoteOperationInput = quoteOperationValidator.safeExtend({
+// The bill of process form requires times, units and rates; the API fills a
+// new operation's from its work center or process, and an update leaves out
+// what it was not sent.
+const quoteOperationFields = baseQuoteOperationValidator.extend({
   quoteId: z.string(),
   quoteLineId: z.string(),
   customFields: customFieldValues.optional()
 });
+const quoteOperationInput = quoteOperationFields.refine(
+  ...inspectionPlanRequired
+);
+// A new operation's id is optional: the table makes one.
+const newQuoteOperationInput = quoteOperationFields
+  .extend({ id: z.string().min(1).optional() })
+  .refine(...inspectionPlanRequired);
 
 /**
  * Add an operation to a quote line's method, then reprice the line.
  *
  * @remarks
- * The line and its make method must be this company's and the line's.
+ * The line and its make method must be this company's and the line's. Times,
+ * units and rates left out are filled as the bill of process form fills them:
+ * from the work center, else the process's default standard factor and the
+ * average of its active work centers, with times 0; an outside operation's
+ * minimum cost and lead time come from its supplier process.
  *
  * @mcp
  */
 export const createQuoteOperation = defineServiceFn({
-  input: quoteOperationInput,
+  input: newQuoteOperationInput,
   permission: { "sales.quotes": "Create" },
 
-  async run(ctx, { customFields, ...operation }) {
+  async run(ctx, { customFields, ...input }) {
+    const operation = await withOperationStandards(ctx, input);
+    if (operation instanceof CarbonError) return operation;
     const { quoteId, quoteLineId } = operation;
     const refused = await service.refuseUnlessQuoteMethodRows(ctx, {
       quoteId,
@@ -3300,20 +3667,19 @@ export const createQuoteOperation = defineServiceFn({
       createdBy: ctx.auditUserId,
       customFields
     });
-    if (inserted.error || !inserted.data?.id) {
-      return ctx.error(
-        "internal",
-        "Failed to insert quote operation",
-        inserted.error
-      );
-    }
+    const row = unwrap(ctx, inserted);
+    if (row instanceof CarbonError) return row;
+    if (!row) return ctx.error("internal", "Failed to insert quote operation");
     await service.repriceQuoteLine(ctx, { quoteId, quoteLineId });
-    return { id: inserted.data.id };
+    return { id: row.id };
   }
 });
 
 /**
  * Change an operation on a quote line's method, then reprice the line.
+ *
+ * @remarks
+ * A field left out keeps its value.
  *
  * @mcp
  */
@@ -3338,7 +3704,8 @@ export const updateQuoteOperation = defineServiceFn({
       ...operation,
       companyId: ctx.company.id,
       updatedBy: ctx.auditUserId,
-      customFields
+      // Left out, the custom fields are kept (sanitize writes undefined as null).
+      ...(customFields !== undefined && { customFields })
     });
     if (updated.error || !updated.data?.id) {
       return ctx.error(
@@ -3349,6 +3716,28 @@ export const updateQuoteOperation = defineServiceFn({
     }
     await service.repriceQuoteLine(ctx, { quoteId, quoteLineId });
     return { id: updated.data.id };
+  }
+});
+
+/**
+ * Set the work instruction of a quote operation.
+ *
+ * @remarks
+ * Replaces the operation's work instruction; the rest of the operation and
+ * the line's price are unchanged.
+ *
+ * @param id - The quote operation's id.
+ * @param text - The work instruction as Markdown: headings, **bold**,
+ *   _italic_, lists, links, quotes and code. Empty text clears it.
+ *
+ * @mcp
+ */
+export const setQuoteOperationWorkInstruction = defineServiceFn({
+  input: z.object({ id: z.string().min(1), text: z.string() }),
+  permission: { "sales.quotes": "Edit" },
+
+  async run(ctx, { id, text }) {
+    return setOperationWorkInstruction(ctx, "quoteOperation", id, text);
   }
 });
 
@@ -3371,11 +3760,14 @@ export const deleteQuoteOperationAndReprice = defineServiceFn({
       .eq("companyId", companyId)
       .single();
 
-    const deleted = await client
-      .from("quoteOperation")
-      .delete()
-      .eq("id", id)
-      .eq("companyId", companyId);
+    const deleted = await requireAffected(
+      client
+        .from("quoteOperation")
+        .delete()
+        .eq("id", id)
+        .eq("companyId", companyId)
+        .select("id")
+    );
     if (deleted.error) {
       return ctx.error(
         "internal",
@@ -3470,9 +3862,27 @@ export const createContract = defineServiceFn({
       id: _id,
       customerContractId: _customerContractId,
       customFields,
-      ...data
+      ...posted
     } = input;
 
+    // A project contract runs over its period of performance: no duration (so
+    // no term months), and the billing terms its basis fixes. Only the billing
+    // frequency is the user's.
+    const data =
+      posted.billingBasis === "Project"
+        ? {
+            ...posted,
+            ...projectContractTermDefaults,
+            billingFrequency:
+              posted.billingFrequency ??
+              projectContractTermDefaults.billingFrequency,
+            duration: undefined,
+            renewalUplift: 0
+          }
+        : posted;
+
+    // Spec decision 17: suggested from the customer's previous contracts, and
+    // editable afterwards. A type the input set is kept.
     let contractType = data.contractType;
     if (!contractType) {
       const previous = await service.getCustomerContractStatuses(
@@ -3684,7 +4094,11 @@ export const setContractTerm = defineServiceFn({
       return ctx.error("notFound", "Contract not found");
     }
     const contract = current.data;
-    const notesDoc = value ? textToTiptap(value) : null;
+    // Notes are a plain textarea read back with `TiptapText(…).toString()`,
+    // so they are stored as typed: Markdown would not survive the round trip.
+    const notesDoc = value
+      ? TiptapText(value, { format: "text" }).toDocument()
+      : null;
 
     if (contract.status !== "Draft") {
       if (field !== "notes") {
@@ -3776,6 +4190,11 @@ export const setContractTerm = defineServiceFn({
     // never resets the contract to the company's invoicing setting.
     if (contract.invoiceAutomation) {
       merged.append("invoiceAutomation", contract.invoiceAutomation);
+    }
+    // Not a term either, and never edited here: carried so the validator
+    // applies the rules of this contract's basis.
+    if (contract.billingBasis) {
+      merged.append("billingBasis", contract.billingBasis);
     }
     if (field === "currencyCode" && value && value !== contract.currencyCode) {
       const rate = await getExchangeRate(client, companyId, value);
@@ -4079,7 +4498,8 @@ export const previewContractAmendment = defineServiceFn({
  * Changes, adds or ends lines from `amendmentDate`, recorded with its type
  * and reason. The `post-customer-contract` server function owns every guard
  * and re-plans the schedule and revenue from the effective date; its
- * refusal is the message.
+ * refusal is the message. An added Cost Plus line, or a line moved to
+ * Percent Complete revenue, needs the Project Revenue feature.
  *
  * @mcp
  */
@@ -4088,6 +4508,19 @@ export const amendContract = defineServiceFn({
   permission: { "sales.serviceContracts": "Edit" },
 
   async run(ctx, input) {
+    const upgrade = await service.projectRevenueRefusal(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      input.changes.flatMap((change) =>
+        change.op === "add"
+          ? [change.line]
+          : change.op === "change"
+            ? [{ revenueMethod: change.revenueMethod }]
+            : []
+      )
+    );
+    if (upgrade) return ctx.error("entitlement", upgrade);
+
     const result = await service.postContract(ctx, {
       type: "amend",
       asOf: await service.companyToday(ctx),
@@ -4259,8 +4692,9 @@ const rentalAgreementInput = rentalAgreementValidator.safeExtend({
  * @remarks
  * Takes the next agreement number. With `fixedAssetId` (the fleet's Rent)
  * the unit is added at its monthly rate on file; when that fails the
- * agreement is kept and `warning` says so. The agreement is then set up
- * from its units step.
+ * agreement is kept and `warning` says so. `customerContactId` is the
+ * primary contact and `contacts` the others. The agreement
+ * is then set up from its units step.
  *
  * @mcp
  */
@@ -4278,8 +4712,31 @@ export const createRentalAgreement = defineServiceFn({
       rentalAgreementId: _rentalAgreementId,
       fixedAssetId,
       customFields,
+      // The contacts are saved through their one writer, which checks them.
+      customerContactId: primaryId,
+      contacts,
       ...data
     } = input;
+
+    // Checked before the insert, so a contact refused (another customer's, or
+    // a primary contact with no email while invoices are emailed) leaves no
+    // agreement behind. A new agreement takes the company's invoicing.
+    if (primaryId || contacts?.length) {
+      const checked = await service.checkRentalAgreementContacts(
+        ctx.asSystem.pg,
+        {
+          companyId,
+          customerId: data.customerId,
+          invoiceAutomation: null,
+          currentPrimaryId: null,
+          primaryId: primaryId ?? null,
+          contacts: contacts ?? []
+        }
+      );
+      if (checked.error) {
+        return ctx.error("rule", checked.error.message, checked.error);
+      }
+    }
 
     const sequence = await getNextSequenceNumber(
       client,
@@ -4308,6 +4765,35 @@ export const createRentalAgreement = defineServiceFn({
       );
     }
     const id = agreement.data.id;
+    // The agreement is kept when what follows fails; each failure says so.
+    const warnings: string[] = [];
+
+    if (primaryId || contacts?.length) {
+      const saved = await service
+        .saveRentalAgreementContacts(ctx.asSystem.pg, {
+          rentalAgreementId: id,
+          primaryId: primaryId ?? null,
+          contacts: contacts ?? [],
+          companyId,
+          userId: ctx.auditUserId
+        })
+        .catch((error: unknown) => ({ data: null, error }));
+      if (saved.error) {
+        logger.error("Failed to add contacts to a new rental agreement", {
+          companyId,
+          rentalAgreementId: id,
+          error: saved.error
+        });
+        const reason =
+          saved.error instanceof Object &&
+          "code" in saved.error &&
+          String(saved.error.code).startsWith("RENTAL_") &&
+          "message" in saved.error
+            ? ` (${saved.error.message})`
+            : "";
+        warnings.push(`its contacts could not be added${reason}`);
+      }
+    }
 
     if (fixedAssetId) {
       const line = await service.upsertRentalAgreementLine(client, {
@@ -4324,20 +4810,23 @@ export const createRentalAgreement = defineServiceFn({
           rentalAgreementId: id,
           error: line.error
         });
-        return {
-          id,
-          warning: "Agreement created, but the unit could not be added"
-        };
+        warnings.push("the unit could not be added");
       }
     }
-    return { id, warning: null };
+    return {
+      id,
+      warning: warnings.length
+        ? `Agreement created, but ${warnings.join(", and ")}`
+        : null
+    };
   }
 });
 
+// Not `customerContactId`: the primary contact changes only through
+// `setRentalAgreementContacts`, which checks it against the customer.
 const rentalTermFields = [
   "customerId",
   "customerLocationId",
-  "customerContactId",
   "salesPersonId",
   "locationId",
   "startDate",
@@ -4369,8 +4858,9 @@ const rentalBooleanTerms = new Set<string>([
  * The terms are checked as a whole (an end date after the start, a purchase
  * option reasonably certain needs an end date), so the stored terms are
  * read, the one field is swapped in and the whole set is validated and
- * saved. A new customer clears the site and contact; a new currency brings
- * today's rate. The yes/no terms take `true` or `on`.
+ * saved. A new customer clears the site and the contacts; a new currency
+ * brings today's rate. The yes/no terms take `true` or `on`. Contacts are set
+ * with `setRentalAgreementContacts`.
  *
  * @mcp
  */
@@ -4394,7 +4884,10 @@ export const setRentalAgreementTerm = defineServiceFn({
       );
     }
 
-    const terms: Record<(typeof rentalTermFields)[number], unknown> = {
+    const terms: Record<
+      (typeof rentalTermFields)[number] | "customerContactId",
+      unknown
+    > = {
       customerId: agreement.customerId,
       customerLocationId: agreement.customerLocationId,
       customerContactId: agreement.customerContactId,
@@ -4419,7 +4912,7 @@ export const setRentalAgreementTerm = defineServiceFn({
     terms[field] = rentalBooleanTerms.has(field)
       ? value === "on" || value === "true"
       : value || null;
-    // A site and contact belong to one customer.
+    // A site and the contacts belong to one customer.
     if (field === "customerId" && value !== agreement.customerId) {
       terms.customerLocationId = null;
       terms.customerContactId = null;
@@ -4427,7 +4920,7 @@ export const setRentalAgreementTerm = defineServiceFn({
 
     // The same form the terms form posts, so the same coercion runs.
     const merged = new FormData();
-    for (const key of rentalTermFields) {
+    for (const key of [...rentalTermFields, "customerContactId"] as const) {
       const term = terms[key];
       if (rentalBooleanTerms.has(key)) {
         if (term) merged.append(key, "on");
@@ -4528,6 +5021,40 @@ export const setRentalInvoiceAutomation = defineServiceFn({
       );
     }
     return { id };
+  }
+});
+
+/**
+ * Set a rental agreement's contacts.
+ *
+ * @remarks
+ * The primary contact and the other contacts become exactly what is given.
+ * The primary contact is on every invoice drafted from now on and is the
+ * one emailed; drafted invoices keep theirs. Every contact must belong to the
+ * agreement's customer. A new primary contact needs an email while invoices
+ * are posted and emailed. Works on a Draft or Active agreement.
+ *
+ * @param primaryId - The primary contact; null for none.
+ * @param contacts - The other contacts, each with an optional role (for example Site or Ordered by, at most 50 characters).
+ *
+ * @mcp
+ */
+export const setRentalAgreementContacts = defineServiceFn({
+  input: z.object({
+    rentalAgreementId: z.string(),
+    primaryId: z.string().nullable(),
+    contacts: z.array(rentalAgreementContactRowValidator).max(100)
+  }),
+  permission: { "sales.rentalAgreements": "Edit" },
+
+  async run(ctx, input) {
+    const saved = await service.saveRentalAgreementContacts(ctx.asSystem.pg, {
+      ...input,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (saved.error) return service.rentalContactError(ctx, saved.error, input);
+    return { id: input.rentalAgreementId };
   }
 });
 
@@ -4695,6 +5222,47 @@ export const deliverRentalUnit = defineServiceFn({
       return ctx.error(
         "rule",
         getErrorMessage(result.error, "Failed to create the shipment"),
+        result.error
+      );
+    }
+    return { shipmentId: result.data.id };
+  }
+});
+
+/**
+ * Deliver a part CLIN.
+ *
+ * @remarks
+ * Opens the contract's Draft delivery with this line on it, or makes one
+ * (spec section 10.4): the line at what its jobs completed and it has not
+ * delivered yet. The part moves no stock; its job consumed it to the
+ * project.
+ *
+ * @mcp
+ */
+export const deliverContractLine = defineServiceFn({
+  input: z.object({
+    customerContractId: z.string(),
+    customerContractLineId: z.string()
+  }),
+  permission: {
+    "sales.serviceContracts": "Edit",
+    "inventory.shipments": "Create"
+  },
+
+  async run(ctx, input) {
+    const result = await invokeCreate(
+      {
+        db: ctx.asSystem.pg,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      },
+      { type: "shipmentFromCustomerContract", ...input }
+    );
+    if (result.error || !result.data) {
+      return ctx.error(
+        "rule",
+        getErrorMessage(result.error, "Failed to create the delivery"),
         result.error
       );
     }
@@ -6503,7 +7071,7 @@ export const getSalesOrders = defineServiceFn({
       .optional(),
     offset: z.number().int().default(0),
     search: z.string().nullable().optional(),
-    status: z.string().nullable().optional(),
+    status: z.enum(salesOrderStatusType).nullable().optional(),
     customerId: z.string().nullable().optional()
   }),
   permission: { "sales.salesOrders": "View" },
@@ -6821,7 +7389,12 @@ export const insertCustomerContact = defineServiceFn({
       firstName: z.string().optional(),
       lastName: z.string().optional(),
       title: z.string().optional(),
-      email: z.string().min(1).optional(),
+      // Blank means no email: stored as NULL, never ''.
+      email: z
+        .string()
+        .trim()
+        .transform((v) => v || null)
+        .optional(),
       mobilePhone: z.string().optional(),
       homePhone: z.string().optional(),
       workPhone: z.string().optional(),
@@ -6836,7 +7409,7 @@ export const insertCustomerContact = defineServiceFn({
     return unwrap(
       ctx,
       await service.insertCustomerContact(
-        ctx.asCaller.supabase,
+        ctx.asSystem.pg,
         payload(ctx, input).forUpsert() as never
       )
     );
@@ -6915,16 +7488,23 @@ export const resolvePriceList = defineServiceFn({
     offset: z.number().int().default(0),
     customerId: z.string().optional(),
     customerTypeId: z.string().optional(),
+    allCustomers: z
+      .boolean()
+      .describe("Set true to list the prices set for every customer.")
+      .optional(),
     search: z.string().optional(),
     quantity: z.number().optional()
   }),
   permission: { "sales.priceLists": "Edit" },
   async run(ctx, input) {
-    return await service.resolvePriceList(
+    const { error, ...result } = await service.resolvePriceList(
       ctx.asCaller.supabase,
       ctx.company.id,
       payload(ctx, input).build() as never
     );
+    if (error)
+      return ctx.error("internal", "Failed to load the price list", error);
+    return result;
   }
 });
 
@@ -6945,11 +7525,14 @@ export const getBaseCatalog = defineServiceFn({
   }),
   permission: { "sales.priceLists": "View" },
   async run(ctx, input) {
-    return await service.getBaseCatalog(
+    const { error, ...result } = await service.getBaseCatalog(
       ctx.asCaller.supabase,
       ctx.company.id,
       payload(ctx, input).build() as never
     );
+    if (error)
+      return ctx.error("internal", "Failed to load the catalog", error);
+    return result;
   }
 });
 
@@ -7032,6 +7615,12 @@ export const updateCustomer = defineServiceFn({
 /**
  * Upsert customer item price override
  *
+ * @remarks
+ * Sets an item's price for one customer (`customerId`), one customer type
+ * (`customerTypeId`), or every customer (`allCustomers: true`). Exactly one
+ * scope is required: a price for every customer replaces the item's list
+ * price on every quote, so it is never the default.
+ *
  * @mcp destructive
  */
 export const upsertCustomerItemPriceOverride = defineServiceFn({
@@ -7039,6 +7628,12 @@ export const upsertCustomerItemPriceOverride = defineServiceFn({
     id: z.string().optional(),
     customerId: z.string().optional(),
     customerTypeId: z.string().optional(),
+    allCustomers: z
+      .boolean()
+      .describe(
+        "Set true to apply the price to every customer. Required when neither customerId nor customerTypeId is sent."
+      )
+      .optional(),
     itemId: z.string(),
     breaks: z.array(
       z.looseObject({
@@ -7122,7 +7717,12 @@ export const updateCustomerContact = defineServiceFn({
       firstName: z.string().optional(),
       lastName: z.string().optional(),
       title: z.string().optional(),
-      email: z.string().min(1),
+      // Blank means no email: stored as NULL, never ''.
+      email: z
+        .string()
+        .trim()
+        .transform((v) => v || null)
+        .optional(),
       mobilePhone: z.string().optional(),
       homePhone: z.string().optional(),
       workPhone: z.string().optional(),
@@ -7136,10 +7736,10 @@ export const updateCustomerContact = defineServiceFn({
   async run(ctx, input) {
     return unwrap(
       ctx,
-      await service.updateCustomerContact(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpdate() as never
-      )
+      await service.updateCustomerContact(ctx.asCaller.supabase, {
+        ...payload(ctx, input).forUpdate(),
+        companyId: ctx.company.id
+      } as never)
     );
   }
 });
@@ -7807,6 +8407,7 @@ export const upsertQuoteLinePrices = defineServiceFn({
               amount: z.number(),
               adjustment: z.number().optional(),
               ruleId: z.string().optional(),
+              overrideId: z.string().optional(),
               label: z.string().optional()
             })
           )
@@ -7883,7 +8484,7 @@ export const createQuoteOperationStep = defineServiceFn({
   input: z.looseObject({
     operationId: z.string().min(1),
     name: z.string().min(1),
-    description: z.string().min(1),
+    description: requiredTiptapDoc,
     type: z.enum([
       "Task",
       "Value",
@@ -7931,7 +8532,7 @@ export const updateQuoteOperationStep = defineServiceFn({
     .looseObject({
       operationId: z.string().min(1),
       name: z.string().min(1),
-      description: z.string().min(1),
+      description: requiredTiptapDoc,
       type: z.enum([
         "Task",
         "Value",
@@ -8640,8 +9241,8 @@ export const createSalesRFQ = defineServiceFn({
     customerId: z.string().min(1),
     customerReference: z.string().optional(),
     expirationDate: z.string().optional(),
-    externalNotes: z.string().optional(),
-    internalNotes: z.string().optional(),
+    externalNotes: optionalTiptapDoc,
+    internalNotes: optionalTiptapDoc,
     locationId: z.string().optional(),
     rfqDate: z.string().min(1),
     status: z.enum(["Draft", "Ready for Quote", "Quoted", "Closed"]).optional(),
@@ -8682,8 +9283,8 @@ export const updateSalesRFQ = defineServiceFn({
       customerId: z.string().min(1),
       customerReference: z.string().optional(),
       expirationDate: z.string().optional(),
-      externalNotes: z.string().optional(),
-      internalNotes: z.string().optional(),
+      externalNotes: optionalTiptapDoc,
+      internalNotes: optionalTiptapDoc,
       locationId: z.string().optional(),
       rfqDate: z.string().min(1),
       status: z
@@ -9272,7 +9873,8 @@ export const getShippedTrackedEntitiesForCustomer = defineServiceFn({
 });
 
 /**
- * Per-line creditable pool = received − already credited
+ * Per-line creditable pool = received − already credited, for the Return to
+ * Stock lines (a Service or Warranty unit is not credited)
  *
  * @mcp read
  */
@@ -9318,9 +9920,10 @@ export const createSalesReturnOrderCredit = defineServiceFn({
 });
 
 /**
- * Create a replacement sales order from a return: a Draft order of the return
- * lines at their resolved prices, which the user can change (to zero for a
- * warranty).
+ * Create a replacement sales order from a return: a Draft order of the
+ * Return to Stock lines at their resolved prices, which the user can change.
+ * A Service or Warranty line is replaced from its own line (No-charge
+ * Replacement), never here.
  *
  * @remarks
  * One replacement per return: calling it again returns the existing order.
@@ -10058,6 +10661,71 @@ export const getContractLine = defineServiceFn({
 });
 
 /**
+ * Build a part CLIN: a job for the line's part.
+ *
+ * @remarks
+ * The job is charged to the task the user picks under the line's project
+ * and linked to the CLIN (spec section 10.2). It consumes to the project and
+ * gets its own Make to Order plan line on the task, so the user sets nothing
+ * but the task, quantity, due date and location. Only a line that names a
+ * part, on an Active contract.
+ *
+ * @mcp
+ */
+export const buildContractLineJob = defineServiceFn({
+  input: contractLineBuildValidator.extend({
+    customerContractId: z.string(),
+    customerContractLineId: z.string()
+  }),
+  permission: { "sales.serviceContracts": "Edit", "production.jobs": "Create" },
+  async run(ctx, input) {
+    const companyId = ctx.company.id;
+    const [line, contract] = await Promise.all([
+      service.getContractLine(
+        ctx.asCaller.supabase,
+        input.customerContractLineId,
+        companyId
+      ),
+      ctx.asCaller.supabase
+        .from("customerContract")
+        .select("status, billingBasis, projectId")
+        .eq("id", input.customerContractId)
+        .eq("companyId", companyId)
+        .maybeSingle()
+    ]);
+    if (
+      line.error ||
+      !contract.data ||
+      line.data.customerContractId !== input.customerContractId
+    ) {
+      return ctx.error(
+        "notFound",
+        "The line was not found",
+        line.error ?? contract.error
+      );
+    }
+    if (line.data.item?.type !== "Part") {
+      return ctx.error("rule", "Only a line that names a part is built");
+    }
+    if (contract.data.status !== "Active") {
+      return ctx.error("rule", "Confirm the contract before you build");
+    }
+    const projectId = line.data.projectId ?? contract.data.projectId;
+    if (!projectId) return ctx.error("rule", "The line has no project");
+
+    return createProjectJob(ctx, {
+      projectId,
+      elementId: input.elementId,
+      itemId: line.data.itemId,
+      quantity: input.quantity,
+      dueDate: input.dueDate,
+      locationId: input.locationId,
+      customerContractLineId: line.data.id
+    });
+  }
+});
+
+/**
  * Gets a contract's persisted invoice schedule: planned invoices with their lines, and the cancellation credits that sit on a memo instead of an invoice
  *
  * @mcp read
@@ -10140,10 +10808,18 @@ export const createContractLine = defineServiceFn({
     startDate: z.string().min(1),
     endDate: z.string().optional(),
     goLiveDate: z.string().optional(),
-    revenueMethod: z.enum(["Daily", "Even Period"]),
+    revenueMethod: z.enum([
+      "Daily",
+      "Even Period",
+      "Right to Invoice",
+      "Percent Complete"
+    ]),
     revenueStartDate: z.string().optional(),
     revenueEndDate: z.string().optional(),
     projectId: z.string().optional(),
+    billingMethod: z
+      .enum(["Fixed", "Time & Materials", "Cost Plus"])
+      .optional(),
     id: z
       .string()
       .describe("Send to update that record; omit to create a new one.")
@@ -10151,6 +10827,13 @@ export const createContractLine = defineServiceFn({
   }),
   permission: { "sales.serviceContracts": "Create" },
   async run(ctx, input) {
+    // Cost Plus and Percent Complete need the project revenue feature.
+    const upgrade = await service.projectRevenueRefusal(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      [input]
+    );
+    if (upgrade) return ctx.error("entitlement", upgrade);
     return unwrap(
       ctx,
       await service.upsertContractLine(
@@ -10185,10 +10868,18 @@ export const updateContractLine = defineServiceFn({
       startDate: z.string().min(1),
       endDate: z.string().optional(),
       goLiveDate: z.string().optional(),
-      revenueMethod: z.enum(["Daily", "Even Period"]),
+      revenueMethod: z.enum([
+        "Daily",
+        "Even Period",
+        "Right to Invoice",
+        "Percent Complete"
+      ]),
       revenueStartDate: z.string().optional(),
       revenueEndDate: z.string().optional(),
       projectId: z.string().optional(),
+      billingMethod: z
+        .enum(["Fixed", "Time & Materials", "Cost Plus"])
+        .optional(),
       id: z
         .string()
         .describe("Send to update that record; omit to create a new one.")
@@ -10197,12 +10888,441 @@ export const updateContractLine = defineServiceFn({
     .required({ id: true }),
   permission: { "sales.serviceContracts": "Edit" },
   async run(ctx, input) {
+    // Cost Plus and Percent Complete need the project revenue feature.
+    const upgrade = await service.projectRevenueRefusal(
+      ctx.asCaller.supabase,
+      ctx.company.id,
+      [input]
+    );
+    if (upgrade) return ctx.error("entitlement", upgrade);
     return unwrap(
       ctx,
       await service.upsertContractLine(
         ctx.asCaller.supabase,
         payload(ctx, input).forUpdate() as never
       )
+    );
+  }
+});
+
+/**
+ * Draft a contract's project billing invoices.
+ *
+ * @remarks
+ * Per Active contract with a started billing line (Time & Materials or Cost
+ * Plus), one Draft invoice for the Unbilled items posted on or before the
+ * latest billing period end that has passed by `asOf`, within each line's
+ * funding (`create-project-billing-invoices`). A contract that fails is
+ * reported in `failures`; the others still draft.
+ *
+ * @param asOf - The day to bill up to, `YYYY-MM-DD` in the company's timezone.
+ * @param customerContractId - Draft one contract only.
+ *
+ * @mcp
+ */
+export const createProjectBillingInvoices = defineServiceFn({
+  input: service.createProjectBillingInvoicesInput,
+  permission: service.createProjectBillingInvoicesPermission,
+
+  async run(ctx, input) {
+    return run(ctx, "create-project-billing-invoices", () =>
+      service.createProjectBillingInvoices(ctx, input)
+    );
+  }
+});
+
+/**
+ * Generate a contract line's billable items.
+ *
+ * @remarks
+ * The line's items for the ledger rows posted up to today that have none
+ * yet: work posted before the line existed, or rows the job SQL wrote. A Time
+ * & Materials line runs the T&M backfill (`generate-contract-billable-items`);
+ * a Cost Plus line runs the commercial generator, which needs the Project
+ * Revenue feature.
+ *
+ * @mcp
+ */
+export const generateContractBillableItems = defineServiceFn({
+  input: z.object({
+    customerContractId: z.string(),
+    customerContractLineId: z.string()
+  }),
+  permission: service.generateContractBillableItemsPermission,
+
+  async run(ctx, { customerContractId, customerContractLineId }) {
+    const companyId = ctx.company.id;
+    const line = await service.getContractLine(
+      ctx.asCaller.supabase,
+      customerContractLineId,
+      companyId
+    );
+    if (line.error || line.data.customerContractId !== customerContractId) {
+      return ctx.error("notFound", "The line was not found", line.error);
+    }
+    const through = await service.companyToday(ctx);
+
+    if (line.data.billingMethod === "Cost Plus") {
+      let result: Awaited<ReturnType<typeof generateCostPlusItems>>;
+      try {
+        result = await generateCostPlusItems(ctx.asSystem.pg, {
+          companyId,
+          userId: ctx.auditUserId,
+          through,
+          customerContractLineId
+        });
+      } catch (err) {
+        logger.error("Failed to generate Cost Plus items", {
+          companyId,
+          customerContractLineId,
+          error: err
+        });
+        return ctx.error(
+          "internal",
+          getErrorMessage(err, "Failed to generate billable items"),
+          err
+        );
+      }
+      if (result.gated) {
+        return ctx.error(
+          "entitlement",
+          defaultUpgradeMessage(
+            resolveRequirement({ feature: "PROJECT_REVENUE" })
+          )
+        );
+      }
+      return { generated: result.generated };
+    }
+
+    const result = await run(ctx, "generate-contract-billable-items", () =>
+      service.generateContractBillableItems(ctx, {
+        customerContractLineId,
+        through
+      })
+    );
+    if (result instanceof CarbonError) {
+      logger.error("Failed to generate billable items", {
+        companyId,
+        customerContractLineId,
+        error: result
+      });
+    }
+    return result;
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Project contracts: research flags, funding, bill rates, billing invoices
+
+/**
+ * Set a contract's R&D tax flags.
+ *
+ * @remarks
+ * Tax facts, not terms, so they change in any status. A flag left out keeps
+ * its value. `researchFunded` null means the default: funded when the
+ * contract has a Cost Plus or Time & Materials line.
+ *
+ * @mcp
+ */
+export const updateContractResearchFlags = defineServiceFn({
+  input: z.object({
+    id: z.string(),
+    researchFunded: z.boolean().nullable().optional(),
+    paymentContingentOnSuccess: z.boolean().optional(),
+    contractorRetainsRights: z.boolean().optional()
+  }),
+  permission: { "sales.serviceContracts": "Edit" },
+
+  async run(ctx, input) {
+    const update = await service.updateContractResearchFlags(
+      ctx.asCaller.supabase,
+      { ...input, companyId: ctx.company.id, updatedBy: ctx.auditUserId }
+    );
+    if (update.error) {
+      logger.error("contract research flag update failed", {
+        companyId: ctx.company.id,
+        id: input.id,
+        error: update.error
+      });
+      return ctx.error(
+        "rule",
+        update.error.message || "Failed to update the research flag",
+        update.error
+      );
+    }
+    return { id: input.id };
+  }
+});
+
+/**
+ * List the funding actions of billing lines.
+ *
+ * @remarks
+ * The contract modifications of Time & Materials and Cost Plus lines, by
+ * funded date.
+ *
+ * @mcp read
+ */
+export const getContractFundingActions = defineServiceFn({
+  input: z.object({ lineIds: z.array(z.string()) }),
+  permission: { "sales.serviceContracts": "View" },
+
+  async run(ctx, { lineIds }) {
+    return unwrap(
+      ctx,
+      await service.getContractFundingActions(
+        ctx.asCaller.supabase,
+        lineIds,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * List the bill rates of a contract line.
+ *
+ * @remarks
+ * Per labor category and per employee, newest first.
+ *
+ * @mcp read
+ */
+export const getContractLaborRates = defineServiceFn({
+  input: z.object({ customerContractLineId: z.string() }),
+  permission: { "sales.serviceContracts": "View" },
+
+  async run(ctx, { customerContractLineId }) {
+    return unwrap(
+      ctx,
+      await service.getContractLaborRates(
+        ctx.asCaller.supabase,
+        customerContractLineId,
+        ctx.company.id
+      )
+    );
+  }
+});
+
+/**
+ * Create or change a bill rate of a contract line.
+ *
+ * @remarks
+ * For a labor category or an employee. Rates change at any time, also on an
+ * Active contract. Only a Time & Materials line has bill rates.
+ *
+ * @mcp
+ */
+export const upsertContractLaborRate = defineServiceFn({
+  input: contractLaborRateValidator,
+  permission: { "sales.serviceContracts": "Edit" },
+
+  async run(ctx, { id, ...rate }) {
+    return unwrap(
+      ctx,
+      await service.upsertContractLaborRate(
+        ctx.asCaller.supabase,
+        id
+          ? {
+              ...rate,
+              id,
+              companyId: ctx.company.id,
+              updatedBy: ctx.auditUserId
+            }
+          : { ...rate, companyId: ctx.company.id, createdBy: ctx.auditUserId }
+      )
+    );
+  }
+});
+
+/**
+ * Delete a bill rate of a contract line.
+ *
+ * @mcp destructive
+ */
+export const deleteContractLaborRate = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { "sales.serviceContracts": "Edit" },
+
+  async run(ctx, { id }) {
+    const result = await service.deleteContractLaborRate(
+      ctx.asCaller.supabase,
+      id,
+      ctx.company.id
+    );
+    if (result.error) {
+      return ctx.error(
+        "rule",
+        result.error.message || "Failed to delete the bill rate",
+        result.error
+      );
+    }
+    return { id };
+  }
+});
+
+/**
+ * Get the funding position of billing lines.
+ *
+ * @remarks
+ * Billed, unbilled, incurred cost and the cost of the last 90 days, on
+ * `asOf` (today in the company's timezone when left out).
+ *
+ * @mcp read
+ */
+export const getContractLineFunding = defineServiceFn({
+  input: z.object({
+    lineIds: z.array(z.string()),
+    asOf: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional()
+  }),
+  permission: { "sales.serviceContracts": "View" },
+
+  async run(ctx, { lineIds, asOf }) {
+    return unwrap(
+      ctx,
+      await service.getContractLineFunding(ctx.asCaller.supabase, {
+        companyId: ctx.company.id,
+        lineIds,
+        asOf: asOf ?? (await service.companyToday(ctx))
+      })
+    );
+  }
+});
+
+/**
+ * Change the funding of a billing line.
+ *
+ * @remarks
+ * The funded amount and cost, the ceiling and the notice terms, on a Draft
+ * or Active contract; nothing else on the line changes. In DCAA mode the
+ * funding actions own the funded cost and amount.
+ *
+ * @mcp
+ */
+export const updateContractLineFunding = defineServiceFn({
+  input: contractLineFundingValidator,
+  permission: { "sales.serviceContracts": "Edit" },
+
+  async run(ctx, input) {
+    return unwrap(
+      ctx,
+      await service.updateContractLineFunding(ctx.asCaller.supabase, {
+        ...input,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      })
+    );
+  }
+});
+
+/**
+ * Add or change a funding action of a billing line.
+ *
+ * @remarks
+ * A contract modification, on a Draft or Active contract, then the line's
+ * funded totals, in one transaction. Refuses a Fixed line.
+ */
+export const upsertContractFunding = defineServiceFn({
+  input: customerContractFundingValidator,
+  permission: { "sales.serviceContracts": "Edit" },
+
+  async run(ctx, input) {
+    try {
+      return await service.upsertContractFunding(ctx.asSystem.pg, {
+        ...input,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+    } catch (err) {
+      return ctx.error(
+        "rule",
+        err instanceof Error
+          ? err.message
+          : "Failed to save the funding action",
+        err
+      );
+    }
+  }
+});
+
+/**
+ * Delete a funding action of a billing line.
+ *
+ * @remarks
+ * On a Draft or Active contract, then the line's funded totals, in one
+ * transaction. Refuses a Fixed line.
+ */
+export const deleteContractFunding = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { "sales.serviceContracts": "Full" },
+
+  async run(ctx, { id }) {
+    try {
+      return await service.deleteContractFunding(ctx.asSystem.pg, {
+        id,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+    } catch (err) {
+      return ctx.error(
+        "rule",
+        err instanceof Error
+          ? err.message
+          : "Failed to delete the funding action",
+        err
+      );
+    }
+  }
+});
+
+/**
+ * List a contract's project billing invoices.
+ *
+ * @remarks
+ * The sales invoices that bill its Time & Materials and Cost Plus lines,
+ * each with the lines' billed total, newest first.
+ *
+ * @mcp read
+ */
+export const getContractProjectBillingInvoices = defineServiceFn({
+  input: z.object({ customerContractId: z.string() }),
+  permission: { "sales.serviceContracts": "View" },
+
+  async run(ctx, { customerContractId }) {
+    return unwrap(
+      ctx,
+      await service.getContractProjectBillingInvoices(ctx.asCaller.supabase, {
+        companyId: ctx.company.id,
+        customerContractId
+      })
+    );
+  }
+});
+
+/**
+ * Get the backup of a project billing invoice.
+ *
+ * @remarks
+ * Every billable item it billed, with the ledger row's posting date, cost
+ * type, employee, labor category, hours and document, and the billing
+ * element. A burden item carries its pool, fiscal year, rate and base.
+ * Reconciles the invoice to the books (DFARS 252.242-7006).
+ *
+ * @mcp read
+ */
+export const getProjectBillingBackup = defineServiceFn({
+  input: z.object({ salesInvoiceId: z.string() }),
+  permission: { "sales.serviceContracts": "View" },
+
+  async run(ctx, { salesInvoiceId }) {
+    return unwrap(
+      ctx,
+      await service.getProjectBillingBackup(ctx.asCaller.supabase, {
+        companyId: ctx.company.id,
+        salesInvoiceId
+      })
     );
   }
 });

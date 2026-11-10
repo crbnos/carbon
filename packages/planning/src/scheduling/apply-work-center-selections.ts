@@ -27,6 +27,22 @@ export function hasPreassignedWorkCenter(
   return workCenterId != null && workCenterId !== "";
 }
 
+/**
+ * True once an operation has begun on the floor. A started op stays on its
+ * machine (setups, fixtures and operators live there); an unstarted op may be
+ * balanced onto another work center that runs its process.
+ */
+export function isOperationStarted(op: {
+  status?: string | null;
+  quantityComplete?: number | null;
+}): boolean {
+  return (
+    op.status === "In Progress" ||
+    op.status === "Paused" ||
+    (op.quantityComplete ?? 0) > 0
+  );
+}
+
 export function applyWorkCenterSelections(
   operations: Map<string, ScheduledOperation>,
   selections: Map<string, WorkCenterSelection>,
@@ -42,9 +58,14 @@ export function applyWorkCenterSelections(
     }
 
     const updated: ScheduledOperation = { ...op };
-    // Never clobber a pre-assigned work center (user or method default) —
-    // auto-selection may only fill empty ones.
-    if (selection.workCenterId && !hasPreassignedWorkCenter(op.workCenterId)) {
+    // Store the station the plan books an unstarted op on. A started op stays
+    // on its machine; a placeholder's fallback is only where it WOULD run.
+    const placed = Boolean(selection.placedStart && selection.placedEnd);
+    if (
+      selection.workCenterId &&
+      (!hasPreassignedWorkCenter(op.workCenterId) ||
+        (placed && !isOperationStarted(op)))
+    ) {
       updated.workCenterId = selection.workCenterId;
     }
 

@@ -4,7 +4,7 @@
 
 import type { Json } from "@carbon/database";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Button,
   Copy,
@@ -14,22 +14,19 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
-import {
-  LuCopy,
-  LuInfo,
-  LuKeySquare,
-  LuLink,
-  LuRefreshCcw
-} from "react-icons/lu";
+import { LuCopy, LuKeySquare, LuLink, LuRefreshCcw } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { Assignee, DateTime, useOptimisticAssignment } from "~/components";
+import {
+  Assignee,
+  ExchangeRateUpdatedAt,
+  useOptimisticAssignment
+} from "~/components";
 import {
   Currency,
   Location,
@@ -63,9 +60,7 @@ const PurchaseInvoiceProperties = () => {
 
   const fetcher = useAction<typeof action>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
+      toastServiceError(data);
     }
   });
   const { company } = useUser();
@@ -453,13 +448,9 @@ const PurchaseInvoiceProperties = () => {
                 Exchange Rate
               </span>
               {routeData?.purchaseInvoice?.exchangeRateUpdatedAt && (
-                <DateTime
+                <ExchangeRateUpdatedAt
                   value={routeData?.purchaseInvoice?.exchangeRateUpdatedAt}
-                  variant="absolute"
-                  side="bottom"
-                >
-                  <LuInfo className="h-4 w-4 text-muted-foreground" />
-                </DateTime>
+                />
               )}
             </HStack>
             <HStack className="w-full justify-between">

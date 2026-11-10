@@ -4,9 +4,9 @@
 
 import { respond } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
-import { validator } from "@carbon/form";
+import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
-import { useNavigate } from "react-router";
 import {
   batchRuleInitialValues,
   processValidator
@@ -23,6 +23,10 @@ export async function action(args: ActionFunctionArgs) {
     ...input.data,
     customFields: input.formData && setCustomFields(input.formData)
   });
+  // A taken name stays on the form, as a field error.
+  if (result.error?.category === "conflict") {
+    return validationError({ fieldErrors: { name: result.error.message } });
+  }
   // The modal form reads the result and closes itself.
   if (input.formData?.get("type") === "modal") return result;
   return respond(args.request, result).redirect(path.to.processes, {
@@ -31,8 +35,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function NewProcessRoute() {
-  const navigate = useNavigate();
-  const onClose = () => navigate(path.to.processes);
+  const dialog = useRouteDialog(path.to.processes);
 
   const initialValues = {
     name: "",
@@ -42,8 +45,15 @@ export default function NewProcessRoute() {
     batchable: false,
     batchType: "Sequential" as const,
     requiresAbility: false,
+    abilityPolicy: "Warn" as const,
     ...batchRuleInitialValues(null)
   };
 
-  return <ProcessForm initialValues={initialValues} onClose={onClose} />;
+  return (
+    <ProcessForm
+      initialValues={initialValues}
+      open={dialog.open}
+      onClose={dialog.close}
+    />
+  );
 }

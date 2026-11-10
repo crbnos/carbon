@@ -3,7 +3,16 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { assertBalanced, EPSILON, round } from "../../precision.ts";
-import { insertId, insertRow, nextJournalEntryId, rows } from "../sql.ts";
+import { journalReference } from "../../utils.ts";
+import { workdayBefore } from "../dates.ts";
+import {
+  insertId,
+  insertMaybe,
+  insertRow,
+  need,
+  nextJournalEntryId,
+  rows
+} from "../sql.ts";
 import type { AccountClass, Ctx } from "../types.ts";
 import {
   consumeFifo,
@@ -17,6 +26,7 @@ import {
   receiptJournal,
   salesInvoiceJournal,
   scrapJournal,
+  serviceJobTimeJournal,
   shipmentJournal,
   voidJournal
 } from "./posting-journals.ts";
@@ -706,4 +716,130 @@ export async function postPayment(
      WHERE id = $3 AND "companyId" = $4`,
     [id, ctx.userId, args.paymentId, ctx.companyId]
   );
+}
+
+/**
+ * post-service-job `post-time` for every time entry tier 04 seeded (all are
+ * closed): one Posted 'Service Job' journal per entry on the entry's day, Dr
+ * the coverage account (Warranty: warrantyExpenseAccount; else
+ * costOfServiceAccount, falling back to costOfGoodsSoldAccount) / Cr
+ * laborAbsorptionAccount at hours × the cost rate. Each line names the entry
+ * (`journalReference.to.serviceJobTime`) and carries the job's location when
+ * a Location dimension is active.
+ */
+export async function postServiceJobTime(
+  ctx: Ctx,
+  posting: PostingContext
+): Promise<void> {
+  const jobs = ctx.dataset.sales.serviceJobs.filter(
+    (job) => job.time.length > 0
+  );
+  if (jobs.length === 0) return;
+  const [defaults] = await rows<{
+    costOfServiceAccount: string | null;
+    costOfGoodsSoldAccount: string | null;
+    warrantyExpenseAccount: string | null;
+    laborAbsorptionAccount: string | null;
+  }>(
+    ctx.client,
+    `SELECT "costOfServiceAccount", "costOfGoodsSoldAccount",
+            "warrantyExpenseAccount", "laborAbsorptionAccount"
+     FROM "accountDefault" WHERE "companyId" = $1`,
+    [ctx.companyId]
+  );
+  const expenseAccount = (
+    accountId: string | null | undefined,
+    role: string
+  ) => {
+    if (!accountId || posting.classById.get(accountId) !== "Expense") {
+      throw new Error(
+        `Seed: accountDefault.${role} must be an active Expense posting account`
+      );
+    }
+    return accountId;
+  };
+  const [location] = await rows<{ id: string }>(
+    ctx.client,
+    `SELECT id FROM dimension
+     WHERE "companyGroupId" = $1 AND active = true AND "entityType" = 'Location'
+     ORDER BY id LIMIT 1`,
+    [ctx.companyGroupId]
+  );
+  const unitCost = ctx.dataset.sales.serviceLaborRates.cost;
+  const locationId = ctx.refs.locations.Plant ?? ctx.locationId;
+  const laborAbsorption = expenseAccount(
+    defaults?.laborAbsorptionAccount,
+    "laborAbsorptionAccount"
+  );
+
+  for (const spec of jobs) {
+    const jobId = need(ctx.refs.documents, `sj:${spec.key}`, "service job");
+    const accountIds = {
+      coverage:
+        spec.coverage === "Warranty"
+          ? expenseAccount(
+              defaults?.warrantyExpenseAccount,
+              "warrantyExpenseAccount"
+            )
+          : expenseAccount(
+              defaults?.costOfServiceAccount ??
+                defaults?.costOfGoodsSoldAccount,
+              "costOfServiceAccount"
+            ),
+      laborAbsorption
+    };
+    for (const [index, entry] of spec.time.entries()) {
+      const entryId = need(
+        ctx.refs.misc,
+        `sjt:${spec.key}:${index}`,
+        "service job time"
+      );
+      const journal = serviceJobTimeJournal({
+        serviceJobReadableId: need(ctx.refs.misc, `sj-readable:${spec.key}`),
+        coverage: spec.coverage,
+        unitCost,
+        hours: entry.hours
+      });
+      if (journal.lines.length === 0) continue;
+      assertBalanced(
+        round(journal.lines.reduce((net, line) => net + line.amount, 0)),
+        0,
+        EPSILON,
+        `${journal.description} journal`
+      );
+      const postingDate = workdayBefore(ctx.anchor, entry.workdaysBack);
+      ctx.log(`journal — ${journal.description} (${postingDate})`);
+      const journalEntryId = await nextJournalEntryId(ctx);
+      const journalId = await insertId(ctx, "journal", {
+        journalEntryId,
+        accountingPeriodId: periodFor(posting, postingDate),
+        description: journal.description,
+        postingDate,
+        sourceType: "Service Job",
+        status: "Posted",
+        postedAt: `${postingDate}T17:00:00Z`,
+        postedBy: ctx.userId
+      });
+      for (const line of journal.lines) {
+        const lineId = await insertId(ctx, "journalLine", {
+          journalId,
+          accountId: accountIds[line.account],
+          description: line.description,
+          amount: line.amount,
+          quantity: 1,
+          documentType: "Service Job",
+          documentId: jobId,
+          documentLineReference: journalReference.to.serviceJobTime(entryId),
+          journalLineReference: `${journalEntryId}-1`
+        });
+        if (location) {
+          await insertMaybe(ctx, "journalLineDimension", {
+            journalLineId: lineId,
+            dimensionId: location.id,
+            valueId: locationId
+          });
+        }
+      }
+    }
+  }
 }

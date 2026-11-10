@@ -14,16 +14,24 @@ import PurchaseOrderEmail from "./PurchaseOrderEmail";
 import QuoteEmail from "./QuoteEmail";
 import SalesInvoiceEmail from "./SalesInvoiceEmail";
 import SalesOrderEmail from "./SalesOrderEmail";
+import ServiceJobEstimateEmail from "./ServiceJobEstimateEmail";
 import VerificationEmail from "./VerificationEmail";
 import WeeklyReminderEmail from "./WeeklyReminderEmail";
 import WelcomeEmail from "./WelcomeEmail";
 
 export {
+  AuthConfirmationEmail,
+  AuthEmailChangeEmail,
+  AuthInviteEmail,
+  AuthMagicLinkEmail,
+  AuthRecoveryEmail,
+  authEmails
+} from "./auth";
+export {
   isReminderItemStatus,
   type ReminderItemStatus,
   reminderItemStatuses
 } from "./WeeklyReminderEmail";
-
 export {
   ChangelogEntryEmail,
   CompanyDeletionWarningEmail,
@@ -37,6 +45,7 @@ export {
   QuoteEmail,
   SalesInvoiceEmail,
   SalesOrderEmail,
+  ServiceJobEstimateEmail,
   VerificationEmail,
   WeeklyReminderEmail,
   WelcomeEmail

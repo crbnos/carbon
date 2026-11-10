@@ -7,11 +7,15 @@ import { error, notFound } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { getWorkCenterCapitalCost } from "~/modules/accounting/accounting.service";
-import { workCenterValidator } from "~/modules/resources/resources.models";
+import {
+  withoutOperatingHours,
+  workCenterFormValidator
+} from "~/modules/resources/resources.models";
 import { WorkCenterForm } from "~/modules/resources/ui";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -49,13 +53,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action(args: ActionFunctionArgs) {
-  const input = await validator(workCenterValidator).request(args, {
+  const input = await validator(workCenterFormValidator).request(args, {
     params: ["id"]
   });
   if ("invalid" in input) return input.invalid;
   const { api } = await authorize(args.request);
   const result = await api.resources.updateWorkCenter({
-    ...input.data,
+    ...withoutOperatingHours(input.data),
     id: input.params.id,
     customFields: input.formData && setCustomFields(input.formData)
   });
@@ -66,8 +70,7 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function WorkCenterRoute() {
   const { workCenter, capitalCost } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
-  const onClose = () => navigate(path.to.workCenters);
+  const dialog = useRouteDialog(path.to.workCenters);
 
   const initialValues = {
     id: workCenter?.id ?? undefined,
@@ -90,7 +93,8 @@ export default function WorkCenterRoute() {
   return (
     <WorkCenterForm
       key={initialValues.id}
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
       initialValues={initialValues}
       capitalCost={capitalCost}
     />

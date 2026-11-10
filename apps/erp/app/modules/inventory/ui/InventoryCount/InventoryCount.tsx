@@ -5,6 +5,11 @@
 import { useAction, useRevalidator } from "@carbon/query";
 import {
   Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
   IconButton,
   Modal,
@@ -18,10 +23,13 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import {
   LuCheck,
+  LuDownload,
+  LuEllipsisVertical,
   LuHistory,
   LuInfo,
   LuRotateCcw,
-  LuSend
+  LuSend,
+  LuUpload
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import {
@@ -31,6 +39,7 @@ import {
 } from "~/components/Layout/RecordHeader";
 import { usePermissions } from "~/hooks";
 import type {
+  InventoryCountGroupSummary,
   InventoryCountLine,
   InventoryCount as InventoryCountType,
   StockMovement
@@ -44,11 +53,17 @@ import type { action as postAction } from "~/routes/x+/inventory-count+/$id.post
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import InventoryCountHistory from "./InventoryCountHistory";
+import InventoryCountImport from "./InventoryCountImport";
+import InventoryCountScanField from "./InventoryCountScanField";
 
 type InventoryCountDetailsProps = {
   inventoryCount: InventoryCountType;
-  lines: InventoryCountLine[];
+  lines: (InventoryCountLine & { otherBinName?: string | null })[];
+  // The tracked groups on the loaded page, by group id, for their headers.
+  groupSummaries: Record<string, InventoryCountGroupSummary>;
   count: number;
+  // The loader's cursor for the next page of lines (infinite scroll).
+  nextCursor: string | null;
   summary: { uncounted: number; variances: number };
   // Ledger adjustments this count has posted (empty for a never-posted Draft).
   movements: StockMovement[];
@@ -63,7 +78,9 @@ type InventoryCountDetailsProps = {
 const InventoryCountDetails = ({
   inventoryCount,
   lines,
+  groupSummaries,
   count,
+  nextCursor,
   summary,
   movements,
   forms,
@@ -79,6 +96,7 @@ const InventoryCountDetails = ({
   const confirmModal = useDisclosure();
   const notesModal = useDisclosure();
   const historyModal = useDisclosure();
+  const importModal = useDisclosure();
   const revalidator = useRevalidator();
   const reopenFetcher = useFetcher();
   // Post submits via a fetcher: a refusal is toasted (by default for an
@@ -131,6 +149,32 @@ const InventoryCountDetails = ({
           </Button>
         </RecordAction>
       )}
+      <RecordAction slot="overflow">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <IconButton
+              aria-label={t`More count actions`}
+              variant="ghost"
+              icon={<LuEllipsisVertical />}
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <a href={path.to.api.inventoryCountCsv(inventoryCount.id!)}>
+                <DropdownMenuIcon icon={<LuDownload />} />
+                {t`Export units (CSV)`}
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={status !== "Draft" || !canUpdate}
+              onClick={importModal.onOpen}
+            >
+              <DropdownMenuIcon icon={<LuUpload />} />
+              {t`Import count results`}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </RecordAction>
       {status === "Draft" && (
         <RecordAction slot="primary">
           <Button
@@ -191,8 +235,19 @@ const InventoryCountDetails = ({
       <RecordPhoneChrome />
       <div className="flex-1 min-h-0 w-full">
         <InventoryCountLines
+          inventoryCountId={inventoryCount.id!}
           lines={lines}
+          groupSummaries={groupSummaries}
+          scanField={
+            status === "Draft" && canUpdate ? (
+              <InventoryCountScanField
+                inventoryCountId={inventoryCount.id!}
+                locationId={inventoryCount.locationId}
+              />
+            ) : null
+          }
           count={count}
+          nextCursor={nextCursor}
           hideSystemQuantity={hideSystemQuantity}
           isReadOnly={isReadOnly}
           locationId={inventoryCount.locationId}
@@ -208,21 +263,24 @@ const InventoryCountDetails = ({
         />
       </div>
 
-      {confirmModal.isOpen && (
-        <InventoryCountConfirmModal
-          inventoryCountId={inventoryCount.id!}
-          summary={summary}
-          isLoading={revalidator.state !== "idle"}
-          onClose={confirmModal.onClose}
-        />
-      )}
+      <InventoryCountImport
+        open={importModal.isOpen}
+        inventoryCountId={inventoryCount.id!}
+        onClose={importModal.onClose}
+      />
+      <InventoryCountConfirmModal
+        open={confirmModal.isOpen}
+        inventoryCountId={inventoryCount.id!}
+        summary={summary}
+        isLoading={revalidator.state !== "idle"}
+        onClose={confirmModal.onClose}
+      />
 
-      {historyModal.isOpen && (
-        <InventoryCountHistory
-          movements={movements}
-          onClose={historyModal.onClose}
-        />
-      )}
+      <InventoryCountHistory
+        open={historyModal.isOpen}
+        movements={movements}
+        onClose={historyModal.onClose}
+      />
 
       <Modal
         open={notesModal.isOpen}

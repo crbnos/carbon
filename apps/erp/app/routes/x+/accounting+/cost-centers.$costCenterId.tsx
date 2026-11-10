@@ -6,7 +6,7 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -79,7 +79,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function CostCenterRoute() {
   const { costCenter } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const initialValues = {
     id: costCenter.id,
@@ -91,7 +91,8 @@ export default function CostCenterRoute() {
 
   return (
     <CostCenterForm
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
       key={initialValues.id}
       initialValues={initialValues}
     />

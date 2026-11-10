@@ -1,5 +1,5 @@
 -- The conversion of today's permissions to grants
--- (migrations/20261018093518_convert-permissions-to-grants.sql), run again over fixtures.
+-- (migrations/20261110050003_convert-permissions-to-grants.sql), run again over fixtures.
 -- Run from the repository root against an existing local database:
 -- pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/access-migration.test.sql
 -- All fixtures are confined to the rolled-back transaction.
@@ -77,9 +77,9 @@ BEGIN
 END;
 $fixtures$;
 
-\i packages/database/supabase/migrations/20261018093518_convert-permissions-to-grants.sql
+\i packages/database/supabase/migrations/20261110050003_convert-permissions-to-grants.sql
 -- Twice: a second run changes nothing.
-\i packages/database/supabase/migrations/20261018093518_convert-permissions-to-grants.sql
+\i packages/database/supabase/migrations/20261110050003_convert-permissions-to-grants.sql
 
 DO $proof$
 DECLARE

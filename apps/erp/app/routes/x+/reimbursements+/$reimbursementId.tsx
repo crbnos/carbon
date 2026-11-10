@@ -9,7 +9,7 @@ import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import { getDefaultAccounts } from "~/modules/accounting/accounting.service";
@@ -19,6 +19,7 @@ import {
   ReimbursementHeader
 } from "~/modules/invoicing/ui";
 import type { Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -26,6 +27,9 @@ export const handle: Handle = {
   to: path.to.reimbursements,
   module: "invoicing"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.reimbursement?.reimbursementId, "Reimbursement");
 
 /**
  * Loads the document for the whole page — the header, the Documents panel,

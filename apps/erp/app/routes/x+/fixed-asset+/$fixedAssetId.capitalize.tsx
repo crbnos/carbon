@@ -6,9 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { datetime, getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { fixedAssetCapitalizeCipValidator } from "~/modules/accounting/accounting.models";
 import { invokeAssetTransfer } from "~/modules/accounting/accounting.service";
 import { FixedAssetCapitalizeCipForm } from "~/modules/accounting/ui/FixedAssets";
@@ -128,7 +129,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function CapitalizeCipFixedAssetRoute() {
   const { initialValues, assetClasses, totalCost, cipClassName } =
     useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog();
 
   return (
     <FixedAssetCapitalizeCipForm
@@ -136,7 +137,8 @@ export default function CapitalizeCipFixedAssetRoute() {
       assetClasses={assetClasses}
       totalCost={totalCost}
       cipClassName={cipClassName}
-      onClose={() => navigate(-1)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

@@ -7,9 +7,10 @@ import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { deleteEnforcementRule } from "@carbon/ee/rules.server";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { getParams, path } from "~/utils/path";
 
@@ -61,13 +62,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteSalesRuleRoute() {
   const { rule } = useLoaderData<typeof loader>();
   const id = rule?.id ?? "";
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.salesRules);
   return (
     <ConfirmDelete
       action={path.to.deleteSalesRule(id)}
       name={rule?.name ?? "this rule"}
       text="Are you sure you want to delete this rule? Assignments will also be removed."
-      onCancel={() => navigate(path.to.salesRules)}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

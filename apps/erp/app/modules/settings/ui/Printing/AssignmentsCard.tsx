@@ -29,6 +29,7 @@ import {
   LuHandCoins,
   LuLocateFixed,
   LuMapPin,
+  LuSquareKanban,
   LuTruck
 } from "react-icons/lu";
 
@@ -110,8 +111,9 @@ export function AssignmentsCard({
         </CardTitle>
         <CardDescription>
           <Trans>
-            Assign printers to locations. Shipping, receiving, and work centers
-            inherit the location default unless overridden.
+            Assign printers to locations. Shipping, receiving, inventory,
+            kanbans, and work centers inherit the location default unless
+            overridden.
           </Trans>
         </CardDescription>
       </CardHeader>
@@ -204,6 +206,12 @@ function LocationSection({
       icon: <LuBlocks />,
       explicit: assignment?.inventory ?? null
     },
+    {
+      context: "kanban",
+      label: "Kanbans",
+      icon: <LuSquareKanban />,
+      explicit: assignment?.kanban ?? null
+    },
     ...workCenters.map<AssignmentRowModel>((wc) => ({
       context: "workCenter",
       contextId: wc.id,
@@ -275,6 +283,7 @@ function AssignmentRow({
   onPrinterChange: (printerRouteId: string) => void;
   onAutoPrintChange: (autoPrint: boolean) => void;
 }) {
+  const { t } = useLingui();
   const displayState = printerRouteId
     ? ("assigned" as const)
     : inheritedName
@@ -316,12 +325,14 @@ function AssignmentRow({
             onChange={(selected) => onPrinterChange(selected)}
             isClearable
             placeholder={placeholder}
+            aria-label={t`Printer for ${label}`}
           />
         </div>
 
         <div className="flex items-center gap-1.5 max-md:shrink-0">
           <Switch
             variant="small"
+            aria-label={t`Auto-print ${label}`}
             checked={autoPrint}
             onCheckedChange={onAutoPrintChange}
           />

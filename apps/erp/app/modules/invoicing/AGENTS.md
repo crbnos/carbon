@@ -11,7 +11,12 @@ the file that defines a thing. `invoicing.server.ts` holds the module's operatio
 Operations below). `invoicing.service.ts` is server-only and holds the building blocks,
 including the deposit and payment-seeding helpers the payment loaders read
 (`getDepositDocuments`, `seedPaymentApplications`) and Stripe Connect customer resolution
-(`resolveStripeCustomer`, with the pure `stripe-customer.mapper.ts`).
+(`resolveStripeCustomer`, with the pure `stripe-customer.mapper.ts`). The posting bodies
+`postSalesInvoice`, `postPurchaseInvoice`, `postPayment` and `postMemo` are building blocks
+there too. `project-charges.ts` (plain, server-only) is the purchase invoice's project side:
+`loadInvoiceProjectCharges` says which lines debit a project account and which PO lines
+their receipt already charged to a project (the invoice then writes only the price
+variance).
 
 `invoicing.reports.ts` is pure calendar/aggregation math (`previousPeriod`, `aggregateSpend`)
 with no route consumer yet — only its own test. `ui/SalesInvoice/` has no `index.ts` and is NOT
@@ -51,9 +56,10 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
   `!isReimbursement && cashIn !== isAR`, so a three-way party can't be misread as a refund.
   `totalAmount` may be 0 — a payment can be a pure credit application.
 - **`invoiceSettlement`** — source is exactly one of `paymentId`/`memoId`; target exactly one of
-  FOUR (`targetSalesInvoiceId`, `targetPurchaseInvoiceId`, `targetMemoId`,
-  `targetReimbursementId` — the fourth added by `20260923231244`, which widened
-  `invoiceSettlement_target_check`). **`appliedAmount`, `discountAmount` and `writeOffAmount` are
+  FIVE (`targetSalesInvoiceId`, `targetPurchaseInvoiceId`, `targetMemoId`,
+  `targetReimbursementId`, `targetPaymentId`). `targetPaymentId` links an advance refund
+  to its original payment; the managed `prevent_invalid_deposit_refund` interceptor
+  validates its party, currency, document scope and effective funding under source locks. **`appliedAmount`, `discountAmount` and `writeOffAmount` are
   company BASE currency; `sourceAmount` is the exact principal in the funding source's DOCUMENT
   currency** (per the `COMMENT ON COLUMN` statements in
   `20260908021155_accounting_posting_corrections.sql`) — getting that pair backwards is a live
@@ -151,7 +157,7 @@ pnpm --filter erp test                                    # the whole app's vite
 | `purchaseInvoiceDelivery` | AP delivery terms |
 | `memo` | Credit/debit memos; customer XOR supplier, `direction` orthogonal to party |
 | `payment` | Receipts, disbursements, employee payouts (three-way `payment_party_check`) |
-| `invoiceSettlement` | Applications: one source × one of four targets; base-currency reliefs + generated `fxGainLossAmount` |
+| `invoiceSettlement` | Applications: one source × one of five targets; base-currency reliefs + generated `fxGainLossAmount` |
 | `charge` / `chargeLine` | Card charges (`chargeType`: Charge/Credit/Payment/Cashback/Repayment) |
 | `reimbursement` / `reimbursementLine` / `reimbursementLineDimension` | Employee expense payable, coding lines, dimension tags |
 | `paymentTerm`, `currency`, `company` | Due-date, decimals, and base-currency resolution |
@@ -179,6 +185,7 @@ guarded by `requireUnlockedBulk`, not validators.
 
 ## Key Service Functions
 
+- `getPurchaseInvoices` / `getSalesInvoices` — the list reads. A search reads the list through the SQL function `search<List>(company_id, terms)` in place of the view (`searchTerms`, `~/utils/search`), so every word must occur in the document or its lines, case, spaces and punctuation ignored. The function finds the matching ids from the company's headers and lines in one pass; a filter on a per-row text took about 700 ms at 1,800 orders. A search on the table on screen also reads `searchLines` (`withSearchLines`: only with `forScreen` and a search word; an export, a bulk action and the API never do), so the rows with a matching line open to those lines. Every row can be opened, collapsed by default; without a search it loads its lines on open from `api+/document-lines.$list.$id.ts` (`useLineItemRows`, `~/components/LineItemRows`). Each line and party lookup in the SQL functions also matches the document's `companyId`, because these list routes read with `bypassRls`. `searchLines` is a computed field of the list view and `search<List>` matches the same line values (migration `*_deep-list-search.sql`), so a row matched on a line value always has a line to show; `select=*` never reads `searchLines`. The supplier and customer names come through a LEFT JOIN, so an invoicing-only user still sees every invoice.
 - `insertSalesInvoice` / `insertPurchaseInvoice` — allocate the sequence via
   `get_next_sequence`, mint the `opportunity`, copy party payment/shipping defaults. Use these,
   not a bare INSERT.
@@ -187,6 +194,19 @@ guarded by `requireUnlockedBulk`, not validators.
 - `computeInvoiceDateDue` / `computeEarlyPaymentDiscounts` — terms math (the due date itself is
   `calculateDueDate` / `DEFAULT_PAYMENT_TERM` from `@carbon/utils`, shared with invoice posting);
   discounts batch-load their terms in one query, never per invoice.
+- `getDepositDocuments` pages rental agreements and customer contracts with stable id tie-breakers.
+  Supplier refund currencies come from `get_supplier_prepayment_refund_currencies`, a caller-RLS
+  SQL aggregate returning one row per referenced purchase order, including exhausted saved links.
+- `postPaymentTransaction` locks company settings, a linked purchase order, the payment,
+  then funding sources; it rechecks the order reference after locking the payment.
+  Activation takes the same settings-first order. Journal, normalized settlements and payment
+  status commit together. `rebuildPaymentJournals` alone opts historical customer refunds into
+  legacy reconstruction; new refunds must allocate original advances. Funding readers, draft
+  allocation and posting also reserve historical customer refunds that have no source applications:
+  oldest eligible original advances first, only when their original account and carrying value
+  match the refund's unchanged journal. Incompatible history refuses with a reconciliation message.
+  Voided history is ignored; attributed modern refunds are not counted twice. The database
+  interceptor protects historical document principal and original-account carrying capacity too.
 - `replaceInvoiceSettlements` (Kysely) — replace-all for a Draft payment's applications; owns
   the AR / AP / refund / reimbursement arm rules and the balance ceilings.
 - `applyCreditsToInvoices` (Kysely) — additive memo-sourced settlements, GL-neutral (the memos
@@ -217,6 +237,7 @@ tagged `@mcp` (all below except the two `*Field` updates) as `invoicing_<name>`:
 - Purchase invoices: `createPurchaseInvoice`, `updatePurchaseInvoiceField`,
   `postPurchaseInvoice`, `voidPurchaseInvoice`, `deleteDraftPurchaseInvoice`,
   `mapPurchaseInvoiceLines`; `deleteDraftPurchaseInvoiceLine`
+- Purchase invoice lines: `createPurchaseInvoiceLine` / `updatePurchaseInvoiceLine`
 - Payments: `createPayment`, `postPayment`, `voidPayment`
 - Memos: `postMemo`, `voidMemo`, `deleteDraftMemo`
 - Charges: `voidCharge`
@@ -236,6 +257,14 @@ How they behave:
   company does so on invoice post. A failed post or price update sets the invoice back to
   Draft (after the post has committed, for the price update: a known gap).
 - The posting and voiding operations return the posting's own refusal message.
+- Project charge numbers: `createPurchaseInvoiceLine` / `updatePurchaseInvoiceLine` check
+  the line's `projectId` / `projectElementId` with `chargeNumberError`, and
+  `saveReimbursement` (so also `saveAndPostReimbursement`) checks every line with
+  `chargeNumbersError` first (`projects.service.ts`); a bad one is a `validation` refusal.
+- Contract financing: `createPayment` takes an optional `financingRequestId` and, for a
+  contract deposit (`customerContractId`), links the financing request to the payment;
+  `postPayment` marks the payment's financing requests Paid after a successful post. A
+  failure of either is logged and the payment kept.
 - A failure after the main write (seeding a payment's applications, applying or posting a
   reimbursement payout, the lines of an adjusting entry) keeps the write and returns
   `warning`.

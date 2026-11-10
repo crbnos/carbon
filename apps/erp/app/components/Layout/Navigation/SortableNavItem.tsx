@@ -5,6 +5,7 @@
 import { cn, navRailItemClasses } from "@carbon/react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useLingui } from "@lingui/react/macro";
 import { LuEyeOff, LuGripVertical } from "react-icons/lu";
 import type { DraftModule } from "./useNavigationEditMode";
 
@@ -17,6 +18,7 @@ export function SortableNavItem({
   module,
   onToggleHidden
 }: SortableNavItemProps) {
+  const { t } = useLingui();
   const {
     attributes,
     listeners,
@@ -47,7 +49,7 @@ export function SortableNavItem({
         className={cn(
           "absolute left-0 top-0 h-full flex items-center pl-1",
           "md:opacity-0 group-data-[state=expanded]:opacity-100",
-          "cursor-grab active:cursor-grabbing"
+          "cursor-grab touch-none active:cursor-grabbing"
         )}
         {...attributes}
         {...listeners}
@@ -72,6 +74,7 @@ export function SortableNavItem({
       {/* Hide button */}
       <button
         type="button"
+        aria-label={t`Hide ${module.name}`}
         onClick={() => onToggleHidden(module.key)}
         className={cn(
           "absolute right-2 top-2.5 p-0.5 rounded",
@@ -80,7 +83,7 @@ export function SortableNavItem({
           "transition-opacity"
         )}
       >
-        <LuEyeOff className="w-3.5 h-3.5" />
+        <LuEyeOff className="w-3.5 h-3.5" aria-hidden />
       </button>
     </div>
   );

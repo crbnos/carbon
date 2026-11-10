@@ -51,6 +51,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   toast,
+  toastError,
   useDebounce,
   useDisclosure,
   useMount,
@@ -64,8 +65,10 @@ import {
   INPUT_FORMAT
 } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { useNumberFormatter } from "@react-aria/i18n";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import { useLocale, useNumberFormatter } from "@react-aria/i18n";
 import type { DragControls } from "motion/react";
 import { motion, Reorder, useDragControls } from "motion/react";
 import { nanoid } from "nanoid";
@@ -129,6 +132,7 @@ import UnitOfMeasure, {
 } from "~/components/Form/UnitOfMeasure";
 import { OperationTypeIcon, ProcedureStepTypeIcon } from "~/components/Icons";
 import InfiniteScroll from "~/components/InfiniteScroll";
+import { MeasurementLimits } from "~/components/MeasurementLimits";
 import { ConfirmDelete } from "~/components/Modals";
 import { SlidesEditor, uploadStepSlideModel } from "~/components/SlidesEditor";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
@@ -265,10 +269,11 @@ function makeItems(
   tags: { name: string }[],
   temporaryItems: TemporaryItems,
   urlParams: { [key: string]: string },
-  t: ReturnType<typeof useLingui>["t"]
+  t: (descriptor: MessageDescriptor) => string,
+  locale: string
 ): ItemWithData[] {
   return operations.map((operation) =>
-    makeItem(operation, tags, temporaryItems, urlParams, t)
+    makeItem(operation, tags, temporaryItems, urlParams, t, locale)
   );
 }
 
@@ -277,7 +282,8 @@ function makeItem(
   tags: { name: string }[],
   temporaryItems: TemporaryItems,
   urlParams: { [key: string]: string },
-  t: ReturnType<typeof useLingui>["t"]
+  t: (descriptor: MessageDescriptor) => string,
+  locale: string
 ): ItemWithData {
   // Forward forecast vs backward need-by target: calendar-day comparison via
   // parseDate (never JS Date arithmetic). Positive = projected finish is late.
@@ -342,19 +348,23 @@ function makeItem(
                 <TooltipTrigger asChild>
                   <Badge variant="red" className="gap-1">
                     <LuSquareChartGantt className="size-3 shrink-0" />
-                    {formatDate(projectedDate)}
+                    {formatDate(projectedDate, undefined, locale)}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent>
                   <span>
-                    <Trans>Behind target by {behindDays} day(s)</Trans>
+                    <Plural
+                      value={behindDays}
+                      one="Behind target by # day"
+                      other="Behind target by # days"
+                    />
                   </span>
                 </TooltipContent>
               </Tooltip>
             ) : (
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
                 <LuSquareChartGantt className="size-3 shrink-0" />
-                {formatDate(projectedDate)}
+                {formatDate(projectedDate, undefined, locale)}
               </span>
             ))}
           <OperationDueDatePicker
@@ -365,18 +375,22 @@ function makeItem(
           <JobOperationTags operation={operation} availableTags={tags} />
           <Tooltip>
             <TooltipTrigger asChild>
-              <a
-                href={path.to.external.mesJobOperation(operation.id!)}
-                title={t`Open in MES`}
+              {/* One control: the link styled as the icon button. A button
+                  inside a link is two controls with one name. */}
+              <Button
+                asChild
+                isIcon
+                variant="secondary"
+                size="sm"
                 className="max-md:hidden"
               >
-                <IconButton
-                  icon={<LuPlay />}
-                  variant="secondary"
-                  aria-label={t`Open in MES`}
-                  size="sm"
-                />
-              </a>
+                <a
+                  href={path.to.external.mesJobOperation(operation.id!)}
+                  aria-label={t(msg`Open in MES`)}
+                >
+                  <LuPlay aria-hidden />
+                </a>
+              </Button>
             </TooltipTrigger>
             <TooltipContent>
               <span>
@@ -386,18 +400,20 @@ function makeItem(
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link
-                to={newIssueUrl(operation, urlParams)}
-                title={t`Create Issue`}
+              <Button
+                asChild
+                isIcon
+                variant="secondary"
+                size="sm"
                 className="max-md:hidden"
               >
-                <IconButton
-                  icon={<LuShieldX />}
-                  variant="secondary"
-                  aria-label={t`Create Issue`}
-                  size="sm"
-                ></IconButton>
-              </Link>
+                <Link
+                  to={newIssueUrl(operation, urlParams)}
+                  aria-label={t(msg`Create Issue`)}
+                >
+                  <LuShieldX aria-hidden />
+                </Link>
+              </Button>
             </TooltipTrigger>
             <TooltipContent>
               <span>
@@ -497,6 +513,7 @@ const JobBillOfProcess = ({
   customerId
 }: JobBillOfProcessProps) => {
   const { t } = useLingui();
+  const { locale } = useLocale();
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { carbon, accessToken } = useCarbon();
   const sortOrderFetcher = useAction();
@@ -584,7 +601,8 @@ const JobBillOfProcess = ({
     tags,
     temporaryItems,
     issueUrlParams,
-    t
+    t,
+    locale
   ).map((item) => ({
     ...item,
     checked: checkedState[item.id] ?? false
@@ -810,15 +828,7 @@ const JobBillOfProcess = ({
         label: t`Details`,
         content: (
           <div className="flex w-full flex-col pr-2 py-2">
-            <motion.div
-              initial={{ opacity: 0, filter: "blur(4px)" }}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              transition={{
-                type: "spring",
-                bounce: 0,
-                duration: 0.3
-              }}
-            >
+            <div>
               <OperationForm
                 item={item}
                 itemId={itemId}
@@ -839,7 +849,7 @@ const JobBillOfProcess = ({
                   });
                 }}
               />
-            </motion.div>
+            </div>
           </div>
         )
       },
@@ -854,6 +864,7 @@ const JobBillOfProcess = ({
             <div>
               {permissions.has({ "production.jobs": "Edit" }) ? (
                 <Editor
+                  label={t`Work Instructions`}
                   initialValue={
                     workInstructions[item.id] ?? ({} as JSONContent)
                   }
@@ -970,22 +981,14 @@ const JobBillOfProcess = ({
         label: t`Events`,
         content: (
           <div className="flex w-full flex-col pr-2 py-6 min-h-[300px]">
-            <motion.div
-              initial={{ opacity: 0, filter: "blur(4px)" }}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              transition={{
-                type: "spring",
-                bounce: 0,
-                duration: 0.3
-              }}
-            >
+            <div>
               <InfiniteScroll
                 component={ProductionEventActivity}
                 items={productionEvents}
                 loadMore={loadMoreProductionEvents}
                 hasMore={hasMore}
               />
-            </motion.div>
+            </div>
           </div>
         )
       },
@@ -1086,6 +1089,7 @@ const JobBillOfProcess = ({
       </HStack>
       <CardContent>
         <SortableList
+          label={t`Bill of Process`}
           isReadOnly={isReadOnly}
           items={items}
           onReorder={onReorder}
@@ -1316,7 +1320,7 @@ function StepsForm({
         .company(companyId)
         .upload(fileName, upload);
       if (result.error || !result.data) {
-        toast.error(t`Failed to upload image`);
+        toastError(t`Failed to upload image`, result.error);
         return;
       }
       setDraftSlides((prev) => [
@@ -1392,7 +1396,7 @@ function StepsForm({
         .insert(slideRows);
       if (cancelled) return;
       if (error) {
-        toast.error(t`Failed to save slides`);
+        toastError(t`Failed to save slides`, error);
         return;
       }
       const savedIds = new Set(batch.map((slide) => slide.id));
@@ -1425,7 +1429,7 @@ function StepsForm({
       );
       if (cancelled) return;
       if (error) {
-        toast.error(t`Failed to save parts`);
+        toastError(t`Failed to save parts`, error);
         return;
       }
       const savedIds = new Set(batch);
@@ -1554,6 +1558,7 @@ function StepsForm({
                   <Trans>Description</Trans>
                 </Label>
                 <Editor
+                  label={t`Description`}
                   initialValue={description}
                   onUpload={onUploadImage}
                   onChange={(value) => {
@@ -1610,7 +1615,11 @@ function StepsForm({
                 </div>
               )}
               {type === "List" && (
-                <ArrayInput name="listValues" label={t`List Options`} />
+                <ArrayInput
+                  name="listValues"
+                  label={t`List Options`}
+                  isRequired
+                />
               )}
 
               <SlidesEditor
@@ -1955,7 +1964,7 @@ function JobStepSlides({
         .company(companyId)
         .upload(fileName, upload);
       if (result.error || !result.data) {
-        toast.error(t`Failed to upload image`);
+        toastError(t`Failed to upload image`, result.error);
         return;
       }
       const fd = new FormData();
@@ -2207,6 +2216,7 @@ function StepsListItem({
                 <Trans>Description</Trans>
               </Label>
               <Editor
+                label={t`Description`}
                 initialValue={description}
                 onUpload={onUploadImage}
                 onChange={(value) => {
@@ -2263,7 +2273,11 @@ function StepsListItem({
               </div>
             )}
             {type === "List" && (
-              <ArrayInput name="listValues" label={t`List Options`} />
+              <ArrayInput
+                name="listValues"
+                label={t`List Options`}
+                isRequired
+              />
             )}
             <JobStepSlides step={attribute} isDisabled={isDisabled} />
             <JobStepParts
@@ -2332,28 +2346,15 @@ function StepsListItem({
                   </HStack>
                   {attribute.type === "Measurement" && (
                     <span className="text-xs text-muted-foreground">
-                      {attribute.minValue !== null &&
-                      attribute.maxValue !== null
-                        ? `Must be between ${attribute.minValue} and ${
-                            attribute.maxValue
-                          } ${
-                            unitOfMeasures.find(
-                              (u) => u.value === unitOfMeasureCode
-                            )?.label
-                          }`
-                        : attribute.minValue !== null
-                          ? `Must be > ${attribute.minValue} ${
-                              unitOfMeasures.find(
-                                (u) => u.value === unitOfMeasureCode
-                              )?.label
-                            }`
-                          : attribute.maxValue !== null
-                            ? `Must be < ${attribute.maxValue} ${
-                                unitOfMeasures.find(
-                                  (u) => u.value === unitOfMeasureCode
-                                )?.label
-                              }`
-                            : null}
+                      <MeasurementLimits
+                        minValue={attribute.minValue}
+                        maxValue={attribute.maxValue}
+                        unit={
+                          unitOfMeasures.find(
+                            (u) => u.value === unitOfMeasureCode
+                          )?.label
+                        }
+                      />
                     </span>
                   )}
                 </VStack>
@@ -2409,20 +2410,18 @@ function StepsListItem({
           )}
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteJobOperationStep(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={name}
-          text={`Are you sure you want to delete the ${name} attribute from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteJobOperationStep(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={name}
+        text={`Are you sure you want to delete the ${name} attribute from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }
@@ -2492,10 +2491,16 @@ function PreviewStepRecord({
   return (
     <>
       {attribute.type === "Task" && (
-        <Checkbox checked={record.booleanValue ?? false} />
+        <Checkbox
+          checked={record.booleanValue ?? false}
+          aria-label={attribute.name}
+        />
       )}
       {attribute.type === "Checkbox" && (
-        <Checkbox checked={record.booleanValue ?? false} />
+        <Checkbox
+          checked={record.booleanValue ?? false}
+          aria-label={attribute.name}
+        />
       )}
       {attribute.type === "Value" && <p className="text-sm">{record.value}</p>}
       {attribute.type === "Measurement" &&
@@ -2559,7 +2564,10 @@ function PreviewStepRecord({
               </a>
             </>
           )}
-          <Checkbox checked={record.booleanValue ?? false} />
+          <Checkbox
+            checked={record.booleanValue ?? false}
+            aria-label={attribute.name}
+          />
         </div>
       )}
     </>
@@ -2767,20 +2775,18 @@ function ParametersListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteJobOperationParameter(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={key}
-          text={`Are you sure you want to delete the ${key} parameter from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteJobOperationParameter(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={key}
+        text={`Are you sure you want to delete the ${key} parameter from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }
@@ -3186,6 +3192,7 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
+                  aria-expanded={setupDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     setupDisclosure.isOpen ? t`Collapse Setup` : t`Expand Setup`
@@ -3268,6 +3275,7 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
+                  aria-expanded={laborDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     laborDisclosure.isOpen ? t`Collapse Labor` : t`Expand Labor`
@@ -3351,6 +3359,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={machineDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       machineDisclosure.isOpen
@@ -3428,6 +3437,7 @@ function OperationForm({
               </HStack>
               <HStack>
                 <IconButton
+                  aria-expanded={costingDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     costingDisclosure.isOpen
@@ -3522,6 +3532,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={procedureDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       procedureDisclosure.isOpen
@@ -3576,13 +3587,12 @@ function OperationForm({
                       >
                         Sync Procedure
                       </Button>
-                      {procedureSyncDisclosure.isOpen && (
-                        <ProcedureSyncModal
-                          operationId={item.id}
-                          procedureId={processData.procedureId}
-                          onClose={procedureSyncDisclosure.onClose}
-                        />
-                      )}
+                      <ProcedureSyncModal
+                        open={procedureSyncDisclosure.isOpen}
+                        operationId={item.id}
+                        procedureId={processData.procedureId}
+                        onClose={procedureSyncDisclosure.onClose}
+                      />
                     </div>
                   </div>
                 )}
@@ -3611,6 +3621,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={assemblyDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       assemblyDisclosure.isOpen
@@ -3669,15 +3680,14 @@ function OperationForm({
                         >
                           Sync Assembly Steps
                         </Button>
-                        {assemblySyncDisclosure.isOpen && (
-                          <AssemblyStepsSyncModal
-                            operationId={item.id}
-                            assemblyInstructionId={
-                              processData.assemblyInstructionId
-                            }
-                            onClose={assemblySyncDisclosure.onClose}
-                          />
-                        )}
+                        <AssemblyStepsSyncModal
+                          open={assemblySyncDisclosure.isOpen}
+                          operationId={item.id}
+                          assemblyInstructionId={
+                            processData.assemblyInstructionId
+                          }
+                          onClose={assemblySyncDisclosure.onClose}
+                        />
                       </div>
                     </div>
                   )}
@@ -3721,41 +3731,32 @@ function OperationForm({
           )}
         </>
       )}
-      <motion.div
-        className="flex w-full items-center justify-end p-2"
-        initial={{ opacity: 0, filter: "blur(4px)" }}
-        animate={{ opacity: 1, filter: "blur(0px)" }}
-        transition={{
-          type: "spring",
-          bounce: 0,
-          duration: 0.25
-        }}
-      >
+      <div className="flex w-full items-center justify-end p-2">
         <motion.div layout className="ml-auto mr-1 pt-2">
           <Submit isDisabled={isDisabled}>
             <Trans>Save</Trans>
           </Submit>
         </motion.div>
-      </motion.div>
+      </div>
     </ValidatedForm>
   );
 }
 
-function ProcedureSyncModal({
-  operationId,
-  procedureId,
-  onClose
-}: {
+type ProcedureSyncModalProps = {
+  open?: boolean;
   operationId: string;
   procedureId: string;
   onClose: () => void;
-}) {
-  const fetcher = useAction<typeof syncProcedureAction>({
-    onSuccess: onClose
-  });
+};
+
+function ProcedureSyncModal({
+  open = true,
+  onClose,
+  ...props
+}: ProcedureSyncModalProps) {
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();
@@ -3763,62 +3764,99 @@ function ProcedureSyncModal({
       }}
     >
       <ModalContent>
-        <ValidatedForm
-          validator={procedureSyncValidator}
-          action={path.to.jobOperationProcedureSync}
-          method="post"
-          fetcher={fetcher}
-          defaultValues={{
-            operationId,
-            procedureId
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Are you sure?</Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody className="py-4">
-            <Hidden name="operationId" />
-            <Hidden name="procedureId" />
-            <Alert variant="warning">
-              <LuTriangleAlert className="h-4 w-4" />
-              <AlertTitle>
-                <Trans>Potential Data Loss</Trans>
-              </AlertTitle>
-              <AlertDescription>
-                Syncing the procedure will update the operation with the new
-                work instructions, steps, and parameters. Any steps that are not
-                part of the procedure will be removed.
-              </AlertDescription>
-            </Alert>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Submit
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-            >
-              Sync
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
+        <ProcedureSyncBody onClose={onClose} {...props} />
       </ModalContent>
     </Modal>
   );
 }
 
-function AssemblyStepsSyncModal({
+function ProcedureSyncBody({
   operationId,
-  assemblyInstructionId,
+  procedureId,
   onClose
-}: {
+}: Omit<ProcedureSyncModalProps, "open">) {
+  const fetcher = useAction<typeof syncProcedureAction>({
+    onSuccess: onClose
+  });
+  return (
+    <ValidatedForm
+      validator={procedureSyncValidator}
+      action={path.to.jobOperationProcedureSync}
+      method="post"
+      fetcher={fetcher}
+      defaultValues={{
+        operationId,
+        procedureId
+      }}
+    >
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Are you sure?</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody className="py-4">
+        <Hidden name="operationId" />
+        <Hidden name="procedureId" />
+        <Alert variant="warning">
+          <LuTriangleAlert className="h-4 w-4" />
+          <AlertTitle>
+            <Trans>Potential Data Loss</Trans>
+          </AlertTitle>
+          <AlertDescription>
+            Syncing the procedure will update the operation with the new work
+            instructions, steps, and parameters. Any steps that are not part of
+            the procedure will be removed.
+          </AlertDescription>
+        </Alert>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Submit
+          isLoading={fetcher.state !== "idle"}
+          isDisabled={fetcher.state !== "idle"}
+        >
+          Sync
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
+  );
+}
+
+type AssemblyStepsSyncModalProps = {
+  open?: boolean;
   operationId: string;
   assemblyInstructionId: string;
   onClose: () => void;
-}) {
+};
+
+function AssemblyStepsSyncModal({
+  open = true,
+  onClose,
+  ...props
+}: AssemblyStepsSyncModalProps) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent>
+        <AssemblyStepsSyncBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function AssemblyStepsSyncBody({
+  operationId,
+  assemblyInstructionId,
+  onClose
+}: Omit<AssemblyStepsSyncModalProps, "open">) {
   const { t } = useLingui();
   const fetcher = useAction<typeof syncAssemblyAction>({
     onSuccess: ({ data }) => {
@@ -3835,57 +3873,46 @@ function AssemblyStepsSyncModal({
     }
   });
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
+    <ValidatedForm
+      validator={syncAssemblyToBopValidator}
+      action={path.to.assemblySyncBop(assemblyInstructionId)}
+      method="post"
+      fetcher={fetcher}
+      defaultValues={{
+        operationId
       }}
     >
-      <ModalContent>
-        <ValidatedForm
-          validator={syncAssemblyToBopValidator}
-          action={path.to.assemblySyncBop(assemblyInstructionId)}
-          method="post"
-          fetcher={fetcher}
-          defaultValues={{
-            operationId
-          }}
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Are you sure?</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody className="py-4">
+        <Hidden name="operationId" />
+        <Alert variant="warning">
+          <LuTriangleAlert className="h-4 w-4" />
+          <AlertTitle>
+            <Trans>Potential Data Loss</Trans>
+          </AlertTitle>
+          <AlertDescription>
+            Syncing updates the operation's steps from the assembly instruction.
+            Steps previously synced from an instruction are updated or removed
+            to match; hand-authored steps are kept.
+          </AlertDescription>
+        </Alert>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Submit
+          isLoading={fetcher.state !== "idle"}
+          isDisabled={fetcher.state !== "idle"}
         >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Are you sure?</Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody className="py-4">
-            <Hidden name="operationId" />
-            <Alert variant="warning">
-              <LuTriangleAlert className="h-4 w-4" />
-              <AlertTitle>
-                <Trans>Potential Data Loss</Trans>
-              </AlertTitle>
-              <AlertDescription>
-                Syncing updates the operation's steps from the assembly
-                instruction. Steps previously synced from an instruction are
-                updated or removed to match; hand-authored steps are kept.
-              </AlertDescription>
-            </Alert>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Submit
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-            >
-              Sync
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+          Sync
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 
@@ -4065,20 +4092,18 @@ function ToolsListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteJobOperationTool(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={tool.readableIdWithRevision}
-          text={`Are you sure you want to delete ${tool.readableIdWithRevision} from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteJobOperationTool(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={tool.readableIdWithRevision}
+        text={`Are you sure you want to delete ${tool.readableIdWithRevision} from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }

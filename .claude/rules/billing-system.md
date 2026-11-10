@@ -237,9 +237,8 @@ whom it deleted.
     documents then fails, and is logged and skipped. So does the last company in a group,
     because its group's system accounts refuse deletion and the group would be stranded.
   - BEFORE the transaction, `removeCompanyFiles` drains and deletes the per-company
-    bucket (already missing counts as done), legacy files under `private/<companyId>/` and
-    legacy audit-log archives under `private/audit-logs/<companyId>/` (listed strictly, so a
-    listing error is a failure). Never inside it: storage deletes
+    bucket (already missing counts as done; listed strictly, so a listing error is a
+    failure). Never inside it: storage deletes
     its object rows on its own connection, `delete_orphaned_documents` then deletes the
     matching `document` rows, and when the open purge transaction has already deleted
     those rows storage waits on it until it times out (HTTP 544) and the purge rolls

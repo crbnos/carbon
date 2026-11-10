@@ -94,6 +94,7 @@ import {
   isSalesOrderLocked,
   salesOrderLineValidator
 } from "../../sales.models";
+import { methodTakesConfiguration } from "../../sales.utils";
 import type {
   PriceTraceStep,
   SalesOrder,
@@ -107,12 +108,14 @@ type SalesOrderLineFormProps = {
     assetName?: string;
   };
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const SalesOrderLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose
 }: SalesOrderLineFormProps) => {
   const { t, i18n } = useLingui();
@@ -193,7 +196,9 @@ const SalesOrderLineForm = ({
     configuration: initialValues.configuration as ConfiguratorValues | null
   });
   const { configuration } = configurator;
-  const requiresConfiguration = configurator.parameters !== null;
+  const requiresConfiguration =
+    configurator.parameters !== null &&
+    methodTakesConfiguration(itemData.methodType);
 
   const isEditing = initialValues.id !== undefined;
   const isFixedAsset = initialValues.salesOrderLineType === "Fixed Asset";
@@ -407,7 +412,8 @@ const SalesOrderLineForm = ({
           carbon,
           itemId,
           locationId,
-          company.id
+          company.id,
+          { source: true }
         )
       : null;
 
@@ -485,7 +491,8 @@ const SalesOrderLineForm = ({
       carbon,
       itemData.itemId,
       newLocation.value,
-      company.id
+      company.id,
+      { source: true }
     );
 
     setItemData((d) => ({
@@ -506,6 +513,7 @@ const SalesOrderLineForm = ({
       >
         <ModalCardProvider type={type}>
           <ModalCard
+            open={open}
             onClose={onClose}
             isCollapsible={isEditing}
             defaultCollapsed={false}
@@ -895,6 +903,7 @@ const SalesOrderLineForm = ({
                                   ))}
 
                                 <IconButton
+                                  aria-expanded={costsDisclosure.isOpen}
                                   icon={<LuChevronRight />}
                                   aria-label={
                                     costsDisclosure.isOpen
@@ -1067,6 +1076,7 @@ const SalesOrderLineForm = ({
                                 </Badge>
                               )}
                               <IconButton
+                                aria-expanded={assetCostsDisclosure.isOpen}
                                 icon={<LuChevronRight />}
                                 aria-label={
                                   assetCostsDisclosure.isOpen
@@ -1159,7 +1169,7 @@ const SalesOrderLineForm = ({
                   )}
                 </ModalCardBody>
                 <ModalCardFooter>
-                  {activeTab === "item" && (
+                  {activeTab === "item" && requiresConfiguration && (
                     <ItemConfigureButton
                       configurator={configurator}
                       isDisabled={

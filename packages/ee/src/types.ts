@@ -171,6 +171,14 @@ export type IntegrationServerHooks = {
    */
   onUninstall?: (companyId: string) => void | Promise<void>;
   /**
+   * Workflow pieces only: after the connect callback saves a NEW account (not a
+   * Reconnect). Best-effort: the connection is already saved.
+   */
+  onConnect?: (connection: {
+    accessToken: string;
+    metadata: Record<string, unknown>;
+  }) => Promise<void>;
+  /**
    * Server-side validation hook to check integration health/credentials.
    * Returns true if the integration is healthy, false otherwise, or a result
    * whose `reason` tells the person what failed and where to fix it.
@@ -201,6 +209,15 @@ export type IntegrationConfig = {
    * Defaults to true if not specified.
    */
   active?: boolean;
+  /**
+   * Installable on Carbon Cloud by Carbon staff, in any company, and by the
+   * users the `integration-early-access` flag is on for, in the companies its
+   * rules name, while the integration is rolled out. Everyone else sees a
+   * "Coming soon" card. The install then works for that company like any
+   * other. See `isIntegrationComingSoon` (`plan.ts`) and
+   * `hasIntegrationEarlyAccess` (`plan.server.ts`).
+   */
+  internalOnly?: boolean;
   /** Category for grouping in the UI (e.g., "Accounting", "CAD", "Email") */
   category: string;
   /**
@@ -218,8 +235,9 @@ export type IntegrationConfig = {
    * anything.
    */
   providerRole?: "accounting" | "spend" | "oee";
-  /** Logo component for the integration */
-  logo: React.FC<React.ComponentProps<"svg">>;
+  /** Logo component for the integration. Consumers pass only `className`, so an
+   * SVG component and a piece's CDN `<img>` (`pieceLogo`) both satisfy it. */
+  logo: React.FC<{ className?: string }>;
   /** Brief one-liner description */
   shortDescription: string;
   /** Full description explaining the integration */

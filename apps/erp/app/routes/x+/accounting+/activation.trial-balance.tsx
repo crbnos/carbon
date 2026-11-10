@@ -454,7 +454,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   return data(
     {},
-    await flash(request, error(intent, "Unknown trial balance action"))
+    await flash(request, error(null, "Unknown trial balance action"))
   );
 }
 

@@ -6,9 +6,10 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { datetime, getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { fixedAssetReturnToInventoryValidator } from "~/modules/accounting/accounting.models";
 import { invokeAssetTransfer } from "~/modules/accounting/accounting.service";
 import { FixedAssetReturnToInventoryForm } from "~/modules/accounting/ui/FixedAssets";
@@ -144,14 +145,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function ReturnFixedAssetToInventoryRoute() {
   const { currentNBV, itemId, initialValues } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog();
 
   return (
     <FixedAssetReturnToInventoryForm
       initialValues={initialValues}
       currentNBV={currentNBV}
       itemId={itemId}
-      onClose={() => navigate(-1)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

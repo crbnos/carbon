@@ -15,6 +15,7 @@ import {
   upsertItemSerialSequence
 } from "~/modules/settings/settings.service";
 import { ItemSerialSequenceForm } from "~/modules/settings/ui";
+import { SINGLE_LOAD_LIMIT } from "~/utils/pagination";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -26,7 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Items that already have a sequence can't get a second one.
   const existing = await getItemSerialSequences(client, companyId, {
     search: null,
-    limit: 1000,
+    limit: SINGLE_LOAD_LIMIT,
     offset: 0,
     sorts: [],
     filters: []

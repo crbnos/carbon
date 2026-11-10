@@ -9,6 +9,7 @@ import { getIntegrationIdsByRole, integrations } from "@carbon/ee";
 import { redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { buildIntegrationOAuthUrl } from "~/modules/settings/integration-oauth";
+import { isIntegrationInstallWithheld } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 // nodejs runtime: issuing the signed state cookie.
@@ -29,7 +30,7 @@ export const config = {
  * parameter the callback reads back.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { userId, companyId, client } = await authorize(request, {
+  const { userId, companyId, client, email } = await authorize(request, {
     "settings.integrations": "Edit"
   });
 
@@ -46,6 +47,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!oauth) {
     return redirectExternal(
       `${getAppUrl()}${path.to.integrations}?error=not-oauth&integration=${integrationId}`
+    );
+  }
+
+  if (
+    await isIntegrationInstallWithheld(client, {
+      companyId,
+      integrationId,
+      email,
+      userId
+    })
+  ) {
+    return redirectExternal(
+      `${getAppUrl()}${path.to.integrations}?error=coming-soon&integration=${integrationId}`
     );
   }
 

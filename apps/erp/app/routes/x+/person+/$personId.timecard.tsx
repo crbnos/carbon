@@ -306,6 +306,7 @@ export default function PersonTimecardRoute() {
     id: string;
     clockIn: string;
   } | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   // Update live durations every minute
   useEffect(() => {
@@ -471,7 +472,7 @@ export default function PersonTimecardRoute() {
                     value={addDate}
                     onValueChange={(value) => setAddDate(value)}
                   >
-                    <SelectTrigger size="sm">
+                    <SelectTrigger size="sm" aria-label={t`Date`}>
                       <SelectValue placeholder={t`Date`} />
                     </SelectTrigger>
                     <SelectContent>
@@ -674,12 +675,13 @@ export default function PersonTimecardRoute() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             shortcut={MENU_ITEM_SHORTCUTS.delete}
-                            onClick={() =>
+                            onClick={() => {
                               setDeletingEntry({
                                 id: entry.id,
                                 clockIn: entry.clockIn
-                              })
-                            }
+                              });
+                              setIsDeleteOpen(true);
+                            }}
                             className="text-destructive"
                           >
                             <DropdownMenuIcon icon={<LuTrash />} />
@@ -705,13 +707,14 @@ export default function PersonTimecardRoute() {
         <ConfirmDelete
           name={`Timecard (${new Date(deletingEntry.clockIn).toLocaleString(locale)})`}
           text={t`Are you sure you want to delete this timecard? This cannot be undone.`}
-          onCancel={() => setDeletingEntry(null)}
+          isOpen={isDeleteOpen}
+          onCancel={() => setIsDeleteOpen(false)}
           onSubmit={() => {
             const formData = new FormData();
             formData.append("intent", "deleteEntry");
             formData.append("entryId", deletingEntry.id);
             fetcher.submit(formData, { method: "post" });
-            setDeletingEntry(null);
+            setIsDeleteOpen(false);
           }}
         />
       )}

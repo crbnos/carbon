@@ -10,7 +10,11 @@ import { validationError, validator } from "@carbon/form";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
 import { data, useLoaderData } from "react-router";
 import { PersonPreview, PersonSidebar } from "~/modules/people/ui/Person";
 import {
@@ -18,6 +22,7 @@ import {
   updatePublicAccount
 } from "~/modules/users/users.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -30,6 +35,9 @@ export const handle: Handle = {
   // route, e.g. tool+/$itemId.tsx). Without it, viewing a person never records.
   module: "people"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.employeeSummary?.name, "Person");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, api } = await authorize(request, {

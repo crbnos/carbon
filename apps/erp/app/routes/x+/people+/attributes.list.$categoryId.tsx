@@ -5,10 +5,10 @@
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { RecordOutlet } from "@carbon/react";
+import { RecordOutlet, useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
 import { useUrlParams } from "~/hooks";
 import { updateAttributeSortOrder } from "~/modules/people/people.service";
 import { AttributeCategoryDetail } from "~/modules/people/ui/Attributes";
@@ -68,7 +68,10 @@ export async function action({ request }: ActionFunctionArgs) {
       {},
       await flash(
         request,
-        error(updateSortOrders, "Failed to update sort order")
+        error(
+          updateSortOrders.find((update) => update.error)?.error,
+          "Failed to update sort order"
+        )
       )
     );
 
@@ -78,14 +81,14 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function AttributeCategoryListRoute() {
   const { attributeCategory } = useLoaderData<typeof loader>();
   const [params] = useUrlParams();
-  const navigate = useNavigate();
-  const onClose = () => navigate(`${path.to.attributes}?${params.toString()}`);
+  const dialog = useRouteDialog(`${path.to.attributes}?${params.toString()}`);
 
   return (
     <>
       <AttributeCategoryDetail
         attributeCategory={attributeCategory}
-        onClose={onClose}
+        open={dialog.open}
+        onClose={dialog.close}
       />
       <RecordOutlet />
     </>

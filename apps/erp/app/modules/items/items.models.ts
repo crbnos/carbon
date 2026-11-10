@@ -2,10 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { isChangeNoticeLocked } from "@carbon/database/change-notice";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { nonConformancePriority } from "../quality/quality.models";
+import type { DiffEntry, DiffStatus } from "../shared/diff";
 import {
   methodItemType,
   methodOperationOrders,
@@ -64,6 +66,44 @@ export const itemReplenishmentSystems = [
   "Make",
   "Buy and Make"
 ] as const;
+
+/** The fields the item tables' bulk Update sets on many items at once. */
+export const itemBulkUpdateFields = [
+  "itemPostingGroupId",
+  "replenishmentSystem",
+  "defaultMethodType",
+  "sourcingType",
+  "itemTrackingType"
+] as const;
+
+export type ItemBulkUpdateField = (typeof itemBulkUpdateFields)[number];
+
+export function isItemBulkUpdateField(
+  field: unknown
+): field is ItemBulkUpdateField {
+  return itemBulkUpdateFields.some((allowed) => allowed === field);
+}
+
+/** One field set on many items (the items tables' Update): the field and a
+ *  value it takes. Any item group id, or none, is a value. */
+export const itemBulkUpdateValidator = z.discriminatedUnion("field", [
+  z.object({
+    field: z.literal("itemTrackingType"),
+    value: z.enum(itemTrackingTypes)
+  }),
+  z.object({
+    field: z.literal("replenishmentSystem"),
+    value: z.enum(itemReplenishmentSystems)
+  }),
+  z.object({
+    field: z.literal("defaultMethodType"),
+    value: z.enum(methodType)
+  }),
+  z.object({ field: z.literal("sourcingType"), value: z.enum(sourcingType) }),
+  z.object({ field: z.literal("itemPostingGroupId"), value: z.string() })
+]);
+
+export type ItemBulkUpdate = z.infer<typeof itemBulkUpdateValidator>;
 
 // Maps an edit of ONE of the three interlocked item-level fields
 // (replenishmentSystem, defaultMethodType, sourcingType) to the columns that must
@@ -210,10 +250,10 @@ export const itemValidator = z.object({
   // itemShelfLife row. Truly absent fields (non-form callers like MCP that
   // don't set shelfLifeMode at all) remain undefined, which the upsert
   // helper treats as a no-op.
-  shelfLifeMode: z.preprocess(
-    (v) => (v === "" ? "NotManaged" : v),
-    z.enum(shelfLifeModes).optional()
-  ),
+  shelfLifeMode: z
+    .union([z.literal(""), z.enum(shelfLifeModes)])
+    .transform((v) => (v === "" ? "NotManaged" : v))
+    .optional(),
   shelfLifeDays: zfd.numeric(z.number().positive().optional()),
   shelfLifeTriggerProcessId: zfd.text(z.string().optional()),
   // Whether the clock starts when the trigger process begins ('Before') or
@@ -651,7 +691,10 @@ export const itemPlanningValidator = z
     planningHorizonDays: zfd.numeric(z.number().int().min(0).optional()),
     // the ownership ladder's leaf override (spec §P1.3): this item at this
     // location; empty = inherit item group → location → company default
-    responsibleEmployee: zfd.text(z.string().optional())
+    responsibleEmployee: zfd.text(z.string().optional()),
+    // Projects Phase 2b: whether a project segment may draw this item's
+    // common true surplus at this location (MRP emits a Transfer action).
+    allowCommonSupplyForProjects: zfd.checkbox()
     // critical: zfd.checkbox(),
   })
   .refine(
@@ -811,9 +854,21 @@ export const itemPurchasingValidator = z.object({
   // purchasingBlocked: zfd.checkbox(),
 });
 
+const warrantyMonths = zfd.numeric(
+  z
+    .number()
+    .int({ message: "Enter whole months" })
+    .min(0, { message: "Enter 0 or more months" })
+    .optional()
+);
+
 export const itemUnitSalePriceValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
-  unitSalePrice: zfd.numeric(z.number().min(0))
+  unitSalePrice: zfd.numeric(z.number().min(0)),
+  /** Months of labor warranty a shipped serial gets; sets its asset's end date. */
+  laborWarrantyMonths: warrantyMonths,
+  /** Months of parts warranty a shipped serial gets. */
+  partsWarrantyMonths: warrantyMonths
   // currencyCode: z.string().min(1, { message: "Currency is required" }),
   // salesUnitOfMeasureCode: z
   //   .string()
@@ -1193,13 +1248,8 @@ export function isChangeNoticeOpen(status: string | null | undefined): boolean {
   return changeNoticeOpenStatuses.some((s) => s === status);
 }
 
-// Locked once closed — Done (released, part of the audit trail) or Cancelled
-// (abandoned). Reopen a Cancelled CO to Draft to edit it again.
-export function isChangeNoticeLocked(
-  status: string | null | undefined
-): boolean {
-  return status === "Done" || status === "Cancelled";
-}
+// isChangeNoticeLocked lives in @carbon/database so the issue sync can share it.
+export { isChangeNoticeLocked };
 
 // Engineering content — affected items, BOM/BOP drafts, cutover, reason/description.
 // Frozen from Implementation onward: what is being implemented must not shift underneath.
@@ -1332,15 +1382,11 @@ export const changeNoticeRequiredActionValidator = z.object({
 // Diff types (Q5 git-style) — one shape reused for the pre-release "tips"
 // (staged-vs-live) and the post-release revision redline (oldRev-vs-newRev).
 // -----------------------------------------------------------------------------
-export type MethodDiffStatus = "added" | "removed" | "modified" | "unchanged";
+// The generic engine lives in `../shared/diff`; these names stay for the
+// change-notice callers.
+export type MethodDiffStatus = DiffStatus;
 
-export type MethodDiffEntry<T> = {
-  status: MethodDiffStatus;
-  before: T | null;
-  after: T | null;
-  // Field-level changes for a "modified" entry: { field: { before, after } }.
-  changedFields?: Record<string, { before: unknown; after: unknown }>;
-};
+export type MethodDiffEntry<T> = DiffEntry<T>;
 
 // One operation's child-level diff (steps / parameters / tools), each bucket
 // classified added/removed/modified/unchanged. Defined here (not in

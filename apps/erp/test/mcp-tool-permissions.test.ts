@@ -283,6 +283,9 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   sales_deliverRentalUnit: { module: null, actions: [] },
   sales_returnRentalUnit: { module: null, actions: [] },
   sales_sellRentalUnit: { module: null, actions: [] },
+  // A part CLIN's delivery: Contracts AND Shipments, which the API cannot
+  // name as one page, so its own gate checks both.
+  sales_deliverContractLine: { module: null, actions: [] },
   // The classification override is an accounting decision.
   sales_classifyRentalUnit: {
     module: "accounting", page: "accounting.revenueRecognition",
@@ -331,7 +334,66 @@ const OVERRIDES: Record<string, Tool["permission"]> = {
   shared_enrollImplementationHub: {
     module: "settings", page: "settings.company",
     actions: ["view", "create", "update"]
-  }
+  },
+  // Project states and labels are company-wide settings: Settings → Projects.
+  projects_upsertProjectState: {
+    module: "settings", page: "settings.projects",
+    actions: ["view", "create", "update"]
+  },
+  projects_deleteProjectState: {
+    module: "settings", page: "settings.projects",
+    actions: ["view", "create", "update"]
+  },
+  projects_setProjectStateDefault: {
+    module: "settings", page: "settings.projects",
+    actions: ["view", "create", "update"]
+  },
+  projects_upsertProjectLabel: {
+    module: "settings", page: "settings.projects",
+    actions: ["view", "create", "update"]
+  },
+  projects_deleteProjectLabel: {
+    module: "settings", page: "settings.projects",
+    actions: ["view", "create", "update"]
+  },
+  // A member deletes their own comment on an element they can view: the
+  // comments route needs View on Projects, and the delete runs as the caller,
+  // so RLS limits it to the author.
+  projects_deleteProjectElementComment: read("projects.projects"),
+  // An employee corrects their own posted time (the My Time route requires
+  // the employee role); the function refuses an entry that is not the
+  // caller's.
+  projects_createTimesheetCorrection: { module: null, actions: [] },
+  // Your own time needs company membership, as the My Time routes do. Saving
+  // another employee's week is decided in the function's body.
+  projects_logTimesheetEntry: { module: null, actions: [] },
+  projects_saveTimesheetEntry: { module: null, actions: [] },
+  service_setServiceJobDayHours: { module: null, actions: [] },
+  // Each needs two pages, as its route does, so the function's own gate
+  // checks them. A Kysely read or a posting has no RLS behind that gate.
+  projects_postProjectIssue: { module: null, actions: [] },
+  projects_placeProjectAssetsInService: { module: null, actions: [] },
+  projects_getLaborDistribution: { module: null, actions: [] },
+  projects_getLaborDistributionPeriods: { module: null, actions: [] },
+  projects_getRdSection174AReport: { module: null, actions: [] },
+  projects_getRdForm6765GReport: { module: null, actions: [] },
+  sales_buildContractLineJob: { module: null, actions: [] },
+  sales_createProjectBillingInvoices: { module: null, actions: [] },
+  // Creating and editing a labor category need different permissions, and
+  // contract billing needs projects AND sales, which the API cannot name as
+  // one page, so each function's own gate checks them.
+  projects_upsertLaborCategory: { module: null, actions: [] },
+  projects_getContractBillableItems: { module: null, actions: [] },
+  projects_getContractBillingLines: { module: null, actions: [] },
+  projects_updateProjectBillableItems: { module: null, actions: [] },
+  // Changing a warranty return line to a billable service line edits the RMA
+  // (sales) AND re-posts the job's coverage (service); the API cannot name
+  // two pages, so the operation's own gate checks both.
+  sales_changeReturnLineToService: { module: null, actions: [] },
+  // Invoicing a completed service job needs Edit on Service Jobs AND
+  // Create on Sales Invoices (the old service order invoice's rule); the operation's
+  // own gate checks both.
+  service_createServiceInvoice: { module: null, actions: [] }
 };
 
 const tools = allTools.filter((t) => !(t.name in OVERRIDES));
@@ -522,7 +584,7 @@ describe("gates the row decides", () => {
         ).length
       ])
     );
-    expect(counts).toEqual({ parts: 115, invoicing: 8, accounting: 7 });
+    expect(counts).toEqual({ parts: 116, invoicing: 8, accounting: 7 });
   });
 
   it("lets Tools at Edit change a tool's bill of material: the method's item picks the page", () => {

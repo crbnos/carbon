@@ -12,7 +12,7 @@ import type {
   ElementRef,
   HTMLAttributes
 } from "react";
-import { forwardRef } from "react";
+import { forwardRef, useEffect } from "react";
 
 import { LuX } from "react-icons/lu";
 import { ActionPresentationBoundary } from "./ActionPresentation";
@@ -22,7 +22,9 @@ import {
   DialogRoot,
   useDialogDismissable
 } from "./Modal";
+import { ReportDialogExit } from "./RouteDialogScope";
 import { cn } from "./utils/cn";
+import { returnFocusOnClose, trackPageFocus } from "./utils/dialog";
 import { usePhoneOpenAutoFocus, useViewport } from "./Viewport";
 
 const Drawer = DialogRoot;
@@ -70,7 +72,7 @@ const DrawerOverlay = forwardRef<
   <DialogPrimitive.Overlay
     data-backdrop=""
     className={cn(
-      "fixed inset-0 z-50 bg-black/20 max-md:bg-black/40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-black/20 max-md:bg-black/40 data-[state=closed]:!pointer-events-none data-[state=open]:duration-300 data-[state=closed]:duration-200 ease-drawer data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props}
@@ -98,16 +100,16 @@ DrawerBody.displayName = "DrawerBody";
 // Phones show every drawer as a bottom sheet, so it also slides up from the
 // bottom whatever its desktop side.
 const sheetVariants = cva(
-  "flex flex-col z-50 scale-100 bg-accent dark:bg-card opacity-100 shadow-button-base dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)] border border-border transition-[background-color,box-shadow,border-color] duration-100 focus-visible:outline-none focus-visible:ring-0 rounded-xl max-md:max-h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:w-full max-md:max-w-none max-md:overflow-hidden max-md:rounded-t-[14px] max-md:rounded-b-none max-md:border-0 max-md:bg-card max-md:h-auto max-md:[&>form]:min-h-0 max-md:data-[state=open]:[--tw-enter-translate-x:0] max-md:data-[state=open]:[--tw-enter-translate-y:100%] max-md:data-[state=closed]:[--tw-exit-translate-x:0] max-md:data-[state=closed]:[--tw-exit-translate-y:100%]",
+  "data-[state=closed]:!pointer-events-none flex flex-col z-50 scale-100 bg-accent dark:bg-card opacity-100 shadow-button-base dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)] border border-border transition-[background-color,box-shadow,border-color] duration-100 focus-visible:outline-none focus-visible:ring-0 rounded-xl max-md:max-h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:w-full max-md:max-w-none max-md:overflow-hidden max-md:rounded-t-[14px] max-md:rounded-b-none max-md:border-0 max-md:bg-card max-md:h-auto max-md:[&>form]:min-h-0 max-md:data-[state=open]:[--tw-enter-translate-x:0] max-md:data-[state=open]:[--tw-enter-translate-y:100%] max-md:data-[state=closed]:[--tw-exit-translate-x:0] max-md:data-[state=closed]:[--tw-exit-translate-y:100%]",
   {
     variants: {
       position: {
-        top: "data-[state=open]:animate-in data-[state=open]:slide-in-from-top data-[state=closed]:animate-out data-[state=closed]:slide-out-to-top data-[state=closed]:duration-200 w-full duration-300 ease-out",
+        top: "data-[state=open]:animate-in data-[state=open]:slide-in-from-top data-[state=closed]:animate-out data-[state=closed]:slide-out-to-top data-[state=closed]:duration-200 w-full data-[state=open]:duration-300 ease-drawer",
         bottom:
-          "data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=closed]:duration-200 w-full duration-300 ease-out",
-        left: "data-[state=open]:animate-in data-[state=open]:slide-in-from-left data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=closed]:duration-200 h-full duration-300 ease-out",
+          "data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=closed]:duration-200 w-full data-[state=open]:duration-300 ease-drawer",
+        left: "data-[state=open]:animate-in data-[state=open]:slide-in-from-left data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=closed]:duration-200 h-full data-[state=open]:duration-300 ease-drawer",
         right:
-          "data-[state=open]:animate-in data-[state=open]:slide-in-from-right data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=closed]:duration-200 h-full duration-300 ease-out"
+          "data-[state=open]:animate-in data-[state=open]:slide-in-from-right data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=closed]:duration-200 h-full data-[state=open]:duration-300 ease-drawer"
       },
       size: {
         content: "",
@@ -208,10 +210,12 @@ const DrawerContent = forwardRef<
       container,
       className,
       children,
+      onCloseAutoFocus,
       ...props
     },
     ref
   ) => {
+    useEffect(trackPageFocus, []);
     const dismissable = useDialogDismissable();
     const { isPhone } = useViewport();
     const onOpenAutoFocus = usePhoneOpenAutoFocus(props.onOpenAutoFocus);
@@ -225,10 +229,12 @@ const DrawerContent = forwardRef<
               className={cn(sheetVariants({ position, size }), className)}
               {...props}
               onOpenAutoFocus={onOpenAutoFocus}
+              onCloseAutoFocus={returnFocusOnClose(onCloseAutoFocus)}
             >
               {isPhone && (
                 <div className="mx-auto mt-1.5 h-[5px] w-9 shrink-0 rounded-full bg-muted-foreground/20" />
               )}
+              <ReportDialogExit />
               <ActionPresentationBoundary>
                 {children}
               </ActionPresentationBoundary>

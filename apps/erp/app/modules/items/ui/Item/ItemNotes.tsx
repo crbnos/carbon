@@ -15,7 +15,7 @@ import {
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { useImageUpload, usePermissions, useUser } from "~/hooks";
 
@@ -30,6 +30,7 @@ const ItemNotes = ({
   subTitle: string;
   notes?: JSONContent;
 }) => {
+  const { t } = useLingui();
   const { id: userId } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
@@ -67,6 +68,7 @@ const ItemNotes = ({
         <CardContent>
           {permissions.has(anyOf(ITEM_PAGES, "Edit")) ? (
             <Editor
+              label={t`Notes`}
               initialValue={(notes ?? {}) as JSONContent}
               onUpload={onUploadImage}
               onChange={(value) => {

@@ -16,21 +16,37 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, { "people.employees": "View" });
+  const { api, client, companyId } = await authorize(request, {
+    "people.employees": "View"
+  });
 
   const { personId } = params;
   if (!personId) throw new Error("Could not find personId");
 
-  const job = await api.people.getEmployeeJob({ employeeId: personId });
+  // Project time adds fields to a job, shown only once the company uses it:
+  // it has a labor category.
+  const [job, laborCategories] = await Promise.all([
+    api.people.getEmployeeJob({ employeeId: personId }),
+    client
+      .from("laborCategory")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+  ]);
   if (job.error) {
+    // notFound (PGRST116 through unwrap): the person has no job record in this company.
+    const message =
+      job.error.category === "notFound"
+        ? "This person has no job record in this company"
+        : `Failed to load job: ${job.error.message}`;
     throw redirect(
       path.to.people,
-      await flash(request, error(job.error, "Failed to load job"))
+      await flash(request, error(job.error, message))
     );
   }
 
   return {
-    job: job.data
+    job: job.data,
+    usesProjectTime: (laborCategories.count ?? 0) > 0
   };
 }
 
@@ -43,6 +59,11 @@ export async function action(args: ActionFunctionArgs) {
   const { api } = await authorize(args.request);
   const result = await api.people.updatePersonJob({
     ...input.data,
+    // This form always renders both switches, and an unchecked switch posts
+    // nothing — so here a missing value is "off". (The validator keeps them
+    // optional for API callers, where a missing value keeps the stored flag.)
+    isOfficer: input.data.isOfficer ?? false,
+    timesheetRequired: input.data.timesheetRequired ?? false,
     employeeId: personId,
     customFields: input.formData && setCustomFields(input.formData)
   });
@@ -52,7 +73,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function PersonJobRoute() {
-  const { job } = useLoaderData<typeof loader>();
+  const { job, usesProjectTime } = useLoaderData<typeof loader>();
   const { personId } = useParams();
 
   const initialValues = {
@@ -62,8 +83,18 @@ export default function PersonJobRoute() {
     shiftId: job.shiftId ?? "",
     departmentId: job.departmentId ?? "",
     managerId: job.managerId ?? "",
+    laborCategoryId: job.laborCategoryId ?? "",
+    flsaStatus: job.flsaStatus ?? undefined,
+    isOfficer: job.isOfficer ?? false,
+    timesheetRequired: job.timesheetRequired ?? true,
     ...getCustomFields(job.customFields)
   };
 
-  return <PersonJob key={personId} initialValues={initialValues} />;
+  return (
+    <PersonJob
+      key={personId}
+      initialValues={initialValues}
+      usesProjectTime={usesProjectTime}
+    />
+  );
 }
