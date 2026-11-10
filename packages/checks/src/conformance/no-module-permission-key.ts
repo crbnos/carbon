@@ -51,7 +51,9 @@ export const LAST_MODULE_KEY_MIGRATION = "20261110050010";
 
 /**
  * Every migration that existed when the cutoff was set (all dated at or before
- * it): the only ones that may still name a module key. Never add to it.
+ * it), plus migrations merged from main later that the generated
+ * page-permissions migration, sorting after them, re-ships with page keys: the
+ * only ones that may still name a module key. Add nothing else to it.
  */
 export const MODULE_KEY_MIGRATIONS: ReadonlySet<string> = new Set(
   JSON.parse(

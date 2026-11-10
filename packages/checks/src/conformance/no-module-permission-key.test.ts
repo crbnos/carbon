@@ -2,6 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { readdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   LAST_MODULE_KEY_MIGRATION,
@@ -10,6 +13,18 @@ import {
 } from "./no-module-permission-key";
 
 const ROUTE = "apps/erp/app/routes/x+/inventory+/receipts.tsx";
+// The generated migration that re-ships every table's policies with page keys.
+const PAGE_PERMISSIONS_MIGRATION = readdirSync(
+  join(
+    dirname(fileURLToPath(import.meta.url)),
+    "../../../database/supabase/migrations"
+  )
+)
+  .filter((name) => name.endsWith("_page-permissions.sql"))
+  .sort()
+  .at(-1)
+  ?.slice(0, 14);
+
 const scan = (contents: string, file = ROUTE) =>
   noModulePermissionKey.scan(file, contents).map((v) => v.snippet);
 
@@ -120,9 +135,18 @@ describe("no-module-permission-key — SQL", () => {
     ).toEqual(["settings_update"]);
   });
 
-  it("freezes the list at the migrations dated at or before the cutoff", () => {
+  it("lists only migrations the page-permissions migration re-ships", () => {
+    // At or before the cutoff, or merged from main later and sorting before
+    // the generated page-permissions migration, which re-ships their tables.
+    expect(PAGE_PERMISSIONS_MIGRATION).toBeDefined();
     const dates = [...MODULE_KEY_MIGRATIONS].map((name) => name.slice(0, 14));
-    expect(dates.every((date) => date <= LAST_MODULE_KEY_MIGRATION)).toBe(true);
+    expect(
+      dates.every(
+        (date) =>
+          date <= LAST_MODULE_KEY_MIGRATION ||
+          date < PAGE_PERMISSIONS_MIGRATION!
+      )
+    ).toBe(true);
     expect(
       MODULE_KEY_MIGRATIONS.has(
         `${LAST_MODULE_KEY_MIGRATION}_module-keys-to-pages.sql`

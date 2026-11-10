@@ -12474,7 +12474,8 @@ async function loadItemBuildNodes(
     .from("methodMaterial")
     .select("id, makeMethodId")
     .in("makeMethodId", [...walkedMethods])
-    .eq("companyId", args.companyId);
+    .eq("companyId", args.companyId)
+    .is("methodCorrectionId", null);
   if (lines.error) throw lines.error;
   const skippedLines = (lines.data ?? []).filter(
     (line) => !shownByMethod.get(line.makeMethodId)?.has(line.id)

@@ -80,7 +80,7 @@ permissions:
    (`20261110050003`) and `access-migration.test.sql` keep their own copy as history.
 
 Done already: the dead `has_any_company_permission` and `get_my_permission` are dropped
-(`20261110113817_drop-dead-permission-helpers.sql`).
+(`20261111050001_drop-dead-permission-helpers.sql`).
 
 ## Validation Commands
 

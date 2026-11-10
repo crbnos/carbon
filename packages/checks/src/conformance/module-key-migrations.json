@@ -1424,5 +1424,7 @@
   "20261110050000_permission.sql",
   "20261110050003_convert-permissions-to-grants.sql",
   "20261110050005_printing-grants-to-settings-page.sql",
-  "20261110050010_module-keys-to-pages.sql"
+  "20261110050010_module-keys-to-pages.sql",
+  "20261110161530_method-corrections-policies.sql",
+  "20261110175143_job-corrections-policies.sql"
 ]

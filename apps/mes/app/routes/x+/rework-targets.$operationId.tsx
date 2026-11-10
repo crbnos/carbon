@@ -4,14 +4,25 @@
 
 import { authorize } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getUpstreamOperations } from "~/services/operations.service";
+import {
+  getOperationCorrections,
+  getUpstreamOperations
+} from "~/services/operations.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await authorize(request, {});
+  const { client, companyId } = await authorize(request, {});
   const { operationId } = params;
 
   if (!operationId) throw new Error("operationId is required");
 
-  const result = await getUpstreamOperations(client, operationId);
-  return { operations: result.data ?? [] };
+  const [result, corrections] = await Promise.all([
+    getUpstreamOperations(client, operationId),
+    getOperationCorrections(client, operationId, companyId)
+  ]);
+  return {
+    operations: result.data ?? [],
+    // The job's corrections for this operation's part, offered beside the
+    // earlier operations.
+    corrections: corrections.data ?? []
+  };
 }

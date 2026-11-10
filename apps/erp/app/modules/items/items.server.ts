@@ -1356,7 +1356,9 @@ export const recalculateItemCost = defineServiceFn({
             "*, ...process(processName:name), ...workCenter(workCenterName:name, laborRate, machineRate, overheadRate)"
           )
           .in("makeMethodId", makeMethodIds)
-          .eq("companyId", companyId),
+          .eq("companyId", companyId)
+          // Corrections are exceptional work, not part of the standard cost.
+          .is("methodCorrectionId", null),
         client
           .from("workCenters")
           .select("id, active, laborRate, machineRate, overheadRate, processes")

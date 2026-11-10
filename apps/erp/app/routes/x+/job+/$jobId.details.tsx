@@ -38,6 +38,7 @@ import {
   jobFormRefusalField,
   jobValidator
 } from "~/modules/production/production.models";
+import { getJobCorrections } from "~/modules/production/production.service";
 import type { Job, JobPurchaseOrderLine } from "~/modules/production/types";
 import {
   JobBillOfMaterial,
@@ -47,6 +48,7 @@ import {
   JobNotes,
   JobRiskRegister
 } from "~/modules/production/ui/Jobs";
+import JobCorrections from "~/modules/production/ui/Jobs/JobCorrections";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
 import { requireCompanyRecord } from "~/modules/shared/shared.service";
@@ -89,6 +91,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       materials: [],
       operations: [],
       makeMethod: null,
+      corrections: [],
       files: Promise.resolve([] as StorageItem[]),
       productionData: Promise.resolve({
         quantities: [],
@@ -101,10 +104,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const methodId = rootMethod.data.id;
 
-  const [materials, operations, makeMethod] = await Promise.all([
+  const [materials, operations, makeMethod, corrections] = await Promise.all([
     api.production.getJobMaterialsByMethodId({ jobMakeMethodId: methodId }),
     api.production.getJobOperationsByMethodId({ jobMakeMethodId: methodId }),
-    api.production.getJobMakeMethodById({ jobMakeMethodId: methodId })
+    api.production.getJobMakeMethodById({ jobMakeMethodId: methodId }),
+    getJobCorrections(client, methodId, companyId)
   ]);
 
   return {
@@ -129,6 +133,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workInstruction: o.workInstruction as JSONContent
       })) ?? [],
     makeMethod: makeMethod.data ?? null,
+    corrections: corrections.data ?? [],
     files: api.production
       .getJobDocumentsWithItemId({
         job: job.data,
@@ -185,7 +190,8 @@ export default function JobDetailsRoute() {
     makeMethod,
     productionData,
     tags,
-    files
+    files,
+    corrections
   } = useLoaderData<typeof loader>();
   const { jobId } = useParams();
   if (!jobId) throw new Error("Could not find jobId");
@@ -238,6 +244,10 @@ export default function JobDetailsRoute() {
               materials={materials}
               // @ts-expect-error
               operations={operations}
+            />
+            <JobCorrections
+              key={`corrections:${methodId}`}
+              corrections={corrections}
             />
           </>
         )}

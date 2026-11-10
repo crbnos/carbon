@@ -17,7 +17,7 @@ import { getWorkCenterWithBlockingStatus } from "~/services/maintenance.service"
 import {
   abilityBlockRefusal,
   getNextIncompleteSerialEntity,
-  getTrackedEntitiesByMakeMethodId,
+  getTrackedEntitiesForOperation,
   postEndedProductionEvents,
   startMachineProductionEvent,
   startProductionEvent
@@ -179,11 +179,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // Get tracked entities if jobMakeMethodId exists
   if (!trackedEntityId && jobOperation.data.jobMakeMethodId) {
-    const trackedEntities = await getTrackedEntitiesByMakeMethodId(
-      serviceRole,
-      jobOperation.data.jobMakeMethodId,
+    const trackedEntities = await getTrackedEntitiesForOperation(serviceRole, {
+      operationId,
+      jobMakeMethodId: jobOperation.data.jobMakeMethodId,
       companyId
-    );
+    });
 
     // Start the next incomplete serial unit for this operation (createdAt asc),
     // falling back to the last entity when every unit is already complete.

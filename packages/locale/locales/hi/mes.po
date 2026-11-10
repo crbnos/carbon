@@ -18,6 +18,10 @@ msgstr ", चल नहीं रहा"
 msgid ", running"
 msgstr ", चल रहा है"
 
+#. placeholder {0}: suggestion.reason
+msgid "\"{0}\" calls for a correction on this unit."
+msgstr "इस इकाई पर “{0}” के लिए सुधार की आवश्यकता है।"
+
 msgid "\"{column}\" is required."
 msgstr "«{column}» आवश्यक है।"
 
@@ -430,6 +434,9 @@ msgstr "असाइनी"
 msgid "Attach file"
 msgstr "फ़ाइल संलग्न करें"
 
+msgid "Attempt limit reached"
+msgstr "प्रयास सीमा पूरी हो गई"
+
 msgid "Authentication Error"
 msgstr "प्रमाणीकरण त्रुटि"
 
@@ -773,6 +780,13 @@ msgstr "सीक्रेट कॉपी करें"
 
 msgid "Copy to clipboard"
 msgstr "क्लिपबोर्ड पर कॉपी करें"
+
+#. placeholder {0}: correction.name
+msgid "Correction: {0}"
+msgstr "सुधार: {0}"
+
+msgid "Correction: {correctionName}"
+msgstr "सुधार: {correctionName}"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -1193,6 +1207,9 @@ msgstr "सामान्य"
 
 msgid "Go back to operation"
 msgstr "ऑपरेशन पर वापस जाएं"
+
+msgid "Go back to operation, or run a correction"
+msgstr "ऑपरेशन पर वापस जाएँ, या सुधार चलाएँ"
 
 msgid "Go to onboarding"
 msgstr "ऑनबोर्डिंग पर जाएं"
@@ -1712,6 +1729,9 @@ msgstr "आपके लिए कोई प्रमाणपत्र पा�
 msgid "No color"
 msgstr "कोई रंग नहीं"
 
+msgid "No correction"
+msgstr "कोई सुधार नहीं"
+
 msgid "No country found."
 msgstr "कोई देश नहीं मिला।"
 
@@ -1880,6 +1900,9 @@ msgstr "कोई नहीं"
 
 msgid "Normal"
 msgstr "सामान्य"
+
+msgid "Not in this operation"
+msgstr "इस ऑपरेशन में नहीं"
 
 msgid "Not scheduled"
 msgstr "निर्धारित नहीं"
@@ -2295,6 +2318,9 @@ msgstr "कतार खाली"
 msgid "Quotes"
 msgstr "कोटेशन"
 
+msgid "Raise quality issue"
+msgstr "गुणवत्ता समस्या दर्ज करें"
+
 msgid "Re"
 msgstr "अस्वीकार"
 
@@ -2556,6 +2582,9 @@ msgstr "स्क्रैप मात्रा"
 
 msgid "Scrap Reason"
 msgstr "स्क्रैप कारण"
+
+msgid "Scrap unit"
+msgstr "इकाई स्क्रैप करें"
 
 msgid "Scrapped"
 msgstr "स्क्रैप किया गया"
@@ -2863,8 +2892,14 @@ msgstr "{workType} शुरू करें"
 msgid "Start {workTypeLabel} timer"
 msgstr "{workTypeLabel} टाइमर शुरू करें"
 
+msgid "Start a correction?"
+msgstr "सुधार शुरू करें?"
+
 msgid "Start clock"
 msgstr "घड़ी शुरू करें"
+
+msgid "Start correction"
+msgstr "सुधार शुरू करें"
 
 msgid "Start Job"
 msgstr "जॉब शुरू करें"
@@ -3041,6 +3076,12 @@ msgstr "थीम"
 msgid "then"
 msgstr "फिर"
 
+msgid "Then continues to the next operation"
+msgstr "इसके बाद अगले ऑपरेशन पर जारी रहेगा"
+
+msgid "Then re-inspects here"
+msgstr "इसके बाद यहीं पुनः निरीक्षण होगा"
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "इस सामग्री के लिए कोई उपलब्ध या उपयोग की गई ट्रैक की गई पार्ट नहीं है।"
 
@@ -3091,6 +3132,9 @@ msgstr "यह नमूना हटा दिया गया था"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "यह आपकी घड़ी को रोकता है और जॉब के समय को पोस्ट करता है। जॉब अब बदल नहीं सकता।"
+
+msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
+msgstr "इस इकाई पर यह सुधार अपनी सीमा तक लागू हो चुका है। इसके बजाय इसे स्क्रैप करें या गुणवत्ता समस्या दर्ज करें।"
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "इस इकाई को स्थायी रूप से स्क्रैप किया जाएगा और एक रिप्लेसमेंट इकाई बनाई जाएगी।"
@@ -3319,6 +3363,11 @@ msgstr "अपलोड किया जा रहा है {0}"
 
 msgid "Use a different account"
 msgstr "एक अलग खाता उपयोग करें"
+
+#. placeholder {0}: correction.uses
+#. placeholder {1}: correction.maxAttempts
+msgid "Used {0} of {1}"
+msgstr "{1} में से {0} उपयोग हुए"
 
 msgid "Used automatically at completion"
 msgstr "पूर्णता पर स्वचालित रूप से उपयोग किया जाता है"

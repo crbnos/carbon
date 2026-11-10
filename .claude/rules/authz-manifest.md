@@ -290,5 +290,5 @@ The meaning equals its rule; the wording may not — production's `agentThread` 
   `get_permission_companies` (`20260927224243` + `20260927224314`), and for
   `has_any_company_permission` (no generated migration ever defined it, so no
   `RETIRED_HELPERS` entry) with the unmanaged `get_my_permission`
-  (`20261110113817_drop-dead-permission-helpers.sql`). `authz-fixes.test.sql` asserts all
+  (`20261111050001_drop-dead-permission-helpers.sql`). `authz-fixes.test.sql` asserts all
   of them stay gone.

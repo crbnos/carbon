@@ -13,6 +13,8 @@ export const PAGES = [
     maxLevel: "Full",
     tables: [
       "job",
+      "jobCorrection",
+      "jobCorrectionTrigger",
       "jobMakeMethod",
       "jobMaterial",
       "jobMaterialStep",
@@ -24,6 +26,7 @@ export const PAGES = [
       "jobOperationStepSlide",
       "jobOperationTool",
       "jobOperationToolStep",
+      "jobOperationTrackedEntity",
       "productionEvent",
       "productionQuantity",
       "rework",

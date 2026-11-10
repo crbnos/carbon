@@ -12,17 +12,22 @@ import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
+import { getMethodCorrectionsData } from "~/modules/items/items.service";
 import type { ServiceSummary } from "~/modules/items/types";
 import {
   BillOfMaterial,
   BillOfProcess,
-  MakeMethodTools
+  MakeMethodTools,
+  MethodCorrections
 } from "~/modules/items/ui/Item";
+import { toMethodCorrectionsProps } from "~/modules/items/ui/Item/MethodCorrections";
 import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { api } = await authorize(request, { "parts.services": "View" });
+  const { api, client, companyId } = await authorize(request, {
+    "parts.services": "View"
+  });
 
   const { itemId, makeMethodId } = params;
   if (!itemId) throw new Error("Could not find itemId");
@@ -65,7 +70,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const methodCorrections = await getMethodCorrectionsData(
+    client,
+    makeMethodId,
+    companyId
+  );
+
   return {
+    corrections: toMethodCorrectionsProps(methodCorrections.data),
     makeMethod: makeMethod.data,
     methodMaterials:
       methodMaterials.data?.map((m) => ({
@@ -139,6 +151,13 @@ export default function ServiceMakeMethodPage() {
         materials={methodMaterials}
         operations={methodOperations}
         replenishmentSystem={serviceData?.serviceSummary?.replenishmentSystem}
+      />
+      <MethodCorrections
+        key={`corrections:${makeMethod.id}`}
+        makeMethod={makeMethod}
+        {...loaderData.corrections}
+        routingOperations={methodOperations as never}
+        tags={tags}
       />
     </VStack>
   );

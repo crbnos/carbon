@@ -194,3 +194,19 @@ fails on main too), the datasets, backups, manifest, workflow-catalog and licens
 - **Deploy pipeline order.** CI still runs migrations and the app deploy in separate workflows.
   The code now works in either order, but making the deploy wait for migrations is still
   recommended.
+
+## Merge 3: origin/main 388038530c (#2190 conditional corrections), 2026-11-11
+
+- **Migration order.** main's `-policies` migrations (20261110160805, 20261110161530,
+  20261110175143) and its unit-of-measure migrations are dated after this branch's two final
+  migrations. They would overwrite the page-keyed policies on a fresh database. The generated
+  migration is regenerated as `20261111050000_page-permissions.sql` (was 20261110113816). The
+  hand-written `20261110113817_drop-dead-permission-helpers.sql` moved to
+  `20261111050001_drop-dead-permission-helpers.sql`, with `DROP FUNCTION IF EXISTS` (local
+  databases ran it under its old name).
+- **Registry.** `methodCorrection` and `methodCorrectionTrigger` are item children (through
+  `makeMethod` → `item`, like `methodMaterial`). `jobCorrection`, `jobCorrectionTrigger` and
+  `jobOperationTrackedEntity` are on `production.jobs`.
+- **Allowlist.** 20261110161530 and 20261110175143 are in `module-key-migrations.json`. The
+  allowlist test now accepts a migration after the cutoff if it sorts before the generated
+  page-permissions migration.

@@ -15,7 +15,10 @@ import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
-import { getPartDocuments } from "~/modules/production/production.service";
+import {
+  getJobCorrections,
+  getPartDocuments
+} from "~/modules/production/production.service";
 import type { Job } from "~/modules/production/types";
 import {
   JobBillOfMaterial,
@@ -23,6 +26,7 @@ import {
   JobDocuments,
   JobEstimatesVsActuals
 } from "~/modules/production/ui/Jobs";
+import JobCorrections from "~/modules/production/ui/Jobs/JobCorrections";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
@@ -45,13 +49,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     jobId
   });
 
-  const [job, makeMethod, materials, operations, tags] = await Promise.all([
-    api.production.getJob({ id: jobId }),
-    api.production.getJobMakeMethodById({ jobMakeMethodId: methodId }),
-    api.production.getJobMaterialsByMethodId({ jobMakeMethodId: methodId }),
-    api.production.getJobOperationsByMethodId({ jobMakeMethodId: methodId }),
-    api.shared.getTagsList({ table: "operation" })
-  ]);
+  const [job, makeMethod, materials, operations, tags, corrections] =
+    await Promise.all([
+      api.production.getJob({ id: jobId }),
+      api.production.getJobMakeMethodById({ jobMakeMethodId: methodId }),
+      api.production.getJobMaterialsByMethodId({ jobMakeMethodId: methodId }),
+      api.production.getJobOperationsByMethodId({ jobMakeMethodId: methodId }),
+      api.shared.getTagsList({ table: "operation" }),
+      getJobCorrections(client, methodId, companyId)
+    ]);
 
   if (job.error) {
     throw redirect(
@@ -111,6 +117,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workInstruction: o.workInstruction as JSONContent | null
       })) ?? [],
     makeMethod: makeMethod.data,
+    corrections: corrections.data ?? [],
     productionData: api.production
       .getProductionDataByOperations({
         jobOperationIds: operations?.data?.map((o) => o.id)
@@ -138,7 +145,8 @@ export default function JobMakeMethodRoute() {
     operations,
     productionData,
     tags,
-    files
+    files,
+    corrections
   } = loaderData;
 
   const { setIsExplorerCollapsed, isExplorerCollapsed } = usePanels();
@@ -173,6 +181,10 @@ export default function JobMakeMethodRoute() {
           materials={materials}
           // @ts-expect-error
           operations={operations}
+        />
+        <JobCorrections
+          key={`corrections:${methodId}`}
+          corrections={corrections}
         />
         <Suspense
           fallback={

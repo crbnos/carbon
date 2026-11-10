@@ -307,6 +307,11 @@ msgstr "{0}（タイプ）"
 msgid "{0} (unavailable)"
 msgstr "{0}（利用不可）"
 
+#. placeholder {0}: formatter.format(material.quantity)
+#. placeholder {1}: material.unitOfMeasureCode
+msgid "{0} {1} per unit"
+msgstr "1個あたり {0} {1}"
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -2484,6 +2489,13 @@ msgstr "について（通知）"
 msgid "About this field"
 msgstr "このフィールドについて"
 
+#. placeholder {0}: result.step.maxValue
+msgid "Above {0}"
+msgstr "{0}超"
+
+msgid "Above maximum"
+msgstr "上限超過"
+
 msgid "Above the upper limit"
 msgstr "上限を超えています"
 
@@ -2960,6 +2972,9 @@ msgstr "作業の各部分について明細を追加してください：Time &
 
 msgid "Add a line to the document"
 msgstr "文書に明細を追加"
+
+msgid "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
+msgstr "リスト、検査、測定（最小値または最大値あり）のステップを工程に追加すると、その結果を補正に割り当てられます。"
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "部品表の各項目とその数量をリストアップした材料セクションを追加します。"
@@ -3517,6 +3532,9 @@ msgstr "後"
 
 msgid "After (calculation method)"
 msgstr "後（計算方法）"
+
+msgid "After the correction"
+msgstr "補正後"
 
 msgid "Afternoon, {name}."
 msgstr "午後、{name}さん。"
@@ -5615,8 +5633,15 @@ msgstr "開始"
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "段階的に廃止されます — 後継品目：<0>{0}</0>"
 
+#. placeholder {0}: result.step.minValue
+msgid "Below {0}"
+msgstr "{0}未満"
+
 msgid "Below level"
 msgstr "レベル以下"
+
+msgid "Below minimum"
+msgstr "下限未満"
 
 msgid "Below safety stock"
 msgstr "安全在庫以下"
@@ -7890,6 +7915,9 @@ msgstr "続行"
 msgid "Continue Setup"
 msgstr "セットアップを続行"
 
+msgid "Continue to the next operation"
+msgstr "次の工程に進む"
+
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "使用権資産償却累計額"
 
@@ -10010,6 +10038,9 @@ msgstr "契約を削除"
 msgid "Delete Contractor"
 msgstr "外部作業者を削除"
 
+msgid "Delete correction"
+msgstr "補正を削除"
+
 msgid "Delete Count"
 msgstr "カウントを削除"
 
@@ -10349,6 +10380,9 @@ msgstr "削除済み"
 
 msgid "Deleted attribute value"
 msgstr "属性値を削除"
+
+msgid "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
+msgstr "この補正を削除すると、その工程、部品、結果の割り当ても削除されます。作成済みの製造指図は独自のコピーを保持します。"
 
 msgid "Deliver"
 msgstr "配送"
@@ -11472,6 +11506,12 @@ msgstr "担当者を編集"
 
 msgid "Edit Contractor"
 msgstr "外部作業者を編集"
+
+msgid "Edit correction"
+msgstr "補正を編集"
+
+msgid "Edit Correction"
+msgstr "補正を編集"
 
 msgid "Edit cost"
 msgstr "原価を編集"
@@ -12910,6 +12950,9 @@ msgstr "失敗"
 
 msgid "Failed characteristics"
 msgstr "不合格の特性"
+
+msgid "Failed inspection"
+msgstr "検査不合格"
 
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
@@ -16670,6 +16713,9 @@ msgstr "空白のままにして、次のリビジョンを自動的に使用し
 msgid "Leave empty for exact match"
 msgstr "正確な一致のために空のままにしてください"
 
+msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
+msgstr "上限を設けない場合は空欄のままにしてください。上限を超えると、MESではスクラップまたは品質問題の登録のみが提示されます。"
+
 msgid "Leave empty to use the account default"
 msgstr "空白のままにしてアカウントデフォルトを使用します"
 
@@ -17842,6 +17888,13 @@ msgstr "マトリックス"
 msgid "Maturity Analysis"
 msgstr "満期分析"
 
+#. placeholder {0}: correction.maxAttempts
+msgid "Max {0} per unit"
+msgstr "1個あたり最大{0}"
+
+msgid "Max attempts per unit"
+msgstr "1個あたりの最大試行回数"
+
 msgid "Max Lead Time"
 msgstr "最大リードタイム"
 
@@ -18641,6 +18694,9 @@ msgstr "新規契約"
 msgid "New Contractor"
 msgstr "新規外部作業者"
 
+msgid "New Correction"
+msgstr "新規補正"
+
 msgid "New Cost Center"
 msgstr "新規原価センター"
 
@@ -19347,6 +19403,12 @@ msgstr "カットオーバー時に残高がある管理勘定がありません
 msgid "No conversion is required"
 msgstr "変換は不要です"
 
+msgid "No correction"
+msgstr "補正なし"
+
+msgid "No corrections yet."
+msgstr "補正はまだありません。"
+
 msgid "No cost"
 msgstr "原価なし"
 
@@ -19737,6 +19799,9 @@ msgstr "オープン受注明細がありません"
 msgid "No open work has a target date."
 msgstr "オープン作業に目標日がありません"
 
+msgid "No operations"
+msgstr "工程なし"
+
 msgid "No operations found."
 msgstr "工程が見つかりません。"
 
@@ -20025,6 +20090,9 @@ msgstr "このビューに適用されたソートはありません"
 
 msgid "No statement for this period"
 msgstr "この期間の明細書がありません"
+
+msgid "No step results suggest this correction."
+msgstr "この補正を提案するステップ結果はありません。"
 
 msgid "No step selected"
 msgstr "ステップが選択されていない"
@@ -20359,6 +20427,9 @@ msgstr "未同期"
 
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "使用可能な在庫ではありません。MRPと計画には含まれず、ピッキングでも引き当てられません。"
+
+msgid "Not used yet."
+msgstr "まだ使用されていません。"
 
 msgid "Not working today"
 msgstr "今日は勤務していません"
@@ -23503,6 +23574,10 @@ msgstr "このかんばんの次の工程を開始するためのQR Code"
 msgid "Qty"
 msgstr "数量"
 
+#. placeholder {0}: formatter.format(use.quantity)
+msgid "Qty {0}"
+msgstr "数量 {0}"
+
 msgid "Qty {jobQuantity}"
 msgstr "数量 {jobQuantity}"
 
@@ -23865,6 +23940,9 @@ msgstr "モデルを再変換"
 msgid "Re-date to first open day"
 msgstr "最初の営業日に再日付け"
 
+msgid "Re-inspect at the operation that found it"
+msgstr "発見した工程で再検査"
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "見積、現場、財務間での再入力"
 
@@ -23876,6 +23954,9 @@ msgstr "現在のステップ順序でモーション再計画—完了時にス
 
 msgid "Re-send"
 msgstr "再送信"
+
+msgid "Re-torque nut"
+msgstr "ナットの再締付け"
 
 msgid "Reactivate"
 msgstr "再度有効化"
@@ -25259,6 +25340,9 @@ msgstr "請求を会員に制限する"
 msgid "Result"
 msgstr "結果"
 
+msgid "Result mappings"
+msgstr "結果の割り当て"
+
 msgid "Results"
 msgstr "結果"
 
@@ -25610,6 +25694,12 @@ msgstr "取り消し済み"
 
 msgid "Rework"
 msgstr "手直し"
+
+msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
+msgstr "ステップ結果が示す手直し専用の工程です（例: 点検でナットの緩みが見つかった場合の再締付け）。通常の個体では実行されません。"
+
+msgid "Rework-only operations that a step result suggests. This job keeps its own copy from the make method."
+msgstr "ステップ結果が示す手直し専用の工程です。この製造指図は製造方法からの独自のコピーを保持します。"
 
 msgid "RFQ"
 msgstr "RFQ"
@@ -31137,6 +31227,12 @@ msgstr "その後、以下のために調整されます"
 msgid "Then by"
 msgstr "次に"
 
+msgid "Then continue"
+msgstr "そのまま続行"
+
+msgid "Then re-inspect"
+msgstr "その後に再検査"
+
 msgid "There are more received than ordered"
 msgstr "受け取ったものが発注数より多い"
 
@@ -33230,6 +33326,9 @@ msgstr "{0}を使用"
 msgid "Uses {0} · {1}"
 msgstr "{0}を使用 · {1}"
 
+msgid "Uses on this job"
+msgstr "この製造指図での使用"
+
 #. placeholder {0}: use.number
 #. placeholder {1}: use.title
 msgid "Uses sub-assembly {0} · {1}"
@@ -34456,6 +34555,9 @@ msgstr "仕掛品"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "{0}の予備費付き"
+
+msgid "With Previous"
+msgstr "前工程と同時"
 
 msgid "Withdraw"
 msgstr "取り下げ"

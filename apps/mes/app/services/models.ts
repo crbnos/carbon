@@ -115,6 +115,12 @@ export const convertEntityValidator = z.object({
   quantity: z.coerce.number().positive().default(1)
 });
 
+/**
+ * The trigger `listValue` that maps a failed Inspection step; the ERP writes it
+ * (`inspectionFailedResult` in the items module's models).
+ */
+export const inspectionFailedResult = "Failed";
+
 export const stepRecordValidator = z.object({
   index: zfd.numeric(z.number()),
   jobOperationStepId: z.string(),
@@ -317,6 +323,18 @@ export const triggerReworkValidator = z.object({
   // Provenance link when the rework was triggered by an inspection
   // disposition (stamped on the Rework productionQuantity row).
   inspectionId: zfd.text(z.string().optional())
+});
+
+/** A disposition rework target naming a correction instead of an operation. */
+export const CORRECTION_TARGET_PREFIX = "correction:";
+
+export const triggerCorrectionValidator = z.object({
+  jobId: z.string().min(1),
+  triggeredAtJobOperationId: z.string().min(1),
+  jobCorrectionId: z.string().min(1, { message: "Choose a correction" }),
+  reason: z.string().min(1),
+  quantity: zfd.numeric(z.number().positive().default(1)),
+  trackedEntityId: zfd.text(z.string().optional())
 });
 
 export const maintenanceDispatchValidator = z.object({

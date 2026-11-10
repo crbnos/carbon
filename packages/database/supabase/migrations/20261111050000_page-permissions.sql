@@ -2913,6 +2913,36 @@ CREATE POLICY "INSERT" ON "public"."job" FOR INSERT WITH CHECK ("companyId" = AN
 CREATE POLICY "UPDATE" ON "public"."job" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_update'))::text[]));
 CREATE POLICY "DELETE" ON "public"."job" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_delete'))::text[]));
 
+-- jobCorrection
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'jobCorrection' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'jobCorrection');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."jobCorrection" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."jobCorrection" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."jobCorrection" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."jobCorrection" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."jobCorrection" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_delete'))::text[]));
+
+-- jobCorrectionTrigger
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'jobCorrectionTrigger' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'jobCorrectionTrigger');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."jobCorrectionTrigger" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."jobCorrectionTrigger" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
+CREATE POLICY "INSERT" ON "public"."jobCorrectionTrigger" FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_create'))::text[]));
+CREATE POLICY "UPDATE" ON "public"."jobCorrectionTrigger" FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_update'))::text[]));
+CREATE POLICY "DELETE" ON "public"."jobCorrectionTrigger" FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission('production.jobs_delete'))::text[]));
+
 -- jobMakeMethod
 DO $authz$
 DECLARE p record;
@@ -3535,6 +3565,36 @@ CREATE POLICY "SELECT" ON "public"."memo" FOR SELECT USING ("companyId" = ANY ((
 CREATE POLICY "INSERT" ON "public"."memo" FOR INSERT WITH CHECK ((("memo"."supplierId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.supplierCredits_create'))::text[])) OR ("memo"."customerId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.creditMemos_create'))::text[]))));
 CREATE POLICY "UPDATE" ON "public"."memo" FOR UPDATE USING ((("memo"."supplierId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.supplierCredits_update'))::text[])) OR ("memo"."customerId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.creditMemos_update'))::text[]))));
 CREATE POLICY "DELETE" ON "public"."memo" FOR DELETE USING (("status" = 'Draft' AND (("memo"."supplierId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.supplierCredits_delete'))::text[])) OR ("memo"."customerId" IS NOT NULL AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing.creditMemos_delete'))::text[])))));
+
+-- methodCorrection
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'methodCorrection' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'methodCorrection');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."methodCorrection" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."methodCorrection" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."methodCorrection" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodCorrection"."makeMethodId" AND "makeMethod"."companyId" = "methodCorrection"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[]))))));
+CREATE POLICY "UPDATE" ON "public"."methodCorrection" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodCorrection"."makeMethodId" AND "makeMethod"."companyId" = "methodCorrection"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[]))))));
+CREATE POLICY "DELETE" ON "public"."methodCorrection" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodCorrection"."makeMethodId" AND "makeMethod"."companyId" = "methodCorrection"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[]))))));
+
+-- methodCorrectionTrigger
+DO $authz$
+DECLARE p record;
+BEGIN
+  FOR p IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'methodCorrectionTrigger' LOOP
+    EXECUTE format('DROP POLICY %I ON public.%I', p.policyname, 'methodCorrectionTrigger');
+  END LOOP;
+END
+$authz$;
+ALTER TABLE public."methodCorrectionTrigger" ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "SELECT" ON "public"."methodCorrectionTrigger" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['parts']::text[], '{}'::text[]))::text[]));
+CREATE POLICY "INSERT" ON "public"."methodCorrectionTrigger" FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM "public"."methodCorrection" WHERE "methodCorrection"."id" = "methodCorrectionTrigger"."methodCorrectionId" AND "methodCorrection"."companyId" = "methodCorrectionTrigger"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodCorrection"."makeMethodId" AND "makeMethod"."companyId" = "methodCorrection"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_create'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_create'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_create'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_create'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_create'))::text[])))))));
+CREATE POLICY "UPDATE" ON "public"."methodCorrectionTrigger" FOR UPDATE USING (EXISTS (SELECT 1 FROM "public"."methodCorrection" WHERE "methodCorrection"."id" = "methodCorrectionTrigger"."methodCorrectionId" AND "methodCorrection"."companyId" = "methodCorrectionTrigger"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodCorrection"."makeMethodId" AND "makeMethod"."companyId" = "methodCorrection"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_update'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_update'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_update'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_update'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_update'))::text[])))))));
+CREATE POLICY "DELETE" ON "public"."methodCorrectionTrigger" FOR DELETE USING (EXISTS (SELECT 1 FROM "public"."methodCorrection" WHERE "methodCorrection"."id" = "methodCorrectionTrigger"."methodCorrectionId" AND "methodCorrection"."companyId" = "methodCorrectionTrigger"."companyId" AND EXISTS (SELECT 1 FROM "public"."makeMethod" WHERE "makeMethod"."id" = "methodCorrection"."makeMethodId" AND "makeMethod"."companyId" = "methodCorrection"."companyId" AND EXISTS (SELECT 1 FROM "public"."item" WHERE "item"."id" = "makeMethod"."itemId" AND "item"."companyId" = "makeMethod"."companyId" AND (("item"."type" = 'Part' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.parts_delete'))::text[])) OR ("item"."type" = 'Material' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.materials_delete'))::text[])) OR ("item"."type" = 'Tool' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.tools_delete'))::text[])) OR ("item"."type" = 'Consumable' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.consumables_delete'))::text[])) OR ("item"."type" = 'Service' AND "companyId" = ANY ((SELECT get_companies_with_employee_permission('parts.services_delete'))::text[])))))));
 
 -- methodMaterial
 DO $authz$

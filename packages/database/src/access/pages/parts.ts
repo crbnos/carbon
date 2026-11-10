@@ -37,6 +37,11 @@ const ITEM_CHILDREN: readonly Child[] = [
     table: "supplierPartPrice",
     path: [["supplierPartId", "supplierPart"], ITEM]
   },
+  { table: "methodCorrection", path: [MAKE_METHOD, ITEM] },
+  {
+    table: "methodCorrectionTrigger",
+    path: [["methodCorrectionId", "methodCorrection"], MAKE_METHOD, ITEM]
+  },
   { table: "methodMaterial", path: [MAKE_METHOD, ITEM] },
   { table: "methodOperation", path: [MAKE_METHOD, ITEM] },
   {

@@ -845,6 +845,8 @@ export const manifest = {
   itemSupersession: company({ read: "employee" }),
   itemUnitSalePrice: company(),
   job: company({ read: "employee" }),
+  jobCorrection: company({ read: "employee" }),
+  jobCorrectionTrigger: company({ read: "employee" }),
   jobFavorite: policies({
     select: owner("userId"),
     insert: owner("userId"),
@@ -869,6 +871,10 @@ export const manifest = {
   jobOperationStepRecord: company({ read: "employee", create: "employee" }),
   jobOperationStepSlide: company({ read: "employee" }),
   jobOperationTool: company({ read: "employee" }),
+  // Written by the trigger-rework posting only (system connection).
+  jobOperationTrackedEntity: policies({
+    select: inCompany("companyId", "employee")
+  }),
   jobOperationToolStep: policies({
     select: exists("jobOperationTool", "jobOperationToolId", "employee"),
     insert: exists("jobOperationTool", "jobOperationToolId", "create"),
@@ -1051,6 +1057,8 @@ export const manifest = {
       inCompany("companyId", "delete")
     )
   }),
+  methodCorrection: company(),
+  methodCorrectionTrigger: company(),
   methodMaterial: company(),
   methodMaterialStep: policies({
     select: exists("methodMaterial", "methodMaterialId", "employee"),

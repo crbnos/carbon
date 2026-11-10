@@ -15,6 +15,7 @@ import { useLoaderData, useParams } from "react-router";
 import { AssemblyView } from "~/components/AssemblyView";
 import { getCompanySettings } from "~/services/inventory.service";
 import {
+  floorRefusal,
   getAbilityShortfall,
   getAssemblyPlaybackByOperationId,
   getJob,
@@ -29,9 +30,10 @@ import {
   getNonConformanceActions,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
+  getReworkCorrectionName,
   getThumbnailPathByItemId,
   getToolsByOperationId,
-  getTrackedEntitiesByMakeMethodId,
+  getTrackedEntitiesForOperation,
   getWorkCenter,
   isFirstOperationOfMakeMethod
 } from "~/services/operations.service";
@@ -108,6 +110,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     job,
     operation,
     thumbnailPath,
+    correctionName,
     trackedEntities,
     jobMakeMethod,
     procedure,
@@ -131,12 +134,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       const itemId = result.data?.[0]?.itemId;
       return itemId ? getThumbnailPathByItemId(serviceRole, itemId) : null;
     }),
+    operationPromise.then((result) =>
+      getReworkCorrectionName(
+        serviceRole,
+        result.data?.[0]?.reworkId,
+        companyId
+      )
+    ),
     jobMakeMethodId
-      ? getTrackedEntitiesByMakeMethodId(
-          serviceRole,
-          jobMakeMethodId,
+      ? getTrackedEntitiesForOperation(serviceRole, {
+          operationId,
+          jobMakeMethodId: jobMakeMethodId,
           companyId
-        )
+        })
       : null,
     jobMakeMethodId ? getJobMakeMethod(serviceRole, jobMakeMethodId) : null,
     procedurePromise,
@@ -214,6 +224,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       await flash(request, error(operation.error, "Failed to fetch operation"))
     );
 
+  const notOnFloor = await floorRefusal(serviceRole, {
+    jobStatus: job.data?.status,
+    jobOperationBatchId: ownedOperation.data.jobOperationBatchId,
+    companyId
+  });
+  if (notOnFloor) {
+    throw redirect(
+      path.to.operations,
+      await flash(request, error(null, notOnFloor))
+    );
+  }
+
   const op = operation.data?.[0];
   if (!op) throw redirect(path.to.operations);
   // The early redirect used the ownership read's type; check the row this
@@ -256,7 +278,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const isParentTracked =
     (jobMakeMethod?.data?.requiresSerialTracking ?? false) ||
     (jobMakeMethod?.data?.requiresBatchTracking ?? false);
-  const navEntities = isParentTracked ? allEntities.slice(0, opQty) : [];
+  // A rework or correction copy works only the units sent into it, so the
+  // navigable units are those; each keeps its place in the full axis, which
+  // keys its step records and issue stamps (AssemblyView does the same).
+  const scopedAxis = isParentTracked
+    ? allEntities
+        .map((entity, axisIndex) => ({ entity, axisIndex }))
+        .filter(({ entity }) => entity.inOperationScope !== false)
+        .slice(0, opQty)
+    : [];
+  const navEntities = scopedAxis.map(({ entity }) => entity);
   const unitParam = Number.parseInt(url.searchParams.get("unit") ?? "", 10);
   const entityIndex = trackedEntityId
     ? navEntities.findIndex((te) => te.id === trackedEntityId)
@@ -292,7 +323,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     requiresSerialTracking:
       jobMakeMethod?.data?.requiresSerialTracking ?? false,
     requiresBatchTracking: jobMakeMethod?.data?.requiresBatchTracking ?? false,
-    unitIndex
+    unitIndex: scopedAxis[unitIndex]?.axisIndex ?? unitIndex
   });
 
   return {
@@ -300,6 +331,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     job: job.data,
     operation: makeDurations(op) as OperationWithDetails,
     thumbnailPath,
+    correctionName,
     trackedEntities: trackedEntities?.data ?? [],
     // The resolved entity for the current unit, or null for untracked units, so the
     // component falls back to the ?unit index instead of snapping back to unit 0.

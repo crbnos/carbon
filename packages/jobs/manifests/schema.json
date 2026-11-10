@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261110211543",
+  "schemaVersion": "20261111050001",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-10T23:38:28.561Z",
+  "exportedAt": "2026-11-10T23:53:58.276Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -3134,6 +3134,24 @@
       ]
     },
     {
+      "name": "methodCorrection",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "makeMethodId",
+        "name",
+        "description",
+        "returnTo",
+        "maxAttempts",
+        "order",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "riskRegister",
       "rows": 0,
       "columns": [
@@ -4025,6 +4043,18 @@
       "name": "jobOperationToolStep",
       "rows": 0,
       "columns": ["jobOperationToolId", "jobOperationStepId"]
+    },
+    {
+      "name": "jobOperationTrackedEntity",
+      "rows": 0,
+      "columns": [
+        "jobOperationId",
+        "trackedEntityId",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "updatedBy"
+      ]
     },
     {
       "name": "location",
@@ -5768,6 +5798,22 @@
       ]
     },
     {
+      "name": "methodCorrectionTrigger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "methodOperationStepId",
+        "methodCorrectionId",
+        "listValue",
+        "measurementCondition",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "methodMaterial",
       "rows": 0,
       "columns": [
@@ -5791,7 +5837,8 @@
         "tags",
         "kit",
         "storageUnitIds",
-        "sourcingType"
+        "sourcingType",
+        "methodCorrectionId"
       ]
     },
     {
@@ -5831,7 +5878,8 @@
         "operationLeadTime",
         "operationUnitCost",
         "assemblyInstructionId",
-        "inspectionDocumentId"
+        "inspectionDocumentId",
+        "methodCorrectionId"
       ]
     },
     {
@@ -5972,6 +6020,22 @@
         "nonConformanceActionId",
         "nonConformanceInvestigationId",
         "assemblyInstructionStepId"
+      ]
+    },
+    {
+      "name": "jobCorrectionTrigger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobOperationStepId",
+        "jobCorrectionId",
+        "listValue",
+        "measurementCondition",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -6765,6 +6829,27 @@
       ]
     },
     {
+      "name": "jobCorrection",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobId",
+        "jobMakeMethodId",
+        "methodCorrectionId",
+        "name",
+        "description",
+        "returnTo",
+        "maxAttempts",
+        "order",
+        "definition",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "jobMakeMethod",
       "rows": 0,
       "columns": [
@@ -6943,7 +7028,8 @@
         "completedAt",
         "companyId",
         "createdAt",
-        "updatedAt"
+        "updatedAt",
+        "jobCorrectionId"
       ]
     },
     {

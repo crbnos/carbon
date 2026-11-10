@@ -211,6 +211,10 @@ type BillOfProcessProps = {
   isDisabled?: boolean;
   // What to tell the user when isDisabled is what made this read-only.
   disabledReason?: ReactNode;
+  // Set when this edits a correction's operations: new operations are created
+  // inside the correction, and the card takes `title`.
+  methodCorrectionId?: string;
+  title?: ReactNode;
 } & ReleaseLockProps;
 
 type PendingWorkInstructions = {
@@ -266,7 +270,9 @@ const BillOfProcess = ({
   revisionStatus,
   releaseControl,
   isDisabled = false,
-  disabledReason
+  disabledReason,
+  methodCorrectionId,
+  title
 }: BillOfProcessProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
@@ -463,7 +469,8 @@ const BillOfProcess = ({
       ...initialOperation,
       id: operationId,
       order: newOrder,
-      makeMethodId
+      makeMethodId,
+      methodCorrectionId: methodCorrectionId ?? null
     };
 
     setTemporaryItems((prev) => ({
@@ -828,7 +835,7 @@ const BillOfProcess = ({
       <HStack className="justify-between">
         <CardHeader className="max-md:min-w-0">
           <CardTitle className="flex flex-row items-center gap-2 max-md:flex max-md:flex-wrap max-md:gap-y-1">
-            <Trans>Bill of Process</Trans>
+            {title ?? <Trans>Bill of Process</Trans>}
             {itemName && (
               <span className="text-xs text-muted-foreground font-normal max-md:order-last max-md:min-w-0 max-md:basis-full max-md:truncate">
                 {itemName}
@@ -1137,6 +1144,8 @@ function OperationForm({
       <div>
         <Hidden name="id" />
         <Hidden name="makeMethodId" />
+        {/* Read on create only: an operation stays in its correction. */}
+        <Hidden name="methodCorrectionId" />
         <Hidden name="order" />
       </div>
 
