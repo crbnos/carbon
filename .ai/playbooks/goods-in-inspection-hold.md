@@ -1,6 +1,7 @@
 # Goods-In Inspection Hold
 
-Last tested: 2026-11-04
+Last tested: 2026-11-04 (steps 1–6). Steps 7–10 added 2026-11-10 from the code and
+the database tests; not yet run in a browser.
 Routes: /x/settings/quality, /x/purchase-order/<id>/details → Receive,
 /x/receipt/<id>/details, /x/inventory/receipts, /x/inspection/<lotId>,
 /x/stock-transfer/<id>
@@ -33,9 +34,12 @@ Spec: .ai/specs/2026-11-03-goods-in-inspection-hold.md
 
 ### 3. Post refusal on a nettable unit
 - PCB line Storage Unit combobox → "A1-L2 Aisle-A". Red text under it:
-  "Choose a non-nettable storage unit for inspected parts."
+  "Choose a non-nettable storage unit at this location for inspected parts."
 - Post → modal → requestSubmit "Post Receipt". Toast
-  "PCB-BARE-REV3 needs inspection. Choose a non-nettable storage unit."; stays Draft.
+  "PCB-BARE-REV3 needs inspection. Choose a non-nettable storage unit at
+  Manufacturing Plant."; stays Draft.
+- A line that delivers to another location is checked against that location's
+  units, not the receipt's.
 
 ### 4. Post
 - Set the line back to QC-Inspection. Post → requestSubmit "Post Receipt" →
@@ -55,10 +59,49 @@ Spec: .ai/specs/2026-11-03-goods-in-inspection-hold.md
   `inspection_held_quantity` = 5; NCR item 5 × Scrap.
 
 ### 6. Put Away
-- Receipt → button "Put Away" → redirects to the new stock transfer (Released):
-  one line PCB × 20, QC-Inspection → A1-L1 (the part's default bin).
+- Receipt → button "Put Away" → toast "Putaway created", redirects to the new
+  stock transfer: one line PCB × 20, QC-Inspection → A1-L1 (the part's default
+  bin). It is Released because every line has a To unit; one transfer is made
+  per line location.
 - Line button "Pick" → transfer Completed → receipt header "Put Away"; the
   Put Away button is gone.
+
+### 7. Put Away with no To unit
+- Before step 6, remove PCB-BARE-REV3's default storage unit at the plant
+  (item → Inventory → pick method).
+- Put Away → the transfer is **Draft** and the line's To is empty.
+- Release → toast "Choose the To storage unit of every Put Away line first.";
+  stays Draft.
+- Edit the line: changing the quantity or From unit is refused ("A Put Away line
+  moves what the receipt holds. Only its To storage unit can change."). Set
+  only To → saves. Release → Released; Pick works as in step 6.
+
+### 8. Void a receipt with a Put Away
+- On a receipt whose lot Passed: Put Away, then void the receipt before picking.
+  The void posts and the Put Away transfer is gone.
+- Same, but pick part of the line first → toast "Cannot void: Put Away ST-… has
+  picked stock. Unpick it first."
+- The step-5 receipt (untracked Partial) → toast "Cannot void: inspection INS-…
+  accepted part of this stock and holds the rest under its NCR. …".
+
+### 9. NCR rules for a receipt lot
+- Issue (not the lot's NCR) → Associations → add inspection → the step-5 lot →
+  refused: "Inspection lot INS-… already has its NCR. A receipt lot belongs to one
+  NCR."
+- The lot's own NCR → add another receipt lot → refused: "A Partial inspection lot
+  must be the only lot on its NCR. …"
+- Close the lot's NCR (Use As Is or Scrap), then Reopen → refused: "This NCR
+  released the rejected part of inspection lot INS-…, so it cannot be reopened."
+
+### 10. Smaller checks
+- Settings card: a user without Resources update sees the two comboboxes
+  disabled.
+- Inventory sidebar: on "Pending inspection", only that link is highlighted, not
+  "Receipts".
+- Partial dialog on a serial lot with no issue types and "Open an NCR" ticked:
+  "Mark Partial" is disabled; untick it to mark Partial without an NCR.
+- A serial lot accepted with one failed unit: Put Away offers the passed units,
+  and the receipt reaches "Put Away" once they are picked.
 
 ## Selector Notes
 - Comboboxes in the settings card have no label; order is HQ inspection, HQ
