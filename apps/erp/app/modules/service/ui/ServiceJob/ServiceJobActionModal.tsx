@@ -29,6 +29,7 @@ import {
  * with no price it asks for one; `onConfirm` gets it, and the caller posts.
  */
 export function ServiceJobActionModal({
+  open = true,
   title,
   description,
   submitLabel,
@@ -37,6 +38,7 @@ export function ServiceJobActionModal({
   onConfirm,
   onClose
 }: {
+  open?: boolean;
   title: ReactNode;
   description: ReactNode;
   submitLabel: ReactNode;
@@ -52,7 +54,7 @@ export function ServiceJobActionModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

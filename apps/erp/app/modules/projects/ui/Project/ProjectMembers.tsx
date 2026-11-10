@@ -120,22 +120,23 @@ const ProjectMembers = ({
         </div>
       )}
 
-      {isAdding && (
-        <ProjectMemberModal
-          projectId={projectId}
-          action={action}
-          onClose={() => setIsAdding(false)}
-        />
-      )}
+      <ProjectMemberModal
+        open={isAdding}
+        projectId={projectId}
+        action={action}
+        onClose={() => setIsAdding(false)}
+      />
     </section>
   );
 };
 
 function ProjectMemberModal({
+  open = true,
   projectId,
   action,
   onClose
 }: {
+  open?: boolean;
   projectId: string;
   action: string;
   onClose: () => void;
@@ -145,7 +146,7 @@ function ProjectMemberModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

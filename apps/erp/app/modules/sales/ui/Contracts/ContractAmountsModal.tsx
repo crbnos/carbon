@@ -48,12 +48,30 @@ type ContractAmountsModalProps = {
   defaults: Record<string, number>;
   defaultDate: string;
   currencyCode: string;
+  open?: boolean;
   onClose: () => void;
 };
 
 /** Add one row to a setup grid: a date, then one amount per line, each
  *  pre-filled with what that line still has to place. */
 const ContractAmountsModal = ({
+  open = true,
+  onClose,
+  ...props
+}: ContractAmountsModalProps) => (
+  <Modal
+    open={open}
+    onOpenChange={(open) => {
+      if (!open) onClose();
+    }}
+  >
+    <ModalContent>
+      <ContractAmountsBody onClose={onClose} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+const ContractAmountsBody = ({
   intent,
   action,
   title,
@@ -63,7 +81,7 @@ const ContractAmountsModal = ({
   defaultDate,
   currencyCode,
   onClose
-}: ContractAmountsModalProps) => {
+}: Omit<ContractAmountsModalProps, "open">) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<{}>();
@@ -94,80 +112,71 @@ const ContractAmountsModal = ({
   );
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
+    <ValidatedForm
+      validator={amountsFormValidator}
+      method="post"
+      action={action}
+      fetcher={fetcher}
+      defaultValues={{ date: defaultDate }}
+      onSubmit={() => {
+        submitted.current = true;
       }}
     >
-      <ModalContent>
-        <ValidatedForm
-          validator={amountsFormValidator}
-          method="post"
-          action={action}
-          fetcher={fetcher}
-          defaultValues={{ date: defaultDate }}
-          onSubmit={() => {
-            submitted.current = true;
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>{title}</ModalTitle>
-            <ModalDescription>{description}</ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="intent" value={intent} />
-            <Hidden
-              name={isMonth ? "periodStart" : "invoiceDate"}
-              value={isMonth && date ? monthStart(date) : date}
+      <ModalHeader>
+        <ModalTitle>{title}</ModalTitle>
+        <ModalDescription>{description}</ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="intent" value={intent} />
+        <Hidden
+          name={isMonth ? "periodStart" : "invoiceDate"}
+          value={isMonth && date ? monthStart(date) : date}
+        />
+        <Hidden name="amounts" value={payload} />
+        <VStack spacing={4}>
+          <DatePicker
+            name="date"
+            label={isMonth ? t`Month` : t`Invoice Date`}
+            helperText={
+              isMonth ? t`Any day in the month adds that month` : undefined
+            }
+            onChange={(value) => setDate(value ?? "")}
+          />
+          {lines.map((line, index) => (
+            <NumberControlled
+              key={line.id}
+              name={`amount${index}`}
+              label={contractLineName(line)}
+              value={amounts[line.id] ?? 0}
+              minValue={0}
+              step={INPUT_STEP.money(decimals)}
+              formatOptions={INPUT_FORMAT.money(currencyCode, decimals)}
+              onChange={(value) =>
+                setAmounts((prev) => ({
+                  ...prev,
+                  [line.id]: Number.isNaN(value) ? 0 : value
+                }))
+              }
             />
-            <Hidden name="amounts" value={payload} />
-            <VStack spacing={4}>
-              <DatePicker
-                name="date"
-                label={isMonth ? t`Month` : t`Invoice Date`}
-                helperText={
-                  isMonth ? t`Any day in the month adds that month` : undefined
-                }
-                onChange={(value) => setDate(value ?? "")}
-              />
-              {lines.map((line, index) => (
-                <NumberControlled
-                  key={line.id}
-                  name={`amount${index}`}
-                  label={contractLineName(line)}
-                  value={amounts[line.id] ?? 0}
-                  minValue={0}
-                  step={INPUT_STEP.money(decimals)}
-                  formatOptions={INPUT_FORMAT.money(currencyCode, decimals)}
-                  onChange={(value) =>
-                    setAmounts((prev) => ({
-                      ...prev,
-                      [line.id]: Number.isNaN(value) ? 0 : value
-                    }))
-                  }
-                />
-              ))}
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button
-              variant="secondary"
-              isDisabled={fetcher.state !== "idle"}
-              onClick={onClose}
-            >
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit
-              withBlocker={false}
-              isDisabled={!date || !permissions.can("update", "sales")}
-            >
-              <Trans>Add</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+          ))}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button
+          variant="secondary"
+          isDisabled={fetcher.state !== "idle"}
+          onClick={onClose}
+        >
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit
+          withBlocker={false}
+          isDisabled={!date || !permissions.can("update", "sales")}
+        >
+          <Trans>Add</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 };
 

@@ -419,8 +419,9 @@ export default function StockTransferLines() {
           </div>
         </CardContent>
       </Card>
-      {deleteDisclosure.isOpen && (
+      {selectedLine && (
         <ConfirmDelete
+          isOpen={deleteDisclosure.isOpen}
           name="Stock Transfer Line"
           text="Are you sure you want to delete this stock transfer line?"
           action={path.to.deleteStockTransferLine(id, selectedLine?.id!)}

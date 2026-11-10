@@ -6,6 +6,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
+import { useDisclosure } from "@carbon/react";
 import { datetime, redirect, type WbsNode } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import XYFlowStyle from "@xyflow/react/dist/style.css?url";
@@ -22,6 +23,7 @@ import {
 import { EmployeeAvatar } from "~/components";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { usePermissions, useRouteData } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import {
   type ChangeOperationMark,
   canonicalElementsParams,
@@ -303,7 +305,7 @@ export default function ProjectElementsRoute() {
   const { t } = useLingui();
   const { projectId } = useParams();
   if (!projectId) throw new Error("Could not find projectId");
-  const [buildingFromPart, setBuildingFromPart] = useState(false);
+  const buildFromPart = useDisclosure();
 
   const {
     elements,
@@ -454,13 +456,13 @@ export default function ProjectElementsRoute() {
   // New Element opens the New element modal with the type, parent or state
   // it was asked for. The List highlights the new row; the other layouts
   // open its page, since they have no row to show.
-  const [creating, setCreating] = useState<NewElementDefaults | null>(null);
+  const creating = useDrawerItem<NewElementDefaults>();
   const [createdId, setCreatedId] = useState<string | null>(null);
   const createElement = (
     elementType?: ProjectElementType,
     parentId?: string,
     stateId?: string
-  ) => setCreating({ type: elementType, parentId, stateId });
+  ) => creating.open({ type: elementType, parentId, stateId });
 
   return (
     <div className="flex h-full min-w-0 flex-col bg-card">
@@ -474,7 +476,7 @@ export default function ProjectElementsRoute() {
         layout={layout}
         filters={filters}
         onNew={(elementType) => createElement(elementType)}
-        onBuildFromPart={() => setBuildingFromPart(true)}
+        onBuildFromPart={buildFromPart.onOpen}
         canCreate={canCreate}
         exportHref={
           layout === "reader"
@@ -532,8 +534,10 @@ export default function ProjectElementsRoute() {
           />
         )}
       </div>
-      {creating && (
+      {creating.item && (
         <NewElementModal
+          key={`creating-${creating.key}`}
+          open={creating.isOpen}
           projectId={projectId}
           context={routeData?.project?.identifier ?? routeData?.project?.name}
           elements={elements}
@@ -541,7 +545,7 @@ export default function ProjectElementsRoute() {
           labels={labels}
           milestones={milestones}
           types={projectElementTypes}
-          defaults={creating}
+          defaults={creating.item}
           onCreated={(created, { createMore }) => {
             if (layout === "list" || createMore) setCreatedId(created.id);
             else {
@@ -550,17 +554,16 @@ export default function ProjectElementsRoute() {
               );
             }
           }}
-          onClose={() => setCreating(null)}
+          onClose={creating.close}
         />
       )}
-      {buildingFromPart && (
-        <BuildFromPartDrawer
-          projectId={projectId}
-          elements={elements}
-          defaultParentId={null}
-          onClose={() => setBuildingFromPart(false)}
-        />
-      )}
+      <BuildFromPartDrawer
+        open={buildFromPart.isOpen}
+        projectId={projectId}
+        elements={elements}
+        defaultParentId={null}
+        onClose={buildFromPart.onClose}
+      />
     </div>
   );
 }

@@ -61,6 +61,7 @@ type ProjectFormValues = z.infer<typeof projectValidator>;
 
 type ProjectFormProps = {
   initialValues: ProjectFormValues;
+  open?: boolean;
   /** Set for a new project: the form opens in a drawer. */
   onClose?: () => void;
   isDisabled?: boolean;
@@ -90,6 +91,7 @@ type ProjectFormProps = {
  */
 const ProjectForm = ({
   initialValues,
+  open = true,
   onClose,
   isDisabled = false,
   copyFrom,
@@ -431,7 +433,7 @@ const ProjectForm = ({
   return (
     <ModalDrawerProvider type="drawer">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose?.();
         }}

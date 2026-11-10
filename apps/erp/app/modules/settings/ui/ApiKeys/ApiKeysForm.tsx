@@ -54,6 +54,7 @@ type ApiKeyFormProps = {
   existingScopes?: Record<string, string[]> | null;
   /** A single-tenant deployment's admins set the limit; Carbon Cloud sets it. */
   canSetRateLimit?: boolean;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -62,6 +63,7 @@ const ApiKeyForm = ({
   companyId,
   existingScopes,
   canSetRateLimit,
+  open = true,
   onClose
 }: ApiKeyFormProps) => {
   const { t } = useLingui();
@@ -100,7 +102,7 @@ const ApiKeyForm = ({
   return (
     <>
       <Modal
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose?.();
         }}
@@ -161,7 +163,7 @@ const ApiKeyForm = ({
           </ValidatedForm>
         </ModalContent>
       </Modal>
-      {key && <ApiKeyView apiKey={key} onClose={onClose} />}
+      {key && <ApiKeyView apiKey={key} open={open} onClose={onClose} />}
     </>
   );
 };
@@ -170,10 +172,11 @@ export default ApiKeyForm;
 
 type ApiKeyViewProps = {
   apiKey: string;
+  open?: boolean;
   onClose: () => void;
 };
 
-function ApiKeyView({ apiKey, onClose }: ApiKeyViewProps) {
+function ApiKeyView({ apiKey, open = true, onClose }: ApiKeyViewProps) {
   const { t } = useLingui();
   const [copied, setCopied] = useState<"key" | "mcp" | null>(null);
   useEffect(() => {
@@ -189,7 +192,7 @@ function ApiKeyView({ apiKey, onClose }: ApiKeyViewProps) {
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

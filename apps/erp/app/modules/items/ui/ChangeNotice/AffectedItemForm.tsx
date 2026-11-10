@@ -61,6 +61,37 @@ function startsWithLetter(value: string) {
 export default function AffectedItemForm({
   changeOrderId,
   blacklist,
+  open = true,
+  onClose
+}: {
+  changeOrderId: string;
+  blacklist: string[];
+  open?: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <ModalDrawerProvider type="modal">
+      <ModalDrawer
+        open={open}
+        onOpenChange={(open) => {
+          if (!open) onClose();
+        }}
+      >
+        <ModalDrawerContent>
+          <AffectedItemFormBody
+            changeOrderId={changeOrderId}
+            blacklist={blacklist}
+            onClose={onClose}
+          />
+        </ModalDrawerContent>
+      </ModalDrawer>
+    </ModalDrawerProvider>
+  );
+}
+
+function AffectedItemFormBody({
+  changeOrderId,
+  blacklist,
   onClose
 }: {
   changeOrderId: string;
@@ -174,158 +205,141 @@ export default function AffectedItemForm({
     </ModalDrawerFooter>
   );
 
-  return (
-    <ModalDrawerProvider type="modal">
-      <ModalDrawer
-        open
-        onOpenChange={(open) => {
-          if (!open) onClose();
-        }}
-      >
-        <ModalDrawerContent>
-          {isNewPart ? (
-            // Distinct `key` per branch is REQUIRED. Both branches render a
-            // <ValidatedForm> at the same JSX slot, so React would reconcile them
-            // as ONE instance and the RVF store would hydrate only once (on the
-            // initial existing-item branch). syncFormProps seeds controlled-field
-            // defaults only when `!isHydrated`, so on switch the New Part Selects
-            // (replenishment/tracking) never get seeded → "" → enum error. The key
-            // forces a fresh mount + fresh store that hydrates with these defaults.
-            <ValidatedForm
-              key="new-part"
-              validator={changeNoticeNewPartValidator}
-              method="post"
-              action={path.to.changeNoticeAffected(changeOrderId)}
-              defaultValues={{
-                changeOrderId,
-                changeType: "New Part",
-                readableId: "",
-                name: "",
-                replenishmentSystem: "Make",
-                itemTrackingType: "Inventory"
-              }}
-              fetcher={fetcher}
-              className="flex flex-col h-full"
-            >
-              <ModalDrawerHeader>
-                <ModalDrawerTitle>
-                  <Trans>Add Affected Item</Trans>
-                </ModalDrawerTitle>
-              </ModalDrawerHeader>
-              <ModalDrawerBody>
-                <Hidden name="changeOrderId" value={changeOrderId} />
-                <VStack spacing={4}>
-                  {changeTypeField}
-                  <InputControlled
-                    name="readableId"
-                    label={t`Part Number`}
-                    helperText={
-                      startsWithLetter(nextId)
-                        ? t`Use ... to get the next part ID`
-                        : undefined
-                    }
-                    value={nextId}
-                    onChange={onIdChange}
-                    isDisabled={loading}
-                    isUppercase={!allowLowercaseItemIds}
-                  />
-                  <Input name="name" label={t`Name`} characterLimit={40} />
-                  <Select
-                    name="replenishmentSystem"
-                    label={t`Replenishment System`}
-                    termId="replenishment-system"
-                    options={replenishmentOptions}
-                    isOptional={false}
-                  />
-                  <Select
-                    name="itemTrackingType"
-                    label={t`Tracking Type`}
-                    termId="item-tracking-type"
-                    options={itemTrackingTypeOptions}
-                  />
-                </VStack>
-              </ModalDrawerBody>
-              {footer}
-            </ValidatedForm>
-          ) : (
-            <ValidatedForm
-              key="existing-item"
-              validator={changeNoticeAffectedItemValidator}
-              method="post"
-              action={path.to.changeNoticeAffected(changeOrderId)}
-              defaultValues={{
-                changeOrderId,
-                itemId: "",
-                changeType,
-                revision: ""
-              }}
-              fetcher={fetcher}
-              className="flex flex-col h-full"
-            >
-              <ModalDrawerHeader>
-                <ModalDrawerTitle>
-                  <Trans>Add Affected Item</Trans>
-                </ModalDrawerTitle>
-              </ModalDrawerHeader>
-              <ModalDrawerBody>
-                <Hidden name="changeOrderId" value={changeOrderId} />
-                <VStack spacing={4}>
-                  {changeTypeField}
-                  <Item
-                    name="itemId"
-                    label={t`Part`}
-                    type="Part"
-                    validItemTypes={["Part"]}
-                    // Version = a new Draft make-method version (BoM/BoP edits),
-                    // which only makes sense for a manufactured (Make) part — Buy
-                    // parts have no BoM/BoP. Restrict the picker to Make parts for
-                    // Version; other change types allow any Part.
-                    replenishmentSystem={
-                      changeType === "Version" ? "Make" : undefined
-                    }
-                    onChange={(o) =>
-                      setSelectedItemId((o?.value as string) ?? "")
-                    }
-                    blacklist={blacklist}
-                  />
-                  {/* Mirror the make-method "New Version" warning: if the part's
+  return isNewPart ? (
+    // Distinct `key` per branch is REQUIRED. Both branches render a
+    // <ValidatedForm> at the same JSX slot, so React would reconcile them
+    // as ONE instance and the RVF store would hydrate only once (on the
+    // initial existing-item branch). syncFormProps seeds controlled-field
+    // defaults only when `!isHydrated`, so on switch the New Part Selects
+    // (replenishment/tracking) never get seeded → "" → enum error. The key
+    // forces a fresh mount + fresh store that hydrates with these defaults.
+    <ValidatedForm
+      key="new-part"
+      validator={changeNoticeNewPartValidator}
+      method="post"
+      action={path.to.changeNoticeAffected(changeOrderId)}
+      defaultValues={{
+        changeOrderId,
+        changeType: "New Part",
+        readableId: "",
+        name: "",
+        replenishmentSystem: "Make",
+        itemTrackingType: "Inventory"
+      }}
+      fetcher={fetcher}
+      className="flex flex-col h-full"
+    >
+      <ModalDrawerHeader>
+        <ModalDrawerTitle>
+          <Trans>Add Affected Item</Trans>
+        </ModalDrawerTitle>
+      </ModalDrawerHeader>
+      <ModalDrawerBody>
+        <Hidden name="changeOrderId" value={changeOrderId} />
+        <VStack spacing={4}>
+          {changeTypeField}
+          <InputControlled
+            name="readableId"
+            label={t`Part Number`}
+            helperText={
+              startsWithLetter(nextId)
+                ? t`Use ... to get the next part ID`
+                : undefined
+            }
+            value={nextId}
+            onChange={onIdChange}
+            isDisabled={loading}
+            isUppercase={!allowLowercaseItemIds}
+          />
+          <Input name="name" label={t`Name`} characterLimit={40} />
+          <Select
+            name="replenishmentSystem"
+            label={t`Replenishment System`}
+            termId="replenishment-system"
+            options={replenishmentOptions}
+            isOptional={false}
+          />
+          <Select
+            name="itemTrackingType"
+            label={t`Tracking Type`}
+            termId="item-tracking-type"
+            options={itemTrackingTypeOptions}
+          />
+        </VStack>
+      </ModalDrawerBody>
+      {footer}
+    </ValidatedForm>
+  ) : (
+    <ValidatedForm
+      key="existing-item"
+      validator={changeNoticeAffectedItemValidator}
+      method="post"
+      action={path.to.changeNoticeAffected(changeOrderId)}
+      defaultValues={{
+        changeOrderId,
+        itemId: "",
+        changeType,
+        revision: ""
+      }}
+      fetcher={fetcher}
+      className="flex flex-col h-full"
+    >
+      <ModalDrawerHeader>
+        <ModalDrawerTitle>
+          <Trans>Add Affected Item</Trans>
+        </ModalDrawerTitle>
+      </ModalDrawerHeader>
+      <ModalDrawerBody>
+        <Hidden name="changeOrderId" value={changeOrderId} />
+        <VStack spacing={4}>
+          {changeTypeField}
+          <Item
+            name="itemId"
+            label={t`Part`}
+            type="Part"
+            validItemTypes={["Part"]}
+            // Version = a new Draft make-method version (BoM/BoP edits),
+            // which only makes sense for a manufactured (Make) part — Buy
+            // parts have no BoM/BoP. Restrict the picker to Make parts for
+            // Version; other change types allow any Part.
+            replenishmentSystem={changeType === "Version" ? "Make" : undefined}
+            onChange={(o) => setSelectedItemId((o?.value as string) ?? "")}
+            blacklist={blacklist}
+          />
+          {/* Mirror the make-method "New Version" warning: if the part's
                       current method is still an un-activated Draft, adding a
                       Version freezes it as Active (read-only) so production keeps
                       using it until this CO releases the new draft. */}
-                  {willActivateDraft && (
-                    <Alert variant="warning">
-                      <LuTriangleAlert className="h-4 w-4" />
-                      <AlertTitle>
-                        <Trans>
-                          This will set the current version of the make method
-                          to Active, making it read-only.
-                        </Trans>
-                      </AlertTitle>
-                      <AlertDescription>
-                        <Trans>
-                          Your changes go into a new draft version released with
-                          this change notice.
-                        </Trans>
-                      </AlertDescription>
-                    </Alert>
-                  )}
-                  {/* A Revision mints a new revision item; let the user name the
+          {willActivateDraft && (
+            <Alert variant="warning">
+              <LuTriangleAlert className="h-4 w-4" />
+              <AlertTitle>
+                <Trans>
+                  This will set the current version of the make method to
+                  Active, making it read-only.
+                </Trans>
+              </AlertTitle>
+              <AlertDescription>
+                <Trans>
+                  Your changes go into a new draft version released with this
+                  change notice.
+                </Trans>
+              </AlertDescription>
+            </Alert>
+          )}
+          {/* A Revision mints a new revision item; let the user name the
                       revision (e.g. "A") instead of always auto-numbering.
                       Blank → the next revision is computed server-side. */}
-                  {changeType === "Revision" && (
-                    <Input
-                      name="revision"
-                      label={t`Revision`}
-                      helperText={t`Leave blank to use the next revision automatically`}
-                    />
-                  )}
-                </VStack>
-              </ModalDrawerBody>
-              {footer}
-            </ValidatedForm>
+          {changeType === "Revision" && (
+            <Input
+              name="revision"
+              label={t`Revision`}
+              helperText={t`Leave blank to use the next revision automatically`}
+            />
           )}
-        </ModalDrawerContent>
-      </ModalDrawer>
-    </ModalDrawerProvider>
+        </VStack>
+      </ModalDrawerBody>
+      {footer}
+    </ValidatedForm>
   );
 }

@@ -22,10 +22,12 @@ import { usePermissions } from "~/hooks";
 import { fixedAssetOutOfServiceValidator } from "../../accounting.models";
 
 type FixedAssetOutOfServiceFormProps = {
+  open?: boolean;
   onClose: () => void;
 };
 
 const FixedAssetOutOfServiceForm = ({
+  open = true,
   onClose
 }: FixedAssetOutOfServiceFormProps) => {
   const { t } = useLingui();
@@ -35,7 +37,7 @@ const FixedAssetOutOfServiceForm = ({
   return (
     <ModalDrawerProvider type="modal">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose?.();
         }}

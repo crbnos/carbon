@@ -35,12 +35,14 @@ import { path } from "~/utils/path";
 type ApprovalRuleFormProps = {
   rule: ApprovalRule | null;
   documentType: ApprovalDocumentType | null;
+  open?: boolean;
   onClose: () => void;
 };
 
 const ApprovalRuleForm = ({
   rule,
   documentType,
+  open = true,
   onClose
 }: ApprovalRuleFormProps) => {
   const { t } = useLingui();
@@ -74,7 +76,7 @@ const ApprovalRuleForm = ({
       };
 
   return (
-    <Drawer open onOpenChange={(open) => !open && onClose()}>
+    <Drawer open={open} onOpenChange={(open) => !open && onClose()}>
       <DrawerContent>
         <ValidatedForm
           validator={approvalRuleValidator}

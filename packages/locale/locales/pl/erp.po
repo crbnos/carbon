@@ -262,7 +262,7 @@ msgstr "{0, plural, one {Przenieś # artykuł} few {Przenieś wszystkie # artyku
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {Zaksięguj lub usuń # dokument datowany przed zmianą.} other {Zaksięguj lub usuń # dokumentów datowanych przed zmianą.}}"
 
-#. placeholder {0}: pendingRemoval.count
+#. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
 msgstr "{0, plural, one {Usunięcie tej ścieżki spowoduje też odłączenie # połączenia.} few {Usunięcie tej ścieżki spowoduje też odłączenie # połączeń.} many {Usunięcie tej ścieżki spowoduje też odłączenie # połączeń.} other {Usunięcie tej ścieżki spowoduje też odłączenie # połączenia.}}"
 
@@ -4427,8 +4427,8 @@ msgid "Are you sure you want to delete {0}?"
 msgstr "Czy na pewno chcesz usunąć {0}?"
 
 #. placeholder {0}: asset.fixedAssetId
-#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć {0}? Tej operacji nie można cofnąć."
 
@@ -4441,12 +4441,12 @@ msgstr "Czy na pewno chcesz usunąć {orderLabel}? Tej operacji nie można cofn�
 msgid "Are you sure you want to delete {readableId}? This cannot be undone."
 msgstr "Na pewno chcesz usunąć {readableId}? Nie można tego cofnąć."
 
-#. placeholder {0}: deleting.number
+#. placeholder {0}: deleting.item.number
 msgid "Are you sure you want to delete payment {0}?"
 msgstr "Czy na pewno chcesz usunąć płatność {0}?"
 
 #. placeholder {0}: activeView.name
-#. placeholder {0}: viewPendingDelete.name
+#. placeholder {0}: viewPendingDelete.item.name
 msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć widok \"{0}\"? Tej czynności nie można cofnąć."
 
@@ -4778,7 +4778,7 @@ msgstr "Czy na pewno chcesz odrzucić tego dostawcę?"
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "Czy na pewno chcesz zwolnić to zlecenie produkcyjne? Stanie się dostępne dla hali produkcyjnej i uruchomi procesy zakupów i produkcji."
 
-#. placeholder {0}: deleting.description
+#. placeholder {0}: deleting.item.description
 msgid "Are you sure you want to remove {0} and its payment rows from this lease?"
 msgstr "Czy na pewno chcesz usunąć z listy {0} i jego wiersze płatności z tego leasingu?"
 
@@ -9835,7 +9835,7 @@ msgstr "Usuń"
 msgid "Delete {0}"
 msgstr "Usuń {0}"
 
-#. placeholder {0}: deleting.readableId
+#. placeholder {0}: deleting.item.readableId
 #. placeholder {0}: element.readableId
 msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
 msgstr "Czy usunąć {0} i każdy element poniżej? Element, który ma koszty, czas, zlecenie produkcyjne lub pozycję zamówienia zakupu, nie może być usunięty."
@@ -15906,7 +15906,7 @@ msgstr "Elementy w tym oknie otrzymują żółty znaczek."
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "Artykuły: wzorzec artykułów, BOM, Lista operacji, zmiany konstrukcyjne, CAD"
 
-#. placeholder {0}: formatQuantity(rowTotal(removing))
+#. placeholder {0}: formatQuantity(rowTotal(removedRow))
 msgid "Its {0} h of draft time this week are deleted."
 msgstr "Jego {0} h czasu roboczego tego tygodnia zostały usunięte."
 
@@ -21646,7 +21646,7 @@ msgstr "Płatność"
 msgid "Payment — {0}"
 msgstr "Płatność — {0}"
 
-#. placeholder {0}: deleting.number
+#. placeholder {0}: deleting.item.number
 msgid "payment {0}"
 msgstr "płatność {0}"
 
@@ -24212,7 +24212,7 @@ msgid "Release Batch"
 msgstr "Zwolnij partię produkcyjną"
 
 #. placeholder {0}: batch.readableId
-#. placeholder {0}: releaseTarget.readableId
+#. placeholder {0}: releaseTarget.item.readableId
 msgid "Release batch {0}"
 msgstr "Zwolnij partię produkcyjną {0}"
 
@@ -24312,7 +24312,7 @@ msgstr "Usuń {0} z ostatnich"
 msgid "Remove {0} from recent searches"
 msgstr "Usuń {0} z listy ostatnich wyszukiwań"
 
-#. placeholder {0}: removing.jobReadableId ?? "this operation"
+#. placeholder {0}: removing.item.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "Usunąć {0} z tej partii produkcyjnej? Jej operacja wraca do harmonogramu, aby uruchamiać się niezależnie."
 
@@ -24325,7 +24325,7 @@ msgstr "Usuń {0} z tego kroku"
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "Usuń z listy {0} z {memberCount} operacji z {1}?"
 
-#. placeholder {0}: removing.readableId
+#. placeholder {0}: removedRow.readableId
 msgid "Remove {0}?"
 msgstr "Usunąć z listy {0}?"
 
@@ -24997,7 +24997,7 @@ msgstr "opłata za uzupełnienie zapasów"
 msgid "Restock Fee Percent"
 msgstr "Procent opłaty za uzupełnienie zapasów"
 
-#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+#. placeholder {0}: percentFormatter.format(line.restockFeePercent)
 msgid "Restocking fee {0}"
 msgstr "Opłata za zwrot do magazynu {0}"
 

@@ -6,7 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { customerTypeValidator } from "~/modules/sales/sales.models";
@@ -68,7 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewCustomerTypesRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const initialValues = {
     name: ""
   };
@@ -76,7 +76,8 @@ export default function NewCustomerTypesRoute() {
   return (
     <CustomerTypeForm
       initialValues={initialValues}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

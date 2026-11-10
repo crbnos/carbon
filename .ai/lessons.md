@@ -3065,8 +3065,33 @@ the portal and the animated node — each `Presence` looks only at its own child
 a trace of `data-state` and `getBoundingClientRect()` per frame, not by eye.
 
 **Applies to:** `packages/react/src/Drawer.tsx` (`portalVariants` + `sheetVariants` closing
-durations must match), `useDrawerItem` (`apps/erp/app/hooks`), both planning tables, and the
-other state-driven drawers that still unmount on close.
+durations must match), `useDrawerItem` (`apps/erp/app/hooks`), both planning tables, and every
+other modal and drawer (see the next lesson).
+
+## A route dialog closed by navigating cannot animate closed either
+
+**Context:** Every modal and drawer in the ERP animated in and vanished on close (New Gauge was
+the report). The drawer lesson above fixed only the planning drawers.
+
+**Problem:** Two patterns removed the dialog in the same render. A route that renders a form as
+a dialog held `open` at `true` and closed by `useCloseRoute()` / `navigate(...)`: the navigation
+removed the route, so `open` never turned false. And about 300 call sites rendered
+`{disclosure.isOpen && <ConfirmDelete />}`. The modal backdrop also closed in 150ms while the
+box closed in 200ms, and Radix removes both when the backdrop ends.
+
+**Rule:** A route dialog uses `useRouteDialog()` (`@carbon/react`): `close` sets `open` false
+and navigates only when Radix has removed the dialog. With unsaved changes it navigates at once,
+so the `Submit` blocker asks over the open dialog — closing first would unmount the blocker and
+lose the edits silently. A conditional dialog passes its condition as `open`/`isOpen` and keeps
+its record until the next open. State or a mount-time fetch that must be fresh per open goes in a
+body component inside `ModalContent` / `DrawerContent`, which Radix unmounts on close. A `key` that
+counts opens is only for state that cannot move there (a `ModalCard` form, or `Modal` /
+`ModalContent` props that read it). The first attempt keyed about 150 dialogs per open: it worked,
+but it fought Radix's own unmount, and the guard around it mounted nothing until the first open for
+no reason. Enforced by `no-unmounting-dialog`.
+
+**Applies to:** every `Modal`, `Drawer`, `ModalDrawer`, `Confirm`, `ConfirmDelete` and
+`*Modal`/`*Drawer` component; `ModalOverlay` and `ModalContent` durations must match.
 
 ## A cast that silences excess-property errors hides failed writes
 
@@ -4687,6 +4712,16 @@ took 20 from the bin and left the 3. TypeScript `id !== null` and SQL
 
 **Applies to:** `packages/database/src/picked-consumption.ts`, `backflush_job_materials`,
 and any bin or stripe filter where `null` is both a key and "unset".
+
+## A plain `duration-*` does not time `animate-in` / `animate-out`
+
+**Context:** The modal was meant to open in 200ms and the drawer in 300ms; both opened in 150ms.
+
+**Problem:** `tailwindcss-animate`'s `animate-in` / `animate-out` set `animation-duration` themselves (the 150ms default). They are used as `data-[state=open]:animate-in`, and a state-variant rule comes after a plain `duration-300` in the CSS, so the plain duration never applied. Only the closing durations, already written as `data-[state=closed]:duration-200`, worked. Nothing looked wrong: the motion was simply shorter than the class said.
+
+**Rule:** Time an enter/exit animation on its state variant — `data-[state=open]:duration-300 data-[state=closed]:duration-200` — never with a bare `duration-*` beside `animate-in`. Verify with `getComputedStyle(el).animationDuration` in each state, not by reading the class list. The motion scale is in `.claude/rules/conventions-ui.md` (Animations).
+
+**Applies to:** `Modal.tsx`, `Drawer.tsx`, `BottomSheet.tsx` (fixed), and any component that pairs `animate-in`/`animate-out` with a duration.
 
 ## The edge runtime reuses a worker, env and all, per pool key
 

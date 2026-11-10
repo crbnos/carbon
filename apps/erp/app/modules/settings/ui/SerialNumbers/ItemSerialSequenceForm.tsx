@@ -13,7 +13,7 @@ import {
   DrawerTitle,
   Heading,
   HStack,
-  useCloseRoute,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -47,8 +47,8 @@ const ItemSerialSequenceForm = ({
 }: ItemSerialSequenceFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const closeRoute = useCloseRoute();
-  const onClose = () => closeRoute();
+  const dialog = useRouteDialog();
+  const onClose = dialog.close;
 
   const isEditing = initialValues.id !== undefined;
 
@@ -92,7 +92,7 @@ const ItemSerialSequenceForm = ({
 
   return (
     <Drawer
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

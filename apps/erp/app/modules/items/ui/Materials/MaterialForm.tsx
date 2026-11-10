@@ -63,6 +63,7 @@ import ItemStorageFields from "../Item/ItemStorageFields";
 type MaterialFormProps = {
   initialValues: z.infer<typeof materialValidator> & { tags?: string[] };
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
@@ -73,6 +74,7 @@ function startsWithLetter(value: string) {
 const MaterialForm = ({
   initialValues,
   type = "card",
+  open = true,
   onClose
 }: MaterialFormProps) => {
   const { t } = useLingui();
@@ -115,7 +117,8 @@ const MaterialForm = ({
   }, [properties]);
 
   useEffect(() => {
-    if (type !== "modal") return;
+    // Stays mounted while it animates closed: close and toast once.
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
@@ -123,7 +126,7 @@ const MaterialForm = ({
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(t`Failed to create material: ${fetcher.data.error.message}`);
     }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
+  }, [fetcher.data, fetcher.state, onClose, open, type, t]);
 
   const { id, onIdChange, loading } = useNextItemId("Material");
 
@@ -163,7 +166,7 @@ const MaterialForm = ({
 
   return (
     <ModalCardProvider type={type}>
-      <ModalCard onClose={onClose}>
+      <ModalCard open={open} onClose={onClose}>
         <ModalCardContent>
           <ValidatedForm
             id={validatedFormId}

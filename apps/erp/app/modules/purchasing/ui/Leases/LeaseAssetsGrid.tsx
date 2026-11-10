@@ -21,7 +21,7 @@ import {
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { LuPlus, LuTrash } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { Table } from "~/components";
@@ -44,7 +44,7 @@ import {
   setupGridHeight,
   useCellSave
 } from "~/components/Setup";
-import { useCurrencyDecimals, usePermissions } from "~/hooks";
+import { useCurrencyDecimals, useDrawerItem, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { leaseLineValidator } from "../../purchasing.models";
 import type { Lease, LeaseLine } from "./types";
@@ -81,7 +81,8 @@ const LeaseAssetsGrid = ({ lease, lines }: LeaseAssetsGridProps) => {
     lease.status === "Draft" && permissions.can("create", "purchasing");
 
   const addAsset = useDisclosure();
-  const [deleting, setDeleting] = useState<AssetRow | null>(null);
+  const deleting = useDrawerItem<AssetRow>();
+  const openDeleting = deleting.open;
 
   const locationName = useMemo(
     () =>
@@ -192,13 +193,13 @@ const LeaseAssetsGrid = ({ lease, lines }: LeaseAssetsGridProps) => {
         disabled={
           lease.status !== "Draft" || !permissions.can("delete", "purchasing")
         }
-        onClick={() => setDeleting(row)}
+        onClick={() => openDeleting(row)}
       >
         <MenuIcon icon={<LuTrash />} />
         <Trans>Remove Asset</Trans>
       </MenuItem>
     ),
-    [lease.status, permissions]
+    [lease.status, permissions, openDeleting]
   );
 
   const gridColumns = useMemo(
@@ -260,22 +261,22 @@ const LeaseAssetsGrid = ({ lease, lines }: LeaseAssetsGridProps) => {
         </>
       )}
 
-      {addAsset.isOpen && (
-        <LeaseAddAssetModal
-          leaseId={leaseId}
-          currencyCode={currencyCode}
-          currencyDecimals={currencyDecimals}
-          onClose={addAsset.onClose}
-        />
-      )}
+      <LeaseAddAssetModal
+        leaseId={leaseId}
+        currencyCode={currencyCode}
+        currencyDecimals={currencyDecimals}
+        open={addAsset.isOpen}
+        onClose={addAsset.onClose}
+      />
 
-      {deleting && (
+      {deleting.item && (
         <ConfirmDelete
-          action={path.to.leaseLineDelete(leaseId, deleting.id)}
-          name={deleting.description}
-          text={t`Are you sure you want to remove ${deleting.description} and its payment rows from this lease?`}
-          onCancel={() => setDeleting(null)}
-          onSubmit={() => setDeleting(null)}
+          action={path.to.leaseLineDelete(leaseId, deleting.item.id)}
+          name={deleting.item.description}
+          text={t`Are you sure you want to remove ${deleting.item.description} and its payment rows from this lease?`}
+          isOpen={deleting.isOpen}
+          onCancel={deleting.close}
+          onSubmit={deleting.close}
         />
       )}
     </div>
@@ -288,11 +289,13 @@ const LeaseAddAssetModal = ({
   leaseId,
   currencyCode,
   currencyDecimals,
+  open = true,
   onClose
 }: {
   leaseId: string;
   currencyCode: string;
   currencyDecimals: number;
+  open?: boolean;
   onClose: () => void;
 }) => {
   const { t } = useLingui();
@@ -309,7 +312,7 @@ const LeaseAddAssetModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

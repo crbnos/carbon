@@ -32,11 +32,12 @@ import {
   TooltipContent,
   TooltipTrigger,
   TrackedEntityPicker,
+  useDisclosure,
   useViewport,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useMemo } from "react";
 import {
   LuChevronDown,
   LuCirclePlus,
@@ -313,8 +314,8 @@ function PickingListLineItem({
   // A refused pick is toasted by useAction.
   const fetcher = useAction();
   const isPending = fetcher.state !== "idle";
-  const [shortOpen, setShortOpen] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const shortModal = useDisclosure();
+  const picker = useDisclosure();
   const trackedFetcher = useFetcher<{
     entities: TrackedEntityOption[];
     trackingType: "Serial" | "Batch";
@@ -325,7 +326,7 @@ function PickingListLineItem({
   }>();
 
   const openPicker = () => {
-    setPickerOpen(true);
+    picker.onOpen();
     trackedFetcher.load(path.to.pickingListTracked(pickingListId, line.id));
   };
 
@@ -340,7 +341,7 @@ function PickingListLineItem({
       method: "post",
       action: path.to.pickingListTracked(pickingListId, line.id)
     });
-    setPickerOpen(false);
+    picker.onClose();
   };
 
   const unpickTracked = (trackedEntityId: string) => {
@@ -511,7 +512,7 @@ function PickingListLineItem({
             <Button
               variant="secondary"
               isDisabled={!canPick || isPending}
-              onClick={() => setShortOpen(true)}
+              onClick={shortModal.onOpen}
             >
               <Trans>Short</Trans>
             </Button>
@@ -660,42 +661,34 @@ function PickingListLineItem({
         {actions}
       </div>
 
-      {shortOpen && (
-        <ShortPickModal
-          pickingListId={pickingListId}
-          lineId={line.id}
-          itemName={itemName}
-          quantityToPick={quantityToPick}
-          quantityPicked={quantityPicked}
-          unitOfMeasureCode={unitOfMeasureCode}
-          onClose={() => setShortOpen(false)}
-        />
-      )}
+      <ShortPickModal
+        open={shortModal.isOpen}
+        pickingListId={pickingListId}
+        lineId={line.id}
+        itemName={itemName}
+        quantityToPick={quantityToPick}
+        quantityPicked={quantityPicked}
+        unitOfMeasureCode={unitOfMeasureCode}
+        onClose={shortModal.onClose}
+      />
 
-      {pickerOpen && (
-        <TrackedEntityPicker
-          trackingType={
-            item?.itemTrackingType === "Serial" ? "Serial" : "Batch"
-          }
-          entities={trackedFetcher.data?.entities ?? []}
-          quantityRequired={Math.max(0, quantityToPick - quantityPicked)}
-          title={`Pick ${itemName}`}
-          description={
-            item?.itemTrackingType === "Serial"
-              ? t`Choose a serial number`
-              : t`Choose a batch number`
-          }
-          nearExpiryWarningDays={
-            trackedFetcher.data?.nearExpiryWarningDays ?? 0
-          }
-          expiredEntityPolicy={
-            trackedFetcher.data?.expiredEntityPolicy ?? "Warn"
-          }
-          defaultOrder={trackedFetcher.data?.defaultOrder}
-          onSelect={pickTracked}
-          onClose={() => setPickerOpen(false)}
-        />
-      )}
+      <TrackedEntityPicker
+        open={picker.isOpen}
+        trackingType={item?.itemTrackingType === "Serial" ? "Serial" : "Batch"}
+        entities={trackedFetcher.data?.entities ?? []}
+        quantityRequired={Math.max(0, quantityToPick - quantityPicked)}
+        title={`Pick ${itemName}`}
+        description={
+          item?.itemTrackingType === "Serial"
+            ? t`Choose a serial number`
+            : t`Choose a batch number`
+        }
+        nearExpiryWarningDays={trackedFetcher.data?.nearExpiryWarningDays ?? 0}
+        expiredEntityPolicy={trackedFetcher.data?.expiredEntityPolicy ?? "Warn"}
+        defaultOrder={trackedFetcher.data?.defaultOrder}
+        onSelect={pickTracked}
+        onClose={picker.onClose}
+      />
     </div>
   );
 }

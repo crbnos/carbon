@@ -5,10 +5,10 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
 import { formatAddress } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
+import { useDrawerItem } from "~/hooks";
 import type { getCustomerLocations } from "~/modules/sales/sales.service";
 import type { CustomerLocation as CustomerLocationType } from "~/modules/sales/types";
 import CustomerLocationForm from "~/modules/sales/ui/Customer/CustomerLocationForm";
@@ -42,8 +42,7 @@ const CustomerLocation = ({
     Awaited<ReturnType<typeof getCustomerLocations>>
   >(customer ? path.to.api.customerLocations(customer) : null);
 
-  const newLocationModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useMemo(
@@ -74,7 +73,7 @@ const CustomerLocation = ({
 
   const emptyMessage = useEmptyState(
     "customerLocation",
-    customer ? { onCreate: () => newLocationModal.onOpen() } : undefined
+    customer ? { onCreate: () => create.open("") } : undefined
   );
 
   return (
@@ -89,21 +88,21 @@ const CustomerLocation = ({
         emptyMessage={emptyMessage}
         onChange={onChange}
         onCreateOption={(option) => {
-          newLocationModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newLocationModal.isOpen && (
+      {create.item !== null && (
         <CustomerLocationForm
+          key={create.key}
+          open={create.isOpen}
           customerId={customer!}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newLocationModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created,
+            name: create.item,
             addressLine1: "",
             addressLine2: "",
             city: "",

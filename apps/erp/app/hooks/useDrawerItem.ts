@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { afterDialogCloses } from "@carbon/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 
@@ -19,16 +20,32 @@ export function useDrawerItem<T>() {
   const [item, setItem] = useState<T | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [key, setKey] = useState(0);
+  const opens = useRef(0);
 
   const open = useCallback((next: T) => {
     setItem(next);
     setIsOpen(true);
     setKey((current) => current + 1);
+    opens.current += 1;
   }, []);
 
   const close = useCallback(() => setIsOpen(false), []);
 
-  return { item, setItem, isOpen, key, open, close };
+  /**
+   * Once the dialog that is closing has left the page: forget the item (its
+   * dialog unmounts), then run `then`. Skipped when it opened again meanwhile,
+   * so a late callback never unmounts the new open.
+   */
+  const afterClose = useCallback((then?: () => void) => {
+    const at = opens.current;
+    afterDialogCloses(() => {
+      if (opens.current !== at) return;
+      setItem(null);
+      then?.();
+    });
+  }, []);
+
+  return { item, setItem, isOpen, key, open, close, afterClose };
 }
 
 /**

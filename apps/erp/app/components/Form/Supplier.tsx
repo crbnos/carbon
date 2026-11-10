@@ -4,9 +4,8 @@
 
 import type { CreatableComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure } from "@carbon/react";
-import { useMemo, useRef, useState } from "react";
-import { useSupplierApprovalRequired, useUser } from "~/hooks";
+import { useMemo, useRef } from "react";
+import { useDrawerItem, useSupplierApprovalRequired, useUser } from "~/hooks";
 import SupplierForm from "~/modules/purchasing/ui/Supplier/SupplierForm";
 import { useSuppliers } from "~/stores";
 import SupplierAvatar from "../SupplierAvatar";
@@ -38,8 +37,7 @@ const Supplier = ({
 }: SupplierSelectProps) => {
   const supplierApprovalRequired = useSupplierApprovalRequired();
   const [suppliers] = useSuppliers();
-  const newSuppliersModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useMemo(
@@ -58,7 +56,7 @@ const Supplier = ({
   const { company } = useUser();
 
   const emptyMessage = useEmptyState("supplier", {
-    onCreate: () => newSuppliersModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -71,20 +69,20 @@ const Supplier = ({
         label={props?.label ?? "Supplier"}
         inline={props?.inline ? SupplierPreview : undefined}
         onCreateOption={(option) => {
-          newSuppliersModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newSuppliersModal.isOpen && (
+      {create.item !== null && (
         <SupplierForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newSuppliersModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created,
+            name: create.item,
             currencyCode: defaultCurrencyCode ?? company.baseCurrencyCode,
             supplierStatus: supplierApprovalRequired ? "Pending" : undefined
           }}
