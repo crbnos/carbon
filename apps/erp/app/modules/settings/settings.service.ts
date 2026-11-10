@@ -5047,10 +5047,9 @@ export type OpenReleaseNotice = {
 };
 
 /**
- * Revisions a change notice holds with its engineering content locked
- * (Implementation onward, or awaiting approval), by item id, with the reason
- * they take no writes. A method's changeOrderId is cleared at release, so a set
- * one means a notice holds the item now.
+ * Revisions held by a change notice whose engineering is locked
+ * (Implementation onward, or awaiting approval), by item id, with the reason.
+ * Release clears `changeOrderId`, so a set one is a current hold.
  */
 export async function loadLockedRevisions(
   client: SupabaseClient<Database>,
@@ -5502,9 +5501,8 @@ function integrationsUrl(request: Request) {
 }
 
 /**
- * The companies this user can move the Onshape panel to. The connection reads
- * with the service role: its SELECT policy needs settings view, and a user who
- * only pushes parts holds parts permissions.
+ * The companies this user can move the Onshape panel to. Service role: the
+ * connection's SELECT needs settings view, which a parts-only user lacks.
  */
 export async function getOnshapePanelCompanies(
   client: SupabaseClient<Database>,
@@ -5547,10 +5545,9 @@ export async function getOnshapePanelCompanies(
 }
 
 /**
- * The app shell's account gates for one company (MFA enrollment, ITAR
- * attestation in a controlled environment). The panel never passes through the
- * shell, so its sign-in and its company switch apply them here. A settings read
- * that fails answers `unavailable`, never `open`.
+ * The app shell's MFA and ITAR gates for one company: the panel skips the
+ * shell, so its sign-in and company switch apply them here. A failed read
+ * answers `unavailable`, never `open`.
  */
 export async function getOnshapePanelAccountGate(
   client: SupabaseClient<Database>,
@@ -6301,15 +6298,14 @@ type AssemblyPushSummary = {
   methodsTouched: number;
   /** Parent part numbers whose BOM went into a new Draft. */
   draftVersionsCreated: string[];
-  /** STEP models and drawings queued for export from Onshape. */
   modelsQueued: number;
   drawingsQueued: number;
   /** Picked rows whose item did not end up linked to the row's source. */
   assetsSkipped: number;
-  /** Queued files the review saw the item already has: the export skips them while they still are. */
+  /** Queued files current at review; the export skips those still current. */
   modelsCurrent: number;
   drawingsCurrent: number;
-  /** The root assembly's own model export, when queued: current at review, or not. */
+  /** The assembly's own model, when queued; "current" as of the review. */
   rootModel?: "exporting" | "current";
   skipped: string[];
   errors: string[];
@@ -7378,11 +7374,9 @@ type DrawingTargetRow = NonNullable<
 >["targets"][number];
 
 /**
- * Queues the STEP models and drawings the reviewer picked. A row is queued
- * only when its item ended up linked to the row's Onshape source; any other
- * pick counts in `assetsSkipped`. A part number the plan did not offer is
- * ignored. `root` takes the drawings of the assembly itself; its model is
- * queued with every push, not here.
+ * Queues the picked models and drawings of rows whose item ended up linked
+ * to the row's source; other picks count in `assetsSkipped`. The root's
+ * model is queued with every push, not here.
  */
 async function queueAssemblyAssets(input: {
   companyId: string;
@@ -7483,8 +7477,7 @@ async function queueAssemblyAssets(input: {
     else failed = true;
   }
   if (failed) {
-    // The apply took the plan, and the panel's next push starts a new review
-    // with nothing picked: the files must be picked again there.
+    // The plan is consumed, so a re-push starts a review with nothing picked.
     summary.errors.push(
       "STEP models or drawings couldn't be queued. Re-push the assembly and pick them again."
     );
@@ -8129,9 +8122,8 @@ export async function pushOnshapeRelease(
     }
   }
 
-  // A reused revision held by a locked change notice takes no writes: not its
-  // fields, not its BOM. Nor does the Carbon revision outside the release that
-  // a drawing attaches to.
+  // A locked notice's revisions take no writes: reused rows, and the revision
+  // outside the release that a drawing attaches to.
   const lockedRevisions = await loadLockedRevisions(client, companyId, [
     ...new Set([
       ...decisions.flatMap((decision) =>

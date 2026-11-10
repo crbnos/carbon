@@ -82,8 +82,7 @@ function trackingIcon(value: string): ReactNode {
   }
 }
 
-// The items table's secondary Badge as a select trigger: the value's icon,
-// with the field and its value in the tooltip.
+// The items table's secondary Badge, as a select trigger.
 const FIELD_PILL =
   "inline-flex h-6 shrink-0 items-center justify-center rounded-full border border-black/[0.08] bg-transparent px-2 text-foreground/70 outline-none transition-[background-color,box-shadow] hover:bg-accent focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[state=open]:bg-accent dark:border-border dark:text-secondary-foreground";
 
@@ -139,8 +138,8 @@ function FieldSelect<T extends string>({
 }
 
 /**
- * Replenishment, Method and Tracking selects as icon pills; each names its
- * field and value in a tooltip. onChange reports only what the user changes.
+ * Replenishment, Method and Tracking selects as icon pills. onChange reports
+ * only what the user changes.
  */
 export function ItemFieldSelects({
   baseline,

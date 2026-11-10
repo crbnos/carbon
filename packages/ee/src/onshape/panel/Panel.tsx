@@ -449,7 +449,7 @@ type AssemblyPushSummary = {
   /** Queued files the review saw the item already has: skipped while they still are. */
   modelsCurrent?: number;
   drawingsCurrent?: number;
-  /** The assembly's own model export, when queued: current at review, or not. */
+  /** The assembly's own model, when queued; "current" as of the review. */
   rootModel?: "exporting" | "current";
   skipped: string[];
   errors: string[];
@@ -603,8 +603,7 @@ function assemblyOutcomeText(s: AssemblyPushSummary): PushOutcome {
               : `${capitalize(listText(exporting))} are exporting from Onshape. They appear on their items in a few minutes.`
           ]
         : []),
-      // The review's view: the export checks again, so a file changed since
-      // the review still exports.
+      // The review's count; the export checks each file again.
       ...(filesCurrent > 0
         ? [
             filesCurrent === 1
@@ -1003,10 +1002,7 @@ function PanelLoadError({
   );
 }
 
-/**
- * The required BOM columns a status or plan refusal names, from its
- * diagnostics; null for any other failure.
- */
+/** BOM columns a status or plan refusal names as missing; null otherwise. */
 function missingBomColumns(diagnostics: unknown): string[] | null {
   const missing =
     diagnostics && typeof diagnostics === "object"
@@ -1065,8 +1061,7 @@ export function OnshapePanel({
   const [tab, setTab] = useState<PanelTab>("push");
 
   const [fields, setFields] = useState<PanelFieldsState>({ status: "closed" });
-  // Manual Mapping changes every push for the company: its fields show only
-  // after "I understand", once per page load. Here because a tab unmounts.
+  // Manual Mapping's "I understand", held here for the page load: tabs unmount.
   const [manualConfirmed, setManualConfirmed] = useState(false);
 
   const [switchingCompany, setSwitchingCompany] = useState(false);
@@ -1101,8 +1096,8 @@ export function OnshapePanel({
     setTab("push");
   }, [elementScope, documentScope]);
 
-  // Everything read under a session belongs to its user and company, and a section
-  // a 401 abandoned mid-read would stay loading.
+  // Reads belong to the session's user and company, and a section a 401
+  // abandoned mid-read would stay loading.
   const clearSessionReads = useCallback(() => {
     setReview(null);
     setParts({ status: "idle" });
@@ -3538,8 +3533,8 @@ const SOURCE_PROPERTY = "property:";
 // Identity fields pushes link parts to Carbon items by: behind Manual Mapping.
 const MANUAL_IDENTITY_FIELDS: IdentityField[] = ["partNumber", "revision"];
 
-/** Names the columns: the right one is when a property's value is written, or
- * the push default when the row reads no property. */
+/** "On push": when a property's value is written, or the push default when
+ * the row reads no property. */
 function FieldListHeader() {
   return (
     <div
@@ -3557,8 +3552,7 @@ function FieldListHeader() {
   );
 }
 
-/** The names Onshape sends for this element, spelled as Onshape sends them:
- * for troubleshooting a field the panel can't find. */
+/** Onshape's raw names for this element, to troubleshoot a field not found. */
 function OnshapeNames({
   bom,
   properties,
@@ -4187,9 +4181,8 @@ function chosenColumn(
 }
 
 /**
- * Item or Quantity: shown when the panel finds no column on its own, one is
- * saved, or the user asks to change the one found. The picker takes a column
- * of this BOM or a typed name, which every BOM is searched for.
+ * Item or Quantity source row. The picker takes a column of this BOM or a
+ * typed name, which every BOM is searched for.
  */
 function BomLineRow({
   field,
@@ -5811,8 +5804,7 @@ type ReviewRowPlan = AssemblyPlan["root"] | AssemblyPlan["items"][number];
 // A long review opens on its modules; a short one shows every row.
 const COLLAPSE_ABOVE_ROWS = 30;
 
-// Narrower than this, the columns leave the part number too little room, so
-// each row stacks its settings and files under the part, as the BOM list does.
+// Narrower, the columns crowd the part number: rows stack, as in the BOM list.
 const REVIEW_TABLE_MIN_WIDTH = 880;
 
 // Indent per tree level, as the BOM list indents; deeper levels stay at the last step.
@@ -5843,7 +5835,7 @@ function useElementWidth<T extends HTMLElement>() {
   return [ref, width] as const;
 }
 
-/** The assembly review as Onshape's tree: a table, or a stacked list when the panel is narrow. */
+/** The assembly review as Onshape's tree; stacked when the panel is narrow. */
 function AssemblyReviewTable({
   review,
   busy,
@@ -6218,7 +6210,7 @@ function ReviewPartText({
   );
 }
 
-/** A sub-assembly's "Pick all files": every file offered in it; once all are picked, clears them. */
+/** A sub-assembly's "Pick all files"; once all are picked, it clears them. */
 function GroupFilesPick({
   partNumbers,
   hiddenBelow,

@@ -124,12 +124,9 @@ export async function deletePanelSession(token: string): Promise<void> {
 }
 
 /**
- * Moves a session to another company under a new token that keeps the old
- * one's expiry. A token names one company for life: `stampActivity` writes a
- * session it read earlier, which would put the old company back over an
- * in-place change, and a duplicated tab sharing the token would keep showing
- * the old company while pushing to the new one. Its old token stops working
- * instead. Null when the session has expired or Redis did not store the new one.
+ * Moves a session to a new token in another company, keeping its expiry.
+ * Never in place: `stampActivity` would write the old company back, and a
+ * tab sharing the token would push to a company it does not show.
  */
 export async function switchPanelSessionCompany(
   token: string,
@@ -151,8 +148,7 @@ export async function switchPanelSessionCompany(
   if (stored !== "OK") return null;
 
   await deletePanelSession(token);
-  // The cached role belongs to the company that filled the entry, as on the
-  // cookie session's company switch.
+  // The cached role is the old company's; the cookie switch drops it too.
   await redis.del(getPermissionCacheKey(session.userId));
   return next;
 }

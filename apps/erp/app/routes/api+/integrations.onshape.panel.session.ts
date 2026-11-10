@@ -41,7 +41,7 @@ export async function action({ request }: ActionFunctionArgs) {
   return data({ ok: true });
 }
 
-/** Moves the panel to another company; the answer is the token to use from now on. */
+/** Moves the panel to another company and answers the new token. */
 async function switchCompany(request: Request) {
   const { client, companyId, userId, email, ssoProviderId } =
     await requireOnshapePanelPermissions(request, {});

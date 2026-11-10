@@ -52,7 +52,7 @@ export type CreatableComboboxProps = Omit<
   onChange?: (selected: string) => void;
   onCreateOption?: (inputValue: string) => void;
   /** The create row's text for a search, in place of "Create …". The row then
-   * shows only while searching, since its text needs the search. */
+   * shows only while searching. */
   createOptionText?: (search: string) => string;
   itemHeight?: number;
 };

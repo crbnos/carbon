@@ -720,9 +720,8 @@ export class OnshapeClient {
   }
 
   /**
-   * What an app element (a drawing) references, resolved in bulk:
-   * `{ resolvedReferences: [{ targetDocumentId, targetElementId, idTag, … }] }`,
-   * read by `parseDrawingReferences` (`panel/drawings.ts`).
+   * A drawing's references, resolved in bulk; `parseDrawingReferences`
+   * (`panel/drawings.ts`) reads the answer.
    */
   async resolveAppElementReferences(
     document: OnshapeDocument,
@@ -796,9 +795,8 @@ export class OnshapeClient {
   }
 
   /**
-   * Every part of a document in its default configuration, each with its
-   * `elementId` and `microversionId`: one call where `getPartsInElement` takes
-   * one per Part Studio.
+   * Every part of a document in its default configuration: one call where
+   * `getPartsInElement` takes one per Part Studio.
    */
   async getPartsInDocument(
     document: OnshapeDocument

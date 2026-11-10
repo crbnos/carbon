@@ -687,8 +687,7 @@ describe("getLockVerdict", () => {
   );
 });
 
-// The verdict both Onshape writers share: the panel's push and the sync
-// connection's BOM sync (`loadMethodWriteRefusals`).
+// Shared by the panel's push and the BOM sync (`loadMethodWriteRefusals`).
 describe("methodWriteRefusal", () => {
   it.each(["off", "warn", "enforce"] as const)(
     "refuses a change notice's Draft under release control %s",

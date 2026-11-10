@@ -124,9 +124,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return data(failure.body, { status: failure.status });
   }
 
-  // An assembly's BOM columns: the Item and Quantity rows show the one
-  // detected, or offer the columns when none is. Non-fatal: the rest of the
-  // page needs no BOM.
+  // An assembly's BOM columns. Non-fatal: the rest of the page needs no BOM.
   let bom: {
     columns: {
       propertyId: string;

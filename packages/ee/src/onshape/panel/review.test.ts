@@ -272,7 +272,7 @@ const settledMethod = (
     ...over
   });
 
-/** An assembly already in Carbon: linked, every file current, the BOM as Onshape has it. */
+/** An assembly already in Carbon: linked, files current, BOM as in Onshape. */
 const settledReview = ({ modelCurrent = true } = {}): AssemblyReview =>
   assemblyReview(
     assemblyPlan({

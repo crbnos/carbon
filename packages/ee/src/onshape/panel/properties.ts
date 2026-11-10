@@ -41,10 +41,8 @@ export const MAPPING_MODES = ["create", "everyPush"] as const;
 export type MappingMode = (typeof MAPPING_MODES)[number];
 
 /**
- * `identity`: the property a push reads Part number, Revision, Name or
- * Description from, instead of Onshape's own. `bomLine`: the BOM column
- * holding Item or Quantity, by column id, when the BOM has no column the panel
- * recognises. Neither writes a field of its own.
+ * `identity` and `bomLine` name where a push reads an identity value or a BOM
+ * Item or Quantity column instead of Onshape's own. Neither writes a field.
  */
 export type PropertyMapTarget =
   | { kind: "customField"; fieldId: string }
@@ -472,8 +470,7 @@ export function propertyMapEqual(
 
 /**
  * Whether the map writes a field from part properties. Identity and BOM line
- * sources are read by the push itself, so a map of only those costs no
- * property read.
+ * sources need no property read: the push reads them itself.
  */
 export function mapsPartProperties(map: readonly PropertyMapEntry[]): boolean {
   return map.some(

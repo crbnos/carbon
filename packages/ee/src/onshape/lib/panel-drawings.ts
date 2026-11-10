@@ -32,11 +32,9 @@ import {
 import { readDocumentDrawings } from "./drawings";
 import { settleBefore } from "./source-state";
 
-// The drawings an assembly review offers: listed per source document, their
-// references resolved (or read from the cache), then tied to rows. Every
-// failed read is a warning; none fails the review. Reads stop at `deadline`,
-// so a large review answers inside the panel's wait; the cache keeps what was
-// read, and the next review reads the rest.
+// The drawings an assembly review offers. A failed read is a warning, never a
+// failed review. No read starts after `deadline`; the cache keeps what was
+// read, so the next review reads the rest.
 
 const logger = getLogger("ee", "onshape", "drawings");
 
@@ -50,9 +48,8 @@ type DrawingClient = Pick<
 >;
 
 /**
- * Runs `run` over `list`, a few at a time. None starts after `deadline`, and
- * one still running then is abandoned and its result dropped. Returns the
- * finished runs' results, in list order, and how many did not finish.
+ * Runs `run` over `list`, a few at a time; none starts after `deadline`, and
+ * one still running then is dropped and counted in `late`.
  */
 async function eachUntil<T, R>(
   list: T[],
@@ -170,8 +167,7 @@ export async function readAssemblyDrawings({
     if (cached) read.push({ ...drawing, references: cached.references });
     else pending.push(drawing);
   });
-  // A read that finishes after the deadline still fills the cache, so the
-  // next review has it.
+  // A read that finishes late still fills the cache for the next review.
   const resolved = await eachUntil(
     pending,
     deadline,

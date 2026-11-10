@@ -61,9 +61,8 @@ export type PanelCompanyChoice = {
 };
 
 /**
- * Where the panel can work: the companies the user is an employee of with the
- * panel connected. The current one stays listed while it is not connected, so
- * the selector can always name where the panel is.
+ * Employee companies with the panel connected, plus the current one even when
+ * it is not, so the selector can always name where the panel is.
  */
 export function panelCompanyChoices(
   memberships: Array<{

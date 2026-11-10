@@ -1331,7 +1331,7 @@ export type AssemblyRowDrawing = {
   current?: true;
   /** The item has this drawing's PDF from an earlier state; a push replaces it. */
   outOfDate?: true;
-  /** The item has this drawing's PDF, but its state could not be read; a push exports it. */
+  /** The item has this PDF but its state was not read; a push exports it. */
   unchecked?: true;
 };
 
@@ -1342,7 +1342,7 @@ export type AssemblyRowAssets = {
   modelCurrent?: true;
   /** The item's model is an earlier Onshape export; a push replaces it. */
   modelOutOfDate?: true;
-  /** The item's model is an Onshape export whose source state could not be read; a push exports it. */
+  /** The model's source state was not read; a push exports it. */
   modelUnchecked?: true;
   drawings: AssemblyRowDrawing[];
 };
@@ -1392,7 +1392,7 @@ export type AssemblyPlanRoot = MappedRowPlan & {
   current?: ItemFieldSnapshot | null;
   changes?: OwnedFieldChange[];
   released?: { revision: string };
-  /** Drawings only: the root's own model goes with every push. Absent when released. */
+  /** Drawings only: its model goes with every push. Absent when released. */
   assets?: AssemblyRowAssets;
   /** The root item already has this assembly's model from its current state. */
   modelCurrent?: true;
@@ -1712,8 +1712,7 @@ export function buildAssemblyPlan({
       });
       continue;
     }
-    // A sub-assembly listed with no components reads like a part; only its
-    // element's type tells them apart.
+    // An empty sub-assembly reads like a part; only its element type differs.
     if (
       !madePartNumbers.has(node.partNumber) &&
       !node.shownAsUnit &&
@@ -1903,10 +1902,8 @@ export type ModelExportRow = ModelExport & {
 };
 
 /**
- * Every row a drawing can tie to: the root, then the first BOM row of each part
- * number in the whole tree. Rows the review lists no files for are targets too,
- * so a drawing that also shows one of them is not tied to a neighbour by
- * elimination.
+ * The root, then the first BOM row of each part number. Rows without files are
+ * targets too, so elimination never ties a drawing of one to a neighbour.
  */
 export function assemblyDrawingTargets(
   plan: AssemblyPlan,
@@ -1943,7 +1940,7 @@ export function assemblyDrawingTargets(
   return targets;
 }
 
-/** The documents whose drawings the review reads: the root's and each row's that takes files. */
+/** The root's document and each document of a row that takes files. */
 export function assemblyDrawingDocuments(
   plan: AssemblyPlan
 ): DrawingDocument[] {
@@ -1971,10 +1968,8 @@ export function assemblyDrawingDocuments(
 }
 
 /**
- * Puts each tied drawing on the rows it shows (`targetIds` are part numbers).
- * A drawing tied to a row that takes no files is dropped there: that item's
- * own push brings its drawings. Returns the ties to the rows that kept them,
- * for the review's current-file check.
+ * A tie to a row that takes no files is dropped: that item's own push brings
+ * its drawings. Returns the ties kept, for the current-file check.
  */
 export function withAssemblyDrawings(
   plan: AssemblyPlan,
@@ -2034,12 +2029,8 @@ export function rowDrawingKey(partNumber: string, elementId: string): string {
 }
 
 /**
- * Marks the files a row's item already has from the source's current state,
- * those it has from an earlier state, and those whose state could not be
- * read: `models` by part number, `drawings` by `rowDrawingKey`. The push
- * skips current files, so the review does not count them; an unchecked file
- * counts as an export. `rootModel`: the root item already has the assembly's
- * model.
+ * Marks each row's current, out-of-date and unchecked files: `models` keyed by
+ * part number, `drawings` by `rowDrawingKey`.
  */
 export function withCurrentFiles(
   plan: AssemblyPlan,
@@ -2102,21 +2093,15 @@ export function withCurrentFiles(
   };
 }
 
-/** A row that takes a drawing's PDF: its item and the Onshape source it shows. */
+/** A row that takes drawing PDFs: its item and the source it shows. */
 export type DrawingTargetRow = DrawingSource & {
   itemId: string;
   partNumber: string;
 };
 
 /**
- * The picked rows' exports on the items they go to: STEP models of parts and
- * sub-assemblies, and the rows whose drawings the push finds and attaches.
- * `modelRows` and `drawingRows` pick rows by part number (absent: every row).
- * `root` is the assembly itself when the push linked it: it takes drawings
- * only, since its model goes with every push. `linkFor` names a row's item and
- * the key of its link to that source, or null when the row has no item linked
- * to it: its picked files count as `unlinked`. `drawings` counts the PDFs the
- * picked rows offer, `current` the picked files the review marked current.
+ * The picked rows' models and drawing targets on their linked items. `root`
+ * takes drawings only, since its model goes with every push.
  */
 export function assemblyAssetRows(input: {
   plan: AssemblyPlan;
@@ -2181,11 +2166,7 @@ export function assemblyAssetRows(input: {
   return { models, drawingTargets, drawings, unlinked, current };
 }
 
-/**
- * What the review checks for current files, on the items the rows have now:
- * every row's model, and each tied drawing on the rows it goes to. A row with
- * no item yet holds no file, so it is left out.
- */
+/** The rows' models and tied drawings the review checks for current files. */
 export function assemblyCurrentFileRows(input: {
   plan: AssemblyPlan;
   ties: DrawingTie[];
@@ -2294,7 +2275,7 @@ export type ReleasePlanItem = MappedRowPlan & {
   /** Part Studio items: the part the export translates; without one, none. */
   partId?: string | null;
   configuration?: string | null;
-  /** Onshape marked this revision obsolete. Shown only: the push still writes it. */
+  /** Onshape marked it obsolete; shown only, the push still writes it. */
   obsolete?: true;
   action: ReleasePlanItemAction;
   baseItemId: string | null;
@@ -2308,7 +2289,7 @@ export type ReleasePlanItem = MappedRowPlan & {
   changes?: OwnedFieldChange[];
   /** Released assemblies only; a reused item's Active method is refused. */
   methodStatus: "draft" | "active" | "new" | "missing" | null;
-  /** Reuse only: why a change notice keeps the push from writing this revision. */
+  /** Reuse only: why a change notice stops the push writing this revision. */
   locked?: string;
   /**
    * Drawings only: the release's model item with the drawing's number, else

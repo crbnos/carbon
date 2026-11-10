@@ -33,13 +33,12 @@ import {
 } from "./onshape-source-keys";
 
 // Which of an assembly push's files an item already has from its source's
-// current state. The review marks them and the export job skips them, with the
-// same reads and the same keys, so the two agree.
+// current state; the review and the export job share these reads and keys.
 
 type CarbonClient = SupabaseClient<Database>;
 type AssetsPayload = Events["carbon/onshape-panel-assets"]["data"];
 export type ModelRow = AssetsPayload["models"][number];
-/** A model row before a push has linked its item: all the current-file checks read. */
+/** A model row before its link exists, as the current-file checks read it. */
 export type ModelSourceRow = Omit<ModelRow, "externalId">;
 export type DrawingTargetRow = NonNullable<
   AssetsPayload["drawings"]
@@ -98,9 +97,8 @@ export type StateRead = <T>(
 ) => Promise<T | null>;
 
 /**
- * Each workspace's state, `atOnce` at a time (one by default). A failed read
- * leaves it out; none starts after `deadline`, and one still running then is
- * dropped. `unread` counts the workspaces left out.
+ * Each workspace's state, `atOnce` at a time. A failed or late read leaves it
+ * out and counts in `unread`; none starts after `deadline`.
  */
 export async function readSourceStates(
   client: Pick<OnshapeClient, "getWorkspaceSourceStates">,
@@ -398,7 +396,6 @@ export type DrawingExport = {
   >;
 };
 
-/** What a row holds of a drawing: its record, and whether that PDF is still stored. */
 function heldDrawing(
   drawing: TiedDrawing,
   target: DrawingTargetRow,
@@ -411,7 +408,6 @@ function heldDrawing(
   return { record, stored };
 }
 
-/** Whether what a row holds is the PDF of `sourceKey`, or that state's PDF was too large. */
 function isCurrentDrawing(
   sourceKey: string | null,
   { record, stored }: ReturnType<typeof heldDrawing>
@@ -529,7 +525,7 @@ export function drawingFileKey(row: {
   return [row.itemId, row.drawingElementId].join(SEP);
 }
 
-/** The rows the review checks: each model, and each drawing on the rows it goes to. */
+/** The review's rows: each model, and each drawing with its target rows. */
 export type FileRows = { models: ModelSourceRow[]; drawings: TiedDrawing[] };
 
 /** What Carbon holds for the review's rows. */
@@ -538,9 +534,8 @@ export type FileRecords = { models: ModelRecords; drawings: DrawingRecords };
 export type CurrentFiles = { models: string[]; drawings: string[] };
 
 /**
- * The rows whose item could hold the current file: it has a model, or a
- * recorded drawing whose PDF is stored or was too large. Only these need
- * Onshape reads.
+ * The rows whose item could hold the current file: a model, or a recorded
+ * drawing stored or too large. Only these need Onshape reads.
  */
 export function rowsWithFiles(rows: FileRows, records: FileRecords): FileRows {
   return {
@@ -564,7 +559,7 @@ export function rowsWithFiles(rows: FileRows, records: FileRecords): FileRows {
   };
 }
 
-/** The drawings the rows' items hold from the sources' current states, by `drawingFileKey`. */
+/** Drawings held from the sources' current states, by `drawingFileKey`. */
 export function currentDrawingFiles(
   drawings: TiedDrawing[],
   states: SourceStates,
@@ -624,10 +619,9 @@ export function uncheckedFiles(
 }
 
 /**
- * The rows' files that Carbon holds from an earlier Onshape export but are
- * not current: models by item id, drawings by `drawingFileKey`. A model
- * uploaded by hand is not one: it is not out of date, it is another file.
- * Neither is an `unchecked` file, whose state is unknown.
+ * Files from an earlier Onshape export that are not current: models by item
+ * id, drawings by `drawingFileKey`. Never a hand-uploaded model (another file,
+ * not an old one) or an `unchecked` file.
  */
 export function outOfDateFiles(
   rows: FileRows,
@@ -671,9 +665,8 @@ export type CurrentFilesCheck = CurrentFiles & {
 };
 
 /**
- * For the review: which of these rows' files are current. Carbon's records
- * come first, so Onshape is read only for rows whose item has a file, and
- * no read runs past `deadline`.
+ * For the review: which rows' files are current. Carbon's records come first,
+ * so Onshape is read only for rows whose item has a file.
  */
 export async function readCurrentFiles(input: {
   client: Pick<OnshapeClient, "getWorkspaceSourceStates">;

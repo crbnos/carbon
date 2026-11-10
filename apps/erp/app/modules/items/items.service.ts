@@ -9251,11 +9251,8 @@ export function getLockVerdict(lock: {
 }
 
 /**
- * Why a sync from CAD must not write a make method's bill of materials, or
- * null. A Draft a change notice holds is the notice's to change, whatever the
- * notice's stage. A released (Production) revision follows `getLockVerdict`,
- * as the BOM editor's `checkRevisionLock` does: `enforce` refuses, `warn` and
- * `off` write. `noticeNumber` is for the message only.
+ * Why a CAD sync must not write this BOM, or null: a change notice's Draft at
+ * any stage, or a Production revision under `enforce` (`checkRevisionLock`).
  */
 export function methodWriteRefusal(
   target: {
@@ -10445,12 +10442,9 @@ export const syncMakeMethodPermission = {
 } satisfies PermissionRule<z.output<typeof syncInput>>;
 
 /**
- * What the Onshape sync does with an item's make method. A refused method
- * (`loadMethodWriteRefusals`: a change notice's Draft, or a released revision
- * under `enforce`) keeps its BOM. A Draft is rewritten. An Active method is
- * never edited: the sync writes into a Draft of the item instead
- * (`pickSyncDraft`, else a new version). An Archived method is frozen, as in
- * the BOM editor, so it is refused.
+ * What the Onshape sync does with a make method. An Active one is never
+ * edited: the sync writes into `pickSyncDraft`'s Draft, else a new version.
+ * An Archived one is frozen, as in the BOM editor.
  */
 export type SyncMethodChoice =
   | { action: "skip"; makeMethodId: string; reason: string }
@@ -10479,10 +10473,8 @@ export function chooseSyncMethod(
 }
 
 /**
- * The Draft the Onshape sync reuses for an item whose method is Active: the
- * newest one no change notice holds. A notice's Draft is the notice's to
- * change, so with no other Draft the sync takes a new version, as the panel
- * does (`pickReusableDraft`).
+ * The Draft the sync writes in place of an Active method: the newest one no
+ * change notice holds, as the panel's `pickReusableDraft` picks.
  */
 export function pickSyncDraft<
   T extends { version: number | null; changeOrderId: string | null }
@@ -10567,8 +10559,7 @@ export async function syncMakeMethod(
         }
       }
 
-      // Every method the sync may write is read before anything is written,
-      // so a refusal below leaves nothing behind.
+      // Read before any write, so a refusal below leaves nothing behind.
       const existingMakeMethods = await many(
         db,
         "activeMakeMethods",
@@ -10611,8 +10602,7 @@ export async function syncMakeMethod(
         existingItems.data.map((item) => [item.id, item.revisionStatus])
       );
 
-      // Not written, as the Onshape panel refuses them: a change notice's
-      // Draft, and a released revision when release control enforces it.
+      // Refused as the Onshape panel refuses them (`methodWriteRefusal`).
       const refusalByItemId = await loadMethodWriteRefusals(
         ctx.asSystem.supabase,
         companyId,
@@ -10719,8 +10709,7 @@ export async function syncMakeMethod(
         ]) ?? []
       );
 
-      // Sub-assemblies whose BOM the sync refused to write, as
-      // `<part number>: <reason>`, the way the panel lists them.
+      // Refused sub-assemblies, as `<part number>: <reason>` like the panel.
       const skipped = new Set<string>();
 
       {

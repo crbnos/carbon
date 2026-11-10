@@ -3,11 +3,10 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 /**
- * Where a push reads the values it always needs: part number, revision, name
- * and description, and a BOM's Item and Quantity columns. Each is Onshape's own
- * property unless the company's property map names another. A BOM template or
- * a language relabels a column, never its property id or `propertyName`, so
- * nothing here matches a label first.
+ * Where a push reads part number, revision, name, description and a BOM's
+ * Item and Quantity: Onshape's own property unless the property map names
+ * another. A template or language relabels a column, never its property id or
+ * `propertyName`, so nothing here matches a label first.
  */
 
 import type { PropertyMapEntry } from "./properties";
@@ -29,7 +28,6 @@ export const IDENTITY_VALUE_TYPES: readonly string[] = ["STRING", "ENUM"];
 type OnshapeProperty = {
   /** The same in every Onshape company. */
   propertyId: string;
-  /** The BOM header's `propertyName`. */
   propertyName: string;
   /** Onshape's default label; a template or a language may show another. */
   label: string;
@@ -107,10 +105,7 @@ for (const [field, property] of Object.entries(ONSHAPE_PROPERTIES) as [
   FIELD_BY_LABEL.set(labelKey(property.label), field);
 }
 
-/**
- * Which of Onshape's own properties this is: by id, by `propertyName` (a BOM
- * header), then by its default label in any case.
- */
+/** Which of Onshape's own properties this is: by id, `propertyName`, label. */
 export function onshapePropertyField(property: {
   propertyId?: unknown;
   id?: unknown;
@@ -240,9 +235,8 @@ export function isNamedColumnId(id: string): boolean {
 
 /**
  * The column a saved choice reads: by id, then by name in any case. The name
- * match skips Onshape's own columns, known by id, property name or default
- * label as detection knows them, so a name never moves Item onto Onshape's
- * Quantity, nor a part number override onto any of Onshape's columns.
+ * match skips Onshape's own columns, so a name never moves Item onto
+ * Onshape's Quantity, nor a part number override onto any of Onshape's columns.
  */
 export function chosenBomColumn(
   headers: readonly BomHeaderLike[],
@@ -268,20 +262,18 @@ export function chosenBomColumn(
 }
 
 /**
- * The BOM column id for each field the parser reads, null when the BOM has
- * none. An identity override names its own column (by id, then its label) and
- * never falls back to Onshape's: a part number read from another property
- * would link other items. A line override is found by id, then by name
- * (`chosenBomColumn`); one this BOM lacks falls back to Onshape's own.
+ * Each parsed field's column id, or null. A missing line override falls back
+ * to Onshape's column; an identity override never does, since a part number
+ * read from another property would link other items.
  */
 export function bomColumnIds(
   headers: readonly BomHeaderLike[],
   sources: StandardSources = DEFAULT_STANDARD_SOURCES
 ): Record<BomColumnField, string | null> {
   const own = new Map<OnshapePropertyField, string>();
-  // Property name first: a custom column may carry a standard label. The exact
-  // label before the label in any case: "Part number" beats a custom "PART NUMBER".
-  // Within a pass the last match wins, as it did before overrides existed.
+  // Property name first: a custom column may carry a standard label. Exact
+  // label before any case, so "Part number" beats a custom "PART NUMBER".
+  // Within a pass the last match wins.
   for (const pass of ["propertyName", "id", "exactLabel", "label"] as const) {
     const matched = new Map<OnshapePropertyField, string>();
     for (const header of headers) {
@@ -306,8 +298,7 @@ export function bomColumnIds(
   const identity = (field: IdentityField) => {
     const override = sources.identity[field];
     if (!override) return own.get(field) ?? null;
-    // A column whose id is not the property id still matches by its label,
-    // as a mapped custom field's cell does (`resolveMappedFields`).
+    // By label too, as `resolveMappedFields` matches a custom field's cell.
     return chosenBomColumn(headers, {
       headerId: override.propertyId,
       name: override.name
@@ -348,11 +339,9 @@ function textValue(value: unknown, trim = true): string | null {
 type PropertyLike = { propertyId?: unknown; name?: unknown; value?: unknown };
 
 /**
- * An identity value from Onshape metadata: the override's property, else
- * Onshape's own (by id, then by label in any case). An override never falls
- * back to Onshape's own property. `trim: false` keeps surrounding spaces, as an
- * assembly's own part number and name were always read: an item pushed with
- * them must still match.
+ * An identity value from metadata: the override's property when one is set,
+ * with no fallback, else Onshape's own. `trim: false` keeps surrounding
+ * spaces, so an assembly root's item pushed with them still matches.
  */
 export function identityValue(
   properties: readonly PropertyLike[],
@@ -414,9 +403,8 @@ export function withIdentitySources<
 }
 
 /**
- * Why the Fields save refuses a standard source entry; empty when it takes
- * it, and for any other target. Guards a hand-made payload: the editor offers
- * neither case.
+ * Why the Fields save refuses a standard source entry; empty otherwise. Guards
+ * a hand-made payload: the editor never offers these.
  */
 export function standardSourceErrors(
   entry: Pick<

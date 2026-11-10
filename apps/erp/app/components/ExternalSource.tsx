@@ -37,11 +37,7 @@ type ExternalSourceMapping = {
   } | null;
 };
 
-/**
- * Self-loading card for the item's `onshape-v2` link: what a push can update,
- * last push time, Open in Onshape and Detach. Renders nothing when the item
- * has no link.
- */
+/** Self-loading `onshape-v2` link card; renders nothing without a link. */
 export function ExternalSourceCard({
   itemId,
   canDetach
@@ -146,8 +142,7 @@ export function ExternalSourceCard({
       : `https://cad.onshape.com/documents/${meta.documentId}`;
   const pushedAt = meta.pushedAt ?? mapping.lastSyncedAt;
   const lastPushed = pushedAt ? formatDateTime(pushedAt) : null;
-  // The card cannot tell which of these a push brings (BOM lines come only
-  // with an assembly, files only when picked), so it names all it can change.
+  // All a push can change: the card cannot tell which ones a push brings.
   const pushTargets = new Intl.ListFormat(i18n.locale, {
     style: "long",
     type: "conjunction"

@@ -144,8 +144,7 @@ export async function action({ request }: ActionFunctionArgs) {
       { status: 500 }
     );
   }
-  // A part number from another property: the part metadata is read now, and
-  // the property map reuses it below.
+  // An identity override reads the part metadata now; the map reuses it.
   let identityProperties: Map<string, OnshapePropertyValue[]> | undefined;
   if (hasIdentityOverride(sources)) {
     try {

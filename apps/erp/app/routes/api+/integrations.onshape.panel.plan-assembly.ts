@@ -76,9 +76,8 @@ const payloadSchema = z.object({
 // rollback, and a gateway can cut a large one off mid-BOM.
 const MAX_PLAN_PARTS = 1500;
 
-// The panel stops waiting at 60 s. The drawing and file reads start only
-// before this much has passed, so the review answers in time; what they did
-// not reach shows as a warning.
+// No drawing or file read starts after this, so the review answers inside
+// the panel's 60 s wait; what they miss shows as a warning.
 const FILE_READS_BUDGET_MS = 45_000;
 
 /** Plan an assembly push without writing; the apply reuses the stored plan. */
@@ -466,8 +465,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
   const refused = withRefusedMethods(built, refusals);
 
-  // The drawings each row can take, so the review can offer them. A failed
-  // read leaves those rows without drawings and says so.
+  // A failed drawing read leaves those rows without drawings and warns.
   const drawings = await readAssemblyDrawings({
     client: onshape.client,
     companyId,
@@ -478,9 +476,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const fileWarnings = [...drawings.warnings];
   const placed = withAssemblyDrawings(refused, drawings.tied);
 
-  // The files the rows' items already have from the current state: the push
-  // skips them, so the review marks them and does not count them. The root's
-  // own model goes with every push, so it is checked too.
+  // Files the items already have from the current state, which the push
+  // skips; the root's model goes with every push, so it is checked too.
   const itemIdByPartNumber = new Map<string, string | null>([
     [refused.root.partNumber, refused.root.itemId],
     ...refused.items.map((item) => [item.partNumber, item.itemId] as const)

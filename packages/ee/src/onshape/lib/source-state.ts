@@ -69,9 +69,8 @@ export function workspaceSourceStates(
 }
 
 /**
- * Waits for `promise` until `deadline` (epoch ms). A promise still running
- * then is abandoned (its rejection is swallowed), so one slow Onshape answer
- * cannot hold a review past the panel's wait.
+ * Waits for `promise` until `deadline` (epoch ms), then abandons it and
+ * swallows its rejection, so one slow Onshape read cannot hold a review.
  */
 export async function settleBefore<T>(
   promise: Promise<T>,

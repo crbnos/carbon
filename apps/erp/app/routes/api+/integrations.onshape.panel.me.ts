@@ -17,10 +17,7 @@ export const config = {
 
 const logger = getLogger("erp", "onshape", "panel-me");
 
-/**
- * The panel user, the company and the ones it can move to, and whether they may
- * edit the Fields page.
- */
+/** The panel user, their companies, and whether they may edit Fields. */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId, sessionUserId, email } =
     await requireOnshapePanelPermissions(request, {});

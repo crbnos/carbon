@@ -52,7 +52,7 @@ export type AssemblyReview = ReviewBase & {
   kind: "assembly";
   plan: AssemblyPlan;
   excluded: Set<string>;
-  /** Part numbers whose STEP model exports. Empty at first: exports spend quota. */
+  /** Part numbers whose model exports. Empty at first: exports spend quota. */
   modelRows: Set<string>;
   /** Part numbers whose drawings export. */
   drawingRows: Set<string>;
@@ -262,10 +262,7 @@ export type AssemblyApplyBody = {
 
 export type AssetKind = "model" | "drawing";
 
-/**
- * The rows that offer each kind, as part numbers in review order: a STEP model
- * on a part or sub-assembly, drawings on any row with at least one.
- */
+/** Part numbers of the rows that offer each kind, in review order. */
 export function assetOffers(
   plan: AssemblyPlan,
   excluded: ReadonlySet<string> = new Set()
@@ -283,7 +280,7 @@ export function assetOffers(
   };
 }
 
-/** Picks or clears `partNumbers` for one kind; a row that does not offer it is ignored. */
+/** Picks or clears rows of one kind; rows that do not offer it are ignored. */
 export function setAssetRows(
   review: AssemblyReview,
   kind: AssetKind,
@@ -301,10 +298,7 @@ export function setAssetRows(
   return { ...review, [key]: next };
 }
 
-/**
- * What the push exports: the picked STEP models and the drawings on picked
- * rows, less the files the items already have (`current`), which it skips.
- */
+/** What the push exports, less the files items already have (`current`). */
 export function assetCounts(review: AssemblyReview): {
   models: number;
   drawings: number;
@@ -470,7 +464,7 @@ export type MethodBomChanges = {
   reordered: boolean;
 };
 
-/** An excluded part is not written, so a line the last push wrote for it goes. */
+/** An excluded part is not written, so its line from the last push goes. */
 export function methodBomChanges(
   method: AssemblyPlanMethod,
   excluded: ReadonlySet<string>
@@ -545,7 +539,7 @@ type WritableRow = MappedRowPlan & {
   current?: ItemFieldSnapshot | null;
 };
 
-/** An existing item takes only its manufacturing choices, and only what differs. */
+/** An existing item takes only the manufacturing choices that differ. */
 function editChangesItem(
   row: WritableRow,
   edit: ItemEdit | undefined
@@ -573,7 +567,7 @@ function writesExistingItem(
 
 type AssemblyRow = AssemblyPlan["root"] | AssemblyPlan["items"][number];
 
-/** Files aside: the push creates this row's item, links it, or writes its fields or BOM. */
+/** Files aside: the push creates, links or writes fields or BOM for the row. */
 function assemblyRowWrites(
   review: AssemblyReview,
   row: AssemblyRow,
@@ -604,12 +598,12 @@ function assemblyRows(review: AssemblyReview): AssemblyRow[] {
   ];
 }
 
-/** The root's own model goes with every push, unless a release holds the root. */
+/** The root's model exports on every push unless released or current. */
 function rootModelExports(root: AssemblyPlan["root"]): boolean {
   return !root.released && !root.modelCurrent;
 }
 
-/** The rows "Changed only" keeps: the push writes to them, or they offer a file Carbon lacks. */
+/** "Changed only" keeps rows the push writes or with a file not yet current. */
 export function changedPartNumbers(review: AssemblyReview): Set<string> {
   const changedMethods = changedMethodParents(review);
   const { root } = review.plan;
@@ -658,8 +652,7 @@ export function applyCount(review: ReviewState): number {
     case "release": {
       const { plan, edits } = review;
       const items = plan.items.filter((item) => {
-        // An attached drawing is uploaded to its model, so a release of
-        // drawings alone still has something to push.
+        // A drawing attaches to its model, so a drawings-only release counts.
         if (item.action !== "reuse") return item.action !== "drawing-unmatched";
         if (item.locked) return false;
         // A released assembly's BOM is rewritten unless Carbon released it too.

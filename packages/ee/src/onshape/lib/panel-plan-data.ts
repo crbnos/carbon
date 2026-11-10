@@ -68,9 +68,8 @@ export async function loadPlanOptions(
 
 /**
  * Where a push reads part number, revision, name, description, Item and
- * Quantity. Throws on a failed read: Onshape's own properties in place of the
- * company's choice would match parts to other items. Takes the service role,
- * as `loadPlanOptions` does.
+ * Quantity. Throws on a failed read: falling back to Onshape's own properties
+ * would match parts to other items. Service role, as `loadPlanOptions`.
  */
 export async function loadStandardSources(
   client: Client,

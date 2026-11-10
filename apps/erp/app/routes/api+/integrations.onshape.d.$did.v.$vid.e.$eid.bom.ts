@@ -75,9 +75,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         // Map each header to its corresponding value in the row
         headers.forEach((header) => {
           const value = row.headerIdToValue[header.id];
-          // Onshape's own columns go under their default label ("Part
-          // number"), whatever a BOM template calls them; matched by id or
-          // property name, never by label.
+          // Onshape's own columns keep their default label whatever a BOM
+          // template calls them: matched by id or property name, never label.
           const field = onshapePropertyField({
             id: header.id,
             propertyName: header.propertyName

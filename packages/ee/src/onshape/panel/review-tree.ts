@@ -20,11 +20,10 @@ export type ReviewTreeRow = {
   partNumber: string;
   /** 0 for the pushed assembly. */
   depth: number;
-  /** The key of the row this one sits under; null for the root. */
+  /** Null for the root. */
   parentKey: string | null;
   /** The quantity its parent's BOM line gives; null for the root. */
   quantity: number | null;
-  /** Keys of the rows directly under it. */
   childKeys: string[];
 };
 
@@ -119,10 +118,7 @@ export function subtreePartNumbers(
   return [...new Set(out)];
 }
 
-/**
- * Only the rows with something to decide (`keep`), and the rows above them so
- * the tree stays readable.
- */
+/** The rows `keep` picks and their ancestors, so the tree stays readable. */
 export function rowsWithAncestors(
   rows: ReviewTreeRow[],
   keep: (row: ReviewTreeRow) => boolean

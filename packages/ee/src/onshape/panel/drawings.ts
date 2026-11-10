@@ -279,7 +279,7 @@ export function bomAssemblySources(nodes: OnshapeBomNode[]): DrawingSource[] {
   return out;
 }
 
-/** A drawing the review lists and does not offer: it shows nothing in the push. */
+/** A drawing the review lists but does not offer: it shows nothing pushed. */
 export type SkippedDrawing = Pick<OnshapeDrawing, "elementId" | "name">;
 
 export function skippedDrawingText(drawing: SkippedDrawing): string {

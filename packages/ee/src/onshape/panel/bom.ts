@@ -4,10 +4,9 @@
 
 /**
  * Onshape indented BOM → typed tree. Columns are found by `bomColumnIds`
- * (`standard-sources.ts`): the property map's choice, else Onshape's own
- * column by property name, id or label in any case. Nesting comes from the
- * dotted Item index ("1.1.2"). Non-empty cells are kept as properties keyed by
- * column id, so a row resolves through the company's property map like a part.
+ * (`standard-sources.ts`); nesting comes from the dotted Item index ("1.1.2").
+ * Non-empty cells are kept as properties keyed by column id, so a row
+ * resolves through the company's property map like a part.
  */
 
 import { isNotApplicable, type OnshapePropertyValue } from "./properties";
@@ -85,9 +84,9 @@ export function parseBomTree(
   /** The assembly's own row (index "0"), when the export included it. */
   root: OnshapeBomNode | null;
   lines: OnshapeBomNode[];
-  /** Labels of the required columns not found or `blankColumns`; non-empty: callers refuse to plan. */
+  /** Labels of required columns missing or blank; callers refuse to plan. */
   missingColumns: string[];
-  /** Labels of the chosen Item and Quantity columns a line has no usable value in. */
+  /** Chosen Item or Quantity columns (labels) a line has no usable value in. */
   blankColumns: string[];
 } {
   const bom = (payload ?? {}) as {
