@@ -19,6 +19,8 @@ interface UIStore {
   isSidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   toggleSidebar: () => void;
+  isRailOpen: boolean;
+  setRailOpen: (open: boolean) => void;
   suggestionPrefill: SuggestionPrefill | null;
   requestSuggestion: (prefill: SuggestionPrefill) => void;
   clearSuggestionRequest: () => void;
@@ -37,6 +39,8 @@ export const useUIStore = create<UIStore>()((set) => ({
   setSidebarOpen: (open) => set({ isSidebarOpen: open }),
   toggleSidebar: () =>
     set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+  isRailOpen: false,
+  setRailOpen: (open) => set({ isRailOpen: open }),
   suggestionPrefill: null,
   requestSuggestion: (prefill) => set({ suggestionPrefill: prefill }),
   clearSuggestionRequest: () => set({ suggestionPrefill: null }),

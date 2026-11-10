@@ -12,14 +12,7 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import { motion, useReducedMotion } from "motion/react";
 import type { ComponentProps, CSSProperties, PropsWithChildren } from "react";
-import {
-  createContext,
-  forwardRef,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef
-} from "react";
+import { createContext, forwardRef, useContext, useMemo } from "react";
 import { LuPanelLeft } from "react-icons/lu";
 import type { Location } from "react-router";
 import { useLocation, useMatches, useNavigation } from "react-router";
@@ -50,19 +43,8 @@ function CollapsibleSidebarProvider({
   hasSidebar,
   children
 }: PropsWithChildren<{ hasSidebar: boolean }>) {
-  const { isPhone } = useViewport();
   const isSidebarOpen = useUIStore((state) => state.isSidebarOpen);
-  const setSidebarOpen = useUIStore((state) => state.setSidebarOpen);
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
-
-  // Only a change of breakpoint moves it: opening on mount would undo the
-  // user's collapse.
-  const wasCompact = useRef(false);
-  useEffect(() => {
-    if (isPhone) setSidebarOpen(false);
-    else if (wasCompact.current) setSidebarOpen(true);
-    wasCompact.current = isPhone;
-  }, [isPhone, setSidebarOpen]);
 
   return (
     <CollapsibleSidebarContext.Provider

@@ -55,6 +55,7 @@ type ImportResultsModalProps = {
   // Method imports only: parts written under a release-control warning.
   warnings?: string[];
   columns: string[];
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -69,6 +70,7 @@ export const ImportResultsModal = ({
   added,
   warnings = [],
   columns,
+  open = true,
   onClose
 }: ImportResultsModalProps) => {
   const { t } = useLingui();
@@ -96,7 +98,7 @@ export const ImportResultsModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

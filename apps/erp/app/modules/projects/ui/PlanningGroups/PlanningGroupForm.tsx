@@ -52,6 +52,7 @@ type PlanningGroupFormProps = {
   stockProjects: { id: string; identifier: string | null; name: string }[];
   /** An existing group only: its member projects. */
   members?: PlanningGroupMember[];
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -63,6 +64,7 @@ const PlanningGroupForm = ({
   initialValues,
   stockProjects,
   members,
+  open = true,
   onClose
 }: PlanningGroupFormProps) => {
   const { t } = useLingui();
@@ -81,7 +83,7 @@ const PlanningGroupForm = ({
   return (
     <ModalDrawerProvider type="drawer">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose();
         }}

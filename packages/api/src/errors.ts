@@ -48,6 +48,16 @@ export class NotFoundError extends ServerFnError {
  *  the person (e.g. "Job J000343 has 6 serial unit(s) left to receive…"). */
 export const RAISED_EXCEPTION = "P0001";
 
+/** The text of a RAISE in our own SQL, written for the person; else null. */
+export function raisedMessage(error: unknown): string | null {
+  const raised = error as { code?: unknown; message?: unknown } | null;
+  return raised?.code === RAISED_EXCEPTION &&
+    typeof raised.message === "string" &&
+    raised.message !== ""
+    ? raised.message
+    : null;
+}
+
 /** SQLSTATE classes that are the server's failure, never the request's:
  *  connection, transaction rollback (deadlock, serialization), insufficient
  *  resources, operator intervention, system, internal. */

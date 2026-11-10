@@ -88,6 +88,7 @@ import { TimeCardWarning } from "~/components/TimeCardWarning";
 import TrainingPanel from "~/components/TrainingPanel";
 import { useIdle, usePermissions, useRecordRecentlyViewed } from "~/hooks";
 import { useChangelogPanel } from "~/hooks/useChangelogPanel";
+import { usePersistentNavigation } from "~/hooks/usePersistentNavigation";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people/people.service";
@@ -106,6 +107,7 @@ import {
   getItarCertificationStatus
 } from "~/modules/users/users.service";
 import type { loader as systemStatusLoader } from "~/routes/api+/system-status";
+import { useUIStore } from "~/stores/ui";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 const log = getLogger("erp", "auth");
@@ -463,6 +465,8 @@ export default function AuthenticatedRoute() {
   useNProgress();
   const themeStyle = useThemeStyle();
   const mode = useMode();
+  const isRailOpen = useUIStore((state) => state.isRailOpen);
+  const setRailOpen = useUIStore((state) => state.setRailOpen);
   useKeyboardWedge({
     test: (input) => input.startsWith(MES_URL) || input.startsWith(ERP_URL)
   });
@@ -551,6 +555,8 @@ export default function AuthenticatedRoute() {
     />
   ) : null;
 
+  usePersistentNavigation(userId, companyId, !itarScreen && !mfaScreen);
+
   return (
     <div className="h-[100dvh] flex flex-col">
       {/* Idle lock conceals the app (3.1.10). Not shown over the ITAR/MFA gates —
@@ -580,7 +586,8 @@ export default function AuthenticatedRoute() {
               <TooltipProvider>
                 <ThemeStyleProvider value={themeStyle}>
                   <SidebarProvider
-                    defaultOpen={false}
+                    open={isRailOpen}
+                    onOpenChange={setRailOpen}
                     className="h-screen min-h-0"
                     style={themeStyle?.frame[mode]}
                   >

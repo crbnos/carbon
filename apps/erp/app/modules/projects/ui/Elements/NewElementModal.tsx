@@ -86,6 +86,7 @@ function isEmptyDocument(content: JSONContent | null) {
  * its properties.
  */
 export function NewElementModal({
+  open = true,
   projectId,
   context,
   elements,
@@ -97,6 +98,7 @@ export function NewElementModal({
   onCreated,
   onClose
 }: {
+  open?: boolean;
   projectId: string;
   /** The project's identifier, before the type (Linear's team). */
   context?: string;
@@ -224,7 +226,7 @@ export function NewElementModal({
   };
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalContent
         size="xlarge"
         onKeyDown={onKeyDown}

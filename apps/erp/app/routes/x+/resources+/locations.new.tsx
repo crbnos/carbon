@@ -4,9 +4,9 @@
 
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
-import { useNavigate } from "react-router";
 import { useUser } from "~/hooks";
 import { locationValidator } from "~/modules/resources/resources.models";
 import { LocationForm } from "~/modules/resources/ui";
@@ -29,9 +29,8 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function NewLocationRoute() {
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.locations);
   const { company } = useUser();
-  const onClose = () => navigate(path.to.locations);
 
   const initialValues = {
     name: "",
@@ -44,5 +43,11 @@ export default function NewLocationRoute() {
     countryCode: company?.countryCode ?? ""
   };
 
-  return <LocationForm initialValues={initialValues} onClose={onClose} />;
+  return (
+    <LocationForm
+      initialValues={initialValues}
+      open={dialog.open}
+      onClose={dialog.close}
+    />
+  );
 }

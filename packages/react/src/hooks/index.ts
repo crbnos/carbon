@@ -25,9 +25,11 @@ import useMount from "./useMount";
 import { useNProgress } from "./useNProgress";
 import { useOptimisticLocation } from "./useOptimisticLocation";
 import useOutsideClick from "./useOutsideClick";
+import { usePaneResize } from "./usePaneResize";
 import { usePlan } from "./usePlan";
 import { useRevalidator } from "./useRevalidator";
 import { useRouteData } from "./useRouteData";
+import { useRouteDialog } from "./useRouteDialog";
 import type { Shortcut, ShortcutDefinition } from "./useShortcutKeys";
 import { useShortcutKeyMap, useShortcutKeys } from "./useShortcutKeys";
 import { useShortcutSequence } from "./useShortcutSequence";
@@ -70,9 +72,11 @@ export {
   useOptimisticLocation,
   useOptimisticMode,
   useOutsideClick,
+  usePaneResize,
   usePlan,
   useRevalidator,
   useRouteData,
+  useRouteDialog,
   useScanPending,
   useShellThemeStyle,
   useShortcutKeyMap,

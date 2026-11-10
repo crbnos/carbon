@@ -331,6 +331,7 @@ export function StepMedia({
   slides: StepSlide[];
   showDescription: boolean;
 }) {
+  const { t } = useLingui();
   const imageSlides = slides
     .filter((slide) => !!slide.imagePath)
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
@@ -354,32 +355,50 @@ export function StepMedia({
   return (
     <>
       {imageSlides.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div
+          className={cn(
+            "mt-4 grid min-w-0 gap-2",
+            imageSlides.length > 1 && "md:grid-cols-2"
+          )}
+        >
           {imageSlides.map((slide, i) => (
-            <button
+            <div
               key={slide.id}
-              type="button"
-              aria-label={slide.caption || `Reference image ${i + 1}`}
-              title={slide.caption ?? undefined}
-              onClick={() => setViewerIndex(i)}
               className={cn(
-                "relative flex h-24 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/40",
-                "transition-transform active:scale-[0.96]"
+                "min-w-0",
+                imageSlides.length > 1 &&
+                  imageSlides.length % 2 === 1 &&
+                  i === imageSlides.length - 1 &&
+                  "md:col-span-2"
               )}
             >
-              <img
-                src={slide.url}
-                alt={slide.caption || ""}
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-            </button>
+              <button
+                type="button"
+                aria-label={slide.caption || `${t`Reference image`} ${i + 1}`}
+                onClick={() => setViewerIndex(i)}
+                className="w-full min-w-0 overflow-hidden rounded-lg border bg-muted/40 text-left transition-transform active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <img
+                  src={slide.url}
+                  alt={slide.caption || ""}
+                  className="block max-h-[65vh] w-full object-contain"
+                />
+              </button>
+              {slide.caption && (
+                <p
+                  aria-hidden="true"
+                  className="mt-1 text-sm text-muted-foreground"
+                >
+                  {slide.caption}
+                </p>
+              )}
+            </div>
           ))}
         </div>
       )}
       {showDescription && (
         <div
-          className="my-4 text-sm prose prose-sm dark:prose-invert"
+          className="my-4 max-w-none text-sm prose prose-sm dark:prose-invert [&_img]:max-h-[65vh] [&_img]:w-full [&_img]:object-contain"
           dangerouslySetInnerHTML={{
             __html: generateHTML(description as JSONContent)
           }}
@@ -463,20 +482,23 @@ export function PreviewStepRecord({
   const record = step.jobOperationStepRecord.find(
     (r) => r.index === activeStep
   );
+  // A Task record exists only once the task is done; a Checkbox with no
+  // answer yet (null) is neither Yes nor No.
+  if (step.type === "Task" && !record) return null;
+  if (step.type === "Checkbox" && record?.booleanValue == null) return null;
 
   return (
     <div className="min-w-[200px] truncate text-right font-medium">
       {step.type === "Task" && (
-        <Checkbox
-          aria-label={step.name}
-          checked={record?.booleanValue ?? false}
-        />
+        <span className="inline-flex items-center gap-1 text-sm text-emerald-500">
+          <LuCircleCheck aria-hidden="true" />
+          <Trans>Completed</Trans>
+        </span>
       )}
       {step.type === "Checkbox" && (
-        <Checkbox
-          aria-label={step.name}
-          checked={record?.booleanValue ?? false}
-        />
+        <span className="text-sm">
+          {record?.booleanValue ? <Trans>Yes</Trans> : <Trans>No</Trans>}
+        </span>
       )}
       {step.type === "Value" && <p className="text-sm">{record?.value}</p>}
       {step.type === "Measurement" &&
@@ -528,6 +550,37 @@ export function PreviewStepRecord({
 }
 
 export function RecordModal({
+  attribute,
+  activeStep,
+  open = true,
+  onClose
+}: {
+  attribute: JobOperationStep;
+  activeStep: number;
+  open?: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent>
+        <RecordBody
+          attribute={attribute}
+          activeStep={activeStep}
+          onClose={onClose}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function RecordBody({
   attribute,
   activeStep,
   onClose
@@ -615,212 +668,219 @@ export function RecordModal({
   };
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
+    <ValidatedForm
+      method="post"
+      validator={
+        attribute.type === "Measurement"
+          ? measurementStepRecordValidator
+          : stepRecordValidator
+      }
+      action={path.to.record}
+      defaultValues={{
+        index: activeStep,
+        jobOperationStepId: attribute.id,
+        value:
+          record?.value ??
+          (attribute.type === "Timestamp" ? new Date().toISOString() : ""),
+        // Empty until recorded: a prefilled 0 could be recorded as a
+        // real measurement.
+        numericValue: record?.numericValue ?? undefined,
+        userValue: record?.userValue ?? ""
       }}
+      fetcher={fetcher}
     >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          validator={
-            attribute.type === "Measurement"
-              ? measurementStepRecordValidator
-              : stepRecordValidator
-          }
-          action={path.to.record}
-          defaultValues={{
-            index: activeStep,
-            jobOperationStepId: attribute.id,
-            value:
-              record?.value ??
-              (attribute.type === "Timestamp" ? new Date().toISOString() : ""),
-            // Empty until recorded: a prefilled 0 could be recorded as a
-            // real measurement.
-            numericValue: record?.numericValue ?? undefined,
-            userValue: record?.userValue ?? ""
-          }}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>
-                {attribute.name} - Set {activeStep + 1}
-              </Trans>
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="id" />
-            <Hidden name="jobOperationStepId" />
-            <Hidden name="index" />
-            {attribute.type === "Checkbox" && (
-              <Hidden
-                name="booleanValue"
-                value={booleanControlled ? "true" : "false"}
-              />
-            )}
-            {attribute.type === "File" && (
-              <Hidden name="value" value={filePath ?? ""} />
-            )}
-            {attribute.type === "Inspection" && (
-              <>
-                <Hidden name="value" value={filePath ?? ""} />
-                <Hidden
-                  name="booleanValue"
-                  value={booleanControlled ? "true" : "false"}
-                />
-              </>
-            )}
-            <VStack spacing={4}>
-              {hasStepDescription(attribute.description) && (
-                <div
-                  className="flex flex-col gap-2"
-                  dangerouslySetInnerHTML={{
-                    __html: generateHTML(attribute.description as JSONContent)
-                  }}
-                />
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>
+            {attribute.name} - Set {activeStep + 1}
+          </Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="id" />
+        <Hidden name="jobOperationStepId" />
+        <Hidden name="index" />
+        {attribute.type === "Checkbox" && (
+          <Hidden
+            name="booleanValue"
+            value={booleanControlled ? "true" : "false"}
+          />
+        )}
+        {attribute.type === "File" && (
+          <Hidden name="value" value={filePath ?? ""} />
+        )}
+        {attribute.type === "Inspection" && (
+          <>
+            <Hidden name="value" value={filePath ?? ""} />
+            <Hidden
+              name="booleanValue"
+              value={booleanControlled ? "true" : "false"}
+            />
+          </>
+        )}
+        <VStack spacing={4}>
+          {hasStepDescription(attribute.description) && (
+            <div
+              className="flex flex-col gap-2"
+              dangerouslySetInnerHTML={{
+                __html: generateHTML(attribute.description as JSONContent)
+              }}
+            />
+          )}
+          {attribute.type === "Value" && (
+            <InputField
+              name="value"
+              label=""
+              aria-label={attribute.name}
+              size="lg"
+            />
+          )}
+          {attribute.type === "Measurement" && (
+            <Number
+              name="numericValue"
+              label={attribute.unitOfMeasureCode ?? ""}
+              // The visible label is only the unit; name the measure too.
+              aria-label={
+                attribute.unitOfMeasureCode
+                  ? `${attribute.name} (${attribute.unitOfMeasureCode})`
+                  : attribute.name
+              }
+              helperText={limits ?? undefined}
+              size="lg"
+            />
+          )}
+          {attribute.type === "Timestamp" && (
+            <DateTimePicker
+              name="value"
+              label=""
+              aria-label={attribute.name}
+              size="lg"
+            />
+          )}
+          {attribute.type === "Checkbox" && (
+            <Switch
+              aria-label={attribute.name}
+              checked={booleanControlled}
+              onCheckedChange={(checked) => setBooleanControlled(!!checked)}
+              onKeyDown={recordOnEnter}
+            />
+          )}
+          {attribute.type === "Person" && (
+            <Combobox
+              name="userValue"
+              label=""
+              aria-label={attribute.name}
+              options={employeeOptions}
+              size="lg"
+            />
+          )}
+          {attribute.type === "List" && (
+            <Select
+              name="value"
+              label=""
+              aria-label={attribute.name}
+              size="lg"
+              options={(attribute.listValues ?? []).map((value) => ({
+                label: value,
+                value
+              }))}
+            />
+          )}
+          {attribute.type === "File" &&
+            (file ? (
+              <div className="flex flex-col gap-2 items-center justify-center py-6 w-full">
+                <LuFile className="size-10 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">{file.name}</p>
+                <Button variant="secondary" size="sm" onClick={removeFile}>
+                  <Trans>Remove</Trans>
+                </Button>
+              </div>
+            ) : (
+              <FileDropzone onDrop={onDrop} />
+            ))}
+          {attribute.type === "Inspection" && (
+            <>
+              {file ? (
+                <div className="flex flex-col gap-2 items-center justify-center py-6 w-full">
+                  <LuFile className="size-10 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">{file.name}</p>
+                  <Button variant="secondary" size="sm" onClick={removeFile}>
+                    Remove
+                  </Button>
+                </div>
+              ) : (
+                <FileDropzone onDrop={onDrop} />
               )}
-              {attribute.type === "Value" && (
-                <InputField
-                  name="value"
-                  label=""
-                  aria-label={attribute.name}
-                  size="lg"
-                />
-              )}
-              {attribute.type === "Measurement" && (
-                <Number
-                  name="numericValue"
-                  label={attribute.unitOfMeasureCode ?? ""}
-                  // The visible label is only the unit; name the measure too.
-                  aria-label={
-                    attribute.unitOfMeasureCode
-                      ? `${attribute.name} (${attribute.unitOfMeasureCode})`
-                      : attribute.name
-                  }
-                  helperText={limits ?? undefined}
-                  size="lg"
-                />
-              )}
-              {attribute.type === "Timestamp" && (
-                <DateTimePicker
-                  name="value"
-                  label=""
-                  aria-label={attribute.name}
-                  size="lg"
-                />
-              )}
-              {attribute.type === "Checkbox" && (
+              <div className="flex items-center justify-between py-4 w-full">
+                <span className="text-sm font-medium">
+                  <Trans>Passed Inspection</Trans>
+                </span>
                 <Switch
-                  aria-label={attribute.name}
+                  aria-label={t`Passed Inspection`}
                   checked={booleanControlled}
                   onCheckedChange={(checked) => setBooleanControlled(!!checked)}
                   onKeyDown={recordOnEnter}
                 />
-              )}
-              {attribute.type === "Person" && (
-                <Combobox
-                  name="userValue"
-                  label=""
-                  aria-label={attribute.name}
-                  options={employeeOptions}
-                  size="lg"
-                />
-              )}
-              {attribute.type === "List" && (
-                <Select
-                  name="value"
-                  label=""
-                  aria-label={attribute.name}
-                  size="lg"
-                  options={(attribute.listValues ?? []).map((value) => ({
-                    label: value,
-                    value
-                  }))}
-                />
-              )}
-              {attribute.type === "File" &&
-                (file ? (
-                  <div className="flex flex-col gap-2 items-center justify-center py-6 w-full">
-                    <LuFile className="size-10 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">{file.name}</p>
-                    <Button variant="secondary" size="sm" onClick={removeFile}>
-                      <Trans>Remove</Trans>
-                    </Button>
-                  </div>
-                ) : (
-                  <FileDropzone onDrop={onDrop} />
-                ))}
-              {attribute.type === "Inspection" && (
-                <>
-                  {file ? (
-                    <div className="flex flex-col gap-2 items-center justify-center py-6 w-full">
-                      <LuFile className="size-10 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
-                        {file.name}
-                      </p>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={removeFile}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ) : (
-                    <FileDropzone onDrop={onDrop} />
-                  )}
-                  <div className="flex items-center justify-between py-4 w-full">
-                    <span className="text-sm font-medium">
-                      <Trans>Passed Inspection</Trans>
-                    </span>
-                    <Switch
-                      aria-label={t`Passed Inspection`}
-                      checked={booleanControlled}
-                      onCheckedChange={(checked) =>
-                        setBooleanControlled(!!checked)
-                      }
-                      onKeyDown={recordOnEnter}
-                    />
-                  </div>
-                </>
-              )}
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" size="lg" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit
-              ref={submitRef}
-              size="lg"
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={
-                fetcher.state !== "idle" ||
-                (attribute.type === "File" && !filePath)
-              }
-              rightIcon={<LuCircleCheck />}
-              // Focus in a field submits natively on Enter; this covers focus
-              // elsewhere in the modal and renders the ↵ badge.
-              shortcut="enter"
-              // Enter on a focused control (Cancel, Remove, the dropzone, a
-              // combobox) stays that control's: Button's own guard stands
-              // down. The switches record through `recordOnEnter`.
-              type="submit"
-            >
-              <Trans>Record</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
+              </div>
+            </>
+          )}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" size="lg" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit
+          ref={submitRef}
+          size="lg"
+          isLoading={fetcher.state !== "idle"}
+          isDisabled={
+            fetcher.state !== "idle" || (attribute.type === "File" && !filePath)
+          }
+          rightIcon={<LuCircleCheck />}
+          // Focus in a field submits natively on Enter; this covers focus
+          // elsewhere in the modal and renders the ↵ badge.
+          shortcut="enter"
+          // Enter on a focused control (Cancel, Remove, the dropzone, a
+          // combobox) stays that control's: Button's own guard stands
+          // down. The switches record through `recordOnEnter`.
+          type="submit"
+        >
+          <Trans>Record</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
+  );
+}
+
+export function DeleteStepRecordModal({
+  open = true,
+  onClose,
+  id,
+  title,
+  description
+}: {
+  open?: boolean;
+  onClose: () => void;
+  id: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <Modal open={open} onOpenChange={onClose}>
+      <ModalContent>
+        <DeleteStepRecordBody
+          onClose={onClose}
+          id={id}
+          title={title}
+          description={description}
+        />
       </ModalContent>
     </Modal>
   );
 }
 
-export function DeleteStepRecordModal({
+function DeleteStepRecordBody({
   onClose,
   id,
   title,
@@ -840,29 +900,27 @@ export function DeleteStepRecordModal({
   });
 
   return (
-    <Modal open={true} onOpenChange={onClose}>
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>{title}</ModalTitle>
-          <ModalDescription>{description}</ModalDescription>
-        </ModalHeader>
-        <ModalFooter>
-          <Button variant="secondary" size="lg" onClick={onClose}>
-            <Trans>Cancel</Trans>
+    <>
+      <ModalHeader>
+        <ModalTitle>{title}</ModalTitle>
+        <ModalDescription>{description}</ModalDescription>
+      </ModalHeader>
+      <ModalFooter>
+        <Button variant="secondary" size="lg" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <fetcher.Form method="post" action={path.to.recordDelete(id)}>
+          <Button
+            size="lg"
+            isLoading={fetcher.state !== "idle"}
+            isDisabled={fetcher.state !== "idle"}
+            type="submit"
+            variant="destructive"
+          >
+            <Trans>Delete</Trans>
           </Button>
-          <fetcher.Form method="post" action={path.to.recordDelete(id)}>
-            <Button
-              size="lg"
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-              type="submit"
-              variant="destructive"
-            >
-              <Trans>Delete</Trans>
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </fetcher.Form>
+      </ModalFooter>
+    </>
   );
 }

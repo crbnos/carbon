@@ -31,6 +31,7 @@ type OvertimeAssignment = {
 };
 
 type OvertimeDialogProps = {
+  open?: boolean;
   onClose: () => void;
   range: "day" | "week";
   /** the board's selected day (day range) / the visible week's Monday */
@@ -55,6 +56,25 @@ type OvertimeDialogProps = {
  * the active department/shift filters (`overtime-bulk` intent).
  */
 export function OvertimeDialog({
+  open = true,
+  onClose,
+  ...props
+}: OvertimeDialogProps) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalContent>
+        <OvertimeDialogBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function OvertimeDialogBody({
   onClose,
   range,
   date,
@@ -67,7 +87,7 @@ export function OvertimeDialog({
   employeeShiftId,
   dayAssignments,
   weekAssignments
-}: OvertimeDialogProps) {
+}: Omit<OvertimeDialogProps, "open">) {
   const { t } = useLingui();
   const submit = useSubmit();
 
@@ -140,112 +160,105 @@ export function OvertimeDialog({
   };
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Add overtime</Trans>
-          </ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <VStack spacing={4}>
-            <p className="text-sm text-muted-foreground text-pretty">
-              {range === "day" ? (
-                <Trans>
-                  Everyone working this day stays on past their shift by the
-                  hours you set. Only the departments and shifts you're
-                  filtering by are affected.
-                </Trans>
-              ) : (
-                <Trans>
-                  Everyone working any day of the week you pick stays on past
-                  their shift by the hours you set. Only the departments and
-                  shifts you're filtering by are affected.
-                </Trans>
-              )}
-            </p>
-            {/* the horizon sets the unit: one visible day needs no picker, a
-                week horizon picks a WEEK — the same list the header uses */}
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Add overtime</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={4}>
+          <p className="text-sm text-muted-foreground text-pretty">
             {range === "day" ? (
-              <DateTime
+              <Trans>
+                Everyone working this day stays on past their shift by the hours
+                you set. Only the departments and shifts you're filtering by are
+                affected.
+              </Trans>
+            ) : (
+              <Trans>
+                Everyone working any day of the week you pick stays on past
+                their shift by the hours you set. Only the departments and
+                shifts you're filtering by are affected.
+              </Trans>
+            )}
+          </p>
+          {/* the horizon sets the unit: one visible day needs no picker, a
+                week horizon picks a WEEK — the same list the header uses */}
+          {range === "day" ? (
+            <DateTime
+              value={overtimeDate}
+              variant="date"
+              dateOptions={{
+                day: "2-digit",
+                month: "short",
+                year: "numeric"
+              }}
+              locationTimeZone={locationTimeZone}
+              className="text-sm font-medium"
+            />
+          ) : (
+            <div className="w-full">
+              <Combobox
+                aria-label={t`Week`}
+                asButton
+                size="sm"
                 value={overtimeDate}
-                variant="date"
-                dateOptions={{
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric"
-                }}
-                locationTimeZone={locationTimeZone}
-                className="text-sm font-medium"
+                options={weekOptions.map((week) => ({
+                  value: week.start,
+                  label: week.isCurrent
+                    ? `${week.label} · ${t`This week`}`
+                    : week.label
+                }))}
+                onChange={(value) => setOvertimeDate(value || weekDates[0])}
+              />
+            </div>
+          )}
+          <Input
+            type="number"
+            aria-label={t`Overtime hours`}
+            min={0}
+            max={16}
+            step={0.5}
+            value={hoursInput}
+            onChange={(event) => setHoursInput(event.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            {range === "day" ? (
+              <Plural
+                value={previewCount}
+                one={`This will set +${hoursInput}h of overtime for # person.`}
+                other={`This will set +${hoursInput}h of overtime for # people.`}
+              />
+            ) : weekIsLoaded ? (
+              // person-days, not people — the same person assigned Mon–Fri is
+              // five separate authorizations
+              <Plural
+                value={previewCount}
+                one={`This will set +${hoursInput}h of overtime on # person-day.`}
+                other={`This will set +${hoursInput}h of overtime on # person-days.`}
               />
             ) : (
-              <div className="w-full">
-                <Combobox
-                  aria-label={t`Week`}
-                  asButton
-                  size="sm"
-                  value={overtimeDate}
-                  options={weekOptions.map((week) => ({
-                    value: week.start,
-                    label: week.isCurrent
-                      ? `${week.label} · ${t`This week`}`
-                      : week.label
-                  }))}
-                  onChange={(value) => setOvertimeDate(value || weekDates[0])}
-                />
-              </div>
+              // that week's people isn't loaded, so any number here would be
+              // invented
+              <Trans>
+                This will set +{hoursInput}h of overtime for everyone assigned
+                that week.
+              </Trans>
             )}
-            <Input
-              type="number"
-              aria-label={t`Overtime hours`}
-              min={0}
-              max={16}
-              step={0.5}
-              value={hoursInput}
-              onChange={(event) => setHoursInput(event.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              {range === "day" ? (
-                <Plural
-                  value={previewCount}
-                  one={`This will set +${hoursInput}h of overtime for # person.`}
-                  other={`This will set +${hoursInput}h of overtime for # people.`}
-                />
-              ) : weekIsLoaded ? (
-                // person-days, not people — the same person assigned Mon–Fri is
-                // five separate authorizations
-                <Plural
-                  value={previewCount}
-                  one={`This will set +${hoursInput}h of overtime on # person-day.`}
-                  other={`This will set +${hoursInput}h of overtime on # person-days.`}
-                />
-              ) : (
-                // that week's people isn't loaded, so any number here would be
-                // invented
-                <Trans>
-                  This will set +{hoursInput}h of overtime for everyone assigned
-                  that week.
-                </Trans>
-              )}
-            </p>
-          </VStack>
-        </ModalBody>
-        <ModalFooter>
-          <HStack>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Button onClick={apply}>
-              <Trans>Apply</Trans>
-            </Button>
-          </HStack>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+          </p>
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <HStack>
+          <Button variant="secondary" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+          <Button onClick={apply}>
+            <Trans>Apply</Trans>
+          </Button>
+        </HStack>
+      </ModalFooter>
+    </>
   );
 }

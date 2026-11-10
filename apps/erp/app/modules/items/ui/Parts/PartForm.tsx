@@ -69,6 +69,7 @@ import ItemStorageFields from "../Item/ItemStorageFields";
 type PartFormProps = {
   initialValues: z.infer<typeof partValidator> & { tags?: string[] };
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
@@ -78,7 +79,12 @@ function startsWithLetter(value: string) {
   return /^[A-Za-z]/.test(value);
 }
 
-const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
+const PartForm = ({
+  initialValues,
+  type = "card",
+  open = true,
+  onClose
+}: PartFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
@@ -174,7 +180,8 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
   });
 
   useEffect(() => {
-    if (type !== "modal") return;
+    // Stays mounted while it animates closed: close and toast once.
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
@@ -182,7 +189,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toastError(t`Failed to create part`, fetcher.data.error);
     }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
+  }, [fetcher.data, fetcher.state, onClose, open, type, t]);
 
   const { id, onIdChange, loading } = useNextItemId("Part");
   const permissions = usePermissions();
@@ -232,7 +239,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
 
   return (
     <ModalCardProvider type={type}>
-      <ModalCard onClose={onClose}>
+      <ModalCard open={open} onClose={onClose}>
         <ModalCardContent>
           <ValidatedForm
             action={isEditing ? undefined : path.to.newPart}

@@ -40,10 +40,12 @@ import { useRentalLineTypeLabel } from "./useRentalLineTypeLabel";
 export default function RentalInvoiceLineSummary({
   lineId,
   type,
+  open = true,
   onClose
 }: {
   lineId?: string;
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 }) {
   const { locale } = useLocale();
@@ -108,7 +110,7 @@ export default function RentalInvoiceLineSummary({
 
   return (
     <ModalCardProvider type={type}>
-      <ModalCard onClose={onClose}>
+      <ModalCard open={open} onClose={onClose}>
         <ModalCardContent size="xxlarge">
           <ModalCardHeader>
             <ModalCardTitle className="flex items-center gap-2">

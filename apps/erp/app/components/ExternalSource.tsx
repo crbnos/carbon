@@ -200,21 +200,20 @@ export function ExternalSourceCard({
           </HStack>
         </div>
       </CardContent>
-      {confirmingDetach ? (
-        <Confirm
-          action={path.to.api.onShapeDetach}
-          title={t`Detach from Onshape?`}
-          text={t`Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back.`}
-          confirmText={t`Detach`}
-          onCancel={() => setConfirmingDetach(false)}
-          onSubmit={() => {
-            setConfirmingDetach(false);
-            setReload((n) => n + 1);
-          }}
-        >
-          <input type="hidden" name="itemId" value={itemId} />
-        </Confirm>
-      ) : null}
+      <Confirm
+        action={path.to.api.onShapeDetach}
+        isOpen={confirmingDetach}
+        title={t`Detach from Onshape?`}
+        text={t`Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back.`}
+        confirmText={t`Detach`}
+        onCancel={() => setConfirmingDetach(false)}
+        onSubmit={() => {
+          setConfirmingDetach(false);
+          setReload((n) => n + 1);
+        }}
+      >
+        <input type="hidden" name="itemId" value={itemId} />
+      </Confirm>
     </Card>
   );
 }

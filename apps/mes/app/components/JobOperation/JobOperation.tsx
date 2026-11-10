@@ -154,7 +154,11 @@ import type {
 } from "~/services/types";
 import { useItems } from "~/stores";
 import { makeDurations } from "~/utils/durations";
-import { isKanbanCompleteScan, kanbanCompleteTarget } from "~/utils/kanban";
+import {
+  isKanbanCompleteScan,
+  kanbanCompleteTarget,
+  soleUnitId
+} from "~/utils/kanban";
 import { useOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 import ItemThumbnail from "../ItemThumbnail";
@@ -683,7 +687,6 @@ export const JobOperation = ({
   };
 
   const onDeselectStep = () => {
-    setSelectedStep(null);
     attributeRecordModal.onClose();
     attributeRecordDeleteModal.onClose();
   };
@@ -712,7 +715,8 @@ export const JobOperation = ({
         selectedEntityId: selected?.id ?? null,
         selectedIsIncomplete:
           !!selected &&
-          isSerialEntityIncompleteForOperation(selected, operation.id)
+          isSerialEntityIncompleteForOperation(selected, operation.id),
+        soleUnitId: soleUnitId(trackedEntities, operation.operationQuantity)
       });
       if (target.action === "select") {
         toast.info(t`Scan or select the unit, then scan the kanban card again`);
@@ -745,36 +749,33 @@ export const JobOperation = ({
   // the batch scope's Pick opens the same shared-pick modal.
   const renderIssueModal = (
     resolvedMaterials: Awaited<typeof materials> | undefined
-  ) =>
-    issueModal.isOpen ? (
-      <IssueMaterialModal
-        operationId={operation.id}
-        // The process view issues the whole quantity at
-        // once, so picked lots may pre-fill when the
-        // parent is a single entity. The modal enforces
-        // the full rule: a picking list exists AND (the
-        // parent is not serialized OR the operation
-        // makes exactly one unit).
-        allowPrefill
-        parentUnitCount={operation.operationQuantity ?? undefined}
-        expiredEntityPolicy={expiredEntityPolicy}
-        autoSelectMaterialWithoutPickingList={
-          autoSelectMaterialWithoutPickingList
-        }
-        locationId={locationId}
-        workCenterId={operation.workCenterId ?? undefined}
-        material={selectedMaterial ?? undefined}
-        batchId={batch?.id ?? undefined}
-        batchRemainingQuantity={selectedBatchRemaining}
-        parentId={trackedEntityId ?? ""}
-        parentIdIsSerialized={method?.requiresSerialTracking ?? false}
-        trackedInputs={resolvedMaterials?.trackedInputs ?? []}
-        onClose={() => {
-          setSelectedMaterial(null);
-          issueModal.onClose();
-        }}
-      />
-    ) : null;
+  ) => (
+    <IssueMaterialModal
+      open={issueModal.isOpen}
+      operationId={operation.id}
+      // The process view issues the whole quantity at
+      // once, so picked lots may pre-fill when the
+      // parent is a single entity. The modal enforces
+      // the full rule: a picking list exists AND (the
+      // parent is not serialized OR the operation
+      // makes exactly one unit).
+      allowPrefill
+      parentUnitCount={operation.operationQuantity ?? undefined}
+      expiredEntityPolicy={expiredEntityPolicy}
+      autoSelectMaterialWithoutPickingList={
+        autoSelectMaterialWithoutPickingList
+      }
+      locationId={locationId}
+      workCenterId={operation.workCenterId ?? undefined}
+      material={selectedMaterial ?? undefined}
+      batchId={batch?.id ?? undefined}
+      batchRemainingQuantity={selectedBatchRemaining}
+      parentId={trackedEntityId ?? ""}
+      parentIdIsSerialized={method?.requiresSerialTracking ?? false}
+      trackedInputs={resolvedMaterials?.trackedInputs ?? []}
+      onClose={issueModal.onClose}
+    />
+  );
 
   // Labelled meters: 1 row of up to 4 on a phone, then as many columns as fit.
   // Phones show them in the Details scroll pane, so only 1 bar stays pinned.
@@ -1290,7 +1291,7 @@ export const JobOperation = ({
           value="details"
           className="[grid-area:main] mt-0 h-full min-h-0"
         >
-          <div className="h-full w-full min-w-0 overflow-y-auto scroll-fade scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+          <div className="h-full w-full min-w-0 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
             {contextInPane && (
               <>
                 {renderContextRow("border-b border-border")}
@@ -1847,6 +1848,7 @@ export const JobOperation = ({
                                               </div>
 
                                               <BarProgress
+                                                className="w-40"
                                                 label={t`Steps`}
                                                 gradient
                                                 invertGradient
@@ -2464,7 +2466,7 @@ export const JobOperation = ({
                                     );
 
                                   return (
-                                    <div className="flex items-end justify-between gap-1 w-full px-4 pb-2 border-b">
+                                    <div className="flex flex-wrap items-end justify-between gap-1 w-full px-4 pb-2 border-b">
                                       <div className="flex items-center gap-1">
                                         {showNavigation && !parentIsSerial && (
                                           <>
@@ -2531,8 +2533,9 @@ export const JobOperation = ({
                                         )}
                                       </div>
 
-                                      <div className="flex flex-col justify-center items-end gap-1">
+                                      <div className="ml-auto flex min-w-0 max-w-full flex-col justify-center items-end gap-1">
                                         <BarProgress
+                                          className="w-40 max-w-full"
                                           label={t`Steps`}
                                           gradient
                                           invertGradient
@@ -2646,7 +2649,7 @@ export const JobOperation = ({
 
               <ScrollArea className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
                 <div
-                  className="prose dark:prose-invert"
+                  className="prose max-w-none dark:prose-invert [&_img]:max-h-[65vh] [&_img]:w-full [&_img]:object-contain"
                   dangerouslySetInnerHTML={{
                     __html: generateHTML(
                       (operation.workInstruction ?? {}) as JSONContent
@@ -2983,8 +2986,9 @@ export const JobOperation = ({
           </BottomSheetBody>
         </BottomSheetContent>
       </BottomSheet>
-      {reworkModal.isOpen && (
+      {reworkModal.openCount > 0 && (
         <ReworkModal
+          key={`rework-${reworkModal.openCount}`}
           operation={operation}
           jobId={job.id!}
           isOpen={reworkModal.isOpen}
@@ -2995,8 +2999,10 @@ export const JobOperation = ({
           returnFocusRef={actionsSheetOpenerRef}
         />
       )}
-      {scrapModal.isOpen && (
+      {scrapModal.openCount > 0 && (
         <QuantityModal
+          key={`scrap-${scrapModal.openCount}`}
+          open={scrapModal.isOpen}
           type="scrap"
           laborProductionEvent={laborProductionEvent}
           machineProductionEvent={machineProductionEvent}
@@ -3013,12 +3019,15 @@ export const JobOperation = ({
           onClose={scrapModal.onClose}
         />
       )}
-      {completeModal.isOpen && (
-        <Suspense key={`complete-modal-${operationId}`}>
+      {completeModal.openCount > 0 && (
+        <Suspense
+          key={`complete-modal-${operationId}-${completeModal.openCount}`}
+        >
           <Await resolve={materials}>
             {(resolvedMaterials) => {
               return (
                 <QuantityModal
+                  open={completeModal.isOpen}
                   type="complete"
                   laborProductionEvent={laborProductionEvent}
                   machineProductionEvent={machineProductionEvent}
@@ -3036,8 +3045,8 @@ export const JobOperation = ({
           </Await>
         </Suspense>
       )}
-      {finishModal.isOpen && (
-        <Suspense key={`finish-modal-${operationId}`}>
+      {finishModal.openCount > 0 && (
+        <Suspense key={`finish-modal-${operationId}-${finishModal.openCount}`}>
           <Await resolve={procedure}>
             {(resolvedProcedure) => {
               const { attributes } = resolvedProcedure;
@@ -3046,6 +3055,7 @@ export const JobOperation = ({
               );
               return (
                 <QuantityModal
+                  open={finishModal.isOpen}
                   type="finish"
                   allStepsRecorded={allStepsRecorded}
                   laborProductionEvent={laborProductionEvent}
@@ -3062,8 +3072,10 @@ export const JobOperation = ({
         </Suspense>
       )}
 
-      {batch && batchCompleteModal.isOpen && (
+      {batch && batchCompleteModal.openCount > 0 && (
         <BatchCompleteModal
+          key={batchCompleteModal.openCount}
+          open={batchCompleteModal.isOpen}
           batch={batch}
           isCompleting={isCompleting}
           fetcher={batchCompleteFetcher}
@@ -3072,38 +3084,38 @@ export const JobOperation = ({
         />
       )}
 
-      {serialModal.isOpen && (
-        <SerialSelectorModal
-          availableEntities={availableEntities}
-          onClose={serialModal.onClose}
-          onCancel={() => navigate(path.to.operations)}
-          onSelect={(entity) => {
-            const entityIndex = availableEntities.findIndex(
-              (e) => e.id === entity.id
-            );
-            if (entityIndex !== -1) {
-              setActiveStep(entityIndex);
-            }
-            setParams({
-              trackedEntityId: entity.id
-            });
-            serialModal.onClose();
-          }}
-        />
-      )}
+      <SerialSelectorModal
+        open={serialModal.isOpen}
+        availableEntities={availableEntities}
+        onClose={serialModal.onClose}
+        onCancel={() => navigate(path.to.operations)}
+        onSelect={(entity) => {
+          const entityIndex = availableEntities.findIndex(
+            (e) => e.id === entity.id
+          );
+          if (entityIndex !== -1) {
+            setActiveStep(entityIndex);
+          }
+          setParams({
+            trackedEntityId: entity.id
+          });
+          serialModal.onClose();
+        }}
+      />
 
-      {attributeRecordModal.isOpen && selectedStep ? (
+      {selectedStep ? (
         <RecordModal
-          key={selectedStep.id}
+          open={attributeRecordModal.isOpen}
           activeStep={activeStep}
           attribute={selectedStep}
           onClose={onDeselectStep}
         />
       ) : null}
 
-      {attributeRecordDeleteModal.isOpen && selectedStep && (
+      {selectedStep && (
         <DeleteStepRecordModal
-          onClose={onDeselectStep}
+          open={attributeRecordDeleteModal.isOpen}
+          onClose={attributeRecordDeleteModal.onClose}
           id={
             selectedStep?.jobOperationStepRecord.find(
               (r) => r.index === activeStep

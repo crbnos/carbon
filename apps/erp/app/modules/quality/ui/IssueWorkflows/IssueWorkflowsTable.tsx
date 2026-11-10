@@ -143,18 +143,12 @@ const IssueWorkflowsTable = memo(
           table="nonConformanceWorkflow"
           withSavedView
         />
-        {deleteDisclosure.isOpen && selectedIssueWorkflow && (
+        {selectedIssueWorkflow && (
           <ConfirmDelete
             action={path.to.deleteIssueWorkflow(selectedIssueWorkflow.id!)}
-            isOpen
-            onCancel={() => {
-              setSelectedIssueWorkflow(null);
-              deleteDisclosure.onClose();
-            }}
-            onSubmit={() => {
-              setSelectedIssueWorkflow(null);
-              deleteDisclosure.onClose();
-            }}
+            isOpen={deleteDisclosure.isOpen}
+            onCancel={deleteDisclosure.onClose}
+            onSubmit={deleteDisclosure.onClose}
             name={selectedIssueWorkflow.name ?? "issue workflow"}
             text={t`Are you sure you want to delete this issue workflow?`}
           />

@@ -15,7 +15,6 @@ import {
 import {
   arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy
 } from "@dnd-kit/sortable";
@@ -24,13 +23,11 @@ import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { LuEye, LuEyeOff, LuGripVertical } from "react-icons/lu";
 import type { RouteGroup } from "~/types";
+import {
+  POINTER_SENSOR_OPTIONS,
+  SORTABLE_KEYBOARD_SENSOR_OPTIONS
+} from "~/utils/drag-sensors";
 import { orderedGroups, submoduleKey } from "~/utils/submodule-visibility";
-
-// The same threshold as the module rows, so a click on a handle is not a drag.
-const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
-const KEYBOARD_SENSOR_OPTIONS = {
-  coordinateGetter: sortableKeyboardCoordinates
-};
 
 // A touch screen has no hover, so there the control always shows.
 const HOVER_REVEAL = "[@media(hover:none)]:opacity-100";
@@ -162,7 +159,7 @@ function SortableGroup({
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
-    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
+    useSensor(KeyboardSensor, SORTABLE_KEYBOARD_SENSOR_OPTIONS)
   );
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
@@ -227,7 +224,7 @@ function SortableRow({
         {...listeners}
         className={cn(
           "absolute left-3 top-1.5 p-0.5 rounded text-muted-foreground",
-          "cursor-grab active:cursor-grabbing transition-opacity",
+          "cursor-grab touch-none active:cursor-grabbing transition-opacity",
           "opacity-0 group-hover/sub:opacity-100 focus-visible:opacity-100",
           HOVER_REVEAL,
           isDragging && "opacity-100"

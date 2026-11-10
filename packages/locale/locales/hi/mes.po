@@ -1460,6 +1460,9 @@ msgstr "स्थानीय"
 msgid "Location"
 msgstr "स्थान"
 
+msgid "Locations"
+msgstr ""
+
 msgid "Log completed"
 msgstr "पूर्ण लॉग किया गया"
 
@@ -1827,6 +1830,9 @@ msgstr "कोई वर्क सेंटर अवरुद्ध नही�
 msgid "No work centers exist"
 msgstr "कोई वर्क सेंटर मौजूद नहीं है"
 
+msgid "Non-nettable"
+msgstr "MRP से बाहर"
+
 msgid "None"
 msgstr "कोई नहीं"
 
@@ -1835,6 +1841,9 @@ msgstr "निर्धारित नहीं"
 
 msgid "Not set"
 msgstr "सेट नहीं"
+
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "उपयोग योग्य स्टॉक नहीं। MRP और योजना इसे नहीं गिनते, और पिकिंग इसमें से नहीं लेती।"
 
 msgid "Notes"
 msgstr "नोट्स"

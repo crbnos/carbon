@@ -3,82 +3,65 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { DocumentBlockType } from "../../template";
-import { Watermark } from "../components";
+import { salesInvoiceTexts } from "../../template";
 import { CustomFieldBlock } from "./CustomFieldBlock";
+import { DocumentSummary } from "./DocumentSummary";
+import { extensionBlocks } from "./extensionRegistry";
 import { HeaderBlock } from "./HeaderBlock";
-import { KeyValueBlock } from "./KeyValueBlock";
 import { LineItemsBlock } from "./LineItemsBlock";
-import { NotesBlock } from "./NotesBlock";
 import { PartiesBlock } from "./PartiesBlock";
-import { RichTextBlock } from "./RichTextBlock";
-import { SharedBlock } from "./SharedBlock";
-import { SpacerBlock } from "./SpacerBlock";
-import { SummaryBlock } from "./SummaryBlock";
-import { TermsBlock } from "./TermsBlock";
+import { DocumentNotes, DocumentTerms } from "./standardBlocks";
 import type { BlockRenderer, SalesInvoiceData } from "./types";
 
 /**
- * Maps each block type to its react-pdf renderer. Built-in renderers read
- * from `data`; extension renderers narrow `block` by its discriminant. The
- * driver looks up by `block.type` — an O(1) Map lookup per block.
+ * Maps each block type to its react-pdf renderer for Sales Invoice. Built-in
+ * renderers read from `data`; the shared extension blocks (rich text, field,
+ * watermark, …) come from `extensionBlocks`. The driver looks up by
+ * `block.type` and skips types with no renderer.
  */
-export const salesInvoiceBlockRegistry: Record<
-  DocumentBlockType,
-  BlockRenderer<SalesInvoiceData>
+export const salesInvoiceBlockRegistry: Partial<
+  Record<DocumentBlockType, BlockRenderer<SalesInvoiceData>>
 > = {
+  ...extensionBlocks,
   header: ({ data }) => <HeaderBlock data={data} />,
-  watermark: ({ block, data }) =>
-    block.type === "watermark" ? (
-      <Watermark
-        src={data.company.logoWatermark}
-        show
-        opacity={block.opacity}
-        placement={block.placement}
-        size={block.size}
-      />
-    ) : null,
-  parties: ({ data }) => <PartiesBlock data={data} />,
-  notes: ({ data }) => <NotesBlock data={data} />,
-  details: () => null,
+  parties: ({ block, data }) => <PartiesBlock block={block} data={data} />,
+  notes: ({ block, data }) => (
+    <DocumentNotes
+      block={block}
+      texts={salesInvoiceTexts.notes}
+      notes={data.salesInvoice?.externalNotes}
+      vars={data.vars}
+    />
+  ),
   lineItems: ({ block, data }) =>
     block.type === "lineItems" ? (
       <LineItemsBlock block={block} data={data} />
     ) : null,
   summary: ({ block, data }) =>
     block.type === "summary" ? (
-      <SummaryBlock block={block} data={data} />
+      <DocumentSummary
+        block={block}
+        texts={salesInvoiceTexts.summary}
+        vars={data.vars}
+        currencyCode={data.currencyCode}
+        rows={[
+          { label: "subtotal", value: "subtotalValue", always: true },
+          { label: "discount", value: "discountValue" },
+          { label: "addOns", value: "addOnsValue" },
+          { label: "shipping", value: "shippingValue" }
+        ]}
+      />
     ) : null,
   terms: ({ block, data }) =>
-    block.type === "terms" ? <TermsBlock block={block} data={data} /> : null,
-  jobDetails: () => null,
-  operations: () => null,
-  issueDetails: () => null,
-  associations: () => null,
-  actionTasks: () => null,
-  reviewers: () => null,
-  approval: () => null,
-  labelHeading: () => null,
-  labelRevision: () => null,
-  labelQuantity: () => null,
-  labelTracking: () => null,
-  labelEntityId: () => null,
-  richText: ({ block, data }) =>
-    block.type === "richText" ? (
-      <RichTextBlock block={block} vars={data.vars} />
+    block.type === "terms" ? (
+      <DocumentTerms
+        block={block}
+        texts={salesInvoiceTexts.terms}
+        terms={data.terms}
+        vars={data.vars}
+        accent={data.theme.accent}
+      />
     ) : null,
-  keyValue: ({ block, data }) =>
-    block.type === "keyValue" ? (
-      <KeyValueBlock block={block} vars={data.vars} />
-    ) : null,
-  spacer: ({ block }) =>
-    block.type === "spacer" ? <SpacerBlock block={block} /> : null,
-  shared: ({ block, data }) =>
-    block.type === "shared" ? (
-      <SharedBlock block={block} sections={data.sections} vars={data.vars} />
-    ) : null,
-  labelBarcode: () => null,
-  labelLogo: () => null,
-  field: () => null,
   customField: ({ block, data }) =>
     block.type === "customField" ? (
       <CustomFieldBlock

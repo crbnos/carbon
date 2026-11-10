@@ -6,6 +6,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
 import { chunkArray } from "@carbon/utils";
 import { sql } from "kysely";
+import {
+  groupConflictClause,
+  rebuildDerivedGroups
+} from "../../../backups/derived-groups";
 import { applyTableRenames } from "../../../backups/renames";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
@@ -298,6 +302,7 @@ export const companyImportFunction = inngest.createFunction(
             trx
           );
         }
+        await sql`SET LOCAL app.inspection_release = 'on'`.execute(trx);
 
         const ledger: LedgerRow[] = [];
 
@@ -371,7 +376,7 @@ export const companyImportFunction = inngest.createFunction(
                       columns.map((c) => sql`${bindValue(row[c.name], c)}`)
                     )})`
                 )
-              )}
+              )}${groupConflictClause(table.name)}
             `.execute(trx);
           }
 
@@ -426,6 +431,10 @@ export const companyImportFunction = inngest.createFunction(
             )}
           `.execute(trx);
         }
+
+        // Triggers were off: the imported customers, suppliers and types have
+        // no groups yet.
+        await rebuildDerivedGroups(trx, companyId);
       });
 
       if (unresolvedRefs.size > 0) {

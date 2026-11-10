@@ -1490,8 +1490,9 @@ export const mapPurchaseInvoiceLines = defineServiceFn({
  *
  * @remarks
  * A deposit (`salesOrderId` / `rentalAgreementId` / `customerContractId`)
- * must name this company's and this customer's document, and a new deposit
- * an open one; that refusal is a `validation` error. The currency must be
+ * must name this company's and this customer's document, and a supplier
+ * prepayment (`purchaseOrderId`) this supplier's purchase order; a new one
+ * needs an open document. That refusal is a `validation` error. The currency must be
  * configured for the company. Without a `paymentId` the next number is used.
  * A contract deposit made from a financing request (`financingRequestId`)
  * receives that request; a failed link is logged and the payment kept. Then
@@ -3300,13 +3301,15 @@ export const getAvailableOnAccountCreditSources = defineServiceFn({
   }),
   permission: { view: "invoicing" },
   async run(ctx, input) {
+    // Invoicing staff can use deposits without access to the underlying journals.
     return unwrap(
       ctx,
       await service.getAvailableOnAccountCreditSources(
         ctx.asCaller.supabase,
         ctx.company.id,
         payload(ctx, input.party).build() as never,
-        input.currencyCode as never
+        input.currencyCode as never,
+        ctx.asSystem.supabase
       )
     );
   }

@@ -75,7 +75,7 @@ export function SortableNavItem({
           className={cn(
             "absolute left-0 top-0 h-full flex items-center pl-1",
             "md:opacity-0 group-data-[state=expanded]:opacity-100",
-            "cursor-grab active:cursor-grabbing"
+            "cursor-grab touch-none active:cursor-grabbing"
           )}
           {...attributes}
           {...listeners}

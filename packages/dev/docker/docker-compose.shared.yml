@@ -12,6 +12,11 @@
 #   carbon-storage    one Storage tenant per worktree (X-Forwarded-Host)
 #   carbon-imgproxy   image transforms for carbon-storage
 #   carbon-inbucket   one mailbox server for every worktree
+#   carbon-redis      one logical database per worktree slot (redisDb)
+#   carbon-edge-runtime  every worktree's edge functions
+#
+# Isolated worktrees use carbon-redis and carbon-edge-runtime too: `crbn up
+# --isolated` starts them alone (`up --no-deps`), without the shared Postgres.
 #
 # pg_cron and pg_net serve only `postgres`; crbn adds triggers to each worktree
 # database that hand its jobs and requests to them (worktree-forwarding.sql).
@@ -19,7 +24,8 @@
 # Realtime stays per worktree: its broadcast slot name has no tenant in it, so
 # 2 tenants on one cluster collide (.claude/rules/dev-shared-services.md).
 #
-# Required env (~/.carbon/shared/.env): SUPABASE_JWT_SECRET, SUPABASE_SERVICE_ROLE_KEY.
+# Required env (~/.carbon/shared/.env): SUPABASE_JWT_SECRET, SUPABASE_SERVICE_ROLE_KEY,
+# SUPABASE_ANON_KEY, REDIS_DATABASES, FUNCTIONS_DIR, EDGE_MAIN_DIR.
 ###
 
 name: crbn-shared
@@ -206,6 +212,72 @@ services:
       - carbon-inbucket-data:/storage
     networks: [carbon-shared]
 
+  # The apps reach it from the host at localhost:6379/<redisDb>. crbn writes
+  # REDIS_DATABASES: the slot pool, or more when a slot holds a higher index.
+  # A change recreates only this container; the AOF on the volume keeps its keys.
+  redis:
+    image: redis:7-alpine
+    container_name: carbon-redis
+    restart: on-failure
+    deploy:
+      resources:
+        limits:
+          # A dev redis has peaked at ~450 MB; over the limit it is OOM-killed.
+          memory: ${MEM_REDIS:-1g}
+          cpus: ${CPU_REDIS:-0.5}
+    ports:
+      - "127.0.0.1:6379:6379"
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --databases
+      - "${REDIS_DATABASES:-25}"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    volumes:
+      - carbon-redis-data:/data
+    networks: [carbon-shared]
+
+  # Serves every worktree's /functions/v1/. Each worktree's Envoy sets
+  # x-carbon-api to its own gateway, and edge-main gives the function that as
+  # SUPABASE_URL, with a worker pool per worktree. A worktree started with
+  # `crbn up --full` runs a private edge-runtime, which its Envoy prefers.
+  # crbn copies the functions and edge-main into directories named after their
+  # content and writes the names to .env: new code is a new mount path, so
+  # compose recreates this container, and the old copy stays until it has.
+  # The code is what the crbn that booted last copied (usually the main
+  # checkout's); `crbn up --full` gives a worktree its own runtime instead.
+  edge-runtime:
+    image: supabase/edge-runtime:v1.77.9
+    container_name: carbon-edge-runtime
+    restart: on-failure
+    deploy:
+      resources:
+        limits:
+          # Worker boot compiles each function's module graph; starved of CPU
+          # it outlives the isolate's CPU budget and requests hang mid-kill.
+          memory: ${MEM_EDGE:-1g}
+          cpus: ${CPU_EDGE:-3}
+    environment:
+      TZ: UTC
+      JWT_SECRET: ${SUPABASE_JWT_SECRET}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      VERIFY_JWT: "false"
+      API_URL_FROM_HEADER: "true"
+    volumes:
+      - ./${FUNCTIONS_DIR:-functions}:/home/deno/functions:ro
+      - ./${EDGE_MAIN_DIR:-edge-main}:/home/deno/main:ro
+    command:
+      - start
+      - --main-service
+      - /home/deno/main
+    networks: [carbon-shared]
+
 networks:
   carbon-shared:
     name: carbon-shared
@@ -222,3 +294,8 @@ volumes:
     name: carbon-storage-data
   carbon-inbucket-data:
     name: carbon-inbucket-data
+  # External: it predates this file (crbn ran redis with `docker run`), and
+  # compose warns on every boot about a volume it did not create. crbn creates it.
+  carbon-redis-data:
+    name: carbon-redis-data
+    external: true

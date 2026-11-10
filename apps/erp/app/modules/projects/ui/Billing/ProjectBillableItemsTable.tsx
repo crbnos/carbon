@@ -16,7 +16,7 @@ import { BILLABLE_REASON_FUNDING_LIMIT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { LuBan, LuCirclePause, LuCirclePlay, LuPencil } from "react-icons/lu";
 import { Hyperlink, Table } from "~/components";
 import {
@@ -25,6 +25,7 @@ import {
   usePermissions,
   useQuantityFormatter
 } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import { BillableItemStatus } from "~/modules/service/ui/ServiceStatus";
 import { path } from "~/utils/path";
 import type {
@@ -68,10 +69,11 @@ const ProjectBillableItemsTable = memo(
     const formatQuantity = useQuantityFormatter();
     const { formatDate } = useDateFormatter();
     const canUpdate = permissions.can("update", "projects");
-    const [acting, setActing] = useState<{
+    const acting = useDrawerItem<{
       action: BillableItemAction;
       items: ContractBillableItem[];
-    } | null>(null);
+    }>();
+    const { open: openActing } = acting;
 
     const columns = useMemo<ColumnDef<ContractBillableItem>[]>(() => {
       const costTypeLabels: Record<ProjectCostType, string> = {
@@ -261,8 +263,8 @@ const ProjectBillableItemsTable = memo(
 
     const open = useCallback(
       (action: BillableItemAction, items: ContractBillableItem[]) =>
-        setActing({ action, items }),
-      []
+        openActing({ action, items }),
+      [openActing]
     );
 
     const renderActions = useCallback(
@@ -374,11 +376,12 @@ const ProjectBillableItemsTable = memo(
           renderContextMenu={renderContextMenu}
           withSelectableRows={canUpdate}
         />
-        {acting && (
+        {acting.item && (
           <BillableItemActionModal
-            action={acting.action}
-            items={acting.items}
-            onClose={() => setActing(null)}
+            open={acting.isOpen}
+            action={acting.item.action}
+            items={acting.item.items}
+            onClose={acting.close}
           />
         )}
       </>

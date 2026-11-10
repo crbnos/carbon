@@ -307,7 +307,7 @@ const JobCardBody = memo(function JobCardBody({
               variant={"ghost"}
               {...attributes}
               {...listeners}
-              className="cursor-grab"
+              className="cursor-grab touch-none"
             />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -32,15 +32,33 @@ type SaveViewModalProps = {
   state: PivotState;
   /** The active saved view, if any. Editable only when owned by the current user. */
   view?: ReportView;
+  open?: boolean;
   onClose: () => void;
 };
 
 const SaveViewModal = ({
+  open = true,
+  onClose,
+  ...props
+}: SaveViewModalProps) => (
+  <Modal
+    open={open}
+    onOpenChange={(open) => {
+      if (!open) onClose();
+    }}
+  >
+    <ModalContent>
+      <SaveViewBody onClose={onClose} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+const SaveViewBody = ({
   reportKey,
   state,
   view,
   onClose
-}: SaveViewModalProps) => {
+}: Omit<SaveViewModalProps, "open">) => {
   const { t } = useLingui();
   const { id: userId } = useUser();
   const fetcher = useFetcher<{ fieldErrors?: Record<string, string> }>();
@@ -70,74 +88,65 @@ const SaveViewModal = ({
   };
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
+    <ValidatedForm
+      validator={reportViewValidator}
+      method="post"
+      defaultValues={{
+        id: isEditing ? view.id : undefined,
+        reportKey,
+        name: isEditing ? view.name : "",
+        visibility: isEditing ? view.visibility : "Private",
+        config: JSON.stringify(state)
       }}
+      fetcher={fetcher}
+      className="flex flex-col h-full"
     >
-      <ModalContent>
-        <ValidatedForm
-          validator={reportViewValidator}
-          method="post"
-          defaultValues={{
-            id: isEditing ? view.id : undefined,
-            reportKey,
-            name: isEditing ? view.name : "",
-            visibility: isEditing ? view.visibility : "Private",
-            config: JSON.stringify(state)
-          }}
-          fetcher={fetcher}
-          className="flex flex-col h-full"
-        >
-          <ModalHeader>
-            <ModalTitle>
-              {isEditing ? <Trans>Edit View</Trans> : <Trans>Save View</Trans>}
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            {isEditing && <Hidden name="id" />}
-            <Hidden name="intent" value="save-view" />
-            <Hidden name="reportKey" value={reportKey} />
-            <Hidden name="config" value={JSON.stringify(state)} />
-            <VStack spacing={4}>
-              <Input name="name" label={t`Name`} />
-              <Select
-                name="visibility"
-                label={t`Visibility`}
-                options={visibilityOptions}
-              />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <HStack className="w-full justify-between">
-              <div>
-                {isEditing && (
-                  <Button
-                    variant="destructive"
-                    isLoading={
-                      fetcher.state !== "idle" &&
-                      fetcher.formData?.get("intent") === "delete-view"
-                    }
-                    onClick={onDelete}
-                  >
-                    <Trans>Delete</Trans>
-                  </Button>
-                )}
-              </div>
-              <HStack>
-                <Submit>
-                  <Trans>Save</Trans>
-                </Submit>
-                <Button size="md" variant="solid" onClick={() => onClose()}>
-                  <Trans>Cancel</Trans>
-                </Button>
-              </HStack>
-            </HStack>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+      <ModalHeader>
+        <ModalTitle>
+          {isEditing ? <Trans>Edit View</Trans> : <Trans>Save View</Trans>}
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        {isEditing && <Hidden name="id" />}
+        <Hidden name="intent" value="save-view" />
+        <Hidden name="reportKey" value={reportKey} />
+        <Hidden name="config" value={JSON.stringify(state)} />
+        <VStack spacing={4}>
+          <Input name="name" label={t`Name`} />
+          <Select
+            name="visibility"
+            label={t`Visibility`}
+            options={visibilityOptions}
+          />
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <HStack className="w-full justify-between">
+          <div>
+            {isEditing && (
+              <Button
+                variant="destructive"
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") === "delete-view"
+                }
+                onClick={onDelete}
+              >
+                <Trans>Delete</Trans>
+              </Button>
+            )}
+          </div>
+          <HStack>
+            <Submit>
+              <Trans>Save</Trans>
+            </Submit>
+            <Button size="md" variant="solid" onClick={() => onClose()}>
+              <Trans>Cancel</Trans>
+            </Button>
+          </HStack>
+        </HStack>
+      </ModalFooter>
+    </ValidatedForm>
   );
 };
 

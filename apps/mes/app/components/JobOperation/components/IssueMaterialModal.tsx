@@ -47,7 +47,8 @@ import {
   getItemReadableId,
   INPUT_FORMAT,
   INPUT_STEP,
-  SCALE_FORMAT
+  SCALE_FORMAT,
+  type Violation
 } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
@@ -89,25 +90,7 @@ interface ItemDetails {
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
-export function IssueMaterialModal({
-  operationId,
-  allowPrefill = false,
-  parentUnitCount,
-  issuePerUnit = false,
-  expiredEntityPolicy = "Block",
-  autoSelectMaterialWithoutPickingList = false,
-  locationId,
-  workCenterId,
-  material,
-  batchId,
-  batchRemainingQuantity,
-  parentId,
-  parentIdIsSerialized,
-  jobOperationStepId,
-  unitNumber,
-  trackedInputs = [],
-  onClose
-}: {
+type IssueMaterialModalProps = {
   operationId: string;
   // Opt-in from the call site to pre-select tracked entities from the picking
   // list. The process view passes true; the assembly view issues one unit at
@@ -147,8 +130,43 @@ export function IssueMaterialModal({
   jobOperationStepId?: string;
   unitNumber?: number;
   trackedInputs?: TrackedInput[];
+  open?: boolean;
   onClose: () => void;
-}) {
+};
+
+export function IssueMaterialModal({
+  open = true,
+  onClose,
+  ...props
+}: IssueMaterialModalProps) {
+  return (
+    <Modal open={open} onOpenChange={onClose}>
+      <ModalContent>
+        <IssueMaterialBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function IssueMaterialBody({
+  operationId,
+  allowPrefill = false,
+  parentUnitCount,
+  issuePerUnit = false,
+  expiredEntityPolicy = "Block",
+  autoSelectMaterialWithoutPickingList = false,
+  locationId,
+  workCenterId,
+  material,
+  batchId,
+  batchRemainingQuantity,
+  parentId,
+  parentIdIsSerialized,
+  jobOperationStepId,
+  unitNumber,
+  trackedInputs = [],
+  onClose
+}: Omit<IssueMaterialModalProps, "open">) {
   const { carbon } = useCarbon();
   const { t } = useLingui();
   const [items] = useItems();
@@ -391,6 +409,8 @@ export function IssueMaterialModal({
     id: string;
     readableId?: string | null;
   } | null>(null);
+  const [isScrapEntityOpen, setIsScrapEntityOpen] = useState(false);
+  const [scrapEntityKey, setScrapEntityKey] = useState(0);
   const [selectedTrackedInputs, setSelectedTrackedInputs] = useState<string[]>(
     []
   );
@@ -621,7 +641,12 @@ export function IssueMaterialModal({
     }>;
   }>();
   const unconsumeFetcher = useFetcher<{ success: boolean; message: string }>();
-  const inventoryFetcher = useFetcher<{ success: boolean; message: string }>();
+  const inventoryFetcher = useFetcher<{
+    success?: boolean;
+    message?: string;
+    violations?: Violation[];
+    ruleNames?: Record<string, string>;
+  }>();
 
   // Fetch item details when item is selected (only when no material provided)
   const handleItemChange = useCallback(
@@ -1213,11 +1238,34 @@ export function IssueMaterialModal({
     }
   }, [unconsumeFetcher.data, onClose]);
 
+  const processedInventoryData = useRef<typeof inventoryFetcher.data | null>(
+    null
+  );
+
   useEffect(() => {
-    if (inventoryFetcher.data?.success) {
-      onClose();
+    const result = inventoryFetcher.data;
+    if (
+      inventoryFetcher.state !== "idle" ||
+      !result ||
+      result === processedInventoryData.current
+    ) {
+      return;
     }
-  }, [inventoryFetcher.data, onClose]);
+    processedInventoryData.current = result;
+
+    if (result.success) {
+      onClose();
+    } else if (result.violations?.length) {
+      for (const violation of result.violations) {
+        const ruleName = result.ruleNames?.[violation.ruleId];
+        toast.error(
+          ruleName ? `${ruleName}: ${violation.message}` : violation.message
+        );
+      }
+    } else if (result.message) {
+      toast.error(result.message);
+    }
+  }, [inventoryFetcher.state, inventoryFetcher.data, onClose]);
 
   // Determine what to render based on state
   const showItemSelector = !material?.itemId;
@@ -1248,126 +1296,112 @@ export function IssueMaterialModal({
 
   return (
     <>
-      <Modal open onOpenChange={onClose}>
-        <ModalContent>
-          <ModalHeader>
-            <ModalTitle>
-              {material?.description ??
-                getItemReadableId(items, selectedItemId) ??
-                "Issue Material"}
-            </ModalTitle>
-            {!material && (
-              <ModalDescription>
-                Select an item and specify the quantity to issue
-              </ModalDescription>
-            )}
-          </ModalHeader>
+      <ModalHeader>
+        <ModalTitle>
+          {material?.description ??
+            getItemReadableId(items, selectedItemId) ??
+            "Issue Material"}
+        </ModalTitle>
+        {!material && (
+          <ModalDescription>
+            Select an item and specify the quantity to issue
+          </ModalDescription>
+        )}
+      </ModalHeader>
 
-          {trackingType === "Inventory" ||
-          trackingType === "Non-Inventory" ||
-          trackingType === null ? (
-            // Untracked item (Inventory or Non-Inventory, e.g. consumables and
-            // services) - use ValidatedForm; the issue posting skips the
-            // itemLedger for Non-Inventory items but still posts the WIP cost
-            <ValidatedForm
-              method="post"
-              action={path.to.issue}
-              onSubmit={onClose}
-              validator={issueValidator}
-              defaultValues={{
-                materialId: material?.id ?? "",
-                jobOperationId: operationId,
-                itemId: selectedItemId,
-                // Default to the remaining qty (or one unit's worth in the
-                // assembly view's one-at-a-time flow), but never submit
-                // zero/negative — that's how this modal ends up posting an
-                // invalid form and the server bouncing it silently when a
-                // material has been fully issued already.
-                quantity: Math.max(
-                  1,
-                  issuePerUnit
-                    ? (material?.quantity ?? material?.estimatedQuantity ?? 1)
-                    : (material?.estimatedQuantity ?? 0) -
-                        (material?.quantityIssued ?? 0)
-                ),
-                adjustmentType: "Negative Adjmt."
-              }}
-              fetcher={inventoryFetcher}
-            >
-              <ModalBody>
-                <Hidden name="jobOperationId" />
-                <Hidden name="materialId" />
-                {/* Scope an unplanned part (no materialId) to the step it's
+      {trackingType === "Inventory" ||
+      trackingType === "Non-Inventory" ||
+      trackingType === null ? (
+        // Untracked item (Inventory or Non-Inventory, e.g. consumables and
+        // services) - use ValidatedForm; the issue posting skips the
+        // itemLedger for Non-Inventory items but still posts the WIP cost
+        <ValidatedForm
+          method="post"
+          action={path.to.issue}
+          validator={issueValidator}
+          defaultValues={{
+            materialId: material?.id ?? "",
+            jobOperationId: operationId,
+            itemId: selectedItemId,
+            // Default to the remaining qty (or one unit's worth in the
+            // assembly view's one-at-a-time flow), but never submit
+            // zero/negative — that's how this modal ends up posting an
+            // invalid form and the server bouncing it silently when a
+            // material has been fully issued already.
+            quantity: Math.max(
+              1,
+              issuePerUnit
+                ? (material?.quantity ?? material?.estimatedQuantity ?? 1)
+                : (material?.estimatedQuantity ?? 0) -
+                    (material?.quantityIssued ?? 0)
+            ),
+            adjustmentType: "Negative Adjmt."
+          }}
+          fetcher={inventoryFetcher}
+        >
+          <ModalBody>
+            <Hidden name="jobOperationId" />
+            <Hidden name="materialId" />
+            {/* Scope an unplanned part (no materialId) to the step it's
                     issued on so the assembly view shows it on that step. */}
-                {!material?.id && jobOperationStepId && (
-                  <Hidden
-                    name="jobOperationStepId"
-                    value={jobOperationStepId}
+            {!material?.id && jobOperationStepId && (
+              <Hidden name="jobOperationStepId" value={jobOperationStepId} />
+            )}
+            {material?.id && (
+              <Hidden name="adjustmentType" value="Negative Adjmt." />
+            )}
+            <div className="flex flex-col gap-4">
+              {showItemSelector && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Item</label>
+                  <ComboboxBase
+                    aria-label={t`Item`}
+                    placeholder="Select an item..."
+                    value={selectedItemId}
+                    onChange={(value) => {
+                      handleItemChange(value);
+                    }}
+                    options={itemOptions}
                   />
-                )}
-                {material?.id && (
-                  <Hidden name="adjustmentType" value="Negative Adjmt." />
-                )}
-                <div className="flex flex-col gap-4">
-                  {showItemSelector && (
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Item
-                      </label>
-                      <ComboboxBase
-                        aria-label={t`Item`}
-                        placeholder="Select an item..."
-                        value={selectedItemId}
-                        onChange={(value) => {
-                          handleItemChange(value);
-                        }}
-                        options={itemOptions}
-                      />
-                      <input
-                        type="hidden"
-                        name="itemId"
-                        value={selectedItemId}
-                      />
-                    </div>
-                  )}
-                  {material?.id && (
-                    <Hidden name="itemId" value={selectedItemId} />
-                  )}
+                  <input type="hidden" name="itemId" value={selectedItemId} />
+                </div>
+              )}
+              {material?.id && <Hidden name="itemId" value={selectedItemId} />}
 
-                  {isLoadingItem && (
-                    <div className="text-sm text-muted-foreground">
-                      Loading item details...
-                    </div>
-                  )}
+              {isLoadingItem && (
+                <div className="text-sm text-muted-foreground">
+                  Loading item details...
+                </div>
+              )}
 
-                  {showContent &&
-                    (trackingType === "Inventory" ||
-                      trackingType === "Non-Inventory") && (
-                      <>
-                        {!material?.id && (
-                          <div>
-                            <label className="block text-sm font-medium mb-1">
-                              Adjustment Type
-                            </label>
-                            <Select
-                              name="adjustmentType"
-                              defaultValue="Negative Adjmt."
-                            >
-                              <SelectTrigger aria-label={t`Adjustment Type`}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Positive Adjmt.">
-                                  Add to Inventory
-                                </SelectItem>
-                                <SelectItem value="Negative Adjmt.">
-                                  Pull from Inventory
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-                        {/*
+              {showContent &&
+                (trackingType === "Inventory" ||
+                  trackingType === "Non-Inventory") && (
+                  <>
+                    {!material?.id && (
+                      <div>
+                        <label className="block text-sm font-medium mb-1">
+                          Adjustment Type
+                        </label>
+                        <Select
+                          name="adjustmentType"
+                          defaultValue="Negative Adjmt."
+                        >
+                          <SelectTrigger aria-label={t`Adjustment Type`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Positive Adjmt.">
+                              Add to Inventory
+                            </SelectItem>
+                            <SelectItem value="Negative Adjmt.">
+                              Pull from Inventory
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    {/*
                         Use the form-aware `<Number>` (FormNumberInput) so
                         `name="quantity"` lands on react-aria's NumberField
                         and a hidden form input is rendered with the numeric
@@ -1377,751 +1411,731 @@ export function IssueMaterialModal({
                         the server's zod schema rejected it, and the action
                         returned a 400 the modal silently swallowed.
                       */}
-                        <FormNumberInput
-                          name="quantity"
-                          label="Quantity"
-                          minValue={INPUT_STEP.quantity}
-                        />
-                      </>
-                    )}
+                    <FormNumberInput
+                      name="quantity"
+                      label="Quantity"
+                      minValue={INPUT_STEP.quantity}
+                    />
+                  </>
+                )}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" size="lg" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              isLoading={inventoryFetcher.state !== "idle"}
+              isDisabled={
+                inventoryFetcher.state !== "idle" ||
+                !selectedItemId ||
+                isLoadingItem
+              }
+            >
+              Issue
+            </Button>
+          </ModalFooter>
+        </ValidatedForm>
+      ) : (
+        // Tracked items (Serial or Batch)
+        <>
+          <ModalBody>
+            <div className="flex flex-col gap-4">
+              {showItemSelector && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Item</label>
+                  <ComboboxBase
+                    aria-label={t`Item`}
+                    placeholder="Select an item..."
+                    value={selectedItemId}
+                    onChange={handleItemChange}
+                    options={itemOptions}
+                  />
                 </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="secondary" size="lg" onClick={onClose}>
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="lg"
-                  isLoading={inventoryFetcher.state !== "idle"}
-                  isDisabled={
-                    inventoryFetcher.state !== "idle" ||
-                    !selectedItemId ||
-                    isLoadingItem
-                  }
-                >
-                  Issue
-                </Button>
-              </ModalFooter>
-            </ValidatedForm>
-          ) : (
-            // Tracked items (Serial or Batch)
-            <>
-              <ModalBody>
-                <div className="flex flex-col gap-4">
-                  {showItemSelector && (
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Item
-                      </label>
-                      <ComboboxBase
-                        aria-label={t`Item`}
-                        placeholder="Select an item..."
-                        value={selectedItemId}
-                        onChange={handleItemChange}
-                        options={itemOptions}
+              )}
+
+              {isLoadingItem && (
+                <div className="text-sm text-muted-foreground">
+                  Loading item details...
+                </div>
+              )}
+
+              {showContent && trackingType === "Serial" && (
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className={trackedTabsListClass}>
+                    <TabsTrigger value="scan">
+                      <LuQrCode className="mr-2" />
+                      Scan
+                    </TabsTrigger>
+                    <TabsTrigger value="select">
+                      <LuList className="mr-2" />
+                      Select
+                    </TabsTrigger>
+                    {canScrap && (
+                      <TabsTrigger value="scrap">
+                        <LuTrash2 className="mr-2" />
+                        Scrap
+                      </TabsTrigger>
+                    )}
+                    {hasTrackedInputs && (
+                      <TabsTrigger value="unconsume">
+                        <LuUndo2 className="mr-2" />
+                        Unconsume
+                      </TabsTrigger>
+                    )}
+                  </TabsList>
+
+                  {canScrap && (
+                    <TabsContent value="scrap">
+                      <ScrapTab
+                        entities={scrappableEntities}
+                        onScrap={(entity) => {
+                          setScrapEntityTarget({
+                            id: entity.id,
+                            readableId: entity.readableId
+                          });
+                          setIsScrapEntityOpen(true);
+                          setScrapEntityKey((key) => key + 1);
+                        }}
                       />
-                    </div>
+                    </TabsContent>
                   )}
 
-                  {isLoadingItem && (
-                    <div className="text-sm text-muted-foreground">
-                      Loading item details...
-                    </div>
-                  )}
-
-                  {showContent && trackingType === "Serial" && (
-                    <Tabs value={activeTab} onValueChange={setActiveTab}>
-                      <TabsList className={trackedTabsListClass}>
-                        <TabsTrigger value="scan">
-                          <LuQrCode className="mr-2" />
-                          Scan
-                        </TabsTrigger>
-                        <TabsTrigger value="select">
-                          <LuList className="mr-2" />
-                          Select
-                        </TabsTrigger>
-                        {canScrap && (
-                          <TabsTrigger value="scrap">
-                            <LuTrash2 className="mr-2" />
-                            Scrap
-                          </TabsTrigger>
-                        )}
-                        {hasTrackedInputs && (
-                          <TabsTrigger value="unconsume">
-                            <LuUndo2 className="mr-2" />
-                            Unconsume
-                          </TabsTrigger>
-                        )}
-                      </TabsList>
-
-                      {canScrap && (
-                        <TabsContent value="scrap">
-                          <ScrapTab
-                            entities={scrappableEntities}
-                            onScrap={(entity) =>
-                              setScrapEntityTarget({
-                                id: entity.id,
-                                readableId: entity.readableId
-                              })
-                            }
-                          />
-                        </TabsContent>
-                      )}
-
-                      <TabsContent value="scan">
-                        <div className="flex flex-col gap-4">
-                          {selectedSerialNumbers.map((sn, index) => (
-                            <div
-                              key={`${index}-serial-scan`}
-                              className="flex flex-col gap-1"
-                            >
-                              <div className="flex items-center gap-2">
-                                <div className="flex-1">
-                                  <InputGroup>
-                                    <Input
-                                      autoFocus={index === 0}
-                                      placeholder={`Serial Number ${index + 1}`}
-                                      aria-label={t`Serial number ${index + 1}`}
-                                      value={sn.id}
-                                      onChange={(e) => {
-                                        const newValue = e.target.value;
-                                        const newSerialNumbers = [
-                                          ...selectedSerialNumbers
-                                        ];
-                                        newSerialNumbers[index] = {
-                                          index,
-                                          id: newValue
-                                        };
-                                        setSelectedSerialNumbers(
-                                          newSerialNumbers
-                                        );
-                                      }}
-                                      onKeyDown={(e) => {
-                                        // Barcode scanners emit the code then an
-                                        // Enter keystroke — submit the issue on
-                                        // Enter, same as clicking Issue.
-                                        if (e.key === "Enter") {
-                                          e.preventDefault();
-                                          handleSubmitSerial();
-                                        }
-                                      }}
-                                      onBlur={(e) => {
-                                        const newValue = e.target.value;
-                                        const error = validateSerialNumber(
-                                          newValue,
-                                          index
-                                        );
-                                        setSerialErrors((prev) => {
-                                          const newErrors = { ...prev };
-                                          if (error) {
-                                            newErrors[index] = error;
-                                          } else {
-                                            delete newErrors[index];
-                                          }
-                                          return newErrors;
-                                        });
-                                        if (!error) {
-                                          updateSerialNumber({
-                                            index,
-                                            id: newValue
-                                          });
-                                        } else {
-                                          const newSerialNumbers = [
-                                            ...selectedSerialNumbers
-                                          ];
-                                          newSerialNumbers[index] = {
-                                            index,
-                                            id: ""
-                                          };
-                                          setSelectedSerialNumbers(
-                                            newSerialNumbers
-                                          );
-                                        }
-                                      }}
-                                      className={cn(
-                                        serialErrors[index] &&
-                                          "border-destructive"
-                                      )}
-                                    />
-                                    <InputRightElement className="pl-2">
-                                      {!serialErrors[index] && sn.id ? (
-                                        <LuCheck className="text-emerald-500" />
-                                      ) : (
-                                        <LuQrCode />
-                                      )}
-                                    </InputRightElement>
-                                  </InputGroup>
-                                </div>
-                                {index > 0 && (
-                                  <IconButton
-                                    aria-label="Remove Serial Number"
-                                    icon={<LuX />}
-                                    variant="ghost"
-                                    onClick={() => removeSerialNumber(index)}
-                                    className="flex-shrink-0"
-                                  />
-                                )}
-                              </div>
-                              {serialErrors[index] && (
-                                <span
-                                  role="alert"
-                                  className="text-xs text-destructive"
-                                >
-                                  {serialErrors[index]}
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                          <div>
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              leftIcon={<LuCirclePlus />}
-                              onClick={addSerialNumber}
-                            >
-                              Add
-                            </Button>
-                          </div>
-                        </div>
-                      </TabsContent>
-
-                      <TabsContent value="select">
-                        <div className="flex flex-col gap-4">
-                          {selectedSerialNumbers.map((sn, index) => (
-                            <div
-                              key={`${index}-serial-select`}
-                              className="flex flex-col gap-1"
-                            >
-                              <div className="flex items-center gap-2">
-                                <div className="flex-1">
-                                  <ComboboxBase
-                                    placeholder={`Select Serial Number ${index + 1}`}
-                                    aria-label={t`Serial number ${index + 1}`}
-                                    value={sn.id}
-                                    onChange={(value) => {
+                  <TabsContent value="scan">
+                    <div className="flex flex-col gap-4">
+                      {selectedSerialNumbers.map((sn, index) => (
+                        <div
+                          key={`${index}-serial-scan`}
+                          className="flex flex-col gap-1"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1">
+                              <InputGroup>
+                                <Input
+                                  autoFocus={index === 0}
+                                  placeholder={`Serial Number ${index + 1}`}
+                                  aria-label={t`Serial number ${index + 1}`}
+                                  value={sn.id}
+                                  onChange={(e) => {
+                                    const newValue = e.target.value;
+                                    const newSerialNumbers = [
+                                      ...selectedSerialNumbers
+                                    ];
+                                    newSerialNumbers[index] = {
+                                      index,
+                                      id: newValue
+                                    };
+                                    setSelectedSerialNumbers(newSerialNumbers);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    // Barcode scanners emit the code then an
+                                    // Enter keystroke — submit the issue on
+                                    // Enter, same as clicking Issue.
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      handleSubmitSerial();
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    const newValue = e.target.value;
+                                    const error = validateSerialNumber(
+                                      newValue,
+                                      index
+                                    );
+                                    setSerialErrors((prev) => {
+                                      const newErrors = { ...prev };
+                                      if (error) {
+                                        newErrors[index] = error;
+                                      } else {
+                                        delete newErrors[index];
+                                      }
+                                      return newErrors;
+                                    });
+                                    if (!error) {
+                                      updateSerialNumber({
+                                        index,
+                                        id: newValue
+                                      });
+                                    } else {
                                       const newSerialNumbers = [
                                         ...selectedSerialNumbers
                                       ];
                                       newSerialNumbers[index] = {
                                         index,
-                                        id: value
+                                        id: ""
                                       };
                                       setSelectedSerialNumbers(
                                         newSerialNumbers
                                       );
-                                      const error = validateSerialNumber(
-                                        value,
-                                        index
-                                      );
-                                      setSerialErrors((prev) => {
-                                        const newErrors = { ...prev };
-                                        if (error) {
-                                          newErrors[index] = error;
-                                        } else {
-                                          delete newErrors[index];
-                                        }
-                                        return newErrors;
-                                      });
-                                    }}
-                                    options={serialOptions}
-                                  />
-                                </div>
-                                {index > 0 && (
-                                  <IconButton
-                                    aria-label="Remove Serial Number"
-                                    icon={<LuX />}
-                                    variant="ghost"
-                                    onClick={() => removeSerialNumber(index)}
-                                    className="flex-shrink-0"
-                                  />
-                                )}
-                              </div>
-                              {serialErrors[index] && (
-                                <span
-                                  role="alert"
-                                  className="text-xs text-destructive"
-                                >
-                                  {serialErrors[index]}
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                          <div>
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              leftIcon={<LuCirclePlus />}
-                              onClick={addSerialNumber}
-                            >
-                              Add
-                            </Button>
-                          </div>
-                        </div>
-                      </TabsContent>
-
-                      {hasTrackedInputs && (
-                        <TabsContent value="unconsume">
-                          <div className="flex flex-col gap-4">
-                            {trackedInputs.map((input) => (
-                              <div
-                                key={input.id}
-                                className="flex items-center gap-3 p-2 border rounded-md"
-                              >
-                                <Checkbox
-                                  id={`unconsume-${input.id}`}
-                                  checked={selectedTrackedInputs.includes(
-                                    input.id
+                                    }
+                                  }}
+                                  className={cn(
+                                    serialErrors[index] && "border-destructive"
                                   )}
-                                  onCheckedChange={() =>
-                                    toggleTrackedInput(input.id)
-                                  }
                                 />
-                                <label
-                                  htmlFor={`unconsume-${input.id}`}
-                                  className="flex-1 cursor-pointer"
-                                >
-                                  <div className="font-medium text-sm">
-                                    {input.id}
-                                  </div>
-                                  {input.readableId && (
-                                    <div className="text-xs text-muted-foreground">
-                                      Serial: {input.readableId}
-                                    </div>
+                                <InputRightElement className="pl-2">
+                                  {!serialErrors[index] && sn.id ? (
+                                    <LuCheck className="text-emerald-500" />
+                                  ) : (
+                                    <LuQrCode />
                                   )}
-                                </label>
-                              </div>
-                            ))}
-                            {trackedInputs.length === 0 && (
-                              <Alert variant="warning">
-                                <AlertTitle>No consumed materials</AlertTitle>
-                                <AlertDescription>
-                                  There are no consumed materials to unconsume.
-                                </AlertDescription>
-                              </Alert>
+                                </InputRightElement>
+                              </InputGroup>
+                            </div>
+                            {index > 0 && (
+                              <IconButton
+                                aria-label="Remove Serial Number"
+                                icon={<LuX />}
+                                variant="ghost"
+                                onClick={() => removeSerialNumber(index)}
+                                className="flex-shrink-0"
+                              />
                             )}
                           </div>
-                        </TabsContent>
-                      )}
-                    </Tabs>
-                  )}
-
-                  {showContent && trackingType === "Batch" && (
-                    <Tabs value={activeTab} onValueChange={setActiveTab}>
-                      <TabsList className={trackedTabsListClass}>
-                        <TabsTrigger value="scan">
-                          <LuQrCode className="mr-2" />
-                          Scan
-                        </TabsTrigger>
-                        <TabsTrigger value="select">
-                          <LuList className="mr-2" />
-                          Select
-                        </TabsTrigger>
-                        {canScrap && (
-                          <TabsTrigger value="scrap">
-                            <LuTrash2 className="mr-2" />
-                            Scrap
-                          </TabsTrigger>
-                        )}
-                        {hasTrackedInputs && (
-                          <TabsTrigger value="unconsume">
-                            <LuUndo2 className="mr-2" />
-                            Unconsume
-                          </TabsTrigger>
-                        )}
-                      </TabsList>
-
-                      {canScrap && (
-                        <TabsContent value="scrap">
-                          <ScrapTab
-                            entities={scrappableEntities}
-                            onScrap={(entity) =>
-                              setScrapEntityTarget({
-                                id: entity.id,
-                                readableId: entity.readableId
-                              })
-                            }
-                          />
-                        </TabsContent>
-                      )}
-
-                      <TabsContent value="scan">
-                        <div className="flex flex-col gap-4">
-                          {selectedBatchNumbers.map((batch, index) => (
-                            <div key={index} className="flex flex-col gap-2">
-                              <div className="flex items-center gap-2">
-                                <div className="flex-1">
-                                  <InputGroup>
-                                    <Input
-                                      autoFocus={index === 0}
-                                      value={batch.id}
-                                      onChange={(e) => {
-                                        // A shelf-label scan resolves to its
-                                        // allocated lineside child (see
-                                        // resolveScannedBatchId).
-                                        const newValue = resolveScannedBatchId(
-                                          e.target.value
-                                        );
-                                        updateBatchNumber({
-                                          ...batch,
-                                          id: newValue
-                                        });
-                                      }}
-                                      onKeyDown={(e) => {
-                                        // Barcode scanners emit the code then an
-                                        // Enter keystroke — submit the issue on
-                                        // Enter, same as clicking Issue.
-                                        if (e.key === "Enter") {
-                                          e.preventDefault();
-                                          handleSubmitBatch();
-                                        }
-                                      }}
-                                      onBlur={(e) => {
-                                        validateBatchInput(
-                                          resolveScannedBatchId(e.target.value),
-                                          index
-                                        );
-                                      }}
-                                      placeholder="Scan batch number"
-                                      aria-label={t`Batch number ${index + 1}`}
-                                    />
-                                    <InputRightElement className="pl-2">
-                                      {!batchErrors[index] && batch.id ? (
-                                        <LuCheck className="text-emerald-500" />
-                                      ) : (
-                                        <LuQrCode />
-                                      )}
-                                    </InputRightElement>
-                                  </InputGroup>
-                                </div>
-                                <div className="w-24">
-                                  <NumberField
-                                    id={`quantity-${index}`}
-                                    aria-label={t`Quantity ${index + 1}`}
-                                    value={batch.quantity}
-                                    formatOptions={INPUT_FORMAT.quantity}
-                                    onChange={(value) =>
-                                      updateBatchNumber({
-                                        ...batch,
-                                        quantity: value
-                                      })
-                                    }
-                                    minValue={INPUT_STEP.quantity}
-                                    maxValue={
-                                      batchOptions.find(
-                                        (o) => o.value === batch.id
-                                      )?.availableQuantity ?? 999999
-                                    }
-                                  >
-                                    <NumberInputGroup className="relative">
-                                      <NumberInput />
-                                      <NumberInputStepper>
-                                        <NumberIncrementStepper>
-                                          <LuChevronUp
-                                            size="1em"
-                                            strokeWidth="3"
-                                          />
-                                        </NumberIncrementStepper>
-                                        <NumberDecrementStepper>
-                                          <LuChevronDown
-                                            size="1em"
-                                            strokeWidth="3"
-                                          />
-                                        </NumberDecrementStepper>
-                                      </NumberInputStepper>
-                                    </NumberInputGroup>
-                                  </NumberField>
-                                </div>
-                                {index > 0 && (
-                                  <IconButton
-                                    aria-label="Remove Batch Number"
-                                    icon={<LuX />}
-                                    variant="ghost"
-                                    onClick={() => removeBatchNumber(index)}
-                                  />
-                                )}
-                              </div>
-                              {batchErrors[index] && (
-                                <span
-                                  role="alert"
-                                  className="text-xs text-destructive"
-                                >
-                                  {batchErrors[index]}
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                          <div>
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              leftIcon={<LuCirclePlus />}
-                              onClick={addBatchNumber}
+                          {serialErrors[index] && (
+                            <span
+                              role="alert"
+                              className="text-xs text-destructive"
                             >
-                              Add
-                            </Button>
-                          </div>
-                        </div>
-                      </TabsContent>
-
-                      <TabsContent value="select">
-                        <div className="flex flex-col gap-4">
-                          {selectedBatchNumbers.map((batch, index) => (
-                            <div key={index} className="flex flex-col gap-2">
-                              <div className="flex items-center gap-2">
-                                <div className="flex-1">
-                                  <ComboboxBase
-                                    value={batch.id}
-                                    onChange={(value) => {
-                                      updateBatchNumber({
-                                        ...batch,
-                                        id: value
-                                      });
-                                      validateBatchInput(value, index);
-                                    }}
-                                    options={batchOptions}
-                                    placeholder="Select batch number"
-                                    aria-label={t`Batch number ${index + 1}`}
-                                  />
-                                </div>
-                                <div className="w-24">
-                                  <NumberField
-                                    aria-label={t`Quantity ${index + 1}`}
-                                    value={batch.quantity}
-                                    formatOptions={INPUT_FORMAT.quantity}
-                                    onChange={(value) =>
-                                      updateBatchNumber({
-                                        ...batch,
-                                        quantity: value
-                                      })
-                                    }
-                                    minValue={INPUT_STEP.quantity}
-                                    maxValue={
-                                      batchOptions.find(
-                                        (o) => o.value === batch.id
-                                      )?.availableQuantity ?? 999999
-                                    }
-                                  >
-                                    <NumberInputGroup className="relative">
-                                      <NumberInput />
-                                      <NumberInputStepper>
-                                        <NumberIncrementStepper>
-                                          <LuChevronUp
-                                            size="1em"
-                                            strokeWidth="3"
-                                          />
-                                        </NumberIncrementStepper>
-                                        <NumberDecrementStepper>
-                                          <LuChevronDown
-                                            size="1em"
-                                            strokeWidth="3"
-                                          />
-                                        </NumberDecrementStepper>
-                                      </NumberInputStepper>
-                                    </NumberInputGroup>
-                                  </NumberField>
-                                </div>
-                                {index > 0 && (
-                                  <IconButton
-                                    aria-label="Remove Batch Number"
-                                    icon={<LuX />}
-                                    variant="ghost"
-                                    onClick={() => removeBatchNumber(index)}
-                                  />
-                                )}
-                              </div>
-                              {batchErrors[index] && (
-                                <span
-                                  role="alert"
-                                  className="text-xs text-destructive"
-                                >
-                                  {batchErrors[index]}
-                                </span>
-                              )}
-                            </div>
-                          ))}
-                          <div>
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              leftIcon={<LuCirclePlus />}
-                              onClick={addBatchNumber}
-                            >
-                              Add Batch
-                            </Button>
-                          </div>
-                        </div>
-                      </TabsContent>
-
-                      {hasTrackedInputs && (
-                        <TabsContent value="unconsume">
-                          <div className="flex flex-col gap-4">
-                            {unconsumedBatches.map((batch, index) => (
-                              <div key={index} className="flex gap-2">
-                                <div className="flex-1">
-                                  <ComboboxBase
-                                    value={batch.id}
-                                    onChange={(value) =>
-                                      updateUnconsumedBatch({
-                                        index,
-                                        id: value
-                                      })
-                                    }
-                                    options={unconsumeOptions.filter(
-                                      (option) =>
-                                        !unconsumedBatches.some(
-                                          (b, i) =>
-                                            b.id === option.value && i !== index
-                                        )
-                                    )}
-                                    placeholder="Select batch to unconsume"
-                                    aria-label={t`Batch to unconsume ${index + 1}`}
-                                  />
-                                </div>
-                                {batch.id && (
-                                  <div className="w-24">
-                                    <Input
-                                      isReadOnly
-                                      aria-label={t`Quantity ${index + 1}`}
-                                      value={
-                                        trackedInputs
-                                          .find(
-                                            (input) => input.id === batch.id
-                                          )
-                                          ?.quantity.toString() ?? "0"
-                                      }
-                                    />
-                                  </div>
-                                )}
-                                {index > 0 && (
-                                  <IconButton
-                                    aria-label="Remove Batch"
-                                    icon={<LuX />}
-                                    variant="ghost"
-                                    onClick={() => removeUnconsumedBatch(index)}
-                                    className="flex-shrink-0"
-                                  />
-                                )}
-                              </div>
-                            ))}
-                            <div>
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                leftIcon={<LuCirclePlus />}
-                                onClick={addUnconsumedBatch}
-                                isDisabled={
-                                  unconsumedBatches.length >=
-                                  trackedInputs.length
-                                }
-                              >
-                                Add Batch
-                              </Button>
-                            </div>
-                            <div className="h-8" />
-                          </div>
-                        </TabsContent>
-                      )}
-                    </Tabs>
-                  )}
-                  {hasExpiredSelection && activeTab !== "unconsume" && (
-                    <Alert
-                      variant={
-                        expiredEntityPolicy === "Warn"
-                          ? "warning"
-                          : "destructive"
-                      }
-                    >
-                      <AlertTitle>
-                        {expiredEntityPolicy === "Warn"
-                          ? "Expired stock selected"
-                          : "Override required"}
-                      </AlertTitle>
-                      <AlertDescription>
-                        <div className="flex flex-col gap-2">
-                          <p>
-                            {expiredSerialIds.length + expiredBatchIds.length}{" "}
-                            of the selected{" "}
-                            {trackingType === "Serial" ? "serials" : "batches"}{" "}
-                            are past their expiration date.
-                            {expiredEntityPolicy === "Warn"
-                              ? " The issue will go through with a warning."
-                              : " Enter a reason below to record the override."}
-                          </p>
-                          {expiredEntityPolicy === "BlockWithOverride" && (
-                            <textarea
-                              className="border rounded-md p-2 text-sm bg-background"
-                              placeholder="Reason for issuing expired stock"
-                              aria-label={t`Reason for issuing expired stock`}
-                              value={expiryOverrideReason}
-                              onChange={(e) =>
-                                setExpiryOverrideReason(e.target.value)
-                              }
-                              rows={2}
-                            />
+                              {serialErrors[index]}
+                            </span>
                           )}
                         </div>
-                      </AlertDescription>
-                    </Alert>
+                      ))}
+                      <div>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          leftIcon={<LuCirclePlus />}
+                          onClick={addSerialNumber}
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="select">
+                    <div className="flex flex-col gap-4">
+                      {selectedSerialNumbers.map((sn, index) => (
+                        <div
+                          key={`${index}-serial-select`}
+                          className="flex flex-col gap-1"
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1">
+                              <ComboboxBase
+                                placeholder={`Select Serial Number ${index + 1}`}
+                                aria-label={t`Serial number ${index + 1}`}
+                                value={sn.id}
+                                onChange={(value) => {
+                                  const newSerialNumbers = [
+                                    ...selectedSerialNumbers
+                                  ];
+                                  newSerialNumbers[index] = {
+                                    index,
+                                    id: value
+                                  };
+                                  setSelectedSerialNumbers(newSerialNumbers);
+                                  const error = validateSerialNumber(
+                                    value,
+                                    index
+                                  );
+                                  setSerialErrors((prev) => {
+                                    const newErrors = { ...prev };
+                                    if (error) {
+                                      newErrors[index] = error;
+                                    } else {
+                                      delete newErrors[index];
+                                    }
+                                    return newErrors;
+                                  });
+                                }}
+                                options={serialOptions}
+                              />
+                            </div>
+                            {index > 0 && (
+                              <IconButton
+                                aria-label="Remove Serial Number"
+                                icon={<LuX />}
+                                variant="ghost"
+                                onClick={() => removeSerialNumber(index)}
+                                className="flex-shrink-0"
+                              />
+                            )}
+                          </div>
+                          {serialErrors[index] && (
+                            <span
+                              role="alert"
+                              className="text-xs text-destructive"
+                            >
+                              {serialErrors[index]}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                      <div>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          leftIcon={<LuCirclePlus />}
+                          onClick={addSerialNumber}
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  {hasTrackedInputs && (
+                    <TabsContent value="unconsume">
+                      <div className="flex flex-col gap-4">
+                        {trackedInputs.map((input) => (
+                          <div
+                            key={input.id}
+                            className="flex items-center gap-3 p-2 border rounded-md"
+                          >
+                            <Checkbox
+                              id={`unconsume-${input.id}`}
+                              checked={selectedTrackedInputs.includes(input.id)}
+                              onCheckedChange={() =>
+                                toggleTrackedInput(input.id)
+                              }
+                            />
+                            <label
+                              htmlFor={`unconsume-${input.id}`}
+                              className="flex-1 cursor-pointer"
+                            >
+                              <div className="font-medium text-sm">
+                                {input.id}
+                              </div>
+                              {input.readableId && (
+                                <div className="text-xs text-muted-foreground">
+                                  Serial: {input.readableId}
+                                </div>
+                              )}
+                            </label>
+                          </div>
+                        ))}
+                        {trackedInputs.length === 0 && (
+                          <Alert variant="warning">
+                            <AlertTitle>No consumed materials</AlertTitle>
+                            <AlertDescription>
+                              There are no consumed materials to unconsume.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </div>
+                    </TabsContent>
                   )}
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="secondary" size="lg" onClick={onClose}>
-                  Cancel
-                </Button>
-                {activeTab === "unconsume" ? (
-                  <Button
-                    variant="destructive"
-                    size="lg"
-                    onClick={
-                      trackingType === "Serial"
-                        ? handleUnconsumeSerial
-                        : handleUnconsumeBatch
-                    }
-                    isLoading={unconsumeFetcher.state !== "idle"}
-                    isDisabled={
-                      unconsumeFetcher.state !== "idle" ||
-                      (trackingType === "Serial"
-                        ? selectedTrackedInputs.length === 0
-                        : !unconsumedBatches.some((batch) => batch.id))
-                    }
-                  >
-                    Unconsume
-                  </Button>
-                ) : (
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    onClick={
-                      trackingType === "Serial"
-                        ? handleSubmitSerial
-                        : handleSubmitBatch
-                    }
-                    isLoading={fetcher.state !== "idle"}
-                    isDisabled={
-                      fetcher.state !== "idle" ||
-                      !selectedItemId ||
-                      isLoadingItem
-                    }
-                  >
-                    Issue
-                  </Button>
-                )}
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
+                </Tabs>
+              )}
+
+              {showContent && trackingType === "Batch" && (
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className={trackedTabsListClass}>
+                    <TabsTrigger value="scan">
+                      <LuQrCode className="mr-2" />
+                      Scan
+                    </TabsTrigger>
+                    <TabsTrigger value="select">
+                      <LuList className="mr-2" />
+                      Select
+                    </TabsTrigger>
+                    {canScrap && (
+                      <TabsTrigger value="scrap">
+                        <LuTrash2 className="mr-2" />
+                        Scrap
+                      </TabsTrigger>
+                    )}
+                    {hasTrackedInputs && (
+                      <TabsTrigger value="unconsume">
+                        <LuUndo2 className="mr-2" />
+                        Unconsume
+                      </TabsTrigger>
+                    )}
+                  </TabsList>
+
+                  {canScrap && (
+                    <TabsContent value="scrap">
+                      <ScrapTab
+                        entities={scrappableEntities}
+                        onScrap={(entity) => {
+                          setScrapEntityTarget({
+                            id: entity.id,
+                            readableId: entity.readableId
+                          });
+                          setIsScrapEntityOpen(true);
+                          setScrapEntityKey((key) => key + 1);
+                        }}
+                      />
+                    </TabsContent>
+                  )}
+
+                  <TabsContent value="scan">
+                    <div className="flex flex-col gap-4">
+                      {selectedBatchNumbers.map((batch, index) => (
+                        <div key={index} className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1">
+                              <InputGroup>
+                                <Input
+                                  autoFocus={index === 0}
+                                  value={batch.id}
+                                  onChange={(e) => {
+                                    // A shelf-label scan resolves to its
+                                    // allocated lineside child (see
+                                    // resolveScannedBatchId).
+                                    const newValue = resolveScannedBatchId(
+                                      e.target.value
+                                    );
+                                    updateBatchNumber({
+                                      ...batch,
+                                      id: newValue
+                                    });
+                                  }}
+                                  onKeyDown={(e) => {
+                                    // Barcode scanners emit the code then an
+                                    // Enter keystroke — submit the issue on
+                                    // Enter, same as clicking Issue.
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      handleSubmitBatch();
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    validateBatchInput(
+                                      resolveScannedBatchId(e.target.value),
+                                      index
+                                    );
+                                  }}
+                                  placeholder="Scan batch number"
+                                  aria-label={t`Batch number ${index + 1}`}
+                                />
+                                <InputRightElement className="pl-2">
+                                  {!batchErrors[index] && batch.id ? (
+                                    <LuCheck className="text-emerald-500" />
+                                  ) : (
+                                    <LuQrCode />
+                                  )}
+                                </InputRightElement>
+                              </InputGroup>
+                            </div>
+                            <div className="w-24">
+                              <NumberField
+                                id={`quantity-${index}`}
+                                aria-label={t`Quantity ${index + 1}`}
+                                value={batch.quantity}
+                                formatOptions={INPUT_FORMAT.quantity}
+                                onChange={(value) =>
+                                  updateBatchNumber({
+                                    ...batch,
+                                    quantity: value
+                                  })
+                                }
+                                minValue={INPUT_STEP.quantity}
+                                maxValue={
+                                  batchOptions.find((o) => o.value === batch.id)
+                                    ?.availableQuantity ?? 999999
+                                }
+                              >
+                                <NumberInputGroup className="relative">
+                                  <NumberInput />
+                                  <NumberInputStepper>
+                                    <NumberIncrementStepper>
+                                      <LuChevronUp size="1em" strokeWidth="3" />
+                                    </NumberIncrementStepper>
+                                    <NumberDecrementStepper>
+                                      <LuChevronDown
+                                        size="1em"
+                                        strokeWidth="3"
+                                      />
+                                    </NumberDecrementStepper>
+                                  </NumberInputStepper>
+                                </NumberInputGroup>
+                              </NumberField>
+                            </div>
+                            {index > 0 && (
+                              <IconButton
+                                aria-label="Remove Batch Number"
+                                icon={<LuX />}
+                                variant="ghost"
+                                onClick={() => removeBatchNumber(index)}
+                              />
+                            )}
+                          </div>
+                          {batchErrors[index] && (
+                            <span
+                              role="alert"
+                              className="text-xs text-destructive"
+                            >
+                              {batchErrors[index]}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                      <div>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          leftIcon={<LuCirclePlus />}
+                          onClick={addBatchNumber}
+                        >
+                          Add
+                        </Button>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="select">
+                    <div className="flex flex-col gap-4">
+                      {selectedBatchNumbers.map((batch, index) => (
+                        <div key={index} className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1">
+                              <ComboboxBase
+                                value={batch.id}
+                                onChange={(value) => {
+                                  updateBatchNumber({
+                                    ...batch,
+                                    id: value
+                                  });
+                                  validateBatchInput(value, index);
+                                }}
+                                options={batchOptions}
+                                placeholder="Select batch number"
+                                aria-label={t`Batch number ${index + 1}`}
+                              />
+                            </div>
+                            <div className="w-24">
+                              <NumberField
+                                aria-label={t`Quantity ${index + 1}`}
+                                value={batch.quantity}
+                                formatOptions={INPUT_FORMAT.quantity}
+                                onChange={(value) =>
+                                  updateBatchNumber({
+                                    ...batch,
+                                    quantity: value
+                                  })
+                                }
+                                minValue={INPUT_STEP.quantity}
+                                maxValue={
+                                  batchOptions.find((o) => o.value === batch.id)
+                                    ?.availableQuantity ?? 999999
+                                }
+                              >
+                                <NumberInputGroup className="relative">
+                                  <NumberInput />
+                                  <NumberInputStepper>
+                                    <NumberIncrementStepper>
+                                      <LuChevronUp size="1em" strokeWidth="3" />
+                                    </NumberIncrementStepper>
+                                    <NumberDecrementStepper>
+                                      <LuChevronDown
+                                        size="1em"
+                                        strokeWidth="3"
+                                      />
+                                    </NumberDecrementStepper>
+                                  </NumberInputStepper>
+                                </NumberInputGroup>
+                              </NumberField>
+                            </div>
+                            {index > 0 && (
+                              <IconButton
+                                aria-label="Remove Batch Number"
+                                icon={<LuX />}
+                                variant="ghost"
+                                onClick={() => removeBatchNumber(index)}
+                              />
+                            )}
+                          </div>
+                          {batchErrors[index] && (
+                            <span
+                              role="alert"
+                              className="text-xs text-destructive"
+                            >
+                              {batchErrors[index]}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                      <div>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          leftIcon={<LuCirclePlus />}
+                          onClick={addBatchNumber}
+                        >
+                          Add Batch
+                        </Button>
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  {hasTrackedInputs && (
+                    <TabsContent value="unconsume">
+                      <div className="flex flex-col gap-4">
+                        {unconsumedBatches.map((batch, index) => (
+                          <div key={index} className="flex gap-2">
+                            <div className="flex-1">
+                              <ComboboxBase
+                                value={batch.id}
+                                onChange={(value) =>
+                                  updateUnconsumedBatch({
+                                    index,
+                                    id: value
+                                  })
+                                }
+                                options={unconsumeOptions.filter(
+                                  (option) =>
+                                    !unconsumedBatches.some(
+                                      (b, i) =>
+                                        b.id === option.value && i !== index
+                                    )
+                                )}
+                                placeholder="Select batch to unconsume"
+                                aria-label={t`Batch to unconsume ${index + 1}`}
+                              />
+                            </div>
+                            {batch.id && (
+                              <div className="w-24">
+                                <Input
+                                  isReadOnly
+                                  aria-label={t`Quantity ${index + 1}`}
+                                  value={
+                                    trackedInputs
+                                      .find((input) => input.id === batch.id)
+                                      ?.quantity.toString() ?? "0"
+                                  }
+                                />
+                              </div>
+                            )}
+                            {index > 0 && (
+                              <IconButton
+                                aria-label="Remove Batch"
+                                icon={<LuX />}
+                                variant="ghost"
+                                onClick={() => removeUnconsumedBatch(index)}
+                                className="flex-shrink-0"
+                              />
+                            )}
+                          </div>
+                        ))}
+                        <div>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            leftIcon={<LuCirclePlus />}
+                            onClick={addUnconsumedBatch}
+                            isDisabled={
+                              unconsumedBatches.length >= trackedInputs.length
+                            }
+                          >
+                            Add Batch
+                          </Button>
+                        </div>
+                        <div className="h-8" />
+                      </div>
+                    </TabsContent>
+                  )}
+                </Tabs>
+              )}
+              {hasExpiredSelection && activeTab !== "unconsume" && (
+                <Alert
+                  variant={
+                    expiredEntityPolicy === "Warn" ? "warning" : "destructive"
+                  }
+                >
+                  <AlertTitle>
+                    {expiredEntityPolicy === "Warn"
+                      ? "Expired stock selected"
+                      : "Override required"}
+                  </AlertTitle>
+                  <AlertDescription>
+                    <div className="flex flex-col gap-2">
+                      <p>
+                        {expiredSerialIds.length + expiredBatchIds.length} of
+                        the selected{" "}
+                        {trackingType === "Serial" ? "serials" : "batches"} are
+                        past their expiration date.
+                        {expiredEntityPolicy === "Warn"
+                          ? " The issue will go through with a warning."
+                          : " Enter a reason below to record the override."}
+                      </p>
+                      {expiredEntityPolicy === "BlockWithOverride" && (
+                        <textarea
+                          className="border rounded-md p-2 text-sm bg-background"
+                          placeholder="Reason for issuing expired stock"
+                          aria-label={t`Reason for issuing expired stock`}
+                          value={expiryOverrideReason}
+                          onChange={(e) =>
+                            setExpiryOverrideReason(e.target.value)
+                          }
+                          rows={2}
+                        />
+                      )}
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" size="lg" onClick={onClose}>
+              Cancel
+            </Button>
+            {activeTab === "unconsume" ? (
+              <Button
+                variant="destructive"
+                size="lg"
+                onClick={
+                  trackingType === "Serial"
+                    ? handleUnconsumeSerial
+                    : handleUnconsumeBatch
+                }
+                isLoading={unconsumeFetcher.state !== "idle"}
+                isDisabled={
+                  unconsumeFetcher.state !== "idle" ||
+                  (trackingType === "Serial"
+                    ? selectedTrackedInputs.length === 0
+                    : !unconsumedBatches.some((batch) => batch.id))
+                }
+              >
+                Unconsume
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={
+                  trackingType === "Serial"
+                    ? handleSubmitSerial
+                    : handleSubmitBatch
+                }
+                isLoading={fetcher.state !== "idle"}
+                isDisabled={
+                  fetcher.state !== "idle" || !selectedItemId || isLoadingItem
+                }
+              >
+                Issue
+              </Button>
+            )}
+          </ModalFooter>
+        </>
+      )}
       {scrapEntityTarget && (
         <ScrapEntityModal
+          key={scrapEntityKey}
+          open={isScrapEntityOpen}
           materialId={material?.id ?? ""}
           trackedEntityId={scrapEntityTarget.id}
           readableId={scrapEntityTarget.readableId}
           parentId={parentId}
           isMakeToOrder={material?.methodType === "Make to Order"}
-          onClose={() => setScrapEntityTarget(null)}
+          onClose={() => setIsScrapEntityOpen(false)}
         />
       )}
     </>

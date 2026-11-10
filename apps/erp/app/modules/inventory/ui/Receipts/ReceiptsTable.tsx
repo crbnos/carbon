@@ -18,6 +18,7 @@ import {
   LuCalendar,
   LuCheck,
   LuCirclePlus,
+  LuClipboardCheck,
   LuClock,
   LuFileText,
   LuHash,
@@ -40,6 +41,7 @@ import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import {
+  receiptInspectionStatusType,
   receiptSourceDocumentType,
   receiptStatusType
 } from "~/modules/inventory/inventory.models";
@@ -47,6 +49,7 @@ import type { Receipt } from "~/modules/inventory/types";
 import { ReceiptStatus } from "~/modules/inventory/ui";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
+import ReceiptInspectionStatus from "./ReceiptInspectionStatus";
 
 function NewReceipt() {
   const fetcher = useFetcher();
@@ -196,6 +199,28 @@ const ReceiptsTable = memo((props: ReceiptsTableProps) => {
           },
           pluralHeader: t`Statuses`,
           icon: <LuClock />
+        }
+      },
+      {
+        accessorKey: "inspectionStatus",
+        header: t`Inspection`,
+        cell: (item) => (
+          <ReceiptInspectionStatus
+            status={item.getValue<
+              (typeof receiptInspectionStatusType)[number]
+            >()}
+          />
+        ),
+        meta: {
+          filter: {
+            type: "static",
+            options: receiptInspectionStatusType.map((status) => ({
+              value: status,
+              label: <ReceiptInspectionStatus status={status} showNotRequired />
+            }))
+          },
+          pluralHeader: t`Inspection Statuses`,
+          icon: <LuClipboardCheck />
         }
       },
       {
@@ -431,11 +456,9 @@ const ReceiptsTable = memo((props: ReceiptsTableProps) => {
           text={`Are you sure you want to delete ${selectedReceipt.receiptId!}? This cannot be undone.`}
           onCancel={() => {
             deleteReceiptModal.onClose();
-            setSelectedReceipt(null);
           }}
           onSubmit={() => {
             deleteReceiptModal.onClose();
-            setSelectedReceipt(null);
           }}
         />
       )}

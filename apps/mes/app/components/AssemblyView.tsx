@@ -117,7 +117,11 @@ import type {
   OperationWithDetails,
   ProductionEvent as ProductionEventType
 } from "~/services/types";
-import { isKanbanCompleteScan, kanbanCompleteTarget } from "~/utils/kanban";
+import {
+  isKanbanCompleteScan,
+  kanbanCompleteTarget,
+  soleUnitId
+} from "~/utils/kanban";
 import { ORIGIN_PARAM, readOrigin, useOrigin } from "~/utils/origin";
 import { getPrivateUrl, path } from "~/utils/path";
 import { deriveUnits } from "~/utils/units";
@@ -614,7 +618,8 @@ export function AssemblyView({
         isFirstOperation,
         selectedEntityId: selected?.id ?? null,
         selectedIsIncomplete:
-          !!selected && isUnitIncompleteForOperation(selected, operationId)
+          !!selected && isUnitIncompleteForOperation(selected, operationId),
+        soleUnitId: soleUnitId(trackedEntities, operation?.operationQuantity)
       });
       if (target.action === "select") {
         toast.info(t`Scan or select the unit, then scan the kanban card again`);
@@ -2735,36 +2740,32 @@ export function AssemblyView({
         </div>
       ) : null}
 
-      {issueModal.isOpen && (
-        <IssueMaterialModal
-          operationId={operationId}
-          // Assembly builds one unit at a time: each scan issues one unit's
-          // worth (issuePerUnit), so the pick order can never be attributed
-          // to the unit on screen — never pre-select tracked entities; the
-          // operator scans what goes into THIS unit.
-          allowPrefill={false}
-          issuePerUnit
-          expiredEntityPolicy={expiredEntityPolicy}
-          locationId={locationId}
-          workCenterId={operation?.workCenterId ?? undefined}
-          material={selectedMaterial ?? undefined}
-          // Untracked parents have no unit-axis entity, but tracked child
-          // consumes still need a genealogy parent — fall back to the make
-          // method's seed entity, same as the operation view.
-          parentId={currentEntity?.id ?? trackedEntities[0]?.id ?? ""}
-          parentIdIsSerialized={requiresSerialTracking}
-          // Stamp the current step + 1-based unit onto the consume so issued
-          // quantities can be attributed per-unit even for a batch parent (where
-          // all units share one lot). See the loader's batch attribution.
-          jobOperationStepId={step?.id}
-          unitNumber={currentUnitIndex + 1}
-          trackedInputs={materials?.trackedInputs ?? []}
-          onClose={() => {
-            setSelectedMaterial(null);
-            issueModal.onClose();
-          }}
-        />
-      )}
+      <IssueMaterialModal
+        open={issueModal.isOpen}
+        operationId={operationId}
+        // Assembly builds one unit at a time: each scan issues one unit's
+        // worth (issuePerUnit), so the pick order can never be attributed
+        // to the unit on screen — never pre-select tracked entities; the
+        // operator scans what goes into THIS unit.
+        allowPrefill={false}
+        issuePerUnit
+        expiredEntityPolicy={expiredEntityPolicy}
+        locationId={locationId}
+        workCenterId={operation?.workCenterId ?? undefined}
+        material={selectedMaterial ?? undefined}
+        // Untracked parents have no unit-axis entity, but tracked child
+        // consumes still need a genealogy parent — fall back to the make
+        // method's seed entity, same as the operation view.
+        parentId={currentEntity?.id ?? trackedEntities[0]?.id ?? ""}
+        parentIdIsSerialized={requiresSerialTracking}
+        // Stamp the current step + 1-based unit onto the consume so issued
+        // quantities can be attributed per-unit even for a batch parent (where
+        // all units share one lot). See the loader's batch attribution.
+        jobOperationStepId={step?.id}
+        unitNumber={currentUnitIndex + 1}
+        trackedInputs={materials?.trackedInputs ?? []}
+        onClose={issueModal.onClose}
+      />
 
       <QualityIssueModal
         operationId={operationId}
@@ -2773,8 +2774,10 @@ export function AssemblyView({
         onClose={qualityModal.onClose}
       />
 
-      {completeModal.isOpen && operation && (
+      {operation && completeModal.openCount > 0 && (
         <QuantityModal
+          key={`complete-${completeModal.openCount}`}
+          open={completeModal.isOpen}
           type="complete"
           operation={operation as unknown as OperationWithDetails}
           materials={(materials?.materials ?? []) as JobMaterial[]}
@@ -2789,8 +2792,10 @@ export function AssemblyView({
         />
       )}
 
-      {scrapModal.isOpen && operation && (
+      {operation && scrapModal.openCount > 0 && (
         <QuantityModal
+          key={`scrap-${scrapModal.openCount}`}
+          open={scrapModal.isOpen}
           type="scrap"
           operation={operation as unknown as OperationWithDetails}
           parentIsSerial={requiresSerialTracking}
@@ -2804,8 +2809,10 @@ export function AssemblyView({
         />
       )}
 
-      {finishModal.isOpen && operation && (
+      {operation && finishModal.openCount > 0 && (
         <QuantityModal
+          key={`finish-${finishModal.openCount}`}
+          open={finishModal.isOpen}
           type="finish"
           operation={operation as unknown as OperationWithDetails}
           parentIsSerial={requiresSerialTracking}
@@ -2819,8 +2826,9 @@ export function AssemblyView({
         />
       )}
 
-      {reworkModal.isOpen && operation && jobId && (
+      {operation && jobId && reworkModal.openCount > 0 && (
         <ReworkModal
+          key={`rework-${reworkModal.openCount}`}
           operation={operation as unknown as OperationWithDetails}
           jobId={jobId}
           isOpen={reworkModal.isOpen}
@@ -2839,21 +2847,20 @@ export function AssemblyView({
         />
       )}
 
-      {serialModal.isOpen && (
-        <SerialSelectorModal
-          availableEntities={
-            unitEntities.filter((entity) =>
-              isUnitIncompleteForOperation(entity, operationId)
-            ) as never
-          }
-          onClose={serialModal.onClose}
-          onCancel={serialModal.onClose}
-          onSelect={(entity) => {
-            navigateEntity(entity);
-            serialModal.onClose();
-          }}
-        />
-      )}
+      <SerialSelectorModal
+        open={serialModal.isOpen}
+        availableEntities={
+          unitEntities.filter((entity) =>
+            isUnitIncompleteForOperation(entity, operationId)
+          ) as never
+        }
+        onClose={serialModal.onClose}
+        onCancel={serialModal.onClose}
+        onSelect={(entity) => {
+          navigateEntity(entity);
+          serialModal.onClose();
+        }}
+      />
 
       <BottomSheet
         open={actionsSheet.isOpen}
@@ -2929,56 +2936,54 @@ export function AssemblyView({
         </BottomSheetContent>
       </BottomSheet>
 
-      {completeAllModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) completeAllModal.onClose();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>Complete all steps?</ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <p className="text-sm text-muted-foreground">
-                This records the{" "}
-                <span className="font-semibold text-foreground">
-                  {steps.length - doneCount}
-                </span>{" "}
-                remaining step(s) as complete for{" "}
-                <span className="font-semibold text-foreground">
-                  Unit {currentUnitIndex + 1}
-                </span>{" "}
-                without capturing their values. This is a manager override; each
-                step can still be undone individually.
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={completeAllModal.onClose}>
-                Cancel
-              </Button>
-              <Button
-                variant="primary"
-                isLoading={completeAllFetcher.state !== "idle"}
-                onClick={() => {
-                  const fd = new FormData();
-                  fd.append("operationId", operationId);
-                  fd.append("index", String(activeIndex));
-                  completeAllFetcher.submit(fd, {
-                    method: "post",
-                    action: path.to.completeAllSteps
-                  });
-                  completeAllModal.onClose();
-                }}
-              >
-                Complete all
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={completeAllModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) completeAllModal.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>Complete all steps?</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-muted-foreground">
+              This records the{" "}
+              <span className="font-semibold text-foreground">
+                {steps.length - doneCount}
+              </span>{" "}
+              remaining step(s) as complete for{" "}
+              <span className="font-semibold text-foreground">
+                Unit {currentUnitIndex + 1}
+              </span>{" "}
+              without capturing their values. This is a manager override; each
+              step can still be undone individually.
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={completeAllModal.onClose}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              isLoading={completeAllFetcher.state !== "idle"}
+              onClick={() => {
+                const fd = new FormData();
+                fd.append("operationId", operationId);
+                fd.append("index", String(activeIndex));
+                completeAllFetcher.submit(fd, {
+                  method: "post",
+                  action: path.to.completeAllSteps
+                });
+                completeAllModal.onClose();
+              }}
+            >
+              Complete all
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       <ImageZoomViewer
         open={imageViewer.isOpen}
@@ -3588,13 +3593,12 @@ function StepCompleteAction({
           className="hidden md:flex"
         />
       </Button>
-      {recordModal.isOpen && (
-        <RecordModal
-          attribute={step as unknown as JobOperationStep}
-          activeStep={activeIndex}
-          onClose={recordModal.onClose}
-        />
-      )}
+      <RecordModal
+        open={recordModal.isOpen}
+        attribute={step as unknown as JobOperationStep}
+        activeStep={activeIndex}
+        onClose={recordModal.onClose}
+      />
     </>
   );
 }

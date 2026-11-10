@@ -11,13 +11,24 @@ export function hasOpenDialog(): boolean {
   return document.querySelector(OPEN_DIALOG_SELECTOR) !== null;
 }
 
+function openDialogs(): Element[] {
+  return Array.from(document.querySelectorAll(OPEN_DIALOG_SELECTOR));
+}
+
+// Popover content (a combobox, a date picker) is a `role="dialog"` too.
+const POPOVER_SELECTOR = "[data-radix-popper-content-wrapper]";
+
+export function openModalDialogs(): Element[] {
+  return openDialogs().filter((dialog) => !dialog.closest(POPOVER_SELECTOR));
+}
+
 // Dialog layers are not uniform (BottomSheetContent is z-[70], Modal/Drawer
 // are z-50), so DOM order alone can pick a covered dialog. Highest computed
 // z-index wins; later-mounted wins ties (portals append in stacking order).
 export function topmostOpenDialog(): Element | null {
   let topmost: Element | null = null;
   let topmostZ = Number.NEGATIVE_INFINITY;
-  for (const dialog of document.querySelectorAll(OPEN_DIALOG_SELECTOR)) {
+  for (const dialog of openDialogs()) {
     const z = Number.parseInt(getComputedStyle(dialog).zIndex, 10) || 0;
     if (z >= topmostZ) {
       topmost = dialog;
@@ -143,4 +154,36 @@ export function returnFocusOnClose(handler?: (event: Event) => void) {
     };
     requestAnimationFrame(attempt);
   };
+}
+
+function whenDialogRemoved(dialog: Element, timeoutMs = 500): Promise<void> {
+  return new Promise((resolve) => {
+    if (!dialog.isConnected) {
+      resolve();
+      return;
+    }
+    const observer = new MutationObserver(() => {
+      if (!dialog.isConnected) done();
+    });
+    const timer = setTimeout(done, timeoutMs);
+    function done() {
+      observer.disconnect();
+      clearTimeout(timer);
+      resolve();
+    }
+    observer.observe(document.body, { childList: true, subtree: true });
+  });
+}
+
+/**
+ * Runs `callback` once the dialog that is closing now has left the page.
+ * Radix gives focus back when it goes, so a control focused before then (a
+ * combobox reopened after a create modal) would lose it.
+ */
+export function afterDialogCloses(callback: () => void) {
+  // The one closing is the modal or drawer mounted last: portals append to
+  // the page in the order they open, whatever their z-index.
+  const dialog = openModalDialogs().at(-1);
+  if (dialog) whenDialogRemoved(dialog).then(callback);
+  else callback();
 }

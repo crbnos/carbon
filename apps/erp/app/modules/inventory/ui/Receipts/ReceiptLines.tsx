@@ -11,6 +11,7 @@ import {
 import { Boolean, Number, Submit, ValidatedForm } from "@carbon/form";
 import { useAction, useRevalidator } from "@carbon/query";
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -54,7 +55,7 @@ import { getItemReadableId } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useId, useState } from "react";
 import {
   LuCalendar,
   LuCircleAlert,
@@ -95,6 +96,10 @@ import type {
   ReceiptLine,
   RentalReceiptLine
 } from "~/modules/inventory/types";
+import {
+  getInspectionStatusVariant,
+  useInspectionLotStatusLabel
+} from "~/modules/quality/ui/Inspections/InspectionStatus";
 import type { action as splitAction } from "~/routes/x+/receipt+/lines.split";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
@@ -127,7 +132,9 @@ const ReceiptLines = () => {
     }[];
     rentalLines: RentalReceiptLine[];
     receiptInspections: ReceiptLineInspection[];
-    inspectedItemIds: string[];
+    inspectedLineIds: string[];
+    heldLineIds: string[];
+    nonNettableStorageUnitIds: string[];
     receiptFiles: PostgrestResponse<StorageItem>;
     receiptLineTracking: ItemTracking[];
     batchProperties: PostgrestResponse<BatchProperty>;
@@ -297,8 +304,16 @@ const ReceiptLines = () => {
                       inspection={inspection}
                       requiresInspection={
                         !!inspection ||
-                        (!!line.itemId &&
-                          !!routeData?.inspectedItemIds?.includes(line.itemId))
+                        !!routeData?.inspectedLineIds?.includes(line.id ?? "")
+                      }
+                      needsHeldUnit={
+                        !!routeData?.heldLineIds?.includes(line.id ?? "")
+                      }
+                      inNonNettableUnit={
+                        !!line.storageUnitId &&
+                        !!routeData?.nonNettableStorageUnitIds?.includes(
+                          line.storageUnitId
+                        )
                       }
                       isReadOnly={isPosted}
                       onUpdate={onUpdateReceiptLine}
@@ -621,18 +636,30 @@ type ReceiptLineInspection = {
 };
 
 /**
- * A small red mark beside a line whose item is inspected at receipt: before
- * posting, the item has a Receipt-usage inspection plan; after, the lot posting
- * opened, which the mark links to.
+ * The line's inspection state, in the badge row under the item. Before
+ * posting it says the item is inspected at receipt (it has a Receipt-usage
+ * inspection plan); after, it shows the lot's status and links to the lot.
  */
-function ReceiptLineInspectionMark({
+function ReceiptLineInspectionBadge({
   inspection
 }: {
   inspection?: ReceiptLineInspection;
 }) {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const icon = <LuClipboardCheck className="size-4 shrink-0 text-red-500" />;
+  const statusLabel = useInspectionLotStatusLabel(inspection?.status);
+
+  const badge = (
+    <Badge
+      variant={
+        inspection ? getInspectionStatusVariant(inspection.status) : "red"
+      }
+      className="gap-1"
+    >
+      <LuClipboardCheck className="size-3.5 shrink-0" />
+      {inspection ? statusLabel : <Trans>Inspection required</Trans>}
+    </Badge>
+  );
 
   return (
     <Tooltip>
@@ -640,21 +667,19 @@ function ReceiptLineInspectionMark({
         {inspection && permissions.can("view", "quality") ? (
           <Link
             to={path.to.inspection(inspection.id)}
-            aria-label={t`Inspection ${inspection.inspectionId}`}
+            // The label replaces the badge text, so it names the status too.
+            aria-label={t`Inspection ${inspection.inspectionId}: ${statusLabel}`}
+            className="rounded-full"
           >
-            {icon}
+            {badge}
           </Link>
         ) : (
-          <span role="img" aria-label={t`Requires inspection`}>
-            {icon}
-          </span>
+          <span>{badge}</span>
         )}
       </TooltipTrigger>
       <TooltipContent>
         {inspection ? (
-          <Trans>
-            Inspection {inspection.inspectionId} · {inspection.status}
-          </Trans>
+          <Trans>Inspection {inspection.inspectionId}</Trans>
         ) : (
           <Trans>
             Requires inspection. A lot opens when the receipt posts.
@@ -670,6 +695,8 @@ function ReceiptLineItem({
   receipt,
   inspection,
   requiresInspection,
+  needsHeldUnit,
+  inNonNettableUnit,
   className,
   isReadOnly,
   onUpdate,
@@ -687,6 +714,8 @@ function ReceiptLineItem({
   receipt?: Receipt;
   inspection?: ReceiptLineInspection;
   requiresInspection: boolean;
+  needsHeldUnit: boolean;
+  inNonNettableUnit: boolean;
   className?: string;
   isReadOnly: boolean;
   files?: PostgrestResponse<StorageItem>;
@@ -731,6 +760,13 @@ function ReceiptLineItem({
   const remainingQuantity =
     (line.outstandingQuantity ?? 0) - (line.receivedQuantity ?? 0);
   const isSurplus = remainingQuantity < 0;
+  const showNettableWarning =
+    needsHeldUnit &&
+    !isReadOnly &&
+    receipt?.sourceDocument === "Purchase Order" &&
+    (line.receivedQuantity ?? 0) > 0 &&
+    !inNonNettableUnit;
+  const nettableWarningId = useId();
 
   return (
     <div
@@ -782,34 +818,35 @@ function ReceiptLineItem({
               type={(item?.type as "Part") ?? "Part"}
             />
             <VStack spacing={0} className="flex-1 min-w-0">
-              <HStack spacing={1} className="w-full min-w-0">
-                <span
-                  className="text-sm font-medium truncate block min-w-0"
-                  title={item?.name}
-                >
-                  {item?.name}
-                </span>
-                {requiresInspection && (
-                  <ReceiptLineInspectionMark inspection={inspection} />
-                )}
-              </HStack>
-              <span className="text-xs text-muted-foreground line-clamp-2">
+              <span
+                className="text-sm font-medium line-clamp-2 break-words w-full min-w-0"
+                title={item?.name}
+              >
+                {item?.name}
+              </span>
+              <span
+                className="text-xs text-muted-foreground line-clamp-2 [overflow-wrap:anywhere] w-full min-w-0"
+                title={item?.readableIdWithRevision ?? undefined}
+              >
                 {item?.readableIdWithRevision}
               </span>
-              <div className="mt-2">
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 <Enumerable
                   value={
                     unitsOfMeasure?.find((u) => u.value === line.unitOfMeasure)
                       ?.label ?? null
                   }
                 />
+                {requiresInspection && (
+                  <ReceiptLineInspectionBadge inspection={inspection} />
+                )}
               </div>
             </VStack>
           </HStack>
         </HStack>
-        <div className="flex flex-wrap @3xl:flex-nowrap items-center gap-x-6 gap-y-4 w-full @3xl:w-auto @3xl:shrink-0">
-          <HStack spacing={4}>
-            <VStack spacing={1}>
+        <div className="flex flex-wrap @3xl:flex-nowrap items-start gap-x-6 gap-y-4 w-full @3xl:w-auto @3xl:shrink-0">
+          <HStack spacing={4} className="items-start">
+            <VStack spacing={1} className="w-28 shrink-0 max-md:w-auto">
               <label className="text-xs text-muted-foreground">
                 <Trans>Received</Trans>
               </label>
@@ -843,21 +880,28 @@ function ReceiptLineItem({
                 }}
               >
                 <NumberInput
-                  className="disabled:bg-transparent disabled:opacity-100 min-w-[100px] max-md:w-full"
+                  className="disabled:bg-transparent disabled:opacity-100 w-full min-w-[100px]"
                   isDisabled={isReadOnly}
-                  size="sm"
                   min={0}
                 />
               </NumberField>
             </VStack>
-            <VStack spacing={1} className="text-center items-center">
+            <VStack
+              spacing={1}
+              className="text-center items-center w-16 shrink-0"
+            >
               <label className="text-xs text-muted-foreground">
                 <Trans>Ordered</Trans>
               </label>
-              <span className="text-sm py-1.5">{line.orderQuantity ?? 0}</span>
+              <span className="text-sm leading-10">
+                {line.orderQuantity ?? 0}
+              </span>
             </VStack>
 
-            <VStack spacing={1} className="text-center items-center">
+            <VStack
+              spacing={1}
+              className="text-center items-center w-24 shrink-0"
+            >
               <label className="text-xs text-muted-foreground">
                 {isSurplus ? (
                   <Trans>Surplus</Trans>
@@ -867,7 +911,10 @@ function ReceiptLineItem({
               </label>
               <HStack className="justify-center">
                 <span
-                  className={cn("text-sm py-1.5", isSurplus && "text-red-500")}
+                  className={cn(
+                    "text-sm leading-10",
+                    isSurplus && "text-red-500"
+                  )}
                 >
                   {Math.abs(remainingQuantity)}
                 </span>
@@ -886,23 +933,39 @@ function ReceiptLineItem({
             </VStack>
           </HStack>
 
-          <div className="flex flex-col items-start gap-1 min-w-[140px] text-sm max-md:w-full">
+          <div className="flex flex-col items-start gap-1 w-48 @5xl:w-60 max-w-full min-w-0 text-sm max-md:w-full">
             <label className="text-xs text-muted-foreground">
               <Trans>Storage Unit</Trans>
             </label>
-            <StorageUnit
-              locationId={line.locationId}
-              label={t`Storage unit for ${itemName}`}
-              value={line.storageUnitId}
-              isReadOnly={isReadOnly}
-              onChange={(storageUnit) => {
-                onUpdate({
-                  lineId: line.id!,
-                  field: "storageUnitId",
-                  value: storageUnit?.id ?? ""
-                });
-              }}
-            />
+            <div className="flex w-full min-w-0">
+              <StorageUnit
+                locationId={line.locationId}
+                value={line.storageUnitId}
+                isReadOnly={isReadOnly}
+                label={t`Storage unit for ${itemName}`}
+                aria-describedby={
+                  showNettableWarning ? nettableWarningId : undefined
+                }
+                onChange={(storageUnit) => {
+                  onUpdate({
+                    lineId: line.id!,
+                    field: "storageUnitId",
+                    value: storageUnit?.id ?? ""
+                  });
+                }}
+              />
+            </div>
+            {showNettableWarning && (
+              <span
+                id={nettableWarningId}
+                className="text-xs text-destructive w-full"
+              >
+                <Trans>
+                  Choose a non-nettable storage unit at this location for
+                  inspected parts.
+                </Trans>
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -1006,21 +1069,19 @@ function ReceiptLineItem({
             </Await>
           </Suspense>
           <FileDropzone onDrop={upload} />
-          {splitDisclosure.isOpen && (
-            <SplitReceiptLineModal
-              line={line}
-              onClose={splitDisclosure.onClose}
-            />
-          )}
-          {deleteDisclosure.isOpen && (
-            <ConfirmDelete
-              name="Receipt Line"
-              text="Are you sure you want to delete this receipt line?"
-              action={path.to.receiptLineDelete(line.id!)}
-              onCancel={deleteDisclosure.onClose}
-              onSubmit={deleteDisclosure.onClose}
-            />
-          )}
+          <SplitReceiptLineModal
+            open={splitDisclosure.isOpen}
+            line={line}
+            onClose={splitDisclosure.onClose}
+          />
+          <ConfirmDelete
+            isOpen={deleteDisclosure.isOpen}
+            name="Receipt Line"
+            text="Are you sure you want to delete this receipt line?"
+            action={path.to.receiptLineDelete(line.id!)}
+            onCancel={deleteDisclosure.onClose}
+            onSubmit={deleteDisclosure.onClose}
+          />
         </>
       )}
     </div>
@@ -1283,12 +1344,14 @@ function BatchForm({
           </Await>
         </Suspense>
       </div>
-      {propertiesDisclosure.isOpen && (
+      {propertiesDisclosure.openCount > 0 && (
         <Suspense fallback={null}>
           <Await resolve={batchProperties}>
             {(resolvedBatchProperties) => {
               return (
                 <BatchPropertiesConfig
+                  key={`propertiesDisclosure-${propertiesDisclosure.openCount}`}
+                  open={propertiesDisclosure.isOpen}
                   itemId={line.itemId!}
                   properties={resolvedBatchProperties?.data ?? []}
                   type="modal"
@@ -1531,59 +1594,64 @@ function SerialForm({
   );
 }
 
+type SplitReceiptLineModalProps = {
+  line: ReceiptLine;
+  open: boolean;
+  onClose: () => void;
+};
+
 function SplitReceiptLineModal({
+  open,
+  onClose,
+  ...props
+}: SplitReceiptLineModalProps) {
+  return (
+    <Modal open={open} onOpenChange={onClose}>
+      <ModalContent>
+        <SplitReceiptLineBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function SplitReceiptLineBody({
   line,
   onClose
-}: {
-  line: ReceiptLine;
-  onClose: () => void;
-}) {
+}: Omit<SplitReceiptLineModalProps, "open">) {
   const { t } = useLingui();
   const fetcher = useAction<typeof splitAction>({ onSuccess: onClose });
   return (
-    <Modal open onOpenChange={onClose}>
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.receiptLineSplit}
-          validator={splitValidator}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>Split Receipt Line</ModalTitle>
-            <ModalDescription>
-              Select the quantity that you'd like to split into a new line.
-            </ModalDescription>
-          </ModalHeader>
+    <ValidatedForm
+      method="post"
+      action={path.to.receiptLineSplit}
+      validator={splitValidator}
+      fetcher={fetcher}
+    >
+      <ModalHeader>
+        <ModalTitle>Split Receipt Line</ModalTitle>
+        <ModalDescription>
+          Select the quantity that you'd like to split into a new line.
+        </ModalDescription>
+      </ModalHeader>
 
-          <ModalBody>
-            <input
-              type="hidden"
-              name="documentId"
-              value={line.receiptId ?? ""}
-            />
-            <input type="hidden" name="documentLineId" value={line.id!} />
-            <input
-              type="hidden"
-              name="locationId"
-              value={line.locationId ?? ""}
-            />
-            <Number
-              name="quantity"
-              label={t`Quantity`}
-              maxValue={line.orderQuantity ?? 0 - 0.0001}
-              minValue={0.0001}
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Submit>Split Line</Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+      <ModalBody>
+        <input type="hidden" name="documentId" value={line.receiptId ?? ""} />
+        <input type="hidden" name="documentLineId" value={line.id!} />
+        <input type="hidden" name="locationId" value={line.locationId ?? ""} />
+        <Number
+          name="quantity"
+          label={t`Quantity`}
+          maxValue={line.orderQuantity ?? 0 - 0.0001}
+          minValue={0.0001}
+        />
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Submit>Split Line</Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 

@@ -410,61 +410,59 @@ const GaugeCalibrationRecordForm = ({
           </ValidatedForm>
         </ModalDrawerContent>
       </ModalDrawer>
-      {gaugeSelectionModal.isOpen && (
-        <Modal
-          open={gaugeSelectionModal.isOpen}
-          onOpenChange={(open) => {
-            if (!open) gaugeSelectionModal.onClose();
-          }}
-        >
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Select Gauge</Trans>
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <VStack className="w-full">
-                <div className="w-full">
-                  <Combobox
-                    aria-label={t`Gauge`}
-                    options={gaugeOptions}
-                    onChange={(value) => {
-                      onGaugeSelected(value);
-                      gaugeSelectionModal.onClose();
-                    }}
-                    value={
-                      selectedGauge?.id ?? initialValues.gaugeId ?? undefined
-                    }
-                    size="lg"
-                  />
-                </div>
-              </VStack>
-              <ModalFooter>
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    if (
-                      selectedGauge &&
-                      selectedGauge.id !== initialValues.gaugeId
-                    ) {
-                      onGaugeSelected(initialValues.gaugeId!);
-                    } else {
-                      setSelectedGauge(null);
-                    }
+      <Modal
+        open={gaugeSelectionModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) gaugeSelectionModal.onClose();
+        }}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Select Gauge</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <VStack className="w-full">
+              <div className="w-full">
+                <Combobox
+                  aria-label={t`Gauge`}
+                  options={gaugeOptions}
+                  onChange={(value) => {
+                    onGaugeSelected(value);
                     gaugeSelectionModal.onClose();
                   }}
-                >
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Button onClick={gaugeSelectionModal.onClose}>
-                  <Trans>Confirm</Trans>
-                </Button>
-              </ModalFooter>
-            </ModalBody>
-          </ModalContent>
-        </Modal>
-      )}
+                  value={
+                    selectedGauge?.id ?? initialValues.gaugeId ?? undefined
+                  }
+                  size="lg"
+                />
+              </div>
+            </VStack>
+            <ModalFooter>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  if (
+                    selectedGauge &&
+                    selectedGauge.id !== initialValues.gaugeId
+                  ) {
+                    onGaugeSelected(initialValues.gaugeId!);
+                  } else {
+                    setSelectedGauge(null);
+                  }
+                  gaugeSelectionModal.onClose();
+                }}
+              >
+                <Trans>Cancel</Trans>
+              </Button>
+              <Button onClick={gaugeSelectionModal.onClose}>
+                <Trans>Confirm</Trans>
+              </Button>
+            </ModalFooter>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </ModalDrawerProvider>
   );
 };

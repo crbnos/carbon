@@ -18,6 +18,7 @@ import { createContext, forwardRef, useContext, useEffect } from "react";
 import { LuX } from "react-icons/lu";
 import { ActionPresentationBoundary } from "./ActionPresentation";
 import { ClientOnly } from "./ClientOnly";
+import { DialogDepthContext, ReportDialogExit } from "./RouteDialogScope";
 import { cn } from "./utils/cn";
 import { returnFocusOnClose, trackPageFocus } from "./utils/dialog";
 import { usePhoneOpenAutoFocus, useViewport } from "./Viewport";
@@ -32,13 +33,22 @@ export const DialogRoot = ({
   open,
   onOpenChange,
   ...props
-}: DialogPrimitive.DialogProps) => (
-  <DismissableContext.Provider
-    value={open === undefined || onOpenChange !== undefined}
-  >
-    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange} {...props} />
-  </DismissableContext.Provider>
-);
+}: DialogPrimitive.DialogProps) => {
+  const depth = useContext(DialogDepthContext);
+  return (
+    <DialogDepthContext.Provider value={depth + 1}>
+      <DismissableContext.Provider
+        value={open === undefined || onOpenChange !== undefined}
+      >
+        <DialogPrimitive.Root
+          open={open}
+          onOpenChange={onOpenChange}
+          {...props}
+        />
+      </DismissableContext.Provider>
+    </DialogDepthContext.Provider>
+  );
+};
 
 const Modal = DialogRoot;
 
@@ -59,6 +69,9 @@ const ModalOverlay = forwardRef<
     data-backdrop=""
     className={cn(
       "bg-black/40 backdrop-blur-xs",
+      // Radix removes the content when this backdrop's animation ends, so the
+      // two durations must match.
+      "data-[state=open]:duration-200 data-[state=closed]:duration-150 ease-out data-[state=closed]:!pointer-events-none",
       "z-50 fixed inset-0 grid place-items-center overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
       // Phones: a bottom sheet over a dimmed screen.
       "max-md:place-items-end max-md:overflow-hidden",
@@ -115,17 +128,21 @@ function moveBetweenFooterActions(event: KeyboardEvent<HTMLDivElement>) {
 const ModalContentVariants = cva(
   cn(
     "px-0 pt-6",
-    "relative z-50 flex flex-col max-h-[calc(100dvh-4rem)] overflow-y-auto w-full border dark:border-none gap-4 shadow-md dark:shadow-sm duration-200",
+    "relative z-50 flex flex-col max-h-[calc(100dvh-4rem)] overflow-y-auto w-full border dark:border-none gap-4 shadow-md dark:shadow-sm",
+    "data-[state=open]:duration-200 data-[state=closed]:duration-150 ease-out",
     "[&>form]:flex [&>form]:flex-col [&>form]:min-h-0",
     "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
     "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+    // Closing: still on the page while it animates, but no second click.
+    // Important: Radix sets `pointer-events: auto` inline on modal content.
+    "data-[state=closed]:!pointer-events-none",
     "md:data-instant:!animate-none",
     "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
     "data-[state=closed]:slide-out-to-left-[0%] data-[state=closed]:slide-out-to-top-[0%]",
     "data-[state=open]:slide-in-from-left-[0%] data-[state=open]:slide-in-from-top-[0%]",
     "sm:rounded-2xl md:w-full",
     "bg-card focus-visible:outline-none focus-visible:ring-0",
-    "max-md:max-h-[88dvh] max-md:max-w-none max-md:rounded-t-[14px] max-md:rounded-b-none max-md:border-0 max-md:pt-5 max-md:pb-safe max-md:data-[state=open]:slide-in-from-bottom-4",
+    "max-md:max-h-[88dvh] max-md:max-w-none max-md:rounded-t-[14px] max-md:rounded-b-none max-md:border-0 max-md:pt-5 max-md:pb-safe max-md:data-[state=open]:slide-in-from-bottom-4 max-md:data-[state=closed]:slide-out-to-bottom-4",
     "dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]"
   ),
   {
@@ -191,6 +208,7 @@ const ModalContent = forwardRef<
                     className="absolute left-1/2 top-1.5 h-[5px] w-9 -translate-x-1/2 rounded-full bg-muted-foreground/20"
                   />
                 )}
+                <ReportDialogExit />
                 <ActionPresentationBoundary>
                   {children}
                 </ActionPresentationBoundary>

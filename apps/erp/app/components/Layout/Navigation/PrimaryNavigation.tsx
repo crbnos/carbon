@@ -51,6 +51,7 @@ import {
 } from "~/shortcuts";
 import { useUIStore } from "~/stores/ui";
 import type { Authenticated, NavItem } from "~/types";
+import { POINTER_SENSOR_OPTIONS } from "~/utils/drag-sensors";
 import { getModule } from "~/utils/submodule-visibility";
 import { SearchModal } from "../Topbar/Search";
 import CompanySwitcher from "./CompanySwitcher";
@@ -58,10 +59,6 @@ import { HiddenModulesPopover } from "./HiddenModulesPopover";
 import { NavigationEditBar } from "./NavigationEditBar";
 import { SortableNavItem } from "./SortableNavItem";
 import { useNavigationEditMode } from "./useNavigationEditMode";
-
-// Module constants: a new options object makes a new sensor, and with it new
-// listeners for every draggable on every render.
-const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
 
 // A row with an open tree is tall, so its center is far from its row. Follow the
 // pointer instead. The keyboard has no pointer, and a gap between rows has no row.

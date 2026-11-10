@@ -79,6 +79,59 @@ const ownAttribute = through(
   )
 );
 
+/**
+ * Whoever can read a record can read how its document prints, by the record's own
+ * read rule. Nothing writes through the API: every save validates the edit and
+ * checks the record's lock on the server, as the system.
+ */
+const documentEditReader = or(
+  and(
+    where<"documentEdit">((eb) =>
+      eb("documentType", "in", [
+        "purchaseReturnOrder",
+        "salesReturnOrder",
+        "stockTransfer",
+        "jobTraveler"
+      ])
+    ),
+    inCompany("companyId", "employee")
+  ),
+  and(
+    where<"documentEdit">((eb) => eb("documentType", "=", "purchaseOrder")),
+    inCompany(
+      "companyId",
+      anyOf("purchasing_view", "inventory_view", "invoicing_view")
+    )
+  ),
+  and(
+    where<"documentEdit">((eb) => eb("documentType", "=", "purchasingRfq")),
+    inCompany("companyId", "purchasing_view")
+  ),
+  and(
+    where<"documentEdit">((eb) => eb("documentType", "=", "quote")),
+    inCompany("companyId", "sales_view")
+  ),
+  and(
+    where<"documentEdit">((eb) => eb("documentType", "=", "salesOrder")),
+    inCompany(
+      "companyId",
+      anyOf("sales_view", "inventory_view", "invoicing_view")
+    )
+  ),
+  and(
+    where<"documentEdit">((eb) => eb("documentType", "=", "salesInvoice")),
+    inCompany("companyId", "invoicing_view")
+  ),
+  and(
+    where<"documentEdit">((eb) => eb("documentType", "=", "packingSlip")),
+    inCompany("companyId", anyOf("inventory_view", "sales_view"))
+  ),
+  and(
+    where<"documentEdit">((eb) => eb("documentType", "=", "issue")),
+    inCompany("companyId", "quality_view")
+  )
+);
+
 /** The value's attribute belongs to a category the caller manages (resources_update). */
 const managedAttribute = through(
   "userAttributeId",
@@ -489,8 +542,14 @@ export const manifest = {
     insert: owner("userId"),
     delete: owner("userId")
   }),
+  documentEdit: policies({ select: documentEditReader }),
   documentSection: company("settings"),
-  documentTemplate: company("settings"),
+  // Saved by the server, which validates its figures: no API writes.
+  documentTemplate: company("settings", {
+    create: false,
+    update: false,
+    delete: false
+  }),
   documentTransaction: policies({
     select: owner("userId"),
     insert: owner("userId")

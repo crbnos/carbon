@@ -9,6 +9,12 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { brotliCompress, constants } from "node:zlib";
 import { loadEnv, normalizePath } from "vite";
+import {
+  activityFile,
+  isAsleepIn,
+  STACK_STATE_ENV,
+  WAKE_TIMEOUT_MS
+} from "./stack-state.js";
 
 /**
  * Merge `.env*` files into `process.env` so SSR code that reads `process.env`
@@ -20,8 +26,8 @@ import { loadEnv, normalizePath } from "vite";
  *
  * In non-production modes, file values **overwrite** existing `process.env`
  * keys — `react-router dev` can invoke the vite config with modes other than
- * `"development"` during startup, which previously left stale shell values
- * (e.g. `SUPABASE_URL=127.0.0.1:54321`) in place.
+ * `"development"` during startup, and a stale shell value
+ * (e.g. `SUPABASE_URL=127.0.0.1:54321`) would otherwise stay in place.
  */
 export function applyDotenvToProcessEnv(mode, appDir) {
   const repoRoot = path.resolve(appDir, "../..");
@@ -104,17 +110,16 @@ export function linguiWithoutIdQuery(plugins) {
  *
  * @returns {import("vite").Plugin}
  */
-export function stackActivity() {
+function stackActivity() {
   return {
     name: "carbon:stack-activity",
     apply: "serve",
     // Its middleware has to see a request before any app handler does.
     enforce: "pre",
     configureServer(server) {
-      const dir = process.env.CRBN_STACK_STATE;
+      const dir = process.env[STACK_STATE_ENV];
       if (!dir) return;
-      const activity = path.join(dir, "activity");
-      const asleep = path.join(dir, "asleep");
+      const activity = activityFile(dir);
       let touched = 0;
       const touch = (force) => {
         const now = Date.now();
@@ -129,10 +134,10 @@ export function stackActivity() {
       server.middlewares.use(async (req, _res, next) => {
         if (req.url?.startsWith("/api/inngest")) return next();
         touch(false);
-        if (fs.existsSync(asleep)) {
+        if (isAsleepIn(dir)) {
           touch(true);
-          const deadline = Date.now() + 120_000;
-          while (fs.existsSync(asleep) && Date.now() < deadline) {
+          const deadline = Date.now() + WAKE_TIMEOUT_MS;
+          while (isAsleepIn(dir) && Date.now() < deadline) {
             await new Promise((resolve) => setTimeout(resolve, 200));
           }
         }
@@ -161,7 +166,7 @@ export function stackActivity() {
  *   hands a config function
  * @returns {Promise<import("vite").Plugin[]>}
  */
-export async function precompressedAssets({ command, mode }) {
+async function precompressedAssets({ command, mode }) {
   if (command !== "build" || mode !== "production" || process.env.VERCEL) {
     return [];
   }
@@ -222,7 +227,7 @@ const brotli = (source) =>
  *
  * @param {string} directory
  */
-export async function compressRemaining(directory) {
+async function compressRemaining(directory) {
   const entries = await readdir(directory, {
     recursive: true,
     withFileTypes: true,
@@ -255,7 +260,7 @@ export async function compressRemaining(directory) {
  *
  * @returns {import("vite").Plugin}
  */
-export function splitServerByPackage() {
+function splitServerByPackage() {
   /** @param {string} id */
   const packageChunk = (id) => {
     if (!id.includes("node_modules/")) {
@@ -479,7 +484,7 @@ function scanIconImports(directories) {
  *
  * @returns {import("vite").Plugin}
  */
-export function iconImports() {
+function iconImports() {
   /** @type {Map<string, Set<string>>} */
   let used = new Map();
   /** @type {string[]} */
@@ -637,7 +642,7 @@ export async function listDatasetAssetFiles(directory) {
  *
  * @returns {import("vite").Plugin}
  */
-export function datasetAssets() {
+function datasetAssets() {
   return {
     name: "carbon:dataset-assets",
     apply: "serve",
@@ -768,6 +773,9 @@ export async function carbon({
   splitServer = false,
   precompress = false,
 } = {}) {
+  if (precompress && !(command && mode)) {
+    throw new Error("carbon({ precompress }) needs the config's command and mode");
+  }
   const { lingui } = await import("@lingui/vite-plugin");
   return [
     stackActivity(),
@@ -776,7 +784,7 @@ export async function carbon({
     dropStalledHmrClients(),
     linguiWithoutIdQuery(lingui({ macroTransform: true })),
     splitServer && splitServerByPackage(),
-    precompress && command && mode && precompressedAssets({ command, mode }),
+    precompress && precompressedAssets({ command, mode }),
     locales && ariaLocales(),
     ...Object.entries(clientOnly).map(([specifier, file]) =>
       clientOnlyAlias(specifier, file)

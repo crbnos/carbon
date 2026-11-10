@@ -8,14 +8,21 @@ import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { bustApiKeyCache, hashApiKey } from "@carbon/auth/auth.server";
 import {
   blockSchema,
+  COMPANY_MERGE_FIELDS,
+  collectSectionIds,
+  DOCUMENT_EDIT_TYPES,
   type DocumentBlock,
   type DocumentSettings,
   type DocumentTheme,
+  diffDocumentEdit,
   documentSectionPlacementSchema,
   documentSettingsSchema,
   documentTemplateTypeSchema,
   sectionConfigSchema,
-  themeSchema
+  themeSchema,
+  unknownVariables,
+  validateDocumentEdit,
+  validateTemplateText
 } from "@carbon/documents/template";
 import { integrations as availableIntegrations } from "@carbon/ee";
 import {
@@ -51,6 +58,10 @@ import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { updateRequireMfaSetting } from "@carbon/ee/two-factor.server";
 import { trigger } from "@carbon/jobs";
+import {
+  getCompanyTemplate,
+  getDocumentEdit
+} from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import {
   createPrintJob,
@@ -104,6 +115,10 @@ import {
   timesheetTimecardChecks
 } from "./settings.models";
 import * as service from "./settings.service";
+import {
+  DOCUMENT_TERMS_FIELD,
+  documentEditPermissions
+} from "./settings.utils";
 
 const logger = getLogger("erp", "settings");
 // ─── Operations (`defineServiceFn`) ─────────────────────────────────────────
@@ -543,7 +558,12 @@ export const updatePurchasingSettings = defineServiceFn({
  * Writes the fields sent and leaves the rest: whether an inspection needs a
  * second person to sign it off, the sampling standard inspection plans use,
  * the open-issue target on the quality dashboard, and who is notified when a
- * gauge goes out of calibration.
+ * gauge goes out of calibration. Then one location's goods-in storage units:
+ * the inspection storage unit received parts wait in, and the rejected
+ * storage unit rejected stock moves to (null clears one). Each must be an
+ * active, non-nettable storage unit at that location. A location is a
+ * resources record: without the resources update permission it is refused.
+ * The location and the company settings are written in one transaction.
  *
  * @mcp
  */
@@ -552,18 +572,91 @@ export const updateQualitySettings = defineServiceFn({
     enforceInspectionFourEyes: z.boolean().optional(),
     samplingStandard: z.enum(["ANSI_Z1_4", "ISO_2859_1"]).optional(),
     qualityIssueTarget: z.number().int().min(0).optional(),
-    gaugeCalibrationExpiredNotificationGroup: notificationGroup.optional()
+    gaugeCalibrationExpiredNotificationGroup: notificationGroup.optional(),
+    locationGoodsInStorage: z
+      .object({
+        locationId: z.string().min(1),
+        inspectionStorageUnitId: z.string().nullable().optional(),
+        rejectedStorageUnitId: z.string().nullable().optional()
+      })
+      .optional()
   }),
   permission: { update: "settings" },
   async run(ctx, input) {
     const refused = service.nothingSent(ctx, input);
     if (refused) return refused;
-    const saved = await service.saveCompanySettings(
-      ctx,
-      input,
-      "Failed to update quality settings"
-    );
-    return saved ?? input;
+    const { locationGoodsInStorage: location, ...settings } = input;
+
+    if (location) {
+      // The write below runs as the system, so it checks what the location's
+      // row-level security (resources update) would have.
+      if (!ctx.can({ update: "resources" })) {
+        return ctx.error(
+          "forbidden",
+          "You do not have permission to change this location"
+        );
+      }
+      const ids = [
+        location.inspectionStorageUnitId,
+        location.rejectedStorageUnitId
+      ].filter((id): id is string => !!id);
+      if (ids.length > 0) {
+        const units = await ctx.asCaller.supabase
+          .from("storageUnit")
+          .select("id, locationId, effectiveNettable, active")
+          .eq("companyId", ctx.company.id)
+          .in("id", ids);
+        if (units.error) {
+          return ctx.error(
+            "internal",
+            "Failed to read storage units",
+            units.error
+          );
+        }
+        const unitById = new Map(units.data.map((unit) => [unit.id, unit]));
+        if (
+          ids.some((id) => unitById.get(id)?.locationId !== location.locationId)
+        ) {
+          return ctx.error("rule", "Choose a storage unit at this location.");
+        }
+        if (ids.some((id) => unitById.get(id)?.effectiveNettable === true)) {
+          return ctx.error("rule", "Choose a non-nettable storage unit.");
+        }
+        if (ids.some((id) => unitById.get(id)?.active !== true)) {
+          return ctx.error("rule", "Choose an active storage unit.");
+        }
+      }
+    }
+
+    const saved = await ctx.transaction(async (tx) => {
+      if (location) {
+        const row = await service.setLocationGoodsInStorage(tx.asSystem.pg, {
+          companyId: ctx.company.id,
+          locationId: location.locationId,
+          inspectionStorageUnitId: location.inspectionStorageUnitId,
+          rejectedStorageUnitId: location.rejectedStorageUnitId,
+          userId: ctx.auditUserId
+        });
+        if (!row) return tx.error("notFound", "Location not found");
+        if (row === "sameUnit") {
+          return tx.error(
+            "rule",
+            "Use different storage units for inspection and rejected stock."
+          );
+        }
+      }
+      const written = await service.saveCompanySettingsIn(
+        tx.asSystem.pg,
+        ctx.company.id,
+        settings
+      );
+      if (!written) {
+        return tx.error("internal", "Failed to update quality settings");
+      }
+      return input;
+    });
+    if (saved.error) return saved.error;
+    return input;
   }
 });
 
@@ -1634,6 +1727,125 @@ export const viewPrintJobContent = defineServiceFn({
 });
 
 /**
+ * Get the editor for one document: the company template, this document's own
+ * edits, whether the record is locked, and its notes.
+ */
+export const getDocumentEditor = defineServiceFn({
+  input: z.object({
+    documentType: z.enum(DOCUMENT_EDIT_TYPES),
+    documentId: z.string().min(1)
+  }),
+  permission: { by: "documentType", rules: documentEditPermissions },
+  async run(ctx, { documentType, documentId }) {
+    const client = ctx.asCaller.supabase;
+    const record = await service.getDocumentEditRecord(
+      client,
+      ctx.company.id,
+      documentType,
+      documentId
+    );
+    if (record.error) {
+      return ctx.error("internal", "Failed to load the document", record.error);
+    }
+    if (!record.data) {
+      return ctx.error("notFound", "The document could not be found");
+    }
+    const termsField = DOCUMENT_TERMS_FIELD[documentType];
+    const [template, edit, terms] = await Promise.all([
+      getCompanyTemplate(client, { companyId: ctx.company.id, documentType }),
+      getDocumentEdit(client, {
+        companyId: ctx.company.id,
+        documentType,
+        documentId
+      }),
+      termsField ? service.getTerms(client, ctx.company.id) : null
+    ]);
+    const termsSeed = termsField
+      ? ((terms?.data?.[termsField] as JSONContent | null) ?? null)
+      : null;
+    // The preview's clicks read what the template's sections print.
+    const sections = await service.resolveSections(
+      client,
+      ctx.company.id,
+      collectSectionIds(template)
+    );
+    return {
+      ...record.data,
+      documentType,
+      documentId,
+      template,
+      edit,
+      termsSeed,
+      sections: Object.values(sections)
+    };
+  }
+});
+
+/**
+ * Save how one document prints: the words, hidden fields and blocks, and Terms
+ * that differ from the company template, plus its notes. Refused once the
+ * record is locked.
+ */
+export const saveDocumentEdit = defineServiceFn({
+  input: z.object({
+    documentType: z.enum(DOCUMENT_EDIT_TYPES),
+    documentId: z.string().min(1),
+    blocks: z.array(blockSchema),
+    settings: documentSettingsSchema,
+    notes: z.record(z.string(), z.unknown()).nullable().optional()
+  }),
+  permission: { by: "documentType", rules: documentEditPermissions },
+  async run(ctx, input) {
+    const { documentType, documentId } = input;
+    const client = ctx.asCaller.supabase;
+    const record = await service.getDocumentEditRecord(
+      client,
+      ctx.company.id,
+      documentType,
+      documentId
+    );
+    if (record.error) {
+      return ctx.error("internal", "Failed to load the document", record.error);
+    }
+    if (!record.data) {
+      return ctx.error("notFound", "The document could not be found");
+    }
+
+    const template = await getCompanyTemplate(client, {
+      companyId: ctx.company.id,
+      documentType
+    });
+    const edit = diffDocumentEdit(documentType, template, {
+      blocks: input.blocks as DocumentBlock[],
+      settings: input.settings as DocumentSettings
+    });
+    const problems = validateDocumentEdit(documentType, template, edit);
+    if (problems.length > 0) {
+      return ctx.error(
+        "validation",
+        problems.map((problem) => problem.message).join("\n")
+      );
+    }
+
+    const saved = await service.saveDocumentEditRow(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      documentType,
+      documentId,
+      edit,
+      notes: input.notes as JSONContent | null | undefined,
+      userId: ctx.auditUserId
+    });
+    if (saved === "locked") {
+      return ctx.error("rule", "This document is locked.");
+    }
+    if (saved === "notFound") {
+      return ctx.error("notFound", "The document could not be found");
+    }
+    return { documentId };
+  }
+});
+
+/**
  * Save a document's layout.
  *
  * @remarks
@@ -1659,7 +1871,21 @@ export const saveDocumentTemplate = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, template) {
+    // Changed values belong to one document, never to a company template.
+    template.settings.valueEdits = undefined;
     const { headerConfig, headerSectionId } = template;
+
+    const problems = validateTemplateText({
+      documentType: template.documentType,
+      blocks: template.blocks as DocumentBlock[],
+      settings: template.settings as DocumentSettings
+    });
+    if (problems.length > 0) {
+      return ctx.error(
+        "validation",
+        problems.map((problem) => problem.message).join("\n")
+      );
+    }
 
     let header: Parameters<typeof service.upsertDocumentTemplate>[2];
     if (headerConfig && headerSectionId) {
@@ -1725,6 +1951,18 @@ export const saveDocumentSection = defineServiceFn({
   }),
   permission: { update: "settings" },
   async run(ctx, { id, name, placement, content, config }) {
+    // The registration line prints on every document type, so it may use only
+    // the company variables every type offers.
+    const unknown = unknownVariables(
+      config?.registrationNumber ?? "",
+      COMPANY_MERGE_FIELDS.map((field) => field.token)
+    );
+    if (unknown.length > 0) {
+      return ctx.error(
+        "validation",
+        `Registration number: unknown variable ${unknown.map((token) => `{${token}}`).join(", ")}`
+      );
+    }
     const result = await service.upsertDocumentSection(ctx.asCaller.supabase, {
       id,
       companyId: ctx.company.id,

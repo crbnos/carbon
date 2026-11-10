@@ -20,7 +20,6 @@ export interface Email {
 }
 
 export interface PDF {
-  title?: string;
   meta?: Meta;
   company: Company;
   locale: string;

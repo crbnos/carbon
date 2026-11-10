@@ -37,19 +37,39 @@ type PurchaseOrderFinalizeModalProps = {
    *  (the planning pages); the route's `orderId` otherwise. */
   purchaseOrderId?: string;
   fetcher: FetcherWithComponents<unknown>;
+  open?: boolean;
   onClose: () => void;
   defaultCc?: string[];
   resolvedAttachments?: ResolvedAttachmentItem[];
 };
 
 const PurchaseOrderFinalizeModal = ({
+  open = true,
+  onClose,
+  ...props
+}: PurchaseOrderFinalizeModalProps) => (
+  <Modal
+    open={open}
+    onOpenChange={(open) => {
+      if (!open) {
+        onClose();
+      }
+    }}
+  >
+    <ModalContent>
+      <PurchaseOrderFinalizeBody onClose={onClose} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+const PurchaseOrderFinalizeBody = ({
   purchaseOrder,
   purchaseOrderId,
   onClose,
   fetcher,
   defaultCc = [],
   resolvedAttachments = []
-}: PurchaseOrderFinalizeModalProps) => {
+}: Omit<PurchaseOrderFinalizeModalProps, "open">) => {
   const params = useParams();
   const orderId = purchaseOrderId ?? params.orderId;
   if (!orderId) throw new Error("orderId not found");
@@ -64,98 +84,87 @@ const PurchaseOrderFinalizeModal = ({
   const [contactMissingEmail, setContactMissingEmail] = useState(false);
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
+    <ValidatedForm
+      method="post"
+      validator={purchaseOrderFinalizeValidator}
+      action={path.to.purchaseOrderFinalize(orderId)}
+      onSubmit={onClose}
+      defaultValues={{
+        notification: notificationType as "Email" | "None",
+        supplierContact: purchaseOrder?.supplierContactId ?? undefined,
+        cc: defaultCc
       }}
+      fetcher={fetcher}
     >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          validator={purchaseOrderFinalizeValidator}
-          action={path.to.purchaseOrderFinalize(orderId)}
-          onSubmit={onClose}
-          defaultValues={{
-            notification: notificationType as "Email" | "None",
-            supplierContact: purchaseOrder?.supplierContactId ?? undefined,
-            cc: defaultCc
-          }}
-          fetcher={fetcher}
+      <ModalHeader>
+        <ModalTitle>{`Finalize ${getPurchaseOrderDisplayId(
+          purchaseOrder
+        )}`}</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={4}>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to finalize the purchase order? Finalizing the
+            order will affect on order quantities used to calculate supply and
+            demand.
+          </p>
+          {canEmail && (
+            <SelectControlled
+              label={t`Send Via`}
+              name="notification"
+              options={[
+                {
+                  label: t`None`,
+                  value: "None"
+                },
+                {
+                  label: t`Email`,
+                  value: "Email"
+                }
+              ]}
+              value={notificationType}
+              onChange={(t) => {
+                if (t) setNotificationType(t.value);
+              }}
+            />
+          )}
+          {notificationType === "Email" && (
+            <>
+              <SupplierContact
+                isOptional={false}
+                name="supplierContact"
+                supplier={purchaseOrder?.supplierId ?? undefined}
+                warnIfNoEmail
+                onMissingEmailChange={setContactMissingEmail}
+              />
+              <EmailRecipients
+                name="cc"
+                label={t`CC`}
+                type="supplier"
+                helperText={t`Type an email and press Enter to add an external recipient`}
+              />
+              <AttachmentsList
+                supplierInteractionId={
+                  purchaseOrder?.supplierInteractionId ?? null
+                }
+                attachments={resolvedAttachments}
+              />
+            </>
+          )}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          type="submit"
+          isDisabled={notificationType === "Email" && contactMissingEmail}
         >
-          <ModalHeader>
-            <ModalTitle>{`Finalize ${getPurchaseOrderDisplayId(
-              purchaseOrder
-            )}`}</ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <VStack spacing={4}>
-              <p className="text-sm text-muted-foreground">
-                Are you sure you want to finalize the purchase order? Finalizing
-                the order will affect on order quantities used to calculate
-                supply and demand.
-              </p>
-              {canEmail && (
-                <SelectControlled
-                  label={t`Send Via`}
-                  name="notification"
-                  options={[
-                    {
-                      label: t`None`,
-                      value: "None"
-                    },
-                    {
-                      label: t`Email`,
-                      value: "Email"
-                    }
-                  ]}
-                  value={notificationType}
-                  onChange={(t) => {
-                    if (t) setNotificationType(t.value);
-                  }}
-                />
-              )}
-              {notificationType === "Email" && (
-                <>
-                  <SupplierContact
-                    isOptional={false}
-                    name="supplierContact"
-                    supplier={purchaseOrder?.supplierId ?? undefined}
-                    warnIfNoEmail
-                    onMissingEmailChange={setContactMissingEmail}
-                  />
-                  <EmailRecipients
-                    name="cc"
-                    label={t`CC`}
-                    type="supplier"
-                    helperText={t`Type an email and press Enter to add an external recipient`}
-                  />
-                  <AttachmentsList
-                    supplierInteractionId={
-                      purchaseOrder?.supplierInteractionId ?? null
-                    }
-                    attachments={resolvedAttachments}
-                  />
-                </>
-              )}
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Button
-              type="submit"
-              isDisabled={notificationType === "Email" && contactMissingEmail}
-            >
-              <Trans>Finalize</Trans>
-            </Button>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+          <Trans>Finalize</Trans>
+        </Button>
+      </ModalFooter>
+    </ValidatedForm>
   );
 };
 
