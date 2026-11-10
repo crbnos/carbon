@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
   HStack,
+  toast,
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
@@ -34,12 +35,17 @@ export function TemplateCards({
    *  null if the action refused, so the stand-in row doesn't spin forever. */
   onApply: (datasetKey: string | null) => void;
 }) {
-  const fetcher = useFetcher<{ success: boolean }>();
+  const fetcher = useFetcher<{ success: boolean; message?: string }>();
 
-  const refused = fetcher.state === "idle" && fetcher.data?.success === false;
+  const refusal =
+    fetcher.state === "idle" && fetcher.data?.success === false
+      ? fetcher.data
+      : null;
   useEffect(() => {
-    if (refused) onApply(null);
-  }, [refused, onApply]);
+    if (!refusal) return;
+    if (refusal.message) toast.error(refusal.message);
+    onApply(null);
+  }, [refusal, onApply]);
 
   return (
     <Card className="w-full">

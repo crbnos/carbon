@@ -5338,6 +5338,9 @@ msgstr "{0}의 백업"
 msgid "Backup uploaded"
 msgstr "백업이 업로드되었습니다"
 
+msgid "Backup uploaded, but {assetErrors} file(s) failed to upload. Its data restores; those files won't."
+msgstr ""
+
 msgid "Backups"
 msgstr "백업"
 
@@ -30505,6 +30508,9 @@ msgstr "송장에 지불 또는 메모를 적용하는 레코드로, 적용, 할
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "추적 개체의 기록된 계보입니다 — 입고부터 출하까지, 어떤 투입물이 소비되어 어떤 산출물을 만들었는지를 나타냅니다."
+
+msgid "The records couldn't be counted. Try again later."
+msgstr ""
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "다른 모든 것의 기반이 되는 참조 데이터입니다. 가장 먼저 로드됩니다."

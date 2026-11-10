@@ -5338,6 +5338,9 @@ msgstr "{0}的备份"
 msgid "Backup uploaded"
 msgstr "已上传备份"
 
+msgid "Backup uploaded, but {assetErrors} file(s) failed to upload. Its data restores; those files won't."
+msgstr ""
+
 msgid "Backups"
 msgstr "备份"
 
@@ -30505,6 +30508,9 @@ msgstr "将付款或备忘录应用于发票的记录，包含应用、折扣和
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "已跟踪实体的记录谱系——哪些输入被消耗以生产哪些输出,从收货到发货。"
+
+msgid "The records couldn't be counted. Try again later."
+msgstr ""
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "参考数据是其他一切的基础。首先加载。"

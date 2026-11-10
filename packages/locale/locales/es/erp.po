@@ -5338,6 +5338,9 @@ msgstr "Copia de seguridad para {0}"
 msgid "Backup uploaded"
 msgstr "Copia de seguridad subida"
 
+msgid "Backup uploaded, but {assetErrors} file(s) failed to upload. Its data restores; those files won't."
+msgstr ""
+
 msgid "Backups"
 msgstr "Copias de seguridad"
 
@@ -30505,6 +30508,9 @@ msgstr "El registro que aplica un pago o nota a una factura, llevando los montos
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "La genealogía registrada de entidades rastreadas - qué entradas se consumieron para producir qué salidas, recepción a través de envío."
+
+msgid "The records couldn't be counted. Try again later."
+msgstr ""
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "Los datos de referencia de los que todo lo demás depende. Se carga primero."

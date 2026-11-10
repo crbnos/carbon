@@ -5338,6 +5338,9 @@ msgstr "{0} के लिए बैकअप"
 msgid "Backup uploaded"
 msgstr "बैकअप अपलोड किया गया"
 
+msgid "Backup uploaded, but {assetErrors} file(s) failed to upload. Its data restores; those files won't."
+msgstr ""
+
 msgid "Backups"
 msgstr "बैकअप"
 
@@ -30505,6 +30508,9 @@ msgstr "रिकॉर्ड जो एक चालान पर भुगत�
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "ट्रैक किए गए इकाइयों का रिकॉर्ड किया गया वंशावली - कौन से इनपुट का उपभोग किया गया था कौन से आउटपुट का उत्पादन करने के लिए, रसीद से शिपमेंट।"
+
+msgid "The records couldn't be counted. Try again later."
+msgstr ""
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "संदर्भ डेटा जिस पर सब कुछ निर्भर करता है। पहले लोड होता है।"

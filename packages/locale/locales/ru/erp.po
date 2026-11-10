@@ -5338,6 +5338,9 @@ msgstr "Резервная копия для {0}"
 msgid "Backup uploaded"
 msgstr "Резервная копия загружена"
 
+msgid "Backup uploaded, but {assetErrors} file(s) failed to upload. Its data restores; those files won't."
+msgstr ""
+
 msgid "Backups"
 msgstr "Резервные копии"
 
@@ -30505,6 +30508,9 @@ msgstr "Запись, которая применяет платеж или па
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "Записанная генеалогия отслеживаемых объектов — какие входные данные были израсходованы для производства каких выходных данных, от поступления через отгрузку."
+
+msgid "The records couldn't be counted. Try again later."
+msgstr ""
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "Справочные данные, на которые опирается всё остальное. Загружаются первыми."

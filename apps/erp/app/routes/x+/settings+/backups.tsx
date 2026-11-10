@@ -216,8 +216,7 @@ export async function action({ request }: ActionFunctionArgs) {
           companyId,
           userId,
           filePath: source,
-          includeStorage: validation.data.includeStorage,
-          label: source
+          includeStorage: validation.data.includeStorage
         });
         return { success: true, message: "Restore started", restoreRunId };
       } catch (err) {
@@ -310,11 +309,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // escaping company scope: permanently delete those rows (user-confirmed in
     // the UI), drop the failed run, and start the same restore again.
     case "purgeAndRestore": {
-      let retry: {
-        filePath: string;
-        includeStorage: "none" | "all";
-        label: string;
-      };
+      let retry: { filePath: string; includeStorage: "none" | "all" };
       try {
         const runs = await getCompanyRestoreRuns(client, companyId);
         const run = runs.find((r) => r.restoreRunId === restoreRunId);
@@ -334,8 +329,7 @@ export async function action({ request }: ActionFunctionArgs) {
         }
         retry = {
           filePath: run.filePath,
-          includeStorage: run.includeStorage ?? "all",
-          label: run.label ?? run.filePath
+          includeStorage: run.includeStorage ?? "all"
         };
       } catch (err) {
         return failure(err, "Failed to read the restore");
@@ -493,9 +487,14 @@ export default function BackupsRoute() {
   // keep / dismiss / revert finalize the run via an async Inngest job, so the
   // marker is still present on the next revalidation. Hide the row optimistically
   // the moment the user acts so it doesn't linger until the job lands.
+  // A refused keep/dismiss/revert puts the row back: hidden, it could never be
+  // finished, and every new restore would be refused as "pending".
   const [resolvedRunIds, setResolvedRunIds] = useState<Set<string>>(new Set());
-  const resolveRun = (runId: string) =>
+  const resolvingRunId = useRef<string | null>(null);
+  const resolveRun = (runId: string) => {
+    resolvingRunId.current = runId;
     setResolvedRunIds((prev) => new Set(prev).add(runId));
+  };
   const visibleRestoreRuns = restoreRuns.filter(
     (r) => !resolvedRunIds.has(r.restoreRunId)
   );
@@ -550,8 +549,21 @@ export default function BackupsRoute() {
       setActive({ runId: result.restoreRunId, mode: "restore" });
       return;
     }
-    if (result.success) toast.success(result.message);
-    else toast.error(result.message);
+    const resolving = resolvingRunId.current;
+    resolvingRunId.current = null;
+    if (result.success) {
+      toast.success(result.message);
+      return;
+    }
+    toast.error(result.message);
+    if (resolving) {
+      setResolvedRunIds((prev) => {
+        const next = new Set(prev);
+        next.delete(resolving);
+        return next;
+      });
+      setActive((current) => (current?.mode === "revert" ? null : current));
+    }
   }, [fetcher.data, knownBackupNames]);
 
   return (

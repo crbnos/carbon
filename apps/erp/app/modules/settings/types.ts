@@ -132,7 +132,6 @@ export type CompanyRestoreRun = CompanyRunView & {
   restoreRunId: string;
   status: RestoreRunMeta["status"];
   rows: number;
-  label: string | null;
   /** What it restored, so a recovery action can restart the same restore. */
   filePath: string | null;
   includeStorage: "none" | "all" | null;

@@ -16,7 +16,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requireBackupAccess(request);
   let runs: Awaited<ReturnType<typeof getCompanyRestoreRuns>>;
   try {
-    runs = await getCompanyRestoreRuns(client, companyId);
+    runs = await getCompanyRestoreRuns(client, companyId, params.restoreRunId);
   } catch {
     return {
       status: "unreadable" as const,
@@ -26,7 +26,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       startedAt: null
     };
   }
-  const run = runs.find((r) => r.restoreRunId === params.restoreRunId);
+  const run = runs.at(0);
   return {
     status: run?.status ?? ("gone" as const),
     rows: run?.rows ?? 0,

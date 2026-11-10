@@ -5,7 +5,7 @@
 import { createGzip } from "node:zlib";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyPrivateBucket } from "@carbon/files";
-import { backupDir, listBucketFilesRecursive } from "@carbon/jobs/backups";
+import { backupDir, listCompanyFiles } from "@carbon/jobs/backups";
 import type { LoaderFunctionArgs } from "react-router";
 import { pack as tarPack } from "tar-stream";
 import {
@@ -37,13 +37,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
   const bucket = getCompanyPrivateBucket(companyId);
 
-  // Strict and paged: a listing cut short or failed would ship an archive
-  // that looks complete without the files it left out.
-  const relPaths = (
-    await listBucketFilesRecursive(serviceRole, bucket, dir, {
-      strict: true
-    })
-  ).map((f) => f.path.slice(dir.length + 1));
+  // A listing cut short would ship an archive that looks complete without the
+  // files it left out; `listCompanyFiles` pages and throws on errors.
+  const relPaths = (await listCompanyFiles(serviceRole, companyId, dir)).map(
+    (f) => f.path.slice(dir.length + 1)
+  );
   if (relPaths.length === 0) {
     throw new Response("Backup not found", { status: 404 });
   }

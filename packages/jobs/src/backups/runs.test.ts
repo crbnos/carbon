@@ -132,11 +132,11 @@ describe("runMarker", () => {
   it("merges a write into what the row already holds", async () => {
     const { client } = fakeClient();
     const m = restore(client, "r1");
-    await m.write({ status: "running", label: "x" });
+    await m.write({ status: "running", filePath: "x" });
     await m.write({ snapshotPath: "_pre-restore-r1" });
     expect(await m.read()).toMatchObject({
       status: "running",
-      label: "x",
+      filePath: "x",
       snapshotPath: "_pre-restore-r1"
     });
   });

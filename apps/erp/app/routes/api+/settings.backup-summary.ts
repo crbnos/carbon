@@ -29,28 +29,38 @@ export async function loader({ request }: LoaderFunctionArgs) {
     await requireBackupAccess(request);
 
   // Keys and counts only — the popover owns the labels (msg descriptors it
-  // resolves client-side), so no display copy crosses the wire.
-  const groups = await Promise.all(
-    BACKUP_SUMMARY_GROUPS.map(async (group) => {
-      const rows = await Promise.all(
-        group.entities.map(async ([, table, scope]) => ({
-          table,
-          count:
-            scope === "group"
-              ? await countEntity(
-                  client,
-                  table,
-                  "companyGroupId",
-                  companyGroupId
-                )
-              : await countEntity(client, table, "companyId", companyId)
-        }))
-      );
-      const subtotal = rows.reduce((sum, r) => sum + r.count, 0);
-      return { area: group.area, rows, subtotal };
-    })
-  );
+  // resolves client-side), so no display copy crosses the wire. A failed count
+  // answers `failed` for the popover to show: thrown, it would replace the page.
+  let groups: Array<{
+    area: string;
+    rows: Array<{ table: string; count: number }>;
+    subtotal: number;
+  }>;
+  try {
+    groups = await Promise.all(
+      BACKUP_SUMMARY_GROUPS.map(async (group) => {
+        const rows = await Promise.all(
+          group.entities.map(async ([, table, scope]) => ({
+            table,
+            count:
+              scope === "group"
+                ? await countEntity(
+                    client,
+                    table,
+                    "companyGroupId",
+                    companyGroupId
+                  )
+                : await countEntity(client, table, "companyId", companyId)
+          }))
+        );
+        const subtotal = rows.reduce((sum, r) => sum + r.count, 0);
+        return { area: group.area, rows, subtotal };
+      })
+    );
+  } catch {
+    return { failed: true as const, groups: [], total: 0 };
+  }
 
   const total = groups.reduce((sum, g) => sum + g.subtotal, 0);
-  return { groups, total };
+  return { failed: false as const, groups, total };
 }

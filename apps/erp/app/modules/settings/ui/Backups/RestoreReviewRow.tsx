@@ -8,7 +8,7 @@ import { LuLoaderCircle } from "react-icons/lu";
 import { DateTime } from "~/components";
 import type { CompanyRestoreRun } from "../../types";
 import { ExcludedRowsInfo } from "./ExcludedRowsInfo";
-import { totalScopeRows } from "./format";
+import { formatBackupName, totalScopeRows } from "./format";
 
 // One row in the "Restored — review" card, branching on the run's status.
 export function RestoreReviewRow({
@@ -30,7 +30,11 @@ export function RestoreReviewRow({
     <HStack className="w-full justify-between border rounded-lg p-3">
       <VStack spacing={0} className="min-w-0">
         <span className="text-sm font-medium truncate">
-          {run.label ?? <Trans>Restore</Trans>}
+          {run.filePath ? (
+            formatBackupName(run.filePath)
+          ) : (
+            <Trans>Restore</Trans>
+          )}
         </span>
         {run.status === "failed" ? (
           // Product words on the line; the exact tables and the job's raw error

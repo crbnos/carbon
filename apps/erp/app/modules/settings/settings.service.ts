@@ -224,6 +224,7 @@ import { type Events, trigger } from "@carbon/jobs";
 import {
   backupDir,
   compatibilityStatus,
+  deleteCompanyFiles,
   EXPORT_INTEGRATION,
   type ExportRunMeta,
   getCompanyTableCatalog,
@@ -233,7 +234,6 @@ import {
   purgeScopeViolations,
   RESTORE_INTEGRATION,
   type RestoreRunMeta,
-  removeBucketPrefix,
   reportBackupCompatibility,
   selectExportableTables,
   TEMPLATE_INTEGRATION,
@@ -1714,22 +1714,22 @@ export async function deleteCompanyBackup(
   companyId: string,
   name: string
 ): Promise<void> {
-  await removeBucketPrefix(client, companyId, backupDir(name), {
-    strict: true
-  });
+  await deleteCompanyFiles(client, companyId, backupDir(name));
 }
 
 async function readMarkers(
   client: SupabaseClient<Database>,
   companyId: string,
-  integration: string
+  integration: string,
+  entityId?: string
 ) {
-  const markers = await client
+  let query = client
     .from("externalIntegrationMapping")
     .select("entityId, metadata, createdAt")
     .eq("integration", integration)
-    .eq("companyId", companyId)
-    .order("createdAt", { ascending: false });
+    .eq("companyId", companyId);
+  if (entityId) query = query.eq("entityId", entityId);
+  const markers = await query.order("createdAt", { ascending: false });
   if (markers.error) throw markers.error;
   return markers.data ?? [];
 }
@@ -1758,25 +1758,26 @@ function runView(
   };
 }
 
-/** Restores that are running, failed, or waiting on keep or revert. */
+/** Restores that are running, failed, or waiting on keep or revert; only
+ *  `restoreRunId`'s when given. */
 export async function getCompanyRestoreRuns(
   client: SupabaseClient<Database>,
-  companyId: string
+  companyId: string,
+  restoreRunId?: string
 ): Promise<CompanyRestoreRun[]> {
-  return (await readMarkers(client, companyId, RESTORE_INTEGRATION)).map(
-    (m) => {
-      const meta = (m.metadata ?? {}) as Partial<RestoreRunMeta>;
-      return {
-        ...runView(meta, m.createdAt),
-        restoreRunId: meta.restoreRunId ?? m.entityId,
-        status: meta.status ?? "running",
-        rows: meta.rows ?? 0,
-        label: meta.label ?? null,
-        filePath: meta.filePath ?? null,
-        includeStorage: meta.includeStorage ?? null
-      };
-    }
-  );
+  return (
+    await readMarkers(client, companyId, RESTORE_INTEGRATION, restoreRunId)
+  ).map((m) => {
+    const meta = (m.metadata ?? {}) as Partial<RestoreRunMeta>;
+    return {
+      ...runView(meta, m.createdAt),
+      restoreRunId: meta.restoreRunId ?? m.entityId,
+      status: meta.status ?? "running",
+      rows: meta.rows ?? 0,
+      filePath: meta.filePath ?? null,
+      includeStorage: meta.includeStorage ?? null
+    };
+  });
 }
 
 /**
@@ -1831,7 +1832,6 @@ export async function startCompanyRestore(args: {
   userId: string;
   filePath: string;
   includeStorage: "none" | "all";
-  label?: string;
 }): Promise<string> {
   const restoreRunId = nanoid();
   await trigger("company-restore", { ...args, restoreRunId });
@@ -1880,7 +1880,9 @@ export async function dismissCompanyExportFailure(
     .from("externalIntegrationMapping")
     .delete()
     .eq("integration", EXPORT_INTEGRATION)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    // Only a failed run: a dismiss racing a new export must not delete its marker.
+    .filter("metadata->>status", "eq", "failed");
   if (error) throw error;
 }
 

@@ -192,3 +192,17 @@ Solves: ERP audit hidden/needless links, `_pre-template-` listed (BUG), view-onl
 - Engine owns the layout: `listBackups`, `newBackupName`, `backupDir`, `isSnapshotName`. `mapWithConcurrency` replaced by `@carbon/utils` `async.map` (the drift check never loads those modules).
 - Removed: `backup:` source prefix, `utils/backups.ts`, the Backups/DemoData UI barrels, finalize/revert trigger wrappers, onboarding's copy of `startCompanyTemplate`, `RestoreRun` re-declaration. `purgeAndRetry` is the one purge-then-start for restore and template. URLs via `path.to.api.backup*`; dates via `formatDate`.
 - Not changed (auth, ask first): internal staff pass the ERP gate via `isInternalEmail`, but the jobs' `requireBackupsEntitlement` only exempts local dev, so a job started by staff on a company without BACKUPS fails.
+
+## Sweep (2026-11-10) — fixed
+- BUG: a demo-data apply over a failed run that still held a snapshot reused it; a revert then dropped everything done since. Refused now.
+- BUG: refused keep/dismiss/revert left the row hidden (Backups: no way to finish it, new restores refused as pending). Rows come back; demo-data rows resolve on success.
+- BUG: a dismiss racing a new export could delete the running export marker. Dismiss deletes only a failed one.
+- Apply refusals toast their reason; summary count errors show in the popover instead of replacing the page; lost upload files warn; restore rows show the backup's name; the polled status route reads one run; modal fetchers typed from their loaders; `shelf` → `storageUnit`.
+- Engine: startRun, company-keyed storage helpers (missing bucket = empty, other errors throw), strict snapshot delete on keep, import entitlement in its step, remap flag and remap-only options removed, flattenIdMaps, restore `label` removed.
+
+## Left on purpose
+- Per-table queries in import's re-added-table loop: bounded by table count, not rows.
+- Purge's sole-member check (locked, in its transaction) vs restore's: different contexts.
+- Unparsable manifest lists as Incomplete (deletable) rather than breaking the page.
+- Phase-key union + untranslated progress-modal copy; one shared poll-timing set; tar pack/unpack in one file; includeStorage default constants; the ERP reading markers itself; the "unknown vs zero" excluded-rows display for pre-field backups.
+- Auth (ask first): staff pass the ERP gate via isInternalEmail, the jobs' entitlement exempts only local dev.

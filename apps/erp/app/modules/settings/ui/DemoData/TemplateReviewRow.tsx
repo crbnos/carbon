@@ -18,10 +18,12 @@ import { useFetcher } from "react-router";
 import { DateTime } from "~/components";
 import type { CompanyTemplateRun } from "~/modules/settings/types";
 import { ExcludedRowsInfo } from "~/modules/settings/ui/Backups/ExcludedRowsInfo";
-import { formatElapsed } from "~/modules/settings/ui/Backups/format";
+import {
+  formatElapsed,
+  totalScopeRows
+} from "~/modules/settings/ui/Backups/format";
 import { PurgeCorruptedRowsModal } from "~/modules/settings/ui/Backups/PurgeCorruptedRowsModal";
 import { path } from "~/utils/path";
-import { totalScopeRows } from "../Backups/format";
 import { KeepDemoDataModal } from "./KeepDemoDataModal";
 
 /** A run with no completion after this long is treated as stalled, and offered a
@@ -94,11 +96,27 @@ export function TemplateReviewRow({
   const stalled = busy && elapsedMs > STALLED_AFTER_MS;
   const elapsed = formatElapsed(elapsedMs);
 
-  const submit = (intent: "keep" | "revert" | "dismiss") => {
-    if (intent === "revert") setRevertRequestedAt(Date.now());
-    else onResolve(run.templateRunId);
+  // Keep and Dismiss hide the row once the job is enqueued; a refused one (its
+  // error is toasted) leaves the row, and a refused Revert drops its spinner.
+  const [intent, setIntent] = useState<"keep" | "revert" | "dismiss" | null>(
+    null
+  );
+  const result = fetcher.state === "idle" ? fetcher.data : undefined;
+  useEffect(() => {
+    if (!intent || !result) return;
+    setIntent(null);
+    if ((result as { success?: boolean }).success === false) {
+      setRevertRequestedAt(null);
+    } else if (intent !== "revert") {
+      onResolve(run.templateRunId);
+    }
+  }, [intent, result, onResolve, run.templateRunId]);
+
+  const submit = (next: "keep" | "revert" | "dismiss") => {
+    if (next === "revert") setRevertRequestedAt(Date.now());
+    setIntent(next);
     fetcher.submit(
-      { intent, templateRunId: run.templateRunId },
+      { intent: next, templateRunId: run.templateRunId },
       { method: "post", action: path.to.demoData }
     );
   };

@@ -5338,6 +5338,9 @@ msgstr "{0} のバックアップ"
 msgid "Backup uploaded"
 msgstr "バックアップをアップロードしました"
 
+msgid "Backup uploaded, but {assetErrors} file(s) failed to upload. Its data restores; those files won't."
+msgstr ""
+
 msgid "Backups"
 msgstr "バックアップ"
 
@@ -30505,6 +30508,9 @@ msgstr "支払またはメモを請求書に適用し、適用額、値引額、
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "追跡対象エンティティの記録された系譜 — どのインプットがどのアウトプットを生成するために消費されたか、入荷から出荷まで。"
+
+msgid "The records couldn't be counted. Try again later."
+msgstr ""
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "参照データはすべての基盤となります。最初に読み込まれます。"

@@ -17,6 +17,8 @@ import { Trans } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuCheck, LuLoaderCircle, LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import type { loader as exportStatusLoader } from "~/routes/api+/settings.backup-export-status";
+import type { loader as restoreStatusLoader } from "~/routes/api+/settings.backup-restore-status.$restoreRunId";
 import { path } from "~/utils/path";
 import { formatElapsed } from "./format";
 
@@ -127,20 +129,9 @@ export function JobProgressModal({
   const isRevert = mode === "revert";
   const revalidator = useRevalidator();
 
-  const statusFetcher = useFetcher<{
-    status: "running" | "ready" | "failed" | "reverting" | "gone";
-    rows: number;
-    error: string | null;
-    progress: { phase: string; done: number; total: number } | null;
-    startedAt: string | null;
-  }>();
+  const statusFetcher = useFetcher<typeof restoreStatusLoader>();
   // Export reports progress via a separate company-scoped marker (no run id).
-  const exportFetcher = useFetcher<{
-    status: "running" | "failed" | null;
-    progress: { phase: string; done: number; total: number } | null;
-    startedAt: string | null;
-    error: string | null;
-  }>();
+  const exportFetcher = useFetcher<typeof exportStatusLoader>();
   const raw = statusFetcher.data?.status;
   const exportFailed = isExport && exportFetcher.data?.status === "failed";
   const failed = (!isExport && raw === "failed") || exportFailed;
@@ -177,7 +168,7 @@ export function JobProgressModal({
   // Surface it instead of spinning indefinitely.
   const [sawMarker, setSawMarker] = useState(false);
   useEffect(() => {
-    if (raw && raw !== "gone") setSawMarker(true);
+    if (raw && raw !== "gone" && raw !== "unreadable") setSawMarker(true);
   }, [raw]);
   const stalled = mode === "restore" && !done && !sawMarker && ticks > 120;
 

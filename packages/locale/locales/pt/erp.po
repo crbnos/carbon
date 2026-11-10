@@ -5338,6 +5338,9 @@ msgstr "Backup para {0}"
 msgid "Backup uploaded"
 msgstr "Backup enviado"
 
+msgid "Backup uploaded, but {assetErrors} file(s) failed to upload. Its data restores; those files won't."
+msgstr ""
+
 msgid "Backups"
 msgstr "Backups"
 
@@ -30505,6 +30508,9 @@ msgstr "O registro que aplica um pagamento ou memorando a uma fatura, contendo o
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "A genealogia registrada de entidades rastreadas - quais entradas foram consumidas para produzir quais saídas, recebimento até remessa."
+
+msgid "The records couldn't be counted. Try again later."
+msgstr ""
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "Os dados de referência dos quais tudo o mais depende. Carrega primeiro."

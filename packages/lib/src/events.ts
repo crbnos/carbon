@@ -302,7 +302,6 @@ export type Events = {
       restoreRunId: string;
       /** Whether to also load the backup's bundled files. Data always loads. */
       includeStorage: "none" | "all";
-      label?: string;
     };
   };
 

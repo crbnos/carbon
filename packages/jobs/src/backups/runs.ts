@@ -73,7 +73,6 @@ type ReversibleRunMeta = RunMeta & {
 export type RestoreRunMeta = ReversibleRunMeta & {
   restoreRunId: string;
   rows?: number;
-  label?: string | null;
   /** The backup came from another company; its rows were re-stamped onto this one. */
   foreign?: boolean;
   /** What was restored, so a recovery action can restart the same restore. */

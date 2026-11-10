@@ -79,7 +79,7 @@ const PRESERVED_TABLES = new Set([
 /**
  * MRP planning output — regenerated on the next run, and deleted before the
  * FK-nulling pass because their CHECKs cannot survive it. The first four are
- * also TRANSIENT_TABLES in packages/jobs/src/backups/schema.ts; planningAction
+ * also TRANSIENT_TABLES in packages/jobs/src/backups/policy.ts; planningAction
  * is NOT (a backup keeps it: Dismissed and assigneeOverridden are the planner's
  * own state), it is only transient for a dataset apply.
  */

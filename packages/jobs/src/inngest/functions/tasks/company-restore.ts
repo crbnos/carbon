@@ -61,7 +61,6 @@ export const companyRestoreFunction = inngest.createFunction(
       userId,
       filePath: name,
       restoreRunId,
-      label,
       includeStorage
     } = event.data;
 
@@ -78,7 +77,6 @@ export const companyRestoreFunction = inngest.createFunction(
       }
 
       await startRun(marker, {
-        label: label ?? null,
         filePath: name,
         includeStorage,
         ...(existing?.startedAt ? { startedAt: existing.startedAt } : {})

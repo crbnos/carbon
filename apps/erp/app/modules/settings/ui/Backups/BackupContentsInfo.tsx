@@ -7,6 +7,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuInfo, LuLoaderCircle } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import type { loader as summaryLoader } from "~/routes/api+/settings.backup-summary";
 import { path } from "~/utils/path";
 import { AREA_LABELS, BACKUP_SUMMARY_GROUPS } from "../../backups.areas";
 
@@ -16,10 +17,7 @@ import { AREA_LABELS, BACKUP_SUMMARY_GROUPS } from "../../backups.areas";
 export function BackupContentsInfo() {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
-  const summary = useFetcher<{
-    groups: { area: string; rows: { table: string; count: number }[] }[];
-    total: number;
-  }>();
+  const summary = useFetcher<typeof summaryLoader>();
   const loaded = summary.data !== undefined;
   const loading = summary.state === "loading";
 
@@ -66,6 +64,10 @@ export function BackupContentsInfo() {
             <LuLoaderCircle className="h-3.5 w-3.5 animate-spin" />
             <Trans>Counting…</Trans>
           </div>
+        ) : summary.data?.failed ? (
+          <p className="py-3 text-xs text-muted-foreground">
+            <Trans>The records couldn't be counted. Try again later.</Trans>
+          </p>
         ) : (
           <div className="flex flex-col gap-3">
             {BACKUP_SUMMARY_GROUPS.filter((group) =>

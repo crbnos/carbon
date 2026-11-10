@@ -5338,6 +5338,9 @@ msgstr "Sauvegarde pour {0}"
 msgid "Backup uploaded"
 msgstr "Sauvegarde téléversée"
 
+msgid "Backup uploaded, but {assetErrors} file(s) failed to upload. Its data restores; those files won't."
+msgstr ""
+
 msgid "Backups"
 msgstr "Sauvegardes"
 
@@ -30505,6 +30508,9 @@ msgstr "L'enregistrement qui applique un paiement ou un mémo à une facture, po
 
 msgid "The recorded genealogy of tracked entities — which inputs were consumed to produce which outputs, receipt through shipment."
 msgstr "La généalogie enregistrée des entités suivies - quelles entrées ont été consommées pour produire quelles sorties, réception à expédition."
+
+msgid "The records couldn't be counted. Try again later."
+msgstr ""
 
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "Les données de référence sur lesquelles tout le reste repose. Se charge en premier."

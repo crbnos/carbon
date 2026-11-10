@@ -87,11 +87,17 @@ export async function provisionCompanyData(
   const source = Readable.fromWeb(
     backup.stream() as Parameters<typeof Readable.fromWeb>[0]
   );
-  const { name: filePath } = await unpackBackupArchive(
+  const { name: filePath, assetErrors } = await unpackBackupArchive(
     serviceRole,
     companyId,
     source
   );
+  if (assetErrors > 0) {
+    logger.warn("Backup upload lost files; its data still imports", {
+      companyId,
+      assetErrors
+    });
+  }
 
   // Kick off the import. The job runs asynchronously (the company's data
   // populates shortly after onboarding finishes), but the *enqueue* is awaited

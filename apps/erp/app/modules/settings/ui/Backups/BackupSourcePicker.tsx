@@ -89,12 +89,18 @@ export function BackupSourcePicker({
           setUpload({ phase: "uploading", uploaded, total })
       });
       setUpload({ phase: "unpacking" });
-      const { name } = await postUploadIntent<{ name: string }>({
-        intent: "unpack",
-        path
-      });
+      const { name, assetErrors } = await postUploadIntent<{
+        name: string;
+        assetErrors: number;
+      }>({ intent: "unpack", path });
       setValue(name);
-      toast.success(t`Backup uploaded`);
+      if (assetErrors > 0) {
+        toast.warning(
+          t`Backup uploaded, but ${assetErrors} file(s) failed to upload. Its data restores; those files won't.`
+        );
+      } else {
+        toast.success(t`Backup uploaded`);
+      }
       revalidator.revalidate();
     } catch (err) {
       const reason = (err as Error).message || t`Network error`;
