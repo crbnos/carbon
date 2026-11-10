@@ -2238,6 +2238,9 @@ msgstr "Se elimina un pedido de venta"
 msgid "A sales order line contains order details for a particular item"
 msgstr "Una línea de orden de venta contiene detalles de pedido para un artículo en particular"
 
+msgid "A sales order line keeps a date it cannot meet"
+msgstr ""
+
 msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 msgstr "Un pedido de venta enviado directamente a un cliente diferente y a una ubicación diferente de la dirección del encabezado del cliente que realiza el pedido; el destino del envío anula el del encabezado."
 

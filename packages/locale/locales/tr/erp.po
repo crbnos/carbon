@@ -2238,6 +2238,9 @@ msgstr "Bir satış siparişi silindi"
 msgid "A sales order line contains order details for a particular item"
 msgstr "Bir satış siparişi satırı belirli bir ürünün sipariş ayrıntılarını içerir"
 
+msgid "A sales order line keeps a date it cannot meet"
+msgstr ""
+
 msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 msgstr "Sipariş veren müşterinin başlık adresinden farklı bir müşteriye ve konuma doğrudan gönderilen bir satış siparişi; sevkiyatın hedefi başlığı geçersiz kılar."
 

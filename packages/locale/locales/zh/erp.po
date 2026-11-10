@@ -2238,6 +2238,9 @@ msgstr "销售订单已删除"
 msgid "A sales order line contains order details for a particular item"
 msgstr "销售订单行包含特定项目的订单详情"
 
+msgid "A sales order line keeps a date it cannot meet"
+msgstr ""
+
 msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 msgstr "销售订单直接运送给与订购客户的抬头地址不同的客户和地点；货运目的地优先于抬头地址。"
 

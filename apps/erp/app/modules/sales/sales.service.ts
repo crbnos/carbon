@@ -99,6 +99,7 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
+import type { DeliveryDateLine, DeliveryDateResult } from "@carbon/planning";
 import type {
   ContractBillingBasis,
   PickPartial,
@@ -14802,6 +14803,344 @@ export async function salesOrderLineGate(
     customerLocationId: shipTo.customerLocationId,
     acknowledged: args.acknowledged
   });
+}
+
+/** The line types a delivery date check applies to: they ship an item. */
+const DELIVERY_CHECKED_LINE_TYPES = new Set([
+  "Part",
+  "Material",
+  "Tool",
+  "Consumable"
+]);
+
+/** A job that still holds its sales order line's date (not done or cancelled). */
+const OPEN_JOB_STATUSES: Database["public"]["Enums"]["jobStatus"][] = [
+  "Draft",
+  "Planned",
+  "Ready",
+  "In Progress",
+  "Paused",
+  "Overdue",
+  "Due Today"
+];
+
+type DeliveryDateControl = Database["public"]["Enums"]["deliveryDateControl"];
+
+/**
+ * The delivery date check level of each item at each location: the item's
+ * `itemPlanning` override, else the company's level.
+ */
+export async function resolveDeliveryDateControls(
+  ctx: ServiceContext,
+  keys: { itemId: string; locationId: string }[]
+): Promise<Map<string, DeliveryDateControl>> {
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const itemIds = Array.from(new Set(keys.map((k) => k.itemId)));
+  const [settings, overrides] = await Promise.all([
+    db
+      .selectFrom("companySettings")
+      .select("deliveryDateControl")
+      .where("id", "=", companyId)
+      .executeTakeFirst(),
+    itemIds.length === 0
+      ? Promise.resolve([])
+      : db
+          .selectFrom("itemPlanning")
+          .select(["itemId", "locationId", "deliveryDateControl"])
+          .where("itemId", "in", itemIds)
+          .where("companyId", "=", companyId)
+          .where("deliveryDateControl", "is not", null)
+          .execute()
+  ]);
+  const companyLevel = settings?.deliveryDateControl ?? "None";
+  const byKey = new Map<string, DeliveryDateControl>();
+  for (const row of overrides) {
+    if (row.deliveryDateControl) {
+      byKey.set(`${row.itemId}:${row.locationId}`, row.deliveryDateControl);
+    }
+  }
+  const result = new Map<string, DeliveryDateControl>();
+  for (const key of keys) {
+    const id = `${key.itemId}:${key.locationId}`;
+    result.set(id, byKey.get(id) ?? companyLevel);
+  }
+  return result;
+}
+
+type DeliveryCheckCandidate = {
+  key: string;
+  salesOrderLineId: string | null;
+  salesOrderLineType: string;
+  itemId: string | null;
+  locationId: string | null;
+  methodType: string | null;
+  quantity: number;
+  promisedDate: string | null;
+  hasOpenJob: boolean;
+};
+
+/**
+ * Run the delivery date check for candidate lines (spec sections 3 and 6).
+ * A line that ships no item, has no date or location, a level of None, or a
+ * Make to Order job already holding its date gets no result.
+ */
+export async function runDeliveryDateCheck(
+  ctx: ServiceContext,
+  candidates: DeliveryCheckCandidate[]
+): Promise<{
+  results: Map<string, DeliveryDateResult>;
+  controls: Map<string, DeliveryDateControl>;
+}> {
+  const keyed = candidates.filter(
+    (c): c is DeliveryCheckCandidate & { itemId: string; locationId: string } =>
+      Boolean(c.itemId && c.locationId)
+  );
+  const controls = await resolveDeliveryDateControls(
+    ctx,
+    keyed.map((c) => ({ itemId: c.itemId, locationId: c.locationId }))
+  );
+  const lines: DeliveryDateLine[] = [];
+  for (const c of keyed) {
+    const control = controls.get(`${c.itemId}:${c.locationId}`) ?? "None";
+    if (control === "None") continue;
+    if (!DELIVERY_CHECKED_LINE_TYPES.has(c.salesOrderLineType)) continue;
+    if (!c.promisedDate || c.quantity <= 0) continue;
+    if (
+      c.methodType !== "Pull from Inventory" &&
+      c.methodType !== "Make to Order" &&
+      c.methodType !== "Purchase to Order"
+    ) {
+      continue;
+    }
+    if (c.methodType === "Make to Order" && c.hasOpenJob) continue;
+    lines.push({
+      key: c.key,
+      salesOrderLineId: c.salesOrderLineId,
+      itemId: c.itemId,
+      locationId: c.locationId,
+      quantity: c.quantity,
+      promisedDate: c.promisedDate.slice(0, 10),
+      methodType: c.methodType,
+      control
+    });
+  }
+
+  const results = new Map<string, DeliveryDateResult>();
+  if (lines.length > 0) {
+    const { checkDeliveryDates } = await import("@carbon/planning");
+    const checked = await checkDeliveryDates({
+      db: ctx.asSystem.pg,
+      client: ctx.asSystem.supabase,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId,
+      lines
+    });
+    for (const result of checked) results.set(result.key, result);
+  }
+  return { results, controls };
+}
+
+/** Which lines carry an open job, by line id. */
+export async function salesOrderLinesWithOpenJobs(
+  ctx: ServiceContext,
+  lineIds: string[]
+): Promise<Set<string>> {
+  if (lineIds.length === 0) return new Set();
+  const rows = await ctx.asSystem.pg
+    .selectFrom("job")
+    .select("salesOrderLineId")
+    .where("salesOrderLineId", "in", lineIds)
+    .where("companyId", "=", ctx.company.id)
+    .where("status", "in", OPEN_JOB_STATUSES)
+    .execute();
+  return new Set(
+    rows.map((r) => r.salesOrderLineId).filter((id): id is string => !!id)
+  );
+}
+
+/**
+ * Check the delivery dates of a sales order's lines and write each result.
+ * With `recordOverride` (a user saving the line), a line that fails records
+ * who kept its date, when and why, and a line that passes clears that record;
+ * without it (a quote conversion) the record is left as it is. Returns the
+ * lines whose kept date this call recorded.
+ */
+export async function checkSalesOrderDeliveryDates(
+  ctx: ServiceContext,
+  args: {
+    salesOrderId: string;
+    lineIds?: string[];
+    recordOverride: boolean;
+    overrideReason?: string | null;
+  }
+): Promise<{ overriddenLineIds: string[] }> {
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+
+  let query = db
+    .selectFrom("salesOrderLine")
+    .innerJoin("salesOrder", (join) =>
+      join
+        .onRef("salesOrder.id", "=", "salesOrderLine.salesOrderId")
+        .onRef("salesOrder.companyId", "=", "salesOrderLine.companyId")
+    )
+    .select([
+      "salesOrderLine.id as id",
+      "salesOrderLine.salesOrderLineType as salesOrderLineType",
+      "salesOrderLine.itemId as itemId",
+      "salesOrderLine.locationId as lineLocationId",
+      "salesOrder.locationId as orderLocationId",
+      "salesOrderLine.methodType as methodType",
+      "salesOrderLine.saleQuantity as saleQuantity",
+      "salesOrderLine.quantitySent as quantitySent",
+      "salesOrderLine.promisedDate as promisedDate"
+    ])
+    .where("salesOrderLine.salesOrderId", "=", args.salesOrderId)
+    .where("salesOrderLine.companyId", "=", companyId);
+  if (args.lineIds) {
+    if (args.lineIds.length === 0) return { overriddenLineIds: [] };
+    query = query.where("salesOrderLine.id", "in", args.lineIds);
+  }
+  const rows = await query.execute();
+  if (rows.length === 0) return { overriddenLineIds: [] };
+
+  const withJobs = await salesOrderLinesWithOpenJobs(
+    ctx,
+    rows.map((r) => r.id)
+  );
+  const { results } = await runDeliveryDateCheck(
+    ctx,
+    rows.map((r) => ({
+      key: r.id,
+      salesOrderLineId: r.id,
+      salesOrderLineType: r.salesOrderLineType,
+      itemId: r.itemId,
+      locationId: r.lineLocationId ?? r.orderLocationId,
+      methodType: r.methodType,
+      // Kysely hands NUMERIC back as a string.
+      quantity: Number(r.saleQuantity ?? 0) - Number(r.quantitySent ?? 0),
+      promisedDate: r.promisedDate ? String(r.promisedDate) : null,
+      hasOpenJob: withJobs.has(r.id)
+    }))
+  );
+
+  const userId = ctx.auditUserId;
+  const reason = args.overrideReason?.trim() || null;
+  const overriddenLineIds: string[] = [];
+  const values = rows.map((row) => {
+    const result = results.get(row.id);
+    // set: record who kept a failing date; clear: the date passes or is not
+    // checked; keep: a conversion leaves the record as it is.
+    const overrideMode = !args.recordOverride
+      ? "keep"
+      : result?.status === "Missed"
+        ? "set"
+        : "clear";
+    if (overrideMode === "set") overriddenLineIds.push(row.id);
+    return sql`(
+      ${row.id}::text,
+      ${result?.status ?? null}::"deliveryDateStatus",
+      ${result?.constraint ?? null}::"deliveryDateConstraint",
+      ${result?.earliestDate ?? null}::date,
+      ${result ? "checked" : "unchecked"}::text,
+      ${overrideMode}::text,
+      ${overrideMode === "set" ? userId : null}::text,
+      ${overrideMode === "set" ? reason : null}::text
+    )`;
+  });
+
+  await sql`
+    UPDATE "salesOrderLine" AS sol SET
+      "deliveryDateStatus" = v."status",
+      "deliveryDateConstraint" = v."checkConstraint",
+      "earliestDeliveryDate" = v."earliestDate",
+      "deliveryDateCheckedAt" =
+        CASE WHEN v."checked" = 'checked' THEN NOW() ELSE NULL END,
+      "deliveryDateOverriddenBy" = CASE v."overrideMode"
+        WHEN 'set' THEN v."overriddenBy"
+        WHEN 'clear' THEN NULL
+        ELSE sol."deliveryDateOverriddenBy" END,
+      "deliveryDateOverriddenAt" = CASE v."overrideMode"
+        WHEN 'set' THEN NOW()
+        WHEN 'clear' THEN NULL
+        ELSE sol."deliveryDateOverriddenAt" END,
+      "deliveryDateOverrideReason" = CASE v."overrideMode"
+        WHEN 'set' THEN v."reason"
+        WHEN 'clear' THEN NULL
+        ELSE sol."deliveryDateOverrideReason" END
+    FROM (VALUES ${sql.join(values)}) AS v(
+      "id", "status", "checkConstraint", "earliestDate", "checked",
+      "overrideMode", "overriddenBy", "reason"
+    )
+    WHERE sol."id" = v."id" AND sol."companyId" = ${companyId}
+  `.execute(db);
+
+  return { overriddenLineIds };
+}
+
+/**
+ * Run the delivery date check after a line is saved, and raise
+ * `sales.deliveryDateOverridden` for a line that keeps a failing date. A
+ * failed check is logged and never fails the save.
+ */
+export async function recordSalesOrderLineDeliveryDate(
+  ctx: ServiceContext,
+  args: {
+    salesOrderId: string;
+    salesOrderLineId: string;
+    overrideReason?: string | null;
+  }
+) {
+  try {
+    const { overriddenLineIds } = await checkSalesOrderDeliveryDates(ctx, {
+      salesOrderId: args.salesOrderId,
+      lineIds: [args.salesOrderLineId],
+      recordOverride: true,
+      overrideReason: args.overrideReason
+    });
+    // The workflow catalog has no sales order line entity, so the moment
+    // names the order; one moment per kept line.
+    for (const _lineId of overriddenLineIds) {
+      await raiseMoment("sales.deliveryDateOverridden", {
+        outputs: {
+          salesOrder: { id: args.salesOrderId },
+          overriddenBy: { id: ctx.auditUserId }
+        },
+        companyId: ctx.company.id,
+        actorId: ctx.auditUserId
+      });
+    }
+  } catch (error) {
+    logger.error("Failed to check a sales order line's delivery date", {
+      companyId: ctx.company.id,
+      salesOrderLineId: args.salesOrderLineId,
+      error
+    });
+  }
+}
+
+/**
+ * Check every line of a sales order made from a quote. A failing line is
+ * flagged, never stopped. A failed check is logged and never fails the
+ * conversion.
+ */
+export async function checkConvertedSalesOrderDeliveryDates(
+  ctx: ServiceContext,
+  salesOrderId: string
+) {
+  try {
+    await checkSalesOrderDeliveryDates(ctx, {
+      salesOrderId,
+      recordOverride: false
+    });
+  } catch (error) {
+    logger.error("Failed to check a converted sales order's delivery dates", {
+      companyId: ctx.company.id,
+      salesOrderId,
+      error
+    });
+  }
 }
 
 /**

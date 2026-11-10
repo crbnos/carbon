@@ -2238,6 +2238,9 @@ msgstr "एक विक्रय आदेश हटाया गया है"
 msgid "A sales order line contains order details for a particular item"
 msgstr "एक विक्रय आदेश पंक्ति एक विशेष आइटम के लिए आदेश विवरण शामिल करती है"
 
+msgid "A sales order line keeps a date it cannot meet"
+msgstr ""
+
 msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 msgstr "एक बिक्रय आदेश सीधे एक अलग ग्राहक और स्थान पर भेजा गया है, जो आदेश देने वाले ग्राहक के हेडर पते से अलग है; शिपमेंट का गंतव्य हेडर को ओवरराइड करता है।"
 

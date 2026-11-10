@@ -2238,6 +2238,9 @@ msgstr "수주가 삭제됨"
 msgid "A sales order line contains order details for a particular item"
 msgstr "수주 라인은 특정 품목에 대한 주문 세부 정보를 포함합니다"
 
+msgid "A sales order line keeps a date it cannot meet"
+msgstr ""
+
 msgid "A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's."
 msgstr "주문 고객의 헤더 주소와 다른 고객 및 위치로 직접 배송되는 판매 주문입니다. 배송 목적지가 헤더 주소를 무시합니다."
 
