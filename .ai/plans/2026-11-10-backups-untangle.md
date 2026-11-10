@@ -170,3 +170,12 @@ Solves: ERP audit hidden/needless links, `_pre-template-` listed (BUG), view-onl
 - `insertTables` + `bulkLoad` are the one insert loop and the one load transaction (replica mode, derived groups, tableChange, realtime) for restore, both reverts and import. Import now also logs the table changes and broadcasts. The user-collapse PK dedupe now applies to every remapped load (foreign restore had the same risk).
 - `removeBucketPrefix` is the one prefix delete, batches of 200, also used by purge (replaces `drainFolder`).
 - Backup storage I/O (`readBackup`, `writeBackupManifest`, `writeBackupTable`, asset copies) lives in `storage.ts` and resolves the bucket with `getCompanyPrivateBucket`; `format.ts` is pure.
+
+## F2 decisions (2026-11-10)
+- `backups/runs.ts` owns the run lifecycle: `runMarker` (one store, keyed by `entityId`, throws on read/write errors), `progressWriter` (throttled, never throws), `failRun` (scope-violation mapping + NonRetriable), `takeSnapshot` (reuses a recorded snapshot), `keepRun` (ready/failed only), `revertRun`.
+- BUG fixed: a restore marker's `externalId` started as `""`, so a second restore marker collided with a failed one on the partial unique index. `externalId` is now the entity id.
+- BUG fixed: restore, template, export and import used three different concurrency keys, so a template could wipe under a restore, or an export dump a half-loaded company. All take `PER_COMPANY_CONCURRENCY`.
+- BUG fixed: a template keep/revert sent for an earlier run resolved whatever run held the one-per-company marker. They now act only on a marker naming their run.
+- Restore finalize now refuses an in-flight run (template already did); restore revert with no snapshot marks the run failed (template already did).
+- Template's `snapshot` flag and its fire-and-forget path are gone: both senders always passed `true`.
+- Entitlement is checked inside the step, after the running marker, so a refusal shows as a failed run.

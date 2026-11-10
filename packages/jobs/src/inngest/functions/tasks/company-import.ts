@@ -29,6 +29,7 @@ import {
   matchableUniqueGroups,
   referencedDroppedTables
 } from "../../../backups/reseed";
+import { PER_COMPANY_CONCURRENCY } from "../../../backups/runs";
 import { restoreAssetsFromBackup } from "../../../backups/storage";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
@@ -41,7 +42,7 @@ export const companyImportFunction = inngest.createFunction(
   {
     id: "company-import",
     retries: 1,
-    concurrency: { key: "event.data.companyId", limit: 1 }
+    concurrency: PER_COMPANY_CONCURRENCY
   },
   { event: "carbon/company-import" },
   async ({ event, step, logger }) => {

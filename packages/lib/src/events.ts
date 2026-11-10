@@ -267,13 +267,6 @@ export type Events = {
       userId: string;
       datasetKey: string;
       templateRunId: string;
-      /**
-       * Snapshot the company before wiping, and leave the run parked on a
-       * keep/revert decision instead of clearing the marker. Onboarding and the
-       * Settings page both set this; absent means the legacy fire-and-forget
-       * behaviour.
-       */
-      snapshot?: boolean;
     };
   };
 

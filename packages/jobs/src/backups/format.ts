@@ -78,6 +78,16 @@ export function backupAssetsDir(name: string): string {
   return `${EXPORTS_PREFIX}/${name}/assets`;
 }
 
+/** The hidden backup a restore or template run takes before it loads, for a revert. */
+export function snapshotName(run: "restore" | "template", runId: string) {
+  return `_pre-${run}-${runId}`;
+}
+
+/** Snapshots share the backup layout; the Backups page leaves them out. */
+export function isSnapshotName(name: string): boolean {
+  return name.startsWith("_pre-");
+}
+
 /**
  * Gzip one table's rows as NDJSON (one JSON object per line). Streamed, so a huge
  * table never builds a `>512MB` string.

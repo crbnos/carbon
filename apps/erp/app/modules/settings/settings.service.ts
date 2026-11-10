@@ -1795,10 +1795,8 @@ export async function exportCompanyBackup(args: {
 // never lands in the browser bundle.
 
 /**
- * Apply a demo dataset to this company. Always snapshots first, so the result is
- * revertible — `snapshot: true` also drives the wipe, since wiping without a
- * snapshot would be unrecoverable. Returns the run id used to poll status and to
- * keep/revert the result.
+ * Apply a demo dataset to this company. The job snapshots first, so the result
+ * is revertible. Returns the run id used to poll status and to keep/revert it.
  */
 export async function startCompanyTemplate(args: {
   companyId: string;
@@ -1806,11 +1804,7 @@ export async function startCompanyTemplate(args: {
   datasetKey: string;
 }): Promise<string> {
   const templateRunId = nanoid();
-  await trigger("company-template", {
-    ...args,
-    templateRunId,
-    snapshot: true
-  });
+  await trigger("company-template", { ...args, templateRunId });
   return templateRunId;
 }
 
