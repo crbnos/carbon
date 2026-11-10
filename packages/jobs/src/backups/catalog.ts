@@ -27,6 +27,8 @@ export type ColumnInfo = {
   /** GENERATED ALWAYS / identity columns — excluded from export & insert */
   isGenerated: boolean;
   hasDefault: boolean;
+  /** `item` for a column defaulting to `id('item')`: new ids get the same prefix. */
+  idPrefix?: string;
 };
 
 export type ForeignKey = {
@@ -99,9 +101,12 @@ export function exportableColumns(table: TableInfo): ColumnInfo[] {
 }
 
 /**
- * Kahn's algorithm over in-set FK edges (referenced tables first). Cycles are
- * broken deterministically (fewest unmet dependencies, then alphabetically).
- * Order is best-effort: imports run with FK enforcement relaxed when possible.
+ * Kahn's algorithm over in-set FK edges (referenced tables first). A cycle is
+ * broken inside the cycle (fewest unmet dependencies, then alphabetically):
+ * only a table whose unmet dependencies all share its cycle may go early. A
+ * table that merely hangs off a cycle (`jobFavorite` off `job`) waits for it —
+ * the wipe runs this order backwards and filters a child through its parent,
+ * so a child placed before its parent survived the wipe.
  */
 export function topologicalSort(tables: TableInfo[]): TableInfo[] {
   const byName = new Map(tables.map((t) => [t.name, t]));
@@ -118,20 +123,23 @@ export function topologicalSort(tables: TableInfo[]): TableInfo[] {
     deps.set(t.name, set);
   }
 
+  const cycleOf = stronglyConnectedComponents([...byName.keys()].sort(), deps);
+
   const sorted: TableInfo[] = [];
   while (remaining.size > 0) {
     let next: string | null = null;
     let fewest = Infinity;
     for (const name of [...remaining].sort()) {
-      const unmet = [...(deps.get(name) ?? [])].filter((d) =>
-        remaining.has(d)
-      ).length;
-      if (unmet === 0) {
+      const unmet = [...(deps.get(name) ?? [])].filter((d) => remaining.has(d));
+      if (unmet.length === 0) {
         next = name;
         break;
       }
-      if (unmet < fewest) {
-        fewest = unmet;
+      const insideCycle = unmet.every(
+        (d) => cycleOf.get(d) === cycleOf.get(name)
+      );
+      if (insideCycle && unmet.length < fewest) {
+        fewest = unmet.length;
         next = name;
       }
     }
@@ -141,6 +149,48 @@ export function topologicalSort(tables: TableInfo[]): TableInfo[] {
   }
 
   return sorted;
+}
+
+/** Tarjan's algorithm: each name's component id. Names in one cycle share it. */
+function stronglyConnectedComponents(
+  names: string[],
+  deps: Map<string, Set<string>>
+): Map<string, number> {
+  const index = new Map<string, number>();
+  const low = new Map<string, number>();
+  const component = new Map<string, number>();
+  const stack: string[] = [];
+  const onStack = new Set<string>();
+  let counter = 0;
+  let components = 0;
+
+  const visit = (v: string) => {
+    index.set(v, counter);
+    low.set(v, counter);
+    counter++;
+    stack.push(v);
+    onStack.add(v);
+    for (const w of [...(deps.get(v) ?? [])].sort()) {
+      if (!index.has(w)) {
+        visit(w);
+        low.set(v, Math.min(low.get(v)!, low.get(w)!));
+      } else if (onStack.has(w)) {
+        low.set(v, Math.min(low.get(v)!, index.get(w)!));
+      }
+    }
+    if (low.get(v) === index.get(v)) {
+      let w: string;
+      do {
+        w = stack.pop()!;
+        onStack.delete(w);
+        component.set(w, components);
+      } while (w !== v);
+      components++;
+    }
+  };
+
+  for (const name of names) if (!index.has(name)) visit(name);
+  return component;
 }
 
 /**
@@ -189,18 +239,17 @@ export async function getCompanyTableCatalog(
     ORDER BY table_name, ordinal_position
   `.execute(db);
 
-  const primaryKeys = await sql<{
-    table_name: string;
-    column_name: string;
-    ordinal_position: string | number;
-  }>`
-    SELECT tc.table_name, kcu.column_name, kcu.ordinal_position
-    FROM information_schema.table_constraints tc
-    JOIN information_schema.key_column_usage kcu
-      ON kcu.constraint_name = tc.constraint_name
-      AND kcu.table_schema = tc.table_schema
-    WHERE tc.table_schema = 'public' AND tc.constraint_type = 'PRIMARY KEY'
-    ORDER BY tc.table_name, kcu.ordinal_position
+  // pg_catalog, not information_schema: the information_schema join takes ~3.5 s
+  // on this schema, and the backups page runs this on every load.
+  const primaryKeys = await sql<{ table_name: string; column_name: string }>`
+    SELECT t.relname AS table_name, a.attname AS column_name
+    FROM pg_constraint con
+    JOIN pg_class t ON t.oid = con.conrelid
+    JOIN pg_namespace nsp ON nsp.oid = t.relnamespace
+    CROSS JOIN LATERAL unnest(con.conkey) WITH ORDINALITY AS k(attnum, ord)
+    JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = k.attnum
+    WHERE con.contype = 'p' AND nsp.nspname = 'public'
+    ORDER BY t.relname, k.ord
   `.execute(db);
 
   // Columns in ANY unique index (covers PKs, unique constraints, and bare
@@ -299,7 +348,8 @@ export async function getCompanyTableCatalog(
       isNullable: c.is_nullable === "YES",
       isGenerated:
         c.is_generated === "ALWAYS" || c.identity_generation !== null,
-      hasDefault: c.column_default !== null
+      hasDefault: c.column_default !== null,
+      idPrefix: c.column_default?.match(/^id\('([^']+)'/)?.[1]
     });
     columnsByTable.set(c.table_name, list);
   }
