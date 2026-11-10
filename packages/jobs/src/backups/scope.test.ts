@@ -18,8 +18,7 @@ import {
   buildExclusionPredicate,
   ExportScopeViolationError,
   formatScopeViolations,
-  scopeEdges,
-  totalExcludedRows
+  scopeEdges
 } from "./scope";
 
 // ── Compile-only Kysely (no connection) ─────────────────────────────────────
@@ -238,35 +237,6 @@ describe("formatScopeViolations / ExportScopeViolationError", () => {
     expect(err.message.startsWith("Refusing to export C: 1 NOT-NULL")).toBe(
       true
     );
-  });
-});
-
-describe("totalExcludedRows", () => {
-  // The bug this pins: `summary`/`violations` carry ONE ENTRY PER FK EDGE, so a
-  // row escaping scope through three of its foreign keys appears three times.
-  // Summing that told the user "10 rows" for 4 real rows — on the confirm button
-  // of an irreversible delete. Totals come from the per-table distinct counts.
-  it("counts a row once however many of its FKs escaped scope", () => {
-    // The prod shape: 1 pickMethod row (1 edge) + 3 jobOperationDependency rows
-    // (3 edges each) = 4 rows, but 4 summary entries totalling 10.
-    const perEdge = [
-      { table: "pickMethod", rows: 1 },
-      { table: "jobOperationDependency", rows: 3 },
-      { table: "jobOperationDependency", rows: 3 },
-      { table: "jobOperationDependency", rows: 3 }
-    ];
-    expect(perEdge.reduce((sum, e) => sum + e.rows, 0)).toBe(10);
-
-    expect(
-      totalExcludedRows([
-        { table: "pickMethod", rows: 1 },
-        { table: "jobOperationDependency", rows: 3 }
-      ])
-    ).toBe(4);
-  });
-
-  it("is zero for a clean export", () => {
-    expect(totalExcludedRows([])).toBe(0);
   });
 });
 

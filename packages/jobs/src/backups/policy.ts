@@ -138,7 +138,7 @@ export const READABLE_ID_TABLES = new Set([
  * the company being restored, and a copy's memberships, invites and integration
  * state belong to the source company's users. The backup still carries them.
  */
-export const KEPT_TABLES = new Set<string>([
+const KEPT_TABLES = new Set<string>([
   "userToCompany",
   "employee",
   "employeeType",

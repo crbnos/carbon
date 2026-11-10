@@ -103,7 +103,7 @@ export class ExportScopeViolationError extends Error {
 }
 
 /** A NOT-NULL FK from an exportable table to another exportable, non-retained table. */
-export type ScopeEdge = { table: TableInfo; column: string; parent: TableInfo };
+type ScopeEdge = { table: TableInfo; column: string; parent: TableInfo };
 
 /**
  * The FK edges the closure guard, the exclusion and the purge all reason about —
@@ -170,38 +170,16 @@ function violationTerm(
 
 /**
  * Export-time closure guard — refuse to PRODUCE a backup that could never be
- * restored. For each NOT-NULL FK from an exportable scoped table to another
- * exportable scoped table, count rows in this company's export scope whose
- * reference falls OUTSIDE the referenced table's export scope (the child row
- * would be dumped but its parent would not). DB-level and count-only. The
- * export mirror of the restore-side `assertReferentiallyClosed`.
+ * restored. For each NOT-NULL FK from an exportable scoped table to another,
+ * find this company's rows whose reference falls OUTSIDE the referenced table's
+ * export scope (the child would be dumped but its parent would not). The export
+ * mirror of the restore-side `assertReferentiallyClosed`.
  *
- * Callers format with `formatScopeViolations` or throw `ExportScopeViolationError`.
+ * Returns the per-edge breakdown and the DISTINCT rows behind it, per table. A
+ * row violating three of its FKs is three `violations` entries but one row —
+ * only `rowsByTable` may be summed into a figure a person reads.
  */
 export async function findExportScopeViolations(
-  db: Kysely<KyselyDatabase>,
-  exportable: TableInfo[],
-  byName: Map<string, TableInfo>,
-  companyId: string,
-  companyGroupId: string | null
-): Promise<ScopeViolation[]> {
-  return (
-    await findExportScopeViolationsDetailed(
-      db,
-      exportable,
-      byName,
-      companyId,
-      companyGroupId
-    )
-  ).violations;
-}
-
-/**
- * The guard's full result: the per-edge breakdown AND the DISTINCT rows behind
- * it, per table. A row violating three of its FKs is three `violations` entries
- * but one row — only `rowsByTable` may be summed into a figure a person reads.
- */
-export async function findExportScopeViolationsDetailed(
   db: Kysely<KyselyDatabase>,
   exportable: TableInfo[],
   byName: Map<string, TableInfo>,
@@ -270,9 +248,9 @@ export async function findExportScopeViolationsDetailed(
   return { violations, rowsByTable };
 }
 
-export type ExclusionCause = "violation" | "cascade";
+type ExclusionCause = "violation" | "cascade";
 
-export type ExclusionTerm = {
+type ExclusionTerm = {
   edge: ScopeEdge;
   cause: ExclusionCause;
   predicate: RawBuilder<unknown>;
@@ -337,8 +315,8 @@ export type ScopeExclusions = {
   /**
    * What was excluded, per FK EDGE — the breakdown a support engineer reads.
    * NOT summable into a row count: one row violating three of its FKs appears
-   * three times here (`jobOperationDependency` does exactly that). Use
-   * {@link totalExcludedRows} over `perTable` for anything a user sees.
+   * three times here (`jobOperationDependency` does exactly that). Sum
+   * `perTable` for anything a user sees.
    */
   summary: Array<{
     table: string;
@@ -350,17 +328,6 @@ export type ScopeExclusions = {
   /** table → DISTINCT rows excluded. The only correct basis for a total. */
   perTable: Array<{ table: string; rows: number }>;
 };
-
-/**
- * The number of ROWS a skip/purge affects — the one figure a person is shown.
- * Counting `summary` instead double-counts every row that violates more than
- * one of its foreign keys.
- */
-export function totalExcludedRows(
-  perTable: Array<{ table: string; rows: number }>
-): number {
-  return perTable.reduce((sum, t) => sum + t.rows, 0);
-}
 
 /**
  * Decide which rows a `skipCorrupted` export leaves out. Walks `exportable` in
@@ -490,7 +457,7 @@ export async function purgeScopeViolations(
     deleted.push({ table: table.name, rows: Number(r.numAffectedRows ?? 0) });
   }
 
-  const left = await findExportScopeViolations(
+  const { violations: left } = await findExportScopeViolations(
     trx,
     exportable,
     byName,

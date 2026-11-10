@@ -179,3 +179,7 @@ Solves: ERP audit hidden/needless links, `_pre-template-` listed (BUG), view-onl
 - Restore finalize now refuses an in-flight run (template already did); restore revert with no snapshot marks the run failed (template already did).
 - Template's `snapshot` flag and its fire-and-forget path are gone: both senders always passed `true`.
 - Entitlement is checked inside the step, after the running marker, so a refusal shows as a failed run.
+
+## F3 notes (2026-11-10)
+- Removed: `backupNameFromSource` (every sender passes the folder name), `totalExcludedRows`, the `findExportScopeViolations` wrapper (the detailed one took its name), the `externalIntegrationMapping` id-ref (that table never loads), needless `export`s.
+- Out of scope, left as they are: `packages/lib/src/trigger.ts` task→event map and `tasks/index.ts` barrel serve every job in the repo, not only backups.

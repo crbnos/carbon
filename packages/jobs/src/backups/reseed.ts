@@ -72,7 +72,7 @@ export function matchableUniqueGroups(
   return usable;
 }
 
-export type CollisionResolution = {
+type CollisionResolution = {
   /** Source ids of backup rows NOT to insert — the target already has them. */
   skippedSourceIds: Set<string>;
   /** source id → the existing target row's id, applied onto the table's id map

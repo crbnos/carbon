@@ -7,7 +7,6 @@ import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
 import { datetime } from "@carbon/utils";
 import { getCompanyTableCatalog } from "../../../backups/catalog";
 import { assertBackupImportable } from "../../../backups/compatibility";
-import { backupNameFromSource } from "../../../backups/format";
 import {
   readBackupForLoad,
   resolveRestoreScope,
@@ -57,8 +56,14 @@ export const companyRestoreFunction = inngest.createFunction(
   },
   { event: "carbon/company-restore" },
   async ({ event, step, logger }) => {
-    const { companyId, userId, filePath, restoreRunId, label, includeStorage } =
-      event.data;
+    const {
+      companyId,
+      userId,
+      filePath: name,
+      restoreRunId,
+      label,
+      includeStorage
+    } = event.data;
 
     return await step.run("restore-company", async () => {
       const client = getCarbonServiceRole();
@@ -75,7 +80,7 @@ export const companyRestoreFunction = inngest.createFunction(
       await marker.write({
         status: "running",
         label: label ?? null,
-        filePath,
+        filePath: name,
         includeStorage,
         startedAt: existing?.startedAt ?? datetime.timestamp()
       });
@@ -84,7 +89,6 @@ export const companyRestoreFunction = inngest.createFunction(
       try {
         await requireBackupsEntitlement(companyId);
 
-        const name = backupNameFromSource(filePath);
         const catalog = await getCompanyTableCatalog(db);
         const backup = await readBackupForLoad(
           client,

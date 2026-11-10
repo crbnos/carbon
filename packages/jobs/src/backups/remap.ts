@@ -33,7 +33,7 @@ import {
  * backup that would dangle.
  */
 
-export type DanglingRef = {
+type DanglingRef = {
   table: string;
   column: string;
   refTable: string;
@@ -307,7 +307,7 @@ const MIRRORED_GROUPS = [
 ] as const;
 
 /** What a foreign load needs to give a backup's groups their target ids. */
-export type GroupRemap = {
+type GroupRemap = {
   source: string;
   target: string;
   /** The target's own employee types by name: a restore keeps them, so the
@@ -355,7 +355,7 @@ function mapGroupIds(
   return map;
 }
 
-export type RowTransform = (value: unknown) => unknown;
+type RowTransform = (value: unknown) => unknown;
 
 /**
  * Per-column transforms for re-stamping a FOREIGN backup onto this company —
@@ -562,7 +562,7 @@ export function rewriteStoragePath(
  * the `id()` default produces). Used wherever reseed/restore remaps ids, so we
  * never feed a nanoid into a uuid column.
  */
-export function newIdForTable(table: TableInfo): string {
+function newIdForTable(table: TableInfo): string {
   const idCol = table.columns.find((c) => c.name === "id");
   return idCol?.udtName === "uuid" ? randomUUID() : nanoid();
 }

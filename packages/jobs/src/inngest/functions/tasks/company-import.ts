@@ -10,7 +10,6 @@ import {
   type TableInfo
 } from "../../../backups/catalog";
 import { assertBackupImportable } from "../../../backups/compatibility";
-import { backupNameFromSource } from "../../../backups/format";
 import {
   bulkLoad,
   getCompanyGroupId,
@@ -46,7 +45,7 @@ export const companyImportFunction = inngest.createFunction(
   },
   { event: "carbon/company-import" },
   async ({ event, step, logger }) => {
-    const { companyId, userId, filePath } = event.data;
+    const { companyId, userId, filePath: name } = event.data;
 
     await requireBackupsEntitlement(companyId);
 
@@ -54,7 +53,6 @@ export const companyImportFunction = inngest.createFunction(
       const client = getCarbonServiceRole();
       const db = getJobDatabaseClient();
 
-      const name = backupNameFromSource(filePath);
       const catalog = await getCompanyTableCatalog(db);
       const backup = await readBackupForLoad(client, companyId, name, catalog);
       assertBackupImportable(catalog, backup);

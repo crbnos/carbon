@@ -48,7 +48,7 @@ export const TABLE_RENAMES: Record<string, string | null> = {
  * live table never has its columns rewritten; a rename that keeps its column
  * list 1:1 needs no entry.
  */
-export const COLUMN_RENAMES: Record<string, Record<string, string>> = {
+const COLUMN_RENAMES: Record<string, Record<string, string>> = {
   cardTransaction: { cardTransactionId: "chargeId" },
   cardTransactionLine: { cardTransactionId: "chargeId" }
 };

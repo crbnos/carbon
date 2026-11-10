@@ -49,7 +49,7 @@ export type Manifest = {
   excludedRowsByTable?: Array<{ table: string; rows: number }>;
 };
 
-export const EXPORTS_PREFIX = "exports";
+const EXPORTS_PREFIX = "exports";
 
 export type CompanyBackup = {
   manifest: Manifest;
@@ -141,13 +141,6 @@ export async function deserializeTable(
   rest += decoder.end();
   if (rest) rows.push(JSON.parse(rest));
   return rows;
-}
-
-/** A restore/import `source` is the backup folder name. Bridge legacy single-gz
- *  sources (`exports/<name>.carbon.json.gz`) to the folder name during the
- *  transition. */
-export function backupNameFromSource(source: string): string {
-  return source.replace(/^exports\//, "").replace(/\.carbon\.json\.gz$/, "");
 }
 
 /** Convert a pg-returned value into a JSON-safe backup value. */

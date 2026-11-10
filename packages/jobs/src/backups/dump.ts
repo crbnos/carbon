@@ -25,7 +25,7 @@ import {
   buildScopeFilter,
   computeScopeExclusions,
   ExportScopeViolationError,
-  findExportScopeViolationsDetailed,
+  findExportScopeViolations,
   type ScopeExclusions
 } from "./scope";
 import {
@@ -161,7 +161,7 @@ export async function writeCompanyBackup(
       });
     }
   } else {
-    const { violations, rowsByTable } = await findExportScopeViolationsDetailed(
+    const { violations, rowsByTable } = await findExportScopeViolations(
       db,
       exportable,
       byName,

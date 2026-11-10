@@ -297,7 +297,7 @@ export type Events = {
     data: {
       companyId: string;
       userId: string;
-      /** The backup to restore (in this company's bucket, `exports/…`). */
+      /** Name of the backup to restore, in this company's bucket. */
       filePath: string;
       restoreRunId: string;
       /** Whether to also load the backup's bundled files. Data always loads. */

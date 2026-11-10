@@ -94,7 +94,7 @@ export type ExportRunMeta = RunMeta & {
   includeStorage?: "none" | "all";
 };
 
-export type RunMarker<M extends RunMeta> = {
+type RunMarker<M extends RunMeta> = {
   read(): Promise<M | null>;
   /** Merge `patch` into the marker, creating it on the first write. */
   write(patch: Partial<M>): Promise<void>;
