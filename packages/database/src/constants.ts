@@ -403,11 +403,17 @@ export const Constants = {
         "Service Center",
       ],
       indirectRateType: ["Provisional", "Target", "Actual", "Final"],
+      inspectionDocumentStatus: ["Draft", "Active", "Archived"],
       inspectionDocumentUsage: ["Receipt", "First Article"],
       inspectionLevel: ["I", "II", "III", "S1", "S2", "S3", "S4"],
       inspectionSampleStatusType: ["Pending", "Passed", "Failed"],
       inspectionSeverity: ["Normal", "Tightened", "Reduced"],
-      inspectionSourceDocument: ["Receipt", "Job Operation", "First Article"],
+      inspectionSourceDocument: [
+        "Receipt",
+        "Job Operation",
+        "First Article",
+        "Manual",
+      ],
       inspectionStatus: ["Pass", "Fail"],
       inspectionStatusType: [
         "Pending",

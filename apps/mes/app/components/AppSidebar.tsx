@@ -35,6 +35,7 @@ import {
   LuCalendarDays,
   LuChevronsUpDown,
   LuCirclePlay,
+  LuClipboardCheck,
   LuClipboardList,
   LuHeadphones,
   LuHistory,
@@ -376,7 +377,8 @@ export const QUEUES: { key: QueueKey; icon: typeof LuActivity; to: string }[] =
     { key: "jobs", icon: LuCirclePlay, to: path.to.jobs },
     { key: "maintenance", icon: LuWrench, to: path.to.maintenance },
     { key: "picking", icon: LuPackageCheck, to: path.to.picking },
-    { key: "service", icon: LuHeadphones, to: path.to.service }
+    { key: "service", icon: LuHeadphones, to: path.to.service },
+    { key: "inspections", icon: LuClipboardCheck, to: path.to.inspections }
   ];
 
 /** `path.to.operations` carries a `?saved=1` query; activity matches on paths. */
@@ -394,7 +396,8 @@ export function useQueueTitles(): Record<QueueKey, string> {
       jobs: t`Jobs`,
       maintenance: t`Maintenance`,
       picking: t`Picking`,
-      service: t`Service`
+      service: t`Service`,
+      inspections: t`Inspections`
     }),
     [t]
   );

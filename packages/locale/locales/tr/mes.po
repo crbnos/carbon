@@ -135,6 +135,9 @@ msgstr "{columns} mevcut bir \"{target}\" ile eşleşmiyor."
 msgid "{columns} does not match an existing record."
 msgstr "{columns} mevcut bir kayıt ile eşleşmiyor."
 
+msgid "{companyName} logo"
+msgstr "{companyName} logosu"
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} / {quantity}"
 
@@ -226,11 +229,17 @@ msgstr "Bu alan hakkında"
 msgid "Above the upper limit"
 msgstr "Üst sınırın üzerinde"
 
+msgid "Ac"
+msgstr "Ka"
+
 msgid "Accept"
 msgstr "Kabul Et"
 
 msgid "Accept first article?"
 msgstr "İlk makaleyi kabul et?"
+
+msgid "Accept inspection?"
+msgstr "Muayene kabul edilsin mi?"
 
 msgid "Accept Lot"
 msgstr "Lotu Kabul Et"
@@ -384,6 +393,12 @@ msgstr "Bağlantıyı uygula"
 
 msgid "Approvals"
 msgstr "Onaylar"
+
+msgid "AQL"
+msgstr "AQL"
+
+msgid "AQL {aql} · Lvl {level} · {severity}"
+msgstr "AQL {aql} · Seviye {level} · {severity}"
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Bu geçiş anahtarını silmek istediğinizden emin misiniz? Artık bununla oturum açamayacaksınız."
@@ -1163,6 +1178,9 @@ msgstr "Hesabınızı ayarlamayı tamamlayın"
 msgid "Finish with material unpicked?"
 msgstr "Malzeme seçilmeden bitir?"
 
+msgid "First"
+msgstr "İlk"
+
 msgid "First article"
 msgstr "İlk makale"
 
@@ -1317,6 +1335,9 @@ msgstr "Geri kalanını çalıştırmadan önce ilk birimi her bir özellikte mu
 msgid "inspected"
 msgstr "incelendi"
 
+msgid "Inspections"
+msgstr "Muayeneler"
+
 msgid "Instructions"
 msgstr "Talimatlar"
 
@@ -1391,6 +1412,9 @@ msgstr "İş Detayları"
 
 msgid "Job due"
 msgstr "İş emri son tarihi"
+
+msgid "Job Operation"
+msgstr "İş emri operasyonu"
 
 msgid "Job Traveler"
 msgstr "İş emri takip kartı"
@@ -1501,7 +1525,7 @@ msgid "Location"
 msgstr "Konum"
 
 msgid "Locations"
-msgstr ""
+msgstr "Lokasyonlar"
 
 msgid "Log completed"
 msgstr "Tamamlandı kaydı"
@@ -1562,6 +1586,9 @@ msgstr "Bir yedek oluştur"
 
 msgid "Manage how you sign in to Carbon."
 msgstr "Carbon'a nasıl oturum açacağınızı yönetin."
+
+msgid "Manual"
+msgstr "Manuel"
 
 msgid "Manually add items to inventory"
 msgstr "Envantere öğeler eklemek için manuel olarak"
@@ -1744,6 +1771,12 @@ msgstr "Ölçüm aleti bulunamadı."
 msgid "No Impact"
 msgstr "Etki Yok"
 
+msgid "No inspection plan"
+msgstr "Kontrol planı yok"
+
+msgid "No inspections assigned to you"
+msgstr "Size atanmış muayene yok"
+
 msgid "No issue types configured"
 msgstr "Sorun türü yapılandırılmadı"
 
@@ -1770,6 +1803,9 @@ msgstr "Malzeme yok"
 
 msgid "No materials on this batch."
 msgstr "Bu Partide Malzeme yok."
+
+msgid "No open inspections"
+msgstr "Açık muayene yok"
 
 msgid "No open jobs"
 msgstr "Açık iş emirleri yok"
@@ -1861,6 +1897,9 @@ msgstr "Adet yok"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden yapılana kadar eldeki stok negatif olabilir, ancak yine de alabilirsiniz."
 
+msgid "No work center"
+msgstr "İş merkezi yok"
+
 msgid "No Work Center"
 msgstr "İş merkezi yok"
 
@@ -1876,6 +1915,9 @@ msgstr "MRP dışı"
 msgid "None"
 msgstr "Hiçbiri"
 
+msgid "Normal"
+msgstr "Normal"
+
 msgid "Not scheduled"
 msgstr "Planlanmamış"
 
@@ -1890,6 +1932,10 @@ msgstr "Not"
 
 msgid "Notes"
 msgstr "Notlar"
+
+#. placeholder {0}: inspection.lotSize
+msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
+msgstr "Henüz hiçbir numune kalmadı, bu yüzden birimlerin neden reddedildiğini belirtin. Tüm {0} adet Reddedildi durumuna geçecek."
 
 msgid "Nothing matches your search."
 msgstr "Aramanızla eşleşen hiçbir şey yok."
@@ -2045,6 +2091,9 @@ msgstr "Uygun"
 msgid "Pass all empty cells of {0}"
 msgstr "{0} için tüm boş hücreleri uygun olarak işaretle"
 
+msgid "Passed"
+msgstr "Geçti"
+
 msgid "Passed inspection"
 msgstr "Muayeneden geçti"
 
@@ -2078,6 +2127,12 @@ msgstr "{workTypeLabel} zamanlayıcısını duraklat"
 
 msgid "Pause maintenance"
 msgstr "Bakımı duraklat"
+
+msgid "Pending"
+msgstr "Beklemede"
+
+msgid "Percentage"
+msgstr "Yüzde"
 
 msgid "Phone"
 msgstr "Telefon"
@@ -2280,6 +2335,18 @@ msgstr "Kuyruk boş"
 msgid "Quotes"
 msgstr "Teklifler"
 
+msgid "Re"
+msgstr "Rd"
+
+msgid "Reason"
+msgstr "Neden"
+
+msgid "Reason (optional)"
+msgstr "Neden (isteğe bağlı)"
+
+msgid "Reason (required)"
+msgstr "Neden (zorunlu)"
+
 msgid "Reason for change"
 msgstr "Değişiklik Nedeni"
 
@@ -2291,6 +2358,12 @@ msgstr "Geç Giriş Nedeni"
 
 msgid "Reason for rework"
 msgstr "Yeniden işleme nedeni"
+
+msgid "Receipt"
+msgstr "Mal kabul"
+
+msgid "Receipt voided"
+msgstr "Mal kabul hükümsüz kılındı"
 
 msgid "Recent"
 msgstr "Son"
@@ -2324,6 +2397,9 @@ msgstr "Kayıt bölümleri"
 msgid "Recorded"
 msgstr "Kaydedildi"
 
+msgid "Reduced"
+msgstr "Gevşetilmiş"
+
 msgid "Reference image"
 msgstr "Referans görseli"
 
@@ -2335,6 +2411,9 @@ msgstr "Reddet"
 
 msgid "Reject first article?"
 msgstr "İlk makaleyi reddet?"
+
+msgid "Reject inspection?"
+msgstr "Muayene reddedilsin mi?"
 
 msgid "Reject Lot"
 msgstr "Lotu Reddet"
@@ -2967,6 +3046,16 @@ msgstr "İlk makale başarısız olarak işaretlenecek ve sonuçları kilitli ol
 msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
 msgstr "İlk makale geçti olarak işaretlenecek ve sonuçları kilitli olacak. Hiç bir miktar kaydedilmeyecektir."
 
+#. placeholder {0}: inspection.lotSize
+msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
+msgstr "Muayene başarısız: {passes} numune geçti, {fails} numune kaldı. Tüm {0} adet Reddedildi durumuna geçecek."
+
+msgid "The inspection will be marked Passed and its units released to Available."
+msgstr "Muayene Geçti olarak işaretlenecek ve birimleri Kullanılabilir durumuna geçecek."
+
+msgid "The inspection will be marked Passed. Its units are released to Available, except the {fails} that failed a sample, which stay Rejected."
+msgstr "Muayene Geçti olarak işaretlenecek. Birimleri Kullanılabilir durumuna geçecek; ancak numune testinde kalan {fails} adet Reddedildi durumunda kalacak."
+
 msgid "The job is closed"
 msgstr "İş emri kapatıldı"
 
@@ -3022,6 +3111,12 @@ msgstr "Bu partinin iş talimatı yok."
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Bu bilgiler tüm kullanıcılara görünür olacak, bu nedenle paylaştığınız şeylere dikkat edin."
 
+msgid "This inspection plan has no parameters."
+msgstr "Bu kontrol planında parametre yok."
+
+msgid "This inspection plan has no work instructions."
+msgstr "Bu kontrol planında iş talimatı yok."
+
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Bu bir geçti / kaldı kontrolüdür. P veya F tuşuna basın."
 
@@ -3060,6 +3155,9 @@ msgstr "Küçük Resim"
 
 msgid "Tick the jobs this was done for."
 msgstr "Bunun için yapılan iş emirlerini işaretleyin."
+
+msgid "Tightened"
+msgstr "Sıkılaştırılmış"
 
 msgid "Tighter or roomier layout. The text stays put."
 msgstr "Daha sıkı veya daha geniş yerleşim. Metin yerinde kalır."

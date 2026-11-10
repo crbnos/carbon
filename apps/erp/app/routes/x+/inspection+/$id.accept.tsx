@@ -35,10 +35,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     decision: "Accept",
     companyId,
     dispositionedBy: userId,
-    // ERP verdict carries no production posting — Receipt (and First Article)
-    // lots only. Job Operation lots are dispositioned (with their physical
-    // outcome) by the MES route.
-    requireSource: firstArticle ? "First Article" : "Receipt",
+    // ERP verdict carries no production posting — Receipt, Manual and First
+    // Article lots only. Job Operation lots are dispositioned (with their
+    // physical outcome) by the MES route. A First Article lot is decided once.
+    requireSource: firstArticle ? "First Article" : ["Receipt", "Manual"],
     requireOpen: !!firstArticle
   });
 

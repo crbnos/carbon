@@ -135,6 +135,9 @@ msgstr "{columns}は既存の「{target}」と一致しません。"
 msgid "{columns} does not match an existing record."
 msgstr "{columns}は既存のレコードと一致しません。"
 
+msgid "{companyName} logo"
+msgstr "{companyName} のロゴ"
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} / {quantity}"
 
@@ -226,11 +229,17 @@ msgstr "このフィールドについて"
 msgid "Above the upper limit"
 msgstr "上限を超えています"
 
+msgid "Ac"
+msgstr "合格判定"
+
 msgid "Accept"
 msgstr "承諾"
 
 msgid "Accept first article?"
 msgstr "初期品を承諾しますか？"
+
+msgid "Accept inspection?"
+msgstr "検査を承諾しますか？"
 
 msgid "Accept Lot"
 msgstr "ロット承諾"
@@ -384,6 +393,12 @@ msgstr "リンクを適用"
 
 msgid "Approvals"
 msgstr "承認"
+
+msgid "AQL"
+msgstr "AQL"
+
+msgid "AQL {aql} · Lvl {level} · {severity}"
+msgstr "AQL {aql} · 検査水準 {level} · {severity}"
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "このパスキーを削除してもよろしいですか？削除後、このパスキーを使ってサインインできなくなります。"
@@ -1163,6 +1178,9 @@ msgstr "アカウントのセットアップを完了する"
 msgid "Finish with material unpicked?"
 msgstr "材料がピッキングされていない状態で終了しますか?"
 
+msgid "First"
+msgstr "初品"
+
 msgid "First article"
 msgstr "初期品"
 
@@ -1317,6 +1335,9 @@ msgstr "残りを開始する前に、最初の単位のすべての特性を検
 msgid "inspected"
 msgstr "検査済み"
 
+msgid "Inspections"
+msgstr "検査"
+
 msgid "Instructions"
 msgstr "作業手順"
 
@@ -1391,6 +1412,9 @@ msgstr "ジョブ詳細"
 
 msgid "Job due"
 msgstr "製造指図の納期"
+
+msgid "Job Operation"
+msgstr "指図工程"
 
 msgid "Job Traveler"
 msgstr "製造指図現品票"
@@ -1501,7 +1525,7 @@ msgid "Location"
 msgstr "ロケーション"
 
 msgid "Locations"
-msgstr ""
+msgstr "拠点"
 
 msgid "Log completed"
 msgstr "完了をログ記録"
@@ -1562,6 +1586,9 @@ msgstr "代替品を作成"
 
 msgid "Manage how you sign in to Carbon."
 msgstr "Carbon へのサインイン方法を管理します。"
+
+msgid "Manual"
+msgstr "手動"
 
 msgid "Manually add items to inventory"
 msgstr "手動で在庫に品目を追加"
@@ -1744,6 +1771,12 @@ msgstr "測定器が見つかりません。"
 msgid "No Impact"
 msgstr "影響なし"
 
+msgid "No inspection plan"
+msgstr "検査計画がありません"
+
+msgid "No inspections assigned to you"
+msgstr "割り当てられた検査はありません"
+
 msgid "No issue types configured"
 msgstr "構成されたイシュータイプがありません"
 
@@ -1770,6 +1803,9 @@ msgstr "材料なし"
 
 msgid "No materials on this batch."
 msgstr "このバッチに材料がありません。"
+
+msgid "No open inspections"
+msgstr "オープン中の検査はありません"
 
 msgid "No open jobs"
 msgstr "オープンな製造指図はありません。"
@@ -1861,6 +1897,9 @@ msgstr "ユニットなし"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。在庫数が負になるまで、実在庫は負のままになります。"
 
+msgid "No work center"
+msgstr "作業区がありません"
+
 msgid "No Work Center"
 msgstr "作業区未設定"
 
@@ -1876,6 +1915,9 @@ msgstr "MRP対象外"
 msgid "None"
 msgstr "なし"
 
+msgid "Normal"
+msgstr "通常検査"
+
 msgid "Not scheduled"
 msgstr "スケジュール未設定"
 
@@ -1890,6 +1932,10 @@ msgstr "メモ"
 
 msgid "Notes"
 msgstr "メモ"
+
+#. placeholder {0}: inspection.lotSize
+msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
+msgstr "まだ不合格はありません。個体を却下する理由を入力してください。全{0}個が却下済になります。"
 
 msgid "Nothing matches your search."
 msgstr "検索に該当するものがありません。"
@@ -2045,6 +2091,9 @@ msgstr "合格"
 msgid "Pass all empty cells of {0}"
 msgstr "{0} の空のセルをすべて合格にする"
 
+msgid "Passed"
+msgstr "合格"
+
 msgid "Passed inspection"
 msgstr "検査合格"
 
@@ -2078,6 +2127,12 @@ msgstr "{workTypeLabel} タイマーを一時停止"
 
 msgid "Pause maintenance"
 msgstr "保全を一時停止"
+
+msgid "Pending"
+msgstr "待機中"
+
+msgid "Percentage"
+msgstr "割合"
 
 msgid "Phone"
 msgstr "電話"
@@ -2280,6 +2335,18 @@ msgstr "キューが空です"
 msgid "Quotes"
 msgstr "見積"
 
+msgid "Re"
+msgstr "不合格判定"
+
+msgid "Reason"
+msgstr "理由"
+
+msgid "Reason (optional)"
+msgstr "理由（任意）"
+
+msgid "Reason (required)"
+msgstr "理由（必須）"
+
 msgid "Reason for change"
 msgstr "変更理由"
 
@@ -2291,6 +2358,12 @@ msgstr "遅延入力の理由"
 
 msgid "Reason for rework"
 msgstr "手直しの理由"
+
+msgid "Receipt"
+msgstr "入荷"
+
+msgid "Receipt voided"
+msgstr "入荷取消済"
 
 msgid "Recent"
 msgstr "最近"
@@ -2324,6 +2397,9 @@ msgstr "レコードのセクション"
 msgid "Recorded"
 msgstr "記録済"
 
+msgid "Reduced"
+msgstr "ゆるい検査"
+
 msgid "Reference image"
 msgstr "参照画像"
 
@@ -2335,6 +2411,9 @@ msgstr "却下"
 
 msgid "Reject first article?"
 msgstr "初期品を却下しますか？"
+
+msgid "Reject inspection?"
+msgstr "検査を却下しますか？"
 
 msgid "Reject Lot"
 msgstr "ロットを却下"
@@ -2967,6 +3046,16 @@ msgstr "初期品は不合格としてマークされ、その結果はロック
 msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
 msgstr "初期品は合格としてマークされ、その結果はロック中になります。数量は記録されません。"
 
+#. placeholder {0}: inspection.lotSize
+msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
+msgstr "検査は不合格です：{passes}件のサンプルが合格、{fails}件が不合格でした。全{0}個が却下済になります。"
+
+msgid "The inspection will be marked Passed and its units released to Available."
+msgstr "検査は合格とされ、個体は利用可能に振り替えられます。"
+
+msgid "The inspection will be marked Passed. Its units are released to Available, except the {fails} that failed a sample, which stay Rejected."
+msgstr "検査は合格とされます。個体は、サンプルで不合格となった{fails}個を除き利用可能に振り替えられます。その{fails}個は却下済のまま残ります。"
+
 msgid "The job is closed"
 msgstr "製造指図はクローズ済です"
 
@@ -3022,6 +3111,12 @@ msgstr "このバッチには作業手順書がありません。"
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "この情報はすべてのユーザーに表示されるため、共有内容に注意してください。"
 
+msgid "This inspection plan has no parameters."
+msgstr "この検査計画にはパラメータがありません。"
+
+msgid "This inspection plan has no work instructions."
+msgstr "この検査計画には作業手順書がありません。"
+
 msgid "This is a pass / fail check. Press P or F."
 msgstr "これは合否判定の項目です。P または F を押してください。"
 
@@ -3060,6 +3155,9 @@ msgstr "サムネイル"
 
 msgid "Tick the jobs this was done for."
 msgstr "これが完了した製造指図をチェック"
+
+msgid "Tightened"
+msgstr "きつい検査"
 
 msgid "Tighter or roomier layout. The text stays put."
 msgstr "より狭いまたはより広いレイアウト。テキストは変わりません。"

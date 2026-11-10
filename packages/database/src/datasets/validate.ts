@@ -4948,10 +4948,22 @@ export function inspections(ctx: ValidationCtx): void {
   const receiptPlanByItem = new Map<string, string>();
   const receiptLines = new Set<string>();
   const inspectedJobs = new Set<string>();
+  const manualEntities = new Set<string>();
+  const onHandEntity = new Map(
+    dataset.inventory.onHandTracked.flatMap((stock) =>
+      stock.entities.map(
+        (entity) =>
+          [entity.readableId, { ...entity, item: stock.item }] as const
+      )
+    )
+  );
   for (const insp of q.inspections) {
     const where = `quality.inspections "${insp.ref}"`;
     seenInspection.status.add(insp.status);
     seenInspection.source.add(insp.source);
+    if (insp.status === "Cancelled" && insp.source !== "Manual") {
+      fail(`${where}: only a manual lot can be Cancelled`);
+    }
 
     let features: InspectionFeatureSpec[] = [];
     let lotSize: number | undefined;
@@ -4966,11 +4978,7 @@ export function inspections(ctx: ValidationCtx): void {
         fail(`${where}: a second lot on the same receipt line`);
       }
       receiptLines.add(lineKey);
-      const plan = JSON.stringify([
-        insp.drawingNumber,
-        insp.aql,
-        insp.features
-      ]);
+      const plan = JSON.stringify([insp.name, insp.aql, insp.features]);
       const other = receiptPlanByItem.get(insp.item);
       if (other !== undefined && other !== plan) {
         fail(
@@ -5008,6 +5016,47 @@ export function inspections(ctx: ValidationCtx): void {
       }
       if (insp.features.length < 2) {
         fail(`${where}: needs at least 2 features`);
+      }
+    } else if (insp.source === "Manual") {
+      // Mirrors createManualInspection: entities of one item, none in another
+      // open lot. Seeded open, over entities already On Hold, so no other
+      // tier's view of their status changes.
+      if (insp.trackedEntities.length === 0) {
+        fail(`${where}: names no tracked entities`);
+      }
+      if (insp.samples.length > 0) {
+        fail(`${where}: a Pending lot has no recorded samples`);
+      }
+      const lotItems = new Set<string>();
+      for (const readableId of insp.trackedEntities) {
+        const entity = onHandEntity.get(readableId);
+        if (!entity) {
+          fail(`${where}: unknown onHandTracked entity "${readableId}"`);
+          continue;
+        }
+        lotItems.add(entity.item);
+        if ((entity.status ?? "Available") !== "On Hold") {
+          fail(
+            `${where}: "${readableId}" is ${entity.status ?? "Available"}, not On Hold`
+          );
+        }
+        // A cancelled lot no longer holds its entities.
+        if (insp.status === "Cancelled") continue;
+        if (manualEntities.has(readableId)) {
+          fail(`${where}: "${readableId}" is in a second open manual lot`);
+        }
+        manualEntities.add(readableId);
+      }
+      if (lotItems.size > 1) {
+        fail(`${where}: tracked entities of more than one item`);
+      }
+      if (
+        insp.workCenter !== undefined &&
+        !dataset.foundation.workCenters.some(
+          (wc) => wc.name === insp.workCenter
+        )
+      ) {
+        fail(`${where}: unknown work center "${insp.workCenter}"`);
       }
     } else {
       if (inspectedJobs.has(insp.job)) {

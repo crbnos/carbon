@@ -35,7 +35,7 @@ type ItemQualityViewProps = {
   documents: {
     id: string;
     fileName: string | null;
-    drawingNumber: string | null;
+    name: string | null;
     version: number;
   }[];
   assignments: ItemInspectionDocumentAssignment[];
@@ -105,7 +105,7 @@ const ItemQualityView = ({
                 >
                   <Hyperlink to={path.to.inspectionDocument(doc.id)}>
                     <span className="text-sm font-medium">
-                      {doc.drawingNumber ?? doc.fileName ?? doc.id}
+                      {doc.name ?? doc.fileName ?? doc.id}
                     </span>
                   </Hyperlink>
                   <Badge
@@ -175,7 +175,7 @@ const ItemQualityView = ({
 
       <InspectionDocumentForm
         open={newDocumentDisclosure.isOpen}
-        initialValues={{ name: "", partId: itemId, drawingNumber: "" }}
+        initialValues={{ name: "", partId: itemId }}
         onClose={newDocumentDisclosure.onClose}
       />
     </VStack>

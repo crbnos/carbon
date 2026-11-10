@@ -5,6 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import {
+  enrichLineagePayload,
   fetchLineageSubgraph,
   type LineageDirection
 } from "~/modules/inventory/inventory.service";
@@ -47,5 +48,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
     depth,
     direction
   );
-  return Response.json(payload);
+  return Response.json(await enrichLineagePayload(client, payload, companyId));
 }

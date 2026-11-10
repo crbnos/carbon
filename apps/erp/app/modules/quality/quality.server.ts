@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { raisedMessage } from "@carbon/api/errors";
+import { rejectInspectionInput } from "@carbon/api/postings";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import { getCompanyTimeZone } from "@carbon/database";
@@ -17,7 +18,7 @@ import {
   notifyIssueStatusChanged,
   notifyTaskStatusChanged
 } from "@carbon/ee/notifications";
-import { isUnsafeStoragePath } from "@carbon/files";
+import { isUnsafeStoragePath, storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
@@ -25,6 +26,7 @@ import {
   async,
   datetime,
   EPSILON,
+  NOT_APPLIED_CODE,
   pick,
   pluckUnique,
   requireAffected,
@@ -33,7 +35,10 @@ import {
 } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { updateChangeNotice } from "~/modules/items/items.service";
+import {
+  isModelUploadPath,
+  updateChangeNotice
+} from "~/modules/items/items.service";
 import {
   deletePurchaseReturnOrder,
   insertPurchaseReturnOrder,
@@ -46,6 +51,7 @@ import { updateSortOrder } from "~/modules/shared/sort-order";
 import { ERP_URL, path } from "~/utils/path";
 import {
   disposition,
+  inspectionDocumentParametersValidator,
   inspectionDocumentSamplingValidator,
   inspectionSaveAnchorsPayloadValidator,
   inspectionSaveBalloonsGeometryPayloadValidator,
@@ -1312,15 +1318,112 @@ export const draftIssueSupplierReturn = defineServiceFn({
 // --- Inspections --------------------------------------------------------------
 
 /**
- * Reject an inspection lot of a receipt or a first article, and open an issue
+ * Create an inspection of specific tracked entities.
+ *
+ * @remarks
+ * Every tracked entity must be of one item, Available or On Hold, and in no
+ * other open inspection. The lot's size is the number of serials, or the
+ * quantity the batches hold; its sampling comes from the inspection plan
+ * (`inspectionDocumentId`), else every unit is inspected. Available entities
+ * go On Hold until a sample verdict or the lot's disposition releases them
+ * (Accept → Available) or rejects them (Reject → Rejected). The work center
+ * and assignee say where and by whom it is done; the shop floor lists open
+ * inspections by work center.
+ *
+ * @param trackedEntityIds - The serials or batches to inspect, all of one item.
+ * @param inspectionDocumentId - The inspection plan to measure against.
+ * @param workCenterId - Where the inspection is done.
+ * @param assignee - The user who does it.
+ *
+ * @mcp
+ */
+export const createManualInspection = defineServiceFn({
+  input: z.object({
+    trackedEntityIds: z.array(z.string().min(1)).min(1),
+    inspectionDocumentId: z.string().nullish(),
+    workCenterId: z.string().nullish(),
+    assignee: z.string().nullish(),
+    notes: z.string().trim().max(2000).nullish()
+  }),
+  permission: { create: "quality" },
+
+  async run(ctx, input) {
+    const created = await engine.createManualInspection(ctx.asSystem.pg, {
+      ...input,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (created.error) {
+      return ctx.error("rule", created.error.message, created.error);
+    }
+    return { id: created.data.id, inspectionId: created.data.inspectionId };
+  }
+});
+
+/**
+ * Delete a manual inspection that recorded nothing.
+ *
+ * @remarks
+ * Refused once the inspection has a sample verdict, a reading, a gauge, a
+ * disposition or a linked issue: cancel it instead. Its tracked entities
+ * return to the status they had before the inspection.
+ *
+ * @mcp destructive
+ */
+export const deleteManualInspection = defineServiceFn({
+  input: z.object({ inspectionId: z.string().min(1) }),
+  permission: { delete: "quality" },
+
+  async run(ctx, { inspectionId }) {
+    const deleted = await engine.deleteManualInspection(ctx.asSystem.pg, {
+      inspectionId,
+      companyId: ctx.company.id
+    });
+    if (deleted.error) {
+      return ctx.error("rule", deleted.error.message, deleted.error);
+    }
+    return { id: deleted.data.id };
+  }
+});
+
+/**
+ * Cancel an open manual inspection.
+ *
+ * @remarks
+ * The inspection becomes Cancelled: it leaves the shop floor queue with no
+ * verdict, and what it recorded stays as history. Its held tracked entities
+ * return to the status they had before the inspection. Receipt and Job
+ * Operation lots cannot be cancelled.
+ *
+ * @mcp
+ */
+export const cancelManualInspection = defineServiceFn({
+  input: z.object({ inspectionId: z.string().min(1) }),
+  permission: { update: "quality" },
+
+  async run(ctx, { inspectionId }) {
+    const cancelled = await engine.cancelManualInspection(ctx.asSystem.pg, {
+      inspectionId,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (cancelled.error) {
+      return ctx.error("rule", cancelled.error.message, cancelled.error);
+    }
+    return { id: cancelled.data.id };
+  }
+});
+
+/**
+ * Reject a receipt, manual or first article inspection lot, and open an issue
  * for it.
  *
  * @remarks
  * Every tracked entity of the lot becomes Rejected and the lot Failed (ISO
- * 9001:2015 §8.7). A Receipt or First Article lot: a Job Operation lot is
- * rejected from the shop floor. A First Article lot is verdict-only and
- * one-shot, because its FAI's Verify snapshots the verdict; its result names
- * the FAI (`firstArticleId`). A non-tracked Inventory lot's value is written off through
+ * 9001:2015 §8.7). Only a Receipt, Manual or First Article lot: a Job
+ * Operation lot is rejected from the shop floor. A First Article lot is
+ * verdict-only and one-shot, because its FAI's Verify snapshots the verdict;
+ * its result names the FAI (`firstArticleId`). A non-tracked Inventory lot's value is written off through
  * `post-nonconformance` in the decision's transaction; when the write-off
  * fails the lot is not rejected. With `createNcr` false that is all
  * (`issueId` null). Otherwise an issue opens, of `nonConformanceTypeId`, else a
@@ -1335,19 +1438,17 @@ export const draftIssueSupplierReturn = defineServiceFn({
  * @param reason - Why the lot is rejected. Required when no characteristic
  * reached its rejection number and no sample failed (a suspected counterfeit,
  * the wrong part, transit damage); stored as the lot's notes.
+ * @param requireOpen - Refuse a lot that is already dispositioned. Left off,
+ * rejecting a rejected lot again retries its write-off.
  *
  * @mcp
  */
 export const rejectInspection = defineServiceFn({
-  input: z.object({
-    id: z.string(),
-    nonConformanceTypeId: z.string().nullish(),
-    createNcr: z.boolean().default(true),
-    reason: z.string().trim().max(2000).nullish()
-  }),
+  // Shared with the `reject-inspection` posting MES sends.
+  input: rejectInspectionInput,
   permission: { update: "quality" },
 
-  async run(ctx, { id, nonConformanceTypeId, createNcr, reason }) {
+  async run(ctx, { id, nonConformanceTypeId, createNcr, reason, requireOpen }) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
 
@@ -1372,8 +1473,10 @@ export const rejectInspection = defineServiceFn({
         reason: reason || undefined,
         companyId,
         dispositionedBy: userId,
-        requireSource: firstArticleId ? "First Article" : "Receipt",
-        requireOpen: !!firstArticleId
+        // A Job Operation lot's reject carries its production outcome, which
+        // only the shop floor posts. A First Article lot is decided once.
+        requireSource: firstArticleId ? "First Article" : ["Receipt", "Manual"],
+        requireOpen: requireOpen || !!firstArticleId
       });
       if (decided.error) {
         return ctx.error(
@@ -1674,8 +1777,9 @@ const emptyInspectionSave = { create: [], update: [], delete: [] };
  * characteristic id belongs are mapped to their characteristic. The default
  * sampling rule (`samplingDefault`) is saved first: a failure after the
  * features were created would leave the editor holding temporary ids, and
- * its retry would create them twice. Returns the saved rows and the maps
- * from temporary to persisted ids.
+ * its retry would create them twice. `parameters`, when sent, is the plan's
+ * whole parameter list in order: rows not in it are deleted. Returns the
+ * saved rows and the maps from temporary to persisted ids.
  *
  * @mcp
  */
@@ -1694,7 +1798,8 @@ export const saveInspectionDocument = defineServiceFn({
       ])
       .optional(),
     anchors: inspectionSaveAnchorsPayloadValidator.optional(),
-    samplingDefault: inspectionDocumentSamplingValidator.optional()
+    samplingDefault: inspectionDocumentSamplingValidator.optional(),
+    parameters: inspectionDocumentParametersValidator.optional()
   }),
   permission: { update: "quality" },
 
@@ -1751,6 +1856,12 @@ export const saveInspectionDocument = defineServiceFn({
       );
     }
 
+    // Checked once the input is known to be valid. The sampling and parameter
+    // writes refuse a locked version themselves, and the RPC refuses one under
+    // the plan's row lock; this read refuses it before anything is written.
+    const locked = await service.inspectionDocumentLockRefusal(ctx, id);
+    if (locked) return locked;
+
     features = await service.resolveInspectionFeaturePayloadIds(
       client,
       id,
@@ -1765,6 +1876,9 @@ export const saveInspectionDocument = defineServiceFn({
         companyId,
         userId: ctx.auditUserId
       });
+      if (sampling.error?.code === NOT_APPLIED_CODE) {
+        return service.inspectionDocumentWriteRefusal(ctx, id);
+      }
       if (sampling.error) {
         return ctx.error(
           "internal",
@@ -1772,6 +1886,28 @@ export const saveInspectionDocument = defineServiceFn({
           sampling.error
         );
       }
+    }
+
+    // The whole list, so the editor's retry after a later failure writes it
+    // again unchanged.
+    let parameters: Awaited<
+      ReturnType<typeof service.replaceInspectionDocumentParameters>
+    > | null = null;
+    if (input.parameters) {
+      try {
+        parameters = await service.replaceInspectionDocumentParameters(
+          ctx.asSystem.pg,
+          {
+            inspectionDocumentId: id,
+            companyId,
+            userId: ctx.auditUserId,
+            parameters: input.parameters
+          }
+        );
+      } catch (err) {
+        return ctx.error("internal", "Failed to save parameters", err);
+      }
+      if (!parameters) return service.inspectionDocumentWriteRefusal(ctx, id);
     }
 
     const saved = await service.saveInspectionDocumentAtomic(client, {
@@ -1792,63 +1928,184 @@ export const saveInspectionDocument = defineServiceFn({
         saved.error
       );
     }
-    return saved.data as {
-      success: boolean;
-      featureIdMap: Record<string, string>;
-      balloonAnchorIdMap: Record<string, string>;
-      features: Array<Record<string, unknown>>;
-      anchors: Array<Record<string, unknown>>;
-      balloons: Array<Record<string, unknown>>;
+    return {
+      ...(saved.data as {
+        success: boolean;
+        featureIdMap: Record<string, string>;
+        balloonAnchorIdMap: Record<string, string>;
+        features: Array<Record<string, unknown>>;
+        anchors: Array<Record<string, unknown>>;
+        balloons: Array<Record<string, unknown>>;
+      }),
+      parameters
     };
   }
 });
 
 /**
- * Set an inspection plan's drawing number and/or drawing revision; an empty
- * one clears it, and a field not sent is left as it is.
+ * Set an inspection plan's name and/or drawing revision; an empty one clears
+ * it, and a field not sent is left as it is.
  *
  * @mcp
  */
-export const setInspectionDocumentDrawingNumber = defineServiceFn({
+export const setInspectionDocumentName = defineServiceFn({
   input: z.object({
     id: z.string(),
-    drawingNumber: z.string().nullish(),
+    name: z.string().nullish(),
     drawingRevision: z.string().nullish()
   }),
   permission: { update: "quality" },
 
-  async run(ctx, { id, drawingNumber, drawingRevision }) {
+  async run(ctx, { id, name, drawingRevision }) {
     // Each header field submits on its own; only update the fields sent.
-    const fields: {
-      drawingNumber?: string | null;
-      drawingRevision?: string | null;
-    } = {};
-    if (drawingNumber !== undefined) {
-      fields.drawingNumber = drawingNumber?.trim() || null;
-    }
+    const fields: { name?: string | null; drawingRevision?: string | null } =
+      {};
+    if (name !== undefined) fields.name = name?.trim() || null;
     if (drawingRevision !== undefined) {
       fields.drawingRevision = drawingRevision?.trim() || null;
     }
-    const { error } = await requireAffected(
-      ctx.asCaller.supabase
-        .from("inspectionDocument")
-        .update({
-          ...fields,
-          updatedBy: ctx.auditUserId,
-          updatedAt: datetime.timestamp()
-        })
-        .eq("id", id)
-        .eq("companyId", ctx.company.id)
-        .select("id")
-    );
-    if (error) {
+    // Only a Draft version is editable.
+    const updated = await ctx.asCaller.supabase
+      .from("inspectionDocument")
+      .update({
+        ...fields,
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", id)
+      .eq("companyId", ctx.company.id)
+      .eq("status", "Draft")
+      .select("id");
+    if (updated.error) {
       return ctx.error(
         "internal",
-        "Failed to update the drawing number",
-        error
+        "Failed to update the inspection name",
+        updated.error
       );
     }
+    if (updated.data.length === 0) {
+      return service.inspectionDocumentWriteRefusal(ctx, id);
+    }
     return { id };
+  }
+});
+
+/**
+ * Set an inspection plan's work instructions: the rich text the inspector
+ * reads on every lot of the plan.
+ *
+ * @param workInstruction - Markdown or a Tiptap document; `{}` or an empty
+ * string clears it.
+ *
+ * @mcp
+ */
+export const setInspectionDocumentWorkInstruction = defineServiceFn({
+  input: z.object({ id: z.string(), workInstruction: optionalTiptapDoc }),
+  permission: { update: "quality" },
+
+  async run(ctx, { id, workInstruction }) {
+    // Only a Draft version is editable.
+    const updated = await ctx.asCaller.supabase
+      .from("inspectionDocument")
+      .update({
+        workInstruction: workInstruction ?? null,
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", id)
+      .eq("companyId", ctx.company.id)
+      .eq("status", "Draft")
+      .select("id");
+    if (updated.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update the work instructions",
+        updated.error
+      );
+    }
+    if (updated.data.length === 0) {
+      return service.inspectionDocumentWriteRefusal(ctx, id);
+    }
+    return { id };
+  }
+});
+
+/**
+ * Attach a CAD model to an inspection plan that has no drawing.
+ *
+ * @remarks
+ * Stage the file first (`items_createModelUploadUrl`), then pass its
+ * `modelId` and `path`. Records the model upload, which starts its
+ * processing, and points the plan at it, so the editor and every lot show the
+ * model where a PDF drawing would be. Refused when the plan already has a PDF
+ * drawing or a model.
+ *
+ * @param modelId - The staged model's id (the file name without extension).
+ * @param path - Where the model was staged in `temp-staging`.
+ *
+ * @mcp
+ */
+export const attachInspectionDocumentModel = defineServiceFn({
+  input: z.object({
+    id: z.string(),
+    modelId: z.string().min(1),
+    path: z.string().min(1),
+    name: z.string().min(1),
+    size: z.number().nonnegative()
+  }),
+  permission: { update: "quality" },
+
+  async run(ctx, { id, modelId, path, name, size }) {
+    // The path comes from the caller: it must be the one minted for this
+    // model, inside this tenant's storage prefix.
+    if (!isModelUploadPath(ctx.company.id, modelId, path)) {
+      return ctx.error("rule", "Failed to record the model", {
+        message: "Invalid model path"
+      });
+    }
+
+    // A quality user need not hold parts permissions, and the model belongs to
+    // the plan, not to a part: it is recorded as the system, linked to nothing,
+    // in the transaction that claims the plan.
+    let attached: Awaited<
+      ReturnType<typeof service.attachModelToInspectionDocument>
+    >;
+    try {
+      attached = await service.attachModelToInspectionDocument(
+        ctx.asSystem.pg,
+        {
+          id,
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          modelId,
+          path,
+          name,
+          size
+        }
+      );
+    } catch (error) {
+      return ctx.error("internal", "Failed to attach the model", error);
+    }
+    if (!attached.ok) {
+      switch (attached.reason) {
+        case "notFound":
+          return ctx.error(
+            "notFound",
+            "The inspection plan could not be found"
+          );
+        case "locked":
+          return ctx.error(
+            "rule",
+            `This inspection plan version is ${attached.status}. Make a new version to change it.`
+          );
+        case "hasDrawing":
+          return ctx.error(
+            "rule",
+            "This inspection plan already has a drawing or a model"
+          );
+      }
+    }
+    return { id, modelUploadId: modelId };
   }
 });
 
@@ -4106,7 +4363,6 @@ export const upsertInspectionDocument = defineServiceFn({
   input: z.looseObject({
     name: z.string().optional(),
     partId: z.string().min(1),
-    drawingNumber: z.string().optional(),
     pdfUrl: z.string().optional(),
     annotations: z.string().optional(),
     features: z.string().optional(),
@@ -4117,18 +4373,27 @@ export const upsertInspectionDocument = defineServiceFn({
   }),
   permission: { create: "quality", update: "quality" },
   async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.upsertInspectionDocument(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpsert() as never
-      )
+    const upserted = await service.upsertInspectionDocument(
+      ctx.asCaller.supabase,
+      payload(ctx, input).forUpsert() as never
     );
+    // The update matches only a Draft version.
+    if (input.id && !upserted.error && !upserted.data) {
+      return service.inspectionDocumentWriteRefusal(ctx, input.id);
+    }
+    return unwrap(ctx, upserted);
   }
 });
 
 /**
- * Delete inspection document
+ * Delete one version of an inspection plan.
+ *
+ * @remarks
+ * Refused when a lot was inspected against the version: publishing a new
+ * version archives it instead.
+ * Deleting the first version makes its lowest remaining version the plan's
+ * first, so the other versions stay one plan. The drawing file is removed
+ * only when no other version holds it.
  *
  * @mcp destructive
  */
@@ -4136,14 +4401,139 @@ export const deleteInspectionDocument = defineServiceFn({
   input: z.looseObject({ id: z.string() }),
   permission: { delete: "quality" },
   async run(ctx, input) {
+    let deleted: Awaited<ReturnType<typeof service.deleteInspectionDocument>>;
+    try {
+      deleted = await service.deleteInspectionDocument(
+        ctx.asSystem.pg,
+        input.id,
+        ctx.company.id
+      );
+    } catch (err) {
+      return ctx.error("internal", "Failed to delete inspection plan", err);
+    }
+    if (!deleted) {
+      return ctx.error("notFound", "Inspection plan not found");
+    }
+    if ("refused" in deleted) return ctx.error("rule", deleted.refused);
+    if (deleted.storagePath) {
+      const removed = await storage(ctx.asSystem.supabase)
+        .company(ctx.company.id)
+        .remove([deleted.storagePath]);
+      if (removed.error) {
+        logger.error("Failed to remove an inspection plan drawing", {
+          companyId: ctx.company.id,
+          storagePath: deleted.storagePath,
+          error: removed.error
+        });
+      }
+    }
+    return { id: input.id };
+  }
+});
+
+/**
+ * Get the versions of an inspection plan
+ *
+ * @remarks
+ * Every version of the plan the id belongs to, newest first, with its status.
+ *
+ * @mcp read
+ */
+export const getInspectionDocumentVersions = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { view: "quality" },
+  async run(ctx, input) {
+    const plan = await ctx.asCaller.supabase
+      .from("inspectionDocument")
+      .select("id, rootInspectionDocumentId")
+      .eq("id", input.id)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+    if (plan.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the inspection plan",
+        plan.error
+      );
+    }
+    if (!plan.data) {
+      return ctx.error("notFound", "Inspection plan not found");
+    }
     return unwrap(
       ctx,
-      await service.deleteInspectionDocument(
+      await service.getInspectionDocumentVersions(
         ctx.asCaller.supabase,
-        input.id as never,
+        plan.data,
         ctx.company.id
       )
     );
+  }
+});
+
+/**
+ * Create a new version of an inspection plan
+ *
+ * @remarks
+ * Copies the version `copyFromId` (its characteristics, balloons, parameters,
+ * sampling default, drawing and model) into a new Draft numbered one past the
+ * plan's highest version. Only a Draft can be edited, so a change to an Active
+ * plan starts here; publish the Draft to use it.
+ *
+ * @mcp
+ */
+export const createInspectionDocumentVersion = defineServiceFn({
+  input: z.object({ copyFromId: z.string() }),
+  permission: { create: "quality" },
+  async run(ctx, input) {
+    let created: Awaited<
+      ReturnType<typeof service.copyInspectionDocumentAsVersion>
+    >;
+    try {
+      created = await service.copyInspectionDocumentAsVersion(ctx.asSystem.pg, {
+        copyFromId: input.copyFromId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      });
+    } catch (err) {
+      return ctx.error("internal", "Failed to create a new version", err);
+    }
+    if (!created) {
+      return ctx.error("notFound", "Inspection plan not found");
+    }
+    return created;
+  }
+});
+
+/**
+ * Publish a version of an inspection plan
+ *
+ * @remarks
+ * Makes the version Active and archives the version that was Active. Item
+ * receipt assignments and method operations that name another version of the
+ * plan move to this one, so the next receipt and new jobs inspect against it.
+ * Job operations already made and existing inspections keep their version.
+ *
+ * @mcp
+ */
+export const activateInspectionDocumentVersion = defineServiceFn({
+  input: z.object({ id: z.string() }),
+  permission: { update: "quality" },
+  async run(ctx, input) {
+    let activated: Awaited<
+      ReturnType<typeof service.activateInspectionDocumentVersion>
+    >;
+    try {
+      activated = await service.activateInspectionDocumentVersion(
+        ctx.asSystem.pg,
+        { id: input.id, companyId: ctx.company.id, userId: ctx.auditUserId }
+      );
+    } catch (err) {
+      return ctx.error("internal", "Failed to publish the version", err);
+    }
+    if (!activated) {
+      return ctx.error("notFound", "Inspection plan not found");
+    }
+    return activated;
   }
 });
 
@@ -4223,13 +4613,18 @@ export const updateInspectionDocumentSampling = defineServiceFn({
   }),
   permission: { update: "quality" },
   async run(ctx, input) {
-    return unwrap(
-      ctx,
-      await service.updateInspectionDocumentSampling(
-        ctx.asCaller.supabase,
-        payload(ctx, input).withUser().forUpdate() as never
-      )
+    const updated = await service.updateInspectionDocumentSampling(
+      ctx.asCaller.supabase,
+      payload(ctx, input).withUser().forUpdate() as never
     );
+    // The update matches only a Draft version.
+    if (updated.error?.code === NOT_APPLIED_CODE) {
+      return service.inspectionDocumentWriteRefusal(
+        ctx,
+        input.inspectionDocumentId
+      );
+    }
+    return unwrap(ctx, updated);
   }
 });
 
@@ -4250,6 +4645,12 @@ export const saveInspectionDocumentAtomic = defineServiceFn({
   }),
   permission: { update: "quality" },
   async run(ctx, input) {
+    const locked = await service.inspectionDocumentLockRefusal(
+      ctx,
+      input.inspectionDocumentId
+    );
+    if (locked) return locked;
+
     return unwrap(
       ctx,
       await service.saveInspectionDocumentAtomic(
