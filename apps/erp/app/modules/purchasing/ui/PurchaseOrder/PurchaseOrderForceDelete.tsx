@@ -64,7 +64,12 @@ export function PurchaseOrderForceDeleteModal({
         if (!isOpen) onClose();
       }}
     >
-      <ModalContent>
+      <ModalContent
+        // Opened from the header's menu, which gives focus back to its trigger
+        // as it closes: an auto-focused Reason was blurred, so validated, and
+        // showed its error before anything was typed.
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
         <ValidatedForm
           method="post"
           validator={purchaseOrderForceDeleteRequestValidator}

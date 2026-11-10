@@ -14,6 +14,11 @@ import { path } from "~/utils/path";
 /**
  * The Admin force-delete override: ask (`request`), then `approve`, `reject`
  * or `cancel`. The service functions check that the caller is an Admin.
+ *
+ * The order is redirected to at its details page, never its index: the
+ * index redirects again, and that second hop reaches the page the form was
+ * on as a same-path GET, which the root loader skips (`rootShouldRevalidate`),
+ * so the flash would never toast.
  */
 export async function action(args: ActionFunctionArgs) {
   const intent = (await args.request.clone().formData()).get("intent");
@@ -31,7 +36,7 @@ export async function action(args: ActionFunctionArgs) {
       confirmation: input.data.confirmation
     });
     return respond(args.request, result).redirect(
-      path.to.purchaseOrder(orderId),
+      path.to.purchaseOrderDetails(orderId),
       {
         message: "Force delete requested. Another Admin must approve it."
       }
@@ -50,7 +55,7 @@ export async function action(args: ActionFunctionArgs) {
       requestId
     });
     return respond(args.request, result).redirect(
-      path.to.purchaseOrder(orderId),
+      path.to.purchaseOrderDetails(orderId),
       { message: "Force delete request cancelled" }
     );
   }
@@ -67,7 +72,7 @@ export async function action(args: ActionFunctionArgs) {
     });
   }
   return respond(args.request, result).redirect(
-    path.to.purchaseOrder(orderId),
+    path.to.purchaseOrderDetails(orderId),
     { message: "Force delete rejected" }
   );
 }
