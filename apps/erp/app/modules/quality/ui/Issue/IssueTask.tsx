@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   BarProgress,
@@ -33,7 +34,6 @@ import {
 import { ActionTaskStatusButton } from "~/components/ActionTasks/ActionTaskStatusButton";
 import { JiraIssueDialog } from "~/components/ActionTasks/Jira/IssueDialog";
 import { LinearIssueDialog } from "~/components/ActionTasks/Linear/IssueDialog";
-import { syncActionTaskNotes } from "~/components/ActionTasks/syncNotes";
 import { useProcesses } from "~/components/Form/Process";
 import SupplierAvatar from "~/components/SupplierAvatar";
 import {
@@ -50,7 +50,10 @@ import type {
   IssueActionTask,
   IssueItem,
   IssueReviewer
-} from "~/modules/quality";
+} from "~/modules/quality/types";
+import type { action as dueDateRouteAction } from "~/routes/x+/issue+/action.$id.due-date";
+import type { action as taskStatusAction } from "~/routes/x+/issue+/task.$id.status";
+import type { action as supplierRouteAction } from "~/routes/x+/issue+/task.supplier";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -88,22 +91,15 @@ function SupplierAssignment({
 }) {
   const [open, setOpen] = useState(false);
   const [suppliers] = useSuppliers();
-  const submit = useSubmit();
+  const supplierAction = useAction<typeof supplierRouteAction>();
   const { t } = useLingui();
   const permissions = usePermissions();
-  const fetchers = useFetchers();
 
   const canEdit = permissions.can("update", "quality") && !isDisabled;
 
-  // Check for optimistic update
-  const pendingUpdate = fetchers.find(
-    (f) =>
-      f.formData?.get("id") === task.id &&
-      f.key === `supplierAssignment:${task.id}`
-  );
-
+  // The supplier being saved, before the server answers.
   const currentSupplierId =
-    (pendingUpdate?.formData?.get("supplierId") as string | null) ??
+    (supplierAction.pending?.get("supplierId") as string | null) ??
     task.supplierId;
 
   const handleChange = (supplierId: string) => {
@@ -112,18 +108,13 @@ function SupplierAssignment({
         ? "nonConformanceInvestigationTask"
         : "nonConformanceActionTask";
 
-    submit(
+    supplierAction.submit(
       {
         id: task.id!,
         supplierId: supplierId || "",
         table
       },
-      {
-        method: "post",
-        action: path.to.issueTaskSupplier,
-        navigate: false,
-        fetcherKey: `supplierAssignment:${task.id}`
-      }
+      { method: "post", action: path.to.issueTaskSupplier }
     );
     setOpen(false);
   };
@@ -140,7 +131,7 @@ function SupplierAssignment({
     return [{ value: "", label: t`Unassigned` }, ...filteredSuppliers];
   }, [suppliers, supplierIds, t]);
 
-  const isPending = pendingUpdate && pendingUpdate?.state !== "idle";
+  const isPending = supplierAction.isPending;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -232,18 +223,10 @@ export function TaskItem({
     disabled: isDisabled
   });
 
-  // Check if this action task has a linked Linear or Jira issue
-  const hasLinearLink =
-    type === "action" && !!(task as IssueActionTask).linearIssue;
-  const hasJiraLink =
-    type === "action" && !!(task as IssueActionTask).jiraIssue;
-
   const { content, setContent, onUpdateContent, onUploadImage } = useTaskNotes({
     initialContent: (task.notes ?? {}) as JSONContent,
     taskId: task.id!,
-    type,
-    hasLinearLink,
-    hasJiraLink
+    type
   });
 
   const { id } = useParams();
@@ -349,15 +332,11 @@ export function TaskItem({
 function useTaskNotes({
   initialContent,
   taskId,
-  type,
-  hasLinearLink = false,
-  hasJiraLink = false
+  type
 }: {
   initialContent: JSONContent;
   taskId: string;
   type: "investigation" | "action" | "approval" | "review";
-  hasLinearLink?: boolean;
-  hasJiraLink?: boolean;
 }) {
   const { id: userId } = useUser();
   const { carbon } = useCarbon();
@@ -378,24 +357,6 @@ function useTaskNotes({
           updatedBy: userId
         })
         .eq("id", taskId!);
-
-      // Sync to Linear if this is an action task with a linked Linear issue
-      if (type === "action" && hasLinearLink) {
-        await syncActionTaskNotes("Linear", {
-          actionId: taskId,
-          entityType: "nonConformanceActionTask",
-          notes: content
-        });
-      }
-
-      // Sync to Jira if this is an action task with a linked Jira issue
-      if (type === "action" && hasJiraLink) {
-        await syncActionTaskNotes("Jira", {
-          actionId: taskId,
-          entityType: "nonConformanceActionTask",
-          notes: content
-        });
-      }
     },
     2500,
     true
@@ -409,12 +370,14 @@ function useTaskNotes({
   };
 }
 
+// Both the task card and its status badge submit status changes, each through
+// its own fetcher, so the pending status is found by the action it posts to.
 function useOptimisticTaskStatus(taskId: string) {
   const fetchers = useFetchers();
   const pendingUpdate = fetchers.find(
     (f) =>
       f.formData?.get("id") === taskId &&
-      f.key === `nonConformanceTask:${taskId}`
+      f.formAction === path.to.issueTaskStatus(taskId)
   );
   return pendingUpdate?.formData?.get("status") as
     | IssueActionTask["status"]
@@ -436,7 +399,7 @@ function useTaskStatus({
   type: "investigation" | "action" | "approval" | "review";
   onChange?: (status: IssueActionTask["status"]) => void;
 }) {
-  const submit = useSubmit();
+  const { submit } = useAction<typeof taskStatusAction>();
   const permissions = usePermissions();
   const optimisticStatus = useOptimisticTaskStatus(task.id!);
 
@@ -452,12 +415,7 @@ function useTaskStatus({
           type,
           assignee: task.assignee ?? ""
         },
-        {
-          method: "post",
-          action: path.to.issueTaskStatus(id),
-          navigate: false,
-          fetcherKey: `nonConformanceTask:${id}`
-        }
+        { method: "post", action: path.to.issueTaskStatus(id) }
       );
     },
     [onChange, submit, task.assignee, type]
@@ -532,32 +490,20 @@ function TaskDueDate({
 }) {
   const { t } = useLingui();
   const { formatDate } = useDateFormatter();
-  const submit = useSubmit();
+  const dueDateAction = useAction<typeof dueDateRouteAction>();
   const [isOpen, setIsOpen] = useState(false);
   const permissions = usePermissions();
 
   const canEdit = permissions.can("update", "quality") && !isDisabled;
-  const fetchers = useFetchers();
-  const pendingUpdate = fetchers.find(
-    (f) =>
-      f.formData?.get("id") === task.id &&
-      f.key === `nonConformanceTask:${task.id}`
-  );
-
-  const pendingValue = pendingUpdate?.formData?.get("dueDate") ?? task.dueDate;
+  const pendingValue = dueDateAction.pending?.get("dueDate") ?? task.dueDate;
 
   const handleDateChange = (date: string | null) => {
-    submit(
+    dueDateAction.submit(
       {
         id: task.id!,
         dueDate: date || ""
       },
-      {
-        method: "post",
-        action: path.to.issueActionDueDate(task.id!),
-        navigate: false,
-        fetcherKey: `nonConformanceTask:${task.id}`
-      }
+      { method: "post", action: path.to.issueActionDueDate(task.id!) }
     );
   };
 
@@ -589,6 +535,7 @@ function TaskDueDate({
       <PopoverContent className="w-auto p-3" align="start">
         <div className="space-y-2">
           <DatePicker
+            aria-label={t`Due Date`}
             value={pendingValue ? parseDate(String(pendingValue)) : null}
             onChange={(date) => handleDateChange(date?.toString() || null)}
           />

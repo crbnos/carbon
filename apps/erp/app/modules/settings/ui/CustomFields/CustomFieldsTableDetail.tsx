@@ -30,6 +30,7 @@ import { CgProfile } from "react-icons/cg";
 import {
   LuContainer,
   LuGripVertical,
+  LuLink,
   LuPencil,
   LuSquareUser,
   LuTrash
@@ -37,9 +38,13 @@ import {
 import { Link, useFetcher, useParams } from "react-router";
 import { New } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import { NewPlacementContext } from "~/components/New";
 import { useUrlParams } from "~/hooks";
-import type { AttributeDataType } from "~/modules/people";
-import type { CustomField, CustomFieldsTableType } from "~/modules/settings";
+import type { AttributeDataType } from "~/modules/people/types";
+import type {
+  CustomField,
+  CustomFieldsTableType
+} from "~/modules/settings/types";
 import { path } from "~/utils/path";
 
 type CustomFieldCategoryDetailProps = {
@@ -146,7 +151,6 @@ const CustomFieldCategoryDetail = ({
   };
 
   const onDeleteCancel = () => {
-    setSelectedCustomField(undefined);
     deleteModal.onClose();
   };
 
@@ -193,6 +197,7 @@ const CustomFieldCategoryDetail = ({
                 className="space-y-2 w-full"
               >
                 {sortOrder.map((sortId) => {
+                  const fieldName = fieldMap[sortId]?.name;
                   return (
                     <Reorder.Item
                       key={sortId}
@@ -222,7 +227,9 @@ const CustomFieldCategoryDetail = ({
                         >
                           {fieldMap[sortId]?.dataType?.label ?? "Unknown"}
                         </Button>
-                        <ActionMenu>{renderContextMenu(sortId)}</ActionMenu>
+                        <ActionMenu label={t`Actions for ${fieldName}`}>
+                          {renderContextMenu(sortId)}
+                        </ActionMenu>
                       </HStack>
                     </Reorder.Item>
                   );
@@ -231,9 +238,12 @@ const CustomFieldCategoryDetail = ({
             )}
           </DrawerBody>
           <DrawerFooter>
-            <Button asChild size="md">
-              <New label={t`Custom Field`} to={`new?${params?.toString()}`} />
-            </Button>
+            {/* Inline on phones too: the app bar sits under this drawer. */}
+            <NewPlacementContext.Provider value="inline">
+              <Button asChild size="md">
+                <New label={t`Custom Field`} to={`new?${params?.toString()}`} />
+              </Button>
+            </NewPlacementContext.Provider>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
@@ -258,6 +268,7 @@ function getIcon(props: AttributeDataType) {
     isDate,
     isNumeric,
     isText,
+    isLink,
     isUser,
     isCustomer,
     isSupplier
@@ -266,6 +277,7 @@ function getIcon(props: AttributeDataType) {
   if (isDate) return <BsCalendarDate />;
   if (isNumeric) return <AiOutlineNumber />;
   if (isText) return <BiText />;
+  if (isLink) return <LuLink />;
   if (isUser) return <CgProfile />;
   if (isCustomer) return <LuSquareUser />;
   if (isSupplier) return <LuContainer />;

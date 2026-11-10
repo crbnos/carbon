@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useLoaderQuery } from "@carbon/query";
+import { useAction, useLoaderQuery } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -34,14 +34,15 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
   Spinner,
-  toast,
   useLocalStorage,
+  useViewport,
   VStack
 } from "@carbon/react";
 import {
   type BatchRuleDimension,
   type BatchRules,
   type BatchType,
+  distinctItemText,
   formatDate,
   formatDurationMilliseconds,
   RoundingMode,
@@ -73,12 +74,13 @@ import {
   LuTriangleAlert,
   LuX
 } from "react-icons/lu";
-import { useFetcher, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { DateSelect, Enumerable, ItemThumbnail, Table } from "~/components";
 import DateRangeFields, {
   type DateRangeValue
 } from "~/components/DateRangeFields";
 import { EnumerableGroup } from "~/components/EnumerableGroup";
+import type { action as batchingAction } from "~/routes/x+/priority+/batching.update";
 import { path } from "~/utils/path";
 import type { jobStatus } from "../../production.models";
 import type { BatchCandidate } from "../../types";
@@ -240,12 +242,12 @@ function materialChips(candidate: BatchCandidate): string[] {
   return [...signatures, ...fallbacks];
 }
 
-// Numbered wizard step marker (StockTransferWizard precedent).
+// Numbered wizard step marker (StockTransferBuilder precedent).
 function StepBadge({ step, active }: { step: number; active: boolean }) {
   return (
     <span
       className={cn(
-        "flex items-center justify-center size-5 rounded-full text-[11px] font-semibold flex-shrink-0",
+        "flex items-center justify-center size-5 rounded-full text-[0.6875rem] font-semibold flex-shrink-0",
         active
           ? "bg-primary text-primary-foreground"
           : "bg-muted text-muted-foreground"
@@ -297,6 +299,7 @@ type CandidatesResponse = {
 };
 
 export function BatchBuilder({
+  open = true,
   onClose,
   defaultLocationId,
   initialLocationId,
@@ -306,6 +309,7 @@ export function BatchBuilder({
   workCenters,
   batch
 }: {
+  open?: boolean;
   onClose: () => void;
   defaultLocationId: string;
   initialLocationId?: string | null;
@@ -409,11 +413,22 @@ export function BatchBuilder({
     processes
   ]);
 
-  const submitFetcher = useFetcher<{
-    success?: boolean;
-    message?: string;
-    batchId?: string | null;
-  }>();
+  // Navigate on success (a failure is toasted). addTargetRef remembers which
+  // existing batch an add-to submit targeted (the action returns no id for add).
+  const addTargetRef = useRef<string | null>(null);
+  const submitFetcher = useAction<typeof batchingAction>({
+    onSuccess: ({ data }) => {
+      const created =
+        data && "batchId" in data && typeof data.batchId === "string"
+          ? data.batchId
+          : null;
+      const targetId = isAddMode
+        ? batch?.id
+        : (addTargetRef.current ?? created);
+      if (targetId) navigate(path.to.operationBatch(targetId));
+      else navigate(path.to.operationBatches);
+    }
+  });
 
   // Candidates for the scope, once it is complete. `staleTime: 0`: operations
   // move on the shop floor, so each scope change asks again.
@@ -751,32 +766,6 @@ export function BatchBuilder({
 
   const selected = useMemo(() => [...selectedById.values()], [selectedById]);
 
-  // Toast on submit failure; navigate on success. addTargetRef remembers which
-  // existing batch an add-to submit targeted (the action returns no id for add).
-  const addTargetRef = useRef<string | null>(null);
-  const wasSubmitting = useRef(false);
-  useEffect(() => {
-    if (submitFetcher.state !== "idle") {
-      wasSubmitting.current = true;
-      return;
-    }
-    if (!wasSubmitting.current) return;
-    wasSubmitting.current = false;
-    const data = submitFetcher.data;
-    if (!data) return;
-    if (data.success === false && data.message) {
-      toast.error(data.message);
-      return;
-    }
-    if (data.success) {
-      const targetId = isAddMode
-        ? batch?.id
-        : (addTargetRef.current ?? data.batchId);
-      if (targetId) navigate(path.to.operationBatch(targetId));
-      else navigate(path.to.operationBatches);
-    }
-  }, [submitFetcher.state, submitFetcher.data, isAddMode, batch?.id, navigate]);
-
   const [createReleaseOpen, setCreateReleaseOpen] = useState(false);
   const submit = (
     targetBatchId?: string,
@@ -886,7 +875,7 @@ export function BatchBuilder({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -1052,18 +1041,17 @@ export function BatchBuilder({
           </HStack>
         </DrawerFooter>
       </DrawerContent>
-      {createReleaseOpen && (
-        <BatchReleaseModal
-          target={{ jobIds: [...new Set(selected.map((c) => c.jobId))] }}
-          title={t`Create & release batch`}
-          confirmLabel={t`Create & Release`}
-          onClose={() => setCreateReleaseOpen(false)}
-          onConfirm={(purchaseOrdersBySupplierId) => {
-            submit(undefined, { release: true, purchaseOrdersBySupplierId });
-            setCreateReleaseOpen(false);
-          }}
-        />
-      )}
+      <BatchReleaseModal
+        open={createReleaseOpen}
+        target={{ jobIds: [...new Set(selected.map((c) => c.jobId))] }}
+        title={t`Create & release batch`}
+        confirmLabel={t`Create & Release`}
+        onClose={() => setCreateReleaseOpen(false)}
+        onConfirm={(purchaseOrdersBySupplierId) => {
+          submit(undefined, { release: true, purchaseOrdersBySupplierId });
+          setCreateReleaseOpen(false);
+        }}
+      />
     </Drawer>
   );
 }
@@ -1143,6 +1131,16 @@ function DrawerBodyGrid({
   left: React.ReactNode;
   right: React.ReactNode;
 }) {
+  const { isPhone } = useViewport();
+  if (isPhone) {
+    return (
+      <div className="flex flex-col min-h-0 flex-1 overflow-y-auto">
+        <div className="flex-shrink-0 border-b px-4 py-3 bg-card">{scope}</div>
+        <div className="flex h-full flex-shrink-0 flex-col">{left}</div>
+        <div className="flex flex-shrink-0 flex-col border-t">{right}</div>
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col min-h-0 flex-1 overflow-hidden">
       <div className="flex-shrink-0 border-b px-4 py-3 bg-card">{scope}</div>
@@ -1252,7 +1250,7 @@ function ScopeBar({
             <Trans>Scope</Trans>
           </span>
         </HStack>
-        <div className="w-[220px]">
+        <div className="w-[220px] max-md:w-full max-md:!mx-0">
           <Combobox
             size="md"
             value={locationId}
@@ -1261,7 +1259,7 @@ function ScopeBar({
             placeholder={t`Location`}
           />
         </div>
-        <div className="w-[220px]">
+        <div className="w-[220px] max-md:w-full max-md:!mx-0">
           <Combobox
             size="md"
             value={processId ?? ""}
@@ -1508,7 +1506,7 @@ function SuggestionsBanner({
             ? t`due in 1 day`
             : t`due in ${days} days`;
       return (
-        <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[11px] tabular-nums text-amber-600 dark:text-amber-400">
+        <span className="flex items-center gap-1 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[0.6875rem] tabular-nums text-amber-600 dark:text-amber-400">
           <LuCalendarClock className="size-3" />
           {label}
         </span>
@@ -1516,7 +1514,7 @@ function SuggestionsBanner({
     }
     if (s.reason === "fills" && s.fillRatio != null) {
       return (
-        <span className="flex items-center gap-1 rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[11px] text-sky-600 dark:text-sky-400">
+        <span className="flex items-center gap-1 rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[0.6875rem] text-sky-600 dark:text-sky-400">
           <LuLayers className="size-3" />
           {t`fills a run`}
         </span>
@@ -1552,7 +1550,7 @@ function SuggestionsBanner({
             onClick={() => onApply(s.members)}
             className="group flex w-full items-center gap-3 border-t border-border/60 px-3.5 py-2.5 text-left transition-colors hover:bg-emerald-500/[0.06] active:bg-emerald-500/10"
           >
-            <span className="flex size-7 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-[13px] font-semibold tabular-nums text-emerald-700 transition-transform group-active:scale-95 dark:text-emerald-300">
+            <span className="flex size-7 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-[0.8125rem] font-semibold tabular-nums text-emerald-700 transition-transform group-active:scale-95 dark:text-emerald-300">
               {s.members.length}
             </span>
             <div className="min-w-0 flex-1">
@@ -1704,6 +1702,7 @@ function ComposePanel({
               <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px]" />
             </InputLeftElement>
             <Input
+              aria-label={t`Search jobs or items`}
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={t`Search jobs or items`}
@@ -1829,24 +1828,28 @@ function CandidateTable({
           const locked =
             compat.lockedById.has(row.original.id) &&
             !selectedById.has(row.original.id);
+          const operationName = [
+            row.original.jobReadableId,
+            row.original.description
+          ]
+            .filter(Boolean)
+            .join(" ");
+          // A label, not a button: the padding stays a hit area for the
+          // checkbox without nesting one control inside another.
           return (
-            <button
-              type="button"
+            <label
               className={cn(
                 "flex items-center p-3 -m-3",
                 locked ? "cursor-not-allowed" : "cursor-pointer"
               )}
-              onClick={() => !locked && onToggle(row.original)}
-              disabled={locked}
-              aria-label={t`Select operation`}
             >
               <Checkbox
                 checked={selectedById.has(row.original.id)}
                 disabled={locked}
-                className="pointer-events-none"
-                tabIndex={-1}
+                onCheckedChange={() => !locked && onToggle(row.original)}
+                aria-label={t`Select ${operationName}`}
               />
-            </button>
+            </label>
           );
         }
       },
@@ -1855,7 +1858,8 @@ function CandidateTable({
         header: t`Job`,
         cell: ({ row }) => (
           <span className="font-medium">{row.original.jobReadableId}</span>
-        )
+        ),
+        meta: { mobile: "P1" }
       },
       {
         id: "jobStatus",
@@ -1878,9 +1882,14 @@ function CandidateTable({
               <span className="text-sm truncate">
                 {row.original.itemReadableId}
               </span>
-              <span className="text-xs text-muted-foreground truncate">
-                {row.original.itemDescription}
-              </span>
+              {distinctItemText(
+                row.original.itemReadableId,
+                row.original.itemDescription
+              ) && (
+                <span className="text-xs text-muted-foreground truncate">
+                  {row.original.itemDescription}
+                </span>
+              )}
             </VStack>
           </HStack>
         )
@@ -1944,6 +1953,7 @@ function CandidateTable({
   return (
     <div className="flex-1 min-h-0 overflow-hidden w-full px-4">
       <Table<BatchCandidate>
+        mobileLayout="table"
         compact
         data={visible}
         columns={columns}
@@ -2174,13 +2184,16 @@ function CandidateGroup({
           const isSelected = selectedById.has(c.id);
           const isLocked = compat.lockedById.has(c.id) && !isSelected;
           const due = dueDateOf(c);
+          const operationName = [c.jobReadableId, c.description]
+            .filter(Boolean)
+            .join(" ");
+          // The card is the checkbox's label: clicking anywhere toggles it,
+          // and the checkbox is the one control (no button around it).
           return (
-            <button
+            <label
               key={c.id}
-              type="button"
-              onClick={() => !isLocked && onToggle(c)}
-              disabled={isLocked}
               className={cn(
+                "block",
                 "w-full min-w-0 rounded-lg border p-2.5 text-left transition-colors",
                 isLocked ? "cursor-not-allowed opacity-60" : "cursor-pointer",
                 isSelected
@@ -2192,8 +2205,9 @@ function CandidateGroup({
                 <Checkbox
                   checked={isSelected}
                   disabled={isLocked}
-                  className="pointer-events-none flex-shrink-0"
-                  tabIndex={-1}
+                  onCheckedChange={() => !isLocked && onToggle(c)}
+                  aria-label={t`Select ${operationName}`}
+                  className="flex-shrink-0"
                 />
                 <ItemThumbnail
                   thumbnailPath={c.thumbnailPath}
@@ -2231,7 +2245,7 @@ function CandidateGroup({
                   </span>
                 </VStack>
               </HStack>
-            </button>
+            </label>
           );
         })}
       </VStack>
@@ -2483,6 +2497,7 @@ function ReviewPanel({
             />
           ) : null}
           <Input
+            aria-label={t`Notes`}
             size="sm"
             value={notes}
             onChange={(e) => onNotesChange(e.target.value)}

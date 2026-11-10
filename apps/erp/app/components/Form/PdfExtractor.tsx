@@ -12,7 +12,7 @@ import { useFetcher } from "react-router";
 import { FileDropzone } from "~/components";
 import { useUser } from "~/hooks";
 import { useDocumentExtraction } from "~/hooks/useDocumentExtraction";
-import type { ExtractedDocumentData } from "~/modules/documents";
+import type { ExtractedDocumentData } from "~/modules/documents/documents.models";
 
 const logger = getLogger("erp", "pdfextractor");
 

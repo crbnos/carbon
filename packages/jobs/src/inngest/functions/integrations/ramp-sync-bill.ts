@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { posting } from "@carbon/api/postings.server";
 import {
   codeSelections,
   confirmSyncs,
@@ -10,7 +11,6 @@ import {
   resolveRampSupplier
 } from "@carbon/ee/ramp.server";
 import { storage } from "@carbon/files";
-import { serverFns } from "@carbon/server-functions";
 import { round } from "@carbon/utils";
 import {
   isPostedRampBill,
@@ -192,16 +192,18 @@ export async function postRampInvoice(
 
   let postError: string | undefined;
   try {
-    const posted = await serverFns
-      .as({
+    const posted = await posting(
+      "post-purchase-invoice",
+      {
         client: ctx.client,
         db: ctx.db,
         companyId: ctx.companyId,
         userId: "system"
-      })
-      .invoke("post-purchase-invoice", {
+      },
+      {
         invoiceId: invoiceRowId
-      });
+      }
+    );
     postError = posted.error?.message;
   } catch (error) {
     postError = error instanceof Error ? error.message : String(error);

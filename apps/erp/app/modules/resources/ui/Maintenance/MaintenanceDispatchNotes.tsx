@@ -6,6 +6,7 @@ import { useCarbon } from "@carbon/auth";
 import {
   convertKbToString,
   downloadUrl,
+  getDocumentType,
   isPreviewableDocumentType,
   storage
 } from "@carbon/files";
@@ -22,10 +23,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   File,
-  generateHTML,
   HStack,
   IconButton,
   MENU_ITEM_SHORTCUTS,
+  RichTextView,
   Skeleton,
   Table,
   Tbody,
@@ -34,7 +35,9 @@ import {
   Thead,
   Tr,
   toast,
-  useDebounce
+  toastError,
+  useDebounce,
+  useViewport
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -51,7 +54,6 @@ import {
   usePermissions,
   useUser
 } from "~/hooks";
-import { getDocumentType } from "~/modules/shared";
 import type { StorageItem } from "~/types";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
@@ -67,6 +69,7 @@ export function MaintenanceDispatchNotes({
   content: JSONContent;
   isDisabled: boolean;
 }) {
+  const { t } = useLingui();
   const { id: userId } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
@@ -102,6 +105,7 @@ export function MaintenanceDispatchNotes({
       <CardContent>
         {permissions.can("update", "resources") && !isDisabled ? (
           <Editor
+            label={t`Notes`}
             initialValue={(content ?? {}) as JSONContent}
             onUpload={onUploadImage}
             onChange={(value) => {
@@ -110,11 +114,9 @@ export function MaintenanceDispatchNotes({
             }}
           />
         ) : (
-          <div
-            className="prose dark:prose-invert"
-            dangerouslySetInnerHTML={{
-              __html: generateHTML(content as JSONContent)
-            }}
+          <RichTextView
+            content={content as JSONContent}
+            empty={<Trans>No notes</Trans>}
           />
         )}
       </CardContent>
@@ -188,6 +190,7 @@ function MaintenanceFilesContent({
   isReadOnly: boolean;
 }) {
   const { t } = useLingui();
+  const { isPhone } = useViewport();
   const { carbon } = useCarbon();
   const { company } = useUser();
   const revalidator = useRevalidator();
@@ -220,7 +223,7 @@ function MaintenanceFilesContent({
       try {
         await downloadUrl(url, file.name);
       } catch (error) {
-        toast.error(t`Error downloading file`);
+        toastError(t`Error downloading file`, error);
         logger.error("Error", { error: error });
       }
     },
@@ -240,7 +243,7 @@ function MaintenanceFilesContent({
         .remove([filePath]);
 
       if (error) {
-        toast.error(error.message || "Error deleting file");
+        toastError("Error deleting file", error);
         return;
       }
 
@@ -288,23 +291,30 @@ function MaintenanceFilesContent({
         <Tbody>
           {files.map((file) => {
             const type = getDocumentType(file.name);
+            const openFile = () => {
+              if (isPreviewableDocumentType(type)) {
+                window.open(
+                  path.to.file.previewFile(`private/${getFilePath(file.name)}`),
+                  "_blank"
+                );
+              } else {
+                download(file);
+              }
+            };
             return (
               <Tr key={file.id}>
                 <Td>
                   <HStack>
                     <DocumentIcon type={type} />
                     <span
+                      role="button"
+                      tabIndex={0}
                       className="font-medium cursor-pointer"
-                      onClick={() => {
-                        if (isPreviewableDocumentType(type)) {
-                          window.open(
-                            path.to.file.previewFile(
-                              `private/${getFilePath(file.name)}`
-                            ),
-                            "_blank"
-                          );
-                        } else {
-                          download(file);
+                      onClick={openFile}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          openFile();
                         }
                       }}
                     >
@@ -371,7 +381,8 @@ function MaintenanceFilesContent({
           )}
         </Tbody>
       </Table>
-      {!isReadOnly && <FileDropzone onDrop={onDrop} />}
+      {/* Phones: the header Upload already opens the same picker. */}
+      {!isReadOnly && !isPhone && <FileDropzone onDrop={onDrop} />}
     </>
   );
 }

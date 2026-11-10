@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { setJobMaterialStepLink } from "~/modules/production";
+import { setJobMaterialStepLink } from "~/modules/production/production.service";
 
 // Toggle a part↔step link from the step editor's "Parts" picker (job tier).
 export async function action({ request }: ActionFunctionArgs) {

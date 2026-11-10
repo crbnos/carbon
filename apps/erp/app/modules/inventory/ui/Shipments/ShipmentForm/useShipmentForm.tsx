@@ -10,7 +10,7 @@ import { useUser } from "~/hooks";
 import type {
   shipmentStatusType,
   shipmentValidator
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.models";
 import type { ShipmentSourceDocument } from "~/modules/inventory/types";
 import type { ListItem } from "~/types";
 
@@ -147,6 +147,11 @@ export default function useShipmentForm({
               );
             }
           });
+        break;
+      case "Rental Agreement":
+      case "Customer Contract":
+        // Created from the agreement or the contract; the initial option
+        // already holds its readable id, and the source cannot change.
         break;
       default:
         setSourceDocuments([]);

@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Database } from "@carbon/database";
+import { SINGLE_TENANT } from "@carbon/env";
 import { sanitize } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireEntitlement } from "./entitlements.server";
@@ -25,8 +26,17 @@ import { requireEntitlement } from "./entitlements.server";
  */
 
 // Minimal input shape — the validator's `Omit<…, "id" | "scopes" | "expiresAt">`
-// leaves only `name` (redefined here so `@carbon/ee` never imports `~/`).
-type ApiKeyInput = { name: string };
+// leaves `name` and `rateLimit` (redefined here so `@carbon/ee` never imports `~/`).
+type ApiKeyInput = { name: string; rateLimit?: number };
+
+/**
+ * A key's requests per minute is the platform's to set on Carbon Cloud, where
+ * companies share the servers. A single-tenant deployment (BYOC, self-hosted)
+ * runs on its owner's servers, so its admins set it.
+ */
+function ownRateLimit(rateLimit: number | undefined) {
+  return SINGLE_TENANT && rateLimit ? { rateLimit } : {};
+}
 
 export async function upsertApiKey(
   client: SupabaseClient<Database>,
@@ -49,13 +59,13 @@ export async function upsertApiKey(
   if ("createdBy" in apiKey) {
     await requireEntitlement(client, apiKey.companyId, "API_KEYS");
     // Create: store the hash, return the raw key (caller generates both)
-    // Strip rateLimit/rateLimitWindow — these are platform-controlled, not user-configurable
+    // The window is always the platform's; the limit is too off single tenant.
     const {
       scopes,
       expiresAt,
       rawKey,
       keyHash,
-      rateLimit: _rl,
+      rateLimit,
       rateLimitWindow: _rlw,
       ...rest
     } = apiKey as any;
@@ -65,6 +75,7 @@ export async function upsertApiKey(
       .insert(
         sanitize({
           ...rest,
+          ...ownRateLimit(rateLimit),
           keyHash,
           scopes: scopes as any,
           expiresAt: expiresAt || null
@@ -99,11 +110,11 @@ export async function upsertApiKey(
   await requireEntitlement(client, existing.data.companyId, "API_KEYS");
 
   // Update: update name, scopes, expiration (never the key itself)
-  // Strip rateLimit/rateLimitWindow — these are platform-controlled, not user-configurable
+  // The window is always the platform's; the limit is too off single tenant.
   const {
     scopes,
     expiresAt,
-    rateLimit: _rl,
+    rateLimit,
     rateLimitWindow: _rlw,
     ...rest
   } = apiKey as any;
@@ -112,6 +123,7 @@ export async function upsertApiKey(
     .update(
       sanitize({
         ...rest,
+        ...ownRateLimit(rateLimit),
         scopes: scopes as any,
         expiresAt: expiresAt || null
       }) as any

@@ -8,8 +8,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { upsertAssemblyInstructionStepSlide } from "~/modules/production";
-import { operationStepSlideValidator } from "~/modules/shared";
+import { upsertAssemblyInstructionStepSlide } from "~/modules/production/production.service";
+import { operationStepSlideValidator } from "~/modules/shared/shared.models";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);

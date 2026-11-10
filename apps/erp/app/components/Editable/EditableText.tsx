@@ -13,12 +13,13 @@ const EditableText =
       accessorKey: string,
       newValue: string,
       row: T
-    ) => Promise<PostgrestSingleResponse<null>>
+    ) => Promise<PostgrestSingleResponse<unknown>>
   ) =>
   ({
     value,
     row,
     accessorKey,
+    label,
     onError,
     onUpdate
   }: EditableTableCellComponentProps<T>) => {
@@ -52,6 +53,7 @@ const EditableText =
     return (
       <Input
         autoFocus
+        aria-label={label}
         defaultValue={value as string}
         className="border-0 rounded-none w-full shadow-none"
         size="sm"

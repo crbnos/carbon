@@ -13,6 +13,7 @@ import { LuCalendar, LuCalendarDays, LuCalendarRange } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { DateTime, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
@@ -21,10 +22,12 @@ import type { Holiday } from "../../types";
 type HolidaysTableProps = {
   data: Holiday[];
   count: number;
+  infinite: InfiniteOptions;
   years: number[];
 };
 
-const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
+const HolidaysTable = memo((props: HolidaysTableProps) => {
+  const { data, count, infinite, years } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -41,6 +44,7 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
           <Hyperlink to={row.original.id}>{row.original.name}</Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuCalendar />
         }
       },
@@ -68,6 +72,7 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
           <DateTime value={item.getValue<string>()} variant="date" />
         ),
         meta: {
+          mobile: "P2",
           filter: {
             type: "dateRange"
           },
@@ -111,6 +116,7 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
   return (
     <Table<(typeof data)[number]>
       data={data}
+      infinite={infinite}
       count={count}
       columns={columns}
       primaryAction={

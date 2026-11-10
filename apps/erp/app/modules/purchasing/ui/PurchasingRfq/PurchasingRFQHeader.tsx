@@ -13,9 +13,6 @@ import {
   DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  Heading,
-  HStack,
-  IconButton,
   MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
@@ -29,22 +26,22 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import {
   LuChevronDown,
   LuCircleX,
-  LuEllipsisVertical,
   LuEye,
+  LuFile,
+  LuFilePen,
   LuGitCompare,
   LuLoaderCircle,
-  LuPanelLeft,
-  LuPanelRight,
   LuSend,
   LuShare2,
   LuTrash,
   LuTriangleAlert
 } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
+import { useDocumentEditModal } from "~/components/DocumentEditModal";
 import { usePanels } from "~/components/Layout";
+import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
-import { useIntegrations } from "~/hooks/useIntegrations";
 import { path } from "~/utils/path";
 import { isRfqLocked } from "../../purchasing.models";
 import type { PurchasingRFQ, PurchasingRFQLine } from "../../types";
@@ -55,6 +52,7 @@ import PurchasingRFQStatus from "./PurchasingRFQStatus";
 const PurchasingRFQHeader = () => {
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("rfqId not found");
+  const documentEdit = useDocumentEditModal("purchasingRfq", rfqId);
 
   const { t } = useLingui();
   const finalizeModal = useDisclosure();
@@ -65,9 +63,6 @@ const PurchasingRFQHeader = () => {
   const { toggleExplorer, toggleProperties } = usePanels();
 
   const permissions = usePermissions();
-  const integrations = useIntegrations();
-  const canEmail = integrations.has("email");
-  const finalizeFetcher = useFetcher<{ error: string | null }>();
 
   const routeData = useRouteData<{
     rfqSummary: PurchasingRFQ;
@@ -92,280 +87,264 @@ const PurchasingRFQHeader = () => {
   );
   const canCompareQuotes = activeLinkedQuotes.length > 1;
 
+  const finalizeSlot = status === "Draft" ? "primary" : "overflow";
+  const menuItems = (
+    <>
+      <DropdownMenuItem
+        disabled={
+          status !== "Closed" ||
+          statusFetcher.state !== "idle" ||
+          !permissions.can("update", "purchasing")
+        }
+        onClick={() => {
+          statusFetcher.submit(
+            { status: "Draft" },
+            {
+              method: "post",
+              action: path.to.purchasingRfqStatus(rfqId)
+            }
+          );
+        }}
+      >
+        <DropdownMenuIcon icon={<LuLoaderCircle />} />
+        <Trans>Reopen</Trans>
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        disabled={
+          isLocked ||
+          !permissions.can("delete", "purchasing") ||
+          !permissions.is("employee")
+        }
+        destructive
+        onClick={deleteRFQModal.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete RFQ</Trans>
+      </DropdownMenuItem>
+    </>
+  );
+  const statusBadge = (
+    <PurchasingRFQStatus status={routeData?.rfqSummary?.status} />
+  );
   return (
-    <div className="flex flex-shrink-0 items-center justify-between gap-x-4 p-2 bg-card border-b h-[var(--header-height)] overflow-x-auto scrollbar-hide ">
-      <HStack className="w-full justify-between">
-        <HStack>
-          <IconButton
-            aria-label={t`Toggle Explorer`}
-            icon={<LuPanelLeft />}
-            onClick={toggleExplorer}
-            variant="ghost"
-          />
-          <Link to={path.to.purchasingRfqDetails(rfqId)}>
-            <Heading size="h4" className="flex items-center gap-2">
-              <span>{routeData?.rfqSummary?.rfqId}</span>
-            </Heading>
-          </Link>
-          <Copy text={routeData?.rfqSummary?.rfqId ?? ""} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                aria-label={t`More options`}
-                icon={<LuEllipsisVertical />}
-                variant="secondary"
-                size="sm"
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem
-                disabled={
-                  status !== "Closed" ||
-                  statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "purchasing")
-                }
-                onClick={() => {
-                  statusFetcher.submit(
-                    { status: "Draft" },
-                    {
-                      method: "post",
-                      action: path.to.purchasingRfqStatus(rfqId)
-                    }
-                  );
-                }}
-              >
-                <DropdownMenuIcon icon={<LuLoaderCircle />} />
-                <Trans>Reopen</Trans>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                shortcut={MENU_ITEM_SHORTCUTS.delete}
-                disabled={
-                  isLocked ||
-                  !permissions.can("delete", "purchasing") ||
-                  !permissions.is("employee")
-                }
-                destructive
-                onClick={deleteRFQModal.onOpen}
-              >
-                <DropdownMenuIcon icon={<LuTrash />} />
-                <Trans>Delete RFQ</Trans>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <PurchasingRFQStatus status={routeData?.rfqSummary?.status} />
-        </HStack>
-        <HStack>
-          {/* Preview Button - for Draft status */}
-          {status === "Draft" && (
-            <Button variant="secondary" leftIcon={<LuEye />} asChild>
-              <Link to={path.to.purchasingRfqPreview(rfqId)} target="_blank">
-                <Trans>Preview</Trans>
-              </Link>
-            </Button>
-          )}
-
-          {/* Share Dropdown - for Requested status with external links */}
-          {status === "Requested" && hasSuppliers && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="secondary"
-                  leftIcon={<LuShare2 />}
-                  rightIcon={<LuChevronDown />}
-                >
-                  <Trans>Share</Trans>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {routeData?.suppliers?.map((supplier) => (
-                  <DropdownMenuItem
-                    key={supplier.id}
-                    disabled={!supplier.quoteExternalLinkId}
-                    onClick={() => {
-                      if (supplier.quoteExternalLinkId) {
-                        window.open(
-                          path.to.externalSupplierQuote(
-                            supplier.quoteExternalLinkId
-                          ),
-                          "_blank"
-                        );
-                      }
-                    }}
+    <>
+      <RecordHeader
+        title={routeData?.rfqSummary?.rfqId}
+        titleTo={path.to.purchasingRfqDetails(rfqId)}
+        copyValue={routeData?.rfqSummary?.rfqId ?? ""}
+        menu={menuItems}
+        status={statusBadge}
+        onToggleExplorer={toggleExplorer}
+        onToggleProperties={toggleProperties}
+        actions={
+          <>
+            {/* Preview Button - for Draft status */}
+            {status === "Draft" && (
+              <RecordAction slot="overflow">
+                <Button variant="secondary" leftIcon={<LuEye />} asChild>
+                  <Link
+                    to={path.to.purchasingRfqPreview(rfqId)}
+                    target="_blank"
                   >
-                    <DropdownMenuIcon icon={<LuShare2 />} />
-                    {supplier.supplier.name}
-                    {supplier.quoteExternalLinkId &&
-                      typeof window !== "undefined" && (
-                        <Copy
-                          className="ml-2"
-                          text={`${
-                            window.location.origin
-                          }${path.to.externalSupplierQuote(
-                            supplier.quoteExternalLinkId
-                          )}`}
-                        />
-                      )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+                    <Trans>Preview</Trans>
+                  </Link>
+                </Button>
+              </RecordAction>
+            )}
 
-          {hasSuppliers ? (
-            canEmail ? (
-              // With Resend: Open modal for contact selection
-              <Button
-                isDisabled={
-                  status !== "Draft" ||
-                  routeData?.lines?.length === 0 ||
-                  !permissions.can("create", "purchasing")
-                }
-                leftIcon={<LuSend />}
-                variant={status === "Draft" ? "primary" : "secondary"}
-                onClick={finalizeModal.onOpen}
-              >
-                <Trans>Finalize</Trans>
+            <RecordAction slot="overflow">
+              <Button leftIcon={<LuFile />} variant="secondary" asChild>
+                <a
+                  target="_blank"
+                  href={path.to.file.purchasingRfq(rfqId)}
+                  rel="noreferrer"
+                >
+                  <Trans>PDF</Trans>
+                </a>
               </Button>
-            ) : (
-              // Without Resend: Submit directly
-              <finalizeFetcher.Form
-                method="post"
-                action={path.to.purchasingRfqFinalize(rfqId)}
-              >
-                {routeData?.suppliers?.map((supplier, index) => (
-                  <span key={supplier.id}>
-                    <input
-                      type="hidden"
-                      name={`suppliers[${index}].supplierId`}
-                      value={supplier.supplierId}
-                    />
-                    <input
-                      type="hidden"
-                      name={`suppliers[${index}].rfqSupplierId`}
-                      value={supplier.id}
-                    />
-                  </span>
-                ))}
+            </RecordAction>
+            {documentEdit.canEdit && (
+              <RecordAction slot="overflow">
                 <Button
-                  type="submit"
+                  leftIcon={<LuFilePen />}
+                  variant="secondary"
+                  onClick={documentEdit.openEditor}
+                >
+                  <Trans>Edit document</Trans>
+                </Button>
+              </RecordAction>
+            )}
+
+            {/* Share Dropdown - for Requested status with external links */}
+            {status === "Requested" && hasSuppliers && (
+              <RecordAction slot="overflow">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      leftIcon={<LuShare2 />}
+                      rightIcon={<LuChevronDown />}
+                    >
+                      <Trans>Share</Trans>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    {routeData?.suppliers?.map((supplier) => (
+                      <DropdownMenuItem
+                        key={supplier.id}
+                        disabled={!supplier.quoteExternalLinkId}
+                        onClick={() => {
+                          if (supplier.quoteExternalLinkId) {
+                            window.open(
+                              path.to.externalSupplierQuote(
+                                supplier.quoteExternalLinkId
+                              ),
+                              "_blank"
+                            );
+                          }
+                        }}
+                      >
+                        <DropdownMenuIcon icon={<LuShare2 />} />
+                        {supplier.supplier.name}
+                        {supplier.quoteExternalLinkId &&
+                          typeof window !== "undefined" && (
+                            <Copy
+                              className="ml-2"
+                              text={`${
+                                window.location.origin
+                              }${path.to.externalSupplierQuote(
+                                supplier.quoteExternalLinkId
+                              )}`}
+                            />
+                          )}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </RecordAction>
+            )}
+
+            {hasSuppliers ? (
+              // The dialog picks the part files to share, with or without email.
+              <RecordAction slot={finalizeSlot}>
+                <Button
                   isDisabled={
                     status !== "Draft" ||
                     routeData?.lines?.length === 0 ||
-                    !permissions.can("create", "purchasing") ||
-                    finalizeFetcher.state !== "idle"
+                    !permissions.can("create", "purchasing")
                   }
-                  isLoading={finalizeFetcher.state !== "idle"}
                   leftIcon={<LuSend />}
                   variant={status === "Draft" ? "primary" : "secondary"}
+                  onClick={finalizeModal.onOpen}
                 >
                   <Trans>Finalize</Trans>
                 </Button>
-              </finalizeFetcher.Form>
-            )
-          ) : (
-            <Button
-              isDisabled={
-                status !== "Draft" ||
-                routeData?.lines?.length === 0 ||
-                !permissions.can("create", "purchasing")
-              }
-              leftIcon={<LuSend />}
-              variant={status === "Draft" ? "primary" : "secondary"}
-              onClick={requiresSuppliersAlert.onOpen}
-            >
-              <Trans>Finalize</Trans>
-            </Button>
-          )}
+              </RecordAction>
+            ) : (
+              <RecordAction slot={finalizeSlot}>
+                <Button
+                  isDisabled={
+                    status !== "Draft" ||
+                    routeData?.lines?.length === 0 ||
+                    !permissions.can("create", "purchasing")
+                  }
+                  leftIcon={<LuSend />}
+                  variant={status === "Draft" ? "primary" : "secondary"}
+                  onClick={requiresSuppliersAlert.onOpen}
+                >
+                  <Trans>Finalize</Trans>
+                </Button>
+              </RecordAction>
+            )}
 
-          {/* Cancel Button - sets status to Closed */}
-          <Button
-            onClick={cancelReasonModal.onOpen}
-            isDisabled={
-              (status !== "Draft" && status !== "Requested") ||
-              !permissions.can("update", "purchasing")
-            }
-            leftIcon={<LuCircleX />}
-            variant="secondary"
-          >
-            <Trans>Cancel</Trans>
-          </Button>
+            <RecordAction slot="overflow">
+              <Button
+                onClick={cancelReasonModal.onOpen}
+                isDisabled={
+                  (status !== "Draft" && status !== "Requested") ||
+                  !permissions.can("update", "purchasing")
+                }
+                leftIcon={<LuCircleX />}
+                variant="secondary"
+              >
+                <Trans>Cancel</Trans>
+              </Button>
+            </RecordAction>
 
-          {canCompareQuotes && (
-            <Button
-              onClick={compareQuotesModal.onOpen}
-              leftIcon={<LuGitCompare />}
-              variant="secondary"
-            >
-              <Trans>Compare Quotes</Trans>
-            </Button>
-          )}
-
-          <IconButton
-            aria-label={t`Toggle Properties`}
-            icon={<LuPanelRight />}
-            onClick={toggleProperties}
-            variant="ghost"
-          />
-        </HStack>
-      </HStack>
-      {finalizeModal.isOpen && (
-        <FinalizeRFQModal
-          lines={routeData?.lines ?? []}
-          suppliers={routeData?.suppliers ?? []}
-          rfqId={rfqId}
-          onClose={finalizeModal.onClose}
-        />
-      )}
-      {requiresSuppliersAlert.isOpen && (
-        <RequiresSuppliersAlert onClose={requiresSuppliersAlert.onClose} />
-      )}
-      {cancelReasonModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.cancelPurchasingRfq(rfqId)}
-          isOpen={cancelReasonModal.isOpen}
-          name={routeData?.rfqSummary?.rfqId!}
-          text={t`Are you sure you want to cancel ${routeData?.rfqSummary
-            ?.rfqId!}? This will also cancel all related supplier quotes.`}
-          deleteText="Cancel"
-          onCancel={() => {
-            cancelReasonModal.onClose();
-          }}
-          onSubmit={() => {
-            cancelReasonModal.onClose();
-          }}
-        />
-      )}
-      {deleteRFQModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deletePurchasingRfq(rfqId)}
-          isOpen={deleteRFQModal.isOpen}
-          name={routeData?.rfqSummary?.rfqId!}
-          text={t`Are you sure you want to delete ${routeData?.rfqSummary
-            ?.rfqId!}? This cannot be undone.`}
-          onCancel={() => {
-            deleteRFQModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteRFQModal.onClose();
-          }}
-        />
-      )}
-      {compareQuotesModal.isOpen && (
-        <SupplierQuoteCompareDrawer
-          isOpen={compareQuotesModal.isOpen}
-          onClose={compareQuotesModal.onClose}
-          purchasingRfqId={rfqId}
-        />
-      )}
-    </div>
+            {canCompareQuotes && (
+              <RecordAction slot="overflow">
+                <Button
+                  onClick={compareQuotesModal.onOpen}
+                  leftIcon={<LuGitCompare />}
+                  variant="secondary"
+                >
+                  <Trans>Compare Quotes</Trans>
+                </Button>
+              </RecordAction>
+            )}
+          </>
+        }
+      />
+      <FinalizeRFQModal
+        lines={routeData?.lines ?? []}
+        suppliers={routeData?.suppliers ?? []}
+        rfqId={rfqId}
+        open={finalizeModal.isOpen}
+        onClose={finalizeModal.onClose}
+      />
+      <RequiresSuppliersAlert
+        open={requiresSuppliersAlert.isOpen}
+        onClose={requiresSuppliersAlert.onClose}
+      />
+      <ConfirmDelete
+        action={path.to.cancelPurchasingRfq(rfqId)}
+        isOpen={cancelReasonModal.isOpen}
+        name={routeData?.rfqSummary?.rfqId!}
+        text={t`Are you sure you want to cancel ${routeData?.rfqSummary
+          ?.rfqId!}? This will also cancel all related supplier quotes.`}
+        deleteText="Cancel"
+        onCancel={() => {
+          cancelReasonModal.onClose();
+        }}
+        onSubmit={() => {
+          cancelReasonModal.onClose();
+        }}
+      />
+      <ConfirmDelete
+        action={path.to.deletePurchasingRfq(rfqId)}
+        isOpen={deleteRFQModal.isOpen}
+        name={routeData?.rfqSummary?.rfqId!}
+        text={t`Are you sure you want to delete ${routeData?.rfqSummary
+          ?.rfqId!}? This cannot be undone.`}
+        onCancel={() => {
+          deleteRFQModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteRFQModal.onClose();
+        }}
+      />
+      <SupplierQuoteCompareDrawer
+        isOpen={compareQuotesModal.isOpen}
+        onClose={compareQuotesModal.onClose}
+        purchasingRfqId={rfqId}
+      />
+      {documentEdit.modal}
+    </>
   );
 };
 
 export default PurchasingRFQHeader;
 
-function RequiresSuppliersAlert({ onClose }: { onClose: () => void }) {
+function RequiresSuppliersAlert({
+  open,
+  onClose
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <ModalHeader>
           <ModalTitle>

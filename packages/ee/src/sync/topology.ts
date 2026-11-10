@@ -23,7 +23,7 @@ import {
 } from "./capabilities";
 
 /** An integration's behavioural role. Mirrors `IntegrationConfig.providerRole`. */
-export type ProviderRole = "accounting" | "spend";
+export type ProviderRole = "accounting" | "spend" | "oee";
 
 /**
  * The registry slice this core needs, INJECTED rather than imported.

@@ -30,12 +30,12 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useFetcher, useLoaderData, useNavigate } from "react-router";
+import { generateFiscalYearPeriodsValidator } from "~/modules/accounting/accounting.models";
 import {
   createFiscalYearPeriods,
-  generateFiscalYearPeriodsValidator,
   getFiscalYearSettings
-} from "~/modules/accounting";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+} from "~/modules/accounting/accounting.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

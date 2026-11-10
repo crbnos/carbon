@@ -9,14 +9,28 @@ import type {
   Tree,
   UseTreeStateOutput
 } from "./TreeView";
-import { flattenTree, LevelLine, TreeView, useTree } from "./TreeView";
+import {
+  flattenTree,
+  LevelLine,
+  TreeView,
+  treeRowFocusClassName,
+  useRovingTreeFocus,
+  useTree
+} from "./TreeView";
 
-export { flattenTree, LevelLine, TreeView, useTree };
 export type {
   FlatTree,
   FlatTreeItem,
-  NodesState,
   NodeState,
+  NodesState,
   Tree,
   UseTreeStateOutput
+};
+export {
+  flattenTree,
+  LevelLine,
+  TreeView,
+  treeRowFocusClassName,
+  useRovingTreeFocus,
+  useTree
 };

@@ -6,11 +6,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { generateProductLabelZPL } from "@carbon/documents/zpl";
 import { labelSizes, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { getDocumentTemplateConfig } from "~/modules/settings";
 import {
   getCompanyLogoForLabel,
+  getDocumentTemplateConfig,
   resolveLabelLogo
-} from "~/modules/settings/labelLogo.server";
+} from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 import { getEntityLabelData } from "./labels.server";
 
@@ -58,7 +58,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     labelItem!,
     labelSize,
     template,
-    logo
+    logo,
+    companyLogo
   );
 
   const headers = new Headers({

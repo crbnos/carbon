@@ -17,17 +17,12 @@ import {
   IconButton,
   MENU_ITEM_SHORTCUTS,
   PrefetchLink,
-  ShortcutKey,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   useDisclosure,
-  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   LuCirclePlus,
   LuEllipsisVertical,
@@ -51,8 +46,8 @@ import {
 } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { Supplier } from "~/modules/purchasing/types";
-import type { ItemType } from "~/modules/shared";
-import { itemType } from "~/modules/shared";
+import { itemType } from "~/modules/shared/shared.models";
+import type { ItemType } from "~/modules/shared/types";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -62,6 +57,7 @@ import MapExtractedInvoiceLinesModal from "./MapExtractedInvoiceLinesModal";
 import PurchaseInvoiceLineForm from "./PurchaseInvoiceLineForm";
 
 export default function PurchaseInvoiceExplorer() {
+  const { t } = useLingui();
   const { defaults } = useUser();
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
@@ -101,22 +97,6 @@ export default function PurchaseInvoiceExplorer() {
     setDeleteLine(line);
     deleteLineDisclosure.onOpen();
   };
-
-  const onDeleteCancel = () => {
-    setDeleteLine(null);
-    deleteLineDisclosure.onClose();
-  };
-
-  const newButtonRef = useRef<HTMLButtonElement>(null);
-  useShortcutKeyMap([
-    {
-      shortcut: EXPLORER_SHORTCUTS.addLine,
-      action: (event: KeyboardEvent) => {
-        event.stopPropagation();
-        newButtonRef.current?.click();
-      }
-    }
-  ]);
 
   const lines = purchaseInvoiceData?.purchaseInvoiceLines ?? [];
   const unmappedLines = lines.filter(
@@ -213,36 +193,19 @@ export default function PurchaseInvoiceExplorer() {
             />
           ) : (
             <>
-              <Tooltip>
-                <TooltipTrigger className="flex-1">
-                  <Button
-                    ref={newButtonRef}
-                    className="w-full"
-                    isDisabled={
-                      isDisabled || !permissions.can("update", "sales")
-                    }
-                    leftIcon={<LuCirclePlus />}
-                    variant="secondary"
-                    onClick={newPurchaseInvoiceLineDisclosure.onOpen}
-                  >
-                    <Trans>Add Line Item</Trans>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <HStack>
-                    <span>
-                      <Trans>New Line Item</Trans>
-                    </span>
-                    <ShortcutKey
-                      shortcut={EXPLORER_SHORTCUTS.addLine}
-                      variant="small"
-                    />
-                  </HStack>
-                </TooltipContent>
-              </Tooltip>
+              <Button
+                className="flex-1"
+                shortcut={EXPLORER_SHORTCUTS.addLine}
+                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                leftIcon={<LuCirclePlus />}
+                variant="secondary"
+                onClick={newPurchaseInvoiceLineDisclosure.onOpen}
+              >
+                <Trans>Add Line Item</Trans>
+              </Button>
               {canReorder && lines.length > 0 && (
                 <IconButton
-                  aria-label="Reorder lines"
+                  aria-label={t`Reorder lines`}
                   icon={<LuSettings2 />}
                   variant="ghost"
                   className="text-muted-foreground"
@@ -253,28 +216,30 @@ export default function PurchaseInvoiceExplorer() {
           )}
         </div>
       </VStack>
-      {newPurchaseInvoiceLineDisclosure.isOpen && (
+      {newPurchaseInvoiceLineDisclosure.openCount > 0 && (
         <PurchaseInvoiceLineForm
+          key={newPurchaseInvoiceLineDisclosure.openCount}
+          open={newPurchaseInvoiceLineDisclosure.isOpen}
           initialValues={purchaseInvoiceLineInitialValues}
           type="modal"
           onClose={newPurchaseInvoiceLineDisclosure.onClose}
         />
       )}
-      {deleteLineDisclosure.isOpen && (
+      {deleteLine && (
         <DeletePurchaseInvoiceLine
-          line={deleteLine!}
-          onCancel={onDeleteCancel}
+          isOpen={deleteLineDisclosure.isOpen}
+          line={deleteLine}
+          onCancel={deleteLineDisclosure.onClose}
         />
       )}
-      {mapLinesDisclosure.isOpen && (
-        <MapExtractedInvoiceLinesModal
-          invoiceId={invoiceId}
-          supplierId={
-            purchaseInvoiceData?.purchaseInvoice?.supplierId ?? undefined
-          }
-          onClose={mapLinesDisclosure.onClose}
-        />
-      )}
+      <MapExtractedInvoiceLinesModal
+        invoiceId={invoiceId}
+        supplierId={
+          purchaseInvoiceData?.purchaseInvoice?.supplierId ?? undefined
+        }
+        open={mapLinesDisclosure.isOpen}
+        onClose={mapLinesDisclosure.onClose}
+      />
     </>
   );
 }
@@ -289,6 +254,15 @@ function PurchaseInvoiceLineBody({
   isOverlay?: boolean;
 }) {
   const [items] = useItems();
+  const subtitle =
+    line.invoiceLineType === "G/L Account"
+      ? "G/L Account"
+      : line.invoiceLineType === "Lease"
+        ? line.description
+        : distinctItemText(
+            getItemReadableId(items, line.itemId),
+            line.description
+          );
   return (
     <ReorderableRow dragHandle={dragHandle} isOverlay={isOverlay}>
       <HStack spacing={2} className="flex-grow min-w-0 p-2 pr-10">
@@ -297,13 +271,15 @@ function PurchaseInvoiceLineBody({
           <span className="font-semibold line-clamp-1">
             {line.invoiceLineType === "G/L Account"
               ? line.description || "Indirect Expense"
-              : getItemReadableId(items, line.itemId)}
+              : line.invoiceLineType === "Lease"
+                ? line.leaseReadableId || "Lease"
+                : getItemReadableId(items, line.itemId)}
           </span>
-          <span className="text-muted-foreground text-xs truncate line-clamp-1">
-            {line.invoiceLineType === "G/L Account"
-              ? "G/L Account"
-              : line.description}
-          </span>
+          {subtitle && (
+            <span className="text-muted-foreground text-xs truncate line-clamp-1">
+              {subtitle}
+            </span>
+          )}
         </VStack>
       </HStack>
     </ReorderableRow>
@@ -331,86 +307,99 @@ function PurchaseInvoiceLineItem({
   const isSelected =
     location.pathname === path.to.purchaseInvoiceLine(invoiceId, line.id!);
 
+  const subtitle =
+    line.invoiceLineType === "G/L Account"
+      ? "G/L Account"
+      : line.invoiceLineType === "Fixed Asset"
+        ? line.assetName || line.description
+        : line.invoiceLineType === "Lease"
+          ? line.description
+          : distinctItemText(
+              getItemReadableId(items, line.itemId),
+              line.description
+            );
+
+  const lineName =
+    line.invoiceLineType === "G/L Account"
+      ? line.description || "G/L Account"
+      : line.invoiceLineType === "Fixed Asset"
+        ? (line as any).assetReadableId || "Fixed Asset"
+        : line.invoiceLineType === "Lease"
+          ? line.leaseReadableId || "Lease"
+          : getItemReadableId(items, line.itemId);
+
   return (
     <VStack spacing={0} className="border-b">
-      <PrefetchLink
-        to={path.to.purchaseInvoiceLine(invoiceId, line.id!)}
-        className="w-full"
+      <HStack
+        className={cn(
+          "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
+          isSelected && "bg-accent/60 hover:bg-accent/50"
+        )}
       >
-        <HStack
-          className={cn(
-            "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
-            isSelected && "bg-accent/60 hover:bg-accent/50"
-          )}
+        <PrefetchLink
+          to={path.to.purchaseInvoiceLine(invoiceId, line.id!)}
+          className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
         >
           <HStack spacing={2} className="flex-grow min-w-0 pr-10">
             <ItemThumbnail thumbnailPath={line.thumbnailPath} type="Part" />
             <VStack spacing={0} className="min-w-0">
-              <span className="font-semibold line-clamp-1">
-                {line.invoiceLineType === "G/L Account"
-                  ? line.description || "G/L Account"
-                  : line.invoiceLineType === "Fixed Asset"
-                    ? (line as any).assetReadableId || "Fixed Asset"
-                    : getItemReadableId(items, line.itemId)}
-              </span>
-              <span className="text-muted-foreground text-xs truncate line-clamp-1">
-                {line.invoiceLineType === "G/L Account"
-                  ? "G/L Account"
-                  : line.invoiceLineType === "Fixed Asset"
-                    ? line.assetName || line.description
-                    : line.description}
-              </span>
+              <span className="font-semibold line-clamp-1">{lineName}</span>
+              {subtitle && (
+                <span className="text-muted-foreground text-xs truncate line-clamp-1">
+                  {subtitle}
+                </span>
+              )}
             </VStack>
           </HStack>
-          <div className="absolute right-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More`}
-                  className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
-                  icon={<LuEllipsisVertical />}
-                  variant="solid"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
+        </PrefetchLink>
+        <div className="absolute right-2 z-10">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                aria-label={t`More actions for ${lineName}`}
+                className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                icon={<LuEllipsisVertical />}
+                variant="solid"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
+                destructive
+                disabled={isDisabled || !permissions.can("update", "sales")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(line);
+                }}
+              >
+                <DropdownMenuIcon icon={<LuTrash />} />
+                <Trans>Delete Line</Trans>
+              </DropdownMenuItem>
+              {/* @ts-expect-error */}
+              {itemType.includes(line.invoiceLineType ?? "") && (
                 <DropdownMenuItem
-                  shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  destructive
-                  disabled={isDisabled || !permissions.can("update", "sales")}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(line);
-                  }}
+                  shortcut={MENU_ITEM_SHORTCUTS.view}
+                  asChild
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  <Trans>Delete Line</Trans>
-                </DropdownMenuItem>
-                {/* @ts-expect-error */}
-                {itemType.includes(line.invoiceLineType ?? "") && (
-                  <DropdownMenuItem
-                    shortcut={MENU_ITEM_SHORTCUTS.view}
-                    asChild
-                    onClick={(e) => e.stopPropagation()}
+                  <Link
+                    to={getLinkToItemDetails(
+                      line.invoiceLineType as ItemType,
+                      line.itemId!
+                    )}
                   >
-                    <Link
-                      to={getLinkToItemDetails(
-                        line.invoiceLineType as ItemType,
-                        line.itemId!
-                      )}
-                    >
-                      <DropdownMenuIcon
-                        icon={<MethodItemTypeIcon type={"Part"} />}
-                      />
-                      <Trans>View Item Master</Trans>
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </HStack>
-      </PrefetchLink>
+                    <DropdownMenuIcon
+                      icon={<MethodItemTypeIcon type={"Part"} />}
+                    />
+                    <Trans>View Item Master</Trans>
+                  </Link>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </HStack>
     </VStack>
   );
 }

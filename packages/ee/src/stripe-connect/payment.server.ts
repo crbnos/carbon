@@ -2,17 +2,16 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { posting } from "@carbon/api/postings.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getPostgresClient, getProcessPool } from "@carbon/database/client";
+import {
+  countedProcessorFee,
+  processorFeeAccount
+} from "@carbon/database/payment-processor-fee";
 import { getLogger } from "@carbon/logger";
-/**
- * Stripe Connect payment recording — shared between the webhook handler in the
- * ERP app and the pull sweep in the jobs package. Kept in @carbon/ee so both
- * callers can import it without crossing the app→package dependency boundary.
- */
-import { serverFns } from "@carbon/server-functions";
 import type { ConnectInvoice } from "@carbon/stripe/connect.server";
 import {
   fromStripeAmount,
@@ -247,30 +246,26 @@ export async function recordStripeConnectPayment({
     const meta = (resume.mapping.metadata ?? {}) as Record<string, unknown>;
     realizedExchangeRate = (meta.exchangeRate as number | null) ?? null;
 
-    const feeAmount = Number(meta.feeAmount ?? 0);
-    const feeCurrency = (meta.feeCurrency as string | null) ?? null;
-    if (feeAmount > 0 && feeCurrency === currencyCode) {
-      const companySettings = await serviceRole
-        .from("companySettings")
-        .select("accountingEnabled")
-        .eq("id", companyId)
-        .single();
-
-      if (companySettings.data?.accountingEnabled) {
-        const feeAccount =
-          (integrationMetadata.paymentFeeAccount as string | undefined) ||
-          accountDefaults.data?.serviceChargeAccount;
-        if (!feeAccount) {
-          throw new Error(
-            "No service charge account is configured for Stripe processing fees (set accountDefault.serviceChargeAccount or the integration's paymentFeeAccount)"
-          );
-        }
-        journalFee = {
-          amount: feeAmount,
-          accountId: feeAccount,
-          description: `Stripe processing fee — ${stripeInvoice.number ?? stripeInvoiceId}`
-        };
-      }
+    // The rules a journal rebuilt from the stored payment reads the fee by,
+    // so the resumed posting and a later rebuild book the same fee. Every
+    // company books it: Provisional before the accounting cutover, Posted
+    // after it.
+    const fee = countedProcessorFee(
+      {
+        id: paymentId,
+        currencyCode,
+        reference: stripeInvoice.number ?? null
+      },
+      { externalId: stripeInvoiceId, metadata: resume.mapping.metadata }
+    );
+    if (fee) {
+      journalFee = {
+        ...fee,
+        accountId: processorFeeAccount(
+          integrationMetadata,
+          accountDefaults.data?.serviceChargeAccount
+        )
+      };
     }
   } else {
     // Round through Stripe's own minor-unit conversion (the same one
@@ -302,11 +297,9 @@ export async function recordStripeConnectPayment({
     // Resolved BEFORE the payment is created (like bankAccount above) so a
     // missing service-charge account throws before any row is written — a
     // retry after the admin fixes it starts clean instead of leaving behind an
-    // orphaned Draft payment. Gated on accountingEnabled: `post-payment` only
-    // ever builds a GL journal (fee included) when accounting is on, so a
-    // company that hasn't configured a service-charge account because they
-    // don't use Carbon's accounting at all must not have Stripe payments
-    // start failing over it.
+    // orphaned Draft payment. `serviceChargeAccount` is a required account
+    // default, so every company resolves it; `post-payment` books the fee in
+    // a Provisional journal before the accounting cutover.
     const feeDetails = await getConnectInvoicePaymentDetails(
       stripeAccountId,
       stripeInvoiceId
@@ -348,27 +341,17 @@ export async function recordStripeConnectPayment({
           }
         );
       } else {
-        const companySettings = await serviceRole
-          .from("companySettings")
-          .select("accountingEnabled")
-          .eq("id", companyId)
-          .single();
-
-        if (companySettings.data?.accountingEnabled) {
-          const feeAccount =
-            (integrationMetadata.paymentFeeAccount as string | undefined) ||
-            accountDefaults.data?.serviceChargeAccount;
-          if (!feeAccount) {
-            throw new Error(
-              "No service charge account is configured for Stripe processing fees (set accountDefault.serviceChargeAccount or the integration's paymentFeeAccount)"
-            );
-          }
-          journalFee = {
-            amount: feeAmount,
-            accountId: feeAccount,
-            description: `Stripe processing fee — ${stripeInvoice.number ?? stripeInvoiceId}`
-          };
-        }
+        // Every company books the fee: Provisional before the accounting
+        // cutover, Posted after it. A fee with no currency is booked here in
+        // the invoice currency, and the mapping records that currency below.
+        journalFee = {
+          amount: feeAmount,
+          accountId: processorFeeAccount(
+            integrationMetadata,
+            accountDefaults.data?.serviceChargeAccount
+          ),
+          description: `Stripe processing fee — ${stripeInvoice.number ?? stripeInvoiceId}`
+        };
       }
     }
 
@@ -415,7 +398,11 @@ export async function recordStripeConnectPayment({
       stripeAccountId,
       chargeIds: feeDetails.chargeIds,
       feeAmount,
-      feeCurrency: feeDetails.feeCurrency,
+      // The currency the fee was booked in. A fee Stripe reported with no
+      // currency is booked in the invoice currency above, so record that:
+      // `countedProcessorFee` (the resume path and a journal rebuild) then
+      // books the same fee instead of dropping it.
+      feeCurrency: journalFee ? currencyCode : feeDetails.feeCurrency,
       settlementCurrency: feeDetails.settlementCurrency,
       exchangeRate: realizedExchangeRate,
       amountRecorded: amountToRecord,
@@ -543,9 +530,11 @@ export async function recordStripeConnectPayment({
     );
   }
 
-  const posted = await serverFns
-    .system({ db: _db, companyId, userId: SYSTEM_USER })
-    .invoke("post-payment", { type: "post", paymentId, fee: journalFee });
+  const posted = await posting(
+    "post-payment",
+    { db: _db, companyId, userId: SYSTEM_USER },
+    { type: "post", paymentId, fee: journalFee }
+  );
 
   if (posted.error) {
     // The payment and its settlement are correct — only the posting failed, so
@@ -650,9 +639,11 @@ export async function voidStripeConnectPayment({
 
   const voidedIds: string[] = [];
   for (const payment of voidable) {
-    const voided = await serverFns
-      .system({ db: _db, companyId, userId: SYSTEM_USER })
-      .invoke("post-payment", { type: "void", paymentId: payment.id });
+    const voided = await posting(
+      "post-payment",
+      { db: _db, companyId, userId: SYSTEM_USER },
+      { type: "void", paymentId: payment.id }
+    );
 
     if (voided.error) {
       logger.error("Failed to void a Stripe Connect payment", {

@@ -9,7 +9,24 @@ import {
   toBaseAmount,
   toDocumentAmount
 } from "@carbon/database/accounting-currency";
-import { round } from "@carbon/database/precision";
+import { EPSILON, round } from "@carbon/database/precision";
+
+/**
+ * The document a deposit secures (`payment.rentalAgreementId` /
+ * `payment.salesOrderId` / `payment.customerContractId`, or for a supplier
+ * prepayment `payment.purchaseOrderId`). A deposit funds only invoices that
+ * bill that document — a `salesInvoiceLine` carrying the same id, for a
+ * contract the invoice's `customerContractId`, for a purchase order a
+ * `purchaseInvoiceLine.purchaseOrderId` — never the party's other invoices. An
+ * unscoped source funds anything.
+ */
+export type FundingScope = {
+  type: "rentalAgreement" | "salesOrder" | "customerContract" | "purchaseOrder";
+  /** The document's row id, as stored on the payment and the invoice line. */
+  id: string;
+  /** Readable id (RA000001, SO000123) for messages; optional. */
+  readableId?: string | null;
+};
 
 export type FundingSource = {
   paymentId: string;
@@ -18,6 +35,8 @@ export type FundingSource = {
   remainingDocument: number;
   /** Original carrying base less effective recorded funding releases. */
   remainingBase: number;
+  /** Set when the source is a customer deposit; absent or null funds anything. */
+  scope?: FundingScope | null;
 };
 
 export type FundingRequest = {
@@ -29,7 +48,107 @@ export type FundingRequest = {
   requestedDocumentPrincipal: number;
   discountAmount: number;
   writeOffAmount: number;
+  /** Rental agreements the target invoice bills (`salesInvoiceLine.rentalAgreementId`). */
+  rentalAgreementIds?: readonly string[];
+  /** Sales orders the target invoice bills (`salesInvoiceLine.salesOrderId`). */
+  salesOrderIds?: readonly string[];
+  /** Contracts the target invoice bills (`salesInvoice.customerContractId`
+   *  and `salesInvoiceLine.customerContractId`). */
+  customerContractIds?: readonly string[];
+  /** Purchase orders the target invoice bills (`purchaseInvoiceLine.purchaseOrderId`). */
+  purchaseOrderIds?: readonly string[];
 };
+
+export type FundingScopeIds = Pick<
+  FundingRequest,
+  | "rentalAgreementIds"
+  | "salesOrderIds"
+  | "customerContractIds"
+  | "purchaseOrderIds"
+>;
+
+/** The deposit scope a payment row carries, or null for an ordinary payment. */
+export function fundingScopeOf(row: {
+  rentalAgreementId?: string | null;
+  salesOrderId?: string | null;
+  customerContractId?: string | null;
+  purchaseOrderId?: string | null;
+}): FundingScope | null {
+  if (row.rentalAgreementId)
+    return { type: "rentalAgreement", id: row.rentalAgreementId };
+  if (row.salesOrderId) return { type: "salesOrder", id: row.salesOrderId };
+  if (row.customerContractId)
+    return { type: "customerContract", id: row.customerContractId };
+  if (row.purchaseOrderId)
+    return { type: "purchaseOrder", id: row.purchaseOrderId };
+  return null;
+}
+
+/** Whether a source with this scope may fund the request's target. */
+export function fundingScopeCovers(
+  scope: FundingScope | null | undefined,
+  request: FundingScopeIds
+): boolean {
+  if (!scope) return true;
+  const ids =
+    scope.type === "rentalAgreement"
+      ? request.rentalAgreementIds
+      : scope.type === "customerContract"
+        ? request.customerContractIds
+        : scope.type === "purchaseOrder"
+          ? request.purchaseOrderIds
+          : request.salesOrderIds;
+  return Boolean(ids?.includes(scope.id));
+}
+
+/** The refusal for applying a deposit to an invoice of another document. */
+export function depositScopeMessage(scope: FundingScope): string {
+  const noun = scope.type === "purchaseOrder" ? "prepayment" : "deposit";
+  const owner =
+    scope.type === "rentalAgreement"
+      ? "that agreement's"
+      : scope.type === "customerContract"
+        ? "that contract's"
+        : "that order's";
+  if (scope.readableId)
+    return `A ${noun} for ${scope.readableId} can only be applied to ${owner} invoices`;
+  return scope.type === "rentalAgreement"
+    ? "A rental agreement deposit can only be applied to that agreement's invoices"
+    : scope.type === "customerContract"
+      ? "A contract deposit can only be applied to that contract's invoices"
+      : scope.type === "purchaseOrder"
+        ? "A purchase order prepayment can only be applied to that order's invoices"
+        : "A sales order deposit can only be applied to that order's invoices";
+}
+
+function assertScope(scope: FundingScope | null | undefined): void {
+  if (!scope) return;
+  if (
+    (scope.type !== "rentalAgreement" &&
+      scope.type !== "salesOrder" &&
+      scope.type !== "customerContract" &&
+      scope.type !== "purchaseOrder") ||
+    typeof scope.id !== "string" ||
+    !scope.id.trim()
+  ) {
+    throw new Error("Funding source scope requires a document type and ID");
+  }
+}
+
+/** Allocation order: the current payment, then prior sources oldest first. */
+function orderFundingSources<T extends FundingSource>(
+  currentPayment: T,
+  priorSources: readonly T[]
+): T[] {
+  return [
+    currentPayment,
+    ...[...priorSources].sort((a, b) => {
+      if (a.postingDate !== b.postingDate)
+        return a.postingDate < b.postingDate ? -1 : 1;
+      return a.paymentId < b.paymentId ? -1 : a.paymentId > b.paymentId ? 1 : 0;
+    })
+  ];
+}
 
 export type FundingApplication = {
   targetId: string;
@@ -56,6 +175,79 @@ function addUniqueId(ids: Set<string>, id: string, label: string): void {
   }
   if (ids.has(id)) throw new Error(`Duplicate ${label} ID: ${id}`);
   ids.add(id);
+}
+
+/**
+ * Integer transport from origins to targets over an eligibility graph, filling
+ * the origins in list order: each origin sends as much as it can, through
+ * augmenting paths that may re-route an earlier origin's units to another
+ * eligible target but never reduce its total. The result is the
+ * lexicographically largest use of the origins in order (so the current
+ * payment is spent before any prior source, and prior sources oldest first),
+ * and it reaches every target any assignment could. With every edge eligible
+ * it is the plain staircase: origin by origin, targets in list order.
+ */
+function prioritizedTransport(
+  originUnits: readonly number[],
+  targetUnits: readonly number[],
+  eligible: (origin: number, target: number) => boolean
+): number[][] {
+  const flow = originUnits.map(() => targetUnits.map(() => 0));
+  const edges = originUnits.map((_, o) =>
+    targetUnits.map((_, t) => eligible(o, t))
+  );
+  const spare = [...originUnits];
+  const open = [...targetUnits];
+  for (const [root] of originUnits.entries()) {
+    while (spare[root]! > 0) {
+      // Breadth-first: origin → eligible target; a full target hands one of
+      // its funding origins on to look for another target.
+      const reachedTargetFrom = targetUnits.map(() => -1);
+      const reachedOriginFrom = originUnits.map(() => -1);
+      const queue = [root];
+      let end = -1;
+      for (let head = 0; head < queue.length && end < 0; head++) {
+        const origin = queue[head]!;
+        for (const [target] of targetUnits.entries()) {
+          if (!edges[origin]![target] || reachedTargetFrom[target] !== -1)
+            continue;
+          reachedTargetFrom[target] = origin;
+          if (open[target]! > 0) {
+            end = target;
+            break;
+          }
+          for (const [other] of originUnits.entries()) {
+            if (
+              other !== root &&
+              reachedOriginFrom[other] === -1 &&
+              flow[other]![target]! > 0
+            ) {
+              reachedOriginFrom[other] = target;
+              queue.push(other);
+            }
+          }
+        }
+      }
+      if (end < 0) break;
+      let amount = Math.min(spare[root]!, open[end]!);
+      for (let target = end; ; ) {
+        const origin = reachedTargetFrom[target]!;
+        if (origin === root) break;
+        target = reachedOriginFrom[origin]!;
+        amount = Math.min(amount, flow[origin]![target]!);
+      }
+      for (let target = end; ; ) {
+        const origin = reachedTargetFrom[target]!;
+        flow[origin]![target]! += amount;
+        if (origin === root) break;
+        target = reachedOriginFrom[origin]!;
+        flow[origin]![target]! -= amount;
+      }
+      spare[root]! -= amount;
+      open[end]! -= amount;
+    }
+  }
+  return flow;
 }
 
 /**
@@ -100,16 +292,13 @@ export function allocatePaymentFunding(input: {
     toDocumentAmount(units / documentScale, 1, currencyDecimals);
 
   const sourceIds = new Set<string>();
-  const sources = [
+  const sources = orderFundingSources(
     input.currentPayment,
-    ...[...input.priorSources].sort((a, b) => {
-      if (a.postingDate !== b.postingDate)
-        return a.postingDate < b.postingDate ? -1 : 1;
-      return a.paymentId < b.paymentId ? -1 : a.paymentId > b.paymentId ? 1 : 0;
-    })
-  ].map((source) => {
+    input.priorSources
+  ).map((source) => {
     addUniqueId(sourceIds, source.paymentId, "funding source");
     assertExchangeRate(source.exchangeRate);
+    assertScope(source.scope);
     const remainingUnits = documentUnits(
       source.remainingDocument,
       "Source amount"
@@ -131,8 +320,13 @@ export function allocatePaymentFunding(input: {
   });
 
   const targetIds = new Set<string>();
+  const currentScope = input.currentPayment.scope;
   const requests = input.requests.map((request) => {
     addUniqueId(targetIds, request.targetId, "target");
+    // A deposit is applied only to its own document's invoices, whatever
+    // would fund the application — refused, not silently re-sourced.
+    if (currentScope && !fundingScopeCovers(currentScope, request))
+      throw new Error(depositScopeMessage(currentScope));
     assertExchangeRate(request.targetExchangeRate);
     const remainingUnits = documentUnits(
       request.remainingDocument,
@@ -196,9 +390,26 @@ export function allocatePaymentFunding(input: {
     };
   });
 
+  // Which source funds how much of which request, decided over all requests
+  // at once: a deposit can fund only its own document's invoices, so a
+  // request-by-request walk could spend ordinary cash on a deposit's invoice
+  // and then refuse another invoice the deposit cannot reach — and whether it
+  // did would depend on the order the caller listed the requests in.
+  const flow = prioritizedTransport(
+    sources.map((source) => source.remainingUnits),
+    requests.map((request) => request.principalUnits),
+    (s, r) => fundingScopeCovers(sources[s]!.scope, requests[r]!)
+  );
+  requests.forEach((request, r) => {
+    const funded = flow.reduce((sum, row) => sum + row[r]!, 0);
+    if (funded < request.principalUnits)
+      throw new Error(
+        `Insufficient payment funding for target: ${request.targetId}`
+      );
+  });
+
   const applications: FundingApplication[] = [];
-  let sourceIndex = 0;
-  for (const request of requests) {
+  for (const [r, request] of requests.entries()) {
     let remainingUnits = request.principalUnits;
     let remainingBase = request.principalBase;
     let hasApplication = false;
@@ -219,17 +430,11 @@ export function allocatePaymentFunding(input: {
       continue;
     }
 
-    while (remainingUnits > 0) {
-      const source = sources[sourceIndex];
-      if (!source)
-        throw new Error(
-          `Insufficient payment funding for target: ${request.targetId}`
-        );
-      if (source.remainingUnits === 0) {
-        sourceIndex++;
-        continue;
-      }
-      const units = Math.min(remainingUnits, source.remainingUnits);
+    // Applications follow source order within the request, so the arithmetic
+    // per (source, target) pair is the same as a plain walk's.
+    for (const [s, source] of sources.entries()) {
+      const units = flow[s]![r]!;
+      if (units === 0) continue;
       const sourceAmount = fromDocumentUnits(units);
       const appliedAmount =
         units === remainingUnits
@@ -282,6 +487,50 @@ export function allocatePaymentFunding(input: {
     newOnAccountDocument: sourceRemainders[0]?.remainingDocument ?? 0,
     sourceRemainders
   };
+}
+
+/**
+ * How much document principal each request could draw, earlier requests first,
+ * under the allocator's eligibility: a deposit only reaches invoices of its own
+ * document, and a deposit payment reaches nothing else. Feeding the results
+ * back as `requestedDocumentPrincipal` always allocates. `maximumDocument` caps
+ * a request (the invoice's open document amount, or an amount already entered);
+ * list the rows to keep first and the row to fill last to ask how much that row
+ * can add.
+ */
+export function fundableDocumentAmounts(input: {
+  currentPayment: FundingSource;
+  priorSources: readonly FundingSource[];
+  requests: ReadonlyArray<FundingScopeIds & { maximumDocument: number }>;
+  currencyDecimals: number;
+}): number[] {
+  const { currencyDecimals } = input;
+  assertCurrencyDecimals(currencyDecimals);
+  const scale = 10 ** currencyDecimals;
+  const toUnits = (amount: number): number =>
+    Math.max(
+      0,
+      round(toDocumentAmount(amount, 1, currencyDecimals) * scale, 0)
+    );
+  const sources = orderFundingSources(input.currentPayment, input.priorSources);
+  const currentScope = input.currentPayment.scope;
+  // Requests are the origins here, so earlier requests are filled first.
+  const flow = prioritizedTransport(
+    input.requests.map((request) =>
+      currentScope && !fundingScopeCovers(currentScope, request)
+        ? 0
+        : toUnits(request.maximumDocument)
+    ),
+    sources.map((source) => toUnits(source.remainingDocument)),
+    (r, s) => fundingScopeCovers(sources[s]!.scope, input.requests[r]!)
+  );
+  return flow.map((row) =>
+    toDocumentAmount(
+      row.reduce((sum, units) => sum + units, 0) / scale,
+      1,
+      currencyDecimals
+    )
+  );
 }
 
 export type SettlementEffectiveness = {
@@ -438,6 +687,8 @@ export type FundingPaymentRow = {
   postingDate: string | null;
   paymentDate: string;
   currencyCode: string;
+  /** A deposit's document (`fundingScopeOf`), carried onto the source. */
+  scope?: FundingScope | null;
 };
 export type FundingConsumptionRow = {
   paymentId: string | null;
@@ -516,13 +767,187 @@ export function remainingFundingSources(
           `Invalid remaining funding balance for payment ${payment.id}`
         );
       }
-      return {
+      const source: FundingSource = {
         paymentId: payment.id,
         postingDate: payment.postingDate ?? payment.paymentDate,
         exchangeRate: Number(payment.exchangeRate),
         remainingDocument,
         remainingBase
       };
+      if (payment.scope) source.scope = payment.scope;
+      return source;
     })
     .filter((payment) => payment.remainingDocument > 0);
+}
+
+export type DepositRefundApplication = {
+  sourcePaymentId: string;
+  sourceAmount: number;
+  carryingBase: number;
+  sourceExchangeRate: number;
+};
+
+/** Refund advances held for this document at their original carrying value.
+ * Callers supply effective sources with matching company, party and currency. */
+export function allocateDepositRefund(input: {
+  scope: FundingScope;
+  sources: readonly FundingSource[];
+  requestedDocumentPrincipal: number;
+  currencyDecimals: number;
+}): DepositRefundApplication[] {
+  assertScope(input.scope);
+  assertCurrencyDecimals(input.currencyDecimals);
+  const documentAmount = (value: number) => {
+    nonnegativeAmount(value, "Refund principal");
+    const normalized = toDocumentAmount(value, 1, input.currencyDecimals);
+    if (Math.abs(normalized - value) > Number.EPSILON * Math.max(1, value) * 4)
+      throw new Error("Refund principal exceeds document currency precision");
+    if (
+      !Number.isSafeInteger(round(normalized * 10 ** input.currencyDecimals, 0))
+    )
+      throw new Error("Refund principal exceeds safe document currency units");
+    return normalized;
+  };
+  let remaining = documentAmount(input.requestedDocumentPrincipal);
+  const applications: DepositRefundApplication[] = [];
+  const seen = new Set<string>();
+  const sources = [...input.sources]
+    .filter(
+      (source) =>
+        source.scope?.type === input.scope.type &&
+        source.scope.id === input.scope.id
+    )
+    .sort((a, b) =>
+      a.postingDate < b.postingDate
+        ? -1
+        : a.postingDate > b.postingDate
+          ? 1
+          : a.paymentId < b.paymentId
+            ? -1
+            : a.paymentId > b.paymentId
+              ? 1
+              : 0
+    );
+  for (const source of sources) {
+    addUniqueId(seen, source.paymentId, "refund source");
+    assertExchangeRate(source.exchangeRate);
+    const available = documentAmount(source.remainingDocument);
+    const availableBase = nonnegativeAmount(
+      source.remainingBase,
+      "Refund source carrying base"
+    );
+    if (available === 0 && availableBase !== 0)
+      throw new Error("Exhausted refund source retains carrying base");
+    if (remaining === 0 || available === 0) continue;
+    const sourceAmount = Math.min(remaining, available);
+    applications.push({
+      sourcePaymentId: source.paymentId,
+      sourceAmount,
+      carryingBase:
+        sourceAmount === available
+          ? availableBase
+          : Math.min(
+              toBaseAmount(sourceAmount, source.exchangeRate),
+              availableBase
+            ),
+      sourceExchangeRate: source.exchangeRate
+    });
+    remaining = toDocumentAmount(
+      remaining - sourceAmount,
+      1,
+      input.currencyDecimals
+    );
+  }
+  if (remaining > 0)
+    throw new Error(
+      "Refund exceeds the remaining advances held for this document"
+    );
+  return applications;
+}
+
+export class HistoricalDepositReconciliationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "HistoricalDepositReconciliationError";
+  }
+}
+
+export type LegacyDepositRefund = {
+  paymentId: string;
+  postingDate: string;
+  currencyCode: string;
+  scope: FundingScope;
+  principal: number;
+  carryingBase: number;
+  accountId: string;
+};
+
+/** Reserve refunds posted before source-payment applications existed, without
+ * changing their journals or guessing a different account or carrying value. */
+export function reserveLegacyDepositRefunds(input: {
+  sources: readonly FundingSource[];
+  refunds: readonly LegacyDepositRefund[];
+  sourceFacts: ReadonlyMap<
+    string,
+    { currencyCode: string; accountId: string | null }
+  >;
+  decimals: ReadonlyMap<string, number>;
+}): FundingSource[] {
+  const sources = input.sources.map((source) => ({ ...source }));
+  for (const refund of [...input.refunds].sort(
+    (a, b) =>
+      a.postingDate.localeCompare(b.postingDate) ||
+      a.paymentId.localeCompare(b.paymentId)
+  )) {
+    const error = new HistoricalDepositReconciliationError(
+      `Reconcile historical deposit refund ${refund.paymentId} before applying or refunding this document's remaining deposit`
+    );
+    const decimals = input.decimals.get(refund.currencyCode);
+    if (decimals === undefined) throw error;
+    let applications: DepositRefundApplication[];
+    try {
+      applications = allocateDepositRefund({
+        scope: refund.scope,
+        sources: sources.filter(
+          (source) =>
+            input.sourceFacts.get(source.paymentId)?.currencyCode ===
+              refund.currencyCode && source.postingDate <= refund.postingDate
+        ),
+        requestedDocumentPrincipal: refund.principal,
+        currencyDecimals: decimals
+      });
+    } catch {
+      throw error;
+    }
+    if (
+      applications.some(
+        (application) =>
+          input.sourceFacts.get(application.sourcePaymentId)?.accountId !==
+          refund.accountId
+      ) ||
+      Math.abs(
+        round(
+          applications.reduce(
+            (sum, application) => sum + application.carryingBase,
+            0
+          )
+        ) - refund.carryingBase
+      ) > EPSILON
+    )
+      throw error;
+    for (const application of applications) {
+      const source = sources.find(
+        (source) => source.paymentId === application.sourcePaymentId
+      )!;
+      source.remainingDocument = toDocumentAmount(
+        source.remainingDocument - application.sourceAmount,
+        1,
+        decimals
+      );
+      source.remainingBase = round(
+        source.remainingBase - application.carryingBase
+      );
+    }
+  }
+  return sources.filter((source) => source.remainingDocument > 0);
 }

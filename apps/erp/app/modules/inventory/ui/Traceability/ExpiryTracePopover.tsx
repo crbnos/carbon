@@ -27,7 +27,7 @@ import {
 import { Link } from "react-router";
 import { DateTime } from "~/components";
 import { useDateFormatter } from "~/hooks";
-import type { TrackedEntity } from "~/modules/inventory";
+import type { TrackedEntity } from "~/modules/inventory/types";
 import { path } from "~/utils/path";
 
 /**

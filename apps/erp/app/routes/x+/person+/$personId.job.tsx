@@ -2,21 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
-import {
-  employeeJobValidator,
-  getEmployeeJob,
-  updateEmployeeJob
-} from "~/modules/people";
+import { employeeJobValidator } from "~/modules/people/people.models";
+import { getEmployeeJob } from "~/modules/people/people.service";
 import { PersonJob } from "~/modules/people/ui/Person";
-import { notifyScheduleInputsChanged } from "~/modules/production";
-import { getDatabaseClient } from "~/services/database.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -28,61 +24,57 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { personId } = params;
   if (!personId) throw new Error("Could not find personId");
 
-  const job = await getEmployeeJob(client, personId, companyId);
+  // Project time adds fields to a job, shown only once the company uses it:
+  // it has a labor category.
+  const [job, laborCategories] = await Promise.all([
+    getEmployeeJob(client, personId, companyId),
+    client
+      .from("laborCategory")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+  ]);
   if (job.error) {
+    // PGRST116 = no rows: the person has no job record in this company.
+    const message =
+      job.error.code === "PGRST116"
+        ? "This person has no job record in this company"
+        : `Failed to load job: ${job.error.message}`;
     throw redirect(
       path.to.people,
-      await flash(request, error(job.error, "Failed to load job"))
+      await flash(request, error(job.error, message))
     );
   }
 
   return {
-    job: job.data
+    job: job.data,
+    usesProjectTime: (laborCategories.count ?? 0) > 0
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "people"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(employeeJobValidator).request(args, {
+    params: ["personId"]
   });
-  const { personId } = params;
-  if (!personId) throw new Error("No person ID provided");
-
-  const formData = await request.formData();
-  const validation = await validator(employeeJobValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const updateJob = await updateEmployeeJob(getDatabaseClient(), personId, {
-    ...validation.data,
-    companyId,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
+  if ("invalid" in input) return input.invalid;
+  const { personId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.people.updatePersonJob({
+    ...input.data,
+    // This form always renders both switches, and an unchecked switch posts
+    // nothing — so here a missing value is "off". (The validator keeps them
+    // optional for API callers, where a missing value keeps the stored flag.)
+    isOfficer: input.data.isOfficer ?? false,
+    timesheetRequired: input.data.timesheetRequired ?? false,
+    employeeId: personId,
+    customFields: input.formData && setCustomFields(input.formData)
   });
-  if (updateJob.error) {
-    throw redirect(
-      path.to.personJob(personId),
-      await flash(request, error(updateJob.error, "Failed to update job"))
-    );
-  }
-
-  await notifyScheduleInputsChanged(
-    companyId,
-    "employee-shift",
-    "Shift assignment changed"
-  );
-
-  throw redirect(
-    path.to.personJob(personId),
-    await flash(request, success("Successfully updated job"))
-  );
+  return respond(args.request, result).redirect(path.to.personJob(personId), {
+    message: "Successfully updated job"
+  });
 }
 
 export default function PersonJobRoute() {
-  const { job } = useLoaderData<typeof loader>();
+  const { job, usesProjectTime } = useLoaderData<typeof loader>();
   const { personId } = useParams();
 
   const initialValues = {
@@ -92,8 +84,18 @@ export default function PersonJobRoute() {
     shiftId: job.shiftId ?? "",
     departmentId: job.departmentId ?? "",
     managerId: job.managerId ?? "",
+    laborCategoryId: job.laborCategoryId ?? "",
+    flsaStatus: job.flsaStatus ?? undefined,
+    isOfficer: job.isOfficer ?? false,
+    timesheetRequired: job.timesheetRequired ?? true,
     ...getCustomFields(job.customFields)
   };
 
-  return <PersonJob key={personId} initialValues={initialValues} />;
+  return (
+    <PersonJob
+      key={personId}
+      initialValues={initialValues}
+      usesProjectTime={usesProjectTime}
+    />
+  );
 }

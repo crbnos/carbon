@@ -2,47 +2,23 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import {
-  notifyScheduleInputsChanged,
-  updateJobOperationDueDate
-} from "~/modules/production";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "production"
+const dueDateForm = z.object({
+  id: z.string().min(1),
+  dueDate: zfd.text(z.string().optional())
+});
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(dueDateForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.production.setJobOperationDueDate({
+    id: input.data.id,
+    dueDate: input.data.dueDate ?? null
   });
-
-  const formData = await request.formData();
-  const id = formData.get("id") as string;
-  const dueDate = formData.get("dueDate") as string | null;
-
-  const update = await updateJobOperationDueDate(
-    client,
-    id,
-    dueDate || null,
-    userId
-  );
-  if (update.error) {
-    return data(
-      {},
-      await flash(request, error(update.error, "Failed to update due date"))
-    );
-  }
-
-  // A pin is a need-by override that must propagate upstream through the
-  // backward pass — trigger the regen wave rather than waiting for the next
-  // unrelated input change.
-  await notifyScheduleInputsChanged(
-    companyId,
-    "reorder",
-    "Operation due date pinned"
-  );
-
-  return {};
 }

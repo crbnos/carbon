@@ -2,13 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { POSTHOG_API_HOST, SUPABASE_URL } from "@carbon/auth";
+import { MAINTENANCE_MODE, POSTHOG_API_HOST, SUPABASE_URL } from "@carbon/auth";
 import { installFormBodyGuard } from "@carbon/auth/middleware/form-body.server";
 import {
   getNonce,
   setStrictContentSecurityPolicy
 } from "@carbon/auth/middleware/security.server";
 import { getProcessPool } from "@carbon/database/client";
+import { initFlags } from "@carbon/env/flags.server";
+import { redisFlagsStore } from "@carbon/kv";
 import { inngest } from "@carbon/lib/inngest";
 import { getLogger } from "@carbon/logger";
 import { ensureLoggingConfigured } from "@carbon/logger/config.server";
@@ -21,6 +23,7 @@ import { InngestSpanProcessor } from "inngest/experimental";
 import type { EntryContext, RouterContextProvider } from "react-router";
 import { isRouteErrorResponse } from "react-router";
 import { scheduleInngestSelfSync } from "./utils/inngest-self-sync.server";
+import "./modules/carbon.server";
 
 ensureLoggingConfigured();
 installFormBodyGuard();
@@ -43,6 +46,17 @@ export const instrumentations = createTracing({
   spanProcessors: [new InngestSpanProcessor(inngest)]
 });
 scheduleInngestSelfSync();
+
+// Feature flags: every process reads the shared copy in Redis and syncs it in
+// the background. Until the first document loads, each flag answers its
+// registry default.
+const flagsLog = getLogger("erp", "flags");
+void initFlags({
+  store: redisFlagsStore,
+  waitUntil: process.env.VERCEL ? waitUntil : undefined,
+  // Structured, so Axiom can alert on stale flags (`ageMs`) and archived reads.
+  onWarning: (message, properties) => flagsLog.warn(message, properties)
+});
 
 const log = getLogger("erp");
 
@@ -147,6 +161,8 @@ export function handleError(
 ) {
   // Client navigated away / cancelled mid-flight — not a real failure.
   if (request.signal.aborted) return;
+  // Every request is a 503 during maintenance; that is not a failure to log.
+  if (MAINTENANCE_MODE) return;
   // Redirects and intentional Response throws are control flow, not errors.
   if (error instanceof Response && error.status < 500) return;
   if (isRouteErrorResponse(error) && error.status < 500) return;

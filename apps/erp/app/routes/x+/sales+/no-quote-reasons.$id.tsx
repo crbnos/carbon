@@ -6,15 +6,15 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { noQuoteReasonValidator } from "~/modules/sales/sales.models";
 import {
   getNoQuoteReason,
-  noQuoteReasonValidator,
   upsertNoQuoteReason
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import NoQuoteReasonForm from "~/modules/sales/ui/NoQuoteReasons/NoQuoteReasonForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -86,7 +86,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function EditNoQuoteReasonRoute() {
   const { noQuoteReason } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const initialValues = {
     id: noQuoteReason.id ?? undefined,
@@ -98,7 +98,8 @@ export default function EditNoQuoteReasonRoute() {
     <NoQuoteReasonForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

@@ -41,7 +41,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { INPUT_FORMAT } from "@carbon/utils";
+import { distinctItemText, INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "motion/react";
@@ -62,6 +62,7 @@ import {
   LuListChecks,
   LuMaximize2,
   LuMinimize2,
+  LuTrash,
   LuTriangleAlert
 } from "react-icons/lu";
 import { useFetcher, useFetchers, useParams } from "react-router";
@@ -91,12 +92,12 @@ import {
 import AssemblyInstruction from "~/components/Form/AssemblyInstruction";
 import InspectionDocument from "~/components/Form/InspectionDocument";
 import Procedure from "~/components/Form/Procedure";
-import { SupplierProcessPreview } from "~/components/Form/SupplierProcess";
 import { getUnitHint } from "~/components/Form/UnitHint";
 import UnitOfMeasure, {
   useUnitOfMeasure
 } from "~/components/Form/UnitOfMeasure";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
+import { MeasurementLimits } from "~/components/MeasurementLimits";
 import { ConfirmDelete } from "~/components/Modals";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import {
@@ -112,11 +113,10 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import type {
-  OperationParameter,
-  OperationStep,
-  OperationTool
-} from "~/modules/shared";
+import {
+  OperationRowDetails,
+  OperationRowTitle
+} from "~/modules/items/ui/Item/MethodRow";
 import {
   methodOperationOrders,
   operationParameterValidator,
@@ -124,7 +124,14 @@ import {
   operationToolValidator,
   operationTypes,
   procedureStepType
-} from "~/modules/shared";
+} from "~/modules/shared/shared.models";
+import type {
+  OperationParameter,
+  OperationStep,
+  OperationTool
+} from "~/modules/shared/types";
+import type { action as editQuoteOperationAction } from "~/routes/x+/quote+/methods+/$quoteId.$lineId.operation.$id";
+import type { action as newQuoteOperationAction } from "~/routes/x+/quote+/methods+/$quoteId.$lineId.operation.new";
 import type { action as editQuoteOperationParameterAction } from "~/routes/x+/quote+/methods+/operation.parameter.$id";
 import type { action as newQuoteOperationParameterAction } from "~/routes/x+/quote+/methods+/operation.parameter.new";
 import type { action as editQuoteOperationStepAction } from "~/routes/x+/quote+/methods+/operation.step.$id";
@@ -190,49 +197,16 @@ function makeItem(
   return {
     id: operation.id!,
     title: (
-      <VStack spacing={0}>
-        <h3 className="font-semibold max-w-full truncate cursor-pointer">
-          {operation.description}
-        </h3>
-        {operation.operationType === "Outside Processing" && (
-          <SupplierProcessPreview
-            processId={operation.processId}
-            supplierProcessId={operation.operationSupplierProcessId}
-          />
-        )}
-      </VStack>
+      <OperationRowTitle
+        description={operation.description}
+        operationType={operation.operationType}
+        processId={operation.processId}
+        supplierProcessId={operation.operationSupplierProcessId}
+      />
     ),
     checked: false,
     order: operation.operationOrder,
-    details: (
-      <HStack spacing={1}>
-        {operation.operationType === "Outside Processing" ? (
-          <Badge>Outside Processing</Badge>
-        ) : (
-          <>
-            {(operation?.setupTime ?? 0) > 0 && (
-              <Badge variant="secondary">
-                <TimeTypeIcon type="Setup" className="h-3 w-3 mr-1" />
-                {operation.setupTime} {operation.setupUnit}
-              </Badge>
-            )}
-            {(operation?.laborTime ?? 0) > 0 && (
-              <Badge variant="secondary">
-                <TimeTypeIcon type="Labor" className="h-3 w-3 mr-1" />
-                {operation.laborTime} {operation.laborUnit}
-              </Badge>
-            )}
-
-            {(operation?.machineTime ?? 0) > 0 && (
-              <Badge variant="secondary">
-                <TimeTypeIcon type="Machine" className="h-3 w-3 mr-1" />
-                {operation.machineTime} {operation.machineUnit}
-              </Badge>
-            )}
-          </>
-        )}
-      </HStack>
-    ),
+    details: <OperationRowDetails operation={operation} />,
     data: operation
   };
 }
@@ -303,7 +277,8 @@ const QuoteBillOfProcess = ({
 }: QuoteBillOfProcessProps) => {
   const { carbon } = useCarbon();
   const sortOrderFetcher = useFetcher<{}>();
-  const deleteOperationFetcher = useFetcher<{ success: boolean }>();
+  // A failed delete is toasted.
+  const deleteOperationFetcher = useAction();
   const permissions = usePermissions();
   const { id: userId } = useUser();
 
@@ -321,7 +296,9 @@ const QuoteBillOfProcess = ({
         .map((item) => ({
           id: item.id,
           label: item.name ?? item.readableIdWithRevision,
-          helper: item.name ? item.readableIdWithRevision : undefined
+          helper: item.name
+            ? distinctItemText(item.name, item.readableIdWithRevision)
+            : undefined
         })),
     [allItems, materialItemIds]
   );
@@ -333,6 +310,7 @@ const QuoteBillOfProcess = ({
   const quoteData = useRouteData<{ quote: Quotation }>(path.to.quote(quoteId));
 
   const isDisabled = quoteData?.quote?.status !== "Draft";
+  const isReadOnly = isDisabled || !permissions.can("update", "sales");
 
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [temporaryItems, setTemporaryItems] = useState<TemporaryItems>({});
@@ -419,7 +397,7 @@ const QuoteBillOfProcess = ({
   const onUploadImage = useImageUpload(`opportunity-line/${selectedItemId}`);
 
   const onToggleItem = (id: string) => {
-    if (!permissions.can("update", "parts")) return;
+    if (isReadOnly) return;
     setCheckedState((prev) => ({
       ...prev,
       [id]: !prev[id]
@@ -449,33 +427,37 @@ const QuoteBillOfProcess = ({
     setSelectedItemId(operationId);
   };
 
-  const onRemoveItem = async (id: string) => {
-    if (!permissions.can("update", "sales")) return;
+  // One request for every saved row, so "Delete Selected" removes the checked
+  // rows together rather than racing one fetcher submit per row.
+  const onRemoveItems = (ids: string[]) => {
+    if (isReadOnly) return;
 
-    const operation = operationsById.get(id);
-    if (!operation) return;
-
-    if (temporaryItems[id]) {
-      setTemporaryItems((prev) => {
-        const { [id]: _, ...rest } = prev;
-        return rest;
-      });
-    } else {
-      deleteOperationFetcher.submit(
-        { id },
-        {
-          method: "post",
-          action: path.to.quoteOperationsDelete
-        }
+    const without = <T,>(state: Record<string, T>) =>
+      Object.fromEntries(
+        Object.entries(state).filter(([id]) => !ids.includes(id))
       );
+
+    // Temporary rows were never saved: dropping them from state is enough.
+    setTemporaryItems(without);
+    const savedIds = ids.filter((id) => !temporaryItems[id]);
+    if (savedIds.length > 0) {
+      const formData = new FormData();
+      for (const id of savedIds) formData.append("id", id);
+      deleteOperationFetcher.submit(formData, {
+        method: "post",
+        action: path.to.quoteOperationsDelete
+      });
     }
 
     setSelectedItemId(null);
-    setOrderState((prev) => {
-      const { [id]: _, ...rest } = prev;
-      return rest;
-    });
+    setOrderState(without);
+    setCheckedState(without);
   };
+
+  const onRemoveItem = (id: string) => onRemoveItems([id]);
+  const checkedIds = items
+    .filter((item) => item.checked)
+    .map((item) => item.id);
 
   const onReorder = (items: ItemWithData[]) => {
     if (!permissions.can("update", "sales") || isDisabled) return;
@@ -543,15 +525,7 @@ const QuoteBillOfProcess = ({
         label: t`Details`,
         content: (
           <div className="flex w-full flex-col pr-2 py-2">
-            <motion.div
-              initial={{ opacity: 0, filter: "blur(4px)" }}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              transition={{
-                type: "spring",
-                bounce: 0,
-                duration: 0.3
-              }}
-            >
+            <div>
               <OperationForm
                 item={item}
                 itemId={itemId}
@@ -570,7 +544,7 @@ const QuoteBillOfProcess = ({
                   });
                 }}
               />
-            </motion.div>
+            </div>
           </div>
         )
       },
@@ -608,6 +582,7 @@ const QuoteBillOfProcess = ({
             <div>
               {permissions.can("update", "parts") ? (
                 <Editor
+                  label={t`Work Instructions`}
                   initialValue={
                     workInstructions[item.id] ?? ({} as JSONContent)
                   }
@@ -764,6 +739,7 @@ const QuoteBillOfProcess = ({
 
     return (
       <SortableListItem<Operation>
+        isReadOnly={isReadOnly}
         item={item}
         items={items}
         order={order}
@@ -802,22 +778,36 @@ const QuoteBillOfProcess = ({
         </CardHeader>
 
         <CardAction>
-          <Button
-            ref={addOperationButtonRef}
-            variant="secondary"
-            isDisabled={
-              !permissions.can("update", "sales") ||
-              selectedItemId !== null ||
-              isDisabled
-            }
-            onClick={onAddItem}
-          >
-            <Trans>Add Operation</Trans>
-          </Button>
+          <div className="flex items-center gap-2">
+            {checkedIds.length > 1 && (
+              <Button
+                variant="destructive"
+                leftIcon={<LuTrash />}
+                isDisabled={isReadOnly}
+                onClick={() => onRemoveItems(checkedIds)}
+              >
+                <Trans>Delete Selected</Trans>
+              </Button>
+            )}
+            <Button
+              ref={addOperationButtonRef}
+              variant="secondary"
+              isDisabled={
+                !permissions.can("update", "sales") ||
+                selectedItemId !== null ||
+                isDisabled
+              }
+              onClick={onAddItem}
+            >
+              <Trans>Add Operation</Trans>
+            </Button>
+          </div>
         </CardAction>
       </HStack>
       <CardContent>
         <SortableList
+          label={t`Bill of Process`}
+          isReadOnly={isReadOnly}
           items={items}
           onReorder={onReorder}
           onToggleItem={onToggleItem}
@@ -975,9 +965,13 @@ function AttributesForm({
               <Input name="name" label={t`Name`} />
             </div>
 
-            <VStack spacing={2} className="w-full col-span-2">
+            <VStack
+              spacing={2}
+              className="w-full col-span-2 max-md:col-span-full"
+            >
               <Label>Description</Label>
               <Editor
+                label={t`Description`}
                 initialValue={description}
                 onUpload={onUploadImage}
                 onChange={(value) => {
@@ -1034,7 +1028,11 @@ function AttributesForm({
               </div>
             )}
             {type === "List" && (
-              <ArrayInput name="listValues" label={t`List Options`} />
+              <ArrayInput
+                name="listValues"
+                label={t`List Options`}
+                isRequired
+              />
             )}
 
             <Submit
@@ -1221,9 +1219,13 @@ function AttributesListItem({
               <Input name="name" label={t`Name`} />
             </div>
 
-            <VStack spacing={2} className="w-full col-span-2">
+            <VStack
+              spacing={2}
+              className="w-full col-span-2 max-md:col-span-full"
+            >
               <Label>Description</Label>
               <Editor
+                label={t`Description`}
                 initialValue={description}
                 onUpload={onUploadImage}
                 onChange={(value) => {
@@ -1280,7 +1282,11 @@ function AttributesListItem({
               </div>
             )}
             {type === "List" && (
-              <ArrayInput name="listValues" label={t`List Options`} />
+              <ArrayInput
+                name="listValues"
+                label={t`List Options`}
+                isRequired
+              />
             )}
             <HStack className="w-full justify-end" spacing={2}>
               <Button variant="secondary" onClick={disclosure.onClose}>
@@ -1337,27 +1343,15 @@ function AttributesListItem({
                 </HStack>
                 {attribute.type === "Measurement" && (
                   <span className="text-xs text-muted-foreground">
-                    {attribute.minValue !== null && attribute.maxValue !== null
-                      ? `Must be between ${attribute.minValue} and ${
-                          attribute.maxValue
-                        } ${
-                          unitOfMeasures.find(
-                            (u) => u.value === unitOfMeasureCode
-                          )?.label
-                        }`
-                      : attribute.minValue !== null
-                        ? `Must be > ${attribute.minValue} ${
-                            unitOfMeasures.find(
-                              (u) => u.value === unitOfMeasureCode
-                            )?.label
-                          }`
-                        : attribute.maxValue !== null
-                          ? `Must be < ${attribute.maxValue} ${
-                              unitOfMeasures.find(
-                                (u) => u.value === unitOfMeasureCode
-                              )?.label
-                            }`
-                          : null}
+                    <MeasurementLimits
+                      minValue={attribute.minValue}
+                      maxValue={attribute.maxValue}
+                      unit={
+                        unitOfMeasures.find(
+                          (u) => u.value === unitOfMeasureCode
+                        )?.label
+                      }
+                    />
                   </span>
                 )}
               </VStack>
@@ -1414,20 +1408,18 @@ function AttributesListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteQuoteOperationStep(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={name}
-          text={t`Are you sure you want to delete the ${name} attribute from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteQuoteOperationStep(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={name}
+        text={t`Are you sure you want to delete the ${name} attribute from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }
@@ -1638,20 +1630,18 @@ function ParametersListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteQuoteOperationParameter(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={key}
-          text={t`Are you sure you want to delete the ${key} parameter from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteQuoteOperationParameter(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={key}
+        text={t`Are you sure you want to delete the ${key} parameter from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }
@@ -1683,30 +1673,24 @@ function OperationForm({
   if (!quoteId) throw new Error("quoteId not found");
   if (!lineId) throw new Error("lineId not found");
 
-  const fetcher = useFetcher<{
-    id: string;
-    success: boolean;
-    message: string;
-  }>();
-  const { carbon } = useCarbon();
-
-  const baseCurrency = company?.baseCurrencyCode ?? "USD";
-  const currencyDecimals = useCurrencyDecimals(baseCurrency);
-
-  useEffect(() => {
-    if (fetcher.data && fetcher.data.id) {
-      // Clear temporary item after successful save
+  const isNew = !!temporaryItems[item.id];
+  const fetcher = useAction<
+    typeof newQuoteOperationAction | typeof editQuoteOperationAction
+  >({
+    onSuccess: () => {
+      // The operation is saved: it is no longer a temporary row.
       setTemporaryItems((prev) => {
         const { [item.id]: _, ...rest } = prev;
         return rest;
       });
-
-      if (fetcher.data?.success) {
-        toast.success(fetcher.data.message);
-      }
+      toast.success(isNew ? t`Operation created` : t`Operation updated`);
       onSubmit();
     }
-  }, [item.id, fetcher.data, setTemporaryItems, onSubmit]);
+  });
+  const { carbon } = useCarbon();
+
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   const machineDisclosure = useDisclosure();
   const assemblyDisclosure = useDisclosure();
@@ -2014,7 +1998,7 @@ function OperationForm({
           onChange={(newValue) => {
             setProcessData((d) => ({ ...d, description: newValue }));
           }}
-          className="col-span-2"
+          className="col-span-2 max-md:col-span-full"
         />
 
         <Select
@@ -2049,6 +2033,7 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
+                  aria-expanded={setupDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     setupDisclosure.isOpen ? t`Collapse Setup` : t`Expand Setup`
@@ -2130,6 +2115,7 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
+                  aria-expanded={laborDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     laborDisclosure.isOpen ? t`Collapse Labor` : t`Expand Labor`
@@ -2213,6 +2199,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={machineDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       machineDisclosure.isOpen
@@ -2289,6 +2276,7 @@ function OperationForm({
                 <Label>Costing</Label>
               </HStack>
               <IconButton
+                aria-expanded={costingDisclosure.isOpen}
                 icon={<LuChevronRight />}
                 aria-label={
                   costingDisclosure.isOpen
@@ -2382,6 +2370,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={procedureDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       procedureDisclosure.isOpen
@@ -2442,6 +2431,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={assemblyDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       assemblyDisclosure.isOpen
@@ -2517,16 +2507,7 @@ function OperationForm({
           )}
         </>
       )}
-      <motion.div
-        className="flex w-full items-center justify-end p-2"
-        initial={{ opacity: 0, filter: "blur(4px)" }}
-        animate={{ opacity: 1, filter: "blur(0px)" }}
-        transition={{
-          type: "spring",
-          bounce: 0,
-          duration: 0.25
-        }}
-      >
+      <div className="flex w-full items-center justify-end p-2">
         <motion.div layout className="ml-auto mr-1 pt-2">
           <Submit
             isDisabled={isDisabled || fetcher.state !== "idle"}
@@ -2535,7 +2516,7 @@ function OperationForm({
             <Trans>Save</Trans>
           </Submit>
         </motion.div>
-      </motion.div>
+      </div>
     </ValidatedForm>
   );
 }
@@ -2664,20 +2645,18 @@ function ToolsListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteQuoteOperationTool(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={tool.readableIdWithRevision}
-          text={t`Are you sure you want to delete ${tool.readableIdWithRevision} from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteQuoteOperationTool(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={tool.readableIdWithRevision}
+        text={t`Are you sure you want to delete ${tool.readableIdWithRevision} from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }

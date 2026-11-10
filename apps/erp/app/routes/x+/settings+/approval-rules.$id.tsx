@@ -14,12 +14,12 @@ import {
 } from "@carbon/ee/approvals.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { useUrlParams } from "~/hooks";
-import { ApprovalRuleForm } from "~/modules/settings";
-
+import { ApprovalRuleForm } from "~/modules/settings/ui";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -129,16 +129,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditApprovalRuleRoute() {
   const { rule } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
   const [params] = useUrlParams();
-  const onClose = () =>
-    navigate(`${path.to.approvalRules}?${params.toString()}`);
+  const dialog = useRouteDialog(
+    `${path.to.approvalRules}?${params.toString()}`
+  );
 
   return (
     <ApprovalRuleForm
       rule={rule}
       documentType={rule.documentType}
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

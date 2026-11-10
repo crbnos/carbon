@@ -13,7 +13,7 @@ import { PersonAbilities, PersonTrainings } from "~/modules/people/ui/Person";
 import {
   getEmployeeAbilities,
   getTrainingAssignmentStatusForEmployee
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service";
 import type { TrainingAssignmentStatusItem } from "~/modules/resources/types";
 import { path } from "~/utils/path";
 

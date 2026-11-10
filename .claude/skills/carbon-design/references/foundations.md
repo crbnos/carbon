@@ -129,7 +129,8 @@ Letters Serif (`font-headline`, **page titles only via `Heading` display/h1/h2/h
 |---|---|---|
 | Public / onboarding / greeting title | `Heading size="display"` or `"h1"` | serif |
 | List page title | `Table title=…` (renders `Heading h2`) | serif `md:text-2xl` |
-| Settings page / section title / DocumentHeader | `Heading size="h3"` | serif `md:text-xl` |
+| Settings page / section title | `Heading size="h3"` | serif `md:text-xl` |
+| Posting document ID (`DocumentPageHeader`) | `Heading size="h2"` | serif `md:text-2xl` |
 | Record header ID (SO-000123) | `Heading size="h4"` | **sans** `md:text-base text-sm font-medium` |
 | Card / Modal / Drawer title | `CardTitle` / `ModalTitle` / `DrawerTitle` | sans `text-base font-medium tracking-tight` |
 | Card / Modal description | `CardDescription` / `ModalDescription` | `text-xs` / `text-sm` muted |

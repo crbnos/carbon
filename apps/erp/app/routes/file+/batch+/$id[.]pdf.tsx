@@ -10,11 +10,12 @@ import { getLogger } from "@carbon/logger";
 import { getPreferenceHeaders } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCompany } from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+import { getCompany } from "~/modules/settings/settings.service";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
 
 const logger = getLogger("erp", "batch-list", "pdf");
 
+/** The batch list PDF: the batch's jobs, items and quantities, and its notes. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   // Permissionless like the job traveler: shop-floor people without ERP
   // permissions still print the load sheet. Tenant safety comes from the
@@ -29,7 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const batch = await serviceRole
     .from("jobOperationBatch")
     .select(
-      "id, readableId, status, createdAt, process(name), workCenter(name)"
+      "id, readableId, status, notes, createdAt, process(name), workCenter(name)"
     )
     .eq("id", id)
     .eq("companyId", companyId)
@@ -104,6 +105,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }}
       processName={batch.data.process?.name ?? null}
       workCenterName={workCenterName}
+      notes={batch.data.notes}
       members={(members.data ?? [])
         .map((m): BatchListMember => {
           const thumbnailPath =

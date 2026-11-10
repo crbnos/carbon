@@ -17,16 +17,20 @@ import { getLocalTimeZone } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
-import { insertEmployeeJob } from "~/modules/people";
-import { getLocationsList, upsertLocation } from "~/modules/resources";
+import { insertEmployeeJob } from "~/modules/people/people.service";
 import {
-  type companyValidator,
+  getLocationsList,
+  upsertLocation
+} from "~/modules/resources/resources.service";
+import type { companyValidator } from "~/modules/settings/settings.models";
+import {
   getCompanies,
   insertCompany,
   seedCompany,
+  unpackBackupArchive,
   updateCompany
-} from "~/modules/settings";
-import { unpackBackupArchive } from "~/modules/settings/backups-archive.server";
+} from "~/modules/settings/settings.service";
+import { invokePosting } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
@@ -52,11 +56,11 @@ export async function provisionCompanyData(
   }
 ): Promise<void> {
   if (!backup) {
-    const seed = await seedCompany(
-      serviceRole,
-      getDatabaseClient(),
-      companyId,
-      userId
+    const seed = await invokePosting(
+      { db: getDatabaseClient(), companyId, userId },
+      "seed-company",
+      { identityOnly: false },
+      seedCompany
     );
     if (seed.error) {
       logger.error("Failed to seed company", { error: seed.error });
@@ -65,14 +69,11 @@ export async function provisionCompanyData(
     return;
   }
 
-  const seed = await seedCompany(
-    serviceRole,
-    getDatabaseClient(),
-    companyId,
-    userId,
-    {
-      identityOnly: true
-    }
+  const seed = await invokePosting(
+    { db: getDatabaseClient(), companyId, userId },
+    "seed-company",
+    { identityOnly: true },
+    seedCompany
   );
   if (seed.error) {
     logger.error("Failed to seed company", { error: seed.error });

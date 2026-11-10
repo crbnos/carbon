@@ -2,57 +2,28 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { deleteInventoryCount, getInventoryCount } from "~/modules/inventory";
-import { getParams, path } from "~/utils/path";
+import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, { delete: "inventory" });
   return redirect(path.to.inventoryCounts);
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    delete: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["id"] });
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.inventory.deleteInventoryCount({
+    id: input.params.id
   });
-
-  const { id } = params;
-  if (!id) {
-    throw redirect(
-      path.to.inventoryCounts,
-      await flash(request, error(params, "Failed to get a inventory count id"))
-    );
-  }
-
-  // A posted count is the audit record of an adjustment — roll it back, don't delete.
-  const header = await getInventoryCount(client, id, companyId);
-  if (header.data?.status === "Posted") {
-    throw redirect(
-      path.to.inventoryCount(id),
-      await flash(
-        request,
-        error(null, "Cannot delete a posted count. Roll it back instead.")
-      )
-    );
-  }
-
-  const remove = await deleteInventoryCount(client, id, companyId);
-  if (remove.error) {
-    throw redirect(
-      `${path.to.inventoryCounts}?${getParams(request)}`,
-      await flash(
-        request,
-        error(remove.error, "Failed to delete inventory count")
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.inventoryCounts,
-    await flash(request, success("Successfully deleted inventory count"))
-  );
+  // An error is toasted where the delete was confirmed.
+  if (result.error) return result;
+  return respond(args.request, result).redirect(path.to.inventoryCounts, {
+    message: "Successfully deleted inventory count"
+  });
 }

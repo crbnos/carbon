@@ -16,20 +16,30 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
-  ModalTitle
+  ModalTitle,
+  toast
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useRef } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useNavigation, useParams } from "react-router";
+import type { action as voidAction } from "~/routes/x+/purchase-invoice+/$invoiceId.void";
 import { path } from "~/utils/path";
 
-const PurchaseInvoiceVoidModal = ({ onClose }: { onClose: () => void }) => {
+const PurchaseInvoiceVoidModal = ({
+  open = true,
+  onClose
+}: {
+  open?: boolean;
+  onClose: () => void;
+}) => {
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("invoiceId not found");
 
   const navigation = useNavigation();
-  const fetcher = useAction<{}>({
+  const { t } = useLingui();
+  const fetcher = useAction<typeof voidAction>({
+    onSuccess: () => toast.success(t`Purchase invoice voided`),
     onSettled: () => {
       if (submitted.current) {
         onClose();
@@ -40,7 +50,7 @@ const PurchaseInvoiceVoidModal = ({ onClose }: { onClose: () => void }) => {
 
   return (
     <Modal
-      open={true}
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

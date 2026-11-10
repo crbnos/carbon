@@ -14,7 +14,7 @@ Customer and supplier data live in PostgreSQL (Supabase). The two families are *
 ### `customer` / `supplier` (main entities)
 Key columns (both, unless noted):
 - `id` TEXT PK (default `uuid_generate_v4()`)
-- `readableId` TEXT NOT NULL — human-readable id (`CUS`/`SUP` prefix, size 6), per-company unique (`<entity>_readableId_companyId_unique`). Auto-filled by a BEFORE INSERT trigger via `get_next_sequence(...)` only when blank, so explicit values (CSV import) win.
+- `readableId` TEXT NOT NULL — human-readable id (`CUS`/`SUP` prefix, size 6), per-company unique (`<entity>_readableId_companyId_unique`). Auto-filled by a BEFORE INSERT trigger via `get_next_sequence(...)` only when blank, so explicit values (CSV import) win — and an explicit value in the sequence's format moves the counter past it (`sync_advance_document_sequence`).
 - `name` TEXT NOT NULL — unique per company (`<entity>_name_unique`)
 - `customerTypeId` / `supplierTypeId` TEXT → `customerType`/`supplierType`
 - **Status differs by entity (asymmetric):**
@@ -42,11 +42,12 @@ Key columns (both, unless noted):
 `id` (default `xid()`), `firstName`, `lastName`, `fullName` (GENERATED `firstName || ' ' || lastName` STORED), `email` (**nullable** since `20251224160904`), `title`, `mobilePhone`, `homePhone`, `workPhone`, `fax`, `notes`, `isCustomer` BOOLEAN NOT NULL DEFAULT TRUE, `companyId`.
 - `isCustomer` distinguishes a contact as customer-side (`true`) vs supplier-side (`false`); set at insert time.
 - Contact has **no address fields** — `addressLine1/city/state/postalCode/countryCode/birthday` were dropped (`20240813152858`). Addresses live in the `address` table.
-- Email is **not** uniquely constrained anymore (the partial unique index was dropped in `20260112120041`).
+- Email is **not** uniquely constrained. `20260112120041` meant to drop the partial unique index but named it unquoted, so Postgres lower-cased the name and `IF EXISTS` dropped nothing; `20261027162653` drops it for real.
+- A contact lives through its `customerContact` / `supplierContact` rows. Usually there is one, but Paperless Parts reuses a contact found by email and links it to more customers. When the LAST link goes (deleted directly, by cascade when its customer or supplier is deleted, or moved to another contact by an UPDATE), the `sync_delete_unlinked_contact` after-interceptor on both link tables deletes the contact. It locks the contact before checking for other links, so a concurrent re-link survives, and it does nothing under `app.sync_in_progress` (dataset wipes and restores manage contacts themselves). Before it, a deleted customer left its contacts behind, invisible in the app.
 
 ### `customerContact` / `supplierContact` (join: entity ↔ contact)
 `id` (default `xid()`), `customerId`/`supplierId` → entity (ON DELETE CASCADE), `contactId` → `contact` (CASCADE), `customerLocationId`/`supplierLocationId` → location (nullable, SET NULL), `userId` → `user` (nullable), `tags`, `customFields`.
-- Code creates a `contact` row first, then the join row (see `insertCustomerContact` in `apps/erp/app/modules/sales/sales.service.ts`, and the supplier equivalent in `purchasing.service.ts`).
+- `insertCustomerContact` (`sales.service.ts`) and `insertSupplierContact` (`purchasing.service.ts`) write the `contact` row and its link in ONE Kysely transaction, after checking the customer or supplier and the location belong to the company. Two separate writes left an orphaned contact whenever the link insert failed.
 
 ### `customerLocation` / `supplierLocation` (join: entity ↔ address)
 `id` (default `xid()`), `customerId`/`supplierId` (CASCADE), `addressId` → `address` (CASCADE), `name` TEXT NOT NULL (`20240813213122`), `tags`, `supplierLocation.externalId` JSONB, `customFields`.

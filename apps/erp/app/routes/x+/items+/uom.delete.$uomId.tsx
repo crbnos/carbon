@@ -5,16 +5,17 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteUnitOfMeasure,
   getUnitOfMeasure,
   getUnitOfMeasureUsage
-} from "~/modules/items";
+} from "~/modules/items/items.service";
 import { getParams, path } from "~/utils/path";
 import { camelCaseToWords } from "~/utils/string";
 
@@ -74,7 +75,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!uomId) {
     throw redirect(
       path.to.uoms,
-      await flash(request, error(params, "Failed to get an unit of measure id"))
+      await flash(request, error(null, "Failed to get an unit of measure id"))
     );
   }
 
@@ -97,7 +98,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(
         request,
         error(
-          inUse,
+          null,
           `Cannot delete a unit of measure that is in use: ${describeUsage(inUse)}`
         )
       )
@@ -128,13 +129,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteUnitOfMeasureRoute() {
   const { uomId } = useParams();
   const { unitOfMeasure, usage } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.uoms);
   const { t } = useLingui();
 
   if (!unitOfMeasure) return null;
   if (!uomId) throw notFound("uomId not found");
 
-  const onCancel = () => navigate(path.to.uoms);
   const isInUse = usage.length > 0;
   const where = describeUsage(usage);
 
@@ -148,7 +148,8 @@ export default function DeleteUnitOfMeasureRoute() {
           ? t`${unitOfMeasure.name} cannot be deleted because it is still in use by ${where}. Change those records to a different unit of measure first.`
           : t`Are you sure you want to delete the unit of measure: ${unitOfMeasure.name}? This cannot be undone.`
       }
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

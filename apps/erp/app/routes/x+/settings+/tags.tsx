@@ -2,53 +2,24 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getLogger } from "@carbon/logger";
-import { unchecked } from "@carbon/utils";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 
-const logger = getLogger("erp", "tags");
+// Any taggable record's properties panel posts here: the record ids, its
+// table and the tags, each id and tag repeated.
+const tagsForm = z.object({
+  ids: zfd.repeatable(z.array(z.string())),
+  table: z.string().min(1),
+  value: zfd.repeatable(z.array(z.string()))
+});
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
-
-  const formData = await request.formData();
-  const ids = formData.getAll("ids");
-  const table = formData.get("table");
-  const value = formData.getAll("value");
-
-  const result = await client
-    // @ts-expect-error
-    .from(table as string)
-    .update(
-      unchecked({
-        tags: value,
-        updatedBy: userId,
-        updatedAt: new Date().toISOString()
-      })
-    )
-    .in(getIdField(table as string), ids as string[]);
-
-  if (result.error) {
-    logger.error(result.error);
-  }
-
-  return result;
-}
-
-function getIdField(table: string) {
-  switch (table) {
-    case "part":
-    case "tool":
-    case "material":
-    case "consumable":
-    case "service":
-    case "fixture":
-    case "job":
-    case "jobOperation":
-    case "methodOperation":
-    case "quoteOperation":
-    default:
-      return "id";
-  }
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(tagsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const { ids, table, value } = input.data;
+  return api.settings.setRecordTags({ table, ids, tags: value });
 }

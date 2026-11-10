@@ -3,20 +3,33 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Database } from "@carbon/database";
-import { Copy, MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
+import {
+  Badge,
+  Copy,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
+} from "@carbon/react";
+import { datetime } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
+  LuCalendarX,
   LuExternalLink,
   LuPencil,
   LuSquareUser,
   LuTrash
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { CustomerAvatar, Hyperlink, New, Table } from "~/components";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { CustomerAvatar, DateTime, Hyperlink, New, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
+import { useCompanyTimeZone, usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
+import {
+  customerPortalExpired,
+  customerPortalExpiryDate
+} from "../../sales.utils";
 
 type CustomerPortal = Database["public"]["Tables"]["externalLink"]["Row"];
 
@@ -24,14 +37,16 @@ type CustomerPortalsTableProps = {
   appUrl: string;
   data: CustomerPortal[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const CustomerPortalsTable = memo(
-  ({ appUrl, data, count }: CustomerPortalsTableProps) => {
+  ({ appUrl, data, count, infinite }: CustomerPortalsTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const permissions = usePermissions();
+    const companyTimeZone = useCompanyTimeZone();
 
     const columns = useMemo<ColumnDef<CustomerPortal>[]>(() => {
       const defaultColumns: ColumnDef<CustomerPortal>[] = [
@@ -52,12 +67,15 @@ const CustomerPortalsTable = memo(
             </Hyperlink>
           ),
           meta: {
-            icon: <LuSquareUser />
+            icon: <LuSquareUser />,
+            mobile: "P1"
           }
         },
         {
           accessorKey: "portalLink",
           header: t`Portal Link`,
+          // The link is built from the id; `externalLink` has no such column to sort by.
+          enableSorting: false,
           cell: ({ row }) => {
             const portalUrl = `${appUrl}/share/customer/${row.original.id}`;
             return (
@@ -75,12 +93,43 @@ const CustomerPortalsTable = memo(
             );
           },
           meta: {
-            icon: <LuExternalLink />
+            icon: <LuExternalLink />,
+            mobile: "P3"
+          }
+        },
+        {
+          accessorKey: "expiresAt",
+          header: t`Expires On`,
+          cell: ({ row }) =>
+            row.original.expiresAt ? (
+              <div className="flex items-center gap-2">
+                {/* The day in the company's calendar, as the form shows it. */}
+                <DateTime
+                  value={
+                    customerPortalExpiryDate(
+                      row.original.expiresAt,
+                      companyTimeZone
+                    ) ?? null
+                  }
+                  variant="date"
+                />
+                {customerPortalExpired(
+                  row.original.expiresAt,
+                  datetime.timestamp()
+                ) && (
+                  <Badge variant="red">
+                    <Trans>Expired</Trans>
+                  </Badge>
+                )}
+              </div>
+            ) : null,
+          meta: {
+            icon: <LuCalendarX />
           }
         }
       ];
       return defaultColumns;
-    }, [appUrl, t]);
+    }, [appUrl, companyTimeZone, t]);
 
     const renderContextMenu = useCallback(
       (row: CustomerPortal) => {
@@ -121,6 +170,7 @@ const CustomerPortalsTable = memo(
         data={data}
         columns={columns}
         count={count}
+        infinite={infinite}
         primaryAction={
           permissions.can("create", "sales") && (
             <New

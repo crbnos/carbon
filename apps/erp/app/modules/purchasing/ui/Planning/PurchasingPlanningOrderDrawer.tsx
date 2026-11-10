@@ -25,9 +25,15 @@ import {
   Thead,
   Tr,
   toast,
+  toastError,
   useDisclosure
 } from "@carbon/react";
-import { formatDate, RoundingMode, round } from "@carbon/utils";
+import {
+  distinctItemText,
+  formatDate,
+  RoundingMode,
+  round
+} from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
@@ -36,12 +42,13 @@ import { LuCircleCheck, LuCirclePlus, LuExternalLink } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import { SupplierAvatar } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { useCurrencyFormatter, useQuantityFormatter } from "~/hooks";
+import { useQuantityFormatter } from "~/hooks";
 import type { SupplierPart } from "~/modules/items/types";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
-import type { PlanningAction } from "~/modules/production";
+import { SupplierPartPrice } from "~/modules/items/ui/Item/SupplierParts";
+import type { PlanningAction } from "~/modules/production/types";
 import {
   type PlanningActionHandlers,
   reviewPathFor
@@ -155,7 +162,6 @@ export const PurchasingPlanningOrderDrawer = memo(
     const { revalidate } = useRevalidator();
     const { carbon } = useCarbon();
 
-    const formatter = useCurrencyFormatter();
     const formatQuantity = useQuantityFormatter();
     const unitOfMeasureOptions = useUnitOfMeasure();
 
@@ -382,8 +388,9 @@ export const PurchasingPlanningOrderDrawer = memo(
             void revalidate();
             return true;
           }
-          toast.error(
-            result?.message ?? t`Failed to update purchase order line`
+          toastError(
+            result?.message ?? t`Failed to update purchase order line`,
+            result
           );
           return false;
         } catch {
@@ -527,6 +534,9 @@ export const PurchasingPlanningOrderDrawer = memo(
           items: [
             {
               id: id,
+              // the row's netting segment: a project segment's order is the
+              // project's ('' is common)
+              planningSegmentId: selectedItem.planningSegmentId ?? "",
               orders: ordersWithPeriods
             }
           ],
@@ -538,7 +548,13 @@ export const PurchasingPlanningOrderDrawer = memo(
           encType: "application/json"
         });
       },
-      [fetcher, locationId, periods, selectedSupplier]
+      [
+        fetcher,
+        locationId,
+        periods,
+        selectedSupplier,
+        selectedItem.planningSegmentId
+      ]
     );
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -548,7 +564,7 @@ export const PurchasingPlanningOrderDrawer = memo(
       }
 
       if (fetcher.data?.success === false && fetcher?.data?.message) {
-        toast.error(fetcher.data.message);
+        toastError(fetcher.data.message, fetcher.data);
       }
 
       if (fetcher.data?.success === true) {
@@ -601,11 +617,18 @@ export const PurchasingPlanningOrderDrawer = memo(
                     selectedItem.id
                   )}
                 >
-                  <LuExternalLink />
+                  <LuExternalLink aria-hidden />
+                  <span className="sr-only">
+                    <Trans>Open item planning</Trans>
+                  </span>
                 </Link>
               </DrawerTitle>
-              <DrawerDescription>{selectedItem.name}</DrawerDescription>
-              <div className="absolute top-4 right-12">
+              {distinctItemText(
+                selectedItem.readableIdWithRevision,
+                selectedItem.name
+              ) && <DrawerDescription>{selectedItem.name}</DrawerDescription>}
+              {/* Phones: under the centred title, not over it. */}
+              <div className="absolute top-4 right-12 max-md:static max-md:mt-2">
                 <TabsList>
                   <TabsTrigger value="ordering">
                     <Trans>Ordering</Trans>
@@ -653,7 +676,12 @@ export const PurchasingPlanningOrderDrawer = memo(
                               }
                             </Td>
                             <Td>{part.conversionFactor}</Td>
-                            <Td>{formatter.format(part.unitPrice ?? 0)}</Td>
+                            <Td>
+                              <SupplierPartPrice
+                                price={part.supplierUnitPrice}
+                                currencyCode={part.currencyCode}
+                              />
+                            </Td>
                             <Td className="text-end">
                               <Button
                                 variant="secondary"
@@ -697,14 +725,16 @@ export const PurchasingPlanningOrderDrawer = memo(
                     >
                       <Trans>Add Supplier</Trans>
                     </Button>
-                    {supplierDisclosure.isOpen && (
+                    {supplierDisclosure.openCount > 0 && (
                       <SupplierPartForm
+                        key={`supplierDisclosure-${supplierDisclosure.openCount}`}
+                        open={supplierDisclosure.isOpen}
                         type="Part"
                         initialValues={{
                           itemId: selectedItem.id,
                           supplierId: "",
                           supplierPartId: "",
-                          unitPrice: 0,
+                          supplierUnitPrice: 0,
                           supplierUnitOfMeasureCode: "EA",
                           minimumOrderQuantity: 1,
                           orderMultiple: 1,

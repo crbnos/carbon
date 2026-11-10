@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { siGithub, siX } from "simple-icons";
+import { SystemStatus } from "./system-status";
 
 // LinkedIn was removed from simple-icons v16, so its 24×24 glyph is inlined here.
 const LINKEDIN_PATH =
@@ -80,15 +81,7 @@ export function SiteFooter() {
             </div>
             <div className="mt-0.5">
               <p className="m-0 text-ed-13 text-white/60">System Status:</p>
-              <a
-                href="https://status.carbon.ms"
-                target="_blank"
-                rel="noreferrer noopener"
-                className="mt-[3px] inline-flex items-center gap-[7px] text-ed-14 text-white/85 transition-colors hover:text-white"
-              >
-                Operational
-                <span className="inline-block h-[7px] w-[7px] rounded-full bg-[#3FB950] shadow-[0_0_6px_rgba(63,185,80,0.7)]" />
-              </a>
+              <SystemStatus />
             </div>
           </div>
 

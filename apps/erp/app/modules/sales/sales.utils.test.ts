@@ -7,9 +7,24 @@ import {
   applyPriceRules,
   configurationSurcharge,
   configuredQuoteBasePrice,
+  customerPortalEarliestExpiry,
+  customerPortalExpired,
+  customerPortalExpiresAt,
+  customerPortalExpiryDate,
+  customerPortalExpiryRefused,
+  customerPortalRefusal,
+  customerPortalServesFile,
   decideRecalcPricing,
   getEffectiveDefaultMarkups,
+  leaseCommencementPreview,
+  leaseTermMonths,
+  previewLeaseClassification,
+  priceListOverrideScopes,
+  priceOverrideScopeError,
+  readLeaseClassification,
   reconcileQuantityBreaks,
+  rentalEquipmentStatus,
+  rentalLineDocuments,
   repricedUnitPrice,
   resolveJobConfiguration,
   resolvePreservedQuoteLinePriceFields,
@@ -188,6 +203,135 @@ describe("decideRecalcPricing", () => {
         {}
       )
     ).toEqual({ mode: "reprice", markups: { laborCost: 20 } });
+  });
+});
+
+describe("leaseTermMonths", () => {
+  it("counts whole months with both ends inclusive", () => {
+    // The same pins as post-rental-agreement's `wholeMonthsInTerm`.
+    const cycle = "Calendar Month";
+    expect(leaseTermMonths(cycle, "2027-01-01", "2029-12-31")).toBe(36);
+    expect(leaseTermMonths(cycle, "2027-01-15", "2028-01-14")).toBe(12);
+    expect(leaseTermMonths(cycle, "2026-01-15", "2026-02-14")).toBe(1);
+    expect(leaseTermMonths(cycle, "2026-01-15", "2026-02-13")).toBe(0);
+    expect(leaseTermMonths(cycle, "2026-01-31", "2026-02-27")).toBe(0);
+  });
+
+  it("counts a Monthly term the way its billing cuts it", () => {
+    // 31 Jan + 1 month clamps to 28 Feb: 31 Jan – 27 Feb is one period.
+    expect(leaseTermMonths("Monthly", "2026-01-31", "2026-02-27")).toBe(1);
+    expect(leaseTermMonths("Monthly", "2027-01-15", "2028-01-14")).toBe(12);
+  });
+
+  it("is null when open-ended", () => {
+    expect(leaseTermMonths("Calendar Month", "2026-01-01", null)).toBeNull();
+  });
+});
+
+describe("previewLeaseClassification", () => {
+  const agreement = {
+    startDate: "2026-01-01",
+    endDate: "2028-12-31",
+    billingCycle: "Calendar Month" as const,
+    billingTiming: "Arrears" as const,
+    discountRate: 6,
+    ownershipTransfers: false,
+    specializedAsset: false,
+    purchaseOptionAmount: 5000,
+    purchaseOptionReasonablyCertain: true
+  };
+  const line = {
+    rateUnit: "Month" as const,
+    rate: 1000,
+    fairValue: 38000,
+    economicLifeMonths: 120,
+    guaranteedResidualValue: 0,
+    unguaranteedResidualValue: 0
+  };
+  const policy = { majorPartPercent: 75, substantiallyAllPercent: 90 };
+
+  it("matches the shared math's pinned sales-type case", () => {
+    const record = previewLeaseClassification({
+      agreement,
+      line,
+      policy,
+      decimals: 2
+    });
+    expect(record.classification).toBe("Sale");
+    expect(record.periods).toBe(36);
+    expect(record.pv?.netInvestment).toBeCloseTo(37049.24, 2);
+    expect(record.tests).toEqual({
+      a: false,
+      b: true,
+      c: false,
+      d: true,
+      e: false
+    });
+  });
+
+  it("is operating when no test is met", () => {
+    const record = previewLeaseClassification({
+      agreement: { ...agreement, purchaseOptionReasonablyCertain: false },
+      line: { ...line, fairValue: 60000 },
+      policy,
+      decimals: 2
+    });
+    expect(record.classification).toBe("Rental");
+  });
+
+  it("values a 28 Days line over whole 28-day periods at a scaled rate", () => {
+    const record = previewLeaseClassification({
+      agreement: { ...agreement, billingCycle: "28 Days" },
+      line,
+      policy,
+      decimals: 2
+    });
+    // 1,096 days → 39 whole periods; 28 days bill one month (1,000).
+    expect(record.periods).toBe(39);
+    expect(record.payment).toBe(1000);
+    expect(record.annualRate).toBeCloseTo((6 * 12 * 28) / 365, 5);
+  });
+
+  it("cannot price a rate that is not a number, and stays operating", () => {
+    const record = previewLeaseClassification({
+      agreement: { ...agreement, purchaseOptionReasonablyCertain: false },
+      line: { ...line, rate: Number.NaN },
+      policy,
+      decimals: 2
+    });
+    expect(record.pv).toBeNull();
+    expect(record.classification).toBe("Rental");
+  });
+
+  it("round-trips through the stored JSON shape", () => {
+    const record = previewLeaseClassification({
+      agreement,
+      line,
+      policy,
+      decimals: 2
+    });
+    const { classification: _, ...stored } = record;
+    expect(
+      readLeaseClassification(JSON.parse(JSON.stringify(stored)), "Sale")
+    ).toEqual(record);
+    expect(readLeaseClassification(null, "Rental")).toBeNull();
+  });
+});
+
+describe("leaseCommencementPreview", () => {
+  it("balances: NI + (C − PVres) = PVpay + C", () => {
+    const pv = {
+      pvRent: 30000,
+      pvPayments: 34000,
+      pvResidual: 2000,
+      netInvestment: 36000
+    };
+    const preview = leaseCommencementPreview(pv, 25000);
+    expect(preview.costOfGoodsSold).toBe(23000);
+    expect(preview.netInvestment + preview.costOfGoodsSold).toBe(
+      preview.leaseRevenue + preview.carryingAmount
+    );
+    expect(preview.sellingProfit).toBe(11000);
   });
 });
 
@@ -551,5 +695,259 @@ describe("repricedUnitPrice", () => {
   it("is today's price at the line's precision when it differs", () => {
     expect(repricedUnitPrice(current(104.5678), 110, 2)).toBe(104.57);
     expect(repricedUnitPrice(current(104.5678), 110, 4)).toBe(104.5678);
+  });
+});
+
+describe("rentalEquipmentStatus", () => {
+  const lines = (
+    ...statuses: ("Pending" | "On Rent" | "Returned" | "Sold")[]
+  ) => statuses.map((status) => ({ status }));
+
+  it("has no status without units", () => {
+    expect(rentalEquipmentStatus([])).toBeNull();
+  });
+
+  it("is To Deliver while every unit is in the yard", () => {
+    expect(rentalEquipmentStatus(lines("Pending", "Pending"))).toBe(
+      "To Deliver"
+    );
+  });
+
+  it("is Partially Delivered while any unit is still to deliver", () => {
+    expect(rentalEquipmentStatus(lines("Pending", "On Rent"))).toBe(
+      "Partially Delivered"
+    );
+    expect(rentalEquipmentStatus(lines("Pending", "Returned"))).toBe(
+      "Partially Delivered"
+    );
+  });
+
+  it("is On Rent when every unit is out", () => {
+    expect(rentalEquipmentStatus(lines("On Rent", "On Rent"))).toBe("On Rent");
+  });
+
+  it("is Partially Returned when some units are back", () => {
+    expect(rentalEquipmentStatus(lines("On Rent", "Returned"))).toBe(
+      "Partially Returned"
+    );
+    expect(rentalEquipmentStatus(lines("On Rent", "Sold"))).toBe(
+      "Partially Returned"
+    );
+  });
+
+  it("is Returned when every unit is back or sold", () => {
+    expect(rentalEquipmentStatus(lines("Returned", "Sold"))).toBe("Returned");
+  });
+});
+
+describe("rentalLineDocuments", () => {
+  const shipment = (
+    status: string,
+    lines: { rentalAgreementLineId: string | null; shipped: boolean }[]
+  ) => ({
+    id: `shp-${status}`,
+    shipmentId: `SHP-${status}`,
+    status,
+    shipmentFixedAssetLine: lines
+  });
+
+  it("finds nothing when the agreement has no documents", () => {
+    expect(rentalLineDocuments("ral1", [], [])).toEqual({
+      shipment: null,
+      receipt: null
+    });
+  });
+
+  it("finds the Posted shipment that delivered the unit", () => {
+    const result = rentalLineDocuments(
+      "ral1",
+      [shipment("Posted", [{ rentalAgreementLineId: "ral1", shipped: true }])],
+      []
+    );
+    expect(result.shipment).toEqual({
+      id: "shp-Posted",
+      shipmentId: "SHP-Posted"
+    });
+    expect(result.receipt).toBeNull();
+  });
+
+  it("ignores a Draft shipment", () => {
+    const result = rentalLineDocuments(
+      "ral1",
+      [shipment("Draft", [{ rentalAgreementLineId: "ral1", shipped: true }])],
+      []
+    );
+    expect(result.shipment).toBeNull();
+  });
+});
+
+describe("priceOverrideScopeError", () => {
+  it("refuses an override with no scope", () => {
+    expect(priceOverrideScopeError({})).toBe(
+      "Choose a customer, a customer type, or All Customers"
+    );
+  });
+
+  it("refuses All Customers together with a customer or a type", () => {
+    const message = "All Customers cannot also name a customer or type";
+    expect(
+      priceOverrideScopeError({ allCustomers: true, customerId: "c" })
+    ).toBe(message);
+    expect(
+      priceOverrideScopeError({ allCustomers: true, customerTypeId: "t" })
+    ).toBe(message);
+  });
+
+  it("refuses a customer together with a type", () => {
+    expect(
+      priceOverrideScopeError({ customerId: "c", customerTypeId: "t" })
+    ).toBe("Cannot set both Customer and Customer Type");
+  });
+
+  it("accepts exactly one scope", () => {
+    expect(priceOverrideScopeError({ customerId: "c" })).toBeNull();
+    expect(priceOverrideScopeError({ customerTypeId: "t" })).toBeNull();
+    expect(priceOverrideScopeError({ allCustomers: true })).toBeNull();
+  });
+});
+
+describe("priceListOverrideScopes", () => {
+  it("lists a customer's own, its type's and the all-customers overrides", () => {
+    expect(priceListOverrideScopes({ customerId: "c" }, "t")).toEqual([
+      { customerId: "c" },
+      { customerTypeId: "t" },
+      { allCustomers: true }
+    ]);
+  });
+
+  it("skips the type of a customer that has none", () => {
+    expect(priceListOverrideScopes({ customerId: "c" }, null)).toEqual([
+      { customerId: "c" },
+      { allCustomers: true }
+    ]);
+  });
+
+  it("lists a type's own and the all-customers overrides", () => {
+    expect(priceListOverrideScopes({ customerTypeId: "t" }, null)).toEqual([
+      { customerTypeId: "t" },
+      { allCustomers: true }
+    ]);
+  });
+
+  it("lists only the all-customers overrides for All Customers", () => {
+    expect(priceListOverrideScopes({ allCustomers: true }, null)).toEqual([
+      { allCustomers: true }
+    ]);
+  });
+
+  it("lists nothing without a scope", () => {
+    expect(priceListOverrideScopes({}, null)).toEqual([]);
+  });
+});
+
+describe("customerPortalServesFile", () => {
+  it.each([
+    ["co/job/op/step/abc/photo.png", true],
+    ["co/job/op/step/abc/PHOTO.JPEG", true],
+    ["co/job/op/step/abc/scan.heic", true],
+    ["co/job/op/step/abc/report.pdf", true],
+    // CAD and drawings can be export-controlled.
+    ["co/job/op/step/abc/housing.step", false],
+    ["co/job/op/step/abc/housing.stl", false],
+    ["co/job/op/step/abc/layout.dwg", false],
+    ["co/job/op/step/abc/layout.dxf", false],
+    ["co/job/op/step/abc/model.glb", false],
+    // An SVG can carry script and is served from the app's origin.
+    ["co/job/op/step/abc/logo.svg", false],
+    ["co/job/op/step/abc/clip.mp4", false],
+    ["co/job/op/step/abc/noextension", false]
+  ])("%s → %s", (path, expected) => {
+    expect(customerPortalServesFile(path)).toBe(expected);
+  });
+});
+
+describe("customer portal expiry", () => {
+  it("expires at the start of the chosen day in the company's timezone", () => {
+    expect(customerPortalExpiresAt("2026-12-01", "America/New_York")).toBe(
+      "2026-12-01T05:00:00.000Z"
+    );
+    expect(customerPortalExpiresAt("2026-12-01", "UTC")).toBe(
+      "2026-12-01T00:00:00.000Z"
+    );
+  });
+
+  it("stores no expiry for a blank date", () => {
+    expect(customerPortalExpiresAt(undefined, "UTC")).toBeNull();
+    expect(customerPortalExpiresAt("", "UTC")).toBeNull();
+  });
+
+  it("reads the stored instant back as the same day", () => {
+    // Postgres returns timestamptz with an offset, not "Z".
+    expect(
+      customerPortalExpiryDate("2026-12-01T05:00:00+00:00", "America/New_York")
+    ).toBe("2026-12-01");
+    expect(customerPortalExpiryDate(null, "UTC")).toBeUndefined();
+  });
+
+  it.each([
+    [null, false],
+    ["2026-12-01T05:00:00+00:00", false],
+    ["2026-11-30T05:00:00+00:00", true],
+    // The expiry instant itself is expired.
+    ["2026-11-30T12:00:00+00:00", true]
+  ])("%s expired at 2026-11-30T12:00Z → %s", (expiresAt, expected) => {
+    expect(customerPortalExpired(expiresAt, "2026-11-30T12:00:00.000Z")).toBe(
+      expected
+    );
+  });
+});
+
+describe("customerPortalRefusal", () => {
+  const now = "2026-11-30T12:00:00.000Z";
+  const base = (
+    overrides: Partial<Parameters<typeof customerPortalRefusal>[0]> = {}
+  ) => ({ expiresAt: null, ...overrides });
+
+  it("lets an open portal through", () => {
+    expect(customerPortalRefusal(base(), now)).toBeNull();
+  });
+
+  it("refuses a portal whose expiry has passed", () => {
+    expect(
+      customerPortalRefusal(
+        base({ expiresAt: "2026-11-30T05:00:00+00:00" }),
+        now
+      )
+    ).toBe("expired");
+  });
+});
+
+describe("customerPortalExpiryRefused", () => {
+  const now = "2026-11-30T12:00:00.000Z";
+
+  it.each([
+    // [new expiry, stored expiry, refused]
+    [null, null, false],
+    ["2026-12-01T06:00:00.000Z", null, false],
+    ["2026-11-30T06:00:00.000Z", null, true],
+    // Saving an expired portal without touching its date is allowed.
+    ["2026-11-01T05:00:00.000Z", "2026-11-01T05:00:00+00:00", false],
+    ["2026-10-01T05:00:00.000Z", "2026-11-01T05:00:00+00:00", true]
+  ])("%s over %s → %s", (next, stored, refused) => {
+    expect(customerPortalExpiryRefused(next, stored, now)).toBe(refused);
+  });
+});
+
+describe("customerPortalEarliestExpiry", () => {
+  it.each([
+    // [company today, stored Expires On, earliest pickable day]
+    ["2026-11-05", undefined, "2026-11-06"],
+    ["2026-12-31", undefined, "2027-01-01"],
+    // A later stored date changes nothing.
+    ["2026-11-05", "2026-12-01", "2026-11-06"],
+    // An expired portal can keep its own date when edited.
+    ["2026-11-05", "2026-10-01", "2026-10-01"]
+  ])("today %s, stored %s → %s", (today, stored, earliest) => {
+    expect(customerPortalEarliestExpiry(today, stored)).toBe(earliest);
   });
 });

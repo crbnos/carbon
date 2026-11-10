@@ -10,8 +10,8 @@ import { getLogger } from "@carbon/logger";
 import { getPreferenceHeaders } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { certificateOfConformanceSendValidator } from "~/modules/inventory";
-import { sendCertificateOfConformance } from "~/modules/inventory/inventory.server";
+import { sendCertificateOfConformance } from "~/modules/inventory/certificateOfConformance.pdf";
+import { certificateOfConformanceSendValidator } from "~/modules/inventory/inventory.models";
 
 const logger = getLogger("erp", "shipment", "certificate-send");
 

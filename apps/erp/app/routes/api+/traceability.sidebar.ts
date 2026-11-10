@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { fetchJobStepRecords } from "~/modules/inventory/lineage.server";
+import { fetchJobStepRecords } from "~/modules/inventory/inventory.service";
 import type { StepRecord } from "~/modules/inventory/ui/Traceability/utils";
 
 export async function loader({ request }: LoaderFunctionArgs) {

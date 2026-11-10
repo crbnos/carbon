@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateDocumentFavorite } from "~/modules/documents";
+import { updateDocumentFavorite } from "~/modules/documents/documents.service";
 import { favoriteSchema } from "~/types/validators";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -34,7 +34,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (result.error) {
     return data(
       {},
-      await flash(request, error(result, "Failed to favorite purchase order"))
+      await flash(request, error(result.error, "Failed to favorite document"))
     );
   }
 

@@ -6,20 +6,46 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { Trans } from "@lingui/react/macro";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
 import { useLoaderData } from "react-router";
-import { MemoForm, memoValidator, upsertMemo } from "~/modules/invoicing";
-import { getCompany, getNextSequence } from "~/modules/settings";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { NewRecordPage } from "~/components/NewRecordPage";
+import { memoValidator } from "~/modules/invoicing/invoicing.models";
+import { upsertMemo } from "~/modules/invoicing/invoicing.service";
+import { MemoForm } from "~/modules/invoicing/ui";
+import {
+  getCompany,
+  getNextSequence
+} from "~/modules/settings/settings.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 // One create route, two presentations. ?party (from the originating list)
 // picks the type; Supplier Credit is a supplier Debit, Credit Memo a customer
-// Credit. The breadcrumb links back to the matching list.
+// Credit. The title and breadcrumb follow it; the breadcrumb links back to the matching list.
+export const meta: MetaFunction<typeof loader> = (args) =>
+  newRecordMeta(
+    args.loaderData?.type === "supplierCredit"
+      ? "Supplier Credit"
+      : "Credit Memo"
+  )(args);
+
 export const handle: Handle = {
   breadcrumb: (_params: unknown, data: unknown) => {
     const isVendor =
@@ -119,12 +145,39 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function NewMemoRoute() {
   const { initialValues, type } = useLoaderData<typeof loader>();
+  const isVendor = type === "supplierCredit";
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
-      <MemoForm
-        initialValues={initialValues}
-        type={type === "supplierCredit" ? "supplierCredit" : "creditMemo"}
-      />
-    </div>
+    <NewRecordPage>
+      <Card>
+        <CardHeader>
+          <CardTitle aria-level={1}>
+            {isVendor ? (
+              <Trans>New Supplier Credit</Trans>
+            ) : (
+              <Trans>New Credit Memo</Trans>
+            )}
+          </CardTitle>
+          <CardDescription>
+            {isVendor ? (
+              <Trans>
+                Record a credit from a supplier — it reduces what you owe them.
+                Applications to specific invoices are added after it is created.
+              </Trans>
+            ) : (
+              <Trans>
+                Record a credit memo for a customer — it reduces what they owe.
+                Applications to specific invoices are added after it is created.
+              </Trans>
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="@container">
+          <MemoForm
+            initialValues={initialValues}
+            type={isVendor ? "supplierCredit" : "creditMemo"}
+          />
+        </CardContent>
+      </Card>
+    </NewRecordPage>
   );
 }

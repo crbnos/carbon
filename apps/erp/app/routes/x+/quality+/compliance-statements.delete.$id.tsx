@@ -13,7 +13,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteComplianceStatement,
   getComplianceStatement
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

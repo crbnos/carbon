@@ -24,8 +24,8 @@ export {
   SalesOrderPaymentForm,
   SalesOrderProperties,
   SalesOrderShipmentForm,
-  SalesOrdersTable,
   SalesOrderSummary,
+  SalesOrdersTable,
   SalesStatus,
   useSalesOrderTotals
 };

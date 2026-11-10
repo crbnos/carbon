@@ -15,6 +15,8 @@ permissions:
 jobs:
   supabase:
     name: Supabase Sync
+    # A fork has none of Carbon's Supabase or AWS secrets.
+    if: github.repository == 'crbnos/carbon'
     runs-on: ubuntu-latest
 
     env:
@@ -29,15 +31,15 @@ jobs:
       SUPABASE_AUTH_EXTERNAL_AZURE_REDIRECT_URI: ${{ secrets.SUPABASE_AUTH_EXTERNAL_AZURE_REDIRECT_URI }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v5
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version-file: .nvmrc
           cache: pnpm
 
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         with:
           version: latest
 

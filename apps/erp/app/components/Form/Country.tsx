@@ -7,7 +7,7 @@ import { useLoaderQuery } from "@carbon/query";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { Combobox } from "~/components/Form";
-import type { getCountries } from "~/modules/shared";
+import type { getCountries } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 type CountrySelectProps = Omit<ComboboxProps, "options">;

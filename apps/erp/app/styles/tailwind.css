@@ -53,8 +53,10 @@ html.mode-transitioning *::after {
     /* Vertical space the inset app-shell panel gives up to its gutters
        (md:mt-2 + md:mb-2 in x+/_layout.tsx). Full-bleed below md → 0.
        Full-screen pages subtract this from their 100dvh height calcs so
-       bottom-pinned content isn't clipped by the panel. */
-    --content-inset: 0px;
+       bottom-pinned content isn't clipped by the panel. The announcement
+       bar (AnnouncementBar sets --announcement-height on <html>) takes
+       height from the same pages, so it is counted here. */
+    --content-inset: var(--announcement-height, 0px);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -138,7 +140,7 @@ html.mode-transitioning *::after {
   /* The inset app-shell panel gains 8px top + 8px bottom gutters at md+. */
   @media (min-width: 768px) {
     :root {
-      --content-inset: 1rem;
+      --content-inset: calc(1rem + var(--announcement-height, 0px));
     }
   }
 }
@@ -225,4 +227,20 @@ p.is-editor-empty:first-child:before {
 
 .animate-spinner {
   animation: spinner-fade 1.2s linear infinite;
+}
+
+/*
+ * ERP phone chrome (< 768px).
+ * - The app bar is 52px, so frames sized from --topbar-height still fit.
+ * - Toasts sit above the bottom chrome (bottom bar or floating dock) at
+ *   every phone width; Sonner's own mobileOffset only applies up to 600px.
+ */
+@media (width < 48rem) {
+  :root {
+    --topbar-height: calc(52px + env(safe-area-inset-top));
+  }
+
+  [data-sonner-toaster][data-y-position="bottom"] {
+    bottom: calc(var(--content-inset, 0px) + var(--dock-height, 0px) + 16px);
+  }
 }

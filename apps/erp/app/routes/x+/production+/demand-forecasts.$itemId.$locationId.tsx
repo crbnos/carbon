@@ -8,15 +8,18 @@ import { flash } from "@carbon/auth/session.server";
 import { upsertDemandProjections } from "@carbon/ee/forecast.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { demandProjectionValidator } from "~/modules/production/production.models";
 import { getDemandProjections } from "~/modules/production/production.service";
 import DemandProjectionsForm from "~/modules/production/ui/DemandProjection/DemandProjectionForm";
-import { getOrCreatePeriods } from "~/modules/shared/shared.server";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getLocationTimeZone,
+  getOrCreatePeriods
+} from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const WEEKS_TO_PROJECT = 52;
@@ -33,6 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const periods = await getOrCreatePeriods(
+    getDatabaseClient(),
     datetime.today(await getLocationTimeZone(client, locationId, companyId)),
     WEEKS_TO_PROJECT
   );
@@ -151,14 +155,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function EditProjectionRoute() {
   const { initialValues, consumedValues } = useLoaderData<typeof loader>();
 
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   return (
     <DemandProjectionsForm
       initialValues={initialValues}
       consumedValues={consumedValues}
       isEditing
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

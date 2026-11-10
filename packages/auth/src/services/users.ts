@@ -106,7 +106,7 @@ function isClaimPermission(key: string, value: unknown) {
   );
 }
 
-export function makePermissionsFromClaims(claims: Json[] | null) {
+export function makePermissionsFromClaims(claims: Json | null) {
   if (typeof claims !== "object" || claims === null) return null;
   let permissions: Record<string, Permission> = {};
   let role: string | null = null;

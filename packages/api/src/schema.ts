@@ -74,16 +74,15 @@ export function jsonSchema(schema: Record<string, unknown>): CarbonJsonSchema {
  * Conversion is lazy and memoized — the router builds ~1500 procedures at module
  * load, and only the ones actually called pay for it.
  *
- * Deliberately permissive in two ways the dispatcher relies on: unknown keys are
- * preserved rather than stripped, so its positional fallbacks still see the whole
- * payload; and a schema zod cannot represent falls back to pass-through rather
- * than failing every request to that operation.
+ * Deliberately permissive in two ways: unknown keys are preserved rather than
+ * stripped, since a service function's `z.looseObject` input reads them; and a
+ * schema zod cannot represent falls back to pass-through rather than failing
+ * every request to that operation.
  */
 export function jsonSchemaInput(
   schema: Record<string, unknown>
 ): CarbonJsonSchema {
   let compiled: z.ZodType | null | undefined;
-  let unwrapped: z.ZodType | null | undefined;
 
   return {
     "~standard": {
@@ -95,14 +94,6 @@ export function jsonSchemaInput(
 
         const result = compiled.safeParse(value);
         if (result.success) return { value: result.data };
-
-        // The dispatcher accepts a lone wrapper's contents sent flat — the
-        // workflow engine's create actions send `{ itemId, quantity }` to an
-        // operation declaring `{ input: {...} }` — so validation must accept
-        // every shape dispatch does. Narrow on purpose: only when the wrapper is
-        // the schema's ONLY required property.
-        if (unwrapped === undefined) unwrapped = compileSoleWrapper(schema);
-        if (unwrapped && unwrapped.safeParse(value).success) return { value };
 
         return { issues: result.error.issues };
       }
@@ -117,18 +108,6 @@ function compileJsonSchema(schema: unknown): z.ZodType | null {
   } catch {
     return null; // unconvertible — do not reject every request to it
   }
-}
-
-/** The schema of the single required object property, when it is the only one required. */
-function compileSoleWrapper(schema: Record<string, unknown>): z.ZodType | null {
-  const required = schema.required;
-  if (!Array.isArray(required) || required.length !== 1) return null;
-  const properties = schema.properties as
-    | Record<string, { type?: unknown }>
-    | undefined;
-  const wrapper = properties?.[required[0] as string];
-  if (!wrapper || wrapper.type !== "object") return null;
-  return compileJsonSchema(wrapper);
 }
 
 /**

@@ -87,7 +87,7 @@ const ActionBarButton = forwardRef<HTMLButtonElement, ButtonProps>(
 );
 ActionBarButton.displayName = "ActionBarButton";
 
-export { Component as ActionBar, ActionBarButton };
+export { ActionBarButton, Component as ActionBar };
 
 const throttle = (f: (e: PointerEvent) => void) => {
   let frameId: number | null = null,

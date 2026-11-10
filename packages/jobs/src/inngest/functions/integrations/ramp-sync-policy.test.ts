@@ -89,42 +89,44 @@ describe("install mode is a ceiling over the toggles", () => {
 });
 
 describe("isRampInboundFamilyEnabled", () => {
-  it.each<RampInboundFamily>([
-    "transactions",
-    "transfers",
-    "cashbacks"
-  ])("gates %s with pullTransactions", (family) => {
-    expect(isRampInboundFamilyEnabled(family, meta("provider"))).toBe(true);
-    expect(
-      isRampInboundFamilyEnabled(
-        family,
-        meta("provider", { pullTransactions: false })
-      )
-    ).toBe(false);
-  });
+  it.each<RampInboundFamily>(["transactions", "transfers", "cashbacks"])(
+    "gates %s with pullTransactions",
+    (family) => {
+      expect(isRampInboundFamilyEnabled(family, meta("provider"))).toBe(true);
+      expect(
+        isRampInboundFamilyEnabled(
+          family,
+          meta("provider", { pullTransactions: false })
+        )
+      ).toBe(false);
+    }
+  );
 
-  it.each<RampInboundFamily>([
-    "bills",
-    "billPayments"
-  ])("gates %s with pullBills", (family) => {
-    expect(isRampInboundFamilyEnabled(family, meta("provider"))).toBe(false);
-    expect(
-      isRampInboundFamilyEnabled(family, meta("provider", { pullBills: true }))
-    ).toBe(true);
-  });
+  it.each<RampInboundFamily>(["bills", "billPayments"])(
+    "gates %s with pullBills",
+    (family) => {
+      expect(isRampInboundFamilyEnabled(family, meta("provider"))).toBe(false);
+      expect(
+        isRampInboundFamilyEnabled(
+          family,
+          meta("provider", { pullBills: true })
+        )
+      ).toBe(true);
+    }
+  );
 
-  it.each<RampInboundFamily>([
-    "reimbursements",
-    "repayments"
-  ])("gates %s with pullReimbursements", (family) => {
-    expect(isRampInboundFamilyEnabled(family, meta("provider"))).toBe(true);
-    expect(
-      isRampInboundFamilyEnabled(
-        family,
-        meta("provider", { pullReimbursements: false })
-      )
-    ).toBe(false);
-  });
+  it.each<RampInboundFamily>(["reimbursements", "repayments"])(
+    "gates %s with pullReimbursements",
+    (family) => {
+      expect(isRampInboundFamilyEnabled(family, meta("provider"))).toBe(true);
+      expect(
+        isRampInboundFamilyEnabled(
+          family,
+          meta("provider", { pullReimbursements: false })
+        )
+      ).toBe(false);
+    }
+  );
 });
 
 describe("Ramp entity policy", () => {

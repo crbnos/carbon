@@ -3,21 +3,21 @@
   "dependencies": {
     "@carbon/database": "workspace:*",
     "@internationalized/date": "catalog:",
-    "@supabase/supabase-js": "catalog:",
-    "@tiptap/react": "catalog:",
     "cookie": "catalog:",
-    "dompurify": "catalog:",
+    "humanize-duration": "3.35.0",
     "intl-parse-accept-language": "catalog:",
     "lodash.template": "4.18.1",
-    "nanoid": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@supabase/supabase-js": "catalog:",
+    "@tiptap/react": "catalog:",
     "@types/lodash.template": "4.5.3",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "humanize-duration": "3.33.2",
+    "dompurify": "catalog:",
+    "nanoid": "catalog:",
     "react": "catalog:",
     "sst": "catalog:",
     "tsup": "catalog:",
@@ -35,7 +35,7 @@
     "dev": "tsup src/index.ts --format esm,cjs --watch --dts --external react",
     "lint": "biome lint --write ",
     "test": "vitest run",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "sideEffects": false,
   "version": "0.0.0"

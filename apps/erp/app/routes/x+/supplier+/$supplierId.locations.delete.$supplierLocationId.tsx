@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteSupplierLocation } from "~/modules/purchasing";
+import { deleteSupplierLocation } from "~/modules/purchasing/purchasing.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -19,10 +19,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!supplierId || !supplierLocationId) {
     throw redirect(
       path.to.suppliers,
-      await flash(
-        request,
-        error(params, "Failed to get a supplier location id")
-      )
+      await flash(request, error(null, "Failed to get a supplier location id"))
     );
   }
 

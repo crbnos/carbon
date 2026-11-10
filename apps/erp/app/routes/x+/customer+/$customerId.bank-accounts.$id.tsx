@@ -6,15 +6,14 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { CustomerBankAccount } from "~/modules/sales";
-import {
-  customerBankAccountValidator,
-  upsertCustomerBankAccount
-} from "~/modules/sales";
+import { customerBankAccountValidator } from "~/modules/sales/sales.models";
+import { upsertCustomerBankAccount } from "~/modules/sales/sales.service";
+import type { CustomerBankAccount } from "~/modules/sales/types";
 import CustomerBankAccountForm from "~/modules/sales/ui/Customer/CustomerBankAccountForm";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
@@ -65,10 +64,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function EditCustomerBankAccountRoute() {
-  const navigate = useNavigate();
   const { customerId, id } = useParams();
   if (!customerId) throw new Error("Could not find customerId");
   if (!id) throw new Error("Could not find id");
+  const dialog = useRouteDialog(path.to.customerBankAccounts(customerId));
 
   const routeData = useRouteData<{ bankAccounts: CustomerBankAccount[] }>(
     path.to.customerBankAccounts(customerId)
@@ -98,7 +97,8 @@ export default function EditCustomerBankAccountRoute() {
     <CustomerBankAccountForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => navigate(path.to.customerBankAccounts(customerId))}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

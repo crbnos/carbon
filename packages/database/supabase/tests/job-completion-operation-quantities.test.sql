@@ -118,7 +118,8 @@ DECLARE
   v_serial_item text; v_stocked_item text; v_part text;
   v_job text; v_error text; v_row record;
   v_process text; v_work_center text; v_op1 text; v_op2 text; v_sub_op text;
-  v_sub_method text; v_sub_material text;
+  v_sub_method text; v_sub_material text; v_defaults jsonb;
+  v_wip_account text; v_finished_account text; v_labor_account text; v_other_account text;
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Job op quantities test', 'system') RETURNING id INTO v_group_id;
   INSERT INTO company (name, "companyGroupId", "baseCurrencyCode", timezone)
@@ -127,6 +128,24 @@ BEGIN
     VALUES ('Plant', '1 Test Way', 'Testville', '00000', v_company_id, 'system', 'UTC') RETURNING id INTO v_location_id;
   INSERT INTO "unitOfMeasure" (code, name, "companyId", "createdBy")
     VALUES ('EA', 'Each', v_company_id, 'system') ON CONFLICT DO NOTHING;
+  -- Every completion journals (Provisional before a cutover): the settings row
+  -- the posting reads, the journal sequence, the accounts and the defaults.
+  INSERT INTO "companySettings" (id) VALUES (v_company_id) ON CONFLICT (id) DO NOTHING;
+  INSERT INTO "sequence" ("table", name, prefix, "companyId", "updatedBy")
+    VALUES ('journalEntry', 'Journal entries', 'JE-', v_company_id, 'system') ON CONFLICT DO NOTHING;
+  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
+    VALUES ('WIP', 'Asset', 'Bank', 'Balance Sheet', v_group_id, 'system') RETURNING id INTO v_wip_account;
+  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
+    VALUES ('Finished goods', 'Asset', 'Bank', 'Balance Sheet', v_group_id, 'system') RETURNING id INTO v_finished_account;
+  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
+    VALUES ('Labor absorption', 'Expense', 'Expense', 'Income Statement', v_group_id, 'system') RETURNING id INTO v_labor_account;
+  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
+    VALUES ('Other', 'Expense', 'Expense', 'Income Statement', v_group_id, 'system') RETURNING id INTO v_other_account;
+  SELECT jsonb_object_agg(attname, to_jsonb(v_other_account)) INTO v_defaults
+    FROM pg_attribute WHERE attrelid = '"accountDefault"'::regclass AND attnum > 0 AND NOT attisdropped AND attnotnull AND attname <> 'companyId';
+  INSERT INTO "accountDefault" SELECT (jsonb_populate_record(NULL::"accountDefault", v_defaults || jsonb_build_object(
+    'companyId', v_company_id, 'workInProgressAccount', v_wip_account, 'finishedGoodsAccount', v_finished_account,
+    'laborAbsorptionAccount', v_labor_account))).*;
   INSERT INTO item ("readableId", name, type, "replenishmentSystem", "itemTrackingType", "unitOfMeasureCode", "companyId", "createdBy")
     VALUES ('T-STOCKED', 'Stocked assembly', 'Part', 'Make', 'Inventory', 'EA', v_company_id, 'system') RETURNING id INTO v_stocked_item;
   INSERT INTO item ("readableId", name, type, "replenishmentSystem", "itemTrackingType", "unitOfMeasureCode", "companyId", "createdBy")
@@ -243,8 +262,10 @@ BEGIN
     'Serial desk completion did not receive its three units: ' || pg_temp.receipts(v_job);
 
   -- A serial job genuinely short of numbered units is still refused, and
-  -- nothing is applied. Here the units are consumed elsewhere, so there is
-  -- nothing left for this job to receive.
+  -- nothing is applied. Here the units are scrapped, so there is nothing left
+  -- for this job to receive. (A unit consumed by another document before the
+  -- receipt still counts as delivered: job-completion-received-quantity covers
+  -- that case.)
   --
   -- The refusal comes from complete_job_to_inventory's serial branch, not from
   -- complete_job_remaining_quantities: the receipt is the code that knows which
@@ -252,7 +273,7 @@ BEGIN
   -- tell a numbered-but-unreported job from a genuinely short one.
   v_job := pg_temp.make_job(v_company_id, v_location_id, v_serial_item, v_part, 'SJ-SHORT', 3);
   v_op1 := pg_temp.add_operation(v_job, v_company_id, v_process, v_work_center, 3, 1);
-  UPDATE "trackedEntity" SET status = 'Consumed'
+  UPDATE "trackedEntity" SET status = 'Scrapped'
   WHERE attributes->>'Job Make Method' = (
     SELECT id FROM "jobMakeMethod" WHERE "jobId" = v_job AND "parentMaterialId" IS NULL
   );

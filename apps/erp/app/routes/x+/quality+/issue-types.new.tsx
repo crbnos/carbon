@@ -6,14 +6,14 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { isUniqueViolation, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { issueTypeValidator } from "~/modules/quality/quality.models";
 import {
   getIssueTypeByName,
-  issueTypeValidator,
   upsertIssueType
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import IssueTypeForm from "~/modules/quality/ui/IssueTypes/IssueTypeForm";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path, requestReferrer } from "~/utils/path";
@@ -88,12 +88,16 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewCustomerStatusesRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const initialValues = {
     name: ""
   };
 
   return (
-    <IssueTypeForm initialValues={initialValues} onClose={() => closeRoute()} />
+    <IssueTypeForm
+      initialValues={initialValues}
+      open={dialog.open}
+      onClose={dialog.close}
+    />
   );
 }

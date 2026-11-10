@@ -2,15 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteShift, getShift } from "~/modules/people";
+import { getShift } from "~/modules/people/people.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -36,42 +38,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "people"
-  });
-
   const { shiftId } = params;
-  if (!shiftId) {
-    throw redirect(
-      path.to.shifts,
-      await flash(request, error(params, "Failed to get shift id"))
-    );
-  }
-
-  const { error: deleteShiftError } = await deleteShift(client, shiftId);
-  if (deleteShiftError) {
-    throw redirect(
-      path.to.shifts,
-      await flash(request, error(deleteShiftError, "Failed to delete shift"))
-    );
-  }
-
-  throw redirect(
-    path.to.shifts,
-    await flash(request, success("Successfully deleted shift"))
-  );
+  if (!shiftId) throw notFound("Shift ID was not found");
+  const api = await carbon(request);
+  const result = await api.people.deleteShift({ shiftId });
+  return respond(request, result).redirect(path.to.shifts, {
+    message: "Successfully deleted shift"
+  });
 }
 
 export default function DeleteShiftRoute() {
   const { shiftId } = useParams();
   const { shift } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.shifts);
   const { t } = useLingui();
 
   if (!shift) return null;
   if (!shiftId) throw notFound("shiftId not found");
 
-  const onCancel = () => navigate(path.to.shifts);
   const name = shift.name ?? "Shift";
   const locationName = shift.locationName ?? t`unknown location`;
   return (
@@ -79,7 +63,8 @@ export default function DeleteShiftRoute() {
       action={path.to.deleteShift(shiftId)}
       name={name}
       text={t`Are you sure you want to delete the shift: ${name} from ${locationName}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

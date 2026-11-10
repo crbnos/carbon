@@ -7,7 +7,7 @@ import type { Database } from "@carbon/database";
 import type { LoaderFunctionArgs } from "react-router";
 import type { FlatTreeItem } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
-import { getJobMethodTree } from "~/modules/production";
+import { getJobMethodTree } from "~/modules/production/production.utils";
 import type { JobMethod } from "~/modules/production/types";
 import type { BomOperation } from "~/utils/bom";
 import {

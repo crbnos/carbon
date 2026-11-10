@@ -9,11 +9,13 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
-  getIssue,
-  insertIssueReviewer,
   isIssueLocked,
   nonConformanceReviewerValidator
-} from "~/modules/quality";
+} from "~/modules/quality/quality.models";
+import {
+  getIssue,
+  insertIssueReviewer
+} from "~/modules/quality/quality.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 

@@ -2,8 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useCarbon } from "@carbon/auth";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Badge,
   BarProgress,
@@ -20,6 +19,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import {
   getLocalTimeZone,
   isSameDay,
@@ -29,7 +29,7 @@ import {
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { AiOutlinePartition } from "react-icons/ai";
 import {
   LuBookMarked,
@@ -61,25 +61,48 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useUrlParams, useUser } from "~/hooks";
+import type { BulkActionScope, InfiniteOptions } from "~/components/Table";
+import { usePermissions, useUrlParams } from "~/hooks";
+import {
+  useAllMatchingLimitLabel,
+  useBulkFormAction,
+  useBulkStartToast
+} from "~/hooks/useBulkAction";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { action as releaseAction } from "~/routes/x+/job+/release";
-import type { action } from "~/routes/x+/job+/update";
 import { useCustomers, useParts, usePeople, useTools } from "~/stores";
+import {
+  bulkSelectionBody,
+  isOverAllMatchingLimit
+} from "~/utils/bulk-selection";
 import { path } from "~/utils/path";
-import { deadlineTypes, jobStatus } from "../../production.models";
+import { ALL_MATCHING_RELEASE_LIMIT } from "~/utils/table-jobs";
+import {
+  deadlineTypes,
+  isJobBulkReleasable,
+  isJobDeletable,
+  jobStatus
+} from "../../production.models";
 import type { Job } from "../../types";
 import { getDeadlineIcon } from "./Deadline";
 import JobStatus from "./JobStatus";
+import { JOB_LIST_EXPORT_VALUES } from "./job-list-export";
+
+// A row of the jobs list, with the values the loader adds per page.
+type JobRow = Job & {
+  // The readableIds of the live (Active/Completing) operation batches the job
+  // has an operation in. Batching is per-operation, so this is the only
+  // job-level view of it.
+  batchReadableIds: string[];
+  // The readableId of the tracked entity the job's make method produces.
+  trackedEntityReadableId: string | null;
+};
 
 type JobsTableProps = {
-  data: Job[];
+  data: JobRow[];
   count: number;
+  infinite: InfiniteOptions;
   tags: { name: string }[];
-  // jobId -> readableIds of live (Active/Completing) operation batches the
-  // job has an operation in. Batching is per-operation, so this is the only
-  // job-level view of it.
-  batchesByJobId?: Record<string, string[]>;
 };
 
 const defaultColumnVisibility = {
@@ -98,61 +121,6 @@ const defaultColumnVisibility = {
   quantityReceivedToInventory: false
 };
 
-function useReadableTrackedEntities(data: Job[], companyId: string) {
-  const [trackedEntities, setTrackedEntities] = useState<
-    Record<string, string>
-  >({});
-  const { carbon } = useCarbon();
-
-  async function getTrackedEntities(
-    jobMakeMethodIds: string[],
-    companyId: string
-  ) {
-    if (carbon) {
-      const response = await carbon
-        ?.from("trackedEntity")
-        .select("*")
-        .in("attributes->>Job Make Method", jobMakeMethodIds)
-        .eq("companyId", companyId);
-
-      if (response.data) {
-        const result = response.data.reduce<Record<string, string>>(
-          (acc, curr) => {
-            if (
-              curr.attributes !== null &&
-              typeof curr.attributes === "object" &&
-              "Job Make Method" in curr.attributes &&
-              curr.readableId
-            ) {
-              acc[curr.attributes["Job Make Method"] as string] =
-                curr.readableId;
-            }
-            return acc;
-          },
-          {}
-        );
-
-        setTrackedEntities(result);
-      }
-    }
-  }
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    getTrackedEntities(
-      data.reduce<string[]>((acc, curr) => {
-        if (curr.jobMakeMethodId) {
-          acc.push(curr.jobMakeMethodId);
-        }
-        return acc;
-      }, []),
-      companyId
-    );
-  }, [data]);
-
-  return trackedEntities;
-}
-
 // A function declaration on purpose: `plural()` nested in `t` inside a
 // `memo(…)` component compiles to the global i18n, which is never activated
 // (see .claude/rules/i18n-lingui-system.md).
@@ -162,18 +130,39 @@ function useReleasedJobsMessage() {
     t`${plural(count, { one: "Released # job", other: "Released # jobs" })}`;
 }
 
+function renderQuantity(job: Job, unit?: string | null) {
+  const quantity = job.quantity;
+  const quantityComplete = job.quantityComplete ?? 0;
+
+  if (["In Progress", "Released", "Paused"].includes(job.status ?? "")) {
+    return (
+      <BarProgress
+        progress={(quantityComplete / (quantity ?? 0)) * 100}
+        value={`${quantityComplete}/${quantity}`}
+      />
+    );
+  }
+  if (unit) {
+    return (
+      <>
+        {quantity}
+        <span className="ml-1 text-[0.8125rem] text-muted-foreground">
+          {unit}
+        </span>
+      </>
+    );
+  }
+  return quantity;
+}
+
 const JobsTable = memo((props: JobsTableProps) => {
-  const { data, count, tags, batchesByJobId = {} } = props;
+  const { data, count, infinite, tags } = props;
   const navigate = useNavigate();
   const { t } = useLingui();
   const releasedJobsMessage = useReleasedJobsMessage();
   const [params] = useUrlParams();
   const parts = useParts();
   const tools = useTools();
-  const {
-    company: { id: companyId }
-  } = useUser();
-
   const items = useMemo(() => [...parts, ...tools], [parts, tools]);
 
   const [people] = usePeople();
@@ -197,24 +186,21 @@ const JobsTable = memo((props: JobsTableProps) => {
   const deleteModal = useDisclosure();
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
-  const trackedEntities = useReadableTrackedEntities(data, companyId);
-
   const onDelete = (data: Job) => {
     setSelectedJob(data);
     deleteModal.onOpen();
   };
 
   const onDeleteCancel = () => {
-    setSelectedJob(null);
     deleteModal.onClose();
   };
 
   const todaysDate = useMemo(() => today(getLocalTimeZone()), []);
 
-  const customColumns = useCustomColumns<Job>("job");
+  const customColumns = useCustomColumns<JobRow>("job");
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  const columns = useMemo<ColumnDef<Job>[]>(() => {
-    const defaultColumns: ColumnDef<Job>[] = [
+  const columns = useMemo<ColumnDef<JobRow>[]>(() => {
+    const defaultColumns: ColumnDef<JobRow>[] = [
       {
         accessorKey: "jobId",
         header: t`Job ID`,
@@ -232,6 +218,7 @@ const JobsTable = memo((props: JobsTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -242,13 +229,19 @@ const JobsTable = memo((props: JobsTableProps) => {
           return (
             <VStack spacing={0}>
               {row.original.itemReadableIdWithRevision}
-              <div className="w-full truncate text-muted-foreground text-xs">
-                {row.original.name}
-              </div>
+              {distinctItemText(
+                row.original.itemReadableIdWithRevision,
+                row.original.name
+              ) && (
+                <div className="w-full truncate text-muted-foreground text-xs">
+                  {row.original.name}
+                </div>
+              )}
             </VStack>
           );
         },
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: items?.map((item) => ({
@@ -259,7 +252,7 @@ const JobsTable = memo((props: JobsTableProps) => {
           icon: <AiOutlinePartition />
         }
       },
-      exportOnlyColumn<Job>({
+      exportOnlyColumn<JobRow>({
         id: "itemName",
         header: t`Item Name`,
         value: (row) => row.name ?? null
@@ -268,15 +261,15 @@ const JobsTable = memo((props: JobsTableProps) => {
         id: "trackedEntityId",
         header: t`Tracking`,
         cell: ({ row }) =>
-          row.original.jobMakeMethodId &&
-          trackedEntities[row.original.jobMakeMethodId] ? (
+          row.original.trackedEntityReadableId ? (
             <Badge variant="secondary" className="items-center gap-1">
               <LuQrCode />
-              {trackedEntities[row.original.jobMakeMethodId]}
+              {row.original.trackedEntityReadableId}
             </Badge>
           ) : null,
         meta: {
-          icon: <LuQrCode />
+          icon: <LuQrCode />,
+          exportValue: JOB_LIST_EXPORT_VALUES.trackedEntityId
         }
       },
       {
@@ -304,6 +297,7 @@ const JobsTable = memo((props: JobsTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: jobStatus.map((status) => ({
@@ -319,9 +313,7 @@ const JobsTable = memo((props: JobsTableProps) => {
         id: "batches",
         header: t`Batches`,
         cell: ({ row }) => {
-          const batches = row.original.id
-            ? (batchesByJobId[row.original.id] ?? [])
-            : [];
+          const batches = row.original.batchReadableIds ?? [];
           if (batches.length === 0) return null;
           return (
             <HStack spacing={1}>
@@ -342,32 +334,18 @@ const JobsTable = memo((props: JobsTableProps) => {
         meta: {
           icon: <LuLayers />,
           filterHeader: t`Batches`,
-          exportValue: (row: Job) =>
-            row.id ? (batchesByJobId[row.id] ?? []).join(", ") : null
+          exportValue: JOB_LIST_EXPORT_VALUES.batches
         }
       },
       {
         accessorKey: "quantity",
         header: t`Quantity`,
-        cell: ({ row }) => {
-          const quantity = row.original.quantity;
-          const quantityComplete = row.original.quantityComplete ?? 0;
-
-          if (
-            ["In Progress", "Released", "Paused"].includes(
-              row.original.status ?? ""
-            )
-          ) {
-            return (
-              <BarProgress
-                progress={(quantityComplete / (quantity ?? 0)) * 100}
-                value={`${quantityComplete}/${quantity}`}
-              />
-            );
-          }
-          return quantity;
-        },
+        cell: ({ row }) => renderQuantity(row.original),
         meta: {
+          mobile: "P2",
+          // Phones: no column header, so the number carries its unit.
+          mobileCell: ({ row }) =>
+            renderQuantity(row.original, row.original.unitOfMeasureCode),
           icon: <LuHash />,
           renderTotal: true
         }
@@ -537,6 +515,8 @@ const JobsTable = memo((props: JobsTableProps) => {
         accessorKey: "orderQuantity",
         header: t`Order Qty`,
         cell: (item) => item.getValue<number>(),
+        // Not a column of the `jobs` view, so the server cannot sort by it.
+        enableSorting: false,
         meta: {
           icon: <LuHash />,
           renderTotal: true
@@ -546,6 +526,8 @@ const JobsTable = memo((props: JobsTableProps) => {
         accessorKey: "inventoryQuantity",
         header: t`Inventory Qty`,
         cell: (item) => item.getValue<number>(),
+        // Not a column of the `jobs` view, so the server cannot sort by it.
+        enableSorting: false,
         meta: {
           icon: <LuHash />,
           renderTotal: true
@@ -674,69 +656,75 @@ const JobsTable = memo((props: JobsTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [params, customColumns, trackedEntities, batchesByJobId]);
+  }, [params, customColumns]);
 
-  const fetcher = useAction<typeof action>({
-    onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
-    }
-  });
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+  const { submit: submitBulk } = useBulkFormAction();
   const onBulkUpdate = useCallback(
-    (selectedRows: typeof data, field: "delete", value?: string) => {
-      const formData = new FormData();
-      selectedRows.forEach((row) => {
-        if (row.id) formData.append("ids", row.id);
-      });
-      formData.append("field", field);
-      if (value) formData.append("value", value);
-      fetcher.submit(formData, {
-        method: "post",
-        action: path.to.bulkUpdateJob
-      });
+    (
+      selectedRows: typeof data,
+      field: "delete",
+      value?: string,
+      scope?: BulkActionScope
+    ) => {
+      submitBulk(
+        path.to.bulkUpdateJob,
+        { scope, idsField: "ids", ids: selectedRows.map((row) => row.id) },
+        { field, value }
+      );
     },
-
-    []
+    [submitBulk]
   );
 
   // Bulk release for the selected rows — Draft and Planned jobs only. Posts the
   // ids to the release action, which holds each job to the job page's release
   // checks and releases the ones that pass; we toast the summary.
+  const showBulkStart = useBulkStartToast();
+  const releaseLimitLabel = useAllMatchingLimitLabel(
+    ALL_MATCHING_RELEASE_LIMIT
+  );
   const releaseFetcher = useAction<typeof releaseAction>({
     onSuccess: (result) => {
-      if (!result.success) return;
-      if (result.released) {
-        toast.success(releasedJobsMessage(result.released));
+      if (showBulkStart(result)) return;
+      const { data } = result;
+      if (!data) return;
+      if (data.released.length) {
+        toast.success(releasedJobsMessage(data.released.length));
       }
-      if (result.warnings.length) {
+      if (data.warnings.length) {
         toast.error(
-          t`Released with problems: ${result.warnings
+          t`Released with problems: ${data.warnings
             .map((w) => `${w.readableId} (${w.message})`)
             .join(", ")}`
         );
       }
-      if (result.failed.length) {
+      if (data.failed.length) {
         toast.error(
-          t`Could not release ${result.failed.length}: ${result.failed
+          t`Could not release ${data.failed.length}: ${data.failed
             .map((f) => `${f.readableId} (${f.message})`)
             .join(", ")}`
         );
       }
-      if (!result.scheduled) {
+      if (!data.scheduled) {
         toast.error(t`The schedule could not be updated after the release`);
       }
     },
     onError: (result) => {
-      if (!result.success) toast.error(result.message);
+      if (showBulkStart(result)) return;
+      toastServiceError(result);
     }
   });
 
   const renderActions = useCallback(
-    (selectedRows: typeof data) => {
-      const releasable = selectedRows.filter(
-        (row) => row.status === "Draft" || row.status === "Planned"
+    (selectedRows: typeof data, scope?: BulkActionScope) => {
+      const releasable = selectedRows.filter((row) =>
+        isJobBulkReleasable(row.status)
+      );
+      // Every matching row: the server picks the jobs each action may act on
+      // and skips the rest. Release runs on at most 2,000 of them.
+      const allMatching = scope?.allMatching;
+      const overReleaseLimit = isOverAllMatchingLimit(
+        scope,
+        ALL_MATCHING_RELEASE_LIMIT
       );
       return (
         <DropdownMenuContent align="end" className="min-w-[200px]">
@@ -748,12 +736,17 @@ const JobsTable = memo((props: JobsTableProps) => {
             <DropdownMenuItem
               disabled={
                 !permissions.can("update", "production") ||
-                releasable.length === 0 ||
+                (!allMatching && releasable.length === 0) ||
+                overReleaseLimit ||
                 releaseFetcher.isPending
               }
               onClick={() =>
                 releaseFetcher.submit(
-                  { jobIds: releasable.flatMap((row) => row.id ?? []) },
+                  bulkSelectionBody({
+                    scope,
+                    idsField: "jobIds",
+                    ids: releasable.map((row) => row.id)
+                  }),
                   {
                     method: "post",
                     action: path.to.bulkReleaseJob,
@@ -763,24 +756,25 @@ const JobsTable = memo((props: JobsTableProps) => {
               }
             >
               <MenuIcon icon={<LuCirclePlay />} />
-              <Trans>Release Jobs</Trans>
+              <div className="flex flex-col">
+                <Trans>Release Jobs</Trans>
+                {overReleaseLimit && (
+                  <span className="text-xs text-muted-foreground">
+                    {releaseLimitLabel}
+                  </span>
+                )}
+              </div>
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={
                 !permissions.can("delete", "production") ||
-                selectedRows.some(
-                  (row) =>
-                    ![
-                      "Draft",
-                      "Planned",
-                      "Due Today",
-                      "Overdue",
-                      "Draft"
-                    ].includes(row.status ?? "")
-                )
+                (!allMatching &&
+                  selectedRows.some((row) => !isJobDeletable(row.status)))
               }
               destructive
-              onClick={() => onBulkUpdate(selectedRows, "delete")}
+              onClick={() =>
+                onBulkUpdate(selectedRows, "delete", undefined, scope)
+              }
             >
               <MenuIcon icon={<LuTrash />} />
               Delete Jobs
@@ -789,11 +783,11 @@ const JobsTable = memo((props: JobsTableProps) => {
         </DropdownMenuContent>
       );
     },
-    [onBulkUpdate, permissions, releaseFetcher]
+    [onBulkUpdate, permissions, releaseFetcher, releaseLimitLabel]
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  const renderContextMenu = useCallback<(row: Job) => JSX.Element>(
+  const renderContextMenu = useCallback<(row: JobRow) => JSX.Element>(
     (row) => (
       <>
         <MenuItem
@@ -808,7 +802,10 @@ const JobsTable = memo((props: JobsTableProps) => {
         <MenuItem
           shortcut={MENU_ITEM_SHORTCUTS.delete}
           destructive
-          disabled={!permissions.can("delete", "production")}
+          disabled={
+            !permissions.can("delete", "production") ||
+            !isJobDeletable(row.status)
+          }
           onClick={() => onDelete(row)}
         >
           <MenuIcon icon={<LuTrash />} />
@@ -822,7 +819,8 @@ const JobsTable = memo((props: JobsTableProps) => {
 
   return (
     <>
-      <Table<Job>
+      <Table<JobRow>
+        getRowLabel={(row) => row.jobId ?? undefined}
         data={data}
         defaultColumnVisibility={defaultColumnVisibility}
         defaultColumnPinning={{
@@ -830,6 +828,7 @@ const JobsTable = memo((props: JobsTableProps) => {
         }}
         columns={columns}
         count={count ?? 0}
+        infinite={infinite}
         primaryAction={
           permissions.can("update", "resources") && (
             <New label={t`Job`} to={path.to.newJob} />

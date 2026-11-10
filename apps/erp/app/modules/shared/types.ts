@@ -50,7 +50,8 @@ export enum DataType {
   User = 6,
   Customer = 7,
   Supplier = 8,
-  File = 9
+  File = 9,
+  Link = 10
 }
 
 export type MethodItemType = (typeof methodItemType)[number];
@@ -127,3 +128,12 @@ export type SavedView = {
 };
 
 export type StandardFactor = (typeof standardFactorType)[number];
+
+/** The rows a BOM, Operations or Parts with Methods import added, by kind. */
+export type MethodRowsAdded = {
+  materials: number;
+  operations: number;
+  steps: number;
+  tools: number;
+  parameters: number;
+};

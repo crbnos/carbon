@@ -7,10 +7,8 @@ import { Combobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { useMemo } from "react";
 import { useRouteData } from "~/hooks";
-import type {
-  getScrapReasonsList,
-  ScrapReason as ScrapReasonType
-} from "~/modules/production";
+import type { getScrapReasonsList } from "~/modules/production/production.service";
+import type { ScrapReason as ScrapReasonType } from "~/modules/production/types";
 import { path } from "~/utils/path";
 
 type ScrapReasonSelectProps = Omit<ComboboxProps, "options">;

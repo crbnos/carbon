@@ -8,7 +8,8 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import invariant from "tiny-invariant";
-import { changeInspectionDocument } from "~/modules/quality/quality.server";
+import { changeInspectionDocument } from "~/modules/quality/quality.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -24,7 +25,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const inspectionDocumentId =
     (formData.get("inspectionDocumentId") as string | null)?.trim() || null;
 
-  const result = await changeInspectionDocument({
+  const result = await changeInspectionDocument(getDatabaseClient(), {
     inspectionId: id,
     inspectionDocumentId,
     companyId,

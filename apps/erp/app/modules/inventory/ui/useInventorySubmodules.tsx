@@ -8,9 +8,12 @@ import {
   LuArrowRightLeft,
   LuClipboardCheck,
   LuClipboardList,
+  LuClipboardX,
   LuHandCoins,
   LuListChecks,
   LuNetwork,
+  LuPackageCheck,
+  LuPackageMinus,
   LuQrCode,
   LuScanQrCode,
   LuShieldCheck,
@@ -19,10 +22,19 @@ import {
   LuTruck,
   LuWarehouse
 } from "react-icons/lu";
+import { GroupedContentSidebar } from "~/components/Layout";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
+import type { receiptInspectionStatusType } from "../inventory.models";
+
+const receiptsByInspectionStatus = (
+  statuses: (typeof receiptInspectionStatusType)[number][]
+) =>
+  `${path.to.receipts}?filter=${encodeURIComponent(
+    `inspectionStatus:in:${statuses.join(",")}`
+  )}`;
 
 export default function useInventorySubmodules() {
   const permissions = usePermissions();
@@ -31,8 +43,22 @@ export default function useInventorySubmodules() {
 
   const inventoryRoutes: AuthenticatedRouteGroup[] = [
     {
-      name: t`Manage`,
+      name: t`Stock`,
       routes: [
+        {
+          name: t`Quantities`,
+          to: path.to.inventory,
+          role: "employee",
+          icon: <LuTally5 />,
+          table: "inventory"
+        },
+        {
+          name: t`Movements`,
+          to: path.to.stockMovements,
+          role: "employee",
+          icon: <LuArrowDownUp />,
+          table: "itemLedger"
+        },
         {
           name: t`Inventory Count`,
           to: path.to.inventoryCounts,
@@ -40,10 +66,21 @@ export default function useInventorySubmodules() {
           table: "inventoryCount"
         },
         {
-          name: t`Picking Lists`,
-          to: path.to.pickingLists,
-          icon: <LuClipboardList />
+          name: t`Issue to Project`,
+          to: path.to.projectIssue,
+          icon: <LuPackageMinus />
         },
+        {
+          name: t`Kanbans`,
+          to: path.to.kanbans,
+          role: "employee",
+          icon: <LuScanQrCode />
+        }
+      ]
+    },
+    {
+      name: t`Shipping & Receiving`,
+      routes: [
         {
           name: t`Receipts`,
           to: path.to.receipts,
@@ -51,10 +88,41 @@ export default function useInventorySubmodules() {
           table: "receipt"
         },
         {
+          name: t`Pending inspection`,
+          to: receiptsByInspectionStatus([
+            "Pending Inspection",
+            "Inspection In Progress"
+          ]),
+          icon: <LuClipboardCheck />
+        },
+        {
+          name: t`Ready for putaway`,
+          to: receiptsByInspectionStatus([
+            "Inspection Passed",
+            "Partially Passed"
+          ]),
+          icon: <LuPackageCheck />
+        },
+        {
+          name: t`Inspection failed`,
+          to: receiptsByInspectionStatus(["Inspection Failed"]),
+          icon: <LuClipboardX />
+        },
+        {
           name: t`Shipments`,
           to: path.to.shipments,
           icon: <LuTruck />,
           table: "shipment"
+        }
+      ]
+    },
+    {
+      name: t`Transfers`,
+      routes: [
+        {
+          name: t`Picking Lists`,
+          to: path.to.pickingLists,
+          icon: <LuClipboardList />
         },
         {
           name: t`Stock Transfers`,
@@ -71,28 +139,8 @@ export default function useInventorySubmodules() {
       ]
     },
     {
-      name: t`Track`,
+      name: t`Traceability`,
       routes: [
-        {
-          name: t`Kanbans`,
-          to: path.to.kanbans,
-          role: "employee",
-          icon: <LuScanQrCode />
-        },
-        {
-          name: t`Movements`,
-          to: path.to.stockMovements,
-          role: "employee",
-          icon: <LuArrowDownUp />,
-          table: "itemLedger"
-        },
-        {
-          name: t`Quantities`,
-          to: path.to.inventory,
-          role: "employee",
-          icon: <LuTally5 />,
-          table: "inventory"
-        },
         {
           name: t`Tracked Entities`,
           to: path.to.trackedEntities,
@@ -140,30 +188,25 @@ export default function useInventorySubmodules() {
     }
   ];
 
+  const isVisible = (route: AuthenticatedRouteGroup["routes"][number]) => {
+    if (route.role) return permissions.is(route.role);
+    if (route.permission) return permissions.can("view", route.permission);
+    return true;
+  };
+
   return {
     groups: inventoryRoutes
-      .filter((group) => {
-        const filteredRoutes = group.routes.filter((route) => {
-          if (route.role) {
-            return permissions.is(route.role);
-          } else {
-            return true;
-          }
-        });
-
-        return filteredRoutes.length > 0;
-      })
       .map((group) => ({
         ...group,
-        routes: group.routes
-          .filter((route) => {
-            if (route.role) {
-              return permissions.is(route.role);
-            } else {
-              return true;
-            }
-          })
-          .map(addSavedViewsToRoutes)
+        routes: group.routes.filter(isVisible).map(addSavedViewsToRoutes)
       }))
+      .filter((group) => group.routes.length > 0)
   };
+}
+
+/** Phones: the module's section switcher, for routes outside the module's
+ *  own layout (`handle.compactSidebar`). */
+export function InventorySections() {
+  const { groups } = useInventorySubmodules();
+  return <GroupedContentSidebar groups={groups} />;
 }

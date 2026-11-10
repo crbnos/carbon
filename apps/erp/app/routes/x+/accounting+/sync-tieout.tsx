@@ -8,7 +8,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
-import { getAccountingSyncTieOut } from "~/modules/accounting";
+import { getAccountingSyncTieOut } from "~/modules/accounting/accounting.service";
 import { SyncTieOutTable } from "~/modules/accounting/ui/SyncTieOut";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

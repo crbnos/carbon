@@ -8,7 +8,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { data, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
 import {
@@ -16,17 +16,17 @@ import {
   getInspection,
   getInspectionDocument,
   getInspectionGauges,
+  getInspectionIssues,
   getInspectionMeasurements,
   getInspectionSamplingPlans,
   getInspectionTrackedEntities,
-  getIssueTypesList
-} from "~/modules/quality";
-import {
+  getIssueTypesList,
   getRecentInspectionGauges,
   reconcileInspectionSamplingPlans
-} from "~/modules/quality/quality.server";
+} from "~/modules/quality/quality.service";
 import type {
   InspectionGauge,
+  InspectionIssue,
   InspectionMeasurement,
   InspectionRow,
   InspectionSample,
@@ -35,8 +35,10 @@ import type {
   IssueTypeListItem
 } from "~/modules/quality/types";
 import InspectionView from "~/modules/quality/ui/Inspections/InspectionView";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -50,6 +52,9 @@ export const handle: Handle = {
   ),
   module: "quality"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.inspection?.inspectionId, "Inspection");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -90,7 +95,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // The lot references its inspection document live — resolve per-lot plan
   // rows for any features added to the document after receipt.
   if (insp.inspectionDocumentId) {
-    await reconcileInspectionSamplingPlans(id, companyId);
+    await reconcileInspectionSamplingPlans(getDatabaseClient(), id, companyId);
   }
 
   const isReceiptSource = insp.sourceDocument === "Receipt";
@@ -103,12 +108,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     lotEntities,
     document,
     balloons,
-    receipt
+    receipt,
+    issues
   ] = await Promise.all([
     getInspectionSamplingPlans(client, id, companyId),
     getInspectionMeasurements(client, id, companyId),
     getInspectionGauges(client, companyId, id),
-    getRecentInspectionGauges({ inspectionId: id, companyId }),
+    getRecentInspectionGauges(getDatabaseClient(), {
+      inspectionId: id,
+      companyId
+    }),
     isReceiptSource && insp.sourceDocumentLineId
       ? getInspectionTrackedEntities(
           client,
@@ -127,21 +136,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     isReceiptSource
       ? client
           .from("receipt")
-          .select("createdBy")
+          .select("createdBy, status")
           .eq("id", insp.sourceDocumentId)
           .maybeSingle()
-      : Promise.resolve({ data: null, error: null })
+      : Promise.resolve({ data: null, error: null }),
+    getInspectionIssues(client, id, companyId)
   ]);
 
   const doc = document.data as {
     name?: string | null;
     content?: { pdfUrl?: string | null };
+    model?: { modelUploadId: string; modelPath: string | null } | null;
   } | null;
 
   return data({
     inspection: insp,
     sourceDocumentReadableId: insp.sourceDocumentReadableId ?? null,
     receiverId: receipt.data?.createdBy ?? null,
+    receiptVoided: receipt.data?.status === "Voided",
     itemName: insp.item?.name ?? "",
     itemTrackingType: insp.item?.itemTrackingType ?? null,
     supplierName: insp.supplier?.name ?? null,
@@ -163,8 +175,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     })),
     documentName: doc?.name ?? null,
     pdfUrl: doc?.content?.pdfUrl ?? null,
+    model: doc?.model ?? null,
     lotEntities: (lotEntities.data ?? []) as InspectionTrackedEntity[],
     issueTypes: (issueTypes.data ?? []) as IssueTypeListItem[],
+    issues: (issues.data ?? [])
+      .map((link) => link.nonConformance)
+      .filter((issue): issue is InspectionIssue => Boolean(issue)),
     enforceFourEyes:
       ((settings.data as any)?.enforceInspectionFourEyes as boolean) ?? false,
     currentUserId: userId
@@ -179,6 +195,7 @@ export default function InspectionExecutionRoute() {
       inspection={loaderData.inspection as InspectionRow}
       sourceDocumentReadableId={loaderData.sourceDocumentReadableId}
       receiverId={loaderData.receiverId}
+      receiptVoided={loaderData.receiptVoided}
       itemName={loaderData.itemName}
       itemTrackingType={loaderData.itemTrackingType}
       supplierName={loaderData.supplierName}
@@ -190,8 +207,10 @@ export default function InspectionExecutionRoute() {
       balloons={loaderData.balloons}
       documentName={loaderData.documentName}
       pdfUrl={loaderData.pdfUrl}
+      model={loaderData.model}
       lotEntities={loaderData.lotEntities as InspectionTrackedEntity[]}
       issueTypes={loaderData.issueTypes as IssueTypeListItem[]}
+      issues={loaderData.issues}
       currentUserId={loaderData.currentUserId}
       enforceFourEyes={loaderData.enforceFourEyes}
     />

@@ -7,6 +7,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
+import {
+  jobCompletionDate,
+  purchaseOrderLineArrivalDate
+} from "@carbon/planning";
 import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -14,15 +18,19 @@ import { mergeDemandProjections } from "~/modules/items/demand-projection";
 import {
   getDemandForecastSources,
   getItemDemand,
+  getItemNettableQuantities,
   getItemQuantities,
-  getItemSupply,
   getOpenJobMaterials,
   getOpenProductionOrders,
   getOpenPurchaseOrderLines,
   getOpenSalesOrderLines
 } from "~/modules/items/items.service";
-import { getOrCreatePeriods } from "~/modules/shared/shared.server";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import { bucketSupplyByPeriod } from "~/modules/items/ui/Item/planningSupplyDemand";
+import {
+  getLocationTimeZone,
+  getOrCreatePeriods
+} from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
 
 const defaultResponse = {
   demand: [],
@@ -31,6 +39,8 @@ const defaultResponse = {
   supply: [],
   periods: [],
   quantityOnHand: 0,
+  quantityNonNettable: 0,
+  quantityNettable: 0,
   openSalesOrderLines: [],
   openJobMaterials: [],
   openProductionOrders: [],
@@ -129,23 +139,24 @@ async function getRedirectedOpenJobMaterials(
 
   for (const rule of incoming.data ?? []) {
     if (!effective(rule)) continue;
-    const [predecessorLines, quantities] = await Promise.all([
+    const [predecessorLines, stock] = await Promise.all([
       getOpenJobMaterials(client, {
         itemId: rule.itemId,
         companyId,
         locationId
       }),
-      getItemQuantities(client, rule.itemId, companyId, locationId)
+      getItemNettableQuantities(client, rule.itemId, companyId, locationId)
     ]);
     if (predecessorLines.error) {
       throw new Error(predecessorLines.error.message);
     }
-    if (quantities.error) throw new Error(quantities.error.message);
+    if (stock.error) throw new Error(stock.error.message);
     const factor = Number(rule.conversionFactor ?? 1) || 1;
     const { moved } = redirectJobMaterialLines(
       predecessorLines.data ?? [],
       rule.supersessionMode,
-      Number(quantities.data?.quantityOnHand ?? 0)
+      Number(stock.data?.quantityOnHand ?? 0) -
+        Number(stock.data?.quantityNonNettable ?? 0)
     );
     for (const line of moved) {
       lines.push({
@@ -171,12 +182,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const today = datetime.today(
     await getLocationTimeZone(client, locationId, companyId)
   );
-  const periods = await getOrCreatePeriods(today, WEEKS_TO_FORECAST);
+  const periods = await getOrCreatePeriods(
+    getDatabaseClient(),
+    today,
+    WEEKS_TO_FORECAST
+  );
 
   const [
     demand,
-    supply,
     quantities,
+    stock,
     openSalesOrderLines,
     openJobMaterials,
     openProductionOrders,
@@ -189,13 +204,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       periods: periods.map((p) => p.id ?? ""),
       companyId
     }),
-    getItemSupply(client, {
-      itemId,
-      locationId,
-      periods: periods.map((p) => p.id ?? ""),
-      companyId
-    }),
     getItemQuantities(client, itemId, companyId, locationId),
+    getItemNettableQuantities(client, itemId, companyId, locationId),
     getOpenSalesOrderLines(client, { itemId, companyId, locationId }),
     getOpenJobMaterials(client, { itemId, companyId, locationId }),
     getOpenProductionOrders(client, { itemId, companyId, locationId }),
@@ -236,6 +246,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       await flash(request, error(demand.error, "Failed to load demand"))
     );
   }
+  // A failed stock read must not chart quarantined stock as supply.
+  if (stock.error) {
+    return data(
+      defaultResponse,
+      await flash(request, error(stock.error, "Failed to load stock"))
+    );
+  }
+  // A failed supply read must not chart as "no supply".
+  if (openPurchaseOrderLines.error || openProductionOrders.error) {
+    return data(
+      defaultResponse,
+      await flash(
+        request,
+        error(
+          openPurchaseOrderLines.error ?? openProductionOrders.error,
+          "Failed to load supply"
+        )
+      )
+    );
+  }
+
+  // The card shows physical on-hand; the projection starts from nettable
+  // stock, read from the same aggregate runMrp plans against.
+  const quantityOnHand = Number(quantities.data?.quantityOnHand ?? 0);
+  const quantityNonNettable = Number(stock.data?.quantityNonNettable ?? 0);
+  const quantityNettable =
+    Number(stock.data?.quantityOnHand ?? 0) - quantityNonNettable;
 
   const redirectedOpenJobMaterials = await getRedirectedOpenJobMaterials(
     client,
@@ -244,27 +281,57 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       locationId,
       companyId,
       today: today.toString(),
-      onHand: Number(quantities.data?.quantityOnHand ?? 0),
+      onHand: quantityNettable,
       lines: openJobMaterials.data ?? []
     }
+  );
+
+  const todayIso = today.toString();
+
+  const purchaseOrderLines = (openPurchaseOrderLines.data ?? []).map(
+    (line) => ({
+      ...line,
+      dueDate: purchaseOrderLineArrivalDate(line, todayIso)
+    })
+  );
+  const productionOrders = (openProductionOrders.data ?? []).map((job) => ({
+    ...job,
+    completionDate: jobCompletionDate(job, todayIso)
+  }));
+
+  const supply = bucketSupplyByPeriod(
+    periods.map((p) => ({
+      id: p.id ?? "",
+      startDate: p.startDate ?? "",
+      endDate: p.endDate ?? ""
+    })),
+    todayIso,
+    [
+      ...purchaseOrderLines.map((line) => ({
+        sourceType: "Purchase Order" as const,
+        quantity: Number(line.quantity ?? 0),
+        dueDate: line.dueDate
+      })),
+      ...productionOrders.map((job) => ({
+        sourceType: "Production Order" as const,
+        quantity: Number(job.quantity ?? 0),
+        dueDate: job.completionDate
+      }))
+    ]
   );
 
   return {
     demand: demand.actuals,
     demandForecast,
     demandForecastSources: demandForecastSources.data ?? [],
-    supply: [
-      ...supply.actuals,
-      ...supply.forecasts.map((f) => ({
-        ...f,
-        actualQuantity: f.forecastQuantity
-      }))
-    ],
+    supply,
     periods,
-    quantityOnHand: quantities.data?.quantityOnHand ?? 0,
+    quantityOnHand,
+    quantityNonNettable,
+    quantityNettable,
     openSalesOrderLines: openSalesOrderLines.data ?? [],
     openJobMaterials: redirectedOpenJobMaterials,
-    openProductionOrders: openProductionOrders.data ?? [],
-    openPurchaseOrderLines: openPurchaseOrderLines.data ?? []
+    openProductionOrders: productionOrders,
+    openPurchaseOrderLines: purchaseOrderLines
   };
 }

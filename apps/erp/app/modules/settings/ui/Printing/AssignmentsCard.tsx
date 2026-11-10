@@ -9,6 +9,7 @@ import type {
   PrinterRoute,
   PrintingSettings
 } from "@carbon/printing";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -16,20 +17,21 @@ import {
   CardHeader,
   CardTitle,
   Combobox,
+  cn,
   Switch,
   toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import {
   LuBlocks,
   LuHandCoins,
   LuLocateFixed,
   LuMapPin,
+  LuSquareKanban,
   LuTruck
 } from "react-icons/lu";
-import { useFetcher } from "react-router";
 
 type AssignmentUpdate = {
   locationId: string;
@@ -55,7 +57,9 @@ export function AssignmentsCard({
   }[];
 }) {
   const { t } = useLingui();
-  const assignmentFetcher = useFetcher<{ success: boolean; message: string }>();
+  const assignmentFetcher = useAction({
+    onSuccess: () => toast.success(t`Assignment updated`)
+  });
 
   const printerRouteOptions = useMemo(
     () => [
@@ -84,21 +88,6 @@ export function AssignmentsCard({
     return map;
   }, [workCenters]);
 
-  useEffect(() => {
-    if (
-      assignmentFetcher.data?.success === true &&
-      assignmentFetcher.data?.message
-    ) {
-      toast.success(assignmentFetcher.data.message);
-    }
-    if (
-      assignmentFetcher.data?.success === false &&
-      assignmentFetcher.data?.message
-    ) {
-      toast.error(assignmentFetcher.data.message);
-    }
-  }, [assignmentFetcher.data?.message, assignmentFetcher.data?.success]);
-
   const submitAssignment = useCallback(
     (data: AssignmentUpdate) => {
       const formData = new FormData();
@@ -122,8 +111,9 @@ export function AssignmentsCard({
         </CardTitle>
         <CardDescription>
           <Trans>
-            Assign printers to locations. Shipping, receiving, and work centers
-            inherit the location default unless overridden.
+            Assign printers to locations. Shipping, receiving, inventory,
+            kanbans, and work centers inherit the location default unless
+            overridden.
           </Trans>
         </CardDescription>
       </CardHeader>
@@ -216,6 +206,12 @@ function LocationSection({
       icon: <LuBlocks />,
       explicit: assignment?.inventory ?? null
     },
+    {
+      context: "kanban",
+      label: "Kanbans",
+      icon: <LuSquareKanban />,
+      explicit: assignment?.kanban ?? null
+    },
     ...workCenters.map<AssignmentRowModel>((wc) => ({
       context: "workCenter",
       contextId: wc.id,
@@ -287,6 +283,7 @@ function AssignmentRow({
   onPrinterChange: (printerRouteId: string) => void;
   onAutoPrintChange: (autoPrint: boolean) => void;
 }) {
+  const { t } = useLingui();
   const displayState = printerRouteId
     ? ("assigned" as const)
     : inheritedName
@@ -302,9 +299,13 @@ function AssignmentRow({
 
   return (
     <div
-      className={`flex items-center justify-between py-2.5 ${isIndented ? "pl-7" : ""} ${!isBold ? "border-t border-border/50" : ""}`}
+      className={cn(
+        "flex items-center justify-between py-2.5 max-md:flex-col max-md:items-stretch max-md:gap-2",
+        isIndented && "pl-7",
+        !isBold && "border-t border-border/50"
+      )}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 max-md:min-w-0">
         <div className="size-7 bg-muted rounded-lg flex items-center justify-center shrink-0">
           <span className="size-4 text-muted-foreground">{icon}</span>
         </div>
@@ -315,8 +316,8 @@ function AssignmentRow({
         </span>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div className="w-[320px]">
+      <div className="flex items-center gap-4 max-md:w-full max-md:justify-between">
+        <div className="w-[320px] max-md:w-auto max-md:flex-1 max-md:min-w-0">
           <Combobox
             size="sm"
             value={printerRouteId ?? ""}
@@ -324,12 +325,14 @@ function AssignmentRow({
             onChange={(selected) => onPrinterChange(selected)}
             isClearable
             placeholder={placeholder}
+            aria-label={t`Printer for ${label}`}
           />
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 max-md:shrink-0">
           <Switch
             variant="small"
+            aria-label={t`Auto-print ${label}`}
             checked={autoPrint}
             onCheckedChange={onAutoPrintChange}
           />

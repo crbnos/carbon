@@ -6,7 +6,7 @@ import type { ComboboxProps } from "@carbon/form";
 import { Combobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { useMemo } from "react";
-import type { getAbilitiesList } from "~/modules/resources";
+import type { getAbilitiesList } from "~/modules/resources/resources.service";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
 

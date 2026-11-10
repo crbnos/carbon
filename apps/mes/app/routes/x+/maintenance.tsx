@@ -11,9 +11,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Heading,
   HStack,
-  SidebarTrigger,
   Tabs,
   TabsContent,
   TabsList,
@@ -21,10 +19,9 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BsExclamationSquareFill } from "react-icons/bs";
-import { LuTriangleAlert } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
 import { LowPriorityIcon } from "~/assets/icons/LowPriorityIcon";
@@ -32,6 +29,8 @@ import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
 import type { ColumnFilter } from "~/components/Filter";
 import { ActiveFilters, Filter, useFilters } from "~/components/Filter";
+import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
+import { MesEmptyState } from "~/components/MesEmptyState";
 import SearchFilter from "~/components/SearchFilter";
 import { userContext } from "~/context";
 import { useUrlParams } from "~/hooks";
@@ -42,11 +41,14 @@ import {
 import { maintenanceDispatchPriority } from "~/services/models";
 import { getWorkCentersByLocation } from "~/services/operations.service";
 import type { Handle } from "~/utils/handle";
+import { pageMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
   realtime: ["maintenanceDispatch"]
 };
+
+export const meta: MetaFunction = () => pageMeta("Maintenance");
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { client, userId } = await requirePermissions(request, {});
@@ -239,7 +241,7 @@ function MaintenanceCard({ dispatch }: { dispatch: MaintenanceDispatch }) {
   }
   return (
     <Link to={path.to.maintenanceDetail(dispatch.id)}>
-      <Card className="hover:border-primary/50 transition-colors cursor-pointer p-0">
+      <Card className="cursor-pointer p-0">
         <CardHeader className="pb-2">
           <HStack className="justify-between">
             <HStack spacing={2}>
@@ -250,16 +252,30 @@ function MaintenanceCard({ dispatch }: { dispatch: MaintenanceDispatch }) {
                 className={`h-2 w-2 rounded-full ${getStatusColor(dispatch.status)}`}
               />
             </HStack>
-            {getPriorityIcon(
-              dispatch.priority as (typeof maintenanceDispatchPriority)[number]
-            )}
+            <HStack spacing={2}>
+              <div className="hidden items-center gap-2 max-md:flex">
+                <Badge
+                  variant={getOeeImpactColor(dispatch.oeeImpact ?? "No Impact")}
+                >
+                  {dispatch.oeeImpact ?? t`No Impact`}
+                </Badge>
+                {dispatch.assignee && (
+                  <span className="text-xs">
+                    <EmployeeAvatar employeeId={dispatch.assignee} />
+                  </span>
+                )}
+              </div>
+              {getPriorityIcon(
+                dispatch.priority as (typeof maintenanceDispatchPriority)[number]
+              )}
+            </HStack>
           </HStack>
           <CardTitle className="text-base">{dispatch.workCenterName}</CardTitle>
           <CardDescription className="text-xs">
             {dispatch.severity}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="max-md:hidden">
           <HStack className="justify-between">
             <Badge
               variant={getOeeImpactColor(dispatch.oeeImpact ?? "No Impact")}
@@ -284,19 +300,17 @@ function EmptyState({
   onClear?: () => void;
 }) {
   return (
-    <div className="flex flex-col flex-1 w-full h-[calc(100dvh-var(--header-height)*2-40px)] items-center justify-center gap-4">
-      <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-        <LuTriangleAlert className="h-6 w-6" />
-      </div>
-      <span className="text-xs font-mono font-light text-foreground uppercase">
-        {message}
-      </span>
-      {onClear && (
-        <Button onClick={onClear}>
-          <Trans>Clear Search</Trans>
-        </Button>
-      )}
-    </div>
+    <MesEmptyState
+      className="flex-1 w-full h-[calc(100dvh-var(--header-height)*2-40px-var(--announcement-height,0px))]"
+      title={message}
+      action={
+        onClear ? (
+          <Button onClick={onClear}>
+            <Trans>Clear Search</Trans>
+          </Button>
+        ) : undefined
+      }
+    />
   );
 }
 
@@ -316,6 +330,14 @@ export default function MaintenanceRoute() {
   const { dispatches, assignedDispatches, workCenters } =
     useLoaderData<typeof loader>();
   const [activeTab, setActiveTab] = useState("all");
+  // Phones: the tab row scrolls sideways; keep the active tab in view.
+  const tabsListRef = useRef<HTMLDivElement>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-run when the active tab changes
+  useEffect(() => {
+    tabsListRef.current
+      ?.querySelector<HTMLElement>('[data-state="active"]')
+      ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [activeTab]);
   const [params] = useUrlParams();
   const { hasFilters, clearFilters } = useFilters();
   const currentFilters = params.getAll("filter").filter(Boolean);
@@ -405,23 +427,20 @@ export default function MaintenanceRoute() {
   const activeDispatches = getActiveDispatches();
 
   return (
-    <div className="flex flex-col flex-1">
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b bg-card">
-        <div className="flex items-center gap-2 px-2">
-          <SidebarTrigger />
-          <Heading size="h4">
-            <Trans>Maintenance</Trans>
-          </Heading>
-        </div>
-      </header>
+    <div className="flex flex-col flex-1 min-h-0">
+      <MesAppBar title={<Trans>Maintenance</Trans>} />
+      <MesQueueHeader title={<Trans>Maintenance</Trans>} />
 
-      <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
+      <div className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
         <div className="w-full p-4">
           <VStack spacing={4}>
             <div className="w-full">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <HStack className="justify-between w-full">
-                  <TabsList>
+                <HStack className="justify-between w-full max-md:flex-col max-md:items-stretch max-md:gap-2">
+                  <TabsList
+                    ref={tabsListRef}
+                    className="max-md:-mx-4 max-md:w-[calc(100%+2rem)] max-md:justify-start max-md:overflow-x-auto max-md:px-4 scrollbar-hide max-md:scroll-fade-x"
+                  >
                     <TabsTrigger value="all">
                       <Trans>All</Trans>
                       {dispatches.length > 0 && (
@@ -551,7 +570,7 @@ export default function MaintenanceRoute() {
             </div>
           </VStack>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

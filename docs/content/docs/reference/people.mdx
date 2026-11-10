@@ -62,6 +62,8 @@ Deleting a shift marks it inactive instead of removing it, preserving historical
 
 A **holiday** is a company non-working day: a name and a date. The year is derived from the date automatically, and the list groups by year so you can review one calendar year at a time.
 
+A holiday closes the plant for [scheduling](/docs/reference/scheduling): no operation is placed on that day, except on a lights-out (24×7) work center, and nobody is counted as available. Forecast shades the day as closed, and the capacity view on Resource Planning shows no available hours for it. Adding, editing, or deleting a holiday queues a reschedule.
+
 <FieldTable>
   <Field name="Holiday Name" type="text">What the day is called.</Field>
   <Field name="Date" type="date">The calendar date. Its year is computed from this.</Field>
@@ -82,7 +84,7 @@ Each attribute defines:
   <Field name="Self Managed" type="boolean">When on, employees can edit this value on their own profile; otherwise only admins can.</Field>
 </FieldTable>
 
-The <Term id="attribute-data-type">Data Type</Term> comes from a fixed set: **"Text"**, **"Numeric"**, **"Yes/No"**, **"Date"**, **"List"**, and **"User"** (the same list also powers customer and supplier custom fields, which add **"Customer"**, **"Supplier"**, and **"File"**). A **"List"** attribute pulls its choices from its <Term id="attribute-list-options">List Options</Term>.
+The <Term id="attribute-data-type">Data Type</Term> comes from a fixed set: **"Text"**, **"Numeric"**, **"Yes/No"**, **"Date"**, **"List"**, and **"User"** (the same list also powers customer and supplier custom fields, which add **"Customer"**, **"Supplier"**, and **"File"**). A **"List"** attribute pulls its choices from its <Term id="attribute-list-options">List Options</Term>. The **"Link"** type is offered on custom fields only, not on attributes.
 
 <Callout type="note">
 Pick the data type when you create the attribute — it's fixed once the attribute has recorded values. Category and attribute deletes are soft deletes (marked inactive), so an attribute you retire won't erase the values already collected against it.
@@ -90,7 +92,7 @@ Pick the data type when you create the attribute — it's fixed once the attribu
 
 ## Time cards
 
-A **time card** is a clock-in / clock-out record for an employee. Time tracking is off by default and turns on per company with a **`timeCardEnabled`** setting; once on, the **Timecards** tab appears on each person and a company-wide list shows up under **Manage**.
+A **time card** is a clock-in / clock-out record for an employee. Time tracking is off by default and turns on per company at **Settings → Time → Timecards** (`timeCardEnabled`); once on, the **Timecards** tab appears on each person and a company-wide list shows up under **Manage**.
 
 Each entry captures the employee, a clock-in time, an optional clock-out time, and a note. An entry with no clock-out is still open — Carbon derives its **Status** from that:
 
@@ -132,7 +134,7 @@ Saving a holiday without a date fails. The year is derived from the date, so the
 Department deletion is a **hard delete** — the row is removed outright. Reassign anyone whose job placement points at that department first, otherwise their placements are left with no department. This differs from shifts and attributes, which are soft-deleted (marked inactive) so historical assignments survive.
 
 ### The Timecards tab / time card list isn't showing
-Time tracking is off by default. It only appears once a company turns on the `timeCardEnabled` setting; until then there is no Timecards tab on a person and no company-wide list under Manage.
+Time tracking is off by default. It only appears once a company turns it on at **Settings → Time → Timecards** (`timeCardEnabled`); until then there is no Timecards tab on a person and no company-wide list under Manage.
 
 ### Looking for a time card approval / sign-off step
 There isn't one. A time card's status ("Active" while clocked in, "Complete" once clocked out) is computed, not stored, and a completed entry is final — there is no pending-approval workflow. Correct a mistake by editing or deleting the entry directly.

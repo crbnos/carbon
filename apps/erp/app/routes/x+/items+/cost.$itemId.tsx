@@ -6,7 +6,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
-import { updateItemCost } from "~/modules/items";
+import { updateItemCost } from "~/modules/items/items.service";
 
 const logger = getLogger("erp", "cost-itemid");
 

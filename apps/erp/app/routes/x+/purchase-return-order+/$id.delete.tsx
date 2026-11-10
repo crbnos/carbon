@@ -12,7 +12,7 @@ import {
   deletePurchaseReturnOrder,
   getPurchaseReturnOrder,
   getPurchaseReturnOrderLines
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

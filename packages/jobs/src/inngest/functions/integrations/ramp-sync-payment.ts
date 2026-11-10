@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { posting } from "@carbon/api/postings.server";
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
@@ -9,7 +10,6 @@ import {
   upsertLocalPaymentDraft
 } from "@carbon/ee/accounting";
 import type { RampBill, RampBillPayment } from "@carbon/ee/ramp.server";
-import { serverFns } from "@carbon/server-functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 
@@ -60,6 +60,19 @@ const BANK_PAYMENT_METHODS = new Set([
   "RTP",
   "SWIFT"
 ]);
+
+/**
+ * How a Ramp bill payment is handled: a card payment is the card charge's
+ * business (skipped here), a verified bank rail posts a payment, and anything
+ * else fails rather than guessing an offset account.
+ */
+export function rampBillPaymentRoute(
+  method: string | null | undefined
+): "card" | "bank" | "unsupported" {
+  if (CARD_PAYMENT_METHODS.has(method ?? "")) return "card";
+  if (BANK_PAYMENT_METHODS.has(method ?? "")) return "bank";
+  return "unsupported";
+}
 
 export async function ensureRampPaymentPosted(deps: {
   stage: () => Promise<StageResult>;
@@ -194,12 +207,14 @@ export async function createOrResumeRampPayment(
   return ensureRampPaymentPosted({
     stage: () => stageRampPaymentDraft(db, args),
     post: async (paymentRowId) => {
-      const response = await serverFns
-        .as({ client, db, companyId: args.companyId, userId: args.actorId })
-        .invoke("post-payment", {
+      const response = await posting(
+        "post-payment",
+        { client, db, companyId: args.companyId, userId: args.actorId },
+        {
           type: "post",
           paymentId: paymentRowId
-        });
+        }
+      );
       return {
         error: Boolean(response.error),
         message: response.error?.message
@@ -230,10 +245,11 @@ export async function syncRampBillPayment(
   }
 
   const method = payment.payment_method ?? "";
-  if (CARD_PAYMENT_METHODS.has(method)) {
+  const route = rampBillPaymentRoute(method);
+  if (route === "card") {
     return { skip: { id: paymentRampId, referenceId: paymentRampId } };
   }
-  if (!BANK_PAYMENT_METHODS.has(method)) {
+  if (route === "unsupported") {
     return {
       fail: {
         id: paymentRampId,

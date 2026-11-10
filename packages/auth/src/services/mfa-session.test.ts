@@ -2,79 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-// ── Isolation mocks ───────────────────────────────────────────────────────
-// session.server's siblings pull in supabase/env at module load; stub them so
-// the cookie/session logic under test runs against the real react-router
-// session storage only.
-vi.mock("@carbon/kv", () => ({
-  redis: {
-    get: vi.fn().mockResolvedValue(null),
-    set: vi.fn().mockResolvedValue(null),
-    del: vi.fn().mockResolvedValue(null)
-  }
-}));
-
-vi.mock("../config/env", () => ({
-  DOMAIN: "localhost",
-  CarbonEdition: "Community",
-  CONTROLLED_ENVIRONMENT: false,
-  REFRESH_ACCESS_TOKEN_THRESHOLD: 60,
-  SESSION_ABSOLUTE_MAX_MS: 12 * 60 * 60 * 1000,
-  SESSION_IDLE_LOCK_MS: 15 * 60 * 1000,
-  SESSION_KEY: "auth",
-  SESSION_MAX_AGE: 60 * 60 * 24 * 7,
-  SESSION_SECRET: "test-session-secret"
-}));
-
-vi.mock("./auth.server", () => ({
-  makeAuthSession: vi.fn(
-    (
-      supabaseSession: any,
-      companyId: string,
-      companyGroupId: string,
-      options?: { mfaVerified?: boolean }
-    ) =>
-      supabaseSession
-        ? {
-            accessToken: supabaseSession.access_token,
-            refreshToken: supabaseSession.refresh_token,
-            userId: supabaseSession.user.id,
-            email: supabaseSession.user.email,
-            companyId,
-            companyGroupId,
-            expiresIn: 3000,
-            expiresAt: supabaseSession.expires_at,
-            ...(options?.mfaVerified ? { mfaVerified: true } : {})
-          }
-        : null
-  ),
-  refreshAccessToken: vi.fn(),
-  verifyAuthSession: vi.fn().mockResolvedValue(true),
-  logAuthEvent: vi.fn()
-}));
-
-vi.mock("./company.server", () => ({
-  setCompanyId: vi.fn(() => "companyId=cookie")
-}));
-
-vi.mock("./mfa.server", () => ({
-  getTotpFactors: vi.fn().mockResolvedValue([]),
-  userHasVerifiedTotpFactor: vi.fn().mockResolvedValue(false),
-  verifyTotpChallenge: vi.fn().mockResolvedValue(null)
-}));
-
-vi.mock("./users", () => ({
-  getPermissionCacheKey: (userId: string) => `permissions:${userId}`
-}));
-
-import type { AuthSession } from "../types";
 import {
-  getTotpFactors,
-  userHasVerifiedTotpFactor,
-  verifyTotpChallenge
-} from "./mfa.server";
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from "vitest";
+import type { AuthSession } from "../types";
 import {
   completeMfaChallenge,
   getPendingMfaSession,
@@ -83,12 +20,112 @@ import {
   setPendingMfaSession
 } from "./session.server";
 
+// The module reads its configuration once, at import.
+vi.hoisted(() => {
+  vi.stubEnv("DOMAIN", "localhost");
+  vi.stubEnv("CARBON_EDITION", "");
+  vi.stubEnv("AUTH_COOKIE_SUFFIX", "");
+  vi.stubEnv("CONTROLLED_ENVIRONMENT", "");
+  vi.stubEnv("SESSION_SECRET", "test-session-secret");
+  vi.stubEnv("SUPABASE_URL", "http://supabase.test");
+  vi.stubEnv("SUPABASE_ANON_KEY", "anon-key");
+  vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-key");
+});
+
+// Redis as an in-memory map.
+const kv = vi.hoisted(() => new Map<string, string>());
+vi.mock("@carbon/kv", () => ({
+  redis: {
+    get: async (key: string) => kv.get(key) ?? null,
+    set: async (key: string, value: string) => {
+      kv.set(key, value);
+      return "OK";
+    },
+    del: async (key: string) => Number(kv.delete(key))
+  }
+}));
+
+// GoTrue takes only a UUID as a user id.
+const USER_ID = "8f7c1e5a-3b2d-4c6e-9a1f-0d2e4b6c8a10";
+const VALID_CODE = "123456";
 const FUTURE_EXPIRES_AT = 4102444800; // far enough that isExpiringSoon is false
 
+// An access token GoTrue's client can decode; without `exp` it counts as
+// expired, so seeding a client with it refreshes first.
+const b64 = (value: object) =>
+  Buffer.from(JSON.stringify(value)).toString("base64url");
+const ACCESS_TOKEN = `${b64({ alg: "HS256", typ: "JWT" })}.${b64({ sub: USER_ID })}.${b64({ signature: true })}`;
+
+const user = { id: USER_ID, email: "jane@example.com" };
+
+// GoTrue, answered over a stubbed fetch. `factors` is the user's enrolled
+// factors; a challenge accepts only VALID_CODE and then issues AAL2 tokens.
+const gotrue = {
+  factors: [] as { id: string; factor_type: string; status: string }[],
+  paths: [] as string[]
+};
+const verifiedTotp = [
+  { id: "factor_1", factor_type: "totp", status: "verified" }
+];
+
+const fakeGoTrue = async (input: RequestInfo | URL, init?: RequestInit) => {
+  const url = new URL(input instanceof Request ? input.url : String(input));
+  gotrue.paths.push(url.pathname);
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { "Content-Type": "application/json" }
+    });
+  const session = (access_token: string, refresh_token: string) => ({
+    access_token,
+    refresh_token,
+    token_type: "bearer",
+    expires_in: 3600,
+    expires_at: FUTURE_EXPIRES_AT,
+    user
+  });
+  switch (url.pathname) {
+    case "/auth/v1/token":
+      return json(session("aal1-access", "aal1-refresh"));
+    case "/auth/v1/user":
+      return json(user);
+    case `/auth/v1/admin/users/${USER_ID}/factors`:
+      return json(gotrue.factors);
+    case "/auth/v1/factors/factor_1/challenge":
+      return json({
+        id: "challenge_1",
+        type: "totp",
+        expires_at: FUTURE_EXPIRES_AT
+      });
+    case "/auth/v1/factors/factor_1/verify": {
+      const { code } = JSON.parse(String(init?.body));
+      return code === VALID_CODE
+        ? json(session("aal2-access", "aal2-refresh"))
+        : json(
+            { code: "mfa_verification_failed", msg: "Invalid TOTP code" },
+            422
+          );
+    }
+    default:
+      return json({}, 404);
+  }
+};
+
+beforeEach(() => {
+  kv.clear();
+  gotrue.factors = [];
+  gotrue.paths = [];
+  vi.stubGlobal("fetch", fakeGoTrue);
+});
+
+afterEach(() => vi.unstubAllGlobals());
+
+afterAll(() => vi.unstubAllEnvs());
+
 const makeSession = (overrides: Partial<AuthSession> = {}): AuthSession => ({
-  accessToken: "access-token",
+  accessToken: ACCESS_TOKEN,
   refreshToken: "refresh-token",
-  userId: "user_1",
+  userId: USER_ID,
   companyId: "company_1",
   companyGroupId: "group_1",
   email: "jane@example.com",
@@ -108,7 +145,6 @@ describe("pending MFA session", () => {
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.clearAllMocks();
   });
 
   it("round-trips the parked session and redirectTo", async () => {
@@ -121,8 +157,8 @@ describe("pending MFA session", () => {
     const pending = await getPendingMfaSession(requestWithCookie(cookie));
 
     expect(pending?.authSession).toMatchObject({
-      accessToken: "access-token",
-      userId: "user_1"
+      accessToken: ACCESS_TOKEN,
+      userId: USER_ID
     });
     expect(pending?.redirectTo).toBe("/x/parts");
   });
@@ -155,35 +191,17 @@ describe("pending MFA session", () => {
 });
 
 describe("completeMfaChallenge", () => {
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
-
   it("fails with no-session when nothing is parked or issued", async () => {
     const result = await completeMfaChallenge(
       new Request("http://localhost:3000/mfa", { method: "POST" }),
-      "123456"
+      VALID_CODE
     );
 
     expect(result).toEqual({ success: false, reason: "no-session" });
   });
 
   it("mints an mfaVerified session from a pending challenge", async () => {
-    vi.mocked(getTotpFactors).mockResolvedValue([
-      {
-        id: "factor_1",
-        friendlyName: "Authenticator app",
-        status: "verified",
-        createdAt: "2026-08-01T00:00:00Z"
-      }
-    ]);
-    vi.mocked(verifyTotpChallenge).mockResolvedValue({
-      access_token: "aal2-access",
-      refresh_token: "aal2-refresh",
-      expires_at: FUTURE_EXPIRES_AT,
-      user: { id: "user_1", email: "jane@example.com" }
-    } as any);
-
+    gotrue.factors = verifiedTotp;
     const pendingCookie = await setPendingMfaSession(
       new Request("http://localhost:3000/callback"),
       { authSession: makeSession(), redirectTo: "/x/parts" }
@@ -191,13 +209,16 @@ describe("completeMfaChallenge", () => {
 
     const result = await completeMfaChallenge(
       requestWithCookie(pendingCookie),
-      "123456"
+      VALID_CODE
     );
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.authSession.accessToken).toBe("aal2-access");
-      expect(result.authSession.mfaVerified).toBe(true);
+      expect(result.authSession).toMatchObject({
+        accessToken: "aal2-access",
+        refreshToken: "aal2-refresh",
+        mfaVerified: true
+      });
       expect(result.redirectTo).toBe("/x/parts");
       // The cookie it returns holds the full session and no pending state.
       expect(
@@ -206,22 +227,8 @@ describe("completeMfaChallenge", () => {
     }
   });
 
-  it("falls back to the issued session when bounced by the re-check", async () => {
-    vi.mocked(getTotpFactors).mockResolvedValue([
-      {
-        id: "factor_1",
-        friendlyName: null,
-        status: "verified",
-        createdAt: "2026-08-01T00:00:00Z"
-      }
-    ]);
-    vi.mocked(verifyTotpChallenge).mockResolvedValue({
-      access_token: "aal2-access",
-      refresh_token: "aal2-refresh",
-      expires_at: FUTURE_EXPIRES_AT,
-      user: { id: "user_1", email: "jane@example.com" }
-    } as any);
-
+  it("falls back to the issued session when bounced by the re-check, keeping console mode", async () => {
+    gotrue.factors = verifiedTotp;
     const staleCookie = await setAuthSession(
       new Request("http://localhost:3000/x"),
       { authSession: makeSession({ console: "company_1" }) }
@@ -229,28 +236,21 @@ describe("completeMfaChallenge", () => {
 
     const result = await completeMfaChallenge(
       requestWithCookie(staleCookie),
-      "123456"
+      VALID_CODE
     );
 
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.authSession.mfaVerified).toBe(true);
-      // Console mode survives the token rotation.
-      expect(result.authSession.console).toBe("company_1");
+      expect(result.authSession).toMatchObject({
+        accessToken: "aal2-access",
+        mfaVerified: true,
+        console: "company_1"
+      });
     }
   });
 
   it("rejects a wrong code", async () => {
-    vi.mocked(getTotpFactors).mockResolvedValue([
-      {
-        id: "factor_1",
-        friendlyName: null,
-        status: "verified",
-        createdAt: "2026-08-01T00:00:00Z"
-      }
-    ]);
-    vi.mocked(verifyTotpChallenge).mockResolvedValue(null);
-
+    gotrue.factors = verifiedTotp;
     const pendingCookie = await setPendingMfaSession(
       new Request("http://localhost:3000/callback"),
       { authSession: makeSession() }
@@ -263,53 +263,59 @@ describe("completeMfaChallenge", () => {
 
     expect(result).toEqual({ success: false, reason: "invalid-code" });
   });
+
+  it("ignores an unverified factor", async () => {
+    gotrue.factors = [
+      { id: "factor_1", factor_type: "totp", status: "unverified" }
+    ];
+    const pendingCookie = await setPendingMfaSession(
+      new Request("http://localhost:3000/callback"),
+      { authSession: makeSession() }
+    );
+
+    const result = await completeMfaChallenge(
+      requestWithCookie(pendingCookie),
+      VALID_CODE
+    );
+
+    expect(result).toEqual({ success: false, reason: "invalid-code" });
+  });
 });
 
 describe("requireAuthSession MFA re-check", () => {
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
+  const signedIn = (overrides: Partial<AuthSession> = {}) =>
+    setAuthSession(new Request("http://localhost:3000/x"), {
+      authSession: makeSession(overrides)
+    });
 
   it("bounces an unverified session when the user has a factor", async () => {
-    vi.mocked(userHasVerifiedTotpFactor).mockResolvedValue(true);
+    gotrue.factors = verifiedTotp;
+    const cookie = await signedIn();
 
-    const cookie = await setAuthSession(
-      new Request("http://localhost:3000/x"),
-      { authSession: makeSession() }
+    const thrown = await requireAuthSession(requestWithCookie(cookie)).catch(
+      (response: Response) => response
     );
 
-    await expect(
-      requireAuthSession(requestWithCookie(cookie))
-    ).rejects.toSatisfy((response: any) => {
-      expect(response).toBeInstanceOf(Response);
-      expect(response.status).toBe(302);
-      expect(response.headers.get("Location")).toContain("/mfa");
-      return true;
-    });
+    expect(thrown).toBeInstanceOf(Response);
+    expect((thrown as Response).status).toBe(302);
+    expect((thrown as Response).headers.get("Location")).toMatch(/^\/mfa\?/);
   });
 
   it("passes an mfaVerified session without a factor lookup", async () => {
-    const cookie = await setAuthSession(
-      new Request("http://localhost:3000/x"),
-      { authSession: makeSession({ mfaVerified: true }) }
-    );
+    gotrue.factors = verifiedTotp;
+    const cookie = await signedIn({ mfaVerified: true });
 
     const session = await requireAuthSession(requestWithCookie(cookie));
 
-    expect(session.userId).toBe("user_1");
-    expect(userHasVerifiedTotpFactor).not.toHaveBeenCalled();
+    expect(session.userId).toBe(USER_ID);
+    expect(gotrue.paths).toEqual([]);
   });
 
   it("passes an unverified session when the user has no factor", async () => {
-    vi.mocked(userHasVerifiedTotpFactor).mockResolvedValue(false);
-
-    const cookie = await setAuthSession(
-      new Request("http://localhost:3000/x"),
-      { authSession: makeSession() }
-    );
+    const cookie = await signedIn();
 
     const session = await requireAuthSession(requestWithCookie(cookie));
 
-    expect(session.userId).toBe("user_1");
+    expect(session.userId).toBe(USER_ID);
   });
 });

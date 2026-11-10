@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { posting } from "@carbon/api/postings.server";
 import type { Database } from "@carbon/database";
 import {
   codeSelections,
@@ -15,7 +16,6 @@ import {
   scaleLinesToTotal
 } from "@carbon/ee/ramp.server";
 import { storage } from "@carbon/files";
-import { serverFns } from "@carbon/server-functions";
 import { stageOrResumeRampCharge } from "./ramp-sync-card-stage";
 import { recordRampFamilyError } from "./ramp-sync-observability";
 import {
@@ -288,17 +288,19 @@ export async function createAndPostTransaction(
 
   let postError: unknown;
   if (staged.status === "Draft") {
-    const posted = await serverFns
-      .as({
+    const posted = await posting(
+      "post-charge",
+      {
         client: ctx.client,
         db: ctx.db,
         companyId: ctx.companyId,
         userId: "system"
-      })
-      .invoke("post-charge", {
+      },
+      {
         type: "post",
         chargeId: staged.chargeId
-      });
+      }
+    );
     postError = posted.error;
   }
 

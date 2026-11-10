@@ -6,8 +6,8 @@ import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { redirect, redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { getKanban } from "~/modules/inventory";
-import { getActiveJobOperationByJobId } from "~/modules/production";
+import { getKanban } from "~/modules/inventory/inventory.service";
+import { getActiveJobOperationByJobId } from "~/modules/production/production.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

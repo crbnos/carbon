@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updatePurchasingRFQLineOrder } from "~/modules/purchasing";
+import { updatePurchasingRFQLineOrder } from "~/modules/purchasing/purchasing.service";
 import { parseSortOrderUpdates } from "~/modules/shared/sort-order";
 import { getDatabaseClient } from "~/services/database.server";
 

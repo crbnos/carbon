@@ -17,12 +17,13 @@ import {
   Td,
   Tr,
   TruncatedTooltipText,
+  useViewport,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
@@ -34,6 +35,8 @@ import {
 } from "~/components";
 import { useAccounts } from "~/components/Form/Account";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { useShowRecordPanel } from "~/components/Layout/Panels";
+import { SummaryLineList, SummaryLineRow } from "~/components/SummaryLineRow";
 import {
   useCurrencyFormatter,
   usePercentFormatter,
@@ -42,13 +45,14 @@ import {
 } from "~/hooks";
 import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
-import { isPurchaseOrderLocked } from "../../purchasing.models";
+import { isPurchaseOrderEditLocked } from "../../purchasing.models";
 import type {
   PurchaseOrder,
   PurchaseOrderDelivery,
   PurchaseOrderLine,
   Supplier
 } from "../../types";
+import { PurchaseOrderLineSummaryDates } from "./PurchaseOrderLineDates";
 
 const LineItems = ({
   currencyCode,
@@ -56,15 +60,20 @@ const LineItems = ({
   formatter,
   locale,
   lines,
+  order,
   shouldConvertCurrency
 }: {
   currencyCode: string;
+  order: PurchaseOrder | undefined;
   presentationCurrencyFormatter: Intl.NumberFormat;
   formatter: Intl.NumberFormat;
   locale: string;
   lines: PurchaseOrderLine[];
   shouldConvertCurrency: boolean;
 }) => {
+  const { t } = useLingui();
+  const { isPhone } = useViewport();
+  const showRecordPanel = useShowRecordPanel();
   const [items] = useItems();
   const accounts = useAccounts();
   const { orderId } = useParams();
@@ -80,161 +89,210 @@ const LineItems = ({
     );
   };
 
-  return (
-    <VStack spacing={8} className="w-full overflow-hidden">
-      {lines.map((line) => {
-        if (!line.id) return null;
+  // Phones: the first lines as rows that open the line page; the Lines tab
+  // lists them all.
+  const phoneLineLimit = 3;
+  const shownLines = isPhone ? lines.slice(0, phoneLineLimit) : lines;
 
-        const isGlAccount = line.purchaseOrderLineType === "G/L Account";
-        const isFixedAsset = line.purchaseOrderLineType === "Fixed Asset";
-        const isIndirect = isGlAccount || isFixedAsset;
-        const isReceivable = !isGlAccount && (line.purchaseQuantity ?? 0) > 0;
-        const quantityReceived = line.quantityReceived ?? 0;
-        const quantityInvoiced = line.quantityInvoiced ?? 0;
-        const itemReadableId = isGlAccount
-          ? line.description || "Indirect Expense"
-          : isFixedAsset
-            ? line.assetReadableId || "Fixed Asset"
-            : getItemReadableId(items, line.itemId);
-        const lineDescription = isGlAccount
-          ? (accounts.find((a) => a.id === line.accountId)?.name ??
-            "Indirect Expense")
-          : isFixedAsset
-            ? line.description || "Fixed Asset"
-            : line.description;
-        const lineTotal = (line.unitPrice ?? 0) * (line.purchaseQuantity ?? 0);
-        const supplierLineTotal =
-          (line.supplierUnitPrice ?? 0) * (line.purchaseQuantity ?? 0);
-        const total =
-          lineTotal + (line.taxAmount ?? 0) + (line.shippingCost ?? 0);
-        const supplierTotal =
-          supplierLineTotal +
-          (line.supplierTaxAmount ?? 0) +
-          (line.supplierShippingCost ?? 0);
+  const rows = shownLines.map((line) => {
+    if (!line.id) return null;
 
-        return (
-          <motion.div
-            key={line.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="border-b border-input py-6 w-full"
-          >
-            <HStack spacing={4} className="items-start">
-              {line.thumbnailPath ? (
-                <img
-                  alt={itemReadableId!}
-                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
-                  src={getPrivateUrl(line.thumbnailPath)}
-                />
-              ) : (
-                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
-                  <LuImage className="w-16 h-16 text-muted-foreground" />
-                </div>
-              )}
+    const isGlAccount = line.purchaseOrderLineType === "G/L Account";
+    const isFixedAsset = line.purchaseOrderLineType === "Fixed Asset";
+    const isIndirect = isGlAccount || isFixedAsset;
+    const isReceivable = !isGlAccount && (line.purchaseQuantity ?? 0) > 0;
+    const quantityReceived = line.quantityReceived ?? 0;
+    const quantityInvoiced = line.quantityInvoiced ?? 0;
+    const itemReadableId = isGlAccount
+      ? line.description || "Indirect Expense"
+      : isFixedAsset
+        ? line.assetReadableId || "Fixed Asset"
+        : getItemReadableId(items, line.itemId);
+    const lineDescription = isGlAccount
+      ? (accounts.find((a) => a.id === line.accountId)?.name ??
+        "Indirect Expense")
+      : isFixedAsset
+        ? line.description || "Fixed Asset"
+        : distinctItemText(itemReadableId, line.description);
+    const lineTotal = (line.unitPrice ?? 0) * (line.purchaseQuantity ?? 0);
+    const supplierLineTotal =
+      (line.supplierUnitPrice ?? 0) * (line.purchaseQuantity ?? 0);
+    const total = lineTotal + (line.taxAmount ?? 0) + (line.shippingCost ?? 0);
+    const supplierTotal =
+      supplierLineTotal +
+      (line.supplierTaxAmount ?? 0) +
+      (line.supplierShippingCost ?? 0);
+    const lineName = itemReadableId ?? "";
+    const unitOfMeasureLabel = unitOfMeasures.find(
+      (uom) => uom.value === line.purchaseUnitOfMeasureCode
+    )?.label;
 
-              <VStack spacing={0} className="flex-1 min-w-0">
-                <div
-                  className="flex flex-col cursor-pointer w-full"
-                  onClick={() => toggleOpen(line.id!)}
-                >
-                  {/* The text column must shrink (flex-1 min-w-0) or a long
+    // Phones: one row that opens the line page (its Edit link, the
+    // badges and the breakdown stay on desktop).
+    if (isPhone) {
+      return (
+        <SummaryLineRow
+          key={line.id}
+          to={path.to.purchaseOrderLine(orderId, line.id)}
+          title={itemReadableId}
+          value={formatter.format(total)}
+          description={lineDescription}
+          meta={
+            <>
+              {line.purchaseQuantity} × {formatter.format(line.unitPrice ?? 0)}{" "}
+              {unitOfMeasureLabel}
+            </>
+          }
+        />
+      );
+    }
+
+    return (
+      <div key={line.id} className="border-b border-input py-6 w-full">
+        <HStack spacing={4} className="items-start">
+          {line.thumbnailPath ? (
+            <img
+              alt={itemReadableId!}
+              className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+              src={getPrivateUrl(line.thumbnailPath)}
+            />
+          ) : (
+            <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
+              <LuImage className="w-16 h-16 text-muted-foreground" />
+            </div>
+          )}
+
+          <VStack spacing={0} className="flex-1 min-w-0">
+            {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
+            <div
+              className="flex flex-col cursor-pointer w-full"
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest("a, button")) return;
+                toggleOpen(line.id!);
+              }}
+            >
+              {/* The text column must shrink (flex-1 min-w-0) or a long
                       description shoves the totals out of the card, and its
                       children need w-full because VStack is items-start, which
                       sizes each child to its own content and leaves truncate
                       inert no matter how narrow the column gets. */}
-                  <div className="flex items-center justify-between w-full">
-                    <VStack spacing={0} className="flex-1 min-w-0">
-                      <HStack spacing={2} className="flex min-w-0 w-full">
-                        <Heading className="truncate">{itemReadableId}</Heading>
-                        <Button
-                          asChild
-                          variant="link"
-                          size="sm"
-                          className="text-muted-foreground flex-shrink-0"
-                        >
-                          <Link
-                            to={path.to.purchaseOrderLine(orderId, line.id!)}
-                          >
-                            <Trans>Edit</Trans>
-                          </Link>
-                        </Button>
-                      </HStack>
-                      <TruncatedTooltipText
-                        className="text-muted-foreground text-sm truncate w-full"
-                        tooltip={lineDescription}
-                      >
-                        {lineDescription}
-                      </TruncatedTooltipText>
-                    </VStack>
-                    <VStack
-                      spacing={2}
-                      className="flex-shrink-0 items-end w-auto"
+              <div className="flex items-center justify-between w-full">
+                <VStack spacing={0} className="flex-1 min-w-0">
+                  <HStack spacing={2} className="flex min-w-0 w-full">
+                    <Heading className="truncate">{itemReadableId}</Heading>
+                    <Button
+                      asChild
+                      variant="link"
+                      size="sm"
+                      className="text-muted-foreground flex-shrink-0"
                     >
-                      <HStack spacing={4}>
-                        <VStack spacing={0}>
-                          <span className="font-bold text-xl whitespace-nowrap">
-                            {formatter.format(total)}
-                          </span>
-                          {shouldConvertCurrency && (
-                            <span className="text-muted-foreground text-sm">
-                              {presentationCurrencyFormatter.format(
-                                supplierTotal
-                              )}
-                            </span>
-                          )}
-                        </VStack>
-                        <motion.div
-                          animate={{
-                            rotate: openItems.includes(line.id) ? 90 : 0
-                          }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <LuChevronRight size={24} />
-                        </motion.div>
-                      </HStack>
-                      <div className="flex items-center gap-2">
-                        {!isIndirect && (
-                          <Badge
-                            variant="outline"
-                            className="flex items-center gap-2"
-                          >
-                            {line.purchaseQuantity}
-                            <MethodIcon
-                              // @ts-expect-error
-                              type={line.methodType ?? "Pull from Inventory"}
-                            />
-                          </Badge>
-                        )}
-                        <Badge variant="green">
-                          {formatter.format(line.unitPrice ?? 0)}{" "}
-                          {
-                            unitOfMeasures.find(
-                              (uom) =>
-                                uom.value === line.purchaseUnitOfMeasureCode
-                            )?.label
-                          }
-                        </Badge>
-                        {(line.taxPercent ?? 0) > 0 ? (
-                          <Badge variant="red">
-                            {percentFormatter.format(line.taxPercent ?? 0)} Tax
-                          </Badge>
-                        ) : null}
-                      </div>
+                      <Link to={path.to.purchaseOrderLine(orderId, line.id!)}>
+                        <Trans>Edit</Trans>
+                      </Link>
+                    </Button>
+                  </HStack>
+                  {lineDescription && (
+                    <TruncatedTooltipText
+                      className="text-muted-foreground text-sm truncate w-full"
+                      tooltip={lineDescription}
+                    >
+                      {lineDescription}
+                    </TruncatedTooltipText>
+                  )}
+                </VStack>
+                <VStack spacing={2} className="flex-shrink-0 items-end w-auto">
+                  <HStack spacing={4}>
+                    <VStack spacing={0}>
+                      <span className="font-semibold text-xl whitespace-nowrap">
+                        {formatter.format(total)}
+                      </span>
+                      {shouldConvertCurrency && (
+                        <span className="text-muted-foreground text-sm">
+                          {presentationCurrencyFormatter.format(supplierTotal)}
+                        </span>
+                      )}
                     </VStack>
+                    <motion.button
+                      type="button"
+                      aria-expanded={openItems.includes(line.id)}
+                      aria-controls={
+                        openItems.includes(line.id)
+                          ? `purchase-order-line-details-${line.id}`
+                          : undefined
+                      }
+                      aria-label={
+                        openItems.includes(line.id)
+                          ? t`Hide details for ${lineName}`
+                          : t`Show details for ${lineName}`
+                      }
+                      className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      onClick={() => toggleOpen(line.id!)}
+                      animate={{
+                        rotate: openItems.includes(line.id) ? 90 : 0
+                      }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <LuChevronRight size={24} aria-hidden />
+                    </motion.button>
+                  </HStack>
+                  <div className="flex items-center gap-2">
+                    {!isIndirect && (
+                      <Badge
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        {line.purchaseQuantity}
+                        <MethodIcon
+                          // @ts-expect-error
+                          type={line.methodType ?? "Pull from Inventory"}
+                        />
+                      </Badge>
+                    )}
+                    <Badge variant="green">
+                      {formatter.format(line.unitPrice ?? 0)}{" "}
+                      {
+                        unitOfMeasures.find(
+                          (uom) => uom.value === line.purchaseUnitOfMeasureCode
+                        )?.label
+                      }
+                    </Badge>
+                    {(line.taxPercent ?? 0) > 0 ? (
+                      <Badge variant="red">
+                        {percentFormatter.format(line.taxPercent ?? 0)} Tax
+                      </Badge>
+                    ) : null}
                   </div>
-                </div>
-              </VStack>
-            </HStack>
+                </VStack>
+              </div>
+              {/* Below the header, not in the totals column: in that
+                      shrink-0 column the dates' width came out of the item
+                      name's. */}
+              {!isIndirect && (
+                <PurchaseOrderLineSummaryDates
+                  line={{
+                    id: line.id,
+                    purchaseOrderId: orderId,
+                    receivedComplete: line.receivedComplete ?? false,
+                    requiredDate: line.requiredDate,
+                    promisedDate: line.promisedDate,
+                    receivedDate: line.receivedDate
+                  }}
+                  order={order}
+                />
+              )}
+            </div>
+          </VStack>
+        </HStack>
 
+        <AnimatePresence initial={false}>
+          {openItems.includes(line.id) ? (
             <motion.div
-              initial="collapsed"
-              animate={openItems.includes(line.id) ? "open" : "collapsed"}
-              variants={{
-                open: { opacity: 1, height: "auto", marginTop: 16 },
-                collapsed: { opacity: 0, height: 0, marginTop: 0 }
-              }}
-              transition={{ duration: 0.3 }}
+              key="panel"
+              id={`purchase-order-line-details-${line.id}`}
+              initial={{ opacity: 0, height: 0, marginTop: 0 }}
+              animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+              exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
               className="w-full overflow-hidden"
             >
               <div className="w-full">
@@ -384,7 +442,7 @@ const LineItems = ({
                       </Td>
                     </Tr>
 
-                    <Tr key="total" className="font-bold">
+                    <Tr key="total" className="font-semibold">
                       <Td>Total</Td>
                       <Td className="text-right">
                         <VStack spacing={0} className="items-end">
@@ -403,9 +461,34 @@ const LineItems = ({
                 </Table>
               </div>
             </motion.div>
-          </motion.div>
-        );
-      })}
+          ) : null}
+        </AnimatePresence>
+      </div>
+    );
+  });
+
+  if (isPhone) {
+    return (
+      <SummaryLineList>
+        {rows}
+        {lines.length > phoneLineLimit ? (
+          <div className="w-full pt-3">
+            <Button
+              variant="secondary"
+              className="w-full"
+              onClick={() => showRecordPanel("explorer")}
+            >
+              {t`See all ${lines.length}`}
+            </Button>
+          </div>
+        ) : null}
+      </SummaryLineList>
+    );
+  }
+
+  return (
+    <VStack spacing={8} className="w-full overflow-hidden">
+      {rows}
     </VStack>
   );
 };
@@ -428,7 +511,9 @@ const PurchaseOrderSummary = ({
     supplier: Supplier;
   }>(path.to.purchaseOrder(orderId));
 
-  const isEditable = !isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
+  const isEditable = !isPurchaseOrderEditLocked(
+    routeData?.purchaseOrder?.status
+  );
 
   const { locale } = useLocale();
   const formatter = useCurrencyFormatter();
@@ -484,8 +569,8 @@ const PurchaseOrderSummary = ({
   return (
     <Card>
       <CardHeader>
-        <HStack className="justify-between items-center">
-          <div className="flex flex-col gap-1">
+        <HStack className="justify-between items-center max-md:min-w-0">
+          <div className="flex flex-col gap-1 max-md:hidden">
             <CardTitle className="flex items-center gap-0">
               <span>{routeData?.purchaseOrder.purchaseOrderId}</span>
               <RevisionSuffix
@@ -496,7 +581,7 @@ const PurchaseOrderSummary = ({
               <Trans>Purchase Order</Trans>
             </CardDescription>
           </div>
-          <div className="flex flex-col gap-1 items-end">
+          <div className="flex flex-col gap-1 items-end max-md:w-full max-md:min-w-0 max-md:items-start max-md:[&>*]:max-w-full max-md:[&_span]:truncate">
             <SupplierAvatar
               supplierId={routeData?.purchaseOrder.supplierId ?? null}
             />
@@ -519,6 +604,7 @@ const PurchaseOrderSummary = ({
           formatter={formatter}
           locale={locale}
           lines={routeData?.lines ?? []}
+          order={routeData?.purchaseOrder}
           shouldConvertCurrency={shouldConvertCurrency}
         />
 

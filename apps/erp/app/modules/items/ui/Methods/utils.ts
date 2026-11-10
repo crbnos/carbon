@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 export function getPathToMakeMethod(

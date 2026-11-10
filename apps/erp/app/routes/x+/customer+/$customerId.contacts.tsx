@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getCustomerContacts } from "~/modules/sales";
+import { getCustomerContacts } from "~/modules/sales/sales.service";
 import { CustomerContacts } from "~/modules/sales/ui/Customer";
 import { path } from "~/utils/path";
 

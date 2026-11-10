@@ -33,10 +33,17 @@ import {
   LuUser
 } from "react-icons/lu";
 import { Link, useFetcher, useNavigate } from "react-router";
-import { CustomerAvatar, DateTime, SupplierAvatar, Table } from "~/components";
+import {
+  CustomerAvatar,
+  DateTime,
+  exportOnlyColumn,
+  SupplierAvatar,
+  Table
+} from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { IndeterminateCheckbox } from "~/components/Table/components";
 import { useCurrencyFormatter, usePermissions, useUrlParams } from "~/hooks";
+import { useCustomers, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 
 type TieOutResult = {
@@ -118,6 +125,18 @@ export function ARAPWorkbench({
   const permissions = usePermissions();
   const currencyFormatter = useCurrencyFormatter();
   const [b1, b2, b3] = bucketDays;
+  const [customers] = useCustomers();
+  const [suppliers] = useSuppliers();
+
+  // The CSV reads a counterparty's name, not its id: the grid shows it through
+  // the avatar, which the export cannot see.
+  const partyNameById = useMemo(
+    () =>
+      new Map(
+        (side === "ar" ? customers : suppliers).map((p) => [p.id, p.name])
+      ),
+    [side, customers, suppliers]
+  );
 
   const money = useCallback(
     (n: number) => currencyFormatter.format(Number(n)),
@@ -276,13 +295,17 @@ export function ARAPWorkbench({
             const kids = childrenByParty[r.partyId] ?? [];
             const isExpanded = expandedIds.has(r.partyId);
             return (
-              <div className="flex items-center">
+              <div
+                data-key-cell=""
+                className="flex items-center max-md:w-[calc(45dvw-32px)] max-md:pl-3"
+              >
                 <div className="w-5 shrink-0 flex items-center justify-center self-center">
                   {kids.length > 0 ? (
                     <button
+                      aria-expanded={isExpanded}
                       type="button"
                       aria-label={isExpanded ? t`Collapse` : t`Expand`}
-                      className="text-muted-foreground hover:text-foreground"
+                      className="text-muted-foreground hover:text-foreground max-md:hit-area"
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleExpand(r.partyId);
@@ -297,9 +320,15 @@ export function ARAPWorkbench({
                   ) : null}
                 </div>
                 {r.customerId ? (
-                  <CustomerAvatar customerId={r.customerId} />
+                  <CustomerAvatar
+                    customerId={r.customerId}
+                    className="max-md:min-w-0 max-md:truncate"
+                  />
                 ) : r.supplierId ? (
-                  <SupplierAvatar supplierId={r.supplierId} />
+                  <SupplierAvatar
+                    supplierId={r.supplierId}
+                    className="max-md:min-w-0 max-md:truncate"
+                  />
                 ) : null}
               </div>
             );
@@ -311,7 +340,10 @@ export function ARAPWorkbench({
                 : path.to.purchaseInvoiceDetails(r.invoiceId)
               : path.to.memo(r.invoiceId);
           return (
-            <div className="flex items-center">
+            <div
+              data-key-cell=""
+              className="flex items-center max-md:w-[calc(45dvw-32px)]"
+            >
               <div
                 aria-hidden
                 className="w-5 shrink-0 border-l border-border -my-2"
@@ -334,15 +366,31 @@ export function ARAPWorkbench({
             </div>
           );
         },
-        meta: { icon: <LuUser /> }
+        meta: {
+          icon: <LuUser />,
+          mobile: "P1",
+          exportValue: (r) =>
+            r.kind === "counterparty"
+              ? (partyNameById.get(r.partyId) ?? r.partyId)
+              : r.invoiceNumber
+        }
       },
+      exportOnlyColumn<WorkbenchRow>({
+        id: "dateDue",
+        header: t`Due Date`,
+        value: (r) => (r.kind === "invoice" ? r.dateDue : null)
+      }),
       {
         id: "paymentTerm",
         header: t`Payment Term`,
         cell: ({ row }) =>
           row.original.kind === "counterparty" ? (
             <Enumerable value={row.original.paymentTerm ?? null} />
-          ) : null
+          ) : null,
+        meta: {
+          exportValue: (r) =>
+            r.kind === "counterparty" ? (r.paymentTerm ?? null) : null
+        }
       },
       // Aging buckets only carry a value on counterparty rows. They aren't
       // common to both union members, so they use `id` + `cell` (not
@@ -363,7 +411,10 @@ export function ARAPWorkbench({
           cell: ({ row }) =>
             row.original.kind === "counterparty" ? (
               <span className="tabular-nums">{money(row.original[key])}</span>
-            ) : null
+            ) : null,
+          meta: {
+            exportValue: (r) => (r.kind === "counterparty" ? r[key] : null)
+          }
         })
       ),
       {
@@ -382,6 +433,10 @@ export function ARAPWorkbench({
               {money(value)}
             </span>
           );
+        },
+        meta: {
+          exportValue: (r) =>
+            r.kind === "counterparty" ? r.total : r.openInBase
         }
       }
     ];
@@ -392,6 +447,7 @@ export function ARAPWorkbench({
     b2,
     b3,
     money,
+    partyNameById,
     childrenByParty,
     expandedIds,
     selectedIds,
@@ -538,6 +594,7 @@ export function ARAPWorkbench({
         <Trans>As of:</Trans>
       </span>
       <DatePicker
+        aria-label={t`As of date`}
         size="sm"
         value={parseDate(asOfDate)}
         onChange={(value) =>
@@ -557,6 +614,7 @@ export function ARAPWorkbench({
           title={title ?? (side === "ar" ? t`Receivables` : t`Payables`)}
           primaryAction={filters}
           defaultColumnPinning={{ left: ["Select", "counterparty"] }}
+          mobileLayout="table"
         />
       </div>
     </VStack>

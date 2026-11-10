@@ -64,9 +64,13 @@ import {
 import { useFetcher, useParams } from "react-router";
 import { Empty } from "~/components";
 import { usePermissions } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
+import type { action as matchBomAction } from "~/routes/x+/assembly+/$id.component-mappings.auto";
+import type { action as mapComponentAction } from "~/routes/x+/assembly+/$id.component-mappings.new";
+import type { action as reassignAction } from "~/routes/x+/assembly+/$id.steps.components.reassign";
 import { path } from "~/utils/path";
 import type { FlattenedBomMaterial } from "../../production.service";
-import { toViewerStep } from "../../production.service";
+import { toViewerStep } from "../../production.utils";
 import type {
   AssemblyComponentMapping,
   AssemblyInstructionStepRow,
@@ -190,7 +194,23 @@ export default function AssemblyBomTree({
     permissions.can("update", "production") &&
     Boolean(modelUploadId);
 
-  const autoMatchFetcher = useFetcher<{ success: boolean }>();
+  const autoMatchFetcher = useAction<typeof matchBomAction>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      const unmatched = data.unmatchedBomItems;
+      const parts = [
+        t`Mapped ${data.mapped} of ${data.totalComponents} components to the bill of materials`
+      ];
+      if (unmatched.length > 0) {
+        const names = `${unmatched.slice(0, 3).join(", ")}${unmatched.length > 3 ? "…" : ""}`;
+        parts.push(t`${unmatched.length} BOM lines unmatched: ${names}`);
+      }
+      if (data.materialsCreated > 0) {
+        parts.push(t`added ${data.materialsCreated} step materials`);
+      }
+      toast.success(parts.join(" · "));
+    }
+  });
   const mappingsByHash = useMemo(
     () =>
       new Map(
@@ -225,7 +245,7 @@ export default function AssemblyBomTree({
     new Set()
   );
   const [showCreateUnit, setShowCreateUnit] = useState(false);
-  const [editingUnit, setEditingUnit] = useState<AssemblyUnit | null>(null);
+  const editingUnit = useDrawerItem<AssemblyUnit>();
   const lastClickedIndexRef = useRef<number | null>(null);
 
   // Every instance that belongs to a subassembly — those show under the
@@ -390,13 +410,18 @@ export default function AssemblyBomTree({
   // Assign the current selection to an existing step. `move` strips it from the
   // steps it's already on; `duplicate` leaves those. When the selection is
   // already used elsewhere we ask which — otherwise assign straight away.
-  const reassignFetcher = useFetcher<{ success: boolean }>();
+  const reassignFetcher = useAction<typeof reassignAction>();
   const [assignPickerOpen, setAssignPickerOpen] = useState(false);
-  const [pendingAssign, setPendingAssign] = useState<{
+  const {
+    item: pendingAssign,
+    isOpen: isPendingAssignOpen,
+    open: openPendingAssign,
+    close: closePendingAssign
+  } = useDrawerItem<{
     targetStepId: string;
     targetTitle: string;
     conflictTitles: string[];
-  } | null>(null);
+  }>();
 
   // Parts go on ordinary steps only: a sub-assembly's parts come from its steps.
   const stepList = useMemo(
@@ -467,7 +492,7 @@ export default function AssemblyBomTree({
         submitAssign(targetStepId, "duplicate");
         return;
       }
-      setPendingAssign({
+      openPendingAssign({
         targetStepId,
         targetTitle:
           stepList.find((entry) => entry.id === targetStepId)?.title ??
@@ -475,7 +500,7 @@ export default function AssemblyBomTree({
         conflictTitles
       });
     },
-    [stepList, steps, selectedSet, submitAssign]
+    [stepList, steps, selectedSet, submitAssign, openPendingAssign]
   );
 
   const applyNodeSelection = (next: ReadonlySet<string>) => {
@@ -789,6 +814,7 @@ export default function AssemblyBomTree({
       )}
       <ContextMenu>
         <ContextMenuTrigger asChild>
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: scroll container only; Escape bubbling up from the focused row clears the selection, the rows are the controls */}
           <div
             ref={parentRef}
             className="w-full flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
@@ -834,7 +860,7 @@ export default function AssemblyBomTree({
                       onToggleExpand={() =>
                         onToggleExpand(`unit:${row.unit.id}`)
                       }
-                      onEdit={() => setEditingUnit(row.unit)}
+                      onEdit={() => editingUnit.open(row.unit)}
                     />
                   );
                 }
@@ -957,8 +983,9 @@ export default function AssemblyBomTree({
           </Button>
         </div>
       )}
-      {showCreateUnit && modelUploadId && (
+      {modelUploadId && (
         <CreateUnitModal
+          open={showCreateUnit}
           instructionId={id}
           modelUploadId={modelUploadId}
           componentNodeIds={selectedNodeIds}
@@ -969,16 +996,17 @@ export default function AssemblyBomTree({
           }}
         />
       )}
-      {editingUnit && modelUploadId && (
+      {editingUnit.item && modelUploadId && (
         <EditUnitModal
+          open={editingUnit.isOpen}
           instructionId={id}
           modelUploadId={modelUploadId}
-          unit={editingUnit}
+          unit={editingUnit.item}
           graphIndex={graphIndex}
           selectedNodeIds={selectedNodeIds}
-          onClose={() => setEditingUnit(null)}
+          onClose={editingUnit.close}
           onUpdated={() => {
-            setEditingUnit(null);
+            editingUnit.close();
             toast.success(
               t`Component group updated — re-run motion planning to apply the change`
             );
@@ -987,9 +1015,9 @@ export default function AssemblyBomTree({
       )}
       {pendingAssign && (
         <Modal
-          open
+          open={isPendingAssignOpen}
           onOpenChange={(open) => {
-            if (!open) setPendingAssign(null);
+            if (!open) closePendingAssign();
           }}
         >
           <ModalContent>
@@ -1004,10 +1032,7 @@ export default function AssemblyBomTree({
               </ModalDescription>
             </ModalHeader>
             <ModalFooter>
-              <Button
-                variant="secondary"
-                onClick={() => setPendingAssign(null)}
-              >
+              <Button variant="secondary" onClick={closePendingAssign}>
                 Cancel
               </Button>
               <Button
@@ -1015,7 +1040,7 @@ export default function AssemblyBomTree({
                 isDisabled={reassignFetcher.state !== "idle"}
                 onClick={() => {
                   submitAssign(pendingAssign.targetStepId, "duplicate");
-                  setPendingAssign(null);
+                  closePendingAssign();
                 }}
               >
                 Add a copy
@@ -1024,7 +1049,7 @@ export default function AssemblyBomTree({
                 isDisabled={reassignFetcher.state !== "idle"}
                 onClick={() => {
                   submitAssign(pendingAssign.targetStepId, "move");
-                  setPendingAssign(null);
+                  closePendingAssign();
                 }}
               >
                 Move here
@@ -1116,6 +1141,7 @@ function UnitListRow({
       )}
       {isExpandable ? (
         <button
+          aria-expanded={isExpanded}
           type="button"
           aria-label={
             isExpanded ? t`Collapse ${unit.name}` : t`Expand ${unit.name}`
@@ -1161,7 +1187,7 @@ function UnitListRow({
             icon={<LuPencil />}
             variant="ghost"
             size="sm"
-            className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
+            className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
             onClick={(event) => {
               event.stopPropagation();
               onEdit();
@@ -1174,7 +1200,7 @@ function UnitListRow({
             icon={<LuTrash />}
             variant="ghost"
             size="sm"
-            className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
+            className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
             onClick={(event) => {
               event.stopPropagation();
               deleteFetcher.submit(new FormData(), {
@@ -1268,12 +1294,14 @@ function UnitChildRow({
 }
 
 function CreateUnitModal({
+  open = true,
   instructionId,
   modelUploadId,
   componentNodeIds,
   onClose,
   onCreated
 }: {
+  open?: boolean;
   instructionId: string;
   modelUploadId: string;
   componentNodeIds: string[];
@@ -1290,6 +1318,10 @@ function CreateUnitModal({
   });
   const [name, setName] = useState("");
 
+  useEffect(() => {
+    if (open) setName("");
+  }, [open]);
+
   const onSubmit = () => {
     if (!name.trim()) return;
     const formData = new FormData();
@@ -1304,7 +1336,7 @@ function CreateUnitModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -1349,21 +1381,8 @@ function CreateUnitModal({
   );
 }
 
-/**
- * Edits an authored subassembly in place: rename it and change which components it
- * groups (remove a component type, or add the currently-selected components). Membership
- * feeds the motion planner, so the caller nudges the user to re-run planning
- * after saving.
- */
-function EditUnitModal({
-  instructionId,
-  modelUploadId,
-  unit,
-  graphIndex,
-  selectedNodeIds,
-  onClose,
-  onUpdated
-}: {
+type EditUnitModalProps = {
+  open?: boolean;
   instructionId: string;
   modelUploadId: string;
   unit: AssemblyUnit;
@@ -1371,7 +1390,38 @@ function EditUnitModal({
   selectedNodeIds: string[];
   onClose: () => void;
   onUpdated: () => void;
-}) {
+};
+
+/**
+ * Edits an authored subassembly in place: rename it and change which components it
+ * groups (remove a component type, or add the currently-selected components). Membership
+ * feeds the motion planner, so the caller nudges the user to re-run planning
+ * after saving.
+ */
+function EditUnitModal({ open = true, onClose, ...props }: EditUnitModalProps) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalContent>
+        <EditUnitBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function EditUnitBody({
+  instructionId,
+  modelUploadId,
+  unit,
+  graphIndex,
+  selectedNodeIds,
+  onClose,
+  onUpdated
+}: Omit<EditUnitModalProps, "open">) {
   const { t } = useLingui();
   const fetcher = useAction<{ success: boolean }>({
     onSuccess: (data) => {
@@ -1423,100 +1473,91 @@ function EditUnitModal({
   const isSubmitting = fetcher.state !== "idle";
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Edit Component Group</Trans>
-          </ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <VStack spacing={3} className="w-full">
-            <Input
-              aria-label={t`Component group name`}
-              placeholder={t`Component group name`}
-              value={name}
-              autoFocus
-              onChange={(nameEvent) => setName(nameEvent.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") onSubmit();
-              }}
-            />
-            <VStack spacing={1} className="w-full">
-              <div className="flex w-full items-center justify-between">
-                <span className="text-xs text-muted-foreground">
-                  <Plural
-                    value={memberIds.length}
-                    one="# component in this group"
-                    other="# components in this group"
-                  />
-                </span>
-                {addableIds.length > 0 && (
-                  <Button variant="secondary" size="sm" onClick={addSelected}>
-                    <Trans>Add {addableIds.length} selected</Trans>
-                  </Button>
-                )}
-              </div>
-              {groups.length > 0 ? (
-                <ul className="max-h-64 w-full overflow-y-auto rounded-md border border-border">
-                  {groups.map((group) => (
-                    <li
-                      key={group.key}
-                      className="flex items-center gap-2 border-b border-border px-2 py-1 text-sm last:border-b-0"
-                    >
-                      <ComponentColorSwatch color={group.color} />
-                      <span
-                        className="min-w-0 flex-1 truncate"
-                        title={group.name}
-                      >
-                        {group.name}
-                      </span>
-                      <Badge variant="secondary" className="tabular-nums">
-                        ×{group.count}
-                      </Badge>
-                      <IconButton
-                        aria-label={t`Remove ${group.name} from ${unit.name}`}
-                        icon={<LuX />}
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeGroup(group)}
-                      />
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  {graphIndex
-                    ? t`No components — add a selection or cancel.`
-                    : t`The model is still loading.`}
-                </p>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Edit Component Group</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={3} className="w-full">
+          <Input
+            aria-label={t`Component group name`}
+            placeholder={t`Component group name`}
+            value={name}
+            autoFocus
+            onChange={(nameEvent) => setName(nameEvent.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") onSubmit();
+            }}
+          />
+          <VStack spacing={1} className="w-full">
+            <div className="flex w-full items-center justify-between">
+              <span className="text-xs text-muted-foreground">
+                <Plural
+                  value={memberIds.length}
+                  one="# component in this group"
+                  other="# components in this group"
+                />
+              </span>
+              {addableIds.length > 0 && (
+                <Button variant="secondary" size="sm" onClick={addSelected}>
+                  <Trans>Add {addableIds.length} selected</Trans>
+                </Button>
               )}
-            </VStack>
-            <p className="text-xs text-muted-foreground">
-              <Trans>
-                Changing the components redefines the group. Re-run Motion
-                Planning to apply the change to the steps.
-              </Trans>
-            </p>
-            <Button
-              className="self-end"
-              isDisabled={
-                !name.trim() || memberIds.length === 0 || isSubmitting
-              }
-              isLoading={isSubmitting}
-              onClick={onSubmit}
-            >
-              <Trans>Save</Trans>
-            </Button>
+            </div>
+            {groups.length > 0 ? (
+              <ul className="max-h-64 w-full overflow-y-auto rounded-md border border-border">
+                {groups.map((group) => (
+                  <li
+                    key={group.key}
+                    className="flex items-center gap-2 border-b border-border px-2 py-1 text-sm last:border-b-0"
+                  >
+                    <ComponentColorSwatch color={group.color} />
+                    <span
+                      className="min-w-0 flex-1 truncate"
+                      title={group.name}
+                    >
+                      {group.name}
+                    </span>
+                    <Badge variant="secondary" className="tabular-nums">
+                      ×{group.count}
+                    </Badge>
+                    <IconButton
+                      aria-label={t`Remove ${group.name} from ${unit.name}`}
+                      icon={<LuX />}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeGroup(group)}
+                    />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {graphIndex
+                  ? t`No components — add a selection or cancel.`
+                  : t`The model is still loading.`}
+              </p>
+            )}
           </VStack>
-        </ModalBody>
-      </ModalContent>
-    </Modal>
+          <p className="text-xs text-muted-foreground">
+            <Trans>
+              Changing the components redefines the group. Re-run Motion
+              Planning to apply the change to the steps.
+            </Trans>
+          </p>
+          <Button
+            className="self-end"
+            isDisabled={!name.trim() || memberIds.length === 0 || isSubmitting}
+            isLoading={isSubmitting}
+            onClick={onSubmit}
+          >
+            <Trans>Save</Trans>
+          </Button>
+        </VStack>
+      </ModalBody>
+    </>
   );
 }
 
@@ -1600,6 +1641,7 @@ function ComponentRow({
       )}
       {expandable ? (
         <button
+          aria-expanded={isExpanded}
           type="button"
           aria-label={
             isExpanded ? t`Collapse ${group.name}` : t`Expand ${group.name}`
@@ -1664,7 +1706,7 @@ function ComponentRow({
               icon={<LuSettings />}
               variant="ghost"
               size="sm"
-              className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 data-[state=open]:opacity-100"
+              className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 data-[state=open]:opacity-100"
               onClick={(event) => event.stopPropagation()}
             />
           </PopoverTrigger>
@@ -1751,7 +1793,7 @@ function HideToggle({
         "focus:opacity-100",
         isMarked
           ? "opacity-100 text-muted-foreground"
-          : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+          : "md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
       )}
       onClick={(event) => {
         event.stopPropagation();
@@ -1768,7 +1810,7 @@ function HideToggle({
           className={cn(
             "inline-flex",
             !isMarked &&
-              "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+              "md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
           )}
         >
           {button}
@@ -1870,7 +1912,7 @@ function ComponentDetails({
   instructionId: string;
   onSelectStep: (stepId: string) => void;
 }) {
-  const mapFetcher = useFetcher<{ success: boolean }>();
+  const mapFetcher = useAction<typeof mapComponentAction>();
   const size = [
     group.bbox.max[0] - group.bbox.min[0],
     group.bbox.max[1] - group.bbox.min[1],

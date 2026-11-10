@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -13,10 +14,8 @@ import {
   toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect } from "react";
-import { useFetcher } from "react-router";
 import { Hidden, Number, Submit } from "~/components/Form";
-import { forecastConsumptionValidator } from "~/modules/settings";
+import { forecastConsumptionValidator } from "~/modules/settings/settings.models";
 
 // The forecast consumption window (weekly buckets). Actual demand that lands
 // in a week whose forecast is used up consumes forecast from up to
@@ -31,16 +30,9 @@ export function ForecastConsumptionCard({
   forwardPeriods: number;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<{ success: boolean; message: string }>();
-
-  useEffect(() => {
-    if (fetcher.state !== "idle" || !fetcher.data?.message) return;
-    if (fetcher.data.success) {
-      toast.success(fetcher.data.message);
-    } else {
-      toast.error(fetcher.data.message);
-    }
-  }, [fetcher.state, fetcher.data]);
+  const fetcher = useAction({
+    onSuccess: () => toast.success(t`Forecast consumption updated`)
+  });
 
   return (
     <Card>

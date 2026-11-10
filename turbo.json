@@ -1,10 +1,11 @@
 {
   "$schema": "https://turborepo.org/schema.json",
+  "agentGuidance": false,
   "tasks": {
     "build": {
       "dependsOn": ["^build", "//#lingui:compile"],
       "inputs": ["$TURBO_DEFAULT$", "!**/AGENTS.md", "!**/CLAUDE.md"],
-      "env": ["ASSETS_URL", "VERCEL"],
+      "env": ["VERCEL"],
       "outputs": [
         "dist/**",
         "build/**",
@@ -58,17 +59,6 @@
       "dependsOn": ["^build"],
       "cache": false
     },
-    "db:types": {
-      "outputs": [],
-      "cache": true
-    },
-    "db:init": {
-      "outputs": []
-    },
-    "db:migrate": {
-      "outputs": [],
-      "cache": false
-    },
     "db:seed": {
       "outputs": [],
       "cache": false
@@ -79,13 +69,14 @@
     },
     "//#generate:mcp": {
       "inputs": [
-        "apps/erp/app/modules/**/*.ts",
+        "apps/erp/app/modules/**",
+        "apps/erp/app/components/TreeView/**",
+        "apps/erp/app/services/**",
         "apps/erp/app/types/**",
         "apps/erp/app/utils/**",
-        "apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools.ts",
-        "apps/erp/app/routes/api+/mcp+/lib/mcp-exposure.ts",
         "apps/erp/tsconfig.json",
-        "packages/{api,database,documents,files,locale,logger,notifications,printing,server-functions,utils}/src/**",
+        "packages/*/package.json",
+        "packages/{account,api,auth,database,documents,ee,env,files,form,jobs,kv,lib,locale,logger,notifications,onboarding,planning,printing,react,stripe,utils}/src/**",
         "packages/database/supabase/migrations/**",
         "scripts/generate-mcp.ts",
         "scripts/lib/**"

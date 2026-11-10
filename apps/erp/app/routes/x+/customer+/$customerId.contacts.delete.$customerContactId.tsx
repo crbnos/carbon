@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteCustomerContact } from "~/modules/sales";
+import { deleteCustomerContact } from "~/modules/sales/sales.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -19,7 +19,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!customerId || !customerContactId) {
     throw redirect(
       path.to.customers,
-      await flash(request, error(params, "Failed to get a customer contact id"))
+      await flash(request, error(null, "Failed to get a customer contact id"))
     );
   }
 

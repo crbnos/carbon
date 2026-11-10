@@ -5,7 +5,6 @@
 import InventoryActivity from "./InventoryActivity";
 import InventoryDetails from "./InventoryDetails";
 
-export { InventoryActivity, InventoryDetails };
 export type {
   BalanceAnchor,
   CollapsedItemLedger,
@@ -16,3 +15,4 @@ export {
   onHandDelta,
   withRunningBalance
 } from "./ledgerFeed";
+export { InventoryActivity, InventoryDetails };

@@ -33,7 +33,13 @@ export const TABLE_RENAMES: Record<string, string | null> = {
   // used — so a pre-rename backup carries only their empty shells. The
   // readable-id / parent column moved with them (cardTransactionId → chargeId).
   cardTransaction: "charge",
-  cardTransactionLine: "chargeLine"
+  cardTransactionLine: "chargeLine",
+  // Dropped 2026-10-23 with the old field-service module (service orders,
+  // visits and installed components; 20261023065804). Service jobs replace
+  // it with new tables; nothing carries over.
+  serviceOrder: null,
+  serviceVisit: null,
+  customerAssetComponent: null
 };
 
 /**
@@ -46,6 +52,44 @@ export const COLUMN_RENAMES: Record<string, Record<string, string>> = {
   cardTransaction: { cardTransactionId: "chargeId" },
   cardTransactionLine: { cardTransactionId: "chargeId" }
 };
+
+/**
+ * Columns renamed on a table that KEPT its name, keyed by the table's current
+ * name. Without an entry an older backup's values for the old column are
+ * reported "removed since this backup" and silently not restored. A column is
+ * only renamed when the backup does not already carry the new name, so a
+ * backup taken after the rename passes through untouched.
+ */
+export const LIVE_COLUMN_RENAMES: Record<string, Record<string, string>> = {
+  // 2026-10 (supplier part currency): the price is now stored in the supplier
+  // part's own currency, which every pre-rename price was (the base currency;
+  // a NULL currencyCode reads as base).
+  supplierPart: { unitPrice: "supplierUnitPrice" },
+  supplierPartPrice: { unitPrice: "supplierUnitPrice" }
+};
+
+/** A live table's column list under its CURRENT column names. */
+export function renameLiveColumns(table: string, columns: string[]): string[] {
+  const map = liveColumnMap(table, columns);
+  if (!map) return columns;
+  return columns.map((column) => map[column] ?? column);
+}
+
+/** The renames that apply to this backup's copy of the table, if any. */
+function liveColumnMap(
+  table: string,
+  columns: string[]
+): Record<string, string> | null {
+  const map = LIVE_COLUMN_RENAMES[table];
+  if (!map) return null;
+  const present = new Set(columns);
+  const applicable = Object.fromEntries(
+    Object.entries(map).filter(
+      ([from, to]) => present.has(from) && !present.has(to)
+    )
+  );
+  return Object.keys(applicable).length > 0 ? applicable : null;
+}
 
 /** A renamed table's column list under its CURRENT column names. */
 export function renameColumns(oldTable: string, columns: string[]): string[] {
@@ -60,6 +104,13 @@ function renameRowColumns(
 ): Record<string, unknown>[] {
   const map = COLUMN_RENAMES[oldTable];
   if (!map) return rows;
+  return renameRows(map, rows);
+}
+
+function renameRows(
+  map: Record<string, string>,
+  rows: Record<string, unknown>[]
+): Record<string, unknown>[] {
   return rows.map((row) => {
     const renamed: Record<string, unknown> = {};
     for (const [column, value] of Object.entries(row)) {
@@ -105,12 +156,20 @@ export function applyTableRenames<
       delete data[t.name];
       continue;
     }
-    tables.push(
-      to === t.name
-        ? t
-        : { ...t, name: to, columns: renameColumns(t.name, t.columns) }
-    );
-    if (to !== t.name && backup.data[t.name]) {
+    if (to === t.name) {
+      const map = liveColumnMap(t.name, t.columns);
+      if (!map) {
+        tables.push(t);
+        continue;
+      }
+      tables.push({ ...t, columns: renameLiveColumns(t.name, t.columns) });
+      if (backup.data[t.name]) {
+        data[t.name] = renameRows(map, backup.data[t.name]!);
+      }
+      continue;
+    }
+    tables.push({ ...t, name: to, columns: renameColumns(t.name, t.columns) });
+    if (backup.data[t.name]) {
       data[to] = renameRowColumns(t.name, backup.data[t.name]!);
       delete data[t.name];
     }

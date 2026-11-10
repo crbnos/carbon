@@ -5,12 +5,16 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteScrapReason, getScrapReason } from "~/modules/production";
+import {
+  deleteScrapReason,
+  getScrapReason
+} from "~/modules/production/production.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -44,7 +48,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!scrapReasonId) {
     throw redirect(
       `${path.to.scrapReasons}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get an scrap reason id"))
+      await flash(request, error(null, "Failed to get an scrap reason id"))
     );
   }
 
@@ -74,19 +78,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteScrapReasonRoute() {
   const { scrapReasonId } = useParams();
   const { scrapReason } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.scrapReasons);
   const { t } = useLingui();
 
   if (!scrapReason) return null;
   if (!scrapReasonId) throw notFound("scrapReasonId not found");
 
-  const onCancel = () => navigate(path.to.scrapReasons);
   return (
     <ConfirmDelete
       action={path.to.deleteScrapReason(scrapReasonId)}
       name={scrapReason.name}
       text={t`Are you sure you want to delete the scrap reason: ${scrapReason.name}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

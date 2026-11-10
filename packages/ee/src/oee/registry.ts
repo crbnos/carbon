@@ -1,0 +1,64 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
+import { createSenseProvider } from "../sense/provider";
+import {
+  DEFAULT_MINIMUM_STATE_SECONDS,
+  type OeeProvider,
+  type OeeProviderId
+} from "./types";
+
+type OeeProviderFactory = (args: {
+  apiKey: string;
+  environment: string;
+}) => OeeProvider;
+
+/**
+ * Integration id → provider factory. The one place an OEE provider is named;
+ * everything else finds OEE integrations through `getIntegrationIdsByRole("oee")`.
+ */
+export const OEE_PROVIDERS: Record<OeeProviderId, OeeProviderFactory> = {
+  sense: createSenseProvider
+};
+
+export function isOeeProviderId(id: string): id is OeeProviderId {
+  return Object.hasOwn(OEE_PROVIDERS, id);
+}
+
+/**
+ * A provider's connection settings from its metadata (with the vaulted `apiKey`
+ * already resolved). Throws when the API key is empty.
+ */
+export function oeeProviderSettings(metadata: Record<string, unknown>) {
+  const apiKey = typeof metadata.apiKey === "string" ? metadata.apiKey : "";
+  if (!apiKey) throw new Error("No API key");
+  return {
+    apiKey,
+    environment: String(metadata.environment ?? "production")
+  };
+}
+
+/**
+ * Builds the provider for an integration from its metadata (with the vaulted
+ * `apiKey` already resolved). Throws when the id is not an OEE provider, when
+ * the API key is empty, or when the provider's factory refuses the settings.
+ */
+export function createOeeProvider(
+  integrationId: string,
+  metadata: Record<string, unknown>
+): { provider: OeeProvider; minimumStateSeconds: number } {
+  if (!isOeeProviderId(integrationId)) {
+    throw new Error(`${integrationId} is not an OEE provider`);
+  }
+  const provider = OEE_PROVIDERS[integrationId](oeeProviderSettings(metadata));
+
+  const minimum = Number(metadata.minimumStateSeconds);
+  return {
+    provider,
+    minimumStateSeconds:
+      Number.isFinite(minimum) && minimum >= 0
+        ? minimum
+        : DEFAULT_MINIMUM_STATE_SECONDS
+  };
+}

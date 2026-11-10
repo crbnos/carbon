@@ -1,0 +1,813 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { Database } from "@carbon/database";
+import { ensureFont, PackingSlipPDF } from "@carbon/documents/pdf";
+import {
+  collectSectionIds,
+  type DocumentEdit,
+  templateShowsThumbnails,
+  type ValueCollector
+} from "@carbon/documents/template";
+import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
+import { getLogger } from "@carbon/logger";
+import type { JSONContent } from "@carbon/react";
+import { renderToStream } from "@react-pdf/renderer";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { getPaymentTerm } from "~/modules/accounting/accounting.service";
+import {
+  getPurchaseOrder,
+  getPurchaseOrderDelivery,
+  getSupplierLocation
+} from "~/modules/purchasing/purchasing.service";
+import {
+  getCustomerLocation,
+  getRentalAgreement,
+  getSalesOrder,
+  getSalesOrderShipment,
+  getSalesTerms
+} from "~/modules/sales/sales.service";
+import {
+  getCompany,
+  resolveSections
+} from "~/modules/settings/settings.service";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
+import {
+  getRentalShipmentLines,
+  getShipment,
+  getShipmentLinesWithDetails,
+  getShippingMethod,
+  getWarehouseTransfer
+} from "./inventory.service";
+import { getShipmentTracking } from "./inventory.utils";
+
+const logger = getLogger("erp", "shipment", "pdf");
+
+/**
+ * A shipment's packing slip (a rental's delivery ticket) as a PDF response.
+ * `client` reads as the caller; the source document's customer, terms and
+ * tracking are read with `serviceRole`, pinned to `companyId`.
+ */
+function readAll(stream: NodeJS.ReadableStream): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const buffers: Uint8Array[] = [];
+    stream.on("data", (data) => {
+      buffers.push(data);
+    });
+    stream.on("end", () => {
+      resolve(Buffer.concat(buffers));
+    });
+    stream.on("error", reject);
+  });
+}
+
+export async function renderPackingSlip({
+  client,
+  serviceRole,
+  companyId,
+  shipmentId: id,
+  locale,
+  edit,
+  valueCollector
+}: {
+  client: SupabaseClient<Database>;
+  serviceRole: SupabaseClient<Database>;
+  companyId: string;
+  shipmentId: string;
+  locale: string;
+  /** Draft edits to preview; omitted, the saved ones are read. */
+  edit?: DocumentEdit | null;
+  valueCollector?: ValueCollector;
+}): Promise<Response> {
+  const [company, shipment, shipmentLines] = await Promise.all([
+    getCompany(client, companyId),
+    getShipment(client, id),
+    getShipmentLinesWithDetails(client, id)
+  ]);
+
+  if (company.error) {
+    logger.error("Failed to load company", { error: company.error });
+  }
+
+  if (shipment.error) {
+    logger.error("Failed to load shipment", { error: shipment.error });
+  }
+
+  // RLS admits a shipment from any company the user belongs to, but the source
+  // document below is read with the service role — pin it to this company.
+  if (shipment.data && shipment.data.companyId !== companyId) {
+    logger.error("Shipment does not belong to this company", {
+      companyId,
+      shipmentId: id
+    });
+    throw new Response("Not found", { status: 404 });
+  }
+
+  if (shipmentLines.error) {
+    logger.error("Failed to load shipmentLines", {
+      error: shipmentLines.error
+    });
+  }
+
+  const terms = await getSalesTerms(serviceRole, companyId);
+
+  if (terms.error) {
+    logger.error("Failed to load terms", { error: terms.error });
+  }
+
+  if (
+    company.error ||
+    shipment.error ||
+    shipmentLines.error ||
+    terms.error ||
+    shipment.data.sourceDocumentId === null
+  ) {
+    throw new Error("Failed to load sales order");
+  }
+
+  const templateConfig = await getPrintedTemplate(
+    client,
+    { companyId, documentType: "packingSlip", documentId: id },
+    edit
+  );
+  const showThumbnails = templateShowsThumbnails(templateConfig, "packingSlip");
+  const templateSections = await resolveSections(
+    client,
+    companyId,
+    collectSectionIds(templateConfig)
+  );
+  await ensureFont(templateConfig.settings.fontFamily);
+
+  switch (shipment.data.sourceDocument) {
+    case "Sales Order": {
+      const [salesOrder, salesOrderShipment] = await Promise.all([
+        getSalesOrder(serviceRole, shipment.data.sourceDocumentId),
+        getSalesOrderShipment(serviceRole, shipment.data.sourceDocumentId)
+      ]);
+
+      const [
+        customer,
+        customerLocation,
+        paymentTerm,
+        shippingMethod,
+        shipmentTracking
+      ] = await Promise.all([
+        serviceRole
+          .from("customer")
+          .select("*")
+          .eq("id", salesOrder.data?.customerId ?? "")
+          .single(),
+        getCustomerLocation(
+          serviceRole,
+          salesOrder.data?.customerLocationId ?? ""
+        ),
+        getPaymentTerm(serviceRole, salesOrder.data?.paymentTermId ?? ""),
+        getShippingMethod(
+          serviceRole,
+          shipment.data.shippingMethodId ??
+            salesOrderShipment.data?.shippingMethodId ??
+            ""
+        ),
+        getShipmentTracking(serviceRole, shipment.data.id, companyId)
+      ]);
+
+      if (customer.error) {
+        logger.error("Failed to load customer", { error: customer.error });
+        throw new Error("Failed to load customer");
+      }
+
+      let thumbnails: Record<string, string | null> = {};
+
+      if (showThumbnails) {
+        const thumbnailPaths = shipmentLines.data?.reduce<
+          Record<string, string | null>
+        >((acc, line) => {
+          if (line.thumbnailPath) {
+            acc[line.id!] = line.thumbnailPath;
+          }
+          return acc;
+        }, {});
+
+        thumbnails =
+          (thumbnailPaths
+            ? await Promise.all(
+                Object.entries(thumbnailPaths).map(([id, path]) => {
+                  if (!path) {
+                    return null;
+                  }
+                  return getBase64ImageFromSupabase(serviceRole, path).then(
+                    (data) => ({
+                      id,
+                      data
+                    })
+                  );
+                })
+              )
+            : []
+          )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
+            if (thumbnail) {
+              acc[thumbnail.id] = thumbnail.data;
+            }
+            return acc;
+          }, {}) ?? {};
+      }
+
+      const stream = await renderToStream(
+        <PackingSlipPDF
+          valueCollector={valueCollector}
+          company={company.data as any}
+          customer={customer.data}
+          locale={locale}
+          meta={{
+            author: "Carbon",
+            keywords: "packing slip",
+            subject: "Packing Slip"
+          }}
+          customerReference={salesOrder.data?.customerReference ?? undefined}
+          sourceDocument="Sales Order"
+          sourceDocumentId={salesOrder.data?.salesOrderId ?? undefined}
+          shipment={shipment.data}
+          shipmentLines={shipmentLines.data ?? []}
+          // @ts-expect-error
+          shippingAddress={customerLocation.data?.address ?? null}
+          terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
+          paymentTerm={paymentTerm.data ?? { id: "", name: "" }}
+          shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
+          trackedEntities={shipmentTracking.data ?? []}
+          thumbnails={thumbnails}
+          template={templateConfig}
+          sections={templateSections}
+        />
+      );
+
+      const body = await readAll(stream);
+
+      const headers = new Headers({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="${company.data.name} - ${shipment.data.shipmentId}.pdf"`
+      });
+      return new Response(new Uint8Array(body), { status: 200, headers });
+    }
+    case "Sales Invoice": {
+      const salesInvoice = await serviceRole
+        .from("salesInvoice")
+        .select("*, salesInvoiceShipment(*)")
+        .eq("id", shipment.data.sourceDocumentId ?? "")
+        .single();
+
+      if (salesInvoice.error) {
+        logger.error("Failed to load salesInvoice", {
+          error: salesInvoice.error
+        });
+        throw new Error("Failed to load sales invoice");
+      }
+
+      const [
+        customer,
+        customerLocation,
+        paymentTerm,
+        shippingMethod,
+        shipmentTracking
+      ] = await Promise.all([
+        serviceRole
+          .from("customer")
+          .select("*")
+          .eq("id", salesInvoice.data?.customerId ?? "")
+          .single(),
+        getCustomerLocation(serviceRole, salesInvoice.data?.locationId ?? ""),
+        getPaymentTerm(serviceRole, salesInvoice.data?.paymentTermId ?? ""),
+        getShippingMethod(
+          serviceRole,
+          shipment.data.shippingMethodId ??
+            salesInvoice.data?.salesInvoiceShipment?.shippingMethodId ??
+            ""
+        ),
+        getShipmentTracking(serviceRole, shipment.data.id, companyId)
+      ]);
+
+      if (customer.error) {
+        logger.error("Failed to load customer", { error: customer.error });
+        throw new Error("Failed to load customer");
+      }
+
+      let thumbnails: Record<string, string | null> = {};
+
+      if (showThumbnails) {
+        const thumbnailPaths = shipmentLines.data?.reduce<
+          Record<string, string | null>
+        >((acc, line) => {
+          if (line.thumbnailPath) {
+            acc[line.id!] = line.thumbnailPath;
+          }
+          return acc;
+        }, {});
+
+        thumbnails =
+          (thumbnailPaths
+            ? await Promise.all(
+                Object.entries(thumbnailPaths).map(([id, path]) => {
+                  if (!path) {
+                    return null;
+                  }
+                  return getBase64ImageFromSupabase(serviceRole, path).then(
+                    (data) => ({
+                      id,
+                      data
+                    })
+                  );
+                })
+              )
+            : []
+          )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
+            if (thumbnail) {
+              acc[thumbnail.id] = thumbnail.data;
+            }
+            return acc;
+          }, {}) ?? {};
+      }
+
+      const stream = await renderToStream(
+        <PackingSlipPDF
+          valueCollector={valueCollector}
+          company={company.data as any}
+          customer={customer.data}
+          locale={locale}
+          meta={{
+            author: "Carbon",
+            keywords: "packing slip",
+            subject: "Packing Slip"
+          }}
+          customerReference={salesInvoice.data?.customerReference ?? undefined}
+          sourceDocument="Sales Invoice"
+          sourceDocumentId={salesInvoice.data?.invoiceId ?? undefined}
+          shipment={shipment.data}
+          shipmentLines={shipmentLines.data ?? []}
+          // @ts-expect-error
+          shippingAddress={customerLocation.data?.address ?? null}
+          terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
+          paymentTerm={paymentTerm.data ?? { id: "", name: "" }}
+          shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
+          trackedEntities={shipmentTracking.data ?? []}
+          thumbnails={thumbnails}
+          template={templateConfig}
+          sections={templateSections}
+        />
+      );
+
+      const body = await readAll(stream);
+
+      const headers = new Headers({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="${company.data.name} - ${shipment.data.shipmentId}.pdf"`
+      });
+      return new Response(new Uint8Array(body), { status: 200, headers });
+    }
+    case "Purchase Order": {
+      const [purchaseOrder, purchaseOrderDelivery] = await Promise.all([
+        getPurchaseOrder(client, shipment.data.sourceDocumentId),
+        getPurchaseOrderDelivery(client, shipment.data.sourceDocumentId)
+      ]);
+
+      const [
+        supplier,
+        supplierLocation,
+        poPaymentTerm,
+        poShippingMethod,
+        poShipmentTracking
+      ] = await Promise.all([
+        client
+          .from("supplier")
+          .select("*")
+          .eq("id", purchaseOrder.data?.supplierId ?? "")
+          .single(),
+        getSupplierLocation(
+          client,
+          purchaseOrder.data?.supplierLocationId ?? ""
+        ),
+        getPaymentTerm(client, purchaseOrder.data?.paymentTermId ?? ""),
+        getShippingMethod(
+          client,
+          purchaseOrderDelivery.data?.shippingMethodId ?? ""
+        ),
+        getShipmentTracking(client, shipment.data.id, companyId)
+      ]);
+
+      if (supplier.error) {
+        logger.error("Failed to load supplier", { error: supplier.error });
+        throw new Error("Failed to load supplier");
+      }
+
+      let poThumbnails: Record<string, string | null> = {};
+
+      if (showThumbnails) {
+        const poThumbnailPaths = shipmentLines.data?.reduce<
+          Record<string, string | null>
+        >((acc, line) => {
+          if (line.thumbnailPath) {
+            acc[line.id!] = line.thumbnailPath;
+          }
+          return acc;
+        }, {});
+
+        poThumbnails =
+          (poThumbnailPaths
+            ? await Promise.all(
+                Object.entries(poThumbnailPaths).map(([id, path]) => {
+                  if (!path) {
+                    return null;
+                  }
+                  return getBase64ImageFromSupabase(client, path).then(
+                    (data) => ({
+                      id,
+                      data
+                    })
+                  );
+                })
+              )
+            : []
+          )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
+            if (thumbnail) {
+              acc[thumbnail.id] = thumbnail.data;
+            }
+            return acc;
+          }, {}) ?? {};
+      }
+
+      const poStream = await renderToStream(
+        <PackingSlipPDF
+          valueCollector={valueCollector}
+          company={company.data as any}
+          customer={supplier.data}
+          locale={locale}
+          meta={{
+            author: "Carbon",
+            keywords: "packing slip",
+            subject: "Packing Slip"
+          }}
+          customerReference={purchaseOrder.data?.supplierReference ?? undefined}
+          sourceDocument="Purchase Order"
+          sourceDocumentId={purchaseOrder.data?.purchaseOrderId ?? undefined}
+          shipment={shipment.data}
+          shipmentLines={shipmentLines.data ?? []}
+          // @ts-expect-error
+          shippingAddress={supplierLocation.data?.address ?? null}
+          terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
+          paymentTerm={poPaymentTerm.data ?? { id: "", name: "" }}
+          shippingMethod={poShippingMethod.data ?? { id: "", name: "" }}
+          trackedEntities={poShipmentTracking.data ?? []}
+          thumbnails={poThumbnails}
+          template={templateConfig}
+          sections={templateSections}
+        />
+      );
+
+      const poBody = await readAll(poStream);
+
+      const poHeaders = new Headers({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="${company.data.name} - ${shipment.data.shipmentId}.pdf"`
+      });
+      return new Response(new Uint8Array(poBody), {
+        status: 200,
+        headers: poHeaders
+      });
+    }
+    case "Outbound Transfer": {
+      const warehouseTransfer = await getWarehouseTransfer(
+        client,
+        shipment.data.sourceDocumentId
+      );
+
+      if (warehouseTransfer.error) {
+        logger.error("Failed to load warehouseTransfer", {
+          error: warehouseTransfer.error
+        });
+        throw new Error("Failed to load warehouse transfer");
+      }
+
+      const [shippingMethod, shipmentTracking] = await Promise.all([
+        getShippingMethod(client, shipment.data.shippingMethodId ?? ""),
+        getShipmentTracking(client, shipment.data.id, companyId)
+      ]);
+
+      const toLocation = warehouseTransfer.data.toLocation;
+      const shippingAddress = toLocation
+        ? {
+            addressLine1: toLocation.addressLine1,
+            addressLine2: toLocation.addressLine2,
+            city: toLocation.city,
+            stateProvince: toLocation.stateProvince,
+            postalCode: toLocation.postalCode,
+            countryCode: toLocation.countryCode
+          }
+        : null;
+
+      let transferThumbnails: Record<string, string | null> = {};
+
+      if (showThumbnails) {
+        const transferThumbnailPaths = shipmentLines.data?.reduce<
+          Record<string, string | null>
+        >((acc, line) => {
+          if (line.thumbnailPath) {
+            acc[line.id!] = line.thumbnailPath;
+          }
+          return acc;
+        }, {});
+
+        transferThumbnails =
+          (transferThumbnailPaths
+            ? await Promise.all(
+                Object.entries(transferThumbnailPaths).map(([id, path]) => {
+                  if (!path) {
+                    return null;
+                  }
+                  return getBase64ImageFromSupabase(client, path).then(
+                    (data) => ({
+                      id,
+                      data
+                    })
+                  );
+                })
+              )
+            : []
+          )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
+            if (thumbnail) {
+              acc[thumbnail.id] = thumbnail.data;
+            }
+            return acc;
+          }, {}) ?? {};
+      }
+
+      const transferStream = await renderToStream(
+        <PackingSlipPDF
+          valueCollector={valueCollector}
+          company={company.data as any}
+          customer={{ name: toLocation?.name ?? "" } as any}
+          locale={locale}
+          meta={{
+            author: "Carbon",
+            keywords: "packing slip",
+            subject: "Packing Slip"
+          }}
+          sourceDocument="Outbound Transfer"
+          sourceDocumentId={warehouseTransfer.data.transferId ?? undefined}
+          shipment={shipment.data}
+          shipmentLines={shipmentLines.data ?? []}
+          // @ts-expect-error
+          shippingAddress={shippingAddress}
+          terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
+          paymentTerm={{ id: "", name: "" }}
+          shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
+          trackedEntities={shipmentTracking.data ?? []}
+          thumbnails={transferThumbnails}
+          template={templateConfig}
+          sections={templateSections}
+        />
+      );
+
+      const transferBody = await readAll(transferStream);
+
+      const transferHeaders = new Headers({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="${company.data.name} - ${shipment.data.shipmentId}.pdf"`
+      });
+      return new Response(new Uint8Array(transferBody), {
+        status: 200,
+        headers: transferHeaders
+      });
+    }
+    case "Rental Agreement": {
+      const rentalAgreement = await getRentalAgreement(
+        serviceRole,
+        shipment.data.sourceDocumentId,
+        companyId
+      );
+
+      if (rentalAgreement.error) {
+        logger.error("Failed to load rentalAgreement", {
+          error: rentalAgreement.error
+        });
+        throw new Error("Failed to load rental agreement");
+      }
+
+      const [
+        customer,
+        customerLocation,
+        paymentTerm,
+        shippingMethod,
+        rentalLines
+      ] = await Promise.all([
+        serviceRole
+          .from("customer")
+          .select("*")
+          .eq("id", rentalAgreement.data.customerId ?? "")
+          .eq("companyId", companyId)
+          .single(),
+        getCustomerLocation(
+          serviceRole,
+          rentalAgreement.data.customerLocationId ?? ""
+        ),
+        getPaymentTerm(serviceRole, rentalAgreement.data.paymentTermId ?? ""),
+        getShippingMethod(serviceRole, shipment.data.shippingMethodId ?? ""),
+        getRentalShipmentLines(serviceRole, id, companyId)
+      ]);
+
+      if (customer.error) {
+        logger.error("Failed to load customer", { error: customer.error });
+        throw new Error("Failed to load customer");
+      }
+
+      if (rentalLines.error) {
+        logger.error("Failed to load rental units", {
+          error: rentalLines.error
+        });
+        throw new Error("Failed to load rental units");
+      }
+
+      const rentalUnits = (rentalLines.data ?? [])
+        .filter((row) => row.shipped)
+        .map((row) => {
+          // The read filters out rows with no rental line.
+          const line = row.rentalAgreementLine!;
+          return {
+            id: row.id,
+            name: line.fixedAsset?.name ?? line.item?.name ?? "Rental unit",
+            assetReadableId: line.fixedAsset?.fixedAssetId ?? null,
+            serialNumber:
+              line.fixedAsset?.serialNumber ??
+              line.trackedEntity?.readableId ??
+              null
+          };
+        });
+
+      const rentalStream = await renderToStream(
+        <PackingSlipPDF
+          valueCollector={valueCollector}
+          company={company.data as any}
+          customer={customer.data}
+          locale={locale}
+          meta={{
+            author: "Carbon",
+            keywords: "delivery ticket",
+            subject: "Delivery Ticket"
+          }}
+          sourceDocument="Rental Agreement"
+          sourceDocumentId={rentalAgreement.data.rentalAgreementId ?? undefined}
+          shipment={shipment.data}
+          shipmentLines={shipmentLines.data ?? []}
+          // @ts-expect-error
+          shippingAddress={customerLocation.data?.address ?? null}
+          terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
+          paymentTerm={paymentTerm.data ?? { id: "", name: "" }}
+          shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
+          trackedEntities={[]}
+          rentalUnits={rentalUnits}
+          documentType="deliveryTicket"
+          thumbnails={{}}
+          template={templateConfig}
+          sections={templateSections}
+        />
+      );
+
+      const rentalBody = await readAll(rentalStream);
+
+      const rentalHeaders = new Headers({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="${company.data.name} - ${shipment.data.shipmentId}.pdf"`
+      });
+      return new Response(new Uint8Array(rentalBody), {
+        status: 200,
+        headers: rentalHeaders
+      });
+    }
+    case "Customer Contract": {
+      // A contract delivery prints as a Receiving Report: the contract number
+      // and, per CLIN, what was delivered with its serials (spec 10.4). The
+      // user keys it into WAWF; there is no EDI export.
+      const contract = await serviceRole
+        .from("customerContract")
+        .select(
+          "customerContractId, customerReference, customerId, shipToCustomerLocationId"
+        )
+        .eq("id", shipment.data.sourceDocumentId ?? "")
+        .eq("companyId", companyId)
+        .single();
+      if (contract.error) {
+        logger.error("Failed to load the contract", { error: contract.error });
+        throw new Error("Failed to load contract");
+      }
+
+      const [customer, customerLocation, shippingMethod, deliveryLines] =
+        await Promise.all([
+          serviceRole
+            .from("customer")
+            .select("*")
+            .eq("id", contract.data.customerId)
+            .eq("companyId", companyId)
+            .single(),
+          getCustomerLocation(
+            serviceRole,
+            contract.data.shipToCustomerLocationId ?? ""
+          ),
+          getShippingMethod(serviceRole, shipment.data.shippingMethodId ?? ""),
+          serviceRole
+            .from("shipmentLine")
+            .select(
+              "id, lineId, shippedQuantity, unitOfMeasure, serialNumber, item(readableIdWithRevision, name)"
+            )
+            .eq("shipmentId", id)
+            .eq("companyId", companyId)
+            .gt("shippedQuantity", 0)
+            .order("createdAt")
+        ]);
+
+      if (customer.error) {
+        logger.error("Failed to load customer", { error: customer.error });
+        throw new Error("Failed to load customer");
+      }
+      if (deliveryLines.error) {
+        logger.error("Failed to load the delivery lines", {
+          error: deliveryLines.error
+        });
+        throw new Error("Failed to load the delivery lines");
+      }
+
+      // `shipmentLine.lineId` names the CLIN with no foreign key: one read.
+      const clinIds = [
+        ...new Set(
+          (deliveryLines.data ?? [])
+            .map((line) => line.lineId)
+            .filter((lineId): lineId is string => !!lineId)
+        )
+      ];
+      const clins = await serviceRole
+        .from("customerContractLine")
+        .select("id, lineItemNumber, description")
+        .in("id", clinIds.length > 0 ? clinIds : [""])
+        .eq("companyId", companyId);
+      if (clins.error) {
+        logger.error("Failed to load the contract lines", {
+          error: clins.error
+        });
+        throw new Error("Failed to load the contract lines");
+      }
+      const clinById = new Map(clins.data.map((clin) => [clin.id, clin]));
+
+      const deliveredLines = (deliveryLines.data ?? []).map((line) => {
+        const contractLine = line.lineId ? clinById.get(line.lineId) : null;
+        const clin = contractLine?.lineItemNumber;
+        const description = contractLine?.description || line.item?.name || "";
+        return {
+          id: line.id,
+          name: clin ? `CLIN ${clin} ${description}` : description,
+          assetReadableId: line.item?.readableIdWithRevision ?? null,
+          serialNumber: line.serialNumber ?? null,
+          quantity: `${line.shippedQuantity} ${line.unitOfMeasure ?? ""}`.trim()
+        };
+      });
+
+      const contractStream = await renderToStream(
+        <PackingSlipPDF
+          valueCollector={valueCollector}
+          company={company.data as any}
+          customer={customer.data}
+          customerReference={contract.data.customerReference ?? undefined}
+          locale={locale}
+          meta={{
+            author: "Carbon",
+            keywords: "receiving report",
+            subject: "Receiving Report"
+          }}
+          sourceDocument="Contract"
+          sourceDocumentId={contract.data.customerContractId ?? undefined}
+          shipment={shipment.data}
+          shipmentLines={shipmentLines.data ?? []}
+          // @ts-expect-error
+          shippingAddress={customerLocation.data?.address ?? null}
+          terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
+          paymentTerm={{ id: "", name: "" }}
+          shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
+          trackedEntities={[]}
+          rentalUnits={deliveredLines}
+          documentType="receivingReport"
+          thumbnails={{}}
+          template={templateConfig}
+          sections={templateSections}
+        />
+      );
+
+      const contractBody = await readAll(contractStream);
+
+      return new Response(new Uint8Array(contractBody), {
+        status: 200,
+        headers: new Headers({
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `inline; filename="${company.data.name} - ${shipment.data.shipmentId}.pdf"`
+        })
+      });
+    }
+    default:
+      throw new Error("Invalid source document");
+  }
+}

@@ -23,6 +23,8 @@ type RowProps<T> = {
   rowRef?: Ref<HTMLTableRowElement>;
   /** The row's index in a virtualized grid, read back when it is measured. */
   virtualIndex?: number;
+  /** The row's place in the whole grid, header included, when only some rows render. */
+  ariaRowIndex?: number;
   /**
    * Draw a line between body rows. A virtualized grid scrolls its rows under a
    * pinned header, where rows with no separator read as one tall cell per
@@ -45,6 +47,7 @@ const Row = <T extends object>({
   rowRef,
   selectedCell,
   virtualIndex,
+  ariaRowIndex,
   withRowBorder = false,
   onCellClick,
   onCellUpdate
@@ -56,6 +59,7 @@ const Row = <T extends object>({
       key={row.id}
       ref={rowRef}
       data-index={virtualIndex}
+      aria-rowindex={ariaRowIndex}
       className={cn(
         withRowBorder && "border-t border-border first:border-t-0",
         rowIsClickable && "cursor-pointer"
@@ -93,7 +97,8 @@ const MemoizedRow = memo(
     next.selectedCell?.row === prev.row.index &&
     next.row.index === prev.selectedCell?.row &&
     next.selectedCell?.column === prev.selectedCell?.column &&
-    next.isEditing === prev.isEditing
+    next.isEditing === prev.isEditing &&
+    next.ariaRowIndex === prev.ariaRowIndex
 ) as typeof Row;
 
 // props are equal if:

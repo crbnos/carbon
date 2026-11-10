@@ -28,7 +28,7 @@ import {
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
-  toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -68,12 +68,14 @@ export default function BatchPropertiesConfig({
   properties: initialProperties,
   type = "card",
   isReadOnly = false,
+  open = true,
   onClose
 }: {
   itemId: string;
   properties: BatchProperty[];
   type?: "card" | "modal";
   isReadOnly?: boolean;
+  open?: boolean;
   onClose?: () => void;
 }) {
   const { isList, onChangeCheckForListType, setIsList } = useBatchProperties();
@@ -81,11 +83,8 @@ export default function BatchPropertiesConfig({
 
   const submit = useSubmit();
   const fetcher = useAction<typeof batchPropertyAction>({
-    onError: (data) => {
-      if (data?.success === false) {
-        toast.error(t`Failed to update batch property`);
-      }
-    }
+    onError: (data) =>
+      toastError(t`Failed to update batch property`, data.error)
   });
 
   const propertiesById = new Map<string, BatchProperty>(
@@ -120,7 +119,7 @@ export default function BatchPropertiesConfig({
 
   return (
     <ModalCardProvider type={type}>
-      <ModalCard onClose={onClose}>
+      <ModalCard open={open} onClose={onClose}>
         <ModalCardContent>
           <ModalCardHeader>
             <ModalCardTitle>
@@ -465,20 +464,18 @@ function BatchPropertyComponent({
           </div>
         </div>
       )}
-      {deletePropertyDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteBatchProperty(property.itemId, property.id)}
-          isOpen={deletePropertyDisclosure.isOpen}
-          name={property.label}
-          text={`Are you sure you want to delete the ${property.label} property?`}
-          onCancel={() => {
-            deletePropertyDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deletePropertyDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteBatchProperty(property.itemId, property.id)}
+        isOpen={deletePropertyDisclosure.isOpen}
+        name={property.label}
+        text={`Are you sure you want to delete the ${property.label} property?`}
+        onCancel={() => {
+          deletePropertyDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deletePropertyDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import {
   ValidatedForm
 } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   BadgeCloseButton,
@@ -23,18 +24,18 @@ import {
   PopoverContent,
   PopoverTrigger,
   toast,
+  toastError,
   useMode,
   VStack
 } from "@carbon/react";
-import data from "@emoji-mart/data";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
 import React, { Suspense, useEffect, useState } from "react";
 import { LuImage, LuMegaphone } from "react-icons/lu";
-import { useFetcher, useLocation } from "react-router";
+import { useLocation } from "react-router";
 import { useUser } from "~/hooks";
-import { suggestionValidator } from "~/modules/shared";
+import { suggestionValidator } from "~/modules/shared/shared.models";
 import type { action } from "~/routes/x+/resources+/suggestions.new";
 import { useUIStore } from "~/stores/ui";
 import { path } from "~/utils/path";
@@ -42,6 +43,10 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "suggestion");
 
 const Picker = React.lazy(() => import("@emoji-mart/react"));
+// The emoji set (~3 MB of JSON) loads when the picker first opens, not with
+// the page: the picker calls this itself.
+const loadEmojiData = () =>
+  import("@emoji-mart/data").then((module) => module.default);
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 const defaultEmoji = "\u{1F4A1}";
@@ -54,7 +59,6 @@ type EmojiData = {
 
 const Suggestion = () => {
   const { t } = useLingui();
-  const fetcher = useFetcher<typeof action>();
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [suggestion, setSuggestion] = useState("");
@@ -76,19 +80,17 @@ const Suggestion = () => {
     (state) => state.clearSuggestionRequest
   );
 
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      toast.success(fetcher.data.message);
+  const fetcher = useAction<typeof action>({
+    onSuccess: () => {
+      toast.success(t`Suggestion submitted`);
       setSuggestion("");
       setEmoji(defaultEmoji);
       setAttachment(null);
       setAnonymous(true);
       setSendToCarbon(CARBON_SLACK_ENABLED);
       setOpen(false);
-    } else if (fetcher.data?.message) {
-      toast.error(fetcher.data.message);
     }
-  }, [fetcher.data]);
+  });
 
   useEffect(() => {
     if (!suggestionPrefill) return;
@@ -136,7 +138,7 @@ const Suggestion = () => {
 
       if (imageUpload.error) {
         logger.error(imageUpload.error);
-        toast.error(t`Failed to upload image`);
+        toastError(t`Failed to upload image`, imageUpload.error);
       }
 
       if (imageUpload.data?.path) {
@@ -190,6 +192,7 @@ const Suggestion = () => {
                   {attachment.name}
                   <BadgeCloseButton
                     type="button"
+                    aria-label={t`Remove ${attachment.name}`}
                     onClick={() => {
                       setAttachment(null);
                     }}
@@ -201,6 +204,7 @@ const Suggestion = () => {
               <VStack spacing={2}>
                 <HStack spacing={2}>
                   <Checkbox
+                    aria-label={t`Submit anonymously`}
                     isChecked={anonymous}
                     onCheckedChange={(checked) =>
                       setAnonymous(checked === true)
@@ -213,6 +217,7 @@ const Suggestion = () => {
                 {CARBON_SLACK_ENABLED && (
                   <HStack spacing={2}>
                     <Checkbox
+                      aria-label={t`Send to Carbon`}
                       isChecked={sendToCarbon}
                       onCheckedChange={(checked) =>
                         setSendToCarbon(checked === true)
@@ -240,7 +245,7 @@ const Suggestion = () => {
                 >
                   <Suspense>
                     <Picker
-                      data={data}
+                      data={loadEmojiData}
                       onEmojiSelect={onEmojiSelect}
                       theme={pickerTheme}
                       previewPosition="none"

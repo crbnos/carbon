@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { OnshapeLogo } from "@carbon/ee";
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -25,12 +26,12 @@ import {
   useMount
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LuChevronRight } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { MethodIcon } from "~/components";
 import { OnshapeStatus } from "~/components/Icons";
-import { methodType } from "~/modules/shared";
+import { methodType } from "~/modules/shared/shared.models";
 import type { action as onShapeSyncAction } from "~/routes/api+/integrations.onshape.sync";
 import { path } from "~/utils/path";
 import { DateTime } from "./DateTime";
@@ -208,10 +209,14 @@ export const OnshapeSync = ({
     }
   };
 
-  const upsertBomFetcher = useFetcher<typeof onShapeSyncAction>();
-  const syncSubmitted = useRef(false);
+  const upsertBomFetcher = useAction<typeof onShapeSyncAction>({
+    onSuccess: () => {
+      setBomRows([]);
+      setLastSyncedAt(new Date().toISOString());
+      toast.success(t`BOM synced successfully`);
+    }
+  });
   const saveBom = () => {
-    syncSubmitted.current = true;
     const formData = new FormData();
     formData.append("documentId", documentId ?? "");
     formData.append("versionId", versionId ?? "");
@@ -224,29 +229,13 @@ export const OnshapeSync = ({
     });
   };
 
-  useEffect(() => {
-    if (
-      syncSubmitted.current &&
-      upsertBomFetcher.data?.success &&
-      bomRows.length > 0
-    ) {
-      setBomRows([]);
-      setLastSyncedAt(new Date().toISOString());
-      syncSubmitted.current = false;
-      toast.success(t`BOM synced successfully`);
-    }
-
-    if (upsertBomFetcher.data?.success === false) {
-      toast.error(upsertBomFetcher.data.message);
-    }
-  }, [bomRows.length, upsertBomFetcher.data, t]);
-
   return (
     <div className="flex flex-col gap-2 w-full">
       <div className="flex flex-col gap-2 border bg-muted/30 rounded p-2 w-full">
         <div className="flex items-center w-full justify-between">
           <OnshapeLogo className="h-5 w-auto" />
           <IconButton
+            aria-expanded={disclosure.isOpen}
             aria-label={t`Show sync options`}
             variant="ghost"
             size="sm"
@@ -264,6 +253,7 @@ export const OnshapeSync = ({
               </span>
               <div className="w-[180px]">
                 <Combobox
+                  aria-label={t`Onshape document`}
                   isLoading={documentsFetcher.state === "loading"}
                   options={documentOptions}
                   isReadOnly={isDisabled}
@@ -285,6 +275,7 @@ export const OnshapeSync = ({
               </span>
               <div className="w-[180px]">
                 <Combobox
+                  aria-label={t`Onshape version`}
                   isLoading={versionsFetcher.state === "loading"}
                   isReadOnly={isDisabled}
                   options={versionOptions}
@@ -305,6 +296,7 @@ export const OnshapeSync = ({
               </span>
               <div className="w-[180px]">
                 <Combobox
+                  aria-label={t`Onshape assembly`}
                   isLoading={elementsFetcher.state === "loading"}
                   options={elementOptions}
                   isReadOnly={isDisabled}
@@ -471,7 +463,9 @@ export const OnshapeSync = ({
                         <Trans>No part ID</Trans>
                       </Status>
                     )}
-                    {!isSynced && partId && <PulsingDot className="mt-0.5" />}
+                    {!isSynced && partId && (
+                      <PulsingDot label={t`Not synced`} className="mt-0.5" />
+                    )}
                     {/** biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration */}
                     {row.data["State"] && (
                       // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration

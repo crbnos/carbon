@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteSalesRFQ } from "~/modules/sales";
+import { deleteSalesRFQ } from "~/modules/sales/sales.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

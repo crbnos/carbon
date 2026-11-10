@@ -6,17 +6,17 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { pricingRuleValidator } from "~/modules/sales/sales.models";
 import {
   duplicatePricingRule,
   getPricingRule,
-  pricingRuleValidator,
-  toMatchedRule,
   updatePricingRule
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
+import { toMatchedRule } from "~/modules/sales/sales.utils";
 import PricingRuleForm from "~/modules/sales/ui/Pricing/PricingRuleForm";
 import { getParams, path } from "~/utils/path";
 
@@ -105,7 +105,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditPricingRuleRoute() {
   const { pricingRule } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   if (!pricingRule) return null;
 
@@ -136,7 +136,8 @@ export default function EditPricingRuleRoute() {
     <PricingRuleForm
       key={pricingRule.id}
       initialValues={initialValues}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

@@ -68,7 +68,7 @@ async function seedInstanceAdmin() {
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   if (!email) return;
 
-  const { error } = await supabaseAdmin.auth.admin.createUser({
+  const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,
     email_confirm: true,
     app_metadata: {
@@ -79,8 +79,22 @@ async function seedInstanceAdmin() {
   });
   // Idempotent the cheap way: this runs on every upgrade, and the account
   // existing is the desired state, not a failure.
-  if (error && error.code !== "email_exists") {
+  if (error?.code === "email_exists") return;
+  if (error) {
     throw new Error(`seed: creating instance admin: ${error.message}`);
+  }
+
+  // The instance admin can add companies (the switcher's Add Company).
+  // Only when the account is created, so a later demotion sticks.
+  const admin = await supabaseAdmin
+    .from("user")
+    .update({ admin: true })
+    .eq("id", data.user.id)
+    .select("id");
+  if (admin.error || !admin.data?.length) {
+    throw new Error(
+      `seed: marking instance admin: ${admin.error?.message ?? "no user row"}`
+    );
   }
 }
 

@@ -36,7 +36,7 @@ export function ReorderableRow({
           className={cn(
             "relative flex items-center justify-center w-10 h-10 shrink-0",
             "text-muted-foreground/50 hover:text-foreground",
-            "cursor-grab active:cursor-grabbing active:scale-[0.96]",
+            "cursor-grab touch-none active:cursor-grabbing active:scale-[0.96]",
             "transition-[color,transform] duration-150 ease"
           )}
           {...dragHandle.attributes}

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { z } from "zod";
+import { isThemeName } from "./themes";
 
 export enum Edition {
   Cloud = "cloud",
@@ -18,6 +19,13 @@ export type ModePreference = Mode | "system";
 
 export const modeValidator = z.object({
   mode: z.enum(["light", "dark", "system"])
+});
+
+/**
+ * A theme name a browser may store (`isThemeName`).
+ */
+export const themeColorValidator = z.object({
+  theme: z.string().refine(isThemeName, { message: "Invalid theme" })
 });
 
 export enum Plan {
@@ -44,6 +52,7 @@ export type PickPartial<T, K extends keyof T> = Omit<T, K> &
 export interface TrackedEntityAttributes {
   "Batch Number"?: string;
   Customer?: string;
+  "Fixed Asset"?: string;
   Job?: string;
   "Job Make Method"?: string;
   "Job Operation"?: string;
@@ -53,6 +62,7 @@ export interface TrackedEntityAttributes {
   "Receipt Line Index"?: number;
   "Receipt Line"?: string;
   Receipt?: string;
+  "Rental Agreement"?: string;
   "Sales Order"?: string;
   "Sales Order Line"?: string;
   Supplier?: string;

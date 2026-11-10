@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getStorageUnitDescendants } from "~/modules/inventory";
+import { getStorageUnitDescendants } from "~/modules/inventory/inventory.service";
 
 /**
  * Returns every storage unit in the subtree rooted at `id` (the unit itself

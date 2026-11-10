@@ -4,6 +4,7 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { fetchAllFromTable } from "@carbon/database";
+import { planningGroupMrpDeps } from "@carbon/ee/pegging.server";
 import { runMrp } from "@carbon/planning";
 import { Edition } from "@carbon/utils";
 import { fromAbsolute, now } from "@internationalized/date";
@@ -174,12 +175,17 @@ export const mrpFunction = inngest.createFunction(
       try {
         await step.run(`mrp-${company.id}`, async () => {
           // Run MRP in-process (Node); runMrp throws on failure.
-          await runMrp(serviceRole, getJobDatabaseClient(), {
-            type: "company",
-            id: company.id,
-            companyId: company.id,
-            userId: "system"
-          });
+          await runMrp(
+            serviceRole,
+            getJobDatabaseClient(),
+            {
+              type: "company",
+              id: company.id,
+              companyId: company.id,
+              userId: "system"
+            },
+            planningGroupMrpDeps
+          );
           logger.info(`Successfully ran MRP for company ${company.name}`);
         });
       } catch (error) {

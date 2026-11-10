@@ -6,21 +6,31 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
 import { data, useLoaderData } from "react-router";
+import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
+import { memoValidator } from "~/modules/invoicing/invoicing.models";
 import {
   getMemo,
   getMemoApplications,
-  MemoApplicationsPanel,
-  MemoForm,
-  memoValidator,
+  getSettlementRelatedItems,
   upsertMemo
-} from "~/modules/invoicing";
+} from "~/modules/invoicing/invoicing.service";
+import {
+  MemoApplicationsPanel,
+  MemoDocuments,
+  MemoForm,
+  MemoHeader
+} from "~/modules/invoicing/ui";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 // The memo detail page is one shared URL (so every inbound path.to.memo(id)
@@ -43,6 +53,12 @@ export const handle: Handle = {
   module: "invoicing"
 };
 
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(
+    data?.memo?.memoId,
+    data?.memo?.supplierId ? "Supplier Credit" : "Credit Memo"
+  );
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "invoicing"
@@ -50,7 +66,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { memoId } = params;
   if (!memoId) throw notFound("Missing memoId");
 
-  const memo = await getMemo(client, memoId);
+  const memo = await getMemo(client, memoId, companyId);
   if (memo.error || !memo.data) {
     throw redirect(
       path.to.invoicing,
@@ -60,12 +76,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const applications = await getMemoApplications(client, companyId, memoId);
 
-  return { memo: memo.data, applications: applications.data ?? [] };
+  return {
+    memo: memo.data,
+    applications: applications.data ?? [],
+    relatedItems: getSettlementRelatedItems(client, companyId, {
+      journalId: memo.data.journalId,
+      targets: (applications.data ?? []).map(({ target }) => ({
+        targetSalesInvoiceId: target.type === "salesInvoice" ? target.id : null,
+        targetPurchaseInvoiceId:
+          target.type === "purchaseInvoice" ? target.id : null,
+        targetMemoId: target.type === "memo" ? target.id : null,
+        targetReimbursementId:
+          target.type === "reimbursement" ? target.id : null
+      })),
+      salesReturnOrderId: memo.data.salesReturnOrderId,
+      purchaseReturnOrderId: memo.data.purchaseReturnOrderId,
+      rentalAgreementId: memo.data.rentalAgreementId
+    })
+  };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "invoicing"
   });
   const { memoId } = params;
@@ -78,7 +111,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Only Draft memos are editable; Posted/Voided are immutable.
-  const existing = await getMemo(client, memoId);
+  const existing = await getMemo(client, memoId, companyId);
   if (existing.error || !existing.data) {
     throw redirect(
       path.to.invoicing,
@@ -133,12 +166,24 @@ export default function MemoDetailRoute() {
   const type = memo.supplierId ? "supplierCredit" : "creditMemo";
 
   return (
-    <VStack spacing={4} className="p-6 max-w-6xl w-full mx-auto">
+    <DocumentPage
+      header={<MemoHeader />}
+      sidebar={
+        <DocumentSidebar
+          documents={<MemoDocuments />}
+          activity={{
+            entityType: "memo",
+            entityId: memo.id,
+            refreshKey: `${memo.updatedAt ?? ""}:${memo.status}`
+          }}
+        />
+      }
+    >
       <MemoForm initialValues={initialValues} type={type} />
       <MemoApplicationsPanel
         rows={applications}
         currencyCode={memo.currencyCode ?? "USD"}
       />
-    </VStack>
+    </DocumentPage>
   );
 }

@@ -16,18 +16,20 @@ import {
   Td,
   Tr,
   TruncatedTooltipText,
+  useViewport,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
 import { DateTime, MethodIcon, SupplierAvatar } from "~/components";
 import { useAccounts } from "~/components/Form/Account";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { SummaryLineList, SummaryLineRow } from "~/components/SummaryLineRow";
 import {
   useCurrencyFormatter,
   usePercentFormatter,
@@ -58,6 +60,8 @@ const LineItems = ({
   purchaseInvoiceLines: PurchaseInvoiceLine[];
   shouldConvertCurrency: boolean;
 }) => {
+  const { t } = useLingui();
+  const { isPhone } = useViewport();
   const [items] = useItems();
   const accounts = useAccounts();
   const { invoiceId } = useParams();
@@ -73,161 +77,192 @@ const LineItems = ({
     );
   };
 
-  return (
-    <VStack spacing={8} className="w-full overflow-hidden">
-      {purchaseInvoiceLines.map((line) => {
-        if (!line.id) return null;
+  const rows = purchaseInvoiceLines.map((line) => {
+    if (!line.id) return null;
 
-        const isGlAccount = line.invoiceLineType === "G/L Account";
-        const isFixedAsset = line.invoiceLineType === "Fixed Asset";
-        const isIndirect = isGlAccount || isFixedAsset;
-        const itemReadableId = isGlAccount
-          ? line.description || "Indirect Expense"
-          : isFixedAsset
-            ? line.assetReadableId || "Fixed Asset"
-            : getItemReadableId(items, line.itemId);
-        const lineDescription = isGlAccount
-          ? (accounts.find((a) => a.id === line.accountId)?.name ??
-            "Indirect Expense")
-          : isFixedAsset
-            ? line.description || "Fixed Asset"
-            : line.description;
-        const lineTotal = (line.unitPrice ?? 0) * (line.quantity ?? 0);
-        const supplierLineTotal =
-          (line.supplierUnitPrice ?? 0) * (line.quantity ?? 0);
-        const total =
-          lineTotal + (line.taxAmount ?? 0) + (line.shippingCost ?? 0);
-        const supplierTotal =
-          supplierLineTotal +
-          (line.supplierTaxAmount ?? 0) +
-          (line.supplierShippingCost ?? 0);
+    const isGlAccount = line.invoiceLineType === "G/L Account";
+    const isFixedAsset = line.invoiceLineType === "Fixed Asset";
+    const isLease = line.invoiceLineType === "Lease";
+    const isIndirect = isGlAccount || isFixedAsset || isLease;
+    const itemReadableId = isGlAccount
+      ? line.description || "Indirect Expense"
+      : isFixedAsset
+        ? line.assetReadableId || "Fixed Asset"
+        : isLease
+          ? line.leaseReadableId || "Lease"
+          : getItemReadableId(items, line.itemId);
+    const lineDescription = isGlAccount
+      ? (accounts.find((a) => a.id === line.accountId)?.name ??
+        "Indirect Expense")
+      : isFixedAsset || isLease
+        ? line.description || itemReadableId
+        : distinctItemText(itemReadableId, line.description);
+    const lineName = itemReadableId ?? "";
+    const lineTotal = (line.unitPrice ?? 0) * (line.quantity ?? 0);
+    const supplierLineTotal =
+      (line.supplierUnitPrice ?? 0) * (line.quantity ?? 0);
+    const total = lineTotal + (line.taxAmount ?? 0) + (line.shippingCost ?? 0);
+    const supplierTotal =
+      supplierLineTotal +
+      (line.supplierTaxAmount ?? 0) +
+      (line.supplierShippingCost ?? 0);
 
-        return (
-          <motion.div
-            key={line.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="border-b border-input py-6 w-full"
-          >
-            <HStack spacing={4} className="items-start">
-              {line.thumbnailPath ? (
-                <img
-                  alt={itemReadableId ?? ""}
-                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
-                  src={getPrivateUrl(line.thumbnailPath)}
-                />
-              ) : (
-                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
-                  <LuImage className="w-16 h-16 text-muted-foreground" />
-                </div>
-              )}
+    // Phones: one row that opens the line page (its Edit link, the
+    // badges and the breakdown stay on desktop).
+    if (isPhone) {
+      return (
+        <SummaryLineRow
+          key={line.id}
+          to={path.to.purchaseInvoiceLine(invoiceId, line.id)}
+          title={itemReadableId}
+          value={formatter.format(total)}
+          description={lineDescription}
+          meta={
+            <>
+              {line.quantity} × {formatter.format(line.unitPrice ?? 0)}{" "}
+              {
+                unitOfMeasures.find(
+                  (uom) => uom.value === line.purchaseUnitOfMeasureCode
+                )?.label
+              }
+            </>
+          }
+        />
+      );
+    }
 
-              <VStack spacing={0} className="flex-1 min-w-0">
-                <div
-                  className="flex flex-col cursor-pointer w-full"
-                  onClick={() => toggleOpen(line.id!)}
-                >
-                  {/* The text column must shrink (flex-1 min-w-0) or a long
+    return (
+      <div key={line.id} className="border-b border-input py-6 w-full">
+        <HStack spacing={4} className="items-start">
+          {line.thumbnailPath ? (
+            <img
+              alt={itemReadableId ?? ""}
+              className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+              src={getPrivateUrl(line.thumbnailPath)}
+            />
+          ) : (
+            <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
+              <LuImage className="w-16 h-16 text-muted-foreground" />
+            </div>
+          )}
+
+          <VStack spacing={0} className="flex-1 min-w-0">
+            {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
+            <div
+              className="flex flex-col cursor-pointer w-full"
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest("a, button")) return;
+                toggleOpen(line.id!);
+              }}
+            >
+              {/* The text column must shrink (flex-1 min-w-0) or a long
                       description shoves the totals out of the card, and its
                       children need w-full because VStack is items-start, which
                       sizes each child to its own content and leaves truncate
                       inert no matter how narrow the column gets. */}
-                  <div className="flex items-center justify-between w-full">
-                    <VStack spacing={0} className="flex-1 min-w-0">
-                      <HStack spacing={2} className="flex min-w-0 w-full">
-                        <Heading className="truncate">{itemReadableId}</Heading>
-                        <Button
-                          asChild
-                          variant="link"
-                          size="sm"
-                          className="text-muted-foreground flex-shrink-0"
-                        >
-                          <Link
-                            to={path.to.purchaseInvoiceLine(
-                              invoiceId,
-                              line.id!
-                            )}
-                          >
-                            Edit
-                          </Link>
-                        </Button>
-                      </HStack>
-                      <TruncatedTooltipText
-                        className="text-muted-foreground text-sm truncate w-full"
-                        tooltip={lineDescription}
-                      >
-                        {lineDescription}
-                      </TruncatedTooltipText>
-                    </VStack>
-                    <VStack
-                      spacing={2}
-                      className="flex-shrink-0 items-end w-auto"
+              <div className="flex items-center justify-between w-full">
+                <VStack spacing={0} className="flex-1 min-w-0">
+                  <HStack spacing={2} className="flex min-w-0 w-full">
+                    <Heading className="truncate">{itemReadableId}</Heading>
+                    <Button
+                      asChild
+                      variant="link"
+                      size="sm"
+                      className="text-muted-foreground flex-shrink-0"
                     >
-                      <HStack spacing={4}>
-                        <VStack spacing={0}>
-                          <span className="font-bold text-xl whitespace-nowrap">
-                            {formatter.format(total)}
-                          </span>
-                          {shouldConvertCurrency && (
-                            <span className="text-muted-foreground text-sm">
-                              {presentationCurrencyFormatter.format(
-                                supplierTotal
-                              )}
-                            </span>
-                          )}
-                        </VStack>
-                        <motion.div
-                          animate={{
-                            rotate: openItems.includes(line.id) ? 90 : 0
-                          }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <LuChevronRight size={24} />
-                        </motion.div>
-                      </HStack>
-                      <div className="flex items-center gap-2">
-                        {!isIndirect && (
-                          <Badge
-                            variant="outline"
-                            className="flex items-center gap-2"
-                          >
-                            {line.quantity}
-                            <MethodIcon
-                              // @ts-expect-error
-                              type={line.methodType ?? "Pull from Inventory"}
-                            />
-                          </Badge>
-                        )}
-                        <Badge variant="green">
-                          {formatter.format(line.unitPrice ?? 0)}{" "}
-                          {
-                            unitOfMeasures.find(
-                              (uom) =>
-                                uom.value === line.purchaseUnitOfMeasureCode
-                            )?.label
-                          }
-                        </Badge>
-                        {(line.taxPercent ?? 0) > 0 ? (
-                          <Badge variant="red">
-                            {percentFormatter.format(line.taxPercent ?? 0)} Tax
-                          </Badge>
-                        ) : null}
-                      </div>
+                      <Link
+                        to={path.to.purchaseInvoiceLine(invoiceId, line.id!)}
+                      >
+                        Edit
+                      </Link>
+                    </Button>
+                  </HStack>
+                  {lineDescription && (
+                    <TruncatedTooltipText
+                      className="text-muted-foreground text-sm truncate w-full"
+                      tooltip={lineDescription}
+                    >
+                      {lineDescription}
+                    </TruncatedTooltipText>
+                  )}
+                </VStack>
+                <VStack spacing={2} className="flex-shrink-0 items-end w-auto">
+                  <HStack spacing={4}>
+                    <VStack spacing={0}>
+                      <span className="font-semibold text-xl whitespace-nowrap">
+                        {formatter.format(total)}
+                      </span>
+                      {shouldConvertCurrency && (
+                        <span className="text-muted-foreground text-sm">
+                          {presentationCurrencyFormatter.format(supplierTotal)}
+                        </span>
+                      )}
                     </VStack>
+                    <motion.button
+                      type="button"
+                      aria-expanded={openItems.includes(line.id)}
+                      aria-controls={
+                        openItems.includes(line.id)
+                          ? `purchase-invoice-line-details-${line.id}`
+                          : undefined
+                      }
+                      aria-label={
+                        openItems.includes(line.id)
+                          ? t`Hide details for ${lineName}`
+                          : t`Show details for ${lineName}`
+                      }
+                      className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      onClick={() => toggleOpen(line.id!)}
+                      animate={{
+                        rotate: openItems.includes(line.id) ? 90 : 0
+                      }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <LuChevronRight size={24} aria-hidden />
+                    </motion.button>
+                  </HStack>
+                  <div className="flex items-center gap-2">
+                    {!isIndirect && (
+                      <Badge
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        {line.quantity}
+                        <MethodIcon
+                          // @ts-expect-error
+                          type={line.methodType ?? "Pull from Inventory"}
+                        />
+                      </Badge>
+                    )}
+                    <Badge variant="green">
+                      {formatter.format(line.unitPrice ?? 0)}{" "}
+                      {
+                        unitOfMeasures.find(
+                          (uom) => uom.value === line.purchaseUnitOfMeasureCode
+                        )?.label
+                      }
+                    </Badge>
+                    {(line.taxPercent ?? 0) > 0 ? (
+                      <Badge variant="red">
+                        {percentFormatter.format(line.taxPercent ?? 0)} Tax
+                      </Badge>
+                    ) : null}
                   </div>
-                </div>
-              </VStack>
-            </HStack>
+                </VStack>
+              </div>
+            </div>
+          </VStack>
+        </HStack>
 
+        <AnimatePresence initial={false}>
+          {openItems.includes(line.id) ? (
             <motion.div
-              initial="collapsed"
-              animate={openItems.includes(line.id) ? "open" : "collapsed"}
-              variants={{
-                open: { opacity: 1, height: "auto", marginTop: 16 },
-                collapsed: { opacity: 0, height: 0, marginTop: 0 }
-              }}
-              transition={{ duration: 0.3 }}
+              id={`purchase-invoice-line-details-${line.id}`}
+              key="panel"
+              initial={{ opacity: 0, height: 0, marginTop: 0 }}
+              animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+              exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
               className="w-full overflow-hidden"
             >
               <div className="w-full">
@@ -334,7 +369,7 @@ const LineItems = ({
                       </Td>
                     </Tr>
 
-                    <Tr key="total" className="font-bold">
+                    <Tr key="total" className="font-semibold">
                       <Td>
                         <Trans>Total</Trans>
                       </Td>
@@ -355,9 +390,19 @@ const LineItems = ({
                 </Table>
               </div>
             </motion.div>
-          </motion.div>
-        );
-      })}
+          ) : null}
+        </AnimatePresence>
+      </div>
+    );
+  });
+
+  if (isPhone) {
+    return <SummaryLineList>{rows}</SummaryLineList>;
+  }
+
+  return (
+    <VStack spacing={8} className="w-full overflow-hidden">
+      {rows}
     </VStack>
   );
 };

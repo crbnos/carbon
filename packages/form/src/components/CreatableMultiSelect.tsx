@@ -10,13 +10,15 @@ import {
   FormErrorMessage,
   FormHelperText,
   FormLabel,
-  LabelWithHelp
+  LabelWithHelp,
+  optionLabelText
 } from "@carbon/react";
 import type { ReactNode } from "react";
 import { forwardRef, useEffect, useMemo } from "react";
 
 import { useControlField, useField } from "../hooks";
 import { useFormStateContext } from "../internal/formStateContext";
+import { useInlineField } from "../internal/inlineField";
 
 export type CreatableMultiSelectProps = Omit<
   CreatableMultiSelectBaseProps,
@@ -55,6 +57,12 @@ const CreatableMultiSelect = forwardRef<
     const isReadOnly =
       formState.isReadOnly || formState.isDisabled || props.isReadOnly;
     const resolvedIsOptional = isOptional ?? fieldIsOptional ?? false;
+    const inlineField = useInlineField({
+      inline: !!props.inline,
+      label,
+      isEmpty: (value ?? []).filter(Boolean).length === 0,
+      isReadOnly
+    });
 
     useEffect(() => {
       if (props.value !== null && props.value !== undefined)
@@ -77,7 +85,7 @@ const CreatableMultiSelect = forwardRef<
 
       // Sort unselected options alphabetically by label
       const sortedUnselected = [...unselectedOptions].sort((a, b) =>
-        a.label.localeCompare(b.label)
+        optionLabelText(a).localeCompare(optionLabelText(b))
       );
 
       // Combine selected options first, followed by sorted unselected options
@@ -86,7 +94,7 @@ const CreatableMultiSelect = forwardRef<
 
     return (
       <FormControl isInvalid={!!error}>
-        {label && (
+        {label && inlineField.showLabel && (
           <FormLabel htmlFor={name} isOptional={resolvedIsOptional}>
             <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
           </FormLabel>
@@ -111,6 +119,7 @@ const CreatableMultiSelect = forwardRef<
           isReadOnly={isReadOnly}
           label={label}
           emptyMessage={emptyMessage}
+          inlinePlaceholder={props.inlinePlaceholder ?? inlineField.placeholder}
           className="w-full"
         />
 

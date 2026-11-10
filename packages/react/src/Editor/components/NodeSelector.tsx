@@ -4,7 +4,6 @@
 
 import type { EditorInstance } from "@carbon/tiptap";
 import { EditorBubbleItem, useEditor } from "@carbon/tiptap";
-import { Popover } from "@radix-ui/react-popover";
 import type { IconType } from "react-icons";
 import {
   LuCheck,
@@ -17,7 +16,7 @@ import {
   LuText
 } from "react-icons/lu";
 import { Button } from "../../Button";
-import { PopoverContent, PopoverTrigger } from "../../Popover";
+import { Popover, PopoverContent, PopoverTrigger } from "../../Popover";
 
 export type SelectorItem = {
   name: string;

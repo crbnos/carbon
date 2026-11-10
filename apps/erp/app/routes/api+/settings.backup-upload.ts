@@ -9,8 +9,10 @@ import { TEMP_STAGING_BUCKET } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { nanoid } from "nanoid";
 import type { ActionFunctionArgs } from "react-router";
-import { canManageBackups } from "~/modules/settings/backups.server";
-import { unpackBackupArchive } from "~/modules/settings/backups-archive.server";
+import {
+  canManageBackups,
+  unpackBackupArchive
+} from "~/modules/settings/settings.service";
 
 const logger = getLogger("erp", "settings-backup-upload");
 

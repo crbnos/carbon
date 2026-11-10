@@ -14,13 +14,18 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
-import type { PurchasingRFQ, PurchasingRFQLine } from "~/modules/purchasing";
+import {
+  isRfqLocked,
+  purchasingRfqValidator
+} from "~/modules/purchasing/purchasing.models";
 import {
   getPurchasingRFQ,
-  isRfqLocked,
-  purchasingRfqValidator,
   upsertPurchasingRFQ
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
+import type {
+  PurchasingRFQ,
+  PurchasingRFQLine
+} from "~/modules/purchasing/types";
 import {
   SupplierInteractionDocuments,
   SupplierInteractionNotes
@@ -126,7 +131,7 @@ export default function PurchasingRFQDetailsRoute() {
   if (!rfqData) throw new Error("Could not find rfq data");
 
   return (
-    <VStack spacing={2}>
+    <VStack spacing={4}>
       <SupplierInteractionState
         currentRfq={{
           id: rfqData.rfqSummary.id!,

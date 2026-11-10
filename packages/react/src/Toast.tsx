@@ -4,14 +4,35 @@
 
 "use client";
 
-import { Toaster as Sonner, toast } from "sonner";
+import { Toaster as Sonner, toast as sonnerToast } from "sonner";
+
+/**
+ * Sonner's `toast`, except an error stays until it is dismissed (with the
+ * close button or Escape): a 4-second error is gone before a screen reader
+ * user, or anyone reading slowly, can take it in. A caller's own `duration`
+ * still wins.
+ */
+const toast: typeof sonnerToast = Object.assign(
+  (...args: Parameters<typeof sonnerToast>) => sonnerToast(...args),
+  sonnerToast,
+  {
+    error: ((message, data) =>
+      sonnerToast.error(message, {
+        duration: Number.POSITIVE_INFINITY,
+        ...data
+      })) as typeof sonnerToast.error
+  }
+);
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
-const Toaster = ({ ...props }: ToasterProps) => {
+const Toaster = ({ style, ...props }: ToasterProps) => {
   return (
     <Sonner
       className="toaster group"
+      // An open modal, drawer or menu sets pointer-events: none on <body>;
+      // the toaster opts back in, so its close buttons and hover still work.
+      style={{ pointerEvents: "auto", ...style }}
       closeButton
       toastOptions={{
         classNames: {
@@ -35,4 +56,4 @@ const Toaster = ({ ...props }: ToasterProps) => {
   );
 };
 
-export { toast, Toaster };
+export { Toaster, toast };

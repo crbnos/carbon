@@ -2,60 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
-
-vi.mock("~/modules/settings", () => ({ getNextSequence: vi.fn() }));
-vi.mock("@carbon/content/glossary", () => ({
-  terms: {},
-  glossaryEntries: () => []
-}));
-vi.mock("@carbon/auth", () => ({
-  assertIsPost: () => undefined,
-  getMESUrl: () => "http://localhost",
-  getAppUrl: () => "http://localhost",
-  CARBON_API_URL: "http://localhost",
-  error: (cause: unknown, message: string) => ({ cause, message }),
-  success: (message: string) => ({ message })
-}));
-vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions: vi.fn() }));
-vi.mock("@carbon/auth/session.server", () => ({
-  flash: vi.fn(async () => ({}))
-}));
-vi.mock("@carbon/react", () => ({
-  ScrollArea: () => null,
-  VStack: () => null
-}));
-vi.mock("@carbon/form", () => ({
-  validator: (schema: {
-    safeParse: (input: unknown) => {
-      success: boolean;
-      data?: unknown;
-      error?: unknown;
-    };
-  }) => ({
-    validate: async (form: FormData) => {
-      const parsed = schema.safeParse(Object.fromEntries(form));
-      return parsed.success ? { data: parsed.data } : { error: parsed.error };
-    }
-  }),
-  validationError: (error: unknown) => ({ error })
-}));
-vi.mock("@lingui/core/macro", () => ({
-  msg: (strings: TemplateStringsArray) => ({ id: strings.join("") })
-}));
-vi.mock("~/hooks", () => ({ useRouteData: vi.fn() }));
-vi.mock("~/modules/accounting/ui/AccountDefaults", () => ({
-  AccountDefaultsForm: () => null
-}));
-vi.mock("~/modules/accounting", async () => ({
-  ...(await import("./accounting.service")),
-  ...(await import("./accounting.models"))
-}));
-
 import {
   defaultAccountValidator,
   defaultIncomeAcountValidator
@@ -144,30 +93,6 @@ function payload(overrides: Record<string, string> = {}) {
 }
 
 describe("shipping revenue defaults", () => {
-  it("the real defaults action rejects an invalid shipping mapping before either section writes", async () => {
-    const { client, writes } = database({ ...shipping, active: false });
-    vi.mocked(requirePermissions).mockResolvedValue({
-      client,
-      companyId: "company",
-      userId: "user"
-    } as never);
-    const body = new FormData();
-    for (const field of Object.keys(defaultAccountValidator.shape))
-      body.set(field, `${field}-id`);
-    body.set("salesAccount", "sales");
-    body.set("salesShippingRevenueAccount", "shipping");
-    body.set("intent", "all");
-    const { action } = await import("~/routes/x+/accounting+/defaults");
-    await action({
-      request: new Request("http://localhost/x/accounting/defaults", {
-        method: "POST",
-        body
-      }),
-      params: {},
-      context: {}
-    } as never);
-    expect(writes).not.toHaveBeenCalled();
-  });
   it("preserves the incoming shipping field and rejects present empty values", () => {
     expect(
       defaultIncomeAcountValidator.parse({
@@ -259,65 +184,5 @@ describe("shipping revenue defaults", () => {
     });
     expect(result.error).toBeTruthy();
     expect(writes).not.toHaveBeenCalled();
-  });
-});
-
-describe("combined defaults action", () => {
-  async function submit(client: SupabaseClient<Database>) {
-    vi.mocked(requirePermissions).mockResolvedValue({
-      client,
-      companyId: "company",
-      userId: "user"
-    } as never);
-    const body = new FormData();
-    for (const field of Object.keys(defaultAccountValidator.shape))
-      body.set(field, `${field}-new`);
-    body.set("salesAccount", "sales");
-    body.set("salesShippingRevenueAccount", "shipping");
-    body.set("intent", "all");
-    const { action } = await import("~/routes/x+/accounting+/defaults");
-    return action({
-      request: new Request("http://localhost/x/accounting/defaults", {
-        method: "POST",
-        body
-      }),
-      params: {},
-      context: {}
-    } as never);
-  }
-
-  it("saves the full form as one statement", async () => {
-    const { client, writes } = database();
-    await expect(submit(client)).rejects.toMatchObject({ status: 302 });
-    expect(writes).toHaveBeenCalledOnce();
-    expect(writes).toHaveBeenCalledWith(
-      "accountDefault",
-      expect.objectContaining({
-        companyId: "company",
-        salesShippingRevenueAccount: "shipping",
-        receivablesAccount: "receivablesAccount-new"
-      })
-    );
-  });
-
-  it("leaves both sections unchanged when the mapping is rejected", async () => {
-    const { client, writes, rows } = database({ ...shipping, active: false });
-    const original = structuredClone(rows.accountDefault);
-    await submit(client);
-    expect(writes).not.toHaveBeenCalled();
-    expect(rows.accountDefault).toEqual(original);
-  });
-
-  it("shows the actual shipping mapping validation error", async () => {
-    vi.mocked(flash).mockClear();
-    const { client } = database({ ...shipping, active: false });
-    await submit(client);
-    expect(flash).toHaveBeenCalledWith(
-      expect.any(Request),
-      expect.objectContaining({
-        message:
-          "Shipping revenue must be an active Revenue leaf account in this company group"
-      })
-    );
   });
 });

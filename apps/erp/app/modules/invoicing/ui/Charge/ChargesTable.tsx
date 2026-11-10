@@ -19,6 +19,7 @@ import {
 } from "react-icons/lu";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyDecimalsLookup } from "~/hooks";
 import { path } from "~/utils/path";
 import { chargeStatus, chargeType } from "../../invoicing.models";
@@ -29,9 +30,11 @@ type ChargeRow = Database["public"]["Tables"]["charge"]["Row"];
 type ChargesTableProps = {
   data: ChargeRow[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
-const ChargesTable = memo(({ data, count }: ChargesTableProps) => {
+const ChargesTable = memo((props: ChargesTableProps) => {
+  const { data, count, infinite } = props;
   const { t } = useLingui();
   const { locale } = useLocale();
   // Each transaction carries its own currencyCode (a company can hold cards in
@@ -50,13 +53,14 @@ const ChargesTable = memo(({ data, count }: ChargesTableProps) => {
             {row.original.chargeId}
           </Hyperlink>
         ),
-        meta: { icon: <LuHash /> }
+        meta: { icon: <LuHash />, mobile: "P1" }
       },
       {
         accessorKey: "type",
         header: t`Type`,
         cell: ({ row }) => <Enumerable value={row.original.type} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleDot />,
           filter: {
             type: "static",
@@ -73,6 +77,7 @@ const ChargesTable = memo(({ data, count }: ChargesTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <ChargeStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleDot />,
           filter: {
             type: "static",
@@ -94,7 +99,7 @@ const ChargesTable = memo(({ data, count }: ChargesTableProps) => {
         accessorKey: "merchantName",
         header: t`Merchant`,
         cell: ({ row }) => row.original.merchantName ?? null,
-        meta: { icon: <LuStore /> }
+        meta: { icon: <LuStore />, mobile: "P3" }
       },
       {
         accessorKey: "cardHolderName",
@@ -119,6 +124,7 @@ const ChargesTable = memo(({ data, count }: ChargesTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           icon: <LuCoins />
         }
       },
@@ -134,6 +140,7 @@ const ChargesTable = memo(({ data, count }: ChargesTableProps) => {
 
   return (
     <Table<ChargeRow>
+      infinite={infinite}
       count={count}
       columns={columns}
       data={data}

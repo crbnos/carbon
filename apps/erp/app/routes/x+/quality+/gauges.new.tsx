@@ -6,15 +6,16 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useCompanyToday, useRouteData, useUser } from "~/hooks";
-import type { GaugeType } from "~/modules/quality";
-import { gaugeValidator, insertGauge } from "~/modules/quality";
+import { gaugeValidator } from "~/modules/quality/quality.models";
+import { insertGauge } from "~/modules/quality/quality.service";
+import type { GaugeType } from "~/modules/quality/types";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
@@ -76,7 +77,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function GaugeNewRoute() {
   const { defaults } = useUser();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const routeData = useRouteData<{
     gaugeTypes: GaugeType[];
@@ -86,7 +87,7 @@ export default function GaugeNewRoute() {
   const initialValues = {
     id: undefined,
     gaugeId: undefined,
-    supplierId: "",
+    manufacturer: "",
     modelNumber: "",
     serialNumber: "",
     description: "",
@@ -106,7 +107,8 @@ export default function GaugeNewRoute() {
     <GaugeForm
       initialValues={initialValues}
       gaugeTypes={routeData?.gaugeTypes ?? []}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

@@ -4,6 +4,8 @@
 
 import {
   AIHighlight,
+  Color,
+  HighlightExtension,
   HorizontalRule,
   Placeholder,
   StarterKit,
@@ -233,6 +235,10 @@ export const defaultExtensions = [
   taskItem,
   horizontalRule,
   aiHighlight,
+  // The color menu (ColorSelector) calls setColor / setHighlight; without
+  // these two the commands do not exist and choosing a color does nothing.
+  Color,
+  HighlightExtension,
   TiptapUnderline,
   VideoEmbed,
   HTMLContent,

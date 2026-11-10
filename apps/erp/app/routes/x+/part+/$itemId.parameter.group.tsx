@@ -7,10 +7,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  configurationParameterGroupValidator,
-  upsertConfigurationParameterGroup
-} from "~/modules/items";
+import { configurationParameterGroupValidator } from "~/modules/items/items.models";
+import { upsertConfigurationParameterGroup } from "~/modules/items/items.service";
 
 const logger = getLogger("erp", "itemid-parameter-group");
 

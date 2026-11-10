@@ -27,7 +27,7 @@ import { data, useFetcher, useLoaderData, useNavigate } from "react-router";
 import {
   deleteAccountingPeriod,
   getAccountingPeriodDeletability
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

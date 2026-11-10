@@ -6,6 +6,7 @@ import { useLingui } from "@lingui/react/macro";
 import {
   LuContainer,
   LuFileText,
+  LuKeyRound,
   LuLayoutList,
   LuListTodo,
   LuPackageSearch,
@@ -24,26 +25,19 @@ export default function usePurchasingSubmodules() {
 
   const purchasingRoutes: AuthenticatedRouteGroup[] = [
     {
-      name: t`Manage`,
+      name: t`Suppliers`,
       routes: [
         {
           name: t`Suppliers`,
           to: path.to.suppliers,
           icon: <LuContainer />,
           table: "supplier"
-        },
-        {
-          name: t`RFQs`,
-          to: path.to.purchasingRfqs,
-          icon: <LuPackageSearch />,
-          table: "purchasingRfq"
-        },
-        {
-          name: t`Supplier Quotes`,
-          to: path.to.supplierQuotes,
-          icon: <LuFileText />,
-          table: "supplierQuote"
-        },
+        }
+      ]
+    },
+    {
+      name: t`Orders`,
+      routes: [
         {
           name: t`Purchase Orders`,
           to: path.to.purchaseOrders,
@@ -65,7 +59,35 @@ export default function usePurchasingSubmodules() {
           name: t`Material Planning`,
           to: path.to.purchasingPlanning,
           icon: <LuListTodo />,
-          table: "purchase-planning"
+          table: "planning"
+        }
+      ]
+    },
+    {
+      name: t`Agreements`,
+      routes: [
+        {
+          name: t`Leases`,
+          to: path.to.leases,
+          icon: <LuKeyRound />,
+          table: "lease"
+        }
+      ]
+    },
+    {
+      name: t`Sourcing`,
+      routes: [
+        {
+          name: t`RFQs`,
+          to: path.to.purchasingRfqs,
+          icon: <LuPackageSearch />,
+          table: "purchasingRfq"
+        },
+        {
+          name: t`Supplier Quotes`,
+          to: path.to.supplierQuotes,
+          icon: <LuFileText />,
+          table: "supplierQuote"
         }
       ]
     },

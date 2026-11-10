@@ -7,11 +7,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
+import { erpPosting } from "~/services/erp";
 import { issueTrackedEntityValidator } from "~/services/models";
+import { abilityBlockRefusal } from "~/services/operations.service";
 
 const log = getLogger("mes", "unconsume");
 
@@ -61,6 +61,15 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (matRow.jobOperationId) {
+    const refusal = await abilityBlockRefusal(serviceRole, {
+      operationId: matRow.jobOperationId,
+      employeeId: userId,
+      companyId
+    });
+    if (refusal) {
+      return data({ success: false, message: refusal }, { status: 403 });
+    }
+
     // `workInstructionId` is in the runtime row but absent from the generated
     // DB types (stale until next regen). Select only the typed column;
     // pick up `workInstructionId` via cast below.
@@ -115,14 +124,16 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const issued = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke("issue", {
+  const issued = await erpPosting(
+    "issue",
+    { companyId, userId },
+    {
       type: "unconsumeTrackedEntities",
       materialId,
       parentTrackedEntityId: parentTrackedEntityId!,
       children
-    });
+    }
+  );
 
   if (issued.error) {
     log.error("Failed to issue material", { error: issued.error });

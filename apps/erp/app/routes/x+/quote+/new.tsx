@@ -10,14 +10,19 @@ import { redirect } from "@carbon/utils";
 import { getLocalTimeZone, now, toCalendarDate } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUrlParams, useUser } from "~/hooks";
-import type { QuotationStatusType } from "~/modules/sales";
-import { insertQuote, quoteValidator } from "~/modules/sales";
+import { quoteValidator } from "~/modules/sales/sales.models";
+import { insertQuote } from "~/modules/sales/sales.service";
+import type { QuotationStatusType } from "~/modules/sales/types";
 import { QuoteForm } from "~/modules/sales/ui/Quotes";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("Quote");
 
 export const handle: Handle = {
   breadcrumb: msg`Quotes`,
@@ -122,8 +127,8 @@ export default function QuoteNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <QuoteForm initialValues={initialValues} />
-    </div>
+    </NewRecordPage>
   );
 }

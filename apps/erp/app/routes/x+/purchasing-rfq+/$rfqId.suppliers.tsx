@@ -7,10 +7,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  purchasingRfqSuppliersValidator,
-  upsertPurchasingRFQSuppliers
-} from "~/modules/purchasing";
+import { purchasingRfqSuppliersValidator } from "~/modules/purchasing/purchasing.models";
+import { upsertPurchasingRFQSuppliers } from "~/modules/purchasing/purchasing.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);

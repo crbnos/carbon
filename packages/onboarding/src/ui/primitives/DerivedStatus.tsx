@@ -28,7 +28,12 @@ function ProgressRingIcon({
 }) {
   const clamped = Math.min(Math.max(fraction, 0), 1);
   return (
-    <svg viewBox="0 0 14 14" fill="none" className={className}>
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 14 14"
+      fill="none"
+      className={className}
+    >
       <circle
         cx="7"
         cy="7"

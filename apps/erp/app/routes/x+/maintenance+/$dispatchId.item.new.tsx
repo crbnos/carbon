@@ -7,11 +7,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import {
-  getMaintenanceDispatch,
   isMaintenanceDispatchLocked,
-  maintenanceDispatchItemValidator,
+  maintenanceDispatchItemValidator
+} from "~/modules/resources/resources.models";
+import {
+  getMaintenanceDispatch,
   upsertMaintenanceDispatchItem
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 

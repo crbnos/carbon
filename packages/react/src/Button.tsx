@@ -5,15 +5,18 @@
 import { Slot, Slottable } from "@radix-ui/react-slot";
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
-import type { ButtonHTMLAttributes, ReactElement } from "react";
+import type { ButtonHTMLAttributes, MouseEvent, ReactElement } from "react";
 import { cloneElement, forwardRef, useCallback, useRef } from "react";
+import { useActionPresentation } from "./ActionPresentation";
 import type { ShortcutInput } from "./hooks/useShortcutKeys";
-import { useShortcutKeys } from "./hooks/useShortcutKeys";
+import { ariaKeyShortcuts, useShortcutKeys } from "./hooks/useShortcutKeys";
 import { ShortcutKey } from "./ShortcutKey";
 import { Spinner } from "./Spinner";
 import { cn } from "./utils/cn";
 import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
+import { isBareKeyForAnotherControl } from "./utils/keyboard";
 import { mergeRefs } from "./utils/react";
+import { HitArea, useViewport } from "./Viewport";
 
 export const buttonVariants = cva(
   [
@@ -35,7 +38,7 @@ export const buttonVariants = cva(
         active:
           "bg-active text-active-foreground hover:bg-active/90 hover:text-active-foreground dark:shadow-button-base before:hidden",
         secondary:
-          "bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 shadow-button-base",
+          "bg-background hover:bg-accent hover:text-accent-foreground shadow-button-base dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
         solid:
           "bg-accent text-accent-foreground hover:bg-accent/90 shadow-button-base",
         destructive:
@@ -168,6 +171,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const Comp = asChild ? Slot : "button";
     const innerRef = useRef<HTMLButtonElement>(null);
+    const presentation = useActionPresentation();
+    const { isPhone } = useViewport();
     // The badge shows the first binding; the rest are silent alternatives.
     const primaryShortcut = Array.isArray(shortcut) ? shortcut[0] : shortcut;
     const badgeShortcut =
@@ -179,6 +184,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const dialogGuard = useCallback(
       (event: KeyboardEvent) =>
         (!hasOpenDialog() || isInsideTopmostDialog(innerRef.current)) &&
+        // A bare Enter/Space on another button or link activates that one.
+        !isBareKeyForAnotherControl(event, innerRef.current) &&
         (shortcutGuard?.(event) ?? true),
       [shortcutGuard]
     );
@@ -200,19 +207,48 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       disabled: Boolean(isDisabled || props.disabled || isLoading)
     });
 
+    // Phones, inside a record action: a bottom-bar cell or an action-sheet
+    // row (see ActionPresentation).
+    const isRow = presentation?.kind === "row";
+    // A square bar cell (Preview): the left icon, the label for screen readers.
+    const isIconCell =
+      presentation?.kind === "bar" && presentation.iconOnly === true;
+    const onClick = isRow
+      ? (event: MouseEvent<HTMLButtonElement>) => {
+          props.onClick?.(event);
+          if (event.defaultPrevented || props["aria-haspopup"]) return;
+          // Next task, so a submit button's form is still mounted when the
+          // browser submits it.
+          setTimeout(presentation.onSelect, 0);
+        }
+      : props.onClick;
+
     return (
       <Comp
+        // Lets a modal skip a destructive action when it places initial focus.
+        data-variant={variant === "destructive" ? "destructive" : undefined}
         {...props}
+        onClick={onClick}
         className={cn(
           buttonVariants({
-            variant,
-            size,
+            variant:
+              presentation?.kind === "bar"
+                ? presentation.emphasis
+                : isRow
+                  ? "ghost"
+                  : variant,
+            size: presentation ? "lg" : size,
             isDisabled,
-            isIcon,
+            isIcon: isIcon || isIconCell,
             isLoading,
             isRound,
             className
-          })
+          }),
+          presentation?.kind === "bar" &&
+            (isIconCell ? "shrink-0" : "w-full min-w-0"),
+          isRow &&
+            "h-12 w-full min-w-0 shrink justify-start rounded-sm px-3 text-[0.9375rem] font-normal text-foreground shadow-none",
+          isRow && variant === "destructive" && "text-destructive"
         )}
         type={asChild ? undefined : (props.type ?? "button")}
         // `isLoading` disables too. It already blocks the keyboard path via
@@ -224,23 +260,43 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         // no spinner: it says "working on it" while accepting another click.
         disabled={isDisabled || props.disabled || isLoading}
         role={asChild ? undefined : "button"}
+        // The combo is announced as a shortcut, not read as part of the name:
+        // the keycap below is hidden, so the button stays "Save".
+        aria-keyshortcuts={
+          props["aria-keyshortcuts"] ?? ariaKeyShortcuts(shortcut)
+        }
+        // Busy while loading; the spinner is decorative, so the name stays put.
+        aria-busy={props["aria-busy"] ?? (isLoading ? true : undefined)}
         ref={mergeRefs(ref, innerRef)}
       >
+        {isPhone && <HitArea />}
         {isLoading && (
-          <Spinner className={cn("size-4 flex-shrink-0", !isIcon && "mr-2")} />
+          <Spinner
+            aria-hidden
+            className={cn("size-4 flex-shrink-0", !isIcon && "mr-2")}
+          />
         )}
         {!isLoading &&
           leftIcon &&
           cloneElement(leftIcon, {
-            className: !leftIcon.props?.size
-              ? cn("mr-2 h-4 w-4 flex-shrink-0", leftIcon.props.className)
-              : cn("mr-2 flex-shrink-0", leftIcon.props.className)
+            className: isIconCell
+              ? cn("size-5 flex-shrink-0", leftIcon.props.className)
+              : !leftIcon.props?.size
+                ? cn("mr-2 h-4 w-4 flex-shrink-0", leftIcon.props.className)
+                : cn("mr-2 flex-shrink-0", leftIcon.props.className)
           })}
         {/* An icon button's icon arrives as children — while loading, the
             spinner must REPLACE it or both clip inside the square hit area. */}
-        {isIcon && isLoading ? null : <Slottable>{children}</Slottable>}
+        {isIcon && isLoading ? null : isIconCell ? (
+          <span className="sr-only">
+            <Slottable>{children}</Slottable>
+          </span>
+        ) : (
+          <Slottable>{children}</Slottable>
+        )}
         {badgeShortcut && (
           <ShortcutKey
+            aria-hidden
             shortcut={badgeShortcut}
             variant={size === "lg" ? "medium" : "small"}
           />
@@ -248,6 +304,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {/* The badge owns the trailing slot — a rightIcon next to it reads
             cluttered, so the badge wins while it's visible. */}
         {!badgeShortcut &&
+          !isIconCell &&
           rightIcon &&
           cloneElement(rightIcon, {
             className: !rightIcon.props?.size

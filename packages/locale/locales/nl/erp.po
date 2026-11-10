@@ -1324,7 +1324,7 @@ msgid "Comments"
 msgstr ""
 
 msgid "Companies"
-msgstr ""
+msgstr "Bedrijven"
 
 msgid "Company"
 msgstr ""
@@ -4011,6 +4011,9 @@ msgstr ""
 msgid "Kanban for {kanbanName}"
 msgstr ""
 
+msgid "Kanban ID"
+msgstr ""
+
 msgid "Kanban Output"
 msgstr ""
 
@@ -4212,9 +4215,6 @@ msgid "Logs older than {0} days are automatically archived."
 msgstr ""
 
 msgid "Long Description"
-msgstr ""
-
-msgid "Looks empty here"
 msgstr ""
 
 msgid "Lost"
@@ -4878,6 +4878,9 @@ msgstr ""
 msgid "No"
 msgstr ""
 
+msgid "No data yet"
+msgstr "Nog geen gegevens"
+
 #. placeholder {0}: node.name.toLowerCase()
 msgid "No {0} found"
 msgstr ""
@@ -5255,10 +5258,10 @@ msgstr ""
 msgid "Order Date"
 msgstr ""
 
-msgid "Order Multiple"
+msgid "Order Items"
 msgstr ""
 
-msgid "Order Parts"
+msgid "Order Multiple"
 msgstr ""
 
 msgid "Order Qty"
@@ -8347,6 +8350,9 @@ msgstr ""
 
 msgid "Your Console PIN"
 msgstr ""
+
+msgid "Your data will appear here once you create or import your first records"
+msgstr "Uw gegevens verschijnen hier zodra u uw eerste records aanmaakt of importeert"
 
 msgid "Your Email"
 msgstr ""

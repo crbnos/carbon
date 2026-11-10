@@ -5,12 +5,16 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteIssueType, getIssueType } from "~/modules/quality";
+import {
+  deleteIssueType,
+  getIssueType
+} from "~/modules/quality/quality.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -44,7 +48,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) {
     throw redirect(
       `${path.to.issueTypes}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get an issue type id"))
+      await flash(request, error(null, "Failed to get an issue type id"))
     );
   }
 
@@ -71,19 +75,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteIssueTypesRoute() {
   const { id } = useParams();
   const { nonConformanceType } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.issueTypes);
   const { t } = useLingui();
 
   if (!nonConformanceType) return null;
   if (!id) throw notFound("id not found");
 
-  const onCancel = () => navigate(path.to.issueTypes);
   return (
     <ConfirmDelete
       action={path.to.deleteIssueType(id)}
       name={nonConformanceType.name}
       text={t`Are you sure you want to delete the issue type: ${nonConformanceType.name}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

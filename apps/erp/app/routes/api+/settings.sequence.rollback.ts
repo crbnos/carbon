@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getCurrentSequence } from "~/modules/settings";
+import { getCurrentSequence } from "~/modules/settings/settings.service";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsDelete(request);
@@ -26,10 +26,7 @@ export async function action({ request }: ActionFunctionArgs) {
   )
     return data(
       { data: null },
-      await flash(
-        request,
-        error(request, "Bad request for rolling back sequence")
-      )
+      await flash(request, error(null, "Bad request for rolling back sequence"))
     );
 
   const verifyCurrent = await getCurrentSequence(client, table, companyId);

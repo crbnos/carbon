@@ -24,6 +24,7 @@ export default defineConfig({
         "packages/printing/src/ui",
         "docs/content/src/glossary",
         "packages/onboarding/src",
+        "packages/account/src",
         "packages/ee/src/workflows"
       ],
       exclude: ["**/*.server.*", "**/*.test.*", "**/*.spec.*"]
@@ -34,7 +35,8 @@ export default defineConfig({
         "apps/mes/app",
         "packages/react/src",
         "packages/form/src",
-        "packages/printing/src/ui"
+        "packages/printing/src/ui",
+        "packages/account/src"
       ],
       exclude: ["**/*.server.*", "**/*.test.*", "**/*.spec.*"]
     }

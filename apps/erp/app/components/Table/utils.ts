@@ -10,6 +10,29 @@ export function getAccessorKey<T>(columnDef: ColumnDef<T, unknown>) {
     : undefined;
 }
 
+// Whether the server can sort the list by this column. Cursor paging compares
+// the sort value inside one table, so a sort on another table's column
+// (`table.column`) is off, as is a column that opts out with
+// `enableSorting: false` (for example a value the list's view does not have).
+export function isServerSortable<T>(columnDef: ColumnDef<T, unknown>) {
+  const accessorKey = getAccessorKey(columnDef);
+  if (!accessorKey) return false;
+  if (columnDef.enableSorting === false) return false;
+  const sortKey = columnDef.meta?.sortBy ?? accessorKey;
+  return !sortKey.includes(".");
+}
+
+// A column's display name: a non-empty string header, else `meta.filterHeader`
+// (the label JSX-header columns carry). The CSV heading and the accessible name
+// of a cell's inline editor both come from here.
+export function getColumnLabel<T>(
+  columnDef: ColumnDef<T, unknown>
+): string | undefined {
+  const header = columnDef.header;
+  if (typeof header === "string" && header.length > 0) return header;
+  return columnDef.meta?.filterHeader;
+}
+
 export interface ColumnMaps<T> {
   // accessorKey (or column id for display columns) -> header label
   accessors: Record<string, string>;
@@ -36,7 +59,7 @@ export function buildColumnMaps<T>(
 
   for (const column of columns) {
     const accessorKey = getAccessorKey(column);
-    // '_' is the nested-path separator for editable cells (updateNestedProperty).
+    // '_' is the nested-path separator for editable cells (`rowEdits.ts`).
     // Custom-field columns are read-only and keyed by a generated id that may
     // contain '_', so they are exempt.
     if (
@@ -48,17 +71,13 @@ export function buildColumnMaps<T>(
 
     const stringHeader =
       typeof column.header === "string" ? column.header : undefined;
-    const filterHeader = column.meta?.filterHeader;
     const exportValue = column.meta?.exportValue;
     const exportKey = accessorKey ?? column.id;
 
     // CSV heading: a non-empty string header wins, then filterHeader (covers
     // JSX-header and blank-header columns), then a (possibly empty) string
     // header — never invents a heading for a JSX header that lacks filterHeader.
-    const exportLabel =
-      stringHeader && stringHeader.length > 0
-        ? stringHeader
-        : (filterHeader ?? stringHeader);
+    const exportLabel = getColumnLabel(column) ?? stringHeader;
 
     const includeInExport =
       (!!accessorKey && stringHeader !== undefined) || !!exportValue;
@@ -76,7 +95,7 @@ export function buildColumnMaps<T>(
 
     // Sort picker stays keyed on string-header columns only, so JSX-header
     // columns (e.g. MRP week columns with a filterHeader) never flood it.
-    if (accessorKey && stringHeader !== undefined) {
+    if (accessorKey && stringHeader !== undefined && isServerSortable(column)) {
       const sortKey = column.meta?.sortBy ?? accessorKey;
       sortKeyToLabel[sortKey] = stringHeader;
     }
@@ -139,17 +158,54 @@ export function exportOnlyColumn<T>(opts: {
   };
 }
 
-export function updateNestedProperty(
-  obj: object,
-  path: string | string[],
-  value: unknown
-): unknown {
-  if (typeof path == "string")
-    return updateNestedProperty(obj, path.split("_"), value);
-  else if (path.length == 1 && value !== undefined)
-    // @ts-expect-error
-    return (obj[path[0]] = value);
-  else if (path.length == 0) return obj;
-  // @ts-expect-error
-  else return updateNestedProperty(obj[path[0]], path.slice(1), value);
+/**
+ * True when every row has an id in `idColumn` and no two rows share it. The
+ * Table then keys rows by it, so selection and expansion follow the row when
+ * pages are appended or rows move. A list that repeats an id keeps index keys.
+ */
+export function hasUniqueRowIds(
+  rows: readonly unknown[],
+  idColumn = "id"
+): boolean {
+  const seen = new Set<string>();
+  for (const row of rows) {
+    if (!row || typeof row !== "object" || !(idColumn in row)) return false;
+    const id = (row as Record<string, unknown>)[idColumn];
+    if (id === null || id === undefined) return false;
+    const key = String(id);
+    if (seen.has(key)) return false;
+    seen.add(key);
+  }
+  return true;
+}
+
+/** What one loaded data row draws in the table body. */
+export type BodyRowShape = {
+  /** It starts a group whose header row is drawn above it. */
+  groupHeader: boolean;
+  /** Its group is collapsed, so the row itself is not drawn. */
+  hidden: boolean;
+  /** Its expanded row is drawn below it. */
+  expanded: boolean;
+};
+
+/**
+ * Where each data row's drawn rows sit in the table body, for `aria-rowindex`.
+ * A data row draws up to three rows (its group header, itself, its expanded
+ * row), so the virtual index alone puts every row after an expanded one or a
+ * group header at the wrong number. `starts[i]` is the 0-based body position
+ * of data row i's first drawn row; `total` counts every drawn body row.
+ */
+export function bodyRowPositions(rows: readonly BodyRowShape[]): {
+  starts: number[];
+  total: number;
+} {
+  const starts: number[] = [];
+  let position = 0;
+  for (const row of rows) {
+    starts.push(position);
+    if (row.groupHeader) position += 1;
+    if (!row.hidden) position += row.expanded ? 2 : 1;
+  }
+  return { starts, total: position };
 }

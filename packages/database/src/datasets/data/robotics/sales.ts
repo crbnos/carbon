@@ -7,11 +7,14 @@
 // salesOrder, shipment, salesInvoice) must open without a 500 or redirect.
 
 import type {
+  ContractSpec,
+  CustomerAssetSpec,
   PriceBreak,
   SalesData,
   SalesOpportunitySpec,
   SalesReturnSpec,
   SalesStatusOrderSpec,
+  ServiceJobSpec,
   StaggeredDeliverySpec
 } from "../../types.ts";
 
@@ -444,7 +447,7 @@ export const STATUS_ORDERS: SalesStatusOrderSpec[] = [
 ];
 
 // Released order — "To Ship and Invoice". The status is written by the app
-// (releaseSalesOrder), not derived by a trigger, but it must still agree with
+// (confirmSalesOrder), not derived by a trigger, but it must still agree with
 // what getSalesOrderStatus would compute: nothing sent and nothing invoiced.
 export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
   {
@@ -958,6 +961,272 @@ export const SALES_RETURNS: SalesReturnSpec[] = [
     dateOffset: -1,
     salesOrder: "so:northwind-bearings",
     lines: [{ item: "BRG-CRB-100", quantity: 4, unitPrice: 278 }]
+  },
+  {
+    // A unit back for repair: ROB-2000-S013, the "expired" customer asset.
+    // Received, so its service job (SERVICE_JOBS "arm-repair") is open and
+    // the RMA is In Progress.
+    key: "arm-repair",
+    status: "In Progress",
+    customer: "Northwind Electronics",
+    returnReason: "Defective",
+    dateOffset: -3,
+    lines: [
+      {
+        item: "ROB-2000",
+        quantity: 1,
+        unitPrice: 58000,
+        returnType: "Return for Service",
+        asset: "expired",
+        problem: "Axis 4 faults with an encoder error after a cold start."
+      }
+    ]
+  }
+];
+
+// One Active contract: an implementation fee and two subscriptions on Service
+// items, two months in. Tier 04 marks every invoice dated up to today Billed
+// Externally, so the schedule shows history without drafted invoices.
+export const CONTRACTS: ContractSpec[] = [
+  {
+    key: "cascade-uptime",
+    name: "Cascade fleet uptime program",
+    customer: "Cascade Integration Group",
+    startOffset: -60,
+    termMonths: 12,
+    renewal: "Renew",
+    renewalUpliftPercent: 5,
+    billingFrequency: "Month",
+    billingAlignment: "Calendar",
+    billingTiming: "Advance",
+    lines: [
+      {
+        revenueType: "One-time",
+        item: "Robot Cell Commissioning",
+        description: "Commissioning of three welding cells",
+        quantity: 3,
+        rate: 9800,
+        startOffset: -60,
+        endOffset: -31,
+        revenueMethod: "Daily"
+      },
+      {
+        revenueType: "Recurring",
+        item: "Fleet Uptime Support",
+        description: "Fleet uptime support per cell",
+        quantity: 3,
+        rate: 2100,
+        rateUnit: "Month",
+        startOffset: -60,
+        revenueMethod: "Even Period"
+      },
+      {
+        revenueType: "Recurring",
+        item: "Robot Calibration & Certification",
+        description: "Quarterly calibration and certification visit",
+        quantity: 1,
+        rate: 2650,
+        rateUnit: "Quarter",
+        discountPercent: 10,
+        startOffset: -60,
+        revenueMethod: "Even Period"
+      }
+    ]
+  }
+];
+
+// Field service: three units at customers (one in warranty, one whose
+// labor warranty has ended, one expired).
+export const CUSTOMER_ASSETS: CustomerAssetSpec[] = [
+  {
+    key: "in-warranty",
+    item: "ROB-2000",
+    serial: "ROB-2000-S011",
+    customer: "Lakeshore Automotive",
+    shippedOffset: -120,
+    laborWarrantyEndOffset: 245,
+    partsWarrantyEndOffset: 610
+  },
+  {
+    key: "labor-ended",
+    item: "ROB-2000",
+    serial: "ROB-2000-S012",
+    customer: "Cascade Integration Group",
+    shippedOffset: -500,
+    laborWarrantyEndOffset: -135,
+    partsWarrantyEndOffset: 230
+  },
+  {
+    key: "expired",
+    item: "ROB-2000",
+    serial: "ROB-2000-S013",
+    customer: "Northwind Electronics",
+    shippedOffset: -900,
+    laborWarrantyEndOffset: -535,
+    partsWarrantyEndOffset: -170
+  }
+];
+
+// Service jobs: one per status the job page and the RMA show. The Open job is
+// the one the "arm-repair" RMA receipt created; Completed and Invoiced carry
+// their completion journal (tier 09), and Invoiced its Draft invoice. No parts:
+// an issued part needs the issue posting's ledger, cost and journal rows.
+export const SERVICE_JOBS: ServiceJobSpec[] = [
+  {
+    key: "arm-repair",
+    status: "Open",
+    coverage: "Billable",
+    workSite: "Depot",
+    priority: "High",
+    asset: "expired",
+    salesReturnLine: { salesReturn: "arm-repair", line: 1 },
+    problem: "Axis 4 faults with an encoder error after a cold start.",
+    time: [],
+    charges: [],
+    assignments: [
+      { weekday: 2, plannedHours: 3 },
+      { weekday: 3, plannedHours: 2 }
+    ]
+  },
+  {
+    key: "estimate",
+    status: "Awaiting Approval",
+    coverage: "Billable",
+    workSite: "Customer Site",
+    priority: "Medium",
+    asset: "labor-ended",
+    openedWorkdaysBack: 6,
+    dueOffset: 10,
+    problem: "Path accuracy drifts by 0.3 mm over a shift.",
+    findings:
+      "Axis 2 gearbox backlash is out of tolerance. The motor and the encoder test in specification.",
+    repairable: true,
+    estimate: {
+      status: "Sent",
+      sentWorkdaysBack: 3,
+      lines: [
+        { quantity: 10, unitPrice: 165 },
+        {
+          item: "Robot Calibration & Certification",
+          description: "Recalibration and certificate after the repair",
+          quantity: 1,
+          unitPrice: 2400
+        }
+      ]
+    },
+    time: [
+      {
+        workdaysBack: 4,
+        hours: 3,
+        note: "On-site backlash measurement on axes 1 to 3"
+      }
+    ],
+    charges: []
+  },
+  {
+    key: "on-site",
+    status: "In Progress",
+    coverage: "Warranty",
+    workSite: "Customer Site",
+    priority: "High",
+    asset: "in-warranty",
+    openedWorkdaysBack: 3,
+    dueOffset: 4,
+    problem: "The arm stops with a collision alarm when no collision occurs.",
+    findings: "The collision sensitivity table is from the previous payload.",
+    repairable: true,
+    time: [
+      {
+        workdaysBack: 2,
+        hours: 3.5,
+        clock: { start: "08:00:00", end: "11:30:00" },
+        note: "Logged torque on each axis through the customer's cycle"
+      },
+      {
+        workdaysBack: 1,
+        hours: 4,
+        note: "Loaded the payload data and re-tuned collision detection"
+      }
+    ],
+    charges: [],
+    assignments: [
+      {
+        weekday: 0,
+        plannedHours: 4,
+        note: "Load the current payload's collision table before the visit"
+      },
+      { weekday: 1, plannedHours: 3 }
+    ]
+  },
+  {
+    key: "warranty-repair",
+    status: "Completed",
+    coverage: "Warranty",
+    workSite: "Depot",
+    priority: "Medium",
+    asset: "in-warranty",
+    openedWorkdaysBack: 30,
+    problem: "Axis 6 makes a grinding noise under load.",
+    findings: "The axis 6 grease is contaminated. The bearings show no damage.",
+    resolution:
+      "Flushed and re-greased axis 6 and ran the arm for 4 hours under load with no noise.",
+    repairable: true,
+    time: [
+      { workdaysBack: 28, hours: 5 },
+      { workdaysBack: 27, hours: 3.5 }
+    ],
+    charges: [],
+    completedWorkdaysBack: 27
+  },
+  {
+    key: "invoiced",
+    status: "Invoiced",
+    coverage: "Billable",
+    workSite: "Customer Site",
+    priority: "Medium",
+    asset: "labor-ended",
+    openedWorkdaysBack: 18,
+    problem: "The teach pendant loses connection several times a day.",
+    findings:
+      "The pendant cable is crushed where it enters the controller cabinet.",
+    resolution:
+      "Re-routed the pendant cable through a strain relief and tested a full shift.",
+    repairable: true,
+    estimate: {
+      status: "Accepted",
+      sentWorkdaysBack: 16,
+      respondedWorkdaysBack: 15,
+      respondedBy: "Tomas Aguilar",
+      lines: [
+        { quantity: 8, unitPrice: 165 },
+        {
+          item: "Robot Calibration & Certification",
+          description: "Recalibration and certificate after the repair",
+          quantity: 1,
+          unitPrice: 2400
+        }
+      ]
+    },
+    time: [
+      { workdaysBack: 14, hours: 4 },
+      { workdaysBack: 13, hours: 3.5 },
+      {
+        workdaysBack: 13,
+        hours: 1,
+        billable: false,
+        note: "Travel to site, not billed"
+      }
+    ],
+    charges: [
+      {
+        item: "Robot Calibration & Certification",
+        description: "Recalibration and certificate after the repair",
+        quantity: 1,
+        unitPrice: 2400
+      }
+    ],
+    completedWorkdaysBack: 12,
+    invoiceWorkdaysBack: 11
   }
 ];
 
@@ -966,6 +1235,7 @@ export const roboticsSales: SalesData = {
   statusOrders: STATUS_ORDERS,
   releasedOrders: RELEASED_ORDERS,
   salesReturns: SALES_RETURNS,
+  contracts: CONTRACTS,
   customerPortals: ["Cascade Integration Group", "Lakeshore Automotive"],
   customerBankAccounts: [
     {
@@ -1010,5 +1280,8 @@ export const roboticsSales: SalesData = {
       accountNumber: "DEMO-2257-6630",
       isPrimary: true
     }
-  ]
+  ],
+  customerAssets: CUSTOMER_ASSETS,
+  serviceLaborRates: { cost: 72, bill: 165 },
+  serviceJobs: SERVICE_JOBS
 };

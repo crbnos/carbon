@@ -52,12 +52,19 @@ type ShortcutKeyProps = {
   shortcut: ShortcutInput;
   variant: ShortcutKeyVariant;
   className?: string;
+  /**
+   * Hide the keycap from the accessibility tree — for a control that already
+   * exposes its combo as `aria-keyshortcuts`, so the combo stays out of the
+   * control's name.
+   */
+  "aria-hidden"?: boolean;
 };
 
 export const ShortcutKey = ({
   shortcut,
   variant,
-  className
+  className,
+  "aria-hidden": ariaHidden
 }: ShortcutKeyProps) => {
   const { platform } = useOperatingSystem();
   const isMac = platform === "mac";
@@ -72,8 +79,16 @@ export const ShortcutKey = ({
   );
 
   return (
-    <span className={cn(shortcutKeyVariants[variant], className)}>
-      <span className="sr-only">{readableShortcut}</span>
+    <span
+      aria-hidden={ariaHidden || undefined}
+      className={cn(
+        shortcutKeyVariants[variant],
+        // Phones have no keyboard shortcuts to hint at.
+        "max-md:hidden",
+        className
+      )}
+    >
+      {!ariaHidden && <span className="sr-only">{readableShortcut}</span>}
       <span aria-hidden="true" className="contents">
         {modifiers.map((k) => (
           <Fragment key={k}>{modifierNode(k, isMac, variant)}</Fragment>

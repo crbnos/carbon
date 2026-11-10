@@ -12,6 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
   Subheading,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { useReactFlow } from "@xyflow/react";
@@ -27,6 +28,7 @@ import {
   LuSearch,
   LuTable
 } from "react-icons/lu";
+import { COMPACT_FIT_PADDING } from "./constants";
 import type { LayoutDirection } from "./worker/core";
 
 export type ViewMode = "graph" | "table";
@@ -94,7 +96,14 @@ function ViewModeChip({
   onViewChange: (next: ViewMode) => void;
 }) {
   return (
-    <HStack spacing={0} className={cn("absolute top-3 left-3 z-30 p-1", PANEL)}>
+    <HStack
+      spacing={0}
+      className={cn(
+        "absolute top-3 left-3 z-30 p-1",
+        PANEL,
+        "max-md:[&_button]:relative max-md:[&_button]:after:absolute max-md:[&_button]:after:inset-x-0 max-md:[&_button]:after:-inset-y-2.5"
+      )}
+    >
       <SegmentButton
         active={view === "graph"}
         onClick={() => onViewChange("graph")}
@@ -143,11 +152,19 @@ function GraphControlsChip({
   showGraphOnly: boolean;
 }) {
   const { fitView } = useReactFlow();
+  const { isPhone } = useViewport();
 
   return (
     <HStack
       spacing={1}
-      className={cn("absolute top-3 right-3 z-30 px-1.5 py-1", PANEL)}
+      className={cn(
+        "absolute top-3 right-3 z-30 px-1.5 py-1",
+        PANEL,
+        // Phones: drops under the view chip and scrolls sideways.
+        // A hit area overflowing the buttons would make it scroll vertically
+        // too, so the buttons themselves are 44pt tall.
+        "max-md:top-14 max-md:left-3 max-md:right-auto max-md:max-w-[calc(100%-24px)] max-md:overflow-x-auto max-md:overflow-y-hidden max-md:scroll-fade-x max-md:[&>*]:shrink-0 max-md:[&_button]:h-11"
+      )}
     >
       {onOpenSearch && (
         <>
@@ -164,7 +181,7 @@ function GraphControlsChip({
                 aria-label="Search nodes"
               >
                 <LuSearch className="w-3.5 h-3.5" />
-                <kbd className="text-[10px] text-muted-foreground bg-muted/50 px-1 rounded">
+                <kbd className="text-[0.625rem] text-muted-foreground bg-muted/50 px-1 rounded max-md:hidden">
                   /
                 </kbd>
               </button>
@@ -238,6 +255,7 @@ function GraphControlsChip({
             <HoverCard openDelay={150} closeDelay={50}>
               <HoverCardTrigger asChild>
                 <button
+                  type="button"
                   onClick={() => onDirectionChange("TB")}
                   className={cn(
                     "h-6 w-6 rounded flex items-center justify-center transition-colors",
@@ -259,6 +277,7 @@ function GraphControlsChip({
             <HoverCard openDelay={150} closeDelay={50}>
               <HoverCardTrigger asChild>
                 <button
+                  type="button"
                   onClick={() => onDirectionChange("LR")}
                   className={cn(
                     "h-6 w-6 rounded flex items-center justify-center transition-colors",
@@ -319,7 +338,13 @@ function GraphControlsChip({
           <HoverCard openDelay={150} closeDelay={50}>
             <HoverCardTrigger asChild>
               <button
-                onClick={() => fitView({ duration: 300, padding: 0.2 })}
+                type="button"
+                onClick={() =>
+                  fitView({
+                    duration: 300,
+                    padding: isPhone ? COMPACT_FIT_PADDING : 0.2
+                  })
+                }
                 className={cn(
                   "h-7 w-7 rounded-md flex items-center justify-center transition-colors",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -393,7 +418,7 @@ function SpacingSlider({
                 "text-muted-foreground hover:text-foreground hover:bg-accent/60"
               )}
             >
-              <span className="text-[10px] uppercase tracking-wide">
+              <span className="text-[0.625rem] uppercase tracking-wide">
                 Spacing
               </span>
               <span className="text-xs tabular-nums font-medium text-foreground">
@@ -435,7 +460,7 @@ function SpacingSlider({
               style={{ accentColor: "hsl(var(--foreground))" }}
             />
           </div>
-          <HStack className="w-full justify-between text-[10px] text-muted-foreground tabular-nums">
+          <HStack className="w-full justify-between text-[0.625rem] text-muted-foreground tabular-nums">
             <span>1</span>
             <span>5</span>
           </HStack>
@@ -458,6 +483,7 @@ function SegmentButton({
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       aria-pressed={active}
       aria-label={ariaLabel}

@@ -7,6 +7,7 @@ import {
   Button,
   Checkbox,
   Combobox,
+  EnumerableAsText,
   HStack,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
@@ -23,9 +24,10 @@ import {
 } from "@carbon/react";
 import { async } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { CellContext, ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  LuBan,
   LuBookMarked,
   LuCheck,
   LuChevronDown,
@@ -55,11 +57,14 @@ type StorageUnit = {
   depth: number | null;
   ancestorPath: string[] | null;
   storageTypeIds: string[] | null;
+  effectiveNettable: boolean | null;
 };
 
 type StorageUnitsTableProps = {
   data: StorageUnit[];
   count: number;
+  // The roots read SINGLE_LOAD_LIMIT rows: more may match.
+  isTruncated?: boolean;
   locations: { id: string; name: string }[];
   locationId: string;
   storageTypes: { id: string; name: string }[];
@@ -71,6 +76,7 @@ const StorageUnitsTable = memo(
   ({
     data,
     count,
+    isTruncated,
     locations: serverLocations,
     locationId,
     storageTypes: serverStorageTypes,
@@ -309,6 +315,87 @@ const StorageUnitsTable = memo(
     }, [displayRows]);
 
     const columns = useMemo<ColumnDef<StorageUnit>[]>(() => {
+      const renderStorageTypes = (ids: string[]) => (
+        <HStack spacing={1}>
+          {ids.map((id) => {
+            const label =
+              storageTypes?.find((st) => st.value === id)?.label ?? id;
+            return <Enumerable key={id} value={label} />;
+          })}
+        </HStack>
+      );
+
+      const renderName = (
+        { row, table }: CellContext<StorageUnit, unknown>,
+        withTypes: boolean
+      ) => {
+        const depth = Math.max(0, (row.original.depth ?? 1) - 1);
+        const isExpanded = expandedIds.has(row.original.id);
+        const isLoading = loadingIds.has(row.original.id);
+        const hasChildren = hasChildrenSet.has(row.original.id);
+
+        return (
+          <div className="flex flex-1">
+            {Array.from({ length: depth }).map((_, i) => (
+              <div
+                key={i}
+                aria-hidden
+                className="w-5 shrink-0 border-l border-border -my-2 max-md:border-l-0"
+              />
+            ))}
+            <div className="w-5 shrink-0 flex items-center justify-center self-center max-md:self-start max-md:h-[1lh]">
+              {hasChildren ? (
+                isLoading ? (
+                  <Spinner className="size-3" />
+                ) : (
+                  <button
+                    aria-expanded={isExpanded}
+                    type="button"
+                    aria-label={
+                      isExpanded ? t`Collapse subtree` : t`Expand subtree`
+                    }
+                    className="text-muted-foreground hover:text-foreground shrink-0 max-md:hit-area"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      toggleExpand(row.original.id);
+                    }}
+                  >
+                    {isExpanded ? (
+                      <LuChevronDown className="size-4" />
+                    ) : (
+                      <LuChevronRight className="size-4" />
+                    )}
+                  </button>
+                )
+              ) : null}
+            </div>
+            <div className="flex items-center py-1 max-md:flex-col max-md:items-start max-md:gap-1 max-md:py-0">
+              <Hyperlink
+                to={`${path.to.storageUnit(row.original.id)}?${params}`}
+              >
+                <span
+                  className={depth === 0 ? "font-medium" : "text-foreground/90"}
+                >
+                  {row.original.name}
+                </span>
+              </Hyperlink>
+              {/* Phones: the context line sits under the name, so it
+                  shares the tree indent instead of starting at the gutter. */}
+              {withTypes &&
+              table.getColumn("storageTypeIds")?.getIsVisible() &&
+              row.original.storageTypeIds?.length ? (
+                <div className="text-[0.8125rem] font-normal text-muted-foreground">
+                  <EnumerableAsText value>
+                    {renderStorageTypes(row.original.storageTypeIds)}
+                  </EnumerableAsText>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        );
+      };
+
       return [
         {
           // The id "Select" opts into the Table's compact checkbox-column
@@ -343,64 +430,10 @@ const StorageUnitsTable = memo(
         {
           accessorKey: "name",
           header: t`Name`,
-          cell: ({ row }) => {
-            const depth = Math.max(0, (row.original.depth ?? 1) - 1);
-            const isExpanded = expandedIds.has(row.original.id);
-            const isLoading = loadingIds.has(row.original.id);
-            const hasChildren = hasChildrenSet.has(row.original.id);
-
-            return (
-              <div className="flex flex-1">
-                {Array.from({ length: depth }).map((_, i) => (
-                  <div
-                    key={i}
-                    aria-hidden
-                    className="w-5 shrink-0 border-l border-border -my-2"
-                  />
-                ))}
-                <div className="w-5 shrink-0 flex items-center justify-center self-center">
-                  {hasChildren ? (
-                    isLoading ? (
-                      <Spinner className="size-3" />
-                    ) : (
-                      <button
-                        type="button"
-                        aria-label={
-                          isExpanded ? t`Collapse subtree` : t`Expand subtree`
-                        }
-                        className="text-muted-foreground hover:text-foreground shrink-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          toggleExpand(row.original.id);
-                        }}
-                      >
-                        {isExpanded ? (
-                          <LuChevronDown className="size-4" />
-                        ) : (
-                          <LuChevronRight className="size-4" />
-                        )}
-                      </button>
-                    )
-                  ) : null}
-                </div>
-                <div className="flex items-center py-1">
-                  <Hyperlink
-                    to={`${path.to.storageUnit(row.original.id)}?${params}`}
-                  >
-                    <span
-                      className={
-                        depth === 0 ? "font-medium" : "text-foreground/90"
-                      }
-                    >
-                      {row.original.name}
-                    </span>
-                  </Hyperlink>
-                </div>
-              </div>
-            );
-          },
+          cell: (context) => renderName(context, false),
           meta: {
+            mobile: "P1",
+            mobileCell: (context) => renderName(context, true),
             icon: <LuBookMarked />
           }
         },
@@ -424,17 +457,10 @@ const StorageUnitsTable = memo(
           header: t`Storage Types`,
           cell: ({ row }) => {
             if (!row.original.storageTypeIds?.length) return null;
-            return (
-              <HStack spacing={1}>
-                {row.original.storageTypeIds.map((id) => {
-                  const label =
-                    storageTypes?.find((st) => st.value === id)?.label ?? id;
-                  return <Enumerable key={id} value={label} />;
-                })}
-              </HStack>
-            );
+            return renderStorageTypes(row.original.storageTypeIds);
           },
           meta: {
+            // No compact slot: the name cell renders it under the name (tree indent).
             filter: {
               type: "static",
               options: storageTypes?.map((st) => ({
@@ -447,11 +473,45 @@ const StorageUnitsTable = memo(
             icon: <LuLayers />
           }
         },
+        {
+          // effectiveNettable: its own flag, a parent's or a storage type's.
+          accessorKey: "effectiveNettable",
+          header: t`Non-nettable`,
+          cell: (item) => {
+            const name = item.row.original.name;
+            return (
+              <Checkbox
+                isChecked={item.getValue<boolean | null>() === false}
+                aria-label={t`Non-nettable: ${name}`}
+              />
+            );
+          },
+          meta: {
+            filter: {
+              type: "static",
+              options: [
+                { value: "false", label: t`Non-nettable` },
+                { value: "true", label: t`Nettable` }
+              ]
+            },
+            pluralHeader: t`Non-nettable`,
+            icon: <LuBan />,
+            exportValue: (row) => row.effectiveNettable === false
+          }
+        },
 
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => {
+            const name = item.row.original.name;
+            return (
+              <Checkbox
+                isChecked={item.getValue<boolean>()}
+                aria-label={t`Active: ${name}`}
+              />
+            );
+          },
           meta: {
             filter: {
               type: "static",
@@ -562,6 +622,7 @@ const StorageUnitsTable = memo(
             </Button>
           )}
           <Combobox
+            aria-label={t`Location`}
             asButton
             size="sm"
             value={locationId}
@@ -628,6 +689,7 @@ const StorageUnitsTable = memo(
       <>
         <Table<StorageUnit>
           count={count}
+          isTruncated={isTruncated}
           columns={columns}
           data={displayRows}
           defaultColumnVisibility={defaultColumnVisibility}
@@ -644,78 +706,72 @@ const StorageUnitsTable = memo(
           table="storageUnit"
           withSavedView
         />
-        {printerModal.isOpen && (
-          <Modal
-            open
-            onOpenChange={(open) => {
-              if (!open) printerModal.onClose();
-            }}
-          >
-            <ModalContent>
-              <ModalHeader>
-                <ModalTitle>
-                  <Trans>Select Printer</Trans>
-                </ModalTitle>
-              </ModalHeader>
-              <ModalBody>
-                <div className="flex flex-col gap-1">
-                  {printerRoutes.map((route) => (
-                    <button
-                      type="button"
-                      key={route.id}
-                      className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
-                        selectedPrinterId === route.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:bg-muted"
-                      }`}
-                      onClick={() => setSelectedPrinterId(route.id)}
-                    >
-                      <LuPrinter className="size-4 text-muted-foreground shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-medium">
-                          {route.name}
-                        </span>
-                        <span className="text-xs text-muted-foreground ml-2 uppercase">
-                          {route.format}
-                        </span>
-                        {route.mediaSizeId && (
-                          <span className="text-xs text-muted-foreground ml-2">
-                            {route.mediaSizeId}
-                          </span>
-                        )}
-                      </div>
-                      {selectedPrinterId === route.id && (
-                        <LuCheck className="size-4 text-primary shrink-0" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <div className="flex gap-2">
-                  <Button
-                    variant="primary"
-                    leftIcon={<LuPrinter />}
-                    disabled={!selectedPrinterId || isPrinting}
-                    onClick={handleConfirmPrint}
+        <Modal
+          open={printerModal.isOpen}
+          onOpenChange={(open) => {
+            if (!open) printerModal.onClose();
+          }}
+        >
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Select Printer</Trans>
+              </ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <div className="flex flex-col gap-1">
+                {printerRoutes.map((route) => (
+                  <button
+                    type="button"
+                    key={route.id}
+                    className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors ${
+                      selectedPrinterId === route.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:bg-muted"
+                    }`}
+                    onClick={() => setSelectedPrinterId(route.id)}
                   >
-                    <Trans>Print {selectedIds.size} Labels</Trans>
-                  </Button>
-                  <Button variant="solid" onClick={printerModal.onClose}>
-                    <Trans>Cancel</Trans>
-                  </Button>
-                </div>
-              </ModalFooter>
-            </ModalContent>
-          </Modal>
-        )}
-        {downloadModal.isOpen && selectedIds.size > 0 && (
-          <StorageUnitDownloadModal
-            ids={Array.from(selectedIds)}
-            isOpen={downloadModal.isOpen}
-            onClose={downloadModal.onClose}
-          />
-        )}
+                    <LuPrinter className="size-4 text-muted-foreground shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium">{route.name}</span>
+                      <span className="text-xs text-muted-foreground ml-2 uppercase">
+                        {route.format}
+                      </span>
+                      {route.mediaSizeId && (
+                        <span className="text-xs text-muted-foreground ml-2">
+                          {route.mediaSizeId}
+                        </span>
+                      )}
+                    </div>
+                    {selectedPrinterId === route.id && (
+                      <LuCheck className="size-4 text-primary shrink-0" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  leftIcon={<LuPrinter />}
+                  disabled={!selectedPrinterId || isPrinting}
+                  onClick={handleConfirmPrint}
+                >
+                  <Trans>Print {selectedIds.size} Labels</Trans>
+                </Button>
+                <Button variant="solid" onClick={printerModal.onClose}>
+                  <Trans>Cancel</Trans>
+                </Button>
+              </div>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+        <StorageUnitDownloadModal
+          ids={Array.from(selectedIds)}
+          isOpen={downloadModal.isOpen}
+          onClose={downloadModal.onClose}
+        />
       </>
     );
   }

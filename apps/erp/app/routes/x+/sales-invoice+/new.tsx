@@ -11,18 +11,22 @@ import { validationError, validator } from "@carbon/form";
 import { getErrorMessage, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
+import { salesInvoiceValidator } from "~/modules/invoicing/invoicing.models";
 import {
   createSalesInvoiceFromSalesOrder,
   createSalesInvoiceFromShipment,
-  insertSalesInvoice,
-  salesInvoiceValidator
-} from "~/modules/invoicing";
+  insertSalesInvoice
+} from "~/modules/invoicing/invoicing.service";
 import SalesInvoiceForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path, requestReferrer } from "~/utils/path";
+
+export const meta = newRecordMeta("Sales Invoice");
 
 export const handle: Handle = {
   breadcrumb: msg`Sales`,
@@ -154,8 +158,8 @@ export default function SalesInvoiceNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <SalesInvoiceForm initialValues={initialValues} />
-    </div>
+    </NewRecordPage>
   );
 }

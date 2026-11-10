@@ -2,20 +2,20 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { AttributeDataType } from "~/modules/people";
+import type { AttributeDataType } from "~/modules/people/types";
 import { AttributeForm } from "~/modules/people/ui/Attributes";
-import { DataType } from "~/modules/shared";
+import { DataType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 export default function NewAttributeRoute() {
   const { categoryId } = useParams();
   if (!categoryId) throw new Error("categoryId is not found");
 
-  const closeRoute = useCloseRoute();
-  const onClose = () => closeRoute();
+  const dialog = useRouteDialog();
+  const onClose = dialog.close;
   const attributesRouteData = useRouteData<{
     dataTypes: AttributeDataType[];
   }>(path.to.attributes);
@@ -31,6 +31,7 @@ export default function NewAttributeRoute() {
       }}
       // @ts-expect-error TS2322 - TODO: fix type
       dataTypes={attributesRouteData?.dataTypes ?? []}
+      open={dialog.open}
       onClose={onClose}
     />
   );

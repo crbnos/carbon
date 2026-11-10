@@ -5,8 +5,11 @@
 import { describe, expect, it } from "vitest";
 import {
   getNotificationTopicChannels,
+  getNotificationTopicScope,
+  isNotificationTopic,
   isNotificationTopicEnabledByDefault,
   NotificationTopic,
+  notificationPreferenceCompanyId,
   renderInlineLinks,
   renderSlackMrkdwn,
   USER_FACING_NOTIFICATION_TOPICS
@@ -115,6 +118,13 @@ describe("notification topic settings", () => {
     ]);
   });
 
+  it("scopes only the newsletter to the account", () => {
+    expect(getNotificationTopicScope(NotificationTopic.Changelog)).toBe(
+      "account"
+    );
+    expect(getNotificationTopicScope(NotificationTopic.Job)).toBe("company");
+  });
+
   it("treats a missing preference as off only for the opt-in newsletter", () => {
     expect(
       isNotificationTopicEnabledByDefault(NotificationTopic.Changelog)
@@ -123,5 +133,29 @@ describe("notification topic settings", () => {
       if (topic === NotificationTopic.Changelog) continue;
       expect(isNotificationTopicEnabledByDefault(topic)).toBe(true);
     }
+  });
+});
+
+describe("notificationPreferenceCompanyId", () => {
+  it("stores the newsletter once per person", () => {
+    expect(
+      notificationPreferenceCompanyId(NotificationTopic.Changelog, "c1")
+    ).toBeNull();
+  });
+
+  it("stores every other topic per company", () => {
+    for (const topic of USER_FACING_NOTIFICATION_TOPICS) {
+      if (topic === NotificationTopic.Changelog) continue;
+      expect(notificationPreferenceCompanyId(topic, "c1")).toBe("c1");
+    }
+  });
+});
+
+describe("isNotificationTopic", () => {
+  it("accepts every topic and nothing else", () => {
+    for (const topic of Object.values(NotificationTopic)) {
+      expect(isNotificationTopic(topic)).toBe(true);
+    }
+    expect(isNotificationTopic("not-a-topic")).toBe(false);
   });
 });

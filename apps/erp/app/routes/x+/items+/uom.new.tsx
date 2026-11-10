@@ -6,11 +6,12 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { unitOfMeasureValidator, upsertUnitOfMeasure } from "~/modules/items";
+import { unitOfMeasureValidator } from "~/modules/items/items.models";
+import { upsertUnitOfMeasure } from "~/modules/items/items.service";
 import { UnitOfMeasureForm } from "~/modules/items/ui/UnitOfMeasure";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
@@ -66,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewUnitOfMeasuresRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const initialValues = {
     name: "",
     code: ""
@@ -74,7 +75,8 @@ export default function NewUnitOfMeasuresRoute() {
 
   return (
     <UnitOfMeasureForm
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
       initialValues={initialValues}
     />
   );

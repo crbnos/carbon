@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { posting } from "@carbon/api/postings.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { runLocationSchedule } from "@carbon/planning";
-import { serverFns } from "@carbon/server-functions";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
@@ -77,13 +77,15 @@ async function recalculateJobRequirements(params: {
   companyId: string;
   userId: string;
 }) {
-  return serverFns
-    .system({
+  return posting(
+    "recalculate",
+    {
       db: getJobDatabaseClient(),
       companyId: params.companyId,
       userId: params.userId
-    })
-    .invoke("recalculate", { type: "jobRequirements", id: params.id });
+    },
+    { type: "jobRequirements", id: params.id }
+  );
 }
 
 async function recalculateJobMakeMethodRequirements(

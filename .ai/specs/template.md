@@ -61,9 +61,18 @@ CREATE POLICY "newEntity_SELECT" ON "newEntity" FOR SELECT USING (has_role());
 
 New or modified service functions, route loaders/actions.
 
+## Closest Sibling
+
+The existing record type users would call the same kind of thing (lease ↔
+rental agreement ↔ contract, sales order ↔ purchase order). List the files
+this feature copies: routes, `ui/` components, server functions. Each
+deviation from the sibling is a Design Decision. Write N/A only when no
+sibling exists, and say why.
+
 ## UI Changes
 
-New or modified pages, forms, tables.
+New or modified pages, forms, tables. Name the page archetype
+(`carbon-design` → `references/page-archetypes.md`) — the sibling's.
 
 ## Acceptance Criteria
 

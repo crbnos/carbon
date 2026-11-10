@@ -24,6 +24,7 @@ import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useSubstance } from "~/components/Form/Substance";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { MaterialGrade } from "../../types";
@@ -31,10 +32,11 @@ import type { MaterialGrade } from "../../types";
 type MaterialGradesTableProps = {
   data: MaterialGrade[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const MaterialGradesTable = memo(
-  ({ data, count }: MaterialGradesTableProps) => {
+  ({ data, count, infinite }: MaterialGradesTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -50,6 +52,7 @@ const MaterialGradesTable = memo(
           header: t`Substance`,
           cell: ({ row }) => <Enumerable value={row.original.substanceName} />,
           meta: {
+            mobile: "P2",
             icon: <LuGlassWater />,
             filter: {
               type: "static",
@@ -76,6 +79,7 @@ const MaterialGradesTable = memo(
               </Hyperlink>
             ),
           meta: {
+            mobile: "P1",
             icon: <LuBeef />
           }
         },
@@ -156,6 +160,7 @@ const MaterialGradesTable = memo(
     return (
       <Table<(typeof rows)[number]>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         importCSV={[

@@ -5,7 +5,10 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getInspectionDocument, getInspectionPlan } from "~/modules/quality";
+import {
+  getInspectionDocument,
+  getInspectionPlan
+} from "~/modules/quality/quality.service";
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) return error.message;

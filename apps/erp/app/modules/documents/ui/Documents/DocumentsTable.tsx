@@ -21,12 +21,13 @@ import {
   PopoverContent,
   PopoverTrigger,
   PrefetchLink,
-  useDisclosure
+  useDisclosure,
+  useViewport
 } from "@carbon/react";
 import { filterEmpty } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { IoMdAdd } from "react-icons/io";
 import {
   LuBookMarked,
@@ -47,8 +48,15 @@ import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
+import {
+  applyRowEdits,
+  type RowEdits,
+  tick
+} from "~/components/Table/rowEdits";
+import { useInfiniteRows } from "~/components/Table/useInfiniteRows";
 import { usePermissions, useUrlParams } from "~/hooks";
-import { documentTypes } from "~/modules/shared";
+import { documentTypes } from "~/modules/shared/shared.models";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { documentSourceTypes } from "../../documents.models";
@@ -56,28 +64,44 @@ import type { Document, DocumentLabel } from "../../types";
 import DocumentCreateForm from "./DocumentCreateForm";
 import { useDocument } from "./useDocument";
 
+const documentId = (row: Document) => row.id ?? "";
+
 type DocumentsTableProps = {
   data: Document[];
   count: number;
+  // Its list is "documents", or "recent-documents" for the Recent view.
+  infinite: InfiniteOptions;
   labels: DocumentLabel[];
   extensions: (string | null)[];
 };
 
 const DocumentsTable = memo(
-  ({ data, count, labels, extensions }: DocumentsTableProps) => {
+  ({ data, count, infinite, labels, extensions }: DocumentsTableProps) => {
     const { t } = useLingui();
+    const { isPhone } = useViewport();
     const permissions = usePermissions();
     const revalidator = useRevalidator();
     const [params] = useUrlParams();
     const filter = params.get("q");
 
-    // put rows in state for use with optimistic ui updates
-    const [rows, setRows] = useState<Document[]>(data);
-    // we have to do this useEffect silliness since we're putitng rows
-    // in state for optimistic ui updates
-    useEffect(() => {
-      setRows(data);
-    }, [data]);
+    const infiniteRows = useInfiniteRows<Document>({
+      initialRows: data,
+      infinite
+    });
+    // The user's star and label changes by document id, laid over the loaded
+    // rows until a load that started after the write (`rowEdits.ts`).
+    const [overrides, setOverrides] = useState<RowEdits>({});
+    const rows = useMemo(() => {
+      const edited = applyRowEdits(
+        infiniteRows.rows,
+        overrides,
+        documentId,
+        infiniteRows.syncedAt
+      );
+      return filter === "starred"
+        ? edited.filter((item) => item.favorite === true)
+        : edited;
+    }, [infiniteRows.rows, infiniteRows.syncedAt, overrides, filter]);
 
     const {
       canUpdate,
@@ -111,6 +135,42 @@ const DocumentsTable = memo(
       [labels]
     );
 
+    // Shows the change at once, writes it, then reloads the rows. The change
+    // stays until a load that started after the write. `row` is the row on
+    // screen, so an earlier change that is still showing is kept.
+    const writesRef = useRef(new Map<string, number>());
+    const writeOverride = useCallback(
+      async (
+        row: Document,
+        values: Partial<Pick<Document, "favorite" | "labels">>,
+        mutate: () => PromiseLike<unknown> | undefined
+      ) => {
+        const id = documentId(row);
+        const write = (writesRef.current.get(id) ?? 0) + 1;
+        writesRef.current.set(id, write);
+        setOverrides((prev) => ({
+          ...prev,
+          [id]: {
+            values: { favorite: row.favorite, labels: row.labels, ...values },
+            at: Number.POSITIVE_INFINITY
+          }
+        }));
+        try {
+          await mutate();
+        } finally {
+          // Only the last write of a row dates its change.
+          if (writesRef.current.get(id) === write) {
+            const at = tick();
+            setOverrides((prev) =>
+              prev[id] ? { ...prev, [id]: { ...prev[id], at } } : prev
+            );
+          }
+          revalidator.revalidate();
+        }
+      },
+      [revalidator]
+    );
+
     const onDeleteLabel = useCallback(
       async (
         e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
@@ -118,61 +178,27 @@ const DocumentsTable = memo(
         label: string
       ) => {
         e.stopPropagation();
-        // optimistically update the UI and then make the mutation
-        setRows((prev) => {
-          const index = prev.findIndex((item) => item.id === row.id);
-          const updated = [...prev];
-          const labelIndex = updated[index].labels?.findIndex(
-            (item: string) => item === label
-          );
-          if (labelIndex) {
-            updated[index].labels?.splice(labelIndex, 1);
-          }
-          return updated;
-        });
-        // mutate the database
-        await deleteLabel(row, label);
+        await writeOverride(
+          row,
+          { labels: (row.labels ?? []).filter((item) => item !== label) },
+          () => deleteLabel(row, label)
+        );
       },
-      [deleteLabel]
+      [deleteLabel, writeOverride]
     );
 
     const onLabel = useCallback(
-      async (row: Document, labels: string[]) => {
-        // optimistically update the UI and then make the mutation
-        setRows((prev) => {
-          const index = prev.findIndex((item) => item.id === row.id);
-          const updated = [...prev];
-          updated[index] = {
-            ...updated[index],
-            labels: labels.sort()
-          };
-          return updated;
-        });
-        // mutate the database
-        await label(row, labels);
-      },
-      [label]
+      (row: Document, labels: string[]) =>
+        writeOverride(row, { labels: [...labels].sort() }, () =>
+          label(row, labels)
+        ),
+      [label, writeOverride]
     );
 
-    // TODO: rows shouldn't be in state -- we should use optimistic updates like purchase order favorites
     const onFavorite = useCallback(
-      async (row: Document) => {
-        // optimistically update the UI and then make the mutation
-        setRows((prev) => {
-          const index = prev.findIndex((item) => item.id === row.id);
-          const updated = [...prev];
-          updated[index] = {
-            ...updated[index],
-            favorite: !updated[index].favorite
-          };
-          return filter === "starred"
-            ? updated.filter((item) => item.favorite === true)
-            : updated;
-        });
-        // mutate the database
-        await favorite(row);
-      },
-      [favorite, filter]
+      (row: Document) =>
+        writeOverride(row, { favorite: !row.favorite }, () => favorite(row)),
+      [favorite, writeOverride]
     );
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -207,6 +233,7 @@ const DocumentsTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -225,7 +252,7 @@ const DocumentsTable = memo(
                 className="group flex items-center gap-1"
               >
                 <Enumerable value={row.original.sourceDocument} />{" "}
-                <span className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
+                <span className="group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 md:opacity-0 transition-opacity duration-150 w-4 h-4 text-foreground">
                   <LuExternalLink />
                 </span>
               </PrefetchLink>
@@ -255,6 +282,7 @@ const DocumentsTable = memo(
                 >
                   {label}
                   <BadgeCloseButton
+                    aria-label={t`Remove label ${label}`}
                     onClick={(e) => onDeleteLabel(e, row.original, label)}
                   />
                 </Badge>
@@ -277,13 +305,12 @@ const DocumentsTable = memo(
                         newValue
                       ])
                     }
-                    onCreateOption={async (newValue) => {
-                      await onLabel(row.original, [
+                    onCreateOption={(newValue) =>
+                      onLabel(row.original, [
                         ...(row.original.labels ?? []),
                         newValue
-                      ]);
-                      revalidator.revalidate();
-                    }}
+                      ])
+                    }
                   />
                 </PopoverContent>
               </Popover>
@@ -304,6 +331,7 @@ const DocumentsTable = memo(
           header: t`Size`,
           cell: ({ row }) => convertKbToString(row.original.size ?? 0),
           meta: {
+            mobile: "P2",
             icon: <LuRuler />
           }
         },
@@ -396,6 +424,7 @@ const DocumentsTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuFileText />
           }
         },
@@ -413,7 +442,6 @@ const DocumentsTable = memo(
           }
         }
       ];
-      // Don't put the revalidator in the deps array
     }, [
       ERP_URL,
       extensions,
@@ -503,10 +531,15 @@ const DocumentsTable = memo(
         <Table<Document>
           count={count}
           columns={columns}
-          data={rows}
+          data={data}
+          infiniteRows={{ ...infiniteRows, rows }}
           defaultColumnVisibility={defaultColumnVisibility}
           primaryAction={
-            permissions.can("create", "documents") && <DocumentCreateForm />
+            permissions.can("create", "documents") &&
+            // Phones: uploading neither pins a file nor fills the trash.
+            !(isPhone && (filter === "starred" || filter === "trash")) && (
+              <DocumentCreateForm />
+            )
           }
           renderContextMenu={renderContextMenu}
           title={t`Documents`}
@@ -514,57 +547,33 @@ const DocumentsTable = memo(
 
         {selectedDocument && selectedDocument.id && (
           <>
-            {moveDocumentModal.isOpen && filter !== "trash" && (
-              <ConfirmDelete
-                action={path.to.deleteDocument(selectedDocument.id)}
-                isOpen
-                name={selectedDocument.name ?? ""}
-                text={`Are you sure you want to move ${selectedDocument.name} to the trash?`}
-                onCancel={() => {
-                  moveDocumentModal.onClose();
-                  setSelectedDocument(null);
-                }}
-                onSubmit={() => {
-                  moveDocumentModal.onClose();
-                  setSelectedDocument(null);
-                }}
-              />
-            )}
+            <ConfirmDelete
+              action={path.to.deleteDocument(selectedDocument.id)}
+              isOpen={moveDocumentModal.isOpen && filter !== "trash"}
+              name={selectedDocument.name ?? ""}
+              text={`Are you sure you want to move ${selectedDocument.name} to the trash?`}
+              onCancel={moveDocumentModal.onClose}
+              onSubmit={moveDocumentModal.onClose}
+            />
 
-            {moveDocumentModal.isOpen && filter === "trash" && (
-              <Confirm
-                action={path.to.documentRestore(selectedDocument.id)}
-                isOpen
-                title={`Restore ${selectedDocument.name}`}
-                text={`Are you sure you want to restore ${selectedDocument.name} from the trash?`}
-                confirmText="Restore"
-                onCancel={() => {
-                  moveDocumentModal.onClose();
-                  setSelectedDocument(null);
-                }}
-                onSubmit={() => {
-                  moveDocumentModal.onClose();
-                  setSelectedDocument(null);
-                }}
-              />
-            )}
+            <Confirm
+              action={path.to.documentRestore(selectedDocument.id)}
+              isOpen={moveDocumentModal.isOpen && filter === "trash"}
+              title={`Restore ${selectedDocument.name}`}
+              text={`Are you sure you want to restore ${selectedDocument.name} from the trash?`}
+              confirmText="Restore"
+              onCancel={moveDocumentModal.onClose}
+              onSubmit={moveDocumentModal.onClose}
+            />
 
-            {deleteDocumentModal.isOpen && (
-              <ConfirmDelete
-                action={path.to.deleteDocumentPermanently(selectedDocument.id)}
-                isOpen
-                name={selectedDocument.name ?? ""}
-                text={`Are you sure you want to delete ${selectedDocument.name} permanently? This cannot be undone.`}
-                onCancel={() => {
-                  deleteDocumentModal.onClose();
-                  setSelectedDocument(null);
-                }}
-                onSubmit={() => {
-                  deleteDocumentModal.onClose();
-                  setSelectedDocument(null);
-                }}
-              />
-            )}
+            <ConfirmDelete
+              action={path.to.deleteDocumentPermanently(selectedDocument.id)}
+              isOpen={deleteDocumentModal.isOpen}
+              name={selectedDocument.name ?? ""}
+              text={`Are you sure you want to delete ${selectedDocument.name} permanently? This cannot be undone.`}
+              onCancel={deleteDocumentModal.onClose}
+              onSubmit={deleteDocumentModal.onClose}
+            />
           </>
         )}
       </>

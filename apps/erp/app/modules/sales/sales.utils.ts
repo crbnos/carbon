@@ -2,7 +2,32 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { equals, round } from "@carbon/utils";
+import type { Database, Json } from "@carbon/database";
+import { getFileExtension } from "@carbon/files";
+import type {
+  DefaultRentalRates,
+  LeasePaymentTerms,
+  RateUnit,
+  RentalBillingCycle,
+  ScopedRentalRate,
+  Timing
+} from "@carbon/utils";
+import {
+  classifyLessorLease,
+  classifyRentalLine,
+  defaultRentalRates,
+  equals,
+  leasePaymentTerms,
+  rentalTermMonths,
+  round
+} from "@carbon/utils";
+import {
+  parseAbsolute,
+  parseDate,
+  toCalendarDate,
+  toZoned
+} from "@internationalized/date";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type {
   MatchedRule,
@@ -163,6 +188,390 @@ export function decideRecalcPricing(
     return { mode: "reprice", markups: rowMarkups };
   }
   return { mode: "reprice", markups: effectiveDefaults };
+}
+
+// ── Lessor lease classification (spec §4) ──────────────────────────────────
+// The shape activation stores on `rentalAgreementLine.classificationInputs`,
+// and the same shape computed here from the agreement terms for a Draft line,
+// so the line form and the Activate preview read one structure either way.
+
+export type LeaseClassificationTests = {
+  a: boolean;
+  b: boolean;
+  c: boolean;
+  d: boolean;
+  e: boolean;
+};
+
+export type LeaseClassificationRecord = {
+  inputs: {
+    ownershipTransfers: boolean;
+    purchaseOptionReasonablyCertain: boolean;
+    termMonths: number | null;
+    economicLifeMonths: number | null;
+    pvPayments: number;
+    fairValue: number | null;
+    specializedAsset: boolean;
+  };
+  thresholds: { majorPartPercent: number; substantiallyAllPercent: number };
+  tests: LeaseClassificationTests;
+  pvToFairValuePercent: number | null;
+  termToLifePercent: number | null;
+  pv: {
+    pvRent: number;
+    pvPayments: number;
+    pvResidual: number;
+    netInvestment: number;
+  } | null;
+  payment: number | null;
+  periods: number | null;
+  annualRate: number;
+  timing: Timing;
+  classification: "Rental" | "Sale";
+};
+
+export type LeasePolicy = {
+  majorPartPercent: number;
+  substantiallyAllPercent: number;
+};
+
+/** Whole months of the term, as activation counts them
+ *  (`rentalTermMonths`); null when open-ended. */
+export function leaseTermMonths(
+  cycle: RentalBillingCycle,
+  startDate: string,
+  endDate: string | null | undefined
+): number | null {
+  return rentalTermMonths(cycle, startDate, endDate || null);
+}
+
+/** `leasePaymentTerms` from @carbon/utils — the same function activation
+ *  prices a line with — or null when the line cannot be priced (a rate that
+ *  is not a finite number). */
+export function draftLeasePaymentTerms(args: {
+  cycle: RentalBillingCycle;
+  rateUnit: RateUnit;
+  rate: number;
+  discountRate: number;
+  startDate: string;
+  endDate: string | null;
+  /** The agreement currency's `decimalPlaces`, as activation prices it. */
+  decimals: number;
+}): LeasePaymentTerms | null {
+  if (!Number.isFinite(args.rate)) return null;
+  try {
+    return leasePaymentTerms(args);
+  } catch {
+    return null;
+  }
+}
+
+/** Classifies a Draft line the way activation will: PV of the fixed rent
+ *  (+ a reasonably certain purchase option + the guaranteed residual), then
+ *  the five ASC 842 tests. A preview — the record activation stores is the
+ *  one of record. `pv` is null when the line cannot be priced yet. */
+export function previewLeaseClassification(args: {
+  agreement: {
+    startDate: string;
+    endDate: string | null;
+    billingCycle: RentalBillingCycle;
+    billingTiming: Timing;
+    discountRate: number;
+    ownershipTransfers: boolean;
+    specializedAsset: boolean;
+    purchaseOptionAmount: number | null;
+    purchaseOptionReasonablyCertain: boolean;
+  };
+  line: {
+    rateUnit: RateUnit;
+    rate: number;
+    fairValue: number | null;
+    economicLifeMonths: number | null;
+    guaranteedResidualValue: number | null;
+    unguaranteedResidualValue: number | null;
+  };
+  policy: LeasePolicy;
+  /** The agreement currency's `decimalPlaces`. */
+  decimals: number;
+}): LeaseClassificationRecord {
+  const { agreement, line, policy } = args;
+  const terms = draftLeasePaymentTerms({
+    cycle: agreement.billingCycle,
+    rateUnit: line.rateUnit,
+    rate: line.rate,
+    discountRate: agreement.discountRate ?? 0,
+    startDate: agreement.startDate,
+    endDate: agreement.endDate,
+    decimals: args.decimals
+  });
+
+  if (terms) {
+    // Priced: exactly what activation stores (`classifyRentalLine`).
+    const { classification, record } = classifyRentalLine({
+      terms,
+      timing: agreement.billingTiming,
+      agreement,
+      line: {
+        fairValue: line.fairValue,
+        economicLifeMonths: line.economicLifeMonths,
+        guaranteedResidualValue: line.guaranteedResidualValue ?? 0,
+        unguaranteedResidualValue: line.unguaranteedResidualValue ?? 0
+      },
+      thresholds: policy
+    });
+    return { ...record, classification };
+  }
+
+  // Not priced yet: the tests that need no present value still answer.
+  const inputs = {
+    ownershipTransfers: agreement.ownershipTransfers,
+    purchaseOptionReasonablyCertain: agreement.purchaseOptionReasonablyCertain,
+    termMonths: leaseTermMonths(
+      agreement.billingCycle,
+      agreement.startDate,
+      agreement.endDate
+    ),
+    economicLifeMonths: line.economicLifeMonths,
+    pvPayments: 0,
+    fairValue: line.fairValue,
+    specializedAsset: agreement.specializedAsset
+  };
+  const result = classifyLessorLease(inputs, policy);
+  return {
+    inputs,
+    thresholds: policy,
+    tests: result.tests,
+    pvToFairValuePercent: null,
+    termToLifePercent: result.termToLifePercent,
+    pv: null,
+    payment: null,
+    periods: null,
+    annualRate: agreement.discountRate ?? 0,
+    timing: agreement.billingTiming,
+    classification: result.classification
+  };
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const numberOrNull = (value: unknown): number | null =>
+  typeof value === "number" && Number.isFinite(value) ? value : null;
+
+/** Reads the `classificationInputs` JSON activation stored. Null when it is
+ *  absent or not the expected shape (a line activated before Phase D). The
+ *  classification itself lives on the line, so the caller supplies it. */
+export function readLeaseClassification(
+  json: Json | null | undefined,
+  classification: "Rental" | "Sale"
+): LeaseClassificationRecord | null {
+  if (!isRecord(json) || !isRecord(json.tests) || !isRecord(json.inputs)) {
+    return null;
+  }
+  const tests = json.tests;
+  const inputs = json.inputs;
+  const thresholds = isRecord(json.thresholds) ? json.thresholds : {};
+  const pv = isRecord(json.pv) ? json.pv : null;
+  return {
+    inputs: {
+      ownershipTransfers: inputs.ownershipTransfers === true,
+      purchaseOptionReasonablyCertain:
+        inputs.purchaseOptionReasonablyCertain === true,
+      termMonths: numberOrNull(inputs.termMonths),
+      economicLifeMonths: numberOrNull(inputs.economicLifeMonths),
+      pvPayments: numberOrNull(inputs.pvPayments) ?? 0,
+      fairValue: numberOrNull(inputs.fairValue),
+      specializedAsset: inputs.specializedAsset === true
+    },
+    thresholds: {
+      majorPartPercent: numberOrNull(thresholds.majorPartPercent) ?? 0,
+      substantiallyAllPercent:
+        numberOrNull(thresholds.substantiallyAllPercent) ?? 0
+    },
+    tests: {
+      a: tests.a === true,
+      b: tests.b === true,
+      c: tests.c === true,
+      d: tests.d === true,
+      e: tests.e === true
+    },
+    pvToFairValuePercent: numberOrNull(json.pvToFairValuePercent),
+    termToLifePercent: numberOrNull(json.termToLifePercent),
+    pv: pv
+      ? {
+          pvRent: numberOrNull(pv.pvRent) ?? 0,
+          pvPayments: numberOrNull(pv.pvPayments) ?? 0,
+          pvResidual: numberOrNull(pv.pvResidual) ?? 0,
+          netInvestment: numberOrNull(pv.netInvestment) ?? 0
+        }
+      : null,
+    payment: numberOrNull(json.payment),
+    periods: numberOrNull(json.periods),
+    annualRate: numberOrNull(json.annualRate) ?? 0,
+    timing: json.timing === "Arrears" ? "Arrears" : "Advance",
+    classification
+  };
+}
+
+export type LeaseCommencementPreview = {
+  netInvestment: number;
+  costOfGoodsSold: number;
+  leaseRevenue: number;
+  carryingAmount: number;
+  sellingProfit: number;
+};
+
+/** The commencement journal of a Sale line (spec §4): Dr Net
+ *  Investment NI, Dr COGS C − PVres, Cr Lease Revenue PVpay, Cr the unit at
+ *  its carrying amount C. Balanced by construction. */
+export function leaseCommencementPreview(
+  pv: NonNullable<LeaseClassificationRecord["pv"]>,
+  carryingAmount: number
+): LeaseCommencementPreview {
+  const costOfGoodsSold = round(carryingAmount - pv.pvResidual);
+  return {
+    netInvestment: pv.netInvestment,
+    costOfGoodsSold,
+    leaseRevenue: pv.pvPayments,
+    carryingAmount: round(carryingAmount),
+    sellingProfit: round(pv.pvPayments - costOfGoodsSold)
+  };
+}
+
+export type SalesOrderInvoiceSummary = {
+  invoicedAmount: number;
+  paidAmount: number;
+  currencyMismatchCount: number;
+};
+
+/** Invoiced and paid totals in the order's currency. Invoice totals and
+ *  applied payments are base amounts; the invoice's rate turns them into its
+ *  document currency. Voided invoices count for nothing, and an invoice in
+ *  another currency is counted as a mismatch rather than mixed in. */
+export function summarizeSalesOrderInvoices(
+  orderCurrency: string | null | undefined,
+  invoices: {
+    id: string | null;
+    invoiceTotal: number | null;
+    status: string | null;
+    currencyCode: string | null;
+    exchangeRate: number | null;
+  }[],
+  settlements: { targetSalesInvoiceId: string | null; appliedAmount: number }[]
+): SalesOrderInvoiceSummary {
+  const paidBaseByInvoiceId = new Map<string, number>();
+  for (const settlement of settlements) {
+    if (!settlement.targetSalesInvoiceId) continue;
+    paidBaseByInvoiceId.set(
+      settlement.targetSalesInvoiceId,
+      (paidBaseByInvoiceId.get(settlement.targetSalesInvoiceId) ?? 0) +
+        settlement.appliedAmount
+    );
+  }
+
+  let invoicedAmount = 0;
+  let paidAmount = 0;
+  let currencyMismatchCount = 0;
+
+  for (const invoice of invoices) {
+    if (invoice.status === "Voided") continue;
+
+    if (
+      orderCurrency &&
+      invoice.currencyCode &&
+      invoice.currencyCode !== orderCurrency
+    ) {
+      currencyMismatchCount += 1;
+      continue;
+    }
+
+    invoicedAmount += (invoice.invoiceTotal ?? 0) * (invoice.exchangeRate ?? 1);
+    if (invoice.id) {
+      paidAmount +=
+        (paidBaseByInvoiceId.get(invoice.id) ?? 0) *
+        (invoice.exchangeRate ?? 1);
+    }
+  }
+
+  return { invoicedAmount, paidAmount, currencyMismatchCount };
+}
+
+export type RentalEquipmentStatus =
+  | "To Deliver"
+  | "Partially Delivered"
+  | "On Rent"
+  | "Partially Returned"
+  | "Returned";
+
+/** Where an agreement's units are, from their line statuses: the header badge
+ *  next to the agreement's own status. Sold counts as back — the unit no
+ *  longer rents. Null with no units. */
+export function rentalEquipmentStatus(
+  lines: {
+    status: Database["public"]["Enums"]["rentalAgreementLineStatus"];
+  }[]
+): RentalEquipmentStatus | null {
+  if (lines.length === 0) return null;
+  const pending = lines.filter((line) => line.status === "Pending").length;
+  const onRent = lines.filter((line) => line.status === "On Rent").length;
+  const back = lines.length - pending - onRent;
+
+  if (pending === lines.length) return "To Deliver";
+  // A unit still in the yard while others have left.
+  if (pending > 0) return "Partially Delivered";
+  if (onRent === lines.length) return "On Rent";
+  if (onRent > 0) return "Partially Returned";
+  return back > 0 ? "Returned" : null;
+}
+
+/** The last Posted shipment that delivered the unit and the last Posted receipt that returned it. */
+export function rentalLineDocuments(
+  lineId: string,
+  shipments: {
+    id: string;
+    shipmentId: string;
+    status: string;
+    shipmentFixedAssetLine: {
+      rentalAgreementLineId: string | null;
+      shipped: boolean;
+    }[];
+  }[],
+  receipts: {
+    id: string;
+    receiptId: string;
+    status: string;
+    receiptFixedAssetLine: {
+      rentalAgreementLineId: string | null;
+      received: boolean;
+    }[];
+  }[]
+): {
+  shipment: { id: string; shipmentId: string } | null;
+  receipt: { id: string; receiptId: string } | null;
+} {
+  let shipment: { id: string; shipmentId: string } | null = null;
+  for (const s of shipments) {
+    if (s.status !== "Posted") continue;
+    if (
+      s.shipmentFixedAssetLine.some(
+        (l) => l.rentalAgreementLineId === lineId && l.shipped
+      )
+    ) {
+      shipment = { id: s.id, shipmentId: s.shipmentId };
+    }
+  }
+  let receipt: { id: string; receiptId: string } | null = null;
+  for (const r of receipts) {
+    if (r.status !== "Posted") continue;
+    if (
+      r.receiptFixedAssetLine.some(
+        (l) => l.rentalAgreementLineId === lineId && l.received
+      )
+    ) {
+      receipt = { id: r.id, receiptId: r.receiptId };
+    }
+  }
+  return { shipment, receipt };
 }
 
 // The surcharge one configuration price adds for a line's configuration: the
@@ -360,6 +769,19 @@ function stableStringify(value: unknown): string {
 }
 
 /**
+ * Whether a line with this method takes a configuration. Only a built line
+ * uses one: a configuration picks the job's method, and a line pulled from
+ * stock or bought ships what it gets.
+ */
+export function methodTakesConfiguration(
+  methodType: string | null | undefined
+) {
+  return (
+    methodType !== "Pull from Inventory" && methodType !== "Purchase to Order"
+  );
+}
+
+/**
  * The configuration a job made for a sales order line is built with: the
  * line's own, falling back to its quote line's. `reconfigured` is true when
  * the order line was configured differently from the quote — the quote's
@@ -423,4 +845,265 @@ export function configuredQuoteBasePrice({
     return null;
   }
   return unitSalePrice;
+}
+export async function getQuoteLines(
+  client: SupabaseClient<Database>,
+  quoteId: string
+) {
+  return client
+    .from("quoteLines")
+    .select("*")
+    .eq("quoteId", quoteId)
+    .order("sortOrder", { ascending: true })
+    .order("itemReadableId", { ascending: true });
+}
+
+export async function getQuoteLinePricesByQuoteId(
+  client: SupabaseClient<Database>,
+  quoteId: string
+) {
+  return client
+    .from("quoteLinePrice")
+    .select("*")
+    .eq("quoteId", quoteId)
+    .order("quoteLineId", { ascending: true });
+}
+
+/** Per item: the rate a rental unit starts at for each frequency. */
+export type DefaultRentalRatesByItem = Record<string, DefaultRentalRates>;
+
+/** The rate each item starts at on a rental line for this customer, per
+ *  frequency — the customer's own rate, else its customer type's, else the
+ *  item's (`defaultRentalRates`) — in effect on `asOf`, the agreement's start
+ *  date. Keyed by item id. One query per table over every item.
+ */
+export async function getDefaultRentalRates(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    customerId: string;
+    currencyCode: string;
+    asOf: string;
+    itemIds: string[];
+  }
+): Promise<
+  | { data: DefaultRentalRatesByItem; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const { companyId, customerId, currencyCode, asOf } = args;
+  const itemIds = [...new Set(args.itemIds)];
+  if (itemIds.length === 0) return { data: {}, error: null };
+
+  const customer = await client
+    .from("customer")
+    .select("customerTypeId")
+    .eq("id", customerId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (customer.error) return { data: null, error: customer.error };
+  const customerTypeId = customer.data?.customerTypeId ?? null;
+
+  // Two plain `.eq` reads rather than one `.or()` string: `customerId` is a
+  // caller's value (this is an MCP tool) and never belongs in a filter string.
+  const scopedSelect =
+    "itemId, customerId, customerTypeId, dayRate, weekRate, monthRate, validFrom, validTo";
+  const [itemRates, customerRates, typeRates] = await Promise.all([
+    client
+      .from("itemRentalRate")
+      .select("itemId, dayRate, weekRate, monthRate")
+      .eq("companyId", companyId)
+      .eq("currencyCode", currencyCode)
+      .in("itemId", itemIds),
+    client
+      .from("customerItemRentalRate")
+      .select(scopedSelect)
+      .eq("companyId", companyId)
+      .eq("currencyCode", currencyCode)
+      .eq("customerId", customerId)
+      .in("itemId", itemIds),
+    customerTypeId
+      ? client
+          .from("customerItemRentalRate")
+          .select(scopedSelect)
+          .eq("companyId", companyId)
+          .eq("currencyCode", currencyCode)
+          .eq("customerTypeId", customerTypeId)
+          .in("itemId", itemIds)
+      : null
+  ]);
+  if (itemRates.error) return { data: null, error: itemRates.error };
+  if (customerRates.error) return { data: null, error: customerRates.error };
+  if (typeRates?.error) return { data: null, error: typeRates.error };
+  const scopedRates = [...customerRates.data, ...(typeRates?.data ?? [])];
+
+  const itemRateById = new Map(itemRates.data.map((row) => [row.itemId, row]));
+  const result: DefaultRentalRatesByItem = {};
+  for (const itemId of itemIds) {
+    const item = itemRateById.get(itemId);
+    result[itemId] = defaultRentalRates({
+      customerId,
+      customerTypeId,
+      asOf,
+      scoped: scopedRates.filter(
+        (row): boolean => row.itemId === itemId
+      ) satisfies ScopedRentalRate[],
+      item: item
+        ? {
+            dayRate: item.dayRate,
+            weekRate: item.weekRate,
+            monthRate: item.monthRate
+          }
+        : null
+    });
+  }
+  return { data: result, error: null };
+}
+
+// Who a price override applies to: one customer, one customer type, or every
+// customer. A row with neither id applies to every customer, so writing one
+// must be asked for (`allCustomers`), never reached by leaving both ids out.
+export type PriceOverrideScope = {
+  customerId?: string;
+  customerTypeId?: string;
+  allCustomers?: boolean;
+};
+
+export function priceOverrideScopeError(
+  scope: PriceOverrideScope
+): string | null {
+  if (scope.allCustomers) {
+    return scope.customerId || scope.customerTypeId
+      ? "All Customers cannot also name a customer or type"
+      : null;
+  }
+  if (scope.customerId && scope.customerTypeId) {
+    return "Cannot set both Customer and Customer Type";
+  }
+  if (!scope.customerId && !scope.customerTypeId) {
+    return "Choose a customer, a customer type, or All Customers";
+  }
+  return null;
+}
+
+// The override scopes whose items a price list shows: the scope's own, and
+// the broader ones it inherits (a customer's type, then all customers), so
+// every item whose price differs for that scope is listed.
+export function priceListOverrideScopes(
+  scope: PriceOverrideScope,
+  customerTypeIdOfCustomer: string | null
+): PriceOverrideScope[] {
+  if (scope.customerId) {
+    return [
+      { customerId: scope.customerId },
+      ...(customerTypeIdOfCustomer
+        ? [{ customerTypeId: customerTypeIdOfCustomer }]
+        : []),
+      { allCustomers: true }
+    ];
+  }
+  if (scope.customerTypeId) {
+    return [{ customerTypeId: scope.customerTypeId }, { allCustomers: true }];
+  }
+  if (scope.allCustomers) return [{ allCustomers: true }];
+  return [];
+}
+
+// The customer portal is an open link: anyone holding it sees what it shows.
+// It serves photos and PDFs recorded on a job's steps, never CAD models or
+// drawings, which can be export-controlled. SVG is left out because it can
+// carry script and is served from the app's own origin.
+const CUSTOMER_PORTAL_FILE_TYPES = new Set([
+  "pdf",
+  "jpg",
+  "jpeg",
+  "png",
+  "gif",
+  "webp",
+  "avif",
+  "heic",
+  "heif"
+]);
+
+export function customerPortalServesFile(path: string) {
+  const fileName = path.split("/").pop() ?? "";
+  return CUSTOMER_PORTAL_FILE_TYPES.has(getFileExtension(fileName));
+}
+
+// Sales orders the portal never lists: not yet confirmed, or called off.
+export const CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES = [
+  "Draft",
+  "Needs Approval",
+  "Cancelled"
+] as const;
+
+// A portal set to expire on a day stops working at the start of that day in
+// the company's timezone. A blank date stores no expiry.
+export function customerPortalExpiresAt(
+  date: string | undefined,
+  timeZone: string
+) {
+  if (!date) return null;
+  return toZoned(parseDate(date), timeZone).toAbsoluteString();
+}
+
+// The day a stored expiry falls on in the company's timezone, for the form.
+export function customerPortalExpiryDate(
+  expiresAt: string | null,
+  timeZone: string
+) {
+  if (!expiresAt) return undefined;
+  return toCalendarDate(parseAbsolute(expiresAt, timeZone)).toString();
+}
+
+export function customerPortalExpired(
+  expiresAt: string | null,
+  nowInstant: string
+) {
+  if (!expiresAt) return false;
+  return (
+    parseAbsolute(expiresAt, "UTC").compare(parseAbsolute(nowInstant, "UTC")) <=
+    0
+  );
+}
+
+export type CustomerPortalRefusal = "expired";
+
+// Why an open portal link must not be served, or null when it may be. Every
+// share route answers through this, so a new route cannot skip a check.
+export function customerPortalRefusal(
+  portal: { expiresAt: string | null },
+  nowInstant: string
+): CustomerPortalRefusal | null {
+  if (customerPortalExpired(portal.expiresAt, nowInstant)) return "expired";
+  return null;
+}
+
+// A new expiry that has already passed would make a link that never works.
+// Saving a portal whose stored expiry has passed, without changing it, is
+// allowed, so an expired portal can still be edited.
+export function customerPortalExpiryRefused(
+  expiresAt: string | null,
+  storedExpiresAt: string | null,
+  nowInstant: string
+) {
+  if (!customerPortalExpired(expiresAt, nowInstant)) return false;
+  if (!expiresAt || !storedExpiresAt) return true;
+  return (
+    parseAbsolute(expiresAt, "UTC").compare(
+      parseAbsolute(storedExpiresAt, "UTC")
+    ) !== 0
+  );
+}
+
+// The first day the Expires On picker offers: tomorrow in the company's
+// calendar, or the portal's own stored date when that has already passed, so
+// an expired portal can be edited without changing it.
+export function customerPortalEarliestExpiry(
+  companyToday: string,
+  storedExpiresOn?: string
+) {
+  const tomorrow = parseDate(companyToday).add({ days: 1 });
+  if (!storedExpiresOn) return tomorrow.toString();
+  const stored = parseDate(storedExpiresOn);
+  return (stored.compare(tomorrow) < 0 ? stored : tomorrow).toString();
 }

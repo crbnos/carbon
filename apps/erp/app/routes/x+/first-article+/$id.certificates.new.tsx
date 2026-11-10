@@ -7,9 +7,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
-import { upsertDocument } from "~/modules/documents";
-import { certificateValidator, upsertCertificate } from "~/modules/quality";
-import { refreshFirstArticleProducts } from "~/modules/quality/firstArticle.server";
+import { upsertDocument } from "~/modules/documents/documents.service";
+import { certificateValidator } from "~/modules/quality/quality.models";
+import {
+  refreshFirstArticleProducts,
+  upsertCertificate
+} from "~/modules/quality/quality.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "first-article", "certificates");
@@ -107,7 +110,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
         message: document.error?.message ?? "Failed to create document"
       };
     }
-    uploadedDocumentId = document.data.id;
+    // The insert branch of upsertDocument returns the one new row.
+    uploadedDocumentId = Array.isArray(document.data)
+      ? document.data[0]?.id
+      : document.data.id;
   }
 
   const insert = await upsertCertificate(client, {

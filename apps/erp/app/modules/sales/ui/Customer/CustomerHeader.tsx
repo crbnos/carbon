@@ -36,6 +36,10 @@ import { useAuditLog } from "~/components/AuditLog";
 import { Enumerable } from "~/components/Enumerable";
 import { Tags } from "~/components/Form";
 import { useCustomerTypes } from "~/components/Form/CustomerType";
+import {
+  RecordHero,
+  RecordPhoneChrome
+} from "~/components/Layout/RecordHeader";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { action } from "~/routes/x+/settings+/tags";
@@ -96,14 +100,37 @@ const CustomerHeader = () => {
     [customerId, fetcher.submit]
   );
 
+  const menuItems = (
+    <>
+      {auditLogTrigger}
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        disabled={!permissions.can("delete", "sales")}
+        destructive
+        onClick={deleteModal.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete Customer</Trans>
+      </DropdownMenuItem>
+    </>
+  );
   return (
     <>
+      {/* The app bar titles the record with its name, so no hero. */}
+      {/* No hero; it still zeroes --header-height on phones. */}
+      <RecordHero />
+      <RecordPhoneChrome menu={menuItems} copyValue={customerId} />
       <VStack>
         <Card>
-          <HStack className="justify-between items-start">
+          <HStack className="justify-between items-start max-md:hidden">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span>{routeData?.customer?.name}</span>
+              {/* The title row holds the ⋯ menu and Copy too: only the name is
+                  the page's heading, or its name would include theirs. */}
+              <CardTitle role="none" className="flex items-center gap-2">
+                <span role="heading" aria-level={1}>
+                  {routeData?.customer?.name}
+                </span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <IconButton
@@ -113,19 +140,7 @@ const CustomerHeader = () => {
                       size="sm"
                     />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {auditLogTrigger}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      shortcut={MENU_ITEM_SHORTCUTS.delete}
-                      disabled={!permissions.can("delete", "sales")}
-                      destructive
-                      onClick={deleteModal.onOpen}
-                    >
-                      <DropdownMenuIcon icon={<LuTrash />} />
-                      <Trans>Delete Customer</Trans>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
+                  <DropdownMenuContent>{menuItems}</DropdownMenuContent>
                 </DropdownMenu>
                 <Copy
                   text={customerId}
@@ -218,16 +233,14 @@ const CustomerHeader = () => {
           </CardContent>
         </Card>
       </VStack>
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteCustomer(customerId)}
-          isOpen={deleteModal.isOpen}
-          name={routeData?.customer?.name!}
-          text={t`Are you sure you want to delete ${routeData?.customer?.name!}? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={deleteModal.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteCustomer(customerId)}
+        isOpen={deleteModal.isOpen}
+        name={routeData?.customer?.name!}
+        text={t`Are you sure you want to delete ${routeData?.customer?.name!}? This cannot be undone.`}
+        onCancel={deleteModal.onClose}
+        onSubmit={deleteModal.onClose}
+      />
       {auditLogDrawer}
     </>
   );

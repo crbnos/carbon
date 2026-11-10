@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261006130200",
+  "schemaVersion": "20261106214206",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-06T01:27:39.616Z",
+  "exportedAt": "2026-11-09T10:06:40.493Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -31,7 +31,10 @@
         "parentId",
         "isGroup",
         "accountType",
-        "isSystem"
+        "isSystem",
+        "allowability",
+        "unallowableReason",
+        "elementOfCost"
       ]
     },
     {
@@ -93,7 +96,40 @@
         "intercompanyPayablesAccount",
         "salesShippingRevenueAccount",
         "salesReturnsAccount",
-        "employeeReimbursementsPayableAccount"
+        "employeeReimbursementsPayableAccount",
+        "deferredRevenueAccount",
+        "contractAssetAccount",
+        "rentalIncomeAccount",
+        "leaseRevenueAccount",
+        "leaseInterestIncomeAccount",
+        "netInvestmentInLeasesAccount",
+        "migrationClearingAccount",
+        "rightOfUseAssetAccount",
+        "accumulatedRightOfUseAmortizationAccount",
+        "leaseLiabilityAccount",
+        "operatingLeaseExpenseAccount",
+        "variableLeaseExpenseAccount",
+        "rightOfUseAmortizationExpenseAccount",
+        "leaseInterestExpenseAccount",
+        "projectExpenseAccount",
+        "projectWorkInProgressAccount",
+        "warrantyExpenseAccount",
+        "contractLossProvisionAccount",
+        "costOfServiceAccount",
+        "serviceRevenueAccount"
+      ]
+    },
+    {
+      "name": "accountingCutoverIgnoredInvoice",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "invoiceId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -279,7 +315,9 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "decisionSignaturePath",
+        "hasPriorVersion"
       ]
     },
     {
@@ -433,16 +471,50 @@
         "showCurrencyTrailingZeros",
         "requireMfa",
         "allowLowercaseItemIds",
-        "defaultResponsibleEmployee",
-        "rescheduleToleranceDays",
-        "forecastConsumptionBackwardPeriods",
-        "forecastConsumptionForwardPeriods",
         "includeOperationsOnTraveler",
         "requireSupplierContactAndLocation",
         "requireCustomerContactAndLocation",
         "showBomExplorerReadableId",
+        "defaultResponsibleEmployee",
+        "rescheduleToleranceDays",
+        "forecastConsumptionBackwardPeriods",
+        "forecastConsumptionForwardPeriods",
         "defaultPlanningHorizonDays",
-        "mrpRunTime"
+        "mrpRunTime",
+        "skipApprovalForPlanningPurchaseOrders",
+        "leaseMajorPartThresholdPercent",
+        "leaseSubstantiallyAllThresholdPercent",
+        "leaseDefaultDiscountRate",
+        "invoiceAutomation",
+        "invoiceNotificationGroup",
+        "accountingCutoverDate",
+        "accountingActivatedAt",
+        "accountingActivatedBy",
+        "leaseIncrementalBorrowingRate",
+        "leaseShortTermExpedient",
+        "leaseReminderDays",
+        "requireBackflushStorageUnit",
+        "preventNegativeBackflush",
+        "receiptQuantitiesStartAtZero",
+        "timesheetApprovalRequired",
+        "requireProjectElement",
+        "timekeepingControls",
+        "timesheetEntryWindowDays",
+        "timesheetTimecardCheck",
+        "certificationTextExempt",
+        "certificationTextNonExempt",
+        "standardWeeklyHours",
+        "burdenRateType",
+        "postAppliedBurden",
+        "requirePurchaseOrderApprovalSignature",
+        "serialNumberTiming",
+        "useCalendarWeeks",
+        "kanbanLabelSize",
+        "serviceLaborCostRate",
+        "serviceLaborBillRate",
+        "requireSupplierContactEmail",
+        "requireCustomerContactEmail",
+        "includeSupplierPartFiles"
       ]
     },
     {
@@ -660,6 +732,22 @@
         "updatedAt",
         "sourceDocument",
         "sourceDocumentId"
+      ]
+    },
+    {
+      "name": "documentEdit",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "documentType",
+        "documentId",
+        "blocks",
+        "settings",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -900,7 +988,8 @@
         "updatedAt",
         "updatedBy",
         "customFields",
-        "gainOnDisposalAccountId"
+        "gainOnDisposalAccountId",
+        "isConstructionInProgress"
       ]
     },
     {
@@ -995,6 +1084,105 @@
       ]
     },
     {
+      "name": "indirectPool",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "name",
+        "poolType",
+        "sequence",
+        "baseType",
+        "appliedAccountId",
+        "appliesToProjects",
+        "offsetAbsorbedOverhead",
+        "active",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "indirectExpenseStatement",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "indirectPoolId",
+        "fiscalYear",
+        "periodNumber",
+        "lineType",
+        "accountId",
+        "dimensionValueId",
+        "sourcePoolId",
+        "amount",
+        "unallowableAmount",
+        "createdBy",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "indirectPoolAccount",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "indirectPoolId",
+        "accountId",
+        "dimensionId",
+        "dimensionValueId",
+        "role",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "indirectRate",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "indirectPoolId",
+        "fiscalYear",
+        "periodNumber",
+        "rateType",
+        "periodRate",
+        "ytdRate",
+        "poolCost",
+        "unallowableCost",
+        "baseAmount",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "indirectRateRun",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "accountingPeriodId",
+        "fiscalYear",
+        "periodNumber",
+        "burdenRateType",
+        "ratesComputedAt",
+        "burdenComputedAt",
+        "billingComputedAt",
+        "burdenRowCount",
+        "billableItemCount",
+        "error",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "invite",
       "rows": 0,
       "columns": [
@@ -1056,7 +1244,14 @@
     {
       "name": "itemStockQuantities",
       "rows": 0,
-      "columns": ["itemId", "companyId", "locationId", "quantityOnHand"]
+      "columns": [
+        "itemId",
+        "companyId",
+        "locationId",
+        "quantityOnHand",
+        "projectId",
+        "quantityNonNettable"
+      ]
     },
     {
       "name": "journal",
@@ -1106,7 +1301,8 @@
         "updatedAt",
         "updatedBy",
         "intercompanyPartnerId",
-        "createdBy"
+        "createdBy",
+        "accountDefaultRole"
       ]
     },
     {
@@ -1162,6 +1358,38 @@
       ]
     },
     {
+      "name": "laborCategory",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "name",
+        "description",
+        "active",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "rdActivityRole"
+      ]
+    },
+    {
+      "name": "laborCategoryRate",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "laborCategoryId",
+        "effectiveFrom",
+        "costRate",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "billRate"
+      ]
+    },
+    {
       "name": "location",
       "rows": 0,
       "columns": [
@@ -1185,92 +1413,9 @@
         "tags",
         "code",
         "requiresStaffing",
-        "responsibleEmployee"
-      ]
-    },
-    {
-      "name": "fixedAsset",
-      "rows": 0,
-      "columns": [
-        "id",
-        "fixedAssetId",
-        "fixedAssetClassId",
-        "name",
-        "description",
-        "serialNumber",
-        "status",
-        "depreciationMethod",
-        "usefulLifeMonths",
-        "residualValuePercent",
-        "taxDepreciationMethod",
-        "taxUsefulLifeMonths",
-        "taxResidualValuePercent",
-        "macrsPropertyClass",
-        "macrsConvention",
-        "bonusDepreciationPercent",
-        "acquisitionCost",
-        "acquisitionDate",
-        "depreciationStartDate",
-        "accumulatedDepreciation",
-        "accumulatedTaxDepreciation",
-        "assetLifetimeUsage",
-        "locationId",
-        "disposalDate",
-        "disposalMethod",
-        "saleProceeds",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy",
-        "notes",
-        "customFields"
-      ]
-    },
-    {
-      "name": "depreciationRunLine",
-      "rows": 0,
-      "columns": [
-        "id",
-        "depreciationRunId",
-        "fixedAssetId",
-        "amount",
-        "taxAmount",
-        "journalId",
-        "companyId"
-      ]
-    },
-    {
-      "name": "fixedAssetDisposal",
-      "rows": 0,
-      "columns": [
-        "id",
-        "fixedAssetId",
-        "disposalMethod",
-        "disposalDate",
-        "saleProceeds",
-        "netBookValueAtDisposal",
-        "gainLoss",
-        "journalId",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedBy"
-      ]
-    },
-    {
-      "name": "fixedAssetUsageLog",
-      "rows": 0,
-      "columns": [
-        "id",
-        "fixedAssetId",
-        "periodStart",
-        "periodEnd",
-        "unitsProduced",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedBy"
+        "responsibleEmployee",
+        "inspectionStorageUnitId",
+        "rejectedStorageUnitId"
       ]
     },
     {
@@ -1437,7 +1582,8 @@
         "optimizedAt",
         "optimizedSize",
         "originalSize",
-        "originalPath"
+        "originalPath",
+        "pmiPath"
       ]
     },
     {
@@ -1747,6 +1893,23 @@
       ]
     },
     {
+      "name": "payrollPeriodTotal",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "employeeId",
+        "periodStart",
+        "periodEnd",
+        "grossWages",
+        "hoursPaid",
+        "importedBy",
+        "importedAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "periodCloseTaskDefinition",
       "rows": 0,
       "columns": [
@@ -1902,7 +2065,8 @@
         "requiresAbility",
         "batchable",
         "batchType",
-        "batchRules"
+        "batchRules",
+        "abilityPolicy"
       ]
     },
     {
@@ -1970,14 +2134,31 @@
       ]
     },
     {
-      "name": "project",
+      "name": "projectLabel",
       "rows": 0,
       "columns": [
         "id",
         "companyId",
         "name",
-        "description",
-        "active",
+        "color",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectState",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "name",
+        "group",
+        "color",
+        "sortOrder",
+        "isDefault",
         "createdBy",
         "createdAt",
         "updatedBy",
@@ -2062,38 +2243,6 @@
       ]
     },
     {
-      "name": "reimbursementLine",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "reimbursementId",
-        "accountId",
-        "costCenterId",
-        "projectId",
-        "description",
-        "amount",
-        "sequence",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "customFields"
-      ]
-    },
-    {
-      "name": "reimbursementLineDimension",
-      "rows": 0,
-      "columns": [
-        "id",
-        "reimbursementLineId",
-        "dimensionId",
-        "valueId",
-        "companyId",
-        "createdAt"
-      ]
-    },
-    {
       "name": "reportPin",
       "rows": 0,
       "columns": [
@@ -2136,6 +2285,25 @@
         "updatedBy",
         "updatedAt",
         "customFields"
+      ]
+    },
+    {
+      "name": "revenueRecognitionRun",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "runId",
+        "periodEnd",
+        "status",
+        "journalId",
+        "postedAt",
+        "postedBy",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "type"
       ]
     },
     {
@@ -2219,24 +2387,6 @@
       ]
     },
     {
-      "name": "employeeJob",
-      "rows": 0,
-      "columns": [
-        "id",
-        "locationId",
-        "shiftId",
-        "managerId",
-        "title",
-        "startDate",
-        "companyId",
-        "updatedAt",
-        "updatedBy",
-        "customFields",
-        "departmentId",
-        "tags"
-      ]
-    },
-    {
       "name": "employeeShift",
       "rows": 0,
       "columns": ["id", "employeeId", "shiftId", "companyId"]
@@ -2308,26 +2458,6 @@
       ]
     },
     {
-      "name": "stockTransfer",
-      "rows": 0,
-      "columns": [
-        "id",
-        "stockTransferId",
-        "locationId",
-        "status",
-        "completedAt",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy",
-        "notes",
-        "assignee",
-        "customFields",
-        "tags"
-      ]
-    },
-    {
       "name": "storageType",
       "rows": 0,
       "columns": [
@@ -2338,7 +2468,8 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "customFields"
+        "customFields",
+        "nettable"
       ]
     },
     {
@@ -2434,6 +2565,34 @@
       ]
     },
     {
+      "name": "timesheetCertification",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "employeeId",
+        "weekStart",
+        "certifiedAt",
+        "textHash",
+        "flsaStatus"
+      ]
+    },
+    {
+      "name": "timesheetEntryRevision",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "timesheetEntryId",
+        "employeeId",
+        "revisedBy",
+        "revisedAt",
+        "reason",
+        "before",
+        "after"
+      ]
+    },
+    {
       "name": "tool",
       "rows": 0,
       "columns": [
@@ -2486,7 +2645,9 @@
         "createdBy",
         "updatedAt",
         "updatedBy",
-        "grantsAbilityId"
+        "grantsAbilityId",
+        "guidePath",
+        "videoUrl"
       ]
     },
     {
@@ -2500,7 +2661,8 @@
         "createdAt",
         "createdBy",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "name"
       ]
     },
     {
@@ -2517,7 +2679,8 @@
         "createdBy",
         "updatedAt",
         "updatedBy",
-        "period"
+        "period",
+        "certificatePath"
       ]
     },
     {
@@ -2668,7 +2831,8 @@
         "rootStepId",
         "hiddenComponentNodeIds",
         "usedInStepId",
-        "isSubAssembly"
+        "isSubAssembly",
+        "orientation"
       ]
     },
     {
@@ -2833,7 +2997,8 @@
         "createdBy",
         "createdAt",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "planningSegmentId"
       ]
     },
     {
@@ -2892,7 +3057,8 @@
         "samplingPercentage",
         "samplingAql",
         "samplingInspectionLevel",
-        "samplingSeverity"
+        "samplingSeverity",
+        "modelUploadId"
       ]
     },
     {
@@ -2920,7 +3086,8 @@
         "samplingAql",
         "samplingInspectionLevel",
         "samplingSeverity",
-        "gaugeTypeId"
+        "gaugeTypeId",
+        "pmiItemId"
       ]
     },
     {
@@ -2942,30 +3109,6 @@
         "createdAt",
         "updatedBy",
         "updatedAt"
-      ]
-    },
-    {
-      "name": "inventoryCountLine",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "inventoryCountId",
-        "itemId",
-        "locationId",
-        "storageUnitId",
-        "trackedEntityId",
-        "readableId",
-        "systemQuantity",
-        "countedQuantity",
-        "countedBy",
-        "countedAt",
-        "postedItemLedgerId",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "customFields"
       ]
     },
     {
@@ -3027,7 +3170,25 @@
         "demandAccumulationSafetyStock",
         "minimumReserveQuantity",
         "responsibleEmployee",
-        "planningHorizonDays"
+        "planningHorizonDays",
+        "allowCommonSupplyForProjects"
+      ]
+    },
+    {
+      "name": "itemRentalRate",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "itemId",
+        "currencyCode",
+        "dayRate",
+        "weekRate",
+        "monthRate",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -3045,7 +3206,8 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "serialNumberTiming"
       ]
     },
     {
@@ -3100,7 +3262,9 @@
         "updatedBy",
         "updatedAt",
         "customFields",
-        "tags"
+        "tags",
+        "laborWarrantyMonths",
+        "partsWarrantyMonths"
       ]
     },
     {
@@ -3482,6 +3646,99 @@
       ]
     },
     {
+      "name": "fixedAsset",
+      "rows": 0,
+      "columns": [
+        "id",
+        "fixedAssetId",
+        "fixedAssetClassId",
+        "name",
+        "description",
+        "serialNumber",
+        "status",
+        "depreciationMethod",
+        "usefulLifeMonths",
+        "residualValuePercent",
+        "taxDepreciationMethod",
+        "taxUsefulLifeMonths",
+        "taxResidualValuePercent",
+        "macrsPropertyClass",
+        "macrsConvention",
+        "bonusDepreciationPercent",
+        "acquisitionCost",
+        "acquisitionDate",
+        "depreciationStartDate",
+        "accumulatedDepreciation",
+        "accumulatedTaxDepreciation",
+        "assetLifetimeUsage",
+        "locationId",
+        "disposalDate",
+        "disposalMethod",
+        "saleProceeds",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "notes",
+        "customFields",
+        "itemId",
+        "trackedEntityId",
+        "quantity",
+        "workCenterId",
+        "outOfServiceSince",
+        "outOfServiceReason"
+      ]
+    },
+    {
+      "name": "depreciationRunLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "depreciationRunId",
+        "fixedAssetId",
+        "amount",
+        "taxAmount",
+        "journalId",
+        "companyId",
+        "periodEnd",
+        "deferredTaxJournalId"
+      ]
+    },
+    {
+      "name": "fixedAssetDisposal",
+      "rows": 0,
+      "columns": [
+        "id",
+        "fixedAssetId",
+        "disposalMethod",
+        "disposalDate",
+        "saleProceeds",
+        "netBookValueAtDisposal",
+        "gainLoss",
+        "journalId",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "fixedAssetUsageLog",
+      "rows": 0,
+      "columns": [
+        "id",
+        "fixedAssetId",
+        "periodStart",
+        "periodEnd",
+        "unitsProduced",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedBy"
+      ]
+    },
+    {
       "name": "jobOperationBatch",
       "rows": 0,
       "columns": [
@@ -3500,6 +3757,20 @@
         "updatedAt",
         "mergeOutput",
         "outputLotNumber"
+      ]
+    },
+    {
+      "name": "machineStateChange",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "workCenterDeviceId",
+        "workCenterId",
+        "externalEventId",
+        "state",
+        "changedAt",
+        "createdAt"
       ]
     },
     {
@@ -3700,34 +3971,61 @@
         "parentId",
         "storageTypeIds",
         "workCenterId",
-        "isWorkCenterDefault"
+        "isWorkCenterDefault",
+        "nettable",
+        "effectiveNettable"
       ]
     },
     {
-      "name": "itemLedger",
+      "name": "employeeJob",
       "rows": 0,
       "columns": [
         "id",
-        "entryNumber",
-        "postingDate",
-        "entryType",
-        "documentType",
-        "documentId",
-        "externalDocumentId",
-        "itemId",
+        "locationId",
+        "shiftId",
+        "managerId",
+        "title",
+        "startDate",
+        "companyId",
+        "updatedAt",
+        "updatedBy",
+        "customFields",
+        "departmentId",
+        "tags",
+        "laborCategoryId",
+        "defaultStorageUnitId",
+        "flsaStatus",
+        "isOfficer",
+        "timesheetRequired"
+      ]
+    },
+    {
+      "name": "gauge",
+      "rows": 0,
+      "columns": [
+        "id",
+        "gaugeId",
+        "modelNumber",
+        "serialNumber",
+        "description",
+        "dateAcquired",
+        "gaugeTypeId",
+        "gaugeCalibrationStatus",
+        "gaugeStatus",
+        "gaugeRole",
+        "calibrationIntervalInMonths",
+        "lastCalibrationDate",
+        "nextCalibrationDate",
         "locationId",
         "storageUnitId",
-        "quantity",
         "companyId",
+        "customFields",
         "createdAt",
         "createdBy",
-        "documentLineId",
-        "trackedEntityId",
-        "comment",
-        "trackedEntityStatus",
+        "updatedAt",
         "updatedBy",
-        "correctionOfItemLedgerId",
-        "scrapReasonId"
+        "lastCalibrationStatus",
+        "manufacturer"
       ]
     },
     {
@@ -3744,6 +4042,21 @@
         "updatedAt",
         "customFields",
         "sortMethod"
+      ]
+    },
+    {
+      "name": "unattributedMachineTime",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "workCenterId",
+        "startTime",
+        "endTime",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -3768,6 +4081,45 @@
         "updatedBy",
         "updatedAt",
         "customFields"
+      ]
+    },
+    {
+      "name": "workCenterDevice",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "workCenterId",
+        "integration",
+        "externalDeviceId",
+        "externalSiteId",
+        "siteTimezone",
+        "deviceName",
+        "currentState",
+        "currentStateAt",
+        "appliedThrough",
+        "lastEventAt",
+        "lastManualChangeAt",
+        "lastSyncedAt",
+        "lastSyncError",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "unplannedPressAt"
+      ]
+    },
+    {
+      "name": "workCenterLoad",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "workCenterId",
+        "jobOperationId",
+        "loadedAt",
+        "unloadedAt",
+        "createdAt"
       ]
     },
     {
@@ -3848,26 +4200,6 @@
       ]
     },
     {
-      "name": "chargeLine",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "chargeId",
-        "accountId",
-        "costCenterId",
-        "projectId",
-        "description",
-        "amount",
-        "sequence",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "customFields"
-      ]
-    },
-    {
       "name": "contractor",
       "rows": 0,
       "columns": [
@@ -3893,30 +4225,6 @@
         "createdAt",
         "companyId",
         "updatedBy"
-      ]
-    },
-    {
-      "name": "costLedger",
-      "rows": 0,
-      "columns": [
-        "id",
-        "entryNumber",
-        "postingDate",
-        "itemLedgerType",
-        "costLedgerType",
-        "adjustment",
-        "documentType",
-        "documentId",
-        "externalDocumentId",
-        "itemId",
-        "quantity",
-        "cost",
-        "nominalCost",
-        "companyId",
-        "createdAt",
-        "supplierId",
-        "remainingQuantity",
-        "appliesToCostLedgerId"
       ]
     },
     {
@@ -4011,6 +4319,28 @@
         "overridePrice",
         "active",
         "companyId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "customerItemRentalRate",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerId",
+        "customerTypeId",
+        "itemId",
+        "currencyCode",
+        "dayRate",
+        "weekRate",
+        "monthRate",
+        "validFrom",
+        "validTo",
+        "notes",
         "createdBy",
         "createdAt",
         "updatedBy",
@@ -4148,6 +4478,138 @@
       ]
     },
     {
+      "name": "rentalAgreement",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "rentalAgreementId",
+        "status",
+        "customerId",
+        "customerLocationId",
+        "customerContactId",
+        "salesPersonId",
+        "locationId",
+        "startDate",
+        "endDate",
+        "billingCycle",
+        "billingTiming",
+        "paymentTermId",
+        "currencyCode",
+        "exchangeRate",
+        "taxPercent",
+        "depositAmount",
+        "discountRate",
+        "ownershipTransfers",
+        "specializedAsset",
+        "purchaseOptionAmount",
+        "purchaseOptionReasonablyCertain",
+        "notes",
+        "activatedAt",
+        "closedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields",
+        "invoiceAutomation"
+      ]
+    },
+    {
+      "name": "rentalAgreementContact",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "rentalAgreementId",
+        "customerContactId",
+        "role",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "rentalAgreementLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "rentalAgreementId",
+        "status",
+        "fixedAssetId",
+        "itemId",
+        "trackedEntityId",
+        "quantity",
+        "rateUnit",
+        "rate",
+        "fairValue",
+        "economicLifeMonths",
+        "guaranteedResidualValue",
+        "unguaranteedResidualValue",
+        "lessorClassification",
+        "classificationOverride",
+        "classificationOverrideReason",
+        "classificationInputs",
+        "initialNetInvestment",
+        "sellingProfit",
+        "deliveredAt",
+        "returnedAt",
+        "meterOut",
+        "meterIn",
+        "returnNotes",
+        "commencementJournalId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "rentalAgreementCharge",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "rentalAgreementLineId",
+        "chargeType",
+        "chargeDate",
+        "description",
+        "amount",
+        "taxPercent",
+        "salesInvoiceLineId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "voidedSalesInvoiceId",
+        "invoiceSeparately"
+      ]
+    },
+    {
+      "name": "rentalLeaseScheduleLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "rentalAgreementLineId",
+        "periodDate",
+        "openingNetInvestment",
+        "paymentAmount",
+        "interestAmount",
+        "principalAmount",
+        "closingNetInvestment",
+        "journalId",
+        "postedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "salesOrder",
       "rows": 0,
       "columns": [
@@ -4186,67 +4648,6 @@
       "name": "salesOrderFavorite",
       "rows": 0,
       "columns": ["salesOrderId", "userId"]
-    },
-    {
-      "name": "salesOrderLine",
-      "rows": 0,
-      "columns": [
-        "id",
-        "salesOrderId",
-        "salesOrderLineType",
-        "itemId",
-        "assetId",
-        "description",
-        "saleQuantity",
-        "quantitySent",
-        "quantityInvoiced",
-        "unitPrice",
-        "unitOfMeasureCode",
-        "locationId",
-        "storageUnitId",
-        "setupPrice",
-        "sentComplete",
-        "invoicedComplete",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy",
-        "customFields",
-        "status",
-        "modelUploadId",
-        "promisedDate",
-        "addOnCost",
-        "methodType",
-        "exchangeRate",
-        "shippingCost",
-        "taxPercent",
-        "internalNotes",
-        "externalNotes",
-        "sentDate",
-        "accountId",
-        "nonTaxableAddOnCost",
-        "pricingRuleId",
-        "priceTrace",
-        "sortOrder",
-        "configuration"
-      ]
-    },
-    {
-      "name": "nonConformanceSalesOrderLine",
-      "rows": 0,
-      "columns": [
-        "id",
-        "nonConformanceId",
-        "salesOrderLineId",
-        "salesOrderId",
-        "salesOrderReadableId",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy"
-      ]
     },
     {
       "name": "salesOrderPayment",
@@ -4410,6 +4811,292 @@
       ]
     },
     {
+      "name": "customerAsset",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "trackedEntityId",
+        "itemId",
+        "customerId",
+        "customerLocationId",
+        "status",
+        "shippedDate",
+        "laborWarrantyEndDate",
+        "partsWarrantyEndDate",
+        "shipmentId",
+        "source",
+        "notes",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields"
+      ]
+    },
+    {
+      "name": "customerContract",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "name",
+        "status",
+        "contractType",
+        "customerId",
+        "invoiceCustomerId",
+        "invoiceCustomerContactId",
+        "invoiceCustomerLocationId",
+        "shipToCustomerLocationId",
+        "salesPersonId",
+        "salesOrderId",
+        "projectId",
+        "customerReference",
+        "closeDate",
+        "startDate",
+        "endDate",
+        "termMonths",
+        "renewal",
+        "renewalUplift",
+        "billingFrequency",
+        "billingAlignment",
+        "billingTiming",
+        "firstInvoiceDate",
+        "billedThrough",
+        "recognizeRevenueFrom",
+        "invoiceAutomation",
+        "paymentTermId",
+        "currencyCode",
+        "exchangeRate",
+        "notes",
+        "confirmedAt",
+        "confirmedBy",
+        "cancelledAt",
+        "cancellationReason",
+        "endedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields",
+        "researchFunded",
+        "paymentContingentOnSuccess",
+        "contractorRetainsRights",
+        "billingBasis"
+      ]
+    },
+    {
+      "name": "customerContractAmendment",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "amendmentDate",
+        "effect",
+        "contractType",
+        "reason",
+        "previousState",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "customerContractFinancing",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "financingMethod",
+        "contractPrice",
+        "initialAwardDate",
+        "isSmallBusiness",
+        "maximumPaymentShare",
+        "nextRequestNumber",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "customerContractFinancingRate",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "effectiveDate",
+        "progressPaymentRate",
+        "liquidationRate",
+        "modificationNumber",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "customerContractInvoice",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "invoiceDate",
+        "status",
+        "salesInvoiceId",
+        "isEdited",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "contractFinancingRequest",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "financingMethod",
+        "requestNumber",
+        "status",
+        "requestDate",
+        "costsThroughDate",
+        "estimateToComplete",
+        "estimateDate",
+        "lines",
+        "overrides",
+        "requestedAmount",
+        "approvedAmount",
+        "paymentId",
+        "submittedAt",
+        "submittedBy",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "contractFinancingRequestEvent",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "contractFinancingRequestId",
+        "performanceBasedPaymentEventId",
+        "amount",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "customerContractFunding",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractLineId",
+        "modificationNumber",
+        "fundedDate",
+        "acrn",
+        "fundedCost",
+        "fundedFee",
+        "expiresOn",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "customerContractInvoiceLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "customerContractInvoiceId",
+        "customerContractLineId",
+        "periodStart",
+        "periodEnd",
+        "units",
+        "unitPrice",
+        "amount",
+        "isAdjustment",
+        "salesInvoiceLineId",
+        "voidedSalesInvoiceId",
+        "memoId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "customerContractLaborRate",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractLineId",
+        "laborCategoryId",
+        "employeeId",
+        "billRate",
+        "effectiveFrom",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "customerContractRateCeiling",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractLineId",
+        "indirectPoolId",
+        "ceilingRate",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "customerContractRevenue",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "customerContractLineId",
+        "periodStart",
+        "periodEnd",
+        "amount",
+        "status",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "earnedToDate",
+        "estimateAtCompletion",
+        "transactionPrice",
+        "progress"
+      ]
+    },
+    {
       "name": "externalLink",
       "rows": 0,
       "columns": [
@@ -4462,71 +5149,6 @@
         "completedDate",
         "customerEngineeringContactId"
       ]
-    },
-    {
-      "name": "job",
-      "rows": 0,
-      "columns": [
-        "id",
-        "jobId",
-        "itemId",
-        "unitOfMeasureCode",
-        "customerId",
-        "locationId",
-        "status",
-        "dueDate",
-        "deadlineType",
-        "quantity",
-        "scrapQuantity",
-        "quantityComplete",
-        "quantityShipped",
-        "quantityReceivedToInventory",
-        "salesOrderId",
-        "salesOrderLineId",
-        "quoteId",
-        "quoteLineId",
-        "modelUploadId",
-        "notes",
-        "assignee",
-        "customFields",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy",
-        "tags",
-        "configuration",
-        "releasedDate",
-        "completedDate",
-        "estimatedTime",
-        "actualTime",
-        "startDate",
-        "storageUnitId",
-        "priority",
-        "projectedCompletionAt",
-        "scheduleOutdatedReason",
-        "scheduleOutdatedAt"
-      ]
-    },
-    {
-      "name": "fulfillment",
-      "rows": 0,
-      "columns": [
-        "id",
-        "salesOrderLineId",
-        "type",
-        "quantity",
-        "jobId",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedBy"
-      ]
-    },
-    {
-      "name": "jobFavorite",
-      "rows": 0,
-      "columns": ["jobId", "userId"]
     },
     {
       "name": "quoteFavorite",
@@ -4625,56 +5247,35 @@
       ]
     },
     {
-      "name": "capacityReservation",
+      "name": "fixedAssetTransfer",
       "rows": 0,
       "columns": [
         "id",
         "companyId",
-        "resourceKind",
-        "resourceId",
-        "operationId",
+        "transferId",
+        "type",
+        "sourceType",
+        "fixedAssetId",
+        "itemId",
+        "trackedEntityId",
         "jobId",
-        "startAt",
-        "endAt",
-        "scenarioId",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "earliestStartAt",
-        "scheduleNote",
-        "workHours",
-        "isPlaceholder",
-        "jobOperationBatchId"
-      ]
-    },
-    {
-      "name": "gauge",
-      "rows": 0,
-      "columns": [
-        "id",
-        "gaugeId",
-        "supplierId",
-        "modelNumber",
-        "serialNumber",
-        "description",
-        "dateAcquired",
-        "gaugeTypeId",
-        "gaugeCalibrationStatus",
-        "gaugeStatus",
-        "gaugeRole",
-        "calibrationIntervalInMonths",
-        "lastCalibrationDate",
-        "nextCalibrationDate",
+        "fromClassId",
         "locationId",
         "storageUnitId",
-        "companyId",
-        "customFields",
-        "createdAt",
+        "quantity",
+        "transferDate",
+        "inServiceDate",
+        "amount",
+        "accumulatedDepreciation",
+        "journalId",
+        "status",
+        "postedAt",
+        "postedBy",
         "createdBy",
-        "updatedAt",
+        "createdAt",
         "updatedBy",
-        "lastCalibrationStatus"
+        "updatedAt",
+        "customFields"
       ]
     },
     {
@@ -4735,7 +5336,9 @@
         "sourceDocument",
         "sourceDocumentId",
         "sourceDocumentLineId",
-        "sourceDocumentReadableId"
+        "sourceDocumentReadableId",
+        "storageUnitId",
+        "acceptedQuantity"
       ]
     },
     {
@@ -4832,6 +5435,61 @@
       ]
     },
     {
+      "name": "inventoryCountLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "inventoryCountId",
+        "itemId",
+        "locationId",
+        "storageUnitId",
+        "trackedEntityId",
+        "readableId",
+        "systemQuantity",
+        "countedQuantity",
+        "countedBy",
+        "countedAt",
+        "postedItemLedgerId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields",
+        "projectId",
+        "foundDuringCount",
+        "assignedReadableId"
+      ]
+    },
+    {
+      "name": "itemLedger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "entryNumber",
+        "postingDate",
+        "entryType",
+        "documentType",
+        "documentId",
+        "externalDocumentId",
+        "itemId",
+        "locationId",
+        "storageUnitId",
+        "quantity",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "documentLineId",
+        "trackedEntityId",
+        "comment",
+        "trackedEntityStatus",
+        "updatedBy",
+        "correctionOfItemLedgerId",
+        "scrapReasonId",
+        "projectId"
+      ]
+    },
+    {
       "name": "itemReplenishment",
       "rows": 0,
       "columns": [
@@ -4855,280 +5513,9 @@
       ]
     },
     {
-      "name": "jobMakeMethod",
+      "name": "jobFavorite",
       "rows": 0,
-      "columns": [
-        "id",
-        "jobId",
-        "parentMaterialId",
-        "itemId",
-        "quantityPerParent",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy",
-        "customFields",
-        "trackedEntityId",
-        "requiresSerialTracking",
-        "requiresBatchTracking",
-        "version",
-        "itemScrapPercentage"
-      ]
-    },
-    {
-      "name": "jobMaterial",
-      "rows": 0,
-      "columns": [
-        "id",
-        "jobId",
-        "itemId",
-        "itemType",
-        "methodType",
-        "order",
-        "description",
-        "quantity",
-        "scrapQuantity",
-        "unitOfMeasureCode",
-        "unitCost",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy",
-        "customFields",
-        "jobMakeMethodId",
-        "jobOperationId",
-        "estimatedQuantity",
-        "defaultStorageUnit",
-        "storageUnitId",
-        "quantityIssued",
-        "requiresSerialTracking",
-        "requiresBatchTracking",
-        "kit",
-        "itemScrapPercentage",
-        "substitutedFromItemId",
-        "substitutionFactor"
-      ]
-    },
-    {
-      "name": "stockTransferLine",
-      "rows": 0,
-      "columns": [
-        "id",
-        "stockTransferId",
-        "jobId",
-        "jobMaterialId",
-        "itemId",
-        "fromStorageUnitId",
-        "toStorageUnitId",
-        "quantity",
-        "pickedQuantity",
-        "trackedEntityId",
-        "requiresBatchTracking",
-        "requiresSerialTracking",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy"
-      ]
-    },
-    {
-      "name": "jobMaterialStep",
-      "rows": 0,
-      "columns": ["jobMaterialId", "jobOperationStepId", "quantity"]
-    },
-    {
-      "name": "jobOperation",
-      "rows": 0,
-      "columns": [
-        "id",
-        "jobId",
-        "jobMakeMethodId",
-        "order",
-        "processId",
-        "workCenterId",
-        "description",
-        "setupTime",
-        "setupUnit",
-        "laborTime",
-        "laborUnit",
-        "machineTime",
-        "machineUnit",
-        "operationOrder",
-        "laborRate",
-        "overheadRate",
-        "machineRate",
-        "operationType",
-        "operationMinimumCost",
-        "operationLeadTime",
-        "operationUnitCost",
-        "operationSupplierProcessId",
-        "workInstruction",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy",
-        "customFields",
-        "operationQuantity",
-        "quantityComplete",
-        "quantityScrapped",
-        "quantityReworked",
-        "status",
-        "priority",
-        "assignee",
-        "tags",
-        "procedureId",
-        "startDate",
-        "dueDate",
-        "hasConflict",
-        "conflictReason",
-        "targetQuantity",
-        "manuallyScheduled",
-        "reworkId",
-        "assemblyInstructionId",
-        "readyAt",
-        "inspectionDocumentId",
-        "projectedCompletionAt",
-        "jobOperationBatchId"
-      ]
-    },
-    {
-      "name": "jobOperationDependency",
-      "rows": 0,
-      "columns": [
-        "operationId",
-        "dependsOnId",
-        "jobId",
-        "companyId",
-        "createdAt"
-      ]
-    },
-    {
-      "name": "jobOperationParameter",
-      "rows": 0,
-      "columns": [
-        "id",
-        "key",
-        "value",
-        "operationId",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy"
-      ]
-    },
-    {
-      "name": "jobOperationTool",
-      "rows": 0,
-      "columns": [
-        "id",
-        "operationId",
-        "toolId",
-        "quantity",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy"
-      ]
-    },
-    {
-      "name": "nonConformanceJobOperation",
-      "rows": 0,
-      "columns": [
-        "id",
-        "nonConformanceId",
-        "jobOperationId",
-        "jobId",
-        "jobReadableId",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy"
-      ]
-    },
-    {
-      "name": "pickingListLine",
-      "rows": 0,
-      "columns": [
-        "id",
-        "pickingListId",
-        "jobId",
-        "jobMaterialId",
-        "jobOperationId",
-        "itemId",
-        "quantityToPick",
-        "quantityPicked",
-        "storageUnitId",
-        "toStorageUnitId",
-        "status",
-        "companyId",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "customFields",
-        "quantityReturned"
-      ]
-    },
-    {
-      "name": "pickingListLineTrackedEntity",
-      "rows": 0,
-      "columns": [
-        "pickingListLineId",
-        "trackedEntityId",
-        "quantity",
-        "quantityPicked",
-        "companyId"
-      ]
-    },
-    {
-      "name": "productionEvent",
-      "rows": 0,
-      "columns": [
-        "id",
-        "jobOperationId",
-        "type",
-        "startTime",
-        "endTime",
-        "employeeId",
-        "workCenterId",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy",
-        "notes",
-        "postedToGL",
-        "jobOperationBatchId"
-      ]
-    },
-    {
-      "name": "productionQuantity",
-      "rows": 0,
-      "columns": [
-        "id",
-        "jobOperationId",
-        "type",
-        "quantity",
-        "setupProductionEventId",
-        "laborProductionEventId",
-        "machineProductionEventId",
-        "notes",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy",
-        "scrapReasonId",
-        "inspectionId",
-        "inspectionSampleId"
-      ]
+      "columns": ["jobId", "userId"]
     },
     {
       "name": "jobOperationNote",
@@ -5146,46 +5533,18 @@
       ]
     },
     {
-      "name": "rework",
+      "name": "jobOperationParameter",
       "rows": 0,
       "columns": [
         "id",
-        "jobId",
-        "triggeredAtJobOperationId",
-        "targetJobOperationId",
-        "reason",
-        "quantity",
-        "requestedById",
-        "completedAt",
-        "companyId",
-        "createdAt",
-        "updatedAt"
-      ]
-    },
-    {
-      "name": "jobOperationStep",
-      "rows": 0,
-      "columns": [
-        "id",
-        "name",
-        "required",
-        "sortOrder",
-        "type",
-        "unitOfMeasureCode",
-        "minValue",
-        "maxValue",
-        "listValues",
-        "fileTypes",
+        "key",
+        "value",
         "operationId",
         "companyId",
         "createdAt",
         "createdBy",
         "updatedAt",
-        "updatedBy",
-        "description",
-        "nonConformanceActionId",
-        "nonConformanceInvestigationId",
-        "assemblyInstructionStepId"
+        "updatedBy"
       ]
     },
     {
@@ -5226,33 +5585,129 @@
       ]
     },
     {
+      "name": "jobOperationTool",
+      "rows": 0,
+      "columns": [
+        "id",
+        "operationId",
+        "toolId",
+        "quantity",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy"
+      ]
+    },
+    {
       "name": "jobOperationToolStep",
       "rows": 0,
       "columns": ["jobOperationToolId", "jobOperationStepId"]
     },
     {
-      "name": "kanban",
+      "name": "leaseLine",
       "rows": 0,
       "columns": [
         "id",
-        "itemId",
-        "replenishmentSystem",
-        "quantity",
-        "locationId",
-        "storageUnitId",
-        "supplierId",
-        "purchaseUnitOfMeasureCode",
-        "conversionFactor",
-        "autoRelease",
         "companyId",
-        "createdAt",
+        "leaseId",
+        "description",
+        "serialNumber",
+        "locationId",
+        "paymentAmount",
+        "fairValue",
+        "economicLifeMonths",
+        "ownershipTransfers",
+        "specializedAsset",
+        "purchaseOptionAmount",
+        "purchaseOptionReasonablyCertain",
+        "status",
+        "lesseeClassification",
+        "classificationInputs",
+        "classificationOverride",
+        "classificationOverrideReason",
+        "initialLiability",
+        "initialRouAsset",
+        "rouAssetCost",
+        "fixedAssetId",
+        "sortOrder",
         "createdBy",
-        "updatedAt",
+        "createdAt",
         "updatedBy",
-        "autoStartJob",
-        "completedBarcodeOverride",
-        "jobId",
-        "fromStorageUnitId"
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "leaseEvent",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "leaseId",
+        "eventType",
+        "effectiveDate",
+        "liabilityBefore",
+        "liabilityAfter",
+        "rouAssetBefore",
+        "rouAssetAfter",
+        "gainLoss",
+        "classificationBefore",
+        "classificationAfter",
+        "fixedAssetId",
+        "journalId",
+        "notes",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "leaseLineId"
+      ]
+    },
+    {
+      "name": "leasePayment",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "leaseId",
+        "paymentType",
+        "periodStart",
+        "periodEnd",
+        "dueDate",
+        "amount",
+        "status",
+        "purchaseInvoiceLineId",
+        "voidedPurchaseInvoiceId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "leaseLineId"
+      ]
+    },
+    {
+      "name": "leaseScheduleLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "leaseId",
+        "periodDate",
+        "openingLiability",
+        "paymentAmount",
+        "interestAmount",
+        "principalAmount",
+        "closingLiability",
+        "leaseCost",
+        "rouAmortization",
+        "closingRouAsset",
+        "journalId",
+        "postedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "leaseLineId"
       ]
     },
     {
@@ -5437,6 +5892,37 @@
       ]
     },
     {
+      "name": "jobOperationStep",
+      "rows": 0,
+      "columns": [
+        "id",
+        "name",
+        "required",
+        "sortOrder",
+        "type",
+        "unitOfMeasureCode",
+        "minValue",
+        "maxValue",
+        "listValues",
+        "fileTypes",
+        "operationId",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "description",
+        "nonConformanceActionId",
+        "nonConformanceInvestigationId",
+        "assemblyInstructionStepId"
+      ]
+    },
+    {
+      "name": "jobMaterialStep",
+      "rows": 0,
+      "columns": ["jobMaterialId", "jobOperationStepId", "quantity"]
+    },
+    {
       "name": "nonConformancePurchaseReturnOrderLine",
       "rows": 0,
       "columns": [
@@ -5446,6 +5932,22 @@
         "purchaseReturnOrderId",
         "purchaseReturnOrderReadableId",
         "quantity",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "nonConformanceSalesOrderLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "nonConformanceId",
+        "salesOrderLineId",
+        "salesOrderId",
+        "salesOrderReadableId",
         "companyId",
         "createdAt",
         "createdBy",
@@ -5502,66 +6004,1251 @@
       ]
     },
     {
-      "name": "payment",
+      "name": "performanceBasedPaymentEvent",
       "rows": 0,
       "columns": [
         "id",
-        "paymentId",
-        "paymentType",
+        "companyId",
+        "customerContractId",
+        "customerContractLineId",
+        "sequence",
+        "eventCode",
+        "description",
+        "completionCriteria",
+        "eventType",
+        "amount",
+        "plannedDate",
+        "completedDate",
+        "completedBy",
+        "evidence",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "pickingListLineTrackedEntity",
+      "rows": 0,
+      "columns": [
+        "pickingListLineId",
+        "trackedEntityId",
+        "quantity",
+        "quantityPicked",
+        "companyId"
+      ]
+    },
+    {
+      "name": "planningGroup",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "name",
+        "locationId",
+        "excessRule",
+        "exceptionProjectId",
+        "priorityRule",
+        "active",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "productionEvent",
+      "rows": 0,
+      "columns": [
+        "id",
+        "jobOperationId",
+        "type",
+        "startTime",
+        "endTime",
+        "employeeId",
+        "workCenterId",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "notes",
+        "postedToGL",
+        "jobOperationBatchId"
+      ]
+    },
+    {
+      "name": "productionQuantity",
+      "rows": 0,
+      "columns": [
+        "id",
+        "jobOperationId",
+        "type",
+        "quantity",
+        "setupProductionEventId",
+        "laborProductionEventId",
+        "machineProductionEventId",
+        "notes",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "scrapReasonId",
+        "inspectionId",
+        "inspectionSampleId"
+      ]
+    },
+    {
+      "name": "project",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "name",
+        "description",
+        "active",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "identifier",
+        "nextElementSequence",
         "status",
+        "costTreatment",
+        "costAccountId",
         "customerId",
-        "supplierId",
-        "paymentDate",
-        "postingDate",
-        "currencyCode",
-        "exchangeRate",
-        "totalAmount",
-        "bankAccount",
-        "reference",
-        "memo",
+        "ownerId",
+        "locationId",
+        "startDate",
+        "endDate",
+        "priority",
+        "isTemplate",
+        "customFields",
+        "fixedAssetClassId",
+        "fixedAssetId",
+        "lockPlanAfterMilestoneId",
+        "nextChangeRequestSequence",
+        "nextBaselineSequence",
+        "projectStock",
+        "chargeAtReceipt",
+        "governmentFurnished",
+        "planningGroupId",
+        "planningPriority",
+        "costObjective",
+        "restrictCharging",
+        "budgetControl",
+        "budgetTolerancePercent",
+        "stopWorkDate",
+        "materialMeasurementPoint"
+      ]
+    },
+    {
+      "name": "projectMember",
+      "rows": 0,
+      "columns": [
+        "projectId",
+        "userId",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectMilestone",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "name",
+        "description",
+        "startDate",
+        "endDate",
+        "completedAt",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectElement",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "readableId",
+        "sequence",
+        "type",
+        "parentId",
+        "name",
+        "description",
+        "stateId",
+        "ownerId",
+        "priority",
+        "milestoneId",
+        "startDate",
+        "targetDate",
+        "completedAt",
+        "estimatedHours",
+        "isChargeable",
+        "isBilling",
+        "budget",
+        "estimateAtCompletion",
+        "costTreatment",
+        "costTreatmentEffectiveFrom",
+        "costAccountId",
+        "itemId",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields",
+        "isFinalAsset",
+        "fixedAssetId",
+        "targetOperator",
+        "targetValue",
+        "targetUpperValue",
+        "targetUnit",
+        "verificationMethod",
+        "actualParameterId",
+        "qualityDocumentId",
+        "verdict",
+        "verdictAt",
+        "verdictBy",
+        "parameterValue",
+        "parameterUnit",
+        "parameterSource",
+        "allocationPercent",
+        "requirementCategory",
+        "parameterFormula",
+        "parameterItemField",
+        "parameterContingencyPercent",
+        "trackedEntityId",
+        "fixedPrice",
+        "isUnallowable",
+        "isPreproduction",
+        "isLeave",
+        "isControlAccount",
+        "controlAccountManagerId",
+        "earnedValueTechnique",
+        "earnedValuePercent",
+        "apportionedToElementId",
+        "apportionedFactor",
+        "isBusinessComponent",
+        "rdComponentType",
+        "rdSoftwareType",
+        "wbsCode"
+      ]
+    },
+    {
+      "name": "chargeLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "chargeId",
+        "accountId",
+        "costCenterId",
+        "projectId",
+        "description",
+        "amount",
+        "sequence",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields",
+        "projectElementId"
+      ]
+    },
+    {
+      "name": "projectElementComment",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectElementId",
+        "content",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectElementCost",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "projectElementId",
+        "description",
+        "amount",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectElementLabel",
+      "rows": 0,
+      "columns": [
+        "projectElementId",
+        "projectLabelId",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "projectElementLabor",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "projectElementId",
+        "laborCategoryId",
+        "hours",
+        "startDate",
+        "endDate",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectElementLink",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "fromElementId",
+        "toElementId",
+        "linkType",
+        "suspectSince",
+        "reviewedAt",
+        "reviewedBy",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectExpenseEntry",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "projectElementId",
+        "employeeId",
+        "entryDate",
+        "description",
+        "amount",
         "journalId",
-        "postedAt",
-        "postedBy",
-        "voidedAt",
-        "voidedBy",
+        "reversalOfId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "reversalReason"
+      ]
+    },
+    {
+      "name": "projectLedger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "projectElementId",
+        "postingDate",
+        "costType",
+        "documentType",
+        "documentId",
+        "documentLineId",
+        "jobId",
+        "itemId",
+        "employeeId",
+        "laborCategoryId",
+        "supplierId",
+        "quantity",
+        "unitOfMeasureCode",
+        "amount",
+        "journalLineId",
+        "reversalOfId",
+        "unallowable",
+        "createdBy",
+        "createdAt",
+        "indirectPoolId",
+        "indirectRateType",
+        "burdenFiscalYear",
+        "relocatesReceiptCharge"
+      ]
+    },
+    {
+      "name": "projectPeg",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "planningGroupId",
+        "itemId",
+        "locationId",
+        "supplyType",
+        "supplyId",
+        "projectId",
+        "projectElementId",
+        "demandSourceType",
+        "demandSourceId",
+        "parentPegId",
+        "quantity",
+        "needDate",
+        "state",
+        "manualReason",
+        "exception",
+        "createdByRunId",
+        "supersededAt",
+        "supersededByRunId",
+        "hardenedAt",
+        "itemLedgerId",
+        "createdBy",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "projectUserPreference",
+      "rows": 0,
+      "columns": [
+        "projectId",
+        "userId",
+        "companyId",
+        "layout",
+        "filters",
+        "displayOptions",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectView",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "name",
+        "isShared",
+        "layout",
+        "filters",
+        "displayOptions",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "reimbursementLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "reimbursementId",
+        "accountId",
+        "costCenterId",
+        "projectId",
+        "description",
+        "amount",
+        "sequence",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields",
+        "projectElementId"
+      ]
+    },
+    {
+      "name": "reimbursementLineDimension",
+      "rows": 0,
+      "columns": [
+        "id",
+        "reimbursementLineId",
+        "dimensionId",
+        "valueId",
+        "companyId",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "customerContractLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "revenueType",
+        "itemId",
+        "description",
+        "quantity",
+        "rate",
+        "rateUnit",
+        "discountPercent",
+        "discountEndsOn",
+        "taxPercent",
+        "startDate",
+        "endDate",
+        "goLiveDate",
+        "revenueMethod",
+        "revenueStartDate",
+        "revenueEndDate",
+        "amendmentId",
+        "amendsLineId",
+        "salesOrderLineId",
+        "projectId",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields",
+        "billingMethod",
+        "projectElementId",
+        "materialHandlingPercent",
+        "feePercent",
+        "fundedAmount",
+        "fundedCost",
+        "noticePercent",
+        "noticeWindowDays",
+        "ceilingAmount",
+        "thresholdNoticeFundedCost",
+        "runOutNoticeFundedCost",
+        "lineItemNumber",
+        "parentLineId"
+      ]
+    },
+    {
+      "name": "customerContractLedgerEntry",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "customerContractLineId",
+        "entryType",
+        "postingDate",
+        "salesInvoiceLineId",
+        "memoId",
+        "revenueRecognitionScheduleId",
+        "customerContractRevenueId",
+        "journalId",
+        "deferredAmount",
+        "deferredBase",
+        "assetAmount",
+        "assetBase",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "earnedValuePeriod",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "projectElementId",
+        "controlAccountId",
+        "accountingPeriodId",
+        "fiscalYear",
+        "periodNumber",
+        "technique",
+        "baselineId",
+        "bac",
+        "bcws",
+        "bcwp",
+        "acwp",
+        "acwpHours",
+        "acwpByElement",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "fixedAssetCipCost",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "fixedAssetId",
+        "sourceType",
+        "sourceDocumentId",
+        "sourceDocumentLineId",
+        "jobId",
+        "amount",
+        "costDate",
+        "journalId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "projectId",
+        "projectElementId",
+        "postCapitalization"
+      ]
+    },
+    {
+      "name": "job",
+      "rows": 0,
+      "columns": [
+        "id",
+        "jobId",
+        "itemId",
+        "unitOfMeasureCode",
+        "customerId",
+        "locationId",
+        "status",
+        "dueDate",
+        "deadlineType",
+        "quantity",
+        "scrapQuantity",
+        "quantityComplete",
+        "quantityShipped",
+        "quantityReceivedToInventory",
+        "salesOrderId",
+        "salesOrderLineId",
+        "quoteId",
+        "quoteLineId",
+        "modelUploadId",
+        "notes",
+        "assignee",
+        "customFields",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "tags",
+        "configuration",
+        "releasedDate",
+        "completedDate",
+        "estimatedTime",
+        "actualTime",
+        "startDate",
+        "storageUnitId",
+        "priority",
+        "projectedCompletionAt",
+        "scheduleOutdatedReason",
+        "scheduleOutdatedAt",
+        "fixedAssetClassId",
+        "fixedAssetId",
+        "projectId",
+        "projectElementId",
+        "consumeToProject",
+        "receiveToProjectStock",
+        "planningGroupId",
+        "customerContractLineId"
+      ]
+    },
+    {
+      "name": "capacityReservation",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "resourceKind",
+        "resourceId",
+        "operationId",
+        "jobId",
+        "startAt",
+        "endAt",
+        "scenarioId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "earliestStartAt",
+        "scheduleNote",
+        "workHours",
+        "isPlaceholder",
+        "jobOperationBatchId"
+      ]
+    },
+    {
+      "name": "fulfillment",
+      "rows": 0,
+      "columns": [
+        "id",
+        "salesOrderLineId",
+        "type",
+        "quantity",
+        "jobId",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "jobMakeMethod",
+      "rows": 0,
+      "columns": [
+        "id",
+        "jobId",
+        "parentMaterialId",
+        "itemId",
+        "quantityPerParent",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "customFields",
+        "trackedEntityId",
+        "requiresSerialTracking",
+        "requiresBatchTracking",
+        "version",
+        "itemScrapPercentage"
+      ]
+    },
+    {
+      "name": "jobMaterial",
+      "rows": 0,
+      "columns": [
+        "id",
+        "jobId",
+        "itemId",
+        "itemType",
+        "methodType",
+        "order",
+        "description",
+        "quantity",
+        "scrapQuantity",
+        "unitOfMeasureCode",
+        "unitCost",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "customFields",
+        "jobMakeMethodId",
+        "jobOperationId",
+        "estimatedQuantity",
+        "defaultStorageUnit",
+        "storageUnitId",
+        "quantityIssued",
+        "requiresSerialTracking",
+        "requiresBatchTracking",
+        "kit",
+        "itemScrapPercentage",
+        "substitutedFromItemId",
+        "substitutionFactor"
+      ]
+    },
+    {
+      "name": "jobOperation",
+      "rows": 0,
+      "columns": [
+        "id",
+        "jobId",
+        "jobMakeMethodId",
+        "order",
+        "processId",
+        "workCenterId",
+        "description",
+        "setupTime",
+        "setupUnit",
+        "laborTime",
+        "laborUnit",
+        "machineTime",
+        "machineUnit",
+        "operationOrder",
+        "laborRate",
+        "overheadRate",
+        "machineRate",
+        "operationType",
+        "operationMinimumCost",
+        "operationLeadTime",
+        "operationUnitCost",
+        "operationSupplierProcessId",
+        "workInstruction",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "customFields",
+        "operationQuantity",
+        "quantityComplete",
+        "quantityScrapped",
+        "quantityReworked",
+        "status",
+        "priority",
+        "assignee",
+        "tags",
+        "procedureId",
+        "startDate",
+        "dueDate",
+        "hasConflict",
+        "conflictReason",
+        "targetQuantity",
+        "manuallyScheduled",
+        "reworkId",
+        "assemblyInstructionId",
+        "readyAt",
+        "inspectionDocumentId",
+        "projectedCompletionAt",
+        "jobOperationBatchId"
+      ]
+    },
+    {
+      "name": "jobOperationDependency",
+      "rows": 0,
+      "columns": [
+        "operationId",
+        "dependsOnId",
+        "jobId",
+        "companyId",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "nonConformanceJobOperation",
+      "rows": 0,
+      "columns": [
+        "id",
+        "nonConformanceId",
+        "jobOperationId",
+        "jobId",
+        "jobReadableId",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "pickingListLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "pickingListId",
+        "jobId",
+        "jobMaterialId",
+        "jobOperationId",
+        "itemId",
+        "quantityToPick",
+        "quantityPicked",
+        "storageUnitId",
+        "toStorageUnitId",
+        "status",
         "companyId",
         "createdBy",
         "createdAt",
         "updatedBy",
         "updatedAt",
         "customFields",
-        "employeeId"
+        "quantityReturned",
+        "projectId"
       ]
     },
     {
-      "name": "planningAction",
+      "name": "rework",
+      "rows": 0,
+      "columns": [
+        "id",
+        "jobId",
+        "triggeredAtJobOperationId",
+        "targetJobOperationId",
+        "reason",
+        "quantity",
+        "requestedById",
+        "completedAt",
+        "companyId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "timesheetEntry",
       "rows": 0,
       "columns": [
         "id",
         "companyId",
-        "itemId",
-        "locationId",
-        "periodId",
-        "type",
+        "employeeId",
+        "entryDate",
+        "projectId",
+        "projectElementId",
+        "laborCategoryId",
+        "hours",
+        "note",
         "status",
-        "suggestedQuantity",
-        "suggestedDate",
-        "isASAP",
-        "purchaseOrderLineId",
-        "jobId",
-        "requiresManualAction",
-        "supplierId",
-        "policyName",
-        "reason",
-        "triggerValues",
-        "assignee",
-        "assigneeOverridden",
+        "submittedAt",
+        "approvedBy",
+        "approvedAt",
+        "rejectionNote",
+        "costRate",
+        "reversalOfId",
+        "correctionReason",
+        "journalId",
+        "postedAt",
         "createdBy",
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "horizonDate",
-        "latestOrderDate"
+        "lateReason",
+        "correctionOfId",
+        "dilutionFactor",
+        "rdActivityRole",
+        "workLocationId",
+        "jobId",
+        "jobOperationId",
+        "productionEventId"
+      ]
+    },
+    {
+      "name": "kanban",
+      "rows": 0,
+      "columns": [
+        "id",
+        "itemId",
+        "replenishmentSystem",
+        "quantity",
+        "locationId",
+        "storageUnitId",
+        "supplierId",
+        "purchaseUnitOfMeasureCode",
+        "conversionFactor",
+        "autoRelease",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "autoStartJob",
+        "completedBarcodeOverride",
+        "jobId",
+        "fromStorageUnitId",
+        "replenishmentLevel",
+        "kanbanId"
+      ]
+    },
+    {
+      "name": "stockTransfer",
+      "rows": 0,
+      "columns": [
+        "id",
+        "stockTransferId",
+        "locationId",
+        "status",
+        "completedAt",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "notes",
+        "assignee",
+        "customFields",
+        "tags",
+        "kanbanId",
+        "receiptId"
+      ]
+    },
+    {
+      "name": "stockTransferLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "stockTransferId",
+        "jobId",
+        "jobMaterialId",
+        "itemId",
+        "fromStorageUnitId",
+        "toStorageUnitId",
+        "quantity",
+        "pickedQuantity",
+        "trackedEntityId",
+        "requiresBatchTracking",
+        "requiresSerialTracking",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "receiptLineId"
+      ]
+    },
+    {
+      "name": "projectBaseline",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "sequence",
+        "name",
+        "source",
+        "milestoneId",
+        "changeRequestId",
+        "formatVersion",
+        "snapshot",
+        "elementCount",
+        "linkCount",
+        "createdBy",
+        "createdAt"
+      ]
+    },
+    {
+      "name": "projectChangeRequest",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "readableId",
+        "title",
+        "reason",
+        "status",
+        "baseBaselineId",
+        "appliedBaselineId",
+        "submittedAt",
+        "decidedBy",
+        "decidedAt",
+        "decisionNotes",
+        "appliedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectChangeRequestComment",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "changeRequestId",
+        "targetTable",
+        "targetId",
+        "field",
+        "comment",
+        "resolvedAt",
+        "resolvedBy",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectChangeRequestItem",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "changeRequestId",
+        "operation",
+        "targetTable",
+        "targetId",
+        "payload",
+        "baseRow",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectChangeRequestView",
+      "rows": 0,
+      "columns": [
+        "changeRequestId",
+        "targetTable",
+        "targetId",
+        "userId",
+        "companyId",
+        "viewedAt"
+      ]
+    },
+    {
+      "name": "projectBillableItem",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "projectElementId",
+        "projectLedgerId",
+        "customerContractLineId",
+        "itemId",
+        "description",
+        "quantity",
+        "unitPrice",
+        "amount",
+        "status",
+        "statusReason",
+        "reversalOfId",
+        "salesInvoiceLineId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "voidedSalesInvoiceId",
+        "indirectPoolId",
+        "fiscalYear",
+        "burdenRate",
+        "burdenBase",
+        "postingDate"
+      ]
+    },
+    {
+      "name": "projectBorrow",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "borrowerProjectId",
+        "lenderProjectId",
+        "itemId",
+        "locationId",
+        "quantity",
+        "quantityPaidBack",
+        "borrowedUnitCost",
+        "paybackDueDate",
+        "status",
+        "projectStockTransferLineId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectStockTransfer",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectStockTransferId",
+        "type",
+        "status",
+        "fromProjectId",
+        "toProjectId",
+        "locationId",
+        "reason",
+        "paybackDueDate",
+        "settlesBorrowId",
+        "planningActionId",
+        "approvedBy",
+        "approvedAt",
+        "postedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectStockTransferLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectStockTransferId",
+        "itemId",
+        "quantity",
+        "storageUnitId",
+        "trackedEntityId",
+        "unitCost",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "costLedger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "entryNumber",
+        "postingDate",
+        "itemLedgerType",
+        "costLedgerType",
+        "adjustment",
+        "documentType",
+        "documentId",
+        "externalDocumentId",
+        "itemId",
+        "quantity",
+        "cost",
+        "nominalCost",
+        "companyId",
+        "createdAt",
+        "supplierId",
+        "remainingQuantity",
+        "appliesToCostLedgerId",
+        "trackedEntityId",
+        "projectId",
+        "projectBorrowId"
+      ]
+    },
+    {
+      "name": "projectCostRelief",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectLedgerId",
+        "revenueRecognitionScheduleId",
+        "amount",
+        "createdAt",
+        "journalId"
+      ]
+    },
+    {
+      "name": "projectElementMaterial",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "projectId",
+        "projectElementId",
+        "itemId",
+        "methodType",
+        "quantity",
+        "unitOfMeasureCode",
+        "requiredDate",
+        "quantityIssued",
+        "unitCost",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "jobId",
+        "purchaseOrderLineId"
       ]
     },
     {
@@ -5663,7 +7350,10 @@
         "costCenterId",
         "ownerId",
         "sortOrder",
-        "supplierPartId"
+        "supplierPartId",
+        "projectId",
+        "projectElementId",
+        "planningGroupId"
       ]
     },
     {
@@ -5680,6 +7370,42 @@
         "createdBy",
         "updatedAt",
         "updatedBy"
+      ]
+    },
+    {
+      "name": "planningAction",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "itemId",
+        "locationId",
+        "periodId",
+        "type",
+        "status",
+        "suggestedQuantity",
+        "suggestedDate",
+        "isASAP",
+        "horizonDate",
+        "latestOrderDate",
+        "purchaseOrderLineId",
+        "jobId",
+        "requiresManualAction",
+        "supplierId",
+        "policyName",
+        "reason",
+        "triggerValues",
+        "assignee",
+        "assigneeOverridden",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "planningSegmentId",
+        "fromProjectId",
+        "toProjectId",
+        "projectStockTransferId",
+        "projectBorrowId"
       ]
     },
     {
@@ -5705,6 +7431,78 @@
         "userId",
         "createdAt",
         "companyId"
+      ]
+    },
+    {
+      "name": "purchaseOrderVersion",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "approvalRequestId",
+        "purchaseOrderId",
+        "exchangeRate",
+        "hasDelivery",
+        "locationId",
+        "shippingMethodId",
+        "shippingTermId",
+        "receiptRequestedDate",
+        "notes",
+        "trackingNumber",
+        "dropShipment",
+        "customerId",
+        "customerLocationId",
+        "customFields",
+        "supplierShippingCost",
+        "incoterm",
+        "incotermLocation",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "purchaseOrderLineVersion",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "purchaseOrderVersionId",
+        "purchaseOrderLineId",
+        "purchaseOrderLineType",
+        "itemId",
+        "description",
+        "purchaseQuantity",
+        "purchaseUnitOfMeasureCode",
+        "inventoryUnitOfMeasureCode",
+        "conversionFactor",
+        "supplierUnitPrice",
+        "supplierShippingCost",
+        "supplierTaxAmount",
+        "taxPercent",
+        "setupPrice",
+        "exchangeRate",
+        "locationId",
+        "storageUnitId",
+        "accountId",
+        "assetId",
+        "costCenterId",
+        "jobId",
+        "jobOperationId",
+        "supplierPartId",
+        "requiredDate",
+        "customFields",
+        "tags",
+        "sortOrder",
+        "externalNotes",
+        "internalNotes",
+        "modelUploadId",
+        "ownerId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -5929,7 +7727,13 @@
         "createdBy",
         "createdAt",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "rentalAgreementLineId",
+        "meter",
+        "notes",
+        "takeOutOfService",
+        "outOfServiceReason",
+        "residualDestination"
       ]
     },
     {
@@ -5954,7 +7758,8 @@
         "updatedBy",
         "conversionFactor",
         "requiresSerialTracking",
-        "requiresBatchTracking"
+        "requiresBatchTracking",
+        "requiresInspection"
       ]
     },
     {
@@ -5971,6 +7776,45 @@
         "createdBy",
         "updatedAt",
         "updatedBy"
+      ]
+    },
+    {
+      "name": "rentalBillingPeriod",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "rentalAgreementLineId",
+        "periodStart",
+        "periodEnd",
+        "days",
+        "rateUnitApplied",
+        "amount",
+        "isAdjustment",
+        "dueOn",
+        "status",
+        "salesInvoiceLineId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "voidedSalesInvoiceId",
+        "memoId"
+      ]
+    },
+    {
+      "name": "revenueRecognitionRunLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "runId",
+        "scheduleId",
+        "amount",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -6009,7 +7853,96 @@
         "createdAt",
         "createdBy",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "automationHoldReason",
+        "sentAt",
+        "sentTo",
+        "sendError",
+        "customerContractId"
+      ]
+    },
+    {
+      "name": "salesInvoiceFundingAllocation",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "salesInvoiceId",
+        "customerContractLineId",
+        "acrn",
+        "amount",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "salesInvoiceShipment",
+      "rows": 0,
+      "columns": [
+        "id",
+        "shippingCost",
+        "locationId",
+        "shippingMethodId",
+        "shippingTermId",
+        "customFields",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "incoterm",
+        "incotermLocation",
+        "customerLocationId"
+      ]
+    },
+    {
+      "name": "salesOrderLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "salesOrderId",
+        "salesOrderLineType",
+        "itemId",
+        "assetId",
+        "description",
+        "saleQuantity",
+        "quantitySent",
+        "quantityInvoiced",
+        "unitPrice",
+        "unitOfMeasureCode",
+        "locationId",
+        "storageUnitId",
+        "setupPrice",
+        "sentComplete",
+        "invoicedComplete",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "customFields",
+        "status",
+        "modelUploadId",
+        "promisedDate",
+        "addOnCost",
+        "methodType",
+        "exchangeRate",
+        "shippingCost",
+        "taxPercent",
+        "internalNotes",
+        "externalNotes",
+        "sentDate",
+        "accountId",
+        "nonTaxableAddOnCost",
+        "pricingRuleId",
+        "priceTrace",
+        "sortOrder",
+        "configuration",
+        "serviceStartDate",
+        "serviceEndDate",
+        "salesReturnOrderLineId"
       ]
     },
     {
@@ -6047,26 +7980,20 @@
         "updatedBy",
         "accountId",
         "nonTaxableAddOnCost",
-        "sortOrder"
-      ]
-    },
-    {
-      "name": "salesInvoiceShipment",
-      "rows": 0,
-      "columns": [
-        "id",
-        "shippingCost",
-        "locationId",
-        "shippingMethodId",
-        "shippingTermId",
-        "customFields",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy",
-        "incoterm",
-        "incotermLocation"
+        "sortOrder",
+        "serviceStartDate",
+        "serviceEndDate",
+        "rentalAgreementId",
+        "rentalAgreementLineId",
+        "rentalBillingPeriodId",
+        "rentalAgreementChargeId",
+        "rentalLineType",
+        "customerContractId",
+        "customerContractLineId",
+        "customerContractInvoiceLineId",
+        "projectId",
+        "discountPercent",
+        "serviceJobId"
       ]
     },
     {
@@ -6093,7 +8020,11 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "customFields"
+        "customFields",
+        "returnType",
+        "customerAssetId",
+        "problem",
+        "quantityShipped"
       ]
     },
     {
@@ -6104,6 +8035,105 @@
         "trackedEntityId",
         "quantity",
         "companyId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "serviceJob",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "serviceJobId",
+        "status",
+        "coverage",
+        "workSite",
+        "billingMethod",
+        "priority",
+        "customerId",
+        "customerLocationId",
+        "customerContactId",
+        "customerAssetId",
+        "itemId",
+        "trackedEntityId",
+        "locationId",
+        "salesReturnOrderLineId",
+        "assignee",
+        "dueDate",
+        "problem",
+        "findings",
+        "resolution",
+        "repairable",
+        "estimateStatus",
+        "estimateSentAt",
+        "estimateRespondedAt",
+        "estimateRespondedBy",
+        "fixedPrice",
+        "completedAt",
+        "salesInvoiceId",
+        "signaturePath",
+        "signedByName",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields",
+        "laborBillRate"
+      ]
+    },
+    {
+      "name": "serviceJobAssignment",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "serviceJobId",
+        "employeeId",
+        "scheduledDate",
+        "plannedHours",
+        "note",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "serviceJobEstimateLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "serviceJobId",
+        "itemId",
+        "description",
+        "quantity",
+        "unitPrice",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "serviceJobTime",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "serviceJobId",
+        "employeeId",
+        "entryDate",
+        "startTime",
+        "endTime",
+        "hours",
+        "billable",
+        "unitCost",
+        "note",
         "createdBy",
         "createdAt",
         "updatedBy",
@@ -6128,6 +8158,30 @@
       ]
     },
     {
+      "name": "serviceJobItem",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "serviceJobId",
+        "lineType",
+        "itemId",
+        "description",
+        "quantity",
+        "unitOfMeasureCode",
+        "storageUnitId",
+        "unitCost",
+        "unitPrice",
+        "billable",
+        "reimbursementLineId",
+        "purchaseInvoiceLineId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "shipmentFixedAssetLine",
       "rows": 0,
       "columns": [
@@ -6140,7 +8194,9 @@
         "createdBy",
         "createdAt",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "rentalAgreementLineId",
+        "meter"
       ]
     },
     {
@@ -6165,7 +8221,10 @@
         "createdBy",
         "updatedAt",
         "updatedBy",
-        "fulfillmentId"
+        "fulfillmentId",
+        "serialNumber",
+        "customerContractInvoiceLineId",
+        "previousInvoiceDate"
       ]
     },
     {
@@ -6276,7 +8335,8 @@
         "tags",
         "internalNotes",
         "supplierInteractionId",
-        "postedBy"
+        "postedBy",
+        "inspectionStatus"
       ]
     },
     {
@@ -6356,6 +8416,42 @@
       ]
     },
     {
+      "name": "lease",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "leaseId",
+        "status",
+        "name",
+        "description",
+        "supplierId",
+        "supplierLocationId",
+        "supplierContactId",
+        "locationId",
+        "assignee",
+        "commencementDate",
+        "endDate",
+        "noticeDate",
+        "invoiceFromDate",
+        "paymentFrequency",
+        "paymentTiming",
+        "annualEscalationPercent",
+        "discountRate",
+        "currencyCode",
+        "commencementJournalId",
+        "noticeRemindedFor",
+        "endRemindedFor",
+        "activatedAt",
+        "closedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields"
+      ]
+    },
+    {
       "name": "purchaseInvoice",
       "rows": 0,
       "columns": [
@@ -6423,7 +8519,44 @@
         "supplierInteractionId",
         "purchaseOrderType",
         "jobId",
-        "jobReadableId"
+        "jobReadableId",
+        "createdFromPlanning"
+      ]
+    },
+    {
+      "name": "payment",
+      "rows": 0,
+      "columns": [
+        "id",
+        "paymentId",
+        "paymentType",
+        "status",
+        "customerId",
+        "supplierId",
+        "paymentDate",
+        "postingDate",
+        "currencyCode",
+        "exchangeRate",
+        "totalAmount",
+        "bankAccount",
+        "reference",
+        "memo",
+        "journalId",
+        "postedAt",
+        "postedBy",
+        "voidedAt",
+        "voidedBy",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields",
+        "employeeId",
+        "salesOrderId",
+        "rentalAgreementId",
+        "customerContractId",
+        "purchaseOrderId"
       ]
     },
     {
@@ -6465,7 +8598,10 @@
         "requiredDate",
         "ownerId",
         "sortOrder",
-        "projectId"
+        "projectId",
+        "leaseId",
+        "leasePaymentId",
+        "projectElementId"
       ]
     },
     {
@@ -6559,7 +8695,9 @@
         "updatedAt",
         "customFields",
         "salesReturnOrderId",
-        "purchaseReturnOrderId"
+        "purchaseReturnOrderId",
+        "customerContractId",
+        "rentalAgreementId"
       ]
     },
     {
@@ -6586,7 +8724,8 @@
         "updatedBy",
         "sourcePaymentId",
         "sourceAmount",
-        "targetReimbursementId"
+        "targetReimbursementId",
+        "targetPaymentId"
       ]
     },
     {
@@ -6633,6 +8772,40 @@
       ]
     },
     {
+      "name": "revenueRecognitionSchedule",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "type",
+        "status",
+        "salesInvoiceLineId",
+        "rentalAgreementLineId",
+        "rentalLeaseScheduleLineId",
+        "periodStart",
+        "periodEnd",
+        "scheduledDate",
+        "accountingPeriodId",
+        "amount",
+        "debitAccountId",
+        "creditAccountId",
+        "runLineId",
+        "journalId",
+        "billedBySalesInvoiceLineId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customerContractLineId",
+        "customerContractRevenueId",
+        "contractAmount",
+        "memoId",
+        "leaseId",
+        "leaseScheduleLineId",
+        "serviceJobId"
+      ]
+    },
+    {
       "name": "supplierPart",
       "rows": 0,
       "columns": [
@@ -6650,9 +8823,10 @@
         "updatedBy",
         "updatedAt",
         "customFields",
-        "unitPrice",
+        "supplierUnitPrice",
         "tags",
-        "orderMultiple"
+        "orderMultiple",
+        "currencyCode"
       ]
     },
     {
@@ -6661,7 +8835,7 @@
       "columns": [
         "supplierPartId",
         "quantity",
-        "unitPrice",
+        "supplierUnitPrice",
         "sourceType",
         "sourceDocumentId",
         "companyId",
@@ -6735,7 +8909,8 @@
         "updatedBy",
         "supplierInteractionId",
         "supplierQuoteType",
-        "externalLinkId"
+        "externalLinkId",
+        "sharedFilePaths"
       ]
     },
     {
@@ -6938,9 +9113,11 @@
     "apiKeyRateLimit",
     "companyIntegration",
     "employeePin",
+    "integrationConnection",
     "oauthClient",
     "oauthCode",
     "oauthToken",
+    "pushSubscription",
     "ssoConnection",
     "ssoDomain",
     "tableChange",

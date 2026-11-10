@@ -12,7 +12,7 @@ import {
   getPurchaseReturnOrder,
   getPurchaseReturnOrderLine,
   shortClosePurchaseReturnOrderLine
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

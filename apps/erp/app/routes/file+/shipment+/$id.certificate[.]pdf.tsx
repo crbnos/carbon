@@ -9,7 +9,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import {
   getCertificateOfConformancePreviewHeader,
   renderCertificateOfConformancePdf
-} from "~/modules/inventory/inventory.server";
+} from "~/modules/inventory/certificateOfConformance.pdf";
 
 const logger = getLogger("erp", "shipment", "certificate-preview");
 

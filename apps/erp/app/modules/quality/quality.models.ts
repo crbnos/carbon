@@ -113,7 +113,7 @@ export const riskRegisterType = ["Risk", "Opportunity"] as const;
 export const gaugeValidator = z.object({
   id: zfd.text(z.string().optional()),
   gaugeId: zfd.text(z.string().optional()),
-  supplierId: zfd.text(z.string().optional()),
+  manufacturer: zfd.text(z.string().optional()),
   modelNumber: zfd.text(z.string().optional()),
   serialNumber: zfd.text(z.string().optional()),
   description: zfd.text(z.string().optional()),
@@ -220,6 +220,7 @@ export const issueValidator = z.object({
   items: z.array(z.string()).optional(),
   jobOperationId: z.string().optional(),
   customerId: z.string().optional(),
+  supplierId: z.string().optional(),
   salesOrderLineId: z.string().optional(),
   operationSupplierProcessId: z.string().optional()
 });
@@ -392,14 +393,6 @@ export const requiredActionValidator = z.object({
   active: zfd.checkbox()
 });
 
-export const qualityDocumentApprovalValidator = z.object({
-  approvalRequestId: z
-    .string()
-    .min(1, { message: "Approval request is required" }),
-  decision: z.enum(["Approved", "Rejected"]),
-  notes: zfd.text(z.string().optional())
-});
-
 export const QualityKPIs = [
   { key: "weeklyTracking", label: "Issue Trend" },
   { key: "statusDistribution", label: "Status Distribution" },
@@ -440,7 +433,8 @@ export const inspectionStatusType = [
   "In Progress",
   "Passed",
   "Failed",
-  "Partial"
+  "Partial",
+  "Cancelled"
 ] as const;
 
 export const inspectionSampleStatusType = [
@@ -1081,7 +1075,7 @@ export const inspectionSaveAnchorsPayloadValidator = z
  *
  * Breaking change vs legacy: `type` and `unit` are closed vocabularies, not arbitrary strings.
  *
- * Server-only vision + prompts: `runInspectionBalloonRegionVisionAnalysis` in `quality.server.ts`.
+ * Server-only vision + prompts: `runInspectionBalloonRegionVisionAnalysis` in `quality.service.ts`.
  */
 
 /** POST body for `/api/quality/inspection-document/:id/balloon-analyze` */

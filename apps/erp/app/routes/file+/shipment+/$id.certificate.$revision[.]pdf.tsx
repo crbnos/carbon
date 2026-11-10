@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
-import { getIssuedCertificateOfConformancePdf } from "~/modules/inventory/inventory.server";
+import { getIssuedCertificateOfConformancePdf } from "~/modules/inventory/certificateOfConformance.pdf";
 
 const logger = getLogger("erp", "shipment", "certificate-download");
 

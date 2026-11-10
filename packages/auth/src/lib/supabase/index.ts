@@ -5,4 +5,4 @@
 import { carbonClient, getCarbon, getCarbonClient } from "./client";
 import { CarbonProvider, useCarbon } from "./provider";
 
-export { carbonClient, CarbonProvider, getCarbon, getCarbonClient, useCarbon };
+export { CarbonProvider, carbonClient, getCarbon, getCarbonClient, useCarbon };

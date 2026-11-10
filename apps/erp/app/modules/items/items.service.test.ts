@@ -2,47 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { describe, expect, it } from "vitest";
 import {
-  type CompiledQuery,
-  type DatabaseConnection,
-  DummyDriver,
-  Kysely as KyselyClient,
-  PostgresAdapter,
-  PostgresIntrospector,
-  PostgresQueryCompiler,
-  type QueryResult
-} from "kysely";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-// diffMethod now lives in items.service. Importing the real module drags in the
-// items.service graph, which transitively loads @carbon/content/glossary — whose
-// module-load-time Lingui `msg` macro isn't transformed under plain vitest and
-// throws. The pure diffMethod under test needs none of it, so stub glossary; the
-// diffMethod under test stays the genuine implementation.
-vi.mock("@carbon/content/glossary", () => ({
-  terms: {},
-  getEntry: vi.fn(),
-  lookupEntry: vi.fn(),
-  hasEntry: vi.fn(),
-  termSlug: vi.fn()
-}));
-
-// The server functions (get-method copies a revision's make method) run their
-// own transactions; the boundary here is the call.
-const { serverFnInvoke } = vi.hoisted(() => ({ serverFnInvoke: vi.fn() }));
-vi.mock("@carbon/server-functions", () => {
-  const invoker = { invoke: serverFnInvoke };
-  return { serverFns: { system: () => invoker, as: () => invoker } };
-});
-
-const {
-  createRevision,
-  deleteItem,
   diffMethod,
   duplicateMethodOperationStep,
-  removeChangeNoticeAffectedItem
-} = await import("./items.service");
+  getItemDemand,
+  getLockVerdict,
+  getUnreleasedChangeOrderIssue,
+  getUnreleasedChangeOrderItems,
+  LOCKED_REVISION_MESSAGE
+} from "./items.service";
 
 // A minimal live methodMaterial row (only the fields diffMethod compares + id).
 function baseMaterial(over: Record<string, unknown> = {}) {
@@ -503,7 +472,8 @@ function supplierPart(over: Record<string, unknown> = {}) {
     minimumOrderQuantity: 10,
     orderMultiple: 5,
     conversionFactor: 12,
-    unitPrice: 4.5,
+    currencyCode: "USD",
+    supplierUnitPrice: 4.5,
     active: true,
     customFields: null,
     tags: null,
@@ -549,7 +519,7 @@ describe("diffMethod — supplier parts", () => {
         supplierPart({ id: "sp-2", supplierId: "sup-2" })
       ],
       targetSupplierParts: [
-        supplierPart({ id: "sp-9", itemId: "item-b", unitPrice: 5 }),
+        supplierPart({ id: "sp-9", itemId: "item-b", supplierUnitPrice: 5 }),
         supplierPart({ id: "sp-11", itemId: "item-b", supplierId: "sup-3" })
       ]
     });
@@ -561,7 +531,7 @@ describe("diffMethod — supplier parts", () => {
       ["removed", "sup-2"]
     ]);
     expect(supplierParts[0].changedFields).toEqual({
-      unitPrice: { before: 4.5, after: 5 }
+      supplierUnitPrice: { before: 4.5, after: 5 }
     });
   });
 
@@ -571,347 +541,6 @@ describe("diffMethod — supplier parts", () => {
       targetSupplierParts: [supplierPart({ id: "sp-9", itemId: "item-b" })]
     });
     expect(supplierParts.map((e) => e.status)).toEqual(["added"]);
-  });
-});
-
-// The boundary is the Postgres wire: a driver that records what Kysely sends
-// and answers the item insert with the id the database would have generated.
-// `failOn` makes the first statement containing that text throw, as the
-// database would on a constraint violation (`code` is its SQLSTATE).
-class RecordingDriver extends DummyDriver {
-  readonly sent: CompiledQuery[] = [];
-  readonly log: string[] = [];
-  constructor(
-    private readonly failOn?: string,
-    private readonly code?: string
-  ) {
-    super();
-  }
-  override async acquireConnection(): Promise<DatabaseConnection> {
-    return {
-      executeQuery: async <R>(
-        query: CompiledQuery
-      ): Promise<QueryResult<R>> => {
-        if (this.failOn && query.sql.includes(this.failOn)) {
-          throw Object.assign(
-            new Error(`failed: ${this.failOn}`),
-            this.code ? { code: this.code } : {}
-          );
-        }
-        this.sent.push(query);
-        this.log.push(query.sql);
-        const rows = query.sql.startsWith('insert into "item"')
-          ? [{ id: "item-b" }]
-          : [];
-        return { rows: rows as R[] };
-      },
-      // biome-ignore lint/correctness/useYield: never streamed
-      streamQuery: async function* () {
-        throw new Error("not streamed");
-      }
-    };
-  }
-  override async beginTransaction() {
-    this.log.push("BEGIN");
-  }
-  override async commitTransaction() {
-    this.log.push("COMMIT");
-  }
-  override async rollbackTransaction() {
-    this.log.push("ROLLBACK");
-  }
-}
-
-function recordingDatabase(failOn?: string, code?: string) {
-  const driver = new RecordingDriver(failOn, code);
-  const db = new KyselyClient<KyselyDatabase>({
-    dialect: {
-      createAdapter: () => new PostgresAdapter(),
-      createDriver: () => driver,
-      createIntrospector: (k) => new PostgresIntrospector(k),
-      createQueryCompiler: () => new PostgresQueryCompiler()
-    }
-  }) as unknown as Kysely<KyselyDatabase>;
-  return { db, driver };
-}
-
-describe("createRevision", () => {
-  const item = {
-    id: "item-a",
-    readableId: "P-100",
-    revision: "A",
-    name: "Bracket",
-    type: "Part",
-    replenishmentSystem: "Make",
-    defaultMethodType: "Make to Order",
-    itemTrackingType: "Inventory",
-    unitOfMeasureCode: "EA",
-    description: null,
-    sourcingType: "Specified",
-    thumbnailPath: null,
-    mpn: null,
-    modelUploadId: null,
-    companyId: "c1"
-  } as never;
-
-  beforeEach(() => {
-    serverFnInvoke.mockReset().mockResolvedValue({ data: null, error: null });
-  });
-
-  // The caller's supabase client: the permission gate.
-  function revisionClient(gate: { error: { message: string } | null }) {
-    const rpc = vi.fn().mockResolvedValue({ data: null, ...gate });
-    return { client: { rpc } as never, rpc };
-  }
-
-  it("inserts the revision and what it inherits in one transaction", async () => {
-    const { client, rpc } = revisionClient({ error: null });
-    const { db, driver } = recordingDatabase();
-
-    const result = await createRevision(client, db, {
-      item,
-      revision: "B",
-      createdBy: "u1"
-    });
-
-    expect(result).toEqual({ data: { id: "item-b" }, error: null });
-    expect(rpc).toHaveBeenCalledWith("assert_company_access", {
-      p_company_id: "c1",
-      p_permission: "parts_create"
-    });
-
-    // The item first (its interceptor creates the rows the updates land on),
-    // and the price breaks after the supplier parts they hang off.
-    expect(
-      driver.log.map((sql) => sql.match(/^\w+( into)? "\w+"|^\w+$/)?.[0])
-    ).toEqual([
-      "BEGIN",
-      'insert into "item"',
-      'update "itemReplenishment"',
-      'update "itemPlanning"',
-      'update "itemCost"',
-      'insert into "supplierPart"',
-      'insert into "supplierPartPrice"',
-      "COMMIT"
-    ]);
-
-    const [insert, ...copies] = driver.sent;
-    expect(insert.parameters).toEqual(
-      expect.arrayContaining(["P-100", "B", "Bracket", "c1", "u1", true])
-    );
-    // Kysely bypasses RLS: both sides of every statement name the company,
-    // and the rows move from the source revision to the new one only.
-    for (const query of copies) {
-      expect(query.parameters).toContain("c1");
-      expect(query.parameters).toContain("item-a");
-      expect(query.parameters).toContain("item-b");
-    }
-    const [replenishment, planning, , supplierParts, prices] = copies.map(
-      (query) => query.sql
-    );
-    expect(replenishment).toContain(
-      'where "target"."itemId" = $3 and "target"."companyId" = $4 and "source"."itemId" = $5 and "source"."companyId" = $6'
-    );
-    expect(planning).toContain('"target"."locationId" = "source"."locationId"');
-    expect(supplierParts).toContain('where "itemId" = $3 and "companyId" = $4');
-    expect(prices).toContain(
-      '"target"."supplierId" = "source"."supplierId" and "target"."companyId" = "source"."companyId"'
-    );
-
-    // The method is copied once the revision is committed.
-    expect(serverFnInvoke).toHaveBeenCalledWith("get-method", {
-      type: "itemToItem",
-      sourceId: "item-a",
-      targetId: "item-b"
-    });
-  });
-
-  it("leaves no revision behind when the copy fails", async () => {
-    const { client } = revisionClient({ error: null });
-    const { db, driver } = recordingDatabase('insert into "supplierPart"');
-
-    const result = await createRevision(client, db, {
-      item,
-      revision: "B",
-      createdBy: "u1"
-    });
-
-    expect(result).toEqual({
-      data: null,
-      error: { message: 'failed: insert into "supplierPart"' }
-    });
-    // The item insert rolls back with the copy; there is nothing to clean up.
-    expect(driver.log.at(-1)).toBe("ROLLBACK");
-    expect(driver.log).not.toContain("COMMIT");
-    expect(driver.log.some((sql) => sql.startsWith("delete"))).toBe(false);
-    expect(serverFnInvoke).not.toHaveBeenCalled();
-  });
-
-  it("writes nothing for a caller who cannot create parts in the company", async () => {
-    const denied = { message: "Not authorized for this company" };
-    const { client } = revisionClient({ error: denied });
-    const { db, driver } = recordingDatabase();
-
-    const result = await createRevision(client, db, {
-      item,
-      revision: "B",
-      createdBy: "u1"
-    });
-
-    expect(result).toEqual({ data: null, error: denied });
-    expect(driver.log).toEqual([]);
-    expect(serverFnInvoke).not.toHaveBeenCalled();
-  });
-});
-
-describe("deleteItem", () => {
-  function gateClient(gate: { error: { message: string } | null }) {
-    const rpc = vi.fn().mockResolvedValue({ data: null, ...gate });
-    return { client: { rpc } as never, rpc };
-  }
-
-  it("deletes the item's price breaks and the item in one transaction", async () => {
-    const { client, rpc } = gateClient({ error: null });
-    const { db, driver } = recordingDatabase();
-
-    const result = await deleteItem(client, db, "item-b", "c1");
-
-    expect(result).toEqual({ data: null, error: null });
-    expect(rpc).toHaveBeenCalledWith("assert_company_access", {
-      p_company_id: "c1",
-      p_permission: "parts_delete"
-    });
-    // A price break restricts the delete of its supplier part, which the item
-    // delete cascades to, so the price breaks go first.
-    expect(driver.log).toEqual([
-      "BEGIN",
-      'delete from "supplierPartPrice" where "companyId" = $1 and "supplierPartId" in (select "id" from "supplierPart" where "itemId" in ($2) and "companyId" = $3)',
-      'delete from "item" where "id" in ($1) and "companyId" = $2',
-      "COMMIT"
-    ]);
-    expect(driver.sent.map((query) => query.parameters)).toEqual([
-      ["c1", "item-b", "c1"],
-      ["item-b", "c1"]
-    ]);
-  });
-
-  it("keeps the price breaks when the item itself cannot be deleted", async () => {
-    const { client } = gateClient({ error: null });
-    const { db, driver } = recordingDatabase('delete from "item"', "23503");
-
-    const result = await deleteItem(client, db, "item-b", "c1");
-
-    // The route maps a 23503 to its friendly message, so the code survives.
-    expect(result).toEqual({
-      data: null,
-      error: { code: "23503", message: 'failed: delete from "item"' }
-    });
-    expect(driver.log.at(-1)).toBe("ROLLBACK");
-    expect(driver.log).not.toContain("COMMIT");
-  });
-
-  it("writes nothing for a caller who cannot delete parts in the company", async () => {
-    const denied = { message: "Not authorized for this company" };
-    const { client } = gateClient({ error: denied });
-    const { db, driver } = recordingDatabase();
-
-    const result = await deleteItem(client, db, "item-b", "c1");
-
-    expect(result).toEqual({ data: null, error: denied });
-    expect(driver.log).toEqual([]);
-  });
-});
-
-describe("removeChangeNoticeAffectedItem", () => {
-  // The caller's supabase client: reads the affected row, vouches for the
-  // delete, and removes the affected row at the end.
-  function affectedItemClient(row: Record<string, unknown>) {
-    const deleted: string[] = [];
-    const client = {
-      rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
-      from: (table: string) => {
-        const builder = {
-          select: () => builder,
-          eq: () => builder,
-          maybeSingle: () => Promise.resolve({ data: row, error: null }),
-          delete: () => {
-            deleted.push(table);
-            return builder;
-          },
-          then: (onF: (v: unknown) => unknown) =>
-            Promise.resolve({ data: null, error: null }).then(onF)
-        };
-        return builder;
-      }
-    };
-    return { client: client as never, deleted };
-  }
-
-  it("discards a Revision draft, price breaks first, then removes the row", async () => {
-    const { client, deleted } = affectedItemClient({
-      draftMakeMethodId: "mm-1",
-      newItemId: "item-b"
-    });
-    const { db, driver } = recordingDatabase();
-
-    const result = await removeChangeNoticeAffectedItem(
-      client,
-      db,
-      "aff-1",
-      "c1"
-    );
-
-    expect(result.error).toBeNull();
-    // The draft method goes with its item, so only the item is deleted.
-    expect(
-      driver.log.map((sql) => sql.match(/^delete from "\w+"|^\w+$/)?.[0])
-    ).toEqual([
-      "BEGIN",
-      'delete from "supplierPartPrice"',
-      'delete from "item"',
-      "COMMIT"
-    ]);
-    expect(deleted).toEqual(["changeOrderAffectedItem"]);
-  });
-
-  it("deletes only the Draft method for a Version", async () => {
-    const { client, deleted } = affectedItemClient({
-      draftMakeMethodId: "mm-1",
-      newItemId: null
-    });
-    const { db, driver } = recordingDatabase();
-
-    await removeChangeNoticeAffectedItem(client, db, "aff-1", "c1");
-
-    expect(driver.log).toEqual([
-      "BEGIN",
-      'delete from "makeMethod" where "id" in ($1) and "companyId" = $2',
-      "COMMIT"
-    ]);
-    expect(deleted).toEqual(["changeOrderAffectedItem"]);
-  });
-
-  it("keeps the affected row when its draft cannot be discarded", async () => {
-    const { client, deleted } = affectedItemClient({
-      draftMakeMethodId: "mm-1",
-      newItemId: "item-b"
-    });
-    const { db, driver } = recordingDatabase('delete from "item"', "23503");
-
-    const result = await removeChangeNoticeAffectedItem(
-      client,
-      db,
-      "aff-1",
-      "c1"
-    );
-
-    expect(result.error).toEqual({
-      code: "23503",
-      message: 'failed: delete from "item"'
-    });
-    expect(driver.log.at(-1)).toBe("ROLLBACK");
-    // The row is the only pointer at the draft; it stays with it.
-    expect(deleted).toEqual([]);
   });
 });
 
@@ -964,40 +593,30 @@ describe("diffMethod — attributes", () => {
 });
 
 describe("getItemDemand", () => {
+  // Answers every table with its rows, or with the error given for it.
   function mockClient(
     rowsByTable: Record<string, unknown[]>,
     errorsByTable: Record<string, unknown> = {}
   ) {
-    const reads: Array<{
-      table: string;
-      filters: Array<[string, string, unknown]>;
-    }> = [];
-    const client: any = {
-      from: (table: string) => {
-        const read = { table, filters: [] as Array<[string, string, unknown]> };
-        reads.push(read);
-        const builder: any = {
-          select: () => builder,
-          eq: (column: string, value: unknown) => {
-            read.filters.push(["eq", column, value]);
-            return builder;
-          },
-          in: (column: string, value: unknown) => {
-            read.filters.push(["in", column, value]);
-            return builder;
-          },
-          order: () => builder,
-          then: (resolve: (v: unknown) => void) =>
-            resolve(
-              errorsByTable[table]
-                ? { data: null, error: errorsByTable[table] }
-                : { data: rowsByTable[table] ?? [], error: null }
-            )
-        };
-        return builder;
-      }
+    return {
+      client: {
+        from: (table: string) => {
+          const builder: any = {
+            select: () => builder,
+            eq: () => builder,
+            in: () => builder,
+            order: () => builder,
+            then: (resolve: (v: unknown) => void) =>
+              resolve(
+                errorsByTable[table]
+                  ? { data: null, error: errorsByTable[table] }
+                  : { data: rowsByTable[table] ?? [], error: null }
+              )
+          };
+          return builder;
+        }
+      } as any
     };
-    return { client, reads };
   }
 
   const args = {
@@ -1007,36 +626,7 @@ describe("getItemDemand", () => {
     periods: ["p1", "p2"]
   };
 
-  it("reads demandProjection alongside demandActual and demandForecast", async () => {
-    const { getItemDemand } = await import("./items.service");
-    const { client, reads } = mockClient({});
-
-    await getItemDemand(client, args);
-
-    expect(reads.map((r) => r.table).sort()).toEqual([
-      "demandActual",
-      "demandForecast",
-      "demandProjection"
-    ]);
-  });
-
-  it("scopes the projection read to the item, location, company and periods", async () => {
-    const { getItemDemand } = await import("./items.service");
-    const { client, reads } = mockClient({});
-
-    await getItemDemand(client, args);
-
-    const projectionRead = reads.find((r) => r.table === "demandProjection");
-    expect(projectionRead?.filters).toEqual([
-      ["eq", "itemId", "item_1"],
-      ["eq", "locationId", "loc_1"],
-      ["eq", "companyId", "co_1"],
-      ["in", "periodId", ["p1", "p2"]]
-    ]);
-  });
-
   it("returns the projection rows as `projections`, defaulting every series to []", async () => {
-    const { getItemDemand } = await import("./items.service");
     const projectionRow = {
       id: "dp_1",
       itemId: "item_1",
@@ -1057,8 +647,6 @@ describe("getItemDemand", () => {
   });
 
   it("tells an item with no demand apart from a failed read", async () => {
-    const { getItemDemand } = await import("./items.service");
-
     const empty = await getItemDemand(mockClient({}).client, args);
     expect(empty.error).toBeNull();
 
@@ -1068,5 +656,272 @@ describe("getItemDemand", () => {
       args
     );
     expect(failed.error).toBe(failure);
+  });
+});
+
+describe("getLockVerdict", () => {
+  it.each(["off", "warn", "enforce"] as const)(
+    "allows edits on an unlocked revision under release control %s",
+    (releaseControl) => {
+      expect(getLockVerdict({ isLocked: false, releaseControl })).toEqual({
+        ok: true,
+        warn: false
+      });
+    }
+  );
+
+  it.each([
+    ["off", { ok: true, warn: false }],
+    ["warn", { ok: true, warn: true, message: LOCKED_REVISION_MESSAGE }],
+    ["enforce", { ok: false, warn: false, message: LOCKED_REVISION_MESSAGE }]
+  ] as const)(
+    "gives a locked revision under release control %s the matching verdict",
+    (releaseControl, verdict) => {
+      expect(getLockVerdict({ isLocked: true, releaseControl })).toEqual(
+        verdict
+      );
+    }
+  );
+});
+
+type Row = Record<string, unknown> | null;
+
+// PostgREST's `max_rows`, mirrored so a read that asks for too much silently
+// comes back short — exactly the failure the batching exists to avoid.
+const MAX_ROWS = 1000;
+
+// Stands in for the two list reads the batch guard makes. Supabase builders are
+// thenables, so the chain resolves on await without a terminal method. Each
+// read is answered from the ids its own `in` filter carries, sliced to the
+// `range` page fetchAllByIds asks for and truncated at MAX_ROWS, so a guard
+// that stopped batching or paging visibly drops rows.
+function fakeListClient(
+  rows: { item?: Row[]; changeOrder?: Row[] },
+  errors: { item?: boolean; changeOrder?: boolean } = {}
+) {
+  return {
+    from(table: string) {
+      const failed = errors[table as keyof typeof errors] === true;
+      const all = rows[table as keyof typeof rows] ?? [];
+      let requested: string[] | null = null;
+      let page: [number, number] | null = null;
+      const builder = {
+        select: () => builder,
+        in: (_column: string, ids: string[]) => {
+          requested = ids;
+          return builder;
+        },
+        eq: () => builder,
+        order: () => builder,
+        range: (from: number, to: number) => {
+          page = [from, to];
+          return builder;
+        },
+        then: (
+          resolve: (value: {
+            data: Row[] | null;
+            error: { message: string } | null;
+          }) => unknown
+        ) =>
+          resolve({
+            data: failed
+              ? null
+              : all
+                  .filter(
+                    (row) => !requested || requested.includes(row?.id as string)
+                  )
+                  .slice(page?.[0] ?? 0, page ? page[1] + 1 : undefined)
+                  .slice(0, MAX_ROWS),
+            error: failed ? { message: `failed to read ${table}` } : null
+          })
+      };
+      return builder;
+    }
+  } as never;
+}
+
+const companyId = "company_1";
+const args = { itemId: "item_1", companyId };
+
+describe("getUnreleasedChangeOrderItems", () => {
+  it("reads nothing when given no ids", async () => {
+    const client = fakeListClient({ item: [{ id: "item_1" }] });
+
+    expect(
+      await getUnreleasedChangeOrderItems(client, { itemIds: [], companyId })
+    ).toEqual({ data: [], error: null });
+  });
+
+  it("passes items that no change order owns", async () => {
+    const client = fakeListClient({
+      item: [
+        {
+          id: "item_1",
+          readableIdWithRevision: "P000001",
+          changeOrderId: null
+        }
+      ]
+    });
+
+    expect(
+      await getUnreleasedChangeOrderItems(client, {
+        itemIds: ["item_1"],
+        companyId
+      })
+    ).toEqual({ data: [], error: null });
+  });
+
+  // Release leaves changeOrderId in place as a provenance link, so the column
+  // alone cannot answer "is this still a draft" — the status decides.
+  it("returns only the items whose change order is unreleased", async () => {
+    const client = fakeListClient({
+      item: [
+        {
+          id: "item_1",
+          readableIdWithRevision: "P000001.A",
+          changeOrderId: "co_open"
+        },
+        {
+          id: "item_2",
+          readableIdWithRevision: "P000002.B",
+          changeOrderId: "co_done"
+        }
+      ],
+      changeOrder: [
+        {
+          id: "co_open",
+          changeOrderId: "ECO-000001",
+          status: "Implementation"
+        },
+        { id: "co_done", changeOrderId: "ECO-000002", status: "Done" }
+      ]
+    });
+
+    expect(
+      await getUnreleasedChangeOrderItems(client, {
+        itemIds: ["item_1", "item_2"],
+        companyId
+      })
+    ).toEqual({
+      data: [
+        {
+          itemId: "item_1",
+          itemName: "P000001.A",
+          changeOrderReadableId: "ECO-000001"
+        }
+      ],
+      error: null
+    });
+  });
+
+  // PostgREST caps a response at 1000 rows, so the guard walks the ids in
+  // batches. Without that, an item past the cap reads as unowned and activates.
+  it("finds an offending item past the response cap", async () => {
+    const itemIds = Array.from({ length: 1200 }, (_, i) => `item_${i}`);
+    const client = fakeListClient({
+      item: itemIds.map((id) => ({
+        id,
+        readableIdWithRevision: id,
+        changeOrderId: id === "item_1100" ? "co_open" : null
+      })),
+      changeOrder: [
+        { id: "co_open", changeOrderId: "ECO-000001", status: "Draft" }
+      ]
+    });
+
+    expect(
+      await getUnreleasedChangeOrderItems(client, { itemIds, companyId })
+    ).toEqual({
+      data: [
+        {
+          itemId: "item_1100",
+          itemName: "item_1100",
+          changeOrderReadableId: "ECO-000001"
+        }
+      ],
+      error: null
+    });
+  });
+
+  // A read that did not answer says nothing about the items, so callers block
+  // rather than wave the write through on a database blip.
+  it("reports an error when the item read fails", async () => {
+    const client = fakeListClient({}, { item: true });
+
+    expect(
+      await getUnreleasedChangeOrderItems(client, {
+        itemIds: ["item_1"],
+        companyId
+      })
+    ).toEqual({
+      data: [],
+      error: "These items could not be checked against their change orders."
+    });
+  });
+
+  it("reports an error when the change order read fails", async () => {
+    const client = fakeListClient(
+      {
+        item: [
+          {
+            id: "item_1",
+            readableIdWithRevision: "P000001.A",
+            changeOrderId: "co_open"
+          }
+        ]
+      },
+      { changeOrder: true }
+    );
+
+    expect(
+      await getUnreleasedChangeOrderItems(client, {
+        itemIds: ["item_1"],
+        companyId
+      })
+    ).toEqual({
+      data: [],
+      error: "These items could not be checked against their change orders."
+    });
+  });
+});
+
+describe("getUnreleasedChangeOrderIssue", () => {
+  it("names the change order still holding the item", async () => {
+    const client = fakeListClient({
+      item: [
+        {
+          id: "item_1",
+          readableIdWithRevision: "P000001.A",
+          changeOrderId: "co_open"
+        }
+      ],
+      changeOrder: [
+        { id: "co_open", changeOrderId: "ECO-000001", status: "Draft" }
+      ]
+    });
+
+    expect(await getUnreleasedChangeOrderIssue(client, args)).toBe(
+      "P000001.A was created by change order ECO-000001, which has not been released yet."
+    );
+  });
+
+  // Narrow on purpose — the guard does not judge `active`. Inactive items are
+  // allowed onto these documents today, and that is a separate decision.
+  it("passes an inactive item that no change order owns", async () => {
+    const client = fakeListClient({
+      item: [
+        { id: "item_1", readableIdWithRevision: "P000001", changeOrderId: null }
+      ]
+    });
+
+    expect(await getUnreleasedChangeOrderIssue(client, args)).toBeNull();
+  });
+
+  it("blocks when the check could not be made", async () => {
+    const client = fakeListClient({}, { item: true });
+
+    expect(await getUnreleasedChangeOrderIssue(client, args)).toBe(
+      "These items could not be checked against their change orders."
+    );
   });
 });

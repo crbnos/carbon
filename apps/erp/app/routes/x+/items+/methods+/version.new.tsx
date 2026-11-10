@@ -2,92 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import {
-  copyMakeMethod,
-  makeMethodVersionValidator,
-  upsertMakeMethodVersion
-} from "~/modules/items";
+import { makeMethodVersionValidator } from "~/modules/items/items.models";
 import { getPathToMakeMethod } from "~/modules/items/ui/Methods/utils";
-import { getDatabaseClient } from "~/services/database.server";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "parts"
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(makeMethodVersionValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  // No change-order gate here: the V1 change-order model applies BOM edits by
-  // spinning fresh method versions at Done and never stages/reserves a pending
-  // revision, so there is nothing for an open CO to lock against.
-
-  const insertMethodOperation = await upsertMakeMethodVersion(client, {
-    ...validation.data,
-    companyId,
-    createdBy: userId
-  });
-  if (insertMethodOperation.error) {
-    return data(
-      {
-        id: null
-      },
-      await flash(
-        request,
-        error(insertMethodOperation.error, "Failed to insert new version")
-      )
-    );
-  }
-
-  const methodOperationId = insertMethodOperation.data?.id;
-  const itemId = insertMethodOperation.data?.itemId;
-  const itemType = insertMethodOperation.data?.type;
-  if (!methodOperationId || !itemType) {
-    return data(
-      {
-        id: null
-      },
-      await flash(
-        request,
-        error(insertMethodOperation, "Failed to insert new version")
-      )
-    );
-  }
-
-  const copy = await copyMakeMethod(
-    getCarbonServiceRole(),
-    getDatabaseClient(),
-    // @ts-expect-error TS2345 - TODO: fix type
-    {
-      sourceId: validation.data.copyFromId,
-      targetId: methodOperationId,
-      companyId,
-      userId
-    }
-  );
-
-  if (copy.error) {
-    return {
-      success: false,
-      message: "Failed to copy make method"
-    };
-  }
-
-  // @ts-expect-error
-  throw redirect(getPathToMakeMethod(itemType, itemId, methodOperationId));
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(makeMethodVersionValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.items.createMethodVersion(input.data);
+  if (result.error) return result;
+  const { id, itemId, type } = result.data;
+  // Only parts, tools and services have make methods.
+  const methodItemType = type as Parameters<typeof getPathToMakeMethod>[0];
+  throw redirect(getPathToMakeMethod(methodItemType, itemId, id));
 }

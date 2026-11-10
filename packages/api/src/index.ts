@@ -9,4 +9,5 @@
 // wrapper and OpenAPI converter live in `./schema`.
 
 export * from "./manifest-types";
+export * from "./rule-error";
 export * from "./schema";

@@ -17,13 +17,13 @@ import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { financialReportParamsValidator } from "~/modules/accounting/accounting.models";
 import {
-  financialReportParamsValidator,
   getCompaniesInGroup,
+  getConsolidatedPeriodSeriesForReport,
   getFinancialStatementPeriodSeries,
   getFiscalYearSettings
-} from "~/modules/accounting";
-import { getConsolidatedPeriodSeriesForReport } from "~/modules/accounting/accounting.server";
+} from "~/modules/accounting/accounting.service";
 import type { ExecutivePnlRowKey } from "~/modules/accounting/ui/Reports";
 import {
   ExecutivePnlSummary,
@@ -31,18 +31,18 @@ import {
   getPeriodColumnLabel,
   ReportFilters
 } from "~/modules/accounting/ui/Reports";
-import { months } from "~/modules/shared";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { months } from "~/modules/shared/shared.models";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import { revalidateIgnoringOffset } from "~/utils/revalidate";
+import { revalidateOnSearchChange } from "~/utils/revalidate";
 
 export const handle: Handle = {
   breadcrumb: msg`Executive P&L`,
   to: path.to.executivePnl
 };
 
-export const shouldRevalidate = revalidateIgnoringOffset;
+export const shouldRevalidate = revalidateOnSearchChange;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
@@ -216,6 +216,7 @@ export default function ExecutivePnlRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
+      <h1 className="sr-only">{t`Executive P&L`}</h1>
       <ReportFilters
         companies={companies}
         selectedCompanyIds={selectedCompanyIds}

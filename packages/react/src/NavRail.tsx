@@ -4,9 +4,14 @@
 
 "use client";
 
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Slot, Slottable } from "@radix-ui/react-slot";
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type {
+  ButtonHTMLAttributes,
+  CSSProperties,
+  MouseEvent,
+  ReactNode
+} from "react";
 import {
   createContext,
   forwardRef,
@@ -16,13 +21,22 @@ import {
   useRef,
   useState
 } from "react";
+import { LuPanelLeft } from "react-icons/lu";
 import type { LinkProps } from "react-router";
 import { Link, useLocation } from "react-router";
+import { Avatar } from "./Avatar";
 import { Drawer, DrawerContent, DrawerTitle } from "./Drawer";
+import { useMode } from "./hooks/useMode";
+import { useShellThemeStyle } from "./hooks/useThemeStyle";
+import { IconButton } from "./IconButton";
 import { PrefetchLink } from "./PrefetchLink";
 import { Separator } from "./Separator";
+import { ShortcutKey } from "./ShortcutKey";
 import { useSidebar } from "./Sidebar";
+import { SHORTCUTS } from "./shortcuts";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./Tooltip";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 import { VStack } from "./VStack";
 
 const focusRingClasses = [
@@ -45,14 +59,13 @@ export const navRailItemClasses = [
 
 /**
  * The primary left navigation shared by the ERP and MES app shells: a 56px
- * icon rail that grows to 208px while a mouse hovers it or while it is pinned
- * open (a `SidebarTrigger`, or ⌘B where the provider binds it), and a left drawer below `md`. Open state
+ * icon rail that grows to 240px while a mouse hovers it or while it is pinned
+ * open, and a left drawer below `md`. The toggle beside the `header` pins it,
+ * as do ⌘B and a `SidebarTrigger`. Open state
  * comes from `SidebarProvider`, so it must be rendered inside one.
  *
- * Hovering expands the rail OVER the page; only a pinned rail takes layout
- * space. A hover is transient and usually ends in a navigation, so resizing
- * the page for it re-laid-out every table twice, the second time while the
- * destination was rendering.
+ * Expanding the rail, by hover or by pin, pushes the page right rather than
+ * covering it.
  */
 // A pointer only passing over the rail (on its way to the page) shouldn't open it.
 const HOVER_OPEN_DELAY_MS = 150;
@@ -60,6 +73,19 @@ const HOVER_OPEN_DELAY_MS = 150;
 // Lets an item freeze the rail as it is (open or collapsed) while a menu or
 // popover it triggered is open, so a tap on a collapsed rail never opens it.
 const NavRailHoldContext = createContext<(() => () => void) | null>(null);
+
+/**
+ * Freeze the rail while the menu or popover an item triggers is open. Radix
+ * triggers pass their open state to the item as `data-state`.
+ */
+function useNavRailHold(triggerProps: object) {
+  const isOpen =
+    (triggerProps as Record<string, unknown>)["data-state"] === "open";
+  const hold = useContext(NavRailHoldContext);
+  useEffect(() => {
+    if (isOpen && hold) return hold();
+  }, [isOpen, hold]);
+}
 
 export function NavRail({
   children,
@@ -76,8 +102,12 @@ export function NavRail({
   /** Ignore hover, e.g. while a modal owns the pointer. */
   disableHover?: boolean;
 }) {
+  const { t } = useLingui();
   const { open, isMobile, openMobile, setOpenMobile } = useSidebar();
   const { pathname } = useLocation();
+  // Desktop rail only: the mobile drawer keeps the normal colors.
+  const themeStyle = useShellThemeStyle();
+  const railMode = useMode();
   const [hovered, setHovered] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const hoverCardRef = useRef<HTMLSpanElement>(null);
@@ -119,6 +149,23 @@ export function NavRail({
     return () => setHolds((n) => n - 1);
   }, []);
 
+  // The rail is expanded while pinned OR hovered, and the toggle sits inside
+  // it, so unpinning alone changed nothing: hover still held it open. An
+  // unpin (the toggle, ⌘B or a page's `SidebarTrigger`) drops the hover too,
+  // and a mouse still over the rail cannot reopen it until it leaves.
+  const hoverSuppressed = useRef(false);
+  const wasOpen = useRef(open);
+  useEffect(() => {
+    if (wasOpen.current && !open) {
+      cancelHoverOpen();
+      setHovered(false);
+      hoverSuppressed.current =
+        lastPointerType.current === "mouse" &&
+        (navRef.current?.matches(":hover") ?? false);
+    }
+    wasOpen.current = open;
+  }, [open, cancelHoverOpen]);
+
   // Links, go-to shortcuts and redirects all land here: whatever navigated,
   // the phone drawer must not stay over the destination.
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs per navigation
@@ -143,44 +190,91 @@ export function NavRail({
     }
     // Touch browsers leave `:hover` stuck on the last tapped element, so only
     // a mouse's `:hover` counts.
-    const raf = requestAnimationFrame(() =>
-      setHovered(
+    const raf = requestAnimationFrame(() => {
+      const over =
         lastPointerType.current === "mouse" &&
-          (navRef.current?.matches(":hover") ?? false)
-      )
-    );
+        (navRef.current?.matches(":hover") ?? false);
+      // The pointer left while blocked: the leave was ignored, so end a
+      // collapse's hold-off here.
+      if (!over) hoverSuppressed.current = false;
+      setHovered(over && !hoverSuppressed.current);
+    });
     return () => cancelAnimationFrame(raf);
   }, [hoverBlocked, cancelHoverOpen, moveHoverCard]);
 
   const content = (
     <NavRailHoldContext.Provider value={hold}>
-      <VStack spacing={1} className="flex flex-col justify-between h-full px-2">
-        <VStack spacing={1}>
-          {header ? <div className="w-full pb-2">{header}</div> : null}
+      <VStack spacing={1} className="flex flex-col justify-between h-full">
+        {/* Only the list scrolls, so the footer stays in view. A color theme makes
+            the rail transparent, so nothing can paint over a scrolling list. */}
+        <VStack
+          spacing={1}
+          className="min-h-0 flex-1 px-2 pb-1 overflow-x-hidden overflow-y-auto hide-scrollbar scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+        >
+          {header ? (
+            // As tall as the app's top bar (ERP `--topbar-height`, MES
+            // `--header-height`) and as far down: the rail's padding plus the
+            // content panel's 1px border. The logo centres on the bar.
+            <div className="mt-px mb-2 flex h-[var(--topbar-height,var(--header-height,2.5rem))] w-full shrink-0 items-center gap-1">
+              {header}
+              <NavRailToggle />
+            </div>
+          ) : null}
           {children}
         </VStack>
-        {footer ? <VStack spacing={1}>{footer}</VStack> : null}
+        {footer ? (
+          <VStack spacing={1} className="shrink-0 px-2">
+            {footer}
+          </VStack>
+        ) : null}
       </VStack>
     </NavRailHoldContext.Provider>
   );
 
   if (isMobile) {
+    // A tap on a link closes the sheet, also when it is the current page and
+    // so no navigation follows.
+    const closeOnLink = (event: MouseEvent<HTMLElement>) => {
+      if ((event.target as Element).closest("a")) setOpenMobile(false);
+    };
+    // The footer (Clock In, My Hours, the user) stays pinned under the
+    // scrolling groups, so it shows without a scroll.
     return (
       <Drawer open={openMobile} onOpenChange={setOpenMobile}>
-        <DrawerContent
-          position="left"
-          size="content"
-          className="w-[17rem] max-w-[85vw] p-0"
-        >
-          <DrawerTitle className="px-6 py-4">
+        <DrawerContent position="left" size="content" className="p-0">
+          <DrawerTitle className="px-6 py-4 max-md:px-4 max-md:text-[1.0625rem] max-md:font-semibold max-md:text-foreground">
             <Trans>Navigation</Trans>
           </DrawerTitle>
-          <nav
-            data-state="expanded"
-            className="group flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent pb-4"
-          >
-            {content}
-          </nav>
+          <NavRailHoldContext.Provider value={hold}>
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents: delegated listener that closes the drawer after a link inside is activated; Enter on a link fires this click too */}
+            <nav
+              aria-label={t`Main`}
+              data-state="expanded"
+              onClick={closeOnLink}
+              className="group min-h-0 flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+            >
+              <VStack spacing={1} className="px-2">
+                {header ? <div className="w-full pb-2">{header}</div> : null}
+                {children}
+              </VStack>
+              {/* A static fade: it pins to the bottom while rows sit under
+                  the footer, and is only end padding once scrolled down. */}
+              <div
+                aria-hidden
+                className="pointer-events-none sticky bottom-0 h-8 bg-gradient-to-t from-card"
+              />
+            </nav>
+            {footer ? (
+              // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: delegated listener that closes the drawer after a link inside is activated; Enter on a link fires this click too
+              <div
+                data-state="expanded"
+                onClick={closeOnLink}
+                className="group shrink-0 border-t border-border px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+              >
+                <VStack spacing={1}>{footer}</VStack>
+              </div>
+            ) : null}
+          </NavRailHoldContext.Provider>
         </DrawerContent>
       </Drawer>
     );
@@ -190,30 +284,29 @@ export function NavRail({
   const state = pinned || hovered ? "expanded" : "collapsed";
 
   return (
-    // The wrapper is the rail's footprint in the layout: it grows only when
-    // pinned, pushing the page right. The nav inside is out of flow, so a
-    // hover widens it without moving anything else. Sticky so it stays in
-    // view in shells whose page scrolls as a whole.
+    // The wrapper is the rail's footprint in the layout: it grows with the
+    // rail, pushing the page right. Sticky so it stays in view in shells
+    // whose page scrolls as a whole.
     <div
-      data-pinned={pinned}
+      data-state={state}
       className={cn(
         "sticky top-0 h-svh z-50 hidden md:block shrink-0",
-        "w-14 data-[pinned=true]:w-[13rem]",
-        "transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+        "w-14 data-[state=expanded]:w-[15rem]",
+        "transition-[width] duration-200 ease-out motion-reduce:transition-none"
       )}
     >
       <nav
         ref={navRef}
+        aria-label={t`Main`}
         data-state={state}
-        data-floating={!pinned && hovered}
         data-sliding-hover=""
+        style={themeStyle?.rail[railMode] as CSSProperties | undefined}
         className={cn(
           "absolute inset-y-0 left-0 bg-background py-2 group",
-          "w-14 data-[state=expanded]:w-[13rem]",
-          "transition-[width,box-shadow] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
-          "data-[floating=true]:shadow-xl data-[floating=true]:ring-1 data-[floating=true]:ring-border",
+          "w-14 data-[state=expanded]:w-[15rem]",
+          "transition-[width] duration-200 ease-out motion-reduce:transition-none",
           "flex flex-col justify-between",
-          "hide-scrollbar overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+          "hide-scrollbar overflow-x-hidden overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         )}
         onPointerDown={(event) => {
           lastPointerType.current = event.pointerType;
@@ -231,7 +324,7 @@ export function NavRail({
         onPointerMove={(event) => {
           lastPointerType.current = event.pointerType;
           if (hoverBlocked || hovered || openTimer.current) return;
-          if (event.pointerType !== "mouse") return;
+          if (event.pointerType !== "mouse" || hoverSuppressed.current) return;
           openTimer.current = setTimeout(() => {
             openTimer.current = undefined;
             setHovered(true);
@@ -248,6 +341,7 @@ export function NavRail({
           // The leave a Radix layer causes by disabling body pointer-events
           // can arrive before this render knows about the hold.
           if (document.body.style.pointerEvents === "none") return;
+          hoverSuppressed.current = false;
           cancelHoverOpen();
           setHovered(false);
           moveHoverCard(null);
@@ -259,7 +353,7 @@ export function NavRail({
           className={cn(
             "pointer-events-none absolute left-2 right-2 top-0 h-10 rounded-md opacity-0",
             "bg-active/60 data-[tone=accent]:bg-accent",
-            "transition-[transform,opacity,background-color] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+            "transition-[transform,opacity,background-color] duration-150 ease-out motion-reduce:transition-none"
           )}
         />
         {content}
@@ -283,6 +377,27 @@ type NavRailItemProps = Omit<
   children?: ReactNode;
 };
 
+// The theme's `ease-out` token; WAAPI can't read a CSS variable.
+const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
+const ICON_PULSE: Keyframe[] = [
+  { transform: "scale(1)", easing: EASE_OUT },
+  { transform: "scale(0.85)", offset: 0.35, easing: EASE_OUT },
+  { transform: "scale(1)" }
+];
+
+/**
+ * Dips a nav row's icon on click. Without `icon`, the row's first `<svg>`.
+ */
+export function pulseNavIcon(
+  event: MouseEvent<HTMLElement>,
+  icon: Element | null = event.currentTarget.querySelector("svg")
+) {
+  // `detail` is 0 for a click made with the keyboard: no motion for those.
+  if (!icon || event.detail === 0) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  icon.animate(ICON_PULSE, { duration: 200 });
+}
+
 /**
  * One rail entry. A `<button>` by default; with `asChild` the child element
  * becomes the item, so a `Link` or a Radix trigger keeps its own semantics.
@@ -303,14 +418,9 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
     ref
   ) => {
     const Comp = asChild ? Slot : "button";
+    const iconRef = useRef<HTMLSpanElement>(null);
 
-    // Radix triggers (menus, popovers) pass their open state as `data-state`.
-    const isTriggerOpen =
-      (props as Record<string, unknown>)["data-state"] === "open";
-    const hold = useContext(NavRailHoldContext);
-    useEffect(() => {
-      if (isTriggerOpen && hold) return hold();
-    }, [isTriggerOpen, hold]);
+    useNavRailHold(props);
 
     return (
       <Comp
@@ -319,6 +429,10 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
         aria-label={label}
         data-nav-item=""
         {...props}
+        onClick={(event) => {
+          pulseNavIcon(event, iconRef.current);
+          props.onClick?.(event);
+        }}
         className={cn(
           navRailItemClasses,
           isActive
@@ -331,11 +445,14 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
       >
         {/* A 16px icon centred in this 24px box sits where a `left-3 top-3`
             icon would; the box also fits an `Avatar size="xs"`. */}
-        <span className="absolute left-2 top-2 flex size-6 items-center justify-center [&>svg]:size-4">
+        <span
+          ref={iconRef}
+          className="absolute left-2 top-2 flex size-6 items-center justify-center [&>svg]:size-4"
+        >
           {icon}
         </span>
         {tag ? (
-          <span className="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-medium leading-4 text-center tabular-nums">
+          <span className="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[0.625rem] font-medium leading-4 text-center tabular-nums max-md:top-1/2 max-md:right-3 max-md:h-5 max-md:min-w-5 max-md:-translate-y-1/2 max-md:text-xs max-md:leading-5">
             {tag}
           </span>
         ) : null}
@@ -345,7 +462,8 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
           className={cn(
             "absolute left-7 right-3 min-w-32 group-data-[state=expanded]:left-12",
             "flex items-center gap-2",
-            "opacity-0 group-data-[state=expanded]:opacity-100"
+            "md:opacity-0 group-data-[state=expanded]:opacity-100",
+            tag ? "max-md:right-11" : null
           )}
         >
           <span
@@ -408,37 +526,140 @@ export function NavRailLink({
   );
 }
 
-/** For `header`: the logo sits in the icon column, the name has equal margins. */
-export function NavRailBrand({
-  href,
-  logo,
-  label
-}: {
-  href: string;
-  logo: ReactNode;
+type NavRailSwitcherProps = Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  "children"
+> & {
+  /** The company's logo for each color mode; its initials stand in for none. */
+  logoLight?: string | null;
+  logoDark?: string | null;
+  /** Also the accessible name unless `aria-label` is given. */
   label: string;
-}) {
-  return (
-    <a
-      href={href}
-      aria-label={label}
-      className={cn(
-        "relative flex h-10 w-full items-center gap-2 rounded-md px-2",
-        "text-sm font-medium text-foreground select-none",
-        "transition-[background-color] duration-100 ease-out hover:bg-active/60",
-        focusRingClasses
-      )}
-    >
-      <span className="flex size-6 shrink-0 items-center justify-center [&>svg]:size-4">
-        {logo}
-      </span>
-      <span
-        aria-hidden
-        className="min-w-0 flex-1 truncate opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100"
+  /** A second line under the name, e.g. the current location. */
+  sublabel?: string | null;
+  /** After the name, e.g. chevrons for a menu or an arrow for a link out. */
+  trailing?: ReactNode;
+  asChild?: boolean;
+  children?: ReactNode;
+};
+
+/**
+ * For `header`: the company. The logo sits in the icon column, so it stays put
+ * as the rail grows, and the name fades in beside it. A menu trigger by
+ * default; with `asChild`, a link. On phones it is a full-width row.
+ */
+export const NavRailSwitcher = forwardRef<
+  HTMLButtonElement,
+  NavRailSwitcherProps
+>(
+  (
+    {
+      logoLight,
+      logoDark,
+      label,
+      sublabel,
+      trailing,
+      asChild = false,
+      className,
+      children,
+      ...props
+    },
+    ref
+  ) => {
+    const Comp = asChild ? Slot : "button";
+    // The rail sits on the frame, so the frame's tone picks the logo. Phones
+    // have no frame.
+    const mode = useMode();
+    const { isPhone } = useViewport();
+    const frameTone = useShellThemeStyle()?.tone;
+    const tone = isPhone ? mode : (frameTone ?? mode);
+    const logo = tone === "dark" ? logoDark : logoLight;
+    // Its menu is a portal: without the hold, the rail collapses under it.
+    useNavRailHold(props);
+
+    return (
+      <Comp
+        ref={ref}
+        type={asChild ? undefined : "button"}
+        aria-label={sublabel ? `${label}, ${sublabel}` : label}
+        // The text truncates in the rail: the full text is one hover away.
+        title={sublabel ? `${label}\n${sublabel}` : label}
+        {...props}
+        className={cn(
+          "relative flex h-10 shrink-0 items-center rounded-md select-none",
+          // Fills the header row beside the toggle. Not on phones: there it
+          // sits in a sheet's column, where flex-1 would collapse its height.
+          "max-md:w-full md:w-10 md:group-data-[state=expanded]:min-w-0 md:group-data-[state=expanded]:flex-1",
+          "text-sm font-medium text-foreground",
+          "transition-[background-color] duration-100 ease-out hover:bg-active/60 data-[state=open]:bg-active/60",
+          focusRingClasses,
+          className
+        )}
       >
-        {label}
-      </span>
-    </a>
+        <span className="absolute left-2 top-2 flex size-6 items-center justify-center [&>svg]:size-4">
+          {logo ? (
+            <img src={logo} alt="" className="size-6 rounded object-contain" />
+          ) : (
+            <Avatar size="xs" name={label} />
+          )}
+        </span>
+        <span
+          aria-hidden
+          className={cn(
+            "absolute left-12 right-2 flex min-w-0 items-center gap-1",
+            "md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100"
+          )}
+        >
+          <span className="flex min-w-0 flex-1 flex-col text-left">
+            <span className="truncate leading-tight">{label}</span>
+            {sublabel ? (
+              <span className="truncate text-xs font-normal leading-tight text-muted-foreground">
+                {sublabel}
+              </span>
+            ) : null}
+          </span>
+          {trailing ? (
+            <span className="flex shrink-0 text-muted-foreground [&>svg]:size-3.5">
+              {trailing}
+            </span>
+          ) : null}
+        </span>
+        <Slottable>{children}</Slottable>
+      </Comp>
+    );
+  }
+);
+NavRailSwitcher.displayName = "NavRailSwitcher";
+
+/**
+ * Keeps the rail open (pinned) or lets it collapse back to icons on mouse
+ * leave. Shown only while the rail is expanded: collapsed, it is only wide
+ * enough for the logo, and hovering it expands it.
+ */
+function NavRailToggle() {
+  const { t } = useLingui();
+  const { open, toggleSidebar } = useSidebar();
+  const label = open ? t`Collapse navigation` : t`Keep navigation open`;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <IconButton
+          aria-label={label}
+          aria-pressed={open}
+          icon={<LuPanelLeft />}
+          variant="ghost"
+          onClick={toggleSidebar}
+          className="hidden shrink-0 text-muted-foreground group-data-[state=expanded]:inline-flex"
+        />
+      </TooltipTrigger>
+      <TooltipContent side="right">
+        <span className="flex items-center gap-2">
+          {label}
+          <ShortcutKey shortcut={SHORTCUTS.sidebarToggle} variant="small" />
+        </span>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -457,7 +678,7 @@ export function NavRailGroup({
           aria-hidden
           className="absolute inset-x-0 top-1/2 mx-auto h-px w-6 bg-border opacity-100 transition-opacity duration-200 group-data-[state=expanded]:opacity-0"
         />
-        <span className="absolute inset-0 flex items-center px-2 text-[11px] font-medium uppercase tracking-wider text-foreground/50 whitespace-nowrap opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100">
+        <span className="absolute inset-0 flex items-center px-2 text-[0.6875rem] font-medium uppercase tracking-wider text-muted-foreground whitespace-nowrap md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100">
           {label}
         </span>
       </div>

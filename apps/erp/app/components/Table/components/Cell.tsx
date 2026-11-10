@@ -11,7 +11,7 @@ import { memo, useState } from "react";
 import { LuPencil } from "react-icons/lu";
 import type { EditableTableCellComponent } from "~/components/Editable";
 import { useMovingCellRef } from "~/hooks";
-import { getAccessorKey } from "../utils";
+import { getAccessorKey, getColumnLabel } from "../utils";
 import { CellContent } from "./CellContent";
 
 const logger = getLogger("erp", "cell");
@@ -81,6 +81,8 @@ const Cell = <T extends object>({
     <Td
       className={cn(
         "group/cell relative py-2 whitespace-nowrap text-sm outline-none max-w-[30dvw] truncate",
+        // Phones: a grid's name column opts in to more width than the others.
+        "max-md:[&:has([data-key-cell])]:max-w-[45dvw]",
         cell.column.id === "Select" ? "px-2" : "px-4",
         wasEdited && "bg-yellow-100 dark:bg-yellow-900",
         isEditMode && !hasEditableTableCellComponent && "bg-muted/50",
@@ -94,18 +96,26 @@ const Cell = <T extends object>({
         isSelected &&
           (hasEditableTableCellComponent ? "!ring-ring" : "!ring-ring/40"),
         isSelected && hasEditableTableCellComponent && "!bg-background",
-        "transition-[left,right,box-shadow] duration-200",
         isPinned && "bg-card"
       )}
       ref={ref}
       style={{
         ...getPinnedStyles(cell.column),
-        width: cell.column.getSize(),
+        width: cell.column.columnDef.meta?.shrinkToFit
+          ? "1%"
+          : cell.column.getSize(),
         margin: 0,
         borderSpacing: 0
       }}
       data-row={cell.row.index}
       data-column={columnIndex}
+      // In edit mode the table is an ARIA grid (Table.tsx): say which cell is
+      // selected and which ones cannot be edited.
+      role={isEditMode ? "gridcell" : undefined}
+      aria-selected={isEditMode ? isSelected : undefined}
+      aria-readonly={
+        isEditMode && !hasEditableTableCellComponent ? true : undefined
+      }
       tabIndex={tabIndex}
       onClick={onClick}
       onFocus={onFocus}
@@ -115,6 +125,7 @@ const Cell = <T extends object>({
           {hasEditableTableCellComponent
             ? flexRender(editableCell, {
                 accessorKey,
+                label: getColumnLabel(cell.column.columnDef),
                 value: cell.renderValue(),
                 row: cell.row.original,
                 onUpdate: onUpdate

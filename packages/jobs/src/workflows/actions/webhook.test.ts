@@ -107,14 +107,13 @@ describe("runWebhookAction", () => {
     expect(headers["Content-Type"]).toBeUndefined();
   });
 
-  it.each([
-    "PUT",
-    "PATCH",
-    "DELETE"
-  ])("sends a %s as itself", async (method) => {
-    await run({ method });
-    expect(sent().init.method).toBe(method);
-  });
+  it.each(["PUT", "PATCH", "DELETE"])(
+    "sends a %s as itself",
+    async (method) => {
+      await run({ method });
+      expect(sent().init.method).toBe(method);
+    }
+  );
 
   it("lets a chosen content type win over the default", async () => {
     await run({

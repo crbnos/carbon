@@ -15,19 +15,21 @@ import { Fragment } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
-import type {
-  SupplierQuote,
-  SupplierQuoteLinePrice
-} from "~/modules/purchasing";
+import {
+  isSupplierQuoteLocked,
+  supplierQuoteLineValidator
+} from "~/modules/purchasing/purchasing.models";
 import {
   getSupplierInteractionLineDocuments,
   getSupplierQuote,
   getSupplierQuoteLine,
   getSupplierQuoteLinePrices,
-  isSupplierQuoteLocked,
-  supplierQuoteLineValidator,
   upsertSupplierQuoteLine
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
+import type {
+  SupplierQuote,
+  SupplierQuoteLinePrice
+} from "~/modules/purchasing/types";
 import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes
@@ -36,7 +38,7 @@ import {
   SupplierQuoteLineForm,
   SupplierQuoteLinePricing
 } from "~/modules/purchasing/ui/SupplierQuote";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";

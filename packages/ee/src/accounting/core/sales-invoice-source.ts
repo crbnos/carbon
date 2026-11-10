@@ -8,7 +8,24 @@ import { JournalEntrySyncError } from "./posting";
 import type { Accounting } from "./types";
 
 /** The posting roles whose original revenue account an AR document replays. */
-type RevenueRole = "ShippingRevenue" | "SalesRevenue";
+type RevenueRole = "ShippingRevenue" | "SalesRevenue" | "ServiceRevenue";
+
+const REVENUE_ROLES: ReadonlySet<string> = new Set<RevenueRole>([
+  "ShippingRevenue",
+  "SalesRevenue",
+  "ServiceRevenue"
+]);
+
+const isRevenueRole = (role: string | null): role is RevenueRole =>
+  role !== null && REVENUE_ROLES.has(role);
+
+/** A service accrual row an invoice cleared, with the account it credited. */
+type ServiceAccrualAccountRow = {
+  invoiceId: string;
+  accountId: string | null;
+  accountClass: string | null;
+  isGroup: boolean | null;
+};
 
 /** One provider-neutral source boundary for invoice amounts and original posting facts. */
 export async function loadSalesInvoices(
@@ -90,10 +107,12 @@ export async function loadSalesInvoices(
       "salesInvoiceLine.quantity",
       "salesInvoiceLine.unitPrice",
       "salesInvoiceLine.convertedUnitPrice",
+      "salesInvoiceLine.discountPercent",
       "salesInvoiceLine.shippingCost",
       "salesInvoiceLine.addOnCost",
       "salesInvoiceLine.nonTaxableAddOnCost",
       "salesInvoiceLine.taxPercent",
+      "salesInvoiceLine.serviceJobId",
       "item.readableIdWithRevision as itemReadableIdWithRevision"
     ])
     .where("salesInvoiceLine.companyId", "=", companyId)
@@ -135,69 +154,79 @@ export async function loadSalesInvoices(
     .where("journal.sourceType", "=", "Sales Invoice")
     .where("journal.status", "=", "Posted")
     .execute();
-  // Both revenue roles are extracted the same way, and for the same reason: a
-  // provider document must replay the account its ORIGINAL journal posted to,
-  // never today's default. Merchandise revenue joined shipping here when AR
-  // invoices stopped referencing items — the item used to carry the account
-  // implicitly (via the provider item's own config), and with the item gone the
-  // posted account is the only thing that can.
-  //
-  // Every defect below belongs to ONE invoice, and none of them throws from
-  // here. This is a BATCH loader: `pushBatchToAccounting` calls it once for the
-  // whole claimed group (up to 20 operations) and its outer catch parks every
-  // id in that group as an error carrying whatever this function threw. So one
-  // invoice with a malformed revenue posting used to park every other posted
-  // invoice drained beside it — as a Warning naming a DIFFERENT document — and
-  // nothing brings those back: `shouldEnqueueMissingDocument` refuses to
-  // re-enqueue a parked Warning, the capped re-drive is `bill`-only, and the
-  // changed-since-failure retry needs the document to be edited. Instead the
-  // role's account is left unresolved (`null`) and
-  // `requirePostedSalesAccountId` / `requirePostedShippingAccountId` raise the
-  // structured error for that one invoice from inside `mapToRemote`, which
-  // `pushBatchToAccounting` already catches per entity.
-  const revenueAccounts: Record<RevenueRole, Map<string, Set<string>>> = {
-    ShippingRevenue: new Map(),
-    SalesRevenue: new Map()
-  };
-  // Invoices whose posting for a role is unusable, whatever else it posted.
-  const unusableRoles: Record<RevenueRole, Set<string>> = {
-    ShippingRevenue: new Set(),
-    SalesRevenue: new Set()
-  };
-
-  for (const row of postingRows) {
-    const role = classifyAccountingPostingRole(row.description);
-    if (role !== "ShippingRevenue" && role !== "SalesRevenue") continue;
-    // Unreachable in practice — the query filters `documentId in ids`, so the
-    // column is only nullable in the generated type — but a row that names no
-    // invoice cannot be recorded against one either, and the alternative here
-    // is a batch-wide throw.
-    if (!row.documentId) continue;
-    if (!row.accountId || row.accountClass !== "Revenue" || row.isGroup) {
-      unusableRoles[role].add(row.documentId);
-      continue;
+  // When the job's accrual covers every service line, the journal has no
+  // "Service Revenue" line at all: each line credited Contract Assets in
+  // full. The accrual rows that invoice cleared are stamped with one of its
+  // service lines, and their credit account is the Service Revenue account
+  // the run recognized the revenue to. Replay that account. It is a posted
+  // fact as well, never today's default.
+  const invoicesWithServiceRevenuePosting = new Set(
+    postingRows
+      .filter(
+        (row) =>
+          row.documentId &&
+          classifyAccountingPostingRole(row.description) === "ServiceRevenue"
+      )
+      .map((row) => row.documentId as string)
+  );
+  const serviceLineInvoiceIds = new Map<string, string>();
+  for (const line of lineRows) {
+    if (
+      line.serviceJobId &&
+      !invoicesWithServiceRevenuePosting.has(line.invoiceId)
+    ) {
+      serviceLineInvoiceIds.set(line.id, line.invoiceId);
     }
-    const byInvoice = revenueAccounts[role];
-    const accounts = byInvoice.get(row.documentId) ?? new Set<string>();
-    accounts.add(row.accountId);
-    byInvoice.set(row.documentId, accounts);
+  }
+  const serviceAccrualRows: ServiceAccrualAccountRow[] = [];
+  if (serviceLineInvoiceIds.size > 0) {
+    const accrualRows = await db
+      .selectFrom("revenueRecognitionSchedule")
+      .innerJoin(
+        "company",
+        "company.id",
+        "revenueRecognitionSchedule.companyId"
+      )
+      .leftJoin("account", (join) =>
+        join
+          .onRef(
+            "account.id",
+            "=",
+            "revenueRecognitionSchedule.creditAccountId"
+          )
+          .onRef("account.companyGroupId", "=", "company.companyGroupId")
+      )
+      .select([
+        "revenueRecognitionSchedule.billedBySalesInvoiceLineId",
+        "revenueRecognitionSchedule.creditAccountId as accountId",
+        "account.class as accountClass",
+        "account.isGroup"
+      ])
+      .where("revenueRecognitionSchedule.companyId", "=", companyId)
+      .where("revenueRecognitionSchedule.type", "=", "Accrual")
+      .where("revenueRecognitionSchedule.serviceJobId", "is not", null)
+      .where("revenueRecognitionSchedule.billedBySalesInvoiceLineId", "in", [
+        ...serviceLineInvoiceIds.keys()
+      ])
+      .execute();
+    for (const row of accrualRows) {
+      const invoiceId = row.billedBySalesInvoiceLineId
+        ? serviceLineInvoiceIds.get(row.billedBySalesInvoiceLineId)
+        : undefined;
+      if (!invoiceId) continue;
+      serviceAccrualRows.push({
+        invoiceId,
+        accountId: row.accountId,
+        accountClass: row.accountClass,
+        isGroup: row.isGroup
+      });
+    }
   }
 
-  /**
-   * The one account a role replays, or `null` when the journal cannot name it.
-   *
-   * Ambiguity is never resolved by guessing — Carbon posts ALL merchandise
-   * revenue to one account (`accountDefault.salesAccount`; there is no
-   * per-item revenue account in the schema) and all shipping revenue to
-   * another, so two of either means the journal is not the shape this replay
-   * assumes. A role with ANY unusable posting stays unresolved even when a
-   * second line did name a valid leaf, for the same reason.
-   */
-  const resolveReplayedAccountId = (role: RevenueRole, invoiceId: string) => {
-    if (unusableRoles[role].has(invoiceId)) return null;
-    const ids = [...(revenueAccounts[role].get(invoiceId) ?? [])];
-    return ids.length === 1 ? ids[0]! : null;
-  };
+  const replayed = resolveReplayedRevenueAccounts(
+    postingRows,
+    serviceAccrualRows
+  );
 
   // Group lines by invoice ID
   const linesByInvoiceId = new Map<string, (typeof lineRows)[number][]>();
@@ -243,11 +272,9 @@ export async function loadSalesInvoices(
       baseCurrencyCode: row.baseCurrencyCode,
       baseCurrencyDecimalPlaces: Number(row.baseCurrencyDecimalPlaces),
       currencyDecimalPlaces: Number(row.currencyDecimalPlaces),
-      shippingRevenueAccountId: resolveReplayedAccountId(
-        "ShippingRevenue",
-        row.id
-      ),
-      salesRevenueAccountId: resolveReplayedAccountId("SalesRevenue", row.id),
+      shippingRevenueAccountId: replayed("ShippingRevenue", row.id),
+      salesRevenueAccountId: replayed("SalesRevenue", row.id),
+      serviceRevenueAccountId: replayed("ServiceRevenue", row.id),
       headerShippingCost: Number(row.headerShippingCost ?? 0),
       exchangeRate: Number(row.exchangeRate),
       postingDate: row.postingDate,
@@ -264,6 +291,7 @@ export async function loadSalesInvoices(
         const quantity = Number(line.quantity) || 0;
         const unitPrice = Number(line.unitPrice) || 0;
         const taxPercent = Number(line.taxPercent) || 0;
+        const discountPercent = Number(line.discountPercent) || 0;
         const convertedUnitPrice =
           line.convertedUnitPrice === null ||
           line.convertedUnitPrice === undefined
@@ -281,8 +309,10 @@ export async function loadSalesInvoices(
           addOnCost: Number(line.addOnCost ?? 0),
           nonTaxableAddOnCost: Number(line.nonTaxableAddOnCost ?? 0),
           convertedUnitPrice,
+          discountPercent,
           taxPercent,
-          lineAmount: quantity * unitPrice
+          lineAmount: quantity * unitPrice * (1 - discountPercent),
+          serviceJobId: line.serviceJobId ?? null
         };
       }),
       updatedAt: row.updatedAt ?? datetime.timestamp(),
@@ -294,11 +324,122 @@ export async function loadSalesInvoices(
 }
 
 /**
+ * The original revenue account each invoice's posted journal names, per role,
+ * from its "Sales Account" / "Shipping Revenue" / "Service Revenue" journal
+ * lines, plus the service accrual rows an invoice with no "Service Revenue"
+ * line cleared.
+ */
+export function resolveReplayedRevenueAccounts(
+  postingRows: Array<{
+    documentId: string | null;
+    accountId: string | null;
+    description: string | null;
+    accountClass: string | null;
+    isGroup: boolean | null;
+  }>,
+  serviceAccrualRows: ServiceAccrualAccountRow[] = []
+): (role: RevenueRole, invoiceId: string) => string | null {
+  // Both revenue roles are extracted the same way, and for the same reason: a
+  // provider document must replay the account its ORIGINAL journal posted to,
+  // never today's default. Merchandise revenue joined shipping here when AR
+  // invoices stopped referencing items — the item used to carry the account
+  // implicitly (via the provider item's own config), and with the item gone the
+  // posted account is the only thing that can.
+  //
+  // Every defect below belongs to ONE invoice, and none of them throws from
+  // here. This is a BATCH loader: `pushBatchToAccounting` calls it once for the
+  // whole claimed group (up to 20 operations) and its outer catch parks every
+  // id in that group as an error carrying whatever this function threw. So one
+  // invoice with a malformed revenue posting used to park every other posted
+  // invoice drained beside it — as a Warning naming a DIFFERENT document — and
+  // nothing brings those back: `shouldEnqueueMissingDocument` refuses to
+  // re-enqueue a parked Warning, the capped re-drive is `bill`-only, and the
+  // changed-since-failure retry needs the document to be edited. Instead the
+  // role's account is left unresolved (`null`) and
+  // `requirePostedSalesAccountId` / `requirePostedShippingAccountId` raise the
+  // structured error for that one invoice from inside `mapToRemote`, which
+  // `pushBatchToAccounting` already catches per entity.
+  const revenueAccounts: Record<RevenueRole, Map<string, Set<string>>> = {
+    ShippingRevenue: new Map(),
+    SalesRevenue: new Map(),
+    ServiceRevenue: new Map()
+  };
+  // Invoices whose posting for a role is unusable, whatever else it posted.
+  const unusableRoles: Record<RevenueRole, Set<string>> = {
+    ShippingRevenue: new Set(),
+    SalesRevenue: new Set(),
+    ServiceRevenue: new Set()
+  };
+  const recordAccount = (
+    role: RevenueRole,
+    invoiceId: string,
+    account: {
+      accountId: string | null;
+      accountClass: string | null;
+      isGroup: boolean | null;
+    }
+  ) => {
+    if (
+      !account.accountId ||
+      account.accountClass !== "Revenue" ||
+      account.isGroup
+    ) {
+      unusableRoles[role].add(invoiceId);
+      return;
+    }
+    const byInvoice = revenueAccounts[role];
+    const accounts = byInvoice.get(invoiceId) ?? new Set<string>();
+    accounts.add(account.accountId);
+    byInvoice.set(invoiceId, accounts);
+  };
+
+  // A service job line posts a "Contract Assets" leg for the share of the
+  // job's accrued revenue it clears, and "Service Revenue" for the rest. The
+  // Contract Assets leg is not revenue for sync: the run journals that
+  // accrued it never sync, so the provider takes the whole line as revenue.
+  // `classifyAccountingPostingRole` leaves it unclassified.
+  for (const row of postingRows) {
+    const role = classifyAccountingPostingRole(row.description);
+    if (!isRevenueRole(role)) continue;
+    // Unreachable in practice — the query filters `documentId in ids`, so the
+    // column is only nullable in the generated type — but a row that names no
+    // invoice cannot be recorded against one either, and the alternative here
+    // is a batch-wide throw.
+    if (!row.documentId) continue;
+    recordAccount(role, row.documentId, row);
+  }
+
+  // An invoice whose journal has no "Service Revenue" line replays the credit
+  // account of the service accrual rows it cleared (see `loadSalesInvoices`,
+  // which loads them only for such invoices).
+  for (const row of serviceAccrualRows) {
+    recordAccount("ServiceRevenue", row.invoiceId, row);
+  }
+
+  /**
+   * The one account a role replays, or `null` when the journal cannot name it.
+   *
+   * Ambiguity is never resolved by guessing — Carbon posts ALL merchandise
+   * revenue to one account (`accountDefault.salesAccount`; there is no
+   * per-item revenue account in the schema), all service job revenue to one
+   * (`accountDefault.serviceRevenueAccount`, else the sales account) and all
+   * shipping revenue to another, so two of any means the journal is not the
+   * shape this replay assumes. A role with ANY unusable posting stays unresolved even when a
+   * second line did name a valid leaf, for the same reason.
+   */
+  return (role: RevenueRole, invoiceId: string): string | null => {
+    if (unusableRoles[role].has(invoiceId)) return null;
+    const ids = [...(revenueAccounts[role].get(invoiceId) ?? [])];
+    return ids.length === 1 ? ids[0]! : null;
+  };
+}
+
+/**
  * Merchandise components must replay an original account, never today's default.
  *
  * This is also where an UNRESOLVABLE original account is reported, not just an
  * absent one — the loader leaves every defect as `null` so the refusal lands on
- * the one invoice it belongs to (see the comment in `loadSalesInvoices`). The
+ * the one invoice it belongs to (see `resolveReplayedRevenueAccounts`). The
  * message therefore names all three causes; the invoice id is what a reader
  * needs to open the journal and see which.
  */
@@ -314,6 +455,26 @@ export function requirePostedSalesAccountId(
       metadata: { invoiceId: invoice.id }
     });
   return invoice.salesRevenueAccountId;
+}
+
+/**
+ * Service job components must replay an original account, never today's
+ * default. The posting falls back to the Sales account when the Service
+ * Revenue default is empty, and its line is still described "Service
+ * Revenue", so the account read here is the one the journal credited.
+ */
+export function requirePostedServiceRevenueAccountId(
+  invoice: Accounting.SalesInvoice
+): string {
+  if (!invoice.serviceRevenueAccountId)
+    throw new JournalEntrySyncError({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      message:
+        "Cannot sync invoice: its posted journal does not name exactly one Service Revenue account — it is absent, posted to more than one account, or not a Revenue leaf account in the company group",
+      metadata: { invoiceId: invoice.id }
+    });
+  return invoice.serviceRevenueAccountId;
 }
 
 /** Shipping components must replay an original account, never today's default. */

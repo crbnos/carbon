@@ -67,6 +67,8 @@ const CertificateOfConformanceMenu = ({
   const permissions = usePermissions();
   const integrations = useIntegrations();
   const issueModal = useDisclosure();
+  const sendModal = useDisclosure();
+  // Kept after close, so the dialog shows its certificate while it animates out.
   const [sending, setSending] = useState<CertificateOfConformance | null>(null);
 
   // Loaded with `load`, so it revalidates after the issue/send actions.
@@ -165,7 +167,10 @@ const CertificateOfConformanceMenu = ({
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         disabled={!canSend}
-                        onClick={() => setSending(certificate)}
+                        onClick={() => {
+                          setSending(certificate);
+                          sendModal.onOpen();
+                        }}
                       >
                         <DropdownMenuIcon icon={<LuSend />} />
                         <Trans>Send…</Trans>
@@ -179,41 +184,61 @@ const CertificateOfConformanceMenu = ({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {issueModal.isOpen && (
-        <CertificateOfConformanceIssueModal
-          shipmentId={shipmentId}
-          isReissue={certificates.length > 0}
-          customerId={customerId}
-          defaultContactId={defaultContactId}
-          onClose={issueModal.onClose}
-        />
-      )}
+      <CertificateOfConformanceIssueModal
+        open={issueModal.isOpen}
+        shipmentId={shipmentId}
+        isReissue={certificates.length > 0}
+        customerId={customerId}
+        defaultContactId={defaultContactId}
+        onClose={issueModal.onClose}
+      />
       {sending && (
         <CertificateOfConformanceSendModal
+          open={sendModal.isOpen}
           shipmentId={shipmentId}
           certificate={sending}
           customerId={customerId}
           defaultContactId={defaultContactId}
-          onClose={() => setSending(null)}
+          onClose={sendModal.onClose}
         />
       )}
     </>
   );
 };
 
-function CertificateOfConformanceSendModal({
-  shipmentId,
-  certificate,
-  customerId,
-  defaultContactId,
-  onClose
-}: {
+type CertificateOfConformanceSendModalProps = {
   shipmentId: string;
   certificate: CertificateOfConformance;
   customerId: string | null;
   defaultContactId: string | null;
   onClose: () => void;
-}) {
+};
+
+function CertificateOfConformanceSendModal({
+  open,
+  ...props
+}: CertificateOfConformanceSendModalProps & { open: boolean }) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) props.onClose();
+      }}
+    >
+      <ModalContent>
+        <CertificateOfConformanceSendForm {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function CertificateOfConformanceSendForm({
+  shipmentId,
+  certificate,
+  customerId,
+  defaultContactId,
+  onClose
+}: CertificateOfConformanceSendModalProps) {
   const { t } = useLingui();
   const fetcher = useFetcher<{ success?: boolean; message?: string }>();
   const number = withRevisionSuffix(
@@ -228,53 +253,44 @@ function CertificateOfConformanceSendModal({
   }, [fetcher.state, fetcher.data]);
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
+    <ValidatedForm
+      method="post"
+      action={path.to.shipmentCertificateSend(shipmentId, certificate.id)}
+      validator={certificateOfConformanceSendValidator}
+      defaultValues={{
+        customerContact: defaultContactId ?? "",
+        cc: []
       }}
+      fetcher={fetcher}
     >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.shipmentCertificateSend(shipmentId, certificate.id)}
-          validator={certificateOfConformanceSendValidator}
-          defaultValues={{
-            customerContact: defaultContactId ?? "",
-            cc: []
-          }}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>{t`Send ${number}`}</ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <VStack spacing={4}>
-              <CustomerContact
-                name="customerContact"
-                customer={customerId ?? undefined}
-              />
-              <EmailRecipients name="cc" label={t`CC`} type="employee" />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <HStack>
-              <Button variant="secondary" onClick={onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button
-                type="submit"
-                leftIcon={<LuSend />}
-                isDisabled={fetcher.state !== "idle"}
-                isLoading={fetcher.state !== "idle"}
-              >
-                <Trans>Send</Trans>
-              </Button>
-            </HStack>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+      <ModalHeader>
+        <ModalTitle>{t`Send ${number}`}</ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={4}>
+          <CustomerContact
+            name="customerContact"
+            customer={customerId ?? undefined}
+          />
+          <EmailRecipients name="cc" label={t`CC`} type="employee" />
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <HStack>
+          <Button variant="secondary" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+          <Button
+            type="submit"
+            leftIcon={<LuSend />}
+            isDisabled={fetcher.state !== "idle"}
+            isLoading={fetcher.state !== "idle"}
+          >
+            <Trans>Send</Trans>
+          </Button>
+        </HStack>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 

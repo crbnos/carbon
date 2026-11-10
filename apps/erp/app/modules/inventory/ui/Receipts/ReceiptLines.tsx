@@ -3,10 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { isPreviewableDocumentType, storage } from "@carbon/files";
-import { Number, Submit, ValidatedForm } from "@carbon/form";
+import {
+  getDocumentType,
+  isPreviewableDocumentType,
+  storage
+} from "@carbon/files";
+import { Boolean, Number, Submit, ValidatedForm } from "@carbon/form";
 import { useAction, useRevalidator } from "@carbon/query";
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -34,21 +39,27 @@ import {
   ModalTitle,
   NumberField,
   NumberInput,
+  RadioGroup,
+  RadioGroupItem,
+  Textarea,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
 import type { TrackedEntityAttributes } from "@carbon/utils";
+import { getItemReadableId } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useId, useState } from "react";
 import {
   LuCalendar,
   LuCircleAlert,
+  LuClipboardCheck,
   LuEllipsisVertical,
   LuFileBadge,
   LuGroup,
@@ -58,12 +69,13 @@ import {
 } from "react-icons/lu";
 import {
   Await,
+  Link,
   Outlet,
-  useFetcher,
   useFetchers,
   useParams,
   useSubmit
 } from "react-router";
+import { z } from "zod";
 import {
   DocumentPreview,
   Empty,
@@ -77,28 +89,34 @@ import StorageUnit from "~/components/Form/StorageUnit";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { splitValidator } from "~/modules/inventory/inventory.models";
 import type {
   BatchProperty,
   ItemTracking,
   Receipt,
-  ReceiptLine
-} from "~/modules/inventory";
-import { splitValidator } from "~/modules/inventory";
+  ReceiptLine,
+  RentalReceiptLine
+} from "~/modules/inventory/types";
 import { CertificatesDrawer } from "~/modules/quality/ui/Certificates";
-import { getDocumentType } from "~/modules/shared/shared.service";
+import {
+  getInspectionStatusVariant,
+  useInspectionLotStatusLabel
+} from "~/modules/quality/ui/Inspections/InspectionStatus";
+import type { action as splitAction } from "~/routes/x+/receipt+/lines.split";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import BatchPropertiesConfig from "../Batches/BatchPropertiesConfig";
 import { BatchPropertiesFields } from "../Batches/BatchPropertiesFields";
+import { RentalUnitRow } from "../Shipments/RentalUnitRow";
 import { ReturnEntityForm } from "./ReturnEntityForm";
 
 const ReceiptLines = () => {
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
 
-  const fetcher = useFetcher();
+  const fetcher = useAction();
 
   const { upload, deleteFile, getPath } = useReceiptFiles(receiptId);
   const routeData = useRouteData<{
@@ -114,6 +132,10 @@ const ReceiptLines = () => {
       received: boolean;
       serialNumber: string | null;
     }[];
+    rentalLines: RentalReceiptLine[];
+    receiptInspections: ReceiptLineInspection[];
+    inspectedLineIds: string[];
+    heldLineIds: string[];
     receiptFiles: PostgrestResponse<StorageItem>;
     receiptLineTracking: ItemTracking[];
     batchProperties: PostgrestResponse<BatchProperty>;
@@ -245,61 +267,76 @@ const ReceiptLines = () => {
   const isPosted =
     routeData?.receipt.status === "Posted" ||
     routeData?.receipt.status === "Voided";
+  const isRental = routeData?.receipt?.sourceDocument === "Rental Agreement";
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <Trans>Receipt Lines</Trans>
-          </CardTitle>
-        </CardHeader>
+      {!isRental && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Receipt Lines</Trans>
+            </CardTitle>
+          </CardHeader>
 
-        <CardContent>
-          <div className="border rounded-lg">
-            {receiptLines.length === 0 ? (
-              <Empty className="py-6" />
-            ) : (
-              receiptLines.map((line, index) => {
-                const trackingCandidates =
-                  routeData?.receiptLineTracking?.filter((t) => {
-                    const attributes = t.attributes as TrackedEntityAttributes;
-                    return attributes["Receipt Line"] === line.id;
-                  }) ?? [];
-                const tracking =
-                  trackingCandidates.find((t) => t.expirationDate) ??
-                  trackingCandidates[0];
-                return (
-                  <ReceiptLineItem
-                    key={line.id}
-                    line={line}
-                    receipt={routeData?.receipt}
-                    isReadOnly={isPosted}
-                    onUpdate={onUpdateReceiptLine}
-                    files={routeData?.receiptFiles}
-                    className={
-                      index === receiptLines.length - 1 ? "border-none" : ""
-                    }
-                    serialNumbers={serialNumbersByLineId[line.id!] || []}
-                    getPath={(file) => getPath(file, line.id!)}
-                    onSerialNumbersChange={(newSerialNumbers) => {
-                      setSerialNumbersByLineId((prev) => ({
-                        ...prev,
-                        [line.id!]: newSerialNumbers
-                      }));
-                    }}
-                    batchProperties={routeData?.batchProperties}
-                    itemShelfLife={routeData?.itemShelfLife}
-                    tracking={tracking}
-                    upload={(files) => upload(files, line.id!)}
-                    deleteFile={(file) => deleteFile(file, line.id!)}
-                  />
-                );
-              })
-            )}
-          </div>
-        </CardContent>
-      </Card>
+          <CardContent>
+            <div className="border rounded-lg">
+              {receiptLines.length === 0 ? (
+                <Empty className="py-6" />
+              ) : (
+                receiptLines.map((line, index) => {
+                  const trackingCandidates =
+                    routeData?.receiptLineTracking?.filter((t) => {
+                      const attributes =
+                        t.attributes as TrackedEntityAttributes;
+                      return attributes["Receipt Line"] === line.id;
+                    }) ?? [];
+                  const tracking =
+                    trackingCandidates.find((t) => t.expirationDate) ??
+                    trackingCandidates[0];
+                  const inspection = routeData?.receiptInspections?.find(
+                    (i) => i.sourceDocumentLineId === line.id
+                  );
+                  return (
+                    <ReceiptLineItem
+                      key={line.id}
+                      line={line}
+                      receipt={routeData?.receipt}
+                      inspection={inspection}
+                      requiresInspection={
+                        !!inspection ||
+                        !!routeData?.inspectedLineIds?.includes(line.id ?? "")
+                      }
+                      needsHeldUnit={
+                        !!routeData?.heldLineIds?.includes(line.id ?? "")
+                      }
+                      isReadOnly={isPosted}
+                      onUpdate={onUpdateReceiptLine}
+                      files={routeData?.receiptFiles}
+                      className={
+                        index === receiptLines.length - 1 ? "border-none" : ""
+                      }
+                      serialNumbers={serialNumbersByLineId[line.id!] || []}
+                      getPath={(file) => getPath(file, line.id!)}
+                      onSerialNumbersChange={(newSerialNumbers) => {
+                        setSerialNumbersByLineId((prev) => ({
+                          ...prev,
+                          [line.id!]: newSerialNumbers
+                        }));
+                      }}
+                      batchProperties={routeData?.batchProperties}
+                      itemShelfLife={routeData?.itemShelfLife}
+                      tracking={tracking}
+                      upload={(files) => upload(files, line.id!)}
+                      deleteFile={(file) => deleteFile(file, line.id!)}
+                    />
+                  );
+                })
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {routeData?.fixedAssetLines && routeData.fixedAssetLines.length > 0 && (
         <Card>
           <CardHeader>
@@ -321,6 +358,35 @@ const ReceiptLines = () => {
                   }
                 />
               ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      {isRental && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Rental Units</Trans>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="border rounded-lg">
+              {(routeData?.rentalLines ?? []).length === 0 ? (
+                <Empty className="py-6" />
+              ) : (
+                routeData!.rentalLines.map((line, index) => (
+                  <ReceiptRentalLineItem
+                    key={line.id}
+                    line={line}
+                    isReadOnly={isPosted}
+                    className={
+                      index < routeData!.rentalLines.length - 1
+                        ? "border-b"
+                        : ""
+                    }
+                  />
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -348,8 +414,11 @@ function ReceiptFixedAssetLineItem({
   isReadOnly: boolean;
   className?: string;
 }) {
-  const fetcher = useFetcher();
+  const { t } = useLingui();
+  const fetcher = useAction();
   const [serialNumber, setSerialNumber] = useState(line.serialNumber ?? "");
+  const assetName =
+    line.assetName ?? line.assetReadableId ?? line.description ?? "";
 
   const updateField = (field: string, value: string) => {
     const formData = new FormData();
@@ -363,8 +432,14 @@ function ReceiptFixedAssetLineItem({
   };
 
   return (
-    <div className={cn("flex items-center gap-4 p-6", className)}>
+    <div
+      className={cn(
+        "flex items-center gap-4 p-6 max-md:flex-wrap max-md:p-4",
+        className
+      )}
+    >
       <Checkbox
+        aria-label={t`Received: ${assetName}`}
         isChecked={line.received}
         disabled={isReadOnly}
         onCheckedChange={(checked) =>
@@ -383,9 +458,10 @@ function ReceiptFixedAssetLineItem({
       </VStack>
       <Input
         placeholder="Serial Number"
+        aria-label={t`Serial number for ${line.assetName ?? line.assetReadableId ?? line.description ?? ""}`}
         value={serialNumber}
         isDisabled={isReadOnly}
-        className="w-48"
+        className="w-48 max-md:w-full"
         onChange={(e) => setSerialNumber(e.target.value)}
         onBlur={() => {
           if (serialNumber !== (line.serialNumber ?? "")) {
@@ -397,9 +473,224 @@ function ReceiptFixedAssetLineItem({
   );
 }
 
+function ReceiptRentalLineItem({
+  line,
+  isReadOnly,
+  className
+}: {
+  line: RentalReceiptLine;
+  isReadOnly: boolean;
+  className?: string;
+}) {
+  const { t } = useLingui();
+  const fetcher = useAction();
+  const [notes, setNotes] = useState(line.notes ?? "");
+  const [takeOutOfService, setTakeOutOfService] = useState(
+    line.takeOutOfService
+  );
+  const [outOfServiceReason, setOutOfServiceReason] = useState(
+    line.outOfServiceReason ?? ""
+  );
+  // Unique per line: the switch's id is its field name.
+  const outOfServiceField = `takeOutOfService-${line.id}`;
+
+  const updateField = (field: string, value: string) => {
+    const formData = new FormData();
+    formData.append("id", line.id);
+    formData.append("field", field);
+    formData.append("value", value);
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.receiptFixedAssetLineUpdate
+    });
+  };
+
+  return (
+    <div className={cn("@container flex flex-col gap-6 p-6", className)}>
+      <RentalUnitRow
+        line={line}
+        checked={line.received}
+        checkedLabel={t`Received`}
+        isReadOnly={isReadOnly}
+        onCheckedChange={(checked) => updateField("received", String(checked))}
+        onMeterChange={(meter) => updateField("meter", meter)}
+      />
+      <VStack spacing={4}>
+        <VStack spacing={1}>
+          <label className="text-xs text-muted-foreground">
+            <Trans>Notes</Trans>
+          </label>
+          <Textarea
+            aria-label={t`Notes`}
+            value={notes}
+            disabled={isReadOnly}
+            onChange={(e) => setNotes(e.target.value)}
+            onBlur={() => {
+              if (notes !== (line.notes ?? "")) {
+                updateField("notes", notes);
+              }
+            }}
+          />
+        </VStack>
+        <VStack spacing={2}>
+          {/* A form only for the field's context: the switch saves through
+              updateField like every other field on the line. */}
+          <ValidatedForm
+            defaultValues={{ [outOfServiceField]: line.takeOutOfService }}
+            validator={z.object({ [outOfServiceField]: z.any() })}
+            className="w-full"
+          >
+            <Boolean
+              name={outOfServiceField}
+              label={t`Take out of service`}
+              bordered
+              value={takeOutOfService}
+              isDisabled={isReadOnly}
+              onChange={(isTicked) => {
+                setTakeOutOfService(isTicked);
+                if (!isTicked) {
+                  setOutOfServiceReason("");
+                  updateField("outOfService", "");
+                }
+              }}
+            />
+          </ValidatedForm>
+          {takeOutOfService && (
+            <>
+              <Input
+                aria-label={t`Reason`}
+                placeholder={t`Reason`}
+                value={outOfServiceReason}
+                isDisabled={isReadOnly}
+                onChange={(e) => setOutOfServiceReason(e.target.value)}
+                onBlur={() => {
+                  const reason = outOfServiceReason.trim();
+                  if (reason && reason !== (line.outOfServiceReason ?? "")) {
+                    updateField("outOfService", reason);
+                  }
+                }}
+              />
+              {!line.outOfServiceReason && (
+                <span className="text-xs text-muted-foreground">
+                  <Trans>Enter a reason to take the unit out of service</Trans>
+                </span>
+              )}
+            </>
+          )}
+          {line.lessorClassification === "Sale" && (
+            <VStack spacing={1} className="pt-2">
+              <label className="text-xs text-muted-foreground">
+                <Trans>Return To</Trans>
+              </label>
+              <RadioGroup
+                value={line.residualDestination ?? ""}
+                disabled={isReadOnly}
+                onValueChange={(value) =>
+                  updateField("residualDestination", value)
+                }
+              >
+                <HStack spacing={2}>
+                  <RadioGroupItem
+                    value="Fleet"
+                    id={`${line.id}:residualDestination:Fleet`}
+                  />
+                  <label
+                    htmlFor={`${line.id}:residualDestination:Fleet`}
+                    className="text-sm"
+                  >
+                    <Trans>Rental fleet, as a new fleet asset</Trans>
+                  </label>
+                </HStack>
+                <HStack spacing={2}>
+                  <RadioGroupItem
+                    value="Inventory"
+                    id={`${line.id}:residualDestination:Inventory`}
+                  />
+                  <label
+                    htmlFor={`${line.id}:residualDestination:Inventory`}
+                    className="text-sm"
+                  >
+                    <Trans>Inventory, as finished goods</Trans>
+                  </label>
+                </HStack>
+              </RadioGroup>
+            </VStack>
+          )}
+        </VStack>
+      </VStack>
+    </div>
+  );
+}
+
+/** An inspection lot posting the receipt opened for one of its lines. */
+type ReceiptLineInspection = {
+  id: string;
+  inspectionId: string;
+  sourceDocumentLineId: string | null;
+  status: string;
+};
+
+/**
+ * The line's inspection state, in the badge row under the item. Before
+ * posting it says the item is inspected at receipt (it has a Receipt-usage
+ * inspection plan); after, it shows the lot's status and links to the lot.
+ */
+function ReceiptLineInspectionBadge({
+  inspection
+}: {
+  inspection?: ReceiptLineInspection;
+}) {
+  const { t } = useLingui();
+  const permissions = usePermissions();
+  const statusLabel = useInspectionLotStatusLabel(inspection?.status);
+
+  const badge = (
+    <Badge
+      variant={
+        inspection ? getInspectionStatusVariant(inspection.status) : "red"
+      }
+      className="gap-1"
+    >
+      <LuClipboardCheck className="size-3.5 shrink-0" />
+      {inspection ? statusLabel : <Trans>Inspection required</Trans>}
+    </Badge>
+  );
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {inspection && permissions.can("view", "quality") ? (
+          <Link
+            to={path.to.inspection(inspection.id)}
+            // The label replaces the badge text, so it names the status too.
+            aria-label={t`Inspection ${inspection.inspectionId}: ${statusLabel}`}
+            className="rounded-full"
+          >
+            {badge}
+          </Link>
+        ) : (
+          <span>{badge}</span>
+        )}
+      </TooltipTrigger>
+      <TooltipContent>
+        {inspection ? (
+          <Trans>Inspection {inspection.inspectionId}</Trans>
+        ) : (
+          <Trans>
+            Requires inspection. A lot opens when the receipt posts.
+          </Trans>
+        )}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 function ReceiptLineItem({
   line,
   receipt,
+  inspection,
+  requiresInspection,
+  needsHeldUnit,
   className,
   isReadOnly,
   onUpdate,
@@ -415,6 +706,9 @@ function ReceiptLineItem({
 }: {
   line: ReceiptLine;
   receipt?: Receipt;
+  inspection?: ReceiptLineInspection;
+  requiresInspection: boolean;
+  needsHeldUnit: boolean;
   className?: string;
   isReadOnly: boolean;
   files?: PostgrestResponse<StorageItem>;
@@ -451,6 +745,7 @@ function ReceiptLineItem({
   const { t } = useLingui();
   const [items] = useItems();
   const item = items.find((p) => p.id === line.itemId);
+  const itemName = item?.readableIdWithRevision ?? line.itemId ?? "";
   const unitsOfMeasure = useUnitOfMeasure();
   const splitDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
@@ -460,14 +755,26 @@ function ReceiptLineItem({
   const remainingQuantity =
     (line.outstandingQuantity ?? 0) - (line.receivedQuantity ?? 0);
   const isSurplus = remainingQuantity < 0;
+  const showHeldUnitWarning =
+    needsHeldUnit &&
+    !isReadOnly &&
+    receipt?.sourceDocument === "Purchase Order" &&
+    (line.receivedQuantity ?? 0) > 0 &&
+    !line.storageUnitId;
+  const heldUnitWarningId = useId();
 
   return (
-    <div className={cn("flex flex-col border-b p-6 gap-6 relative", className)}>
-      <div className="absolute top-3 right-6">
+    <div
+      className={cn(
+        "@container flex flex-col border-b p-6 gap-6 relative max-md:p-4 max-md:gap-4",
+        className
+      )}
+    >
+      <div className="absolute top-3 right-6 max-md:right-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <IconButton
-              aria-label={t`Line options`}
+              aria-label={t`Line options for ${itemName}`}
               variant="secondary"
               icon={<LuEllipsisVertical />}
               size="sm"
@@ -497,32 +804,54 @@ function ReceiptLineItem({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="flex flex-1 justify-between items-center w-full">
-        <HStack spacing={4} className="w-1/2">
-          <HStack spacing={4} className="flex-1">
+      {/* Sized by the line's own width, not the viewport: the content pane
+          it sits in is resizable. The item takes what the quantities leave,
+          and they stay on one line once the row is wide enough. pr-10 clears
+          the line menu. */}
+      <div className="flex flex-1 flex-col @3xl:flex-row @3xl:items-center gap-4 w-full pr-10">
+        <HStack spacing={4} className="w-full @3xl:w-auto @3xl:flex-1 min-w-0">
+          <HStack spacing={4} className="flex-1 min-w-0">
             <ItemThumbnail
               size="md"
               thumbnailPath={line.thumbnailPath}
               type={(item?.type as "Part") ?? "Part"}
             />
-            <VStack spacing={0}>
-              <span className="text-sm font-medium">{item?.name}</span>
-              <span className="text-xs text-muted-foreground line-clamp-2">
+            <VStack spacing={0} className="flex-1 min-w-0">
+              <span
+                className="text-sm font-medium line-clamp-2 break-words w-full min-w-0"
+                title={item?.name}
+              >
+                {item?.name}
+              </span>
+              <span
+                className="text-xs text-muted-foreground line-clamp-2 [overflow-wrap:anywhere] w-full min-w-0"
+                title={item?.readableIdWithRevision ?? undefined}
+              >
                 {item?.readableIdWithRevision}
               </span>
-              <div className="mt-2">
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
                 <Enumerable
                   value={
                     unitsOfMeasure?.find((u) => u.value === line.unitOfMeasure)
                       ?.label ?? null
                   }
                 />
+                {requiresInspection && (
+                  <ReceiptLineInspectionBadge inspection={inspection} />
+                )}
               </div>
             </VStack>
-            <VStack spacing={1}>
-              <label className="text-xs text-muted-foreground">Received</label>
+          </HStack>
+        </HStack>
+        <div className="flex flex-wrap @3xl:flex-nowrap items-start gap-x-6 gap-y-4 w-full @3xl:w-auto @3xl:shrink-0">
+          <HStack spacing={4} className="items-start">
+            <VStack spacing={1} className="w-28 shrink-0 max-md:w-auto">
+              <label className="text-xs text-muted-foreground">
+                <Trans>Received</Trans>
+              </label>
 
               <NumberField
+                aria-label={t`Received quantity for ${itemName}`}
                 value={line.receivedQuantity ?? 0}
                 onChange={(value) => {
                   // Default to 0 if value is NaN, null, or undefined
@@ -550,29 +879,41 @@ function ReceiptLineItem({
                 }}
               >
                 <NumberInput
-                  className="disabled:bg-transparent disabled:opacity-100 min-w-[100px]"
+                  className="disabled:bg-transparent disabled:opacity-100 w-full min-w-[100px]"
                   isDisabled={isReadOnly}
-                  size="sm"
                   min={0}
                 />
               </NumberField>
             </VStack>
-          </HStack>
-        </HStack>
-        <div className="flex flex-grow items-center justify-between gap-2 pl-4">
-          <HStack spacing={4}>
-            <VStack spacing={1} className="text-center items-center">
-              <label className="text-xs text-muted-foreground">Ordered</label>
-              <span className="text-sm py-1.5">{line.orderQuantity ?? 0}</span>
+            <VStack
+              spacing={1}
+              className="text-center items-center w-16 shrink-0"
+            >
+              <label className="text-xs text-muted-foreground">
+                <Trans>Ordered</Trans>
+              </label>
+              <span className="text-sm leading-10">
+                {line.orderQuantity ?? 0}
+              </span>
             </VStack>
 
-            <VStack spacing={1} className="text-center items-center">
+            <VStack
+              spacing={1}
+              className="text-center items-center w-24 shrink-0"
+            >
               <label className="text-xs text-muted-foreground">
-                {isSurplus ? "Surplus" : "Outstanding"}
+                {isSurplus ? (
+                  <Trans>Surplus</Trans>
+                ) : (
+                  <Trans>Outstanding</Trans>
+                )}
               </label>
               <HStack className="justify-center">
                 <span
-                  className={cn("text-sm py-1.5", isSurplus && "text-red-500")}
+                  className={cn(
+                    "text-sm leading-10",
+                    isSurplus && "text-red-500"
+                  )}
                 >
                   {Math.abs(remainingQuantity)}
                 </span>
@@ -583,7 +924,7 @@ function ReceiptLineItem({
                       <LuCircleAlert className="text-red-500" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      There are more received than ordered
+                      <Trans>There are more received than ordered</Trans>
                     </TooltipContent>
                   </Tooltip>
                 )}
@@ -591,22 +932,38 @@ function ReceiptLineItem({
             </VStack>
           </HStack>
 
-          <div className="flex flex-col items-start gap-1 min-w-[140px] text-sm">
+          <div className="flex flex-col items-start gap-1 w-48 @5xl:w-60 max-w-full min-w-0 text-sm max-md:w-full">
             <label className="text-xs text-muted-foreground">
-              Storage Unit
+              <Trans>Storage Unit</Trans>
             </label>
-            <StorageUnit
-              locationId={line.locationId}
-              value={line.storageUnitId}
-              isReadOnly={isReadOnly}
-              onChange={(storageUnit) => {
-                onUpdate({
-                  lineId: line.id!,
-                  field: "storageUnitId",
-                  value: storageUnit?.id ?? ""
-                });
-              }}
-            />
+            <div className="flex w-full min-w-0">
+              <StorageUnit
+                locationId={line.locationId}
+                value={line.storageUnitId}
+                isReadOnly={isReadOnly}
+                label={t`Storage unit for ${itemName}`}
+                aria-describedby={
+                  showHeldUnitWarning ? heldUnitWarningId : undefined
+                }
+                onChange={(storageUnit) => {
+                  onUpdate({
+                    lineId: line.id!,
+                    field: "storageUnitId",
+                    value: storageUnit?.id ?? ""
+                  });
+                }}
+              />
+            </div>
+            {showHeldUnitWarning && (
+              <span
+                id={heldUnitWarningId}
+                className="text-xs text-destructive w-full"
+              >
+                <Trans>
+                  Choose a storage unit at this location for inspected parts.
+                </Trans>
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -710,30 +1067,27 @@ function ReceiptLineItem({
             </Await>
           </Suspense>
           <FileDropzone onDrop={upload} />
-          {splitDisclosure.isOpen && (
-            <SplitReceiptLineModal
-              line={line}
-              onClose={splitDisclosure.onClose}
-            />
-          )}
-          {deleteDisclosure.isOpen && (
-            <ConfirmDelete
-              name="Receipt Line"
-              text="Are you sure you want to delete this receipt line?"
-              action={path.to.receiptLineDelete(line.id!)}
-              onCancel={deleteDisclosure.onClose}
-              onSubmit={deleteDisclosure.onClose}
-            />
-          )}
+          <SplitReceiptLineModal
+            open={splitDisclosure.isOpen}
+            line={line}
+            onClose={splitDisclosure.onClose}
+          />
+          <ConfirmDelete
+            isOpen={deleteDisclosure.isOpen}
+            name="Receipt Line"
+            text="Are you sure you want to delete this receipt line?"
+            action={path.to.receiptLineDelete(line.id!)}
+            onCancel={deleteDisclosure.onClose}
+            onSubmit={deleteDisclosure.onClose}
+          />
         </>
       )}
-      {certificatesDisclosure.isOpen && (
-        <CertificatesDrawer
-          receiptLineId={line.id!}
-          isReadOnly={!permissions.can("update", "inventory")}
-          onClose={certificatesDisclosure.onClose}
-        />
-      )}
+      <CertificatesDrawer
+        open={certificatesDisclosure.isOpen}
+        receiptLineId={line.id!}
+        isReadOnly={!permissions.can("update", "inventory")}
+        onClose={certificatesDisclosure.onClose}
+      />
     </div>
   );
 }
@@ -758,6 +1112,8 @@ function BatchForm({
   tracking: ItemTracking | undefined;
 }) {
   const { t } = useLingui();
+  const [items] = useItems();
+  const itemReadableId = getItemReadableId(items, line.itemId) ?? "";
   const submit = useSubmit();
   const shelfLife = itemShelfLife?.data?.find(
     (sl) => sl.itemId === line.itemId
@@ -883,7 +1239,7 @@ function BatchForm({
   const propertiesDisclosure = useDisclosure();
 
   return (
-    <div className="flex flex-col gap-6 w-full p-6 border rounded-lg">
+    <div className="flex flex-col gap-6 w-full p-6 border rounded-lg max-md:gap-4 max-md:p-4">
       <div className="flex justify-between items-center gap-4">
         <Heading size="h4">Batch Properties</Heading>
         <div className="flex items-center gap-2">
@@ -917,7 +1273,7 @@ function BatchForm({
           </Button>
         </div>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 ">
+      <div className="grid grid-cols-1 @min-[42rem]:grid-cols-3 gap-4">
         <div className="flex flex-col gap-2 w-full">
           <label className="text-xs text-muted-foreground flex items-center gap-2">
             <LuGroup /> <Trans>Batch Number</Trans>
@@ -928,6 +1284,7 @@ function BatchForm({
 
           <Input
             placeholder={`Batch number`}
+            aria-label={t`Batch number for ${itemReadableId}`}
             isDisabled={isReadOnly}
             value={values.number}
             onChange={(e) => {
@@ -948,6 +1305,7 @@ function BatchForm({
               <LuCalendar /> <Trans>Expiration Date</Trans>
             </label>
             <DatePicker
+              aria-label={t`Expiration date`}
               isDisabled={isReadOnly}
               value={
                 values.expirationDate ? parseDate(values.expirationDate) : null
@@ -990,12 +1348,14 @@ function BatchForm({
           </Await>
         </Suspense>
       </div>
-      {propertiesDisclosure.isOpen && (
+      {propertiesDisclosure.openCount > 0 && (
         <Suspense fallback={null}>
           <Await resolve={batchProperties}>
             {(resolvedBatchProperties) => {
               return (
                 <BatchPropertiesConfig
+                  key={`propertiesDisclosure-${propertiesDisclosure.openCount}`}
+                  open={propertiesDisclosure.isOpen}
                   itemId={line.itemId!}
                   properties={resolvedBatchProperties?.data ?? []}
                   type="modal"
@@ -1035,6 +1395,9 @@ function SerialForm({
   ) => void;
   tracking: ItemTracking | undefined;
 }) {
+  const { t } = useLingui();
+  const [items] = useItems();
+  const itemReadableId = getItemReadableId(items, line.itemId) ?? "";
   const shelfLife = itemShelfLife?.data?.find(
     (sl) => sl.itemId === line.itemId
   );
@@ -1064,26 +1427,17 @@ function SerialForm({
     [serialNumbers]
   );
 
-  const updateSerialNumber = useCallback(
-    async (serialNumber: { index: number; number: string }) => {
-      if (!receipt?.id || !serialNumber.number.trim()) return;
-
-      const error = validateSerialNumber(
-        serialNumber.number,
-        serialNumber.index
-      );
-      if (error) {
-        setErrors((prev) => ({ ...prev, [serialNumber.index]: error }));
-        return;
-      }
+  const saveSerialNumber = useCallback(
+    async (index: number, value: string) => {
+      if (!receipt?.id) return { ok: true, error: null };
 
       const formData = new FormData();
       formData.append("itemId", line.itemId!);
       formData.append("receiptId", receipt.id);
       formData.append("receiptLineId", line.id!);
       formData.append("trackingType", "serial");
-      formData.append("index", serialNumber.index.toString());
-      formData.append("serialNumber", serialNumber.number.trim());
+      formData.append("index", index.toString());
+      formData.append("serialNumber", value);
       if (expiryDate) {
         formData.append("expiryDate", expiryDate);
       }
@@ -1093,36 +1447,40 @@ function SerialForm({
           method: "POST",
           body: formData
         });
-
-        if (response.ok) {
-          // Clear error if submission was successful
-          setErrors((prev) => {
-            const newErrors = { ...prev };
-            delete newErrors[serialNumber.index];
-            return newErrors;
-          });
-        } else {
-          setErrors((prev) => ({
-            ...prev,
-            [serialNumber.index]: "Serial number already exists"
-          }));
-        }
-      } catch (error) {
-        if (error instanceof Error && error.message.includes("duplicate")) {
-          setErrors((prev) => ({
-            ...prev,
-            [serialNumber.index]: "Serial number already exists for this item"
-          }));
-        }
+        // The operation's result, `{ data, error }`; a refused form is a 422.
+        const result: { error: { message: string } | null } | null = response.ok
+          ? await response.json()
+          : null;
+        if (result && !result.error) return { ok: true, error: null };
+        return {
+          ok: false,
+          error: result?.error?.message ?? "Failed to save the serial number"
+        };
+      } catch {
+        return { ok: false, error: "Failed to save the serial number" };
       }
     },
-    [line.id, line.itemId, receipt?.id, validateSerialNumber, expiryDate]
+    [line.id, line.itemId, receipt?.id, expiryDate]
+  );
+
+  const updateSerialNumber = useCallback(
+    async (serialNumber: { index: number; number: string }) => {
+      const { index } = serialNumber;
+      const saved = await saveSerialNumber(index, serialNumber.number.trim());
+      setErrors((prev) => {
+        const next = { ...prev };
+        if (saved.error) next[index] = saved.error;
+        else delete next[index];
+        return next;
+      });
+    },
+    [saveSerialNumber]
   );
 
   const propertiesDisclosure = useDisclosure();
 
   return (
-    <div className="flex flex-col gap-6 p-6 border rounded-lg">
+    <div className="flex flex-col gap-6 p-6 border rounded-lg max-md:gap-4 max-md:p-4">
       <div className="flex justify-between items-center gap-6">
         <Heading size="h4">Serial Numbers</Heading>
         <div className="flex items-center gap-2">
@@ -1148,12 +1506,13 @@ function SerialForm({
       </div>
 
       {showExpiryField && (
-        <div className="flex flex-col gap-2 max-w-xs">
+        <div className="flex flex-col gap-2 max-w-xs max-md:max-w-none">
           <label className="text-xs text-muted-foreground flex items-center gap-2">
             <LuCalendar />{" "}
             <Trans>Expiration Date (applies to all serials on this line)</Trans>
           </label>
           <DatePicker
+            aria-label={t`Expiration date`}
             isDisabled={isReadOnly}
             value={expiryDate ? parseDate(expiryDate) : null}
             onChange={(date) => setExpiryDate(date?.toString() ?? "")}
@@ -1161,7 +1520,10 @@ function SerialForm({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3">
+      <div
+        data-serial-boxes
+        className="grid grid-cols-1 @min-[42rem]:grid-cols-3 gap-x-4 gap-y-3"
+      >
         {serialNumbers.map((serialNumber, index) => (
           <div
             key={`${line.id}-${index}-serial`}
@@ -1169,6 +1531,7 @@ function SerialForm({
           >
             <Input
               placeholder={`Serial ${index + 1}`}
+              aria-label={t`Serial number ${index + 1} for ${itemReadableId}`}
               isDisabled={isReadOnly}
               value={serialNumber.number}
               onChange={(e) => {
@@ -1193,22 +1556,18 @@ function SerialForm({
                 onSerialNumbersChange(newSerialNumbers);
               }}
               onBlur={() => {
-                if (serialNumber.number.trim()) {
-                  updateSerialNumber(serialNumber);
-                }
+                updateSerialNumber(serialNumber);
               }}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  if (serialNumber.number.trim()) {
-                    updateSerialNumber(serialNumber);
-                  }
                   const nextInput = e.currentTarget
-                    .closest("div")
-                    ?.querySelector(`input[placeholder="Serial ${index + 2}"]`);
-                  if (nextInput) {
-                    (nextInput as HTMLElement).focus();
-                  }
+                    .closest("[data-serial-boxes]")
+                    ?.querySelector<HTMLInputElement>(
+                      `input[placeholder="Serial ${index + 2}"]`
+                    );
+                  if (nextInput) nextInput.focus();
+                  else e.currentTarget.blur();
                 }
               }}
               className={cn(errors[index] && "border-destructive")}
@@ -1239,65 +1598,64 @@ function SerialForm({
   );
 }
 
-function SplitReceiptLineModal({
-  line,
-  onClose
-}: {
+type SplitReceiptLineModalProps = {
   line: ReceiptLine;
+  open: boolean;
   onClose: () => void;
-}) {
-  const { t } = useLingui();
-  const fetcher = useAction<{ success: boolean }>({
-    onSuccess: (data) => {
-      if (data?.success) {
-        onClose();
-      }
-    }
-  });
-  return (
-    <Modal open onOpenChange={onClose}>
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.receiptLineSplit}
-          validator={splitValidator}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>Split Receipt Line</ModalTitle>
-            <ModalDescription>
-              Select the quantity that you'd like to split into a new line.
-            </ModalDescription>
-          </ModalHeader>
+};
 
-          <ModalBody>
-            <input
-              type="hidden"
-              name="documentId"
-              value={line.receiptId ?? ""}
-            />
-            <input type="hidden" name="documentLineId" value={line.id!} />
-            <input
-              type="hidden"
-              name="locationId"
-              value={line.locationId ?? ""}
-            />
-            <Number
-              name="quantity"
-              label={t`Quantity`}
-              maxValue={line.orderQuantity ?? 0 - 0.0001}
-              minValue={0.0001}
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
-            </Button>
-            <Submit>Split Line</Submit>
-          </ModalFooter>
-        </ValidatedForm>
+function SplitReceiptLineModal({
+  open,
+  onClose,
+  ...props
+}: SplitReceiptLineModalProps) {
+  return (
+    <Modal open={open} onOpenChange={onClose}>
+      <ModalContent>
+        <SplitReceiptLineBody onClose={onClose} {...props} />
       </ModalContent>
     </Modal>
+  );
+}
+
+function SplitReceiptLineBody({
+  line,
+  onClose
+}: Omit<SplitReceiptLineModalProps, "open">) {
+  const { t } = useLingui();
+  const fetcher = useAction<typeof splitAction>({ onSuccess: onClose });
+  return (
+    <ValidatedForm
+      method="post"
+      action={path.to.receiptLineSplit}
+      validator={splitValidator}
+      fetcher={fetcher}
+    >
+      <ModalHeader>
+        <ModalTitle>Split Receipt Line</ModalTitle>
+        <ModalDescription>
+          Select the quantity that you'd like to split into a new line.
+        </ModalDescription>
+      </ModalHeader>
+
+      <ModalBody>
+        <input type="hidden" name="documentId" value={line.receiptId ?? ""} />
+        <input type="hidden" name="documentLineId" value={line.id!} />
+        <input type="hidden" name="locationId" value={line.locationId ?? ""} />
+        <Number
+          name="quantity"
+          label={t`Quantity`}
+          maxValue={line.orderQuantity ?? 0 - 0.0001}
+          minValue={0.0001}
+        />
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          Cancel
+        </Button>
+        <Submit>Split Line</Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 
@@ -1361,7 +1719,7 @@ function useReceiptFiles(receiptId: string) {
           });
 
         if (fileUpload.error) {
-          toast.error(`Failed to upload file: ${file.name}`);
+          toastError(`Failed to upload file: ${file.name}`, fileUpload.error);
         } else if (fileUpload.data?.path) {
           toast.success(`Uploaded: ${file.name}`);
           const formData = new FormData();
@@ -1395,7 +1753,7 @@ function useReceiptFiles(receiptId: string) {
         .remove([getPath(file, lineId)]);
 
       if (error) {
-        toast.error(error.message || "Error deleting file");
+        toastError("Error deleting file", error);
         return;
       }
 

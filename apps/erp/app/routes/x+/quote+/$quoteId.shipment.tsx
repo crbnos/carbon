@@ -9,11 +9,10 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
-  getQuote,
   isQuoteLocked,
-  quoteShipmentValidator,
-  upsertQuoteShipment
-} from "~/modules/sales";
+  quoteShipmentValidator
+} from "~/modules/sales/sales.models";
+import { getQuote, upsertQuoteShipment } from "~/modules/sales/sales.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 

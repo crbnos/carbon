@@ -7,14 +7,14 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { storage } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
+import { TiptapText } from "@carbon/files/markdown";
 import { processImage } from "@carbon/files/media";
 import { initNodeImageCodecs } from "@carbon/files/media/node";
 import { getLogger } from "@carbon/logger";
 import {
   getMaterialDescription,
   getMaterialId,
-  openAiCategorizationModel,
-  textToTiptap
+  openAiCategorizationModel
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateText, Output } from "ai";
@@ -1399,18 +1399,38 @@ export async function getCustomerIdAndContactId(
   }
 
   if (!customerContactId) {
-    // If there is no matching contact in Carbon, check if contact exists by email first
+    // If there is no matching contact in Carbon, check if contact exists by email first.
+    // Contacts may share an email: reuse one already on this customer, or the only match.
     const existingContactByEmail = await carbon
       .from("contact")
-      .select("id")
+      .select("id, customerContact(customerId)")
       .eq("companyId", company.id)
       .eq("email", contact.email!)
       .eq("isCustomer", true)
-      .maybeSingle();
+      .order("id");
+
+    if (existingContactByEmail.error) {
+      logger.error("Failed to look up contact by email in Carbon", {
+        error: existingContactByEmail.error
+      });
+      return {
+        customerContactId: null,
+        customerId
+      };
+    }
+
+    const contactsWithEmail = existingContactByEmail.data;
+    const reusableContact =
+      contactsWithEmail.find((c) =>
+        c.customerContact.some((link) => link.customerId === customerId)
+      ) ??
+      // Several contacts with this email and none on the customer: they are
+      // other people's, so create a new one rather than take one over.
+      (contactsWithEmail.length === 1 ? contactsWithEmail[0] : undefined);
 
     let contactId: string;
 
-    if (existingContactByEmail.data) {
+    if (reusableContact) {
       // Update the existing contact
       const updatedContact = await carbon
         .from("contact")
@@ -1418,7 +1438,7 @@ export async function getCustomerIdAndContactId(
           firstName: contact.first_name!,
           lastName: contact.last_name!
         })
-        .eq("id", existingContactByEmail.data.id)
+        .eq("id", reusableContact.id)
         .select()
         .single();
 
@@ -2120,7 +2140,7 @@ export async function createPartFromComponent(
             machineTime: (operation.runtime ?? 0) * 60,
             machineUnit: "Minutes/Piece",
             workInstruction: operation.notes
-              ? textToTiptap(operation.notes)
+              ? TiptapText(operation.notes, { format: "text" }).toDocument()
               : {}
           });
         }
@@ -2757,10 +2777,14 @@ export async function insertOrderLines(
                 ? new Date(promisedDate ?? orderItem.ships_on!).toISOString()
                 : null,
             internalNotes: orderItem.private_notes
-              ? textToTiptap(orderItem.private_notes)
+              ? TiptapText(orderItem.private_notes, {
+                  format: "text"
+                }).toDocument()
               : null,
             externalNotes: orderItem.public_notes
-              ? textToTiptap(orderItem.public_notes)
+              ? TiptapText(orderItem.public_notes, {
+                  format: "text"
+                }).toDocument()
               : null
           };
 
@@ -3010,10 +3034,14 @@ export async function insertQuoteLines(
           companyId,
           createdBy,
           internalNotes: quoteItem.private_notes
-            ? textToTiptap(quoteItem.private_notes)
+            ? TiptapText(quoteItem.private_notes, {
+                format: "text"
+              }).toDocument()
             : null,
           externalNotes: quoteItem.public_notes
-            ? textToTiptap(quoteItem.public_notes)
+            ? TiptapText(quoteItem.public_notes, {
+                format: "text"
+              }).toDocument()
             : null
         };
 
@@ -3138,7 +3166,9 @@ export async function insertQuoteLines(
                       overheadRate: operationRates.overheadRate,
                       machineRate: operationRates.machineRate,
                       workInstruction: operation.notes
-                        ? textToTiptap(operation.notes)
+                        ? TiptapText(operation.notes, {
+                            format: "text"
+                          }).toDocument()
                         : {},
                       companyId,
                       createdBy

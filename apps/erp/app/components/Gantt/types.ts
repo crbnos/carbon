@@ -57,6 +57,14 @@ export type GanttEvent = {
      * ms relative to the timeline window, like the bar's.
      */
     conflictSegments?: { offset: number; duration: number }[];
+    /**
+     * Bars drawn side by side INSIDE this row instead of as child rows — e.g. a
+     * work-center lane carrying every operation it runs on one line. Each is
+     * labelled with its `message` and selectable by its `id`. When set, the
+     * row's own bar is not drawn. Bars that overlap in time share the row in
+     * stacked tracks.
+     */
+    items?: GanttEvent[];
   };
 };
 

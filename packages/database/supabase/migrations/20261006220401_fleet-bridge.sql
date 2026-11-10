@@ -1,0 +1,245 @@
+-- Fleet bridge + Make to Asset: item/serial/work-center links on fixedAsset, job
+-- asset targets, the fixedAssetTransfer document and the CIP cost ledger, PP&E
+-- accounts, and the Rental Fleet and Construction in Progress classes. The
+-- fleetAssets view comes with the rental agreements it reads
+-- (20261006220501_rental-agreements.sql). Idempotent.
+-- Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §2
+
+-- 1) Columns ---------------------------------------------------------------------
+ALTER TABLE "fixedAsset"
+  ADD COLUMN IF NOT EXISTS "itemId" TEXT REFERENCES "item"("id") ON DELETE RESTRICT,
+  ADD COLUMN IF NOT EXISTS "trackedEntityId" TEXT REFERENCES "trackedEntity"("id") ON DELETE RESTRICT,
+  ADD COLUMN IF NOT EXISTS "quantity" NUMERIC NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS "workCenterId" TEXT REFERENCES "workCenter"("id") ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS "outOfServiceSince" DATE,
+  ADD COLUMN IF NOT EXISTS "outOfServiceReason" TEXT;
+
+ALTER TABLE "fixedAssetClass" ADD COLUMN IF NOT EXISTS "isConstructionInProgress" BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE "job"
+  ADD COLUMN IF NOT EXISTS "fixedAssetClassId" TEXT REFERENCES "fixedAssetClass"("id"),
+  ADD COLUMN IF NOT EXISTS "fixedAssetId" TEXT REFERENCES "fixedAsset"("id");
+
+DO $fleetchecks$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = '"fixedAsset"'::regclass AND conname = 'fixedAsset_quantity_v1_check') THEN
+    -- v1 is one serialized unit per asset; a later bulk-pool phase relaxes this.
+    ALTER TABLE "fixedAsset" ADD CONSTRAINT "fixedAsset_quantity_v1_check" CHECK ("quantity" = 1);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = '"fixedAsset"'::regclass AND conname = 'fixedAsset_outOfService_check') THEN
+    ALTER TABLE "fixedAsset" ADD CONSTRAINT "fixedAsset_outOfService_check"
+      CHECK (("outOfServiceSince" IS NULL) = ("outOfServiceReason" IS NULL));
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = '"job"'::regclass AND conname = 'job_asset_target_check') THEN
+    -- A job completes to inventory, to a new asset of a class, or sweeps its cost
+    -- to one Under Construction asset — never two of those.
+    ALTER TABLE "job" ADD CONSTRAINT "job_asset_target_check"
+      CHECK (num_nonnulls("fixedAssetClassId", "fixedAssetId") <= 1);
+  END IF;
+END $fleetchecks$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "fixedAsset_trackedEntity_live_idx"
+  ON "fixedAsset" ("companyId", "trackedEntityId")
+  WHERE "trackedEntityId" IS NOT NULL AND "status" <> 'Disposed';
+CREATE INDEX IF NOT EXISTS "fixedAsset_itemId_idx" ON "fixedAsset" ("itemId");
+CREATE INDEX IF NOT EXISTS "fixedAsset_workCenterId_idx" ON "fixedAsset" ("workCenterId");
+CREATE INDEX IF NOT EXISTS "job_fixedAssetClassId_idx" ON "job" ("fixedAssetClassId");
+CREATE INDEX IF NOT EXISTS "job_fixedAssetId_idx" ON "job" ("fixedAssetId");
+
+-- 2) fixedAssetTransfer ----------------------------------------------------------
+CREATE TABLE IF NOT EXISTS "fixedAssetTransfer" (
+  "id" TEXT NOT NULL DEFAULT id('fatr'),
+  "companyId" TEXT NOT NULL,
+  "transferId" TEXT NOT NULL,
+  "type" "fixedAssetTransferType" NOT NULL,
+  "sourceType" "fixedAssetTransferSourceType" NOT NULL DEFAULT 'Inventory',
+  "fixedAssetId" TEXT NOT NULL REFERENCES "fixedAsset"("id") ON DELETE RESTRICT,
+  "itemId" TEXT REFERENCES "item"("id"),
+  "trackedEntityId" TEXT REFERENCES "trackedEntity"("id"),
+  "jobId" TEXT REFERENCES "job"("id") ON DELETE SET NULL,
+  "fromClassId" TEXT REFERENCES "fixedAssetClass"("id"),
+  "locationId" TEXT NOT NULL REFERENCES "location"("id"),
+  "storageUnitId" TEXT,
+  "quantity" NUMERIC NOT NULL DEFAULT 1,
+  "transferDate" DATE NOT NULL,
+  "inServiceDate" DATE,
+  "amount" NUMERIC NOT NULL,
+  "accumulatedDepreciation" NUMERIC NOT NULL DEFAULT 0,
+  "journalId" TEXT REFERENCES "journal"("id") ON DELETE SET NULL,
+  "status" TEXT NOT NULL DEFAULT 'Draft' CHECK ("status" IN ('Draft', 'Posted')),
+  "postedAt" TIMESTAMP WITH TIME ZONE,
+  "postedBy" TEXT REFERENCES "user"("id"),
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"),
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "customFields" JSONB,
+  CONSTRAINT "fixedAssetTransfer_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "fixedAssetTransfer_transferId_companyId_key" UNIQUE ("transferId", "companyId"),
+  CONSTRAINT "fixedAssetTransfer_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE INDEX IF NOT EXISTS "fixedAssetTransfer_companyId_idx" ON "fixedAssetTransfer" ("companyId");
+CREATE INDEX IF NOT EXISTS "fixedAssetTransfer_fixedAssetId_idx" ON "fixedAssetTransfer" ("fixedAssetId");
+CREATE INDEX IF NOT EXISTS "fixedAssetTransfer_itemId_idx" ON "fixedAssetTransfer" ("itemId");
+CREATE INDEX IF NOT EXISTS "fixedAssetTransfer_trackedEntityId_idx" ON "fixedAssetTransfer" ("trackedEntityId");
+CREATE INDEX IF NOT EXISTS "fixedAssetTransfer_jobId_idx" ON "fixedAssetTransfer" ("jobId");
+CREATE INDEX IF NOT EXISTS "fixedAssetTransfer_fromClassId_idx" ON "fixedAssetTransfer" ("fromClassId");
+CREATE INDEX IF NOT EXISTS "fixedAssetTransfer_locationId_idx" ON "fixedAssetTransfer" ("locationId");
+CREATE INDEX IF NOT EXISTS "fixedAssetTransfer_journalId_idx" ON "fixedAssetTransfer" ("journalId");
+CREATE INDEX IF NOT EXISTS "fixedAssetTransfer_postedBy_idx" ON "fixedAssetTransfer" ("postedBy");
+CREATE INDEX IF NOT EXISTS "fixedAssetTransfer_createdBy_idx" ON "fixedAssetTransfer" ("createdBy");
+
+-- RLS: the policies are rendered from packages/database/src/authz/manifest.ts.
+
+-- 3) fixedAssetCipCost (append-only) ---------------------------------------------
+CREATE TABLE IF NOT EXISTS "fixedAssetCipCost" (
+  "id" TEXT NOT NULL DEFAULT id('facc'),
+  "companyId" TEXT NOT NULL,
+  "fixedAssetId" TEXT NOT NULL REFERENCES "fixedAsset"("id") ON DELETE RESTRICT,
+  "sourceType" TEXT NOT NULL CHECK ("sourceType" IN ('Purchase Invoice', 'Receipt', 'Job', 'Manual')),
+  "sourceDocumentId" TEXT,
+  "sourceDocumentLineId" TEXT,
+  "jobId" TEXT REFERENCES "job"("id") ON DELETE SET NULL,
+  "amount" NUMERIC NOT NULL,
+  "costDate" DATE NOT NULL,
+  "journalId" TEXT REFERENCES "journal"("id") ON DELETE SET NULL,
+  "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT REFERENCES "user"("id"),
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  CONSTRAINT "fixedAssetCipCost_pkey" PRIMARY KEY ("id", "companyId"),
+  CONSTRAINT "fixedAssetCipCost_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE INDEX IF NOT EXISTS "fixedAssetCipCost_companyId_idx" ON "fixedAssetCipCost" ("companyId");
+CREATE INDEX IF NOT EXISTS "fixedAssetCipCost_asset_idx" ON "fixedAssetCipCost" ("companyId", "fixedAssetId");
+CREATE INDEX IF NOT EXISTS "fixedAssetCipCost_jobId_idx" ON "fixedAssetCipCost" ("jobId");
+CREATE INDEX IF NOT EXISTS "fixedAssetCipCost_journalId_idx" ON "fixedAssetCipCost" ("journalId");
+CREATE INDEX IF NOT EXISTS "fixedAssetCipCost_createdBy_idx" ON "fixedAssetCipCost" ("createdBy");
+
+-- RLS: the policies are rendered from packages/database/src/authz/manifest.ts.
+
+-- 4) Sequence per company -----------------------------------------------------------
+INSERT INTO "sequence" ("table", "name", "prefix", "suffix", "next", "size", "step", "companyId")
+SELECT 'fixedAssetTransfer', 'Fixed Asset Transfer', 'FAT', NULL, 0, 6, 1, c.id
+FROM "company" c
+WHERE NOT EXISTS (SELECT 1 FROM "sequence" s WHERE s."companyId" = c.id AND s."table" = 'fixedAssetTransfer');
+
+-- 5) PP&E accounts, one per company group that has a chart ----------------------------
+-- Re-runnable, and the same parent fallback as 20261006220201_revenue-recognition-core:
+-- the "Property, Plant & Equipment" group by NAME, else the group holding a seeded PP&E
+-- sibling, else the chart root with a NOTICE. A group that already holds the number OR
+-- the name keeps its account.
+DO $fleetaccounts$
+DECLARE
+  spec RECORD;
+  grp TEXT;
+  parent_id TEXT;
+BEGIN
+  FOR spec IN
+    SELECT * FROM (VALUES
+      ('1370', 'Rental Fleet', 'Fixed Asset'),
+      ('1380', 'Accumulated Depreciation – Rental Fleet', 'Accumulated Depreciation'),
+      ('1390', 'Construction in Progress', 'Fixed Asset')
+    ) AS s(number, name, account_type)
+  LOOP
+    FOR grp IN SELECT DISTINCT a."companyGroupId" FROM "account" a LOOP
+      CONTINUE WHEN EXISTS (
+        SELECT 1 FROM "account" a
+        WHERE a."companyGroupId" = grp AND (a.number = spec.number OR a.name = spec.name)
+      );
+
+      SELECT g.id INTO parent_id
+      FROM "account" g
+      WHERE g."companyGroupId" = grp AND g."isGroup" = TRUE AND g.name = 'Property, Plant & Equipment'
+      LIMIT 1;
+
+      IF parent_id IS NULL THEN
+        SELECT p.id INTO parent_id
+        FROM "account" a
+        JOIN "account" p ON p.id = a."parentId" AND p."isGroup" = TRUE
+        WHERE a."companyGroupId" = grp AND a.number = ANY (ARRAY['1310', '1320', '1330', '1340', '1350', '1360'])
+        ORDER BY a.number
+        LIMIT 1;
+      END IF;
+
+      IF parent_id IS NULL THEN
+        RAISE NOTICE 'fleet-bridge: company group % has no "Property, Plant & Equipment" group; account % % is at the chart root',
+          grp, spec.number, spec.name;
+      END IF;
+
+      INSERT INTO "account" ("id", "number", "name", "class", "accountType", "incomeBalance", "consolidatedRate", "parentId", "isGroup", "active", "isSystem", "companyGroupId", "createdBy")
+      VALUES (
+        id('acct'), spec.number, spec.name, 'Asset', spec.account_type::"accountType",
+        'Balance Sheet', 'Current', parent_id, false, true, false, grp, 'system'
+      );
+    END LOOP;
+  END LOOP;
+END $fleetaccounts$;
+
+-- 6) Two classes per company ---------------------------------------------------------
+INSERT INTO "fixedAssetClass" (
+  "name", "depreciationMethod", "usefulLifeMonths", "residualValuePercent", "isConstructionInProgress",
+  "assetAccountId", "accumulatedDepreciationAccountId", "depreciationExpenseAccountId",
+  "writeOffAccountId", "writeDownAccountId", "gainOnDisposalAccountId", "lossOnDisposalAccountId",
+  "companyId", "createdBy"
+)
+SELECT
+  cls.name, 'Straight Line'::"depreciationMethod", cls.useful_life_months, cls.residual_percent, cls.is_cip,
+  a_asset.id, a_accum.id, a6310.id, a6320.id, a6320.id, a4140.id, a6320.id, c.id, 'system'
+FROM "company" c
+CROSS JOIN (
+  VALUES
+    ('Rental Fleet', 60, 20, false, '1370', '1380'),
+    ('Construction in Progress', 120, 0, true, '1390', '1330')
+) AS cls(name, useful_life_months, residual_percent, is_cip, asset_number, accum_number)
+JOIN "account" a_asset ON a_asset."companyGroupId" = c."companyGroupId" AND a_asset.number = cls.asset_number
+JOIN "account" a_accum ON a_accum."companyGroupId" = c."companyGroupId" AND a_accum.number = cls.accum_number
+JOIN "account" a6310 ON a6310."companyGroupId" = c."companyGroupId" AND a6310.number = '6310'
+JOIN "account" a6320 ON a6320."companyGroupId" = c."companyGroupId" AND a6320.number = '6320'
+JOIN "account" a4140 ON a4140."companyGroupId" = c."companyGroupId" AND a4140.number = '4140'
+WHERE c."isEliminationEntity" IS NOT TRUE
+  AND EXISTS (SELECT 1 FROM "user" u WHERE u.id = 'system')
+ON CONFLICT ("name", "companyId") DO NOTHING;
+
+-- 7) "jobs" selects j.* before aliased columns: DROP + CREATE (never CREATE OR REPLACE).
+--    Body copied verbatim from 20260811123619_widen-sales-production-scale.sql.
+DROP VIEW IF EXISTS "jobs";
+CREATE VIEW "jobs" WITH(SECURITY_INVOKER=true) AS
+WITH job_model AS (
+  SELECT
+    j.id AS job_id,
+    j."companyId",
+    COALESCE(j."modelUploadId", i."modelUploadId") AS model_upload_id
+  FROM "job" j
+  INNER JOIN "item" i ON j."itemId" = i."id" AND j."companyId" = i."companyId"
+)
+SELECT
+  j.*,
+  jmm."id" as "jobMakeMethodId",
+  i.name,
+  i."readableIdWithRevision" as "itemReadableIdWithRevision",
+  i.type as "itemType",
+  i.name as "description",
+  i."itemTrackingType",
+  i.active,
+  i."replenishmentSystem",
+  mu.id as "modelId",
+  mu."autodeskUrn",
+  mu."modelPath",
+  CASE
+    WHEN i."thumbnailPath" IS NULL AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
+    ELSE i."thumbnailPath"
+  END as "thumbnailPath",
+  mu."name" as "modelName",
+  mu."size" as "modelSize",
+  so."salesOrderId" as "salesOrderReadableId",
+  qo."quoteId" as "quoteReadableId"
+FROM "job" j
+LEFT JOIN "jobMakeMethod" jmm ON jmm."jobId" = j.id AND jmm."parentMaterialId" IS NULL
+INNER JOIN "item" i ON j."itemId" = i."id" AND j."companyId" = i."companyId"
+LEFT JOIN job_model jm ON j.id = jm.job_id AND j."companyId" = jm."companyId"
+LEFT JOIN "modelUpload" mu ON mu.id = jm.model_upload_id
+LEFT JOIN "salesOrder" so on j."salesOrderId" = so.id AND j."companyId" = so."companyId"
+LEFT JOIN "quote" qo ON j."quoteId" = qo.id AND j."companyId" = qo."companyId";
+
+NOTIFY pgrst, 'reload schema';

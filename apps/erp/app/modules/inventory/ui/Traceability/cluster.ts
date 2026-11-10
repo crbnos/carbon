@@ -7,7 +7,7 @@ import type {
   ActivityInput,
   ActivityOutput,
   TrackedEntity
-} from "~/modules/inventory";
+} from "~/modules/inventory/types";
 
 /**
  * Serial items at quantity N create N quantity-1 tracked entities by design

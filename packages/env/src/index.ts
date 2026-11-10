@@ -113,9 +113,39 @@ export const ASSEMBLER_STORAGE_PUBLIC_URL = getEnv(
 
 export const GOOGLE_PLACES_API_KEY = getEnv("GOOGLE_PLACES_API_KEY");
 
+// Google OAuth app backing workflow integration connections (Google Calendar,
+// Gmail). Optional: an unconfigured server lists the piece as unavailable rather
+// than failing to boot. The secret and redirect URL are read by name through
+// `resolveOAuthApp`, so only the browser-visible client id is exported here.
+export const GOOGLE_CLIENT_ID = getEnv("GOOGLE_CLIENT_ID");
+
 const itarEnvironment = getEnv("CONTROLLED_ENVIRONMENT");
 
 export const CONTROLLED_ENVIRONMENT = parseBoolean(itarEnvironment, false);
+
+export const MAINTENANCE_MODE = parseBoolean(getEnv("MAINTENANCE_MODE"), false);
+
+// "single": one customer owns this deployment and everything in it (BYOC, a
+// self-hosted install), so the server's own settings, such as its mail, are
+// theirs to share across their companies. Anything else, unset included, is
+// Carbon Cloud's "multi": many customers, one server.
+export const TENANT_TYPE = getEnv("TENANT_TYPE");
+export const SINGLE_TENANT = TENANT_TYPE === "single";
+
+export const SYSTEM_STATUS_URL = getEnv("SYSTEM_STATUS_URL");
+
+// A fallback beside the `integration-early-access` flag until a flags source
+// is live (`hasIntegrationEarlyAccess`, `@carbon/ee/plan.server`).
+export const INTEGRATION_EARLY_ACCESS_USER_IDS = getEnv(
+  "INTEGRATION_EARLY_ACCESS_USER_IDS"
+);
+
+// Feature flags (`@carbon/env/flags.server`). Unset means every flag answers
+// its registry default.
+export const CARBON_FLAGS_ENDPOINT = getEnv("CARBON_FLAGS_ENDPOINT");
+export const CARBON_FLAGS_HEADERS = getEnv("CARBON_FLAGS_HEADERS");
+// The build's git commit: Vercel's VERCEL_GIT_COMMIT_SHA, or IMAGE_TAG on AWS.
+export const CARBON_COMMIT_SHA = getEnv("CARBON_COMMIT_SHA");
 
 // Carbon GovCloud Rider metadata. These are the authoritative `docVersion` /
 // `docHash` stamped onto every ITAR certification, and the target of the
@@ -130,6 +160,13 @@ export const ITAR_RIDER_PDF_PATH = "https://carbon.ms/itar-rider.pdf";
 export const ONSHAPE_CLIENT_ID = getEnv("ONSHAPE_CLIENT_ID");
 export const ONSHAPE_CLIENT_SECRET = getEnv("ONSHAPE_CLIENT_SECRET");
 export const ONSHAPE_OAUTH_REDIRECT_URL = getEnv("ONSHAPE_OAUTH_REDIRECT_URL");
+// The panel (`onshape-v2`) is its own Onshape app: it shares no variable with
+// the sync integration above.
+export const ONSHAPE_V2_CLIENT_ID = getEnv("ONSHAPE_V2_CLIENT_ID");
+export const ONSHAPE_V2_CLIENT_SECRET = getEnv("ONSHAPE_V2_CLIENT_SECRET");
+export const ONSHAPE_V2_OAUTH_REDIRECT_URL = getEnv(
+  "ONSHAPE_V2_OAUTH_REDIRECT_URL"
+);
 // Path to the native gltfpack binary (github.com/zeux/meshoptimizer), used to
 // compress oversized Onshape GLTF exports into viewer-ready GLBs. Optional:
 // when unset (and gltfpack isn't on PATH), oversized models are skipped
@@ -169,9 +206,12 @@ export const CARBON_SLACK_ENABLED = isBrowser
   : Boolean(SLACK_BOT_TOKEN);
 export const SLACK_CLIENT_ID = getEnv("SLACK_CLIENT_ID");
 export const SLACK_CLIENT_SECRET = getEnv("SLACK_CLIENT_SECRET");
+/** Where Slack sends the browser back after consent. One consent serves both the
+ * Carbon Assistant and workflow steps. The value may still point at the legacy
+ * `/api/integrations/slack/oauth` path — that route forwards to
+ * `/api/integrations/connections/callback` — so a deployed value keeps working. */
 export const SLACK_OAUTH_REDIRECT_URL = getEnv("SLACK_OAUTH_REDIRECT_URL");
 export const SLACK_SIGNING_SECRET = getEnv("SLACK_SIGNING_SECRET");
-export const SLACK_STATE_SECRET = getEnv("SLACK_STATE_SECRET");
 
 export const SUPABASE_SERVICE_ROLE_KEY = getEnv("SUPABASE_SERVICE_ROLE_KEY");
 export const SUPABASE_JWT_SECRET = getEnv("SUPABASE_JWT_SECRET");
@@ -185,6 +225,7 @@ export const SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID = getEnv(
   "SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID"
 );
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
+export const AUTH_COOKIE_SUFFIX = getEnv("AUTH_COOKIE_SUFFIX");
 export const SESSION_KEY = "auth";
 export const SESSION_ERROR_KEY = "error";
 export const STRIPE_SECRET_KEY = getEnv("STRIPE_SECRET_KEY");
@@ -295,7 +336,7 @@ export const DEFAULT_LANGUAGE = getEnv("DEFAULT_LANGUAGE") ?? "en";
 // browser prod: warning), so an invalid/absent value never throws.
 export const LOG_LEVEL = getEnv("LOG_LEVEL");
 
-export const RATE_LIMIT = parseInt(getEnv("RATE_LIMIT") || "5", 10);
+export const RATE_LIMIT = parseInt(getEnv("RATE_LIMIT") || "10", 10);
 
 // Vercel's own VERCEL_URL is a bare host; an APP_URL set by hand is an origin.
 const previewUrl = () =>
@@ -349,18 +390,23 @@ export function getBrowserEnv() {
     CONTROLLED_ENVIRONMENT,
     DEFAULT_LANGUAGE,
     ERP_URL,
+    // The integration card reads it to decide whether Google Calendar can be
+    // connected at all; it is a public OAuth client id, never the secret.
+    GOOGLE_CLIENT_ID,
     GOOGLE_PLACES_API_KEY,
     JIRA_CLIENT_ID,
     LOG_LEVEL,
     MES_URL,
     NODE_ENV,
     ONSHAPE_CLIENT_ID,
+    ONSHAPE_V2_CLIENT_ID,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     QUICKBOOKS_CLIENT_ID,
     RAMP_CLIENT_ID,
     SUPABASE_ANON_KEY,
     SUPABASE_URL,
+    TENANT_TYPE,
     APP_ENV,
     APP_URL,
     VERCEL_ENV,

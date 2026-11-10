@@ -23,7 +23,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
 import { useSubmit } from "react-router";
-import type { Company } from "~/modules/settings";
+import type { Company } from "~/modules/settings/types";
 import { path } from "~/utils/path";
 
 const STORAGE_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/public/`;

@@ -51,7 +51,15 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
   { label: "Getting started", slugs: ["onboarding", "keyboard-shortcuts"] },
   {
     label: "Sales",
-    slugs: ["quotes", "pricing", "sales-orders", "rmas", "customer-portal"],
+    slugs: [
+      "quotes",
+      "pricing",
+      "sales-orders",
+      "contracts",
+      "rental-agreements",
+      "rmas",
+      "customer-portal",
+    ],
   },
   {
     label: "Items & engineering",
@@ -69,6 +77,7 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
     label: "Purchasing",
     slugs: [
       "purchase-orders",
+      "leases",
       "supplier-returns",
       "supplier-quotes",
       "suppliers-and-customers",
@@ -81,12 +90,18 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
       "scheduling",
       "batching",
       "kanban",
+      "strict-backflush",
       "work-centers",
       "maintenance",
       "mes",
       "assembly-instructions",
     ],
   },
+  {
+    label: "Projects",
+    slugs: ["projects", "project-billing", "government-contracting"],
+  },
+  { label: "Service", slugs: ["service-jobs", "customer-assets"] },
   {
     label: "Inventory",
     slugs: [
@@ -115,6 +130,7 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
     label: "Accounting",
     slugs: [
       "accounting",
+      "accounting-workflows",
       "financial-reports",
       "period-close",
       "dimensions",

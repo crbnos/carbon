@@ -2,120 +2,34 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  assertIsPost,
-  CONTROLLED_ENVIRONMENT,
-  error,
-  success
-} from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { InviteEmail } from "@carbon/documents/email";
-import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
-import { validationError, validator } from "@carbon/form";
-import { sendEmail } from "@carbon/lib/email.server";
-import { getLogger } from "@carbon/logger";
-import { getClientIp, redirect } from "@carbon/utils";
-import { render } from "@react-email/components";
-import { nanoid } from "nanoid";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  CreateCustomerModal,
-  createCustomerAccountValidator
-} from "~/modules/users";
-import { createCustomerAccount } from "~/modules/users/users.server";
+import { CreateCustomerModal } from "~/modules/users/ui";
+import { createCustomerAccountValidator } from "~/modules/users/users.models";
+import { originOf } from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "customers-new");
-
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "users"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(createCustomerAccountValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { ip, city } = originOf(args.request);
+  const api = await carbon(args.request);
+  const result = await api.users.inviteCustomerContact({
+    customerContactId: input.data.id,
+    customerId: input.data.customer,
+    ip,
+    city
   });
-
-  const validation = await validator(createCustomerAccountValidator).validate(
-    await request.formData()
+  // Invited from a customer's contacts: go back there.
+  const customerRedirect = new URL(args.request.url).searchParams.get(
+    "customer"
   );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const customerRedirect = searchParams.get("customer");
-
-  const { id, customer } = validation.data;
-  const result = await createCustomerAccount(client, {
-    id,
-    customerId: customer,
-    companyId,
-    createdBy: userId
-  });
-
-  if (!result.success) {
-    logger.error(result);
-    throw redirect(
-      path.to.customerAccounts,
-      await flash(
-        request,
-        error(result, result.message ?? "Failed to create customer account")
-      )
-    );
-  }
-
-  const location = request.headers.get("x-vercel-ip-city") ?? "Unknown";
-  const ip = getClientIp(request) ?? "127.0.0.1";
-  const [company, user, invitee] = await Promise.all([
-    client.from("company").select("name").eq("id", companyId).single(),
-    client.from("user").select("email, fullName").eq("id", userId).single(),
-    client.from("user").select("fullName").eq("id", result.userId).single()
-  ]);
-
-  if (!company.data || !user.data) {
-    throw new Error("Failed to load company or user");
-  }
-
-  const inviteLink = await getSsoAwareInviteLink(
-    getCarbonServiceRole(),
-    result.email,
-    result.code,
-    companyId
-  );
-
-  await sendEmail({
-    to: result.email,
-    subject: `You have been invited to join ${company.data?.name} on Carbon`,
-    headers: {
-      "X-Entity-Ref-ID": nanoid()
-    },
-    html: await render(
-      InviteEmail({
-        invitedByEmail: user.data.email,
-        invitedByName: user.data.fullName ?? "",
-        email: result.email,
-        name: invitee.data?.fullName ?? "",
-        companyName: company.data.name,
-        inviteLink,
-        ip,
-        location,
-        controlledEnvironment: CONTROLLED_ENVIRONMENT
-      })
-    )
-  });
-
-  if (customerRedirect) {
-    throw redirect(
-      path.to.customerContacts(customerRedirect),
-      await flash(request, success("Customer invited"))
-    );
-  }
-
-  throw redirect(
-    path.to.customerAccounts,
-    await flash(request, success("Customer invited"))
+  return respond(args.request, result).redirect(
+    customerRedirect && !result.error
+      ? path.to.customerContacts(customerRedirect)
+      : path.to.customerAccounts,
+    { message: "Customer invited" }
   );
 }
 

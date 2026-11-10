@@ -18,6 +18,7 @@ import {
   mergeToken,
   REGISTRATION_LINE_DOCUMENT_TYPES
 } from "@carbon/documents/template";
+import { useAction } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Button,
@@ -40,11 +41,12 @@ import {
   SelectValue,
   Subheading,
   Switch,
+  toast,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { useEffect, useRef, useState } from "react";
-import { useFetcher } from "react-router";
+import { useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 
 export type SectionFormValue = {
   id: string;
@@ -68,6 +70,26 @@ const PLACEMENT_LABELS: Record<DocumentSectionPlacement, string> = {
  */
 export function SectionFormModal({
   section,
+  open = true,
+  onClose,
+  action
+}: {
+  section: SectionFormValue | null;
+  open?: boolean;
+  onClose: () => void;
+  action?: string;
+}) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalContent>
+        <SectionFormBody section={section} onClose={onClose} action={action} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function SectionFormBody({
+  section,
   onClose,
   action
 }: {
@@ -75,7 +97,13 @@ export function SectionFormModal({
   onClose: () => void;
   action?: string;
 }) {
-  const fetcher = useFetcher<{ success?: boolean }>();
+  const { t } = useLingui();
+  const fetcher = useAction({
+    onSuccess: () => {
+      toast.success(t`Section saved`);
+      onClose();
+    }
+  });
   const [content, setContent] = useState<JSONContent>(
     section?.content ?? { type: "doc", content: [] }
   );
@@ -93,7 +121,6 @@ export function SectionFormModal({
   const isFooter = placement === "footer";
 
   const isSaving = fetcher.state !== "idle";
-  const submittedRef = useRef(false);
 
   const setConfigKey = <K extends keyof (HeaderOptions & FooterOptions)>(
     key: K,
@@ -111,185 +138,167 @@ export function SectionFormModal({
     } else if (isFooter) {
       data.set("config", JSON.stringify(footerOptionsSchema.parse(config)));
     }
-    submittedRef.current = true;
     fetcher.submit(data, { method: "post", ...(action ? { action } : {}) });
   };
 
-  // Close once our save resolves successfully.
-  useEffect(() => {
-    if (
-      submittedRef.current &&
-      fetcher.state === "idle" &&
-      fetcher.data?.success
-    ) {
-      submittedRef.current = false;
-      onClose();
-    }
-  }, [fetcher.state, fetcher.data, onClose]);
-
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalContent>
-        <fetcher.Form
-          method="post"
-          onSubmit={(e) => {
-            e.preventDefault();
-            submit(e.currentTarget);
-          }}
-        >
-          {section && <input type="hidden" name="id" value={section.id} />}
-          <ModalHeader>
-            <ModalTitle>
-              {section ? "Edit section" : "New shared section"}
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <VStack spacing={4}>
-              <div className="flex w-full flex-col gap-1.5">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  defaultValue={section?.name ?? ""}
-                  autoFocus
-                  required
-                />
+    <fetcher.Form
+      method="post"
+      onSubmit={(e) => {
+        e.preventDefault();
+        submit(e.currentTarget);
+      }}
+    >
+      {section && <input type="hidden" name="id" value={section.id} />}
+      <ModalHeader>
+        <ModalTitle>
+          {section ? "Edit section" : "New shared section"}
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={4}>
+          <div className="flex w-full flex-col gap-1.5">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              name="name"
+              defaultValue={section?.name ?? ""}
+              autoFocus
+              required
+            />
+          </div>
+          <div className="flex w-full flex-col gap-1.5">
+            <Label>Placement</Label>
+            {lockPlacement ? (
+              <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+                {PLACEMENT_LABELS[placement]}
               </div>
-              <div className="flex w-full flex-col gap-1.5">
-                <Label>Placement</Label>
-                {lockPlacement ? (
-                  <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
-                    {PLACEMENT_LABELS[placement]}
+            ) : (
+              <Select
+                value={placement}
+                onValueChange={(v) =>
+                  setPlacement(v as DocumentSectionPlacement)
+                }
+              >
+                <SelectTrigger aria-label={t`Placement`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="body">Body section</SelectItem>
+                  <SelectItem value="header">Page header</SelectItem>
+                  <SelectItem value="footer">Page footer</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          {isHeader && (
+            <div className="flex w-full flex-col gap-3 rounded-md border bg-muted/30 p-3">
+              <Subheading variant="heavy" className="block">
+                Header layout
+              </Subheading>
+              <p className="text-xs text-muted-foreground">
+                Set the logo from the Logo item under Header.
+              </p>
+              <ConfigSwitch
+                label="Show company address"
+                checked={config.showCompanyDetails}
+                onChange={(v) => setConfigKey("showCompanyDetails", v)}
+              />
+              <ConfigSwitch
+                label="Show document title"
+                checked={config.showDocumentTitle}
+                onChange={(v) => setConfigKey("showDocumentTitle", v)}
+              />
+              <ConfigSwitch
+                label="Show document number"
+                checked={config.showDocumentId}
+                onChange={(v) => setConfigKey("showDocumentId", v)}
+              />
+            </div>
+          )}
+
+          {isFooter && (
+            <div className="flex w-full flex-col gap-3 rounded-md border p-3">
+              <ConfigSwitch
+                label="Registration line"
+                checked={config.showRegistrationLine}
+                onChange={(v) => setConfigKey("showRegistrationLine", v)}
+              />
+              {config.showRegistrationLine && (
+                <div className="flex w-full flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="registrationNumber">
+                      Registration number
+                    </Label>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="shrink-0"
+                        >
+                          Insert field
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {COMPANY_MERGE_FIELDS.map((field) => (
+                          <DropdownMenuItem
+                            key={field.token}
+                            onClick={() =>
+                              setConfigKey(
+                                "registrationNumber",
+                                config.registrationNumber +
+                                  mergeToken(field.token)
+                              )
+                            }
+                          >
+                            {field.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
-                ) : (
-                  <Select
-                    value={placement}
-                    onValueChange={(v) =>
-                      setPlacement(v as DocumentSectionPlacement)
+                  <Input
+                    id="registrationNumber"
+                    value={config.registrationNumber}
+                    onChange={(e) =>
+                      setConfigKey("registrationNumber", e.target.value)
                     }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="body">Body section</SelectItem>
-                      <SelectItem value="header">Page header</SelectItem>
-                      <SelectItem value="footer">Page footer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-
-              {isHeader && (
-                <div className="flex w-full flex-col gap-3 rounded-md border bg-muted/30 p-3">
-                  <Subheading variant="heavy" className="block">
-                    Header layout
-                  </Subheading>
+                  />
                   <p className="text-xs text-muted-foreground">
-                    Set the logo from the Logo item under Header.
+                    Shown on{" "}
+                    {REGISTRATION_LINE_DOCUMENT_TYPES.map(
+                      getDocumentLabel
+                    ).join(", ")}{" "}
+                    documents.
                   </p>
-                  <ConfigSwitch
-                    label="Show company address"
-                    checked={config.showCompanyDetails}
-                    onChange={(v) => setConfigKey("showCompanyDetails", v)}
-                  />
-                  <ConfigSwitch
-                    label="Show document title"
-                    checked={config.showDocumentTitle}
-                    onChange={(v) => setConfigKey("showDocumentTitle", v)}
-                  />
-                  <ConfigSwitch
-                    label="Show document number"
-                    checked={config.showDocumentId}
-                    onChange={(v) => setConfigKey("showDocumentId", v)}
-                  />
                 </div>
               )}
+            </div>
+          )}
 
-              {isFooter && (
-                <div className="flex w-full flex-col gap-3 rounded-md border p-3">
-                  <ConfigSwitch
-                    label="Registration line"
-                    checked={config.showRegistrationLine}
-                    onChange={(v) => setConfigKey("showRegistrationLine", v)}
-                  />
-                  {config.showRegistrationLine && (
-                    <div className="flex w-full flex-col gap-1.5">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="registrationNumber">
-                          Registration number
-                        </Label>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              className="shrink-0"
-                            >
-                              Insert field
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {COMPANY_MERGE_FIELDS.map((field) => (
-                              <DropdownMenuItem
-                                key={field.token}
-                                onClick={() =>
-                                  setConfigKey(
-                                    "registrationNumber",
-                                    config.registrationNumber +
-                                      mergeToken(field.token)
-                                  )
-                                }
-                              >
-                                {field.label}
-                              </DropdownMenuItem>
-                            ))}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                      <Input
-                        id="registrationNumber"
-                        value={config.registrationNumber}
-                        onChange={(e) =>
-                          setConfigKey("registrationNumber", e.target.value)
-                        }
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Shown on{" "}
-                        {REGISTRATION_LINE_DOCUMENT_TYPES.map(
-                          getDocumentLabel
-                        ).join(", ")}{" "}
-                        documents.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <div className="flex w-full flex-col gap-1.5">
-                <Label>
-                  {isHeader ? "Banner content (optional)" : "Content"}
-                </Label>
-                <Editor
-                  className="min-h-[160px] w-full rounded-md border bg-background p-3"
-                  initialValue={content}
-                  onChange={setContent}
-                  disableFileUpload
-                />
-              </div>
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" type="button" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" isLoading={isSaving} isDisabled={isSaving}>
-              Save
-            </Button>
-          </ModalFooter>
-        </fetcher.Form>
-      </ModalContent>
-    </Modal>
+          <div className="flex w-full flex-col gap-1.5">
+            <Label>{isHeader ? "Banner content (optional)" : "Content"}</Label>
+            <Editor
+              label={isHeader ? t`Banner content (optional)` : t`Content`}
+              className="min-h-[160px] w-full rounded-md border bg-background p-3"
+              initialValue={content}
+              onChange={setContent}
+              disableFileUpload
+            />
+          </div>
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" type="button" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button type="submit" isLoading={isSaving} isDisabled={isSaving}>
+          Save
+        </Button>
+      </ModalFooter>
+    </fetcher.Form>
   );
 }
 
@@ -306,6 +315,7 @@ function ConfigSwitch({
     <div className="flex items-center justify-between gap-2">
       <span className="text-sm">{label}</span>
       <Switch
+        aria-label={label}
         variant="small"
         checked={checked}
         onCheckedChange={(v) => onChange(Boolean(v))}

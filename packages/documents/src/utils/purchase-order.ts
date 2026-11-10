@@ -3,8 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { distinctItemText } from "@carbon/utils";
 import { withRevisionSuffix } from "./revision";
 
+/**
+ * A PO line's title in the purchase order email: the asset name, the
+ * description for G/L Account and Comment lines, else the item ID with the
+ * supplier's part number in brackets.
+ */
 export function getLineDescription(
   line: Database["public"]["Views"]["purchaseOrderLines"]["Row"]
 ) {
@@ -16,21 +22,37 @@ export function getLineDescription(
     case "Comment":
       return line?.description;
     default: {
-      // Use `||` (not `??`) so an empty-string supplier part number falls
-      // through. Supplier parts with no part number get backfilled onto the
-      // line as "", and `??` would render a blank line.
-      const supplierPartId =
-        line?.supplierPartId || line?.supplierPartIdFromSupplier;
+      const supplierPartId = getLineSupplierPartId(line);
       // `itemReadableId` is the view's `readableIdWithRevision` — the only
       // place the revision reaches the document, so the supplier part number
       // goes beside it rather than in its place (as the sales order does with
       // the customer part number).
       if (!line?.itemReadableId) return supplierPartId;
-      return supplierPartId && supplierPartId !== line.itemReadableId
+      return supplierPartId
         ? `${line.itemReadableId} (${supplierPartId})`
         : line.itemReadableId;
     }
   }
+}
+
+/**
+ * The supplier's part number for a PO line: the line's own number, else the
+ * supplier part record's. Null when both are blank, or when it repeats
+ * `shownId`, the identifier the document already prints for the line. That is
+ * the item ID unless the caller passes another one: a Service line on the PDF
+ * prints its description instead.
+ */
+export function getLineSupplierPartId(
+  line: Database["public"]["Views"]["purchaseOrderLines"]["Row"],
+  shownId: string | null | undefined = line?.itemReadableId
+) {
+  // Use `||` (not `??`) so an empty-string supplier part number falls
+  // through. Supplier parts with no part number get backfilled onto the
+  // line as "", and `??` would print a blank number.
+  const supplierPartId =
+    line?.supplierPartId?.trim() || line?.supplierPartIdFromSupplier?.trim();
+  if (!supplierPartId || supplierPartId === shownId?.trim()) return null;
+  return supplierPartId;
 }
 
 export function getLineDescriptionDetails(
@@ -45,10 +67,13 @@ export function getLineDescriptionDetails(
         : "G/L Account";
     case "Comment":
     default:
-      const itemDescription = line?.itemDescription
-        ? `\n${line.itemDescription}`
-        : "";
-      return line?.description + itemDescription;
+      // A service's readable id is its name — don't print it twice.
+      return [
+        distinctItemText(line?.itemReadableId, line?.description),
+        line?.itemDescription
+      ]
+        .filter(Boolean)
+        .join("\n");
   }
 }
 

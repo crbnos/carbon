@@ -70,7 +70,6 @@ const CertificateOfConformancePDF = ({
   company,
   locale,
   meta,
-  title = "Certificate of Conformance",
   certificate,
   customer,
   purchaseOrderNumber,
@@ -140,7 +139,7 @@ const CertificateOfConformancePDF = ({
   return (
     <Template
       theme={theme}
-      title={title}
+      title="Certificate of Conformance"
       meta={{
         author: meta?.author ?? "Carbon",
         keywords:

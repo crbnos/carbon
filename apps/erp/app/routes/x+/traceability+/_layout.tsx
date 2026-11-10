@@ -4,21 +4,22 @@
 
 import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type { MetaFunction } from "react-router";
-
+import { InventorySections } from "~/modules/inventory/ui";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Traceability" }];
-};
+export const meta = moduleMeta("Traceability");
 
 export const handle: Handle = {
   breadcrumb: msg`Inventory`,
   to: path.to.inventory,
-  module: "inventory"
+  module: "inventory",
+  // Phones: this route is a section of its module, so it gets the module's
+  // section switcher there (desktop shows no sidebar here, unchanged).
+  compactSidebar: InventorySections
 };
 
 export default function TraceabilityLayout() {

@@ -88,12 +88,21 @@ BEGIN
 
   IF v_job_id IS NOT NULL AND v_is_last_top_level_operation THEN
     UPDATE "job"
+    -- Counted as sync_finish_job_operation counts the receipt: the smallest of
+    -- the routing's own final operations (parallel ones each see every unit)
+    -- plus what rework branches completed.
     SET "quantityComplete" = (
-      SELECT COALESCE(SUM(terminal_jo."quantityComplete"), 0)
+      SELECT COALESCE(MIN(terminal_jo."quantityComplete") FILTER (
+               WHERE terminal_jo."reworkId" IS NULL AND terminal_jo."quantityComplete" > 0
+             ), 0)
+           + COALESCE(SUM(terminal_jo."quantityComplete") FILTER (
+               WHERE terminal_jo."reworkId" IS NOT NULL
+             ), 0)
       FROM "jobOperation" terminal_jo
       INNER JOIN "jobMakeMethod" terminal_jmm ON terminal_jmm.id = terminal_jo."jobMakeMethodId"
       WHERE terminal_jo."jobId" = v_job_id
         AND terminal_jmm."parentMaterialId" IS NULL
+        AND terminal_jo.status <> 'Canceled'
         AND NOT EXISTS (
           SELECT 1
           FROM "jobOperationDependency" dep

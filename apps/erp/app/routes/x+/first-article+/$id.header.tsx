@@ -9,10 +9,8 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  firstArticleInspectionHeaderValidator,
-  updateFirstArticleInspectionHeader
-} from "~/modules/quality";
+import { firstArticleInspectionHeaderValidator } from "~/modules/quality/quality.models";
+import { updateFirstArticleInspectionHeader } from "~/modules/quality/quality.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

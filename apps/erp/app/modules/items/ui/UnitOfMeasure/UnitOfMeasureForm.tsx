@@ -30,7 +30,10 @@ import {
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import { unitOfMeasureValidator } from "../../items.models";
+import {
+  EACH_UNIT_OF_MEASURE_CODE,
+  unitOfMeasureValidator
+} from "../../items.models";
 
 type UnitOfMeasureFormProps = {
   initialValues: z.infer<typeof unitOfMeasureValidator>;
@@ -51,7 +54,7 @@ const UnitOfMeasureForm = ({
   const [code, setCode] = useState<string>(initialValues.code);
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
@@ -61,9 +64,13 @@ const UnitOfMeasureForm = ({
         `Failed to create unit of measure: ${fetcher.data.error.message}`
       );
     }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
+  }, [fetcher.data, fetcher.state, onClose, open, type, t]);
 
   const isEditing = initialValues.id !== undefined;
+  // Each is built in: the database refuses to rename it (custom fields stay
+  // editable).
+  const isBuiltIn =
+    isEditing && initialValues.code === EACH_UNIT_OF_MEASURE_CODE;
   const isDisabled = isEditing
     ? !permissions.can("update", "parts")
     : !permissions.can("create", "parts");
@@ -98,6 +105,12 @@ const UnitOfMeasureForm = ({
                   name="name"
                   label={t`Unit of Measure`}
                   characterLimit={50}
+                  isReadOnly={isBuiltIn}
+                  helperText={
+                    isBuiltIn
+                      ? t`Each is built in and can't be renamed or deleted`
+                      : undefined
+                  }
                 />
                 <InputControlled
                   name="code"
@@ -107,7 +120,12 @@ const UnitOfMeasureForm = ({
                     setCode(value.toUpperCase().replace(/\s/g, ""))
                   }
                   characterLimit={10}
-                  helperText={t`Unique, uppercase, without spaces (max 10 characters)`}
+                  isReadOnly={isBuiltIn}
+                  helperText={
+                    isBuiltIn
+                      ? undefined
+                      : t`Unique, uppercase, without spaces (max 10 characters)`
+                  }
                 />
                 <CustomFormFields table="unitOfMeasure" />
               </VStack>

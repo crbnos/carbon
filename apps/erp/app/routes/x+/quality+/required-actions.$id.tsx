@@ -6,14 +6,15 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
+import { requiredActionValidator } from "~/modules/quality/quality.models";
 import {
   getRequiredAction,
-  requiredActionValidator,
   upsertRequiredAction
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import { RequiredActionForm } from "~/modules/quality/ui/RequiredActions";
 import { path } from "~/utils/path";
 
@@ -82,14 +83,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditRequiredActionRoute() {
   const { requiredAction } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
-  const onClose = () => navigate(path.to.requiredActions);
+  const dialog = useRouteDialog(path.to.requiredActions);
 
   return (
     <RequiredActionForm
       type="modal"
       initialValues={requiredAction}
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

@@ -22,11 +22,13 @@ import { data, useFetcher, useParams } from "react-router";
 import { DateTime, EmployeeAvatar } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import {
-  getMaintenanceDispatch,
   isMaintenanceDispatchLocked,
-  maintenanceDispatchCommentValidator,
+  maintenanceDispatchCommentValidator
+} from "~/modules/resources/resources.models";
+import {
+  getMaintenanceDispatch,
   upsertMaintenanceDispatchComment
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service";
 import type { MaintenanceDispatchComment } from "~/modules/resources/types";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -115,6 +117,7 @@ export default function MaintenanceDispatchCommentsRoute() {
           <CardContent className="py-4">
             <VStack spacing={2}>
               <Textarea
+                aria-label={t`Comment`}
                 placeholder={t`Add a comment...`}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}

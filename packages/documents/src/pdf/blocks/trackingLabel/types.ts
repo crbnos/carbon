@@ -9,6 +9,7 @@ import type {
   ResolvedSection
 } from "../../../template";
 import type { Company } from "../../../types";
+import type { LabelCompany } from "./vars";
 
 /** Resolved logo sources for a label (color URL + monochrome data URL). */
 export interface LabelLogo {
@@ -17,9 +18,13 @@ export interface LabelLogo {
 }
 
 /** Everything a tracking-label block renderer might need (one label's worth). */
+/** The company fields a label's PDF reads: its variables and its logo. */
+export type LabelPdfCompany = LabelCompany &
+  Pick<Company, "logoLight" | "logoLightIcon">;
+
 export interface LabelData {
   item: ProductLabelItem;
-  company?: Company | null;
+  company?: LabelPdfCompany | null;
   logo?: LabelLogo | null;
   theme: DocumentTheme;
   vars: Record<string, string>;

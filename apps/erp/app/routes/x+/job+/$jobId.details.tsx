@@ -2,9 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -33,7 +33,11 @@ import {
 } from "~/components";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { Job, JobPurchaseOrderLine } from "~/modules/production";
+import {
+  JOB_LOCKED_MESSAGE,
+  jobFormRefusalField,
+  jobValidator
+} from "~/modules/production/production.models";
 import {
   getJob,
   getJobDocumentsWithItemId,
@@ -42,12 +46,9 @@ import {
   getJobOperationsByMethodId,
   getJobPurchaseOrderLines,
   getProductionDataByOperations,
-  getRootMakeMethod,
-  isJobLocked,
-  jobValidator,
-  recalculateJobRequirements,
-  updateJob
-} from "~/modules/production";
+  getRootMakeMethod
+} from "~/modules/production/production.service";
+import type { Job, JobPurchaseOrderLine } from "~/modules/production/types";
 import {
   JobBillOfMaterial,
   JobBillOfProcess,
@@ -58,13 +59,13 @@ import {
 } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
-import { getTagsList } from "~/modules/shared";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
-import { getDatabaseClient } from "~/services/database.server";
+import {
+  getTagsList,
+  requireCompanyRecord
+} from "~/modules/shared/shared.service";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { setCustomFields } from "~/utils/form";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -154,75 +155,36 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "production"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(jobValidator).request(args, {
+    params: ["jobId"]
   });
-
-  const { jobId: id } = params;
-  if (!id) throw new Error("Could not find jobId");
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "production"
+  if ("invalid" in input) return input.invalid;
+  const { jobId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.production.updateJobDetails({
+    ...input.data,
+    id: jobId,
+    customFields: setCustomFields(input.formData ?? new FormData())
   });
-  const job = await getJob(viewClient, id);
-  await requireUnlocked({
-    request,
-    isLocked: isJobLocked(job.data?.status),
-    redirectTo: path.to.job(id),
-    message: "Cannot modify a locked job. Reopen it first."
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(jobValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
+  // The item cannot complete to the job's asset: say so on the item field.
+  if (
+    result.error?.category === "rule" &&
+    result.error.message !== JOB_LOCKED_MESSAGE
+  ) {
+    return validationError({ fieldErrors: { itemId: result.error.message } });
   }
-
-  const result = await updateJob(client, {
-    id,
-    quantity: validation.data.quantity,
-    scrapQuantity: validation.data.scrapQuantity,
-    itemId: validation.data.itemId,
-    dueDate: validation.data.dueDate || null,
-    startDate: validation.data.startDate || null,
-    deadlineType: validation.data.deadlineType,
-    locationId: validation.data.locationId,
-    unitOfMeasureCode: validation.data.unitOfMeasureCode,
-    customerId: validation.data.customerId || null,
-    modelUploadId: validation.data.modelUploadId || null,
-    customFields: setCustomFields(formData),
-    updatedBy: userId
+  // The charge number is refused, or the project's budget blocks the save.
+  const field = jobFormRefusalField(result.error?.category);
+  if (result.error && field) {
+    return validationError({ fieldErrors: { [field]: result.error.message } });
+  }
+  // A budget warning saves the job; the flash says by how much it runs over.
+  return respond(args.request, result).redirect(path.to.job(jobId), {
+    message: result.data?.budgetNote
+      ? `Updated job. ${result.data.budgetNote}`
+      : "Updated job"
   });
-  if (result.error) {
-    throw redirect(
-      path.to.job(id),
-      await flash(request, error(result.error, "Failed to update job"))
-    );
-  }
-
-  const recalculate = await recalculateJobRequirements(
-    getCarbonServiceRole(),
-    getDatabaseClient(),
-    {
-      id,
-      companyId,
-      userId
-    }
-  );
-  if (recalculate.error) {
-    throw redirect(
-      path.to.job(id),
-      await flash(
-        request,
-        error(recalculate.error, "Failed to recalculate job requirements")
-      )
-    );
-  }
-
-  throw redirect(path.to.job(id), await flash(request, success("Updated job")));
 }
 
 export default function JobDetailsRoute() {

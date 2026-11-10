@@ -2,169 +2,23 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
-import { batchTrigger } from "@carbon/jobs";
-import { redirect } from "@carbon/utils";
-import { parseDateTime, toCalendarDateTime } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
-import { getDefaultStorageUnitForJob } from "~/modules/inventory";
-import { bulkJobValidator, insertJob } from "~/modules/production";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
-import { getDatabaseClient } from "~/services/database.server";
+import { bulkJobValidator } from "~/modules/production/production.models";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    create: "production",
-    bypassRls: true
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(bulkJobValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.production.createJobs({
+    ...input.data,
+    customFields: setCustomFields(input.formData ?? new FormData())
   });
-
-  const serviceRole = await getCarbonServiceRole();
-
-  const formData = await request.formData();
-  const validation = await validator(bulkJobValidator).validate(formData);
-  let jobIds: string[] = [];
-
-  if (!validation.data) {
-    throw redirect(
-      path.to.jobs,
-      await flash(request, error(validation.error, "Invalid form data"))
-    );
-  }
-
-  const {
-    dueDateOfFirstJob,
-    dueDateOfLastJob,
-    totalQuantity,
-    quantityPerJob,
-    configuration: configStr,
-    ...jobData
-  } = validation.data;
-
-  let configuration: Record<string, unknown> | undefined;
-  if (configStr) {
-    try {
-      configuration = JSON.parse(configStr);
-    } catch {
-      // invalid JSON — skip configuration
-    }
-  }
-  const jobs = Math.ceil(totalQuantity / quantityPerJob);
-  const quantityOfLastJob = totalQuantity - (jobs - 1) * quantityPerJob;
-
-  // Calculate due date distribution if both dates are provided
-  let dueDateDistribution: string[] = [];
-  if (dueDateOfFirstJob && dueDateOfLastJob) {
-    const startDate = toCalendarDateTime(parseDateTime(dueDateOfFirstJob));
-    const endDate = toCalendarDateTime(parseDateTime(dueDateOfLastJob));
-    const daysBetween = endDate.compare(startDate);
-
-    // Determine if we have multiple jobs per day or multiple days per job
-    const jobsPerDay = (jobs - 1) / daysBetween;
-    const daysPerJob = daysBetween / (jobs - 1);
-
-    if (jobsPerDay >= 1) {
-      // Multiple jobs per day - distribute jobs evenly across days
-      let cumulativeJobs = 0;
-      dueDateDistribution = Array.from({ length: jobs }, (_, i) => {
-        if (i === jobs - 1) return dueDateOfLastJob;
-
-        cumulativeJobs += 1;
-        const dayOffset = Math.floor(cumulativeJobs / jobsPerDay);
-        const jobDate = startDate.add({ days: dayOffset });
-        return jobDate.toString();
-      });
-    } else {
-      // Multiple days per job - distribute days evenly across jobs
-      dueDateDistribution = Array.from({ length: jobs }, (_, i) => {
-        if (i === jobs - 1) return dueDateOfLastJob;
-
-        const dayOffset = Math.floor(i * daysPerJob);
-        const jobDate = startDate.add({ days: dayOffset });
-        return jobDate.toString();
-      });
-    }
-  }
-
-  // insertJob runs with the service role, so every foreign-key id in the form
-  // is proven to belong to this company before any job is written.
-  await Promise.all([
-    requireCompanyRecord(serviceRole, "item", companyId, {
-      id: jobData.itemId
-    }),
-    requireCompanyRecord(serviceRole, "location", companyId, {
-      id: jobData.locationId
-    }),
-    jobData.customerId
-      ? requireCompanyRecord(serviceRole, "customer", companyId, {
-          id: jobData.customerId
-        })
-      : null,
-    jobData.modelUploadId
-      ? requireCompanyRecord(serviceRole, "modelUpload", companyId, {
-          id: jobData.modelUploadId
-        })
-      : null
-  ]);
-
-  const storageUnitId = await getDefaultStorageUnitForJob(
-    serviceRole,
-    jobData.itemId,
-    jobData.locationId,
-    companyId
-  );
-
-  for await (const [i] of Array.from({ length: jobs }, (_, i) => [i])) {
-    const dueDate = (dueDateDistribution[i] || dueDateOfFirstJob)?.split(
-      "T"
-    )[0];
-
-    const createJob = await insertJob(
-      serviceRole,
-      getDatabaseClient(),
-      {
-        ...jobData,
-        quantity: i === jobs - 1 ? quantityOfLastJob : quantityPerJob,
-        dueDate,
-        storageUnitId: storageUnitId ?? undefined,
-        configuration,
-        companyId,
-        createdBy: userId,
-        customFields: setCustomFields(formData)
-      },
-      { skipRecalculate: true, source: "bulk" }
-    );
-
-    if (createJob.error || !createJob.data) {
-      throw redirect(
-        path.to.newJob,
-        await flash(request, error(createJob.error, "Failed to insert job"))
-      );
-    }
-
-    jobIds.push(createJob.data.id);
-  }
-
-  await batchTrigger(
-    "recalculate",
-    jobIds.map((id) => ({
-      payload: {
-        type: "jobRequirements",
-        id,
-        companyId,
-        userId
-      }
-    }))
-  );
-
-  throw redirect(
-    path.to.jobs,
-    await flash(request, success(`Successfully created ${jobs} jobs`))
-  );
+  return respond(args.request, result).redirect(path.to.jobs, {
+    message: `Successfully created ${result.data?.jobIds.length} jobs`,
+    onError: path.to.newJob
+  });
 }

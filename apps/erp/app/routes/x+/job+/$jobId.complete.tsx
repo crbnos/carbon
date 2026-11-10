@@ -2,22 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { trackWorkEvent } from "@carbon/lib/telemetry";
-import { redirect } from "@carbon/utils";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  jobCompleteValidator,
-  returnPickedRemaindersForJob
-} from "~/modules/production";
-import { getDatabaseClient } from "~/services/database.server";
+import { jobCompleteValidator } from "~/modules/production/production.models";
 import type { Handle } from "~/utils/handle";
-import { path, requestReferrer } from "~/utils/path";
+import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: msg`Jobs`,
@@ -25,95 +16,17 @@ export const handle: Handle = {
   module: "production"
 };
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "production"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(jobCompleteValidator).request(args, {
+    params: ["jobId"]
   });
-
-  const formData = await request.formData();
-  const validation = await validator(jobCompleteValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { jobId } = params;
-  if (!jobId) throw new Error("Could not find jobId");
-
-  const { quantityComplete, locationId, storageUnitId } = validation.data;
-
-  // Complete the job to inventory: sets job.quantityComplete and receives the
-  // finished goods. It must NOT write job.quantityShipped — that column tracks
-  // units actually shipped and is advanced only by post-shipment. The shipment
-  // builder computes quantityToShip = quantityComplete - quantityShipped, so
-  // pre-setting quantityShipped here zeroes out the shippable quantity and the
-  // sales order can no longer be shipped (empty shipment lines).
-  const rpc = await client.rpc("complete_job_to_inventory", {
-    p_job_id: jobId,
-    p_quantity_complete: quantityComplete,
-    p_storage_unit_id: storageUnitId ?? undefined,
-    p_location_id: locationId ?? undefined,
-    p_company_id: companyId,
-    p_user_id: userId
+  if ("invalid" in input) return input.invalid;
+  const { quantityComplete, locationId, storageUnitId } = input.data;
+  const api = await carbon(args.request);
+  return api.production.completeJob({
+    jobId: input.params.jobId,
+    quantityComplete,
+    locationId,
+    storageUnitId
   });
-
-  if (rpc.error) {
-    // complete_job_to_inventory refuses completions it cannot satisfy (serials
-    // outstanding, quantity below what was received). Those are validation
-    // failures, and its message is the only thing that says what to do next.
-    throw redirect(
-      requestReferrer(request) ?? path.to.job(jobId),
-      await flash(
-        request,
-        error(rpc.error, rpc.error.message || "Failed to complete job")
-      )
-    );
-  }
-
-  // complete_job_to_inventory explicitly supports re-completion, so this route
-  // can fire twice for one job. The idempotency key is the job id, so the
-  // repeat collapses rather than counting a second completion.
-  trackWorkEvent("job_completed", {
-    companyId,
-    userId,
-    jobId,
-    path: "manual"
-  });
-
-  // Note: for Non-Inventory (Service) jobs, complete_job_to_inventory itself
-  // fulfills the linked sales-order line — completion is also reachable via
-  // the sync_finish_job_operation interceptor, so the SQL function is the
-  // single choke point for fulfillment.
-
-  // Return picked-but-unconsumed material from lineside to the warehouse.
-  // Runs after the RPC (backflush inside it must consume first). A sweep
-  // failure never fails the completion — the sweep is idempotent and can be
-  // re-triggered — so warn instead.
-  const sweep = await returnPickedRemaindersForJob(
-    getCarbonServiceRole(),
-    getDatabaseClient(),
-    {
-      jobId,
-      userId,
-      companyId
-    }
-  );
-  if (sweep.error) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.job(jobId),
-      await flash(
-        request,
-        error(
-          sweep.error,
-          "Job completed, but returning picked material failed"
-        )
-      )
-    );
-  }
-
-  throw redirect(
-    requestReferrer(request) ?? path.to.job(jobId),
-    await flash(request, success("Job completed successfully"))
-  );
 }

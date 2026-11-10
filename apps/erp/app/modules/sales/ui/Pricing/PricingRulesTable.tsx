@@ -4,13 +4,13 @@
 
 import {
   Badge,
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
   HStack,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
-  MenuItem
+  MenuItem,
+  Popover,
+  PopoverContent,
+  PopoverTrigger
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -34,6 +34,7 @@ import { CustomerAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useCustomerTypes } from "~/components/Form/CustomerType";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
+import type { InfiniteOptions } from "~/components/Table";
 import {
   useCurrencyFormatter,
   useDateFormatter,
@@ -50,6 +51,7 @@ import type { PricingRule } from "../../types";
 type PricingRulesTableProps = {
   data: PricingRule[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const defaultColumnVisibility = {
@@ -59,7 +61,8 @@ const defaultColumnVisibility = {
   itemPostingGroupId: false
 };
 
-const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
+const PricingRulesTable = memo((props: PricingRulesTableProps) => {
+  const { data, count, infinite } = props;
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const { t } = useLingui();
@@ -100,6 +103,7 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuTag />
         }
       },
@@ -126,6 +130,7 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: pricingRuleTypes.map((type) => ({
@@ -270,6 +275,7 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
           return <div className="flex flex-col items-start gap-1">{parts}</div>;
         },
         meta: {
+          mobile: "P3",
           icon: <LuSquareUser />,
           exportValue: (row) => {
             const labels: string[] = [];
@@ -320,13 +326,19 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
                 </Badge>
               )}
               {remainingItems.length > 0 && (
-                <HoverCard>
-                  <HoverCardTrigger>
+                <Popover>
+                  <PopoverTrigger
+                    aria-label={t`More items for ${row.original.name}: ${remainingItems.length}`}
+                    className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
                     <Badge variant="secondary" className="cursor-pointer">
                       +{remainingItems.length}
                     </Badge>
-                  </HoverCardTrigger>
-                  <HoverCardContent className="w-[260px]">
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-[260px]"
+                    aria-label={t`Items for ${row.original.name}`}
+                  >
                     <div className="flex flex-col items-start gap-1 text-sm">
                       {remainingItems.map((id) => {
                         const item = items?.find((i) => i.id === id);
@@ -337,8 +349,8 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
                         );
                       })}
                     </div>
-                  </HoverCardContent>
-                </HoverCard>
+                  </PopoverContent>
+                </Popover>
               )}
             </HStack>
           );
@@ -393,6 +405,7 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
           </Badge>
         ),
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: [
@@ -471,6 +484,7 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      infinite={infinite}
       defaultColumnVisibility={defaultColumnVisibility}
       primaryAction={
         canCreate && (

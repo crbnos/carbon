@@ -8,8 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import invariant from "tiny-invariant";
-import { getFirstArticleInspectionByLot } from "~/modules/quality";
-import { dispositionInspection } from "~/modules/quality/quality.server";
+import {
+  dispositionInspection,
+  getFirstArticleInspectionByLot
+} from "~/modules/quality/quality.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -27,7 +30,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await getFirstArticleInspectionByLot(client, id, companyId)
   ).data;
 
-  const result = await dispositionInspection({
+  const result = await dispositionInspection(getDatabaseClient(), {
     id,
     decision: "Accept",
     companyId,

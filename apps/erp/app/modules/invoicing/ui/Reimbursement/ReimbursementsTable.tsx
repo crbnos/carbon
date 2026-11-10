@@ -18,6 +18,7 @@ import {
   LuUser
 } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, Table } from "~/components";
+import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyDecimalsLookup } from "~/hooks";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -29,10 +30,11 @@ type ReimbursementRow = Database["public"]["Tables"]["reimbursement"]["Row"];
 type ReimbursementsTableProps = {
   data: ReimbursementRow[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const ReimbursementsTable = memo(
-  ({ data, count }: ReimbursementsTableProps) => {
+  ({ data, count, infinite }: ReimbursementsTableProps) => {
     const { t } = useLingui();
     const { locale } = useLocale();
     // Each reimbursement carries its own currencyCode, so the amount is
@@ -52,7 +54,7 @@ const ReimbursementsTable = memo(
               {row.original.reimbursementId}
             </Hyperlink>
           ),
-          meta: { icon: <LuHash /> }
+          meta: { icon: <LuHash />, mobile: "P1" }
         },
         {
           accessorKey: "status",
@@ -61,6 +63,7 @@ const ReimbursementsTable = memo(
             <ReimbursementStatus status={row.original.status} />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuCircleDot />,
             filter: {
               type: "static",
@@ -79,6 +82,7 @@ const ReimbursementsTable = memo(
             <EmployeeAvatar employeeId={row.original.employeeId} />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuUser />,
             filter: {
               type: "static",
@@ -119,7 +123,7 @@ const ReimbursementsTable = memo(
               </span>
             );
           },
-          meta: { icon: <LuCoins /> }
+          meta: { icon: <LuCoins />, mobile: "P2" }
         },
         {
           accessorKey: "journalId",
@@ -133,6 +137,7 @@ const ReimbursementsTable = memo(
 
     return (
       <Table<ReimbursementRow>
+        infinite={infinite}
         count={count}
         columns={columns}
         data={data}

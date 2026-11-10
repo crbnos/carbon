@@ -4,7 +4,10 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getGaugesList, getGaugeTypesList } from "~/modules/quality";
+import {
+  getGaugesList,
+  getGaugeTypesList
+} from "~/modules/quality/quality.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

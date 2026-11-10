@@ -2,21 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useNavigate, useParams } from "react-router";
-import { notifyScheduleInputsChanged } from "~/modules/production";
-import {
-  EmployeeAbilityForm,
-  employeeAbilityCellValidator,
-  resolveEmployeeAbilityExpiresAt,
-  upsertEmployeeAbilityCell
-} from "~/modules/resources";
+import { useParams } from "react-router";
+import { employeeAbilityCellValidator } from "~/modules/resources/resources.models";
+import { EmployeeAbilityForm } from "~/modules/resources/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -28,57 +22,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return null;
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    update: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(employeeAbilityCellValidator).request(args, {
+    params: ["personId"]
   });
-
-  const { personId } = params;
-  if (!personId) throw notFound("Invalid person id");
-
-  const formData = await request.formData();
-  const validation = await validator(employeeAbilityCellValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { abilityId, lastTrainingDate, expiresAt } = validation.data;
-
-  const resolvedExpiresAt = await resolveEmployeeAbilityExpiresAt(
-    client,
-    abilityId,
-    lastTrainingDate ?? null,
-    expiresAt ?? null
-  );
-
-  const upsert = await upsertEmployeeAbilityCell(client, {
-    employeeId: personId,
-    abilityId,
-    companyId,
-    lastTrainingDate: lastTrainingDate ?? null,
-    expiresAt: resolvedExpiresAt
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.resources.addEmployeeAbility({
+    ...input.data,
+    employeeId: input.params.personId
   });
-  if (upsert.error) {
-    return data(
-      {},
-      await flash(request, error(upsert.error, "Failed to add ability"))
-    );
-  }
-
-  await notifyScheduleInputsChanged(
-    companyId,
-    "ability",
-    "Operator qualification added",
-    abilityId
-  );
-
-  throw redirect(
-    path.to.personAbilities(personId),
-    await flash(request, success("Added ability"))
+  // The drawer posts through a fetcher, which toasts a refusal.
+  if (result.error) return result;
+  return respond(args.request, result).redirect(
+    path.to.personAbilities(input.params.personId),
+    { message: "Added ability" }
   );
 }
 
@@ -87,9 +45,7 @@ export default function NewPersonAbilityRoute() {
   if (!personId) throw new Error("Invalid person id");
 
   const { t } = useLingui();
-  const navigate = useNavigate();
-
-  const onClose = () => navigate(path.to.personAbilities(personId));
+  const dialog = useRouteDialog(path.to.personAbilities(personId));
 
   const initialValues = {
     employeeId: personId,
@@ -104,7 +60,8 @@ export default function NewPersonAbilityRoute() {
       action={path.to.newPersonAbility(personId)}
       title={t`Add Ability`}
       initialValues={initialValues}
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

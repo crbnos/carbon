@@ -22,14 +22,14 @@ import { LuCirclePlus, LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
 import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import { useRouteData } from "~/hooks";
-import { canEditChangeNoticeEngineering } from "~/modules/items";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { ItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { ChangeNotice } from "../../types";
 import AffectedItemForm from "./AffectedItemForm";
 import type { AffectedItemDraft } from "./affectedItem.types";
+import { useChangeNoticeEngineeringLock } from "./lock-ui";
 
 // Explorer (left panel) of the change-order workspace — deliberately the same
 // layout as the Purchase Order explorer (PurchaseOrderExplorer /
@@ -49,9 +49,7 @@ export default function ChangeNoticeExplorer() {
   }>(path.to.changeNotice(id));
 
   const affectedItems = routeData?.affectedItems ?? [];
-  const isDisabled = !canEditChangeNoticeEngineering(
-    routeData?.changeNotice?.status
-  );
+  const { isDisabled } = useChangeNoticeEngineeringLock(id);
 
   const disclosure = useDisclosure();
 
@@ -100,13 +98,12 @@ export default function ChangeNoticeExplorer() {
         )}
       </div>
 
-      {disclosure.isOpen && (
-        <AffectedItemForm
-          changeOrderId={id}
-          blacklist={affectedItems.map((a) => a.affectedItem.itemId)}
-          onClose={disclosure.onClose}
-        />
-      )}
+      <AffectedItemForm
+        open={disclosure.isOpen}
+        changeOrderId={id}
+        blacklist={affectedItems.map((a) => a.affectedItem.itemId)}
+        onClose={disclosure.onClose}
+      />
     </>
   );
 }
@@ -143,15 +140,15 @@ function AffectedItemRow({
 
   return (
     <VStack spacing={0} className="border-b">
-      <PrefetchLink
-        to={path.to.changeNoticeAffectedItem(changeOrderId, item.id)}
-        className="w-full"
+      <HStack
+        className={cn(
+          "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
+          isSelected && "bg-accent/60 hover:bg-accent/50"
+        )}
       >
-        <HStack
-          className={cn(
-            "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
-            isSelected && "bg-accent/60 hover:bg-accent/50"
-          )}
+        <PrefetchLink
+          to={path.to.changeNoticeAffectedItem(changeOrderId, item.id)}
+          className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
         >
           <HStack spacing={2} className="flex-grow min-w-0 pr-10">
             <ItemThumbnail type={type} />
@@ -176,52 +173,52 @@ function AffectedItemRow({
               )}
             </VStack>
           </HStack>
-          {!isDisabled && (
-            <div className="absolute right-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <IconButton
-                    aria-label={t`More`}
-                    className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
-                    icon={<LuEllipsisVertical />}
-                    variant="solid"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem
-                    destructive
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteFetcher.submit(
-                        {},
-                        {
-                          method: "post",
-                          action: path.to.deleteChangeNoticeAffected(
-                            changeOrderId,
-                            item.id
-                          )
-                        }
-                      );
-                    }}
-                  >
-                    <DropdownMenuIcon icon={<LuTrash />} />
-                    <Trans>Delete</Trans>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
-                    <Link to={getLinkToItemDetails(type, item.itemId)}>
-                      <DropdownMenuIcon
-                        icon={<MethodItemTypeIcon type={type} />}
-                      />
-                      <Trans>View Item Master</Trans>
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
-        </HStack>
-      </PrefetchLink>
+        </PrefetchLink>
+        {!isDisabled && (
+          <div className="absolute right-2 z-10">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  aria-label={t`More`}
+                  className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  icon={<LuEllipsisVertical />}
+                  variant="solid"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  destructive
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteFetcher.submit(
+                      {},
+                      {
+                        method: "post",
+                        action: path.to.deleteChangeNoticeAffected(
+                          changeOrderId,
+                          item.id
+                        )
+                      }
+                    );
+                  }}
+                >
+                  <DropdownMenuIcon icon={<LuTrash />} />
+                  <Trans>Delete</Trans>
+                </DropdownMenuItem>
+                <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
+                  <Link to={getLinkToItemDetails(type, item.itemId)}>
+                    <DropdownMenuIcon
+                      icon={<MethodItemTypeIcon type={type} />}
+                    />
+                    <Trans>View Item Master</Trans>
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
+      </HStack>
     </VStack>
   );
 }

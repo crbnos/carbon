@@ -2,36 +2,50 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { VStack } from "@carbon/react";
 import type { FundingSource } from "@carbon/utils";
-import { redirect } from "@carbon/utils";
+import { fundingScopeOf, getErrorMessage, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
 import { data, useLoaderData } from "react-router";
+import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
-  AvailableCreditsTable,
+  isPaymentLocked,
+  paymentValidator
+} from "~/modules/invoicing/invoicing.models";
+import {
+  checkDepositDocument,
   getAvailableCreditsForParty,
-  getAvailableOnAccountCreditSources,
+  getDepositDocuments,
   getInvoiceSettlements,
   getOpenPurchaseInvoicesForSupplier,
   getOpenReimbursementsForEmployee,
   getOpenSalesInvoicesForCustomer,
   getPayment,
   getPaymentCurrencyConfiguration,
+  getSettlementRelatedItems,
   getStagedCreditsForPayment,
-  isPaymentLocked,
+  upsertPayment
+} from "~/modules/invoicing/invoicing.service";
+import {
+  AvailableCreditsTable,
   PaymentApplications,
   PaymentApplyTable,
+  PaymentDocuments,
   PaymentForm,
-  paymentValidator,
-  upsertPayment
-} from "~/modules/invoicing";
+  PaymentHeader
+} from "~/modules/invoicing/ui";
 import { setCustomFields } from "~/utils/form";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -41,6 +55,9 @@ export const handle: Handle = {
   ),
   module: "invoicing"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.payment?.paymentId, "Payment");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -59,11 +76,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   try {
     if (applications.error) throw new Error(applications.error.message);
-    const configuration = await getPaymentCurrencyConfiguration(
-      client,
-      companyId,
-      payment.data.currencyCode
-    );
+    const [configuration, depositDocuments] = await Promise.all([
+      getPaymentCurrencyConfiguration(
+        client,
+        companyId,
+        payment.data.currencyCode
+      ),
+      // The payment's own document stays listed even once it is closed.
+      getDepositDocuments(
+        client,
+        companyId,
+        [payment.data.salesOrderId],
+        [payment.data.purchaseOrderId]
+      )
+    ]);
     let openInvoices: NonNullable<
       Awaited<ReturnType<typeof getOpenSalesInvoicesForCustomer>>["data"]
     > = [];
@@ -103,7 +129,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         totalAmount: reimbursement.totalAmount,
         balance: reimbursement.balance,
         remainingDocument: reimbursement.remainingDocument,
-        status: "Posted"
+        status: "Posted",
+        rentalAgreementIds: [],
+        salesOrderIds: [],
+        customerContractIds: [],
+        purchaseOrderIds: []
       }));
     } else if (payment.data.status === "Draft") {
       const isAR = Boolean(payment.data.customerId);
@@ -114,7 +144,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         Boolean(payment.data.customerId) === Boolean(payment.data.supplierId)
       )
         throw new Error("Payment requires exactly one customer or supplier");
-      if (isRefund) {
+      if (isRefund && !fundingScopeOf(payment.data)) {
         const memos = await getAvailableCreditsForParty(
           client,
           companyId,
@@ -136,9 +166,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           totalAmount: memo.amount,
           balance: memo.remaining,
           remainingDocument: memo.remainingDocument,
-          status: "Posted"
+          status: "Posted",
+          rentalAgreementIds: [],
+          salesOrderIds: [],
+          customerContractIds: [],
+          purchaseOrderIds: []
         }));
-      } else {
+      } else if (!isRefund) {
+        const api = await carbon(request);
         const [invoices, credit, credits, staged] = await Promise.all([
           isAR
             ? getOpenSalesInvoicesForCustomer(
@@ -153,14 +188,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
                 partyId,
                 payment.data.currencyCode
               ),
-          getAvailableOnAccountCreditSources(
-            client,
-            companyId,
-            isAR
+          api.invoicing.getAvailableOnAccountCreditSources({
+            party: isAR
               ? { paymentType: "Receipt", customerId: partyId }
               : { paymentType: "Disbursement", supplierId: partyId },
-            payment.data.currencyCode
-          ),
+            currencyCode: payment.data.currencyCode
+          }),
           getAvailableCreditsForParty(
             client,
             companyId,
@@ -194,17 +227,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       funding,
       availableCredits,
       stagedCredits,
-      ...configuration
+      depositDocuments,
+      ...configuration,
+      relatedItems: getSettlementRelatedItems(client, companyId, {
+        journalId: payment.data.journalId,
+        targets: applications.data ?? [],
+        appliedViaPaymentId: payment.data.id,
+        appliedViaPaymentStaged: payment.data.status === "Draft"
+      })
     };
   } catch (e) {
     throw redirect(
       path.to.payments,
       await flash(
         request,
-        error(
-          e,
-          e instanceof Error ? e.message : "Failed to load payment balances"
-        )
+        // The log keeps the fixed text so occurrences group as one error;
+        // the person sees the cause, which a service returns as a plain
+        // `{ message }` object rather than an `Error`.
+        {
+          ...error(e, "Failed to load payment balances"),
+          message: getErrorMessage(e, "Failed to load payment balances")
+        }
       )
     );
   }
@@ -239,6 +282,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // The deposit ids arrive as hidden fields: never trust them to name this
+  // company's, this customer's, open document. The payment's own saved link
+  // stays valid after its document closes.
+  const depositError = await checkDepositDocument(
+    client,
+    companyId,
+    validation.data,
+    existing.data
+  );
+  if (depositError) {
+    return validationError({
+      fieldErrors: { depositDocument: depositError }
+    });
+  }
+
   try {
     await getPaymentCurrencyConfiguration(
       client,
@@ -248,13 +306,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } catch (e) {
     throw redirect(
       path.to.payment(paymentId),
-      await flash(
-        request,
-        error(
-          e,
-          e instanceof Error ? e.message : "Invalid currency configuration"
-        )
-      )
+      await flash(request, {
+        ...error(e, "Invalid currency configuration"),
+        message: getErrorMessage(e, "Invalid currency configuration")
+      })
     );
   }
 
@@ -287,7 +342,8 @@ export default function PaymentDetailRoute() {
     baseCurrencyCode,
     currencyDecimals,
     availableCredits,
-    stagedCredits
+    stagedCredits,
+    depositDocuments
   } = useLoaderData<typeof loader>();
   const locked = isPaymentLocked(payment.status);
   const isReimbursement = Boolean(payment.employeeId);
@@ -297,6 +353,16 @@ export default function PaymentDetailRoute() {
   const isRefund =
     !isReimbursement &&
     (side === "sales") !== (payment.paymentType === "Receipt");
+  // Advances fund their document's invoices. Advance refunds consume the
+  // original payments; other refunds target memos without a document scope.
+  const isDepositRefund = isRefund && Boolean(fundingScopeOf(payment));
+  const depositScope = !isRefund ? fundingScopeOf(payment) : null;
+  const paymentScope = depositScope && {
+    ...depositScope,
+    readableId:
+      depositDocuments.find((document) => document.id === depositScope.id)
+        ?.readableId ?? null
+  };
 
   const initialValues = {
     id: payment.id,
@@ -312,22 +378,44 @@ export default function PaymentDetailRoute() {
     bankAccount: payment.bankAccount ?? "",
     reference: payment.reference ?? "",
     memo: payment.memo ?? "",
+    salesOrderId: payment.salesOrderId ?? "",
+    rentalAgreementId: payment.rentalAgreementId ?? "",
+    customerContractId: payment.customerContractId ?? "",
+    purchaseOrderId: payment.purchaseOrderId ?? "",
     status: payment.status ?? undefined
   };
 
   return (
-    <VStack spacing={4} className="p-6 max-w-6xl w-full mx-auto">
-      <PaymentForm key={payment.id} initialValues={initialValues} />
+    <DocumentPage
+      header={<PaymentHeader />}
+      sidebar={
+        <DocumentSidebar
+          documents={<PaymentDocuments />}
+          activity={{
+            entityType: "payment",
+            entityId: payment.id,
+            refreshKey: `${payment.updatedAt ?? ""}:${payment.status}`
+          }}
+        />
+      }
+    >
+      <PaymentForm
+        key={payment.id}
+        initialValues={initialValues}
+        depositDocuments={depositDocuments}
+      />
       <PaymentApplications
         applications={applications}
         paymentTotal={Number(payment.totalAmount)}
         paymentCurrency={payment.currencyCode}
         baseCurrency={baseCurrencyCode}
         isRefund={isRefund}
+        isDepositRefund={isDepositRefund}
+        isDeposit={Boolean(depositScope)}
         isReimbursement={isReimbursement}
       />
 
-      {!locked && (
+      {!locked && !isDepositRefund && (
         <PaymentApplyTable
           key={`${payment.id}:${side}:${payment.customerId ?? payment.supplierId ?? payment.employeeId}:${payment.currencyCode}:${payment.paymentType}`}
           isRefund={isRefund}
@@ -338,6 +426,7 @@ export default function PaymentDetailRoute() {
           baseCurrency={baseCurrencyCode}
           currencyDecimals={currencyDecimals}
           priorSources={funding.sources}
+          paymentScope={paymentScope}
           paymentTotal={Number(payment.totalAmount)}
           paymentExchangeRate={Number(payment.exchangeRate)}
           availableCredit={funding.availableDocumentAmount}
@@ -350,7 +439,11 @@ export default function PaymentDetailRoute() {
             totalAmount: Number(inv.totalAmount ?? 0),
             balance: Number(inv.balance ?? 0),
             remainingDocument: inv.remainingDocument,
-            status: inv.status
+            status: inv.status,
+            rentalAgreementIds: inv.rentalAgreementIds,
+            salesOrderIds: inv.salesOrderIds,
+            customerContractIds: inv.customerContractIds,
+            purchaseOrderIds: inv.purchaseOrderIds
           }))}
           existingApplications={applications.map((a) => ({
             targetSalesInvoiceId: a.targetSalesInvoiceId,
@@ -398,6 +491,6 @@ export default function PaymentDetailRoute() {
           staged={stagedCredits}
         />
       )}
-    </VStack>
+    </DocumentPage>
   );
 }

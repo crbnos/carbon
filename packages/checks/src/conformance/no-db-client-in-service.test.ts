@@ -39,6 +39,30 @@ describe("noDbClientInService", () => {
     expect(noDbClientInService.scan(SERVICE, ts)).toHaveLength(4);
   });
 
+  it("flags getDatabaseClient() and getJobDatabaseClient() in a service file", () => {
+    const ts = [
+      'import { getDatabaseClient } from "~/services/database.server";',
+      "const db = getDatabaseClient();",
+      "await seed(getJobDatabaseClient(5), args);"
+    ].join("\n");
+    const v = noDbClientInService.scan(SERVICE, ts);
+    // The import names the getter without calling it; only the calls count.
+    expect(v.map((x) => [x.line, x.snippet])).toEqual([
+      [2, "getDatabaseClient("],
+      [3, "getJobDatabaseClient("]
+    ]);
+  });
+
+  it("ignores the getter named in a comment", () => {
+    const ts = [
+      "// The route passes getDatabaseClient() in as `db`.",
+      "/**",
+      " * Called with getDatabaseClient() from the route.",
+      " */"
+    ].join("\n");
+    expect(noDbClientInService.scan(SERVICE, ts)).toHaveLength(0);
+  });
+
   it("allows a type-only import of the Kysely types", () => {
     const ts =
       'import type { Kysely, KyselyDatabase } from "@carbon/database/client";';

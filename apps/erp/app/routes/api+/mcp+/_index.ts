@@ -3,38 +3,61 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ManifestEntry } from "@carbon/api";
-import { hashOAuthSecret } from "@carbon/auth/auth.server";
-import {
-  getCarbonServiceRole,
-  getUserScopedClient
-} from "@carbon/auth/client.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
-import { createCatalogSearch } from "@carbon/ee/mcp";
-import { createMcpServer } from "@carbon/ee/mcp.server";
+import { createCatalogSearch, type McpServerDeps } from "@carbon/ee/mcp";
+import { serveMcpRequest } from "@carbon/ee/mcp.server";
 import { getAppUrl } from "@carbon/env";
 import { Ratelimit, redis } from "@carbon/kv";
 import { withLogContext } from "@carbon/logger/middleware.server";
 import { datetime, getRequestOrigin } from "@carbon/utils";
-import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { ActionFunctionArgs } from "react-router";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
-import { authenticateApiKey } from "../v1+/lib/authenticate.server";
-import type { AuthedContext } from "../v1+/lib/base.server";
-import { callOperation } from "../v1+/lib/call.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import {
-  isListOperation,
-  operationsByName
-} from "../v1+/lib/operations.server";
-import { isMcpBlockedTool } from "./lib/mcp-blocked-tools";
-import toolMetadata from "./lib/tool-metadata.json";
+  authenticateApiKey,
+  findOAuthToken,
+  oauthContext
+} from "../v1+/lib/authenticate.server";
+import type { AuthedContext } from "../v1+/lib/base.server";
 
-// One catalog search index for the process (built lazily on first query); the
-// MCP engine now lives in `@carbon/ee/mcp.server` and takes the dispatch, the
-// manifest and this index as injected deps — they derive from `~/modules/*` and
-// cannot move into a package.
-const catalogSearch = createCatalogSearch(
-  toolMetadata.tools as unknown as ManifestEntry[]
-);
+// The MCP engine lives in `@carbon/ee/mcp.server` and takes the dispatch, the
+// manifest and one catalog search index for the process as injected deps —
+// they derive from `~/modules/*` and cannot move into a package.
+//
+// They load on the first MCP request, not at module scope. The dev server
+// evaluates every route module on its first request, and the manifest
+// (tool-metadata.json, ~20 MB of JSON) plus the dispatcher it pulls in were
+// among the largest things it held — for a route most sessions never call.
+type McpDeps = McpServerDeps<AuthedContext>;
+let mcpDeps: Promise<McpDeps> | undefined;
+function loadMcpDeps(): Promise<McpDeps> {
+  if (mcpDeps) return mcpDeps;
+  const loading: Promise<McpDeps> = Promise.all([
+    import("../v1+/lib/call.server"),
+    import("../v1+/lib/operations.server"),
+    import("./lib/tool-metadata.json")
+  ]).then(
+    ([{ callOperation }, { isListOperation, operationsByName }, json]) => {
+      const toolMetadata = json.default;
+      return {
+        callOperation,
+        operationsByName,
+        isListOperation,
+        catalogSearch: createCatalogSearch(
+          toolMetadata.tools as unknown as ManifestEntry[]
+        ),
+        toolMetadata
+      };
+    }
+  );
+  // A transient failure (a chunk that did not load) is retried on the next
+  // request rather than cached; a module that throws while evaluating keeps
+  // throwing, as Node caches that failure.
+  loading.catch(() => {
+    mcpDeps = undefined;
+  });
+  mcpDeps = loading;
+  return loading;
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -52,25 +75,6 @@ function addCorsHeaders(response: Response): Response {
     status: response.status,
     headers
   });
-}
-
-async function authenticateOAuthToken(
-  accessToken: string
-): Promise<{ userId: string; companyId: string } | null> {
-  const serviceRole = getCarbonServiceRole();
-  const tokenResult = await serviceRole
-    .from("oauthToken")
-    .select("userId, companyId, expiresAt")
-    .eq("accessToken", hashOAuthSecret(accessToken))
-    .single();
-
-  if (!tokenResult.data) return null;
-  if (new Date(tokenResult.data.expiresAt) < new Date()) return null;
-
-  return {
-    userId: tokenResult.data.userId,
-    companyId: tokenResult.data.companyId
-  };
 }
 
 /**
@@ -144,32 +148,15 @@ async function resolveAuth(request: Request): Promise<{
 
     // Try OAuth for non-API-key tokens
     if (!token.startsWith("crbn_")) {
-      const oauthAuth = await authenticateOAuthToken(token);
-      if (oauthAuth) {
-        const rl = await oauthRatelimit.limit(`mcp-oauth:${oauthAuth.userId}`);
+      const identity = await findOAuthToken(token);
+      if (identity) {
+        const rl = await oauthRatelimit.limit(`mcp-oauth:${identity.userId}`);
         if (!rl.success) {
           throw make429Response(rl.reset, rl.remaining);
         }
 
-        const client = await getUserScopedClient(oauthAuth.userId);
-        const companyResult = await client
-          .from("company")
-          .select("companyGroupId")
-          .eq("id", oauthAuth.companyId)
-          .single();
-
-        return {
-          ctx: {
-            client,
-            companyId: oauthAuth.companyId,
-            companyGroupId:
-              companyResult.data?.companyGroupId ?? oauthAuth.companyId,
-            userId: oauthAuth.userId,
-            authKind: "oauth" as const,
-            scopes: {}
-          },
-          request
-        };
+        const ctx = await oauthContext(identity);
+        if (ctx) return { ctx, request };
       }
 
       throw make401Response(request);
@@ -208,30 +195,17 @@ export async function action({ request }: ActionFunctionArgs) {
       async () => {
         // The agent is told what "today" is; it has to be the company's day, not
         // the server's, or every relative-date tool call it makes lands a day off.
-        // `createMcpServer` embeds the MCP entitlement LOCK (Business+), covering
+        // `serveMcpRequest` embeds the MCP entitlement LOCK (Business+), covering
         // every auth path since both resolve to an authed context first — it
         // throws `EntitlementError` for community/starter, caught below as 402.
-        const server = await createMcpServer(
+        return serveMcpRequest(
+          authedRequest,
           ctx,
           datetime
             .today(await getCompanyTimeZone(ctx.client, ctx.companyId))
             .toString(),
-          {
-            callOperation,
-            operationsByName,
-            isListOperation,
-            isMcpBlockedTool,
-            catalogSearch,
-            toolMetadata
-          }
+          await loadMcpDeps()
         );
-        const transport = new WebStandardStreamableHTTPServerTransport({
-          sessionIdGenerator: undefined,
-          enableJsonResponse: true
-        });
-
-        await server.connect(transport);
-        return transport.handleRequest(authedRequest);
       }
     );
   } catch (err) {

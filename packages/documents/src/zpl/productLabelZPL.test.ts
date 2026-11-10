@@ -100,6 +100,47 @@ describe("generateProductLabelZPL", () => {
     }
   });
 
+  it("escapes a caret in label text so it cannot end the field", () => {
+    const zpl = generateProductLabelZPL(
+      { ...item, itemId: "AB^CD" },
+      size("label2x1")
+    );
+    expect(zpl).toContain("^FH^FDAB_5ECD^FS");
+    expect(zpl).not.toContain("^FDAB^CD");
+  });
+
+  it("escapes a caret in a barcode's value so it cannot start a command", () => {
+    const zpl = generateProductLabelZPL(
+      { ...item, trackedEntityId: "AB^PQ100" },
+      size("label2x1")
+    );
+    expect(zpl).toContain("^FH^FDMA,AB_5EPQ100^FS");
+    expect(zpl).not.toContain("AB^PQ100");
+  });
+
+  it("prints a custom field's value alone when its label is empty", () => {
+    const template = resolveTemplate("trackingLabel", null);
+    const zpl = generateProductLabelZPL(
+      { ...item, customFields: { cf1: "Blue" } },
+      size("label2x1"),
+      {
+        ...template,
+        blocks: [
+          ...template.blocks,
+          {
+            id: "c",
+            type: "customField",
+            visible: true,
+            fieldId: "cf1",
+            label: ""
+          }
+        ]
+      }
+    );
+    expect(zpl).toContain("^FH^FDBlue^FS");
+    expect(zpl).not.toContain(": Blue");
+  });
+
   it("throws for sizes without ZPL support", () => {
     expect(() => generateProductLabelZPL(item, size("avery5163"))).toThrow();
   });

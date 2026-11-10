@@ -7,10 +7,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  purchasingRfqStatusType,
-  updatePurchasingRFQStatus
-} from "~/modules/purchasing";
+import { purchasingRfqStatusType } from "~/modules/purchasing/purchasing.models";
+import { updatePurchasingRFQStatus } from "~/modules/purchasing/purchasing.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

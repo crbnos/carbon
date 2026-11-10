@@ -3,6 +3,23 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { distinctItemText } from "@carbon/utils";
+
+type SalesInvoiceLineRow =
+  Database["public"]["Views"]["salesInvoiceLines"]["Row"];
+
+/**
+ * A service job's labor or fixed price line: a Service line with no item,
+ * named by its description. "Labor" is the type those lines had before
+ * 2026-11-01.
+ */
+function isItemlessServiceLine(line: SalesInvoiceLineRow) {
+  return (
+    (line?.invoiceLineType === "Service" ||
+      line?.invoiceLineType === "Labor") &&
+    !line?.itemId
+  );
+}
 
 export function getLineDescription(
   line: Database["public"]["Views"]["salesInvoiceLines"]["Row"]
@@ -17,7 +34,9 @@ export function getLineDescription(
     case "Comment":
       return line?.description;
     default:
-      return line?.itemReadableId;
+      return isItemlessServiceLine(line)
+        ? line?.description
+        : line?.itemReadableId;
   }
 }
 
@@ -29,26 +48,57 @@ export function getLineDescriptionDetails(
       return line?.description;
     case "Comment":
     default:
-      return line?.description ?? "";
+      // Its description is already its name.
+      if (isItemlessServiceLine(line)) return "";
+      // A service's readable id is its name — don't print it twice.
+      return distinctItemText(line?.itemReadableId, line?.description) ?? "";
   }
+}
+
+/**
+ * The line's list merchandise amount, `quantity × convertedUnitPrice`, before
+ * the line discount. Documents render in the invoice currency.
+ */
+export function getLineGrossMerchandise(
+  line: Database["public"]["Views"]["salesInvoiceLines"]["Row"]
+) {
+  return (line?.quantity ?? 0) * (line?.convertedUnitPrice ?? 0);
+}
+
+/**
+ * The line discount's amount. `discountPercent` is a fraction from 0 to 1 and
+ * discounts merchandise only — add-ons and shipping are never discounted.
+ */
+export function getLineDiscount(
+  line: Database["public"]["Views"]["salesInvoiceLines"]["Row"]
+) {
+  return getLineGrossMerchandise(line) * (line?.discountPercent ?? 0);
+}
+
+/** The line's merchandise amount after its discount. */
+export function getLineMerchandise(
+  line: Database["public"]["Views"]["salesInvoiceLines"]["Row"]
+) {
+  return getLineGrossMerchandise(line) - getLineDiscount(line);
 }
 
 export function getLineSubtotal(
   line: Database["public"]["Views"]["salesInvoiceLines"]["Row"]
 ) {
   return (
-    (line?.quantity ?? 0) * (line?.convertedUnitPrice ?? 0) +
+    getLineMerchandise(line) +
     (line?.convertedAddOnCost ?? 0) +
     (line?.convertedNonTaxableAddOnCost ?? 0) +
     (line?.convertedShippingCost ?? 0)
   );
 }
 
+/** Tax is charged on the discounted merchandise. */
 export function getLineTaxableSubtotal(
   line: Database["public"]["Views"]["salesInvoiceLines"]["Row"]
 ) {
   return (
-    (line?.quantity ?? 0) * (line?.convertedUnitPrice ?? 0) +
+    getLineMerchandise(line) +
     (line?.convertedAddOnCost ?? 0) +
     (line?.convertedShippingCost ?? 0)
   );

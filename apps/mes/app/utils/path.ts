@@ -18,15 +18,19 @@ const display = "/display";
 
 export const path = {
   to: {
-    accountSettings: `${ERP_URL}/x/account`,
     acknowledge: `${x}/acknowledge`,
     active: `${x}/active`,
     addAndIssueMaintenanceDispatchItem: (dispatchId: string) =>
       generatePath(`${x}/dispatch/${dispatchId}/add-and-issue`),
+    addAndIssueServiceJobItem: (jobId: string) =>
+      generatePath(`${x}/service/${jobId}/add-and-issue`),
     api: {
-      batchNumbers: (itemId: string) =>
-        generatePath(`${api}/batch-numbers?itemId=${itemId}`),
+      batchNumbers: (itemId: string, operationId?: string) =>
+        generatePath(
+          `${api}/batch-numbers?itemId=${itemId}${operationId ? `&operationId=${operationId}` : ""}`
+        ),
       failureModes: `${api}/failure-modes`,
+      loginVerifyCode: `${api}/login/verify-code`,
       modelArtifacts: (modelUploadId: string) =>
         generatePath(`${api}/model/artifacts/${modelUploadId}`),
       modelDownload: (modelUploadId: string) =>
@@ -36,17 +40,21 @@ export const path = {
       pickedAllocation: (jobMaterialId: string) =>
         generatePath(`${api}/picked-allocation?jobMaterialId=${jobMaterialId}`),
       qualityIssueTypes: `${api}/quality-issue-types`,
-      serialNumbers: (itemId: string) =>
-        generatePath(`${api}/serial-numbers?itemId=${itemId}`),
+      serialNumbers: (itemId: string, operationId?: string) =>
+        generatePath(
+          `${api}/serial-numbers?itemId=${itemId}${operationId ? `&operationId=${operationId}` : ""}`
+        ),
       ssoCheck: `${api}/sso/check`,
       suggestedAllocation: (
         itemId: string,
         locationId: string,
-        quantity: number
+        quantity: number,
+        operationId?: string
       ) =>
         generatePath(
-          `${api}/suggested-allocation?itemId=${itemId}&locationId=${locationId}&quantity=${quantity}`
-        )
+          `${api}/suggested-allocation?itemId=${itemId}&locationId=${locationId}&quantity=${quantity}${operationId ? `&operationId=${operationId}` : ""}`
+        ),
+      systemStatus: `${api}/system-status`
     },
     assembly: (id: string) => generatePath(`${x}/assembly/${id}`),
     assigned: `${x}/assigned`,
@@ -68,6 +76,9 @@ export const path = {
     displays: display,
     endOperation: (id: string) => generatePath(`${x}/end/${id}`),
     endShift: `${x}/end-shift`,
+    erpAccountSecurity: `${ERP_URL}/x/account/security`,
+    // The ERP's API routes, through the proxy (`x+/proxy.$.tsx`).
+    erpApi: `${x}/proxy/api`,
     file: {
       // The load-sheet route lives in ERP (like the traveler); MES links to it
       // cross-origin.
@@ -168,7 +179,6 @@ export const path = {
     jobMakeMethodDetail: (jobId: string, makeMethodId: string) =>
       `${getAppUrl()}${x}/job/${jobId}/make/${makeMethodId}`,
     jobs: `${x}/jobs`,
-    kanbanComplete: (id: string) => `${ERP_URL}/api/kanban/complete/${id}`,
     location: `${x}/location`,
     login: "/login",
     logout: "/logout",
@@ -183,6 +193,7 @@ export const path = {
     messagingNotify: `${x}/proxy/api/messaging/notify`,
     mfa: "/mfa",
     newMaintenanceDispatch: `${x}/dispatch/new`,
+    newServiceJob: `${x}/service/new`,
     onboarding: `${ERP_URL}/onboarding`,
     operation: (id: string) => generatePath(`${x}/operation/${id}`),
     operations: `${x}/operations?saved=1`,
@@ -212,6 +223,11 @@ export const path = {
       return parentId ? `${basePath}?parentId=${parentId}` : basePath;
     },
     scrapReasons: `${api}/scrap-reasons`,
+    service: `${x}/service`,
+    serviceJob: (id: string) => generatePath(`${x}/service/${id}`),
+    serviceJobDetail: (id: string) => `${getAppUrl()}${x}/service-job/${id}`,
+    serviceSettings: `${ERP_URL}/x/settings/service`,
+    serviceTime: `${x}/service-time`,
     setupRequired: "/setup-required",
     startOperation: (id: string) => generatePath(`${x}/start/${id}`),
     suggestion: `${x}/suggestion`,
@@ -219,6 +235,7 @@ export const path = {
       generatePath(`${x}/company/switch/${companyId}`),
     timeCardPage: `${x}/timecard`,
     timecard: `${api}/timecard`,
+    timesheet: `${x}/timesheet`,
     triggerRework: `${x}/trigger-rework`,
     unconsume: `${x}/unconsume`,
     workCenter: (workCenter: string) =>

@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { createHmac } from "node:crypto";
 import { z } from "zod";
+import {
+  outboundHttpAgent,
+  outboundHttpsAgent
+} from "../../../workflows/actions/url-guard.ts";
 
 // Separate from webhook.ts so the contract below is testable — the handler
 // imports client.server, which validates the server env at module load.
@@ -75,4 +80,44 @@ export function toWebhookBody(
     table: event.table,
     eventId
   };
+}
+
+/**
+ * The header carrying a delivery's signature. PUBLIC contract — see
+ * docs/content/docs/building/webhooks.mdx.
+ */
+export const WEBHOOK_SIGNATURE_HEADER = "Carbon-Signature";
+
+/**
+ * The axios options every delivery uses. The agents run the SSRF guard at
+ * connect time, so the address `checkWebhookUrl` approved is the address
+ * dialled. Redirects are off: following one would leave the guard behind, so a
+ * 3xx fails the attempt. So is any proxy from the environment (`HTTP_PROXY`):
+ * through one, the socket — and the guard — would reach the proxy, and the proxy
+ * the target. The timeout is PUBLIC contract (30 s, see the docs).
+ */
+export const webhookTransport = {
+  timeout: 30_000,
+  maxRedirects: 0,
+  proxy: false as const,
+  httpAgent: outboundHttpAgent,
+  httpsAgent: outboundHttpsAgent
+};
+
+/**
+ * Sign a delivery: `t=<unix seconds>,v1=<hex HMAC-SHA256>`, where the HMAC is
+ * keyed by the webhook's signing secret (the whole `whsec_…` string) and runs
+ * over `${t}.${body}`, the exact bytes sent. The scheme Carbon itself verifies
+ * for Paperless Parts. A consumer recomputes it from the raw request body and
+ * rejects an old `t` to stop replays.
+ */
+export function signWebhookBody(
+  secret: string,
+  body: string,
+  timestamp: number
+): string {
+  const signature = createHmac("sha256", secret)
+    .update(`${timestamp}.${body}`)
+    .digest("hex");
+  return `t=${timestamp},v1=${signature}`;
 }

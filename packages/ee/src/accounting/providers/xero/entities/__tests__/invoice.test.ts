@@ -250,6 +250,22 @@ describe("SalesInvoiceSyncer.mapToRemote (foreign currency)", () => {
     expect(payload.LineItems[0]?.LineAmount).toBe(80);
   });
 
+  it("pushes a discounted line's NET amount", async () => {
+    const source = fxInvoice();
+    // 2 × 50 base list, 20% off → 80 base merchandise, 64 EUR at 0.8.
+    const payload = await makeInvoiceSyncer(db()).mapToRemote({
+      ...source,
+      subtotal: 80,
+      totalAmount: 80,
+      balance: 80,
+      lines: [{ ...source.lines[0]!, discountPercent: 0.2, lineAmount: 80 }]
+    });
+    expect(payload.LineItems[0]?.UnitAmount).toBe(64);
+    expect(payload.LineItems[0]?.LineAmount).toBe(64);
+    expect(payload.LineItems[0]?.Description).toContain("2 × 32 EUR");
+    expect(payload.LineItems[0]).not.toHaveProperty("DiscountRate");
+  });
+
   it("passes CurrencyRate through unchanged (foreign per base, both sides)", async () => {
     const payload = await makeInvoiceSyncer(db()).mapToRemote(fxInvoice());
     // Xero wants EUR per USD, which is what Carbon already stores. Sending the
@@ -367,6 +383,79 @@ describe("Xero native sales components", () => {
   });
 });
 
+describe("Xero service job revenue", () => {
+  const serviceDb = () =>
+    makeInvoiceDb({
+      accountDefault: { salesAccount: "acct_sales" },
+      accountMappings: [
+        ...mappedAccounts,
+        {
+          ...mappedAccounts[0]!,
+          id: "service-map",
+          accountId: "acct_service",
+          metadata: { externalCode: "4300" },
+          accountNumber: "4300",
+          accountName: "Service Revenue"
+        }
+      ]
+    });
+
+  it("codes a service job's lines to Service Revenue and a part line to Sales", async () => {
+    const source = invoice();
+    source.serviceRevenueAccountId = "acct_service";
+    source.subtotal = 385;
+    source.totalAmount = 385;
+    source.balance = 385;
+    source.lines.push({
+      ...source.lines[0]!,
+      id: "sil-labor",
+      invoiceLineType: "Service",
+      itemId: null,
+      itemCode: null,
+      description: "Labor",
+      quantity: 3,
+      unitPrice: 95,
+      lineAmount: 285,
+      serviceJobId: "sj-1"
+    });
+    const payload = await makeInvoiceSyncer(serviceDb()).mapToRemote(source);
+    expect(
+      payload.LineItems.map((line) => [line.AccountCode, line.LineAmount])
+    ).toEqual([
+      ["4000", 100],
+      ["4300", 285]
+    ]);
+  });
+
+  it("needs no sales account for a service-only invoice", async () => {
+    const source = invoice();
+    source.salesRevenueAccountId = null;
+    source.serviceRevenueAccountId = "acct_service";
+    source.lines[0] = { ...source.lines[0]!, serviceJobId: "sj-1" };
+    const payload = await makeInvoiceSyncer(serviceDb()).mapToRemote(source);
+    expect(payload.LineItems.map((line) => line.AccountCode)).toEqual(["4300"]);
+  });
+
+  it("refuses an unmapped Service Revenue account before the customer push", async () => {
+    const source = invoice();
+    source.serviceRevenueAccountId = "acct_service";
+    source.lines[0] = { ...source.lines[0]!, serviceJobId: "sj-1" };
+    const syncer = makeInvoiceSyncer(
+      makeInvoiceDb({
+        accountDefault: { salesAccount: "acct_sales" },
+        accountMappings: mappedAccounts
+      })
+    );
+    await expect(syncer.mapToRemote(source)).rejects.toMatchObject({
+      failure: {
+        errorCode: "UNMAPPED_ACCOUNTS",
+        message: expect.stringContaining("Service Revenue")
+      }
+    });
+    expect((syncer as any).ensureDependencySynced).not.toHaveBeenCalled();
+  });
+});
+
 function reviewSyncer() {
   const database = makeInvoiceDb({
     accountDefault: {
@@ -434,22 +523,25 @@ describe("Xero posted facts and monetary representation", () => {
     source.currencyCode = "EUR";
     expect((await reviewSyncer().mapToRemote(source)).CurrencyRate).toBe(1);
   });
-  it.each([
-    false,
-    true
-  ])("opts into supported unit precision at the actual invoice transport (batch=%s)", async (batch) => {
-    const syncer = reviewSyncer();
-    const requests: string[] = [];
-    (syncer as any).provider.request = async (_method: string, url: string) => {
-      requests.push(url);
-      return { data: { Invoices: [{ InvoiceID: "remote" }] } };
-    };
-    const payload = await syncer.mapToRemote(invoice());
-    if (batch)
-      await (syncer as any).upsertRemoteBatch([{ localId: "si_1", payload }]);
-    else await (syncer as any).upsertRemote(payload, "si_1");
-    expect(requests).toEqual(["/Invoices?unitdp=4"]);
-  });
+  it.each([false, true])(
+    "opts into supported unit precision at the actual invoice transport (batch=%s)",
+    async (batch) => {
+      const syncer = reviewSyncer();
+      const requests: string[] = [];
+      (syncer as any).provider.request = async (
+        _method: string,
+        url: string
+      ) => {
+        requests.push(url);
+        return { data: { Invoices: [{ InvoiceID: "remote" }] } };
+      };
+      const payload = await syncer.mapToRemote(invoice());
+      if (batch)
+        await (syncer as any).upsertRemoteBatch([{ localId: "si_1", payload }]);
+      else await (syncer as any).upsertRemote(payload, "si_1");
+      expect(requests).toEqual(["/Invoices?unitdp=4"]);
+    }
+  );
 });
 
 it("preserves an exact extended net when the source unit price has four decimals", async () => {

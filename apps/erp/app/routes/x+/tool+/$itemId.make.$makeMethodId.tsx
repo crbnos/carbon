@@ -15,21 +15,21 @@ import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel } from "~/components";
 import { useRouteData } from "~/hooks";
 import { usePermissions } from "~/hooks/usePermissions";
-import type { ToolSummary } from "~/modules/items";
 import {
   getMakeMethodById,
   getMakeMethods,
   getMethodMaterialsByMakeMethod,
-  getMethodOperationsByMakeMethodId
-} from "~/modules/items";
-import { getRevisionLock } from "~/modules/items/items.server";
+  getMethodOperationsByMakeMethodId,
+  getRevisionLock
+} from "~/modules/items/items.service";
+import type { ToolSummary } from "~/modules/items/types";
 import {
   BillOfMaterial,
   BillOfProcess,
   MakeMethodTools
 } from "~/modules/items/ui/Item";
-import type { MethodItemType, MethodType } from "~/modules/shared";
-import { getModelByItemId, getTagsList } from "~/modules/shared";
+import { getModelByItemId, getTagsList } from "~/modules/shared/shared.service";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

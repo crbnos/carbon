@@ -199,27 +199,24 @@ const FirstArticleHeader = ({
         </HStack>
       </div>
 
-      {approveConfirm.isOpen && (
-        <Confirm
-          action={path.to.firstArticleApprove(id)}
-          title={t`Approve first article?`}
-          text={t`You verified this first article. AS9102 recommends a different approver. Approve anyway?`}
-          confirmText={t`Approve`}
-          onCancel={approveConfirm.onClose}
-          onSubmit={approveConfirm.onClose}
-        />
-      )}
+      <Confirm
+        isOpen={approveConfirm.isOpen}
+        action={path.to.firstArticleApprove(id)}
+        title={t`Approve first article?`}
+        text={t`You verified this first article. AS9102 recommends a different approver. Approve anyway?`}
+        confirmText={t`Approve`}
+        onCancel={approveConfirm.onClose}
+        onSubmit={approveConfirm.onClose}
+      />
 
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteFirstArticle(id)}
-          isOpen={deleteModal.isOpen}
-          name={lot.inspectionId}
-          text={t`Are you sure you want to delete ${lot.inspectionId}? Its inspection is deleted with it. This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={deleteModal.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteFirstArticle(id)}
+        isOpen={deleteModal.isOpen}
+        name={lot.inspectionId}
+        text={t`Are you sure you want to delete ${lot.inspectionId}? Its inspection is deleted with it. This cannot be undone.`}
+        onCancel={deleteModal.onClose}
+        onSubmit={deleteModal.onClose}
+      />
 
       {customerApprovalModal.isOpen && (
         <FirstArticleCustomerApprovalForm

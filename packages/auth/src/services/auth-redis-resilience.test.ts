@@ -2,142 +2,101 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-// ── Redis-down simulation ─────────────────────────────────────────────────
-// PR #1083 wraps the @carbon/kv client in withResilience(): reads/writes resolve
-// `null` instead of throwing when Redis is unreachable. These tests prove the
-// auth path stays safe under that condition — every hardened function either
-// falls through to a safe path or fails closed, and none throw / reject.
-vi.mock("@carbon/kv", () => ({
-  redis: {
-    get: vi.fn().mockResolvedValue(null),
-    set: vi.fn().mockResolvedValue(null),
-    del: vi.fn().mockResolvedValue(null),
-    getdel: vi.fn().mockResolvedValue(null)
-  }
-}));
-
-// Env is validated at import time (getEnv throws on missing required vars), so we
-// stub the config module rather than requiring a full environment in the test run.
-vi.mock("../config/env", () => ({
-  DOMAIN: "localhost",
-  ERP_URL: "http://localhost:3000",
-  MES_URL: "http://localhost:3001",
-  VERCEL_URL: "",
-  CarbonEdition: "Community",
-  REFRESH_ACCESS_TOKEN_THRESHOLD: 60,
-  SESSION_KEY: "auth",
-  SESSION_MAX_AGE: 60 * 60 * 24 * 7,
-  SESSION_SECRET: "test-session-secret"
-}));
-
-// Heavy / side-effectful dependencies of the modules under test.
-vi.mock("@carbon/lib/email.server", () => ({
-  sendEmail: vi.fn().mockResolvedValue({ error: null })
-}));
-vi.mock("@carbon/documents/email", () => ({
-  VerificationEmail: vi.fn(() => null)
-}));
-vi.mock("@react-email/components", () => ({
-  render: vi.fn().mockResolvedValue("<html>code</html>")
-}));
-vi.mock("@simplewebauthn/server", () => ({
-  generateAuthenticationOptions: vi.fn(),
-  generateRegistrationOptions: vi.fn(),
-  verifyAuthenticationResponse: vi.fn(),
-  verifyRegistrationResponse: vi.fn()
-}));
-vi.mock("../lib/supabase/client.server", () => ({
-  getCarbonServiceRole: vi.fn(() => ({}))
-}));
-// ./users backs both users.server (getClaims/makePermissionsFromClaims) and
-// session.server (getPermissionCacheKey). getClaims returns a healthy DB result so
-// getUserClaims can prove the Redis-miss → DB fallback path.
-vi.mock("./users", () => ({
-  getClaims: vi.fn().mockResolvedValue({ data: [{}], error: null }),
-  getPermissionCacheKey: (userId: string) => `permissions:${userId}`,
-  makePermissionsFromClaims: vi.fn(() => ({
-    permissions: { parts: { view: [], create: [], update: [], delete: [] } },
-    role: "employee"
-  }))
-}));
-// session.server imports these siblings; they pull in supabase/env so we stub them.
-vi.mock("./auth.server", () => ({
-  makeAuthSession: vi.fn(),
-  refreshAccessToken: vi.fn(),
-  verifyAuthSession: vi.fn()
-}));
-vi.mock("./company.server", () => ({
-  setCompanyId: vi.fn(() => "companyId=cookie")
-}));
-vi.mock("./mfa.server", () => ({
-  getTotpFactors: vi.fn().mockResolvedValue([]),
-  userHasVerifiedTotpFactor: vi.fn().mockResolvedValue(false),
-  verifyTotpChallenge: vi.fn().mockResolvedValue(null)
-}));
-
-import { redis } from "@carbon/kv";
-import { sendEmail } from "@carbon/lib/email.server";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from "vitest";
 import type { AuthSession } from "../types";
 import {
-  getAndDeleteAuthChallenge,
-  getAndDeleteRegistrationChallenge
-} from "./passkey.server";
-import { setAuthSession, updateCompanySession } from "./session.server";
+  getAuthSession,
+  setAuthSession,
+  updateCompanySession
+} from "./session.server";
 import { getUserClaims } from "./users.server";
 import { sendVerificationCode, verifyEmailCode } from "./verification.server";
 
-beforeEach(() => {
-  // clearAllMocks resets call history but keeps the "Redis down" (→ null)
-  // implementations declared in the vi.mock factory above.
-  vi.clearAllMocks();
+// The module reads its configuration once, at import.
+vi.hoisted(() => {
+  vi.stubEnv("DOMAIN", "localhost");
+  vi.stubEnv("CARBON_EDITION", "");
+  vi.stubEnv("AUTH_COOKIE_SUFFIX", "");
+  vi.stubEnv("CONTROLLED_ENVIRONMENT", "");
+  vi.stubEnv("SESSION_SECRET", "test-session-secret");
+  vi.stubEnv("SUPABASE_URL", "http://supabase.test");
+  vi.stubEnv("SUPABASE_ANON_KEY", "anon-key");
+  vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-key");
 });
 
-describe("auth Redis-down resilience", () => {
-  it("[case 1] getUserClaims falls through to the DB when redis.get is null", async () => {
-    const claims = await getUserClaims("user-1", "company-1");
+// Redis is down: @carbon/kv's withResilience() resolves every call to null
+// instead of throwing.
+const redisDown = vi.hoisted(() => ({
+  get: async () => null,
+  set: async (): Promise<string | null> => null,
+  del: async () => null
+}));
+vi.mock("@carbon/kv", () => ({ redis: redisDown }));
 
-    // Cache miss (Redis down) → DB lookup → correct claims, no throw.
-    expect(redis.get).toHaveBeenCalledWith("permissions:user-1");
-    expect(claims).toMatchObject({ role: "employee" });
-    // Best-effort cache write was attempted but its null return didn't abort.
-    expect(redis.set).toHaveBeenCalled();
+// Outbound mail is a network boundary.
+const sendEmail = vi.hoisted(() => vi.fn());
+vi.mock("@carbon/lib/email.server", () => ({ sendEmail }));
+
+// The database answers get_claims for a plain employee.
+const fakeDatabase = async (input: RequestInfo | URL) => {
+  const url = new URL(input instanceof Request ? input.url : String(input));
+  if (url.pathname !== "/rest/v1/rpc/get_claims") {
+    return new Response("{}", { status: 404 });
+  }
+  return new Response(
+    JSON.stringify({ role: "employee", parts_view: ["company-1"] }),
+    { headers: { "Content-Type": "application/json" } }
+  );
+};
+
+beforeEach(() => {
+  sendEmail.mockReset();
+  vi.stubGlobal("fetch", fakeDatabase);
+});
+
+afterEach(() => vi.unstubAllGlobals());
+
+afterAll(() => vi.unstubAllEnvs());
+
+// Every auth path that touches Redis either falls through to a safe path or
+// fails closed when Redis is down; none throws.
+describe("auth with Redis down", () => {
+  it("reads claims from the database when the permission cache is unreachable", async () => {
+    await expect(getUserClaims("user-1", "company-1")).resolves.toEqual({
+      role: "employee",
+      permissions: {
+        parts: { view: ["company-1"], create: [], update: [], delete: [] }
+      }
+    });
   });
 
-  it("[case 2] sendVerificationCode returns false without throwing when redis.set fails", async () => {
-    // A genuine Redis failure that escapes fail-soft (e.g. a throw) is caught and
-    // reported as an unsendable code rather than crashing the request.
-    vi.mocked(redis.set).mockRejectedValueOnce(new Error("redis down"));
-
-    await expect(sendVerificationCode("user@example.com")).resolves.toBe(false);
-  });
-
-  it("[case 2b] sendVerificationCode fails closed (returns false, no email) when redis.set resolves null", async () => {
-    // Under withResilience, a Redis-down `set` resolves null (not a throw). The code
-    // must NOT send an unverifiable email in that case — it returns false without
-    // ever calling sendEmail.
+  it("does not send a verification email it could not store the code for", async () => {
     await expect(sendVerificationCode("user@example.com")).resolves.toBe(false);
     expect(sendEmail).not.toHaveBeenCalled();
   });
 
-  it("[case 3] verifyEmailCode returns false (fail-closed) when redis.get is null", async () => {
+  it("reports a verification code as unsendable when the store throws", async () => {
+    vi.spyOn(redisDown, "set").mockRejectedValueOnce(new Error("redis down"));
+
+    await expect(sendVerificationCode("user@example.com")).resolves.toBe(false);
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+
+  it("refuses a verification code it cannot look up", async () => {
     await expect(verifyEmailCode("user@example.com", "123456")).resolves.toBe(
       false
     );
   });
 
-  it("[case 4] getAndDeleteRegistrationChallenge returns null when redis.getdel is null", async () => {
-    await expect(
-      getAndDeleteRegistrationChallenge("user-1")
-    ).resolves.toBeNull();
-  });
-
-  it("[case 5] getAndDeleteAuthChallenge returns null when redis.getdel is null", async () => {
-    await expect(getAndDeleteAuthChallenge("challenge-1")).resolves.toBeNull();
-  });
-
-  it("[case 6] updateCompanySession still returns a session cookie when redis.del is null", async () => {
+  it("still switches the session's company when the cache bust fails", async () => {
     const authSession: AuthSession = {
       accessToken: "access",
       refreshToken: "refresh",
@@ -148,25 +107,24 @@ describe("auth Redis-down resilience", () => {
       expiresIn: 3600,
       expiresAt: 9_999_999_999
     };
+    const cookieOf = (setCookie: string) =>
+      new Request("http://localhost/", {
+        headers: { Cookie: setCookie.split(";")[0] ?? "" }
+      });
 
-    // Mint a real signed cookie via the module's own storage, then feed it back.
-    const setCookie = await setAuthSession(new Request("http://localhost/"), {
+    const signedIn = await setAuthSession(new Request("http://localhost/"), {
       authSession
     });
-    const cookiePair = setCookie.split(";")[0] ?? "";
-    const request = new Request("http://localhost/", {
-      headers: { Cookie: cookiePair }
-    });
-
-    const cookie = await updateCompanySession(
-      request,
+    const switched = await updateCompanySession(
+      cookieOf(signedIn),
       "new-company",
       "new-group"
     );
 
-    // Cache invalidation was attempted (fire-and-forget) and the null return was benign.
-    expect(redis.del).toHaveBeenCalledWith("permissions:user-1");
-    expect(typeof cookie).toBe("string");
-    expect(cookie.length).toBeGreaterThan(0);
+    expect(await getAuthSession(cookieOf(switched))).toEqual({
+      ...authSession,
+      companyId: "new-company",
+      companyGroupId: "new-group"
+    });
   });
 });

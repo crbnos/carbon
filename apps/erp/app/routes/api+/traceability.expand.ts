@@ -7,8 +7,8 @@ import type { LoaderFunctionArgs } from "react-router";
 import {
   fetchLineageSubgraph,
   type LineageDirection
-} from "~/modules/inventory/lineage.server";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+} from "~/modules/inventory/inventory.service";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

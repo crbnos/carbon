@@ -6,11 +6,12 @@ import { assertIsPost, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { certificateValidator, getCertificates } from "~/modules/quality";
+import { certificateValidator } from "~/modules/quality/quality.models";
 import {
   addReceiptLineCertificate,
-  deleteReceiptLineCertificate
-} from "~/modules/quality/certificates.server";
+  deleteReceiptLineCertificate,
+  getCertificates
+} from "~/modules/quality/quality.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 async function getReceiptLine(

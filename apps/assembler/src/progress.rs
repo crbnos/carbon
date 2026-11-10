@@ -2,10 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-//! Live per-job convert progress, served by `GET /convert/status/{jobId}` so
-//! the app can render a real phase checklist instead of a bare spinner.
-//! Entries exist only while a convert is in flight; unknown id => 404 and the
-//! caller falls back to its coarse DB status.
+//! Live per-job convert progress, merged into `GET /v1/jobs/{id}` while the job
+//! runs on the replica answering the poll. Entries exist only while a convert
+//! is in flight.
 
 use dashmap::DashMap;
 use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};

@@ -2,30 +2,38 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, useCarbon } from "@carbon/auth";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { generateHTML, RecordOutlet, useDebounce } from "@carbon/react";
+import {
+  generateHTML,
+  RecordOutlet,
+  useDebounce,
+  useHydrated
+} from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { redirect } from "@carbon/utils";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useFetcher, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { useImageUpload, usePermissions, useUser } from "~/hooks";
-import { getProcedure, getProcedureVersions } from "~/modules/production";
+import { useImageUpload, usePermissions } from "~/hooks";
+import {
+  getProcedure,
+  getProcedureVersions
+} from "~/modules/production/production.service";
 import ProcedureExplorer from "~/modules/production/ui/Procedures/ProcedureExplorer";
 import ProcedureHeader from "~/modules/production/ui/Procedures/ProcedureHeader";
 import ProcedureProperties from "~/modules/production/ui/Procedures/ProcedureProperties";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service";
 import type { action } from "~/routes/x+/procedure+/update";
 import { useDocumentStore } from "~/stores";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "procedure-detail");
@@ -37,6 +45,9 @@ export const handle: Handle = {
   ),
   module: "production"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.procedure?.name, "Procedure");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -78,6 +89,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ProcedureRoute() {
+  const { t } = useLingui();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
@@ -90,6 +102,7 @@ export default function ProcedureRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex grow overflow-hidden">
             <ResizablePanels
+              explorerLabel={t`Steps`}
               explorer={
                 <ProcedureExplorer
                   key={`explorer-${id}-${procedure.version}`}
@@ -144,19 +157,18 @@ function ProcedureEditor() {
     return () => setLiveTitle(null);
   }, [canEdit, setLiveTitle]);
 
-  const { carbon } = useCarbon();
-  const { id: userId } = useUser();
-
+  // Its own fetcher, so a content save and a name save never abort each other.
+  const contentFetcher = useFetcher<typeof action>();
   const updateProcedure = useDebounce(
-    async (content: JSONContent) => {
-      await carbon
-        ?.from("procedure")
-        .update({
-          content: content ?? {},
-          updatedAt: today(getLocalTimeZone()).toString(),
-          updatedBy: userId
-        })
-        .eq("id", id!);
+    (content: JSONContent) => {
+      const formData = new FormData();
+      formData.append("ids", id!);
+      formData.append("field", "content");
+      formData.append("value", JSON.stringify(content ?? {}));
+      contentFetcher.submit(formData, {
+        method: "post",
+        action: path.to.bulkUpdateProcedure
+      });
     },
     500,
     true
@@ -189,11 +201,15 @@ function ProcedureEditor() {
   );
 
   const onUploadImage = useImageUpload("job/notes");
+  // generateHTML renders "" on the server and React 18 keeps a mismatched
+  // innerHTML on hydration, so remount the read-only body once hydrated.
+  const isHydrated = useHydrated();
 
   return (
     <div className="flex flex-col w-full h-full">
       {canEdit ? (
         <Editor
+          label={t`Procedure content`}
           toolbar
           title={{
             value: procedureName,
@@ -212,11 +228,12 @@ function ProcedureEditor() {
           }}
         />
       ) : (
-        <div className="flex flex-col gap-6 w-full h-full p-8">
+        <div className="flex flex-col gap-6 w-full h-full p-8 max-md:p-4">
           <h1 className="md:text-3xl text-2xl font-semibold leading-tight tracking-tight text-foreground">
             {procedureName}
           </h1>
           <div
+            key={isHydrated ? "client" : "server"}
             className="prose dark:prose-invert"
             dangerouslySetInnerHTML={{
               __html: generateHTML(content)

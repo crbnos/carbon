@@ -5,6 +5,7 @@
 import { resolveDate, resolveTimestamp } from "../dates.ts";
 import { inspectionPlan } from "../helpers/inspection.ts";
 import { addBomLine, addBopOperation, createItem } from "../helpers/items.ts";
+import { allItemSpecs } from "../item-tables.ts";
 import { insertId, insertRow, need, one, rows } from "../sql.ts";
 import type {
   AssemblySpec,
@@ -330,59 +331,46 @@ export async function runTier2(ctx: Ctx): Promise<void> {
     const itemRef = needItem(sl.item);
     const supplierId = need(ctx.refs.suppliers, sl.supplier);
 
+    // Authored in the company's base currency: currencyCode stays NULL, which
+    // every reader takes as base.
     const spId = await insertId(ctx, "supplierPart", {
       itemId: itemRef.id,
       supplierId,
-      unitPrice: sl.price,
+      supplierUnitPrice: sl.price,
       minimumOrderQuantity: 1
     });
     await insertRow(ctx, "supplierPartPrice", {
       supplierPartId: spId,
       quantity: 1,
-      unitPrice: sl.price,
+      supplierUnitPrice: sl.price,
       leadTime: sl.leadTime,
       sourceType: "Manual Entry"
     });
   }
 
-  // The active revision is the released one, so it goes to Production (locking
-  // its BOM/BOP in the app). The rungs share its readableId and stay out of
-  // ctx.refs.items so later tiers keep resolving the active revision.
+  // Every revision keeps the Design default: nothing in the app sets a
+  // revision status, and a Production revision locks its BOM/BOP. The rungs
+  // share the active revision's readableId and stay out of ctx.refs.items so
+  // later tiers keep resolving the active revision.
   ctx.log("revision ladder");
-  const allItemSpecs = [
-    ...data.buyParts,
-    ...data.materials,
-    ...data.consumables,
-    ...data.tools,
-    ...data.services,
-    ...data.makeParts
-  ];
+  const itemSpecs = allItemSpecs(data);
   for (const ladder of data.revisionLadder) {
-    const baseSpec = allItemSpecs.find(
-      (spec) => spec.readableId === ladder.item
-    );
+    const baseSpec = itemSpecs.find((spec) => spec.readableId === ladder.item);
     if (!baseSpec) {
       throw new Error(
         `Seed: revisionLadder item "${ladder.item}" is not a seeded item spec`
       );
     }
-    await ctx.client.query(
-      `UPDATE item SET "revisionStatus" = 'Production'
-       WHERE id = $1 AND "companyId" = $2`,
-      [needItem(ladder.item).id, ctx.companyId]
-    );
     await createItem(ctx, {
       ...baseSpec,
       revision: ladder.obsoleteRevision,
       active: false,
-      revisionStatus: "Obsolete",
       description: `Rev ${ladder.obsoleteRevision} — superseded; kept for historical jobs`
     });
     await createItem(ctx, {
       ...baseSpec,
       revision: ladder.nextRevision,
       active: false,
-      revisionStatus: ladder.nextStatus,
       description: `Rev ${ladder.nextRevision} — in work, not yet released`
     });
   }

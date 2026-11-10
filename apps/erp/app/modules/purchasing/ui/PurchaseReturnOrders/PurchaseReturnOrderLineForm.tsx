@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import { convertUnitPrice } from "@carbon/database/supplier-part-price";
 import { Combobox, ValidatedForm } from "@carbon/form";
 import type { TrackedEntityOption } from "@carbon/react";
 import {
@@ -25,6 +26,7 @@ import {
   PrefetchLink,
   TrackedEntityPicker,
   toast,
+  toastError,
   useDisclosure,
   useMount,
   VStack
@@ -54,6 +56,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import { getSupplierPartPricing } from "~/modules/items/items.utils";
 import { path } from "~/utils/path";
 import {
   isPurchaseReturnOrderLocked,
@@ -68,6 +71,7 @@ import type {
 type PurchaseReturnOrderLineFormProps = {
   initialValues: z.infer<typeof purchaseReturnOrderLineValidator>;
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
   /** Full line row when editing (drives short close and tracking) */
   line?: PurchaseReturnOrderLine;
@@ -116,6 +120,7 @@ function SourceReference({
 const PurchaseReturnOrderLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose,
   line,
   returnReasons,
@@ -170,7 +175,7 @@ const PurchaseReturnOrderLineForm = ({
       .order("name")
       .then(({ data, error }) => {
         if (error) {
-          toast.error(t`Failed to load return reasons`);
+          toastError(t`Failed to load return reasons`, error);
           return;
         }
         setReasons(data ?? []);
@@ -193,7 +198,9 @@ const PurchaseReturnOrderLineForm = ({
       supplierId
         ? carbon
             .from("supplierPart")
-            .select("unitPrice, conversionFactor")
+            .select(
+              "id, companyId, currencyCode, supplierUnitPrice, conversionFactor"
+            )
             .eq("itemId", itemId)
             .eq("supplierId", supplierId)
             .eq("companyId", company.id)
@@ -202,18 +209,39 @@ const PurchaseReturnOrderLineForm = ({
     ]);
 
     if (item.error) {
-      toast.error(t`Failed to load item data`);
+      toastError(t`Failed to load item data`, item.error);
       return;
     }
 
-    // supplierPart prices are per purchase unit — the line stores inventory
-    // units, so divide by the conversion factor.
+    // supplierPart prices are per purchase unit, in the part's currency — the
+    // line stores inventory units in the return's currency, so convert at
+    // today's rate and divide by the conversion factor.
     const part = supplierPart.data?.[0];
     const conversionFactor = part?.conversionFactor ?? 1;
+    const pricing = part
+      ? await getSupplierPartPricing(
+          carbon,
+          part,
+          company.baseCurrencyCode,
+          currencyCode
+        )
+      : null;
+    if (pricing?.error) toast.error(pricing.error.message);
+    const purchaseUnitPrice =
+      pricing?.data?.supplierUnitPrice != null
+        ? convertUnitPrice(
+            pricing.data.supplierUnitPrice,
+            pricing.data.currency,
+            {
+              currencyCode,
+              exchangeRate: routeData?.purchaseReturnOrder?.exchangeRate ?? 1
+            }
+          )
+        : 0;
     const unitPrice =
       conversionFactor > 0
-        ? (part?.unitPrice ?? 0) / conversionFactor
-        : (part?.unitPrice ?? 0);
+        ? purchaseUnitPrice / conversionFactor
+        : purchaseUnitPrice;
 
     setItemData({
       itemId,
@@ -525,7 +553,7 @@ const PurchaseReturnOrderLineForm = ({
   return (
     <ModalCardProvider type={type}>
       {type === "modal" ? (
-        <ModalCard onClose={onClose} isCollapsible={isEditing}>
+        <ModalCard open={open} onClose={onClose} isCollapsible={isEditing}>
           <ModalCardContent size="xxlarge">
             <ValidatedForm
               defaultValues={initialValues}
@@ -565,23 +593,22 @@ const PurchaseReturnOrderLineForm = ({
           {serialsCard}
         </ValidatedForm>
       )}
-      {pickerDisclosure.isOpen && (
-        <TrackedEntityPicker
-          trackingType={itemData.trackingType === "Serial" ? "Serial" : "Batch"}
-          entities={pickerEntities}
-          title={t`Pick serials/batches to return`}
-          description={t`Serials and batches on hand that were received from this supplier`}
-          onSelect={(selection) => {
-            setSelectedEntityIds((ids) =>
-              ids.includes(selection.trackedEntityId)
-                ? ids
-                : [...ids, selection.trackedEntityId]
-            );
-            pickerDisclosure.onClose();
-          }}
-          onClose={pickerDisclosure.onClose}
-        />
-      )}
+      <TrackedEntityPicker
+        open={pickerDisclosure.isOpen}
+        trackingType={itemData.trackingType === "Serial" ? "Serial" : "Batch"}
+        entities={pickerEntities}
+        title={t`Pick serials/batches to return`}
+        description={t`Serials and batches on hand that were received from this supplier`}
+        onSelect={(selection) => {
+          setSelectedEntityIds((ids) =>
+            ids.includes(selection.trackedEntityId)
+              ? ids
+              : [...ids, selection.trackedEntityId]
+          );
+          pickerDisclosure.onClose();
+        }}
+        onClose={pickerDisclosure.onClose}
+      />
     </ModalCardProvider>
   );
 };

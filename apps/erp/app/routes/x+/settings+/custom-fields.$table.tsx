@@ -10,10 +10,13 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useNavigate } from "react-router";
 import { useRouteData, useUrlParams } from "~/hooks";
-import type { AttributeDataType } from "~/modules/people";
-import { CustomFieldsTableDetail, getCustomFields } from "~/modules/settings";
-import { updateCustomFieldsSortOrder } from "~/modules/settings/settings.server";
-import { getTagsList } from "~/modules/shared";
+import type { AttributeDataType } from "~/modules/people/types";
+import {
+  getCustomFields,
+  updateCustomFieldsSortOrder
+} from "~/modules/settings/settings.service";
+import { CustomFieldsTableDetail } from "~/modules/settings/ui";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -71,7 +74,10 @@ export async function action({ request }: ActionFunctionArgs) {
       {},
       await flash(
         request,
-        error(updateSortOrders, "Failed to update sort order")
+        error(
+          updateSortOrders.find((update) => update.error)?.error,
+          "Failed to update sort order"
+        )
       )
     );
 

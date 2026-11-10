@@ -57,7 +57,7 @@ export function PickingListsHeader({
   const locations = useLocations();
 
   return (
-    <HStack className="px-4 py-2 justify-between bg-card border-b border-border w-full">
+    <HStack className="px-4 py-2 justify-between bg-card border-b border-border w-full max-md:[&_:is(button,a)]:h-11 max-md:[&_:is(button,a)]:min-w-11">
       <HStack>
         <Button variant="secondary" leftIcon={<LuClipboardList />} asChild>
           <Link to={path.to.pickingListsTable}>
@@ -72,12 +72,7 @@ export function PickingListsHeader({
           <Form method="post" action={path.to.newPickingList}>
             <input type="hidden" name="locationId" value={locationId} />
             {selectedJobOperationIds.map((id) => (
-              <input
-                key={id}
-                type="hidden"
-                name="jobOperationIds[]"
-                value={id}
-              />
+              <input key={id} type="hidden" name="jobOperationIds" value={id} />
             ))}
             <Button
               type="submit"
@@ -107,6 +102,7 @@ export function PickingListsHeader({
               </span>
               <div className="w-full">
                 <Combobox
+                  aria-label={t`Location`}
                   asButton
                   size="sm"
                   value={locationId}

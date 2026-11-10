@@ -8,19 +8,26 @@ import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
-import { useParams } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { useLoaderData } from "react-router";
+import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
   getPickingList,
   getPickingListAvailability,
   getPickingListLines,
-  getPickingListRecommendations
-} from "~/modules/inventory";
-import { PickingListHeader } from "~/modules/inventory/ui/PickingLists";
+  getPickingListRecommendations,
+  getPickingListRelatedItems
+} from "~/modules/inventory/inventory.service";
+import {
+  PickingListDocuments,
+  PickingListHeader
+} from "~/modules/inventory/ui/PickingLists";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Picking List`,
   realtime: [
     { table: "pickingList", column: "id", param: "pickingListId" },
     {
@@ -36,8 +43,11 @@ export const handle: Handle = {
   module: "inventory"
 };
 
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.pickingList?.pickingListId, "Picking List");
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "inventory"
   });
 
@@ -78,23 +88,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     })),
     // Deferred (not awaited): recommended serial/batch lots per line, streamed in
     // after the list paints so the at-a-glance subtext never blocks first render.
-    recommendations: getPickingListRecommendations(client, pickingListId)
+    recommendations: getPickingListRecommendations(client, pickingListId),
+    // Deferred: the jobs the list picks for, listed under Documents.
+    relatedItems: getPickingListRelatedItems(client, companyId, pickingListId)
   };
 }
 
 export default function PickingListDetailRoute() {
-  const params = useParams();
-  const { pickingListId } = params;
-  if (!pickingListId) throw new Error("Could not find pickingListId");
-
+  const { pickingList } = useLoaderData<typeof loader>();
   return (
-    <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
-      <PickingListHeader />
-      <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
-        <div className="h-full p-4 w-full max-w-5xl mx-auto flex flex-col gap-4 pb-16">
-          <RecordOutlet />
-        </div>
-      </div>
-    </div>
+    <DocumentPage
+      header={<PickingListHeader />}
+      sidebar={
+        <DocumentSidebar
+          documents={<PickingListDocuments />}
+          activity={{
+            entityType: "pickingList",
+            entityId: pickingList.id,
+            refreshKey: `${pickingList.updatedAt ?? ""}:${pickingList.status}`
+          }}
+        />
+      }
+    >
+      <RecordOutlet />
+    </DocumentPage>
   );
 }

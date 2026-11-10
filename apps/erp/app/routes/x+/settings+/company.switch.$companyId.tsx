@@ -12,7 +12,7 @@ import {
 } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { getCompanies } from "~/modules/settings";
+import { getCompanies } from "~/modules/settings/settings.service";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function loader() {

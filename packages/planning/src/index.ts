@@ -9,18 +9,34 @@
 // *.service.ts, *.server.ts, or @carbon/jobs handlers, never client code.
 
 // Material Requirements Planning.
-export { type MrpPayload, type MrpResult, runMrp } from "./mrp/mrp.ts";
+export {
+  type MrpDeps,
+  type MrpPayload,
+  type MrpResult,
+  runMrp
+} from "./mrp/mrp.ts";
+// When open supply arrives (one rule for the projection, the reschedule check
+// and the item planning chart).
+export {
+  jobCompletionDate,
+  purchaseOrderLineArrivalDate
+} from "./mrp/supply-date.ts";
 // Finite scheduling (formerly reached via @carbon/database/scheduling).
 export {
   type CalendarWindow,
   subtractIntervals
 } from "./scheduling/calendar-utils.ts";
+export { remainingWorkHours } from "./scheduling/duration-calculator.ts";
+export { SCHEDULING_HORIZON_DAYS } from "./scheduling/finite-context.ts";
 export {
+  closeHolidays,
+  downtimeOutages,
   type LadderShiftRow,
   resolveLocationWindows,
   resolveWorkCenterWindows,
   type WorkCenterAvailabilityInput
 } from "./scheduling/machine-availability.ts";
+export { subtractDates } from "./scheduling/people-utils.ts";
 export {
   type QuoteLeadTimeForecast,
   type QuoteLeadTimeScenario,

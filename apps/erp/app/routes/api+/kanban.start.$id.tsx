@@ -11,8 +11,8 @@ import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData } from "react-router";
 import { Redirect } from "~/components/Redirect";
-import { getKanban } from "~/modules/inventory";
-import { getActiveJobOperationByJobId } from "~/modules/production";
+import { getKanban } from "~/modules/inventory/inventory.service";
+import { getActiveJobOperationByJobId } from "~/modules/production/production.service";
 import { path } from "~/utils/path";
 
 async function handleKanbanStart({

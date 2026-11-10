@@ -6,7 +6,7 @@ import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import { path } from "~/utils/path";
 
 export async function loader() {
-  throw redirect(path.to.profile);
+  throw redirect(path.to.accountSettings("profile"));
 }
 
 export const middleware = [redirectBeforeLoaders(loader)];

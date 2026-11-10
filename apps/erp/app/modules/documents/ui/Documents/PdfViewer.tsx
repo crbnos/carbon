@@ -4,8 +4,12 @@
 
 import { registerReactPdfWorker } from "@carbon/files/pdf/worker";
 import { Skeleton } from "@carbon/react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
+import { useResizeObserver } from "~/hooks/useResizeObserver";
+// Without its stylesheet the annotation layer sits in normal flow under the
+// canvas and adds a blank page-sized gap below every page.
+import "react-pdf/dist/Page/AnnotationLayer.css";
 
 // Registered here, not in the client entry: this module is lazy, so the PDF
 // engine stays out of every page that shows no PDF.
@@ -27,26 +31,36 @@ type PdfViewerProps = {
   file: string;
 };
 
+// Pages fill the container up to a readable width. A react-pdf page box is a
+// full-width white block, so a page narrower than its box left a white strip.
+const MAX_PAGE_WIDTH = 1000;
+
 export default function PdfViewer({ file }: PdfViewerProps) {
   const [numPages, setNumPages] = useState<number>();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const containerWidth = useResizeObserver(containerRef)?.contentRect.width;
+  const pageWidth = Math.min(containerWidth || MAX_PAGE_WIDTH, MAX_PAGE_WIDTH);
 
   return (
-    <Document
-      file={file}
-      onLoadSuccess={({ numPages }) => setNumPages(numPages)}
-      loading={<SkeletonDocument />}
+    <div
+      ref={containerRef}
+      className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent max-h-[calc(100dvh-91px)]"
     >
-      <div className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent max-h-[calc(100dvh-91px)]">
+      <Document
+        file={file}
+        onLoadSuccess={({ numPages }) => setNumPages(numPages)}
+        loading={<SkeletonDocument />}
+      >
         {Array.from(new Array(numPages), (_, index) => (
           <Page
             key={`page_${index + 1}`}
             pageNumber={index + 1}
             renderTextLayer={false}
-            width={680}
-            height={780}
+            width={pageWidth}
+            className="mx-auto w-fit"
           />
         ))}
-      </div>
-    </Document>
+      </Document>
+    </div>
   );
 }

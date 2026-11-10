@@ -3,10 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { type ServerFnInput, serverFns } from "@carbon/server-functions";
-import { getErrorMessage } from "@carbon/utils";
+import { getErrorMessage, requireAffected } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { type ErpPostingInput, erpPosting } from "~/services/erp";
 import { isPickingListLocked } from "~/services/models";
 
 export async function getAssignedPickingLists(
@@ -39,8 +38,11 @@ export async function getPickingListForExecution(
       "*, item:item(name, readableId, unitOfMeasureCode), jobMaterial:jobMaterial(itemId, quantity, substitutionFactor, item(readableId, itemSupersession!itemSupersession_itemId_fkey(conversionFactor))), job:job(jobId), jobOperation:jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name)"
     )
     .eq("pickingListId", pickingListId)
+    // The ERP picking list reads the same order: line numbers are positions.
     .order("jobOperationId")
-    .order("storageUnitId");
+    .order("storageUnitId")
+    .order("itemId")
+    .order("id");
 
   if (lineError) return { data: null, error: lineError };
 
@@ -90,15 +92,18 @@ export async function updatePickingListStatus(
   updatedBy: string,
   companyId: string
 ) {
-  return client
-    .from("pickingList")
-    .update({
-      status,
-      updatedBy,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", pickingListId)
-    .eq("companyId", companyId);
+  return requireAffected(
+    client
+      .from("pickingList")
+      .update({
+        status,
+        updatedBy,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", pickingListId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export type UnresolvedPickingListLine = {
@@ -159,7 +164,7 @@ export async function getUnresolvedPickingListLines(
  * Set the picked quantity on a picking line (pick, short, or unpick).
  *
  * A pick TRANSFERS the material from its warehouse source shelf to the work
- * center's lineside shelf via the `post-picking` server function (consumption
+ * center's lineside shelf via the `post-picking` posting (consumption
  * happens later at production). `quantity <= 0` reverses a prior pick. "Short"
  * just records the status with no inventory movement — the kitter couldn't
  * fully pick it, and production handles the shortfall. The picking list header
@@ -167,7 +172,6 @@ export async function getUnresolvedPickingListLines(
  */
 export async function setPickingListLineQuantity(
   client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
   args: {
     pickingListLineId: string;
     quantity: number;
@@ -236,30 +240,21 @@ export async function setPickingListLineQuantity(
       };
     }
 
-    const body =
+    const ids = {
+      pickingListId: line.pickingListId,
+      pickingListLineId: line.id,
+      locationId: pickingList.locationId
+    };
+    const input: ErpPostingInput<"post-picking"> =
       delta > 0
-        ? {
-            type: "inventory",
-            pickingListId: line.pickingListId,
-            pickingListLineId: line.id,
-            quantity: delta,
-            locationId: pickingList.locationId,
-            userId: args.userId,
-            companyId: pickingList.companyId
-          }
-        : {
-            type: "unpickInventory",
-            pickingListId: line.pickingListId,
-            pickingListLineId: line.id,
-            quantity: -delta,
-            locationId: pickingList.locationId,
-            userId: args.userId,
-            companyId: pickingList.companyId
-          };
+        ? { ...ids, type: "inventory", quantity: delta }
+        : { ...ids, type: "unpickInventory", quantity: -delta };
 
-    const result = await serverFns
-      .as({ client, db, companyId: body.companyId, userId: body.userId })
-      .invoke("post-picking", body as ServerFnInput<"post-picking">);
+    const result = await erpPosting(
+      "post-picking",
+      { client, companyId: args.companyId, userId: args.userId },
+      input
+    );
 
     if (result.error) {
       return {
@@ -269,17 +264,20 @@ export async function setPickingListLineQuantity(
     }
   }
 
-  // Short overrides the status the server function derived from quantities.
+  // Short overrides the status the posting derived from quantities.
   if (args.markShort) {
-    const update = await client
-      .from("pickingListLine")
-      .update({
-        status: "Short",
-        quantityPicked: target,
-        updatedBy: args.userId,
-        updatedAt: new Date().toISOString()
-      })
-      .eq("id", args.pickingListLineId);
+    const update = await requireAffected(
+      client
+        .from("pickingListLine")
+        .update({
+          status: "Short",
+          quantityPicked: target,
+          updatedBy: args.userId,
+          updatedAt: new Date().toISOString()
+        })
+        .eq("id", args.pickingListLineId)
+        .select("id")
+    );
     if (update.error) {
       return { data: null, error: update.error };
     }
@@ -295,7 +293,6 @@ export async function setPickingListLineQuantity(
  */
 export async function setPickingListLineTrackedEntity(
   client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
   args: {
     pickingListLineId: string;
     trackedEntityId: string;
@@ -349,37 +346,31 @@ export async function setPickingListLineTrackedEntity(
     };
   }
 
-  const type = args.unpick
-    ? isSerial
-      ? "unpickSerial"
-      : "unpickBatch"
-    : isSerial
-      ? "serial"
-      : "batch";
-
-  const body: Record<string, unknown> = {
-    type,
+  const ids = {
     pickingListId: line.pickingListId,
     pickingListLineId: line.id,
     trackedEntityId: args.trackedEntityId,
-    locationId: pickingList.locationId,
-    userId: args.userId,
-    companyId: args.companyId
+    locationId: pickingList.locationId
   };
-  if (!args.unpick) {
-    body.fromStorageUnitId = args.fromStorageUnitId ?? null;
-    // A batch pick may be fractional (0.5 kg): send the requested quantity as
-    // is and fall back to 1 only when none was given. Flooring at 1 turned
-    // every sub-1 remainder into an over-pick post-picking refused.
-    if (isBatch) {
-      body.quantity =
-        args.quantity !== undefined && args.quantity > 0 ? args.quantity : 1;
-    }
-  }
+  const fromStorageUnitId = args.fromStorageUnitId ?? null;
+  // A batch pick may be fractional (0.5 kg): send the requested quantity as
+  // is and fall back to 1 only when none was given. Flooring at 1 turned
+  // every sub-1 remainder into an over-pick post-picking refused.
+  const quantity =
+    args.quantity !== undefined && args.quantity > 0 ? args.quantity : 1;
+  const input: ErpPostingInput<"post-picking"> = args.unpick
+    ? isSerial
+      ? { ...ids, type: "unpickSerial" }
+      : { ...ids, type: "unpickBatch" }
+    : isSerial
+      ? { ...ids, type: "serial", fromStorageUnitId }
+      : { ...ids, type: "batch", fromStorageUnitId, quantity };
 
-  const result = await serverFns
-    .as({ client, db, companyId: args.companyId, userId: args.userId })
-    .invoke("post-picking", body as ServerFnInput<"post-picking">);
+  const result = await erpPosting(
+    "post-picking",
+    { client, companyId: args.companyId, userId: args.userId },
+    input
+  );
   if (result.error) {
     return {
       data: null,

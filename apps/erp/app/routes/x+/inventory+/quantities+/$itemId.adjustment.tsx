@@ -2,139 +2,35 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  dedupeViolations,
-  evaluateLinesForSurface,
-  isBlocked
-} from "@carbon/ee/rules.server";
-import { validationError, validator } from "@carbon/form";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  insertManualInventoryAdjustment,
-  inventoryAdjustmentValidator
-} from "~/modules/inventory";
-import { getDatabaseClient } from "~/services/database.server";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+import { inventoryAdjustmentValidator } from "~/modules/inventory/inventory.models";
 import { path, requestReferrer } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "inventory"
+// The adjustment form, and `acknowledged` once the user accepts the rule
+// violations shown to them.
+const adjustmentForm = inventoryAdjustmentValidator.and(
+  z.object({ acknowledged: zfd.checkbox({ trueValue: "true" }) })
+);
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(adjustmentForm).request(args, {
+    params: ["itemId"]
   });
-
-  const { itemId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-
-  const formData = await request.formData();
-  const validation = await validator(inventoryAdjustmentValidator).validate(
-    formData
+  if ("invalid" in input) return input.invalid;
+  // A form-only flag: the serial quantity cap has been checked.
+  const { requiresSerialTracking: _serial, ...adjustment } = input.data;
+  const api = await carbon(args.request);
+  const result = await api.inventory.adjustInventory(adjustment);
+  // An error is toasted by the rule-violation fetcher that sent it.
+  if (!result.data) return result;
+  // A blocking rule: the violation modal reads these.
+  if ("violations" in result.data) return result.data;
+  throw redirect(
+    requestReferrer(args.request) ?? path.to.inventoryItem(input.params.itemId)
   );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-  // `requiresSerialTracking` is a form-only flag for the serial quantity guard —
-  // strip it before the service call (not an `insertManualInventoryAdjustment` arg).
-  const { requiresSerialTracking: _requiresSerialTracking, ...d } =
-    validation.data;
-  const acknowledged = formData.get("acknowledged") === "true";
-
-  // Business rule evaluation. Storage rules fire on the `inventoryAdjustment`
-  // surface, and on `place` when the adjustment lands stock in a bin (positive
-  // delta) or `pick` when it removes from a bin (negative delta) — so bin-level
-  // rules tied to those surfaces also kick in for manual adjustments.
-  const serviceRole = getCarbonServiceRole();
-  const qty = Number(d.quantity ?? 0);
-  const evalLine = [
-    {
-      lineId: itemId,
-      itemId,
-      storageUnitId: d.storageUnitId ?? null,
-      quantity: qty,
-      locationId: d.locationId
-    }
-  ];
-
-  const itemPass = await evaluateLinesForSurface({
-    client: serviceRole,
-    companyId,
-    userId,
-    targetType: "item",
-    surface: "inventoryAdjustment",
-    lines: evalLine
-  });
-
-  const allViolations = [...itemPass.violations];
-  const allRuleNames: Record<string, string> = { ...itemPass.ruleNames };
-
-  if (d.storageUnitId) {
-    // Pick the bin surface from `adjustmentType` only. `quantity` is a
-    // positive magnitude per `inventoryAdjustmentValidator` — sign-based
-    // direction detection would misclassify `Negative Adjmt.` as `place`.
-    // Storage rules own the `place`/`pick` surfaces. Scrap removes from a bin
-    // (pick); Unscrap restores to a bin (place).
-    const isNegative =
-      d.adjustmentType === "Negative Adjmt." || d.adjustmentType === "Scrap";
-    const binSurface: "place" | "pick" = isNegative ? "pick" : "place";
-
-    const binPass = await evaluateLinesForSurface({
-      client: serviceRole,
-      companyId,
-      userId,
-      targetType: "item",
-      surface: binSurface,
-      lines: evalLine
-    });
-    allViolations.push(...binPass.violations);
-    Object.assign(allRuleNames, binPass.ruleNames);
-  }
-
-  const deduped = dedupeViolations(allViolations);
-
-  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
-    return {
-      error: null,
-      data: null,
-      violations: deduped,
-      ruleNames: allRuleNames
-    };
-  }
-
-  const itemLedger = await insertManualInventoryAdjustment(
-    client,
-    getDatabaseClient(),
-    {
-      ...d,
-      companyId,
-      createdBy: userId
-    }
-  );
-
-  if (itemLedger.error) {
-    // Return the error as fetcher data so the modal can toast the reason and
-    // stay open. A redirect+flash would be lost here: the modal submits via a
-    // fetcher, so a redirect-throw never surfaces the flash message.
-    const message =
-      itemLedger.error === "Insufficient quantity for negative adjustment"
-        ? "Insufficient quantity for negative adjustment"
-        : itemLedger.error === "Serial number not found"
-          ? "Serial number not found"
-          : itemLedger.error ===
-              "Multiple tracked entities in this storage unit — select a specific row to adjust"
-            ? "Multiple tracked entities in this storage unit — select a specific row to adjust"
-            : "Failed to create manual inventory adjustment";
-
-    return {
-      error: { message },
-      data: null,
-      violations: [],
-      ruleNames: {}
-    };
-  }
-
-  throw redirect(requestReferrer(request) ?? path.to.inventoryItem(itemId));
 }

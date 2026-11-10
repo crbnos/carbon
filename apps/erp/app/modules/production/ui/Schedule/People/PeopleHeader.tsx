@@ -38,6 +38,7 @@ import { useNavigate, useSearchParams, useSubmit } from "react-router";
 import { useLocations } from "~/components/Form/Location";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
+import { usePeopleBoardFeedback } from "./usePeopleBoardFeedback";
 
 export type WeekOption = {
   start: string;
@@ -87,6 +88,7 @@ export function PeopleHeader({
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const submit = useSubmit();
+  usePeopleBoardFeedback();
   const locations = useLocations();
 
   const [dateOpen, setDateOpen] = useState(false);
@@ -190,10 +192,11 @@ export function PeopleHeader({
   };
 
   return (
-    <HStack className="pl-2 pr-4 py-2 flex flex-wrap gap-y-2 justify-between bg-card border-b border-border">
+    <HStack className="pl-2 pr-4 py-2 flex flex-wrap gap-y-2 justify-between bg-card border-b border-border max-md:pl-4">
       <HStack className="flex-wrap gap-y-2">
         <HStack spacing={2} className="flex-wrap gap-y-2">
           <Combobox
+            aria-label={t`Location`}
             asButton
             size="sm"
             value={locationId}
@@ -207,6 +210,7 @@ export function PeopleHeader({
           />
           {departments.length > 0 && (
             <Combobox
+              aria-label={t`Department`}
               asButton
               size="sm"
               value={departmentId ?? "all"}
@@ -219,6 +223,7 @@ export function PeopleHeader({
           )}
           {view !== "capacity" && shifts.length > 1 && (
             <Combobox
+              aria-label={t`Shift`}
               asButton
               size="sm"
               value={shiftId ?? "all"}
@@ -340,7 +345,7 @@ export function PeopleHeader({
                     >
                       <span className="tabular-nums">{week.label}</span>
                       {week.isCurrent && (
-                        <span className="text-[11px] font-medium text-primary">
+                        <span className="text-[0.6875rem] font-medium text-primary">
                           <Trans>This week</Trans>
                         </span>
                       )}

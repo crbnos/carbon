@@ -2,16 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost } from "@carbon/auth";
+import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  correctStockMovement,
-  getStockMovementEffectiveQuantity,
-  stockMovementCorrectionValidator
-} from "~/modules/inventory";
-import { getDatabaseClient } from "~/services/database.server";
+import { stockMovementCorrectionValidator } from "~/modules/inventory/inventory.models";
+import { getStockMovementEffectiveQuantity } from "~/modules/inventory/inventory.service";
 
 // The modal pre-fills its corrected-quantity field from this — the page's
 // visible rows can miss off-page corrections (or descendants of a correction
@@ -36,38 +32,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return { effectiveQuantity: effective.data.effectiveQuantity };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "inventory"
-  });
-
-  const { ledgerId } = params;
-  if (!ledgerId) throw new Error("Could not find ledgerId");
-
-  const formData = await request.formData();
-  const validation = await validator(stockMovementCorrectionValidator).validate(
-    formData
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(stockMovementCorrectionValidator).request(
+    args,
+    { params: ["ledgerId"] }
   );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const correction = await correctStockMovement(client, getDatabaseClient(), {
-    ...validation.data,
-    itemLedgerId: ledgerId,
-    companyId,
-    createdBy: userId
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  // Returned to the modal's fetcher: it toasts a refusal and stays open, and
+  // closes itself on success. The table follows itemLedger through realtime.
+  return api.inventory.correctStockMovement({
+    ...input.data,
+    itemLedgerId: input.params.ledgerId
   });
-
-  if (correction.error) {
-    // Returned as fetcher data so the modal can toast the reason and stay
-    // open — a redirect+flash would be lost on a fetcher submission.
-    return { error: { message: correction.error }, data: null };
-  }
-
-  // The stock-movements table revalidates via realtime on itemLedger; the
-  // modal closes itself on success.
-  return { error: null, data: correction.data };
 }

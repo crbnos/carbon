@@ -73,16 +73,18 @@ beforeEach(() => {
 });
 
 describe("Ramp webhook challenge authentication", () => {
-  it.each([
-    "missing",
-    "invalid"
-  ] as const)("rejects a body challenge with %s signature without callback or echo", async (signature) => {
-    const result = await run(request(JSON.stringify({ challenge }), signature));
-    expect(result).toMatchObject({ init: { status: 401 } });
-    expect(result).not.toHaveProperty("challenge");
-    expect(completeWebhookVerification).not.toHaveBeenCalled();
-    expect(trigger).not.toHaveBeenCalled();
-  });
+  it.each(["missing", "invalid"] as const)(
+    "rejects a body challenge with %s signature without callback or echo",
+    async (signature) => {
+      const result = await run(
+        request(JSON.stringify({ challenge }), signature)
+      );
+      expect(result).toMatchObject({ init: { status: 401 } });
+      expect(result).not.toHaveProperty("challenge");
+      expect(completeWebhookVerification).not.toHaveBeenCalled();
+      expect(trigger).not.toHaveBeenCalled();
+    }
+  );
 
   it("rejects a challenge when no webhook secret is configured", async () => {
     vi.mocked(getRampIntegration).mockResolvedValue({

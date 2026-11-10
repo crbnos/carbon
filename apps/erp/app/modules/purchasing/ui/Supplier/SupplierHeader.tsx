@@ -2,7 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { ApprovalDecision } from "@carbon/ee/approvals";
+import type {
+  ApprovalDecision,
+  DocumentApprovalState
+} from "@carbon/ee/approvals";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -37,7 +40,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import {
   LuCheckCheck,
   LuClipboardCheck,
@@ -53,18 +56,26 @@ import { useAuditLog } from "~/components/AuditLog";
 import { Enumerable } from "~/components/Enumerable";
 import { Tags } from "~/components/Form";
 import { useSupplierTypes } from "~/components/Form/SupplierType";
-import { ConfirmDelete } from "~/components/Modals";
 import {
+  RecordAction,
+  RecordHero,
+  RecordPhoneChrome
+} from "~/components/Layout/RecordHeader";
+import {
+  ApprovalDecision as ApprovalDecisionModal,
+  ConfirmDelete
+} from "~/components/Modals";
+import {
+  useDrawerItem,
   usePermissions,
   useRouteData,
   useSupplierApprovalRequired,
   useUser
 } from "~/hooks";
-import type { SupplierDetail } from "~/modules/purchasing";
+import type { SupplierDetail } from "~/modules/purchasing/types";
 import { SupplierStatusIndicator } from "~/modules/purchasing/ui/Supplier/SupplierStatusIndicator";
 import type { action } from "~/routes/x+/settings+/tags";
 import { path } from "~/utils/path";
-import SupplierApprovalModal from "./SupplierApprovalModal";
 
 const SupplierHeader = () => {
   const { supplierId } = useParams();
@@ -78,18 +89,12 @@ const SupplierHeader = () => {
   const isApprovalRequired = useSupplierApprovalRequired();
   const deleteModal = useDisclosure();
   const makeInactiveModal = useDisclosure();
-  const [approvalDecision, setApprovalDecision] =
-    useState<ApprovalDecision | null>(null);
+  const approval = useDrawerItem<ApprovalDecision>();
+  const approvalDecision = approval.item;
   const routeData = useRouteData<{
     supplier: SupplierDetail;
     tags: { name: string }[];
-    approvalRequest: { id: string } | null;
-    canApprove: boolean;
-    decision: {
-      status: "Approved" | "Rejected";
-      decisionBy: string;
-      decisionAt: string;
-    } | null;
+    approval: DocumentApprovalState;
     supplierTax: { taxExempt: boolean } | null;
   }>(path.to.supplier(supplierId));
 
@@ -107,9 +112,11 @@ const SupplierHeader = () => {
 
   const status = routeData?.supplier?.status ?? null;
   const isPending = status === "Pending";
-  const approvalRequestId = routeData?.approvalRequest?.id;
+  const approvalRequestId = routeData?.approval?.pendingRequestId;
   const hasApprovalRequest = !!approvalRequestId;
-  const canApprove = routeData?.canApprove ?? false;
+  const canApprove = routeData?.approval?.canApprove ?? false;
+  const decision = routeData?.approval?.lastDecision;
+  const approvalFetcher = useFetcher();
 
   const submitRequestApproval = () => {
     const formData = new FormData();
@@ -151,14 +158,37 @@ const SupplierHeader = () => {
     [supplierId]
   );
 
+  const menuItems = (
+    <>
+      {auditLogTrigger}
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        disabled={!permissions.can("delete", "purchasing")}
+        destructive
+        onClick={deleteModal.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete Supplier</Trans>
+      </DropdownMenuItem>
+    </>
+  );
   return (
     <>
+      {/* The app bar titles the record with its name, so no hero. */}
+      {/* No hero; it still zeroes --header-height on phones. */}
+      <RecordHero />
+      <RecordPhoneChrome menu={menuItems} copyValue={supplierId} />
       <VStack>
         <Card>
-          <HStack className="justify-between items-start">
+          <HStack className="justify-between items-start max-md:hidden">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span>{routeData?.supplier?.name}</span>
+              {/* The title row holds the ⋯ menu and Copy too: only the name is
+                  the page's heading, or its name would include theirs. */}
+              <CardTitle role="none" className="flex items-center gap-2">
+                <span role="heading" aria-level={1}>
+                  {routeData?.supplier?.name}
+                </span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <IconButton
@@ -168,19 +198,7 @@ const SupplierHeader = () => {
                       size="sm"
                     />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {auditLogTrigger}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      shortcut={MENU_ITEM_SHORTCUTS.delete}
-                      disabled={!permissions.can("delete", "purchasing")}
-                      destructive
-                      onClick={deleteModal.onOpen}
-                    >
-                      <DropdownMenuIcon icon={<LuTrash />} />
-                      <Trans>Delete Supplier</Trans>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
+                  <DropdownMenuContent>{menuItems}</DropdownMenuContent>
                 </DropdownMenu>
                 <Copy
                   text={supplierId}
@@ -193,54 +211,62 @@ const SupplierHeader = () => {
               {isApprovalRequired &&
                 status !== "Active" &&
                 !hasApprovalRequest && (
-                  <Button
-                    leftIcon={<LuClipboardCheck />}
-                    variant="primary"
-                    isDisabled={
-                      !permissions.can("update", "purchasing") ||
-                      requestApprovalFetcher.state !== "idle"
-                    }
-                    isLoading={requestApprovalFetcher.state !== "idle"}
-                    onClick={submitRequestApproval}
-                  >
-                    <Trans>Request Approval</Trans>
-                  </Button>
+                  <RecordAction slot="primary">
+                    <Button
+                      leftIcon={<LuClipboardCheck />}
+                      variant="primary"
+                      isDisabled={
+                        !permissions.can("update", "purchasing") ||
+                        requestApprovalFetcher.state !== "idle"
+                      }
+                      isLoading={requestApprovalFetcher.state !== "idle"}
+                      onClick={submitRequestApproval}
+                    >
+                      <Trans>Request Approval</Trans>
+                    </Button>
+                  </RecordAction>
                 )}
               {status === "Active" && canApprove && (
-                <Button
-                  leftIcon={<LuX />}
-                  variant="secondary"
-                  isLoading={makeInactiveFetcher.state !== "idle"}
-                  isDisabled={makeInactiveFetcher.state !== "idle"}
-                  onClick={makeInactiveModal.onOpen}
-                >
-                  <Trans>Make Inactive</Trans>
-                </Button>
+                <RecordAction slot="secondary">
+                  <Button
+                    leftIcon={<LuX />}
+                    variant="secondary"
+                    isLoading={makeInactiveFetcher.state !== "idle"}
+                    isDisabled={makeInactiveFetcher.state !== "idle"}
+                    onClick={makeInactiveModal.onOpen}
+                  >
+                    <Trans>Make Inactive</Trans>
+                  </Button>
+                </RecordAction>
               )}
               {isPending && hasApprovalRequest && (
                 <>
-                  <Button
-                    leftIcon={<LuCheckCheck />}
-                    variant="primary"
-                    isLoading={requestApprovalFetcher.state !== "idle"}
-                    isDisabled={
-                      !canApprove || requestApprovalFetcher.state !== "idle"
-                    }
-                    onClick={() => setApprovalDecision("Approved")}
-                  >
-                    <Trans>Approve</Trans>
-                  </Button>
-                  <Button
-                    leftIcon={<LuX />}
-                    variant="destructive"
-                    isLoading={requestApprovalFetcher.state !== "idle"}
-                    isDisabled={
-                      !canApprove || requestApprovalFetcher.state !== "idle"
-                    }
-                    onClick={() => setApprovalDecision("Rejected")}
-                  >
-                    <Trans>Reject</Trans>
-                  </Button>
+                  <RecordAction slot="primary">
+                    <Button
+                      leftIcon={<LuCheckCheck />}
+                      variant="primary"
+                      isLoading={requestApprovalFetcher.state !== "idle"}
+                      isDisabled={
+                        !canApprove || requestApprovalFetcher.state !== "idle"
+                      }
+                      onClick={() => approval.open("Approved")}
+                    >
+                      <Trans>Approve</Trans>
+                    </Button>
+                  </RecordAction>
+                  <RecordAction slot="secondary">
+                    <Button
+                      leftIcon={<LuX />}
+                      variant="destructive"
+                      isLoading={requestApprovalFetcher.state !== "idle"}
+                      isDisabled={
+                        !canApprove || requestApprovalFetcher.state !== "idle"
+                      }
+                      onClick={() => approval.open("Rejected")}
+                    >
+                      <Trans>Reject</Trans>
+                    </Button>
+                  </RecordAction>
                 </>
               )}
             </CardAction>
@@ -293,58 +319,46 @@ const SupplierHeader = () => {
                   )}
                 </CardAttributeValue>
               </CardAttribute>
-              {routeData?.decision?.status === "Approved" &&
-                status === "Active" && (
-                  <>
-                    <CardAttribute>
-                      <CardAttributeLabel>
-                        <Trans>Approved By</Trans>
-                      </CardAttributeLabel>
-                      <CardAttributeValue>
-                        <EmployeeAvatar
-                          employeeId={routeData.decision.decisionBy}
-                        />
-                      </CardAttributeValue>
-                    </CardAttribute>
-                    <CardAttribute>
-                      <CardAttributeLabel>
-                        <Trans>Approval Date</Trans>
-                      </CardAttributeLabel>
-                      <CardAttributeValue>
-                        <DateTime
-                          value={routeData.decision.decisionAt}
-                          variant="date"
-                        />
-                      </CardAttributeValue>
-                    </CardAttribute>
-                  </>
-                )}
-              {routeData?.decision?.status === "Rejected" &&
-                status === "Rejected" && (
-                  <>
-                    <CardAttribute>
-                      <CardAttributeLabel>
-                        <Trans>Rejected By</Trans>
-                      </CardAttributeLabel>
-                      <CardAttributeValue>
-                        <EmployeeAvatar
-                          employeeId={routeData.decision.decisionBy}
-                        />
-                      </CardAttributeValue>
-                    </CardAttribute>
-                    <CardAttribute>
-                      <CardAttributeLabel>
-                        <Trans>Rejected Date</Trans>
-                      </CardAttributeLabel>
-                      <CardAttributeValue>
-                        <DateTime
-                          value={routeData.decision.decisionAt}
-                          variant="date"
-                        />
-                      </CardAttributeValue>
-                    </CardAttribute>
-                  </>
-                )}
+              {decision?.status === "Approved" && status === "Active" && (
+                <>
+                  <CardAttribute>
+                    <CardAttributeLabel>
+                      <Trans>Approved By</Trans>
+                    </CardAttributeLabel>
+                    <CardAttributeValue>
+                      <EmployeeAvatar employeeId={decision.decisionBy} />
+                    </CardAttributeValue>
+                  </CardAttribute>
+                  <CardAttribute>
+                    <CardAttributeLabel>
+                      <Trans>Approval Date</Trans>
+                    </CardAttributeLabel>
+                    <CardAttributeValue>
+                      <DateTime value={decision.decisionAt} variant="date" />
+                    </CardAttributeValue>
+                  </CardAttribute>
+                </>
+              )}
+              {decision?.status === "Rejected" && status === "Rejected" && (
+                <>
+                  <CardAttribute>
+                    <CardAttributeLabel>
+                      <Trans>Rejected By</Trans>
+                    </CardAttributeLabel>
+                    <CardAttributeValue>
+                      <EmployeeAvatar employeeId={decision.decisionBy} />
+                    </CardAttributeValue>
+                  </CardAttribute>
+                  <CardAttribute>
+                    <CardAttributeLabel>
+                      <Trans>Rejected Date</Trans>
+                    </CardAttributeLabel>
+                    <CardAttributeValue>
+                      <DateTime value={decision.decisionAt} variant="date" />
+                    </CardAttributeValue>
+                  </CardAttribute>
+                </>
+              )}
               <CardAttribute>
                 <CardAttributeValue>
                   <ValidatedForm
@@ -371,60 +385,68 @@ const SupplierHeader = () => {
           </CardContent>
         </Card>
       </VStack>
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteSupplier(supplierId)}
-          isOpen={deleteModal.isOpen}
-          name={routeData?.supplier?.name!}
-          text={t`Are you sure you want to delete ${routeData?.supplier?.name!}? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={deleteModal.onClose}
-        />
-      )}
-      {makeInactiveModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) makeInactiveModal.onClose();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Deactivate Supplier</Trans>
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <Trans>
-                Are you sure you want to deactivate {routeData?.supplier?.name}?
-              </Trans>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={makeInactiveModal.onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button
-                isLoading={makeInactiveFetcher.state !== "idle"}
-                isDisabled={makeInactiveFetcher.state !== "idle"}
-                onClick={() => {
-                  submitMakeInactive();
-                  makeInactiveModal.onClose();
-                }}
-              >
-                <Trans>Deactivate</Trans>
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <ConfirmDelete
+        action={path.to.deleteSupplier(supplierId)}
+        isOpen={deleteModal.isOpen}
+        name={routeData?.supplier?.name!}
+        text={t`Are you sure you want to delete ${routeData?.supplier?.name!}? This cannot be undone.`}
+        onCancel={deleteModal.onClose}
+        onSubmit={deleteModal.onClose}
+      />
+      <Modal
+        open={makeInactiveModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) makeInactiveModal.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Deactivate Supplier</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <Trans>
+              Are you sure you want to deactivate {routeData?.supplier?.name}?
+            </Trans>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={makeInactiveModal.onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              isLoading={makeInactiveFetcher.state !== "idle"}
+              isDisabled={makeInactiveFetcher.state !== "idle"}
+              onClick={() => {
+                submitMakeInactive();
+                makeInactiveModal.onClose();
+              }}
+            >
+              <Trans>Deactivate</Trans>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
       {auditLogDrawer}
       {approvalDecision && approvalRequestId && (
-        <SupplierApprovalModal
-          supplierName={routeData?.supplier?.name ?? undefined}
+        <ApprovalDecisionModal
+          action={path.to.supplierApproval(supplierId)}
           approvalRequestId={approvalRequestId}
           decision={approvalDecision}
-          onClose={() => setApprovalDecision(null)}
+          title={
+            approvalDecision === "Approved"
+              ? t`Approve ${routeData?.supplier?.name ?? ""}`
+              : t`Reject ${routeData?.supplier?.name ?? ""}`
+          }
+          description={
+            approvalDecision === "Approved"
+              ? t`Are you sure you want to approve this supplier? This will make it active.`
+              : t`Are you sure you want to reject this supplier?`
+          }
+          fetcher={approvalFetcher}
+          open={approval.isOpen}
+          onClose={approval.close}
         />
       )}
     </>

@@ -25,7 +25,11 @@ const Hidden = forwardRef<HTMLInputElement, HiddenProps>(
     });
 
     return (
-      <FormControl isInvalid={!!error}>
+      // Phones: an empty hidden field must not take a row in the form.
+      <FormControl
+        isInvalid={!!error}
+        className={error ? undefined : "max-md:hidden"}
+      >
         <InputBase
           ref={ref}
           {...inputProps}

@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { deletePayment } from "~/modules/invoicing";
+import { deletePayment } from "~/modules/invoicing/invoicing.service";
 import { path } from "~/utils/path";
 
 // Action-only route — the delete confirmation modal (ConfirmDelete) posts here.
@@ -15,7 +15,7 @@ import { path } from "~/utils/path";
 // a non-draft delete fails at the database; the UI also hides the action.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     delete: "invoicing"
   });
 
@@ -23,11 +23,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!paymentId) {
     throw redirect(
       path.to.payments,
-      await flash(request, error(params, "Failed to get a payment id"))
+      await flash(request, error(null, "Failed to get a payment id"))
     );
   }
 
-  const remove = await deletePayment(client, paymentId);
+  const remove = await deletePayment(client, paymentId, companyId);
   if (remove.error) {
     throw redirect(
       path.to.payment(paymentId),

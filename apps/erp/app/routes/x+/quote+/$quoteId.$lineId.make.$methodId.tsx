@@ -18,13 +18,13 @@ import {
   getQuoteMakeMethod,
   getQuoteMaterialsByMethodId,
   getQuoteOperationsByMethodId
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import {
   QuoteBillOfMaterial,
   QuoteBillOfProcess,
   QuoteMakeMethodTools
 } from "~/modules/sales/ui/Quotes";
-import { getModelByItemId, getTagsList } from "~/modules/shared";
+import { getModelByItemId, getTagsList } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -113,7 +113,7 @@ export default function QuoteMakeMethodRoute() {
   const { makeMethod, materials, operations, tags } = loaderData;
 
   return (
-    <VStack spacing={2}>
+    <VStack spacing={4}>
       <QuoteMakeMethodTools />
 
       <QuoteBillOfProcess

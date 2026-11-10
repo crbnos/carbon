@@ -5,6 +5,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CREDIT_REASON_ITEM_ENTITY_TYPE } from "../../../../core/credit-reason-item";
 import type { ExternalIntegrationMappingService } from "../../../../core/external-mapping";
+import {
+  type FakeDatabase,
+  fakeDatabase
+} from "../../../../core/fake-database-test-fixture";
 import { JournalEntrySyncError } from "../../../../core/posting";
 import type { Qbo } from "../../models";
 import {
@@ -25,34 +29,6 @@ import {
   QboVendorCreditSyncer,
   qboVendorCreditSkipReason
 } from "../vendor-credit";
-
-/**
- * `recordQboMemoApplication` writes its mapping row inside
- * `withTriggersDisabled`, a real Kysely transaction that opens with a `SET LOCAL`
- * statement. Stub it so the row lands in `mappingRows` instead — that map is the
- * durable store the resumability test reads back.
- */
-const { mappingRows } = vi.hoisted(() => ({
-  mappingRows: new Map<string, string>()
-}));
-vi.mock("../../../../core/utils", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../../core/utils")>()),
-  withTriggersDisabled: async (
-    _db: unknown,
-    cb: (tx: unknown) => Promise<unknown>
-  ) => {
-    const builder: Record<string, any> = {};
-    builder.values = (value: any) => {
-      for (const row of Array.isArray(value) ? value : [value]) {
-        mappingRows.set(`${row.entityType}::${row.entityId}`, row.externalId);
-      }
-      return builder;
-    };
-    builder.onConflict = () => builder;
-    builder.execute = async () => [];
-    return cb({ insertInto: () => builder });
-  }
-}));
 
 const INTEGRATION = "quickbooks";
 const REASON_ACCOUNT_REF: Qbo.Ref = { value: "84", name: "Sales Returns" };
@@ -416,48 +392,69 @@ function settlement(
 }
 
 /**
- * Drives `upsertRemote` (and so `applySettlements`) with no QBO and no database.
- *
- * `mappingRows` is the DURABLE store: `recordQboMemoApplication` writes into it
- * through the mocked `withTriggersDisabled` above, and the same rows back
- * `mappingService.getExternalId` — so a second push really does see what the
- * first one recorded, which is the whole claim of the resumability test.
+ * The company and mappings the memo pushes read: the settled documents are
+ * already in QuickBooks, and the bank account is mapped. `db` is reset per test
+ * and outlives a syncer, so a second push sees the application rows the first
+ * one recorded — the whole claim of the resumability test.
  */
+let db: FakeDatabase;
+beforeEach(() => {
+  const mapping = (
+    entityType: string,
+    entityId: string,
+    externalId: string
+  ) => ({
+    entityType,
+    entityId,
+    integration: INTEGRATION,
+    companyId: "company-1",
+    externalId
+  });
+  db = fakeDatabase({
+    company: [{ id: "company-1", baseCurrencyCode: "USD" }],
+    accountDefault: [
+      {
+        companyId: "company-1",
+        payablesAccount: "acc_ap",
+        bankCashAccount: "acc_bank"
+      }
+    ],
+    externalIntegrationMapping: [
+      mapping("invoice", "si_1", "qbo-invoice-si_1"),
+      mapping("invoice", "si_2", "qbo-invoice-si_2"),
+      mapping("bill", "pi_1", "qbo-bill-pi_1"),
+      mapping("account", "acc_bank", "60")
+    ]
+  });
+});
+const applicationMapping = (entityId: string) =>
+  db
+    .rows("externalIntegrationMapping")
+    .find(
+      (row) =>
+        row.entityType === "qboMemoApplication" && row.entityId === entityId
+    )?.externalId;
+
+/** Drives `upsertRemote` (and so `applySettlements`) with no QBO. */
 function makeCreditMemoSyncer(args: {
   memo: QboMemoSource;
   applyCreditMemo?: ReturnType<typeof vi.fn>;
-  baseCurrencyCode?: string;
 }) {
   const applyCreditMemo =
     args.applyCreditMemo ?? vi.fn(async () => "qbo-payment-1");
   const createCreditMemo = vi.fn(async () => ({ Id: "qbo-cm-1" }));
 
   const syncer = new QboCreditMemoSyncer({
-    database: {} as never,
+    database: db.database,
     companyId: "company-1",
     provider: { id: INTEGRATION, createCreditMemo, applyCreditMemo } as never,
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
     entityType: "creditMemo"
   });
-
-  const patched = syncer as unknown as Record<string, any>;
-  patched.mappingService = {
-    getByEntity: vi.fn(async () => null),
-    getExternalId: vi.fn(async (entityType: string, entityId: string) =>
-      entityType === "invoice"
-        ? `qbo-invoice-${entityId}`
-        : (mappingRows.get(`${entityType}::${entityId}`) ?? null)
-    )
-  };
-  // The one company read `upsertRemote` needs — stubbed rather than faked,
-  // there is no database in this process.
-  patched.baseCurrencyCodePromise = Promise.resolve(
-    args.baseCurrencyCode ?? "USD"
-  );
   vi.spyOn(syncer, "fetchLocal").mockResolvedValue(args.memo);
 
   const push = () =>
-    patched.upsertRemote(
+    (syncer as unknown as Record<string, any>).upsertRemote(
       { CustomerRef: { value: "17" } } as never,
       args.memo.id
     ) as Promise<string>;
@@ -469,14 +466,13 @@ function makeCreditMemoSyncer(args: {
 function makeVendorCreditSyncer(args: {
   memo: QboMemoSource;
   applyVendorCredit?: ReturnType<typeof vi.fn>;
-  baseCurrencyCode?: string;
 }) {
   const applyVendorCredit =
     args.applyVendorCredit ?? vi.fn(async () => "qbo-billpayment-1");
   const createVendorCredit = vi.fn(async () => ({ Id: "qbo-vc-1" }));
 
   const syncer = new QboVendorCreditSyncer({
-    database: {} as never,
+    database: db.database,
     companyId: "company-1",
     provider: {
       id: INTEGRATION,
@@ -486,30 +482,10 @@ function makeVendorCreditSyncer(args: {
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
     entityType: "supplierCredit"
   });
-
-  const patched = syncer as unknown as Record<string, any>;
-  patched.mappingService = {
-    getByEntity: vi.fn(async () => null),
-    getExternalId: vi.fn(async (entityType: string, entityId: string) =>
-      entityType === "bill"
-        ? `qbo-bill-${entityId}`
-        : (mappingRows.get(`${entityType}::${entityId}`) ?? null)
-    )
-  };
-  patched.accountDefaultsPromise = Promise.resolve({
-    payablesAccount: "acc_ap",
-    bankCashAccount: "acc_bank"
-  });
-  patched.accountRefsByIdPromise = Promise.resolve(
-    new Map<string, Qbo.Ref>([["acc_bank", { value: "60" }]])
-  );
-  patched.baseCurrencyCodePromise = Promise.resolve(
-    args.baseCurrencyCode ?? "USD"
-  );
   vi.spyOn(syncer, "fetchLocal").mockResolvedValue(args.memo);
 
   const push = () =>
-    patched.upsertRemote(
+    (syncer as unknown as Record<string, any>).upsertRemote(
       { VendorRef: { value: "55" } } as never,
       args.memo.id
     ) as Promise<string>;
@@ -615,10 +591,6 @@ describe("the cross-currency application guard (parity with Xero)", () => {
 });
 
 describe("QboCreditMemoSyncer.applySettlements", () => {
-  beforeEach(() => {
-    mappingRows.clear();
-  });
-
   it("sends the DOCUMENT-currency principal for a foreign memo, not the base amount", async () => {
     // EUR 100.00 at 0.92 EUR per USD of base: appliedAmount is 108.70 base.
     const { push, applyCreditMemo } = makeCreditMemoSyncer({
@@ -722,9 +694,7 @@ describe("QboCreditMemoSyncer.applySettlements", () => {
     await expect(first.push()).rejects.toThrow("500");
     // The whole point: linkEntities never ran, so the memo's own mapping
     // metadata was never written — the per-application row is what survives.
-    expect(mappingRows.get("qboMemoApplication::memo_1:st_1")).toBe(
-      "qbo-payment-1"
-    );
+    expect(applicationMapping("memo_1:st_1")).toBe("qbo-payment-1");
 
     const second = makeCreditMemoSyncer({ memo: memoWithTwo });
     await second.push();
@@ -736,17 +706,11 @@ describe("QboCreditMemoSyncer.applySettlements", () => {
       Line: Array<{ LinkedTxn: Array<{ TxnId: string }> }>;
     };
     expect(retried.Line[0]?.LinkedTxn[0]?.TxnId).toBe("qbo-invoice-si_2");
-    expect(mappingRows.get("qboMemoApplication::memo_1:st_2")).toBe(
-      "qbo-payment-1"
-    );
+    expect(applicationMapping("memo_1:st_2")).toBe("qbo-payment-1");
   });
 });
 
 describe("QboVendorCreditSyncer.applySettlements", () => {
-  beforeEach(() => {
-    mappingRows.clear();
-  });
-
   it("sends CurrencyRef and the inverted ExchangeRate on a FOREIGN BillPayment", async () => {
     const { push, applyVendorCredit } = makeVendorCreditSyncer({
       memo: supplierMemo({

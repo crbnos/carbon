@@ -55,6 +55,8 @@ import {
   YAxis
 } from "recharts";
 import { DateTime, Empty, Hyperlink } from "~/components";
+import { useQuantityFormatter } from "~/hooks";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import type { DemandForecastSourceRow } from "~/modules/items/items.service";
 import type { loader as forecastLoader } from "~/routes/api+/items.$id.$locationId.forecast";
 import { path } from "~/utils/path";
@@ -64,6 +66,7 @@ import type { ChartPlannedOrder } from "./planningSupplyDemand";
 import {
   demandSourceTypes,
   mergePlannedOrders,
+  projectedChange,
   type SourceType,
   supplySourceTypes
 } from "./planningSupplyDemand";
@@ -169,6 +172,11 @@ export const ItemPlanningChart = ({
   timeFenceDate?: string | null;
 }) => {
   const { t } = useLingui();
+  const [planningTab, setPlanningTab] = usePersistentPageTab(
+    "supply-demand",
+    ["all", "supply", "demand"],
+    "all"
+  );
   const forecastFetcher = useLoaderQuery<typeof forecastLoader>(
     path.to.api.itemForecast(itemId, locationId)
   );
@@ -192,6 +200,8 @@ export const ItemPlanningChart = ({
   });
 
   const numberFormatter = useNumberFormatter();
+  const formatQuantity = useQuantityFormatter();
+  const nonNettableQuantity = forecastFetcher.data?.quantityNonNettable ?? 0;
 
   const hasSafetyStock = typeof safetyStock === "number" && safetyStock > 0;
   const safetyStockValue = hasSafetyStock ? safetyStock : 0;
@@ -214,7 +224,7 @@ export const ItemPlanningChart = ({
     const demand = forecastFetcher.data.demand;
     const demandForecast = forecastFetcher.data.demandForecast ?? [];
     const supply = forecastFetcher.data.supply;
-    let currentQuantity = forecastFetcher.data.quantityOnHand ?? 0;
+    let currentQuantity = forecastFetcher.data.quantityNettable ?? 0;
 
     // Initialize all periods with zero values
     const groupedData = periods.reduce(
@@ -282,7 +292,7 @@ export const ItemPlanningChart = ({
       ) {
         const sourceType = curr.sourceType as keyof ChartDataPoint;
         if (sourceType === "Sales Order" || sourceType === "Job Material") {
-          groupedData[curr.periodId][sourceType] = -(curr.actualQuantity ?? 0);
+          groupedData[curr.periodId][sourceType] -= curr.actualQuantity ?? 0;
         }
       }
     });
@@ -299,7 +309,7 @@ export const ItemPlanningChart = ({
           sourceType === "Purchase Order" ||
           sourceType === "Production Order"
         ) {
-          groupedData[curr.periodId][sourceType] = curr.actualQuantity ?? 0;
+          groupedData[curr.periodId][sourceType] += curr.actualQuantity ?? 0;
         }
       }
     });
@@ -327,13 +337,7 @@ export const ItemPlanningChart = ({
 
     const data = sortedData.map((period) => {
       // Add supply (positive), then subtract demand (already stored negative).
-      const supplyUp =
-        period["Purchase Order"] + period["Production Order"] + period.Planned;
-      const demandDown =
-        period["Sales Order"] +
-        period["Job Material"] +
-        period["Demand Forecast"];
-      runningProjection += supplyUp + demandDown;
+      runningProjection += projectedChange(period, hiddenSeries);
       period.Projection = runningProjection;
 
       if (stockoutDate === null && runningProjection < 0)
@@ -369,12 +373,13 @@ export const ItemPlanningChart = ({
     plannedOrders,
     conversionFactor,
     hasSafetyStock,
-    safetyStockValue
+    safetyStockValue,
+    hiddenSeries
   ]);
 
   const axis = useMemo(() => {
     const show = (key: SeriesKey) => !hiddenSeries.has(key);
-    const onHand = forecastFetcher.data?.quantityOnHand ?? 0;
+    const onHand = forecastFetcher.data?.quantityNettable ?? 0;
     let domainMin = show("projection") ? Math.min(0, onHand) : 0;
     let domainMax = show("projection") ? Math.max(0, onHand) : 0;
     if (show("safety")) domainMax = Math.max(domainMax, safetyStockValue);
@@ -402,8 +407,29 @@ export const ItemPlanningChart = ({
   }, [
     chartData.data,
     hiddenSeries,
-    forecastFetcher.data?.quantityOnHand,
+    forecastFetcher.data?.quantityNettable,
     safetyStockValue
+  ]);
+
+  // The chart is pointer-only (values live in its tooltip): a text summary of
+  // the projection; the per-order rows are the supply and demand list below.
+  const chartSummary = useMemo(() => {
+    const data = chartData.data;
+    if (data.length === 0) return t`Supply and demand chart: no data.`;
+    const start = numberFormatter.format(
+      forecastFetcher.data?.quantityNettable ?? 0
+    );
+    const end = numberFormatter.format(data[data.length - 1].Projection);
+    const lowest = numberFormatter.format(
+      Math.min(...data.map((d) => d.Projection))
+    );
+    const weeks = data.length;
+    return t`Supply and demand chart over ${weeks} weeks: projected on hand starts at ${start}, ends at ${end}, lowest ${lowest}.`;
+  }, [
+    chartData.data,
+    forecastFetcher.data?.quantityNettable,
+    numberFormatter,
+    t
   ]);
 
   const combinedSupplyAndDemand = useMemo(() => {
@@ -459,7 +485,7 @@ export const ItemPlanningChart = ({
       forecastData,
       plannedOrders,
       conversionFactor,
-      forecastFetcher.data?.quantityOnHand ?? 0
+      forecastFetcher.data?.quantityNettable ?? 0
     );
 
     if (!searchTerm) return combined;
@@ -587,7 +613,14 @@ export const ItemPlanningChart = ({
           />
           <div className="w-full h-[360px]">
             <Loading isLoading={isFetching}>
-              <ChartContainer config={chartConfig} className="w-full h-full">
+              {/* Not role="img": the legend inside holds series toggles. */}
+              <p className="sr-only">{chartSummary}</p>
+              <ChartContainer
+                config={chartConfig}
+                role="group"
+                aria-label={t`Projected on hand by week`}
+                className="w-full h-full"
+              >
                 <ComposedChart data={chartData.data} stackOffset="sign">
                   <defs>
                     <linearGradient
@@ -804,7 +837,11 @@ export const ItemPlanningChart = ({
           </div>
         </CardContent>
       </Card>
-      <Tabs defaultValue="all" className="w-full">
+      <Tabs
+        value={planningTab}
+        onValueChange={setPlanningTab}
+        className="w-full"
+      >
         <Card className={cn(compact && "border-none p-0 dark:shadow-none")}>
           <HStack className="w-full justify-between">
             <CardHeader>
@@ -842,6 +879,11 @@ export const ItemPlanningChart = ({
                       )}`}
                     </div>
                   </CardTitle>
+                  {nonNettableQuantity > 0 && (
+                    <NonNettableNote
+                      quantity={formatQuantity(nonNettableQuantity)}
+                    />
+                  )}
                 </CardHeader>
               </Card>
               <Card>
@@ -898,6 +940,7 @@ export const ItemPlanningChart = ({
 
             <div className="relative w-full mb-4">
               <Input
+                aria-label={t`Search supply and demand`}
                 placeholder={t`Search`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -1484,4 +1527,12 @@ function getPathToDocument(item: PlanningItem) {
     default:
       return "";
   }
+}
+
+function NonNettableNote({ quantity }: { quantity: string }) {
+  return (
+    <p className="text-xs text-muted-foreground">
+      <Trans>{quantity} in non-nettable storage, not planned against</Trans>
+    </p>
+  );
 }

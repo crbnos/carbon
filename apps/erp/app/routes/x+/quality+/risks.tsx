@@ -2,20 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet, VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData } from "react-router";
-import { getRisks } from "~/modules/quality/quality.service";
-import type { Risk } from "~/modules/quality/types";
+import { useLoaderData } from "react-router";
 import RiskRegistersTable from "~/modules/quality/ui/RiskRegister/RiskRegistersTable";
 import type { Handle } from "~/utils/handle";
+import { loadListPage } from "~/utils/list-registry/load.server";
+import { risksList } from "~/utils/list-registry/quality.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: msg`Risks`,
@@ -23,44 +18,18 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "quality",
-    role: "employee"
-  });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const risks = await getRisks(client, companyId, {
-    search,
-    limit,
-    offset,
-    sorts,
-    filters
-  });
-
-  if (risks.error) {
-    redirect(
-      path.to.quality,
-      await flash(request, error(risks.error, "Failed to fetch risks"))
-    );
-  }
-
-  return data({
-    count: risks.count ?? 0,
-    risks: (risks.data ?? []) as unknown as Risk[]
+  return loadListPage(request, risksList, {
+    dataKey: "risks",
+    onError: { redirectTo: path.to.quality, message: "Failed to fetch risks" }
   });
 }
 
 export default function RisksRoute() {
-  const { count, risks } = useLoaderData<typeof loader>();
+  const { count, risks, infinite } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <RiskRegistersTable data={risks} count={count} />
+      <RiskRegistersTable data={risks} count={count} infinite={infinite} />
       <RecordOutlet />
     </VStack>
   );

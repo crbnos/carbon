@@ -6,17 +6,22 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
-import { RecordOutlet, VStack } from "@carbon/react";
+import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useParams } from "react-router";
-import { PanelProvider } from "~/components/Layout";
-import { getStockTransfer, getStockTransferLines } from "~/modules/inventory";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { useLoaderData } from "react-router";
+import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
+import {
+  getStockTransfer,
+  getStockTransferLines
+} from "~/modules/inventory/inventory.service";
+import StockTransferDocuments from "~/modules/inventory/ui/StockTransfers/StockTransferDocuments";
 import StockTransferHeader from "~/modules/inventory/ui/StockTransfers/StockTransferHeader";
 import StockTransferLines from "~/modules/inventory/ui/StockTransfers/StockTransferLines";
 import StockTransferNotes from "~/modules/inventory/ui/StockTransfers/StockTransferNotes";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -30,6 +35,9 @@ export const handle: Handle = {
   ),
   module: "inventory"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.stockTransfer?.stockTransferId, "Stock Transfer");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -65,27 +73,30 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function StockTransferRoute() {
-  const params = useParams();
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
-
   const { stockTransfer } = useLoaderData<typeof loader>();
 
   return (
-    <PanelProvider>
-      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
-        <StockTransferHeader />
-        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
-          <VStack spacing={4} className="h-full p-4 w-full max-w-5xl mx-auto">
-            <StockTransferLines />
-            <StockTransferNotes
-              id={id}
-              notes={(stockTransfer?.notes ?? {}) as JSONContent}
-            />
-          </VStack>
-        </div>
-      </div>
+    <>
+      <DocumentPage
+        header={<StockTransferHeader />}
+        sidebar={
+          <DocumentSidebar
+            documents={<StockTransferDocuments />}
+            activity={{
+              entityType: "stockTransfer",
+              entityId: stockTransfer.id,
+              refreshKey: `${stockTransfer.updatedAt ?? ""}:${stockTransfer.status}`
+            }}
+          />
+        }
+      >
+        <StockTransferLines />
+        <StockTransferNotes
+          id={stockTransfer.id}
+          notes={(stockTransfer.notes ?? {}) as JSONContent}
+        />
+      </DocumentPage>
       <RecordOutlet />
-    </PanelProvider>
+    </>
   );
 }

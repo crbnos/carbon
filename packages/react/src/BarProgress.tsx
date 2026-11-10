@@ -83,6 +83,8 @@ interface BarProgressProps {
   activeClassName?: string;
   /** Class name for the inactive (unfilled) bars */
   inactiveClassName?: string;
+  /** Phones: label above the bar, value under it, value not truncated. */
+  stackOnPhone?: boolean;
 }
 
 export function BarProgress({
@@ -95,7 +97,8 @@ export function BarProgress({
   segments,
   className,
   activeClassName = "bg-emerald-500",
-  inactiveClassName = "bg-muted"
+  inactiveClassName = "bg-muted",
+  stackOnPhone = false
 }: BarProgressProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [barCount, setBarCount] = useState(0);
@@ -158,14 +161,27 @@ export function BarProgress({
   return (
     <div className={cn("w-full", className)}>
       {hasHeader && (
-        <div className="mb-0.5 flex items-baseline justify-between">
+        <div className="mb-0.5 flex items-baseline justify-between gap-2">
           {label ? (
-            <span className="text-sm font-medium text-foreground">{label}</span>
+            <span
+              className={cn(
+                "shrink-0 text-sm font-medium text-foreground",
+                stackOnPhone && "max-md:min-w-0 max-md:truncate max-md:text-xs"
+              )}
+            >
+              {label}
+            </span>
           ) : (
             <div />
           )}
           {value && (
-            <span className="text-xs font-mono tabular-nums text-muted-foreground">
+            <span
+              title={value}
+              className={cn(
+                "min-w-0 truncate text-xs font-mono tabular-nums text-muted-foreground",
+                stackOnPhone && "max-md:hidden"
+              )}
+            >
               {value}
             </span>
           )}
@@ -178,6 +194,8 @@ export function BarProgress({
         aria-valuemin={0}
         aria-valuemax={max}
         aria-label={label ?? "Progress"}
+        // The shown text ("2h / 8h", "3 / 4"), not a bare percentage.
+        aria-valuetext={value || undefined}
         className="flex w-full items-center gap-[3px]"
       >
         {barCount > 0 &&
@@ -198,6 +216,11 @@ export function BarProgress({
           ))}
         <span className="sr-only">{Math.round(percentage)}%</span>
       </div>
+      {stackOnPhone && value ? (
+        <span className="mt-1 hidden break-words text-xs font-mono tabular-nums text-muted-foreground max-md:block">
+          {value}
+        </span>
+      ) : null}
     </div>
   );
 }

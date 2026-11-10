@@ -16,8 +16,8 @@ import {
   NotificationEvent
 } from "@carbon/notifications";
 import { chunkArray, datetime, Edition, formatDate } from "@carbon/utils";
-import { render } from "@react-email/components";
 import type { Kysely } from "kysely";
+import { render } from "react-email";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import {
@@ -394,8 +394,10 @@ export const weeklyFunction = inngest.createFunction(
           }
 
           // Filter to outstanding and dedupe by employee+assignment
-          const outstandingTrainings = (trainingStatus ?? []).filter((t) =>
-            isReminderItemStatus(t.status)
+          // An external assignment is completed by an admin; its outside
+          // system reminds people, so Carbon does not.
+          const outstandingTrainings = (trainingStatus ?? []).filter(
+            (t) => !t.isExternal && isReminderItemStatus(t.status)
           );
 
           // Group by trainingAssignmentId to send one notification per assignment per employee

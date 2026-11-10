@@ -15,7 +15,7 @@ Issues open from several places: by hand, from the shop floor in MES, from Slack
 
 An issue can run a configurable workflow, often an **<Term id="8d">8D</Term>**. The workflow attaches **required actions** and **approvals** as tasks; each task advances *Pending → In Progress → Completed* as the team works it. Adding a **Material Review Board** approval gates closing the issue: it can't close until a **disposition** is chosen for the affected material. The five options are *Pending* (not yet decided), *Return to Supplier*, *<Term>Rework</Term>*, *<Term>Scrap</Term>*, and *Use As Is*.
 
-When accounting is enabled, closing the issue posts each disposition's stock movement to the general ledger. *Scrap* and *Return to Supplier* write the material off — relieving its inventory cost layers and posting **debit Scrap / Cost of Quality, credit Inventory** — so scrapped and returned value lands on a dedicated cost-of-quality account rather than distorting on-hand inventory. *Use As Is* and *Rework* keep the material as stock, restoring any value an earlier rejection had written off. Once an issue has posted these entries it can no longer be reopened; a correction is booked forward as a new adjustment, never by unwinding the original.
+Closing the issue posts each disposition's stock movement to the general ledger. *Scrap* and *Return to Supplier* write the material off — relieving its inventory cost layers and posting **debit Scrap / Cost of Quality, credit Inventory** — so scrapped and returned value lands on a dedicated cost-of-quality account rather than distorting on-hand inventory. *Use As Is* and *Rework* keep the material as stock, restoring any value an earlier rejection had written off. Once an issue has posted these entries it can no longer be reopened; a correction is booked forward as a new adjustment, never by unwinding the original.
 
 <Callout type="note">
 There's no dedicated supplier scorecard in Carbon. **Supplier quality is a derived metric**, counted from the issues linked to each supplier. The data comes from the issues themselves, not a separate record.
@@ -23,9 +23,9 @@ There's no dedicated supplier scorecard in Carbon. **Supplier quality is a deriv
 
 ## Inbound inspection
 
-When goods arrive for an item that **requires inspection**, posting the receipt opens an inbound inspection and holds the received units **On Hold**. They're not available stock yet. Inspection is lot-based, with sample sizes drawn from AQL standards (ANSI / ISO).
+When goods arrive for an item that **requires inspection**, posting the receipt opens an inbound inspection and holds the received stock in the location's inspection storage unit: serial and batch units stay **On Hold**, and untracked stock cannot leave the unit. It is not available stock yet. See [parts that need inspection](/docs/reference/receipts#parts-that-need-inspection). Inspection is lot-based, with sample sizes drawn from AQL standards (ANSI / ISO).
 
-An inspection moves through **Pending**, **In Progress**, and one of three outcomes: **Passed**, **Failed**, or **Partial**. Dispositioning the lot decides what happens: **Passed** accepts it and the units become available; **Failed** rejects it, marks the units rejected, and opens an issue automatically; **Partial** clears some and holds the rest.
+An inspection moves through **Pending**, **In Progress**, and one of three outcomes: **Passed**, **Failed**, or **Partial**. Dispositioning the lot decides what happens: **Passed** accepts it and the units become available; **Failed** rejects it, marks the units rejected, and opens an issue unless you untick it; **Partial** clears some and holds the rest until its issue is completed. A receipt lot belongs to one issue, and a Partial lot must be the only lot on its issue.
 
 <Callout type="info">
 Inbound inspection only fires on **purchase-order receipts** of items flagged to require it. Until a lot is dispositioned, its units sit On Hold: received, but not yet stock you can sell or consume.

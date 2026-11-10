@@ -25,11 +25,16 @@ import {
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
-  toast,
+  toastError,
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { getItemReadableId, INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import {
+  distinctItemText,
+  getItemReadableId,
+  INPUT_FORMAT,
+  INPUT_STEP
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
@@ -62,8 +67,8 @@ import type {
   ConfigurationParameterGroup
 } from "~/modules/items/types";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { ItemType } from "~/modules/shared";
-import { itemType, methodType } from "~/modules/shared";
+import { itemType, methodType } from "~/modules/shared/shared.models";
+import type { ItemType } from "~/modules/shared/types";
 import type { action } from "~/routes/x+/quote+/$quoteId.new";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -72,18 +77,21 @@ import {
   quoteLineStatusType,
   quoteLineValidator
 } from "../../sales.models";
+import { methodTakesConfiguration } from "../../sales.utils";
 import type { Quotation, QuotationLine } from "../../types";
 import DeleteQuoteLine from "./DeleteQuoteLine";
 
 type QuoteLineFormProps = {
   initialValues: z.infer<typeof quoteLineValidator>;
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const QuoteLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose
 }: QuoteLineFormProps) => {
   const { t, i18n } = useLingui();
@@ -146,8 +154,14 @@ const QuoteLineForm = ({
   const [lineType, setLineType] = useState<ItemType>(
     (initialValues.itemType as ItemType) ?? "Part"
   );
+  // The picker's type filter. It starts on every item type; the line's own
+  // type is a real enum value — "Item" is not one — and follows the selected
+  // item.
+  const [itemFilter, setItemFilter] = useState<ItemType | "Item">("Item");
 
   const onTypeChange = (t: ItemType | "Item") => {
+    setItemFilter(t);
+    // "Item" is the "All Items" filter, always compatible with the selection.
     if (t === "Item") return;
     setLineType(t);
     if (itemData.itemId) {
@@ -165,7 +179,7 @@ const QuoteLineForm = ({
       // Clearing the item must also clear its configuration — otherwise a
       // configured Part's stale parameters/values remain submittable after
       // switching to a different item type.
-      setRequiresConfiguration(false);
+      setItemRequiresConfiguration(false);
       setIsConfigured(false);
       setConfigurationParameters(null);
       setConfigurationValues("");
@@ -173,7 +187,10 @@ const QuoteLineForm = ({
   };
 
   const configurationDisclosure = useDisclosure();
-  const [requiresConfiguration, setRequiresConfiguration] = useState(false);
+  const [itemRequiresConfiguration, setItemRequiresConfiguration] =
+    useState(false);
+  const requiresConfiguration =
+    itemRequiresConfiguration && methodTakesConfiguration(itemData.methodType);
   const [isConfigured, setIsConfigured] = useState(false);
   const [configurationParameters, setConfigurationParameters] = useState<{
     parameters: ConfigurationParameter[];
@@ -197,7 +214,7 @@ const QuoteLineForm = ({
       .maybeSingle();
 
     if (customerPart.error) {
-      toast.error(t`Failed to load customer part details`);
+      toastError(t`Failed to load customer part details`, customerPart.error);
       return;
     }
 
@@ -219,7 +236,7 @@ const QuoteLineForm = ({
       .maybeSingle();
 
     if (customerPart.error) {
-      toast.error(t`Failed to load customer part details`);
+      toastError(t`Failed to load customer part details`, customerPart.error);
       return;
     }
 
@@ -235,7 +252,7 @@ const QuoteLineForm = ({
       carbon
         .from("item")
         .select(
-          "name, readableIdWithRevision, defaultMethodType, unitOfMeasureCode, modelUploadId"
+          "name, readableIdWithRevision, type, defaultMethodType, unitOfMeasureCode, modelUploadId"
         )
         .eq("id", itemId)
         .eq("companyId", company.id)
@@ -254,16 +271,23 @@ const QuoteLineForm = ({
     ]);
 
     if (item.error) {
-      toast.error(t`Failed to load item details`);
+      toastError(t`Failed to load item details`, item.error);
       return;
     }
 
+    if (item.data?.type) {
+      setLineType(item.data.type as ItemType);
+    }
     const newItemData = {
       ...itemData,
       itemId,
       description: item.data?.name ?? "",
       methodType: item.data?.defaultMethodType ?? "",
-      uom: item.data?.unitOfMeasureCode ?? "",
+      // A service is always sold in "EA"
+      uom:
+        item.data?.type === "Service"
+          ? "EA"
+          : (item.data?.unitOfMeasureCode ?? ""),
       modelUploadId: item.data?.modelUploadId ?? null
     };
 
@@ -275,7 +299,7 @@ const QuoteLineForm = ({
 
     setItemData(newItemData);
     if (itemReplenishment.data?.requiresConfiguration) {
-      setRequiresConfiguration(true);
+      setItemRequiresConfiguration(true);
       const [parameters, groups] = await Promise.all([
         carbon
           .from("configurationParameter")
@@ -290,7 +314,10 @@ const QuoteLineForm = ({
       ]);
 
       if (parameters.error || groups.error) {
-        toast.error(t`Failed to load configuration parameters`);
+        toastError(
+          t`Failed to load configuration parameters`,
+          parameters.error ?? groups.error
+        );
         return;
       }
 
@@ -299,7 +326,7 @@ const QuoteLineForm = ({
         groups: groups.data ?? []
       });
     } else {
-      setRequiresConfiguration(false);
+      setItemRequiresConfiguration(false);
       setConfigurationParameters(null);
     }
   };
@@ -310,6 +337,7 @@ const QuoteLineForm = ({
     <>
       <ModalCardProvider type={type}>
         <ModalCard
+          open={open}
           onClose={onClose}
           defaultCollapsed={false}
           isCollapsible={isEditing}
@@ -342,7 +370,10 @@ const QuoteLineForm = ({
                   <ModalCardDescription>
                     {isEditing ? (
                       <div className="flex flex-col items-start gap-1">
-                        <span>{itemData?.description}</span>
+                        {distinctItemText(
+                          getItemReadableId(items, itemData?.itemId),
+                          itemData?.description
+                        ) && <span>{itemData?.description}</span>}
                         <div className="flex items-center gap-2">
                           <Badge
                             variant="outline"
@@ -414,7 +445,11 @@ const QuoteLineForm = ({
               <ModalCardBody>
                 <Hidden name="id" />
                 <Hidden name="quoteId" />
-                <Hidden name="unitOfMeasureCode" value={itemData?.uom} />
+                <Hidden name="itemType" value={lineType} />
+                <Hidden
+                  name="unitOfMeasureCode"
+                  value={lineType === "Service" ? "EA" : itemData?.uom}
+                />
                 <Hidden
                   name="modelUploadId"
                   value={itemData?.modelUploadId ?? undefined}
@@ -427,13 +462,15 @@ const QuoteLineForm = ({
                 )}
                 <VStack>
                   <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                    <div className="col-span-2 grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-2 auto-rows-min">
+                    <div className="col-span-2 max-md:col-span-full grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-2 auto-rows-min">
                       <Item
                         autoFocus
                         name="itemId"
-                        label={i18n._(itemTypeLabel(lineType))}
-                        type={lineType}
-                        typeFieldName="itemType"
+                        label={i18n._(itemTypeLabel(itemFilter))}
+                        type={itemFilter}
+                        // The line type is posted separately; the filter is
+                        // not it.
+                        typeFieldName="itemFilter"
                         validItemTypes={[...itemType]}
                         value={itemData.itemId}
                         includeInactive
@@ -590,28 +627,27 @@ const QuoteLineForm = ({
         </ModalCard>
       </ModalCardProvider>
       <rules.ViolationModal />
-      {isEditing && deleteDisclosure.isOpen && (
+      {isEditing && (
         <DeleteQuoteLine
+          isOpen={deleteDisclosure.isOpen}
           line={initialValues as QuotationLine}
           onCancel={deleteDisclosure.onClose}
         />
       )}
-      {requiresConfiguration &&
-        configurationDisclosure.isOpen &&
-        configurationParameters && (
-          <ConfiguratorModal
-            open
-            initialValues={configurationValues || {}}
-            groups={configurationParameters.groups ?? []}
-            parameters={configurationParameters.parameters ?? []}
-            onClose={configurationDisclosure.onClose}
-            onSubmit={(config: Record<string, any>) => {
-              setConfigurationValues(config);
-              setIsConfigured(true);
-              configurationDisclosure.onClose();
-            }}
-          />
-        )}
+      {requiresConfiguration && configurationParameters && (
+        <ConfiguratorModal
+          open={configurationDisclosure.isOpen}
+          initialValues={configurationValues || {}}
+          groups={configurationParameters.groups ?? []}
+          parameters={configurationParameters.parameters ?? []}
+          onClose={configurationDisclosure.onClose}
+          onSubmit={(config: Record<string, any>) => {
+            setConfigurationValues(config);
+            setIsConfigured(true);
+            configurationDisclosure.onClose();
+          }}
+        />
+      )}
     </>
   );
 };

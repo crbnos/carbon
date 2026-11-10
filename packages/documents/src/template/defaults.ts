@@ -96,6 +96,13 @@ export interface BlockMeta {
   hideable: boolean;
   /** Whether the block appears in the "Add block" menu. */
   addable: boolean;
+  /**
+   * Whether a built-in block missing from a stored template is appended
+   * visible. Others are appended hidden so a new block never changes a layout
+   * the user already arranged; only a block that prints nothing until its
+   * data exists may opt in.
+   */
+  showWhenAppended?: boolean;
 }
 
 export const BLOCK_META: Record<DocumentBlockType, BlockMeta> = {
@@ -211,6 +218,14 @@ export const BLOCK_META: Record<DocumentBlockType, BlockMeta> = {
     hideable: true,
     addable: false
   },
+  approval: {
+    label: "Approval",
+    isBuiltIn: true,
+    removable: false,
+    hideable: true,
+    addable: false,
+    showWhenAppended: true
+  },
   labelHeading: {
     label: "Item ID",
     isBuiltIn: true,
@@ -311,6 +326,27 @@ export const BLOCK_META: Record<DocumentBlockType, BlockMeta> = {
 };
 
 /** Block types a user may append, in menu order. */
+/** The Approval block's heading when the template sets none. */
+export const DEFAULT_APPROVAL_HEADING = "Approved By";
+
+/**
+ * The Approval block's caption under the signature line when the template
+ * sets none: the approver, then the approval date.
+ */
+export const DEFAULT_APPROVAL_CAPTION: JSONContent = {
+  type: "doc",
+  content: [
+    {
+      type: "paragraph",
+      content: [
+        { type: "text", text: "{order.approvedBy}" },
+        { type: "hardBreak" },
+        { type: "text", text: "{order.approvedDate}" }
+      ]
+    }
+  ]
+};
+
 export const ADDABLE_BLOCK_TYPES = (
   Object.keys(BLOCK_META) as DocumentBlockType[]
 ).filter((type) => BLOCK_META[type].addable);
@@ -345,6 +381,21 @@ function transactionalBlocks(): DocumentBlock[] {
  * but no summary block — the line-items table carries its own total row.
  */
 function returnOrderBlocks(): DocumentBlock[] {
+  return [
+    { id: "header", type: "header", visible: true },
+    { id: "parties", type: "parties", visible: true },
+    { id: "lineItems", type: "lineItems", visible: true },
+    { id: "notes", type: "notes", visible: true },
+    { id: "terms", type: "terms", visible: true }
+  ];
+}
+
+/**
+ * Layout for a purchasing RFQ, read as a letter: letterhead, the request,
+ * the items, the sign-off (notes block), then the terms. No summary block —
+ * nothing is priced; the supplier quotes in their own format.
+ */
+function rfqBlocks(): DocumentBlock[] {
   return [
     { id: "header", type: "header", visible: true },
     { id: "parties", type: "parties", visible: true },
@@ -470,7 +521,17 @@ export const DEFAULT_TEMPLATES: Record<DocumentTemplateType, DocumentTemplate> =
     salesInvoice: {
       formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
       documentType: "salesInvoice",
-      blocks: transactionalBlocks(),
+      // An invoice line's description is the whole story of what is billed —
+      // a rental or contract period, its days and rate — so it wraps rather
+      // than losing its end to an ellipsis.
+      blocks: transactionalBlocks().map((block) =>
+        block.type === "lineItems"
+          ? {
+              ...block,
+              options: { ...DEFAULT_LINE_ITEMS_OPTIONS, textOverflow: "wrap" }
+            }
+          : block
+      ),
       theme: { ...DEFAULT_THEME },
       settings: { ...DEFAULT_DOCUMENT_SETTINGS },
       headerSectionId: BUILT_IN_SECTION_IDS.header,
@@ -497,7 +558,10 @@ export const DEFAULT_TEMPLATES: Record<DocumentTemplateType, DocumentTemplate> =
     purchaseOrder: {
       formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
       documentType: "purchaseOrder",
-      blocks: transactionalBlocks(),
+      blocks: [
+        ...transactionalBlocks(),
+        { id: "approval", type: "approval", visible: true }
+      ],
       theme: { ...DEFAULT_THEME },
       settings: { ...DEFAULT_DOCUMENT_SETTINGS },
       headerSectionId: BUILT_IN_SECTION_IDS.header,
@@ -507,6 +571,15 @@ export const DEFAULT_TEMPLATES: Record<DocumentTemplateType, DocumentTemplate> =
       formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
       documentType: "purchaseReturnOrder",
       blocks: returnOrderBlocks(),
+      theme: { ...DEFAULT_THEME },
+      settings: { ...DEFAULT_DOCUMENT_SETTINGS },
+      headerSectionId: BUILT_IN_SECTION_IDS.header,
+      footerSectionId: BUILT_IN_SECTION_IDS.footer
+    },
+    purchasingRfq: {
+      formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
+      documentType: "purchasingRfq",
+      blocks: rfqBlocks(),
       theme: { ...DEFAULT_THEME },
       settings: { ...DEFAULT_DOCUMENT_SETTINGS },
       headerSectionId: BUILT_IN_SECTION_IDS.header,
@@ -611,6 +684,25 @@ function migrateBlocks(
 }
 
 /**
+ * The Summary prints the Line Items table's totals, and the editor shows it as
+ * part of that table, so it always sits directly after it. Blocks are stored
+ * flat, so moving one past Line Items could otherwise land it between the two.
+ */
+export function keepSummaryWithLineItems<B extends { type: string }>(
+  blocks: B[]
+): B[] {
+  const summary = blocks.find((block) => block.type === "summary");
+  if (!summary || !blocks.some((block) => block.type === "lineItems")) {
+    return blocks;
+  }
+  return blocks
+    .filter((block) => block !== summary)
+    .flatMap((block) =>
+      block.type === "lineItems" ? [block, summary] : [block]
+    );
+}
+
+/**
  * Resolve a stored template row to a renderable template, falling back to the
  * type's default when nothing is stored. Built-in blocks that are missing from
  * a stored template are appended (hidden) so a section added in a later release
@@ -661,12 +753,15 @@ export function resolveTemplate(
   const present = new Set(storedBlocks.map((b) => b.type));
   const missingBuiltIns = fallback.blocks
     .filter((b) => BLOCK_META[b.type].isBuiltIn && !present.has(b.type))
-    .map((b) => ({ ...b, visible: false }));
+    .map((b) => ({
+      ...b,
+      visible: b.visible && !!BLOCK_META[b.type].showWhenAppended
+    }));
 
   return {
     formatVersion,
     documentType,
-    blocks: [...storedBlocks, ...missingBuiltIns],
+    blocks: keepSummaryWithLineItems([...storedBlocks, ...missingBuiltIns]),
     theme,
     settings,
     headerSectionId,
@@ -761,6 +856,13 @@ export const DOCUMENT_CATALOG: DocumentCatalogEntry[] = [
     type: "salesReturnOrder",
     label: "RMA",
     group: "Sales",
+    supported: true,
+    themeColors: "full"
+  },
+  {
+    type: "purchasingRfq",
+    label: "Request for Quote",
+    group: "Purchasing",
     supported: true,
     themeColors: "full"
   },

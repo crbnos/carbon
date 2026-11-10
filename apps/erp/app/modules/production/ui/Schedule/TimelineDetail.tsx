@@ -4,6 +4,7 @@
 
 import { Button, cn, Heading, IconButton, Subheading } from "@carbon/react";
 import {
+  distinctItemText,
   formatDateTimeInZone,
   formatDurationMilliseconds,
   formatRelativeTime
@@ -22,7 +23,7 @@ import {
 } from "react-icons/lu";
 import { Link } from "react-router";
 import { DateTime, ItemThumbnail } from "~/components";
-import type { ItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import type { TimelineNodeDetail } from "./timeline";
 
@@ -311,6 +312,39 @@ export function TimelineDetail({
             </p>
           ))}
 
+        {isUnschedulablePlaceholder && detail.qualifiedPeople && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground">
+              <Trans>Qualified to run it</Trans>
+            </p>
+            {detail.qualifiedPeople.length === 0 ? (
+              <p className="text-sm text-pretty">
+                <Trans>
+                  Nobody is qualified. Add someone to the process's ability.
+                </Trans>
+              </p>
+            ) : (
+              <ul className="space-y-1 text-sm">
+                {detail.qualifiedPeople.map((person, index) => {
+                  const stations = person.stations.join(", ");
+                  return (
+                    <li key={`${index}:${person.name}`} className="text-pretty">
+                      <span className="font-medium">{person.name}</span>{" "}
+                      <span className="text-muted-foreground">
+                        {person.stations.length > 0 ? (
+                          <Trans>— on the manning board at {stations}</Trans>
+                        ) : (
+                          <Trans>— not on the manning board</Trans>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        )}
+
         {/* Why the row starts when it does — hidden when a conflict is shown,
             the conflict message already names the same cause */}
         {detail.scheduleNote && !detail.conflictReason && (
@@ -391,7 +425,10 @@ export function TimelineDetail({
                 value={
                   <span className="flex flex-col items-end">
                     <span>{detail.itemReadableId}</span>
-                    {detail.itemName && (
+                    {distinctItemText(
+                      detail.itemReadableId,
+                      detail.itemName
+                    ) && (
                       <span className="text-xs font-normal text-muted-foreground">
                         {detail.itemName}
                       </span>

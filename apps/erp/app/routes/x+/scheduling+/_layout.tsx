@@ -4,22 +4,23 @@
 
 import { RecordOutlet } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type { MetaFunction } from "react-router";
-
+import { ProductionSections } from "~/modules/production/ui/useProductionSubmodules";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Schedule" }];
-};
+export const meta = moduleMeta("Schedule");
 
 export const handle: Handle = {
   realtime: ["job", "jobOperation"],
   breadcrumb: msg`Production`,
   to: path.to.production,
-  module: "production"
+  module: "production",
+  // Phones: this route is a section of its module, so it gets the module's
+  // section switcher there (desktop shows no sidebar here, unchanged).
+  compactSidebar: ProductionSections
 };
 
 export default function SchedulingRoute() {

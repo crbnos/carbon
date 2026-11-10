@@ -2,74 +2,29 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  getPickingList,
-  pickingListValidator,
-  upsertPickingList
-} from "~/modules/inventory";
+import { pickingListValidator } from "~/modules/inventory/inventory.models";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(pickingListValidator).request(args, {
+    params: ["pickingListId"]
   });
+  if ("invalid" in input) return input.invalid;
+  const { pickingListId } = input.params;
+  const { id: _id, pickingListId: _readableId, ...fields } = input.data;
 
-  const { pickingListId } = params;
-  if (!pickingListId) throw new Error("pickingListId not found");
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "inventory"
+  const api = await carbon(args.request);
+  const result = await api.inventory.updatePickingList({
+    pickingListId,
+    ...fields,
+    customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
-  const existing = await getPickingList(viewClient, pickingListId);
-  if (existing.data?.status && !["Draft"].includes(existing.data.status)) {
-    throw redirect(
-      path.to.pickingList(pickingListId),
-      await flash(
-        request,
-        error(null, "Cannot modify a locked picking list. Reopen it first.")
-      )
-    );
-  }
-
-  const formData = await request.formData();
-  const validation = await validator(pickingListValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, pickingListId: validatedPickingListId, ...d } = validation.data;
-  if (!id) throw new Error("id not found");
-  if (!validatedPickingListId) throw new Error("pickingListId not found");
-
-  const updateResult = await upsertPickingList(client, {
-    id,
-    pickingListId: validatedPickingListId,
-    ...d,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
-  });
-
-  if (updateResult.error) {
-    throw redirect(
-      path.to.pickingList(pickingListId),
-      await flash(
-        request,
-        error(updateResult.error, "Failed to update picking list")
-      )
-    );
-  }
-
-  throw redirect(
+  return respond(args.request, result).redirect(
     path.to.pickingList(pickingListId),
-    await flash(request, success("Updated picking list"))
+    { message: "Updated picking list" }
   );
 }

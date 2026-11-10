@@ -38,6 +38,14 @@ export type SalesDocumentComponent = {
    * place that decides.
    */
   invoiceLineType: string | null;
+  /**
+   * The service job the source line bills, `null` for HeaderShipping and for
+   * every line that is not a service job's. Load-bearing like
+   * `invoiceLineType`: `post-sales-invoice` credits a service job line's
+   * revenue to Service Revenue, not to the Sales account, so the provider
+   * line must take `serviceRevenueAccountId` (`isServiceRevenueComponent`).
+   */
+  serviceJobId: string | null;
   description: string;
   quantity: number;
   unitAmount: number;
@@ -70,6 +78,35 @@ export function hasRevenueComponent(
   components: readonly SalesDocumentComponent[]
 ): boolean {
   return components.some(isRevenueComponent);
+}
+
+/**
+ * Does this revenue component post to Service Revenue rather than to the
+ * Sales account? Every revenue component of a service job line does: its
+ * labor, parts and charges are one performance obligation. Its shipping
+ * stays on Shipping Revenue.
+ */
+export function isServiceRevenueComponent(
+  component: SalesDocumentComponent
+): boolean {
+  return isRevenueComponent(component) && component.serviceJobId !== null;
+}
+
+/** Does this document need the replayed Sales account? */
+export function hasSalesRevenueComponent(
+  components: readonly SalesDocumentComponent[]
+): boolean {
+  return components.some(
+    (component) =>
+      isRevenueComponent(component) && !isServiceRevenueComponent(component)
+  );
+}
+
+/** Does this document need the replayed Service Revenue account? */
+export function hasServiceRevenueComponent(
+  components: readonly SalesDocumentComponent[]
+): boolean {
+  return components.some(isServiceRevenueComponent);
 }
 
 /**
@@ -131,6 +168,11 @@ export type SalesDocumentComponents = {
 function finite(value: number, name: string): number {
   if (!Number.isFinite(value)) throw new Error(`${name} must be finite`);
   return value;
+}
+
+/** The line discount, a fraction in [0, 1]; absent is no discount. */
+function lineDiscount(line: Accounting.SalesInvoiceLine): number {
+  return finite(line.discountPercent ?? 0, "Line discount");
 }
 
 function precision(value: number): void {
@@ -217,8 +259,16 @@ export function buildSalesDocumentComponents(
     const quantity = args.quantity ?? 1;
     let unitAmount = toDocumentAmount(baseNet, rate, decimals);
     if (kind === "Merchandise" && line) {
-      const convertedUnit = line.convertedUnitPrice;
-      const expectedUnit = finite(line.unitPrice * rate, "Document unit price");
+      // Both prices are LIST prices; the provider is sent the NET unit price,
+      // so the line discount is applied to each before they are compared. A
+      // discounted price is a rate, so it is rounded to storage scale; an
+      // undiscounted mirror is sent exactly as stored.
+      const discount = lineDiscount(line);
+      const net = 1 - discount;
+      const netUnit = line.unitPrice * net;
+      const convertedUnit =
+        line.convertedUnitPrice == null ? null : line.convertedUnitPrice * net;
+      const expectedUnit = finite(netUnit * rate, "Document unit price");
       if (
         convertedUnit != null &&
         Math.abs(
@@ -231,7 +281,11 @@ export function buildSalesDocumentComponents(
         );
       }
       unitAmount =
-        convertedUnit ?? toDocumentAmount(line.unitPrice, rate, SCALE);
+        convertedUnit == null
+          ? toDocumentAmount(netUnit, rate, SCALE)
+          : discount
+            ? round(convertedUnit)
+            : convertedUnit;
     }
     raw.push({
       baseNet,
@@ -243,6 +297,7 @@ export function buildSalesDocumentComponents(
         itemId: line?.itemId ?? null,
         itemCode: line?.itemCode ?? null,
         invoiceLineType: line?.invoiceLineType ?? null,
+        serviceJobId: line?.serviceJobId ?? null,
         description: args.description,
         quantity,
         unitAmount,
@@ -256,7 +311,9 @@ export function buildSalesDocumentComponents(
     push({
       kind: "Merchandise",
       line,
-      baseNet: line.quantity * line.unitPrice,
+      // The same expression `calculateSalesPostingAmounts` and the
+      // `salesInvoices` view use, so the reconciliation above holds.
+      baseNet: line.quantity * line.unitPrice * (1 - lineDiscount(line)),
       taxPercent: line.taxPercent,
       quantity: line.quantity,
       description: line.description ?? line.itemCode ?? "Invoice line"

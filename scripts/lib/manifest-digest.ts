@@ -14,9 +14,8 @@
  * The digest keeps that signal at a fifth of the size, one line per operation, and
  * does not grow when schemas do (only the hash of one changes). It records the
  * facts a reviewer needs to notice a regression — classification, permission,
- * injected auth fields, the argument count, and a hash of the schema — so a changed
- * schema always shows up as a changed line, and a changed COUNT shows up as a
- * number a human can judge.
+ * and a hash of each schema — so a changed schema always shows up as a changed
+ * line.
  */
 
 import { createHash } from "crypto";
@@ -26,26 +25,13 @@ import type { ManifestEntry } from "@carbon/api";
 export interface DigestEntry {
   name: string;
   classification: string;
-  paramCount: number;
   /** Stable hash of the input schema — any shape change moves it. */
   schema: string;
   /** Stable hash of the response schema, or "none" when none was derived. */
   response: string;
-  injectAuth: string;
   permission: string;
-  /** Whether the service pages itself — decides who applies limit/offset. */
+  /** Whether the operation pages itself — decides who applies limit/offset. */
   paginates: boolean;
-  /** How the result reports failure, when it is not PostgREST's `{ data, error }`
-   *  (`envelope`) or a plain value. */
-  result?: string;
-  /** Positional params filled from a context value of a different name
-   *  (`updatedBy=userId`). Absent when every context param is its own source. */
-  context?: string;
-  /** How create is told from update: the key fields, or `table(columns)` for
-   *  each row the dispatcher looks up. Absent when the service does not branch. */
-  upsert?: string;
-  /** When published defaults are filled: `always`, or `create` for an upsert. */
-  defaults?: string;
 }
 
 export interface ManifestDigest {
@@ -96,30 +82,6 @@ export function serializeManifestDigest(digest: ManifestDigest): string {
   ].join("\n");
 }
 
-function describeUpsert(upsert: NonNullable<ManifestEntry["upsert"]>): string {
-  if (!upsert.lookups) return upsert.keys.join(",");
-  return upsert.lookups
-    .map(
-      (lookup) =>
-        `${lookup.table}(${Object.entries(lookup.match)
-          .map(([column, field]) =>
-            column === field ? column : `${column}=${field}`
-          )
-          .join(",")})`
-    )
-    .join("|");
-}
-
-function describeContext(tool: ManifestEntry): string {
-  return tool.serviceParams
-    .filter((name) => {
-      const source = tool.contextParams[name];
-      return source !== undefined && source !== name;
-    })
-    .map((name) => `${name}=${tool.contextParams[name]}`)
-    .join(",");
-}
-
 export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
   return {
     totalTools: tools.length,
@@ -131,20 +93,12 @@ export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
       .map((t) => ({
         name: t.name,
         classification: t.classification,
-        paramCount: t.paramCount,
         schema: stableHash(t.schema),
         response: t.responseSchema ? stableHash(t.responseSchema) : "none",
-        injectAuth: [...t.injectAuth].sort().join("+") || "none",
         permission: t.permission?.module
           ? `${t.permission.module}:${[...t.permission.actions].sort().join("+")}`
           : "none",
-        paginates: t.paginates,
-        ...(t.resultShape === "envelopes" || t.resultShape === "flag"
-          ? { result: t.resultShape }
-          : {}),
-        ...(describeContext(t) ? { context: describeContext(t) } : {}),
-        ...(t.upsert ? { upsert: describeUpsert(t.upsert) } : {}),
-        ...(t.defaults ? { defaults: t.defaults } : {})
+        paginates: t.paginates
       }))
   };
 }
@@ -185,28 +139,14 @@ export function formatDigestDiff(diff: DigestDiff): string {
   for (const name of diff.removed) lines.push(`  - ${name}`);
   for (const { name, before, after } of diff.changed) {
     const parts: string[] = [];
-    if (before.paramCount !== after.paramCount) {
-      parts.push(`args ${before.paramCount} → ${after.paramCount}`);
-    }
     if (before.classification !== after.classification) {
       parts.push(`${before.classification} → ${after.classification}`);
     }
     if (before.permission !== after.permission) {
       parts.push(`permission ${before.permission} → ${after.permission}`);
     }
-    if (before.injectAuth !== after.injectAuth) {
-      parts.push(`injectAuth ${before.injectAuth} → ${after.injectAuth}`);
-    }
     if (before.paginates !== after.paginates) {
       parts.push(`paginates ${before.paginates} → ${after.paginates}`);
-    }
-    if (before.upsert !== after.upsert) {
-      parts.push(`upsert ${before.upsert ?? "none"} → ${after.upsert ?? "none"}`);
-    }
-    if (before.defaults !== after.defaults) {
-      parts.push(
-        `defaults ${before.defaults ?? "none"} → ${after.defaults ?? "none"}`
-      );
     }
     if (before.schema !== after.schema) parts.push("input schema changed");
     if (before.response !== after.response) {

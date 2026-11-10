@@ -2,90 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
+import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import {
-  getMaintenanceDispatch,
-  isMaintenanceDispatchLocked,
-  maintenanceDispatchEventValidator,
-  upsertMaintenanceDispatchEvent
-} from "~/modules/resources";
-import { postMaintenanceLabor } from "~/modules/resources/resources.server";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
-import { path } from "~/utils/path";
+import { maintenanceDispatchEventValidator } from "~/modules/resources/resources.models";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "resources"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(maintenanceDispatchEventValidator).request(
+    args,
+    { params: ["dispatchId", "eventId"] }
+  );
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.resources.updateMaintenanceEvent({
+    ...input.data,
+    id: input.params.eventId,
+    maintenanceDispatchId: input.params.dispatchId
   });
-
-  const { dispatchId, eventId } = params;
-  if (!dispatchId) throw new Error("Could not find dispatchId");
-  if (!eventId) throw new Error("Could not find eventId");
-
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "resources"
-  });
-  const dispatch = await getMaintenanceDispatch(viewClient, dispatchId);
-  await requireUnlocked({
-    request,
-    isLocked: isMaintenanceDispatchLocked(dispatch.data?.status),
-    redirectTo: path.to.maintenanceDispatch(dispatchId),
-    message: "Cannot modify a locked dispatch. Reopen it first."
-  });
-
-  const formData = await request.formData();
-  const validation = await validator(
-    maintenanceDispatchEventValidator
-  ).validate(formData);
-
-  if (validation.error) {
-    return {
-      success: false,
-      message: "Invalid form data"
-    };
-  }
-
-  const { employeeId, workCenterId, startTime, endTime, notes } =
-    validation.data;
-
-  const result = await upsertMaintenanceDispatchEvent(client, {
-    id: eventId,
-    maintenanceDispatchId: dispatchId,
-    employeeId,
-    workCenterId,
-    startTime,
-    endTime: endTime ?? undefined,
-    notes: notes ?? undefined,
-    updatedBy: userId
-  });
-
-  if (result.error) {
-    return {
-      success: false,
-      message: "Failed to update timecard"
-    };
-  }
-
-  const postingError = await postMaintenanceLabor({
-    maintenanceDispatchIds: [dispatchId],
-    companyId,
-    userId
-  });
-  if (postingError) {
-    return data(
-      { success: true },
-      await flash(
-        request,
-        error(postingError, "Timecard updated, but its labor cost did not post")
-      )
-    );
-  }
-
-  return { success: true };
 }

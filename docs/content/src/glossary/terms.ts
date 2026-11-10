@@ -97,12 +97,22 @@ export const terms = {
   },
   "assembly-step-motion": {
     term: msg`Motion`,
-    definition: msg`The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path.`,
+    definition: msg`The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint.`,
+    href: "/docs/reference/assembly-instructions#playback-settings"
+  },
+  "assembly-sub-assembly-path": {
+    term: msg`Sub-assembly path`,
+    definition: msg`The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build.`,
     href: "/docs/reference/assembly-instructions#playback-settings"
   },
   "assembly-step-camera": {
     term: msg`Camera`,
     definition: msg`The view a step plays from; without a saved view the step frames its own components.`,
+    href: "/docs/reference/assembly-instructions#playback-settings"
+  },
+  "assembly-build-orientation": {
+    term: msg`Orientation`,
+    definition: msg`How the whole build is turned on a step, such as flipped to fit parts on its underside. Later steps of the same build keep it until a step turns the build again.`,
     href: "/docs/reference/assembly-instructions#playback-settings"
   },
   "assembly-sub-assembly": {
@@ -358,13 +368,31 @@ export const terms = {
   },
   "general-ledger": {
     term: msg`General ledger`,
-    definition: msg`The book of all posted journal lines, summed by account — written only when the company has accounting enabled.`,
+    definition: msg`The book of all posted journal lines, summed by account. Provisional journals from before the company sets up accounting are not in it.`,
     href: "/docs/reference/accounting"
   },
   "accounting-period": {
     term: msg`Accounting period`,
     definition: msg`A dated window postings fall into; its close status moves Open → Locked → Closed, and a closed period is frozen against new postings.`,
     href: "/docs/reference/period-close"
+  },
+  "accounting-cutover": {
+    term: msg`Accounting cutover`,
+    definition: msg`The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal.`,
+    href: "/docs/reference/accounting#setting-up-accounting",
+    aliases: ["cutover-date"]
+  },
+  "provisional-journal": {
+    term: msg`Provisional journal`,
+    definition: msg`An automatic journal written before the company sets up accounting: it records the document's accounting but has no accounting period and counts in no balance or report.`,
+    href: "/docs/reference/accounting#the-journal",
+    aliases: ["provisional"]
+  },
+  "superseded-journal": {
+    term: msg`Before cutover (journal)`,
+    definition: msg`A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again.`,
+    href: "/docs/reference/accounting#the-journal",
+    aliases: ["before-cutover"]
   },
 
   // ── Cost centers ────────────────────────────────────────────────────────
@@ -471,6 +499,145 @@ export const terms = {
     term: msg`Disposal`,
     definition: msg`Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed.`,
     href: "/docs/reference/fixed-assets#selling-vs-disposing"
+  },
+  "rental-fleet": {
+    term: msg`Rental fleet`,
+    definition: msg`The seeded asset class for units you build or capitalize to rent out rather than sell; it posts to its own Rental Fleet asset and accumulated-depreciation accounts, and every asset tied to an item appears in the Fleet register.`,
+    href: "/docs/reference/fixed-assets#fleet-register"
+  },
+  "make-to-asset": {
+    term: msg`Make to Asset`,
+    definition: msg`A job that completes to a fixed asset class instead of inventory: each finished unit becomes an asset priced at its WIP cost and never enters stock.`,
+    href: "/docs/reference/fixed-assets#acquiring"
+  },
+  "out-of-service": {
+    term: msg`Out of service`,
+    definition: msg`A fleet asset taken out of availability with a date and reason; it keeps depreciating, reads In Maintenance in the Fleet register, and comes back with Return to Service.`,
+    href: "/docs/reference/fixed-assets#fleet-register"
+  },
+
+  // ── Rentals ─────────────────────────────────────────────────────────────
+  "rental-agreement": {
+    term: msg`Rental agreement`,
+    definition: msg`A sales document that rents serialized fleet units to a customer, each at its own day, week, or month rate, cutting billing periods and drafting their invoices until every unit is returned and the agreement is closed.`,
+    href: "/docs/reference/rental-agreements"
+  },
+  "on-rent": {
+    term: msg`On rent`,
+    definition: msg`A fleet unit delivered to the customer on an active rental agreement; before delivery it reads Reserved, and after its return it is Available again or In Maintenance.`,
+    href: "/docs/reference/rental-agreements#units-and-the-fleet"
+  },
+  "fleet-unit": {
+    term: msg`Fleet unit`,
+    definition: msg`A fixed asset tied to a serialized item that you rent out; only units that read Available in the Fleet register can be added to a rental agreement.`,
+    href: "/docs/reference/rental-agreements#units-and-the-fleet"
+  },
+  "rate-frequency": {
+    term: msg`Rate frequency`,
+    definition: msg`What a rental unit's rate is charged per: a day, a week, or a month. Each billing period bills the whole days, weeks, or months it covers, except a monthly rate on a calendar-month agreement, which is prorated for a partial month.`,
+    href: "/docs/reference/rental-agreements#rates"
+  },
+  "cycle-billing": {
+    term: msg`Cycle billing`,
+    definition: msg`Billing a rental in fixed periods, either months from the start date, calendar months, or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears).`,
+    href: "/docs/reference/rental-agreements#billing"
+  },
+  "billing-cycle": {
+    term: msg`Billing cycle`,
+    definition: msg`How a rental agreement cuts billing periods from its start date: Monthly cuts one month from the start date's day (a start on the 7th bills the 7th to the 6th), Calendar Month (Monthly, aligned to calendar periods) cuts calendar months, and 28 Days cuts consecutive 28-day periods. Each unit bills one rate at its own frequency for the whole days, weeks, or months a period covers; a monthly rate in a part period is prorated by days.`,
+    href: "/docs/reference/rental-agreements#billing"
+  },
+  "billing-timing": {
+    term: msg`Billing timing`,
+    definition: msg`When each billing period of a rental agreement or contract falls due for invoicing: Advance on its first day, before the period is used, or Arrears on its last day, after it is earned.`,
+    href: "/docs/reference/contracts#the-invoice-schedule"
+  },
+  "customer-deposit": {
+    term: msg`Customer deposit`,
+    definition: msg`A customer receipt recorded against a sales order or rental agreement, whose unapplied cash is held on the Customer Prepayments liability until it is applied to an invoice or refunded.`,
+    href: "/docs/reference/rental-agreements#deposits"
+  },
+  "contract-asset": {
+    term: msg`Contract asset`,
+    definition: msg`Revenue earned but not yet invoiced, such as rent for days a unit has already been on rent; the recognition run accrues it and the invoice for that period clears it.`,
+    href: "/docs/reference/rental-agreements#what-posts-to-the-ledger"
+  },
+  "deferred-revenue": {
+    term: msg`Deferred revenue`,
+    definition: msg`Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes.`,
+    href: "/docs/reference/rental-agreements#what-posts-to-the-ledger"
+  },
+  "sales-type-lease": {
+    term: msg`Sales-type lease`,
+    definition: msg`A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place.`,
+    href: "/docs/reference/rental-agreements#sales-type-leases"
+  },
+  "net-investment-in-leases": {
+    term: msg`Net investment in leases`,
+    definition: msg`The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice.`,
+    href: "/docs/reference/rental-agreements#commencement"
+  },
+  "purchase-option": {
+    term: msg`Purchase option`,
+    definition: msg`A price on a rental agreement at which the customer can buy the unit, counted as a lease payment that makes the lease sales-type when its exercise is reasonably certain, and billed by Sell to Customer.`,
+    href: "/docs/reference/rental-agreements#end-of-the-term"
+  },
+
+  // ── Leases (lessee) ─────────────────────────────────────────────────────
+  "lessee-lease": {
+    term: msg`Lease (lessee)`,
+    definition: msg`An asset the company rents from a supplier, accounted for under ASC 842: activation classifies it as Operating, Finance or Short-Term and books its right-of-use asset and lease liability, its payment rows are drafted as purchase invoices, and the lease run posts its monthly interest and amortization.`,
+    href: "/docs/reference/leases"
+  },
+  "right-of-use-asset": {
+    term: msg`Right-of-use asset`,
+    definition: msg`The lessee's asset for the right to use a leased asset, booked at the present value of the lease payments when an operating or finance lease is activated and amortized each month by the lease run.`,
+    href: "/docs/reference/leases#what-posts-to-the-ledger"
+  },
+  "lease-liability": {
+    term: msg`Lease liability`,
+    definition: msg`What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment.`,
+    href: "/docs/reference/leases#what-posts-to-the-ledger"
+  },
+  "lease-run": {
+    term: msg`Lease run`,
+    definition: msg`The monthly period run that posts lease entries: lessee lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest, as Lease Run journals.`,
+    href: "/docs/reference/accounting#revenue-recognition-and-lease-runs"
+  },
+  contract: {
+    term: msg`Contract`,
+    definition: msg`A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled.`,
+    href: "/docs/reference/contracts"
+  },
+  "contract-type": {
+    term: msg`Contract type`,
+    definition: msg`How a contract or an amendment is classified for recurring-revenue reporting: New Sales, Existing, Expansion, Reactivation, or Contraction. Carbon suggests it and you can change it.`,
+    href: "/docs/reference/contracts#contract-types"
+  },
+  "invoice-schedule": {
+    term: msg`Invoice schedule`,
+    definition: msg`The planned invoices of a contract, cut from its lines by the billing frequency, alignment, and timing; while the contract is a draft you can change, add, and delete invoices, as long as each line still bills its full amount.`,
+    href: "/docs/reference/contracts#the-invoice-schedule"
+  },
+  "contract-close-date": {
+    term: msg`Contract close date`,
+    definition: msg`The date the customer agreed to the contract — when the deal was won. It records the booking for reporting; billing and revenue start from the contract's start date, not its close date.`,
+    href: "/docs/reference/contracts#setting-up-a-contract"
+  },
+  "revenue-method": {
+    term: msg`Revenue method`,
+    definition: msg`How a contract line earns its revenue: Daily or Even Period spread it over the line's revenue dates, Right to Invoice follows the billable items, and Percent Complete follows cost to date over the estimate at completion.`,
+    href: "/docs/reference/contracts#revenue"
+  },
+  "billed-through": {
+    term: msg`Billed through`,
+    definition: msg`A date on a contract moved into Carbon mid-term: billing periods that end on or before it were invoiced elsewhere, so they read Billed Externally and are never invoiced.`,
+    href: "/docs/reference/contracts#the-invoice-schedule"
+  },
+  amendment: {
+    term: msg`Amendment`,
+    definition: msg`A dated change to an active contract, with a reason and a contract type: changed lines end and their replacements start from the change date, prorated by day, or from the next billing period.`,
+    href: "/docs/reference/contracts#amendments"
   },
 
   // ── Inventory ledger ────────────────────────────────────────────────────
@@ -582,6 +749,12 @@ export const terms = {
     term: msg`Currency Translation (default)`,
     definition: msg`GL equity account (CTA reserve) that holds unrealized FX differences from re-translating foreign-currency balances at period-end; separate from realized FX gain/loss in P&L.`
   },
+  "account-default-migration-clearing": {
+    term: msg`Migration Clearing (default)`,
+    definition: msg`Equity account the opening journal posts against when accounting is set up; it holds any difference between the prior trial balance and Carbon's records, and must total zero before you can enable.`,
+    href: "/docs/reference/accounting#setting-up-accounting",
+    aliases: ["migration-clearing"]
+  },
   "account-default-sales": {
     term: msg`Sales (default)`,
     definition: msg`Default revenue GL account credited when a sales invoice posts.`
@@ -589,6 +762,30 @@ export const terms = {
   "account-default-sales-shipping-revenue": {
     term: msg`Shipping Revenue (default)`,
     definition: msg`Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default.`
+  },
+  "account-default-deferred-revenue": {
+    term: msg`Deferred Revenue (default)`,
+    definition: msg`Liability GL account credited when an invoice line with service dates, or a rental line, is billed before the revenue is earned; a recognition run releases it to revenue.`
+  },
+  "account-default-contract-assets": {
+    term: msg`Contract Assets (default)`,
+    definition: msg`Asset GL account for revenue earned before it is invoiced, for rentals and contracts; cleared when the invoice posts.`
+  },
+  "account-default-net-investment-in-leases": {
+    term: msg`Net Investment in Leases (default)`,
+    definition: msg`Asset GL account recognized when a sales-type lease starts, holding the present value of the payments and residual; each rental payment reduces it.`
+  },
+  "account-default-rental-income": {
+    term: msg`Rental Income (default)`,
+    definition: msg`Revenue GL account for operating rental income recognized straight-line over the rental period, and for variable rental charges.`
+  },
+  "account-default-lease-revenue": {
+    term: msg`Lease Revenue (default)`,
+    definition: msg`Revenue GL account credited at commencement of a sales-type lease for the present value of the lease payments.`
+  },
+  "account-default-lease-interest-income": {
+    term: msg`Interest Income – Leases (default)`,
+    definition: msg`Other Income GL account for the monthly interest earned on the net investment in sales-type leases.`
   },
   "account-default-sales-discounts": {
     term: msg`Sales Discounts (default)`,
@@ -925,6 +1122,11 @@ export const terms = {
     term: msg`Auto Release`,
     definition: msg`When the kanban card is scanned, the job is automatically moved out of draft and released to the floor.`
   },
+  "kanban-replenishment-level": {
+    term: msg`Replenishment Level`,
+    definition: msg`On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity.`,
+    href: "/docs/reference/kanban"
+  },
   "kanban-auto-start-job": {
     term: msg`Auto Start Job`,
     definition: msg`Skip the released-but-not-started state — the job starts immediately on scan.`
@@ -966,6 +1168,10 @@ export const terms = {
   "storage-unit-work-center": {
     term: msg`Work Center`,
     definition: msg`Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there.`
+  },
+  "non-nettable": {
+    term: msg`Non-nettable`,
+    definition: msg`Stock in this storage unit is not supply. MRP and the planning screens do not count it, and picking does not take from it. A unit is also non-nettable when its parent unit or one of its storage types is. Use it for quarantine and hold areas. A stock transfer moves the stock out again.`
   },
 
   // ── Receipts (ReceiptForm) ──────────────────────────────────────────────
@@ -1524,7 +1730,7 @@ export const terms = {
   },
   "purchase-order-line-required-date": {
     term: msg`Required Date`,
-    definition: msg`When the buyer needs this line's goods on the dock; planning uses this date for stock-availability and outside-processing scheduling.`
+    definition: msg`When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling.`
   },
   "purchase-order-line-delivery-location": {
     term: msg`Delivery Location`,
@@ -1549,11 +1755,11 @@ export const terms = {
 
   // ── Purchasing: PO delivery (PurchaseOrderDeliveryForm) ─────────────────
   "purchase-order-delivery-requested-date": {
-    term: msg`Requested Date`,
-    definition: msg`When the buyer asked for the goods; the supplier may promise something else on Promised Date and post something else again on Delivery Date.`
+    term: msg`Receipt Requested Date`,
+    definition: msg`When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date.`
   },
   "purchase-order-delivery-promised-date": {
-    term: msg`Promised Date`,
+    term: msg`Receipt Promised Date`,
     definition: msg`When the supplier committed to deliver; planning uses this date for the inbound-stock arrival projection.`
   },
   "purchase-order-delivery-actual-date": {
@@ -1564,7 +1770,7 @@ export const terms = {
   // ── Sales: Customer (CustomerForm, CustomerPaymentForm, CustomerShippingForm, CustomerPortalForm) ──
   "customer-portal-customer": {
     term: msg`Customer`,
-    definition: msg`The customer this portal link is provisioned for; only contacts on this customer can sign in through the link.`
+    definition: msg`The customer whose orders this portal link shows. The link has no sign-in, so anyone who has it can see them.`
   },
   "customer-status": {
     term: msg`Customer Status`,
@@ -1758,7 +1964,7 @@ export const terms = {
   // ── Resources: Contractors (ContractorForm) ─────────────────────────────
   "contractor-hours-per-week": {
     term: msg`Hours per Week`,
-    definition: msg`The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week.`
+    definition: msg`The contractor's expected weekly availability, for reference. The scheduler does not book contractors on operations.`
   },
 
   // ── Resources: Processes (ProcessForm) ──────────────────────────────────
@@ -2115,5 +2321,362 @@ export const terms = {
   "swift-bic": {
     term: msg`SWIFT / BIC`,
     definition: msg`The code that identifies a bank internationally, 8 or 11 characters. A cross-border payment will not route without it, while a domestic transfer usually travels on the local routing code instead.`
+  },
+  // Projects (projects.models.ts, migrations 20261009*_projects-*.sql)
+  "charge-number": {
+    term: msg`Charge number`,
+    definition: msg`A project, or a project and one of its elements, that a job, a purchase order or invoice line, a timesheet entry or a material issue charges its cost to. Only Released projects and chargeable elements in an Unstarted or Started state can be picked.`,
+    href: "/docs/reference/projects#charge-numbers"
+  },
+  element: {
+    term: msg`Element`,
+    definition: msg`One item of a project's tree, typed System, Requirement, Function, Task, Test Case or Parameter, with a readable id such as ST-12: the project identifier and a sequence number.`,
+    href: "/docs/reference/projects#elements"
+  },
+  milestone: {
+    term: msg`Milestone`,
+    definition: msg`A dated window in a project, such as a design review or a phase. Each element can belong to one milestone.`,
+    href: "/docs/reference/projects#milestones"
+  },
+  timesheet: {
+    term: msg`Timesheet`,
+    definition: msg`An employee's week of project hours, one row per charge number and labor category. Entries go from Draft to Submitted, then Approved when approval is on, and Posted; posted hours change only through a correction.`,
+    href: "/docs/reference/projects#time"
+  },
+  "labor-category": {
+    term: msg`Labor category`,
+    definition: msg`The cost class of a project hour, such as Engineer II, with an effective-dated cost rate per hour that prices the time when it posts.`,
+    href: "/docs/reference/projects#labor-categories"
+  },
+  "cost-treatment": {
+    term: msg`Cost treatment`,
+    definition: msg`Set on a project, it decides where the project's cost posts: Statistical keeps each charge's own account and tags the project, Expense posts to Project Expense, and Contract posts to Project WIP.`,
+    href: "/docs/reference/projects#cost-treatment"
+  },
+  "project-ledger": {
+    term: msg`Project ledger`,
+    definition: msg`The append-only list of every cost charged to a project, one row per charge with its cost type, source document, quantity and amount. A void adds a negative row instead of deleting one.`,
+    href: "/docs/reference/projects#costs-and-the-project-ledger"
+  },
+  capitalize: {
+    term: msg`Capitalize`,
+    definition: msg`The cost treatment of a project that builds fixed assets. Its charges post to assets under construction, one for the project and one per Final asset element, until Place in Service.`,
+    href: "/docs/reference/projects#capital-projects",
+    aliases: ["cip"]
+  },
+  requirement: {
+    term: msg`Requirement`,
+    definition: msg`An element type with a category, a target and the Parameter that measures it. It passes when the Parameter meets the target and no Test Case that verifies it has failed.`,
+    href: "/docs/reference/projects#requirements-tests-and-parameters"
+  },
+  "needs-review": {
+    term: msg`Needs review`,
+    definition: msg`A trace link flagged because the element it points to changed its name, description, target or Parameter value. Mark reviewed clears the flag.`,
+    href: "/docs/reference/projects#trace-links",
+    aliases: ["suspect-link"]
+  },
+  baseline: {
+    term: msg`Baseline`,
+    definition: msg`A read-only copy of a project's plan, taken with Take Baseline or when a milestone completes, that you compare with the current plan or with another baseline.`,
+    href: "/docs/reference/projects#baselines"
+  },
+  "change-request": {
+    term: msg`Change request`,
+    definition: msg`A draft set of plan changes with a title and a reason. The current plan does not change until the request is approved, and then it applies whole, in one step.`,
+    href: "/docs/reference/projects#change-requests"
+  },
+
+  // Project stock and planning groups (projects-system.md, inventory-system.md)
+  "unassigned-stock": {
+    term: msg`Unassigned stock`,
+    definition: msg`Stock that no project owns. A project with project stock draws its own stock first and then this; every other demand, such as a sales shipment, draws only this.`,
+    href: "/docs/reference/projects#project-stock"
+  },
+  "project-stock": {
+    term: msg`Project stock`,
+    definition: msg`A project setting, chosen while the project is Draft, that makes the project own the stock received for it. Its jobs and issues draw that stock first, then unassigned stock.`,
+    href: "/docs/reference/projects#project-stock"
+  },
+  "borrow-payback": {
+    term: msg`Borrow and payback`,
+    definition: msg`A Borrow moves one project's stock to another until a payback due date, at the lender's cost; a Payback returns it, and the lender gets back the cost it lent.`,
+    href: "/docs/reference/projects#transfers-borrows-and-paybacks"
+  },
+  "payback-variance": {
+    term: msg`Payback variance`,
+    definition: msg`The difference between the borrower's current cost of the stock it pays back and the cost it borrowed at, charged to the borrower's project and to the inventory adjustment variance account.`,
+    href: "/docs/reference/projects#transfers-borrows-and-paybacks"
+  },
+  "planning-group": {
+    term: msg`Planning group`,
+    definition: msg`Projects with project stock at one location that MRP plans as one, so one order covers all their demand and each piece of it is pegged to a member. Available on the Business plan.`,
+    href: "/docs/reference/projects#planning-groups"
+  },
+  peg: {
+    term: msg`Peg`,
+    definition: msg`The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason.`,
+    href: "/docs/reference/projects#planning-groups",
+    aliases: ["soft-peg", "hard-peg", "manual-peg"]
+  },
+
+  // Indirect rates (indirect-rates.md)
+  "indirect-pool": {
+    term: msg`Indirect pool`,
+    definition: msg`A fringe, overhead, material handling, G&A or service center pool. Its mapped GL accounts give its cost, and Carbon computes its rate as that cost over its base. Available on the Business plan.`,
+    href: "/docs/reference/projects#pools"
+  },
+  burden: {
+    term: msg`Burden`,
+    definition: msg`The indirect cost a pool's rate puts on a project: rate × the project's base, posted to the project ledger as Burden rows, year to date less what earlier runs posted.`,
+    href: "/docs/reference/projects#burden-on-projects-and-contracts"
+  },
+  "provisional-rate": {
+    term: msg`Provisional rate`,
+    definition: msg`A pool rate you enter for a fiscal year before the Final rate is known. The burden run applies it unless Burden Settings picks Actual, and Cost Plus lines bill at it until a Final rate exists.`,
+    href: "/docs/reference/projects#rates-and-the-period-run"
+  },
+  "final-rate": {
+    term: msg`Final rate`,
+    definition: msg`A pool's settled rate for a fiscal year. Cost Plus lines bill at it once it exists, and Run True-Up burdens the year again at the Final rates of period 12 and bills the difference.`,
+    href: "/docs/reference/projects#rates-and-the-period-run"
+  },
+  "rate-ceiling": {
+    term: msg`Rate ceiling`,
+    definition: msg`A cap on a pool's billing rate for one Cost Plus contract line, set under Rate Ceilings on the line's Billing tab.`,
+    href: "/docs/reference/projects#burden-on-projects-and-contracts"
+  },
+
+  // Project control (project-control.md)
+  "budget-control": {
+    term: msg`Budget control`,
+    definition: msg`A project setting, None, Warn or Block, that checks a purchase order line, an issue or a consume-to-project job against the budget of the nearest budgeted element. A timesheet only gets a warning, never a refusal.`,
+    href: "/docs/reference/projects#budget-control"
+  },
+  "control-account": {
+    term: msg`Control account`,
+    definition: msg`An element with Control account turned on, owned by a control account manager. The work packages below it roll up to it in earned value.`,
+    href: "/docs/reference/projects#earned-value"
+  },
+  "work-package": {
+    term: msg`Work package`,
+    definition: msg`A chargeable element below a control account that has an earned value technique, such as 0/100, 50/50 or Percent Complete.`,
+    href: "/docs/reference/projects#earned-value"
+  },
+  "planned-value": {
+    term: msg`Planned value (BCWS)`,
+    definition: msg`The budgeted cost of the work scheduled by a date, from the latest baseline's budgets and dates and the work package's technique.`,
+    href: "/docs/reference/projects#earned-value",
+    aliases: ["bcws"]
+  },
+  "earned-value": {
+    term: msg`Earned value (BCWP)`,
+    definition: msg`The budgeted cost of the work done by a date: the work package's baseline budget, earned by its technique, such as all of it when the element is completed under 0/100.`,
+    href: "/docs/reference/projects#earned-value",
+    aliases: ["bcwp"]
+  },
+  "actual-cost": {
+    term: msg`Actual cost (ACWP)`,
+    definition: msg`The direct cost in the project ledger of a work package and the elements below it.`,
+    href: "/docs/reference/projects#earned-value",
+    aliases: ["acwp"]
+  },
+  cpi: {
+    term: msg`CPI (cost performance index)`,
+    definition: msg`Earned value ÷ actual cost. Below 1, the work done cost more than its budget.`,
+    href: "/docs/reference/projects#earned-value"
+  },
+  spi: {
+    term: msg`SPI (schedule performance index)`,
+    definition: msg`Earned value ÷ planned value. Below 1, less work is done than the baseline planned by that date.`,
+    href: "/docs/reference/projects#earned-value"
+  },
+  "stop-work-order": {
+    term: msg`Stop-work order`,
+    definition: msg`A customer's order to stop work on a contract for 90 days (FAR 52.242-15). Stop work puts a Released Direct project On Hold, so it takes no new charges, until Resume releases it.`,
+    href: "/docs/reference/projects#stop-work-orders"
+  },
+
+  // Government contracting (government-contracting.md)
+  "cost-objective": {
+    term: msg`Cost objective`,
+    definition: msg`Set on a project, it says what its cost is for: Direct (a government contract), Commercial, Indirect, IR&D or B&P. DCAA mode requires one on every project.`,
+    href: "/docs/reference/government-contracting#cost-objectives"
+  },
+  allowability: {
+    term: msg`Allowability`,
+    definition: msg`Set on a posting account: Allowable, or Expressly, Mutually Agreed or Directly Associated Unallowable. Cost posted to an unallowable account or element is marked unallowable in the project ledger and never becomes a billable item.`,
+    href: "/docs/reference/government-contracting#unallowable-cost",
+    aliases: ["unallowable-cost"]
+  },
+  preproduction: {
+    term: msg`Preproduction`,
+    definition: msg`An element switch that shows the cost of the element and the elements below it as Preproduction in the total row of the project's Costs tab.`,
+    href: "/docs/reference/government-contracting#unallowable-cost"
+  },
+  "timekeeping-controls": {
+    term: msg`Timekeeping controls`,
+    definition: msg`The company's timesheet mode, Standard or DCAA, turned on with Use DCAA controls at Settings → Projects. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check.`,
+    href: "/docs/reference/government-contracting#dcaa-timekeeping",
+    aliases: ["dcaa"]
+  },
+  "flsa-status": {
+    term: msg`FLSA status`,
+    definition: msg`Exempt or Non-Exempt, set on a person's Job tab. In DCAA mode it picks the certification text the employee certifies at submit, and an Exempt employee's long weeks are diluted.`,
+    href: "/docs/reference/government-contracting#dcaa-timekeeping"
+  },
+  dilution: {
+    term: msg`Dilution`,
+    definition: msg`In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour.`,
+    href: "/docs/reference/government-contracting#dilution-for-exempt-staff"
+  },
+  "labor-transfer": {
+    term: msg`Labor transfer`,
+    definition: msg`A correction that moves posted time to another charge number. In DCAA mode it always waits for approval, and the person who asked for it cannot approve it.`,
+    href: "/docs/reference/government-contracting#labor-transfers"
+  },
+  clin: {
+    term: msg`CLIN`,
+    definition: msg`A contract line item number on a contract line: 4 digits, such as 0001. A project billing invoice shows a separate amount per CLIN.`,
+    href: "/docs/reference/government-contracting#clin-and-acrn-funding"
+  },
+  slin: {
+    term: msg`SLIN`,
+    definition: msg`A SubCLIN: the 4 digits of its parent CLIN on the same contract, plus 2 letters or digits, such as 0001AA.`,
+    href: "/docs/reference/government-contracting#clin-and-acrn-funding"
+  },
+  acrn: {
+    term: msg`ACRN (accounting classification reference number)`,
+    definition: msg`The funding reference that each funding action carries. A project billing invoice splits each CLIN's amount across the line's ACRNs, oldest funds first.`,
+    href: "/docs/reference/government-contracting#clin-and-acrn-funding"
+  },
+  "funding-action": {
+    term: msg`Funding action`,
+    definition: msg`One contract modification's funding of a Time & Materials or Cost Plus line, with modification number, date, ACRN, funded cost, funded fee and expiry. In DCAA mode the line's funded totals are the sums of its funding actions.`,
+    href: "/docs/reference/government-contracting#clin-and-acrn-funding"
+  },
+  "wbs-code": {
+    term: msg`WBS code`,
+    definition: msg`An element's code in the work breakdown structure, such as 1.3.2. Carbon numbers the tree by position unless the code is pinned, for example to match the contract WBS; a pinned code stays when the element moves.`,
+    href: "/docs/reference/projects#wbs-codes"
+  },
+  "progress-payment": {
+    term: msg`Progress payment`,
+    definition: msg`Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments.`,
+    href: "/docs/reference/government-contracting#contract-financing"
+  },
+  "performance-based-payment": {
+    term: msg`Performance-based payment`,
+    definition: msg`Government financing of a fixed-price contract paid when defined events are complete (FAR 32.10), never on cost incurred. Total payments stay within a share of the price, at most 90 %.`,
+    href: "/docs/reference/government-contracting#contract-financing"
+  },
+  liquidation: {
+    term: msg`Liquidation`,
+    definition: msg`The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated.`,
+    href: "/docs/reference/government-contracting#contract-financing"
+  },
+  "business-component": {
+    term: msg`Business component`,
+    definition: msg`An element marked Business component (R&D) for the R&D tax reports. It holds its own cost and the cost of the elements below it, down to the next business component.`,
+    href: "/docs/reference/government-contracting#rd-tax"
+  },
+  "research-role": {
+    term: msg`Research role`,
+    definition: msg`Direct Research, Direct Supervision, Direct Support or Not Qualified on a timesheet entry, for the R&D tax reports. New time takes the labor category's role.`,
+    href: "/docs/reference/government-contracting#rd-tax"
+  },
+  "funded-research": {
+    term: msg`Funded research`,
+    definition: msg`A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded.`,
+    href: "/docs/reference/government-contracting#rd-tax"
+  },
+
+  // Project billing (project-billing.md)
+  "billing-method": {
+    term: msg`Billing method`,
+    definition: msg`How a contract line bills: Fixed (its schedule), Time & Materials (hours × a bill rate, plus marked-up cost) or Cost Plus (cost × (1 + fee %)).`,
+    href: "/docs/reference/project-billing#the-billing-line"
+  },
+  "billing-element": {
+    term: msg`Billing element`,
+    definition: msg`The project element a Time & Materials or Cost Plus contract line bills. The line bills the work charged to it and to every element below it.`,
+    href: "/docs/reference/project-billing#the-billing-line"
+  },
+  "bill-rate": {
+    term: msg`Bill rate`,
+    definition: msg`The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day.`,
+    href: "/docs/reference/project-billing#bill-rates"
+  },
+  "billable-item": {
+    term: msg`Billable item`,
+    definition: msg`One cost to bill, made from a charge under a billing element. It is Unbilled, On Hold, Billed or Written Off.`,
+    href: "/docs/reference/project-billing#billable-items"
+  },
+  "right-to-invoice": {
+    term: msg`Right to invoice`,
+    definition: msg`A revenue method that recognizes the billable items of the work posted by the month end, less written-off items.`,
+    href: "/docs/reference/project-billing#revenue"
+  },
+  "percent-complete": {
+    term: msg`Percent complete`,
+    definition: msg`A revenue method that recognizes price × cost to date ÷ estimate at completion. It is also an earned value technique: the budget times the element's percent complete.`,
+    href: "/docs/reference/project-billing#revenue"
+  },
+  "project-contract": {
+    term: msg`Project contract`,
+    definition: msg`A contract that bills the work of a project over a period of performance. Its lines are Time & Materials, Cost Plus or Fixed Price, billed from billable items and billing events instead of a schedule.`,
+    href: "/docs/reference/project-billing"
+  },
+  "service-contract": {
+    term: msg`Service contract`,
+    definition: msg`A contract that bills Service items on a planned invoice schedule, with recurring and one-time lines over a term that can renew.`,
+    href: "/docs/reference/contracts"
+  },
+  "service-job": {
+    term: msg`Service job`,
+    definition: msg`Work on one customer unit, at the depot or at the customer's site, with one coverage, a time list, parts and charges, and an estimate for billable work. An RMA's Return for Service or Return for Warranty line opens one when its receipt posts.`,
+    href: "/docs/reference/service-jobs"
+  },
+  "service-coverage": {
+    term: msg`Coverage`,
+    definition: msg`Who bears a service job's cost: Billable and Contract work posts to Cost of Service (else Cost of Goods Sold), Warranty work to Warranty Expense. Only a Billable job is invoiced.`,
+    href: "/docs/reference/service-jobs#coverage-and-cost"
+  },
+  "return-type": {
+    term: msg`Return type`,
+    definition: msg`What an RMA line's unit comes back for: Return to Stock is restocked at its original cost, while Return for Service and Return for Warranty stay the customer's and open a service job.`,
+    href: "/docs/reference/rmas#return-types"
+  },
+  "time-and-materials": {
+    term: msg`Time & Materials`,
+    definition: msg`A billing method that bills the hours charged under the line's billing element at a bill rate, plus material and other direct cost marked up by the handling %.`,
+    href: "/docs/reference/project-billing",
+    aliases: ["time-materials"]
+  },
+  "cost-plus": {
+    term: msg`Cost Plus`,
+    definition: msg`A billing method that bills every cost charged under the line's billing element, times (1 + fee %).`,
+    href: "/docs/reference/project-billing"
+  },
+  "fixed-price": {
+    term: msg`Fixed Price`,
+    definition: msg`A project contract line with a set price, billed on the billing events planned on the contract's Invoicing step.`,
+    href: "/docs/reference/project-billing"
+  },
+  "funded-amount": {
+    term: msg`Funded`,
+    definition: msg`What the customer has authorized on a Time & Materials or Cost Plus line. Billing stops at it, and items past it stay Unbilled with the reason Funding limit.`,
+    href: "/docs/reference/project-billing#invoicing",
+    aliases: ["funded"]
+  },
+  "contract-ceiling": {
+    term: msg`Ceiling`,
+    definition: msg`The most a Cost Plus line can be worth, fee included. Percent Complete never prices the line above it.`,
+    href: "/docs/reference/project-billing#the-billing-line",
+    aliases: ["ceiling"]
+  },
+
+  "external-training": {
+    term: msg`External training`,
+    definition: msg`Training taken outside Carbon, such as a vendor course. The assignment has only a name. An admin marks each employee complete and can attach their certificate.`
   }
 } as const satisfies Record<string, GlossaryEntry>;

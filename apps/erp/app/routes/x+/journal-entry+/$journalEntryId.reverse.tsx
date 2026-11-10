@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { reverseJournalEntry } from "~/modules/accounting";
+import { reverseJournalEntry } from "~/modules/accounting/accounting.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -29,7 +29,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.journalEntryDetails(journalEntryId),
       await flash(
         request,
-        error(result.error, "Failed to reverse journal entry")
+        error(
+          result.error,
+          result.error.message || "Failed to reverse journal entry"
+        )
       )
     );
   }

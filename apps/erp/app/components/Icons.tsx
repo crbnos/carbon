@@ -30,6 +30,7 @@ import {
   LuBox,
   LuBuilding,
   LuBuilding2,
+  LuCalendarClock,
   LuCircle,
   LuCircleCheck,
   LuCircleDashed,
@@ -51,6 +52,7 @@ import {
   LuHardHat,
   LuHeadphones,
   LuImage,
+  LuKeyRound,
   LuLandmark,
   LuList,
   LuListChecks,
@@ -81,10 +83,11 @@ import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import type {
   dimensionEntityTypes,
   journalEntrySourceTypes
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.models";
 import type { JobOperation } from "~/modules/production/types";
-import type { nonConformanceTaskStatus } from "~/modules/quality";
-import type { MethodType, OperationType } from "~/modules/shared";
+import type { nonConformanceTaskStatus } from "~/modules/quality/quality.models";
+import type { OperationType } from "~/modules/shared/shared.models";
+import type { MethodType } from "~/modules/shared/types";
 
 export const ModuleIcon = ({ icon }: { icon: ReactNode }) => {
   return (
@@ -179,7 +182,7 @@ export function MethodBadge({ type, text, to, className }: MethodBadgeProps) {
         <MethodIcon type={type} className="w-3 h-3 mr-1 " />
         {text}
       </Badge>
-      <span className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
+      <span className="group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 md:opacity-0 transition-opacity duration-150 w-4 h-4 text-foreground">
         <LuExternalLink />
       </span>
     </PrefetchLink>
@@ -474,6 +477,7 @@ export const TimeTypeIcon = ({
 export const LinearIcon = (props: React.SVGProps<SVGSVGElement>) => {
   return (
     <svg
+      aria-hidden="true"
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
@@ -552,6 +556,7 @@ export const LinearIssueStateBadge = (props: {
 export const JiraIcon = (props: React.SVGProps<SVGSVGElement>) => {
   return (
     <svg
+      aria-hidden="true"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 65 65"
       fill="currentColor"
@@ -640,6 +645,20 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuCircleCheck className={className} />;
     case "Maintenance Event":
       return <LuWrench className={className} />;
+    case "Timesheet":
+      return <LuTimer className={className} />;
+    case "Project Issue":
+      return <LuFolderKanban className={className} />;
+    case "Project Expense":
+      return <LuHandCoins className={className} />;
+    case "Project Transfer":
+      return <LuArrowLeftRight className={className} />;
+    case "Burden":
+    case "Project Close":
+      return <LuFolderKanban className={className} />;
+    case "Service Order":
+    case "Service Job":
+      return <LuHardHat className={className} />;
     case "Asset Depreciation":
       return <LuClock className={className} />;
     case "Asset Disposal":
@@ -659,6 +678,13 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuTriangleAlert className={className} />;
     case "Inbound Inspection":
       return <LuClipboardCheck className={className} />;
+    case "Revenue Recognition":
+      return <LuCalendarClock className={className} />;
+    case "Asset Transfer":
+      return <LuArrowLeftRight className={className} />;
+    case "Lease":
+    case "Lease Run":
+      return <LuKeyRound className={className} />;
   }
 
   return <LuSquare className={cn("text-muted-foreground", className)} />;
@@ -702,6 +728,8 @@ export const DimensionEntityTypeIcon = ({
       return <LuRedoDot className={className} />;
     case "Project":
       return <LuFolderKanban className={className} />;
+    case "ProjectElement":
+      return <LuListChecks className={className} />;
     case "ScrapReason":
       return <LuTriangleAlert className={className} />;
   }

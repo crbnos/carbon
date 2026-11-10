@@ -2,10 +2,9 @@
 paths:
   - "apps/erp/app/modules/quality/certificationLineage.ts"
   - "apps/erp/app/modules/quality/firstArticleRows.ts"
-  - "apps/erp/app/modules/quality/firstArticle.server.ts"
-  - "apps/erp/app/modules/quality/firstArticlePdf.server.tsx"
+  - "apps/erp/app/modules/quality/firstArticle.pdf.tsx"
   - "apps/erp/app/modules/inventory/certificateOfConformance.ts"
-  - "apps/erp/app/modules/inventory/inventory.server.tsx"
+  - "apps/erp/app/modules/inventory/certificateOfConformance.pdf.tsx"
   - "apps/erp/app/routes/x+/first-article+/**"
   - "apps/erp/app/routes/x+/shipment+/$shipmentId.certificate*.tsx"
   - "packages/database/src/first-article.ts"
@@ -34,7 +33,7 @@ uploaded file) and exactly one target — CHECK `certificate_one_target`
   `ReceiptLines.tsx` (`CertificatesDrawer`). Permission per intent: loader
   `inventory_view`, add `inventory_create`, `intent=delete` `inventory_delete`.
   The writes are `addReceiptLineCertificate` / `deleteReceiptLineCertificate`
-  (`quality/certificates.server.ts`): the `document` and `certificate` rows go
+  (`quality/quality.service.ts`): the `document` and `certificate` rows go
   in ONE Kysely transaction (the browser-uploaded file is removed on failure,
   unless another `document` already points at that path); a form `supplierId`
   that is not the company's is dropped; delete is scoped to the line and fails
@@ -44,7 +43,7 @@ uploaded file) and exactly one target — CHECK `certificate_one_target`
   rebuilds every line of an existing receipt when its source document or
   location changes (`receiptFromPurchaseOrder`, `receiptFromInboundTransfer`,
   `receiptFromSalesReturnOrder`), and `receiptLineId` is ON DELETE CASCADE. The
-  rebuild goes through `replaceReceiptLines` (`packages/server-functions/src/create/index.ts`): in
+  rebuild goes through `replaceReceiptLines` (`apps/erp/app/modules/shared/shared.service.ts`): in
   the same transaction it reads the receipt's certificates, inserts the new
   lines, MOVES each certificate (one `UPDATE … CASE "id"`, so it keeps its id)
   to the new line with the same `receiptLine.lineId` — or the same `itemId`
@@ -128,7 +127,8 @@ signature snapshot (`signedBy/Name/Title/At`), `lastSentAt` / `lastSentTo`.
 UNIQUE `(companyId, certificateId, revision)`. Printed number is
 `withRevisionSuffix(certificateId, revision)` — `COC000123`, then `COC000123-1`.
 
-Server code is `inventory.server.tsx`; data load is
+Server code is `inventory/certificateOfConformance.pdf.tsx` (it renders, so it
+is a `.pdf.tsx`); data load is
 `getCertificateOfConformanceData` (inventory.service.ts); field 13 is the pure
 `buildConformityDetails` (`certificateOfConformance.ts`: shelf life, latest
 approved FAIR per item, material vs process certificates, `Use As Is`
@@ -140,28 +140,29 @@ nonconformances as concessions, statements, reason for update).
 | Issue / Reissue | `x+/shipment+/$shipmentId.certificate.tsx` → `issueCertificateOfConformance` | Posted shipments only. One Kysely txn: `FOR UPDATE` on the shipment (two clicks cannot mint two numbers), sequence (rev 0) or latest+1 (reissue — throws without a reason), render, upload, `document` row, `certificateOfConformance` row. An uploaded object is removed if anything after it fails |
 | Download | `file+/shipment+/$id.certificate.$revision[.]pdf.tsx` → `getIssuedCertificateOfConformancePdf` | The **stored** PDF, never re-rendered. The `document` row's read groups are the issuer's, so its path is read with the service role after the caller's client proved it can see the certificate |
 | Send | `$shipmentId.certificate.$certificateId.send.tsx` → `sendCertificateOfConformance` | Emails the stored PDF (signed URL attachment via `send-email`) to a contact of the certificate's customer, plus the sender; stamps `lastSentAt/To` |
-| Auto-issue | `autoIssueCertificatesOfConformance` (inventory.server.tsx), from the shipment post route and the sales invoice post route (below) | After a post that stuck, when `customerShipping.requiresCertificateOfConformance`: issue revision 0, then email the customer's shipping contact when the email integration is active. Skips a shipment that already has revision 0, so it never reissues. **Never fails the post** — every failure becomes part of the flash |
+| Auto-issue | `autoIssueCertificatesOfConformance` (`certificateOfConformance.pdf.tsx`), from the `postShipment` and `postSalesInvoice` service functions (below) | After a post that stuck, when `customerShipping.requiresCertificateOfConformance`: issue revision 0, then email the customer's shipping contact when the email integration is active. Skips a shipment that already has revision 0, so it never reissues. **Never fails the post** — every failure becomes part of the flash |
 
 The PDF is template-driven: document type `certificateOfConformance`
 (`CertificateOfConformancePDF.tsx`, registry
 `pdf/blocks/certificateOfConformance/`), see `document-template-customizer.md`.
 
-Auto-issue has two call sites, both after the post has committed:
+Auto-issue has two call sites, both after the post has committed, so the API
+and MCP posts issue certificates too:
 
-- `x+/shipment+/$shipmentId.post.tsx` — the one shipment, with the user's
-  client. The outcome shares one flash with the expired-batch warning; a
-  failed issue turns it into an error flash, the post still stands.
-- `x+/sales-invoice+/$invoiceId.post.tsx` — `post-sales-invoice` inserts one
+- `postShipment` (`inventory.server.ts`) — the one shipment; returns
+  `certificate` beside `warning`. `x+/shipment+/$shipmentId.post.tsx` shows both
+  in one message, as an error when the issue failed; the post still stands.
+- `postSalesInvoice` (`invoicing.server.ts`, via
+  `autoIssueInvoiceShipmentCertificates`) — `post-sales-invoice` inserts one
   `shipment` per location for invoice lines no shipment covered, already
   `Posted`, with `sourceDocument = 'Sales Invoice'` and `sourceDocumentId` =
-  the invoice (its void reads them back by the same key). The route reads those
-  (status Posted, `companyId`-scoped) with the **service role** — like the rest
-  of that route after the post, since the caller holds `invoicing`, not
-  necessarily `inventory` — and issues right after the post, before the PDF and
-  the invoice email, so their early returns cannot skip it. The route returns
-  `{ success, message }` rather than a flash: the outcome is appended to
-  whatever it returns, and `certificateFailed` makes `SalesInvoicePostModal`
-  toast it as an error while still closing. The invoice email is independent.
+  the invoice (its void reads them back by the same key). It reads those
+  (status Posted, `companyId`-scoped) with the **service role**, since the
+  caller holds `invoicing`, not necessarily `inventory`, and issues right after
+  the post, before the PDF and the invoice email, so their early returns cannot
+  skip it. The result carries `certificate`, which `SalesInvoicePostModal`
+  toasts on its own (an error when it failed) while still closing. The invoice
+  email is independent.
   The certificate's customer and PO come from the Sales Invoice
   (`getCertificateOfConformanceData`'s `Sales Invoice` branch). A sales
   invoice has no ship-to (its `locationId` is our warehouse, its
@@ -200,7 +201,7 @@ pure, tested). One function answers for three callers, so they cannot disagree:
 2. the **generator** — `createFirstArticleInspections`
    (`@carbon/database/quality`, inputs from `loadFirstArticleNeedInput`, Kysely),
 3. the **job header "FAI due" chip** — `getFirstArticlesDueForJob`
-   (firstArticle.server.ts).
+   (quality.service.ts).
 
 Per job make method (root and made sub-assemblies alike):
 
@@ -233,22 +234,19 @@ Per job make method (root and made sub-assemblies alike):
 
 ### Generation at release — `afterJobsReleased`
 
-`firstArticle.server.ts`. Called after the Ready write succeeds, on every path
-that releases a job:
+`quality.service.ts`. `releaseCheckedJobs` (`production.server.ts`) calls it
+after the Ready write succeeds, so every release path generates — and every
+path first refuses a job `jobReleaseProblems` names, which includes
+`firstArticlesWithoutPlan`:
 
-- `releaseJobs` (production.server.ts) — the job Release dialog and batch
-  release (`releaseBatchMemberJobs`, from `production+/batches.release.tsx` and
-  `priority+/batching.update.tsx`; batch release refuses the whole batch naming
-  each job's parts without a plan);
-- a plain status post in `x+/job+/$jobId.status.tsx` that is a **release**:
-  prior status Draft or Planned and new status `Ready` **or `In Progress`**
-  (both run the blocker, then generation). **Ready from Paused is a resume**:
-  no readiness re-check, no generation. The Release dialog branch
-  (`status=Ready&schedule=1`) requires the same Draft/Planned prior status and
-  refuses otherwise ("Only a Draft or Planned job can be released"), so an
-  already-released job is never put through `releaseJobs` again;
-- kanban auto-release (`api+/kanban.$id.tsx`) — generates, but is **not gated**
-  by the blocker (it never reads readiness).
+- `releaseJobs` — the job Release dialog, bulk and planning release, the API;
+- batch release (`releaseBatchMemberJobs`; refuses the whole batch naming each
+  job's parts without a plan);
+- kanban auto-release (`scanKanban`, `inventory.server.ts`) — a refused job
+  stays Draft and the flash names the problem.
+
+The job status route no longer releases: Ready from Paused is `resumeJob`, In
+Progress is `reopenJob` (from Cancelled or Completed), and neither generates.
 
 **MES auto-start is a release too.** `autoStartJobAndOperation`
 (`apps/mes/app/services/operations.service.ts`, from `startProductionEvent`)
@@ -310,7 +308,7 @@ may carry the user's edits.
 
 | From → To | Function | Guard / effect |
 |---|---|---|
-| (created) Draft | generator / manual | Header, Form 2 editable (`updateFirstArticleInspectionHeader`; `upsert/deleteFirstArticleInspectionProduct` in firstArticle.server.ts lock the FAI row `FOR UPDATE` and re-check Draft in the same Kysely transaction as the write) |
+| (created) Draft | generator / manual | Header, Form 2 editable (`updateFirstArticleInspectionHeader`; `upsert/deleteFirstArticleInspectionProduct` in quality.service.ts lock the FAI row `FOR UPDATE` and re-check Draft in the same Kysely transaction as the write) |
 | Draft → Verified | `verifyFirstArticleInspection` | Lot must be dispositioned (Passed/Failed/Partial). Snapshots `hasNonconformance` = lot Failed/Partial, or an NCR linked to the lot or to an operation of the make method. Signs fields 19–21 |
 | Verified → Draft | `reopenFirstArticleInspection` | Clears verification. The lot stays closed; readings stay locked |
 | Verified → Approved | `approveFirstArticleInspection` | Renders the FAIR (landscape A4) with the approver's signature — the render reads the FAI under the caller's client and company, which is the access proof — then uploads it with the **service role** under `{companyId}/job/{jobId}/` (or `{companyId}/first-article/{id}/` when the job was deleted), then in one txn inserts a `document` (source `Job`, or none without a job) and locks the FAI. Upload removed (service role) on failure. When the approver is the verifier the UI asks for confirmation (`FirstArticleHeader`); the server does not refuse |

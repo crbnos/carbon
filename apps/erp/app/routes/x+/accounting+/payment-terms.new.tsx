@@ -6,12 +6,13 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import type { PaymentTermCalculationMethod } from "~/modules/accounting";
-import { paymentTermValidator, upsertPaymentTerm } from "~/modules/accounting";
+import { paymentTermValidator } from "~/modules/accounting/accounting.models";
+import { upsertPaymentTerm } from "~/modules/accounting/accounting.service";
+import type { PaymentTermCalculationMethod } from "~/modules/accounting/types";
 import { PaymentTermForm } from "~/modules/accounting/ui/PaymentTerms";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
@@ -67,7 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewPaymentTermsRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const initialValues = {
     name: "",
     daysDue: 0,
@@ -79,7 +80,8 @@ export default function NewPaymentTermsRoute() {
   return (
     <PaymentTermForm
       initialValues={initialValues}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

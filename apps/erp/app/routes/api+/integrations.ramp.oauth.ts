@@ -20,7 +20,7 @@ import { isUniqueViolation, redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import type { IntegrationErrorCode } from "~/modules/settings/integration-errors";
 import { integrationErrorSearch } from "~/modules/settings/integration-errors";
-import { oAuthCallbackSchema } from "~/modules/shared";
+import { oAuthCallbackSchema } from "~/modules/shared/shared.models";
 import { path } from "~/utils/path";
 
 // nodejs runtime: the code exchange uses the OAuth app's client secret.

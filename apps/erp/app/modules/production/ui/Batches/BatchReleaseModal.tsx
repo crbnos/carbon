@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { MESSAGE_LIST_LIMIT } from "@carbon/database/strict-backflush";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -19,9 +21,10 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuShoppingCart, LuTriangleAlert } from "react-icons/lu";
-import { Link, useFetcher } from "react-router";
+import { Link } from "react-router";
 import Select from "~/components/Select";
 import SupplierAvatar from "~/components/SupplierAvatar";
+import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import type { JobReleaseReadiness } from "../../production.service";
 import { FirstArticlePlanLinks } from "../Jobs/FirstArticlePlanLinks";
@@ -32,6 +35,7 @@ import { FirstArticlePlanLinks } from "../Jobs/FirstArticlePlanLinks";
 // blocked — any failure blocks the whole batch) and the same purchase-order
 // choice, made once per supplier across every job.
 export function BatchReleaseModal({
+  open = true,
   target,
   title,
   confirmLabel,
@@ -39,6 +43,7 @@ export function BatchReleaseModal({
   onConfirm,
   onClose
 }: {
+  open?: boolean;
   target: { batchId: string } | { jobIds: string[] };
   title: string;
   confirmLabel: string;
@@ -47,43 +52,58 @@ export function BatchReleaseModal({
   onClose: () => void;
 }) {
   const { t } = useLingui();
-  const readinessFetcher = useFetcher<
-    JobReleaseReadiness | { error: string }
-  >();
+  const [suppliers] = useSuppliers();
+  // A whole translated sentence, so "and N more" is translated too.
+  const storageUnitReason = (materials: { description: string }[]) => {
+    const names = materials
+      .slice(0, MESSAGE_LIST_LIMIT)
+      .map((material) => material.description)
+      .join(", ");
+    const more = materials.length - MESSAGE_LIST_LIMIT;
+    return more > 0
+      ? t`set a Pull From storage unit on ${names} and ${more} more`
+      : t`set a Pull From storage unit on ${names}`;
+  };
   const [purchaseOrders, setPurchaseOrders] = useState<Record<string, string>>(
     {}
   );
 
-  const url = path.to.api.batchReleaseReadiness(target);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: load once per target
-  useEffect(() => {
-    readinessFetcher.load(url);
-  }, [url]);
+  // Read only while open; the last answer stays on screen while it closes.
+  const readinessQuery = useLoaderQuery<JobReleaseReadiness>(
+    open ? path.to.api.batchReleaseReadiness(target) : null,
+    { staleTime: 0 }
+  );
+  const [lastReadiness, setLastReadiness] =
+    useState<JobReleaseReadiness | null>(null);
+  if (readinessQuery.data && readinessQuery.data !== lastReadiness) {
+    setLastReadiness(readinessQuery.data);
+  }
+  const readiness = open ? (readinessQuery.data ?? null) : lastReadiness;
+  const loadError = readinessQuery.isError
+    ? t`Failed to check the batch's jobs`
+    : null;
 
-  const result = readinessFetcher.data;
-  const readiness = result && "jobs" in result ? result : null;
-  const loadError = result && "error" in result ? result.error : null;
-
   useEffect(() => {
-    if (!readiness) return;
+    if (!open || !readiness) return;
     setPurchaseOrders(
       Object.fromEntries(readiness.suppliers.map((s) => [s.supplierId, "new"]))
     );
-  }, [readiness]);
+  }, [open, readiness]);
 
   const blocked = (readiness?.jobs ?? []).filter(
     (job) =>
       job.manufacturingBlocked ||
       job.missingAssemblies.length > 0 ||
       job.firstArticlesWithoutPlan.length > 0 ||
-      job.outsideOperationsWithoutSupplier.length > 0
+      job.outsideOperationsWithoutSupplier.length > 0 ||
+      job.materialsWithoutStorageUnit.length > 0
   );
   const jobIds = (readiness?.jobs ?? []).map((job) => job.jobId);
   const canRelease = !!readiness && blocked.length === 0 && !isSubmitting;
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -131,7 +151,9 @@ export function BatchReleaseModal({
                             op.missing === "choose"
                               ? t`choose a supplier for ${op.description} on the job`
                               : t`${op.description} has no supplier`
-                          )
+                          ),
+                          job.materialsWithoutStorageUnit.length > 0 &&
+                            storageUnitReason(job.materialsWithoutStorageUnit)
                         ].filter(Boolean);
                         return (
                           <li key={job.id}>
@@ -190,32 +212,38 @@ export function BatchReleaseModal({
                       </Trans>
                     </AlertDescription>
                   </Alert>
-                  {readiness.suppliers.map((supplier) => (
-                    <div
-                      key={supplier.supplierId}
-                      className="flex w-full items-center justify-between rounded-lg border p-4 text-sm"
-                    >
-                      <SupplierAvatar supplierId={supplier.supplierId} />
-                      <Select
-                        size="sm"
-                        value={purchaseOrders[supplier.supplierId] ?? "new"}
-                        isReadOnly={supplier.draftPurchaseOrders.length === 0}
-                        options={[
-                          { value: "new", label: t`Create New` },
-                          ...supplier.draftPurchaseOrders.map((po) => ({
-                            value: po.id,
-                            label: po.purchaseOrderId
-                          }))
-                        ]}
-                        onChange={(value) =>
-                          setPurchaseOrders((prev) => ({
-                            ...prev,
-                            [supplier.supplierId]: value
-                          }))
-                        }
-                      />
-                    </div>
-                  ))}
+                  {readiness.suppliers.map((supplier) => {
+                    const supplierName =
+                      suppliers.find((s) => s.id === supplier.supplierId)
+                        ?.name ?? "";
+                    return (
+                      <div
+                        key={supplier.supplierId}
+                        className="flex w-full items-center justify-between rounded-lg border p-4 text-sm"
+                      >
+                        <SupplierAvatar supplierId={supplier.supplierId} />
+                        <Select
+                          aria-label={t`Purchase order for ${supplierName}`}
+                          size="sm"
+                          value={purchaseOrders[supplier.supplierId] ?? "new"}
+                          isReadOnly={supplier.draftPurchaseOrders.length === 0}
+                          options={[
+                            { value: "new", label: t`Create New` },
+                            ...supplier.draftPurchaseOrders.map((po) => ({
+                              value: po.id,
+                              label: po.purchaseOrderId
+                            }))
+                          ]}
+                          onChange={(value) =>
+                            setPurchaseOrders((prev) => ({
+                              ...prev,
+                              [supplier.supplierId]: value
+                            }))
+                          }
+                        />
+                      </div>
+                    );
+                  })}
                 </>
               )}
             </VStack>

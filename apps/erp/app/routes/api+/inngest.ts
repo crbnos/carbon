@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { functions, inngest, setWorkflowDispatch } from "@carbon/jobs/inngest";
+import {
+  functions,
+  inngest,
+  setTableJobHandlers,
+  setWorkflowDispatch
+} from "@carbon/jobs/inngest";
 import { getLogger } from "@carbon/logger";
 import { describeRequest } from "@carbon/logger/middleware.server";
 import {
@@ -12,7 +17,8 @@ import {
 } from "@carbon/logger/tracing.server";
 import { serve } from "inngest/remix";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { callOperation } from "./v1+/lib/call.server";
+import { tableJobHandlers } from "~/utils/table-jobs.server";
+import { scopesFromPermissions } from "./v1+/lib/base.server";
 
 const logger = getLogger("erp", "inngest");
 
@@ -32,18 +38,33 @@ const functionIds = new Set(
   })
 );
 
-// packages/jobs cannot import ~/modules, so the ERP app hands it the dispatcher.
+// packages/jobs cannot import ~/modules, so the ERP app hands it the dispatcher
+// and the table-job handlers (list registry reads for exports and bulk actions).
 // Wired on first request rather than at module scope: a top-level side effect is
 // not removable by the client build, which would drag the server-only jobs graph
 // into the browser bundle.
 let dispatchWired = false;
 function wireWorkflowDispatch() {
   if (dispatchWired) return;
-  // A running workflow acts as its already-authorized owner; the per-operation
-  // scope gate applies to API keys only.
-  setWorkflowDispatch((name, context, args) =>
-    callOperation(name, { ...context, authKind: "session", scopes: {} }, args)
-  );
+  // A running workflow acts as its owner, so the operation's permission is
+  // checked against the owner's permissions, read for this run.
+  //
+  // The dispatcher loads on the first workflow call: it carries the operation
+  // catalog (tool-metadata.json, ~20 MB), which the dev server would otherwise
+  // hold from its first request, since it evaluates every route module.
+  setWorkflowDispatch(async (name, { permissions, ...context }, args) => {
+    const { callOperation } = await import("./v1+/lib/call.server");
+    return callOperation(
+      name,
+      {
+        ...context,
+        authKind: "session",
+        scopes: scopesFromPermissions(permissions, context.companyId)
+      },
+      args
+    );
+  });
+  setTableJobHandlers(tableJobHandlers);
   dispatchWired = true;
 }
 

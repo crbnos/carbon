@@ -9,11 +9,11 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useNavigate } from "react-router";
+import { complianceStatementValidator } from "~/modules/quality/quality.models";
 import {
-  complianceStatementValidator,
   getComplianceStatement,
   upsertComplianceStatement
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
 import ComplianceStatementForm from "~/modules/quality/ui/ComplianceStatements/ComplianceStatementForm";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";

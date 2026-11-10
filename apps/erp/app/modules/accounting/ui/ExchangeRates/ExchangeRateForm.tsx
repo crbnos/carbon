@@ -32,7 +32,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   Tr,
-  useCloseRoute,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import type { ChartConfig } from "@carbon/react/Chart";
@@ -65,8 +65,8 @@ import {
 import { usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import {
-  currencyValidator,
-  exchangeRateOverrideValidator
+  currencyFormValidator,
+  type currencyValidator
 } from "../../accounting.models";
 import ExchangeRateSourceBadge from "./ExchangeRateSourceBadge";
 
@@ -92,8 +92,8 @@ const CurrencyForm = ({
 }: CurrencyFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const closeRoute = useCloseRoute();
-  const onClose = () => closeRoute();
+  const dialog = useRouteDialog();
+  const onClose = dialog.close;
   const { locale } = useLocale();
   const resetFetcher = useFetcher<{}>();
 
@@ -129,6 +129,7 @@ const CurrencyForm = ({
   );
 
   const hasHistory = chartData.length > 0;
+  const latestRate = chartData.at(-1)?.rate;
 
   const onDownloadCSV = useCallback(() => {
     if (!exchangeRateHistory.length) return;
@@ -148,7 +149,7 @@ const CurrencyForm = ({
 
   return (
     <Drawer
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -161,67 +162,49 @@ const CurrencyForm = ({
             </DrawerTitle>
           </DrawerHeader>
           <DrawerBody>
-            {isEditing && (
-              <ValidatedForm
-                validator={exchangeRateOverrideValidator}
-                method="post"
-                action={path.to.exchangeRate(initialValues.id!)}
-                defaultValues={{
-                  currencyCode: initialValues.code,
-                  rate: rate ?? undefined
-                }}
-                className="w-full mb-6"
-              >
-                <Hidden name="intent" value="override" />
-                <Hidden name="currencyCode" value={initialValues.code} />
-                <VStack spacing={4}>
-                  <NumberField
-                    name="rate"
-                    label={t`Exchange Rate`}
-                    termId="exchange-rate"
-                    minValue={0}
-                    step={INPUT_STEP.exchangeRate}
-                    formatOptions={INPUT_FORMAT.exchangeRate}
-                    helperText={exchangeRateHelperText}
-                    isDisabled={isBaseCurrency}
-                  />
-                  <HStack className="w-full justify-between">
-                    <ExchangeRateSourceBadge source={rateSource} />
-                    {!isBaseCurrency && (
-                      <HStack>
-                        {rateSource === "override" && (
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            isDisabled={isDisabled}
-                            isLoading={resetFetcher.state !== "idle"}
-                            onClick={onResetToMarketRate}
-                          >
-                            {t`Reset to market rate`}
-                          </Button>
-                        )}
-                        <Submit isDisabled={isDisabled}>{t`Save Rate`}</Submit>
-                      </HStack>
-                    )}
-                  </HStack>
-                </VStack>
-              </ValidatedForm>
-            )}
-
             <ValidatedForm
               id={CONFIG_FORM_ID}
-              validator={currencyValidator}
+              validator={currencyFormValidator}
               method="post"
               action={
                 isEditing
                   ? path.to.exchangeRate(initialValues.id!)
                   : path.to.newExchangeRate
               }
-              defaultValues={initialValues}
+              defaultValues={{ ...initialValues, rate: rate ?? undefined }}
               className="w-full"
             >
               <Hidden name="id" />
+              {rate !== null && <Hidden name="displayedRate" value={rate} />}
               <VStack spacing={4}>
+                {isEditing && (
+                  <>
+                    <NumberField
+                      name="rate"
+                      label={t`Exchange Rate`}
+                      termId="exchange-rate"
+                      minValue={0}
+                      step={INPUT_STEP.exchangeRate}
+                      formatOptions={INPUT_FORMAT.exchangeRate}
+                      helperText={exchangeRateHelperText}
+                      isDisabled={isBaseCurrency}
+                    />
+                    <HStack className="w-full justify-between">
+                      <ExchangeRateSourceBadge source={rateSource} />
+                      {!isBaseCurrency && rateSource === "override" && (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          isDisabled={isDisabled}
+                          isLoading={resetFetcher.state !== "idle"}
+                          onClick={onResetToMarketRate}
+                        >
+                          {t`Reset to market rate`}
+                        </Button>
+                      )}
+                    </HStack>
+                  </>
+                )}
                 <Input name="name" label={t`Name`} isReadOnly />
                 <Input name="code" label={t`Code`} isReadOnly />
                 <NumberField
@@ -282,6 +265,12 @@ const CurrencyForm = ({
                     <TabsContent value="chart">
                       <ChartContainer
                         config={chartConfig}
+                        aria-label={t`Market rate history`}
+                        summary={
+                          latestRate === undefined
+                            ? undefined
+                            : t`Latest rate ${latestRate}`
+                        }
                         className="h-[200px] w-full"
                       >
                         <AreaChart data={chartData}>

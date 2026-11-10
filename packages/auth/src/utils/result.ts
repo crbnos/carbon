@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getLogger } from "@carbon/logger";
+import { describeCause } from "@carbon/utils";
 import type { Result } from "../types";
 
 const log = getLogger("auth");
@@ -16,9 +17,11 @@ export function error(error: any, message = "Request failed"): Result {
     log.error(`${template}: {error}`, { error });
   }
 
+  const reason = describeCause(error);
   return {
     success: false,
-    message
+    message,
+    ...(reason && { reason })
   };
 }
 

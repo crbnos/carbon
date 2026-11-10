@@ -26,7 +26,7 @@ import {
   Submit
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { DataType } from "~/modules/shared";
+import { DataType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { attributeValidator } from "../../people.models";
 
@@ -42,22 +42,28 @@ type AttributeFormProps = {
     isText: boolean;
     isFile: boolean;
   }[];
+  open?: boolean;
   onClose: () => void;
 };
 
 const AttributeForm = ({
   initialValues,
   dataTypes,
+  open = true,
   onClose
 }: AttributeFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
 
+  // Link is a custom field type only; person attributes have no Link input
+  // and no column to store one in.
   const options =
-    dataTypes?.map((dt) => ({
-      value: dt.id.toString(),
-      label: dt.label
-    })) ?? [];
+    dataTypes
+      ?.filter((dt) => dt.id !== DataType.Link)
+      .map((dt) => ({
+        value: dt.id.toString(),
+        label: dt.label
+      })) ?? [];
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
@@ -81,7 +87,7 @@ const AttributeForm = ({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

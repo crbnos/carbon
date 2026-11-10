@@ -1,8 +1,10 @@
+---
 paths:
   - "docs/content/changelog/**"
   - "docs/components/changelog-*.tsx"
   - "docs/lib/changelog*.ts*"
   - "docs/app/changelog/**"
+---
 
 # Authoring a changelog entry
 

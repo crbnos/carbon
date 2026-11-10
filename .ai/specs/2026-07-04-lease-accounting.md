@@ -5,6 +5,8 @@
 > Date: 2026-07-04
 > Tracking issue: crbnos/carbon#1056
 > Readiness finding: GAP-2 (`.ai/specs/2026-07-03-public-company-readiness.md`)
+> Scope note (2026-09-22): the LESSOR slice (operating income, sales-type commencement, net-investment schedule, interest income) is superseded by `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I (rental agreements); this spec keeps lessee accounting, modifications/remeasurements, disclosures and the IFRS 16 delta. Enum `lessorClassification` is shared.
+> Scope note (2026-10-12): the LESSEE slice (lease master, classification, ROU asset and lease liability, effective-interest schedules, modifications, termination and purchase, the monthly lease journals, the "Post lease journals" close task, and the disclosure report) is superseded by `.ai/specs/2026-10-11-lessee-leases.md` (lessee leases in purchasing, posted by the lease run). This spec now keeps only the IFRS 16 delta.
 
 ## TLDR
 
@@ -400,3 +402,4 @@ Routes (fixed-asset layout): `x+/accounting+/leases*`, `lease-classes*`, `lease-
 
 - 2026-07-04: Created — GAP-2 remediation spec. Scope resolved by Brad same day ("more ambitious"): full lessee (modifications/remeasurements included) + lessor (operating posting v1; sales-type/direct-financing schedules + interest posting v1, commencement JE drafted not auto-posted pending GAP-3) + IFRS 16 adjustment-book delta (consumes `.ai/specs/2026-07-04-multi-book.md` generator framework) + monthly Inngest-proposed lease runs + "Post lease journals" close task + disclosure services. Verified zero pre-existing lease code.
 - 2026-07-04: Remaining open questions resolved under the program ambition heuristic (ambitious scope now; back-out valves at plan stage).
+- 2026-09-22: Lessor slice superseded by `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I (rental agreements carry the lessor operating + sales-type accounting). Lessee scope unchanged.

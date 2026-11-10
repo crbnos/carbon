@@ -1,0 +1,31 @@
+/* react-spring-bottom-sheet's stylesheet is unlayered, so it beats every
+   Tailwind utility (those live in @layer utilities). Carbon's look for the
+   sheet is therefore plain, unlayered CSS too, loaded after the library's. */
+.nav-sheet {
+  --rsbs-bg: hsl(var(--popover));
+  --rsbs-handle-bg: hsl(var(--muted-foreground) / 0.3);
+  --rsbs-backdrop-bg: rgb(0 0 0 / 0.4);
+  --rsbs-overlay-rounded: 14px;
+}
+
+/* The library stacks at z-index 3, under the app shell; sheets sit at 70. */
+.nav-sheet [data-rsbs-overlay],
+.nav-sheet [data-rsbs-backdrop],
+.nav-sheet[data-rsbs-root]::after {
+  z-index: 70;
+}
+
+.nav-sheet [data-rsbs-overlay] {
+  color: hsl(var(--popover-foreground));
+}
+
+.nav-sheet [data-rsbs-header] {
+  box-shadow: none;
+}
+
+/* Phones only. */
+@media (min-width: 48rem) {
+  .nav-sheet {
+    display: none;
+  }
+}

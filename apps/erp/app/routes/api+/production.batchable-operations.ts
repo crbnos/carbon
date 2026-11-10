@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getBatchableOperations } from "~/modules/production";
+import { getBatchableOperations } from "~/modules/production/production.service";
 import type { BatchCandidate, BatchMaterial } from "~/modules/production/types";
 
 // The base candidate row, derived from the RPC wrapper's return so a column
@@ -123,7 +123,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Enrich with the fields the RPC doesn't return but the wizard needs.
   // The thumbnail follows the operation's PRODUCED item (r.itemId, the op's
   // make-method item resolved by the RPC), not the job's root item — a
-  // sub-assembly operation shows its own part, matching its readableId.
+  // sub-assembly operation shows its own part, matching its readableId. An
+  // item with no image of its own falls back to its CAD model's thumbnail, as
+  // the parts list and the batch PDF do.
   const [opDetails, itemThumbnails] = await Promise.all([
     client
       .from("jobOperation")
@@ -137,7 +139,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .eq("companyId", companyId),
     client
       .from("item")
-      .select("id, thumbnailPath")
+      .select("id, thumbnailPath, modelUpload(thumbnailPath)")
       .in("id", [...new Set(rows.map((r) => r.itemId))])
       .eq("companyId", companyId)
   ]);
@@ -146,7 +148,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
   const thumbnailByItemId = new Map(
     (itemThumbnails.data ?? []).map(
-      (i) => [i.id, i.thumbnailPath ?? null] as const
+      (i) =>
+        [i.id, i.thumbnailPath ?? i.modelUpload?.thumbnailPath ?? null] as const
     )
   );
 

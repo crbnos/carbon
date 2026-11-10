@@ -6,7 +6,7 @@ import { Badge, cn, HStack } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuChevronDown, LuChevronRight, LuExternalLink } from "react-icons/lu";
 import { Link } from "react-router";
-import type { Activity, TrackedEntity } from "~/modules/inventory";
+import type { Activity, TrackedEntity } from "~/modules/inventory/types";
 import { ACTIVITY_KIND_META, activityKindFor } from "./metadata";
 import TrackedEntityStatus from "./TrackedEntityStatus";
 import { entityHeadline, type LineagePayload, sourceLinkHref } from "./utils";
@@ -275,7 +275,7 @@ function TreeRow({
           </span>
         )}
         {!row.isReference && entity.sourceDocument && (
-          <span className="text-[11px] text-muted-foreground truncate max-w-[140px] hidden md:inline">
+          <span className="text-[0.6875rem] text-muted-foreground truncate max-w-[140px] hidden md:inline">
             {entity.sourceDocument}
           </span>
         )}
@@ -346,7 +346,7 @@ function TreeRow({
         </span>
       )}
       {!row.isReference && activity.sourceDocument && (
-        <span className="text-[11px] text-muted-foreground truncate max-w-[140px] hidden md:inline">
+        <span className="text-[0.6875rem] text-muted-foreground truncate max-w-[140px] hidden md:inline">
           {activity.sourceDocument}
         </span>
       )}
@@ -389,6 +389,7 @@ function ToggleOrLeaf({
   if (hasChildren) {
     return (
       <button
+        aria-expanded={!isCollapsed}
         type="button"
         onClick={(e) => {
           e.stopPropagation();
@@ -412,7 +413,7 @@ function RefBadge() {
   return (
     <Badge
       variant="outline"
-      className="text-[9px] px-1 py-0 uppercase tracking-wide"
+      className="text-[0.5625rem] px-1 py-0 uppercase tracking-wide"
     >
       ref
     </Badge>

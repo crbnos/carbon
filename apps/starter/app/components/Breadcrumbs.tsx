@@ -19,8 +19,8 @@ import {
   HStack,
   PrefetchLink,
   ScrollArea,
-  useIsMobile,
-  useMode
+  useMode,
+  useViewport
 } from "@carbon/react";
 import type { ComponentProps } from "react";
 import { cloneElement, forwardRef, useMemo } from "react";
@@ -130,7 +130,7 @@ const Breadcrumbs = () => {
     })
     .filter(Boolean);
 
-  const isMobile = useIsMobile();
+  const { isPhone: isMobile } = useViewport();
 
   return (
     <HStack className="items-center h-full -ml-2" spacing={0}>

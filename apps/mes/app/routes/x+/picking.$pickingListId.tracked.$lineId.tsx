@@ -8,7 +8,6 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { userContext } from "~/context";
-import { getDatabaseClient } from "~/services/database.server";
 import {
   getAvailableTrackedEntities,
   getCompanySettings,
@@ -30,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const lineResult = await client
     .from("pickingListLine")
     .select(
-      "id, itemId, quantityToPick, quantityPicked, pickingList(locationId), item(itemTrackingType)"
+      "id, itemId, projectId, quantityToPick, quantityPicked, pickingList(locationId), item(itemTrackingType)"
     )
     .eq("id", lineId)
     .eq("companyId", companyId)
@@ -59,8 +58,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           companyId,
           locationId,
           excludeLineside: true,
+          excludeNonNettable: true,
           excludeAllocated: true,
-          excludeLineId: lineId
+          excludeLineId: lineId,
+          // A pick line draws one stock stripe: list the lots in it.
+          projectIds: [line.projectId ?? null]
         })
       : { data: [] },
     getCompanySettings(client, companyId),
@@ -106,19 +108,15 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
     return { success: false, message: "Missing tracked entity" };
   }
 
-  const result = await setPickingListLineTrackedEntity(
-    serviceRole,
-    getDatabaseClient(),
-    {
-      pickingListLineId: lineId,
-      trackedEntityId,
-      fromStorageUnitId,
-      quantity,
-      unpick,
-      userId: effectiveUserId,
-      companyId
-    }
-  );
+  const result = await setPickingListLineTrackedEntity(serviceRole, {
+    pickingListLineId: lineId,
+    trackedEntityId,
+    fromStorageUnitId,
+    quantity,
+    unpick,
+    userId: effectiveUserId,
+    companyId
+  });
 
   if (result.error) {
     logger.error("Failed to pick tracked entity", {

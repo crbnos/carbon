@@ -23,7 +23,14 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { Link, useFetcher } from "react-router";
 import { DateTime, Empty } from "~/components";
-import { Hidden, Input, Select, Submit, TextArea } from "~/components/Form";
+import {
+  FormGroup,
+  Hidden,
+  Input,
+  Select,
+  Submit,
+  TextArea
+} from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import type { FirstArticleInspectionDetail } from "~/modules/quality/types";
 import { path } from "~/utils/path";
@@ -130,7 +137,7 @@ const FirstArticleForm1 = ({ detail, baselines }: FirstArticleForm1Props) => {
           >
             <Hidden name="id" />
             <VStack spacing={4}>
-              <div className="grid w-full gap-4 grid-cols-1 md:grid-cols-4">
+              <FormGroup title={t`Part`}>
                 <Input name="partNumber" label={t`Part Number`} />
                 <Input name="partName" label={t`Part Name`} />
                 <Input name="partRevision" label={t`Part Revision`} />
@@ -140,9 +147,13 @@ const FirstArticleForm1 = ({ detail, baselines }: FirstArticleForm1Props) => {
                 />
                 <Input name="drawingNumber" label={t`Drawing Number`} />
                 <Input name="drawingRevision" label={t`Drawing Revision`} />
+              </FormGroup>
+              <FormGroup title={t`Organization`}>
                 <Input name="organizationName" label={t`Organization Name`} />
                 <Input name="supplierCode" label={t`Supplier Code`} />
                 <Input name="purchaseOrderNumber" label={t`PO Number`} />
+              </FormGroup>
+              <FormGroup title={t`Inspection`}>
                 <Select
                   name="scope"
                   label={t`Scope`}
@@ -164,29 +175,33 @@ const FirstArticleForm1 = ({ detail, baselines }: FirstArticleForm1Props) => {
                     label: labels.reason(value)
                   }))}
                 />
-              </div>
-              {scope === "Partial" && (
-                <div className="grid w-full gap-4 grid-cols-1 md:grid-cols-2">
-                  <Select
-                    name="baselineFirstArticleInspectionId"
-                    label={t`Baseline First Article`}
-                    options={baselines.map((baseline) => ({
-                      value: baseline.id,
-                      label: baseline.label
-                    }))}
-                    isOptional
-                  />
-                  <Input
-                    name="baselineReference"
-                    label={t`External Baseline`}
+                {scope === "Partial" && (
+                  <>
+                    <Select
+                      name="baselineFirstArticleInspectionId"
+                      label={t`Baseline First Article`}
+                      options={baselines.map((baseline) => ({
+                        value: baseline.id,
+                        label: baseline.label
+                      }))}
+                      isOptional
+                    />
+                    <Input
+                      name="baselineReference"
+                      label={t`External Baseline`}
+                    />
+                  </>
+                )}
+                <div className="md:col-span-2">
+                  <TextArea
+                    name="additionalChanges"
+                    label={t`Additional Changes`}
                   />
                 </div>
-              )}
-              <TextArea
-                name="additionalChanges"
-                label={t`Additional Changes`}
-              />
-              <TextArea name="comments" label={t`Comments`} />
+                <div className="md:col-span-2">
+                  <TextArea name="comments" label={t`Comments`} />
+                </div>
+              </FormGroup>
               {!isDisabled && (
                 <HStack>
                   <Submit hideShortcutKey>

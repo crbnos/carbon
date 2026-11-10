@@ -30,7 +30,7 @@ import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import {
   useFetcher,
   useLoaderData,
@@ -38,7 +38,7 @@ import {
   useNavigate
 } from "react-router";
 import { GroupedContentSidebar } from "~/components/Layout";
-import { useSettings, useUser } from "~/hooks";
+import { useUser } from "~/hooks";
 import {
   isCustomerPreview,
   setCustomerPreview,
@@ -47,16 +47,15 @@ import {
 import { useFlags } from "~/hooks/useFlags";
 import { useImplementationRealtime } from "~/hooks/useImplementationRealtime";
 import { useImplementationSubmodules } from "~/hooks/useImplementationSubmodules";
-import { getImplementationSignals } from "~/modules/shared/shared.server";
+import { getImplementationSignals } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
+import { moduleMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 import { trainingConfig } from "~/utils/training";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Get Started" }];
-};
+export const meta = moduleMeta("Get Started");
 
 // Deep links from the Setup Map: each setup row's stable key → the ERP screen
 // where you configure that thing. Keys without a screen are simply omitted (the
@@ -107,7 +106,7 @@ const SETUP_SCREEN_PATHS: Record<string, string> = {
   "storage-types": path.to.storageTypes,
   "storage-rules": path.to.storageRules,
   "shipping-methods": path.to.shippingMethods,
-  "chart-of-accounts": path.to.chartOfAccounts,
+  "chart-of-accounts": path.to.chartOfAccountsImport,
   "default-accounts": path.to.accountingDefaults,
   "cost-centers": path.to.costCenters,
   "payment-terms": path.to.paymentTerms,
@@ -171,11 +170,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function GetStartedLayout() {
   const { company } = useUser();
   const { isInternal } = useFlags();
-  const settings = useSettings();
-  // Same read as useAccountingSubmodules — the generated companySettings type
-  // doesn't carry the column yet.
-  const accountingEnabled =
-    (settings as { accountingEnabled?: boolean }).accountingEnabled ?? false;
   const previewingAsCustomer = useCustomerPreview();
   useImplementationRealtime(company.id);
 
@@ -235,17 +229,13 @@ export default function GetStartedLayout() {
       exclusions:
         (loaderData.hub.exclusions as unknown as HubExclusions) ??
         EMPTY_EXCLUSIONS,
-      // The Accounting module only appears in the hub when the company has
-      // accounting enabled; forced here so it never persists into the stored
-      // (staff-editable) exclusions.
-      forcedModules: accountingEnabled ? [] : ["acc"],
       contacts: (loaderData.hub.contacts as unknown as HubContacts) ?? {},
       checkStates: loaderData.checkStates,
       fieldValues: loaderData.fieldValues,
       rows: loaderData.rows as unknown as ImplementationRowData[],
       signals: loaderData.signals
     }),
-    [loaderData, accountingEnabled]
+    [loaderData]
   );
 
   const flags = useMemo<HubFlags>(

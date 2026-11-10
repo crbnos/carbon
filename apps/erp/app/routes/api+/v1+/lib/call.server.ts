@@ -4,45 +4,41 @@
 
 // The ONE server-side entry point for running a Carbon API operation outside HTTP:
 // MCP call_tool, the in-app agent, and the workflow dispatcher all call this. It
-// runs the operation through the real oRPC procedure (gate middleware included) via
-// server-side call(), and folds the outcome back into the { success, … } envelope
-// the legacy executeFunction callers expect.
+// runs the operation through the real oRPC procedure (its service function's gate
+// included) via server-side call(), and folds the outcome into a { success, … }
+// envelope.
 
 import { getLogger } from "@carbon/logger";
 import { call, ORPCError } from "@orpc/server";
-import { isMcpBlockedTool } from "../../mcp+/lib/mcp-blocked-tools";
-import { unwrapArgsEnvelope } from "./args-envelope";
 import type { AuthedContext } from "./base.server";
-import {
-  classifyDatabaseFailure,
-  isServiceRuleError,
-  publicDatabaseError,
-  type SupabaseFailure
-} from "./database-errors";
 import {
   operationId,
   operationsByName,
   unshapeHttpBody
 } from "./operations.server";
 import { router } from "./router.server";
-
 import {
   formatValidationIssues,
   type StandardIssue
 } from "./validation-issues";
 
-const logger = getLogger("erp", "api", "call-operation");
+const logger = getLogger("erp", "api", "call");
 
 export type CallResult =
   | { success: true; data: unknown; count?: number }
-  | { success: false; error: string; errorKind: "database" | "execution" };
+  | {
+      success: false;
+      error: string;
+      errorKind: "execution";
+      /** The service function's refusal (`notFound`, `rule`, …), when it refused. */
+      category?: string;
+    };
 
 export async function callOperation(
   name: string,
   context: AuthedContext,
   args?: Record<string, unknown> | string
 ): Promise<CallResult> {
-  // The step order is the contract — it reproduces executeFunction's exactly.
   if (typeof args === "string") {
     try {
       args = args.trim().length > 0 ? JSON.parse(args) : {};
@@ -55,14 +51,6 @@ export async function callOperation(
     }
   }
 
-  if (isMcpBlockedTool(name)) {
-    return {
-      success: false,
-      error: `Tool disabled: ${name} is not available via MCP.`,
-      errorKind: "execution"
-    };
-  }
-
   const meta = operationsByName.get(name);
   const procedure = meta ? router[meta.module]?.[operationId(meta)] : undefined;
   if (!meta || !procedure) {
@@ -73,16 +61,10 @@ export async function callOperation(
     };
   }
 
-  const callArgs = unwrapArgsEnvelope(
-    meta,
-    args as Record<string, unknown> | undefined
-  );
-
   try {
     // The handler shapes the HTTP body (bare single results, `{ results, count }`
-    // lists); unshapeHttpBody reverses it so MCP/agent/workflow callers keep
-    // DispatchResult semantics.
-    const body = await call(procedure, callArgs ?? {}, { context });
+    // lists); unshapeHttpBody reverses it for MCP, agent and workflow callers.
+    const body = await call(procedure, args ?? {}, { context });
     const result = unshapeHttpBody(meta, body);
     return {
       success: true,
@@ -90,48 +72,35 @@ export async function callOperation(
       ...(result.count !== undefined ? { count: result.count } : {})
     };
   } catch (err) {
-    const supabase =
-      err instanceof ORPCError
-        ? (err.data as { supabase?: SupabaseFailure } | undefined)?.supabase
-        : undefined;
-    // A service's own refusal is written for the caller; only a database
-    // failure is reduced to the fixed public messages below.
-    if (isServiceRuleError(supabase)) {
-      return {
-        success: false,
-        error: supabase.message,
-        errorKind: "execution"
-      };
-    }
-    if (supabase) {
-      logger.error("Operation failed", {
+    // Anything but an ORPCError is our own failure: its text (a stack frame,
+    // a connection string) is for the log, never the caller.
+    if (!(err instanceof ORPCError)) {
+      logger.error("Operation {name} threw", {
         name,
-        kind: classifyDatabaseFailure(supabase),
-        supabase
+        companyId: context.companyId,
+        error: err
       });
       return {
         success: false,
-        error: publicDatabaseError(supabase),
-        errorKind: "database"
+        category: "internal",
+        error: "Function execution failed",
+        errorKind: "execution"
       };
     }
     // oRPC's input-validation failure says only "Input validation failed" —
     // useless to an agent that has to fix its own call. The issues ride along
     // in `err.data`, so name the fields and what's wrong with each.
-    const issues =
-      err instanceof ORPCError
-        ? (err.data as { issues?: StandardIssue[] } | undefined)?.issues
-        : undefined;
-    if (Array.isArray(issues) && issues.length > 0) {
-      return {
-        success: false,
-        error: formatValidationIssues(issues),
-        errorKind: "execution"
-      };
-    }
+    const data = err.data as
+      | { issues?: StandardIssue[]; category?: string }
+      | undefined;
+    const issues = data?.issues;
     return {
       success: false,
-      error: err instanceof Error ? err.message : "Function execution failed",
+      ...(data?.category ? { category: data.category } : {}),
+      error:
+        Array.isArray(issues) && issues.length > 0
+          ? formatValidationIssues(issues)
+          : err.message,
       errorKind: "execution"
     };
   }

@@ -9,8 +9,8 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { firstArticleInspectionProductValidator } from "~/modules/quality";
-import { upsertFirstArticleInspectionProduct } from "~/modules/quality/firstArticle.server";
+import { firstArticleInspectionProductValidator } from "~/modules/quality/quality.models";
+import { upsertFirstArticleInspectionProduct } from "~/modules/quality/quality.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

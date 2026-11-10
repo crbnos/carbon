@@ -989,7 +989,15 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     projectedCompletionAt: { kind: "primitive", of: "date" },
     scheduleOutdatedReason: { kind: "primitive", of: "string" },
     scheduleOutdatedAt: { kind: "primitive", of: "date" },
-    productionQuantity: { kind: "primitive", of: "number" }
+    productionQuantity: { kind: "primitive", of: "number" },
+    fixedAssetClassId: { kind: "primitive", of: "string" },
+    fixedAssetId: { kind: "primitive", of: "string" },
+    projectId: { kind: "primitive", of: "string" },
+    projectElementId: { kind: "primitive", of: "string" },
+    consumeToProject: { kind: "primitive", of: "boolean" },
+    receiveToProjectStock: { kind: "primitive", of: "boolean" },
+    planningGroupId: { kind: "primitive", of: "string" },
+    customerContractLineId: { kind: "primitive", of: "string" }
   },
   jobOperation: {
     id: { kind: "primitive", of: "string" },
@@ -1056,7 +1064,9 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     tags: { kind: "list", of: { kind: "primitive", of: "string" } },
     code: { kind: "primitive", of: "string" },
     requiresStaffing: { kind: "primitive", of: "boolean" },
-    responsibleEmployee: { kind: "entity", of: "user" }
+    responsibleEmployee: { kind: "entity", of: "user" },
+    inspectionStorageUnitId: { kind: "primitive", of: "string" },
+    rejectedStorageUnitId: { kind: "primitive", of: "string" }
   },
   nonConformance: {
     id: { kind: "primitive", of: "string" },
@@ -1196,7 +1206,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     tags: { kind: "list", of: { kind: "primitive", of: "string" } },
     internalNotes: { kind: "primitive", of: "string" },
     supplierInteractionId: { kind: "primitive", of: "string" },
-    postedBy: { kind: "entity", of: "user" }
+    postedBy: { kind: "entity", of: "user" },
+    inspectionStatus: { kind: "primitive", of: "string" }
   },
   salesInvoice: {
     id: { kind: "primitive", of: "string" },
@@ -1227,7 +1238,12 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     externalNotes: { kind: "primitive", of: "string" },
     tags: { kind: "list", of: { kind: "primitive", of: "string" } },
     createdAt: { kind: "primitive", of: "date" },
-    createdBy: { kind: "entity", of: "user" }
+    createdBy: { kind: "entity", of: "user" },
+    automationHoldReason: { kind: "primitive", of: "string" },
+    sentAt: { kind: "primitive", of: "date" },
+    sentTo: { kind: "primitive", of: "string" },
+    sendError: { kind: "primitive", of: "string" },
+    customerContractId: { kind: "primitive", of: "string" }
   },
   salesOrder: {
     id: { kind: "primitive", of: "string" },
@@ -1317,7 +1333,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     acknowledgedITAR: { kind: "primitive", of: "boolean" },
     flags: { kind: "primitive", of: "string" },
     isConsoleOperator: { kind: "primitive", of: "boolean" },
-    phone: { kind: "primitive", of: "string" }
+    phone: { kind: "primitive", of: "string" },
+    signaturePath: { kind: "primitive", of: "string" }
   }
 };
 
@@ -1459,9 +1476,19 @@ export const WORKFLOW_ENTITY_ENUMS: Record<
       "Inbound Transfer",
       "Outbound Transfer",
       "Manufacturing Consumption",
-      "Manufacturing Output"
+      "Manufacturing Output",
+      "Rental Agreement"
     ],
-    status: ["Draft", "Pending", "Posted", "Voided"]
+    status: ["Draft", "Pending", "Posted", "Voided"],
+    inspectionStatus: [
+      "Not Required",
+      "Pending Inspection",
+      "Inspection In Progress",
+      "Inspection Passed",
+      "Inspection Failed",
+      "Partially Passed",
+      "Put Away"
+    ]
   },
   salesInvoice: {
     status: [
@@ -1500,7 +1527,9 @@ export const WORKFLOW_ENTITY_ENUMS: Record<
       "Purchase Invoice",
       "Purchase Return Order",
       "Inbound Transfer",
-      "Outbound Transfer"
+      "Outbound Transfer",
+      "Rental Agreement",
+      "Customer Contract"
     ],
     status: ["Draft", "Pending", "Posted", "Voided"]
   },

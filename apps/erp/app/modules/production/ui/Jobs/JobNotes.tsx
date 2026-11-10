@@ -9,12 +9,12 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  generateHTML,
+  RichTextView,
   useDebounce
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { useImageUpload, usePermissions, useUser } from "~/hooks";
 
@@ -31,6 +31,7 @@ const JobNotes = ({
   notes?: JSONContent;
   isReadOnly?: boolean;
 }) => {
+  const { t } = useLingui();
   const { id: userId } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
@@ -68,6 +69,7 @@ const JobNotes = ({
         <CardContent>
           {!isReadOnlyProp && permissions.can("update", "production") ? (
             <Editor
+              label={t`Notes`}
               initialValue={(notes ?? {}) as JSONContent}
               onUpload={onUploadImage}
               onChange={(value) => {
@@ -76,11 +78,9 @@ const JobNotes = ({
               }}
             />
           ) : (
-            <div
-              className="prose dark:prose-invert"
-              dangerouslySetInnerHTML={{
-                __html: generateHTML(notes as JSONContent)
-              }}
+            <RichTextView
+              content={notes as JSONContent}
+              empty={<Trans>No notes</Trans>}
             />
           )}
         </CardContent>

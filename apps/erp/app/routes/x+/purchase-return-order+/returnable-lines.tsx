@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getReturnableLinesForSupplier } from "~/modules/purchasing";
+import { getReturnableLinesForSupplier } from "~/modules/purchasing/purchasing.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

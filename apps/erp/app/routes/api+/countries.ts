@@ -5,9 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { cachedClientLoader, RefreshRate } from "@carbon/query/cache";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCountries } from "~/modules/shared";
-
-import { keptForADay } from "~/modules/shared/shared.server";
+import { getCountries, keptForADay } from "~/modules/shared/shared.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {});

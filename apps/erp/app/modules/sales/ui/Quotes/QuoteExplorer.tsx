@@ -18,19 +18,16 @@ import {
   HStack,
   IconButton,
   MENU_ITEM_SHORTCUTS,
-  ShortcutKey,
+  PrefetchLink,
   Spinner,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   useDisclosure,
   useMount,
-  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { useDroppable } from "@dnd-kit/core";
-import { Trans } from "@lingui/react/macro";
-import { useMemo, useRef, useState } from "react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useMemo, useState } from "react";
 import {
   LuBraces,
   LuChevronDown,
@@ -43,7 +40,7 @@ import {
   LuTable,
   LuTrash
 } from "react-icons/lu";
-import { Link, useFetchers, useNavigate, useParams } from "react-router";
+import { Link, useFetchers, useParams } from "react-router";
 import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import { QuoteLineStatusIcon } from "~/components/Icons";
 import type { DragHandleBindings } from "~/components/LineReorder";
@@ -55,15 +52,9 @@ import {
 } from "~/components/LineReorder";
 import type { Tree } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
-import {
-  useOptimisticLocation,
-  usePermissions,
-  useRealtime,
-  useRouteData,
-  useUser
-} from "~/hooks";
+import { usePermissions, useRealtime, useRouteData, useUser } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import { isQuoteLocked } from "../../sales.models";
@@ -82,6 +73,7 @@ type QuoteExplorerProps = {
 };
 
 export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
+  const { t } = useLingui();
   const { defaults } = useUser();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -127,20 +119,8 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
   };
 
   const onDeleteCancel = () => {
-    setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
-
-  const newButtonRef = useRef<HTMLButtonElement>(null);
-  useShortcutKeyMap([
-    {
-      shortcut: EXPLORER_SHORTCUTS.addLine,
-      action: (event: KeyboardEvent) => {
-        event.stopPropagation();
-        newButtonRef.current?.click();
-      }
-    }
-  ]);
 
   const { setNodeRef: setExplorerRef, isOver: isOverExplorer } = useDroppable({
     id: "quote-explorer"
@@ -244,36 +224,19 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
             />
           ) : (
             <>
-              <Tooltip>
-                <TooltipTrigger className="flex-1">
-                  <Button
-                    ref={newButtonRef}
-                    className="w-full"
-                    isDisabled={
-                      isDisabled || !permissions.can("update", "sales")
-                    }
-                    leftIcon={<LuCirclePlus />}
-                    variant="secondary"
-                    onClick={newQuoteLineDisclosure.onOpen}
-                  >
-                    <Trans>Add Line Item</Trans>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <HStack>
-                    <span>
-                      <Trans>New Line Item</Trans>
-                    </span>
-                    <ShortcutKey
-                      shortcut={EXPLORER_SHORTCUTS.addLine}
-                      variant="small"
-                    />
-                  </HStack>
-                </TooltipContent>
-              </Tooltip>
+              <Button
+                className="flex-1"
+                shortcut={EXPLORER_SHORTCUTS.addLine}
+                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                leftIcon={<LuCirclePlus />}
+                variant="secondary"
+                onClick={newQuoteLineDisclosure.onOpen}
+              >
+                <Trans>Add Line Item</Trans>
+              </Button>
               {canReorder && realQuoteLines.length > 0 && (
                 <IconButton
-                  aria-label="Reorder lines"
+                  aria-label={t`Reorder lines`}
                   icon={<LuSettings2 />}
                   variant="ghost"
                   className="text-muted-foreground"
@@ -284,15 +247,21 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
           )}
         </div>
       </VStack>
-      {newQuoteLineDisclosure.isOpen && (
+      {newQuoteLineDisclosure.openCount > 0 && (
         <QuoteLineForm
+          key={newQuoteLineDisclosure.openCount}
+          open={newQuoteLineDisclosure.isOpen}
           initialValues={quoteLineInitialValues}
           type="modal"
           onClose={newQuoteLineDisclosure.onClose}
         />
       )}
-      {deleteLineDisclosure.isOpen && (
-        <DeleteQuoteLine line={deleteLine!} onCancel={onDeleteCancel} />
+      {deleteLine && (
+        <DeleteQuoteLine
+          isOpen={deleteLineDisclosure.isOpen}
+          line={deleteLine}
+          onCancel={onDeleteCancel}
+        />
       )}
     </div>
   );
@@ -307,17 +276,19 @@ function QuoteLineBody({
   dragHandle?: DragHandleBindings;
   isOverlay?: boolean;
 }) {
+  const title = line.itemReadableId || line.description || "Item";
+  const description = distinctItemText(title, line.description);
   return (
     <ReorderableRow dragHandle={dragHandle} isOverlay={isOverlay}>
       <HStack spacing={2} className="flex-grow min-w-0 p-2 pr-10">
         <ItemThumbnail thumbnailPath={line.thumbnailPath} type="Part" />
         <VStack spacing={0} className="min-w-0">
-          <span className="font-semibold line-clamp-1">
-            {line.itemReadableId || line.description || "Item"}
-          </span>
-          <span className="text-muted-foreground text-xs truncate line-clamp-1">
-            {line.description}
-          </span>
+          <span className="font-semibold line-clamp-1">{title}</span>
+          {description && (
+            <span className="text-muted-foreground text-xs truncate line-clamp-1">
+              {description}
+            </span>
+          )}
         </VStack>
       </HStack>
     </ReorderableRow>
@@ -445,12 +416,10 @@ function QuoteLineItem({
   onDelete,
   methods
 }: QuoteLineItemProps) {
+  const { t } = useLingui();
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
   const permissions = usePermissions();
-
-  const navigate = useNavigate();
-  const location = useOptimisticLocation();
 
   const disclosure = useDisclosure();
   const searchDisclosure = useDisclosure();
@@ -468,17 +437,8 @@ function QuoteLineItem({
     [methodTree]
   );
 
+  const lineName = line.itemReadableId;
   const isSelected = lineId === line.id;
-  const onLineClick = (line: QuotationLine) => {
-    if (line.methodType === "Make to Order") {
-      disclosure.onOpen();
-    }
-
-    if (location.pathname !== path.to.quoteLine(quoteId, line.id!)) {
-      // navigate to line
-      navigate(path.to.quoteLine(quoteId, line.id!));
-    }
-  };
 
   return (
     <VStack spacing={0} className="border-b">
@@ -487,38 +447,50 @@ function QuoteLineItem({
           "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
           isSelected && "bg-accent/60 hover:bg-accent/50"
         )}
-        onClick={() => onLineClick(line)}
       >
-        <HStack spacing={2} className="flex-grow min-w-0 pr-10">
-          <ItemThumbnail
-            thumbnailPath={line.thumbnailPath}
-            type={line.itemType as MethodItemType}
-          />
+        <PrefetchLink
+          to={path.to.quoteLine(quoteId, line.id!)}
+          onClick={() => {
+            if (line.methodType === "Make to Order") disclosure.onOpen();
+          }}
+          className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+        >
+          <HStack spacing={2} className="flex-grow min-w-0 pr-10">
+            <ItemThumbnail
+              thumbnailPath={line.thumbnailPath}
+              type={line.itemType as MethodItemType}
+            />
 
-          <VStack spacing={0} className="min-w-0">
-            <HStack>
-              <span className="font-semibold line-clamp-1">
-                {line.itemReadableId}
+            <VStack spacing={0} className="min-w-0">
+              <HStack>
+                <span className="font-semibold line-clamp-1">
+                  {line.itemReadableId}
+                </span>
+                <div className="ml-auto">
+                  <QuoteLineStatusIcon status={line.status ?? "Not Started"} />
+                </div>
+              </HStack>
+              <span className="font-medium text-muted-foreground text-xs line-clamp-1">
+                {line.customerPartId}
+                {line.customerPartRevision && `-${line.customerPartRevision}`}
               </span>
-              <div className="ml-auto">
-                <QuoteLineStatusIcon status={line.status ?? "Not Started"} />
-              </div>
-            </HStack>
-            <span className="font-medium text-muted-foreground text-xs line-clamp-1">
-              {line.customerPartId}
-              {line.customerPartRevision && `-${line.customerPartRevision}`}
-            </span>
-          </VStack>
-        </HStack>
-        <div className="absolute right-2">
+            </VStack>
+          </HStack>
+        </PrefetchLink>
+        <div className="absolute right-2 z-10">
           <HStack spacing={1}>
             {line.methodType === "Make to Order" &&
               permissions.can("update", "sales") &&
               line.status !== "No Quote" && (
                 <IconButton
-                  aria-label={disclosure.isOpen ? "Hide" : "Show"}
+                  aria-label={
+                    disclosure.isOpen
+                      ? t`Hide details for ${lineName}`
+                      : t`Show details for ${lineName}`
+                  }
+                  aria-expanded={disclosure.isOpen}
                   className={cn(
-                    "animate opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
+                    "animate md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
                     disclosure.isOpen && "-rotate-180"
                   )}
                   icon={<LuChevronDown />}
@@ -533,8 +505,8 @@ function QuoteLineItem({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
-                  aria-label="More"
-                  className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  aria-label={t`More actions for ${lineName}`}
+                  className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
                   size="md"
                   variant="solid"

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { DatePicker } from "@carbon/react";
+import type { CalendarDate } from "@internationalized/date";
 import { parseDate } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
@@ -25,27 +26,44 @@ import type { EditableTableCellComponentProps } from "~/components/Editable";
  * (a due date, a required date) are not optional, and react-aria reports a
  * half-typed date as `null` too.
  */
+/** A `YYYY-MM-DD` value as a picker date; anything else is empty. */
+function toCalendarDate(value: unknown): CalendarDate | null {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}/.test(value)) {
+    return null;
+  }
+  try {
+    return parseDate(value.slice(0, 10));
+  } catch {
+    return null;
+  }
+}
+
 const EditableDate = <T extends object>(
   mutation: (
     accessorKey: string,
     newValue: string,
     row: T
   ) => Promise<PostgrestSingleResponse<unknown>>,
-  options?: { clearable?: boolean }
+  options?: {
+    clearable?: boolean;
+    /** The accessible name of the picker (the column's header). */
+    label?: string;
+    /** Per-row bounds, as `YYYY-MM-DD`. */
+    bounds?: (row: T) => { minValue?: string; maxValue?: string };
+  }
 ) => {
   const EditableDateEditor = ({
     value,
     row,
     accessorKey,
+    label,
     onError,
     onUpdate
   }: EditableTableCellComponentProps<T>) => {
     const { t } = useLingui();
     // a timestamp column would carry a time part; a calendar date is its head
-    const current =
-      typeof value === "string" && value.length >= 10
-        ? value.slice(0, 10)
-        : null;
+    const current = toCalendarDate(value)?.toString() ?? null;
+    const bounds = options?.bounds?.(row);
 
     // The field's latest value; `committed` is what the cell last saved, so
     // the blur that follows a closed calendar does not save the day twice.
@@ -77,6 +95,7 @@ const EditableDate = <T extends object>(
       // The selected cell already draws the ring. The picker's own border and
       // focus halo on top of it read as a doubled, blurry edge, so the field
       // group goes edgeless here — as EditableNumber's input does.
+      // biome-ignore lint/a11y/noStaticElementInteractions: onBlur only detects focus leaving the DatePicker to commit; not a control itself
       <div
         className="[&_[role=group]]:rounded-none [&_[role=group]]:border-transparent [&_[role=group]]:shadow-none [&_[role=group]:focus-within]:border-transparent [&_[role=group]:focus-within]:ring-0"
         // Focus moving between the date segments and the calendar button stays
@@ -89,11 +108,13 @@ const EditableDate = <T extends object>(
         }}
       >
         <DatePicker
-          aria-label={t`Date`}
+          aria-label={options?.label ?? label ?? t`Date`}
           size="sm"
           autoFocus
           closeOnSelect
           defaultValue={current ? parseDate(current) : null}
+          minValue={toCalendarDate(bounds?.minValue) ?? undefined}
+          maxValue={toCalendarDate(bounds?.maxValue) ?? undefined}
           onChange={(next) => {
             latest.current = next ? next.toString() : null;
           }}

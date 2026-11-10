@@ -2,12 +2,41 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { resolveDate, resolveTimestamp } from "../dates.ts";
+import { parseDate } from "@internationalized/date";
+import {
+  applyContractMovement,
+  EMPTY_POSITION
+} from "../../contract-position.ts";
+import {
+  monthStart,
+  planRevenueSchedule,
+  revenueTotals
+} from "../../contract-revenue-schedule.ts";
+import {
+  type ContractLineTerms,
+  type ContractTerms,
+  horizon,
+  planInvoiceSchedule
+} from "../../contract-schedule.ts";
+import { round } from "../../precision.ts";
+import {
+  anchorWeekday,
+  resolveDate,
+  resolveLocalTimestamp,
+  resolveTimestamp,
+  workdayBefore
+} from "../dates.ts";
 import { bootstrapIdByName } from "../helpers/bootstrap-lookup.ts";
 import { copyMethodToQuoteLine } from "../helpers/method-copy.ts";
 import { seedReturnCredit } from "../helpers/return-credit.ts";
 import { insertId, insertRow, need, nextSequence, RICH } from "../sql.ts";
-import type { Ctx, PriceBreak, SalesOpportunitySpec } from "../types.ts";
+import type {
+  Ctx,
+  PriceBreak,
+  SalesOpportunitySpec,
+  SalesReturnLineSpec,
+  ServiceJobSpec
+} from "../types.ts";
 
 async function insertPriceBreaks(
   ctx: Ctx,
@@ -45,18 +74,22 @@ export async function runTier4(ctx: Ctx): Promise<void> {
   // already exists and only needs the digital-quote flags flipped on. Without
   // digitalQuoteEnabled the public quote page renders no Accept/Reject buttons,
   // and without digitalQuoteIncludesPurchaseOrders the PO-upload field is gone.
-  ctx.log("company settings — digital quotes enabled");
+  // The service labor rates: the cost every time entry posts at and the bill
+  // rate every new service job copies (Settings → Service).
+  ctx.log("company settings — digital quotes enabled, service labor rates");
   await insertRow(
     ctx,
     "companySettings",
     {
       id: companyId,
       digitalQuoteEnabled: true,
-      digitalQuoteIncludesPurchaseOrders: true
+      digitalQuoteIncludesPurchaseOrders: true,
+      serviceLaborCostRate: data.serviceLaborRates.cost,
+      serviceLaborBillRate: data.serviceLaborRates.bill
     },
     {
       onConflict:
-        '("id") DO UPDATE SET "digitalQuoteEnabled" = true, "digitalQuoteIncludesPurchaseOrders" = true'
+        '("id") DO UPDATE SET "digitalQuoteEnabled" = true, "digitalQuoteIncludesPurchaseOrders" = true, "serviceLaborCostRate" = EXCLUDED."serviceLaborCostRate", "serviceLaborBillRate" = EXCLUDED."serviceLaborBillRate"'
     }
   );
 
@@ -226,7 +259,8 @@ export async function runTier4(ctx: Ctx): Promise<void> {
         currencyCode: "USD",
         opportunityId,
         orderDate: resolveDate(ctx.anchor, spec.order.orderDateOffset),
-        assignee: spec.order.assignee === "self" ? ctx.userId : undefined
+        assignee: spec.order.assignee === "self" ? ctx.userId : undefined,
+        customerReference: spec.order.customerReference
       });
       await insertRow(ctx, "salesOrderPayment", {
         id: orderId,
@@ -257,7 +291,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
           salesOrderId: orderId,
           salesOrderLineType: "Part",
           itemId: item.id,
-          description: item.name,
+          description: line.description ?? item.name,
           saleQuantity: line.saleQuantity,
           unitPrice: line.unitPrice,
           unitOfMeasureCode: "EA",
@@ -422,7 +456,8 @@ export async function runTier4(ctx: Ctx): Promise<void> {
       locationId: plantId,
       currencyCode: "USD",
       opportunityId: oppId,
-      orderDate: resolveDate(ctx.anchor, spec.orderDateOffset)
+      orderDate: resolveDate(ctx.anchor, spec.orderDateOffset),
+      customerReference: spec.customerReference
     });
     await insertRow(ctx, "salesOrderPayment", {
       id: soId,
@@ -441,7 +476,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
       salesOrderId: soId,
       salesOrderLineType: "Part",
       itemId: item.id,
-      description: item.name,
+      description: spec.lineDescription ?? item.name,
       saleQuantity: 1,
       unitPrice: spec.unitPrice,
       unitOfMeasureCode: "EA",
@@ -459,9 +494,16 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     await insertOpportunity(spec);
   }
 
-  // Completed mirrors post-receipt's Sales Return Order branch: a Posted receipt
-  // plus a Sales Return Receipt ledger row per line. A `credit` adds Issue
-  // Credit's memo (helpers/return-credit.ts); tier 09 journals it if Posted.
+  // Before the returns: a Service or Warranty line names its asset.
+  await seedCustomerAssets(ctx);
+
+  // In Progress and Completed mirror post-receipt's Sales Return Order branch:
+  // a Posted receipt plus a Sales Return Receipt ledger row per Return to Stock
+  // line. A Service or Warranty line enters no stock (receipt-service-return.ts):
+  // no ledger row, its serial goes Available and its asset At Depot, and
+  // seedServiceJobs creates its job.
+  // A `credit` adds Issue Credit's memo (helpers/return-credit.ts); tier 09
+  // journals it if Posted.
   if (data.salesReturns.length > 0) {
     ctx.log("sales returns");
     for (const spec of data.salesReturns) {
@@ -477,7 +519,8 @@ export async function runTier4(ctx: Ctx): Promise<void> {
         "returnReason",
         spec.returnReason
       );
-      const completed = spec.status === "Completed";
+      const received =
+        spec.status === "Completed" || spec.status === "In Progress";
       const orderDate = resolveDate(ctx.anchor, spec.dateOffset);
       const rmaReadableId = await nextSequence(ctx, "salesReturnOrder");
       const rmaId = await insertId(ctx, "salesReturnOrder", {
@@ -502,16 +545,22 @@ export async function runTier4(ctx: Ctx): Promise<void> {
           itemId: item.id,
           lineNumber: index + 1,
           quantity: line.quantity,
-          quantityReceived: completed ? line.quantity : 0,
+          quantityReceived: received ? line.quantity : 0,
           returnReasonId,
           unitOfMeasureCode: "EA",
-          unitPrice: line.unitPrice
+          unitPrice: line.unitPrice,
+          returnType: line.returnType,
+          customerAssetId:
+            line.asset === undefined
+              ? undefined
+              : need(ctx.refs.misc, `asset:${line.asset}`, "customer asset"),
+          problem: line.problem
         });
         lineIds.push(lineId);
         ctx.refs.documents[`rmaline:${spec.key}:${index + 1}`] = lineId;
       }
 
-      if (completed) {
+      if (received) {
         const receiptReadableId = await nextSequence(ctx, "receipt");
         const receiptId = await insertId(ctx, "receipt", {
           receiptId: receiptReadableId,
@@ -525,9 +574,35 @@ export async function runTier4(ctx: Ctx): Promise<void> {
         });
         for (const [index, line] of spec.lines.entries()) {
           const item = need(ctx.refs.items, line.item);
+          if (isServiceLine(line)) {
+            await insertId(ctx, "receiptLine", {
+              receiptId,
+              lineId: lineIds[index],
+              itemId: item.id,
+              orderQuantity: line.quantity,
+              outstandingQuantity: 0,
+              receivedQuantity: line.quantity,
+              locationId: plantId,
+              unitOfMeasure: "EA",
+              unitPrice: line.unitPrice
+            });
+            if (line.asset !== undefined) {
+              await ctx.client.query(
+                `UPDATE "customerAsset" SET status = 'At Depot'
+                 WHERE id = $1 AND "companyId" = $2`,
+                [need(ctx.refs.misc, `asset:${line.asset}`), companyId]
+              );
+              await ctx.client.query(
+                `UPDATE "trackedEntity" SET status = 'Available'
+                 WHERE id = $1 AND "companyId" = $2`,
+                [need(ctx.refs.misc, `asset-serial:${line.asset}`), companyId]
+              );
+            }
+            continue;
+          }
           if (line.toShelf === undefined) {
             throw new Error(
-              `Seed: completed return "${spec.key}" line "${line.item}" has no toShelf`
+              `Seed: received return "${spec.key}" line "${line.item}" has no toShelf`
             );
           }
           const shelfId = need(ctx.refs.shelves, line.toShelf);
@@ -557,6 +632,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
           });
         }
         ctx.refs.documents[`rma-receipt:${spec.key}`] = receiptId;
+        ctx.refs.misc[`rma-receipt-readable:${spec.key}`] = receiptReadableId;
       }
 
       if (spec.credit) {
@@ -570,6 +646,205 @@ export async function runTier4(ctx: Ctx): Promise<void> {
       }
 
       ctx.refs.documents[`rma:${spec.key}`] = rmaId;
+    }
+  }
+
+  // Contracts: Active and confirmed, as Confirm leaves one. The schedule comes
+  // from the shared planner through its horizon; every invoice dated on or
+  // before today is Billed Externally and billedThrough is the last such row's
+  // period end, so no drafted invoice exists for tier 09 to journal. Like a
+  // migrated contract, revenue is recognized externally before this month
+  // (recognizeRevenueFrom) and each line opens with the billed-but-unrecognized
+  // difference, as Confirm writes it.
+  if (data.contracts.length > 0) {
+    ctx.log("customer contracts");
+    const today = ctx.anchor.toString();
+    for (const spec of data.contracts) {
+      ctx.log(`  contract ${spec.key}`);
+      const customerId = need(ctx.refs.customers, spec.customer);
+      const startDate = resolveDate(ctx.anchor, spec.startOffset);
+      const endDate =
+        spec.termMonths === null
+          ? null
+          : parseDate(startDate)
+              .add({ months: spec.termMonths })
+              .subtract({ days: 1 })
+              .toString();
+      const lines = spec.lines.map((line, index) => ({
+        spec: line,
+        terms: {
+          id: `line-${index}`,
+          revenueType: line.revenueType,
+          quantity: line.quantity,
+          rate: line.rate,
+          rateUnit: line.rateUnit ?? null,
+          discountPercent: (line.discountPercent ?? 0) / 100,
+          startDate: resolveDate(ctx.anchor, line.startOffset),
+          endDate:
+            line.endOffset === undefined
+              ? null
+              : resolveDate(ctx.anchor, line.endOffset)
+        } satisfies ContractLineTerms
+      }));
+      const terms: ContractTerms = {
+        startDate,
+        endDate,
+        billingFrequency: spec.billingFrequency,
+        billingAlignment: spec.billingAlignment,
+        billingTiming: spec.billingTiming,
+        firstInvoiceDate: null,
+        billedThrough: null
+      };
+      const invoices = planInvoiceSchedule(
+        terms,
+        lines.map((line) => line.terms),
+        horizon(terms, today)
+      );
+      let billedThrough: string | null = null;
+      for (const invoice of invoices) {
+        if (invoice.invoiceDate > today) continue;
+        for (const row of invoice.rows) {
+          if (billedThrough === null || row.periodEnd > billedThrough) {
+            billedThrough = row.periodEnd;
+          }
+        }
+      }
+
+      const contractId = await insertId(ctx, "customerContract", {
+        customerContractId: await nextSequence(ctx, "customerContract"),
+        name: spec.name,
+        status: "Active",
+        customerId,
+        salesPersonId: userId,
+        closeDate: startDate,
+        startDate,
+        endDate,
+        termMonths: spec.termMonths,
+        renewal: spec.renewal,
+        renewalUplift: spec.renewalUpliftPercent / 100,
+        billingFrequency: spec.billingFrequency,
+        billingAlignment: spec.billingAlignment,
+        billingTiming: spec.billingTiming,
+        billedThrough,
+        recognizeRevenueFrom: monthStart(today),
+        paymentTermId,
+        currencyCode: "USD",
+        exchangeRate: 1,
+        confirmedAt: resolveTimestamp(ctx.anchor, spec.startOffset, "10:00:00"),
+        confirmedBy: userId,
+        createdAt: resolveTimestamp(ctx.anchor, spec.startOffset, "09:00:00")
+      });
+
+      const lineIdByKey: Record<string, string> = {};
+      for (const [index, line] of lines.entries()) {
+        lineIdByKey[line.terms.id] = await insertId(
+          ctx,
+          "customerContractLine",
+          {
+            customerContractId: contractId,
+            revenueType: line.spec.revenueType,
+            itemId: need(ctx.refs.items, line.spec.item).id,
+            description: line.spec.description,
+            quantity: line.terms.quantity,
+            rate: line.terms.rate,
+            rateUnit: line.terms.rateUnit ?? undefined,
+            discountPercent: line.terms.discountPercent,
+            startDate: line.terms.startDate,
+            endDate: line.terms.endDate ?? undefined,
+            revenueMethod: line.spec.revenueMethod,
+            sortOrder: index + 1
+          }
+        );
+      }
+
+      for (const invoice of invoices) {
+        const status =
+          invoice.invoiceDate <= today ? "Billed Externally" : "Planned";
+        const invoiceId = await insertId(ctx, "customerContractInvoice", {
+          customerContractId: contractId,
+          invoiceDate: invoice.invoiceDate,
+          status
+        });
+        for (const row of invoice.rows) {
+          await insertRow(ctx, "customerContractInvoiceLine", {
+            customerContractId: contractId,
+            customerContractInvoiceId: invoiceId,
+            customerContractLineId: need(lineIdByKey, row.lineId),
+            periodStart: row.periodStart,
+            periodEnd: row.periodEnd,
+            units: row.units,
+            unitPrice: row.unitPrice,
+            amount: row.amount,
+            isAdjustment: row.isAdjustment
+          });
+        }
+      }
+
+      const scheduleRows = invoices.flatMap((invoice) => invoice.rows);
+      const lastPeriodEnds = new Map<string, string>();
+      for (const row of scheduleRows) {
+        const last = lastPeriodEnds.get(row.lineId);
+        if (!last || row.periodEnd > last) {
+          lastPeriodEnds.set(row.lineId, row.periodEnd);
+        }
+      }
+      const billed = revenueTotals(scheduleRows);
+      const revenue = planRevenueSchedule({
+        lines: lines.map((line) => ({
+          id: line.terms.id,
+          revenueType: line.spec.revenueType,
+          revenueMethod: line.spec.revenueMethod,
+          startDate: line.terms.startDate,
+          endDate: line.terms.endDate,
+          goLiveDate: null,
+          revenueStartDate: null,
+          revenueEndDate: null
+        })),
+        totals: billed,
+        fallbackEnds: lastPeriodEnds,
+        recognizeRevenueFrom: monthStart(today)
+      });
+      for (const row of revenue) {
+        await insertRow(ctx, "customerContractRevenue", {
+          customerContractId: contractId,
+          customerContractLineId: need(lineIdByKey, row.lineId),
+          periodStart: row.periodStart,
+          periodEnd: row.periodEnd,
+          amount: row.amount,
+          status: row.status
+        });
+      }
+
+      const billedExternally = revenueTotals(
+        invoices
+          .filter((invoice) => invoice.invoiceDate <= today)
+          .flatMap((invoice) => invoice.rows)
+      );
+      const recognizedExternally = revenueTotals(
+        revenue.filter((row) => row.status === "Recognized Externally")
+      );
+      for (const line of lines) {
+        const opening = applyContractMovement({
+          position: EMPTY_POSITION,
+          amount:
+            (billedExternally.get(line.terms.id) ?? 0) -
+            (recognizedExternally.get(line.terms.id) ?? 0),
+          rate: 1,
+          counterpart: "receivable"
+        });
+        if (opening.deferredAmount === 0 && opening.assetAmount === 0) continue;
+        await insertRow(ctx, "customerContractLedgerEntry", {
+          customerContractId: contractId,
+          customerContractLineId: need(lineIdByKey, line.terms.id),
+          entryType: "Opening",
+          postingDate: startDate,
+          deferredAmount: opening.deferredAmount,
+          deferredBase: opening.deferredBase,
+          assetAmount: opening.assetAmount,
+          assetBase: opening.assetBase
+        });
+      }
+      ctx.refs.documents[`con:${spec.key}`] = contractId;
     }
   }
 
@@ -643,4 +918,393 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     salesOrderId: need(ctx.refs.documents, firstReleased.order.ref),
     userId
   });
+
+  await seedServiceJobs(ctx);
+}
+
+function isServiceLine(line: SalesReturnLineSpec): boolean {
+  return (
+    line.returnType === "Return for Service" ||
+    line.returnType === "Return for Warranty"
+  );
+}
+
+/**
+ * Units at customers, registered as `registerCustomerAsset` (ERP
+ * `service.server.ts`) does it: a Consumed serial sourced from the item, and
+ * a `customerAsset` with source Manual at the customer's location. The
+ * datasets ship no serials to customers, so none comes from a shipment.
+ */
+async function seedCustomerAssets(ctx: Ctx): Promise<void> {
+  for (const spec of ctx.dataset.sales.customerAssets) {
+    ctx.log(`customer asset ${spec.serial}`);
+    const item = need(ctx.refs.items, spec.item, "item");
+    const trackedEntityId = await insertId(ctx, "trackedEntity", {
+      itemId: item.id,
+      readableId: spec.serial,
+      quantity: 1,
+      status: "Consumed",
+      sourceDocument: "Item",
+      sourceDocumentId: item.id
+    });
+    ctx.refs.misc[`asset-serial:${spec.key}`] = trackedEntityId;
+    ctx.refs.misc[`asset:${spec.key}`] = await insertId(ctx, "customerAsset", {
+      trackedEntityId,
+      itemId: item.id,
+      customerId: need(ctx.refs.customers, spec.customer, "customer"),
+      customerLocationId: need(
+        ctx.refs.misc,
+        `cloc:${spec.customer}`,
+        "customer location"
+      ),
+      shippedDate: resolveDate(ctx.anchor, spec.shippedOffset),
+      laborWarrantyEndDate:
+        spec.laborWarrantyEndOffset === null
+          ? null
+          : resolveDate(ctx.anchor, spec.laborWarrantyEndOffset),
+      partsWarrantyEndDate:
+        spec.partsWarrantyEndOffset === null
+          ? null
+          : resolveDate(ctx.anchor, spec.partsWarrantyEndOffset),
+      source: "Manual"
+    });
+  }
+}
+
+/**
+ * Service jobs, as the app leaves them (`service.service.ts`):
+ * - a job from an RMA line is created Open at the receipt by
+ *   `createServiceJobsForReturn` (receipt-service-return.ts), with its
+ *   `Return Receipt` activity on the asset's serial;
+ * - a job copies the company's bill rate (`laborBillRate`); an estimate line
+ *   with no item is a Labor line at that rate;
+ * - time entries are the employee's and all closed, so each stores the
+ *   company's cost rate (`post-time`), and tier 09 writes its journal;
+ * - an Invoiced job has the Draft invoice `createServiceInvoice` drafts: one
+ *   Labor line (billable hours × the job's bill rate), then each billable
+ *   charge, every line with `serviceJobId`, tax 0;
+ * - an open job's dispatch assignments are the user's, on weekdays of the
+ *   anchor's week.
+ */
+async function seedServiceJobs(ctx: Ctx): Promise<void> {
+  const data = ctx.dataset.sales;
+  if (data.serviceJobs.length === 0) return;
+  const { userId } = ctx;
+  const plantId = ctx.refs.locations.Plant ?? ctx.locationId;
+  const rates = data.serviceLaborRates;
+  const assetByKey = Object.fromEntries(
+    data.customerAssets.map((asset) => [asset.key, asset])
+  );
+  const returnByKey = Object.fromEntries(
+    data.salesReturns.map((rma) => [rma.key, rma])
+  );
+  const day = (workdaysBack: number) => workdayBefore(ctx.anchor, workdaysBack);
+  const at = (date: string, timeOfDay: string) =>
+    resolveLocalTimestamp(date, timeOfDay, ctx.timeZone);
+
+  for (const spec of data.serviceJobs) {
+    ctx.log(`service job ${spec.key} — ${spec.status}`);
+    const asset = need(assetByKey, spec.asset, "customer asset");
+    const customerId = need(ctx.refs.customers, asset.customer, "customer");
+    const customerLocationId = need(
+      ctx.refs.misc,
+      `cloc:${asset.customer}`,
+      "customer location"
+    );
+    const rma = spec.salesReturnLine;
+    // A job from an RMA line opens at the receipt.
+    const openedDate =
+      rma === undefined
+        ? day(spec.openedWorkdaysBack ?? 0)
+        : resolveDate(
+            ctx.anchor,
+            need(returnByKey, rma.salesReturn, "sales return").dateOffset
+          );
+    const completedDate =
+      spec.completedWorkdaysBack === undefined
+        ? undefined
+        : day(spec.completedWorkdaysBack);
+    const estimate = spec.estimate;
+
+    const serviceJobId = await nextSequence(ctx, "serviceJob");
+    const jobId = await insertId(ctx, "serviceJob", {
+      serviceJobId,
+      status: spec.status,
+      coverage: spec.coverage,
+      workSite: spec.workSite,
+      billingMethod: "Time and Materials",
+      priority: spec.priority,
+      laborBillRate: rates.bill,
+      customerId,
+      customerLocationId,
+      customerAssetId: need(ctx.refs.misc, `asset:${spec.asset}`),
+      itemId: need(ctx.refs.items, asset.item, "item").id,
+      trackedEntityId: need(ctx.refs.misc, `asset-serial:${spec.asset}`),
+      locationId: plantId,
+      salesReturnOrderLineId:
+        rma === undefined
+          ? undefined
+          : need(
+              ctx.refs.documents,
+              `rmaline:${rma.salesReturn}:${rma.line}`,
+              "sales return line"
+            ),
+      // The receipt assigns nobody; an office job is the user's.
+      assignee: rma === undefined ? userId : undefined,
+      dueDate:
+        spec.dueOffset === undefined
+          ? undefined
+          : resolveDate(ctx.anchor, spec.dueOffset),
+      problem: RICH(spec.problem),
+      findings: spec.findings === undefined ? undefined : RICH(spec.findings),
+      resolution:
+        spec.resolution === undefined ? undefined : RICH(spec.resolution),
+      repairable: spec.repairable,
+      estimateStatus: estimate?.status,
+      estimateSentAt:
+        estimate?.sentWorkdaysBack === undefined
+          ? undefined
+          : at(day(estimate.sentWorkdaysBack), "15:00:00"),
+      estimateRespondedAt:
+        estimate?.respondedWorkdaysBack === undefined
+          ? undefined
+          : at(day(estimate.respondedWorkdaysBack), "10:00:00"),
+      estimateRespondedBy: estimate?.respondedBy,
+      completedAt:
+        completedDate === undefined ? undefined : at(completedDate, "16:30:00"),
+      createdAt: at(openedDate, "09:00:00")
+    });
+    ctx.refs.documents[`sj:${spec.key}`] = jobId;
+    ctx.refs.misc[`sj-readable:${spec.key}`] = serviceJobId;
+
+    for (const [index, line] of (estimate?.lines ?? []).entries()) {
+      // No item: a Labor line, hours at the job's bill rate.
+      const item =
+        line.item === undefined
+          ? undefined
+          : need(ctx.refs.items, line.item, "item");
+      await insertRow(ctx, "serviceJobEstimateLine", {
+        serviceJobId: jobId,
+        itemId: item?.id,
+        description: line.description ?? item?.name,
+        quantity: line.quantity,
+        unitPrice: item === undefined ? rates.bill : line.unitPrice,
+        sortOrder: index + 1
+      });
+    }
+
+    // Tier 09 posts each entry's journal: `sjt:<job key>:<index>`.
+    for (const [index, entry] of spec.time.entries()) {
+      const entryDate = day(entry.workdaysBack);
+      ctx.refs.misc[`sjt:${spec.key}:${index}`] = await insertId(
+        ctx,
+        "serviceJobTime",
+        {
+          serviceJobId: jobId,
+          employeeId: userId,
+          entryDate,
+          startTime:
+            entry.clock === undefined
+              ? undefined
+              : at(entryDate, entry.clock.start),
+          endTime:
+            entry.clock === undefined
+              ? undefined
+              : at(entryDate, entry.clock.end),
+          hours: entry.hours,
+          billable: entry.billable ?? true,
+          // Stored by post-service-job post-time: the company's cost rate.
+          unitCost: rates.cost,
+          note: entry.note,
+          createdAt: at(entryDate, "17:00:00")
+        }
+      );
+    }
+
+    // The dispatch grid's blocks this week (`upsertServiceJobAssignment`).
+    for (const assignment of spec.assignments ?? []) {
+      await insertRow(ctx, "serviceJobAssignment", {
+        serviceJobId: jobId,
+        employeeId: userId,
+        scheduledDate: anchorWeekday(ctx.anchor, assignment.weekday),
+        plannedHours: assignment.plannedHours,
+        note: assignment.note,
+        createdAt: at(openedDate, "09:30:00")
+      });
+    }
+
+    for (const charge of spec.charges) {
+      const item = need(ctx.refs.items, charge.item, "item");
+      await insertRow(ctx, "serviceJobItem", {
+        serviceJobId: jobId,
+        lineType: "Charge",
+        itemId: item.id,
+        description: charge.description ?? item.name,
+        quantity: charge.quantity,
+        unitOfMeasureCode: item.unitOfMeasureCode,
+        unitCost: 0,
+        unitPrice: charge.unitPrice,
+        billable: charge.billable ?? true
+      });
+    }
+
+    // createServiceJobsForReturn: the Return Receipt activity on the serial.
+    if (rma !== undefined) {
+      const activityId = await insertId(ctx, "trackedActivity", {
+        type: "Return Receipt",
+        sourceDocument: "Receipt",
+        sourceDocumentId: need(
+          ctx.refs.documents,
+          `rma-receipt:${rma.salesReturn}`,
+          "return receipt"
+        ),
+        sourceDocumentReadableId: need(
+          ctx.refs.misc,
+          `rma-receipt-readable:${rma.salesReturn}`
+        ),
+        attributes: JSON.stringify({
+          "Sales Return Order": need(
+            ctx.refs.documents,
+            `rma:${rma.salesReturn}`
+          ),
+          Receipt: need(ctx.refs.documents, `rma-receipt:${rma.salesReturn}`),
+          Employee: userId,
+          "At Depot": true,
+          "Service Job": jobId
+        }),
+        createdAt: openedDate
+      });
+      await insertRow(ctx, "trackedActivityOutput", {
+        trackedActivityId: activityId,
+        trackedEntityId: need(ctx.refs.misc, `asset-serial:${spec.asset}`),
+        quantity: 1,
+        createdAt: openedDate
+      });
+    }
+
+    if (spec.status === "Invoiced") {
+      await insertServiceInvoice(ctx, spec, {
+        jobId,
+        serviceJobId,
+        customerId,
+        customerLocationId,
+        plantId,
+        laborBillRate: rates.bill
+      });
+    }
+  }
+}
+
+/** createServiceInvoice's Draft invoice of one Invoiced job. */
+async function insertServiceInvoice(
+  ctx: Ctx,
+  spec: ServiceJobSpec,
+  args: {
+    jobId: string;
+    serviceJobId: string;
+    customerId: string;
+    customerLocationId: string;
+    plantId: string;
+    laborBillRate: number;
+  }
+): Promise<void> {
+  if (spec.invoiceWorkdaysBack === undefined) {
+    throw new Error(
+      `Seed: Invoiced service job "${spec.key}" has no invoice day`
+    );
+  }
+  const billableHours = round(
+    spec.time
+      .filter((entry) => entry.billable ?? true)
+      .reduce((sum, entry) => sum + entry.hours, 0)
+  );
+  // planServiceJobInvoiceLines: one labor line (a Service line with no item,
+  // unit EA), then the charges.
+  const lines: {
+    invoiceLineType: "Service";
+    itemId: string | undefined;
+    description: string;
+    quantity: number;
+    unitPrice: number;
+    unitOfMeasureCode: string;
+  }[] = [
+    ...(billableHours > 0
+      ? [
+          {
+            invoiceLineType: "Service" as const,
+            itemId: undefined,
+            description: "Labor",
+            quantity: billableHours,
+            unitPrice: round(args.laborBillRate),
+            unitOfMeasureCode: "EA"
+          }
+        ]
+      : []),
+    ...spec.charges
+      .filter((charge) => charge.billable ?? true)
+      .map((charge) => {
+        const item = need(ctx.refs.items, charge.item, "item");
+        return {
+          invoiceLineType: "Service" as const,
+          itemId: item.id,
+          description: charge.description ?? item.name,
+          quantity: charge.quantity,
+          unitPrice: round(charge.unitPrice),
+          unitOfMeasureCode: item.unitOfMeasureCode
+        };
+      })
+  ];
+  if (lines.length === 0) {
+    throw new Error(`Seed: Invoiced service job "${spec.key}" bills nothing`);
+  }
+  const subtotal = round(
+    lines.reduce((sum, line) => sum + line.quantity * line.unitPrice, 0)
+  );
+  const dateIssued = workdayBefore(ctx.anchor, spec.invoiceWorkdaysBack);
+  const opportunityId = await insertId(ctx, "opportunity", {
+    customerId: args.customerId
+  });
+  const invoiceId = await insertId(ctx, "salesInvoice", {
+    invoiceId: await nextSequence(ctx, "salesInvoice"),
+    status: "Draft",
+    customerId: args.customerId,
+    invoiceCustomerId: args.customerId,
+    locationId: args.plantId,
+    paymentTermId: ctx.refs.misc.paymentTermId,
+    currencyCode: "USD",
+    exchangeRate: 1,
+    customerReference: args.serviceJobId,
+    dateIssued,
+    subtotal,
+    totalDiscount: 0,
+    totalTax: 0,
+    totalAmount: subtotal,
+    opportunityId
+  });
+  await insertRow(ctx, "salesInvoiceShipment", {
+    id: invoiceId,
+    locationId: args.plantId,
+    customerLocationId: args.customerLocationId,
+    shippingCost: 0
+  });
+  for (const [index, line] of lines.entries()) {
+    await insertRow(ctx, "salesInvoiceLine", {
+      invoiceId,
+      invoiceLineType: line.invoiceLineType,
+      itemId: line.itemId,
+      description: line.description,
+      quantity: line.quantity,
+      unitPrice: line.unitPrice,
+      unitOfMeasureCode: line.unitOfMeasureCode,
+      taxPercent: 0,
+      exchangeRate: 1,
+      locationId: args.plantId,
+      serviceJobId: args.jobId,
+      sortOrder: index + 1
+    });
+  }
+  await ctx.client.query(
+    `UPDATE "serviceJob" SET "salesInvoiceId" = $1 WHERE id = $2 AND "companyId" = $3`,
+    [invoiceId, args.jobId, ctx.companyId]
+  );
 }

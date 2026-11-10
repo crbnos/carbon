@@ -20,6 +20,7 @@
  * that job. It is provider-agnostic here and reachable on its own.
  */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { GL_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
 import {
   getAccountingIntegration,
   isAccountingSyncEnabled,
@@ -114,7 +115,7 @@ export const accountingJournalBackfillFunction = inngest.createFunction(
           .from("journal")
           .select("id, sourceType, status, reversalOfId")
           .eq("companyId", payload.companyId)
-          .in("status", ["Posted", "Reversed"])
+          .in("status", GL_JOURNAL_STATUSES)
           .is("reversalOfId", null)
           .gte("postingDate", syncFromDate)
           .order("id", { ascending: true })

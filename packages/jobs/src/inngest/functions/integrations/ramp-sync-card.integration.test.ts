@@ -2,11 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ServerFnError } from "@carbon/api/errors";
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { createMappingService } from "@carbon/ee/accounting";
 import type { RampClient, RampTransaction } from "@carbon/ee/ramp.server";
-import { ServerFnError } from "@carbon/server-functions/errors";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
@@ -14,23 +14,31 @@ import { getJobDatabaseClient } from "../../../db";
 import { stageOrResumeRampCharge } from "./ramp-sync-card-stage";
 import type { RampSyncContext } from "./ramp-sync-shared";
 
-const runDatabaseTests = process.env.RUN_RAMP_DB_TESTS === "true";
-
 // Only the posting operation is substituted; everything else is real Postgres.
+const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
+const hasLocalDatabase = (() => {
+  try {
+    return LOCAL_HOSTS.includes(
+      new URL(process.env.SUPABASE_DB_URL ?? "").hostname
+    );
+  } catch {
+    return false;
+  }
+})();
+
 const { post } = vi.hoisted(() => ({ post: vi.fn() }));
-vi.mock("@carbon/server-functions", () => {
-  const bind = (actor: string) => (fields: object) => ({
-    invoke: (_name: string, input: unknown) => post({ ...fields, actor }, input)
-  });
-  return { serverFns: { system: bind("system"), as: bind("caller") } };
-});
+// A posting with a client runs as the caller behind it, else as the system.
+vi.mock("@carbon/api/postings.server", () => ({
+  posting: (_name: string, handles: { client?: unknown }, input: unknown) =>
+    post({ ...handles, actor: handles.client ? "caller" : "system" }, input)
+}));
 
 vi.mock("@carbon/ee/ramp.server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@carbon/ee/ramp.server")>()),
   confirmSyncs: vi.fn().mockResolvedValue(undefined)
 }));
 
-describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
+describe.skipIf(!hasLocalDatabase)("Ramp card staging (Postgres)", () => {
   let db: Kysely<KyselyDatabase>;
   let fixture: {
     companyId: string;
@@ -323,8 +331,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
         credentials: {
           type: "client_credentials",
           clientId: "integration-test",
-          clientSecret: "integration-test",
-          environment: "sandbox"
+          clientSecret: "integration-test"
         },
         sync: {
           pullTransactions: true,
@@ -447,8 +454,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
         credentials: {
           type: "client_credentials",
           clientId: "integration-test",
-          clientSecret: "integration-test",
-          environment: "sandbox"
+          clientSecret: "integration-test"
         },
         sync: {
           pullTransactions: true,

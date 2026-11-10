@@ -3,16 +3,16 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ComboboxProps } from "@carbon/form";
-import { CreatableCombobox } from "@carbon/form";
+import { CreatableCombobox, useControlField } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { Avatar, HStack, useDisclosure } from "@carbon/react";
+import { Avatar, HStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useMemo, useRef, useState } from "react";
-import type {
-  CustomerContact as CustomerContactType,
-  getCustomerContacts
-} from "~/modules/sales";
+import { useEffect, useMemo, useRef } from "react";
+import { useCompanySettings, useDrawerItem } from "~/hooks";
+import type { getCustomerContacts } from "~/modules/sales/sales.service";
+import type { CustomerContact as CustomerContactType } from "~/modules/sales/types";
 import CustomerContactForm from "~/modules/sales/ui/Customer/CustomerContactForm";
+import { isEmailableContact } from "~/modules/settings/party-contact";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
 
@@ -25,6 +25,10 @@ type CustomerContactSelectProps = Omit<
     customer: { id: string; contact: CustomerContactType["contact"] } | null
   ) => void;
   inline?: boolean;
+  /** Show a warning when the selected contact has no email. */
+  warnIfNoEmail?: boolean;
+  /** Called when the "selected contact has no email" state changes. */
+  onMissingEmailChange?: (missing: boolean) => void;
 };
 
 const CustomerContactPreview = (
@@ -38,6 +42,7 @@ const CustomerContactPreview = (
       <Avatar
         size="xs"
         name={typeof contact.label === "string" ? contact.label : undefined}
+        decorative
       />
       <span>{contact.label}</span>
     </HStack>
@@ -46,16 +51,32 @@ const CustomerContactPreview = (
 
 const CustomerContact = ({
   customer,
+  warnIfNoEmail,
+  onMissingEmailChange,
   ...props
 }: CustomerContactSelectProps) => {
   const { t } = useLingui();
-  const newContactModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const companySettings = useCompanySettings();
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const [firstName, ...lastName] = created.split(" ");
+  const [firstName, ...lastName] = (create.item ?? "").split(" ");
 
   const { options, data, reload } = useCustomerContacts(customer);
+
+  const [value] = useControlField<string | undefined>(props.name);
+  const selected = data?.data?.find((c) => c.id === value);
+  const missingEmail =
+    !!warnIfNoEmail &&
+    !!selected &&
+    !isEmailableContact(selected.contact ?? {});
+
+  // A ref, so a parent passing an inline callback does not re-run the effect.
+  const onMissingEmailChangeRef = useRef(onMissingEmailChange);
+  onMissingEmailChangeRef.current = onMissingEmailChange;
+  useEffect(() => {
+    onMissingEmailChangeRef.current?.(missingEmail);
+  }, [missingEmail]);
 
   const onChange = (
     newValue: { label: string | JSX.Element; value: string } | null
@@ -68,7 +89,7 @@ const CustomerContact = ({
 
   const emptyMessage = useEmptyState(
     "customerContact",
-    customer ? { onCreate: () => newContactModal.onOpen() } : undefined
+    customer ? { onCreate: () => create.open("") } : undefined
   );
 
   return (
@@ -83,21 +104,27 @@ const CustomerContact = ({
         emptyMessage={emptyMessage}
         onChange={onChange}
         onCreateOption={(option) => {
-          newContactModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newContactModal.isOpen && (
+      {missingEmail && (
+        <p className="text-sm text-destructive">
+          {t`This contact has no email address.`}
+        </p>
+      )}
+      {create.item !== null && (
         <CustomerContactForm
+          key={create.key}
+          open={create.isOpen}
           customerId={customer!}
           type="modal"
+          requireEmail={!!companySettings?.requireCustomerContactEmail}
           onClose={() => {
-            setCreated("");
-            newContactModal.onClose();
+            create.close();
             // The options come from a per-customer fetcher that only loads once;
             // reload it so a just-created contact shows up in the list.
             reload();
-            triggerRef.current?.click();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
             email: "",
@@ -123,7 +150,7 @@ function useCustomerContacts(customerId?: string) {
     () =>
       customerContactsFetcher.data?.data?.map((c) => ({
         value: c.id,
-        label: c.contact?.fullName ?? c.contact?.email ?? "Unknown"
+        label: c.contact?.fullName || c.contact?.email || "Unknown"
       })) ?? [],
 
     [customerContactsFetcher.data]

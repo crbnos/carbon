@@ -206,8 +206,8 @@ export async function runLocationSchedule(
       batchPlacements
     });
     // One job's failure must not abandon the rest of the batch — it is left
-    // out of the write, so it stays stamped stale for a later wave and the
-    // jobs behind it still see its stored reservations.
+    // out of the write, so it stays stamped stale for a later wave. The jobs
+    // behind it still see its stored reservations; the write then clears them.
     try {
       const result = await engine.run();
       const jobWrites = engine.getWrites();
@@ -233,7 +233,7 @@ export async function runLocationSchedule(
     }
   }
 
-  await persistLocationWrites(db, writes, { companyId, userId });
+  await persistLocationWrites(db, writes, { companyId, userId }, failedJobIds);
 
   return {
     locationId,

@@ -2,10 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Button, cn, PrefetchLink, VStack } from "@carbon/react";
+import { Button, cn, PrefetchLink, pulseNavIcon, VStack } from "@carbon/react";
 import { useUrlParams } from "~/hooks";
+import { useSubmoduleLayout } from "~/hooks/useModules";
 import type { Route } from "~/types";
+import { arrangedGroups } from "~/utils/submodule-visibility";
 import { SidebarLinks, useSidebarLocation } from "./CollapsibleSidebar";
+import {
+  SheetNavGroup,
+  SheetNavRow,
+  useSidebarPresentation
+} from "./SidebarPresentation";
 
 const ContentSidebar = ({ links }: { links: Route[] }) => {
   const location = useSidebarLocation((pathname) =>
@@ -13,28 +20,60 @@ const ContentSidebar = ({ links }: { links: Route[] }) => {
   );
   const [params] = useUrlParams();
   const filter = params.get("q") ?? undefined;
+  const presentation = useSidebarPresentation();
+  const submoduleLayout = useSubmoduleLayout();
+  // The compact title reads `links`, so it still names a hidden page.
+  const shownLinks = arrangedGroups([{ routes: links }], submoduleLayout)[0]
+    .routes;
+  const isActive = (route: Route) =>
+    location.pathname.includes(route.to) && route.q === filter;
+
+  if (presentation === "title") {
+    const active = links.find(isActive);
+    return active ? <>{active.name}</> : null;
+  }
+
+  if (presentation === "sheet") {
+    return (
+      <SheetNavGroup>
+        {shownLinks.map((route) => (
+          <SheetNavRow
+            key={route.name}
+            to={route.to + (route.q ? `?q=${route.q}` : "")}
+            icon={route.icon}
+            label={route.name}
+            isActive={isActive(route)}
+            restoreRememberedTable
+          />
+        ))}
+      </SheetNavGroup>
+    );
+  }
 
   return (
     <SidebarLinks>
       <VStack>
         <VStack spacing={1} className="p-2">
-          {links.map((route) => {
-            const isActive =
-              location.pathname.includes(route.to) && route.q === filter;
+          {shownLinks.map((route) => {
+            const active = isActive(route);
             return (
               <Button
                 key={route.name}
                 asChild
                 leftIcon={route.icon}
-                variant={isActive ? "active" : "ghost"}
+                variant={active ? "active" : "ghost"}
+                aria-current={active ? "page" : undefined}
                 data-nav-item=""
+                onClick={(event) => pulseNavIcon(event)}
                 className={cn(
-                  "w-full justify-start",
-                  !isActive &&
-                    "hover:bg-transparent hover:text-active-foreground"
+                  "w-full justify-start active:scale-100",
+                  !active && "hover:bg-transparent hover:text-active-foreground"
                 )}
               >
-                <PrefetchLink to={route.to + (route.q ? `?q=${route.q}` : "")}>
+                <PrefetchLink
+                  to={route.to + (route.q ? `?q=${route.q}` : "")}
+                  state={{ restoreRememberedTable: true }}
+                >
                   {route.name}
                 </PrefetchLink>
               </Button>

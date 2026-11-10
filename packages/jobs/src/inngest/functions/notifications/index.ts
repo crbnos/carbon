@@ -4,4 +4,5 @@
 
 export { notifyFunction } from "./notify";
 export { sendEmailFunction } from "./send-email";
+export { sendPushFunction } from "./send-push";
 export { sendSlackFunction } from "./send-slack";

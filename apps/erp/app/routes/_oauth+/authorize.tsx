@@ -4,51 +4,63 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getUserClaims } from "@carbon/auth/users.server";
 import { validator } from "@carbon/form";
 import { Button, Heading, VStack } from "@carbon/react";
 import { redirectExternal } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Form, useLoaderData } from "react-router";
 import { z } from "zod";
+import {
+  canAuthorizeForCompany,
+  isRegisteredRedirectUri,
+  supportedScope
+} from "~/services/oauth.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
     update: "settings"
   });
 
-  const userCompanies = await client
-    .from("userToCompany")
-    .select("companyId, company:companyId(name)")
-    .eq("userId", userId);
+  const [userCompanies, claims] = await Promise.all([
+    client
+      .from("userToCompany")
+      .select("companyId, role, company:companyId(name)")
+      .eq("userId", userId),
+    getUserClaims(userId, companyId)
+  ]);
 
-  const companies = (userCompanies.data ?? []).map((uc) => ({
-    id: uc.companyId,
-    name: (uc.company as unknown as { name: string })?.name ?? uc.companyId
-  }));
+  // Only the companies the user may authorize a connector for.
+  const companies = (userCompanies.data ?? [])
+    .filter((uc) => canAuthorizeForCompany(uc, claims.permissions))
+    .map((uc) => ({
+      id: uc.companyId,
+      name: (uc.company as unknown as { name: string })?.name ?? uc.companyId
+    }));
 
   const url = new URL(request.url);
   const clientId = url.searchParams.get("client_id");
   const redirectUri = url.searchParams.get("redirect_uri");
-  const scope = url.searchParams.get("scope");
+  const scope = supportedScope(url.searchParams.get("scope"));
 
+  // The name is whatever the client registered itself as, so the page also
+  // shows where the code goes — the one thing a client cannot choose freely —
+  // and only once it matches a registered redirect URI.
   let clientName = "Unknown Application";
   let redirectDomain: string | null = null;
   if (clientId) {
     const serviceRole = getCarbonServiceRole();
     const oauthClient = await serviceRole
       .from("oauthClient")
-      .select("name")
+      .select("name, redirectUris")
       .eq("clientId", clientId)
       .single();
     if (oauthClient.data) {
       clientName = oauthClient.data.name;
-    }
-  }
-  if (redirectUri) {
-    try {
-      redirectDomain = new URL(redirectUri).hostname;
-    } catch {
-      // invalid URL — will be caught by the action validator
+      if (isRegisteredRedirectUri(oauthClient.data.redirectUris, redirectUri)) {
+        const target = new URL(redirectUri);
+        redirectDomain = target.host || target.protocol;
+      }
     }
   }
 
@@ -66,7 +78,7 @@ const formValidator = z.object({
 });
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "settings"
   });
 
@@ -89,7 +101,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const client_id = param("client_id");
   const redirect_uri = url.searchParams.get("redirect_uri");
   const state = url.searchParams.get("state");
-  const scope = url.searchParams.get("scope");
+  const scope = supportedScope(url.searchParams.get("scope"));
   const code_challenge = param("code_challenge");
   const code_challenge_method = param("code_challenge_method");
 
@@ -107,15 +119,22 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Verify the user belongs to the selected company
-  const membership = await client
-    .from("userToCompany")
-    .select("companyId")
-    .eq("userId", userId)
-    .eq("companyId", company_id)
-    .single();
+  // The token acts in the SELECTED company, so the user must be able to
+  // authorize there — requirePermissions above only checked the active one.
+  const [membership, claims] = await Promise.all([
+    client
+      .from("userToCompany")
+      .select("companyId, role")
+      .eq("userId", userId)
+      .eq("companyId", company_id)
+      .single(),
+    getUserClaims(userId, companyId)
+  ]);
 
-  if (!membership.data) {
+  if (
+    !membership.data ||
+    !canAuthorizeForCompany(membership.data, claims.permissions)
+  ) {
     return data({ error: "Invalid company" }, { status: 403 });
   }
 
@@ -133,7 +152,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const oauthClient = oauthClientResult.data;
 
-  if (!oauthClient.redirectUris.includes(redirect_uri)) {
+  if (!isRegisteredRedirectUri(oauthClient.redirectUris, redirect_uri)) {
     return data({ error: "Invalid redirect URI" }, { status: 400 });
   }
 
@@ -150,7 +169,7 @@ export async function action({ request }: ActionFunctionArgs) {
       userId,
       companyId: company_id,
       redirectUri: redirect_uri,
-      scope: scope || null,
+      scope,
       codeChallenge: code_challenge || null,
       codeChallengeMethod: code_challenge_method || null,
       createdAt: new Date().toISOString(),
@@ -206,6 +225,11 @@ export default function AuthorizeRoute() {
                   <span className="text-xs"> ({redirectDomain})</span>
                 )}{" "}
                 is requesting access to your Carbon account.
+              </p>
+              <p className="text-center text-xs text-pretty text-muted-foreground">
+                The application names itself. Only authorize it if you started
+                this connection. It will be able to do anything you can do in
+                the company you choose.
               </p>
               <div className="flex w-full flex-col gap-1.5">
                 <label

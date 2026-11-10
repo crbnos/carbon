@@ -26,7 +26,10 @@ import { flushSync } from "react-dom";
 import { useDropzone } from "react-dropzone";
 import { LuDownload, LuFileSpreadsheet } from "react-icons/lu";
 import { useUser } from "~/hooks/useUser";
-import { fieldMappings, type importSchemas } from "~/modules/shared";
+import {
+  fieldMappings,
+  type importSchemas
+} from "~/modules/shared/imports.models";
 import { useCsvContext } from "./useCsvContext";
 
 export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {

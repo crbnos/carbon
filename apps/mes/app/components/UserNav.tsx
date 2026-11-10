@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Company } from "@carbon/auth";
+import { useAccountSettings } from "@carbon/account";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import {
   Avatar,
@@ -18,7 +18,6 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-  HStack,
   ItarDisclosure,
   NavRailItem,
   Switch,
@@ -28,15 +27,13 @@ import {
   useRouteData,
   useSidebar
 } from "@carbon/react";
-import { modeValidator } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
-import { useRef } from "react";
+import { modeValidator, ROOT_ACTION_SAVE } from "@carbon/utils";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useEffect, useRef } from "react";
 import {
-  LuBuilding,
   LuChevronDown,
   LuLaptop,
   LuLogOut,
-  LuMapPin,
   LuMonitor,
   LuMoon,
   LuShieldCheck,
@@ -44,38 +41,75 @@ import {
   LuUser,
   LuUsers
 } from "react-icons/lu";
-import { Form, Link, useFetcher } from "react-router";
+import { useFetcher, useNavigation, useSubmit } from "react-router";
 import { useUser } from "~/hooks";
 import type { action } from "~/root";
 import type { Location } from "~/services/types";
 import type { PinnedInUser } from "~/types";
 import { path } from "~/utils/path";
 
-export function UserNav({
-  company,
-  companies,
-  consoleEnabled,
-  consoleMode,
-  location,
-  locations,
-  pinnedInUser
-}: {
-  company: Company;
-  companies: Company[];
+type UserNavProps = {
   consoleEnabled?: boolean;
   consoleMode: boolean;
   location: string;
   locations: Location[];
   pinnedInUser: PinnedInUser | null;
-}) {
+};
+
+/**
+ * Switches the session to another of the user's companies. A navigation, not
+ * a fetcher: the shell's `shouldRevalidate` re-runs only after a mutation, and
+ * a fetcher's redirect reaches it as a plain GET, so the page kept showing the
+ * old company until a reload.
+ */
+export function useSwitchCompany() {
+  const submit = useSubmit();
+  return (companyId: string) => {
+    const form = new FormData();
+    form.append("companyId", companyId);
+    submit(form, {
+      method: "post",
+      action: path.to.switchCompany(companyId)
+    });
+  };
+}
+
+/**
+ * Switches the session's location. The pending choice shows at once, as
+ * `optimisticLocation`, until the shell re-runs.
+ */
+export function useLocationSwitch(location: string) {
+  const submit = useSubmit();
+  const navigation = useNavigation();
+
+  // A navigation, not a fetcher (see useSwitchCompany): the action redirects
+  // twice, and a fetcher's submission is dropped on the second redirect, so
+  // the shell never re-ran and the menu kept the old location checked.
+  const updateLocation = (value: string) => {
+    const formData = new FormData();
+    formData.append("location", value);
+    submit(formData, { method: "POST", action: path.to.location });
+  };
+
+  const pendingLocation =
+    navigation.formAction === path.to.location
+      ? (navigation.formData?.get("location") as string | null)
+      : null;
+
+  return { updateLocation, optimisticLocation: pendingLocation ?? location };
+}
+
+/** The user menu's state and actions, shared by the rail menu and the phone More sheet. */
+export function useUserNav({
+  consoleMode,
+  location,
+  pinnedInUser
+}: Pick<UserNavProps, "consoleMode" | "location" | "pinnedInUser">) {
   const user = useUser();
   const stationName = `${user.firstName} ${user.lastName}`;
-  const { isMobile } = useSidebar();
 
   const mode = useMode();
   const modePreference = useModePreference();
-
-  const consoleSubmitRef = useRef<HTMLButtonElement>(null);
 
   const fetcher = useFetcher<typeof action>();
 
@@ -85,17 +119,22 @@ export function UserNav({
     document.body.removeAttribute("style");
     const formData = new FormData();
     formData.append("mode", parsed.data);
-    fetcher.submit(formData, { method: "post", action: path.to.root });
+    fetcher.submit(formData, ROOT_ACTION_SAVE);
   };
 
-  const updateLocation = (value: string) => {
+  const switchCompany = useSwitchCompany();
+
+  const switchOperator = () => {
+    fetcher.submit(null, { method: "POST", action: path.to.consolePinOut });
+  };
+
+  const toggleConsoleMode = () => {
     const formData = new FormData();
-    formData.append("location", value);
-    fetcher.submit(formData, { method: "POST", action: path.to.location });
+    formData.append("consoleMode", consoleMode ? "false" : "true");
+    fetcher.submit(formData, { method: "post", action: path.to.consoleToggle });
   };
 
-  const optimisticLocation =
-    (fetcher.formData?.get("location") as string | undefined) ?? location;
+  const { updateLocation, optimisticLocation } = useLocationSwitch(location);
 
   const itarDisclosure = useDisclosure();
 
@@ -104,22 +143,77 @@ export function UserNav({
     path.to.authenticatedRoot
   );
   const sessionUserId = routeData?.user?.id;
-  const isOperatorPinnedIn =
+  const isOperatorPinnedIn = Boolean(
     consoleMode &&
-    pinnedInUser &&
-    sessionUserId &&
-    pinnedInUser.userId !== sessionUserId;
-  const showingOperator = consoleMode && pinnedInUser;
-  const displayName = showingOperator ? pinnedInUser.name : stationName;
+      pinnedInUser &&
+      sessionUserId &&
+      pinnedInUser.userId !== sessionUserId
+  );
+  const showingOperator = isOperatorPinnedIn ? pinnedInUser : null;
+  const displayName = showingOperator ? showingOperator.name : stationName;
   const displayAvatar = showingOperator
-    ? pinnedInUser.avatarUrl
+    ? showingOperator.avatarUrl
     : user.avatarUrl;
+
+  return {
+    stationName,
+    mode,
+    modePreference,
+    onModeChange,
+    updateLocation,
+    switchCompany,
+    switchOperator,
+    toggleConsoleMode,
+    optimisticLocation,
+    itarDisclosure,
+    isOperatorPinnedIn,
+    showingOperator,
+    displayName,
+    displayAvatar
+  };
+}
+
+export function UserNav({
+  consoleEnabled,
+  consoleMode,
+  pinnedInUser
+}: Omit<UserNavProps, "location" | "locations">) {
+  const { t } = useLingui();
+  const submit = useSubmit();
+  const { isMobile } = useSidebar();
+  const openAccountSettings = useAccountSettings((s) => s.open);
+  // The settings dialog opens from a menu item that no longer exists when it
+  // closes, so focus would fall to <body>. Return it to the account trigger.
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const openedFromMenuRef = useRef(false);
+  const accountSettingsOpen = useAccountSettings((s) => s.tab !== null);
+  useEffect(() => {
+    if (accountSettingsOpen || !openedFromMenuRef.current) return;
+    openedFromMenuRef.current = false;
+    // After the dialog's own focus restore, which runs on a timeout.
+    const timer = setTimeout(() => triggerRef.current?.focus(), 50);
+    return () => clearTimeout(timer);
+  }, [accountSettingsOpen]);
+  const {
+    stationName,
+    mode,
+    modePreference,
+    onModeChange,
+    switchOperator,
+    toggleConsoleMode,
+    itarDisclosure,
+    isOperatorPinnedIn,
+    showingOperator,
+    displayName,
+    displayAvatar
+  } = useUserNav({ consoleMode, location: "", pinnedInUser });
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <NavRailItem
+            ref={triggerRef}
             icon={
               <Avatar
                 size="xs"
@@ -128,6 +222,7 @@ export function UserNav({
               />
             }
             label={displayName}
+            aria-label={t`Account: ${displayName.trim()}`}
             trailing={<LuChevronDown className="size-4" />}
           />
         </DropdownMenuTrigger>
@@ -140,16 +235,9 @@ export function UserNav({
           {/* Console mode with pinned-in operator: simplified menu */}
           {showingOperator ? (
             <>
-              <DropdownMenuLabel>{pinnedInUser.name}</DropdownMenuLabel>
+              <DropdownMenuLabel>{showingOperator.name}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onSelect={() => {
-                  fetcher.submit(null, {
-                    method: "POST",
-                    action: path.to.consolePinOut
-                  });
-                }}
-              >
+              <DropdownMenuItem onSelect={switchOperator}>
                 <DropdownMenuIcon icon={<LuUsers />} />
                 <Trans>Switch Operator</Trans>
               </DropdownMenuItem>
@@ -164,149 +252,88 @@ export function UserNav({
                 <Trans>Signed in as {stationName}</Trans>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to={path.to.accountSettings}>
-                  <DropdownMenuIcon icon={<LuUser />} />
-                  <Trans>Account Settings</Trans>
-                </Link>
+              <DropdownMenuItem
+                onClick={() => {
+                  openedFromMenuRef.current = true;
+                  openAccountSettings();
+                }}
+              >
+                <DropdownMenuIcon icon={<LuUser />} />
+                <Trans>Account Settings</Trans>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <DropdownMenuIcon icon={<LuBuilding />} />
-                  <Trans>Company</Trans>
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuRadioGroup value={company.companyId!}>
-                    {companies.map((c) => {
-                      const logo =
-                        mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
-                      return (
-                        <DropdownMenuRadioItem
-                          key={c.companyId}
-                          value={c.companyId!}
-                          onSelect={() => {
-                            const form = new FormData();
-                            form.append("companyId", c.companyId!);
-                            fetcher.submit(form, {
-                              method: "post",
-                              action: path.to.switchCompany(c.companyId!)
-                            });
-                          }}
-                        >
-                          <HStack>
-                            <Avatar
-                              size="xs"
-                              name={c.name ?? undefined}
-                              src={logo ?? undefined}
-                            />
-                            <span>{c.name}</span>
-                          </HStack>
-                        </DropdownMenuRadioItem>
-                      );
-                    })}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-              <DropdownMenuSeparator />
-              {locations.length > 1 ? (
-                <>
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                      <DropdownMenuIcon icon={<LuMapPin />} />
-                      <Trans>Location</Trans>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
-                      <DropdownMenuRadioGroup value={optimisticLocation}>
-                        {locations.map((loc) => (
-                          <DropdownMenuRadioItem
-                            key={loc.id}
-                            value={loc.id}
-                            onSelect={() => {
-                              updateLocation(loc.id);
-                            }}
-                          >
-                            {loc.name}
-                          </DropdownMenuRadioItem>
-                        ))}
-                      </DropdownMenuRadioGroup>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
-                  <DropdownMenuSeparator />
-                </>
-              ) : null}
             </>
           )}
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
+          {/* The account settings modal is the station's account, which a
+              pinned-in operator never opens: they keep the mode picker. */}
+          {showingOperator ? (
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <DropdownMenuIcon
+                  icon={mode === "dark" ? <LuMoon /> : <LuSun />}
+                />
+                <Trans>Appearance</Trans>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuRadioGroup
+                  value={modePreference}
+                  onValueChange={onModeChange}
+                >
+                  <DropdownMenuRadioItem
+                    value="light"
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    <DropdownMenuIcon icon={<LuSun />} />
+                    <Trans>Light</Trans>
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem
+                    value="dark"
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    <DropdownMenuIcon icon={<LuMoon />} />
+                    <Trans>Dark</Trans>
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem
+                    value="system"
+                    onSelect={(e) => e.preventDefault()}
+                  >
+                    <DropdownMenuIcon icon={<LuLaptop />} />
+                    <Trans>System</Trans>
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          ) : (
+            <DropdownMenuItem onClick={() => openAccountSettings("appearance")}>
               <DropdownMenuIcon
                 icon={mode === "dark" ? <LuMoon /> : <LuSun />}
               />
               <Trans>Appearance</Trans>
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
-              <DropdownMenuRadioGroup
-                value={modePreference}
-                onValueChange={onModeChange}
-              >
-                <DropdownMenuRadioItem
-                  value="light"
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  <DropdownMenuIcon icon={<LuSun />} />
-                  <Trans>Light</Trans>
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem
-                  value="dark"
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  <DropdownMenuIcon icon={<LuMoon />} />
-                  <Trans>Dark</Trans>
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem
-                  value="system"
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  <DropdownMenuIcon icon={<LuLaptop />} />
-                  <Trans>System</Trans>
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
+            </DropdownMenuItem>
+          )}
           {!isOperatorPinnedIn && (
             <>
               {consoleEnabled && (
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                // The item itself is the toggle; the switch only shows its state.
+                <DropdownMenuItem
+                  role="menuitemcheckbox"
+                  aria-checked={consoleMode}
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    toggleConsoleMode();
+                  }}
+                >
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center justify-start">
                       <DropdownMenuIcon icon={<LuMonitor />} />
                       <Trans>Console Mode</Trans>
                     </div>
-                    <div>
-                      <Switch
-                        checked={consoleMode}
-                        onCheckedChange={() =>
-                          consoleSubmitRef.current?.click()
-                        }
-                      />
-                      <fetcher.Form
-                        action={path.to.consoleToggle}
-                        method="post"
-                        className="sr-only"
-                      >
-                        <input
-                          type="hidden"
-                          name="consoleMode"
-                          value={consoleMode ? "false" : "true"}
-                        />
-                        <button
-                          ref={consoleSubmitRef}
-                          className="sr-only"
-                          type="submit"
-                        />
-                      </fetcher.Form>
-                    </div>
+                    <Switch
+                      aria-hidden
+                      tabIndex={-1}
+                      className="pointer-events-none"
+                      checked={consoleMode}
+                    />
                   </div>
                 </DropdownMenuItem>
               )}
@@ -317,15 +344,13 @@ export function UserNav({
                   <Trans>About</Trans>
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                <Form method="post" action={path.to.logout}>
-                  <button type="submit" className="w-full flex items-center">
-                    <DropdownMenuIcon icon={<LuLogOut />} />
-                    <span>
-                      <Trans>Sign Out</Trans>
-                    </span>
-                  </button>
-                </Form>
+              <DropdownMenuItem
+                onSelect={() =>
+                  submit(null, { method: "post", action: path.to.logout })
+                }
+              >
+                <DropdownMenuIcon icon={<LuLogOut />} />
+                <Trans>Sign Out</Trans>
               </DropdownMenuItem>
             </>
           )}

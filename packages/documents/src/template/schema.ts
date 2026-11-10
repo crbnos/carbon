@@ -16,7 +16,11 @@ const jsonContentSchema = z.custom<JSONContent>(
 /** Fields shared by every block, built-in or extension. */
 const baseFields = {
   id: z.string(),
-  visible: z.boolean().default(true)
+  visible: z.boolean().default(true),
+  /** Printed texts the user changed, keyed by catalog key. A missing key prints the default. */
+  text: z.record(z.string(), z.string()).optional(),
+  /** Catalog keys of the fields and columns the user hid. */
+  hidden: z.array(z.string()).optional()
 };
 
 /**
@@ -68,14 +72,17 @@ export const headerOptionsSchema = z.object({
 export const DEFAULT_LINE_ITEMS_OPTIONS = {
   showThumbnails: true,
   zebra: true,
-  textOverflow: "truncate"
+  textOverflow: "truncate",
+  showSupplierPartId: true
 } as const;
 
 const lineItemsOptionsSchema = z.object({
   showThumbnails: z.boolean().default(true),
   zebra: z.boolean().default(true),
   /** How the item title/description behave: wrap to new lines or truncate. */
-  textOverflow: z.enum(["wrap", "truncate"]).default("truncate")
+  textOverflow: z.enum(["wrap", "truncate"]).default("truncate"),
+  /** Purchase orders only: print the supplier's part number under each line. */
+  showSupplierPartId: z.boolean().default(true)
 });
 
 /** Per-block options for the Summary totals. */
@@ -135,6 +142,20 @@ const reviewersBlock = builtInBlock("reviewers");
  */
 const conformityDetailsBlock = builtInBlock("conformityDetails");
 const conformityStatementBlock = builtInBlock("conformityStatement");
+/**
+ * Who approved the document: a heading, the approver's signature over a line,
+ * and a rich-text caption with merge fields (the approver and the date by
+ * default). Prints nothing until the document is approved.
+ */
+const approvalBlock = z.object({
+  ...baseFields,
+  type: z.literal("approval"),
+  /** Absent: "Approved By". An empty string prints no heading. */
+  heading: z.string().optional(),
+  showSignature: z.boolean().optional(),
+  /** Empty: `DEFAULT_APPROVAL_CAPTION`. */
+  content: jsonContentSchema.optional()
+});
 /** Tracking-label fields (data-bound; one per label element). */
 const labelHeadingBlock = builtInBlock("labelHeading");
 /** A label field whose printed name (the prefix before the value) is editable. */
@@ -257,6 +278,7 @@ export const blockSchema = z.discriminatedUnion("type", [
   reviewersBlock,
   conformityDetailsBlock,
   conformityStatementBlock,
+  approvalBlock,
   labelHeadingBlock,
   labelRevisionBlock,
   labelQuantityBlock,
@@ -363,6 +385,16 @@ export const DEFAULT_DOCUMENT_SETTINGS = {
   showRegistrationLine: true
 } as const;
 
+/**
+ * One document's changed values, by `{token}`. A row is `<prefix>:<record id>`.
+ * Only a document's edit holds these; a company template never does.
+ */
+export const valueEditsSchema = z.object({
+  document: z.record(z.string(), z.string()).optional(),
+  rows: z.record(z.string(), z.record(z.string(), z.string())).optional()
+});
+export type ValueEdits = z.infer<typeof valueEditsSchema>;
+
 export const documentSettingsSchema = z.object({
   fontFamily: z
     .enum([
@@ -387,7 +419,12 @@ export const documentSettingsSchema = z.object({
    * section's config (`sectionConfigSchema.showRegistrationLine`) takes
    * precedence when set — edit it via the footer section modal.
    */
-  showRegistrationLine: z.boolean().default(true)
+  showRegistrationLine: z.boolean().default(true),
+  /** Changed texts that belong to the whole document (title, footer words). */
+  text: z.record(z.string(), z.string()).optional(),
+  /** Hidden columns of tables outside any block (job traveler materials). */
+  hidden: z.array(z.string()).optional(),
+  valueEdits: valueEditsSchema.optional()
 });
 
 /** Document types that support a customizable template. Widen as docs ship. */
@@ -397,6 +434,7 @@ export const documentTemplateTypeSchema = z.enum([
   "salesReturnOrder",
   "purchaseOrder",
   "purchaseReturnOrder",
+  "purchasingRfq",
   "quote",
   "packingSlip",
   "stockTransfer",
@@ -417,6 +455,7 @@ export const REGISTRATION_LINE_DOCUMENT_TYPES: DocumentTemplateType[] = [
   "salesReturnOrder",
   "purchaseOrder",
   "purchaseReturnOrder",
+  "purchasingRfq",
   "quote",
   "packingSlip",
   "certificateOfConformance"
@@ -485,12 +524,15 @@ export function toDocumentTemplate(
 ): DocumentTemplate | null {
   if (!row) return null;
   const r = row as StoredDocumentTemplateRow;
+  // Changed values belong to one record's edit: a template never prints them,
+  // whatever its stored JSON holds.
+  const { valueEdits: _, ...settings } = (r.settings ?? {}) as DocumentSettings;
   return {
     formatVersion: r.formatVersion ?? CURRENT_TEMPLATE_FORMAT_VERSION,
     documentType,
     blocks: r.blocks as DocumentTemplate["blocks"],
     theme: r.theme as DocumentTemplate["theme"],
-    settings: r.settings as DocumentTemplate["settings"],
+    settings: settings as DocumentTemplate["settings"],
     headerSectionId: r.headerSectionId ?? null,
     footerSectionId: r.footerSectionId ?? null
   };
@@ -531,6 +573,7 @@ export type ConformityStatementBlock = Extract<
   DocumentBlock,
   { type: "conformityStatement" }
 >;
+export type ApprovalBlock = Extract<DocumentBlock, { type: "approval" }>;
 export type LabelHeadingBlock = Extract<
   DocumentBlock,
   { type: "labelHeading" }

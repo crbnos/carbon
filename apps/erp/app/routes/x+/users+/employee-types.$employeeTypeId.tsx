@@ -2,26 +2,20 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import {
-  makeCompanyPermissionsFromEmployeeType,
-  upsertEmployeeType,
-  upsertEmployeeTypePermissions
-} from "@carbon/ee/permissions.server";
+import { makeCompanyPermissionsFromEmployeeType } from "@carbon/ee/permissions.server";
 import { requireFeature } from "@carbon/ee/plan.server";
-import { validationError, validator } from "@carbon/form";
-import { redirect } from "@carbon/utils";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { EmployeeTypeForm } from "~/modules/users/ui";
+import { employeeTypeValidator } from "~/modules/users/users.models";
 import {
-  EmployeeTypeForm,
-  employeeTypePermissionsValidator,
-  employeeTypeValidator,
   getEmployeeType,
   getPermissionsByEmployeeType
-} from "~/modules/users";
+} from "~/modules/users/users.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -55,83 +49,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
-    update: "users"
-  });
-
-  await requireFeature({
-    request,
-    client,
-    companyId,
-    redirectTo: path.to.employeeAccounts,
-    feature: "PERMISSIONS"
-  });
-
-  const validation = await validator(employeeTypeValidator).validate(
-    await request.formData()
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const { id, name, data: permissionData } = validation.data;
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(employeeTypeValidator).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { id, name, data: permissions } = input.data;
   if (!id) throw notFound("id not found");
-
-  const permissions = JSON.parse(permissionData);
-  const jsonValidation =
-    employeeTypePermissionsValidator.safeParse(permissions);
-  if (jsonValidation.success === false) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(jsonValidation.error, "Failed to parse permissions")
-      )
-    );
-  }
-
-  const updateEmployeeType = await upsertEmployeeType(client, {
+  const api = await carbon(args.request);
+  const result = await api.users.updateEmployeeType({
     id,
-    name
+    name,
+    permissions: JSON.parse(permissions)
   });
-
-  if (updateEmployeeType.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(updateEmployeeType.error, "Failed to update employee type")
-      )
-    );
-  }
-
-  const updateEmployeeTypePermissions = await upsertEmployeeTypePermissions(
-    client,
-    id,
-    companyId,
-    permissions
-  );
-
-  if (updateEmployeeTypePermissions.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(
-          updateEmployeeTypePermissions.error,
-          "Failed to update employee type permissions"
-        )
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.employeeTypes,
-    await flash(request, success("Updated employee type"))
-  );
+  return respond(args.request, result).redirect(path.to.employeeTypes, {
+    message: "Updated employee type",
+    onError: path.to.employeeType(id)
+  });
 }
 
 export default function EditEmployeeTypesRoute() {

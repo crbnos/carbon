@@ -2,18 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost } from "@carbon/auth";
+import { carbon } from "@carbon/api/carbon.server";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 import {
   getAvailableTrackedEntities,
-  getPickOrder,
-  setPickingListLineTrackedEntity
-} from "~/modules/inventory";
-import { getCompanySettings } from "~/modules/settings";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
-import { getDatabaseClient } from "~/services/database.server";
+  getPickOrder
+} from "~/modules/inventory/inventory.service";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 
 /**
  * GET: available tracked lots for a picking line (non-lineside, deduped),
@@ -29,7 +28,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const lineResult = await client
     .from("pickingListLine")
     .select(
-      "id, itemId, quantityToPick, quantityPicked, pickingList(locationId), item(itemTrackingType)"
+      "id, itemId, projectId, quantityToPick, quantityPicked, pickingList(locationId), item(itemTrackingType)"
     )
     .eq("id", lineId)
     .single();
@@ -52,8 +51,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           companyId,
           locationId,
           excludeLineside: true,
+          excludeNonNettable: true,
           excludeAllocated: true,
-          excludeLineId: lineId
+          excludeLineId: lineId,
+          // A pick line draws one stock stripe: list the lots in it.
+          projectIds: [line.projectId ?? null]
         })
       : { data: [] },
     getCompanySettings(client, companyId),
@@ -79,59 +81,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
-    update: "inventory"
+const trackedPick = z.object({
+  trackedEntityId: z.string().min(1, { message: "Missing tracked entity" }),
+  fromStorageUnitId: zfd.text(z.string().optional()),
+  quantity: zfd.numeric(z.number().min(0).default(0)),
+  unpick: zfd.checkbox({ trueValue: "true" })
+});
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(trackedPick).request(args, {
+    params: ["pickingListId", "lineId"]
   });
-  const serviceRole = getCarbonServiceRole();
+  if ("invalid" in input) return input.invalid;
 
-  const { pickingListId, lineId } = params;
-  if (!pickingListId || !lineId) {
-    return { success: false, message: "Missing line" };
-  }
-
-  // The pick runs through the service role: the line must belong to this
-  // company and to the picking list in the URL.
-  await requireCompanyRecord(serviceRole, "pickingListLine", companyId, {
-    id: lineId,
-    pickingListId
+  const api = await carbon(args.request);
+  return api.inventory.pickPickingListLineEntity({
+    pickingListId: input.params.pickingListId,
+    pickingListLineId: input.params.lineId,
+    ...input.data,
+    fromStorageUnitId: input.data.fromStorageUnitId ?? null
   });
-
-  const formData = await request.formData();
-  const trackedEntityId = formData.get("trackedEntityId") as string;
-  const fromStorageUnitId =
-    (formData.get("fromStorageUnitId") as string) || null;
-  const quantity = Number(formData.get("quantity") ?? 0);
-  const unpick = formData.get("unpick") === "true";
-
-  if (!trackedEntityId) {
-    return { success: false, message: "Missing tracked entity" };
-  }
-
-  const result = await setPickingListLineTrackedEntity(
-    serviceRole,
-    getDatabaseClient(),
-    {
-      pickingListLineId: lineId,
-      trackedEntityId,
-      fromStorageUnitId,
-      quantity,
-      unpick,
-      userId,
-      companyId
-    }
-  );
-
-  if (result.error) {
-    return {
-      success: false,
-      message:
-        typeof result.error === "string"
-          ? result.error
-          : (result.error.message ?? "Failed to pick line")
-    };
-  }
-
-  return { success: true, data: result.data };
 }

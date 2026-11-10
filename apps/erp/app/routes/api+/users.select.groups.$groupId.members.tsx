@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getUserSelectGroupMembers } from "~/modules/users";
+import { getUserSelectGroupMembers } from "~/modules/users/users.service";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -18,10 +18,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!groupId) {
     return data(
       { groups: [], users: [] },
-      await flash(
-        request,
-        error(new Error("groupId is required"), "Group id is required")
-      )
+      await flash(request, error(null, "Group id is required"))
     );
   }
 

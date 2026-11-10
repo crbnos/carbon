@@ -1,7 +1,9 @@
+---
 paths:
   - "packages/ee/**"
   - "apps/erp/app/routes/x+/settings+/**"
   - "apps/erp/app/modules/users/**"
+---
 
 # Commercial Feature Licensing & Entitlement Pattern
 
@@ -112,13 +114,13 @@ UI stays `.ee.tsx` in `apps/erp/app/modules/<module>/ui/` (coupled to `~/compone
    function.** Runtime functions that must degrade use `companyHasFeature` instead.
 4. Move the feature's validators/derived types with it; add the package exports.
 5. Repoint every call site from `~/modules/...` to `@carbon/ee/<feature>` / `.server`.
-   Remove the moved code from the community module + its barrel.
+   Remove the moved code from the community module's `.service.ts` / `.server.ts`.
 6. UI → `.ee.tsx`. Route → keep `requireFeature` for the UX redirect + catch
    `EntitlementError`.
 7. Verify: `pnpm --filter @carbon/ee typecheck`, `pnpm exec turbo run typecheck --filter=erp`,
-   Biome, and if service functions leave `*.service.ts` note the MCP digest changes
-   (`pnpm run generate:mcp`) — moving a function out of a scanned `*.service.ts` removes it
-   as an MCP tool, which is usually correct (an ungated MCP path would bypass the gate).
+   Biome, and if an `@mcp` service function leaves `<module>.server.ts` note the MCP digest
+   changes (`pnpm run generate:mcp`) — moving it out of the router removes it as an MCP
+   tool, which is usually correct (an ungated MCP path would bypass the gate).
 
 ## Rollout status (starter-only → new pattern)
 
@@ -142,7 +144,9 @@ Refactor one at a time; each PR should leave the tree green.
 - ✅ **API keys** — `upsertApiKey`/`deleteApiKey` in `packages/ee/src/api-keys.server.ts`,
   `requireEntitlement("API_KEYS")`; routes gate with `requireFeature`.
 - ✅ **Webhooks** — authoring in `packages/ee/src/webhooks.server.ts`
-  (`requireEntitlement("WEBHOOKS")`); delivery degrades at runtime via `companyHasFeature`.
+  (`requireEntitlement("WEBHOOKS")`, including `revealWebhookSigningSecret` /
+  `rotateWebhookSigningSecret`); delivery degrades at runtime via `companyHasFeature` and
+  signs with the ungated `getWebhookSigningSecret`.
 - ✅ **Two-factor** — the `requireMfa` company policy in `packages/ee/src/two-factor.server.ts`,
   `requireEntitlement("TWO_FACTOR")` scoped to ENABLING only (a downgrade can still disable).
 - ✅ **Forecast** — `upsert/deleteDemandForecasts` + `upsert/deleteDemandProjections` in
@@ -182,12 +186,52 @@ Refactor one at a time; each PR should leave the tree green.
   edge would be a `lib → ee → lib` cycle. (The job-side executors in
   `packages/jobs/src/workflows/` stay in jobs — Inngest-coupled, like backups.)
 - ✅ **MCP** — protocol engine moved to `packages/ee/src/mcp/` (`@carbon/ee/mcp`
-  pure logic; `@carbon/ee/mcp.server` = `server.ts`). `createMcpServer` embeds
+  pure logic; `@carbon/ee/mcp.server` = `server.ts`). `serveMcpRequest` embeds
   `requireEntitlement("MCP")` (route catches `EntitlementError` → 402), replacing
   the former deletable in-route `companyHasFeature`. The dispatch, tool manifest and
   generated `tool-metadata.json` STAY in the app (derive from `~/modules/*`) and are
-  INJECTED as `deps`. Note: `server.ts` is `@ts-nocheck`, so the live endpoint needs a
-  smoke test before merge (typecheck can't cover its body).
+  INJECTED as `deps`.
+- ✅ **Project revenue** (`PROJECT_REVENUE`) — Cost Plus pricing lives in
+  `packages/ee/src/project-revenue/` (`@carbon/ee/project-revenue` for the pure
+  `priceCostPlusItem`, `@carbon/ee/project-revenue.server` for
+  `generateCostPlusItems`, which degrades with `gated: true` via
+  `projectRevenueEnabledForCompany`). The community postings write Time & Materials
+  items only and never price Cost Plus, so a Cost Plus line bills nothing without ee
+  code — that is the lock. `generateCostPlusItems` runs from the `generateContractBillableItems`
+  operation (`sales.server.ts`) and the jobs `recurring-billing` step. `requireProjectRevenueEntitlement` is the
+  authoring check for Cost Plus or Percent Complete; the contract line routes and the
+  `amendContract` / `createContractLine` / `updateContractLine` operations reach it through
+  `projectRevenueRefusal` (`sales.service.ts`) and return the upgrade message. The forms
+  keep both choices visible with an upgrade notice. The Percent Complete synthesizer and
+  the loss provision (`synthesizeCommercialProjectRevenue`, same module) degrade through
+  `projectRevenueEnabledForCompany`: without the feature the run writes no Percent
+  Complete month. Both are factories over the community writers the ERP passes in
+  (`projectRevenueSynthesizers(projectRevenueWriters)`, `accounting/project-revenue.ts`),
+  because ee cannot import the ERP; `runRowSynthesizers` (`accounting.service.ts`) adds
+  them to every revenue recognition run. See `project-billing.md`.
+- ✅ **Government contracting (5b)** — indirect pools, rates, burden and burden billing in
+  `packages/ee/src/indirect-rates/` (`@carbon/ee/indirect-rates` client-safe,
+  `@carbon/ee/indirect-rates.server` server), feature `GOVERNMENT_CONTRACTING`.
+  `requireEntitlement` is embedded in every authoring function and every run
+  (`upsertIndirectPool`, `setIndirectRate`, `upsertContractRateCeiling`,
+  `updateBurdenSettings`, `runIndirectRatePeriod`, `runFinalTrueUp`, `buildIceSchedule`, …);
+  the `indirect-rates` job degrades with `companyHasFeature`. The Burden rows and the
+  applied burden journal are written by the community `postProjectBurden` body
+  (`projects.service.ts`), which the ee run calls as the `post-project-burden` posting
+  (`posting(…)`, `@carbon/api/postings.server`). Accounting → Indirect Pools and
+  Indirect Rates show `IndirectRatesUpgradeOverlay` when gated; the contract line's rate
+  ceilings use `UpgradeOverlaySection`. See `indirect-rates.md`.
+- ✅ **Government contracting (5c)** — budget control, earned value, the ACWP export and
+  stop-work orders in `packages/ee/src/project-control/` (`@carbon/ee/project-control`
+  client-safe, `@carbon/ee/project-control.server` server), feature
+  `GOVERNMENT_CONTRACTING`. `requireEntitlement` is embedded in
+  `updateProjectControlSettings`, `updateElementEarnedValue`, `closeEarnedValuePeriod`,
+  `buildAcwpExport` and `stopWork`; `checkBudgetAvailability`, `checkTimesheetBudget` and
+  `getEarnedValue` degrade with `companyHasFeature`. `resumeWork` is deliberately NOT
+  gated, so a company that loses the feature can still release a stopped project. The
+  project Settings section, the element sidebar section, the Costs tab section and the
+  Stop work modal are `.ee.tsx` and show the upgrade overlay when gated. See
+  `project-control.md`.
 - Note (context): Planning was NOT a gated feature — MRP + scheduling are now the
   community `@carbon/planning` package.
 - ⬜ Still on `requirePlan`/`companyHasPlan`, pending an architecture/policy decision
@@ -208,12 +252,12 @@ build does) pull the server file into the client:
    the client barrel transitively reaches `service.ts`. **Fix:** derive those types from
    `@carbon/database` directly (`Database["public"]["Tables"|"Views"][…]["Row"]`), so
    `types.ts` never imports `service.ts`.
-2. **A `.service.ts` importing `@carbon/ee/<feature>.server`.** Module `*.service.ts`
-   files are re-exported through the module barrel that client components import, so they
-   are browser-bundled — importing a `.server` module there reaches the client graph.
-   **Fix:** move that server-only helper into a `*.server.ts` (not barrel-exported) and
-   import it from the route directly. (Routes MAY import `.server` — RR strips it from the
-   client build; `*.service.ts` may NOT.)
+2. **A client file importing a module's `.service.ts` or `.server.ts`.** Both are
+   server-only, so they MAY import `@carbon/ee/<feature>.server`. A component, hook,
+   `ui/`, models, utils or types file that value-imports one pulls that graph into the
+   client. **Fix:** move the helper the component needs into `<module>.utils.ts`. The
+   `no-server-code-in-client` check (`@carbon/checks`) fails the import. (Routes MAY
+   import `.server` — RR strips it from the client build.)
 
 ## Anti-patterns
 

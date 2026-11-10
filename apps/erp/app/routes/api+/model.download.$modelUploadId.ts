@@ -3,11 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { findStorageObjectBuckets } from "@carbon/database/storage-objects";
 import { getCompanyPrivateBucket, TEMP_STAGING_BUCKET } from "@carbon/files";
 import { isModelRawDownloadable } from "@carbon/files/cad";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 // Resolves the DOWNLOADABLE bytes for a model — always the customer's original
@@ -44,32 +45,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("Original model file is not available", { status: 404 });
   }
 
-  // Retained raws live in `private` once persisted, or `temp-staging` before
-  // compaction settles / when oversized — probe both (same resolution as the
-  // model.artifacts route).
-  const serviceRole = getCarbonServiceRole();
-  const probe = (bucket: string) =>
-    serviceRole.storage
-      .from(bucket)
-      .info(candidate)
-      .catch(() => ({ data: null, error: true as const }));
-  // Durable raws live in the company's own bucket since the per-company bucket
-  // migration; pre-migration raws in legacy `private`; staged ones in
-  // `temp-staging`. The row is companyId-scoped, so the session's own bucket
-  // is the right one — never derive it from the path.
-  const companyBucket = getCompanyPrivateBucket(companyId);
-  let bucket: string | null = null;
-  for (const candidateBucket of [
-    companyBucket,
-    "private",
-    TEMP_STAGING_BUCKET
-  ]) {
-    const found = await probe(candidateBucket);
-    if (!found.error && found.data) {
-      bucket = candidateBucket;
-      break;
-    }
-  }
+  // A retained raw lives in the company's own bucket once it is durable, or
+  // in `temp-staging` before compaction settles (and when it is too big for
+  // the company bucket). The row is companyId-scoped, so the session's own
+  // bucket is the right one — never derive it from the path.
+  const buckets = await findStorageObjectBuckets(getDatabaseClient(), {
+    names: [candidate],
+    buckets: [getCompanyPrivateBucket(companyId), TEMP_STAGING_BUCKET]
+  });
+  const bucket = buckets.get(candidate);
   if (!bucket) {
     throw new Response("Original model file is not available", { status: 404 });
   }

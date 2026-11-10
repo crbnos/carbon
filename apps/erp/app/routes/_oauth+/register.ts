@@ -4,9 +4,12 @@
 
 import { hashOAuthSecret } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
+import { getClientIp } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { z } from "zod";
+import { isAllowedRedirectUri, supportedScope } from "~/services/oauth.server";
 
 const logger = getLogger("erp", "register");
 
@@ -24,21 +27,37 @@ function jsonResponse(body: unknown, status: number = 200) {
   });
 }
 
+// Registration is open by design — MCP clients (Claude, Cursor, VS Code) register
+// themselves on first connect, with no account to authenticate. So the limit is
+// per IP and generous: a connector platform registers from a few egress IPs.
+const REGISTRATIONS_PER_HOUR = 100;
+
 const clientRegistrationSchema = z.object({
-  client_name: z.string().min(1),
-  redirect_uris: z.array(z.string().url()).min(1),
+  client_name: z.string().trim().min(1).max(100),
+  redirect_uris: z
+    .array(
+      z.string().max(2000).refine(isAllowedRedirectUri, {
+        message:
+          "redirect_uris must be https, http on a loopback address, or a private-use scheme, with no fragment"
+      })
+    )
+    .min(1)
+    .max(10),
   grant_types: z
-    .array(z.string())
+    .array(z.enum(["authorization_code", "refresh_token"]))
     .optional()
     .default(["authorization_code", "refresh_token"]),
-  response_types: z.array(z.string()).optional().default(["code"]),
+  response_types: z.array(z.literal("code")).optional().default(["code"]),
+  // What `/.well-known/oauth-authorization-server` advertises: `/token` reads
+  // the secret from the form body only, so a `client_secret_basic` client
+  // could register and then never authenticate.
   token_endpoint_auth_method: z
-    .enum(["client_secret_post", "client_secret_basic", "none"])
+    .enum(["client_secret_post", "none"])
     .optional()
     .default("none"),
-  client_uri: z.string().url().optional(),
-  logo_uri: z.string().url().optional(),
-  scope: z.string().optional()
+  client_uri: z.string().url().max(2000).optional(),
+  logo_uri: z.string().url().max(2000).optional(),
+  scope: z.string().max(500).optional()
 });
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -51,7 +70,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 }
 
+const registerRatelimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(REGISTRATIONS_PER_HOUR, "1 h")
+});
+
 export async function action({ request }: ActionFunctionArgs) {
+  const ip = getClientIp(request) ?? "unknown";
+  const rl = await registerRatelimit.limit(`oauth-register:${ip}`);
+  if (!rl.success) {
+    return jsonResponse(
+      {
+        error: "too_many_requests",
+        error_description: "Too many client registrations. Try again later."
+      },
+      429
+    );
+  }
+
   const client = getCarbonServiceRole();
 
   let body: unknown;
@@ -84,9 +120,9 @@ export async function action({ request }: ActionFunctionArgs) {
     response_types,
     token_endpoint_auth_method,
     client_uri,
-    logo_uri,
-    scope
+    logo_uri
   } = validation.data;
+  const scope = supportedScope(validation.data.scope);
 
   // Generate client credentials
   const clientId = `mcp_${crypto.randomUUID().replace(/-/g, "")}`;

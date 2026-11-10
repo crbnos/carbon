@@ -3,30 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-  DropdownMenuIcon,
-  DropdownMenuItem,
-  MENU_ITEM_SHORTCUTS,
-  useDisclosure,
-  VStack
-} from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
-import { LuCheckCheck, LuTicketX, LuTrash } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { useMemo, useState } from "react";
 import type { z } from "zod";
-import { DocumentHeader } from "~/components";
-import { Enumerable } from "~/components/Enumerable";
 import {
   Account,
+  Combobox,
   Currency,
   Customer,
   CustomFormFields,
@@ -41,11 +24,18 @@ import {
   Supplier,
   TextArea
 } from "~/components/Form";
-import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
-import { isPaymentLocked, paymentValidator } from "~/modules/invoicing";
+import {
+  type DepositDocument,
+  isPaymentLocked,
+  paymentValidator
+} from "~/modules/invoicing/invoicing.models";
 import { path } from "~/utils/path";
-import PaymentStatus from "./PaymentStatus";
+import {
+  initialPaymentKind,
+  paymentDocumentCurrency,
+  paymentKindFields
+} from "./payment-logic";
 
 // Builds the "new payment" URL pre-filled from an invoice. side "ar" seeds the
 // customer (→ Receipt); "ap" seeds the supplier (→ Disbursement). Lives with the
@@ -81,6 +71,31 @@ export function getApplyCreditHref(args: {
 
 type PaymentFormValues = z.infer<typeof paymentValidator>;
 
+// The picker's single value: the ids travel as separate hidden fields
+// (`salesOrderId` / `rentalAgreementId` / `customerContractId` /
+// `purchaseOrderId`, at most one set — the validator and
+// `payment_deposit_document_check` both enforce it).
+const depositValue = (doc: Pick<DepositDocument, "kind" | "id">) =>
+  `${doc.kind}:${doc.id}`;
+const parseDepositValue = (value: string) => {
+  const separator = value.indexOf(":");
+  if (separator < 0)
+    return {
+      salesOrderId: "",
+      rentalAgreementId: "",
+      customerContractId: "",
+      purchaseOrderId: ""
+    };
+  const kind = value.slice(0, separator);
+  const id = value.slice(separator + 1);
+  return {
+    salesOrderId: kind === "salesOrder" ? id : "",
+    rentalAgreementId: kind === "rentalAgreement" ? id : "",
+    customerContractId: kind === "customerContract" ? id : "",
+    purchaseOrderId: kind === "purchaseOrder" ? id : ""
+  };
+};
+
 type PaymentFormProps = {
   initialValues: PaymentFormValues & { status?: string };
   // When set, a hidden field carries the seed invoice ids through to the
@@ -88,49 +103,137 @@ type PaymentFormProps = {
   // their open balances server-side). Drives the workbench "pay N invoices"
   // hand-off as well as the single-invoice "Pay Invoice" link.
   seedInvoiceIds?: string[];
+  // Documents the "Deposit for" picker offers. Omitted = no picker (the saved
+  // ids still round-trip through the hidden fields).
+  depositDocuments?: DepositDocument[];
+  // A contract financing request the new payment receives.
+  financingRequestId?: string;
 };
 
-const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
+/**
+ * The payment's own fields, laid flat. On the detail page they sit under the
+ * payment's header; the new-payment page frames them itself. Posting locks
+ * them.
+ */
+const PaymentForm = ({
+  initialValues,
+  seedInvoiceIds,
+  depositDocuments,
+  financingRequestId
+}: PaymentFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
   const [currencyCode, setCurrencyCode] = useState(
-    initialValues.currencyCode || company?.baseCurrencyCode || "USD"
+    paymentDocumentCurrency(
+      initialValues.currencyCode,
+      company?.baseCurrencyCode
+    )
   );
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const permissions = usePermissions();
-  const post = useFetcher();
   const isEditing = Boolean(initialValues.id);
-  const status = initialValues.status as
-    | "Draft"
-    | "Posted"
-    | "Voided"
-    | undefined;
   const isLocked = isPaymentLocked(initialValues.status);
   const canMutate = permissions.can("update", "invoicing");
-  const canDelete = permissions.can("delete", "invoicing");
-  const deleteModal = useDisclosure();
-  const voidModal = useDisclosure();
 
-  // Cash direction and subledger party are independent for refunds. An employee
-  // payee is neither: it is always cash OUT against the reimbursement control
-  // account, so it has a single kind rather than a payment/refund pair.
-  const initialKind = initialValues.employeeId
-    ? "employee-payment"
-    : initialValues.supplierId
-      ? initialValues.paymentType === "Receipt"
-        ? "supplier-refund"
-        : "supplier-payment"
-      : initialValues.paymentType === "Disbursement"
-        ? "customer-refund"
-        : "customer-payment";
+  const initialKind = initialPaymentKind(initialValues);
   const [paymentKind, setPaymentKind] = useState(initialKind);
-  const defaultValues = { ...initialValues, paymentKind: initialKind };
-  const isEmployee = paymentKind === "employee-payment";
-  const isCustomer = paymentKind.startsWith("customer-");
-  const currentType =
-    paymentKind === "customer-payment" || paymentKind === "supplier-refund"
-      ? "Receipt"
-      : "Disbursement";
+  const kindFields = paymentKindFields(paymentKind);
+  const isEmployee = kindFields.party === "employeeId";
+  const isCustomer = kindFields.party === "customerId";
+  const isSupplier = kindFields.party === "supplierId";
+  const currentType = kindFields.paymentType;
+
+  // The deposit picker follows the selected party; picking a party clears a
+  // document that belonged to the previous one. A customer deposit is taken by
+  // a Receipt; a supplier prepayment by a Disbursement.
+  const [customerId, setCustomerId] = useState(initialValues.customerId ?? "");
+  const [supplierId, setSupplierId] = useState(initialValues.supplierId ?? "");
+  const partyId = isCustomer ? customerId : isSupplier ? supplierId : "";
+  const initialDeposit = initialValues.rentalAgreementId
+    ? depositValue({
+        kind: "rentalAgreement",
+        id: initialValues.rentalAgreementId
+      })
+    : initialValues.salesOrderId
+      ? depositValue({ kind: "salesOrder", id: initialValues.salesOrderId })
+      : initialValues.customerContractId
+        ? depositValue({
+            kind: "customerContract",
+            id: initialValues.customerContractId
+          })
+        : initialValues.purchaseOrderId
+          ? depositValue({
+              kind: "purchaseOrder",
+              id: initialValues.purchaseOrderId
+            })
+          : "";
+  const [deposit, setDeposit] = useState(initialDeposit);
+  // UI-only controlled fields are seeded through the form defaults so the
+  // registered value matches what is shown on first render.
+  const defaultValues = {
+    ...initialValues,
+    paymentKind: initialKind,
+    depositDocument: initialDeposit
+  };
+  const showDepositPicker =
+    (isCustomer || isSupplier) && depositDocuments !== undefined;
+  const takesDeposit = isCustomer
+    ? currentType === "Receipt"
+    : currentType === "Disbursement";
+  const depositOptions = useMemo(() => {
+    if (!showDepositPicker) return [];
+    return (depositDocuments ?? [])
+      .filter(
+        (doc) =>
+          doc.partyId === partyId &&
+          (doc.kind === "purchaseOrder") === isSupplier &&
+          (takesDeposit
+            ? doc.open || (isEditing && depositValue(doc) === initialDeposit)
+            : !doc.refundableCurrencyCodes ||
+              doc.refundableCurrencyCodes.includes(currencyCode) ||
+              (isEditing && depositValue(doc) === initialDeposit))
+      )
+      .map((doc) => ({
+        value: depositValue(doc),
+        label: doc.readableId,
+        helper: `${
+          doc.kind === "rentalAgreement"
+            ? t`Rental Agreement`
+            : doc.kind === "customerContract"
+              ? t`Contract`
+              : doc.kind === "purchaseOrder"
+                ? t`Purchase Order`
+                : t`Sales Order`
+        } · ${doc.status}`
+      }));
+  }, [
+    showDepositPicker,
+    depositDocuments,
+    partyId,
+    isSupplier,
+    takesDeposit,
+    isEditing,
+    currencyCode,
+    initialDeposit,
+    t
+  ]);
+  if (
+    showDepositPicker &&
+    deposit &&
+    !depositOptions.some((option) => option.value === deposit)
+  ) {
+    setDeposit("");
+  }
+  // With no picker the saved link round-trips untouched — a payment keeps its
+  // deposit until its party changes.
+  const depositIds = parseDepositValue(
+    showDepositPicker
+      ? deposit
+      : (isCustomer && customerId === initialValues.customerId) ||
+          (isSupplier && supplierId === initialValues.supplierId)
+        ? initialDeposit
+        : ""
+  );
   const typeOptions = [
     { label: t`Payment from Customer`, value: "customer-payment" },
     { label: t`Payment to Supplier`, value: "supplier-payment" },
@@ -140,199 +243,147 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
   ];
 
   return (
-    <>
-      <ValidatedForm
-        method="post"
-        validator={paymentValidator}
-        defaultValues={defaultValues}
-        isDisabled={isEditing && isLocked}
-        className="w-full"
-      >
-        <Card>
-          {isEditing ? (
-            <DocumentHeader
-              title={initialValues.paymentId ?? ""}
-              status={
-                <>
-                  <Enumerable value={initialValues.paymentType} />
-                  <PaymentStatus status={status} />
-                </>
-              }
-              menuItems={
-                status === "Draft" && canDelete ? (
-                  <DropdownMenuItem
-                    shortcut={MENU_ITEM_SHORTCUTS.delete}
-                    destructive
-                    onClick={deleteModal.onOpen}
-                  >
-                    <DropdownMenuIcon icon={<LuTrash />} />
-                    <Trans>Delete</Trans>
-                  </DropdownMenuItem>
-                ) : undefined
-              }
-              actions={
-                status === "Draft" ? (
-                  <Button
-                    leftIcon={<LuCheckCheck />}
-                    variant="primary"
-                    isLoading={post.state !== "idle"}
-                    isDisabled={!canMutate}
-                    onClick={() =>
-                      post.submit(null, {
-                        method: "post",
-                        action: path.to.paymentPost(initialValues.id!)
-                      })
-                    }
-                  >
-                    <Trans>Post</Trans>
-                  </Button>
-                ) : status === "Posted" ? (
-                  <Button
-                    leftIcon={<LuTicketX />}
-                    variant="destructive"
-                    type="button"
-                    isDisabled={!canMutate}
-                    onClick={voidModal.onOpen}
-                  >
-                    <Trans>Void</Trans>
-                  </Button>
-                ) : undefined
-              }
-            />
-          ) : (
-            <CardHeader>
-              <CardTitle>
-                <Trans>New Payment</Trans>
-              </CardTitle>
-              <CardDescription>
-                <Trans>
-                  Record a customer payment, supplier payment, refund, or
-                  employee reimbursement. Applications to invoices, memos or
-                  reimbursements are added after the payment is created.
-                </Trans>
-              </CardDescription>
-            </CardHeader>
-          )}
-          <CardContent>
-            <Hidden name="id" />
-            <Hidden name="paymentType" value={currentType} />
-            {/* Exactly one party field is mounted, and the other two are
-                blanked — the validator's one-of-three refine (and the DB's
-                widened payment_party_check) rejects anything else. */}
-            {isEmployee ? (
-              <>
-                <Hidden name="customerId" value="" />
-                <Hidden name="supplierId" value="" />
-              </>
-            ) : (
-              <>
-                <Hidden
-                  name={isCustomer ? "supplierId" : "customerId"}
-                  value=""
-                />
-                <Hidden name="employeeId" value="" />
-              </>
-            )}
-            {isEditing && <Hidden name="paymentId" />}
-            {seedInvoiceIds && seedInvoiceIds.length > 0 && (
-              <Hidden name="seedInvoiceIds" value={seedInvoiceIds.join(",")} />
-            )}
-            <VStack>
-              <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2">
-                {!isEditing && (
-                  <SequenceOrCustomId
-                    name="paymentId"
-                    label={t`Payment ID`}
-                    table="payment"
-                  />
-                )}
-                <SelectControlled
-                  autoFocus={!isEditing}
-                  name="paymentKind"
-                  label={t`Type`}
-                  options={typeOptions}
-                  value={paymentKind}
-                  onChange={(opt) => {
-                    if (opt) setPaymentKind(opt.value);
-                  }}
-                />
-                {isEmployee ? (
-                  <Employee name="employeeId" label={t`Employee`} />
-                ) : isCustomer ? (
-                  <Customer name="customerId" label={t`Customer`} />
-                ) : (
-                  <Supplier name="supplierId" label={t`Supplier`} />
-                )}
-                <DatePicker name="paymentDate" label={t`Payment Date`} />
-                <Currency
-                  name="currencyCode"
-                  label={t`Currency`}
-                  onChange={(option) => {
-                    if (option) setCurrencyCode(option.value);
-                  }}
-                />
-                <Number
-                  name="exchangeRate"
-                  label={t`Exchange Rate`}
-                  step={INPUT_STEP.exchangeRate}
-                  formatOptions={INPUT_FORMAT.exchangeRate}
-                />
-                <Number
-                  name="totalAmount"
-                  label={t`Total Amount`}
-                  formatOptions={INPUT_FORMAT.money(
-                    currencyCode,
-                    currencyDecimals
-                  )}
-                />
-                <Account
-                  name="bankAccount"
-                  label={t`Bank / Cash Account`}
-                  classes={["Asset"]}
-                />
-                <Input name="reference" label={t`Reference`} />
-                <CustomFormFields table="payment" />
-              </div>
-              <div className="mt-4 w-full">
-                <TextArea name="memo" label={t`Memo`} />
-              </div>
-            </VStack>
-          </CardContent>
-          <CardFooter>
-            <Submit
-              isDisabled={
-                isEditing
-                  ? isLocked || !canMutate
-                  : !permissions.can("create", "invoicing")
-              }
-            >
-              <Trans>Save</Trans>
-            </Submit>
-          </CardFooter>
-        </Card>
-      </ValidatedForm>
-      {voidModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.paymentVoid(initialValues.id!)}
-          name={initialValues.paymentId ?? ""}
-          title={t`Void ${initialValues.paymentId}`}
-          text={t`Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone.`}
-          deleteText={t`Void`}
-          onCancel={voidModal.onClose}
-          onSubmit={voidModal.onClose}
+    <ValidatedForm
+      method="post"
+      validator={paymentValidator}
+      defaultValues={defaultValues}
+      isDisabled={isEditing && isLocked}
+      className="flex flex-col gap-4 w-full pt-2 pb-4"
+    >
+      {/* Each Hidden renders a wrapper; keep them out of the flex gap. */}
+      <div className="hidden">
+        <Hidden name="id" />
+        <Hidden name="paymentType" value={currentType} />
+        {/* Exactly one party field is mounted, and the other two are
+            blanked — the validator's one-of-three refine (and the DB's
+            widened payment_party_check) rejects anything else. */}
+        {kindFields.blank.map((field) => (
+          <Hidden key={field} name={field} value="" />
+        ))}
+        <Hidden name="salesOrderId" value={depositIds.salesOrderId} />
+        <Hidden name="rentalAgreementId" value={depositIds.rentalAgreementId} />
+        <Hidden
+          name="customerContractId"
+          value={depositIds.customerContractId}
         />
-      )}
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.paymentDelete(initialValues.id!)}
-          isOpen={deleteModal.isOpen}
-          name={initialValues.paymentId ?? ""}
-          text={t`Are you sure you want to delete ${initialValues.paymentId}? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={deleteModal.onClose}
+        <Hidden name="purchaseOrderId" value={depositIds.purchaseOrderId} />
+        {isEditing && <Hidden name="paymentId" />}
+        {financingRequestId && (
+          <Hidden name="financingRequestId" value={financingRequestId} />
+        )}
+        {seedInvoiceIds && seedInvoiceIds.length > 0 && (
+          <Hidden name="seedInvoiceIds" value={seedInvoiceIds.join(",")} />
+        )}
+      </div>
+      <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 @xl:grid-cols-2">
+        {!isEditing && (
+          <SequenceOrCustomId
+            name="paymentId"
+            label={t`Payment ID`}
+            table="payment"
+          />
+        )}
+        <SelectControlled
+          autoFocus={!isEditing}
+          name="paymentKind"
+          label={t`Type`}
+          options={typeOptions}
+          value={paymentKind}
+          onChange={(opt) => {
+            if (opt) setPaymentKind(opt.value);
+          }}
         />
-      )}
-    </>
+        {isEmployee ? (
+          <Employee name="employeeId" label={t`Employee`} />
+        ) : isCustomer ? (
+          <Customer
+            name="customerId"
+            label={t`Customer`}
+            onChange={(option) => {
+              const next = option?.value ?? "";
+              if (next !== customerId) setDeposit("");
+              setCustomerId(next);
+            }}
+          />
+        ) : (
+          <Supplier
+            name="supplierId"
+            label={t`Supplier`}
+            onChange={(option) => {
+              const next = option?.value ?? "";
+              if (next !== supplierId) setDeposit("");
+              setSupplierId(next);
+            }}
+          />
+        )}
+        {showDepositPicker && (
+          <Combobox
+            name="depositDocument"
+            label={
+              isSupplier
+                ? takesDeposit
+                  ? t`Prepayment for`
+                  : t`Refund prepayment for`
+                : takesDeposit
+                  ? t`Deposit for`
+                  : t`Refund deposit for`
+            }
+            helperText={
+              isSupplier
+                ? takesDeposit
+                  ? t`Unapplied cash is held as a supplier prepayment for this order instead of on-account credit.`
+                  : t`Takes the prepayment held for this order back out of supplier prepayments.`
+                : takesDeposit
+                  ? t`Unapplied cash is held as a customer prepayment for this document instead of on-account credit.`
+                  : t`Pays the deposit held for this document back out of customer prepayments.`
+            }
+            options={depositOptions}
+            value={deposit}
+            isOptional
+            placeholder={t`No document`}
+            onChange={(option) => setDeposit(option?.value ?? "")}
+          />
+        )}
+        <DatePicker name="paymentDate" label={t`Payment Date`} />
+        <Currency
+          name="currencyCode"
+          label={t`Currency`}
+          onChange={(option) => {
+            if (option) setCurrencyCode(option.value);
+          }}
+        />
+        <Number
+          name="exchangeRate"
+          label={t`Exchange Rate`}
+          step={INPUT_STEP.exchangeRate}
+          formatOptions={INPUT_FORMAT.exchangeRate}
+        />
+        <Number
+          name="totalAmount"
+          label={t`Total Amount`}
+          formatOptions={INPUT_FORMAT.money(currencyCode, currencyDecimals)}
+        />
+        <Account
+          name="bankAccount"
+          label={t`Bank / Cash Account`}
+          classes={["Asset"]}
+        />
+        <Input name="reference" label={t`Reference`} />
+        <CustomFormFields table="payment" />
+      </div>
+      <TextArea name="memo" label={t`Memo`} />
+      <div>
+        <Submit
+          isDisabled={
+            isEditing
+              ? isLocked || !canMutate
+              : !permissions.can("create", "invoicing")
+          }
+        >
+          <Trans>Save</Trans>
+        </Submit>
+      </div>
+    </ValidatedForm>
   );
 };
 

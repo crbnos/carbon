@@ -43,13 +43,13 @@ const ItarCertificationsTable = memo(
           accessorKey: "name",
           header: t`Name`,
           cell: (item) => item.getValue() ?? dash,
-          meta: { icon: <LuUser /> }
+          meta: { mobile: "P1", icon: <LuUser /> }
         },
         {
           accessorKey: "email",
           header: t`Email`,
           cell: (item) => item.getValue() ?? dash,
-          meta: { icon: <LuMail /> }
+          meta: { mobile: "P3", icon: <LuMail /> }
         },
         {
           accessorKey: "lastLogin",
@@ -64,7 +64,7 @@ const ItarCertificationsTable = memo(
           accessorKey: "certVersion",
           header: t`Cert Version`,
           cell: ({ row }) => row.original.certVersion ?? t`Not certified`,
-          meta: { icon: <LuBadgeCheck /> }
+          meta: { mobile: "P2", icon: <LuBadgeCheck /> }
         },
         {
           accessorKey: "certifiedAt",

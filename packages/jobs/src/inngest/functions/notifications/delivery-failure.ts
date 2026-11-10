@@ -18,6 +18,12 @@ import { NonRetriableError } from "inngest";
  */
 
 /**
+ * Ours, not nodemailer's: the company sender stopped before any vendor call
+ * (a Gmail token refresh another caller holds).
+ */
+export const NOT_SENT = "ENOTSENT";
+
+/**
  * Nodemailer codes raised while connecting, greeting or authenticating, i.e.
  * before a single recipient or byte of DATA reaches the relay.
  *
@@ -25,7 +31,16 @@ import { NonRetriableError } from "inngest";
  * ANY phase, so either can mean the relay accepted the message and then dropped
  * the connection before the final ack.
  */
-const RETRYABLE_SMTP_CODES = new Set(["ECONNECTION", "EDNS", "EAUTH", "ETLS"]);
+const RETRYABLE_SMTP_CODES = new Set([
+  "ECONNECTION",
+  "EDNS",
+  "EAUTH",
+  "ETLS",
+  // An attachment URL that failed to download: the message never finished, and
+  // a relay accepts nothing until it does.
+  "EFETCH",
+  NOT_SENT
+]);
 
 /**
  * The only Slack failure that provably posted nothing. A platform error is
@@ -66,6 +81,76 @@ export const isRetryableEmailFailure = (error: unknown): boolean => {
 export const isRetryableSlackFailure = (error: unknown): boolean => {
   const code = codeOf(error);
   return code !== undefined && RETRYABLE_SLACK_CODES.has(code);
+};
+
+/** Gmail's 403 reasons for a request it refused over a rate limit; it asks to retry them. */
+const RATE_LIMIT_REASONS = new Set([
+  "rateLimitExceeded",
+  "userRateLimitExceeded"
+]);
+
+type VendorErrorItem = { reason?: unknown; message?: unknown };
+
+type VendorError = {
+  status?: unknown;
+  code?: unknown;
+  message?: unknown;
+  errors?: VendorErrorItem[];
+  response?: {
+    status?: unknown;
+    data?: { error?: { message?: unknown; errors?: VendorErrorItem[] } };
+  };
+};
+
+/** The HTTP statuses, `reason`s and messages googleapis may put on an error. */
+function readVendorError(error: unknown) {
+  if (typeof error !== "object" || error === null) return null;
+  const { status, code, message, errors, response } = error as VendorError;
+  const items = [...(errors ?? []), ...(response?.data?.error?.errors ?? [])];
+  const strings = (values: unknown[]) =>
+    values.filter((v): v is string => typeof v === "string");
+  return {
+    statuses: [status, code, response?.status].map(String),
+    reasons: strings(items.map((item) => item.reason)),
+    messages: strings([
+      message,
+      response?.data?.error?.message,
+      ...items.map((item) => item.message)
+    ]).map((m) => m.toLowerCase())
+  };
+}
+
+/**
+ * Gmail refused the send because the account hit its sending limit: a 429
+ * "User-rate limit exceeded (Mail sending)", or a 403 `dailyLimitExceeded`.
+ * It lasts up to a day, so a retry within the job cannot help.
+ */
+export const isSendingLimitResponse = (error: unknown): boolean => {
+  const parts = readVendorError(error);
+  if (!parts) return false;
+  if (parts.statuses.includes("403")) {
+    return parts.reasons.includes("dailyLimitExceeded");
+  }
+  return (
+    parts.statuses.includes("429") &&
+    parts.messages.some((m) => m.includes("mail sending"))
+  );
+};
+
+/**
+ * A vendor API refused the request over a short-lived rate limit (Gmail
+ * through googleapis), so nothing was sent and a replay cannot duplicate: an
+ * HTTP 429, or a 403 whose reason is a rate limit. A sending-limit refusal is
+ * not one: it lasts up to a day (`isSendingLimitResponse`).
+ */
+export const isRateLimitedResponse = (error: unknown): boolean => {
+  const parts = readVendorError(error);
+  if (!parts || isSendingLimitResponse(error)) return false;
+  if (parts.statuses.includes("429")) return true;
+  return (
+    parts.statuses.includes("403") &&
+    parts.reasons.some((reason) => RATE_LIMIT_REASONS.has(reason))
+  );
 };
 
 /** The error to throw for a failed email send, classified. */

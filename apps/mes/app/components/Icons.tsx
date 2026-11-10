@@ -4,6 +4,8 @@
 
 import type { Database } from "@carbon/database";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
 import { AiOutlinePartition } from "react-icons/ai";
 import {
   BsExclamationSquareFill,
@@ -66,17 +68,40 @@ export function DeadlineIcon({
   deadlineType: Operation["jobDeadlineType"];
   overdue: boolean;
 }) {
+  const { t } = useLingui();
+  // Every call site follows the icon with text: the deadline type itself for
+  // ASAP / No Deadline (so the icon is decorative), the due date otherwise —
+  // then the icon is the only place the hard/soft priority shows, so name it.
+  const named = (icon: ReactNode, label: string) => (
+    <span
+      className="inline-flex"
+      role="img"
+      aria-label={overdue ? t`${label}, overdue` : label}
+    >
+      {icon}
+    </span>
+  );
   switch (deadlineType) {
     case "ASAP":
-      return <BsExclamationSquareFill className="text-red-500" />;
-    case "Hard Deadline":
-      return <HighPriorityIcon className={cn(overdue ? "text-red-500" : "")} />;
-    case "Soft Deadline":
       return (
-        <MediumPriorityIcon className={cn(overdue ? "text-red-500" : "")} />
+        <BsExclamationSquareFill aria-hidden="true" className="text-red-500" />
+      );
+    case "Hard Deadline":
+      return named(
+        <HighPriorityIcon className={cn(overdue ? "text-red-500" : "")} />,
+        t`Hard deadline`
+      );
+    case "Soft Deadline":
+      return named(
+        <MediumPriorityIcon className={cn(overdue ? "text-red-500" : "")} />,
+        t`Soft deadline`
       );
     case "No Deadline":
-      return <LowPriorityIcon />;
+      return (
+        <span className="inline-flex" aria-hidden="true">
+          <LowPriorityIcon />
+        </span>
+      );
     default:
       return null;
   }
@@ -223,7 +248,9 @@ export function OperationStatusIcon({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="inline-flex">{icon}</span>
+        <span className="inline-flex" role="img" aria-label={status}>
+          {icon}
+        </span>
       </TooltipTrigger>
       <TooltipContent>
         <span>{status}</span>

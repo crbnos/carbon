@@ -4,7 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getTrackedEntity } from "~/modules/inventory";
+import { getTrackedEntity } from "~/modules/inventory/inventory.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 
 export async function getEntityLabelData(

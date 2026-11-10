@@ -2,153 +2,24 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, notFound } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
-import {
-  canApproveRequest,
-  canCancelRequest,
-  getLatestApprovalRequestForDocument
-} from "@carbon/ee/approvals.server";
-import { getLogger } from "@carbon/logger";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { deletePurchaseOrder, getPurchaseOrder } from "~/modules/purchasing";
 import { path } from "~/utils/path";
 
-const logger = getLogger("erp", "orderid-delete");
-
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    delete: "purchasing"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["orderId"] });
+  if ("invalid" in input) return input.invalid;
+  const { orderId } = input.params;
+  const api = await carbon(args.request);
+  const result = await api.purchasing.deletePurchaseOrders({
+    purchaseOrderIds: [orderId]
   });
-
-  const { orderId } = params;
-  if (!orderId) throw notFound("orderId not found");
-
-  const serviceRole = getCarbonServiceRole();
-
-  // Get PO status and check if it's in "Needs Approval"
-  const purchaseOrder = await getPurchaseOrder(serviceRole, orderId);
-  // The service role bypasses RLS and orderId comes from the URL.
-  if (purchaseOrder.data && purchaseOrder.data.companyId !== companyId) {
-    logger.error("Purchase order not found for company", {
-      companyId,
-      orderId
-    });
-    throw redirect(
-      path.to.purchaseOrders,
-      await flash(request, error(null, "Purchase order not found"))
-    );
-  }
-
-  if (purchaseOrder.error || !purchaseOrder.data) {
-    throw redirect(
-      path.to.purchaseOrders,
-      await flash(
-        request,
-        error(
-          purchaseOrder.error ?? new Error("Purchase order not found"),
-          "Purchase order not found"
-        )
-      )
-    );
-  }
-
-  const poStatus = purchaseOrder.data.status;
-
-  // If PO is in "Needs Approval", check permissions
-  if (poStatus && poStatus === "Needs Approval") {
-    const approvalRequest = await getLatestApprovalRequestForDocument(
-      serviceRole,
-      "purchaseOrder",
-      orderId
-    );
-
-    if (
-      approvalRequest.data &&
-      approvalRequest.data.status === "Pending" &&
-      approvalRequest.data.requestedBy
-    ) {
-      const isRequester = canCancelRequest(
-        {
-          requestedBy: approvalRequest.data.requestedBy,
-          status: approvalRequest.data.status as "Pending"
-        },
-        userId
-      );
-      const isApprover = await canApproveRequest(
-        serviceRole,
-        {
-          amount: approvalRequest.data.amount,
-          documentType: approvalRequest.data.documentType,
-          companyId: approvalRequest.data.companyId
-        },
-        userId
-      );
-
-      // Only requester can delete POs in "Needs Approval" status
-      // Approvers should reject instead, normal users have no permission
-      if (!isRequester) {
-        throw redirect(
-          path.to.purchaseOrder(orderId),
-          await flash(
-            request,
-            error(
-              new Error(
-                isApprover
-                  ? "Approvers cannot delete purchase orders. Please reject the approval request instead."
-                  : "Only the requester can delete a purchase order that needs approval"
-              ),
-              isApprover
-                ? "Please reject the approval request instead of deleting"
-                : "You do not have permission to delete this purchase order"
-            )
-          )
-        );
-      }
-
-      // Cancel pending approval requests before deletion
-      await serviceRole
-        .from("approvalRequest")
-        .update({
-          status: "Cancelled",
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
-        .eq("documentType", "purchaseOrder")
-        .eq("documentId", orderId)
-        .eq("companyId", companyId)
-        .eq("status", "Pending");
-    }
-  }
-
-  // Only allow deletion of Draft, Planned, or Needs Approval (if requester) statuses
-  if (!poStatus || !["Draft", "Planned", "Needs Approval"].includes(poStatus)) {
-    throw redirect(
-      path.to.purchaseOrder(orderId),
-      await flash(
-        request,
-        error(
-          new Error("Cannot delete purchase order in this status"),
-          `Cannot delete purchase order with status "${poStatus ?? "unknown"}". Only Draft, Planned, or Needs Approval (if you're the requester) purchase orders can be deleted.`
-        )
-      )
-    );
-  }
-
-  const remove = await deletePurchaseOrder(client, orderId);
-
-  if (remove.error) {
-    logger.error("Failed to delete purchase order:", remove.error);
-
-    throw redirect(
-      path.to.purchaseOrders,
-      await flash(request, error(remove.error, remove.error.message))
-    );
-  }
-
-  throw redirect(path.to.purchaseOrders);
+  // A refusal stays on the order; a deleted (or missing) one goes to the list.
+  return respond(args.request, result).redirect(
+    result.error && result.error.category !== "notFound"
+      ? path.to.purchaseOrder(orderId)
+      : path.to.purchaseOrders,
+    { message: "Purchase order deleted" }
+  );
 }

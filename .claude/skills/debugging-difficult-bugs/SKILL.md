@@ -16,7 +16,7 @@ the runtime path to observe the failure."
 ## Step 1: State the uncertainty
 
 Write down: what you believe, what you can't verify statically, and the exact
-runtime path that must be observed (route → service → query, server function, job).
+runtime path that must be observed (route → service → query, posting, job).
 
 ## Step 2: Add temporary unconditional instrumentation
 
@@ -47,9 +47,9 @@ debugBug("service.beforeUpdate", { id, companyId, status: row.status });
 ```
 
 **Carbon multi-process note.** The ERP and MES dev servers and the Inngest
-handlers run as separate processes with different working directories; server
-functions (`packages/server-functions`) run inside whichever of them called
-them. Log `process.cwd()` + a process role once at startup, or use distinct
+handlers run as separate processes with different working directories;
+postings (the ERP modules' service files) run in the ERP process, also when the
+MES calls them (over HTTP, `erpPosting`). Log `process.cwd()` + a process role once at startup, or use distinct
 filenames (`debug-erp.jsonl`, `debug-jobs.jsonl`). The Docker `edge-runtime`
 container only hosts the `embedding` edge function; there,
 `console.error` JSON lines (visible in container logs) stand in for a file.

@@ -24,6 +24,7 @@ import {
   Spinner,
   Switch,
   useLocalStorage,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -49,16 +50,22 @@ import { useLocations } from "~/components/Form/Location";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useUrlParams } from "~/hooks";
-import { getJobsByDateRange, getUnscheduledJobs } from "~/modules/production";
 import { isDateColumnSentinel } from "~/modules/production/production.models";
+import {
+  getJobProjects,
+  getJobsByDateRange,
+  getUnscheduledJobs
+} from "~/modules/production/production.service";
 import type { Column, JobItem } from "~/modules/production/ui/Schedule";
 import type { DisplaySettings } from "~/modules/production/ui/Schedule/Kanban";
 import { DateKanban } from "~/modules/production/ui/Schedule/Kanban/DateKanban";
 import { comparePriorityThenId } from "~/modules/production/ui/Schedule/Kanban/placement";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
-import { getTagsList } from "~/modules/shared";
-import { resolveLocationId } from "~/modules/shared/location.server";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getLocationTimeZone,
+  getTagsList,
+  resolveLocationId
+} from "~/modules/shared/shared.service";
 import { usePeople } from "~/stores";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -180,6 +187,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
         error(unscheduledJobs.error, "Failed to fetch unscheduled jobs")
       )
     );
+  }
+
+  const jobProjects = await getJobProjects(client, companyId, [
+    ...(jobs.data ?? []).map((job) => job.id),
+    ...(unscheduledJobs.data ?? []).map((job) => job.id)
+  ]);
+  if (jobProjects.error) {
+    logger.error("Failed to load job projects", {
+      companyId,
+      error: jobProjects.error
+    });
   }
 
   // Filter jobs
@@ -399,6 +417,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       salesOrderReadableId: job.salesOrderReadableId,
       salesOrderId: job.salesOrderId,
       salesOrderLineId: job.salesOrderLineId,
+      ...jobProjects.data[job.id],
       status: job.status,
       setupDuration: 0,
       laborDuration: 0,
@@ -439,6 +458,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     salesOrderReadableId: job.salesOrderReadableId,
     salesOrderId: job.salesOrderId,
     salesOrderLineId: job.salesOrderLineId,
+    ...jobProjects.data[job.id],
     status: job.status,
     setupDuration: 0,
     laborDuration: 0,
@@ -494,6 +514,7 @@ const defaultDisplaySettings: DisplaySettings = {
   showQuantity: true,
   showStatus: true,
   showSalesOrder: true,
+  showProject: true,
   showThumbnail: true
 };
 
@@ -570,10 +591,20 @@ function DateKanbanSchedule() {
   const [searchParams] = useSearchParams();
 
   const [items, setItems] = useState<JobItem[]>(initialItems);
-  const [displaySettings, setDisplaySettings] = useLocalStorage(
-    DISPLAY_SETTINGS_KEY,
-    defaultDisplaySettings
+  // Phones keep their own settings and start without the product image, so
+  // more than one card fits on a screen; the Thumbnail toggle still applies.
+  const { isPhone } = useViewport();
+  const [storedDisplaySettings, setDisplaySettings] = useLocalStorage(
+    isPhone ? `${DISPLAY_SETTINGS_KEY}-compact` : DISPLAY_SETTINGS_KEY,
+    isPhone
+      ? { ...defaultDisplaySettings, showThumbnail: false }
+      : defaultDisplaySettings
   );
+  // Settings stored before a toggle existed read that toggle's default
+  const displaySettings = {
+    ...defaultDisplaySettings,
+    ...storedDisplaySettings
+  };
 
   // A reload hands over new objects for every card. Keeping the ones that did
   // not change lets their memoized cards skip the render.
@@ -747,15 +778,17 @@ function DateKanbanSchedule() {
 
   return (
     <div className="flex flex-col h-full max-h-full overflow-auto relative">
-      <HStack className="px-4 py-2 flex justify-between bg-card border-b border-border">
-        <HStack>
+      <HStack className="px-4 py-2 flex justify-between bg-card border-b border-border max-md:flex-wrap max-md:gap-y-2 max-md:[&_button]:h-11 max-md:[&_button]:min-w-11">
+        <HStack className="max-md:w-full">
           <ScheduleNavigation />
-          <SearchFilter param="search" size="sm" placeholder="Search" />
+          <div className="contents max-md:block max-md:min-w-0 max-md:flex-1">
+            <SearchFilter param="search" size="sm" placeholder="Search" />
+          </div>
           <Filter filters={filters} />
         </HStack>
 
-        <HStack>
-          <HStack>
+        <HStack className="max-md:w-full">
+          <HStack className="max-md:min-w-0 max-md:flex-1">
             <Button variant="secondary" onClick={goToToday}>
               <Trans>Today</Trans>
             </Button>
@@ -767,7 +800,10 @@ function DateKanbanSchedule() {
             />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="secondary" className="min-w-[140px]">
+                <Button
+                  variant="secondary"
+                  className="min-w-[140px] max-md:min-w-0 max-md:flex-1"
+                >
                   {currentDateSpanLabel}
                 </Button>
               </DropdownMenuTrigger>
@@ -809,6 +845,7 @@ function DateKanbanSchedule() {
                 <div className="w-full">
                   <Combobox
                     asButton
+                    aria-label={t`Location`}
                     size="sm"
                     value={locationId ?? undefined}
                     options={locations}
@@ -834,6 +871,7 @@ function DateKanbanSchedule() {
                     { key: "showQuantity", label: t`Quantity` },
                     { key: "showStatus", label: t`Status` },
                     { key: "showSalesOrder", label: t`Sales Order` },
+                    { key: "showProject", label: t`Project` },
                     { key: "showThumbnail", label: t`Thumbnail` }
                   ].map(({ key, label }) => (
                     <Switch
@@ -881,6 +919,7 @@ function DateKanbanSchedule() {
             showQuantity={displaySettings.showQuantity}
             showStatus={displaySettings.showStatus}
             showSalesOrder={displaySettings.showSalesOrder}
+            showProject={displaySettings.showProject}
             showThumbnail={displaySettings.showThumbnail}
           />
         </div>

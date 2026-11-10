@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getCustomerBankAccounts } from "~/modules/sales";
+import { getCustomerBankAccounts } from "~/modules/sales/sales.service";
 import CustomerBankAccounts from "~/modules/sales/ui/Customer/CustomerBankAccounts";
 import { path } from "~/utils/path";
 

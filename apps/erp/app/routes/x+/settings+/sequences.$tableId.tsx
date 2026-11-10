@@ -9,12 +9,12 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { sequenceValidator } from "~/modules/settings/settings.models";
 import {
   getSequence,
-  SequenceForm,
-  sequenceValidator,
   updateSequence
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service";
+import { SequenceForm } from "~/modules/settings/ui";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

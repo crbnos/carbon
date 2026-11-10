@@ -2,7 +2,8 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { fakeDatabase } from "../../../../core/fake-database-test-fixture";
 import {
   isJournalEntrySyncFailure,
   JournalEntrySyncError
@@ -186,39 +187,6 @@ describe("mapItemToQboItem (mapping fixture with account resolution)", () => {
   });
 });
 
-const { shippingLinks, linkControl } = vi.hoisted(() => ({
-  shippingLinks: [] as Array<Record<string, unknown>>,
-  linkControl: { failOnce: false }
-}));
-vi.mock("../../../../core/utils", async (original) => ({
-  ...(await original<typeof import("../../../../core/utils")>()),
-  withTriggersDisabled: async (
-    _database: unknown,
-    callback: (tx: unknown) => Promise<unknown>
-  ) => {
-    const builder: any = {
-      values(values: Record<string, unknown>) {
-        shippingLinks.push(values);
-        return builder;
-      },
-      onConflict() {
-        return builder;
-      },
-      async execute() {
-        if (linkControl.failOnce) {
-          linkControl.failOnce = false;
-          throw new Error("link failed");
-        }
-        return [];
-      }
-    };
-    return callback({ insertInto: () => builder });
-  }
-}));
-beforeEach(() => {
-  shippingLinks.length = 0;
-  linkControl.failOnce = false;
-});
 const shippingItem = (overrides: Partial<Qbo.Item> = {}): Qbo.Item => ({
   Id: "shipping-remote",
   SyncToken: "1",
@@ -235,9 +203,31 @@ function shippingSyncer(
     existing?: Qbo.Item;
     matches?: Qbo.Item[];
     create?: ReturnType<typeof vi.fn>;
-    refs?: Map<string, Qbo.Ref>;
+    /** Carbon account id → the QBO account it is mapped to. */
+    refs?: Record<string, string>;
   } = {}
 ) {
+  const mapping = (
+    entityType: string,
+    entityId: string,
+    externalId: string
+  ) => ({
+    entityType,
+    entityId,
+    integration: "quickbooks",
+    companyId: "company-1",
+    externalId
+  });
+  const db = fakeDatabase({
+    externalIntegrationMapping: [
+      ...Object.entries(
+        args.refs ?? { "acct-shipping": "income-shipping" }
+      ).map(([accountId, ref]) => mapping("account", accountId, ref)),
+      ...(args.existingId
+        ? [mapping("shippingItem", "acct-shipping", args.existingId)]
+        : [])
+    ]
+  });
   const query = vi.fn(
     async (_entity: string, _where?: string) => args.matches ?? []
   );
@@ -247,7 +237,7 @@ function shippingSyncer(
     vi.fn(async (_payload: QboCreatePayload<Qbo.Item>) => shippingItem());
   const updateItem = vi.fn(async (payload: Qbo.Item) => payload);
   const syncer = new QboItemSyncer({
-    database: {} as never,
+    database: db.database,
     companyId: "company-1",
     provider: {
       id: "quickbooks",
@@ -259,12 +249,18 @@ function shippingSyncer(
     config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
     entityType: "item"
   });
-  (syncer as any).mappingService = {
-    getExternalId: vi.fn(async () => args.existingId ?? null)
+  return {
+    syncer,
+    db,
+    query,
+    getItem,
+    createItem,
+    updateItem,
+    helperLinks: () =>
+      db
+        .rows("externalIntegrationMapping")
+        .filter((row) => row.entityType === "shippingItem")
   };
-  (syncer as any).getAccountRefsById = async () =>
-    args.refs ?? new Map([["acct-shipping", { value: "income-shipping" }]]);
-  return { syncer, query, getItem, createItem, updateItem };
 }
 describe("QBO shipping helper identity", () => {
   it("creates one sales-only Service per shipping account and caches reuse", async () => {
@@ -288,14 +284,16 @@ describe("QBO shipping helper identity", () => {
       UnitPrice: 0,
       IncomeAccountRef: { value: "income-shipping" }
     });
-    expect(shippingLinks[0]).toMatchObject({
-      entityType: "shippingItem",
-      entityId: "acct-shipping",
-      integration: "quickbooks",
-      externalId: "shipping-remote",
-      companyId: "company-1",
-      metadata: { accountId: "acct-shipping", kind: "shipping" }
-    });
+    expect(test.helperLinks()).toMatchObject([
+      {
+        entityType: "shippingItem",
+        entityId: "acct-shipping",
+        integration: "quickbooks",
+        externalId: "shipping-remote",
+        companyId: "company-1",
+        metadata: { accountId: "acct-shipping", kind: "shipping" }
+      }
+    ]);
     expect(test.query).toHaveBeenCalledOnce();
   });
   it("reuses an owned compatible helper mapping without a create or name lookup", async () => {
@@ -310,7 +308,10 @@ describe("QBO shipping helper identity", () => {
   });
   it("recovers remote-create/local-link retries through the exact compatible remote name", async () => {
     const test = shippingSyncer();
-    linkControl.failOnce = true;
+    test.db.failNextWrite(
+      "externalIntegrationMapping",
+      new Error("link failed")
+    );
     await expect(
       test.syncer.ensureShippingItem({ shippingAccountId: "acct-shipping" })
     ).rejects.toThrow("link failed");
@@ -346,25 +347,28 @@ describe("QBO shipping helper identity", () => {
       })
     ).toBe("shipping-remote");
     expect(test.createItem).toHaveBeenCalledOnce();
-    expect(shippingLinks).toHaveLength(1);
+    expect(test.helperLinks()).toHaveLength(1);
   });
   it.each([
     { Type: "NonInventory" },
     { Active: false },
     { IncomeAccountRef: { value: "wrong" } }
-  ])("refuses an incompatible unowned helper without mutating it: %s", async (override) => {
-    const test = shippingSyncer({
-      matches: [shippingItem(override as Partial<Qbo.Item>)]
-    });
-    await expect(
-      test.syncer.ensureShippingItem({ shippingAccountId: "acct-shipping" })
-    ).rejects.toMatchObject({
-      failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
-    });
-    expect(test.createItem).not.toHaveBeenCalled();
-    expect(test.updateItem).not.toHaveBeenCalled();
-    expect(shippingLinks).toEqual([]);
-  });
+  ])(
+    "refuses an incompatible unowned helper without mutating it: %s",
+    async (override) => {
+      const test = shippingSyncer({
+        matches: [shippingItem(override as Partial<Qbo.Item>)]
+      });
+      await expect(
+        test.syncer.ensureShippingItem({ shippingAccountId: "acct-shipping" })
+      ).rejects.toMatchObject({
+        failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+      });
+      expect(test.createItem).not.toHaveBeenCalled();
+      expect(test.updateItem).not.toHaveBeenCalled();
+      expect(test.helperLinks()).toEqual([]);
+    }
+  );
   it("reconverges only an owned helper with the current SyncToken", async () => {
     const test = shippingSyncer({
       existingId: "shipping-remote",
@@ -398,7 +402,7 @@ describe("QBO shipping helper identity", () => {
     );
   });
   it("fails unmapped shipping before remote reads/writes", async () => {
-    const test = shippingSyncer({ refs: new Map() });
+    const test = shippingSyncer({ refs: {} });
     await expect(
       test.syncer.ensureShippingItem({ shippingAccountId: "acct-shipping" })
     ).rejects.toMatchObject({

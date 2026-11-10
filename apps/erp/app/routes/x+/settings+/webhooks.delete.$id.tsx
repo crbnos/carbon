@@ -7,13 +7,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { deleteWebhook } from "@carbon/ee/webhooks.server";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { getWebhook } from "~/modules/settings";
+import { getWebhook } from "~/modules/settings/settings.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -54,7 +54,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) {
     throw redirect(
       path.to.itemPostingGroups,
-      await flash(request, error(params, "Failed to get an id"))
+      await flash(request, error(null, "Failed to get an id"))
     );
   }
 
@@ -81,15 +81,16 @@ export default function DeleteWebhookRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const { t } = useLingui();
-  const onCancel = () => closeRoute();
+  const onCancel = dialog.close;
 
   return (
     <ConfirmDelete
       action={path.to.deleteWebhook(id)}
       name={webhook.name}
       text={t`Are you sure you want to delete the webhook: ${webhook.name}? This cannot be undone.`}
+      isOpen={dialog.open}
       onCancel={onCancel}
     />
   );

@@ -10,7 +10,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getFirstArticleInspections } from "~/modules/quality";
+import { getFirstArticleInspections } from "~/modules/quality/quality.service";
 import FirstArticlesTable from "~/modules/quality/ui/FirstArticles/FirstArticlesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

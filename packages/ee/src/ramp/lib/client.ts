@@ -16,17 +16,12 @@ import {
   RampVendorSchema
 } from "./models";
 
-export const RAMP_PRODUCTION_HOST = "https://api.ramp.com";
-export const RAMP_SANDBOX_HOST = "https://demo-api.ramp.com";
+export const RAMP_HOST = "https://api.ramp.com";
 
 // The canonical scope lists live in the browser-safe `../scopes` module so the
 // client-bundled `config.tsx` can share them without importing this file (which
 // pulls `node:crypto`). Re-exported here to preserve the public contract.
 export { RAMP_OAUTH_SCOPES, RAMP_SCOPES } from "../scopes";
-
-/** Ramp OAuth authorize endpoints (production / sandbox). */
-export const RAMP_PRODUCTION_AUTHORIZE_URL = `${RAMP_PRODUCTION_HOST}/v1/authorize`;
-export const RAMP_SANDBOX_AUTHORIZE_URL = `${RAMP_SANDBOX_HOST}/v1/authorize`;
 
 /** Re-mint a client-credentials token when fewer than this many ms remain. */
 const TOKEN_REFRESH_MARGIN_MS = 60_000;
@@ -116,10 +111,7 @@ export class RampClient {
     private readonly credentials: RampCredentials,
     private readonly options: RampClientOptions = {}
   ) {
-    this.host =
-      credentials.environment === "sandbox"
-        ? RAMP_SANDBOX_HOST
-        : RAMP_PRODUCTION_HOST;
+    this.host = RAMP_HOST;
     if (credentials.type === "oauth2") {
       this.oauthAccessToken = credentials.accessToken;
       this.oauthExpiresAt = credentials.expiresAt

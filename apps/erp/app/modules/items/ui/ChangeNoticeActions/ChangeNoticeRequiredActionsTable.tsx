@@ -15,6 +15,7 @@ import { LuListChecks, LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { ChangeNoticeRequiredAction } from "../../types";
@@ -22,10 +23,11 @@ import type { ChangeNoticeRequiredAction } from "../../types";
 type ChangeNoticeRequiredActionsTableProps = {
   data: ChangeNoticeRequiredAction[];
   count: number;
+  infinite: InfiniteOptions;
 };
 
 const ChangeNoticeRequiredActionsTable = memo(
-  ({ data, count }: ChangeNoticeRequiredActionsTableProps) => {
+  ({ data, count, infinite }: ChangeNoticeRequiredActionsTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -42,13 +44,22 @@ const ChangeNoticeRequiredActionsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuListChecks />
           }
         },
         {
           accessorKey: "active",
           header: t`Active`,
-          cell: ({ row }) => <Checkbox checked={row.original.active} />
+          cell: ({ row }) => {
+            const name = row.original.name;
+            return (
+              <Checkbox
+                checked={row.original.active}
+                aria-label={t`Active: ${name}`}
+              />
+            );
+          }
         }
       ];
     }, [t]);
@@ -95,6 +106,7 @@ const ChangeNoticeRequiredActionsTable = memo(
     return (
       <Table<ChangeNoticeRequiredAction>
         data={data}
+        infinite={infinite}
         columns={columns}
         count={count}
         primaryAction={

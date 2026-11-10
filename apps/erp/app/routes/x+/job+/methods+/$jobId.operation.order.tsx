@@ -2,87 +2,28 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
-import {
-  recalculateJobOperationDependencies,
-  updateJobOperationOrder
-} from "~/modules/production";
-import { getDatabaseClient } from "~/services/database.server";
+import { z } from "zod";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "production"
+// `updates`: a JSON map of operation id to its new order.
+const orderForm = z.object({ updates: z.string().min(1) });
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(orderForm).request(args, {
+    params: ["jobId"]
   });
-
-  const formData = await request.formData();
-  const updateMap = formData.get("updates") as string;
-
-  const { jobId } = params;
-  if (!jobId) {
-    return data(
-      {},
-      await flash(request, error(null, "Failed to receive a job id"))
-    );
-  }
-
-  if (!updateMap) {
-    return data(
-      {},
-      await flash(request, error(null, "Failed to receive a new sort order"))
-    );
-  }
-
-  const updates = Object.entries(JSON.parse(updateMap)).map(
-    ([id, orderString]) => ({
+  if ("invalid" in input) return input.invalid;
+  const orders = Object.fromEntries(
+    Object.entries(JSON.parse(input.data.updates)).map(([id, order]) => [
       id,
-      order: Number(orderString),
-      updatedBy: userId
-    })
+      Number(order)
+    ])
   );
-
-  const updateSortOrders = await updateJobOperationOrder(client, updates);
-  if (updateSortOrders.some((update) => update.error))
-    return data(
-      {},
-      await flash(
-        request,
-        error(updateSortOrders, "Failed to update sort order")
-      )
-    );
-
-  if (jobId) {
-    const recalculateDependencies = await recalculateJobOperationDependencies(
-      getCarbonServiceRole(),
-      getDatabaseClient(),
-      {
-        jobId: jobId,
-        companyId: companyId,
-        userId: userId
-      }
-    );
-    if (recalculateDependencies.error)
-      return data(
-        {},
-        await flash(
-          request,
-          error(recalculateDependencies, "Failed to recalculate dependencies")
-        )
-      );
-  } else {
-    return data(
-      {},
-      await flash(
-        request,
-        error(null, "Failed to receive a job id to recalculate dependencies")
-      )
-    );
-  }
-
-  return null;
+  const api = await carbon(args.request);
+  return api.production.reorderJobOperations({
+    jobId: input.params.jobId,
+    orders
+  });
 }

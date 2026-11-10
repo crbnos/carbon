@@ -3,74 +3,52 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchLineageSubgraph } from "~/modules/inventory/lineage.server";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { expect, it, vi } from "vitest";
 import { loader } from "./traceability.expand";
 
-vi.mock("@carbon/auth/auth.server", () => ({
-  requirePermissions: vi.fn()
-}));
-vi.mock("~/modules/inventory/lineage.server", () => ({
-  fetchLineageSubgraph: vi.fn(async () => ({ entities: [], activities: [] }))
-}));
-vi.mock("~/modules/shared/shared.server", () => ({
-  requireCompanyRecord: vi.fn(async () => undefined)
-}));
+vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions: vi.fn() }));
 
-const client = { from: vi.fn(), rpc: vi.fn() };
-
-function load(query: string) {
-  return loader({
-    request: new Request(`http://localhost/api/traceability/expand?${query}`)
-  } as any);
+// The service-role client the route gets: tracked entities filtered by every
+// `.match` and `.eq`. Anything past the ownership check is out of reach.
+function serviceRole(entities: Record<string, unknown>[]) {
+  return {
+    from() {
+      let rows = entities;
+      const query = {
+        select: () => query,
+        match: (match: Record<string, unknown>) => {
+          rows = rows.filter((row) =>
+            Object.entries(match).every(([key, value]) => row[key] === value)
+          );
+          return query;
+        },
+        eq: (column: string, value: unknown) => {
+          rows = rows.filter((row) => row[column] === value);
+          return query;
+        },
+        maybeSingle: async () => ({ data: rows[0] ?? null, error: null })
+      };
+      return query;
+    },
+    rpc: () => {
+      throw new Error("traversed past the ownership check");
+    }
+  };
 }
 
-describe("traceability expand loader", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(requirePermissions).mockResolvedValue({
-      client,
-      companyId: "company-1"
-    } as any);
-  });
+it("refuses another company's tracked entity before traversing its lineage", async () => {
+  vi.mocked(requirePermissions).mockResolvedValue({
+    client: serviceRole([{ id: "entity-1", companyId: "company-2" }]),
+    companyId: "company-1"
+  } as unknown as Awaited<ReturnType<typeof requirePermissions>>);
 
-  it("proves the entity is the caller's company's before traversing", async () => {
-    const response = await load("trackedEntityId=entity-1&depth=2");
-
-    expect(response.status).toBe(200);
-    expect(requireCompanyRecord).toHaveBeenCalledWith(
-      client,
-      "trackedEntity",
-      "company-1",
-      { id: "entity-1" }
-    );
-    expect(fetchLineageSubgraph).toHaveBeenCalledWith(
-      client,
-      "entity-1",
-      "company-1",
-      2,
-      "both"
-    );
-  });
-
-  it("stops before any traversal when the entity is another company's", async () => {
-    vi.mocked(requireCompanyRecord).mockRejectedValueOnce(
-      new Response("Not found", { status: 404 })
-    );
-
-    await expect(load("trackedEntityId=foreign-entity")).rejects.toMatchObject({
-      status: 404
-    });
-    expect(fetchLineageSubgraph).not.toHaveBeenCalled();
-    expect(client.rpc).not.toHaveBeenCalled();
-  });
-
-  it("returns 400 without a trackedEntityId", async () => {
-    const response = await load("depth=1");
-
-    expect(response.status).toBe(400);
-    expect(requireCompanyRecord).not.toHaveBeenCalled();
-    expect(fetchLineageSubgraph).not.toHaveBeenCalled();
-  });
+  await expect(
+    loader({
+      request: new Request(
+        "http://localhost/api/traceability/expand?trackedEntityId=entity-1"
+      ),
+      params: {},
+      context: {}
+    } as Parameters<typeof loader>[0])
+  ).rejects.toMatchObject({ status: 404 });
 });

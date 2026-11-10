@@ -150,15 +150,16 @@ describe("runSearch operators", () => {
     ]
   ];
 
-  it.each(
-    cases
-  )("maps %s to the matching filter", async (_name, rule, expected) => {
-    const { client, calls } = createStub({ rows: [row] });
-    const outcome = await search(client, { criteria: [rule] });
+  it.each(cases)(
+    "maps %s to the matching filter",
+    async (_name, rule, expected) => {
+      const { client, calls } = createStub({ rows: [row] });
+      const outcome = await search(client, { criteria: [rule] });
 
-    expect(outcome.ok).toBe(true);
-    expect(calls).toContainEqual(expected);
-  });
+      expect(outcome.ok).toBe(true);
+      expect(calls).toContainEqual(expected);
+    }
+  );
 
   it("compares an entity by its id", async () => {
     const { client, calls } = createStub({ rows: [row] });

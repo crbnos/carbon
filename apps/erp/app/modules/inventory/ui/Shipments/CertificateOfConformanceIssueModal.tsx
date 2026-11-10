@@ -44,6 +44,23 @@ type CertificateOfConformanceIssueModalProps = {
 };
 
 const CertificateOfConformanceIssueModal = ({
+  open,
+  ...props
+}: CertificateOfConformanceIssueModalProps & { open: boolean }) => (
+  <Modal
+    open={open}
+    onOpenChange={(next) => {
+      if (!next) props.onClose();
+    }}
+  >
+    <ModalContent>
+      {/* Mounted only while open, so each open loads its warnings afresh. */}
+      <CertificateOfConformanceIssueForm {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+const CertificateOfConformanceIssueForm = ({
   shipmentId,
   isReissue,
   customerId,
@@ -80,122 +97,113 @@ const CertificateOfConformanceIssueModal = ({
     (warnings.faiDue.length > 0 || warnings.missingCertificates.length > 0);
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
+    <ValidatedForm
+      method="post"
+      action={path.to.shipmentCertificate(shipmentId)}
+      validator={certificateOfConformanceIssueValidator}
+      defaultValues={{
+        reasonForUpdate: "",
+        email,
+        customerContact: defaultContactId ?? undefined,
+        cc: []
       }}
+      fetcher={fetcher}
     >
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.shipmentCertificate(shipmentId)}
-          validator={certificateOfConformanceIssueValidator}
-          defaultValues={{
-            reasonForUpdate: "",
-            email,
-            customerContact: defaultContactId ?? undefined,
-            cc: []
-          }}
-          fetcher={fetcher}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              {isReissue ? (
-                <Trans>Reissue Certificate of Conformance</Trans>
-              ) : (
-                <Trans>Issue Certificate of Conformance</Trans>
-              )}
-            </ModalTitle>
-            <ModalDescription>
-              {isReissue ? (
-                <Trans>
-                  A new revision is issued under the same number. Earlier
-                  revisions stay downloadable.
-                </Trans>
-              ) : (
-                <Trans>
-                  The certificate is signed by you and stored with the shipment.
-                </Trans>
-              )}
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <VStack spacing={4}>
-              {isLoadingWarnings && (
-                <HStack className="text-sm text-muted-foreground">
-                  <Spinner className="size-4" />
-                  <span>
-                    <Trans>Checking first articles and certificates…</Trans>
-                  </span>
-                </HStack>
-              )}
-              {hasWarnings && warnings && (
-                <Alert variant="warning">
-                  <LuTriangleAlert />
-                  <AlertTitle>
-                    <Trans>Review before issuing</Trans>
-                  </AlertTitle>
-                  <AlertDescription>
-                    <ul className="list-disc pl-4 space-y-1">
-                      {warnings.faiDue.map((item) => (
-                        <li key={`fai-${item.itemReadableId}`}>
-                          {t`First article due for ${item.itemReadableId}`}
-                          {item.reason ? ` (${item.reason})` : ""}
-                        </li>
-                      ))}
-                      {warnings.missingCertificates.map((name) => (
-                        <li key={`cert-${name}`}>
-                          {t`No certificate on file for ${name}`}
-                        </li>
-                      ))}
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              )}
-              {isReissue && (
-                <TextArea
-                  name="reasonForUpdate"
-                  label={t`Reason for Update`}
-                  isRequired
-                />
-              )}
-              {canEmail && (
-                <Boolean
-                  name="email"
-                  label={t`Email to customer`}
-                  value={email}
-                  onChange={setEmail}
-                />
-              )}
-              {canEmail && email && (
-                <>
-                  <CustomerContact
-                    name="customerContact"
-                    customer={customerId ?? undefined}
-                  />
-                  <EmailRecipients name="cc" label={t`CC`} type="employee" />
-                </>
-              )}
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <HStack>
-              <Button variant="secondary" onClick={onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button
-                type="submit"
-                isDisabled={fetcher.state !== "idle"}
-                isLoading={fetcher.state !== "idle"}
-              >
-                {isReissue ? <Trans>Reissue</Trans> : <Trans>Issue</Trans>}
-              </Button>
+      <ModalHeader>
+        <ModalTitle>
+          {isReissue ? (
+            <Trans>Reissue Certificate of Conformance</Trans>
+          ) : (
+            <Trans>Issue Certificate of Conformance</Trans>
+          )}
+        </ModalTitle>
+        <ModalDescription>
+          {isReissue ? (
+            <Trans>
+              A new revision is issued under the same number. Earlier revisions
+              stay downloadable.
+            </Trans>
+          ) : (
+            <Trans>
+              The certificate is signed by you and stored with the shipment.
+            </Trans>
+          )}
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={4}>
+          {isLoadingWarnings && (
+            <HStack className="text-sm text-muted-foreground">
+              <Spinner className="size-4" />
+              <span>
+                <Trans>Checking first articles and certificates…</Trans>
+              </span>
             </HStack>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+          )}
+          {hasWarnings && warnings && (
+            <Alert variant="warning">
+              <LuTriangleAlert />
+              <AlertTitle>
+                <Trans>Review before issuing</Trans>
+              </AlertTitle>
+              <AlertDescription>
+                <ul className="list-disc pl-4 space-y-1">
+                  {warnings.faiDue.map((item) => (
+                    <li key={`fai-${item.itemReadableId}`}>
+                      {t`First article due for ${item.itemReadableId}`}
+                      {item.reason ? ` (${item.reason})` : ""}
+                    </li>
+                  ))}
+                  {warnings.missingCertificates.map((name) => (
+                    <li key={`cert-${name}`}>
+                      {t`No certificate on file for ${name}`}
+                    </li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+          {isReissue && (
+            <TextArea
+              name="reasonForUpdate"
+              label={t`Reason for Update`}
+              isRequired
+            />
+          )}
+          {canEmail && (
+            <Boolean
+              name="email"
+              label={t`Email to customer`}
+              value={email}
+              onChange={setEmail}
+            />
+          )}
+          {canEmail && email && (
+            <>
+              <CustomerContact
+                name="customerContact"
+                customer={customerId ?? undefined}
+              />
+              <EmailRecipients name="cc" label={t`CC`} type="employee" />
+            </>
+          )}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <HStack>
+          <Button variant="secondary" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+          <Button
+            type="submit"
+            isDisabled={fetcher.state !== "idle"}
+            isLoading={fetcher.state !== "idle"}
+          >
+            {isReissue ? <Trans>Reissue</Trans> : <Trans>Issue</Trans>}
+          </Button>
+        </HStack>
+      </ModalFooter>
+    </ValidatedForm>
   );
 };
 

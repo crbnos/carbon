@@ -8,11 +8,11 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getMethodValidator } from "~/modules/sales/sales.models";
 import {
-  getMethodValidator,
   upsertMakeMethodFromQuoteLine,
   upsertMakeMethodFromQuoteMethod
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 

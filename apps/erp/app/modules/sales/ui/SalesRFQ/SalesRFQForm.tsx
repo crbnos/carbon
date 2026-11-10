@@ -76,7 +76,7 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
         isDisabled={isEditing && isLocked}
       >
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? <Trans>RFQ</Trans> : <Trans>New RFQ</Trans>}
           </CardTitle>
           {!isEditing && (
@@ -180,7 +180,7 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
             onExtractionComplete={handleExtractionComplete}
           />
         </CardContent>
-        <CardFooter>
+        <CardFooter sticky={!isEditing}>
           <Submit
             isDisabled={
               !isDraft ||

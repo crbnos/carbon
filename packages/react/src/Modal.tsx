@@ -13,29 +13,30 @@ import type {
   HTMLAttributes,
   KeyboardEvent
 } from "react";
-import { createContext, forwardRef, useContext } from "react";
+import { forwardRef, useEffect } from "react";
 
 import { LuX } from "react-icons/lu";
+import { ActionPresentationBoundary } from "./ActionPresentation";
+import {
+  BottomSheetContent,
+  sheetFooterClassName,
+  sheetHeaderClassName,
+  sheetTitleClassName
+} from "./BottomSheet";
 import { ClientOnly } from "./ClientOnly";
+import { DialogRoot, useDialogDismissable } from "./DialogRoot";
+import { ReportDialogExit } from "./RouteDialogScope";
 import { cn } from "./utils/cn";
+import {
+  keepOpenOnToast,
+  returnFocusOnClose,
+  trackPageFocus
+} from "./utils/dialog";
+import { useViewport } from "./Viewport";
 
-// A dialog held open with no `onOpenChange` cannot be closed by the X, Escape
-// or a click outside, so it does not offer the X. Leave `onOpenChange` off to
-// say "this cannot be dismissed" rather than passing a handler that does nothing.
-const DismissableContext = createContext(true);
-export const useDialogDismissable = () => useContext(DismissableContext);
-
-export const DialogRoot = ({
-  open,
-  onOpenChange,
-  ...props
-}: DialogPrimitive.DialogProps) => (
-  <DismissableContext.Provider
-    value={open === undefined || onOpenChange !== undefined}
-  >
-    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange} {...props} />
-  </DismissableContext.Provider>
-);
+// The root is shared with `Drawer` and `BottomSheet`, so it lives on its own:
+// on phones `ModalContent` renders a `BottomSheetContent`.
+export { DialogRoot, useDialogDismissable };
 
 const Modal = DialogRoot;
 
@@ -51,11 +52,21 @@ const ModalOverlay = forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
+    // Only the top-most backdrop paints, so stacked modals keep one level of
+    // dim (see `[data-backdrop]` in the shared theme.css).
+    data-backdrop=""
     className={cn(
-      // 'z-50 fixed h-full w-full left-0 top-0',
-      // 'bg-alternative/90 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-      "bg-alternative/90",
+      "bg-black/40 backdrop-blur-xs",
+      // Radix removes the content when this backdrop's animation ends, so the
+      // two durations must match.
+      "data-[state=open]:duration-200 data-[state=closed]:duration-150 ease-out data-[state=closed]:!pointer-events-none",
       "z-50 fixed inset-0 grid place-items-center overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
+      // Content marked `data-instant` (opened by a keyboard shortcut) opens
+      // and closes with no fade on desktop, and so does its backdrop.
+      "md:[&:has(>[data-instant])]:!animate-none",
+      // Content marked `data-clear-backdrop` leaves the page behind it
+      // undimmed (a settings pane that previews the page's look).
+      "[&:has(>[data-clear-backdrop])]:bg-transparent [&:has(>[data-clear-backdrop])]:backdrop-blur-none",
 
       className
     )}
@@ -74,7 +85,7 @@ function getFooterActions(footer: Element) {
 }
 
 // When nothing before the footer can take focus (a plain confirm modal), start
-// on the primary action instead of Cancel.
+// on the primary action instead of Cancel — unless the primary is destructive.
 function focusPrimaryAction(event: Event) {
   const content = event.currentTarget as HTMLElement;
   const first = Array.from(
@@ -82,11 +93,14 @@ function focusPrimaryAction(event: Event) {
   ).find((el) => el.offsetParent !== null);
   const footer = first?.closest("[data-modal-footer]");
   if (!footer) return;
-  const actions = getFooterActions(footer);
-  const primary = actions[actions.length - 1];
-  if (!primary) return;
+  // Never a destructive action: one Enter must not confirm a delete. Take the
+  // last action that is not destructive (Cancel, beside a lone Delete).
+  const primary = getFooterActions(footer)
+    .filter((el) => el.dataset.variant !== "destructive")
+    .pop();
   event.preventDefault();
-  primary.focus();
+  // Only a destructive action: start on the dialog itself.
+  (primary ?? content).focus();
 }
 
 function moveBetweenFooterActions(event: KeyboardEvent<HTMLDivElement>) {
@@ -103,10 +117,15 @@ function moveBetweenFooterActions(event: KeyboardEvent<HTMLDivElement>) {
 const ModalContentVariants = cva(
   cn(
     "px-0 pt-6",
-    "relative z-50 flex flex-col max-h-[calc(100dvh-4rem)] overflow-y-auto w-full border dark:border-none gap-4 shadow-md dark:shadow-sm duration-200",
+    "relative z-50 flex flex-col max-h-[calc(100dvh-4rem)] overflow-y-auto w-full border dark:border-none gap-4 shadow-md dark:shadow-sm",
+    "data-[state=open]:duration-200 data-[state=closed]:duration-150 ease-out",
     "[&>form]:flex [&>form]:flex-col [&>form]:min-h-0",
     "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
     "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+    // Closing: still on the page while it animates, but no second click.
+    // Important: Radix sets `pointer-events: auto` inline on modal content.
+    "data-[state=closed]:!pointer-events-none",
+    "md:data-instant:!animate-none",
     "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
     "data-[state=closed]:slide-out-to-left-[0%] data-[state=closed]:slide-out-to-top-[0%]",
     "data-[state=open]:slide-in-from-left-[0%] data-[state=open]:slide-in-from-top-[0%]",
@@ -132,6 +151,34 @@ const ModalContentVariants = cva(
   }
 );
 
+/**
+ * A modal's or drawer's panel on a phone: a bottom sheet (its grabber that
+ * drags it down, its close button, its layer). The parts inside stay the
+ * modal's or drawer's own, which lay out for a phone. It undoes a desktop
+ * width or border from the caller, and lets a wrapping form shrink, so its
+ * body scrolls and its footer stays in view. Shared with `Drawer`.
+ */
+export const DialogSheetContent = forwardRef<
+  ElementRef<typeof BottomSheetContent>,
+  ComponentPropsWithoutRef<typeof BottomSheetContent>
+>(({ className, children, onCloseAutoFocus, ...props }, ref) => (
+  <BottomSheetContent
+    ref={ref}
+    className={cn(
+      // A caller's radius would round the corners at the screen's edge.
+      "max-md:rounded-b-none",
+      "max-md:w-full max-md:max-w-none max-md:border-0 max-md:[&>form]:flex max-md:[&>form]:min-h-0 max-md:[&>form]:flex-1 max-md:[&>form]:flex-col",
+      className
+    )}
+    onCloseAutoFocus={returnFocusOnClose(onCloseAutoFocus)}
+    {...props}
+  >
+    <ReportDialogExit />
+    {children}
+  </BottomSheetContent>
+));
+DialogSheetContent.displayName = "DialogSheetContent";
+
 const ModalContent = forwardRef<
   ElementRef<typeof DialogPrimitive.Content>,
   ComponentPropsWithoutRef<typeof DialogPrimitive.Content> &
@@ -146,11 +193,36 @@ const ModalContent = forwardRef<
       size,
       withCloseButton = true,
       onOpenAutoFocus,
+      onCloseAutoFocus,
+      onInteractOutside,
       ...props
     },
     ref
   ) => {
+    useEffect(trackPageFocus, []);
     const dismissable = useDialogDismissable();
+    const { isPhone } = useViewport();
+
+    // Phones: a bottom sheet, as `Drawer` is.
+    if (isPhone) {
+      return (
+        <DialogSheetContent
+          ref={ref}
+          withCloseButton={withCloseButton}
+          // As the modal did, the panel scrolls when its content is not in a
+          // `ModalBody`, unless the caller says otherwise (`overflow-hidden`).
+          className={cn("overflow-y-auto", className)}
+          onOpenAutoFocus={onOpenAutoFocus}
+          onCloseAutoFocus={onCloseAutoFocus}
+          onInteractOutside={onInteractOutside}
+          {...props}
+        >
+          {children}
+        </DialogSheetContent>
+      );
+    }
+
+    // Not on a phone (that is the sheet above), so nothing here styles one.
     return (
       <ClientOnly fallback={null}>
         {() => (
@@ -164,8 +236,13 @@ const ModalContent = forwardRef<
                   if (!event.defaultPrevented) focusPrimaryAction(event);
                 }}
                 {...props}
+                onInteractOutside={keepOpenOnToast(onInteractOutside)}
+                onCloseAutoFocus={returnFocusOnClose(onCloseAutoFocus)}
               >
-                {children}
+                <ReportDialogExit />
+                <ActionPresentationBoundary>
+                  {children}
+                </ActionPresentationBoundary>
                 {withCloseButton && dismissable && (
                   <DialogPrimitive.Close
                     type="button"
@@ -190,8 +267,12 @@ const ModalHeader = ({
   ...props
 }: HTMLAttributes<HTMLDivElement>) => (
   <div
+    data-bottom-sheet-header=""
     className={cn(
       "flex flex-col shrink-0 space-y-1.5 text-center sm:text-left mb-4 px-6",
+      // Phones: a sheet's header (a centred 44px row beside its close button).
+      sheetHeaderClassName,
+      "max-md:mb-1 max-md:space-y-0.5 max-md:text-center",
       className
     )}
     {...props}
@@ -205,6 +286,7 @@ const ModalBody = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) => (
       // py-1 keeps the 3px focus ring of the first/last field inside the
       // scroll clip; -mt-1/mb-3 cancel it so the layout is unchanged.
       "relative w-full min-h-0 overflow-y-auto -mt-1 py-1 px-6 mb-3",
+      "max-md:px-4",
       "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
       className
     )}
@@ -213,11 +295,22 @@ const ModalBody = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) => (
 );
 ModalBody.displayName = "ModalBody";
 
+/**
+ * Phones: a dialog footer becomes a sticky row of full-width 44px actions in
+ * the thumb zone. Footers often wrap their buttons in an HStack, so its
+ * children are stretched too and its space-x margins are cleared. The submit
+ * action moves to the right end ([Cancel][Save]) whatever the source order.
+ * Shared by ModalFooter and DrawerFooter.
+ */
+export const compactFooterClassName =
+  "max-md:sticky max-md:bottom-0 max-md:flex-row max-md:px-4 max-md:[&>*]:flex-1 max-md:[&>div]:flex max-md:[&>div]:w-full max-md:[&>div]:gap-2 max-md:[&>div>*]:flex-1 max-md:[&>div>*]:mx-0 max-md:[&_button]:h-11 max-md:[&_[type=submit]]:order-last";
+
 const ModalFooter = ({
   className,
   onKeyDown,
   ...props
 }: HTMLAttributes<HTMLDivElement>) => (
+  // biome-ignore lint/a11y/noStaticElementInteractions: onKeyDown moves focus between the footer's buttons with arrow keys; the row itself is not a control
   <div
     data-modal-footer=""
     onKeyDown={(event) => {
@@ -226,6 +319,9 @@ const ModalFooter = ({
     }}
     className={cn(
       "flex flex-col-reverse shrink-0 sm:flex-row sm:justify-end gap-2 px-6 py-3 border-t border-border bg-muted/40 sm:rounded-b-2xl",
+      compactFooterClassName,
+      "max-md:rounded-none",
+      sheetFooterClassName,
       className
     )}
     {...props}
@@ -241,6 +337,7 @@ const ModalTitle = forwardRef<
     ref={ref}
     className={cn(
       "text-base font-medium leading-none tracking-tight text-foreground text-balance",
+      sheetTitleClassName,
       className
     )}
     {...props}
@@ -254,7 +351,7 @@ const ModalDescription = forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={cn("text-sm text-muted-foreground max-md:text-xs", className)}
     {...props}
   />
 ));

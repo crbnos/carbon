@@ -27,6 +27,28 @@ const MESSAGES: Record<number, string> = {
   404: "This page may have been moved or deleted, or it belongs to another company."
 };
 
+// What each browser's `fetch` rejects with when no response arrived: Chrome,
+// Firefox, Safari, and the connection dropping mid-body.
+const NETWORK_ERROR_MESSAGES = new Set([
+  "Failed to fetch",
+  "network error",
+  "NetworkError when attempting to fetch resource.",
+  "Load failed",
+  "The Internet connection appears to be offline.",
+  "The network connection was lost."
+]);
+
+/**
+ * The request never reached the server: offline, a laptop waking from sleep,
+ * a dropped connection. Nothing on the page failed, so trying again once the
+ * connection is back is the fix.
+ */
+export function isNetworkError(error: unknown): boolean {
+  return (
+    error instanceof TypeError && NETWORK_ERROR_MESSAGES.has(error.message)
+  );
+}
+
 /**
  * What the route error screen says for a thrown value.
  *
@@ -35,6 +57,15 @@ const MESSAGES: Record<number, string> = {
  * thrown `Error` keeps the generic copy, since its text is internal detail.
  */
 export function routeErrorCopy(error: unknown): RouteErrorCopy {
+  if (isNetworkError(error)) {
+    return {
+      title: "Connection lost",
+      message:
+        "Carbon could not reach the server. It tries again when the connection returns or when you come back to this tab.",
+      canRetry: true
+    };
+  }
+
   if (
     !isRouteErrorResponse(error) ||
     error.status < 400 ||

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { useRevalidator } from "@carbon/query";
+import { useAction, useRevalidator } from "@carbon/query";
 import {
   Button,
   Drawer,
@@ -21,14 +21,15 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { LuExternalLink } from "react-icons/lu";
-import { Link, useFetcher } from "react-router";
+import { Link } from "react-router";
 import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
-import type { PlanningAction, ProductionOrder } from "~/modules/production";
+import type { ProductionOrder } from "~/modules/production/production.models";
 import {
   isJobEditableFromPlanning,
   type jobStatus
 } from "~/modules/production/production.models";
+import type { PlanningAction } from "~/modules/production/types";
 import type { PlanningActionHandlers } from "~/modules/production/ui/Planning/PlanningActionLines";
 import {
   BeyondFenceButton,
@@ -85,6 +86,9 @@ type ProductionPlanningOrderDrawerProps = {
   /** Apply / dismiss / reopen / assign, owned by the grid (one fetcher). */
   actionHandlers: PlanningActionHandlers;
   setOrders: (item: ProductionPlanningItem, orders: ProductionOrder[]) => void;
+  /** Drop the item's draft list so the drawer re-seeds from MRP's new
+   *  suggestions — after a Draft job is planned, which re-runs MRP. */
+  onSuggestionsStale: (item: ProductionPlanningItem) => void;
   locationId: string;
   periods: { id: string; startDate: string; endDate: string }[];
   isOpen: boolean;
@@ -102,15 +106,23 @@ export const ProductionPlanningOrderDrawer = memo(
     actions,
     actionHandlers,
     setOrders,
+    onSuggestionsStale,
     locationId,
     periods,
     isOpen,
     onClose,
     locationToday
   }: ProductionPlanningOrderDrawerProps) => {
-    const fetcher = useFetcher<typeof bulkUpdateAction>();
     const { revalidate } = useRevalidator();
     const { t } = useLingui();
+    // Order: a refusal is toasted by useAction.
+    const fetcher = useAction<typeof bulkUpdateAction>({
+      onSuccess: () => {
+        toast.success(t`Orders submitted`);
+        setOrders(row, []);
+        onClose();
+      }
+    });
     const { locale } = useLocale();
     const fenceLabel = timeFenceDate
       ? formatDate(timeFenceDate, undefined, locale)
@@ -130,6 +142,8 @@ export const ProductionPlanningOrderDrawer = memo(
 
     // Re-read when the item's actions change: applying one rewrites its job.
     const actionsKey = actions.map((a) => `${a.id}:${a.status}`).join(",");
+    // ...and after a Draft job is planned here, which changes its status.
+    const [openJobsVersion, setOpenJobsVersion] = useState(0);
 
     // Only while open: the drawer stays mounted on its last item so it can
     // slide out, and that item's actions change with every Apply on the grid.
@@ -180,7 +194,7 @@ export const ProductionPlanningOrderDrawer = memo(
       return () => {
         isCurrent = false;
       };
-    }, [isOpen, carbon, row.id, locationId, actionsKey]);
+    }, [isOpen, carbon, row.id, locationId, actionsKey, openJobsVersion]);
 
     const openJobRows = useMemo<OpenOrderRow[] | null | Error>(() => {
       if (!Array.isArray(openJobs)) return openJobs;
@@ -261,20 +275,19 @@ export const ProductionPlanningOrderDrawer = memo(
             })
           });
           const result = (await response.json().catch(() => null)) as {
-            success?: boolean;
-            message?: string;
-            warning?: string;
+            data: { warning: string | null } | null;
+            error: { message: string } | null;
           } | null;
-          if (response.ok && result?.success) {
+          if (response.ok && result?.data) {
             // Saved, but a follow-up step failed: keep the new value and say so.
-            if (result.warning) toast.error(result.warning);
+            if (result.data.warning) toast.error(result.data.warning);
             // A plain fetch bypasses the router: refresh the grid row behind
             // the drawer, which otherwise shows the old value until the next
             // navigation.
             void revalidate();
             return true;
           }
-          toast.error(result?.message ?? t`Failed to update job`);
+          toast.error(result?.error?.message ?? t`Failed to update job`);
           return false;
         } catch {
           toast.error(t`Failed to update job`);
@@ -282,6 +295,65 @@ export const ProductionPlanningOrderDrawer = memo(
         }
       },
       [locationId, revalidate, t]
+    );
+
+    // Plan: a Draft job becomes Planned, so MRP counts it as supply. Draft is
+    // the planner's own unfinished job; without this it sat beside a Make
+    // suggestion for the same need, and both could be built. Edit its
+    // quantity and date in the row first — Plan keeps them.
+    const [planningJobId, setPlanningJobId] = useState<string | null>(null);
+    const onPlanDraftJob = useCallback(
+      async (jobId: string) => {
+        setPlanningJobId(jobId);
+        try {
+          const response = await fetch(path.to.bulkUpdateProductionPlanning, {
+            method: "post",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "planJob",
+              locationId,
+              job: { id: jobId }
+            })
+          });
+          const result = (await response.json().catch(() => null)) as {
+            data: { warning: string | null } | null;
+            error: { message: string } | null;
+          } | null;
+          if (response.ok && result?.data) {
+            if (result.data.warning) toast.error(result.data.warning);
+            else toast.success(t`Planned job`);
+            // MRP ran: the suggestions, the grid row and this list all moved
+            onSuggestionsStale(row);
+            setOpenJobsVersion((version) => version + 1);
+            void revalidate();
+          } else {
+            toast.error(result?.error?.message ?? t`Failed to plan job`);
+          }
+        } catch {
+          toast.error(t`Failed to plan job`);
+        } finally {
+          setPlanningJobId(null);
+        }
+      },
+      [locationId, onSuggestionsStale, revalidate, row, t]
+    );
+
+    const renderPlanCommand = useCallback(
+      (openRow: OpenOrderRow) =>
+        openRow.status === "Draft" && actionHandlers.canUpdate ? (
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              variant="secondary"
+              isLoading={planningJobId === openRow.id}
+              isDisabled={planningJobId !== null}
+              onClick={() => onPlanDraftJob(openRow.id)}
+            >
+              <Trans>Plan</Trans>
+            </Button>
+          </div>
+        ) : null,
+      [actionHandlers.canUpdate, onPlanDraftJob, planningJobId]
     );
 
     const renderOpenJobStatus = useCallback(
@@ -380,6 +452,9 @@ export const ProductionPlanningOrderDrawer = memo(
           items: [
             {
               id: id,
+              // the row's netting segment: a project segment's job is the
+              // project's ('' is common)
+              planningSegmentId: row.planningSegmentId ?? "",
               orders: ordersWithPeriods
             }
           ],
@@ -391,21 +466,8 @@ export const ProductionPlanningOrderDrawer = memo(
           encType: "application/json"
         });
       },
-      [fetcher, locationId, periods]
+      [fetcher, locationId, periods, row.planningSegmentId]
     );
-
-    // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-    useEffect(() => {
-      if (fetcher.data?.success === false && fetcher?.data?.message) {
-        toast.error(fetcher.data.message);
-      }
-
-      if (fetcher.data?.success === true) {
-        toast.success(t`Orders submitted`);
-        setOrders(row, []);
-        onClose();
-      }
-    }, [fetcher.data?.success]);
 
     // Memoize drawer content
     const drawerContent = useMemo(
@@ -418,7 +480,10 @@ export const ProductionPlanningOrderDrawer = memo(
                 // @ts-expect-error
                 to={getLinkToItemPlanning(row.type, row.id)}
               >
-                <LuExternalLink />
+                <LuExternalLink aria-hidden />
+                <span className="sr-only">
+                  <Trans>Open item planning</Trans>
+                </span>
               </Link>
             </DrawerTitle>
             <DrawerDescription>{row.name}</DrawerDescription>
@@ -461,6 +526,7 @@ export const ProductionPlanningOrderDrawer = memo(
                   rows={openJobRows}
                   todayIso={locationToday}
                   renderStatusIcon={renderOpenJobStatus}
+                  renderRowCommand={renderPlanCommand}
                   onSave={onSaveOpenJob}
                   onRowsChange={onOpenJobsChange}
                   {...actionHandlers}
@@ -507,6 +573,7 @@ export const ProductionPlanningOrderDrawer = memo(
         onIncludeBeyondFence,
         openJobRows,
         renderOpenJobStatus,
+        renderPlanCommand,
         onSaveOpenJob,
         onOpenJobsChange,
         actionHandlers,

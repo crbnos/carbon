@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import {
   RecordOutlet,
   ResizablePanel,
@@ -14,24 +15,30 @@ import {
 import { pluckUnique, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import type { InventoryItem } from "~/modules/inventory";
 import {
   expandStorageUnitIdsWithDescendants,
   getInventoryItems,
   getStorageTypesList,
-  getStorageUnitsList
-} from "~/modules/inventory";
+  getStorageUnitsList,
+  INVENTORY_ITEMS_PAGING
+} from "~/modules/inventory/inventory.service";
+import type { InventoryItem } from "~/modules/inventory/types";
 import InventoryTable from "~/modules/inventory/ui/Inventory/InventoryTable";
 import {
   getMaterialFormsList,
   getMaterialSubstancesList
-} from "~/modules/items";
-import { getLocationsList } from "~/modules/resources";
-import { getTagsList } from "~/modules/shared";
-import { getUserDefaults } from "~/modules/users/users.server";
+} from "~/modules/items/items.service";
+import { getStockOwnerProjects } from "~/modules/projects/projects.service";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getTagsList } from "~/modules/shared/shared.service";
+import { getUserDefaults } from "~/modules/users/users.service";
+import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
+import { listErrorPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "inventory-quantities");
 
 export const handle: Handle = {
   realtime: ["itemStockQuantities"]
@@ -47,8 +54,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
 
-  const { limit, offset, sorts, filters } =
+  const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
+  // A later page (`?after=`) is read for its rows only: skip the option lists.
+  const isFirstPage = !cursor;
 
   const storageUnitFilter = filters?.find(
     (f) => f.column === "storageUnitIds" && f.value
@@ -58,6 +67,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const expanded = await expandStorageUnitIdsWithDescendants(client, ids);
     storageUnitFilter.value = expanded.join(",");
   }
+
+  // The stock owner filter (Projects Phase 2a): absent for every stripe,
+  // `common` for common stock, or a project id.
+  const stockOwner = searchParams.get("project");
+  const projectId =
+    stockOwner === "common" ? "" : stockOwner ? stockOwner : null;
 
   let locationId = searchParams.get("location");
 
@@ -98,23 +113,39 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const [inventoryItems, forms, substances, tags, storageTypes, storageUnits] =
-    await Promise.all([
-      getInventoryItems(client, locationId, companyId, {
-        search,
-        limit,
-        offset,
-        sorts,
-        filters
-      }),
-      getMaterialFormsList(client, companyId),
-      getMaterialSubstancesList(client, companyId),
-      getTagsList(client, companyId),
-      getStorageTypesList(client, companyId),
-      getStorageUnitsList(client, companyId)
-    ]);
+  const [
+    inventoryItems,
+    forms,
+    substances,
+    tags,
+    storageTypes,
+    storageUnits,
+    stockOwners
+  ] = await Promise.all([
+    getInventoryItems(client, locationId, companyId, {
+      search,
+      limit,
+      cursor,
+      sorts,
+      filters,
+      projectId
+    }),
+    isFirstPage ? getMaterialFormsList(client, companyId) : null,
+    isFirstPage ? getMaterialSubstancesList(client, companyId) : null,
+    isFirstPage ? getTagsList(client, companyId) : null,
+    isFirstPage ? getStorageTypesList(client, companyId) : null,
+    isFirstPage ? getStorageUnitsList(client, companyId) : null,
+    isFirstPage ? getStockOwnerProjects(client, companyId) : null
+  ]);
 
   if (inventoryItems.error) {
+    if (cursor) {
+      logger.error("Failed to load a later page of inventory items", {
+        companyId,
+        error: inventoryItems.error
+      });
+      return listErrorPage("inventoryItems");
+    }
     throw redirect(
       path.to.authenticatedRoot,
       await flash(
@@ -124,17 +155,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  const uniqueTags = pluckUnique(tags.data, (t) => t.name);
+  const uniqueTags = pluckUnique(tags?.data, (t) => t.name);
+
+  const page = toPage(
+    inventoryItems.data ?? [],
+    { limit, sorts },
+    INVENTORY_ITEMS_PAGING
+  );
 
   return {
     count: inventoryItems.count ?? 0,
-    inventoryItems: (inventoryItems.data ?? []) as InventoryItem[],
+    inventoryItems: page.rows as InventoryItem[],
+    nextCursor: page.nextCursor,
     locationId,
-    forms: forms.data ?? [],
-    substances: substances.data ?? [],
+    forms: forms?.data ?? [],
+    substances: substances?.data ?? [],
     tags: uniqueTags,
-    storageTypes: storageTypes.data ?? [],
-    storageUnits: storageUnits.data ?? []
+    storageTypes: storageTypes?.data ?? [],
+    storageUnits: storageUnits?.data ?? [],
+    stockOwners: stockOwners?.data ?? [],
+    stockOwner
   };
 }
 
@@ -142,17 +182,20 @@ export default function QuantitiesRoute() {
   const {
     count,
     inventoryItems,
+    nextCursor,
     locationId,
     forms,
     substances,
     tags,
     storageTypes,
-    storageUnits
+    storageUnits,
+    stockOwners,
+    stockOwner
   } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full ">
-      <ResizablePanelGroup direction="horizontal">
+      <ResizablePanelGroup direction="horizontal" stackOnCompact>
         <ResizablePanel
           defaultSize={50}
           maxSize={70}
@@ -162,12 +205,15 @@ export default function QuantitiesRoute() {
           <InventoryTable
             data={inventoryItems}
             count={count}
+            nextCursor={nextCursor}
             locationId={locationId}
             forms={forms}
             substances={substances}
             tags={tags}
             storageTypes={storageTypes}
             storageUnits={storageUnits}
+            stockOwners={stockOwners}
+            stockOwner={stockOwner}
           />
         </ResizablePanel>
         <RecordOutlet />

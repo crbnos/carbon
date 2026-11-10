@@ -13,7 +13,7 @@ rules — this file does not repeat them:
 |-------|------|
 | DB / migrations / RLS / multi-tenancy | [conventions-database.md](conventions-database.md) |
 | ValidatedForm + zod validators + actions | [conventions-forms.md](conventions-forms.md) |
-| Service functions (`{module}.service.ts`) | [conventions-services.md](conventions-services.md) |
+| Service functions (`{module}.server.ts`, `{module}.service.ts`) | [conventions-services.md](conventions-services.md), [module-files.md](module-files.md) |
 | Components, animation, polish | [conventions-ui.md](conventions-ui.md) |
 
 ## Stack & Tooling
@@ -65,17 +65,17 @@ ERP feature code is organized by module under `apps/erp/app/modules/{module}/`:
 
 ```
 modules/{module}/
+├── {module}.server.ts    # defineServiceFn operations: the module's API
+├── {module}.service.ts   # building blocks the operations call (server-only)
 ├── {module}.models.ts    # zod validators + derived types
-├── {module}.service.ts   # Supabase/Kysely data operations
-├── {module}.server.ts    # server-only helpers (optional)
+├── {module}.utils.ts     # browser-safe helpers (optional)
 ├── types.ts              # shared types (optional)
-├── index.ts              # barrel: re-exports models/service/types
 └── ui/                   # feature components
 ```
 
-`index.ts` is a barrel of `export * from "./..."` (see
-`apps/erp/app/modules/sales/index.ts`). Import from the module root
-(`~/modules/sales`), not deep files.
+There is no barrel. Import from the file that defines the thing
+(`~/modules/sales/sales.models`, never `~/modules/sales`). Full rules and the
+checks that enforce them: [module-files.md](module-files.md).
 
 **Folder names are kebab-case.** Multi-word directories use hyphens, not
 camelCase — `packages/ee/src/paperless-parts`, `packages/ee/src/rules` (not
@@ -86,9 +86,9 @@ as are the React component filenames inside them (`StorageRuleForm.tsx`). The
 `{module}.*.ts` service/model file prefixes mirror their folder name.
 
 **A feature is not automatically a module.** A module is a business domain, and
-it owns exactly one `{module}.models.ts` / `{module}.service.ts` pair. Sub-features
+it owns exactly one `{module}.server.ts` / `{module}.service.ts` / `{module}.models.ts` set. Sub-features
 live *inside* their domain module as a `ui/{Feature}/` folder plus functions in
-that one service/models file — e.g. storage rules live in `~/modules/inventory`
+those files — e.g. storage rules live in `~/modules/inventory`
 and sales rules in `~/modules/sales`, not in standalone `modules/storage-rules` /
 `modules/sales-rules` directories. Create a new module only for a genuinely new
 domain.
@@ -101,9 +101,16 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
 - File-based via `remix-flat-routes`. Conventions seen in `apps/*/app/routes/`:
   `_index.tsx`, `_layout.tsx` and `_public+/` (pathless), `x+/`, `api+/`, `file+/`
   (folder groups), `$param` (dynamic segments), `[.]pdf` (escaped literals).
-- Loaders/actions destructure args typed by `react-router`; the first thing an
-  authenticated handler does is `await requirePermissions(request, { ... })`,
+- Loaders/actions destructure args typed by `react-router`. The first thing an
+  authenticated loader does is `await requirePermissions(request, { ... })`,
   destructuring `{ client, companyId, userId }` (also `email`, `companyGroupId`).
+- An action checks the request with `validator(schema).request(args, …)`
+  (`@carbon/form`), calls ONE service function through `carbon(request)`
+  (`@carbon/api/carbon.server`) and returns its result, or
+  `respond(request, result).redirect(...)` for a navigating form. The service
+  function holds the permission and the write. See
+  [conventions-forms.md](conventions-forms.md) and [module-files.md](module-files.md).
+  Older actions still run `assertIsPost` → `requirePermissions` → a building block.
 - Loaders/actions return **plain objects** or `data(value, responseInit)`.
   Do NOT use `json(...)` — that is the old Remix helper and is not the convention here.
 - A layout does NOT export `shouldRevalidate` to skip its loader. Single fetch
@@ -126,6 +133,12 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   component that stays mounted across records passes the record id as its third
   argument (`useResolved(promise, null, itemId)`), or it shows the previous record's
   value until the new one arrives.
+- Every page has its own document title. A record route exports
+  `meta = ({ data }) => recordMeta(...)`, a new-record route
+  `meta = newRecordMeta("Sales Order")` and a module layout
+  `meta = moduleMeta("Sales")` (`~/utils/meta`), which titles each list and
+  settings page from its breadcrumbs. `RouteAnnouncer` reads that title aloud
+  on navigation, so a route without one is announced as the bare module.
 - A route under `/x` renders `<RecordOutlet />` from `@carbon/react`, never a plain
   `<Outlet />`. React Router keeps a page mounted when only its params change, so
   a form's default values, an editor's content or a `useState` copy would stay the
@@ -136,7 +149,7 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   `@carbon/utils`. The loaders of a matched branch run in parallel, so without it every
   parent loader runs for a request that is about to be redirected. Enforced by the
   `index-redirect-before-loaders` check (`@carbon/checks`).
-- On success an action throws a redirect (`throw redirect(...)`), not `return`.
+- A legacy action throws its success redirect (`throw redirect(...)`), not `return`.
   A cached `api+` loader exports `clientLoader = cachedClientLoader<typeof loader>()`;
   no route exports a `clientAction`.
 
@@ -181,8 +194,9 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
 
 - zod, imported as `import { z } from "zod"`, with `zfd` from `zod-form-data`
   for FormData coercion: `zfd.text(...)`, `zfd.numeric(...)`, `zfd.checkbox()`.
-- Validate in route actions with `validator(schema).validate(formData)` from
-  `@carbon/form` — not `schema.parse()`. Full pattern in conventions-forms.md.
+- Validate in route actions with `validator(schema).request(args, …)` from
+  `@carbon/form` (legacy actions: `validator(schema).validate(formData)`) — not
+  `schema.parse()`. Full pattern in conventions-forms.md.
 
 ## State
 
@@ -207,9 +221,65 @@ URL strings in links, redirects, and form actions.
 
 ## Theme System
 
-Themes are defined in `packages/utils/src/themes.ts` and selected via the
-`useTheme()` hook (`apps/erp/app/hooks/useTheme.tsx`). Each theme supplies HSL
-values for CSS variables (`--primary`, `--background`, `--foreground`, `--card`,
-`--popover`, `--secondary`, `--muted`, `--accent`, `--destructive`).
-Theme names: `zinc`, `neutral`, `red`, `orange`, `yellow`, `green`, `blue`,
-`violet`. <!-- UNVERIFIED: display labels like "Modern"/"Brutal"/"Cherry" not re-confirmed in current code -->
+A theme may carry **colors** (`Theme.colors`): the 16 presets in
+`presetThemes` and any `custom:<base>:<highlight>:<g|s>` name. Such a theme
+takes its accent (buttons, focus rings) from its highlight (`themeAccent`) and
+also colors the app frame (the `NavRail` and the gutter around the content
+card), the ERP module sidebar, and lightly the page, solid or gradient
+(`packages/utils/src/theme-colors.ts`). It is stored in the
+same `theme` cookie as every theme. `useThemeStyle` (`@carbon/react`) reads the
+theme to render (`useThemeValue`: a preview, a pending pick, the root loader)
+and paints the ERP and MES `SidebarProvider`; the shell passes the same style
+down with `ThemeStyleProvider`, which the desktop `NavRail` and
+`CollapsibleSidebar` read with `useShellThemeStyle`; the root `Document` sets `useThemeContent(mode)` on
+`<html>`, inside `/x` only, and never touches `--primary` or the status colors.
+Spec: `.ai/specs/2026-11-03-theme-colors.md`.
+
+Themes are defined in `packages/utils/src/themes.ts` (`themes`, the color
+themes, and `presetThemes`; `isThemeName` is the one test of a stored name). The browser reads the theme
+to render with `useThemeValue()` (`@carbon/react`; the order is
+`resolveThemeValue` in `@carbon/utils`). Each theme supplies HSL values for CSS
+variables (`--primary`, `--background`, `--foreground`, `--card`, `--popover`,
+`--secondary`, `--muted`, `--accent`, `--destructive`) and its four `mesh`
+colors per mode (the ERP's onboarding backdrop). Theme names: `zinc`
+(the default, `DEFAULT_THEME_NAME`), `neutral`, `red`, `orange`, `yellow`,
+`green`, `blue`, `violet`, the 16 presets in `presetThemes` (`forge`,
+`graphite`, …), any `custom:<base>:<highlight>:<g|s>` name, plus seasonal ones.
+
+The choice is a `theme` cookie per browser, never a database column. Each app's
+`getTheme` (`services/theme.server.ts`) is the theme to RENDER: it resolves
+through `themeForRequest` and `resolveTheme`, which return the default for a
+name that is no theme (`storedTheme`: not in `themes` or `presetThemes`, and
+no valid `custom:` value), so removing a theme needs no migration and breaks
+no browser that still holds it. The picker shows `useThemeValue()` as chosen, which falls back to `getTheme`. The
+root `Document` renders the loader's name with `themeByName`, so the season is
+decided once, on the server.
+
+A seasonal theme (`seasonalThemes`, never in `themes`) shows only inside the
+signed-in app (`isAppPath`, `/x`): every other page (sign-in, shared links,
+onboarding) gets the stored everyday theme, so public pages always show the
+brand, and the onboarding theme step lists only `themes`. Inside the app it is
+on by default while in season: it replaces every theme for everyone who has not
+picked another one, and when the season ends everyone is back on their own
+cookie. While in season the in-app picker (Account → Appearance, which every
+app's avatar menu Appearance item opens, except for a pinned-in MES console
+operator) lists it first (`pickableThemes`),
+and `themeColorValidator` accepts it. What a pick writes is
+`themeCookieWrites` (`@carbon/utils`, as data; each app's `setTheme`
+serializes it with its cookie domain): an everyday theme is stored, and when
+picked inside the app (`inApp`) while a seasonal theme is on, a second cookie,
+`SEASONAL_OFF_COOKIE`, holds the seasonal theme's name for 30 days, which
+`themeForRequest` passes to `resolveTheme` as `seasonalOff`. Onboarding's pick
+(`inApp: false`) only stores the theme. Picking the seasonal theme clears that
+cookie and keeps the stored one. Its season is the `available` window on the
+theme (`ThemeWindow`, month and day inside one calendar year), and that
+window is the only switch: no flag, no deploy on the day. The server has no time zone for the user, so `isInSeason` is true
+while it is the season anywhere on Earth (UTC+14 reaches `from`, UTC-12 has
+not left `to`); a fixed UTC check turned it on hours late east of UTC. To
+preview one locally, widen its window. A seasonal theme lives in its own file
+(`<name>-theme.ts`) and declares everything about itself on the
+`SeasonalTheme` object (its window, its colors and `mesh`), so no other code
+names it: removing it is that file,
+its `seasonalThemes` entry and its `index.ts` export. `themes.test.ts` tests
+the window on a fixture and loops over `seasonalThemes`, so it survives the
+removal unchanged.

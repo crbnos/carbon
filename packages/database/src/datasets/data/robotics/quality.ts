@@ -396,6 +396,7 @@ export const GAUGES: GaugeSpec[] = [
     key: "gauge-blocks",
     gaugeType: "Gauge Block",
     description: "Grade 0 steel gauge block set, 87 pc — metrology lab master",
+    manufacturer: "Mitutoyo",
     modelNumber: "GBS-87-0",
     serialNumber: "RB-21-0381",
     role: "Master",
@@ -424,6 +425,7 @@ export const GAUGES: GaugeSpec[] = [
     gaugeType: "Dial Indicator",
     description:
       "0.001 mm digital dial indicator — new unit for the gearbox bench lost-motion fixture",
+    manufacturer: "Starrett",
     modelNumber: "DI-12.7D",
     serialNumber: "DI25-30917",
     role: "Standard",
@@ -436,6 +438,7 @@ export const GAUGES: GaugeSpec[] = [
     key: "bore-gauge",
     gaugeType: "Bore Gauge",
     description: "35–60 mm dial bore gauge — retired after failed calibration",
+    manufacturer: "Mahr",
     modelNumber: "BG-60",
     serialNumber: "BG18-11746",
     role: "Standard",

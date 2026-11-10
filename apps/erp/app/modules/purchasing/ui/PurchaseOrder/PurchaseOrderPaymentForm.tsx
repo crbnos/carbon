@@ -25,9 +25,9 @@ import {
 } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
 import {
-  isPurchaseOrderLocked,
+  isPurchaseOrderEditLocked,
   purchaseOrderPaymentValidator
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.models";
 import type { action } from "~/routes/x+/purchase-order+/$orderId.payment";
 import { path } from "~/utils/path";
 
@@ -47,7 +47,7 @@ const PurchaseOrderPaymentForm = ({
     purchaseOrder: { status: string };
   }>(path.to.purchaseOrder(orderId));
 
-  const isLocked = isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
+  const isLocked = isPurchaseOrderEditLocked(routeData?.purchaseOrder?.status);
 
   const fetcher = useFetcher<typeof action>();
   const { t } = useLingui();

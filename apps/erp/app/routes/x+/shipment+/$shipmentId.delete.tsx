@@ -2,65 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteShipment, getShipment } from "~/modules/inventory";
 import { path } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    delete: "inventory"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator().request(args, { params: ["shipmentId"] });
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  const result = await api.inventory.deleteShipment({
+    shipmentId: input.params.shipmentId
   });
-
-  const { shipmentId } = params;
-  if (!shipmentId) {
-    throw redirect(
-      path.to.shipments,
-      await flash(request, error(params, "Failed to get an shipment id"))
-    );
-  }
-
-  // make sure the shipment has not been posted
-  const { error: getShipmentError, data: shipment } = await getShipment(
-    client,
-    shipmentId
-  );
-  if (getShipmentError) {
-    throw redirect(
-      path.to.shipments,
-      await flash(request, error(getShipmentError, "Failed to get shipment"))
-    );
-  }
-
-  if (shipment?.postingDate) {
-    throw redirect(
-      path.to.shipments,
-      await flash(
-        request,
-        error(getShipmentError, "Cannot delete a posted shipment")
-      )
-    );
-  }
-
-  const { error: deleteShipmentError } = await deleteShipment(
-    client,
-    shipmentId
-  );
-  if (deleteShipmentError) {
-    throw redirect(
-      path.to.shipments,
-      await flash(
-        request,
-        error(deleteShipmentError, deleteShipmentError.message)
-      )
-    );
-  }
-
-  throw redirect(
-    path.to.shipments,
-    await flash(request, success("Successfully deleted shipment"))
-  );
+  return respond(args.request, result).redirect(path.to.shipments, {
+    message: "Successfully deleted shipment"
+  });
 }

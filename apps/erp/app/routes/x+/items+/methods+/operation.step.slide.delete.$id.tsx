@@ -10,7 +10,7 @@ import { data } from "react-router";
 import {
   assertMethodOperationIsDraft,
   deleteMethodOperationStepSlide
-} from "~/modules/items";
+} from "~/modules/items/items.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);

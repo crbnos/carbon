@@ -12,8 +12,8 @@ import { Avatar } from "~/components";
 import { Hidden, Submit } from "~/components/Form";
 import RichTextForm from "~/components/Form/RichText";
 import { usePermissions, useUser } from "~/hooks";
-import type { Note } from "~/modules/shared";
-import { noteValidator } from "~/modules/shared";
+import { noteValidator } from "~/modules/shared/shared.models";
+import type { Note } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { DateTime } from "./DateTime";
 
@@ -38,8 +38,11 @@ const RichText = ({ documentId, notes }: RichTextProps) => {
               throw new Error("Invalid user");
             return (
               <Fragment key={note.id}>
-                {/* @ts-expect-error */}
-                <Avatar path={note.user.avatarUrl} name={note.user?.fullName} />
+                <Avatar
+                  path={note.user.avatarUrl}
+                  name={note.user?.fullName ?? undefined}
+                  decorative
+                />
                 <VStack spacing={1}>
                   <p className="font-bold">{note.user?.fullName!}</p>
                   <HTML text={note.note} />

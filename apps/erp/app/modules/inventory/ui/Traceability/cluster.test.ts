@@ -7,7 +7,7 @@ import type {
   ActivityInput,
   ActivityOutput,
   TrackedEntity
-} from "~/modules/inventory";
+} from "~/modules/inventory/types";
 import { clusterEntities, edgeKey } from "./cluster";
 
 type EntityOverrides = Partial<

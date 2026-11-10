@@ -2,87 +2,43 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { redirect } from "@carbon/utils";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  cancelSalesOrder,
-  salesOrderStatusType,
-  updateSalesOrderStatus
-} from "~/modules/sales";
+import { z } from "zod";
+import { salesOrderStatusType } from "~/modules/sales/sales.models";
 import { path, requestReferrer } from "~/utils/path";
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "sales"
+// The cancel modal sends `cancelJobIds` as a comma-separated string. The
+// field's presence (even empty) means the user chose which jobs; its absence
+// means cancel them all.
+const statusChange = z.object({
+  status: z.enum(salesOrderStatusType),
+  cancelJobIds: z.string().optional()
+});
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(statusChange).request(args, {
+    params: ["orderId"]
   });
+  if ("invalid" in input) return input.invalid;
+  const { orderId } = input.params;
+  const { status, cancelJobIds } = input.data;
 
-  const { orderId: id } = params;
-  if (!id) throw new Error("Could not find id");
-
-  const formData = await request.formData();
-  const status = formData.get(
-    "status"
-  ) as (typeof salesOrderStatusType)[number];
-
-  if (!status || !salesOrderStatusType.includes(status)) {
-    throw redirect(
-      path.to.salesOrderDetails(id),
-      await flash(request, error(null, "Invalid status"))
-    );
-  }
-
-  // Cancel flow routes through the dedicated service function so MCP /
-  // scripts can call the same code path with the same semantics.
-  if (status === "Cancelled") {
-    // The modal sends "cancelJobIds" as a comma-separated string. The
-    // presence of the field (even when empty) signals "user explicitly
-    // chose which jobs". Absence signals "no preference — cancel all".
-    const cancelJobIdsRaw = formData.get("cancelJobIds") as string | null;
-    const jobs =
-      cancelJobIdsRaw === null
-        ? undefined
-        : cancelJobIdsRaw
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean);
-
-    const result = await cancelSalesOrder(client, { id, userId, jobs });
-
-    if (!result.success) {
-      throw redirect(
-        requestReferrer(request) ?? path.to.salesOrderDetails(id),
-        await flash(request, error(null, result.message))
-      );
-    }
-
-    throw redirect(
-      requestReferrer(request) ?? path.to.quote(id),
-      await flash(request, success(result.message))
-    );
-  }
-
-  const update = await updateSalesOrderStatus(client, {
-    id,
+  const api = await carbon(args.request);
+  const result = await api.sales.setSalesOrderStatus({
+    salesOrderId: orderId,
     status,
-    assignee: ["Closed"].includes(status) ? null : undefined,
-    updatedBy: userId
+    cancelJobIds:
+      cancelJobIds === undefined
+        ? undefined
+        : cancelJobIds
+            .split(",")
+            .map((id) => id.trim())
+            .filter(Boolean)
   });
-  if (update.error) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.salesOrderDetails(id),
-      await flash(
-        request,
-        error(update.error, "Failed to update sales order status")
-      )
-    );
-  }
-
-  throw redirect(
-    requestReferrer(request) ?? path.to.quote(id),
-    await flash(request, success("Updated sales order status"))
+  return respond(args.request, result).redirect(
+    requestReferrer(args.request) ?? path.to.salesOrderDetails(orderId),
+    { message: result.data?.message }
   );
 }

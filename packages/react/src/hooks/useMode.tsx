@@ -17,7 +17,10 @@ type RootModeData = { mode?: Mode; modePreference?: ModePreference };
 
 export function useOptimisticMode() {
   const fetchers = useFetchers();
-  const modeFetcher = fetchers.find((f) => f.formAction === "/");
+  // The root action also takes a theme color; only a mode submission counts.
+  const modeFetcher = fetchers.find(
+    (f) => f.formAction === "/" && f.formData?.has("mode")
+  );
 
   if (modeFetcher && modeFetcher.formData) {
     const mode = { mode: modeFetcher.formData.get("mode") };

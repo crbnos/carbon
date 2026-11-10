@@ -10,8 +10,8 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  generateHTML,
   HStack,
+  RichTextView,
   Tabs,
   TabsContent,
   TabsList,
@@ -20,7 +20,7 @@ import {
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { useImageUpload, usePermissions, useUser } from "~/hooks";
 
@@ -44,6 +44,7 @@ const SupplierInteractionNotes = ({
   internalNotes?: JSONContent;
   externalNotes?: JSONContent;
 }) => {
+  const { t } = useLingui();
   const { id: userId } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
@@ -115,6 +116,7 @@ const SupplierInteractionNotes = ({
             <TabsContent value="internal">
               {!isReadOnly && permissions.can("update", "purchasing") ? (
                 <Editor
+                  label={t`Internal notes`}
                   initialValue={(internalNotes ?? {}) as JSONContent}
                   onUpload={onUploadImage}
                   onChange={(value) => {
@@ -123,11 +125,9 @@ const SupplierInteractionNotes = ({
                   }}
                 />
               ) : (
-                <div
-                  className="prose dark:prose-invert"
-                  dangerouslySetInnerHTML={{
-                    __html: generateHTML(internalNotes as JSONContent)
-                  }}
+                <RichTextView
+                  content={internalNotes as JSONContent}
+                  empty={<Trans>No internal notes</Trans>}
                 />
               )}
             </TabsContent>
@@ -135,6 +135,7 @@ const SupplierInteractionNotes = ({
               <TabsContent value="external">
                 {!isReadOnly && permissions.can("update", "purchasing") ? (
                   <Editor
+                    label={t`External notes`}
                     initialValue={(externalNotes ?? {}) as JSONContent}
                     onUpload={onUploadImage}
                     onChange={(value) => {
@@ -143,11 +144,9 @@ const SupplierInteractionNotes = ({
                     }}
                   />
                 ) : (
-                  <div
-                    className="prose dark:prose-invert"
-                    dangerouslySetInnerHTML={{
-                      __html: generateHTML(externalNotes as JSONContent)
-                    }}
+                  <RichTextView
+                    content={externalNotes as JSONContent}
+                    empty={<Trans>No external notes</Trans>}
                   />
                 )}
               </TabsContent>

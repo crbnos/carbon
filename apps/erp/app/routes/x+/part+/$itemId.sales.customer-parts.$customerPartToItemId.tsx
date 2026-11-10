@@ -9,12 +9,12 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { customerPartValidator } from "~/modules/items/items.models";
 import {
-  customerPartValidator,
   getItem,
   getItemCustomerPart,
   upsertItemCustomerPart
-} from "~/modules/items";
+} from "~/modules/items/items.service";
 import CustomerPartForm from "~/modules/items/ui/Item/CustomerPartForm";
 import { path } from "~/utils/path";
 

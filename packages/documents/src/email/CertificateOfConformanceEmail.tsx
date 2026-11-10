@@ -5,19 +5,20 @@
 import {
   Body,
   Column,
-  Container,
   Hr,
   Img,
   Preview,
   Row,
   Section,
   Text
-} from "@react-email/components";
+} from "react-email";
 import type { Email } from "../types";
+import { DocumentCard, documentCardStyles } from "./components/DocumentCard";
 import {
   EmailThemeProvider,
   getEmailInlineStyles,
-  getEmailThemeClasses
+  getEmailThemeClasses,
+  HeadStyle
 } from "./components/Theme";
 
 interface CertificateOfConformanceEmailProps extends Email {
@@ -43,19 +44,15 @@ const CertificateOfConformanceEmail = ({
   const lightStyles = getEmailInlineStyles("light");
 
   return (
-    <EmailThemeProvider preview={preview}>
+    <EmailThemeProvider
+      preview={preview}
+      additionalHeadContent={<HeadStyle css={documentCardStyles} />}
+    >
       <Body
         className={`my-auto mx-auto font-sans ${themeClasses.body}`}
         style={lightStyles.body}
       >
-        <Container
-          className={`mx-auto py-5 px-0 w-[660px] max-w-full ${themeClasses.container}`}
-          style={{
-            borderStyle: "solid",
-            borderWidth: "1px",
-            borderColor: lightStyles.container.borderColor
-          }}
-        >
+        <DocumentCard>
           <Section>
             <Row>
               <Column>
@@ -77,8 +74,14 @@ const CertificateOfConformanceEmail = ({
               </Column>
               <Column className="text-right">
                 <Text
-                  className={`text-3xl font-light ${themeClasses.mutedText}`}
-                  style={{ color: lightStyles.mutedText.color }}
+                  className={themeClasses.text}
+                  style={{
+                    margin: 0,
+                    paddingLeft: "16px",
+                    fontSize: "22px",
+                    lineHeight: "28px",
+                    color: lightStyles.text.color
+                  }}
                 >
                   Certificate of Conformance
                 </Text>
@@ -164,7 +167,7 @@ const CertificateOfConformanceEmail = ({
               </Column>
             </Row>
           </Section>
-        </Container>
+        </DocumentCard>
       </Body>
     </EmailThemeProvider>
   );

@@ -36,13 +36,17 @@ Introduced in `20250519122022_revisions.sql`; ordering/filtering refined through
 ## Which revision is shown
 
 There is **no `activeRevision` flag** on items. The list views (`parts`,
-`materials`, `tools`, `consumables`, `services`) collapse to **one row per
-`(readableId, companyId)`** via a `latest_items` CTE
-(`DISTINCT ON ... ORDER BY`). Current ordering
-(`20260325073453_fix-latest-revision-ordering.sql`) **prefers named revisions
-over the `'0'`/empty initial revision**, then `createdAt DESC` as tiebreaker — so
-the most-recent *named* revision is the default surfaced. Each view row also
-carries a `revisions` JSON array (all siblings) for the version switcher.
+`materials`, `tools`, `consumables`, `services`) give **one row per row of
+the type table** (`part`, `material`, …), picking its latest item through a
+`LATERAL (… ORDER BY … LIMIT 1)` on `(readableId, companyId)`
+(`20261104063844_item-list-views-lateral.sql`). The ordering is **active
+first**, then **named revisions over the `'0'`/empty initial revision**, then
+`createdAt DESC`, then `id` as the final tiebreaker — so the most-recent active
+*named* revision is the default surfaced. Each view row also carries a
+`revisions` JSON array (all siblings, a second `LATERAL`) for the version
+switcher. Do not go back to a `DISTINCT ON` CTE over all items: under RLS it
+cannot be inlined and the revisions join turns quadratic in the company's
+item count.
 
 Detail pages route by the specific item **`id` (UUID)**, so the URL pins the exact
 revision. The `get_<type>_details(item_id)` RPCs return that revision's data plus
@@ -62,10 +66,12 @@ the type-scoped `revisions` array.
   and purchasing setup onto it (next bullet), so a revision with default planning
   and no suppliers is never visible and a failure leaves no row holding the
   revision label. After the commit, if `replenishmentSystem !== "Buy"`, it calls
-  the `get-method` server function (`@carbon/server-functions/get-method`,
+  `getMethod` (`production.service.ts`, ported from the `get-method` server function) (`~/modules/production/production.service`,
   `type: "itemToItem"`) to copy the method/BOM from source to the new revision.
-  That call runs its own transaction, so it cannot join this one: a failure is
-  logged and the revision stands (the method can be copied again). Three callers, one behaviour: the New Revision
+  That call runs after the commit, in its own transaction: a failure is
+  logged and the revision stands (the method can be copied again). get-method
+  would now join a transaction it is handed (`withTransaction`), so the copy
+  could move inside; it has not been. Three callers, one behaviour: the New Revision
   route, material sizes (`upsertMaterial`), and a change notice's Revision draft
   (`createChangeNoticeDraftMethod`, `active: false`).
 - **Authorization.** Kysely bypasses RLS, so before the transaction
@@ -132,7 +138,7 @@ Make methods are independently **versioned** (`20250603011801_make-method-versio
   = `Draft | Active | Archived`. Unique `(itemId, version)`.
 - View `activeMakeMethods` ranks per `itemId`, preferring `status='Active'` then
   `version DESC` (excludes `Archived`) — picks the one current method per item.
-- `activateMethodVersion` (`items.service.ts`) calls the `convert` server function
+- `activateMethodVersion` (`items.service.ts`) calls `convertDocument` (`shared.service.ts`, ported from the `convert` server function)
   (`type: "methodVersionToActive"`). Route: `x+/items+/methods+/versions.activate.$id.tsx`.
 - `jobMakeMethod.version` / `quoteMakeMethod.version` denormalize the method version
   at job/quote creation. Don't conflate method `version` (per-item recipe) with item

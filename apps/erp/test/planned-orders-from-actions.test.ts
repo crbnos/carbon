@@ -173,9 +173,172 @@ describe("productionOrdersFromActions", () => {
         dueDate: "2026-10-04",
         periodId: "w1",
         quantity: 5,
-        isASAP: true
+        isASAP: true,
+        policyName: "Fixed Reorder Quantity"
       }
     ]);
+  });
+
+  // The chart's order popover explains a suggestion from these; production's
+  // suggested jobs dropped them and the popover lost its policy section.
+  it("carries the action's policy attribution", () => {
+    const [order] = productionOrdersFromActions([
+      action({
+        type: "Make",
+        policyName: "Demand-Based Reorder",
+        reason: "Short in week 2",
+        triggerValues: { projectedStock: -30, safetyStock: 0, note: "x" }
+      })
+    ]);
+    expect(order).toMatchObject({
+      policyName: "Demand-Based Reorder",
+      reason: "Short in week 2",
+      triggerValues: { projectedStock: -30, safetyStock: 0 }
+    });
+  });
+
+  // MRP stores one ASAP flag per week, as of its run: every batch became an
+  // ASAP job if any one was, and a job raised after its start date had passed
+  // could still be a Soft Deadline.
+  it("judges each job's ASAP from its own start date and today", () => {
+    const make = action({
+      type: "Make",
+      policyName: "Demand-Based Reorder",
+      suggestedQuantity: 120,
+      suggestedDate: "2026-10-04",
+      latestOrderDate: "2026-09-27",
+      isASAP: false
+    });
+    expect(
+      productionOrdersFromActions([make], {
+        item: { lotSize: 50 },
+        todayDate: "2026-09-29"
+      }).map((o) => [o.startDate, o.isASAP])
+    ).toEqual([
+      ["2026-09-27", true],
+      ["2026-09-29", false],
+      ["2026-10-01", false]
+    ]);
+  });
+
+  it("keeps Maximum Quantity's stock condition from the run", () => {
+    const make = (isASAP: boolean) =>
+      action({
+        type: "Make",
+        policyName: "Maximum Quantity",
+        suggestedQuantity: 10,
+        latestOrderDate: "2026-09-20",
+        isASAP
+      });
+    const asap = (isASAP: boolean) =>
+      productionOrdersFromActions([make(isASAP)], {
+        todayDate: "2026-09-29"
+      })[0]?.isASAP;
+    expect(asap(true)).toBe(true);
+    // started late, but the run found stock above zero: not ASAP
+    expect(asap(false)).toBe(false);
+  });
+});
+
+// MRP sums the orders a week needs into one action; one order per action
+// turned a 120 on a batch size of 50 into a single job of 120, and three
+// fixed reorders of 100 into one order of 300.
+describe("orders split back by the policy that sized them", () => {
+  const make = (policyName: string, suggestedQuantity: number) =>
+    action({
+      type: "Make",
+      policyName,
+      suggestedQuantity,
+      suggestedDate: "2026-10-04",
+      latestOrderDate: "2026-09-27",
+      isASAP: false
+    });
+
+  it("Demand-Based Reorder: one job per batch, spread across the week", () => {
+    expect(
+      productionOrdersFromActions([make("Demand-Based Reorder", 120)], { item: {
+        lotSize: 50
+      } })
+    ).toEqual([
+      {
+        startDate: "2026-09-27",
+        dueDate: "2026-10-04",
+        periodId: "w1",
+        quantity: 50,
+        isASAP: false,
+        policyName: "Demand-Based Reorder"
+      },
+      {
+        startDate: "2026-09-29",
+        dueDate: "2026-10-06",
+        periodId: "w1",
+        quantity: 50,
+        isASAP: false,
+        policyName: "Demand-Based Reorder"
+      },
+      {
+        startDate: "2026-10-01",
+        dueDate: "2026-10-08",
+        periodId: "w1",
+        quantity: 20,
+        isASAP: false,
+        policyName: "Demand-Based Reorder"
+      }
+    ]);
+  });
+
+  it("keeps one job when the item has no batch size", () => {
+    expect(
+      productionOrdersFromActions([make("Demand-Based Reorder", 120)], { item: {
+        lotSize: 0
+      } }).map((o) => o.quantity)
+    ).toEqual([120]);
+  });
+
+  it("Fixed Reorder Quantity: one order of that quantity per day", () => {
+    const orders = productionOrdersFromActions(
+      [make("Fixed Reorder Quantity", 300)],
+      { item: { reorderQuantity: 100, lotSize: 40 } }
+    );
+    expect(orders.map((o) => [o.quantity, o.dueDate])).toEqual([
+      [100, "2026-10-04"],
+      [100, "2026-10-05"],
+      [100, "2026-10-06"]
+    ]);
+  });
+
+  it("Maximum Quantity: never an order past the maximum order quantity", () => {
+    expect(
+      productionOrdersFromActions([make("Maximum Quantity", 450)], { item: {
+        maximumOrderQuantity: 200,
+        lotSize: 50
+      } }).map((o) => o.quantity)
+    ).toEqual([200, 200, 50]);
+  });
+
+  it("Maximum Quantity keeps a lot-multiple order whole", () => {
+    expect(
+      productionOrdersFromActions([make("Maximum Quantity", 100)], { item: {
+        lotSize: 50
+      } }).map((o) => o.quantity)
+    ).toEqual([100]);
+  });
+
+  it("Stock Only is one order of the shortfall", () => {
+    expect(
+      productionOrdersFromActions([make("Stock Only", 120)], { item: {
+        lotSize: 50
+      } }).map((o) => o.quantity)
+    ).toEqual([120]);
+  });
+
+  it("splits a purchase action before converting to purchase units", () => {
+    expect(
+      plannedOrdersFromActions(
+        [action({ policyName: "Fixed Reorder Quantity", suggestedQuantity: 120 })],
+        { conversionFactor: 20, item: { reorderQuantity: 50 } }
+      ).map((o) => o.quantity)
+    ).toEqual([3, 3, 1]);
   });
 });
 

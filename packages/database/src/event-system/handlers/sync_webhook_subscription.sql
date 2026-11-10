@@ -11,6 +11,7 @@ BEGIN
     PERFORM delete_event_system_subscriptions_by_name(
       p_old->>'companyId', 'webhook-' || (p_old->>'id')
     );
+    PERFORM delete_webhook_signing_secret(p_old->>'companyId', p_old->>'id');
     RETURN;
   END IF;
 

@@ -6,24 +6,32 @@ import {
   getAppUrl,
   ONSHAPE_CLIENT_ID,
   ONSHAPE_CLIENT_SECRET,
-  ONSHAPE_OAUTH_REDIRECT_URL
+  ONSHAPE_OAUTH_REDIRECT_URL,
+  ONSHAPE_V2_CLIENT_ID,
+  ONSHAPE_V2_CLIENT_SECRET,
+  ONSHAPE_V2_OAUTH_REDIRECT_URL
 } from "@carbon/env";
 import {
   normalizeOnshapeUrl,
   ONSHAPE_DEFAULT_BASE_URL,
   ONSHAPE_DEFAULT_OAUTH_URL,
   ONSHAPE_GOVERNMENT_INTEGRATION_ID,
-  ONSHAPE_GOVERNMENT_OAUTH_CALLBACK_PATH,
-  type OnshapeIntegrationId
+  ONSHAPE_GOVERNMENT_OAUTH_CALLBACK_PATH
 } from "./connection";
+import {
+  ONSHAPE_V2_INTEGRATION_ID,
+  type OnshapeOAuthIntegrationId
+} from "./integration-id";
 
 /**
  * Where to authorize, which client to authorize as, and which API host the
  * resulting token is good for.
  *
- * The public app's client lives in this Carbon instance's environment. A
- * Government customer's private app lives in THEIR Enterprise, so its client id,
- * secret and hosts come from the integration's own (vaulted) settings instead.
+ * The sync integration and the panel are two Onshape apps, each with its own
+ * client in this Carbon instance's environment (`ONSHAPE_*` and
+ * `ONSHAPE_V2_*`). A Government customer's private app lives in THEIR
+ * Enterprise, so its client id, secret and hosts come from the integration's
+ * own (vaulted) settings instead.
  */
 export type OnshapeOAuthConfig = {
   clientId: string;
@@ -35,7 +43,7 @@ export type OnshapeOAuthConfig = {
   baseUrl: string;
 };
 
-// Read for models/revisions/documents; Write to create translation (GLTF/PDF
+// Read for models/revisions/documents; Write to create translation (STEP/PDF
 // export) jobs and manage the release webhook subscription. Both must be
 // granted to the OAuth application (the dev portal for the public app, the
 // Enterprise's Developer settings for a private one), or Onshape refuses the
@@ -59,7 +67,7 @@ function oauthEndpoints(oauthUrl: string) {
  * (`resolveIntegrationSecrets`) — the Government client secret is one of them.
  */
 export function getOnshapeOAuthConfig(
-  integrationId: OnshapeIntegrationId,
+  integrationId: OnshapeOAuthIntegrationId,
   metadata: Record<string, unknown> | null | undefined
 ): OnshapeOAuthConfig | null {
   if (integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID) {
@@ -85,17 +93,26 @@ export function getOnshapeOAuthConfig(
     };
   }
 
-  if (
-    !ONSHAPE_CLIENT_ID ||
-    !ONSHAPE_CLIENT_SECRET ||
-    !ONSHAPE_OAUTH_REDIRECT_URL
-  ) {
+  // The panel is its own Onshape app: it never falls back to the sync app's client.
+  const { clientId, clientSecret, redirectUri } =
+    integrationId === ONSHAPE_V2_INTEGRATION_ID
+      ? {
+          clientId: ONSHAPE_V2_CLIENT_ID,
+          clientSecret: ONSHAPE_V2_CLIENT_SECRET,
+          redirectUri: ONSHAPE_V2_OAUTH_REDIRECT_URL
+        }
+      : {
+          clientId: ONSHAPE_CLIENT_ID,
+          clientSecret: ONSHAPE_CLIENT_SECRET,
+          redirectUri: ONSHAPE_OAUTH_REDIRECT_URL
+        };
+  if (!clientId || !clientSecret || !redirectUri) {
     return null;
   }
   return {
-    clientId: ONSHAPE_CLIENT_ID,
-    clientSecret: ONSHAPE_CLIENT_SECRET,
-    redirectUri: ONSHAPE_OAUTH_REDIRECT_URL,
+    clientId,
+    clientSecret,
+    redirectUri,
     baseUrl: ONSHAPE_DEFAULT_BASE_URL,
     ...oauthEndpoints(ONSHAPE_DEFAULT_OAUTH_URL)
   };
@@ -138,6 +155,10 @@ export class OnshapeTokenError extends Error {
   }
 }
 
+// A hung token exchange would hold the refresh lease and stall every request
+// for the connection.
+const TOKEN_REQUEST_TIMEOUT_MS = 15_000;
+
 async function requestToken(
   config: OnshapeOAuthConfig,
   body: Record<string, string>
@@ -149,7 +170,8 @@ async function requestToken(
       ...body,
       client_id: config.clientId,
       client_secret: config.clientSecret
-    })
+    }),
+    signal: AbortSignal.timeout(TOKEN_REQUEST_TIMEOUT_MS)
   });
 
   if (!response.ok) {

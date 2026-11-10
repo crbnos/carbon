@@ -13,7 +13,8 @@ import {
   CardHeader,
   CardTitle,
   HStack,
-  toast
+  toast,
+  toastError
 } from "@carbon/react";
 import { isEoriCountry } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -25,7 +26,7 @@ import { FileDropzone } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Boolean, Hidden, Input, Select, Submit } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
-import { taxExemptionReasons } from "~/modules/shared";
+import { taxExemptionReasons } from "~/modules/shared/shared.models";
 import { supplierTaxValidator } from "../../purchasing.models";
 
 type SupplierTaxFormProps = {
@@ -64,7 +65,7 @@ const SupplierTaxForm = ({ initialValues }: SupplierTaxFormProps) => {
         .upload(fileName, file);
 
       if (result.error) {
-        toast.error(t`Failed to upload certificate`);
+        toastError(t`Failed to upload certificate`, result.error);
       } else {
         setCertificatePath(result.data.path);
         toast.success(t`Certificate uploaded`);
@@ -101,7 +102,7 @@ const SupplierTaxForm = ({ initialValues }: SupplierTaxFormProps) => {
               <div />
             )}
 
-            <div className="col-span-3">
+            <div className="col-span-3 max-md:col-span-full">
               <Boolean
                 name="taxExempt"
                 label={t`Tax Exempt`}
@@ -159,7 +160,7 @@ const SupplierTaxForm = ({ initialValues }: SupplierTaxFormProps) => {
             </div>
           )}
         </CardContent>
-        <CardFooter>
+        <CardFooter className="max-md:[&>*]:flex-1 max-md:[&>div>*]:flex-1 max-md:[&_button]:h-11">
           <HStack>
             <Submit isDisabled={isDisabled}>
               <Trans>Save</Trans>

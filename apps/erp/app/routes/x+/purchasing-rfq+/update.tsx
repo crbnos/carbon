@@ -2,78 +2,36 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { unchecked } from "@carbon/utils";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  isRfqLocked,
-  upsertPurchasingRFQSuppliers
-} from "~/modules/purchasing";
-import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "purchasing"
-  });
+// The properties panel posts one field: `ids`, `field`, and `value` (repeated
+// for the suppliers).
+const form = z.object({
+  ids: zfd.repeatableOfType(z.string()),
+  field: z.enum([
+    "employeeId",
+    "expirationDate",
+    "locationId",
+    "rfqDate",
+    "supplierIds"
+  ]),
+  value: zfd.repeatableOfType(z.string())
+});
 
-  const formData = await request.formData();
-  const ids = formData.getAll("ids");
-  const field = formData.get("field");
-
-  if (typeof field !== "string") {
-    return { error: { message: "Invalid form data" }, data: null };
-  }
-
-  // Check if any of the selected RFQs are locked
-  const purchasingRfqs = await client
-    .from("purchasingRfq")
-    .select("id, status")
-    .in("id", ids as string[]);
-  const lockedError = requireUnlockedBulk({
-    statuses: (purchasingRfqs.data ?? []).map((r) => r.status),
-    checkFn: isRfqLocked,
-    message: "Cannot modify a locked RFQ."
-  });
-  if (lockedError) return lockedError;
-
-  switch (field) {
-    case "employeeId":
-    case "expirationDate":
-    case "locationId":
-    case "rfqDate": {
-      const value = formData.get("value");
-      if (typeof value !== "string" && value !== null) {
-        return { error: { message: "Invalid form data" }, data: null };
-      }
-      return await client
-        .from("purchasingRfq")
-        .update(
-          unchecked({
-            [field]: value ? value : null,
-            updatedBy: userId,
-            updatedAt: new Date().toISOString()
-          })
-        )
-        .in("id", ids as string[]);
-    }
-    case "supplierIds": {
-      const supplierIds = formData.getAll("value") as string[];
-      // Apply to each RFQ
-      for (const id of ids as string[]) {
-        const result = await upsertPurchasingRFQSuppliers(
-          client,
-          id as string,
-          supplierIds,
-          companyId,
-          userId
-        );
-        if (result.error) {
-          return result;
-        }
-      }
-      return { data: null, error: null };
-    }
-    default:
-      return { error: { message: "Invalid field" }, data: null };
-  }
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(form).request(args);
+  if ("invalid" in input) return input.invalid;
+  const { ids, field, value } = input.data;
+  const api = await carbon(args.request);
+  return field === "supplierIds"
+    ? api.purchasing.updatePurchasingRfqs({ ids, field, value })
+    : api.purchasing.updatePurchasingRfqs({
+        ids,
+        field,
+        value: value[0] || null
+      });
 }

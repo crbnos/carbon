@@ -109,6 +109,7 @@ Save to `.ai/plans/{YYYY-MM-DD}-{slug}.md` (today's date, same slug as the spec)
 
 **Spec:** .ai/specs/{date}-{slug}.md
 **Research:** .ai/research/{slug}.md
+**Closest sibling:** {record type, from the spec — e.g. rental agreement}
 **Branch:** {branch name}
 
 ## Progress
@@ -136,7 +137,10 @@ while planning, do the pass on the spec too.
 - [ ] Every task has exact paths, exact commands, expected output
 - [ ] Every migration task follows the hard rules above and is followed by a
       `generate:types` step
-- [ ] Every UI task names its precedent file
+- [ ] Every UI task names its precedent file, and the precedent is the
+      closest sibling's file (its `new.tsx`, `$id.tsx`, setup or detail routes,
+      `ui/` components) — not a generic archetype example
+- [ ] A subagent prompt that builds UI names the sibling's files to copy
 - [ ] No whole-repo typecheck anywhere in the plan
 - [ ] Every acceptance criterion in the spec is covered by at least one task,
       and the final task is browser verification via `/test` for user-facing work

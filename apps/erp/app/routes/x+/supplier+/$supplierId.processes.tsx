@@ -9,7 +9,7 @@ import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getSupplierProcessesBySupplier } from "~/modules/purchasing";
+import { getSupplierProcessesBySupplier } from "~/modules/purchasing/purchasing.service";
 import SupplierProcesses from "~/modules/purchasing/ui/Supplier/SupplierProcesses";
 import { path } from "~/utils/path";
 
@@ -28,7 +28,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.supplier(supplierId),
       await flash(
         request,
-        error(processes.error, "Failed to load supplier payment")
+        error(processes.error, "Failed to load supplier processes")
       )
     );
   }

@@ -8,7 +8,7 @@ import { useLingui } from "@lingui/react/macro";
 
 import { Select } from "~/components";
 import type { SelectProps } from "~/components/Select";
-import type { StandardFactor } from "~/modules/shared";
+import type { StandardFactor } from "~/modules/shared/types";
 
 export type UnitHintProps = Omit<SelectProps, "onChange" | "options"> & {
   name: string;

@@ -107,7 +107,7 @@ const MaintenanceDispatchForm = ({
         isDisabled={isEditing && isLocked}
       >
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? (
               <Trans>Edit Maintenance Dispatch</Trans>
             ) : (
@@ -134,6 +134,7 @@ const MaintenanceDispatchForm = ({
                   <Trans>Description</Trans>
                 </Label>
                 <Editor
+                  label={t`Description`}
                   autoFocus={!isEditing}
                   initialValue={content}
                   onUpload={onUploadImage}
@@ -205,7 +206,7 @@ const MaintenanceDispatchForm = ({
 
               <Boolean
                 bordered
-                className="col-span-2"
+                className="col-span-2 max-md:col-span-1"
                 name="takesWorkCenterOffline"
                 label={t`Takes work center offline`}
                 description={t`While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed).`}

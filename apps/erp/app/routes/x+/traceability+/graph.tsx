@@ -16,14 +16,14 @@ import { useCallback, useMemo, useState } from "react";
 import type { LinksFunction, LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData, useNavigation } from "react-router";
 import { Empty } from "~/components";
-import type { Activity, TrackedEntity } from "~/modules/inventory";
 import {
   enrichActivityBinNames,
   fetchContainmentsForEntities,
   fetchJobScopedLineage,
   fetchLineageSubgraph,
   type LineagePayload
-} from "~/modules/inventory/lineage.server";
+} from "~/modules/inventory/inventory.service";
+import type { Activity, TrackedEntity } from "~/modules/inventory/types";
 import { isClusterId } from "~/modules/inventory/ui/Traceability/cluster";
 import { clampDepth } from "~/modules/inventory/ui/Traceability/constants";
 import {
@@ -34,7 +34,7 @@ import { useTraceabilityStore } from "~/modules/inventory/ui/Traceability/store"
 import { TraceabilityGraph } from "~/modules/inventory/ui/Traceability/TraceabilityGraph";
 import { TraceabilitySidebar } from "~/modules/inventory/ui/Traceability/TraceabilitySidebar";
 import { stateEntityId } from "~/modules/inventory/ui/Traceability/utils";
-import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -398,7 +398,7 @@ function TraceabilityRouteInner() {
       null);
 
   return (
-    <div className="flex bg-card h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] w-full overflow-hidden scrollbar-hide">
+    <div className="flex bg-card h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] w-full overflow-hidden scrollbar-hide max-md:flex-col">
       <VStack className="flex-1 min-w-0 h-full" spacing={0}>
         <div className="flex flex-1 w-full h-full overflow-hidden">
           <div className="w-full h-full">

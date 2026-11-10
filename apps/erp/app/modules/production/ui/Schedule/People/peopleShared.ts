@@ -86,6 +86,30 @@ export function assignmentMatchesShift(
 }
 
 /**
+ * The rows the day editor opens with: every row of the person's day whose
+ * effective shift is the one its save is scoped to (null = every row), at any
+ * station. `setPeopleDay` deletes the rows of that scope it is not sent, so
+ * the editor must see each of them, whatever the page's shift or department
+ * filter hides.
+ */
+export function editorDayRows<
+  T extends { employeeId: string; date: string; shiftId: string | null }
+>(
+  rows: T[],
+  employeeId: string,
+  date: string,
+  shiftId: string | null,
+  employeeShiftId: Record<string, string>
+): T[] {
+  return rows.filter(
+    (row) =>
+      row.employeeId === employeeId &&
+      row.date === date &&
+      assignmentMatchesShift(row, shiftId, employeeShiftId)
+  );
+}
+
+/**
  * Overtime is one value for the DAY, stamped on each of the day's rows —
  * take the max, never the sum, or a split person's overtime multiplies.
  */

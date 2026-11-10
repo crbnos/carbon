@@ -2,32 +2,50 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error, useCarbon } from "@carbon/auth";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
+import { toastServiceError } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
-import { generateHTML, RecordOutlet, useDebounce } from "@carbon/react";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  HStack,
+  isRichTextEmpty,
+  RecordOutlet,
+  RichTextView,
+  ToggleGroup,
+  ToggleGroupItem,
+  toast,
+  useDebounce,
+  VStack
+} from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { redirect } from "@carbon/utils";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
-import type { LoaderFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData, useParams } from "react-router";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useState } from "react";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { useImageUpload, usePermissions, useUser } from "~/hooks";
+import { Confirm } from "~/components/Modals";
+import { useImageUpload, usePermissions } from "~/hooks";
+import { getTraining } from "~/modules/resources/resources.service";
 import {
-  getTraining,
   TrainingExplorer,
+  TrainingGuide,
   TrainingHeader,
-  TrainingProperties
-} from "~/modules/resources";
-import { getTagsList } from "~/modules/shared";
-import type { action } from "~/routes/x+/training+/update";
-import { useDocumentStore } from "~/stores";
+  TrainingProperties,
+  TrainingVideo
+} from "~/modules/resources/ui";
+import { getTagsList } from "~/modules/shared/shared.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "training-detail");
@@ -39,6 +57,9 @@ export const handle: Handle = {
   ),
   module: "resources"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.training?.name, "Training");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -78,6 +99,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function TrainingRoute() {
+  const { t } = useLingui();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
@@ -88,11 +110,14 @@ export default function TrainingRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
+              explorerLabel={t`Questions`}
               explorer={<TrainingExplorer key={`explorer-${id}`} />}
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                  <TrainingEditor />
-                  <RecordOutlet />
+                  <VStack spacing={4} className="p-4">
+                    <TrainingContent key={`content-${id}`} />
+                    <RecordOutlet />
+                  </VStack>
                 </div>
               }
               properties={<TrainingProperties key={`properties-${id}`} />}
@@ -104,56 +129,43 @@ export default function TrainingRoute() {
   );
 }
 
-function TrainingEditor() {
+const contentTypes = ["write", "pdf", "video"] as const;
+type ContentType = (typeof contentTypes)[number];
+const isContentType = (value: string): value is ContentType =>
+  (contentTypes as readonly string[]).includes(value);
+
+function TrainingContent() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
   const { t } = useLingui();
   const permissions = usePermissions();
-
   const loaderData = useLoaderData<typeof loader>();
-
-  const [trainingName, setTrainingName] = useState(
-    loaderData?.training?.name ?? ""
-  );
 
   const [content, setContent] = useState<JSONContent>(
     (loaderData?.training?.content ?? {}) as JSONContent
   );
 
-  const { carbon } = useCarbon();
-  const { id: userId } = useUser();
-
+  // A quiet POST, not a fetcher: an autosave every pause in typing must not
+  // reload every loader on the page.
   const updateTraining = useDebounce(
     async (content: JSONContent) => {
-      await carbon
-        ?.from("training")
-        .update({
-          content: content ?? {},
-          updatedAt: today(getLocalTimeZone()).toString(),
-          updatedBy: userId
-        })
-        .eq("id", id!);
-    },
-    500,
-    true
-  );
-
-  const fetcher = useFetcher<typeof action>();
-  const setLiveTitle = useDocumentStore((s) => s.setLiveTitle);
-
-  const updateTrainingName = useDebounce(
-    async (name: string) => {
       const formData = new FormData();
-
       formData.append("ids", id);
-      formData.append("field", "name");
-      formData.append("value", name);
-
-      fetcher.submit(formData, {
+      formData.append("field", "content");
+      formData.append("value", JSON.stringify(content ?? {}));
+      const response = await fetch(path.to.bulkUpdateTraining, {
         method: "post",
-        action: path.to.bulkUpdateTraining
-      });
+        body: formData
+      }).catch(() => null);
+      const body = (await response?.json().catch(() => null)) as {
+        error?: { message: string } | null;
+      } | null;
+      if (body?.error) {
+        toastServiceError(body);
+      } else if (!response?.ok) {
+        toast.error(t`Failed to save the content`);
+      }
     },
     500,
     true
@@ -163,50 +175,137 @@ function TrainingEditor() {
 
   const canEdit =
     permissions.can("update", "people") &&
+    permissions.can("update", "resources") &&
     loaderData?.training?.status === "Draft";
 
-  // Mirror the live title only while editing; clear it when editing ends (e.g.
-  // a Draft→Active transition that doesn't remount the route) or on unmount, so
-  // the header title bar can never show a stale edited title.
-  useEffect(() => {
-    if (!canEdit) setLiveTitle(null);
-    return () => setLiveTitle(null);
-  }, [canEdit, setLiveTitle]);
+  const guidePath = loaderData?.training?.guidePath ?? null;
+  const videoUrl = loaderData?.training?.videoUrl ?? null;
+  // Content is written text, a PDF or a video, never two of them. A training
+  // with a guide is a PDF training and one with a video a video training; the
+  // toggle only remembers the choice before the first upload or link.
+  const savedType: ContentType | null = guidePath
+    ? "pdf"
+    : videoUrl
+      ? "video"
+      : null;
+  const [chosenType, setChosenType] = useState<ContentType>("write");
+  const [switchTo, setSwitchTo] = useState<ContentType | null>(null);
+  const [isSwitchOpen, setIsSwitchOpen] = useState(false);
+  const contentType = savedType ?? chosenType;
 
   return (
-    <div className="flex flex-col w-full h-full">
-      {canEdit ? (
-        <Editor
-          toolbar
-          title={{
-            value: trainingName,
-            placeholder: t`Untitled`,
-            onChange: (name) => {
-              setTrainingName(name);
-              setLiveTitle(name);
-              updateTrainingName(name);
-            }
-          }}
-          initialValue={content}
-          onUpload={onUploadImage}
-          onChange={(value) => {
-            setContent(value);
-            updateTraining(value);
-          }}
-        />
-      ) : (
-        <div className="flex flex-col gap-6 w-full h-full p-8">
-          <h1 className="md:text-3xl text-2xl font-semibold leading-tight tracking-tight text-foreground">
-            {trainingName}
-          </h1>
-          <div
-            className="prose dark:prose-invert"
-            dangerouslySetInnerHTML={{
-              __html: generateHTML(content)
+    <Card>
+      <HStack className="w-full justify-between items-start">
+        <CardHeader>
+          <CardTitle>
+            <Trans>Content</Trans>
+          </CardTitle>
+          <CardDescription>
+            <Trans>What employees read or watch before the questions</Trans>
+          </CardDescription>
+        </CardHeader>
+        <CardAction>
+          <ToggleGroup
+            type="single"
+            value={contentType}
+            disabled={!canEdit}
+            onValueChange={(value) => {
+              if (!isContentType(value) || value === contentType) return;
+              if (savedType) {
+                setSwitchTo(value);
+                setIsSwitchOpen(true);
+              } else setChosenType(value);
+            }}
+          >
+            <ToggleGroupItem size="sm" value="write">
+              <Trans>Write</Trans>
+            </ToggleGroupItem>
+            <ToggleGroupItem size="sm" value="pdf">
+              <Trans>Upload PDF</Trans>
+            </ToggleGroupItem>
+            <ToggleGroupItem size="sm" value="video">
+              <Trans>YouTube Video</Trans>
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </CardAction>
+      </HStack>
+      <CardContent
+        className={
+          canEdit && contentType === "write" ? "p-0 overflow-hidden" : undefined
+        }
+      >
+        {contentType === "pdf" ? (
+          <TrainingGuide
+            trainingId={id}
+            guidePath={guidePath}
+            canEdit={canEdit}
+          />
+        ) : contentType === "video" ? (
+          <TrainingVideo
+            trainingId={id}
+            videoUrl={videoUrl}
+            canEdit={canEdit}
+          />
+        ) : canEdit ? (
+          // Flush toolbar: pad the text, not the panel.
+          <Editor
+            label={t`Training content`}
+            toolbar
+            toolbarClassName="static bg-transparent px-4"
+            className="w-full [&_.ProseMirror]:min-h-[240px] [&_.ProseMirror]:px-6 [&_.ProseMirror]:py-4 max-md:[&_.ProseMirror]:px-4"
+            initialValue={content}
+            onUpload={onUploadImage}
+            onChange={(value) => {
+              setContent(value);
+              updateTraining(value);
             }}
           />
-        </div>
+        ) : // RichTextView shows its empty text on phones only, so say it here.
+        isRichTextEmpty(content) ? (
+          <p className="text-sm text-muted-foreground">
+            <Trans>No content</Trans>
+          </p>
+        ) : (
+          <RichTextView
+            content={content}
+            empty={<Trans>No content</Trans>}
+            className="prose dark:prose-invert max-w-none"
+          />
+        )}
+      </CardContent>
+      {savedType && switchTo && (
+        <Confirm
+          action={path.to.bulkUpdateTraining}
+          title={
+            switchTo === "write"
+              ? t`Switch to Written Content`
+              : switchTo === "pdf"
+                ? t`Switch to PDF`
+                : t`Switch to Video`
+          }
+          text={
+            savedType === "pdf"
+              ? t`This removes the PDF. Employees will see the new content instead.`
+              : t`This removes the video. Employees will see the new content instead.`
+          }
+          confirmText={savedType === "pdf" ? t`Remove PDF` : t`Remove Video`}
+          confirmVariant="destructive"
+          isOpen={isSwitchOpen}
+          onCancel={() => setIsSwitchOpen(false)}
+          onSubmit={() => {
+            setChosenType(switchTo);
+            setIsSwitchOpen(false);
+          }}
+        >
+          <input type="hidden" name="ids" value={id} />
+          <input
+            type="hidden"
+            name="field"
+            value={savedType === "pdf" ? "guidePath" : "videoUrl"}
+          />
+          <input type="hidden" name="value" value="" />
+        </Confirm>
       )}
-    </div>
+    </Card>
   );
 }

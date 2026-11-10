@@ -16,18 +16,30 @@ import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import type { ProductionPlanningItem } from "~/modules/production";
+import {
+  PLANNING_DRAWER_PARAM,
+  resolvePlanningActionScope,
+  resolvePlanningSegmentScope
+} from "~/modules/production/production.models";
 import {
   getPlanningActions,
   getProductionPlanning,
-  PLANNING_DRAWER_PARAM,
-  resolvePlanningActionScope
-} from "~/modules/production";
+  PRODUCTION_PLANNING_PAGING
+} from "~/modules/production/production.service";
+import type { ProductionPlanningItem } from "~/modules/production/types";
+import { PlanningOverdueBorrows } from "~/modules/production/ui/Planning/PlanningOverdueBorrows";
 import ProductionPlanningTable from "~/modules/production/ui/Planning/ProductionPlanningTable";
-import { resolveLocationId } from "~/modules/shared/location.server";
-import { getOrCreatePeriods } from "~/modules/shared/shared.server";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import { withPlanningActions } from "~/modules/production/ui/Planning/planning-action-scope";
+import { getProjectBorrows } from "~/modules/projects/projects.service";
+import {
+  getLocationTimeZone,
+  getOrCreatePeriods,
+  resolveLocationId
+} from "~/modules/shared/shared.service";
+import { getDatabaseClient } from "~/services/database.server";
+import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
+import { listErrorPage } from "~/utils/list-registry/list-error";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -36,6 +48,7 @@ const WEEKS_TO_PLAN = 12 * 4;
 const logger = getLogger("erp", "production", "planning");
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Production`,
   realtime: ["job"],
   breadcrumb: msg`Material Planning`,
   to: path.to.productionPlanning
@@ -51,7 +64,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
 
-  const { limit, offset, sorts, filters } =
+  const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
   const locationId = await resolveLocationId(client, request, {
@@ -65,13 +78,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const locationToday = datetime.today(
     await getLocationTimeZone(client, locationId, companyId)
   );
-  const periods = await getOrCreatePeriods(locationToday, WEEKS_TO_PLAN);
+  const periods = await getOrCreatePeriods(
+    getDatabaseClient(),
+    locationToday,
+    WEEKS_TO_PLAN
+  );
 
   // The grid's Actions and Assignee filters are not RPC
   // columns: they go to the RPC as arguments, which keeps the items with a
   // matching OPEN action inside each item's planning horizon.
-  const { gridFilters, actionTypes, actionAssignees } =
-    resolvePlanningActionScope({ filters });
+  const actionScope = resolvePlanningActionScope({ filters });
+  const { actionTypes, actionAssignees } = actionScope;
+  // The Segment filter is not an RPC column either: Common is the empty
+  // segment id, which a URL filter cannot carry.
+  const { gridFilters, segments } = resolvePlanningSegmentScope({
+    filters: actionScope.gridFilters
+  });
 
   const periodIds = periods.map((p) => p.id);
   const asOf = locationToday.toString();
@@ -79,24 +101,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // A link to a row's order drawer (`?item=`) opens it even when the row is
   // not on this page — the plan has changed since the link was made, or it
   // came from another page. That row is read on its own, alongside the page.
-  const drawerItemId = searchParams.get(PLANNING_DRAWER_PARAM);
+  // A later page (`?after=`) is read for its rows and their actions only.
+  const drawerItemId = cursor ? null : searchParams.get(PLANNING_DRAWER_PARAM);
 
   const [items, drawerItemRead] = await Promise.all([
     getProductionPlanning(client, locationId, companyId, periodIds, {
       search,
       limit,
-      offset,
+      cursor,
       sorts,
       filters: gridFilters,
       asOf,
       actionTypes,
-      actionAssignees
+      actionAssignees,
+      segments
     }),
     drawerItemId
       ? getProductionPlanning(client, locationId, companyId, periodIds, {
           search: null,
           limit: 1,
-          offset: 0,
+          cursor: null,
           sorts: [],
           filters: [{ column: "id", operator: "eq", value: drawerItemId }],
           asOf
@@ -105,7 +129,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
 
   if (items.error) {
-    redirect(
+    logger.error("Failed to load the planning items", {
+      companyId,
+      locationId,
+      laterPage: Boolean(cursor),
+      error: items.error
+    });
+    if (cursor) return listErrorPage("items");
+    throw redirect(
       path.to.production,
       await flash(request, error(items.error, "Failed to fetch planning items"))
     );
@@ -121,7 +152,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
       error: drawerItemRead.error
     });
   }
-  const pageItems = (items.data ?? []) as ProductionPlanningItem[];
+  const page = toPage(
+    (items.data ?? []) as ProductionPlanningItem[],
+    { limit, sorts },
+    PRODUCTION_PLANNING_PAGING
+  );
+  const pageItems = page.rows;
   const linkedItem = (drawerItemRead?.data?.[0] ??
     null) as ProductionPlanningItem | null;
   const drawerItem =
@@ -133,6 +169,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // drawer's row). Every action is loaded, whatever its date: the grid hides
   // the ones beyond each row's time fence, and a planner can widen one row's
   // fence without a reload.
+  // The projects that are netting segments (a project with project stock),
+  // for the Segment column's names and its filter. One read of a bounded set.
+  const segmentProjectsRead = client
+    .from("project")
+    .select("id, identifier, name")
+    .eq("companyId", companyId)
+    .eq("projectStock", true)
+    .order("identifier");
+
   const planningActions = await getPlanningActions(client, {
     companyId,
     locationId,
@@ -150,18 +195,60 @@ export async function loader({ request }: LoaderFunctionArgs) {
       locationId,
       error: planningActions.error
     });
+    if (cursor) return listErrorPage("items");
     throw new Response("Failed to load planning actions", { status: 500 });
   }
 
+  // Open borrows at the location past their payback date: the worklist's
+  // read-only Overdue borrows group, under the Segment filter (a borrow is in
+  // the segments of its borrower and its lender; common holds none).
+  const [segmentProjects, overdueBorrowsRead] = await Promise.all([
+    segmentProjectsRead,
+    getProjectBorrows(client, companyId, {
+      status: ["Open"],
+      locationId,
+      dueBefore: asOf
+    })
+  ]);
+  if (overdueBorrowsRead.error) {
+    logger.error("Failed to load overdue project borrows", {
+      companyId,
+      locationId,
+      error: overdueBorrowsRead.error
+    });
+  }
+  const overdueBorrows = (overdueBorrowsRead.data ?? []).filter(
+    (borrow) =>
+      !segments ||
+      segments.includes(borrow.borrowerProjectId) ||
+      segments.includes(borrow.lenderProjectId)
+  );
+  if (segmentProjects.error) {
+    logger.error("Failed to load the planning segment projects", {
+      companyId,
+      error: segmentProjects.error
+    });
+    if (cursor) return listErrorPage("items");
+    throw new Response("Failed to load planning segments", { status: 500 });
+  }
+
+  // Each row carries its own actions (per item and netting segment), so a
+  // later page brings its rows' actions.
+  const actions = planningActions.data ?? [];
   return {
-    items: pageItems,
+    items: withPlanningActions(pageItems, actions),
     // The row a `?item=` link opens the drawer on, when it is not in `items`.
-    drawerItem,
+    drawerItem: drawerItem
+      ? (withPlanningActions([drawerItem], actions)[0] ?? null)
+      : null,
     count: items.count ?? 0,
-    planningActions: planningActions.data ?? [],
+    nextCursor: page.nextCursor,
     // The Actions-column filter the rows were matched on: each row shows only
     // its actions of these types.
     actionTypes: actionTypes ?? null,
+    // The projects that net in their own segment ('' is common).
+    segmentProjects: segmentProjects.data ?? [],
+    overdueBorrows,
     periods,
     locationId,
     // Planned-order date defaults are business dates on the plant's calendar —
@@ -175,32 +262,40 @@ export default function ProductionPlanningRoute() {
     items,
     drawerItem,
     count,
+    nextCursor,
     locationId,
     periods,
-    planningActions,
     actionTypes,
+    segmentProjects,
+    overdueBorrows,
     locationToday
   } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full ">
-      <ResizablePanelGroup direction="horizontal">
+      <ResizablePanelGroup direction="horizontal" stackOnCompact>
         <ResizablePanel
           defaultSize={50}
           maxSize={70}
           minSize={25}
           className="bg-background"
         >
-          <ProductionPlanningTable
-            data={items}
-            drawerItem={drawerItem}
-            count={count}
-            locationId={locationId}
-            periods={periods}
-            planningActions={planningActions}
-            actionTypes={actionTypes}
-            locationToday={locationToday}
-          />
+          <div className="flex h-full flex-col">
+            <PlanningOverdueBorrows borrows={overdueBorrows} />
+            <div className="min-h-0 flex-1">
+              <ProductionPlanningTable
+                data={items}
+                drawerItem={drawerItem}
+                count={count}
+                nextCursor={nextCursor}
+                locationId={locationId}
+                periods={periods}
+                actionTypes={actionTypes}
+                segmentProjects={segmentProjects}
+                locationToday={locationToday}
+              />
+            </div>
+          </div>
         </ResizablePanel>
         <RecordOutlet />
       </ResizablePanelGroup>

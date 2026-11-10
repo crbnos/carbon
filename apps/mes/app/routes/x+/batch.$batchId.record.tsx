@@ -11,9 +11,9 @@ import { getLogger } from "@carbon/logger";
 import { async } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
 import { batchStepRecordsValidator } from "~/services/models";
 import {
+  abilityBlockRefusal,
   backflushUntrackedMaterialsOnStepRecord,
   insertBatchStepRecords
 } from "~/services/operations.service";
@@ -36,6 +36,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const serviceRole = await getCarbonServiceRole();
+
+  // Every member runs the batch's one process, so one member's check covers
+  // the whole batch.
+  const member = await serviceRole
+    .from("jobOperation")
+    .select("id")
+    .eq("jobOperationBatchId", batchId)
+    .eq("companyId", companyId)
+    .limit(1)
+    .maybeSingle();
+  const abilityRefusal = member.data
+    ? await abilityBlockRefusal(serviceRole, {
+        operationId: member.data.id,
+        employeeId: userId,
+        companyId
+      })
+    : null;
+  if (abilityRefusal) {
+    return data({}, await flash(request, error(null, abilityRefusal)));
+  }
+
   const inserted = await insertBatchStepRecords(serviceRole, {
     batchId,
     companyId,
@@ -54,15 +75,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const backflushes = await async.map(
     validation.data.records,
     (record) =>
-      backflushUntrackedMaterialsOnStepRecord(
-        serviceRole,
-        getDatabaseClient(),
-        {
-          jobOperationStepId: record.jobOperationStepId,
-          companyId,
-          userId
-        }
-      ),
+      backflushUntrackedMaterialsOnStepRecord(serviceRole, {
+        jobOperationStepId: record.jobOperationStepId,
+        companyId,
+        userId
+      }),
     { concurrency: 4 }
   );
   for (const [i, backflush] of backflushes.entries()) {

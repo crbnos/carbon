@@ -13,8 +13,8 @@ How to add or extend a Carbon edge function. These are **Deno** functions in
 | `embedding` | `{ text }` → `{ embedding }`; `{ texts }` (≤ 100) → `{ embeddings }` — gte-small (384 dims) via `Supabase.ai.Session` | `requireCaller`: the service role key, a `service_role`/`authenticated` JWT (signature verified with `JWT_SECRET` when set), or a `carbon-key` API key checked against `apiKey` + `check_api_key_rate_limit` | ERP `shared.service.ts` (search), `@carbon/jobs` `events/embedding.ts` (`embedRecords`) |
 
 Everything else is Node. Privileged, transactional writes shared by the apps, the
-API and jobs (posting, converting, issuing, CSV import) are **server functions** —
-see `packages/server-functions/AGENTS.md`. MRP and scheduling are
+API and jobs (posting, converting, issuing, CSV import) are **postings** in the ERP
+modules' service files — see `module-files.md`. MRP and scheduling are
 `@carbon/planning`. Async/event-driven side effects go through the Inngest event
 system (`@carbon/jobs`, see `event-system.md`); Postgres sends its own Inngest
 events with `util.send_inngest_event` and never calls an edge function. Model
@@ -110,8 +110,11 @@ const { data, error } = await client.functions.invoke("embedding", {
 
 ## 6. Local dev and CI
 
-Functions are served by the Docker `edge-runtime` container (`pnpm dev` / `crbn up`),
-which live-mounts `packages/database/supabase/functions/` — no per-edit deploy step.
+`crbn up` serves functions from the shared `carbon-edge-runtime` (`crbn-shared`), which
+runs the copy of `packages/database/supabase/functions/` the `crbn` code last made
+(usually the main checkout's). To work on a function, run `crbn up --full`: the
+worktree's own `edge-runtime` live-mounts its checkout's functions — no per-edit
+deploy step — and its gateway prefers it (`.claude/rules/dev-shared-services.md`).
 Exercise a function through the app or job path that invokes it.
 
 CI (`.github/workflows/check.yml`, job `edge-functions`, Deno v2) runs

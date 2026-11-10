@@ -10,9 +10,9 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
 import { stepRecordValidator } from "~/services/models";
 import {
+  abilityBlockRefusal,
   backflushUntrackedMaterialsOnStepRecord,
   insertAttributeRecord
 } from "~/services/operations.service";
@@ -31,11 +31,33 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  // A missing step is left to insertAttributeRecord's not-found refusal.
+  const step = await serviceRole
+    .from("jobOperationStep")
+    .select("operationId")
+    .eq("id", validation.data.jobOperationStepId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  const refusal = step.data
+    ? await abilityBlockRefusal(serviceRole, {
+        operationId: step.data.operationId,
+        employeeId: userId,
+        companyId
+      })
+    : null;
+  if (refusal) {
+    return data({}, await flash(request, error(null, refusal)));
+  }
+
   const attributeRecord = await insertAttributeRecord(serviceRole, {
     ...validation.data,
     companyId,
     createdBy: userId
   });
+
+  if (attributeRecord.refusal) {
+    return data({}, await flash(request, error(null, attributeRecord.refusal)));
+  }
 
   if (attributeRecord.error) {
     return data(
@@ -52,15 +74,11 @@ export async function action({ request }: ActionFunctionArgs) {
   // (unassigned) on the operation's first step. The operator builds unit by unit
   // and never scans these. A backflush failure (e.g. insufficient stock) never
   // blocks the record; the part just stays manually issuable.
-  const backflush = await backflushUntrackedMaterialsOnStepRecord(
-    serviceRole,
-    getDatabaseClient(),
-    {
-      jobOperationStepId: validation.data.jobOperationStepId,
-      companyId,
-      userId
-    }
-  );
+  const backflush = await backflushUntrackedMaterialsOnStepRecord(serviceRole, {
+    jobOperationStepId: validation.data.jobOperationStepId,
+    companyId,
+    userId
+  });
   if (backflush.error) {
     log.error("Backflush on step record failed", {
       error: backflush.error,

@@ -9,34 +9,40 @@ import { activeJobStatuses } from "@carbon/database";
 import { RecordOutlet } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useMemo } from "react";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { ExplorerSkeleton } from "~/components/Skeletons";
 import { flattenTree } from "~/components/TreeView";
-import { getConfigurationParameters } from "~/modules/items";
-import type { JobMethodTreeItem } from "~/modules/production";
+import { getConfigurationParameters } from "~/modules/items/items.utils";
 import {
   getJob,
   getJobMaterialsWithQuantityOnHand,
-  getJobMethodTree,
   getJobOrderStatusMap,
+  getJobProjectCharge,
   getTrackedEntitiesByJobId
-} from "~/modules/production";
+} from "~/modules/production/production.service";
+import type { JobMethodTreeItem } from "~/modules/production/production.utils";
+import { getJobMethodTree } from "~/modules/production/production.utils";
 import {
   JobBoMExplorer,
   JobHeader,
   JobProperties
 } from "~/modules/production/ui/Jobs";
 import type { JobOrderStatusData } from "~/modules/production/ui/Jobs/JobBoMExplorer";
-import { getFirstArticleInspectionsByJob } from "~/modules/quality";
-import { getFirstArticlesDueForJob } from "~/modules/quality/firstArticle.server";
-import { getTagsList } from "~/modules/shared";
-import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import {
+  getFirstArticleInspectionsByJob,
+  getFirstArticlesDueForJob
+} from "~/modules/quality/quality.service";
+import {
+  getLocationTimeZone,
+  getTagsList
+} from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 // Resolves each job material's procurement status for the BoM explorer badge:
@@ -72,6 +78,7 @@ async function getJobOrderStatus(
 }
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Job`,
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Jobs`, to: path.to.jobs },
     (data) => data?.job?.jobId
@@ -98,6 +105,9 @@ export const handle: Handle = {
   ]
 };
 
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.job?.jobId, "Job");
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "production",
@@ -107,9 +117,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const [job, tags] = await Promise.all([
+  const [job, tags, projectCharge] = await Promise.all([
     getJob(client, jobId),
-    getTagsList(client, companyId, "job")
+    getTagsList(client, companyId, "job"),
+    getJobProjectCharge(client, jobId, companyId)
   ]);
 
   if (companyId !== job.data?.companyId) {
@@ -159,6 +170,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     job: job.data,
     firstArticles: firstArticles.data ?? [],
     firstArticlesDue,
+    projectCharge: projectCharge.data ?? null,
     unbatchedBatchableOperations,
     tags: tags.data ?? [],
     trackedEntities: getTrackedEntitiesByJobId(client, jobId),
@@ -179,6 +191,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function JobRoute() {
+  const { t } = useLingui();
   const params = useParams();
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
@@ -192,6 +205,7 @@ export default function JobRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
+              explorerLabel={t`Structure`}
               explorer={
                 <div className="w-full h-full p-2">
                   <Suspense fallback={<ExplorerSkeleton />}>

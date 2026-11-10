@@ -6,6 +6,9 @@ import {
   Alert,
   AlertDescription,
   cn,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Table,
   Tabs,
   TabsList,
@@ -14,9 +17,6 @@ import {
   Td,
   Th,
   Thead,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   Tr
 } from "@carbon/react";
 import {
@@ -25,9 +25,10 @@ import {
 } from "@internationalized/date";
 import { Trans } from "@lingui/react/macro";
 import type { ComponentProps, ReactNode } from "react";
-import { Fragment, useCallback, useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo } from "react";
 import { LuInfo, LuTriangleAlert } from "react-icons/lu";
 import { DateTime } from "~/components";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import { PeopleChip } from "./PeopleChip";
 import {
   assignmentHours,
@@ -45,7 +46,7 @@ function CapacityTh({ className, ...props }: ComponentProps<typeof Th>) {
 }
 
 const SERIES_LABEL =
-  "whitespace-nowrap text-[11px] font-medium uppercase tracking-wider text-muted-foreground";
+  "whitespace-nowrap text-[0.6875rem] font-medium uppercase tracking-wider text-muted-foreground";
 
 type CapacityWorkCenter = {
   id: string;
@@ -85,8 +86,10 @@ type PeopleCapacityProps = {
   shiftHoursById: Record<string, number>;
   employeeShiftHours: Record<string, number>;
   defaultShiftHours: number;
-  /** per-work-center calendar hours (the availability ladder) — the Available series. */
+  /** per-work-center working hours (the scheduler's windows, less maintenance downtime) — the Available series. */
   calendarHoursByWorkCenter: Record<string, Record<string, number>>;
+  /** Company holidays: the plant is closed, so nobody counts as staffed. */
+  holidayDates: string[];
   /** which ladder rung each work center resolved via (1 explicit, 2 location, 3 stock). */
   capacityRungByWorkCenter: Record<string, number>;
 };
@@ -148,10 +151,16 @@ export function PeopleCapacity({
   employeeShiftHours,
   defaultShiftHours,
   calendarHoursByWorkCenter,
-  capacityRungByWorkCenter
+  capacityRungByWorkCenter,
+  holidayDates
 }: PeopleCapacityProps) {
-  const [tab, setTab] = useState<CapacityTab>("load");
+  const [tab, setTab] = usePersistentPageTab<CapacityTab>(
+    "people-capacity",
+    ["load", "due"],
+    "load"
+  );
   const absentSet = useMemo(() => buildAbsentSet(absences), [absences]);
+  const holidaySet = useMemo(() => new Set(holidayDates), [holidayDates]);
 
   // present people labor hours per work center per date (all shifts, minus
   // absent), using each assignment's real shift duration — shown as a secondary
@@ -163,7 +172,10 @@ export function PeopleCapacity({
     // scheduler, which extends the last window of the day.
     const lastRowByPersonDate = new Map<string, (typeof assignments)[number]>();
     for (const assignment of assignments) {
-      if (absentSet.has(`${assignment.employeeId}:${assignment.date}`)) {
+      if (
+        absentSet.has(`${assignment.employeeId}:${assignment.date}`) ||
+        holidaySet.has(assignment.date)
+      ) {
         continue;
       }
       const hours = assignmentHours(assignment, {
@@ -188,12 +200,13 @@ export function PeopleCapacity({
   }, [
     assignments,
     absentSet,
+    holidaySet,
     shiftHoursById,
     employeeShiftHours,
     defaultShiftHours
   ]);
 
-  // Available is the calendar-hours ladder, never people-derived — staffing a
+  // Available is the station's working time, never people-derived — staffing a
   // station no longer lowers its displayed available hours (the fallback cliff).
   const availableHours = useCallback(
     (workCenterId: string, date: string) =>
@@ -315,8 +328,8 @@ export function PeopleCapacity({
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          <Tooltip>
-            <TooltipTrigger asChild>
+          <Popover>
+            <PopoverTrigger asChild>
               <button
                 type="button"
                 className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground"
@@ -324,8 +337,8 @@ export function PeopleCapacity({
                 <LuInfo className="h-3.5 w-3.5" />
                 <Trans>What these rows mean</Trans>
               </button>
-            </TooltipTrigger>
-            <TooltipContent align="start" className="max-w-[320px]">
+            </PopoverTrigger>
+            <PopoverContent align="start" className="max-w-[320px] p-3">
               <div className="flex flex-col gap-1.5 text-xs">
                 <p>
                   <span className="font-medium">
@@ -340,8 +353,9 @@ export function PeopleCapacity({
                   </span>{" "}
                   —{" "}
                   <Trans>
-                    the station's calendar hours from its shifts. Staffed hours
-                    (the people you've assigned) show beneath.
+                    the station's working hours from its shifts, less holidays
+                    and maintenance that takes it offline. Staffed hours (the
+                    people you've assigned) show beneath.
                   </Trans>
                 </p>
                 <p>
@@ -360,13 +374,14 @@ export function PeopleCapacity({
                   </span>{" "}
                   —{" "}
                   <Trans>
-                    the job hours due that day (a due-date basis, not the day
-                    the work runs), with overdue work in Past due.
+                    the job hours still to do that are due that day (a due-date
+                    basis, not the day the work runs), with overdue work in Past
+                    due.
                   </Trans>
                 </p>
               </div>
-            </TooltipContent>
-          </Tooltip>
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="flex items-center gap-2 text-xs tabular-nums">
           <span className="inline-flex items-center rounded-md bg-emerald-500/15 px-2 py-0.5 text-emerald-700 dark:text-emerald-400">
@@ -519,7 +534,7 @@ export function PeopleCapacity({
                               <div className="flex flex-col items-center leading-tight">
                                 <span>{formatHours(available)}</span>
                                 {staffed > 0 && (
-                                  <span className="text-[11px] text-muted-foreground/70 tabular-nums">
+                                  <span className="text-[0.6875rem] text-muted-foreground/70 tabular-nums">
                                     <Trans>
                                       {formatHours(staffed)}h staffed
                                     </Trans>
@@ -533,7 +548,7 @@ export function PeopleCapacity({
                           <div className="flex flex-col items-center leading-tight">
                             <span>{formatHours(availableWeek)}</span>
                             {staffedWeek > 0 && (
-                              <span className="text-[11px] text-muted-foreground/70 tabular-nums">
+                              <span className="text-[0.6875rem] text-muted-foreground/70 tabular-nums">
                                 <Trans>
                                   {formatHours(staffedWeek)}h staffed
                                 </Trans>

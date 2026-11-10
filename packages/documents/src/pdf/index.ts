@@ -14,8 +14,17 @@ import type {
   CertificateSigner
 } from "./blocks/certificateOfConformance";
 import { CONFORMITY_STATEMENT } from "./blocks/certificateOfConformance";
-import type { JobTravelerMaterial } from "./blocks/jobTraveler";
+import {
+  buildJobTravelerVars,
+  type JobTravelerMaterial
+} from "./blocks/jobTraveler";
+import type { PurchaseOrderApproval } from "./blocks/purchaseOrder";
 import CertificateOfConformancePDF from "./CertificateOfConformancePDF";
+import type {
+  ContractFinancingEventRow,
+  ContractFinancingRow
+} from "./ContractFinancingRequestPDF";
+import ContractFinancingRequestPDF from "./ContractFinancingRequestPDF";
 import { SAMPLE_CERTIFICATE_OF_CONFORMANCE } from "./certificateOfConformance.samples";
 import { Footer } from "./components";
 import type {
@@ -35,20 +44,30 @@ import { SAMPLE_JOB_TRAVELER } from "./jobTraveler.samples";
 import KanbanLabelPDF from "./KanbanLabelPDF";
 import PackingSlipPDF from "./PackingSlipPDF";
 import ProductLabelPDF from "./ProductLabelPDF";
+import type { ProjectReaderSection } from "./ProjectReaderPDF";
+import ProjectReaderPDF from "./ProjectReaderPDF";
 import PurchaseOrderPDF from "./PurchaseOrderPDF";
 import PurchaseReturnOrderPDF from "./PurchaseReturnOrderPDF";
+import PurchasingRfqPDF from "./PurchasingRfqPDF";
 import { DOCUMENT_PDFS } from "./preview-documents";
 import { SAMPLE_PURCHASE_RETURN_ORDER } from "./purchaseReturnOrder.samples";
 import QuotePDF from "./QuotePDF";
 import SalesInvoicePDF from "./SalesInvoicePDF";
 import SalesOrderPDF from "./SalesOrderPDF";
 import SalesReturnOrderPDF from "./SalesReturnOrderPDF";
+import type {
+  ServiceJobEstimate,
+  ServiceJobEstimateLine
+} from "./ServiceJobEstimatePDF";
+import ServiceJobEstimatePDF from "./ServiceJobEstimatePDF";
 import StockTransferPDF from "./StockTransferPDF";
 import StorageUnitLabelPDF from "./StorageUnitLabelPDF";
 import { SAMPLE_SALES_ORDER } from "./salesOrder.samples";
 import { SAMPLE_SALES_RETURN_ORDER } from "./salesReturnOrder.samples";
 import { SAMPLE_SALES_INVOICE } from "./samples";
 import { SAMPLE_TRACKING_LABEL } from "./trackingLabel.samples";
+
+export { documentChrome } from "./blocks/documentChrome";
 export type {
   BatchListMember,
   CertificateOfConformanceConformity,
@@ -56,17 +75,25 @@ export type {
   CertificateOfConformanceHeader,
   CertificateOfConformanceLine,
   CertificateSigner,
+  ContractFinancingEventRow,
+  ContractFinancingRow,
   FirstArticleInspectionPDFCharacteristic,
   FirstArticleInspectionPDFHeader,
   FirstArticleInspectionPDFIndexRow,
   FirstArticleInspectionPDFProduct,
   FirstArticleInspectionPDFProps,
-  JobTravelerMaterial
+  JobTravelerMaterial,
+  ProjectReaderSection,
+  PurchaseOrderApproval,
+  ServiceJobEstimate,
+  ServiceJobEstimateLine
 };
 export {
   BatchListPDF,
+  buildJobTravelerVars,
   CertificateOfConformancePDF,
   CONFORMITY_STATEMENT,
+  ContractFinancingRequestPDF,
   DOCUMENT_PDFS,
   ensureFont,
   FirstArticleInspectionPDF,
@@ -80,13 +107,14 @@ export {
   KanbanLabelPDF,
   PackingSlipPDF,
   ProductLabelPDF,
+  ProjectReaderPDF,
   PurchaseOrderPDF,
   PurchaseReturnOrderPDF,
+  PurchasingRfqPDF,
   QuotePDF,
   registerDocumentFonts,
   SAMPLE_CERTIFICATE_OF_CONFORMANCE,
   SAMPLE_FIRST_ARTICLE_INSPECTION,
-  SalesInvoicePDF,
   SAMPLE_ISSUE,
   SAMPLE_JOB_TRAVELER,
   SAMPLE_PURCHASE_RETURN_ORDER,
@@ -94,8 +122,10 @@ export {
   SAMPLE_SALES_ORDER,
   SAMPLE_SALES_RETURN_ORDER,
   SAMPLE_TRACKING_LABEL,
+  SalesInvoicePDF,
   SalesOrderPDF,
   SalesReturnOrderPDF,
+  ServiceJobEstimatePDF,
   StockTransferPDF,
   StorageUnitLabelPDF
 };

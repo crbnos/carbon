@@ -5,6 +5,7 @@
 import { Input, Select, Submit, ValidatedForm } from "@carbon/form";
 import type { PrinterRoute } from "@carbon/printing";
 import { printerRouteValidator } from "@carbon/printing";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Card,
@@ -32,9 +33,14 @@ import {
 } from "@carbon/react";
 import { getLabelSizeLabel, labelSizes } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useState } from "react";
-import { LuEllipsisVertical, LuPlay, LuPlus, LuTrash } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { useMemo, useState } from "react";
+import {
+  LuEllipsisVertical,
+  LuPencil,
+  LuPlay,
+  LuPlus,
+  LuTrash
+} from "react-icons/lu";
 import { Empty } from "~/components";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { path } from "~/utils/path";
@@ -50,14 +56,28 @@ export function PrintersCard({
   printerRoutes: PrinterRoute[];
 }) {
   const { t } = useLingui();
-  const routeFetcher = useFetcher<{ success: boolean; message: string }>();
+  const printerDisclosure = useDisclosure();
+  // The printer being edited; null while adding a new one.
+  const [printerToEdit, setPrinterToEdit] = useState<PrinterRoute | null>(null);
+  const routeFetcher = useAction({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if ("created" in data) {
+        toast.success(
+          data.created ? t`Printer route created` : t`Printer route updated`
+        );
+        printerDisclosure.onClose();
+      } else {
+        toast.success(t`Test label sent to printer`);
+      }
+    }
+  });
 
   const formatOptions = [
     { value: "zpl", label: t`ZPL (Thermal Label)` },
     { value: "pdf", label: t`PDF (Document)` }
   ];
 
-  const newPrinterDisclosure = useDisclosure();
   const deletePrinterDisclosure = useDisclosure();
   const [printerToDelete, setPrinterToDelete] = useState<{
     id: string;
@@ -74,21 +94,10 @@ export function PrintersCard({
     [selectedFormat]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: we don't need to re-run this effect when onClose changes
-  useEffect(() => {
-    if (routeFetcher.data?.success === true && routeFetcher.data?.message) {
-      toast.success(routeFetcher.data.message);
-      newPrinterDisclosure.onClose();
-    }
-    if (routeFetcher.data?.success === false && routeFetcher.data?.message) {
-      toast.error(routeFetcher.data.message);
-    }
-  }, [routeFetcher.data?.message, routeFetcher.data?.success]);
-
   return (
     <>
       <Card>
-        <HStack className="w-full justify-between items-start">
+        <HStack className="w-full justify-between items-start max-md:flex-col max-md:items-stretch max-md:gap-0">
           <CardHeader>
             <CardTitle>
               <Trans>Printers</Trans>
@@ -97,12 +106,13 @@ export function PrintersCard({
               <Trans>Physical printers available for assignment.</Trans>
             </CardDescription>
           </CardHeader>
-          <CardAction className="py-6">
+          <CardAction className="py-6 max-md:pt-0 max-md:pb-4 max-md:px-4">
             <Button
               leftIcon={<LuPlus />}
               onClick={() => {
+                setPrinterToEdit(null);
                 setSelectedFormat("zpl");
-                newPrinterDisclosure.onOpen();
+                printerDisclosure.onOpen();
               }}
             >
               <Trans>Add Printer</Trans>
@@ -141,6 +151,17 @@ export function PrintersCard({
                       />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.edit}
+                        onSelect={() => {
+                          setPrinterToEdit(route);
+                          setSelectedFormat(route.format);
+                          printerDisclosure.onOpen();
+                        }}
+                      >
+                        <DropdownMenuIcon icon={<LuPencil />} />
+                        <Trans>Edit</Trans>
+                      </DropdownMenuItem>
                       <DropdownMenuItem
                         onSelect={() =>
                           routeFetcher.submit(
@@ -183,93 +204,119 @@ export function PrintersCard({
         </CardContent>
       </Card>
 
-      {newPrinterDisclosure.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) newPrinterDisclosure.onClose();
-          }}
-        >
-          <ModalContent size="large">
-            <ValidatedForm
-              method="post"
-              validator={printerRouteValidator}
-              fetcher={routeFetcher}
-              defaultValues={{ format: "zpl" }}
-              className="flex flex-col h-full"
-            >
-              <input type="hidden" name="intent" value="upsertRoute" />
-              <ModalHeader>
-                <ModalTitle>
+      <Modal
+        open={printerDisclosure.isOpen}
+        onOpenChange={(open) => {
+          if (!open) printerDisclosure.onClose();
+        }}
+      >
+        <ModalContent size="large">
+          <ValidatedForm
+            method="post"
+            validator={printerRouteValidator}
+            fetcher={routeFetcher}
+            defaultValues={
+              printerToEdit
+                ? {
+                    id: printerToEdit.id,
+                    locationId: printerToEdit.locationId ?? undefined,
+                    name: printerToEdit.name,
+                    format: printerToEdit.format,
+                    mediaSizeId: printerToEdit.mediaSizeId ?? undefined,
+                    printerUrl: printerToEdit.printerUrl,
+                    apiKey: printerToEdit.apiKey ?? undefined,
+                    templateId: printerToEdit.templateId ?? undefined
+                  }
+                : { format: "zpl" }
+            }
+            className="flex flex-col h-full"
+          >
+            <input type="hidden" name="intent" value="upsertRoute" />
+            {printerToEdit && (
+              <>
+                <input type="hidden" name="id" value={printerToEdit.id} />
+                <input
+                  type="hidden"
+                  name="locationId"
+                  value={printerToEdit.locationId ?? ""}
+                />
+              </>
+            )}
+            <ModalHeader>
+              <ModalTitle>
+                {printerToEdit ? (
+                  <Trans>Edit Printer</Trans>
+                ) : (
                   <Trans>Add Printer</Trans>
-                </ModalTitle>
-              </ModalHeader>
-              <ModalBody>
-                <div className="flex flex-col gap-4">
-                  <div className="grid grid-cols-1 gap-4">
-                    <Input
-                      name="name"
-                      label={t`Name`}
-                      placeholder={t`e.g. Zebra 2x1`}
-                    />
-                    <Select
-                      name="format"
-                      label={t`Format`}
-                      options={formatOptions}
-                      onChange={(option) => {
-                        if (
-                          option?.value === "zpl" ||
-                          option?.value === "pdf"
-                        ) {
-                          setSelectedFormat(option.value);
-                        }
-                      }}
-                    />
+                )}
+              </ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <Input
+                    name="name"
+                    label={t`Name`}
+                    placeholder={t`e.g. Zebra 2x1`}
+                  />
+                  <Select
+                    name="format"
+                    label={t`Format`}
+                    options={formatOptions}
+                    onChange={(option) => {
+                      if (option?.value === "zpl" || option?.value === "pdf") {
+                        setSelectedFormat(option.value);
+                      }
+                    }}
+                  />
 
-                    <Select
-                      name="mediaSizeId"
-                      label={t`Media Size`}
-                      options={mediaSizeOptions}
-                    />
-                    <Input
-                      name="templateId"
-                      label={t`Template ID`}
-                      placeholder={t`Leave blank for built-in`}
-                    />
+                  <Select
+                    name="mediaSizeId"
+                    label={t`Media Size`}
+                    options={mediaSizeOptions}
+                  />
+                  <Input
+                    name="templateId"
+                    label={t`Template ID`}
+                    placeholder={t`Leave blank for built-in`}
+                  />
 
-                    <Input
-                      name="printerUrl"
-                      label={t`Printer URL`}
-                      placeholder="https://pbx-XXXX.pbxz.cloud/api/v1/print/..."
-                    />
-                    <Input
-                      name="apiKey"
-                      label={t`API Key`}
-                      placeholder={t`Optional`}
-                    />
-                  </div>
+                  <Input
+                    name="printerUrl"
+                    label={t`Printer URL`}
+                    placeholder="https://pbx-XXXX.pbxz.cloud/api/v1/print/..."
+                  />
+                  <Input
+                    name="apiKey"
+                    label={t`API Key`}
+                    placeholder={t`Optional`}
+                  />
                 </div>
-              </ModalBody>
-              <ModalFooter>
-                <HStack>
-                  <Button
-                    size="md"
-                    variant="solid"
-                    onClick={newPrinterDisclosure.onClose}
-                  >
-                    <Trans>Cancel</Trans>
-                  </Button>
-                  <Submit>
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <HStack>
+                <Button
+                  size="md"
+                  variant="solid"
+                  onClick={printerDisclosure.onClose}
+                >
+                  <Trans>Cancel</Trans>
+                </Button>
+                <Submit>
+                  {printerToEdit ? (
+                    <Trans>Save</Trans>
+                  ) : (
                     <Trans>Add Printer</Trans>
-                  </Submit>
-                </HStack>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
+                  )}
+                </Submit>
+              </HStack>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
 
-      {deletePrinterDisclosure.isOpen && printerToDelete && (
+      {printerToDelete && (
         <ConfirmDelete
           action={path.to.deletePrinterRoute(printerToDelete.id)}
           isOpen={deletePrinterDisclosure.isOpen}
@@ -277,11 +324,9 @@ export function PrintersCard({
           text={t`Are you sure you want to delete the printer "${printerToDelete.name}"? Any assignments referencing this printer will be cleared. This cannot be undone.`}
           onCancel={() => {
             deletePrinterDisclosure.onClose();
-            setPrinterToDelete(null);
           }}
           onSubmit={() => {
             deletePrinterDisclosure.onClose();
-            setPrinterToDelete(null);
           }}
         />
       )}

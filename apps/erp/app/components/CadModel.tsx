@@ -3,9 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, TEMP_STAGING_BUCKET } from "@carbon/files";
+import { convertKbToString } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
-import { useRevalidator } from "@carbon/query";
+import { useAction, useRevalidator } from "@carbon/query";
 import {
   Button,
   CardHeader,
@@ -21,25 +21,31 @@ import {
   ModalTitle,
   Spinner,
   toast,
+  toastError,
   useDisclosure,
-  useMode
+  useMode,
+  useViewport
 } from "@carbon/react";
-import { getFileSizeLimit, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
+import {
+  getFileSizeLimit,
+  MODEL_RAW_KEEP_MAX_BYTES,
+  requireAffected
+} from "@carbon/utils";
 import { ModelPreview } from "@carbon/viewer/model-preview";
+import { modelPreviewUrls } from "@carbon/viewer/model-upload-preview";
 import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
 import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { nanoid } from "nanoid";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { LuCloudUpload, LuRefreshCw, LuZap } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { LuBox, LuCloudUpload, LuRefreshCw, LuZap } from "react-icons/lu";
 import { useModelUpload, useUser } from "~/hooks";
 import type { ModelUpload } from "~/types";
 import type { ViewDirection } from "~/utils/model-thumbnail";
 import { regenerateModelThumbnail } from "~/utils/model-thumbnail";
-import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
-import { UploadProgress } from "./UploadProgress";
+import { path } from "~/utils/path";
+import type { InterruptedUpload } from "~/utils/resumable-upload";
+import { InterruptedUploadNotice, UploadProgress } from "./UploadProgress";
 
 const SIZE_LIMIT = getFileSizeLimit("CAD_MODEL_UPLOAD");
 
@@ -83,9 +89,16 @@ const CadModel = ({
   const mode = useMode();
   const { carbon } = useCarbon();
   const revalidator = useRevalidator();
-  const { upload, runUpload } = useModelUpload();
+  // What the model is for, so an upload a reload cut off is offered back here.
+  const uploadScope =
+    Object.entries(metadata ?? {})
+      .filter(([, id]) => id)
+      .map(([key, id]) => `${key}:${id}`)
+      .join(",") || "cad";
+  const { upload, runUpload, interrupted, dismissInterrupted } =
+    useModelUpload(uploadScope);
 
-  const fetcher = useFetcher<{}>();
+  const fetcher = useAction();
   const [file, setFile] = useState<File | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const deleteModal = useDisclosure();
@@ -147,36 +160,51 @@ const CadModel = ({
 
     let result;
     if (metadata?.itemId) {
-      result = await carbon
-        .from("item")
-        .update({ modelUploadId: null })
-        .eq("id", metadata.itemId);
+      result = await requireAffected(
+        carbon
+          .from("item")
+          .update({ modelUploadId: null })
+          .eq("id", metadata.itemId)
+          .select("id")
+      );
     } else if (metadata?.salesRfqLineId) {
-      result = await carbon
-        .from("salesRfqLine")
-        .update({ modelUploadId: null })
-        .eq("id", metadata.salesRfqLineId);
+      result = await requireAffected(
+        carbon
+          .from("salesRfqLine")
+          .update({ modelUploadId: null })
+          .eq("id", metadata.salesRfqLineId)
+          .select("id")
+      );
     } else if (metadata?.quoteLineId) {
-      result = await carbon
-        .from("quoteLine")
-        .update({ modelUploadId: null })
-        .eq("id", metadata.quoteLineId);
+      result = await requireAffected(
+        carbon
+          .from("quoteLine")
+          .update({ modelUploadId: null })
+          .eq("id", metadata.quoteLineId)
+          .select("id")
+      );
     } else if (metadata?.salesOrderLineId) {
-      result = await carbon
-        .from("salesOrderLine")
-        .update({ modelUploadId: null })
-        .eq("id", metadata.salesOrderLineId);
+      result = await requireAffected(
+        carbon
+          .from("salesOrderLine")
+          .update({ modelUploadId: null })
+          .eq("id", metadata.salesOrderLineId)
+          .select("id")
+      );
     } else if (metadata?.jobId) {
-      result = await carbon
-        .from("job")
-        .update({ modelUploadId: null })
-        .eq("id", metadata.jobId);
+      result = await requireAffected(
+        carbon
+          .from("job")
+          .update({ modelUploadId: null })
+          .eq("id", metadata.jobId)
+          .select("id")
+      );
     }
 
     setIsDeleting(false);
 
     if (result?.error) {
-      toast.error("Failed to delete model");
+      toastError("Failed to delete model", result.error);
       return;
     }
 
@@ -197,8 +225,6 @@ const CadModel = ({
     );
 
   const onFileChange = async (file: File | null) => {
-    const modelId = nanoid();
-
     setFile(file);
 
     if (file) {
@@ -206,19 +232,17 @@ const CadModel = ({
         toast.error("Failed to initialize carbon client");
         return;
       }
-      const fileExtension = file.name.split(".").pop();
-      const fileName = `${companyId}/models/${modelId}.${fileExtension}`;
-
       // Raw CAD lands in `temp-staging` (2.5 GB cap) via a resumable (TUS) upload
       // — a standard buffered upload times out on multi-GB files. The
       // optimise/assembly jobs read it from there and write the gated artifacts
-      // (<=50 MB) to `private`.
+      // (<=50 MB) to `private`. The id and path are the upload's: a resumed
+      // upload keeps its own.
       const toastId = toast.loading(`Uploading ${file.name}…`);
-      const { error: uploadError } = await runUpload({
-        bucket: TEMP_STAGING_BUCKET,
-        path: fileName,
-        file
-      });
+      const {
+        error: uploadError,
+        modelId,
+        modelPath: fileName
+      } = await runUpload(file);
       if (uploadError) {
         toast.error("Failed to upload file to storage", { id: toastId });
         setFile(null);
@@ -274,36 +298,9 @@ const CadModel = ({
                 optimizing={backgroundOptimizing}
                 optimizeFailed={optimizeFailed}
                 sourceMissing={artifacts?.sourceAvailable === false}
-                optimizedUrl={
-                  artifacts?.optimizedModelPath
-                    ? // ?v= busts the immutable preview cache on the STABLE
-                      // optimized.glb path when a re-optimise lands.
-                      `${getPrivateUrl(artifacts.optimizedModelPath)}${
-                        artifacts.optimizedAt
-                          ? `?v=${encodeURIComponent(artifacts.optimizedAt)}`
-                          : ""
-                      }`
-                    : null
-                }
-                glbUrl={
-                  artifacts?.glbPath ? getPrivateUrl(artifacts.glbPath) : null
-                }
-                lodUrl={
-                  artifacts?.lodPath ? getPrivateUrl(artifacts.lodPath) : null
-                }
-                rawUrl={
-                  artifacts?.rawPath &&
-                  (artifacts.size ?? 0) <= MODEL_RAW_KEEP_MAX_BYTES
-                    ? getRawModelUrl(artifacts.rawBucket, artifacts.rawPath)
-                    : null
-                }
+                {...modelPreviewUrls(artifacts)}
                 rawFile={
                   file && file.size <= MODEL_RAW_KEEP_MAX_BYTES ? file : null
-                }
-                thumbnailUrl={
-                  artifacts?.thumbnailPath
-                    ? getPrivateUrl(artifacts.thumbnailPath)
-                    : null
                 }
                 mode={mode}
                 className={viewerClassName}
@@ -384,45 +381,43 @@ const CadModel = ({
                 </div>
               ) : null}
             </div>
-            {deleteModal.isOpen && (
-              <Modal
-                open
-                onOpenChange={(open) => {
-                  if (!open) deleteModal.onClose();
-                }}
-              >
-                <ModalOverlay />
-                <ModalContent>
-                  <ModalHeader>
-                    <ModalTitle>Delete 3D model</ModalTitle>
-                  </ModalHeader>
-                  <ModalBody>
-                    <p className="text-sm text-muted-foreground">
-                      Are you sure you want to delete this 3D file and image?
-                      Continuing will remove both the preview image and the 3D
-                      file from this record. This action cannot be undone.
-                    </p>
-                  </ModalBody>
-                  <ModalFooter>
-                    <Button
-                      variant="secondary"
-                      onClick={deleteModal.onClose}
-                      isDisabled={isDeleting}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={onDelete}
-                      isLoading={isDeleting}
-                      isDisabled={isDeleting}
-                    >
-                      Delete
-                    </Button>
-                  </ModalFooter>
-                </ModalContent>
-              </Modal>
-            )}
+            <Modal
+              open={deleteModal.isOpen}
+              onOpenChange={(open) => {
+                if (!open) deleteModal.onClose();
+              }}
+            >
+              <ModalOverlay />
+              <ModalContent>
+                <ModalHeader>
+                  <ModalTitle>Delete 3D model</ModalTitle>
+                </ModalHeader>
+                <ModalBody>
+                  <p className="text-sm text-muted-foreground">
+                    Are you sure you want to delete this 3D file and image?
+                    Continuing will remove both the preview image and the 3D
+                    file from this record. This action cannot be undone.
+                  </p>
+                </ModalBody>
+                <ModalFooter>
+                  <Button
+                    variant="secondary"
+                    onClick={deleteModal.onClose}
+                    isDisabled={isDeleting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={onDelete}
+                    isLoading={isDeleting}
+                    isDisabled={isDeleting}
+                  >
+                    Delete
+                  </Button>
+                </ModalFooter>
+              </ModalContent>
+            </Modal>
           </>
         ) : (
           <CadModelUpload
@@ -432,6 +427,8 @@ const CadModel = ({
             isReadOnly={isReadOnly}
             titleExtras={titleExtras}
             onFileChange={onFileChange}
+            interrupted={interrupted}
+            onDismissInterrupted={dismissInterrupted}
           />
         );
       }}
@@ -448,6 +445,8 @@ type CadModelUploadProps = {
   className?: string;
   isReadOnly?: boolean;
   onFileChange: (file: File | null) => void;
+  interrupted?: InterruptedUpload | null;
+  onDismissInterrupted?: () => void;
 };
 
 const CadModelUpload = ({
@@ -456,9 +455,12 @@ const CadModelUpload = ({
   file,
   isReadOnly,
   className,
-  onFileChange
+  onFileChange,
+  interrupted,
+  onDismissInterrupted
 }: CadModelUploadProps) => {
   const hasFile = !!file;
+  const { isPhone } = useViewport();
 
   const { getRootProps, getInputProps } = useDropzone({
     disabled: hasFile,
@@ -494,6 +496,45 @@ const CadModelUpload = ({
       toast.error(message);
     }
   });
+
+  // Phones: no model yet is one line with an Upload button, not a 400px drop zone.
+  if (isPhone && !hasFile) {
+    return (
+      <div className="flex w-full flex-col rounded-xl border border-border bg-card">
+        {title && (
+          <div className="flex items-center gap-2 border-b border-border px-4 py-3 font-medium">
+            {title}
+            {titleExtras}
+          </div>
+        )}
+        <div className="flex items-center gap-3 px-4 py-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+            <LuBox className="size-4" />
+          </span>
+          <p className="min-w-0 flex-1 text-sm text-muted-foreground">
+            <Trans>No CAD model to preview.</Trans>
+          </p>
+          {!isReadOnly && (
+            <div {...getRootProps()}>
+              <input {...getInputProps()} name="file" className="sr-only" />
+              <Button variant="secondary" leftIcon={<LuCloudUpload />}>
+                <Trans>Upload</Trans>
+              </Button>
+            </div>
+          )}
+        </div>
+        {!isReadOnly && interrupted && onDismissInterrupted && (
+          <div className="px-4 pb-3">
+            <InterruptedUploadNotice
+              name={interrupted.name}
+              percent={interrupted.percent}
+              onDismiss={onDismissInterrupted}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   // Read-only with no model yet: keep the section (and its title) so the reader
   // knows it exists, but drop the drop zone entirely.
@@ -563,6 +604,14 @@ const CadModelUpload = ({
               <p className="text-xs text-muted-foreground group-hover:text-foreground">
                 Supports {supportedModelTypes.join(", ")} files
               </p>
+              {interrupted && onDismissInterrupted && (
+                <InterruptedUploadNotice
+                  className="mt-4 max-w-md"
+                  name={interrupted.name}
+                  percent={interrupted.percent}
+                  onDismiss={onDismissInterrupted}
+                />
+              )}
             </>
           )}
         </div>

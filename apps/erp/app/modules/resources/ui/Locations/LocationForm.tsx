@@ -14,6 +14,7 @@ import {
   ModalDrawerProvider,
   ModalDrawerTitle,
   toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -30,7 +31,7 @@ import {
 } from "~/components/Form";
 import AddressAutocomplete from "~/components/Form/AddressAutocomplete";
 import { usePermissions } from "~/hooks";
-import { locationValidator } from "~/modules/resources";
+import { locationValidator } from "~/modules/resources/resources.models";
 import { path } from "~/utils/path";
 
 type LocationFormProps = {
@@ -51,15 +52,15 @@ const LocationForm = ({
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
       toast.success(t`Created location`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(t`Failed to create location: ${fetcher.data.error.message}`);
+      toastError(t`Failed to create location`, fetcher.data.error);
     }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
+  }, [fetcher.data, fetcher.state, onClose, open, type, t]);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing

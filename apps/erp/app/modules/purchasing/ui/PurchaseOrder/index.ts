@@ -23,8 +23,8 @@ export {
   PurchaseOrderLineForm,
   PurchaseOrderPaymentForm,
   PurchaseOrderProperties,
-  PurchaseOrdersTable,
   PurchaseOrderSummary,
+  PurchaseOrdersTable,
   PurchasingStatus,
   usePurchaseOrder,
   usePurchaseOrderTotals

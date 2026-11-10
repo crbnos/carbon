@@ -14,11 +14,11 @@ import { useLoaderData } from "react-router";
 import {
   ItarCertificationsTable,
   ItarEntityCertificationStatus
-} from "~/modules/settings";
+} from "~/modules/settings/ui";
 import {
   getItarCertificationReport,
   getItarEntityCertification
-} from "~/modules/users";
+} from "~/modules/users/users.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

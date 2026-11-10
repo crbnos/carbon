@@ -7,12 +7,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { getExchangeRate } from "~/modules/accounting";
+import { getExchangeRate } from "~/modules/accounting/accounting.service";
+import { isQuoteLocked } from "~/modules/sales/sales.models";
 import {
   getQuote,
-  isQuoteLocked,
   updateQuoteExchangeRate
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
 

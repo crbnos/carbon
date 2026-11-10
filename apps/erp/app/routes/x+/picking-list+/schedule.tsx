@@ -11,7 +11,7 @@ import { msg } from "@lingui/core/macro";
 import { useCallback, useMemo, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getPickingSchedule } from "~/modules/inventory";
+import { getPickingSchedule } from "~/modules/inventory/inventory.service";
 import type {
   PickingDisplaySettings,
   PickingScheduleItem
@@ -21,8 +21,8 @@ import {
   PickingKanban,
   PickingListsHeader
 } from "~/modules/inventory/ui/PickingLists";
-import { getLocationsList } from "~/modules/resources";
-import { getUserDefaults } from "~/modules/users/users.server";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { makeDurations } from "~/utils/duration";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

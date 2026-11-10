@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Idempotent one-time setup: adds <repo>/packages/dev/bin to PATH and installs
-# the `crbn()` shell function (so `crbn go <branch>` can mutate the caller's
-# cwd).
+# the `crbn()` shell function (so `crbn checkout` and `crbn new` can change
+# the caller's cwd).
 #
 # Run from the repo root:
 #     ./setup.sh                # install

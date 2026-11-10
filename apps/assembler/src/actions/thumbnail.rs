@@ -5,11 +5,11 @@
 //! `thumbnail` action — a model's GLB → a square PNG preview, rendered on the
 //! CPU by `crates/thumbnail` (no GPU, no browser). The source is a GLB this
 //! service wrote: the optimised one (`EXT_meshopt_compression`) or the lossless
-//! `convert` output. Async job; the single `thumbnail` output is late-mint
-//! uploaded.
+//! `convert` output. Async job; the single `thumbnail` output is uploaded to
+//! its submit-time URL.
 
 use crate::jobs::{Done, Output};
-use crate::{admission, http, telemetry, AppState};
+use crate::{admission, compute, http, telemetry, AppState};
 use serde_json::json;
 use std::time::Instant;
 
@@ -20,40 +20,48 @@ pub struct ThumbnailReq {
     /// Where the camera stands: model towards camera, Z up. The viewer's home
     /// direction unless the caller captured another.
     pub direction: [f32; 3],
-    /// Storage path recorded in the completion pointer; the signed PUT URL is
-    /// late-minted per poll, key `thumbnail`.
+    /// Storage path recorded in the completion pointer; the signed PUT URL
+    /// comes with the submit, key `thumbnail`.
     pub path: Option<String>,
 }
 
 pub fn spawn(state: &AppState, job_id: &str, req: ThumbnailReq) {
     let jobs = state.jobs.clone();
     let admission = state.admission.clone();
+    let sources = state.sources.clone();
     let job_id = job_id.to_string();
     telemetry::spawn_job(&job_id.clone(), "thumbnail", async move {
         if jobs.is_canceled(&job_id).await {
             return;
         }
-        jobs.set_status(&job_id, "running").await;
-        eprintln!("[{job_id}] thumbnail running");
         let started = Instant::now();
 
-        let src = http::temp_path("glb");
-        if let Err(e) = http::download_hashed(&req.source_url, &src, None).await {
-            let _ = tokio::fs::remove_file(&src).await;
-            eprintln!("[{job_id}] thumbnail failed: source download: {}", e.message);
-            jobs.set_error(&job_id, &e.code, e.message).await;
-            return;
-        }
-        let src_str = src.to_string_lossy().to_string();
+        let src = match sources.download(&req.source_url, "glb", None).await {
+            Ok(src) => src,
+            Err(e) => {
+                eprintln!("[{job_id}] thumbnail failed: source download: {}", e.message);
+                jobs.set_error(&job_id, &e.code, e.message).await;
+                return;
+            }
+        };
+        let src_str = src.path_string();
         let (size, direction) = (req.size, req.direction);
 
         let res = {
-            let _grant = admission
-                .acquire(admission::estimate_mb(http::file_len(&src).await))
+            let grant = admission
+                .acquire(admission::estimate_mb(http::file_len(src.path()).await))
                 .await;
-            telemetry::in_span("compute", tokio::task::spawn_blocking(move || render(&src_str, size, direction))).await
+            // The wait may have been long: a job cancelled meanwhile is dropped
+            // before it takes the memory it was granted.
+            if jobs.is_canceled(&job_id).await {
+                return;
+            }
+            // Running from here on: the wait for memory is queue time, not work.
+            jobs.set_status(&job_id, "running").await;
+            eprintln!("[{job_id}] thumbnail running");
+            compute::run(Some(grant), move || render(&src_str, size, direction)).await
         };
-        let _ = tokio::fs::remove_file(&src).await;
+        drop(src);
 
         let png = match res {
             Ok(Ok(png)) => png,
@@ -63,9 +71,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: ThumbnailReq) {
                 return;
             }
             Err(e) => {
-                let msg = format!("thumbnail panicked: {e}");
+                let msg = format!("thumbnail {e}");
                 eprintln!("[{job_id}] {msg}");
-                jobs.set_error(&job_id, "thumbnail_failed", msg).await;
+                jobs.set_error(&job_id, e.code("thumbnail_failed"), msg).await;
                 return;
             }
         };

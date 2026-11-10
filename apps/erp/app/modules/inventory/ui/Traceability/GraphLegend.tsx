@@ -158,7 +158,7 @@ function LineRow({
 }) {
   return (
     <HStack spacing={3} className="items-center">
-      <svg width={36} height={6} className="shrink-0">
+      <svg width={36} height={6} className="shrink-0" aria-hidden="true">
         <line
           x1={0}
           y1={3}
@@ -170,7 +170,7 @@ function LineRow({
           strokeDasharray={dashed ? "5 3" : undefined}
         />
       </svg>
-      <span className="text-[13px] text-foreground truncate">{label}</span>
+      <span className="text-[0.8125rem] text-foreground truncate">{label}</span>
     </HStack>
   );
 }
@@ -212,7 +212,7 @@ function Row({ entry }: { entry: Entry }) {
         />
         <Icon className="relative w-3.5 h-3.5 text-white" />
       </div>
-      <span className="text-[13px] text-foreground truncate">
+      <span className="text-[0.8125rem] text-foreground truncate">
         {entry.label}
       </span>
     </HStack>

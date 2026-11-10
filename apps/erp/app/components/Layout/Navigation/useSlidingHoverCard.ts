@@ -53,7 +53,11 @@ export function useSlidingHoverCard<Container extends HTMLElement>() {
       // A press navigates, expands a link's views or starts a reorder: the
       // row under the card is about to change or move.
       onPointerDown: () => moveCard(null),
-      onPointerLeave: () => moveCard(null)
+      // A mouse event, not `onPointerLeave`: Chrome can lose its pointer
+      // boundary tracking for an element and then never send it a pointer
+      // leave, while mouse leave events keep arriving. The card stayed on the
+      // last link hovered (the icon rail hit the same, see NavRail).
+      onMouseLeave: () => moveCard(null)
     }),
     [moveCard]
   );

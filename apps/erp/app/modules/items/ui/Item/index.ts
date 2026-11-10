@@ -5,6 +5,8 @@
 import BillOfMaterial from "./BillOfMaterial";
 import BillOfProcess from "./BillOfProcess";
 import BoMExplorer, { BoMActions } from "./BoMExplorer";
+import CustomerRentalRateForm from "./CustomerRentalRateForm";
+import CustomerRentalRates from "./CustomerRentalRates";
 import { FileBadge } from "./FileBadge";
 import ItemCostingForm from "./ItemCostingForm";
 import ItemDescription from "./ItemDescription";
@@ -13,6 +15,7 @@ import ItemForm from "./ItemForm";
 import ItemNotes from "./ItemNotes";
 import ItemPlanningForm from "./ItemPlanningForm";
 import ItemPurchasingForm from "./ItemPurchasingForm";
+import ItemRentalRateForm from "./ItemRentalRateForm";
 import ItemRiskRegister from "./ItemRiskRegister";
 import ItemSalePriceForm from "./ItemSalePriceForm";
 import ItemSupersessionForm, {
@@ -22,7 +25,10 @@ import MakeMethodTools from "./MakeMethodTools";
 import PickMethodForm from "./PickMethodForm";
 import ReleaseLockAlert from "./ReleaseLockAlert";
 import { SelectedItemProperties } from "./SelectedItemProperties";
-import { SourcingTypeProperty } from "./SourcingTypeProperty";
+import {
+  SourcingTypeProperty,
+  useIsComponentOfBuyAndMake
+} from "./SourcingTypeProperty";
 import SupplierPartForm from "./SupplierPartForm";
 import SupplierParts from "./SupplierParts";
 
@@ -31,7 +37,10 @@ export {
   BillOfProcess,
   BoMActions,
   BoMExplorer,
+  CustomerRentalRateForm,
+  CustomerRentalRates,
   FileBadge,
+  getItemLifecycleStatus,
   ItemCostingForm,
   ItemDescription,
   ItemDocuments,
@@ -39,15 +48,16 @@ export {
   ItemNotes,
   ItemPlanningForm,
   ItemPurchasingForm,
+  ItemRentalRateForm,
   ItemRiskRegister,
-  ItemSupersessionForm,
-  getItemLifecycleStatus,
   ItemSalePriceForm,
+  ItemSupersessionForm,
   MakeMethodTools,
   PickMethodForm,
   ReleaseLockAlert,
   SelectedItemProperties,
   SourcingTypeProperty,
   SupplierPartForm,
-  SupplierParts
+  SupplierParts,
+  useIsComponentOfBuyAndMake
 };

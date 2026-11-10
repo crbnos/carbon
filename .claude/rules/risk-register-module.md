@@ -67,9 +67,11 @@ UPDATE → `quality_update`; DELETE → `quality_delete`.
   There is no combined score anywhere — UI shows the two ratings side by side.
 - Status is a free-set enum (`Open` → `In Review` → `Mitigating` → `Closed`/`Accepted`);
   `updateRiskStatus(client, riskId, status)` patches it. No state-machine enforcement.
-- New-risk action (`risks.new.tsx`) parses `severity`/`likelihood` from strings to
-  ints, defaults `assignee` to the current user, and fires a `notify` job
-  (`NotificationEvent.RiskAssignment`) when an assignee is set.
+- `createRisk` (`quality.server.ts`; route `risks.new.tsx`
+  parses `severity`/`likelihood` from strings to ints) defaults `assignee` to the
+  current user and fires a `notify` job (`NotificationEvent.RiskAssignment`) when
+  an assignee is set. `updateRisk` (`risks.$id.tsx`) notifies a new
+  assignee. `upsertRisk` is the bare row write and is not published.
 
 ## Code map (verified)
 
@@ -86,8 +88,9 @@ UPDATE → `quality_update`; DELETE → `quality_delete`.
   filtered by `source` + `sourceId`), `RiskRating.tsx`, `RiskStatus.tsx`,
   `RiskType.tsx`.
 - Routes `apps/erp/app/routes/x+/quality+/`: `risks.tsx` (list, `view: "quality"`),
-  `risks.new.tsx` (action gated `role: "employee"` only — **not** `create: "quality"`),
-  `risks.$id.tsx` (loader `view`, action `update: "quality"`),
+  `risks.new.tsx` (`createRisk`: company membership, and the table's
+  employee-only INSERT policy — **not** `create: "quality"`; not published),
+  `risks.$id.tsx` (loader `view`, `updateRisk`: `update: "quality"`),
   `risks.delete.$id.tsx` (`delete: "quality"`).
 - Path helpers (`apps/erp/app/utils/path.ts`): `risks`, `risk(id)`, `newRisk`,
   `deleteRisk(id)`, plus `customerRisks(id)` / `supplierRisks(id)`.
@@ -122,5 +125,5 @@ wired-up entity card **except `Work Center`**, which is surfaced only via the
   and per-entity reads use the **`riskRegister` table**. Keep that split in mind.
 - `riskRegister` PK is a single UUID `id`, and the default is `gen_random_uuid()` —
   it deviates from the standard `id('prefix')` + composite-PK table template.
-- Creating a risk only requires `role: "employee"`; editing/deleting require
+- Creating a risk only requires being an employee (RLS); editing/deleting require
   `quality_update`/`quality_delete`.

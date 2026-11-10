@@ -26,11 +26,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher, useNavigate } from "react-router";
 import { Submit, Supplier } from "~/components/Form";
 import { useUrlParams } from "~/hooks";
-import type {
-  getSupplierContacts,
-  SupplierContact as SupplierContactType
-} from "~/modules/purchasing";
-import { createSupplierAccountValidator } from "~/modules/users";
+import type { getSupplierContacts } from "~/modules/purchasing/purchasing.service";
+import type { SupplierContact as SupplierContactType } from "~/modules/purchasing/types";
+import { createSupplierAccountValidator } from "~/modules/users/users.models";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 
@@ -172,7 +170,7 @@ const SupplierContact = ({
       supplierContactFetcher.data?.data
         ? supplierContactFetcher.data?.data.map((c) => ({
             value: c.id,
-            label: c.contact?.fullName ?? c.contact?.email ?? "Unknown"
+            label: c.contact?.fullName || c.contact?.email || "Unknown"
           }))
         : [],
     [supplierContactFetcher.data]

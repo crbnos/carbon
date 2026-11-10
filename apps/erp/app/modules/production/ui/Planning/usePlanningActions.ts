@@ -2,17 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useAction } from "@carbon/query";
 import { toast } from "@carbon/react";
-import { useCallback, useEffect, useMemo } from "react";
-import { useFetcher } from "react-router";
-import type { PlanningAction } from "~/modules/production";
-import { actionsOfTypes } from "~/modules/production";
+import { useLingui } from "@lingui/react/macro";
+import { createElement, useCallback, useMemo, useRef } from "react";
+import { Link } from "react-router";
+import { actionsOfTypes } from "~/modules/production/production.models";
+import type { PlanningAction } from "~/modules/production/types";
 import {
   type FenceRow,
   useTimeFenceOverrides
 } from "~/modules/production/ui/Planning/PlanningFence";
+import { planningRowKey } from "~/modules/production/ui/Planning/planning-action-scope";
 import { actionsInsideFence } from "~/modules/production/ui/Planning/planning-fence";
 import { isStaleRelease } from "~/modules/production/ui/Planning/planning-review";
+import { path } from "~/utils/path";
 
 /**
  * The planning grids' MRP worklist state, shared by the production and
@@ -28,7 +32,7 @@ export function usePlanningActions({
   currentUserId,
   canUpdate
 }: {
-  data: FenceRow[];
+  data: (FenceRow & { planningSegmentId?: string | null })[];
   planningActions: PlanningAction[];
   /** The Actions-column filter; null shows every type. */
   actionTypes: string[] | null;
@@ -38,27 +42,78 @@ export function usePlanningActions({
   currentUserId: string;
   canUpdate: boolean;
 }) {
-  const actionsFetcher = useFetcher<{ success?: boolean; message?: string }>();
+  const { t } = useLingui();
+  const describePlanningResult = usePlanningResultMessage();
+  // The worklist action last submitted, for the toast that answers it.
+  const lastAction = useRef<string | null>(null);
+  const actionsFetcher = useAction<PlanningActionsResult>({
+    onSuccess: (result) => {
+      const outcome = describePlanningResult(result, lastAction.current);
+      if (!outcome) return;
+      // An applied Transfer leaves the worklist; the toast links its transfer.
+      // Purchasing answers `transfers` at the top level; production's
+      // service function answers it inside `data`.
+      const transfers =
+        ("transfers" in result ? result.transfers : undefined) ??
+        ("data" in result ? result.data?.transfers : undefined) ??
+        [];
+      const content =
+        transfers.length > 0
+          ? createElement(
+              "div",
+              { className: "flex flex-col gap-1" },
+              createElement("span", null, outcome.message),
+              createElement(
+                "span",
+                { className: "flex flex-wrap gap-2 text-xs" },
+                ...transfers.map((transfer) =>
+                  createElement(
+                    Link,
+                    {
+                      key: transfer.id,
+                      to: path.to.projectStockTransfer(transfer.id),
+                      className: "underline underline-offset-2 hover:opacity-80"
+                    },
+                    transfer.projectStockTransferId
+                  )
+                )
+              )
+            )
+          : outcome.message;
+      if (outcome.ok) {
+        toast.success(content, transfers.length > 0 ? { duration: 8000 } : {});
+      } else {
+        toast.error(content);
+      }
+    },
+    // The purchasing route answers `{ success: false, message }`; a service
+    // function's error is `{ error: { message } }`.
+    onError: (result) => {
+      const message =
+        "message" in result && typeof result.message === "string"
+          ? result.message
+          : "error" in result && result.error
+            ? result.error.message
+            : t`Something went wrong`;
+      toast.error(message);
+    }
+  });
   const isActionsBusy = actionsFetcher.state !== "idle";
 
-  useEffect(() => {
-    if (actionsFetcher.state !== "idle" || !actionsFetcher.data?.message)
-      return;
-    if (actionsFetcher.data.success) {
-      toast.success(actionsFetcher.data.message);
-    } else {
-      toast.error(actionsFetcher.data.message);
-    }
-  }, [actionsFetcher.state, actionsFetcher.data]);
-
-  const actionsByItemId = useMemo(() => {
+  // Keyed by the row (`planningRowKey`): the grid has a row per item and
+  // netting segment, and each row holds its own segment's actions only.
+  const actionsByRowKey = useMemo(() => {
     const map = new Map<string, PlanningAction[]>();
     for (const action of planningActions) {
       // a Release whose order moved on since MRP ran no longer applies
       if (isStaleRelease(action)) continue;
-      const list = map.get(action.itemId);
+      const key = planningRowKey({
+        id: action.itemId,
+        planningSegmentId: action.planningSegmentId
+      });
+      const list = map.get(key);
       if (list) list.push(action);
-      else map.set(action.itemId, [action]);
+      else map.set(key, [action]);
     }
     return map;
   }, [planningActions]);
@@ -68,35 +123,38 @@ export function usePlanningActions({
   // re-filters what is already loaded and never touches the item.
   const timeFence = useTimeFenceOverrides();
 
-  const fencedActionsByItemId = useMemo(() => {
+  const fencedActionsByRowKey = useMemo(() => {
     const map = new Map<string, PlanningAction[]>();
     for (const row of data) {
-      const actions = actionsByItemId.get(row.id);
+      const key = planningRowKey(row);
+      const actions = actionsByRowKey.get(key);
       if (!actions) continue;
       const fenced = actionsInsideFence(actions, timeFence.fenceDateFor(row));
-      if (fenced.length > 0) map.set(row.id, fenced);
+      if (fenced.length > 0) map.set(key, fenced);
     }
     return map;
-  }, [data, actionsByItemId, timeFence]);
+  }, [data, actionsByRowKey, timeFence]);
 
   // What the GRID shows and acts on: under the Actions-column filter, only
   // the filtered types. The order drawer keeps every fenced action — it lists
   // the item's open orders, and one shown without its pending suggestion
   // would read as "nothing to do".
-  const visibleActionsByItemId = useMemo(() => {
-    if (!actionTypes) return fencedActionsByItemId;
+  const visibleActionsByRowKey = useMemo(() => {
+    if (!actionTypes) return fencedActionsByRowKey;
     const map = new Map<string, PlanningAction[]>();
-    for (const [itemId, actions] of fencedActionsByItemId) {
+    for (const [key, actions] of fencedActionsByRowKey) {
       const visible = actionsOfTypes(actions, actionTypes);
-      if (visible.length > 0) map.set(itemId, visible);
+      if (visible.length > 0) map.set(key, visible);
     }
     return map;
-  }, [fencedActionsByItemId, actionTypes]);
+  }, [fencedActionsByRowKey, actionTypes]);
 
   // ONE batched request per click: the route derives each row's behaviour
   // from its persisted type, and a fetcher holds a single in-flight submission.
   const submitActions = useCallback(
     (payload: Record<string, unknown>) => {
+      lastAction.current =
+        typeof payload.action === "string" ? payload.action : null;
       actionsFetcher.submit(JSON.stringify({ locationId, ...payload }), {
         method: "post",
         action: updatePath,
@@ -136,9 +194,101 @@ export function usePlanningActions({
     actionHandlers,
     isActionsBusy,
     timeFence,
-    actionsByItemId,
-    fencedActionsByItemId,
-    visibleActionsByItemId,
+    actionsByRowKey,
+    fencedActionsByRowKey,
+    visibleActionsByRowKey,
     submitActions
+  };
+}
+
+/**
+ * What a worklist submission answers: the production route's service result
+ * (`{ data, error }`), or the purchasing route's `{ success, message }`.
+ */
+type PlanningActionsResult =
+  | {
+      success?: boolean;
+      message?: string;
+      /** The Draft project stock transfers an applied Transfer created. */
+      transfers?: { id: string; projectStockTransferId: string }[];
+    }
+  | {
+      data: {
+        applied?: string[];
+        requiresManualAction?: unknown[];
+        warnings?: string[];
+        errors?: string[];
+        changed?: number;
+        requested?: number;
+        /** The Draft project stock transfers an applied Transfer created. */
+        transfers?: { id: string; projectStockTransferId: string }[];
+      } | null;
+      error: { message: string } | null;
+    };
+
+/**
+ * The toast for a successful worklist submission, or null for none. A hook,
+ * so the Lingui macro binds `t` here (it does not follow a `t` passed in).
+ */
+function usePlanningResultMessage() {
+  const { t } = useLingui();
+  return (
+    result: PlanningActionsResult,
+    action: string | null
+  ): { ok: boolean; message: string } | null => {
+    if ("message" in result || "success" in result) {
+      return result.message
+        ? { ok: result.success !== false, message: result.message }
+        : null;
+    }
+    if (!("data" in result) || !result.data) return null;
+    const data = result.data;
+
+    if (data.changed !== undefined) {
+      const changed = data.changed;
+      const stale = (data.requested ?? changed) - changed;
+      const done =
+        action === "dismiss"
+          ? changed === 1
+            ? t`Dismissed 1 planning action`
+            : t`Dismissed ${changed} planning actions`
+          : action === "reopen"
+            ? changed === 1
+              ? t`Reopened 1 planning action`
+              : t`Reopened ${changed} planning actions`
+            : changed === 1
+              ? t`Assigned 1 planning action`
+              : t`Assigned ${changed} planning actions`;
+      return {
+        ok: true,
+        message:
+          stale > 0
+            ? `${done}; ${t`${stale} changed since the page loaded`}`
+            : done
+      };
+    }
+
+    const applied = data.applied?.length ?? 0;
+    const manual = data.requiresManualAction?.length ?? 0;
+    const warnings = data.warnings?.length ?? 0;
+    const errors = data.errors?.length ?? 0;
+    const parts = [
+      applied === 1
+        ? t`Applied 1 planning action`
+        : t`Applied ${applied} planning actions`
+    ];
+    if (manual > 0) {
+      parts.push(
+        manual === 1
+          ? t`1 target is committed — review on the order`
+          : t`${manual} targets are committed — review on the order`
+      );
+    }
+    if (warnings > 0) parts.push(t`${warnings} need a follow-up`);
+    if (errors > 0) parts.push(t`${errors} failed`);
+    return {
+      ok: errors === 0 && warnings === 0 && !(applied === 0 && manual > 0),
+      message: parts.join("; ")
+    };
   };
 }

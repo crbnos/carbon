@@ -2,6 +2,32 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+// The journal statuses each kind of reader may read
+// (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 2). A Provisional
+// journal counts nowhere until the accounting cutover; a Superseded one never
+// counts again.
+
+// Statuses a balance, report, snapshot, tie-out or sync counts.
+export const GL_JOURNAL_STATUSES = ["Posted", "Reversed"] as const;
+// Statuses a reader that follows one document's chain reads: void builders,
+// GR/IR, WIP sums, intercompany lookups.
+export const DOCUMENT_JOURNAL_STATUSES = [
+  "Provisional",
+  "Posted",
+  "Reversed"
+] as const;
+// Statuses an open-item lookup reads: payment control lines and the memo,
+// charge and reimbursement void checks.
+export const OPEN_ITEM_JOURNAL_STATUSES = ["Provisional", "Posted"] as const;
+// Statuses only an automatic posting from before the accounting cutover
+// carries: Provisional until the enable, Superseded after it when dated before
+// the cutover date. The enable wizard dates the start of Carbon's cost record
+// from the first such journal; no balance or chain reader uses this list.
+export const PRE_CUTOVER_JOURNAL_STATUSES = [
+  "Provisional",
+  "Superseded"
+] as const;
+
 export const RECEIVABLE_POSTING_DESCRIPTIONS = [
   "Accounts Receivable",
   "IC Receivables"
@@ -25,6 +51,54 @@ export function onAccountCreditDescription(isAR: boolean): string {
   return `${isAR ? "Accounts Receivable" : "Accounts Payable"} (on-account credit)`;
 }
 
+/** The description a customer DEPOSIT's unapplied cash is booked with — a
+ *  payment that references a sales order or rental agreement holds that cash
+ *  as a liability on the prepayment account, not as on-account receivable
+ *  credit. A Disbursement carrying the same reference refunds it under the
+ *  same description (mirroring the on-account leg, which is one description in
+ *  both cash directions).
+ *
+ *  Deliberately NOT `onAccountCreditDescription`: the prior-credit lookup reads
+ *  the description back to learn which account a credit was booked to, and the
+ *  AR subledger views count only the receivable descriptions — a deposit must
+ *  never be mistaken for either. */
+export const CUSTOMER_DEPOSIT_DESCRIPTION = "Customer Deposit";
+
+/** The description a later payment releases a deposit with (a debit on the
+ *  prepayment account against the invoice it settles). Distinct from
+ *  CUSTOMER_DEPOSIT_DESCRIPTION for the same reason on-account credit is
+ *  released as "(credit applied)" rather than "(on-account credit)": the
+ *  lookup keys on the booked description and must never read a release line
+ *  as a booked credit. */
+export const CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION =
+  "Customer Deposit (applied)";
+
+/** The supplier side of the same leg: a supplier payment that references a
+ *  purchase order is a prepayment, an ASSET on the supplier prepayment account
+ *  (1150), never an on-account debit inside payables. The same writer/reader
+ *  contract as the customer descriptions. */
+export const SUPPLIER_PREPAYMENT_DESCRIPTION = "Supplier Prepayment";
+export const SUPPLIER_PREPAYMENT_APPLIED_DESCRIPTION =
+  "Supplier Prepayment (applied)";
+
+/** The description a deposit's unapplied cash is booked with, by side. */
+export function depositDescription(isAR: boolean): string {
+  return isAR ? CUSTOMER_DEPOSIT_DESCRIPTION : SUPPLIER_PREPAYMENT_DESCRIPTION;
+}
+
+/** The description a deposit is released with, by side. */
+export function depositAppliedDescription(isAR: boolean): string {
+  return isAR
+    ? CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION
+    : SUPPLIER_PREPAYMENT_APPLIED_DESCRIPTION;
+}
+
+/** Both deposit descriptions: the prior-credit lookup reads either. */
+export const DEPOSIT_DESCRIPTIONS = [
+  CUSTOMER_DEPOSIT_DESCRIPTION,
+  SUPPLIER_PREPAYMENT_DESCRIPTION
+] as const;
+
 /** The description the employee-payable control line of a posted reimbursement
  *  journal is written with, and the exact string a later payout reads back to
  *  find the carrying value that reimbursement was originally booked at.
@@ -46,7 +120,8 @@ export type AccountingPostingRole =
   | "Receivables"
   | "Payables"
   | "ShippingRevenue"
-  | "SalesRevenue";
+  | "SalesRevenue"
+  | "ServiceRevenue";
 
 /** Roles come from the original journal, never a mutable account name or default. */
 export function classifyAccountingPostingRole(
@@ -63,6 +138,10 @@ export function classifyAccountingPostingRole(
       return "ShippingRevenue";
     case "Sales Account":
       return "SalesRevenue";
+    // A service job line's revenue leg (`planServiceJobLine`). Its
+    // "Contract Assets" leg is not revenue and stays unclassified.
+    case "Service Revenue":
+      return "ServiceRevenue";
     default:
       return null;
   }

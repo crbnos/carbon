@@ -23,11 +23,12 @@ ready. The hourly sweep/webhook fires `ramp-sync`, which pulls transactions with
 - reads the coding off `line_items[].accounting_field_selections` (`codeSelections`): GL
   account (`account.id`) + cost center (`carbon-cost-center` option),
 - atomically stages a **Draft `charge`** (type `Charge`) + coded lines + the Ramp
-  mapping, then posts it via the `post-charge` edge function.
+  mapping, then posts it through the `post-charge` posting (`posting("post-charge", …)`,
+  which runs `postCharge` in the ERP's `accounting.service.ts`).
 
 ### 2. Carbon posts the GL journal
 
-`post-charge` books: **debit each coded line's account, credit the card-liability
+`postCharge` books: **debit each coded line's account, credit the card-liability
 account** (the one configured on the Ramp integration), in base currency. The row becomes a
 Posted `Charge` with a `supplierId` and a `journalId`.
 

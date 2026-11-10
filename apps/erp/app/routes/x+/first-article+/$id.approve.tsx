@@ -9,7 +9,7 @@ import { getLogger } from "@carbon/logger";
 import { getPreferenceHeaders, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { approveFirstArticleInspection } from "~/modules/quality/firstArticle.server";
+import { approveFirstArticleInspection } from "~/modules/quality/quality.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

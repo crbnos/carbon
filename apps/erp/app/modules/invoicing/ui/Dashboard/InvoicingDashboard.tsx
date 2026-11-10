@@ -57,7 +57,7 @@ export type RecentPayment = {
 
 type InvoicingDashboardProps = {
   asOfDate: string;
-  accountingEnabled: boolean;
+  accountingSetUp: boolean;
   ar: AgingTotals;
   ap: AgingTotals;
   arTieOut: TieOut;
@@ -105,7 +105,7 @@ const AgingCard = ({
         <span className="text-muted-foreground">{icon}</span>
         <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="max-md:px-0 max-md:py-2 max-md:[&_td]:px-4 max-md:[&_th]:px-4">
         <Table>
           <Thead>
             <Tr>
@@ -170,7 +170,7 @@ const AgingCard = ({
 };
 
 const InvoicingDashboard = ({
-  accountingEnabled,
+  accountingSetUp,
   ar,
   ap,
   arTieOut,
@@ -210,8 +210,11 @@ const InvoicingDashboard = ({
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
+      <h1 className="sr-only">
+        <Trans>Invoicing Dashboard</Trans>
+      </h1>
       {/* KPI Cards */}
-      <div className="grid w-full gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid w-full gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
         <MetricCard
           icon={<LuHandCoins />}
           title={<Trans>AR Outstanding</Trans>}
@@ -258,7 +261,7 @@ const InvoicingDashboard = ({
           icon={<LuClock />}
           totals={ar}
           tieOut={arTieOut}
-          showTieOut={accountingEnabled}
+          showTieOut={accountingSetUp}
           bucketLabels={bucketLabels}
           format={format}
         />
@@ -267,7 +270,7 @@ const InvoicingDashboard = ({
           icon={<LuClock />}
           totals={ap}
           tieOut={apTieOut}
-          showTieOut={accountingEnabled}
+          showTieOut={accountingSetUp}
           bucketLabels={bucketLabels}
           format={format}
         />

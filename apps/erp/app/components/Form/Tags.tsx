@@ -22,7 +22,7 @@ type TagsSelectProps = Omit<
 
 const TagsPreview = (
   value: string[],
-  options: { value: string; label: string; helper?: string }[],
+  options: { value: string; label: string | JSX.Element; helper?: string }[],
   maxPreview?: number
 ) => {
   return (

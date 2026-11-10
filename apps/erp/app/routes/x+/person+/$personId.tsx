@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { accountProfileValidator } from "@carbon/account";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -9,17 +10,21 @@ import { validationError, validator } from "@carbon/form";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
 import { data, useLoaderData } from "react-router";
+import { getEmployeeSummary } from "~/modules/people/people.service";
+import { PersonPreview, PersonSidebar } from "~/modules/people/ui/Person";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 import {
-  accountProfileValidator,
   getAllAttributeCategories,
   updatePublicAccount
-} from "~/modules/account";
-import { getEmployeeSummary } from "~/modules/people";
-import { PersonPreview, PersonSidebar } from "~/modules/people/ui/Person";
-import { getCompanySettings } from "~/modules/settings";
+} from "~/modules/users/users.service";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -32,6 +37,9 @@ export const handle: Handle = {
   // route, e.g. tool+/$itemId.tsx). Without it, viewing a person never records.
   module: "people"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.employeeSummary?.name, "Person");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -109,7 +117,7 @@ export default function PersonRoute() {
   return (
     <>
       <PersonPreview />
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_4fr] h-full w-full gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_4fr] h-full w-full gap-4 max-md:h-auto max-md:gap-0">
         <PersonSidebar
           attributeCategories={attributeCategories}
           timeCardEnabled={timeCardEnabled}

@@ -28,7 +28,6 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Heading,
   HStack,
   ScrollArea,
   toast,
@@ -45,13 +44,13 @@ import { data, useFetcher, useFetchers, useLoaderData } from "react-router";
 import { z } from "zod";
 import { DateTime } from "~/components";
 import { Confirm } from "~/components/Modals";
-import type { CompanyBackupSummary } from "~/modules/settings";
+import { SettingsPageHeading } from "~/components/SettingsPage";
+import type { CompanyBackupSummary } from "~/modules/settings/backups.service";
 import {
   deleteCompanyBackup,
   getCompanyExportRun,
-  getCompanyRestoreRuns,
-  totalScopeRows
-} from "~/modules/settings";
+  getCompanyRestoreRuns
+} from "~/modules/settings/backups.service";
 import {
   canManageBackups,
   dismissCompanyExportFailure,
@@ -61,7 +60,8 @@ import {
   purgeCorruptedRows,
   revertCompanyRestore,
   startCompanyRestore
-} from "~/modules/settings/backups.server";
+} from "~/modules/settings/settings.service";
+import { totalScopeRows } from "~/modules/settings/settings.utils";
 import type { BackupStatus } from "~/modules/settings/ui/Backups";
 import {
   BackupContentsInfo,
@@ -78,6 +78,7 @@ import {
   RestoreIncludeChoice,
   RestoreReviewRow
 } from "~/modules/settings/ui/Backups";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -153,7 +154,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const [backupsList, restoreRuns, exportRun] = await Promise.all([
     // Backup objects are service-role only; the checks above gate this route.
-    getCompanyBackups(getCarbonServiceRole(), companyId),
+    getCompanyBackups(getCarbonServiceRole(), getDatabaseClient(), companyId),
     getCompanyRestoreRuns(client, companyId),
     getCompanyExportRun(client, companyId)
   ]);
@@ -361,7 +362,10 @@ export async function action({ request }: ActionFunctionArgs) {
       // start" call for opposite next actions, and only the second is lossy.
       let deleted: Array<{ table: string; rows: number }>;
       try {
-        ({ deleted } = await purgeCorruptedRows(companyId));
+        ({ deleted } = await purgeCorruptedRows(
+          getDatabaseClient(),
+          companyId
+        ));
       } catch (err) {
         return {
           success: false,
@@ -547,6 +551,7 @@ export default function BackupsRoute() {
   const [purgeRun, setPurgeRun] = useState<
     (typeof visibleRestoreRuns)[number] | null
   >(null);
+  const [purgeOpen, setPurgeOpen] = useState(false);
   const exportChoices = useExportChoices();
   // A failed run's label and include setting seed the form, so "Skip corrupted
   // rows and retry" reuses what that run asked for and the person can see it.
@@ -596,8 +601,10 @@ export default function BackupsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <div className="py-12 px-4 max-w-[72rem] mx-auto flex flex-col gap-4">
-        <Heading size="h3">Backups</Heading>
+      <div className="py-12 px-4 max-w-[72rem] mx-auto flex flex-col gap-4 max-md:py-3">
+        <SettingsPageHeading>
+          <Trans>Backups</Trans>
+        </SettingsPageHeading>
 
         {/* Create + Restore — equal-height cards, footers aligned. */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
@@ -716,7 +723,10 @@ export default function BackupsRoute() {
                       );
                       resolveRun(run.restoreRunId);
                     }}
-                    onPurgeAndRestore={() => setPurgeRun(run)}
+                    onPurgeAndRestore={() => {
+                      setPurgeRun(run);
+                      setPurgeOpen(true);
+                    }}
                   />
                 ))}
               </VStack>
@@ -726,6 +736,7 @@ export default function BackupsRoute() {
 
         {purgeRun && (
           <PurgeCorruptedRowsModal
+            open={purgeOpen}
             rowsByTable={purgeRun.violationRowsByTable}
             description={
               <Trans>
@@ -736,7 +747,7 @@ export default function BackupsRoute() {
               </Trans>
             }
             confirmLabel={<Trans>Delete and restore</Trans>}
-            onCancel={() => setPurgeRun(null)}
+            onCancel={() => setPurgeOpen(false)}
             onConfirm={() => {
               fetcher.submit(
                 {
@@ -746,7 +757,7 @@ export default function BackupsRoute() {
                 { method: "post" }
               );
               resolveRun(purgeRun.restoreRunId);
-              setPurgeRun(null);
+              setPurgeOpen(false);
             }}
           />
         )}
@@ -859,7 +870,7 @@ export default function BackupsRoute() {
                   <button
                     type="button"
                     onClick={openExportProgress}
-                    className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted/50"
+                    className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 max-md:border-0 max-md:p-0 max-md:rounded-none"
                   >
                     <VStack spacing={0}>
                       <span className="text-sm font-medium">
@@ -914,7 +925,7 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
 
   return (
     <HStack
-      className={`w-full justify-between border rounded-lg p-3 ${
+      className={`w-full justify-between border rounded-lg p-3 max-md:border-0 max-md:p-0 max-md:rounded-none ${
         file.status === "pending" || isDeleting ? "opacity-70" : ""
       }`}
     >

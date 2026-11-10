@@ -3,31 +3,27 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { KyselyTx } from "@carbon/database/client";
-import { describe, expect, it, vi } from "vitest";
-
-/**
- * The ONE stub, and it is the real external boundary: `withTriggersDisabled`
- * opens a Postgres transaction and issues `SET LOCAL app.sync_in_progress`. The
- * behaviour under test is WHEN the mapping write happens relative to the next
- * platform call, not what a Kysely transaction does — so the wrapper hands the
- * callback a sentinel and everything else below runs real.
- */
-const TX = { sentinel: true } as unknown as KyselyTx;
-
-vi.mock("../accounting/core/utils", async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import("../accounting/core/utils")>();
-  return {
-    ...actual,
-    withTriggersDisabled: async <T>(
-      _db: unknown,
-      operation: (tx: KyselyTx) => Promise<T>
-    ) => operation(TX)
-  };
-});
-
+import {
+  DummyDriver,
+  Kysely,
+  PostgresAdapter,
+  PostgresIntrospector,
+  PostgresQueryCompiler
+} from "kysely";
+import { describe, expect, it } from "vitest";
 import type { EntityConfig, SyncContext } from "../accounting/core/types";
 import { SpendPushOnlyEntitySyncer } from "./push-only-syncer";
+
+// The Postgres wire is the boundary: a Kysely over a driver that answers every
+// statement with no rows, so the trigger-disabled transaction really opens.
+const database = new Kysely({
+  dialect: {
+    createAdapter: () => new PostgresAdapter(),
+    createDriver: () => new DummyDriver(),
+    createIntrospector: (db) => new PostgresIntrospector(db),
+    createQueryCompiler: () => new PostgresQueryCompiler()
+  }
+});
 
 type TestLocal = { id: string; updatedAt: string };
 type TestRemote = { name: string };
@@ -118,7 +114,7 @@ function makeSyncer(
 ): TestSpendSyncer {
   return new TestSpendSyncer(
     {
-      database: {} as never,
+      database: database as never,
       companyId: "company-1",
       provider: { id: "ramp" } as never,
       entityType: "purchaseOrder",
@@ -161,7 +157,7 @@ describe("SpendPushOnlyEntitySyncer.pushBatchToAccounting", () => {
     expect(syncer.linked.map((entry) => entry.localId)).toEqual(["a", "c"]);
     expect(syncer.linked[0]?.remoteId).toBe("remote-a");
     // Written through the trigger-disabled transaction, not the bare database.
-    expect(syncer.linked[0]?.tx).toBe(TX);
+    expect(syncer.linked[0]?.tx.isTransaction).toBe(true);
   });
 
   it("does not report an already-pushed document as failed", async () => {

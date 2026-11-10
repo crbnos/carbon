@@ -5,7 +5,7 @@
 import { RefreshRate, useLoaderQuery } from "@carbon/query";
 import { cldrCurrencyDecimals, DEFAULT_CURRENCY_DECIMALS } from "@carbon/utils";
 import { createContext, useContext, useMemo } from "react";
-import type { getCurrenciesList } from "~/modules/accounting";
+import type { getCurrenciesList } from "~/modules/accounting/accounting.service";
 import { path } from "~/utils/path";
 import { useCompanySettings } from "./useCompanySettings";
 

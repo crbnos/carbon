@@ -10,12 +10,17 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { materialValidator, upsertMaterial } from "~/modules/items";
+import { NewRecordPage } from "~/components/NewRecordPage";
+import { materialValidator } from "~/modules/items/items.models";
+import { upsertMaterial } from "~/modules/items/items.service";
 import { MaterialForm } from "~/modules/items/ui/Materials";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
+import { newRecordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+export const meta = newRecordMeta("Material");
 
 export const handle: Handle = {
   breadcrumb: msg`Materials`,
@@ -87,8 +92,8 @@ export default function MaterialsNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <MaterialForm initialValues={initialValues} />
-    </div>
+    </NewRecordPage>
   );
 }

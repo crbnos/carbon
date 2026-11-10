@@ -2,9 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
 import type { PlanningSizingParams } from "./planning-sizing";
-import { computePlanningOrders } from "./planning-sizing";
+import {
+  computePlanningOrders,
+  lotSizeBatches,
+  orderSizingRules,
+  reducedOrderQuantity,
+  splitIntoOrders
+} from "./planning-sizing";
 
 const params = (
   overrides: Partial<PlanningSizingParams> = {}
@@ -123,9 +130,8 @@ describe("computePlanningOrders", () => {
       }
     });
 
-    it("applies max OQ, min OQ, and order multiple", () => {
-      // Shortfall 100, capped to maxOQ 30
-      const capped = computePlanningOrders({
+    it("splits a shortfall past the maximum order quantity into several orders", () => {
+      const split = computePlanningOrders({
         reorderingPolicy: "Demand-Based Reorder",
         periods: weeklyPeriods(["2026-10-05"]),
         projections: [0],
@@ -135,8 +141,66 @@ describe("computePlanningOrders", () => {
           maximumOrderQuantity: 30
         })
       });
-      expect(capped[0]?.quantity).toBe(30);
+      expect(split.map((o) => o.quantity)).toEqual([30, 30, 30, 10]);
+      // the next window sees the whole 100 as ordered
+      const covered = computePlanningOrders({
+        reorderingPolicy: "Demand-Based Reorder",
+        periods: weeklyPeriods(["2026-10-05", "2026-10-12"]),
+        projections: [0, 0],
+        todayDate: TODAY,
+        params: params({
+          demandAccumulationSafetyStock: 100,
+          maximumOrderQuantity: 30
+        })
+      });
+      expect(covered.map((o) => o.periodId)).toEqual(["p1", "p1", "p1", "p1"]);
+    });
 
+    it("keeps every split order on the order multiple and under the maximum", () => {
+      // need 100, multiple 10, max 25 → orders of 20 (25 floored to the multiple)
+      const orders = computePlanningOrders({
+        reorderingPolicy: "Demand-Based Reorder",
+        periods: weeklyPeriods(["2026-10-05"]),
+        projections: [0],
+        todayDate: TODAY,
+        params: params({
+          demandAccumulationSafetyStock: 100,
+          maximumOrderQuantity: 25,
+          orderMultiple: 10
+        })
+      });
+      expect(orders.map((o) => o.quantity)).toEqual([20, 20, 20, 20, 20]);
+      // a multiple larger than the maximum is the cap
+      const multipleWins = computePlanningOrders({
+        reorderingPolicy: "Demand-Based Reorder",
+        periods: weeklyPeriods(["2026-10-05"]),
+        projections: [0],
+        todayDate: TODAY,
+        params: params({
+          demandAccumulationSafetyStock: 25,
+          maximumOrderQuantity: 8,
+          orderMultiple: 10
+        })
+      });
+      expect(multipleWins.map((o) => o.quantity)).toEqual([10, 10, 10]);
+    });
+
+    it("splits by the smaller of batch size and maximum order quantity", () => {
+      const orders = computePlanningOrders({
+        reorderingPolicy: "Demand-Based Reorder",
+        periods: weeklyPeriods(["2026-10-05"]),
+        projections: [0],
+        todayDate: TODAY,
+        params: params({
+          demandAccumulationSafetyStock: 70,
+          lotSize: 50,
+          maximumOrderQuantity: 30
+        })
+      });
+      expect(orders.map((o) => o.quantity)).toEqual([30, 30, 10]);
+    });
+
+    it("applies min OQ and order multiple", () => {
       // Shortfall 7, rounded up to multiple 5 → 10
       const multiple = computePlanningOrders({
         reorderingPolicy: "Demand-Based Reorder",
@@ -181,6 +245,53 @@ describe("computePlanningOrders", () => {
         "2026-10-05",
         "2026-10-07",
         "2026-10-09"
+      ]);
+    });
+
+    // The reschedule check dates each order by the first demand it covers.
+    // Dated all in the window's first week, the batches for weeks 3 and 4
+    // read as early and got a Defer the moment they were raised.
+    it("dates each batch in the week its share of the window is needed", () => {
+      const orders = computePlanningOrders({
+        reorderingPolicy: "Demand-Based Reorder",
+        periods: weeklyPeriods([
+          "2026-10-05",
+          "2026-10-12",
+          "2026-10-19",
+          "2026-10-26"
+        ]),
+        projections: [-25, -50, -75, -100],
+        todayDate: TODAY,
+        params: params({ demandAccumulationPeriod: 4, lotSize: 25 })
+      });
+      expect(orders.map((o) => [o.periodId, o.dueDate, o.quantity])).toEqual([
+        ["p1", "2026-10-05", 25],
+        ["p2", "2026-10-12", 25],
+        ["p3", "2026-10-19", 25],
+        ["p4", "2026-10-26", 25]
+      ]);
+      expect(orders.map((o) => o.startDate)).toEqual([
+        "2026-09-28",
+        "2026-10-05",
+        "2026-10-12",
+        "2026-10-19"
+      ]);
+    });
+
+    it("spreads the batches one week needs across that week", () => {
+      // 60 short in p1 and 20 more in p2, batches of 20: three in p1, one in p2
+      const orders = computePlanningOrders({
+        reorderingPolicy: "Demand-Based Reorder",
+        periods: weeklyPeriods(["2026-10-05", "2026-10-12"]),
+        projections: [-60, -80],
+        todayDate: TODAY,
+        params: params({ demandAccumulationPeriod: 2, lotSize: 20 })
+      });
+      expect(orders.map((o) => [o.periodId, o.dueDate])).toEqual([
+        ["p1", "2026-10-05"],
+        ["p1", "2026-10-07"],
+        ["p1", "2026-10-09"],
+        ["p2", "2026-10-12"]
       ]);
     });
   });
@@ -344,5 +455,261 @@ describe("computePlanningOrders", () => {
       });
       expect(total(orders)).toBe(20); // SQL: ceil(18/5)*5
     });
+  });
+});
+
+describe("lotSizeBatches", () => {
+  it("splits into full batches with the remainder last, spread across the week", () => {
+    expect(lotSizeBatches(120, 50)).toEqual([
+      { quantity: 50, dayOffset: 0 },
+      { quantity: 50, dayOffset: 2 },
+      { quantity: 20, dayOffset: 4 }
+    ]);
+  });
+
+  it("is one order when it fits in a batch or there is no batch size", () => {
+    expect(lotSizeBatches(50, 50)).toEqual([{ quantity: 50, dayOffset: 0 }]);
+    expect(lotSizeBatches(120, 0)).toEqual([{ quantity: 120, dayOffset: 0 }]);
+  });
+});
+
+describe("orderSizingRules", () => {
+  const item = {
+    reorderPoint: 0,
+    reorderQuantity: 0,
+    minimumOrderQuantity: 0,
+    maximumOrderQuantity: 0,
+    orderMultiple: 0,
+    lotSize: 0
+  };
+
+  it("Demand-Based Reorder: one order per batch, never past batch or max", () => {
+    expect(
+      orderSizingRules("Demand-Based Reorder", {
+        ...item,
+        lotSize: 50,
+        maximumOrderQuantity: 40,
+        minimumOrderQuantity: 5,
+        orderMultiple: 10
+      })
+    ).toEqual({
+      perOrder: 40,
+      daily: false,
+      maximum: 40,
+      minimum: 5,
+      multiples: [10]
+    });
+    // a batch alone sizes the order
+    expect(
+      orderSizingRules("Demand-Based Reorder", { ...item, lotSize: 50 })
+    ).toMatchObject({ perOrder: 50, maximum: 50 });
+    // a maximum off the multiple is floored to it; under the multiple, the
+    // multiple is the cap
+    expect(
+      orderSizingRules("Demand-Based Reorder", {
+        ...item,
+        maximumOrderQuantity: 25,
+        orderMultiple: 10
+      })
+    ).toMatchObject({ perOrder: 20, maximum: 20 });
+    expect(
+      orderSizingRules("Demand-Based Reorder", {
+        ...item,
+        maximumOrderQuantity: 8,
+        orderMultiple: 10
+      })
+    ).toMatchObject({ perOrder: 10, maximum: 10 });
+  });
+
+  it("Fixed Reorder Quantity: every order is the fixed quantity", () => {
+    expect(
+      orderSizingRules("Fixed Reorder Quantity", {
+        ...item,
+        reorderQuantity: 100
+      })
+    ).toMatchObject({
+      perOrder: 100,
+      daily: true,
+      maximum: 100,
+      multiples: [100]
+    });
+    // no reorder quantity orders the reorder point
+    expect(
+      orderSizingRules("Fixed Reorder Quantity", { ...item, reorderPoint: 30 })
+    ).toMatchObject({ perOrder: 30, maximum: 30 });
+  });
+
+  it("Maximum Quantity: orders up to the maximum, on lot multiples", () => {
+    expect(
+      orderSizingRules("Maximum Quantity", {
+        ...item,
+        maximumOrderQuantity: 200,
+        lotSize: 50,
+        orderMultiple: 1
+      })
+    ).toEqual({
+      perOrder: 200,
+      daily: true,
+      maximum: 200,
+      minimum: 0,
+      multiples: [0, 50]
+    });
+  });
+
+  it("Stock Only and Manual Reorder size by no rule", () => {
+    for (const policy of ["Stock Only", "Manual Reorder", null]) {
+      expect(
+        orderSizingRules(policy, { ...item, lotSize: 50, orderMultiple: 10 })
+      ).toEqual({
+        perOrder: 0,
+        daily: false,
+        maximum: 0,
+        minimum: 0,
+        multiples: []
+      });
+    }
+  });
+});
+
+describe("splitIntoOrders", () => {
+  it("splits batches across the week", () => {
+    expect(splitIntoOrders(120, { perOrder: 50, daily: false })).toEqual([
+      { quantity: 50, dayOffset: 0 },
+      { quantity: 50, dayOffset: 2 },
+      { quantity: 20, dayOffset: 4 }
+    ]);
+  });
+
+  it("splits daily orders one per day", () => {
+    expect(splitIntoOrders(300, { perOrder: 100, daily: true })).toEqual([
+      { quantity: 100, dayOffset: 0 },
+      { quantity: 100, dayOffset: 1 },
+      { quantity: 100, dayOffset: 2 }
+    ]);
+  });
+
+  it("is the whole quantity with no per-order size", () => {
+    expect(splitIntoOrders(300, { perOrder: 0, daily: true })).toEqual([
+      { quantity: 300, dayOffset: 0 }
+    ]);
+  });
+
+  // The split must give back exactly the orders computePlanningOrders sized
+  // for the week, or summing them into one action loses them.
+  it.each([
+    [
+      "Fixed Reorder Quantity",
+      { reorderPoint: 250, reorderQuantity: 100 },
+      [-10]
+    ],
+    [
+      "Maximum Quantity",
+      {
+        reorderPoint: 400,
+        reorderQuantity: 1,
+        maximumInventoryQuantity: 500,
+        maximumOrderQuantity: 200
+      },
+      [0]
+    ],
+    [
+      "Demand-Based Reorder",
+      { demandAccumulationSafetyStock: 120, lotSize: 50 },
+      [0]
+    ],
+    [
+      "Demand-Based Reorder",
+      {
+        demandAccumulationSafetyStock: 100,
+        maximumOrderQuantity: 25,
+        orderMultiple: 10
+      },
+      [0]
+    ]
+  ] as const)(
+    "round-trips the week %s sized",
+    (policy, overrides, projections) => {
+      const orders = computePlanningOrders({
+        reorderingPolicy: policy,
+        periods: weeklyPeriods(["2026-10-05"]),
+        projections: [...projections],
+        todayDate: TODAY,
+        params: params(overrides)
+      });
+      expect(orders.length).toBeGreaterThan(1);
+      const total = orders.reduce((sum, o) => sum + o.quantity, 0);
+      expect(
+        splitIntoOrders(total, orderSizingRules(policy, params(overrides))).map(
+          (o) => o.quantity
+        )
+      ).toEqual(orders.map((o) => o.quantity));
+    }
+  );
+
+  // Demand-Based Reorder batches land in the week each is needed, and MRP
+  // sums each week into one action: every week's split must give back that
+  // week's batches, due dates included.
+  it("round-trips Demand-Based Reorder batches spread over several weeks", () => {
+    const overrides = { demandAccumulationPeriod: 4, lotSize: 25 };
+    const orders = computePlanningOrders({
+      reorderingPolicy: "Demand-Based Reorder",
+      periods: weeklyPeriods([
+        "2026-10-05",
+        "2026-10-12",
+        "2026-10-19",
+        "2026-10-26"
+      ]),
+      projections: [-50, -60, -75, -95],
+      todayDate: TODAY,
+      params: params(overrides)
+    });
+    const rules = orderSizingRules("Demand-Based Reorder", params(overrides));
+    const weeks = [...new Set(orders.map((o) => o.periodId))];
+    // 95 short: two batches for p1, one for p2, the remainder for p4 (p3 is
+    // exactly covered)
+    expect(weeks).toEqual(["p1", "p2", "p4"]);
+    for (const week of weeks) {
+      const inWeek = orders.filter((o) => o.periodId === week);
+      const total = inWeek.reduce((sum, o) => sum + o.quantity, 0);
+      const weekStart = inWeek[0]!.dueDate;
+      expect(
+        splitIntoOrders(total, rules).map((o) => ({
+          quantity: o.quantity,
+          dueDate: parseDate(weekStart).add({ days: o.dayOffset }).toString()
+        }))
+      ).toEqual(
+        inWeek.map((o) => ({ quantity: o.quantity, dueDate: o.dueDate }))
+      );
+    }
+  });
+});
+
+describe("reducedOrderQuantity", () => {
+  const rules = { minimum: 0, multiples: [] as number[] };
+
+  it("is the requirement when the item has no order rules", () => {
+    expect(reducedOrderQuantity(37, 50, rules)).toBe(37);
+  });
+
+  it("rounds up to a whole order multiple", () => {
+    expect(reducedOrderQuantity(37, 50, { ...rules, multiples: [10] })).toBe(
+      40
+    );
+  });
+
+  it("rounds up to every multiple in turn", () => {
+    expect(
+      reducedOrderQuantity(37, 200, { ...rules, multiples: [10, 25] })
+    ).toBe(50);
+  });
+
+  it("never goes below the minimum order quantity", () => {
+    expect(reducedOrderQuantity(12, 50, { ...rules, minimum: 25 })).toBe(25);
+  });
+
+  it("never exceeds the order as it stands", () => {
+    expect(reducedOrderQuantity(42, 45, { ...rules, multiples: [10] })).toBe(
+      45
+    );
   });
 });

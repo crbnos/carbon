@@ -102,8 +102,14 @@ export function exampleArgs(schema: unknown): Record<string, unknown> {
   return out;
 }
 
-/** `sales_copyQuote` + module `sales` → `copyQuote`, the id used in the v1 path. */
-export function operationPath(toolName: string, moduleSlug: string): string {
+/** `sales_copyQuote` + module `sales` → `/api/v1/sales/copyQuote`. A service
+ *  function brings its own router path (`/production/job/cancel`). */
+export function operationPath(
+  toolName: string,
+  moduleSlug: string,
+  path?: string
+): string {
+  if (path) return `/api/v1${path}`;
   const id = toolName.startsWith(`${moduleSlug}_`)
     ? toolName.slice(moduleSlug.length + 1)
     : toolName;
@@ -118,10 +124,11 @@ function indent(json: string, spaces: number): string {
 export function buildOperationSamples(
   toolName: string,
   moduleSlug: string,
-  schema: unknown
+  schema: unknown,
+  httpPath?: string
 ): Record<SampleKey, string> {
   const args = exampleArgs(schema);
-  const path = operationPath(toolName, moduleSlug);
+  const path = operationPath(toolName, moduleSlug, httpPath);
   const url = `${DEFAULT_APP_ORIGIN}${path}`;
   const body = JSON.stringify(args, null, 2);
   const hasArgs = Object.keys(args).length > 0;

@@ -11,15 +11,15 @@ import { getPreferenceHeaders } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
-  certificateOfConformanceIssueValidator,
+  issueCertificateOfConformance,
+  sendCertificateOfConformance
+} from "~/modules/inventory/certificateOfConformance.pdf";
+import { certificateOfConformanceIssueValidator } from "~/modules/inventory/inventory.models";
+import {
   getCertificateOfConformanceData,
   getCertificateOfConformanceDefaults,
   getCertificatesOfConformance
-} from "~/modules/inventory";
-import {
-  issueCertificateOfConformance,
-  sendCertificateOfConformance
-} from "~/modules/inventory/inventory.server";
+} from "~/modules/inventory/inventory.service";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "shipment", "certificate");

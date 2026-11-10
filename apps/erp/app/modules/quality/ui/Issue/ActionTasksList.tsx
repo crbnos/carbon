@@ -2,14 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useAction } from "@carbon/query";
-import { toast } from "@carbon/react";
+import { toastServiceError, useAction } from "@carbon/query";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import { useParams } from "react-router";
 import { ActionTaskList } from "~/components/ActionTasks/ActionTaskList";
 import { useRouteData } from "~/hooks";
-import type { IssueActionTask } from "~/modules/quality";
+import type { IssueActionTask } from "~/modules/quality/types";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { TaskItem } from "./IssueTask";
@@ -36,9 +35,7 @@ export function ActionTasksList({
   }>(path.to.issue(id));
   const addFetcher = useAction<{ error: { message: string } | null }>({
     onError: (data) => {
-      if (data?.error) {
-        toast.error(data.error.message);
-      }
+      toastServiceError(data);
     }
   });
 

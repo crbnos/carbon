@@ -11,7 +11,9 @@ afterEach(() => {
   vi.resetModules();
 });
 
-describe("module load", () => {
+// The first import transforms @carbon/utils cold. On a CI runner that alone
+// takes 5-6 s, past the default 5 s timeout, whichever test happens to run first.
+describe("module load", { timeout: 30_000 }, () => {
   it("stops a server with one report of everything missing", async () => {
     vi.stubEnv("VITEST", "");
     vi.stubEnv("SESSION_SECRET", "");

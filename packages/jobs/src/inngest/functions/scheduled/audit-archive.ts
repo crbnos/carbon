@@ -72,13 +72,10 @@ async function archiveCompanyLogs(
   const timestamp = `${year}-${month}-${day}`;
   // Keys in the company bucket start with `${companyId}/` — the module-wide
   // private-storage invariant (it is what backup listing and the prefix-guarded
-  // helpers key off). Pre-migration archives used `audit-logs/${companyId}/...`
-  // in the legacy shared bucket; readers resolve via the stored `archivePath`,
-  // so both shapes stay readable.
+  // helpers key off).
   const archivePath = `${companyId}/audit-logs/${year}/${month}/${timestamp}.jsonl.gz`;
 
-  // Upload to the company's own private bucket (auditConfig.archiveBucket is
-  // the legacy shared bucket, kept only as a read fallback for old archives).
+  // Upload to the company's own private bucket.
   const archiveBucket = getCompanyPrivateBucket(companyId);
   const { error: uploadError } = await client.storage
     .from(archiveBucket)

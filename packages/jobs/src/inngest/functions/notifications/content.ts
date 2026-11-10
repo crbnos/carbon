@@ -13,11 +13,17 @@ import {
 import { ERP_URL } from "@carbon/env";
 import {
   type NotificationDetail,
-  NotificationEvent
+  NotificationEvent,
+  type RecurringInvoicingDocumentType
 } from "@carbon/notifications";
 import { NonRetriableError } from "inngest";
 
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
+/** The approvable document of an Approval* event, or what a Recurring
+ *  invoicing notification lists. */
+type NotificationDocumentType =
+  | ApprovalDocumentType
+  | RecurringInvoicingDocumentType;
 
 // The ERP's /api/link route resolves event + documentId to the right page
 // (switching the user's active company first) — route shapes never leak here.
@@ -25,7 +31,7 @@ export function buildNotificationLink(
   event: NotificationEvent,
   documentId: string,
   companyId: string,
-  documentType?: ApprovalDocumentType
+  documentType?: NotificationDocumentType
 ): string {
   const params = new URLSearchParams({ event, documentId, companyId });
   if (documentType) params.set("documentType", documentType);
@@ -122,7 +128,7 @@ export function buildDetails(
 type EventContentOptions = {
   companyId: string;
   // Which approvable document an Approval* event is about.
-  documentType?: ApprovalDocumentType;
+  documentType?: NotificationDocumentType;
   documentIds?: string[];
   userId?: string;
   // Workflow-authored text, carried on the payload instead of read from a document.
@@ -393,7 +399,9 @@ async function buildEventContent(
     case NotificationEvent.JobAssignment: {
       const job = await client
         .from("job")
-        .select("*, customer(name), item(readableId, name)")
+        .select(
+          "*, customer!job_customerId_fkey(name), item!job_itemId_fkey(readableId, name)"
+        )
         .eq("id", documentId)
         .eq("companyId", opts.companyId)
         .single();
@@ -421,7 +429,9 @@ async function buildEventContent(
     case NotificationEvent.JobCompleted: {
       const completedJob = await client
         .from("job")
-        .select("*, customer(name), item(readableId, name)")
+        .select(
+          "*, customer!job_customerId_fkey(name), item!job_itemId_fkey(readableId, name)"
+        )
         .eq("id", documentId)
         .eq("companyId", opts.companyId)
         .single();
@@ -1265,6 +1275,64 @@ async function buildEventContent(
         };
       }
 
+      if (opts.documentType === "projectChangeRequest") {
+        // The document id is "<projectId>:<changeRequestId>", so the link can
+        // open the page; a bare change request id reads too.
+        const changeRequestId = documentId.split(":").pop() ?? documentId;
+        const cr = await client
+          .from("projectChangeRequest")
+          .select("readableId, title, status")
+          .eq("id", changeRequestId)
+          .eq("companyId", opts.companyId)
+          .single();
+
+        if (cr.error || !cr.data) {
+          console.error(
+            "Failed to retrieve change request for approval notification",
+            cr.error
+          );
+          return {
+            description: `Project change request ${docPhrase}`,
+            details: []
+          };
+        }
+
+        return {
+          description: `${cr.data.readableId}: ${cr.data.title} ${docPhrase}`,
+          reference: cr.data.readableId,
+          details: buildDetails([{ label: "Status", value: cr.data.status }])
+        };
+      }
+
+      if (opts.documentType === "changeOrder") {
+        const co = await client
+          .from("changeOrder")
+          .select("changeOrderId, name, status")
+          .eq("id", documentId)
+          .eq("companyId", opts.companyId)
+          .single();
+
+        if (co.error || !co.data) {
+          console.error(
+            "Failed to retrieve change notice for approval notification",
+            co.error
+          );
+          return {
+            description: `Change notice ${docPhrase}`,
+            details: []
+          };
+        }
+
+        return {
+          description: `Change notice ${co.data.changeOrderId} ${docPhrase}`,
+          reference: co.data.changeOrderId ?? undefined,
+          details: buildDetails([
+            { label: "Name", value: co.data.name },
+            { label: "Status", value: co.data.status }
+          ])
+        };
+      }
+
       return {
         description:
           outcome === "requested"
@@ -1359,6 +1427,94 @@ async function buildEventContent(
       return {
         description: opts?.title ?? "Accounting sync needs attention",
         details: opts?.body ? [{ label: "Detail", value: opts.body }] : []
+      };
+    }
+
+    // Payload-carried like IntegrationSync: the table-export job writes the
+    // outcome as `title` and the row count as `body`; documentId is the export
+    // id, not a record, so there is nothing to look up.
+    case NotificationEvent.TableExport: {
+      return {
+        description: opts?.title ?? "Your export is ready",
+        details: opts?.body ? [{ label: "Detail", value: opts.body }] : []
+      };
+    }
+
+    // Payload-carried like TableExport: the bulk-action job writes the outcome
+    // and the counts as `title`; documentId is the run id, not a record.
+    case NotificationEvent.TableBulkAction: {
+      return {
+        description: opts?.title ?? "Your bulk action is done",
+        details: opts?.body ? [{ label: "Detail", value: opts.body }] : []
+      };
+    }
+
+    // The recurring-billing job says which date is coming up in `body`
+    // ("notice must be given by Jun 30, 2027"); the lease names the rest.
+    case NotificationEvent.LeaseCriticalDate: {
+      const lease = await client
+        .from("lease")
+        .select("leaseId, name, noticeDate, endDate, supplier(name)")
+        .eq("id", documentId)
+        .eq("companyId", opts.companyId)
+        .single();
+      if (lease.error) {
+        console.error("Failed to get lease", lease.error);
+        throw documentLookupError(lease.error);
+      }
+      return {
+        description: opts?.body
+          ? `Lease ${lease.data.leaseId}: ${opts.body}`
+          : `Lease ${lease.data.leaseId} has a date coming up`,
+        reference: lease.data.leaseId ?? undefined,
+        details: buildDetails([
+          { label: "Lease", value: lease.data.name },
+          { label: "Supplier", value: lease.data.supplier?.name },
+          {
+            label: "Notice by",
+            value: formatDetailDate(lease.data.noticeDate)
+          },
+          { label: "Ends", value: formatDetailDate(lease.data.endDate) }
+        ])
+      };
+    }
+
+    // Payload-carried digest: the recurring-billing job sends the counts as
+    // `body`; documentIds are the invoices it touched, but nothing is read.
+    case NotificationEvent.RecurringInvoicing: {
+      return {
+        description: opts?.body
+          ? `Recurring invoicing: ${opts.body}`
+          : "Recurring invoicing",
+        details: []
+      };
+    }
+
+    // Payload-carried: the recurring-billing job sends the notice as `title`
+    // and the funding figures as `body`; documentId is the contract.
+    case NotificationEvent.ContractFundingThreshold: {
+      return {
+        description: opts?.title ?? "Contract funding notice",
+        details: opts?.body ? [{ label: "Funding", value: opts.body }] : []
+      };
+    }
+
+    // Payload-carried: the daily missing-time check sends the text as `body`;
+    // documentId is the missed date, so there is nothing to read.
+    case NotificationEvent.TimesheetMissing: {
+      return {
+        description: opts?.body ?? "No time entered",
+        details: []
+      };
+    }
+
+    // Payload-carried: the timesheet budget check sends "Budget exceeded on
+    // <project>" as `title` and the overruns as `body`; documentId is the
+    // project.
+    case NotificationEvent.ProjectBudgetExceeded: {
+      return {
+        description: opts?.title ?? "Budget exceeded",
+        details: opts?.body ? [{ label: "Overrun", value: opts.body }] : []
       };
     }
 

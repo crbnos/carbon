@@ -16,12 +16,13 @@ BEGIN
   -- No PK: key columns of the smallest valid, non-partial, non-expression
   -- unique index. Partial/expression indexes don't guarantee row identity for
   -- every row, and INCLUDE columns (positions past indnkeyatts) aren't part of
-  -- the uniqueness constraint — the slice keeps key columns only.
+  -- the uniqueness constraint — the slice keeps key columns only. indkey is an
+  -- int2vector, so its first element is at 0: [1:n] dropped the first column.
   IF pk_columns IS NULL THEN
     SELECT array_agg(a.attname ORDER BY a.attnum) INTO pk_columns
     FROM pg_index i
     JOIN pg_attribute a ON a.attrelid = i.indrelid
-      AND a.attnum = ANY ((i.indkey::int2[])[1:i.indnkeyatts])
+      AND a.attnum = ANY ((i.indkey::int2[])[0:i.indnkeyatts - 1])
     WHERE i.indexrelid = (
       SELECT i2.indexrelid
       FROM pg_index i2

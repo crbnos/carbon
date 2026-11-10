@@ -16,6 +16,7 @@ import {
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { batchPropertyDataTypes } from "../items/items.models";
+import { booleanField } from "../shared/shared.models";
 
 export const demandPeriodTypes = ["Week", "Day", "Month"] as const;
 export const demandSourceTypes = ["Sales Order", "Job Material"] as const;
@@ -66,7 +67,8 @@ export const itemLedgerDocumentTypes = [
   "Purchase Order",
   "Maintenance Consumption",
   "Non-Conformance",
-  "Inbound Inspection"
+  "Inbound Inspection",
+  "Project Issue"
 ] as const;
 
 export const trackedEntityStatus = [
@@ -99,7 +101,8 @@ export const receiptSourceDocumentType = [
   "Purchase Order",
   "Purchase Invoice",
   // "Purchase Return Order",
-  "Inbound Transfer"
+  "Inbound Transfer",
+  "Rental Agreement"
   // "Outbound Transfer",
   // "Manufacturing Consumption",
   // "Manufacturing Output",
@@ -110,6 +113,16 @@ export const receiptStatusType = [
   "Pending",
   "Posted",
   "Voided"
+] as const;
+
+export const receiptInspectionStatusType = [
+  "Not Required",
+  "Pending Inspection",
+  "Inspection In Progress",
+  "Inspection Passed",
+  "Inspection Failed",
+  "Partially Passed",
+  "Put Away"
 ] as const;
 
 export const batchPropertyValidator = z
@@ -174,6 +187,56 @@ export const inventoryCountLineValidator = z.object({
   )
 });
 
+// A scanned or typed code on a count, in one storage unit. `itemId` picks the
+// item when the code matches 2 or more items, or names the item of a new
+// serial or batch number. `quantity` is a batch's or an untracked item's count.
+export const inventoryCountScanValidator = z.object({
+  storageUnitId: zfd.text(z.string().optional()),
+  code: z.string().trim().min(1, { message: "Code is required" }),
+  itemId: zfd.text(z.string().optional()),
+  quantity: zfd.numeric(
+    z.number().min(0, { message: "Quantity cannot be negative" }).optional()
+  )
+});
+
+// A unit the counter adds by hand from a group's expanded row.
+export const inventoryCountUnitValidator = z.object({
+  storageUnitId: zfd.text(z.string().optional()),
+  code: z.string().trim().min(1, { message: "Serial / Batch is required" }),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  quantity: zfd.numeric(
+    z.number().min(0, { message: "Quantity cannot be negative" }).optional()
+  )
+});
+
+// A count results file: Item, Storage Unit, Serial / Batch, Counted Quantity.
+export const inventoryCountImportValidator = z.object({
+  file: zfd.file()
+});
+
+// Put a cost of the user's own on one serial unit in stock (FIFO / LIFO).
+export const serialUnitRecostValidator = z.object({
+  trackedEntityId: z.string().min(1, { message: "Unit is required" }),
+  unitCost: zfd.numeric(
+    z.number().min(0, { message: "Unit cost cannot be negative" })
+  ),
+  offsetAccountId: zfd.text(z.string().optional()),
+  postingDate: z.string().min(1, { message: "Posting date is required" })
+});
+
+// Exactly the types the post-inventory-adjustment server function accepts —
+// NOT itemLedgerTypes. That wider ledger enum leaked into the published API
+// schema here, so API/MCP callers were offered "Purchase" etc. and every such
+// call failed with the generic fallback message. Keep in sync with the server
+// function's payloadValidator.
+export const inventoryAdjustmentTypes = [
+  "Positive Adjmt.",
+  "Negative Adjmt.",
+  "Set Quantity",
+  "Scrap",
+  "Unscrap"
+] as const;
+
 export const inventoryAdjustmentValidator = z
   .object({
     itemId: z.string().min(1, { message: "Item ID is required" }),
@@ -183,31 +246,24 @@ export const inventoryAdjustmentValidator = z
     locationId: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     originalStorageUnitId: zfd.text(z.string().optional()),
-    // Exactly the types the post-inventory-adjustment server function accepts —
-    // NOT itemLedgerTypes. That wider ledger enum leaked into the published API
-    // schema here, so API/MCP callers were offered "Purchase" etc. and every
-    // such call failed with the generic fallback message. Keep in sync with
-    // the server function's payloadValidator.
-    adjustmentType: z.enum([
-      "Positive Adjmt.",
-      "Negative Adjmt.",
-      "Set Quantity",
-      "Scrap",
-      "Unscrap"
-    ]),
+    adjustmentType: z.enum(inventoryAdjustmentTypes),
     quantity: zfd.numeric(z.number()),
     trackedEntityId: zfd.text(z.string().optional()),
     readableId: zfd.text(z.string().optional()),
     expirationDate: zfd.text(z.string().optional()),
     comment: zfd.text(z.string().optional()),
-    // Required for Scrap (enforced below); lands on the itemLedger row and,
-    // when accounting is enabled, as a ScrapReason journal dimension. Unscrap
+    // Required for Scrap (enforced below); lands on the itemLedger row and as
+    // a ScrapReason journal dimension. Unscrap
     // omits it — the server function inherits the reason from the original scrap
     // movement it reverses.
     scrapReasonId: zfd.text(z.string().optional()),
     // Unscrap: the original scrap movement to reverse against (resolved
     // server-side from the tracked entity when omitted).
     unscrapOfItemLedgerId: zfd.text(z.string().optional()),
+    // The stock owner of untracked stock (Projects Phase 2a): a project with
+    // project stock, or omitted for common stock. The quantities page passes
+    // the row's owner; an existing tracked entity keeps its own.
+    projectId: zfd.text(z.string().optional()),
     // Set by serial-tracked forms so the quantity can be capped server-side.
     requiresSerialTracking: zfd
       .text(z.string().optional())
@@ -238,6 +294,17 @@ export const inventoryAdjustmentValidator = z
       });
     }
   });
+
+// Gives stock with no batch number a batch, in the storage unit it is in.
+export const assignBatchValidator = z.object({
+  locationId: z.string().min(1, { message: "Location is required" }),
+  storageUnitId: zfd.text(z.string().optional()),
+  quantity: zfd.numeric(
+    z.number().positive({ message: "Quantity must be greater than 0" })
+  ),
+  readableId: z.string().trim().min(1, { message: "Batch number is required" }),
+  expirationDate: zfd.text(z.string().optional())
+});
 
 // Corrects a posted stock movement: the user enters the SIGNED quantity the
 // movement should have been; the server function derives the delta against the
@@ -270,14 +337,23 @@ export const kanbanValidator = z
     autoStartJob: zfd.checkbox(),
     completedBarcodeOverride: zfd.text(z.string().optional()),
     quantity: zfd.numeric(
-      z.number().int().min(1, { message: "Quantity must be at least 1" })
+      z
+        .number()
+        .int({ message: "Quantity must be a whole number" })
+        .min(1, { message: "Quantity must be at least 1" })
     ),
     locationId: z.string().min(1, { message: "Location is required" }),
     storageUnitId: zfd.text(z.string().optional()),
     fromStorageUnitId: zfd.text(z.string().optional()),
     supplierId: zfd.text(z.string().optional()),
     purchaseUnitOfMeasureCode: zfd.text(z.string().optional()),
-    conversionFactor: zfd.numeric(z.number().min(0).default(1))
+    conversionFactor: zfd.numeric(z.number().min(0).default(1)),
+    replenishmentLevel: zfd.numeric(
+      z
+        .number()
+        .min(0, { message: "Replenishment level must be 0 or more" })
+        .optional()
+    )
   })
   .refine(
     (data) => (data.replenishmentSystem === "Buy" ? !!data.supplierId : true),
@@ -313,6 +389,16 @@ export const kanbanValidator = z
       message: "From and to storage units must be different",
       path: ["storageUnitId"]
     }
+  )
+  // Only a Transfer kanban has a To storage unit to watch.
+  .refine(
+    (data) =>
+      data.replenishmentSystem === "Transfer" ||
+      data.replenishmentLevel === undefined,
+    {
+      message: "Only a transfer kanban can have a replenishment level",
+      path: ["replenishmentLevel"]
+    }
   );
 
 export const receiptValidator = z.object({
@@ -335,12 +421,16 @@ export const storageUnitValidator = z.object({
   warehouseId: zfd.text(z.string().optional()),
   parentId: zfd.text(z.string().optional()),
   workCenterId: zfd.text(z.string().optional()),
-  storageTypeIds: zfd.repeatableOfType(z.string()).default([])
+  storageTypeIds: zfd.repeatableOfType(z.string()).default([]),
+  // Stored as storageUnit.nettable = !nonNettable (see upsertStorageUnit).
+  nonNettable: zfd.checkbox()
 });
 
 export const storageTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" })
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  // Stored as storageType.nettable = !nonNettable (see upsertStorageType).
+  nonNettable: zfd.checkbox()
 });
 
 export const shipmentStatusType = [
@@ -358,7 +448,9 @@ export const shipmentSourceDocumentType = [
   // "Purchase Invoice",
   "Purchase Return Order",
   // "Inbound Transfer",
-  "Outbound Transfer"
+  "Outbound Transfer",
+  "Rental Agreement",
+  "Customer Contract"
 ] as const;
 
 export const shippingCarrierType = [
@@ -382,6 +474,70 @@ export const shipmentValidator = z.object({
   sourceDocumentReadableId: zfd.text(z.string().optional()),
   customerId: zfd.text(z.string().optional())
 });
+
+const meterValue = z
+  .string()
+  .refine((v) => v === "" || (Number.isFinite(Number(v)) && Number(v) >= 0), {
+    message: "Enter a meter reading of 0 or more"
+  });
+
+export const shipmentFixedAssetLineUpdateValidator = z.discriminatedUnion(
+  "field",
+  [
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("shipped"),
+      value: booleanField()
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("serialNumber"),
+      value: z.string()
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("meter"),
+      value: meterValue
+    })
+  ]
+);
+
+export const receiptFixedAssetLineUpdateValidator = z.discriminatedUnion(
+  "field",
+  [
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("received"),
+      value: booleanField()
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("serialNumber"),
+      value: z.string()
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("meter"),
+      value: meterValue
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("notes"),
+      value: z.string()
+    }),
+    // "" takes the unit off the out-of-service list; any other text is the reason.
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("outOfService"),
+      value: z.string()
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("residualDestination"),
+      value: z.enum(["", "Fleet", "Inventory"])
+    })
+  ]
+);
 
 export const shippingMethodValidator = z.object({
   id: zfd.text(z.string().optional()),
@@ -433,7 +589,8 @@ export type ReceiptSerialEntity = {
  * can never disagree on which serials count:
  *   - `missingIndexes`  — required indices with no serial yet (post validation)
  *   - `surplusEntityIds` — orphan/duplicate entities to delete before posting,
- *     keeping the earliest-created entity for each in-range index.
+ *     keeping, for each in-range index, a serial-bearing entity over a blank
+ *     one, then the earliest-created.
  */
 export function reconcileReceiptLineSerials(
   entities: ReceiptSerialEntity[],
@@ -451,8 +608,10 @@ export function reconcileReceiptLineSerials(
 
   const keptIndexes = new Set<number>();
   const surplusEntityIds: string[] = [];
-  const ordered = [...entities].sort((a, b) =>
-    (a.createdAt ?? "").localeCompare(b.createdAt ?? "")
+  const ordered = [...entities].sort(
+    (a, b) =>
+      Number(b.hasSerial) - Number(a.hasSerial) ||
+      (a.createdAt ?? "").localeCompare(b.createdAt ?? "")
   );
   for (const entity of ordered) {
     const index = entity.index;
@@ -467,13 +626,72 @@ export function reconcileReceiptLineSerials(
   return { missingIndexes, surplusEntityIds };
 }
 
+export type SerialBoxEntity = { id: string; hasHistory: boolean };
+
+export type SerialBoxWrite =
+  | { kind: "clear"; releaseIds: string[] }
+  | { kind: "taken"; reason: "box" | "unit"; releaseIds: string[] }
+  | { kind: "write"; targetId: string | undefined; releaseIds: string[] };
+
+export function planSerialBoxWrite(args: {
+  receiptLineId: string;
+  index: number;
+  serialNumber: string;
+  box: SerialBoxEntity[];
+  withSerial: (SerialBoxEntity & {
+    attributes: Record<string, unknown>;
+    /** Its `Receipt` is voided: the box it names no longer holds it. */
+    onVoidedReceipt?: boolean;
+  })[];
+}): SerialBoxWrite {
+  const boxIds = args.box.map((entity) => entity.id);
+  if (!args.serialNumber.trim()) return { kind: "clear", releaseIds: boxIds };
+
+  const isInThisBox = (attributes: Record<string, unknown>) =>
+    attributes["Receipt Line"] === args.receiptLineId &&
+    attributes["Receipt Line Index"] === args.index;
+
+  if (args.withSerial.some((entity) => entity.hasHistory)) {
+    return { kind: "taken", reason: "unit", releaseIds: boxIds };
+  }
+
+  // Only this box's record or one from a voided receipt can be taken over;
+  // any other record with the serial belongs to another box or document (a
+  // job's reserved serial).
+  const elsewhere = args.withSerial.filter(
+    (entity) => !entity.onVoidedReceipt && !isInThisBox(entity.attributes)
+  );
+  if (elsewhere.length > 0) {
+    return {
+      kind: "taken",
+      reason: elsewhere.some(
+        (entity) => "Receipt Line Index" in entity.attributes
+      )
+        ? "box"
+        : "unit",
+      releaseIds: boxIds
+    };
+  }
+
+  const targetId =
+    (
+      args.withSerial.find((entity) => isInThisBox(entity.attributes)) ??
+      args.withSerial[0]
+    )?.id ?? args.box.find((entity) => !entity.hasHistory)?.id;
+
+  return {
+    kind: "write",
+    targetId,
+    releaseIds: boxIds.filter((id) => id !== targetId)
+  };
+}
+
 export const warehouseTransferValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     transferId: zfd.text(z.string().optional()),
     fromLocationId: z.string().min(1, { message: "From Location is required" }),
     toLocationId: z.string().min(1, { message: "To Location is required" }),
-    status: z.enum(warehouseTransferStatusType).optional(),
     transferDate: zfd.text(z.string().optional()),
     expectedReceiptDate: zfd.text(z.string().optional()),
     notes: zfd.text(z.string().optional()),
@@ -511,40 +729,86 @@ export const stockTransferStatusType = [
   "Completed"
 ] as const;
 
+/**
+ * The status a count must be in to move to `to`, and the refusal when it is
+ * not. Confirm takes a Draft to Pending, reopen a Pending back to Draft; only
+ * posting reaches Posted.
+ */
+export function inventoryCountStatusFrom(to: "Draft" | "Pending"): {
+  status: "Draft" | "Pending";
+  refusal: string;
+} {
+  return to === "Pending"
+    ? { status: "Draft", refusal: "Only a draft count can be confirmed" }
+    : { status: "Pending", refusal: "Only a pending count can be reopened" };
+}
+
 export function isStockTransferLocked(
   status: string | null | undefined
 ): boolean {
   return status !== null && status !== undefined && status !== "Draft";
 }
 
+export const SAME_STORAGE_UNIT_MESSAGE =
+  "From and To can't be the same storage unit";
+
+/**
+ * A stock transfer line that moves stock onto the bin it came from. Two nulls
+ * are the same place too: stock recorded against the location, not a bin.
+ */
+export function isSameStorageUnit(
+  fromStorageUnitId: string | null | undefined,
+  toStorageUnitId: string | null | undefined
+): boolean {
+  return (fromStorageUnitId || null) === (toStorageUnitId || null);
+}
+
+const stockTransferLinesInput = z
+  .array(
+    z
+      .object({
+        itemId: z.string().min(1, { message: "Item is required" }),
+        fromStorageUnitId: z.string().nullish(),
+        toStorageUnitId: z.string().nullish(),
+        quantity: z.number().min(0).optional(),
+        requiresSerialTracking: z.boolean().optional(),
+        requiresBatchTracking: z.boolean().optional(),
+        trackedEntityId: z.string().nullish()
+      })
+      .refine(
+        (line) =>
+          !isSameStorageUnit(line.fromStorageUnitId, line.toStorageUnitId),
+        { message: SAME_STORAGE_UNIT_MESSAGE, path: ["toStorageUnitId"] }
+      )
+  )
+  .min(1, { message: "At least one line is required" });
+
 export const stockTransferValidator = z.object({
   id: zfd.text(z.string().optional()),
   locationId: z.string().min(1, { message: "Location is required" }),
   lines: z.string().transform((val, ctx) => {
+    let parsed: unknown;
     try {
-      const parsed = JSON.parse(val);
-      return z
-        .array(
-          z.object({
-            itemId: z.string().min(1, { message: "Item is required" }),
-            fromStorageUnitId: z.string().nullish(),
-            toStorageUnitId: z.string().nullish(),
-            quantity: z.number().min(0).optional(),
-            requiresSerialTracking: z.boolean().optional(),
-            requiresBatchTracking: z.boolean().optional()
-          })
-        )
-        .min(1, { message: "At least one line is required" })
-        .parse(parsed);
-      // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-    } catch (e) {
+      parsed = JSON.parse(val);
+    } catch {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Invalid JSON format for lines"
       });
       return z.NEVER;
     }
-  })
+    const lines = stockTransferLinesInput.safeParse(parsed);
+    if (!lines.success) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: lines.error.issues[0]?.message ?? "Invalid lines"
+      });
+      return z.NEVER;
+    }
+    return lines.data;
+  }),
+  // Create the transfer and pick every untracked line straight away.
+  moveNow: zfd.checkbox({ trueValue: "true" })
 });
 
 export const stockTransferLineValidator = z
@@ -559,7 +823,6 @@ export const stockTransferLineValidator = z
         .number()
         .min(0, { message: "Quantity must be greater than or equal to 0" })
     ),
-    pickedQuantity: zfd.numeric(z.number().min(0).optional()),
     requiresBatchTracking: zfd.text(
       z.string().transform((val) => val === "true")
     ),
@@ -576,6 +839,13 @@ export const stockTransferLineValidator = z
         message: "Serial items can only have a quantity of 1"
       });
     }
+    if (isSameStorageUnit(data.fromStorageUnitId, data.toStorageUnitId)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["toStorageUnitId"],
+        message: SAME_STORAGE_UNIT_MESSAGE
+      });
+    }
   });
 
 export const stockTransferLineScanValidator = z.object({
@@ -586,10 +856,9 @@ export const stockTransferLineScanValidator = z.object({
   trackedEntityId: z
     .string()
     .min(1, { message: "Tracked entity ID is required" }),
-  // The picker sends the clamped pick quantity and the bin the user chose; the
-  // action forwards both to the server function (serial always posts 1).
-  quantity: z.number().positive({ message: "Quantity must be greater than 0" }),
-  storageUnitId: z.string().nullable().optional()
+  // The picker sends the clamped pick quantity; the action forwards it to the
+  // server function (serial always posts 1). The source bin is the line's own.
+  quantity: z.number().positive({ message: "Quantity must be greater than 0" })
 });
 
 /**
@@ -599,19 +868,14 @@ export const stockTransferLineScanValidator = z.object({
  * re-checks the same limits under a row lock (`resolvePick` in @carbon/utils).
  *   - A serial scan always moves one unit; a batch scan moves the picker's
  *     clamped quantity.
- *   - The bin the user chose wins; the highest-quantity bin is only a fallback.
  *   - A line with no outstanding quantity (or a pick that exceeds it) is refused.
  */
 export function resolveStockTransferPickForward(input: {
   transferType: "batch" | "serial";
   quantity: number;
-  storageUnitId: string | null | undefined;
-  currentStorageUnitId: string | null;
   lineQuantity: number;
   pickedQuantity: number;
-}):
-  | { ok: true; quantity: number; fromStorageUnitId: string | null }
-  | { ok: false; message: string } {
+}): { ok: true; quantity: number } | { ok: false; message: string } {
   // Round like the server function's resolvePick does, so the pre-check and the
   // post-lock re-check cannot disagree about a residue pick.
   const pickQuantity = round(
@@ -637,11 +901,7 @@ export function resolveStockTransferPickForward(input: {
       message: `Only ${outstanding} left to pick on this line`
     };
   }
-  return {
-    ok: true,
-    quantity: pickQuantity,
-    fromStorageUnitId: input.storageUnitId ?? input.currentStorageUnitId
-  };
+  return { ok: true, quantity: pickQuantity };
 }
 
 export const pickingListStatusType = [
@@ -668,6 +928,42 @@ export function isPickingListLocked(
   return (
     status === "Completed" || status === "Partial" || status === "Cancelled"
   );
+}
+
+/**
+ * What finishing a picking list does, given its unresolved lines (neither
+ * fully picked, cancelled nor marked Short) and the company's
+ * incomplete-list policy: refuse (`error`), ask first (`warn`, until
+ * acknowledged), or finish — Partial when anything was left or short.
+ */
+export function finishPickingList({
+  unresolvedItemNames,
+  hasShort,
+  policy,
+  acknowledged
+}: {
+  unresolvedItemNames: string[];
+  hasShort: boolean;
+  policy: string | null;
+  acknowledged: boolean;
+}):
+  | { outcome: "refuse"; message: string }
+  | { outcome: "ask" }
+  | { outcome: "finish"; status: "Completed" | "Partial" } {
+  if (unresolvedItemNames.length > 0) {
+    if (policy === "error") {
+      return {
+        outcome: "refuse",
+        message: `Can't finish — still unpicked: ${unresolvedItemNames.join(", ")}`
+      };
+    }
+    if (!acknowledged) return { outcome: "ask" };
+  }
+  return {
+    outcome: "finish",
+    status:
+      unresolvedItemNames.length === 0 && !hasShort ? "Completed" : "Partial"
+  };
 }
 
 export const pickingListValidator = z.object({

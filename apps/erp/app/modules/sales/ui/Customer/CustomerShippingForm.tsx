@@ -27,7 +27,7 @@ import {
   Submit
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { incoterms } from "~/modules/shared";
+import { incoterms } from "~/modules/shared/shared.models";
 import { customerShippingValidator } from "../../sales.models";
 
 type CustomerShippingFormProps = {
@@ -126,7 +126,7 @@ const CustomerShippingForm = ({ initialValues }: CustomerShippingFormProps) => {
             </div>
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="max-md:[&>*]:flex-1 max-md:[&>div>*]:flex-1 max-md:[&_button]:h-11">
           <HStack>
             <Submit isDisabled={isDisabled}>
               <Trans>Save</Trans>

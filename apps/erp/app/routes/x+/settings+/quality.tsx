@@ -2,9 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { fetchAllFromTable } from "@carbon/database";
 import {
   Boolean,
   Hidden,
@@ -14,6 +16,8 @@ import {
   ValidatedForm,
   validator
 } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
@@ -21,7 +25,6 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Heading,
   HStack,
   Label,
   ScrollArea,
@@ -32,20 +35,24 @@ import {
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { z } from "zod";
 import { Users } from "~/components/Form";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
-  getCompanySettings,
   requireFirstArticleValidator,
-  updateRequireFirstArticleSetting
-} from "~/modules/settings";
+  settingsToggle
+} from "~/modules/settings/settings.models";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import { GoodsInStorageCard } from "~/modules/settings/ui/Quality";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "settings", "quality");
 
 export const handle: Handle = {
   breadcrumb: msg`Quality`,
@@ -76,7 +83,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "settings"
   });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const [companySettings, locations, storageUnits] = await Promise.all([
+    getCompanySettings(client, companyId),
+    client
+      .from("location")
+      .select(
+        "id, name, inspectionStorageUnitId, rejectedStorageUnitId, inspectionStorageUnit:storageUnit!location_inspectionStorageUnitId_fkey(name, active), rejectedStorageUnit:storageUnit!location_rejectedStorageUnitId_fkey(name, active)"
+      )
+      .eq("companyId", companyId)
+      .order("name"),
+    fetchAllFromTable<{ id: string; name: string; locationId: string }>(
+      client,
+      "storageUnit",
+      "id, name, locationId",
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .eq("active", true)
+          .order("name")
+          .order("id")
+    )
+  ]);
 
   if (!companySettings.data)
     throw redirect(
@@ -86,108 +113,98 @@ export async function loader({ request }: LoaderFunctionArgs) {
         error(companySettings.error, "Failed to get company settings")
       )
     );
-  return { companySettings: companySettings.data };
-}
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "settings"
-  });
-
-  const formData = await request.formData();
-  const intent = formData.get("intent");
-
-  if (intent === "enforceInspectionFourEyes") {
-    const enabled = formData.get("enabled") === "true";
-    const update = await client
-      .from("companySettings")
-      .update({ enforceInspectionFourEyes: enabled })
-      .eq("id", companyId);
-
-    if (update.error) return { success: false, message: update.error.message };
-
-    return {
-      success: true,
-      message: `Four-eyes enforcement ${enabled ? "enabled" : "disabled"}`
-    };
-  }
-
-  if (intent === "samplingStandard") {
-    const validation = await validator(samplingStandardValidator).validate(
-      formData
-    );
-    if (validation.error) {
-      return { success: false, message: "Invalid form data" };
-    }
-    const update = await client
-      .from("companySettings")
-      .update({ samplingStandard: validation.data.samplingStandard })
-      .eq("id", companyId);
-    if (update.error) return { success: false, message: update.error.message };
-    return { success: true, message: "Sampling standard updated" };
-  }
-
-  if (intent === "requireFirstArticle") {
-    const validation = await validator(firstArticleValidator).validate(
-      formData
-    );
-    if (validation.error) {
-      return { success: false, message: "Invalid form data" };
-    }
-    const update = await updateRequireFirstArticleSetting(
-      client,
+  // A failed list read would render as "no locations / storage units", which
+  // reads as a clean company: refuse the page instead.
+  const failedRead = locations.error ?? storageUnits.error;
+  if (failedRead) {
+    logger.error("Failed to load goods-in storage settings", {
       companyId,
-      validation.data.requireFirstArticle
+      error: failedRead
+    });
+    throw redirect(
+      path.to.settings,
+      await flash(
+        request,
+        error(failedRead, "Failed to load goods-in storage settings")
+      )
     );
-    if (update.error) return { success: false, message: update.error.message };
-    return { success: true, message: "First article settings updated" };
   }
-
-  if (intent === "dashboard") {
-    const validation = await validator(dashboardValidator).validate(formData);
-    if (validation.error) {
-      return { success: false, message: "Invalid form data" };
-    }
-
-    const update = await client
-      .from("companySettings")
-      .update({ qualityIssueTarget: validation.data.qualityIssueTarget })
-      .eq("id", companyId);
-
-    if (update.error) return { success: false, message: update.error.message };
-
-    return { success: true, message: "Dashboard settings updated" };
-  }
-
-  const validation = await validator(gaugeCalibrationValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return { success: false, message: "Invalid form data" };
-  }
-
-  const update = await client
-    .from("companySettings")
-    .update({
-      gaugeCalibrationExpiredNotificationGroup:
-        validation.data.gaugeCalibrationExpiredNotificationGroup ?? []
-    })
-    .eq("id", companyId);
-
-  if (update.error) return { success: false, message: update.error.message };
 
   return {
-    success: true,
-    message: "Gauge calibration notification settings updated"
+    companySettings: companySettings.data,
+    locations: locations.data ?? [],
+    storageUnits: storageUnits.data ?? []
   };
+}
+
+// One form per card, told apart by its intent: each becomes the fields of
+// `settings.quality.update` it saves (the operation drops `intent`).
+const qualitySettingsForm = z.discriminatedUnion("intent", [
+  settingsToggle("enforceInspectionFourEyes", "enforceInspectionFourEyes"),
+  samplingStandardValidator,
+  firstArticleValidator,
+  dashboardValidator,
+  gaugeCalibrationValidator.transform((form) => ({
+    gaugeCalibrationExpiredNotificationGroup:
+      form.gaugeCalibrationExpiredNotificationGroup ?? []
+  })),
+  z
+    .object({
+      intent: z.literal("setLocationGoodsInStorage"),
+      locationId: z.string().min(1, { message: "Location is required" }),
+      inspectionStorageUnitId: z
+        .string()
+        .optional()
+        .transform((id) => (id === undefined ? undefined : id || null)),
+      rejectedStorageUnitId: z
+        .string()
+        .optional()
+        .transform((id) => (id === undefined ? undefined : id || null))
+    })
+    .transform(
+      ({ locationId, inspectionStorageUnitId, rejectedStorageUnitId }) => ({
+        locationGoodsInStorage: {
+          locationId,
+          inspectionStorageUnitId,
+          rejectedStorageUnitId
+        }
+      })
+    )
+]);
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(qualitySettingsForm).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.settings.updateQualitySettings(input.data);
 }
 
 export default function QualitySettingsRoute() {
   const { t } = useLingui();
-  const { companySettings } = useLoaderData<typeof loader>();
-  const fetcher = useFetcher<typeof action>();
-  const toggleFetcher = useFetcher<typeof action>();
+  const { companySettings, locations, storageUnits } =
+    useLoaderData<typeof loader>();
+  const fetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (!data) return;
+      if (data.samplingStandard) toast.success(t`Sampling standard updated`);
+      else if (data.requireFirstArticle !== undefined)
+        toast.success(t`First article settings updated`);
+      else if (data.qualityIssueTarget !== undefined)
+        toast.success(t`Dashboard settings updated`);
+      else toast.success(t`Gauge calibration notification settings updated`);
+    }
+  });
+  const toggleFetcher = useAction<typeof action>({
+    onSuccess: ({ data }) => {
+      if (data?.enforceInspectionFourEyes === undefined) return;
+      toast.success(
+        data.enforceInspectionFourEyes
+          ? t`Four-eyes enforcement enabled`
+          : t`Four-eyes enforcement disabled`
+      );
+    }
+  });
 
   const fourEyesEnabled = useSavedToggle(
     toggleFetcher,
@@ -209,34 +226,12 @@ export default function QualitySettingsRoute() {
     [toggleFetcher]
   );
 
-  useEffect(() => {
-    if (fetcher.data?.success === true && fetcher?.data?.message) {
-      toast.success(fetcher.data.message);
-    }
-
-    if (fetcher.data?.success === false && fetcher?.data?.message) {
-      toast.error(fetcher.data.message);
-    }
-  }, [fetcher.data?.message, fetcher.data?.success]);
-
-  useEffect(() => {
-    if (toggleFetcher.data?.success === true && toggleFetcher.data?.message) {
-      toast.success(toggleFetcher.data.message);
-    }
-    if (toggleFetcher.data?.success === false && toggleFetcher.data?.message) {
-      toast.error(toggleFetcher.data.message);
-    }
-  }, [toggleFetcher.data?.message, toggleFetcher.data?.success]);
-
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <SettingsPageHeading>
           <Trans>Quality</Trans>
-        </Heading>
+        </SettingsPageHeading>
 
         <SettingsSectionHeader>
           <Trans>Notifications</Trans>
@@ -378,6 +373,7 @@ export default function QualitySettingsRoute() {
                 </span>
               </VStack>
               <Switch
+                aria-label={t`Inspections: Require Different Inspector`}
                 checked={fourEyesEnabled}
                 onCheckedChange={handleFourEyesToggle}
                 disabled={toggleFetcher.state !== "idle"}
@@ -385,6 +381,7 @@ export default function QualitySettingsRoute() {
             </HStack>
           </CardContent>
         </Card>
+        <GoodsInStorageCard locations={locations} storageUnits={storageUnits} />
         <Card>
           <ValidatedForm
             method="post"
@@ -480,7 +477,7 @@ export default function QualitySettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }
@@ -490,9 +487,11 @@ function SamplingStandardSelect({
 }: {
   value: "ANSI_Z1_4" | "ISO_2859_1";
 }) {
+  const { t } = useLingui();
   return (
     <Select
       name="samplingStandard"
+      aria-label={t`Sampling standard`}
       options={[
         { value: "ANSI_Z1_4", label: "ANSI/ASQ Z1.4" },
         { value: "ISO_2859_1", label: "ISO 2859-1" }

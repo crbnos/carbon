@@ -4,19 +4,17 @@
 
 import type { CreatableMultiSelectProps } from "@carbon/form";
 import { CreatableMultiSelect } from "@carbon/form";
-import { useDisclosure } from "@carbon/react";
-import { useMemo, useRef, useState } from "react";
-import { useUser } from "~/hooks";
+import { useMemo, useRef } from "react";
+import { useDrawerItem, useUser } from "~/hooks";
 import CustomerForm from "~/modules/sales/ui/Customer/CustomerForm";
 import { useCustomers } from "~/stores";
+import CustomerAvatar from "../CustomerAvatar";
 import { useEmptyState } from "./emptyStates";
 
 type CustomerSelectProps = Omit<CreatableMultiSelectProps, "options">;
 
 const Customers = (props: CustomerSelectProps) => {
-  const newCustomerModal = useDisclosure();
-
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const [customers] = useCustomers();
@@ -26,13 +24,14 @@ const Customers = (props: CustomerSelectProps) => {
     () =>
       customers.map((c) => ({
         value: c.id,
-        label: c.name
+        label: <CustomerAvatar customerId={c.id} />,
+        keywords: c.name
       })) ?? [],
     [customers]
   );
 
   const emptyMessage = useEmptyState("customer", {
-    onCreate: () => newCustomerModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -44,20 +43,20 @@ const Customers = (props: CustomerSelectProps) => {
         label={props?.label ?? "Customers"}
         emptyMessage={emptyMessage}
         onCreateOption={(option) => {
-          newCustomerModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newCustomerModal.isOpen && (
+      {create.item !== null && (
         <CustomerForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newCustomerModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created,
+            name: create.item,
             currencyCode: company.baseCurrencyCode,
             taxPercent: 0
           }}

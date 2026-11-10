@@ -77,10 +77,7 @@ export async function action({ request }: ActionFunctionArgs) {
           { success: false },
           await flash(
             request,
-            error(
-              new Error("forbidden"),
-              "Only Carbon staff can edit this field"
-            )
+            error(null, "Only Carbon staff can edit this field")
           )
         );
       }
@@ -99,10 +96,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!isInternal) {
         return data(
           { success: false },
-          await flash(
-            request,
-            error(new Error("forbidden"), "Only Carbon staff can add rows")
-          )
+          await flash(request, error(null, "Only Carbon staff can add rows"))
         );
       }
       const result = await insertImplementationRow(client, {
@@ -128,10 +122,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!isInternal) {
         return data(
           { success: false },
-          await flash(
-            request,
-            error(new Error("forbidden"), "Only Carbon staff can delete rows")
-          )
+          await flash(request, error(null, "Only Carbon staff can delete rows"))
         );
       }
       const result = await deleteImplementationRow(client, {
@@ -159,10 +150,7 @@ export async function action({ request }: ActionFunctionArgs) {
           { success: false },
           await flash(
             request,
-            error(
-              new Error("forbidden"),
-              "Only Carbon staff can change this setting"
-            )
+            error(null, "Only Carbon staff can change this setting")
           )
         );
       }

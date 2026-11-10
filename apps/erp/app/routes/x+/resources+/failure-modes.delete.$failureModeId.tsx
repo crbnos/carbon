@@ -5,12 +5,16 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteFailureMode, getFailureMode } from "~/modules/resources";
+import {
+  deleteFailureMode,
+  getFailureMode
+} from "~/modules/resources/resources.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -44,7 +48,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!failureModeId) {
     throw redirect(
       `${path.to.failureModes}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get a failure mode id"))
+      await flash(request, error(null, "Failed to get a failure mode id"))
     );
   }
 
@@ -74,20 +78,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteFailureModeRoute() {
   const { failureModeId } = useParams();
   const { failureMode } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.failureModes);
   const { t } = useLingui();
 
   if (!failureMode) return null;
   if (!failureModeId) throw notFound("failureModeId not found");
 
-  const onCancel = () => navigate(path.to.failureModes);
   const name = failureMode.name;
   return (
     <ConfirmDelete
       action={path.to.deleteFailureMode(failureModeId)}
       name={name}
       text={t`Are you sure you want to delete the failure mode: ${name}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

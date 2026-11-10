@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useFeatureFlags } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import {
@@ -16,6 +17,10 @@ import {
   LuFactory,
   LuFileText,
   LuFlaskConical,
+  LuFolderCheck,
+  LuFolderKanban,
+  LuHeadphones,
+  LuHeartHandshake,
   LuHistory,
   LuImage,
   LuKey,
@@ -27,10 +32,10 @@ import {
   LuSheet,
   LuShieldCheck,
   LuShoppingCart,
+  LuTimer,
   LuUsers,
   LuWebhook,
-  LuWorkflow,
-  LuWrench
+  LuWorkflow
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useFlags } from "~/hooks/useFlags";
@@ -38,13 +43,13 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import type { AuthenticatedRouteGroup, Role } from "~/types";
 import { path } from "~/utils/path";
 
-const internalOnlyRoutes = new Set<string>([path.to.companies]);
-
 export default function useSettingsSubmodules() {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { isCloud, isControlledEnvironment, isInternal, isLocalDev } =
     useFlags();
+  const { feature } = useFeatureFlags();
+  const canManageCompanies = isInternal || feature("multi-company-management");
   // Enterprise: backups are a Business plan feature, but internal staff and
   // local dev keep access (mirrors the server `canManageBackups`).
   const { isGated: backupsGated } = usePlanGate({ feature: "BACKUPS" });
@@ -114,6 +119,12 @@ export default function useSettingsSubmodules() {
             icon: <LuBox />
           },
           {
+            name: t`Invoicing`,
+            to: path.to.invoicingSettings,
+            role: "employee",
+            icon: <LuCreditCard />
+          },
+          {
             name: t`Items`,
             to: path.to.itemsSettings,
             role: "employee",
@@ -144,10 +155,28 @@ export default function useSettingsSubmodules() {
             icon: <LuFactory />
           },
           {
+            name: t`Projects`,
+            to: path.to.projectsSettings,
+            role: "employee",
+            icon: <LuFolderKanban />
+          },
+          {
+            name: t`Time`,
+            to: path.to.timeSettings,
+            role: "employee",
+            icon: <LuTimer />
+          },
+          {
+            name: t`Service`,
+            to: path.to.serviceSettings,
+            role: "employee",
+            icon: <LuHeadphones />
+          },
+          {
             name: t`Quality`,
             to: path.to.qualitySettings,
             role: "employee",
-            icon: <LuClipboardCheck />
+            icon: <LuFolderCheck />
           },
           {
             name: t`Sales`,
@@ -159,7 +188,7 @@ export default function useSettingsSubmodules() {
             name: t`Resources`,
             to: path.to.resourcesSettings,
             role: "employee",
-            icon: <LuWrench />
+            icon: <LuHeartHandshake />
           }
         ]
       },
@@ -257,7 +286,7 @@ export default function useSettingsSubmodules() {
     if (route.requiresCloudEnvironment && !isCloud) return false;
     if (route.requiresControlledEnvironment && !isControlledEnvironment)
       return false;
-    if (!isInternal && internalOnlyRoutes.has(route.to)) return false;
+    if (route.to === path.to.companies && !canManageCompanies) return false;
     // Backups: visible to Business/Enterprise, internal staff, or local dev.
     if (
       route.to === path.to.backups &&

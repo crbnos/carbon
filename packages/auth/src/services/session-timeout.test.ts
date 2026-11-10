@@ -2,60 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-// Isolation mocks — session.server's siblings pull in supabase/env at module
-// load; stub them so the cookie/predicate logic under test runs against the
-// real react-router session storage only. (Mirrors mfa-session.test.ts.)
-vi.mock("@carbon/kv", () => ({
-  redis: {
-    get: vi.fn().mockResolvedValue(null),
-    set: vi.fn().mockResolvedValue(null),
-    del: vi.fn().mockResolvedValue(null)
-  }
-}));
-
-const IDLE_MS = 15 * 60 * 1000;
-const ABSOLUTE_MS = 12 * 60 * 60 * 1000;
-
-vi.mock("../config/env", () => ({
-  DOMAIN: "localhost",
-  CarbonEdition: "Community",
-  CONTROLLED_ENVIRONMENT: false,
-  REFRESH_ACCESS_TOKEN_THRESHOLD: 60,
-  SESSION_ABSOLUTE_MAX_MS: 12 * 60 * 60 * 1000,
-  SESSION_IDLE_LOCK_MS: 15 * 60 * 1000,
-  SESSION_KEY: "auth",
-  SESSION_MAX_AGE: 60 * 60 * 24 * 7,
-  SESSION_SECRET: "test-session-secret"
-}));
-
-vi.mock("./auth.server", () => ({
-  // refreshAccessToken returns a FRESH-minted-looking session (createdAt/lastActiveAt
-  // = "now"), so the preserve test proves refreshAuthSession restores the originals.
-  makeAuthSession: vi.fn(),
-  refreshAccessToken: vi.fn(),
-  verifyAuthSession: vi.fn().mockResolvedValue(true)
-}));
-
-vi.mock("./company.server", () => ({
-  setCompanyId: vi.fn(() => "companyId=cookie")
-}));
-
-vi.mock("./mfa.server", () => ({
-  getTotpFactors: vi.fn().mockResolvedValue([]),
-  userHasVerifiedTotpFactor: vi.fn().mockResolvedValue(false),
-  verifyTotpChallenge: vi.fn().mockResolvedValue(null)
-}));
-
-vi.mock("./users", () => ({
-  getPermissionCacheKey: (userId: string) => `permissions:${userId}`
-}));
-
-import type { AuthSession } from "../types";
-import { refreshAccessToken } from "./auth.server";
-import { userHasVerifiedTotpFactor } from "./mfa.server";
 import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi
+} from "vitest";
+import type { AuthSession } from "../types";
+import {
+  flash,
+  getSessionFlash,
   isSessionExpiredAbsolute,
   isSessionIdleLocked,
   refreshAuthSession,
@@ -63,12 +22,82 @@ import {
   setAuthSession
 } from "./session.server";
 
+// The module reads its configuration once, at import.
+vi.hoisted(() => {
+  vi.stubEnv("DOMAIN", "localhost");
+  vi.stubEnv("CARBON_EDITION", "");
+  vi.stubEnv("AUTH_COOKIE_SUFFIX", "");
+  vi.stubEnv("CONTROLLED_ENVIRONMENT", "");
+  vi.stubEnv("SESSION_SECRET", "test-session-secret");
+  vi.stubEnv("SUPABASE_URL", "http://supabase.test");
+  vi.stubEnv("SUPABASE_ANON_KEY", "anon-key");
+  vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-key");
+});
+
+// Redis as an in-memory map.
+const kv = vi.hoisted(() => new Map<string, string>());
+vi.mock("@carbon/kv", () => ({
+  redis: {
+    get: async (key: string) => kv.get(key) ?? null,
+    set: async (key: string, value: string) => {
+      kv.set(key, value);
+      return "OK";
+    },
+    del: async (key: string) => Number(kv.delete(key))
+  }
+}));
+
+// GoTrue takes only a UUID as a user id.
+const USER_ID = "8f7c1e5a-3b2d-4c6e-9a1f-0d2e4b6c8a10";
+
+const IDLE_MS = 15 * 60 * 1000;
+const ABSOLUTE_MS = 12 * 60 * 60 * 1000;
+
+// GoTrue, answered over a stubbed fetch: a token refresh mints a fresh
+// session, and the admin factor list says whether the user enrolled TOTP.
+const gotrue = { hasVerifiedTotp: false };
+const fakeGoTrue = async (input: RequestInfo | URL) => {
+  const url = new URL(input instanceof Request ? input.url : String(input));
+  const json = (body: unknown) =>
+    new Response(JSON.stringify(body), {
+      headers: { "Content-Type": "application/json" }
+    });
+  if (url.pathname === "/auth/v1/token") {
+    return json({
+      access_token: "fresh-access-token",
+      refresh_token: "fresh-refresh-token",
+      token_type: "bearer",
+      expires_in: 3600,
+      expires_at: FUTURE_EXPIRES_AT,
+      user: { id: USER_ID, email: "jane@example.com" }
+    });
+  }
+  if (url.pathname === `/auth/v1/admin/users/${USER_ID}/factors`) {
+    return json(
+      gotrue.hasVerifiedTotp
+        ? [{ id: "factor_1", factor_type: "totp", status: "verified" }]
+        : []
+    );
+  }
+  return new Response("{}", { status: 404 });
+};
+
+beforeEach(() => {
+  kv.clear();
+  gotrue.hasVerifiedTotp = false;
+  vi.stubGlobal("fetch", fakeGoTrue);
+});
+
+afterEach(() => vi.unstubAllGlobals());
+
+afterAll(() => vi.unstubAllEnvs());
+
 const FUTURE_EXPIRES_AT = 4102444800; // far enough that isExpiringSoon is false
 
 const makeSession = (overrides: Partial<AuthSession> = {}): AuthSession => ({
   accessToken: "access-token",
   refreshToken: "refresh-token",
-  userId: "user_1",
+  userId: USER_ID,
   companyId: "company_1",
   companyGroupId: "group_1",
   email: "jane@example.com",
@@ -90,7 +119,6 @@ describe("session timeout predicates", () => {
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.clearAllMocks();
   });
 
   describe("isSessionExpiredAbsolute (3.1.11)", () => {
@@ -142,7 +170,6 @@ describe("refreshAuthSession preserves session-age clocks", () => {
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.clearAllMocks();
   });
 
   it("keeps the original createdAt/lastActiveAt across a silent token refresh", async () => {
@@ -160,15 +187,12 @@ describe("refreshAuthSession preserves session-age clocks", () => {
       }
     );
 
-    // The refresh rebuild looks freshly-minted (createdAt/lastActiveAt = now).
-    vi.mocked(refreshAccessToken).mockResolvedValue(
-      makeSession({ createdAt: Date.now(), lastActiveAt: Date.now() })
-    );
-
     // POST so refreshAuthSession returns inline rather than throwing a GET redirect.
     const refreshed = await refreshAuthSession(requestWithCookie(cookie));
 
-    // The absolute-cap clock and idle clock are the ORIGINALS, not "now".
+    // The new tokens, but the absolute-cap and idle clocks are the ORIGINALS:
+    // the rebuilt session would otherwise be stamped "now".
+    expect(refreshed.accessToken).toBe("fresh-access-token");
     expect(refreshed.createdAt).toBe(originalCreatedAt);
     expect(refreshed.lastActiveAt).toBe(originalLastActiveAt);
     // Sanity: a session 8h old is not yet absolute-expired, and 2min idle is not locked.
@@ -212,8 +236,6 @@ describe("requireAuthSession returns to the requested URL", () => {
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.clearAllMocks();
-    vi.mocked(userHasVerifiedTotpFactor).mockResolvedValue(false);
   });
 
   it("after a token refresh", async () => {
@@ -221,8 +243,6 @@ describe("requireAuthSession returns to the requested URL", () => {
     const cookie = await sessionCookie({
       expiresAt: Math.floor(Date.now() / 1000) + 30
     });
-    vi.mocked(refreshAccessToken).mockResolvedValue(makeSession());
-
     const response = await redirectOf(
       requestWithCookie(cookie, {
         method: "GET",
@@ -243,7 +263,7 @@ describe("requireAuthSession returns to the requested URL", () => {
 
   it("after an MFA challenge", async () => {
     const cookie = await sessionCookie();
-    vi.mocked(userHasVerifiedTotpFactor).mockResolvedValue(true);
+    gotrue.hasVerifiedTotp = true;
 
     const response = await redirectOf(
       requestWithCookie(cookie, {
@@ -254,5 +274,40 @@ describe("requireAuthSession returns to the requested URL", () => {
 
     expect(response.headers.get("Location")).toMatch(/^\/mfa\?/);
     expect(redirectToOf(response)).toBe(EMAIL_LINK);
+  });
+});
+
+describe("a flash keeps the signed-in session's expiry", () => {
+  // The toast is stored in the session cookie, so writing or reading it
+  // re-issues that cookie. Without a max age it became a cookie that ends
+  // when the browser closes, signing the user out.
+  // A Set-Cookie header as the browser would send it back.
+  const cookiePair = (setCookie: string) => setCookie.split(";")[0] ?? "";
+  const signedIn = async () =>
+    cookiePair(
+      await setAuthSession(new Request("http://localhost:3000/x"), {
+        authSession: makeSession()
+      })
+    );
+
+  it("when the flash is written", async () => {
+    const { headers } = await flash(requestWithCookie(await signedIn()), {
+      success: true,
+      message: "Saved"
+    });
+
+    expect(headers["Set-Cookie"]).toContain("Max-Age=604800");
+  });
+
+  it("when the flash is read", async () => {
+    const written = await flash(requestWithCookie(await signedIn()), {
+      success: true,
+      message: "Saved"
+    });
+    const read = await getSessionFlash(
+      requestWithCookie(cookiePair(written.headers["Set-Cookie"]))
+    );
+
+    expect(read?.headers["Set-Cookie"]).toContain("Max-Age=604800");
   });
 });

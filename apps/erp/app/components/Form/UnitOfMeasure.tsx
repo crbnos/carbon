@@ -5,13 +5,10 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
-import { useMemo, useRef, useState } from "react";
-import { useRouteData } from "~/hooks";
-import type {
-  getUnitOfMeasuresList,
-  UnitOfMeasureListItem
-} from "~/modules/items";
+import { useMemo, useRef } from "react";
+import { useDrawerItem, useRouteData } from "~/hooks";
+import type { getUnitOfMeasuresList } from "~/modules/items/items.service";
+import type { UnitOfMeasureListItem } from "~/modules/items/types";
 import UnitOfMeasureForm from "~/modules/items/ui/UnitOfMeasure/UnitOfMeasureForm";
 import { path } from "~/utils/path";
 import { Enumerable } from "../Enumerable";
@@ -35,12 +32,11 @@ const UnitOfMeasurePreview = (
 const UnitOfMeasure = (props: UnitOfMeasureSelectProps) => {
   const options = useUnitOfMeasure();
 
-  const newUnitOfMeasureModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
+  const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const emptyMessage = useEmptyState("unitOfMeasure", {
-    onCreate: () => newUnitOfMeasureModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -53,20 +49,20 @@ const UnitOfMeasure = (props: UnitOfMeasureSelectProps) => {
         label={props?.label ?? "Unit of Measure"}
         emptyMessage={emptyMessage}
         onCreateOption={(option) => {
-          newUnitOfMeasureModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newUnitOfMeasureModal.isOpen && (
+      {create.item !== null && (
         <UnitOfMeasureForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newUnitOfMeasureModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created,
+            name: create.item,
             code: ""
           }}
         />

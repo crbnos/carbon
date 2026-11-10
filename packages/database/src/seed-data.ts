@@ -24,7 +24,8 @@ export const dimensions = [
   { name: "Supplier", entityType: "Supplier" },
   { name: "Item", entityType: "Item" },
   { name: "Scrap Reason", entityType: "ScrapReason" },
-  { name: "Project", entityType: "Project" }
+  { name: "Project", entityType: "Project" },
+  { name: "Project Element", entityType: "ProjectElement" }
 ] as const;
 
 export const supplierStatuses = [
@@ -333,6 +334,15 @@ export const sequences = [
     step: 1
   },
   {
+    table: "serviceJob",
+    name: "Service Job",
+    prefix: "SJ",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
     table: "nonConformance",
     name: "Issue",
     prefix: "NCR",
@@ -435,6 +445,15 @@ export const sequences = [
     table: "stockTransfer",
     name: "Stock Transfer",
     prefix: "ST",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "kanban",
+    name: "Kanban",
+    prefix: "KB",
     suffix: null,
     next: 0,
     size: 6,
@@ -564,6 +583,69 @@ export const sequences = [
     table: "debitMemo",
     name: "Debit Memo",
     prefix: "DR-%{yyyy}-%{mm}-",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "revenueRecognitionRun",
+    name: "Revenue Recognition Run",
+    prefix: "RR",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "fixedAssetTransfer",
+    name: "Fixed Asset Transfer",
+    prefix: "FAT",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "rentalAgreement",
+    name: "Rental Agreement",
+    prefix: "RA",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "lease",
+    name: "Lease",
+    prefix: "LSE",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "leaseRun",
+    name: "Lease Run",
+    prefix: "LR",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "customerContract",
+    name: "Contract",
+    prefix: "CON",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "projectStockTransfer",
+    name: "Project Stock Transfer",
+    prefix: "PST",
     suffix: null,
     next: 0,
     size: 6,
@@ -819,9 +901,33 @@ export const accounts = [
     createdBy: "system"
   },
   {
+    key: "1145",
+    number: "1145",
+    name: "Contract Assets",
+    isGroup: false,
+    parentKey: "receivables",
+    accountType: "Other Current Asset",
+    incomeBalance: "Balance Sheet",
+    class: "Asset",
+    consolidatedRate: "Current",
+    createdBy: "system"
+  },
+  {
     key: "1150",
     number: "1150",
     name: "Supplier Prepayments",
+    isGroup: false,
+    parentKey: "receivables",
+    accountType: "Other Current Asset",
+    incomeBalance: "Balance Sheet",
+    class: "Asset",
+    consolidatedRate: "Current",
+    createdBy: "system"
+  },
+  {
+    key: "1160",
+    number: "1160",
+    name: "Net Investment in Leases",
     isGroup: false,
     parentKey: "receivables",
     accountType: "Other Current Asset",
@@ -978,6 +1084,42 @@ export const accounts = [
     consolidatedRate: "Current",
     createdBy: "system"
   },
+  {
+    key: "1370",
+    number: "1370",
+    name: "Rental Fleet",
+    isGroup: false,
+    parentKey: "ppe",
+    accountType: "Fixed Asset",
+    incomeBalance: "Balance Sheet",
+    class: "Asset",
+    consolidatedRate: "Current",
+    createdBy: "system"
+  },
+  {
+    key: "1380",
+    number: "1380",
+    name: "Accumulated Depreciation – Rental Fleet",
+    isGroup: false,
+    parentKey: "ppe",
+    accountType: "Accumulated Depreciation",
+    incomeBalance: "Balance Sheet",
+    class: "Asset",
+    consolidatedRate: "Current",
+    createdBy: "system"
+  },
+  {
+    key: "1390",
+    number: "1390",
+    name: "Construction in Progress",
+    isGroup: false,
+    parentKey: "ppe",
+    accountType: "Fixed Asset",
+    incomeBalance: "Balance Sheet",
+    class: "Asset",
+    consolidatedRate: "Current",
+    createdBy: "system"
+  },
 
   // Other Assets
   {
@@ -1032,6 +1174,30 @@ export const accounts = [
     key: "1440",
     number: "1440",
     name: "Deferred Tax Assets",
+    isGroup: false,
+    parentKey: "other-assets",
+    accountType: "Other Asset",
+    incomeBalance: "Balance Sheet",
+    class: "Asset",
+    consolidatedRate: "Current",
+    createdBy: "system"
+  },
+  {
+    key: "1450",
+    number: "1450",
+    name: "Right-of-Use Assets",
+    isGroup: false,
+    parentKey: "other-assets",
+    accountType: "Other Asset",
+    incomeBalance: "Balance Sheet",
+    class: "Asset",
+    consolidatedRate: "Current",
+    createdBy: "system"
+  },
+  {
+    key: "1460",
+    number: "1460",
+    name: "Accumulated Amortization – Right-of-Use Assets",
     isGroup: false,
     parentKey: "other-assets",
     accountType: "Other Asset",
@@ -1167,6 +1333,18 @@ export const accounts = [
     createdBy: "system"
   },
   {
+    key: "2165",
+    number: "2165",
+    name: "Contract Loss Provision",
+    isGroup: false,
+    parentKey: "current-liabilities",
+    accountType: "Other Current Liability",
+    incomeBalance: "Balance Sheet",
+    class: "Liability",
+    consolidatedRate: "Current",
+    createdBy: "system"
+  },
+  {
     key: "2170",
     number: "2170",
     name: "Short-Term Loans",
@@ -1290,6 +1468,18 @@ export const accounts = [
     consolidatedRate: "Current",
     createdBy: "system"
   },
+  {
+    key: "2440",
+    number: "2440",
+    name: "Lease Liabilities",
+    isGroup: false,
+    parentKey: "long-term-liabilities",
+    accountType: "Long Term Liability",
+    incomeBalance: "Balance Sheet",
+    class: "Liability",
+    consolidatedRate: "Current",
+    createdBy: "system"
+  },
 
   // ─── 3000-3999: EQUITY ───
   {
@@ -1347,6 +1537,20 @@ export const accounts = [
     isGroup: false,
     parentKey: "equity",
     accountType: "Equity - Close",
+    incomeBalance: "Balance Sheet",
+    class: "Equity",
+    consolidatedRate: "Historical",
+    createdBy: "system"
+  },
+  {
+    // The opening journal of the accounting cutover offsets every open item
+    // and trial balance line here; it must total zero before the enable.
+    key: "3400",
+    number: "3400",
+    name: "Migration Clearing",
+    isGroup: false,
+    parentKey: "equity",
+    accountType: "Equity - No Close",
     incomeBalance: "Balance Sheet",
     class: "Equity",
     consolidatedRate: "Historical",
@@ -1444,6 +1648,30 @@ export const accounts = [
     createdBy: "system"
   },
   {
+    key: "4060",
+    number: "4060",
+    name: "Rental Income",
+    isGroup: false,
+    parentKey: "revenue",
+    accountType: "Income",
+    incomeBalance: "Income Statement",
+    class: "Revenue",
+    consolidatedRate: "Average",
+    createdBy: "system"
+  },
+  {
+    key: "4070",
+    number: "4070",
+    name: "Lease Revenue",
+    isGroup: false,
+    parentKey: "revenue",
+    accountType: "Income",
+    incomeBalance: "Income Statement",
+    class: "Revenue",
+    consolidatedRate: "Average",
+    createdBy: "system"
+  },
+  {
     key: "4900",
     number: "4900",
     name: "Sales Returns",
@@ -1509,6 +1737,18 @@ export const accounts = [
     key: "4140",
     number: "4140",
     name: "Gain on Disposal",
+    isGroup: false,
+    parentKey: "other-income",
+    accountType: "Other Income",
+    incomeBalance: "Income Statement",
+    class: "Revenue",
+    consolidatedRate: "Average",
+    createdBy: "system"
+  },
+  {
+    key: "4150",
+    number: "4150",
+    name: "Interest Income – Leases",
     isGroup: false,
     parentKey: "other-income",
     accountType: "Other Income",
@@ -1861,6 +2101,42 @@ export const accounts = [
     consolidatedRate: "Average",
     createdBy: "system"
   },
+  {
+    key: "6120",
+    number: "6120",
+    name: "Warranty Expense",
+    isGroup: false,
+    parentKey: "operating-expenses",
+    accountType: "Expense",
+    incomeBalance: "Income Statement",
+    class: "Expense",
+    consolidatedRate: "Average",
+    createdBy: "system"
+  },
+  {
+    key: "6130",
+    number: "6130",
+    name: "Variable Lease Expense",
+    isGroup: false,
+    parentKey: "operating-expenses",
+    accountType: "Expense",
+    incomeBalance: "Income Statement",
+    class: "Expense",
+    consolidatedRate: "Average",
+    createdBy: "system"
+  },
+  {
+    key: "6140",
+    number: "6140",
+    name: "Operating Lease Expense",
+    isGroup: false,
+    parentKey: "operating-expenses",
+    accountType: "Expense",
+    incomeBalance: "Income Statement",
+    class: "Expense",
+    consolidatedRate: "Average",
+    createdBy: "system"
+  },
 
   // Depreciation & Amortization
   {
@@ -1899,6 +2175,18 @@ export const accounts = [
     consolidatedRate: "Average",
     createdBy: "system"
   },
+  {
+    key: "6330",
+    number: "6330",
+    name: "Amortization – Right-of-Use Assets",
+    isGroup: false,
+    parentKey: "depreciation",
+    accountType: "Other Expense",
+    incomeBalance: "Income Statement",
+    class: "Expense",
+    consolidatedRate: "Average",
+    createdBy: "system"
+  },
 
   // ─── 7000-7999: OTHER / NON-OPERATING EXPENSES ───
   {
@@ -1917,6 +2205,18 @@ export const accounts = [
     key: "7010",
     number: "7010",
     name: "Interest Expense",
+    isGroup: false,
+    parentKey: "other-expenses",
+    accountType: "Other Expense",
+    incomeBalance: "Income Statement",
+    class: "Expense",
+    consolidatedRate: "Average",
+    createdBy: "system"
+  },
+  {
+    key: "7020",
+    number: "7020",
+    name: "Interest Expense – Leases",
     isGroup: false,
     parentKey: "other-expenses",
     accountType: "Other Expense",
@@ -2033,6 +2333,9 @@ export const accountDefaults = {
   rawMaterialsAccount: "1210",
   finishedGoodsAccount: "1220",
   workInProgressAccount: "1230",
+  projectWorkInProgressAccount: "1230",
+  projectExpenseAccount: "7080",
+  warrantyExpenseAccount: "6120",
   receivablesAccount: "1110",
   intercompanyReceivablesAccount: "1130",
   bankCashAccount: "1010",
@@ -2047,13 +2350,28 @@ export const accountDefaults = {
   purchaseTaxPayableAccount: "2220",
   reverseChargeSalesTaxPayableAccount: "2230",
   retainedEarningsAccount: "3100",
+  migrationClearingAccount: "3400",
   currencyTranslationAccount: "3200",
   customerWriteOffAccount: "6050",
   supplierWriteOffAccount: "4130",
   realizedExchangeGainAccount: "4120",
   realizedExchangeLossAccount: "7060",
   deferredTaxLiabilityAccountId: "2420",
-  deferredTaxExpenseAccountId: "7090"
+  deferredTaxExpenseAccountId: "7090",
+  deferredRevenueAccount: "2160",
+  contractAssetAccount: "1145",
+  rentalIncomeAccount: "4060",
+  leaseRevenueAccount: "4070",
+  leaseInterestIncomeAccount: "4150",
+  netInvestmentInLeasesAccount: "1160",
+  contractLossProvisionAccount: "2165",
+  rightOfUseAssetAccount: "1450",
+  accumulatedRightOfUseAmortizationAccount: "1460",
+  leaseLiabilityAccount: "2440",
+  operatingLeaseExpenseAccount: "6140",
+  variableLeaseExpenseAccount: "6130",
+  rightOfUseAmortizationExpenseAccount: "6330",
+  leaseInterestExpenseAccount: "7020"
 } as const;
 
 export const fixedAssetClasses = [
@@ -2068,7 +2386,8 @@ export const fixedAssetClasses = [
     writeOffAccount: "6320",
     writeDownAccount: "6320",
     gainOnDisposalAccount: "4140",
-    lossOnDisposalAccount: "6320"
+    lossOnDisposalAccount: "6320",
+    isConstructionInProgress: false
   },
   {
     name: "Machinery & Equipment",
@@ -2081,7 +2400,8 @@ export const fixedAssetClasses = [
     writeOffAccount: "6320",
     writeDownAccount: "6320",
     gainOnDisposalAccount: "4140",
-    lossOnDisposalAccount: "6320"
+    lossOnDisposalAccount: "6320",
+    isConstructionInProgress: false
   },
   {
     name: "Vehicles",
@@ -2094,7 +2414,40 @@ export const fixedAssetClasses = [
     writeOffAccount: "6320",
     writeDownAccount: "6320",
     gainOnDisposalAccount: "4140",
-    lossOnDisposalAccount: "6320"
+    lossOnDisposalAccount: "6320",
+    isConstructionInProgress: false
+  },
+  {
+    // Built or bought units rented out under operating leases: their own
+    // balance-sheet line, depreciated whether or not on rent.
+    name: "Rental Fleet",
+    depreciationMethod: "Straight Line" as const,
+    usefulLifeMonths: 60,
+    residualValuePercent: 20,
+    assetAccount: "1370",
+    accumulatedDepreciationAccount: "1380",
+    depreciationExpenseAccount: "6310",
+    writeOffAccount: "6320",
+    writeDownAccount: "6320",
+    gainOnDisposalAccount: "4140",
+    lossOnDisposalAccount: "6320",
+    isConstructionInProgress: false
+  },
+  {
+    // Self-constructed assets accumulate cost here until placed in service;
+    // never depreciated (its depreciation accounts are conventional fillers).
+    name: "Construction in Progress",
+    depreciationMethod: "Straight Line" as const,
+    usefulLifeMonths: 120,
+    residualValuePercent: 0,
+    assetAccount: "1390",
+    accumulatedDepreciationAccount: "1330",
+    depreciationExpenseAccount: "6310",
+    writeOffAccount: "6320",
+    writeDownAccount: "6320",
+    gainOnDisposalAccount: "4140",
+    lossOnDisposalAccount: "6320",
+    isConstructionInProgress: true
   }
 ];
 
@@ -2152,6 +2505,46 @@ export const periodCloseTaskDefinitions = [
     isSystem: true
   },
   {
+    name: "Recognize revenue for the period",
+    taskType: "Auto",
+    autoCheckKey: "unposted-revenue-schedules",
+    sortOrder: 5,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
+  },
+  {
+    name: "Post lease journals",
+    taskType: "Auto",
+    autoCheckKey: "unposted-lease-schedules",
+    sortOrder: 5,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
+  },
+  {
+    name: "Compute burden for the period",
+    taskType: "Auto",
+    autoCheckKey: "burden-computed",
+    sortOrder: 5,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
+  },
+  {
+    name: "Close earned value for the period",
+    taskType: "Auto",
+    autoCheckKey: "earned-value-closed",
+    sortOrder: 5,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
+  },
+  {
     name: "Match & eliminate intercompany transactions",
     taskType: "Auto",
     autoCheckKey: "unmatched-ic",
@@ -2200,6 +2593,88 @@ export const periodCloseTaskDefinitions = [
     severity: "Blocker",
     active: true,
     isSystem: true
+  },
+  // Government Contracting 5a. Passes in Standard timekeeping; in DCAA mode it
+  // warns about unposted entries and missing days in the period.
+  {
+    name: "Timesheets complete",
+    taskType: "Auto",
+    autoCheckKey: "timesheets-complete",
+    sortOrder: 9,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
+  },
+  // A shipment posts cost of goods sold; the sales invoice posts the revenue.
+  // Warns while a shipment posted in the period has lines with no posted
+  // invoice by the period end, so the cost and its revenue land together.
+  {
+    name: "Invoice shipped sales orders",
+    taskType: "Auto",
+    autoCheckKey: "shipped-not-invoiced",
+    sortOrder: 10,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
+  }
+];
+
+/**
+ * The project states every company starts with (Settings → Projects). States
+ * are company-wide: every project and service order uses the same set. The
+ * migration `20261021012100_project-states-company-wide.sql` seeds the same
+ * rows for companies that had none.
+ */
+export const projectStates: {
+  name: string;
+  group: "Backlog" | "Unstarted" | "Started" | "Completed" | "Cancelled";
+  color: string;
+  sortOrder: number;
+  isDefault: boolean;
+}[] = [
+  {
+    name: "Backlog",
+    group: "Backlog",
+    color: "#60646C",
+    sortOrder: 1,
+    isDefault: true
+  },
+  {
+    name: "Todo",
+    group: "Unstarted",
+    color: "#60646C",
+    sortOrder: 2,
+    isDefault: true
+  },
+  {
+    name: "In Progress",
+    group: "Started",
+    color: "#F59E0B",
+    sortOrder: 3,
+    isDefault: true
+  },
+  {
+    name: "In Review",
+    group: "Started",
+    color: "#3B82F6",
+    sortOrder: 4,
+    isDefault: false
+  },
+  {
+    name: "Done",
+    group: "Completed",
+    color: "#46A758",
+    sortOrder: 5,
+    isDefault: true
+  },
+  {
+    name: "Cancelled",
+    group: "Cancelled",
+    color: "#9AA4BC",
+    sortOrder: 6,
+    isDefault: true
   }
 ];
 

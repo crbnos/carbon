@@ -9,12 +9,12 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  generateHTML,
+  RichTextView,
   useDebounce
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { useImageUpload, usePermissions, useUser } from "~/hooks";
 
@@ -29,6 +29,7 @@ const ItemNotes = ({
   subTitle: string;
   notes?: JSONContent;
 }) => {
+  const { t } = useLingui();
   const { id: userId } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
@@ -66,6 +67,7 @@ const ItemNotes = ({
         <CardContent>
           {permissions.can("update", "parts") ? (
             <Editor
+              label={t`Notes`}
               initialValue={(notes ?? {}) as JSONContent}
               onUpload={onUploadImage}
               onChange={(value) => {
@@ -74,11 +76,9 @@ const ItemNotes = ({
               }}
             />
           ) : (
-            <div
-              className="prose dark:prose-invert"
-              dangerouslySetInnerHTML={{
-                __html: generateHTML(notes as JSONContent)
-              }}
+            <RichTextView
+              content={notes as JSONContent}
+              empty={<Trans>No notes</Trans>}
             />
           )}
         </CardContent>

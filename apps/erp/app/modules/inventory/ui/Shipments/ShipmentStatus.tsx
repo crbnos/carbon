@@ -5,7 +5,7 @@
 import { Status } from "@carbon/react";
 import { SHIPMENT_STATUS_COLOR_MAP } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
-import type { shipmentStatusType } from "~/modules/inventory";
+import type { shipmentStatusType } from "~/modules/inventory/inventory.models";
 
 type ShipmentStatusProps = {
   status?: (typeof shipmentStatusType)[number] | null;

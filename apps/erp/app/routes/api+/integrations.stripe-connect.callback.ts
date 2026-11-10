@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { getConnectAccountStatus } from "@carbon/stripe/connect.server";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
+import { upsertCompanyIntegration } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {

@@ -4,30 +4,24 @@
 
 import { readdirSync, readFileSync } from "node:fs";
 import { setTimeout as sleep } from "node:timers/promises";
+import type { Task } from "@clack/prompts";
 import { log } from "@clack/prompts";
 import { execa } from "execa";
 import { join } from "pathe";
 import pg from "pg";
-import { waitForPort } from "../helpers.js";
+import { waitForPort, waitUntil } from "../helpers.js";
+import { type DbTarget, dbUrl } from "../stack.js";
+import type { StackHosts, StackMode } from "../topology.js";
+import { readDevJwt } from "../worktree.js";
+import { syncWorktreeCron } from "./shared-db.js";
 
-// ---------------------------------------------------------------------------
-// Readiness gates
-// ---------------------------------------------------------------------------
-
-// Block until each tcp:<port> accepts on 127.0.0.1. `onProgress` fires once
-// per port as it opens — caller streams these into a spinner subtitle so a
-// stuck service (e.g. inngest pulling its container) is visible instead of a
-// 60s silent hang.
+// Block until each port accepts on 127.0.0.1. `onProgress` fires as each
+// opens, so a stuck service (Inngest pulling its image) shows instead of a
+// silent minute.
 export async function waitForTcp(
-  targets: string[],
+  ports: number[],
   opts: { onProgress?: (line: string) => void } = {}
 ) {
-  const ports = targets.map((t) => {
-    const m = t.match(/^tcp:(\d+)$/);
-    if (!m)
-      throw new Error(`waitForTcp: bad target "${t}" (expected tcp:<port>)`);
-    return Number(m[1]);
-  });
   const total = ports.length;
   let opened = 0;
   await Promise.all(
@@ -41,17 +35,13 @@ export async function waitForTcp(
 
 // Block until postgres accepts queries (TCP-open ≠ ready — init scripts run
 // after the port opens).
-export async function waitForPostgres(port: number, timeoutMs = 60_000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    try {
-      await withClient(port, (c) => c.query("SELECT 1"));
-      return;
-    } catch {
-      // postgres still initializing — retry until deadline
-    }
-    await sleep(1000);
-  }
+export async function waitForPostgres(db: DbTarget, timeoutMs = 60_000) {
+  const ready = () =>
+    withClient(db, (c) => c.query("SELECT 1")).then(
+      () => true,
+      () => false
+    );
+  if (await waitUntil(ready, { timeoutMs, intervalMs: 1000 })) return;
   throw new Error(`postgres did not accept queries within ${timeoutMs}ms`);
 }
 
@@ -60,14 +50,15 @@ export async function waitForPostgres(port: number, timeoutMs = 60_000) {
 // the request that woke the stack is waiting on exactly them.
 export async function waitForApi(
   port: number,
-  anonKey: string,
+  // The service key: the gateway serves bare /rest/v1/ (the OpenAPI document)
+  // to the service role only, as the hosted platform does.
+  serviceKey: string,
   timeoutMs = 60_000
 ) {
-  const deadline = Date.now() + timeoutMs;
   const up = async (path: string) => {
     try {
       const res = await fetch(`http://127.0.0.1:${port}${path}`, {
-        headers: { apikey: anonKey },
+        headers: { apikey: serviceKey },
         signal: AbortSignal.timeout(2000)
       });
       return res.ok;
@@ -75,10 +66,9 @@ export async function waitForApi(
       return false;
     }
   };
-  while (Date.now() < deadline) {
-    if ((await up("/rest/v1/")) && (await up("/auth/v1/health"))) return;
-    await sleep(500);
-  }
+  const both = async () =>
+    (await up("/rest/v1/")) && (await up("/auth/v1/health"));
+  if (await waitUntil(both, { timeoutMs, intervalMs: 500 })) return;
   throw new Error(`the API did not answer within ${timeoutMs}ms`);
 }
 
@@ -92,7 +82,7 @@ export async function waitForApi(
  * passwords drift and storage-api auth-fails forever otherwise.
  */
 export async function waitForStorageReady(
-  port: number,
+  db: DbTarget,
   opts: {
     onHeal?: () => Promise<void>;
     onProgress?: (line: string) => void;
@@ -103,7 +93,7 @@ export async function waitForStorageReady(
   const elapsed = () => Math.floor((Date.now() - start) / 1000);
 
   opts.onProgress?.("waiting for storage.buckets");
-  if (await pollBuckets(port, start + 30_000)) {
+  if (await pollBuckets(db, start + 30_000)) {
     opts.onProgress?.(`storage.buckets ready (${elapsed()}s)`);
     return;
   }
@@ -113,7 +103,7 @@ export async function waitForStorageReady(
     await opts.onHeal();
   }
 
-  if (await pollBuckets(port, start + 180_000)) {
+  if (await pollBuckets(db, start + 180_000)) {
     opts.onProgress?.(`storage.buckets ready (${elapsed()}s)`);
     return;
   }
@@ -138,17 +128,13 @@ export async function waitForStorageReady(
 // Connect as `supabase_admin` (not `postgres`): current supabase/postgres
 // images treat `supabase_admin` as a reserved role; only a superuser may
 // `ALTER` it, and the host TCP `postgres` role is no longer sufficient.
-export async function applyBootstrapSql(root: string, port: number) {
+export async function applyBootstrapSql(root: string, db: DbTarget) {
   const sql = readFileSync(join(root, "packages/dev/docker/init.sql"), "utf8");
-  await withClient(port, (c) => c.query(sql), {
+  await withClient(db, (c) => c.query(sql), {
     user: "supabase_admin",
     password: "postgres"
   });
 }
-
-// ---------------------------------------------------------------------------
-// Schema migrations
-// ---------------------------------------------------------------------------
 
 // --include-all: supabase bootstrap inserts a sentinel into schema_migrations
 // that makes earlier-timestamp migrations look "out of order" without it.
@@ -159,16 +145,21 @@ export async function applyBootstrapSql(root: string, port: number) {
 // `session_authorization=postgres` as non-superuser (`is_superuser=off`), so
 // the CLI cannot INSERT migration bookkeeping rows into
 // `supabase_migrations.schema_migrations` as `postgres`.
-export async function applyMigrations(
+async function applyMigrations(
   root: string,
-  dbPort: number
+  db: DbTarget
 ): Promise<{ applied: boolean }> {
-  const dbUrl = `postgresql://supabase_admin:postgres@localhost:${dbPort}/postgres`;
-  const args = ["migration", "up", "--include-all", "--db-url", dbUrl];
+  const args = [
+    "migration",
+    "up",
+    "--include-all",
+    "--db-url",
+    dbUrl(db, "supabase_admin")
+  ];
   const cwd = join(root, "packages/database");
 
-  // Retry up to 3 times on deadlock — background services (PostgREST,
-  // Realtime) hold catalog locks that race with CREATE POLICY / ALTER TABLE.
+  // Background services (PostgREST, Realtime) hold catalog locks that race
+  // with CREATE POLICY / ALTER TABLE, so a deadlock is retried.
   const MAX_RETRIES = 3;
   const execOpts = { cwd, reject: false, preferLocal: true };
   // Inferred from the call so `r` is the string-encoded result (not execa's
@@ -188,7 +179,7 @@ export async function applyMigrations(
     // Auto-repair: DB has migration versions not present locally (stale from
     // another branch or incomplete volume wipe). Remove them and retry.
     if (/remote migration versions not found in local/i.test(output)) {
-      const repaired = await repairStaleMigrations(root, dbPort);
+      const repaired = await repairStaleMigrations(root, db);
       if (repaired > 0) {
         log.warn(`repaired ${repaired} stale migration(s) — retrying`);
         const retry = await execa("supabase", args, {
@@ -213,11 +204,78 @@ export async function applyMigrations(
   return { applied: didApplyMigrations(r) };
 }
 
+/**
+ * The steps that bring a worktree database in line with this branch, in
+ * order: migrations, the cron forwarding, the config row, generated types,
+ * then the RLS policies. Every command that changes a database runs these.
+ */
+export function databaseTasks(
+  stack: { root: string; db: DbTarget; mode: StackMode; hosts: StackHosts },
+  opts: {
+    migrate: boolean;
+    regen: boolean;
+    /** Swagger reads the running API, so only `crbn up` and a running stack have it. */
+    swagger: boolean;
+    /** Default: with `migrate`. A restore sets it: its database has the
+     *  table whether it migrates or not, and `--mode prod` keeps the source's. */
+    configRow?: boolean;
+  }
+): Task[] {
+  const { root, db } = stack;
+  let applied = false;
+  return [
+    {
+      title: "Apply database migrations",
+      enabled: opts.migrate,
+      task: async () => {
+        applied = (await applyMigrations(root, db)).applied;
+        return applied ? "migrations applied" : "schema already up to date";
+      }
+    },
+    {
+      // Also when none applied: a restore loads cron.job with triggers off.
+      title: "Forward the worktree's cron jobs",
+      enabled: stack.mode === "shared",
+      task: async () => {
+        await syncWorktreeCron(db.database);
+        return "cron jobs forwarded";
+      }
+    },
+    {
+      // Needs the "config" table, which a fresh database has only once
+      // migrations ran.
+      title: "Seed pg_net config row",
+      enabled: opts.configRow ?? opts.migrate,
+      task: async () => {
+        await ensureConfigRow(db, readDevJwt().anonKey, stack.hosts);
+        return "config row upserted";
+      }
+    },
+    {
+      title: opts.swagger ? "Regenerate types & swagger" : "Regenerate types",
+      enabled: opts.regen,
+      task: async () => {
+        // Always: the checked-in types can lag a database that is already
+        // migrated (a branch switch, a stash-pop, reverted generated files).
+        await execa("pnpm", ["db:types"], { cwd: root });
+        if (!opts.swagger || !applied) return "types refreshed";
+        await execa("pnpm", ["generate:swagger"], { cwd: root });
+        return "types + swagger refreshed";
+      }
+    },
+    {
+      title: "Sync RLS policies with the authz manifest",
+      enabled: opts.migrate,
+      task: () => syncAuthz(root, db)
+    }
+  ];
+}
+
 // Make every table's RLS policies match packages/database/src/authz/manifest.ts — the
 // one place policies are authored; migrations only create tables. Callers run it after
 // migrations (which create the tables) and after type regen, so a manifest problem
 // fails loudly without leaving the generated types stale.
-export async function syncAuthz(root: string, dbPort: number): Promise<string> {
+async function syncAuthz(root: string, db: DbTarget): Promise<string> {
   const r = await execa(
     "pnpm",
     ["--silent", "--filter", "@carbon/database", "run", "authz", "sync"],
@@ -226,7 +284,9 @@ export async function syncAuthz(root: string, dbPort: number): Promise<string> {
       reject: false,
       env: {
         ...process.env,
-        SUPABASE_DB_URL: `postgresql://supabase_admin:postgres@localhost:${dbPort}/postgres`
+        SUPABASE_DB_URL: dbUrl(db, "supabase_admin"),
+        // The pooler logs in as postgres; this connection is supabase_admin.
+        SUPABASE_DB_POOLER_URL: ""
       }
     }
   );
@@ -252,7 +312,7 @@ function didApplyMigrations(r: { stdout?: string; stderr?: string }): boolean {
 // remove them from supabase_migrations.schema_migrations.
 async function repairStaleMigrations(
   root: string,
-  dbPort: number
+  db: DbTarget
 ): Promise<number> {
   const migrationsDir = join(root, "packages/database/supabase/migrations");
   const localVersions = new Set(
@@ -262,7 +322,7 @@ async function repairStaleMigrations(
   );
 
   const remoteVersions = await withClient(
-    dbPort,
+    db,
     async (c) => {
       const res = await c.query<{ version: string }>(
         "SELECT version FROM supabase_migrations.schema_migrations ORDER BY version"
@@ -276,7 +336,7 @@ async function repairStaleMigrations(
   if (stale.length === 0) return 0;
 
   await withClient(
-    dbPort,
+    db,
     async (c) => {
       for (const version of stale) {
         await c.query(
@@ -290,10 +350,6 @@ async function repairStaleMigrations(
 
   return stale.length;
 }
-
-// ---------------------------------------------------------------------------
-// Config row (pg_net push targets)
-// ---------------------------------------------------------------------------
 
 /**
  * Whether the Supabase service schemas are initialized, not just present.
@@ -314,8 +370,8 @@ async function repairStaleMigrations(
  * Realtime is the third: `realtime.messages` is built by the Realtime service,
  * and Carbon's migrations put policies on it.
  */
-export async function serviceSchemasReady(dbPort: number): Promise<boolean> {
-  return withClient(dbPort, async (c) => {
+export async function serviceSchemasReady(db: DbTarget): Promise<boolean> {
+  return withClient(db, async (c) => {
     const r = await c.query(
       `SELECT to_regclass('auth.users') IS NOT NULL
                 AND to_regclass('storage.objects') IS NOT NULL
@@ -333,12 +389,9 @@ export async function serviceSchemasReady(dbPort: number): Promise<boolean> {
 
 // Carbon's migrations write into schemas GoTrue, Storage and Realtime build on
 // their first boot, so a fresh volume can't be migrated until all three have.
-export async function waitForServiceSchemas(port: number, timeoutMs = 90_000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (await serviceSchemasReady(port).catch(() => false)) return;
-    await sleep(1000);
-  }
+export async function waitForServiceSchemas(db: DbTarget, timeoutMs = 90_000) {
+  const ready = () => serviceSchemasReady(db).catch(() => false);
+  if (await waitUntil(ready, { timeoutMs, intervalMs: 1000 })) return;
   throw new Error(
     `auth / storage / realtime schemas not ready within ${timeoutMs}ms — check the gotrue, storage and realtime containers`
   );
@@ -348,41 +401,39 @@ export async function waitForServiceSchemas(port: number, timeoutMs = 90_000) {
 // functions read), and the Vault `inngest_event_url` that
 // util.send_inngest_event posts database events to. Without the URL the
 // event-queue wake never fires in dev — and since webhooks ride the event
-// system, they don't either. Both URLs are in-network (Kong, Inngest): pg_net
-// runs inside the postgres container, which can't reach host ports.
-export async function ensureConfigRow(
-  dbPort: number,
-  anonKey: string
+// system, they don't either. Both URLs are in-network (the API gateway,
+// Inngest): pg_net requests leave from inside Docker, which can't reach host
+// ports. `hosts` names the gateway and Inngest on that network: `kong` and
+// `inngest` on a private stack, the worktree's aliases on the carbon-shared network.
+async function ensureConfigRow(
+  db: DbTarget,
+  anonKey: string,
+  hosts: { api: string; inngest: string }
 ): Promise<void> {
-  await withClient(dbPort, (c) =>
+  await withClient(db, (c) =>
     c.query(
       `INSERT INTO "config" ("id", "apiUrl", "anonKey")
-       VALUES (TRUE, 'http://kong:8000', $1)
+       VALUES (TRUE, $2, $1)
        ON CONFLICT ("id") DO UPDATE
          SET "apiUrl" = EXCLUDED."apiUrl", "anonKey" = EXCLUDED."anonKey"`,
-      [anonKey]
+      [anonKey, `http://${hosts.api}:8000`]
     )
   );
-  // Postgres sends its Inngest events to the dev server on the compose network.
-  await withClient(dbPort, (c) =>
-    c.query(
-      `SELECT public.set_inngest_event_url('http://inngest:8288/e/NO_EVENT_KEY_SET')`
-    )
+  await withClient(db, (c) =>
+    c.query(`SELECT public.set_inngest_event_url($1)`, [
+      `http://${hosts.inngest}:8288/e/NO_EVENT_KEY_SET`
+    ])
   );
 }
-
-// ---------------------------------------------------------------------------
-// Smoke-test user
-// ---------------------------------------------------------------------------
 
 const SMOKE_TEST_EMAIL = "test@carbon.ms";
 
 export async function ensureSmokeTestUser(
   root: string,
-  dbPort: number,
+  db: DbTarget,
   apiPort: number
 ): Promise<{ seeded: boolean }> {
-  const exists = await withClient(dbPort, async (c) => {
+  const exists = await withClient(db, async (c) => {
     const r = await c.query<{ count: string }>(
       `SELECT count(*)::text FROM "user" WHERE email = $1`,
       [SMOKE_TEST_EMAIL]
@@ -392,7 +443,6 @@ export async function ensureSmokeTestUser(
 
   if (exists) return { seeded: false };
 
-  const dbUrl = `postgresql://postgres:postgres@localhost:${dbPort}/postgres`;
   const supabaseUrl = `http://localhost:${apiPort}`;
   await execa(
     "pnpm",
@@ -409,7 +459,7 @@ export async function ensureSmokeTestUser(
       cwd: root,
       env: {
         ...process.env,
-        SUPABASE_DB_URL: dbUrl,
+        SUPABASE_DB_URL: dbUrl(db),
         SUPABASE_URL: supabaseUrl,
         NODE_TLS_REJECT_UNAUTHORIZED: "0"
       },
@@ -420,29 +470,24 @@ export async function ensureSmokeTestUser(
   return { seeded: true };
 }
 
-// ---------------------------------------------------------------------------
-// Private helpers
-// ---------------------------------------------------------------------------
-
 type HostPgOpts = {
   user?: string;
   password?: string;
   database?: string;
 };
 
-// Host-side Postgres connection. `pg` avoids a host `psql` install —
-// previously a hidden requirement that bit at least one engineer.
+// Host-side Postgres connection through `pg`, so no host `psql` is needed.
 async function withClient<T>(
-  port: number,
+  db: DbTarget,
   fn: (c: pg.Client) => Promise<T>,
   opts: HostPgOpts = {}
 ): Promise<T> {
   const client = new pg.Client({
     host: "127.0.0.1",
-    port,
+    port: db.port,
     user: opts.user ?? "postgres",
     password: opts.password ?? "postgres",
-    database: opts.database ?? "postgres"
+    database: opts.database ?? db.database
   });
   await client.connect();
   try {
@@ -452,17 +497,15 @@ async function withClient<T>(
   }
 }
 
-async function pollBuckets(port: number, deadline: number): Promise<boolean> {
-  while (Date.now() < deadline) {
-    if (await storageBucketsExists(port)) return true;
-    await sleep(1000);
-  }
-  return false;
-}
+const pollBuckets = (db: DbTarget, deadline: number) =>
+  waitUntil(() => storageBucketsExists(db), {
+    timeoutMs: deadline - Date.now(),
+    intervalMs: 1000
+  });
 
-async function storageBucketsExists(port: number): Promise<boolean> {
+async function storageBucketsExists(db: DbTarget): Promise<boolean> {
   try {
-    return await withClient(port, async (c) => {
+    return await withClient(db, async (c) => {
       const r = await c.query<{ regclass: string | null }>(
         "SELECT to_regclass('storage.buckets')::text AS regclass"
       );

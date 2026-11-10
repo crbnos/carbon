@@ -2,10 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { carbon, respond } from "@carbon/api/carbon.server";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
@@ -15,15 +16,17 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
-import type { Opportunity, SalesOrder, SalesOrderLine } from "~/modules/sales";
+import { salesOrderValidator } from "~/modules/sales/sales.models";
 import {
   getSalesOrder,
   getSalesOrderPayment,
-  getSalesOrderShipment,
-  isSalesOrderLocked,
-  salesOrderValidator,
-  updateSalesOrder
-} from "~/modules/sales";
+  getSalesOrderShipment
+} from "~/modules/sales/sales.service";
+import type {
+  Opportunity,
+  SalesOrder,
+  SalesOrderLine
+} from "~/modules/sales/types";
 import {
   OpportunityDocuments,
   OpportunityNotes,
@@ -36,7 +39,6 @@ import {
 } from "~/modules/sales/ui/SalesOrder";
 import type { SalesOrderShipmentFormRef } from "~/modules/sales/ui/SalesOrder/SalesOrderShipmentForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
-import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -85,67 +87,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { client: viewClient } = await requirePermissions(request, {
-    view: "sales"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(salesOrderValidator).request(args, {
+    params: ["orderId"]
   });
+  if ("invalid" in input) return input.invalid;
+  const { orderId } = input.params;
 
-  const { orderId: id } = params;
-  if (!id) throw new Error("Could not find id");
-
-  const salesOrder = await getSalesOrder(viewClient, id);
-  if (salesOrder.error) {
-    throw redirect(
-      path.to.salesOrder(id),
-      await flash(
-        request,
-        error(salesOrder.error, "Failed to load sales order")
-      )
-    );
-  }
-
-  await requireUnlocked({
-    request,
-    isLocked: isSalesOrderLocked(salesOrder.data?.status),
-    redirectTo: path.to.salesOrder(id),
-    message: "Cannot modify a locked sales order. Reopen it first."
+  const api = await carbon(args.request);
+  const result = await api.sales.updateSalesOrderDetails({
+    ...input.data,
+    id: orderId,
+    customFields: input.formData ? setCustomFields(input.formData) : undefined
   });
-
-  const { client, userId } = await requirePermissions(request, {
-    update: "sales"
+  return respond(args.request, result).redirect(path.to.salesOrder(orderId), {
+    message: "Updated order"
   });
-
-  const formData = await request.formData();
-  const validation = await validator(salesOrderValidator).validate(formData);
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  const result = await updateSalesOrder(client, {
-    id,
-    status: validation.data.status,
-    currencyCode: validation.data.currencyCode,
-    orderDate: validation.data.orderDate,
-    customerId: validation.data.customerId,
-    customerContactId: validation.data.customerContactId || null,
-    customerLocationId: validation.data.customerLocationId || null,
-    notes: validation.data.notes,
-    customFields: setCustomFields(formData),
-    updatedBy: userId
-  });
-  if (result.error) {
-    throw redirect(
-      path.to.salesOrder(id),
-      await flash(request, error(result.error, "Failed to update order"))
-    );
-  }
-
-  throw redirect(
-    path.to.salesOrder(id),
-    await flash(request, success("Updated order"))
-  );
 }
 
 export default function SalesOrderDetailsRoute() {

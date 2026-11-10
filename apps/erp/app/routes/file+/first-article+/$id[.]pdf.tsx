@@ -8,7 +8,7 @@ import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { getPreferenceHeaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { renderFirstArticleInspectionPdf } from "~/modules/quality/firstArticlePdf.server";
+import { renderFirstArticleInspectionPdf } from "~/modules/quality/firstArticle.pdf";
 
 const logger = getLogger("erp", "first-article", "pdf");
 

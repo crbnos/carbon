@@ -13,9 +13,9 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   getFirstArticleCreateOptions,
-  getFirstArticleInspection
-} from "~/modules/quality";
-import { seedFirstArticleProductsOnView } from "~/modules/quality/firstArticle.server";
+  getFirstArticleInspection,
+  seedFirstArticleProductsOnView
+} from "~/modules/quality/quality.service";
 import {
   FirstArticleCharacteristics,
   FirstArticleForm1,

@@ -2,182 +2,24 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { trackWorkEvent } from "@carbon/lib/telemetry";
-import { raiseMoment } from "@carbon/lib/workflows";
-import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { getCompanySettings } from "~/modules/settings";
-import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
-import { getDatabaseClient } from "~/services/database.server";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 
-const logger = getLogger("erp", "purchase-invoice.post");
+const postForm = z.object({
+  skipReceiptPost: zfd.checkbox({ trueValue: "true" })
+});
 
-export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "invoicing"
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(postForm).request(args, {
+    params: ["invoiceId"]
   });
-
-  const { invoiceId } = params;
-  if (!invoiceId) throw new Error("invoiceId not found");
-
-  const formData = await request.formData();
-  const skipReceiptPost = formData.get("skipReceiptPost") === "true";
-
-  // A supplier with no reachable contact cannot be created as a vendor at a
-  // spend platform, so an invoice posted for one is rejected downstream, hours
-  // later, in a sync log nobody is watching. Gate it here while the person who
-  // can fix the supplier is still looking at it. No-op unless the company has
-  // turned the setting on.
-  const invoiceSupplier = await client
-    .from("purchaseInvoice")
-    .select("supplierId")
-    .eq("id", invoiceId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-
-  // Fail CLOSED. Without the error check this read was the gate's own bypass: any
-  // failure (or a row in another tenant) left `supplierId` undefined, and
-  // `checkPartyContactRequirement` returns null for a party with no id — so the
-  // requirement the company switched on silently let the invoice post.
-  if (invoiceSupplier.error || !invoiceSupplier.data) {
-    logger.error("Could not read the invoice supplier before posting", {
-      companyId,
-      invoiceId,
-      error: invoiceSupplier.error
-    });
-    return {
-      success: false,
-      message: "Failed to post purchase invoice"
-    };
-  }
-
-  const supplierContactError = await checkPartyContactRequirement(
-    client,
-    companyId,
-    { kind: "supplier", id: invoiceSupplier.data.supplierId }
-  );
-  if (supplierContactError) {
-    return { success: false, message: supplierContactError };
-  }
-
-  const setPendingState = await client
-    .from("purchaseInvoice")
-    .update({
-      status: "Pending"
-    })
-    .eq("id", invoiceId)
-    .eq("companyId", companyId)
-    .in("status", ["Draft", "Pending"])
-    .select("id");
-
-  if (setPendingState.error) {
-    return {
-      success: false,
-      message: "Failed to post purchase invoice"
-    };
-  }
-
-  if (!setPendingState.data?.length) {
-    return {
-      success: false,
-      message: "This purchase invoice has already been posted"
-    };
-  }
-
-  let receiptIds: string[] | undefined;
-
-  try {
-    const serviceRole = await getCarbonServiceRole();
-    const posted = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
-      .invoke("post-purchase-invoice", {
-        invoiceId: invoiceId,
-        skipReceiptPost: skipReceiptPost
-      });
-
-    if (posted.error) {
-      await client
-        .from("purchaseInvoice")
-        .update({
-          status: "Draft"
-        })
-        .eq("id", invoiceId);
-
-      return {
-        success: false,
-        message: "Failed to post purchase invoice"
-      };
-    }
-
-    receiptIds = posted.data?.receiptIds;
-
-    // Check if we should update prices on invoice post
-    const companySettings = await getCompanySettings(serviceRole, companyId);
-    if (
-      !companySettings.data?.purchasePriceUpdateTiming ||
-      companySettings.data.purchasePriceUpdateTiming === "Purchase Invoice Post"
-    ) {
-      const priceUpdate = await serverFns
-        .system({ db: getDatabaseClient(), companyId, userId })
-        .invoke("update-purchased-prices", {
-          invoiceId,
-          source: "purchaseInvoice",
-          updatePrices: true,
-          updateLeadTimes: false
-        });
-
-      if (priceUpdate.error) {
-        await client
-          .from("purchaseInvoice")
-          .update({
-            status: "Draft"
-          })
-          .eq("id", invoiceId);
-
-        return {
-          success: false,
-          message: "Failed to update prices"
-        };
-      }
-    }
-    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  } catch (error) {
-    await client
-      .from("purchaseInvoice")
-      .update({
-        status: "Draft"
-      })
-      .eq("id", invoiceId);
-
-    return {
-      success: false,
-      message: "Failed to post purchase invoice"
-    };
-  }
-
-  // Must stay below the rollback catch above — a post that got reverted to
-  // Draft must not fire workflows.
-  await raiseMoment("invoicing.purchaseInvoicePosted", {
-    outputs: { purchaseInvoice: { id: invoiceId }, postedBy: { id: userId } },
-    companyId,
-    actorId: userId
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.invoicing.postPurchaseInvoice({
+    invoiceId: input.params.invoiceId,
+    skipReceiptPost: input.data.skipReceiptPost
   });
-
-  trackWorkEvent("purchase_invoice_posted", {
-    companyId,
-    userId,
-    purchaseInvoiceId: invoiceId
-  });
-
-  const receiptId =
-    skipReceiptPost && receiptIds?.[0] ? receiptIds[0] : undefined;
-
-  return {
-    success: true,
-    message: "Purchase invoice posted successfully",
-    receiptId
-  };
 }

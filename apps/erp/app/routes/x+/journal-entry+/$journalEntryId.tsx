@@ -8,15 +8,22 @@ import { flash } from "@carbon/auth/session.server";
 import { RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
-import { useParams } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import { useLoaderData } from "react-router";
+import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
   getActiveDimensionsWithValues,
   getCompaniesInGroup,
   getJournalEntry,
+  getJournalEntryRelatedItems,
   getJournalLineDimensions
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service";
+import {
+  JournalEntryDocuments,
+  JournalEntryHeader
+} from "~/modules/accounting/ui/JournalEntries";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -27,39 +34,8 @@ export const handle: Handle = {
   module: "accounting"
 };
 
-// Maps a journal's sourceType to the document it was posted from, so the
-// details screen can link back to it (like the Sales Order button on an
-// invoice). `Manual` entries and unmapped sources show no link.
-const journalSourceDocumentMap: Record<
-  string,
-  { table: string; column: string; to: (id: string) => string }
-> = {
-  Payment: {
-    table: "payment",
-    column: "paymentId",
-    to: (id) => path.to.payment(id)
-  },
-  "Sales Invoice": {
-    table: "salesInvoice",
-    column: "invoiceId",
-    to: (id) => path.to.salesInvoiceDetails(id)
-  },
-  "Purchase Invoice": {
-    table: "purchaseInvoice",
-    column: "invoiceId",
-    to: (id) => path.to.purchaseInvoiceDetails(id)
-  },
-  "Sales Shipment": {
-    table: "shipment",
-    column: "shipmentId",
-    to: (id) => path.to.shipmentDetails(id)
-  },
-  "Purchase Receipt": {
-    table: "receipt",
-    column: "receiptId",
-    to: (id) => path.to.receiptDetails(id)
-  }
-};
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.journalEntry?.journalEntryId, "Journal Entry");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
@@ -95,50 +71,42 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const journalLineIds = (journalEntry.data.journalLine ?? []).map((l) => l.id);
   const lineDimensions = await getJournalLineDimensions(client, journalLineIds);
 
-  // Resolve the source document (if any) so the screen can link back to it.
-  const sourceType = journalEntry.data.sourceType;
-  const documentId =
-    (journalEntry.data.journalLine ?? []).find((l) => l.documentId)
-      ?.documentId ?? null;
-  let sourceDocument: { readableId: string; to: string } | null = null;
-  if (sourceType && sourceType !== "Manual" && documentId) {
-    const spec = journalSourceDocumentMap[sourceType];
-    if (spec) {
-      const doc = await client
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .from(spec.table as any)
-        .select(`id, ${spec.column}`)
-        .eq("id", documentId)
-        .maybeSingle();
-      if (doc.data) {
-        sourceDocument = {
-          readableId: (doc.data as unknown as Record<string, string>)[
-            spec.column
-          ],
-          to: spec.to(documentId)
-        };
-      }
-    }
-  }
-
   return {
     journalEntry: journalEntry.data,
     companies: companies.data ?? [],
     dimensions: dimensions.data ?? [],
     lineDimensions: lineDimensions.data ?? {},
-    sourceDocument
+    relatedItems: getJournalEntryRelatedItems(client, companyId, {
+      id: journalEntry.data.id,
+      sourceType: journalEntry.data.sourceType,
+      lines: (journalEntry.data.journalLine ?? []).map((line) => ({
+        documentType: line.documentType,
+        documentId: line.documentId
+      })),
+      accountingPeriodId: journalEntry.data.accountingPeriodId,
+      reversalOfId: journalEntry.data.reversalOfId,
+      reversedById: journalEntry.data.reversedById
+    })
   };
 }
 
 export default function JournalEntryRoute() {
-  const { journalEntryId } = useParams();
-  if (!journalEntryId) throw new Error("Could not find journalEntryId");
-
+  const { journalEntry } = useLoaderData<typeof loader>();
   return (
-    <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
-      <div className="h-full p-4 w-full max-w-5xl mx-auto">
-        <RecordOutlet />
-      </div>
-    </div>
+    <DocumentPage
+      header={<JournalEntryHeader />}
+      sidebar={
+        <DocumentSidebar
+          documents={<JournalEntryDocuments />}
+          activity={{
+            entityType: "journalEntry",
+            entityId: journalEntry.id,
+            refreshKey: `${journalEntry.updatedAt ?? ""}:${journalEntry.status}`
+          }}
+        />
+      }
+    >
+      <RecordOutlet />
+    </DocumentPage>
   );
 }

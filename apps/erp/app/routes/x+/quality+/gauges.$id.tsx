@@ -7,25 +7,26 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { GaugeType } from "~/modules/quality";
+import { gaugeValidator } from "~/modules/quality/quality.models";
 import {
-  gaugeValidator,
   getGauge,
   getGaugeCalibrationRecordsByGaugeId,
   updateGauge
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service";
+import type { GaugeType } from "~/modules/quality/types";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { getParams, path } from "~/utils/path";
+
 export const handle: Handle = {
   breadcrumb: msg`Gauges`,
   to: path.to.gauges
@@ -96,7 +97,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     gaugeCalibrationStatus,
     gaugeTypeId: d.gaugeTypeId,
     gaugeRole: d.gaugeRole,
-    supplierId: d.supplierId || null,
+    manufacturer: d.manufacturer || null,
     modelNumber: d.modelNumber || null,
     serialNumber: d.serialNumber || null,
     description: d.description || null,
@@ -135,7 +136,7 @@ export default function GaugeRoute() {
   const initialValues = {
     id: gauge.id,
     gaugeId: gauge.gaugeId,
-    supplierId: gauge.supplierId ?? "",
+    manufacturer: gauge.manufacturer ?? "",
     modelNumber: gauge.modelNumber ?? "",
     serialNumber: gauge.serialNumber ?? "",
     description: gauge.description ?? "",
@@ -152,7 +153,7 @@ export default function GaugeRoute() {
     ...getCustomFields(gauge.customFields)
   };
 
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   return (
     <GaugeForm
@@ -161,7 +162,8 @@ export default function GaugeRoute() {
       initialValues={initialValues}
       records={records}
       gaugeTypes={routeData?.gaugeTypes ?? []}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

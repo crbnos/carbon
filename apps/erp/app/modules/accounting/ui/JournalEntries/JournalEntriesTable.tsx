@@ -29,6 +29,7 @@ import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { JournalEntrySourceTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
+import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { usePeople } from "~/stores/people";
@@ -43,6 +44,7 @@ import JournalEntryStatus from "./JournalEntryStatus";
 type JournalEntriesTableProps = {
   data: JournalEntryListItem[];
   count: number;
+  infinite: InfiniteOptions;
   primaryAction?: ReactNode;
 };
 
@@ -55,7 +57,7 @@ const defaultColumnVisibility = {
 };
 
 const JournalEntriesTable = memo(
-  ({ data, count, primaryAction }: JournalEntriesTableProps) => {
+  ({ data, count, primaryAction, infinite }: JournalEntriesTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -81,6 +83,7 @@ const JournalEntriesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookmark />
           }
         },
@@ -120,6 +123,9 @@ const JournalEntriesTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P3",
+            // Phones: plain text on the row's context line.
+            mobileCell: ({ row }) => row.original.description || "—",
             icon: <LuFileText />
           }
         },
@@ -149,6 +155,7 @@ const JournalEntriesTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: journalEntryStatuses.map((v) => ({
@@ -165,6 +172,7 @@ const JournalEntriesTable = memo(
           cell: ({ row }) =>
             currencyFormatter.format(Number(row.original.totalDebits)),
           meta: {
+            mobile: "P2",
             icon: <LuCircleDollarSign />
           }
         },
@@ -273,6 +281,7 @@ const JournalEntriesTable = memo(
     return (
       <>
         <Table<JournalEntryListItem>
+          infinite={infinite}
           data={data}
           columns={columns}
           count={count}
@@ -280,6 +289,8 @@ const JournalEntriesTable = memo(
           primaryAction={primaryAction}
           renderContextMenu={renderContextMenu}
           title={t`Journal Entries`}
+          table="journal"
+          withSavedView
         />
         {selectedEntry && selectedEntry.id && (
           <ConfirmDelete
@@ -289,11 +300,9 @@ const JournalEntriesTable = memo(
             text={t`Are you sure you want to delete ${selectedEntry.journalEntryId}?`}
             onCancel={() => {
               deleteModal.onClose();
-              setSelectedEntry(null);
             }}
             onSubmit={() => {
               deleteModal.onClose();
-              setSelectedEntry(null);
             }}
           />
         )}

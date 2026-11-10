@@ -4,7 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import { Badge, Combobox, cn, HStack, VStack } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { distinctItemText, formatDate } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
@@ -33,7 +33,7 @@ import {
   JobOperationProgress,
   type jobOperationValidator
 } from "~/modules/sales/ui/CustomerPortal";
-import type { ItemType } from "~/modules/shared";
+import type { ItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 export const outboundHorizons = ["7", "14", "30", "all"] as const;
@@ -138,6 +138,7 @@ const OutboundTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -193,6 +194,7 @@ const OutboundTable = memo(
             <CustomerAvatar customerId={row.original.customerId} />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuSquareUser />
           }
         },
@@ -224,7 +226,10 @@ const OutboundTable = memo(
               <span className="truncate">
                 {row.original.itemReadableIdWithRevision}
               </span>
-              {row.original.itemName && (
+              {distinctItemText(
+                row.original.itemReadableIdWithRevision,
+                row.original.itemName
+              ) && (
                 <span className="text-xs text-muted-foreground truncate max-w-[240px]">
                   {row.original.itemName}
                 </span>
@@ -263,14 +268,18 @@ const OutboundTable = memo(
           id: "progress",
           header: t`Progress`,
           // No attachments here, so the portal-only customerId is never read.
+          // Phones: the strip scrolls sideways so segment labels stay whole.
           cell: ({ row }) => (
-            <JobOperationProgress
-              customerId=""
-              jobOperations={row.original.operations}
-              jobOperationAttachments={{}}
-            />
+            <div className="contents max-md:block max-md:max-w-full max-md:overflow-x-auto max-md:scroll-fade-x max-md:[&>div>*]:shrink-0">
+              <JobOperationProgress
+                customerId=""
+                jobOperations={row.original.operations}
+                jobOperationAttachments={{}}
+              />
+            </div>
           ),
           meta: {
+            mobile: "P2",
             filterHeader: t`Progress`,
             exportValue: (row) =>
               `${row.operations.filter((op) => op.status === "Done").length}/${row.operations.length}`
@@ -333,6 +342,7 @@ const OutboundTable = memo(
         headerActions={
           <HStack spacing={2}>
             <Combobox
+              aria-label={t`Location`}
               asButton
               size="sm"
               value={locationId}
@@ -342,6 +352,7 @@ const OutboundTable = memo(
               }}
             />
             <Combobox
+              aria-label={t`Horizon`}
               asButton
               size="sm"
               value={horizon}

@@ -7,7 +7,7 @@ import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getComplianceStatements } from "~/modules/quality";
+import { getComplianceStatements } from "~/modules/quality/quality.service";
 import ComplianceStatementsTable from "~/modules/quality/ui/ComplianceStatements/ComplianceStatementsTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

@@ -22,7 +22,7 @@ import {
   getPurchaseReturnOrderCredits,
   getPurchaseReturnOrderIssues,
   getPurchaseReturnOrderShipments
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service";
 import PurchaseReturnOrderSummary from "~/modules/purchasing/ui/PurchaseReturnOrders/PurchaseReturnOrderSummary";
 import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
 import { path } from "~/utils/path";

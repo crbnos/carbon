@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { Status } from "@carbon/react";
-import type { memoStatus } from "~/modules/invoicing";
+import type { memoStatus } from "~/modules/invoicing/invoicing.models";
 
 type MemoStatusProps = {
   status?: (typeof memoStatus)[number] | null;

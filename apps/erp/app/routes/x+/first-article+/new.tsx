@@ -12,13 +12,13 @@ import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { firstArticleInspectionCreateValidator } from "~/modules/quality/quality.models";
 import {
-  firstArticleInspectionCreateValidator,
-  getFirstArticleCreateOptions
-} from "~/modules/quality";
-import { seedFirstArticleProducts } from "~/modules/quality/firstArticle.server";
+  getFirstArticleCreateOptions,
+  seedFirstArticleProducts
+} from "~/modules/quality/quality.service";
 import FirstArticleCreateForm from "~/modules/quality/ui/FirstArticles/FirstArticleCreateForm";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -49,7 +49,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const [jobs, options] = await Promise.all([
     client
       .from("job")
-      .select("id, jobId, item(readableIdWithRevision)")
+      // The row type is given: inferring this embed is too deep for the
+      // compiler on the current schema (TS5114).
+      .select<
+        string,
+        {
+          id: string;
+          jobId: string;
+          item: { readableIdWithRevision: string | null } | null;
+        }
+      >("id, jobId, item(readableIdWithRevision)")
       .eq("companyId", companyId)
       .in("status", [...OPEN_JOB_STATUSES])
       .order("createdAt", { ascending: false })

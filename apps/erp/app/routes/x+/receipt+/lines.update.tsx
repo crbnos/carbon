@@ -2,44 +2,24 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { unchecked } from "@carbon/utils";
+import { carbon } from "@carbon/api/carbon.server";
+import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 
-export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "inventory"
+const linesUpdate = z.object({
+  ids: zfd.repeatableOfType(z.string()),
+  field: z.enum(["storageUnitId", "receivedQuantity"]),
+  value: zfd.text(z.string().optional())
+});
+
+export async function action(args: ActionFunctionArgs) {
+  const input = await validator(linesUpdate).request(args);
+  if ("invalid" in input) return input.invalid;
+  const api = await carbon(args.request);
+  return api.inventory.updateReceiptLines({
+    ...input.data,
+    value: input.data.value ?? null
   });
-
-  const formData = await request.formData();
-  const ids = formData.getAll("ids") as string[];
-  const field = formData.get("field");
-  const value = formData.get("value");
-
-  if (
-    typeof field !== "string" ||
-    (typeof value !== "string" && value !== null)
-  ) {
-    return { error: { message: "Invalid form data" }, data: null };
-  }
-
-  if (field !== "storageUnitId" && field !== "receivedQuantity") {
-    return { error: { message: `Invalid field: ${field}` }, data: null };
-  }
-
-  // Storage Rule evaluation runs at post time only (`$receiptId.post.tsx`).
-  // Per-line saves go straight through.
-  const update = await client
-    .from("receiptLine")
-    .update(
-      unchecked({
-        [field]: value ? value : null,
-        updatedBy: userId,
-        updatedAt: new Date().toISOString()
-      })
-    )
-    .in("id", ids)
-    .eq("companyId", companyId);
-
-  return update;
 }

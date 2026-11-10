@@ -121,7 +121,7 @@ export function BuilderControls({ panOnScroll, onTogglePanOnScroll }: Props) {
       <MiniMap
         pannable
         zoomable
-        className="!static !m-0 rounded-lg border shadow-sm"
+        className="!static !m-0 rounded-lg border shadow-sm max-md:!hidden"
         style={{ width: 180, height: 120 }}
       />
     </Panel>

@@ -5,12 +5,16 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteReturnReason, getReturnReason } from "~/modules/sales";
+import {
+  deleteReturnReason,
+  getReturnReason
+} from "~/modules/sales/sales.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -44,7 +48,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) {
     throw redirect(
       `${path.to.returnReasons}?${getParams(request)}`,
-      await flash(request, error(params, "Failed to get a return reason id"))
+      await flash(request, error(null, "Failed to get a return reason id"))
     );
   }
 
@@ -75,18 +79,18 @@ export default function DeleteReturnReasonRoute() {
   const { t } = useLingui();
   const { id } = useParams();
   const { returnReason } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.returnReasons);
 
   if (!returnReason) return null;
   if (!id) throw notFound("id not found");
 
-  const onCancel = () => navigate(path.to.returnReasons);
   return (
     <ConfirmDelete
       action={path.to.deleteReturnReason(id)}
       name={returnReason.name}
       text={t`Are you sure you want to delete the return reason: ${returnReason.name}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

@@ -3,13 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getLogger } from "@carbon/logger";
-import { ClientOnly, cn, toast } from "@carbon/react";
+import { ClientOnly, cn, toastError } from "@carbon/react";
 import type {
-  Active,
   DragEndEvent,
   DragOverEvent,
-  DragStartEvent,
-  Over
+  DragStartEvent
 } from "@dnd-kit/core";
 import {
   DndContext,
@@ -19,7 +17,6 @@ import {
   useSensor,
   useSensors
 } from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useLingui } from "@lingui/react/macro";
 import {
   createContext,
@@ -32,30 +29,31 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { useFetchers, useSubmit } from "react-router";
+import {
+  POINTER_SENSOR_OPTIONS,
+  SORTABLE_KEYBOARD_SENSOR_OPTIONS
+} from "~/utils/drag-sensors";
 import { path } from "~/utils/path";
 import { BoardContainer, ColumnCard } from "./components/ColumnCard";
 import { JobCard } from "./components/JobCard";
-import { KanbanProvider } from "./context/KanbanContext";
-import { getDateOnly, getPendingDueDate } from "./date-utils";
+import { type KanbanMoveTo, KanbanProvider } from "./context/KanbanContext";
+import {
+  type BoardDragEvent,
+  createDateDragOrigin,
+  type DateSubmission,
+  type DatesDragState,
+  datePlacementSubmission,
+  mergePendingDateMoves,
+  pendingDateMoves,
+  reduceDatesDrag
+} from "./drag-lifecycle";
 import {
   comparePriorityThenId,
-  createDragOrigin,
-  type DragOrigin,
-  type DragPreview,
   getColumnPlacement,
-  getItemPlacement,
-  isSamePlacement,
-  isSamePreview,
   resolveInsertionMarker
 } from "./placement";
 import type { Column, DisplaySettings, JobItem, Progress } from "./types";
-import { hasDraggableData, kanbanCollisionDetection } from "./utils";
-
-// Module constants: a new options object makes a new sensor, and with it new
-// listeners for every draggable on every render.
-const KEYBOARD_SENSOR_OPTIONS = {
-  coordinateGetter: sortableKeyboardCoordinates
-};
+import { kanbanCollisionDetection } from "./utils";
 
 const logger = getLogger("erp", "datekanban");
 
@@ -67,16 +65,7 @@ type DateKanbanProps = {
   tags: { name: string }[];
 } & DisplaySettings;
 
-type DateDragOrigin = DragOrigin<JobItem> & {
-  dueDate: string | null | undefined;
-};
-
-type DateDragState = {
-  origin: DateDragOrigin;
-  preview: DragPreview | null;
-};
-
-const DateDragPreviewContext = createContext<DateDragState | null>(null);
+const DateDragPreviewContext = createContext<DatesDragState>(null);
 
 type DatePreviewJobCardProps = {
   item: JobItem;
@@ -121,111 +110,11 @@ function DatePreviewJobCard({
   );
 }
 
-function isOriginItemDrag(active: Active, origin: DateDragOrigin) {
-  return (
-    hasDraggableData(active) &&
-    active.data.current?.type === "item" &&
-    String(active.id) === origin.item.id
-  );
-}
-
-function resolveDragPlacement(
-  origin: DateDragOrigin,
-  over: Over | null,
-  items: readonly JobItem[],
-  itemsById: ReadonlyMap<string, JobItem>,
-  columnsById: ReadonlyMap<string, Column>
-): DragPreview | null {
-  if (
-    !over ||
-    over.disabled ||
-    !hasDraggableData(over) ||
-    !itemsById.has(origin.item.id)
-  ) {
-    return null;
-  }
-
-  const overId = String(over.id);
-  if (overId === origin.item.id) {
-    return { ...origin.placement, targetType: "item" };
-  }
-
-  const overData = over.data.current;
-  if (overData?.type === "item") {
-    const overItem = itemsById.get(overId);
-    if (
-      !overItem ||
-      overData.item.id !== overId ||
-      overData.item.columnId !== overItem.columnId ||
-      !columnsById.has(overItem.columnId)
-    ) {
-      return null;
-    }
-
-    const placement = getItemPlacement(
-      origin,
-      items,
-      overItem.columnId,
-      overItem.id
-    );
-    return placement ? { ...placement, targetType: "item" } : null;
-  }
-
-  if (overData?.type === "column") {
-    if (
-      overData.column.id !== overId ||
-      !columnsById.has(overId) ||
-      overId === origin.placement.columnId
-    ) {
-      return null;
-    }
-
-    const placement = getColumnPlacement(origin, items, overId);
-    return placement ? { ...placement, targetType: "column" } : null;
-  }
-
-  return null;
-}
-
 function usePendingItems(locationId: string) {
-  type PendingItem = ReturnType<typeof useFetchers>[number] & {
-    formData: FormData;
-  };
-  type PendingProjection = {
-    id: string;
-    priority: number;
-    columnId: string;
-    dueDate: string | null | undefined;
-  };
-  return useFetchers()
-    .filter((fetcher): fetcher is PendingItem => {
-      return (
-        fetcher.formAction === path.to.priorityDatesUpdate &&
-        fetcher.formData?.get("locationId") === locationId
-      );
-    })
-    .map((fetcher): PendingProjection => {
-      const persistenceColumnId = fetcher.formData.get("columnId");
-      const optimisticColumnId = fetcher.formData.get("optimisticColumnId");
-      const columnId =
-        typeof optimisticColumnId === "string" && optimisticColumnId.length > 0
-          ? optimisticColumnId
-          : typeof persistenceColumnId === "string"
-            ? persistenceColumnId
-            : "";
-      const id = fetcher.formData.get("id");
-      const priority = Number(fetcher.formData.get("priority"));
-
-      return {
-        id: typeof id === "string" ? id : "",
-        priority,
-        columnId,
-        dueDate:
-          typeof persistenceColumnId === "string"
-            ? getPendingDueDate(persistenceColumnId)
-            : undefined
-      };
-    });
+  return pendingDateMoves(useFetchers(), {
+    action: path.to.priorityDatesUpdate,
+    locationId
+  });
 }
 
 // Surface reschedule failures. useFetchers() returns only in-flight fetchers in
@@ -249,15 +138,19 @@ function useDateUpdateFailureToast() {
       }
 
       const data = fetcher.data as
-        | { success: boolean; message?: string }
+        | { error?: { message?: string } | null; fieldErrors?: unknown }
         | undefined;
+      const failed = !!data?.error || !!data?.fieldErrors;
 
-      if (data?.success === false && !toastedKeys.current.has(key)) {
+      if (failed && !toastedKeys.current.has(key)) {
         toastedKeys.current.add(key);
         // Surface a friendly, translated message; log the raw server detail.
-        if (data.message)
-          logger.error("Reschedule failed", { error: data.message });
-        toast.error(t`Couldn't reschedule the job. Please try again.`);
+        if (data?.error?.message)
+          logger.error("Reschedule failed", { error: data.error.message });
+        toastError(
+          t`Couldn't reschedule the job. Please try again.`,
+          data?.error
+        );
       }
     }
   }, [fetchers, t]);
@@ -283,147 +176,87 @@ const DateKanban = ({
   // For date-based kanban, always use the column order from props (don't persist)
   const columnOrder = useMemo(() => columns.map((col) => col.id), [columns]);
 
-  const itemsById = new Map<string, JobItem>(
-    initialItems.map((item) => [item.id, item])
-  );
-
   const pendingItems = usePendingItems(locationId);
   useDateUpdateFailureToast();
 
   // Merge pending items and existing items for optimistic updates
-  for (const pendingItem of pendingItems) {
-    const item = itemsById.get(pendingItem.id);
-    if (item) {
-      itemsById.set(pendingItem.id, { ...item, ...pendingItem });
-    }
-  }
+  const itemsById = mergePendingDateMoves(initialItems, pendingItems);
 
   const baseItems = Array.from(itemsById.values()).sort(comparePriorityThenId);
   const columnsMap = new Map(columns.map((column) => [column.id, column]));
-  const dragOriginRef = useRef<DateDragOrigin | null>(null);
-  const [dragState, setDragState] = useState<DateDragState | null>(null);
+  // A ref, not state: dnd-kit can fire the next event before a re-render.
+  const dragRef = useRef<DatesDragState>(null);
+  const [dragState, setDragState] = useState<DatesDragState>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
+    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
+    useSensor(KeyboardSensor, SORTABLE_KEYBOARD_SENSOR_OPTIONS)
   );
 
-  function clearDragState() {
-    dragOriginRef.current = null;
-    setDragState(null);
+  function dispatchDrag(event: BoardDragEvent) {
+    const { state, submission } = reduceDatesDrag(dragRef.current, event, {
+      items: baseItems,
+      itemsById,
+      columnsById: columnsMap,
+      locationId
+    });
+    if (submission) submitDate(submission);
+    dragRef.current = state;
+    setDragState(state);
   }
 
   function onDragStart(event: DragStartEvent) {
-    if (
-      !hasDraggableData(event.active) ||
-      event.active.data.current?.type !== "item"
-    ) {
-      clearDragState();
-      return;
-    }
-
-    const activeItem = itemsById.get(String(event.active.id));
-    if (!activeItem || !columnsMap.has(activeItem.columnId)) {
-      clearDragState();
-      return;
-    }
-
-    const placementOrigin = createDragOrigin(baseItems, activeItem);
-    if (!placementOrigin) {
-      clearDragState();
-      return;
-    }
-
-    const origin: DateDragOrigin = {
-      ...placementOrigin,
-      dueDate:
-        activeItem.dueDate === undefined
-          ? undefined
-          : getDateOnly(activeItem.dueDate)
-    };
-    dragOriginRef.current = origin;
-    setDragState({ origin, preview: null });
+    dispatchDrag({ type: "start", active: event.active });
   }
 
   function onDragOver(event: DragOverEvent) {
-    const origin = dragOriginRef.current;
-    if (!origin) return;
-
-    if (!isOriginItemDrag(event.active, origin)) {
-      setDragState((current) =>
-        current?.origin === origin && isSamePreview(current.preview, null)
-          ? current
-          : { origin, preview: null }
-      );
-      return;
-    }
-
-    const placement = resolveDragPlacement(
-      origin,
-      event.over,
-      baseItems,
-      itemsById,
-      columnsMap
-    );
-    const preview =
-      placement && !isSamePlacement(origin.placement, placement)
-        ? placement
-        : null;
-
-    setDragState((current) =>
-      current?.origin === origin && isSamePreview(current.preview, preview)
-        ? current
-        : { origin, preview }
-    );
+    dispatchDrag({ type: "over", active: event.active, over: event.over });
   }
 
   function onDragEnd(event: DragEndEvent) {
-    const origin = dragOriginRef.current;
-    const placement =
-      origin && isOriginItemDrag(event.active, origin)
-        ? resolveDragPlacement(
-            origin,
-            event.over,
-            baseItems,
-            itemsById,
-            columnsMap
-          )
-        : null;
-
-    if (
-      origin &&
-      origin.dueDate !== undefined &&
-      placement &&
-      !isSamePlacement(origin.placement, placement)
-    ) {
-      const isSameDisplayBucket =
-        placement.columnId === origin.placement.columnId;
-      submit(
-        {
-          id: origin.item.id,
-          locationId,
-          columnId: isSameDisplayBucket
-            ? (origin.dueDate ?? origin.placement.columnId)
-            : placement.columnId,
-          optimisticColumnId: placement.columnId,
-          priority: placement.priority
-        },
-        {
-          method: "post",
-          action: path.to.priorityDatesUpdate,
-          navigate: false,
-          flushSync: true,
-          fetcherKey: `job:${origin.item.id}`
-        }
-      );
-    }
-
-    clearDragState();
+    dispatchDrag({ type: "end", active: event.active, over: event.over });
   }
 
   function onDragCancel() {
-    clearDragState();
+    dispatchDrag({ type: "cancel" });
   }
+
+  function submitDate(submission: DateSubmission) {
+    submit(submission, {
+      method: "post",
+      action: path.to.priorityDatesUpdate,
+      navigate: false,
+      flushSync: true,
+      fetcherKey: `job:${submission.id}`
+    });
+  }
+
+  // Phones: "Move to" on a card makes the same move as dropping it on that
+  // column's background.
+  const moveTo: KanbanMoveTo = {
+    targetsFor: (itemId) => {
+      const item = itemsById.get(itemId);
+      if (!item || item.dueDate === undefined) return [];
+      return columnOrder.flatMap((columnId) => {
+        const column = columnsMap.get(columnId);
+        return column && column.id !== item.columnId
+          ? [{ id: column.id, title: column.title }]
+          : [];
+      });
+    },
+    onMove: (itemId, columnId) => {
+      const activeItem = itemsById.get(itemId);
+      const origin = activeItem
+        ? createDateDragOrigin(baseItems, activeItem)
+        : null;
+      if (!origin) return;
+      const placement = getColumnPlacement(origin, baseItems, columnId);
+      const submission = placement
+        ? datePlacementSubmission(origin, placement, locationId)
+        : null;
+      if (submission) submitDate(submission);
+    }
+  };
 
   const isInitialMount = useRef(true);
 
@@ -441,6 +274,7 @@ const DateKanban = ({
       setSelectedGroup={setSelectedGroup}
       tags={tags}
       columnIds={columns.map((col) => col.id)}
+      moveTo={moveTo}
     >
       <DateDragPreviewContext.Provider value={dragState}>
         <DndContext

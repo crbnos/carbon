@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadUrl, storage } from "@carbon/files";
+import {
+  convertKbToString,
+  downloadUrl,
+  getDocumentType,
+  storage
+} from "@carbon/files";
 import { wasConvertedFromHeic } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
 import { useRevalidator } from "@carbon/query";
@@ -13,6 +18,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -27,7 +33,8 @@ import {
   Th,
   Thead,
   Tr,
-  toast
+  toast,
+  toastError
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
@@ -38,7 +45,6 @@ import DocumentIcon from "~/components/DocumentIcon";
 import DocumentPreview from "~/components/DocumentPreview";
 import FileDropzone from "~/components/FileDropzone";
 import { useUser } from "~/hooks";
-import { getDocumentType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import { DateTime } from "./DateTime";
@@ -96,7 +102,8 @@ export default function DefaultAttachmentsPanel({
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
           });
-        if (upload.error) toast.error(t`Failed to upload ${file.name}`);
+        if (upload.error)
+          toastError(t`Failed to upload ${file.name}`, upload.error);
       }
       revalidator.revalidate();
     },
@@ -109,7 +116,7 @@ export default function DefaultAttachmentsPanel({
       try {
         await downloadUrl(url, name);
       } catch (err) {
-        toast.error(t`Error downloading file`);
+        toastError(t`Error downloading file`, err);
         logger.error("Error", { error: err });
       }
     },
@@ -129,7 +136,7 @@ export default function DefaultAttachmentsPanel({
           .company(company.id)
           .remove([storagePath]);
         if (error) {
-          toast.error(error.message || t`Error deleting file`);
+          toastError(t`Error deleting file`, error);
         } else {
           toast.success(t`${name} deleted`);
           revalidator.revalidate();
@@ -149,7 +156,7 @@ export default function DefaultAttachmentsPanel({
       </CardHeader>
       <CardContent>
         <Table className="w-full table-fixed">
-          <Thead>
+          <Thead className={cn(files.length === 0 && "max-md:hidden")}>
             <Tr>
               <Th className="w-auto">
                 <Trans>Name</Trans>
@@ -175,6 +182,16 @@ export default function DefaultAttachmentsPanel({
                   f.metadata?.size != null
                     ? Math.round(f.metadata.size / 1024)
                     : null;
+                const openFile = () => {
+                  if (isPreviewable) {
+                    window.open(
+                      path.to.file.previewFile(`private/${filePath}`),
+                      "_blank"
+                    );
+                  } else {
+                    onDownload(f.name);
+                  }
+                };
 
                 return (
                   <Tr key={f.name}>
@@ -182,15 +199,14 @@ export default function DefaultAttachmentsPanel({
                       <HStack className="gap-2 min-w-0 w-full">
                         <DocumentIcon type={type} />
                         <span
+                          role="button"
+                          tabIndex={0}
                           className="font-medium truncate cursor-pointer min-w-0 flex-1"
-                          onClick={() => {
-                            if (isPreviewable) {
-                              window.open(
-                                path.to.file.previewFile(`private/${filePath}`),
-                                "_blank"
-                              );
-                            } else {
-                              onDownload(f.name);
+                          onClick={openFile}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              openFile();
                             }
                           }}
                         >

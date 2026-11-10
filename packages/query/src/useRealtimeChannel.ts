@@ -16,6 +16,27 @@ const log = getLogger("react", "realtime-channel");
 // is live and still receiving, and reconnecting it only reloads the page.
 const RECONNECT_AFTER_HIDDEN_MS = 5 * 60_000;
 
+// One "Realtime disconnected" toast however many channels are down: they share
+// its id, and it goes when the last channel that is down reconnects or unmounts.
+const DISCONNECTED_TOAST_ID = "realtime-disconnected";
+const disconnectedChannels = new Set<object>();
+
+function showDisconnected(channel: object) {
+  disconnectedChannels.add(channel);
+  toast.loading("Realtime disconnected", {
+    id: DISCONNECTED_TOAST_ID,
+    description: "Trying to reconnect…",
+    duration: Number.POSITIVE_INFINITY,
+    dismissible: false
+  });
+}
+
+function clearDisconnected(channel: object) {
+  if (disconnectedChannels.delete(channel) && disconnectedChannels.size === 0) {
+    toast.dismiss(DISCONNECTED_TOAST_ID);
+  }
+}
+
 function formatSubscribeErr(err: unknown): string {
   if (err == null) return "No error details";
   if (typeof err === "string") return err.trim() || "No error details";
@@ -68,8 +89,7 @@ export const useRealtimeChannel = <TDeps extends any[]>(
   } = options;
   const channelRef = useRef<RealtimeChannel | null>(null);
   const isTearingDownRef = useRef(false);
-  const lastErrorToastAtRef = useRef<number>(0);
-  const lastErrorToastIdRef = useRef<string | number | null>(null);
+  const toastKeyRef = useRef({});
   const retryCountRef = useRef(0);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSilentReconnectRef = useRef(false);
@@ -143,11 +163,7 @@ export const useRealtimeChannel = <TDeps extends any[]>(
             retryCountRef.current = 0;
             onSubscribedRef.current?.(hasSubscribedRef.current);
             hasSubscribedRef.current = true;
-            // Dismiss any lingering disconnect toast — reconnect succeeded.
-            if (lastErrorToastIdRef.current != null) {
-              toast.dismiss(lastErrorToastIdRef.current);
-              lastErrorToastIdRef.current = null;
-            }
+            clearDisconnected(toastKeyRef.current);
             return;
           }
 
@@ -160,10 +176,8 @@ export const useRealtimeChannel = <TDeps extends any[]>(
             notifyOnSubscribeError &&
             !isSilentReconnectRef.current
           ) {
-            // Persistent loading toast — sticks with a spinner until reconnect
-            // succeeds. Reuses the same id so repeated CHANNEL_ERRORs don't
-            // stack. Underlying error only logged; users see a calm
-            // "reconnecting" indicator, not an alarming red toast.
+            // A calm "reconnecting" indicator rather than a red toast; the
+            // underlying error is only logged.
             if (err) {
               log.warning("Realtime subscribe error", {
                 topic,
@@ -171,17 +185,7 @@ export const useRealtimeChannel = <TDeps extends any[]>(
                 error: formatSubscribeErr(err)
               });
             }
-            const opts = {
-              id: lastErrorToastIdRef.current ?? undefined,
-              description: "Trying to reconnect…",
-              duration: Number.POSITIVE_INFINITY,
-              dismissible: false
-            } as const;
-            lastErrorToastIdRef.current = toast.loading(
-              `Realtime disconnected`,
-              opts
-            );
-            lastErrorToastAtRef.current = Date.now();
+            showDisconnected(toastKeyRef.current);
           }
 
           if (isRetriableError) {
@@ -263,10 +267,7 @@ export const useRealtimeChannel = <TDeps extends any[]>(
         retryTimerRef.current = null;
       }
       retryCountRef.current = 0;
-      if (lastErrorToastIdRef.current != null) {
-        toast.dismiss(lastErrorToastIdRef.current);
-        lastErrorToastIdRef.current = null;
-      }
+      clearDisconnected(toastKeyRef.current);
       void teardown();
     };
   }, [

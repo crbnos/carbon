@@ -23,7 +23,7 @@ import {
   LuLink
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
-import type { Activity, TrackedEntity } from "~/modules/inventory";
+import type { Activity, TrackedEntity } from "~/modules/inventory/types";
 import { path } from "~/utils/path";
 import { capitalize, copyToClipboard } from "~/utils/string";
 import { AttributeList, hasRenderedAttributes } from "./attributeRenderers";
@@ -300,17 +300,17 @@ export function TraceabilitySidebar({
   const hasMultiSelect = selectedIds && selectedIds.length > 1;
 
   return (
-    <aside className="w-[426px] flex-shrink-0 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border text-sm">
+    <aside className="w-[426px] flex-shrink-0 bg-card h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border text-sm max-md:w-full max-md:h-[45%] max-md:border-l-0 max-md:border-t">
       {hasMultiSelect && (
         <div className="flex items-center justify-between gap-2 bg-muted/40 mx-3 mt-3 rounded-md px-2 py-1">
           <div className="flex items-center gap-2 min-w-0">
             <Badge
               variant="secondary"
-              className="uppercase tracking-wide text-[10px]"
+              className="uppercase tracking-wide text-[0.625rem]"
             >
               {selectedIds.length} selected
             </Badge>
-            <span className="text-[11px] text-muted-foreground tabular-nums">
+            <span className="text-[0.6875rem] text-muted-foreground tabular-nums">
               {(focusedIndex ?? 0) + 1} / {selectedIds.length}
             </span>
           </div>
@@ -351,14 +351,14 @@ export function TraceabilitySidebar({
             {cluster ? (
               <Badge
                 variant="secondary"
-                className="uppercase tracking-wide text-[10px] shrink-0"
+                className="uppercase tracking-wide text-[0.625rem] shrink-0"
               >
                 Serial Group
               </Badge>
             ) : entity ? (
               <Badge
                 variant="secondary"
-                className="uppercase tracking-wide text-[10px] shrink-0"
+                className="uppercase tracking-wide text-[0.625rem] shrink-0"
               >
                 Entity
               </Badge>
@@ -366,7 +366,7 @@ export function TraceabilitySidebar({
               <>
                 <Badge
                   variant="outline"
-                  className="uppercase tracking-wide text-[10px] shrink-0"
+                  className="uppercase tracking-wide text-[0.625rem] shrink-0"
                 >
                   Activity
                 </Badge>
@@ -407,10 +407,10 @@ export function TraceabilitySidebar({
             </Tooltip>
           </div>
         </div>
-        <h2 className="text-[15px] font-semibold leading-5 text-foreground truncate">
+        <h2 className="text-[0.9375rem] font-semibold leading-5 text-foreground truncate">
           {headline}
         </h2>
-        <p className="text-[11px] text-muted-foreground/70 font-mono break-all leading-4 mt-0.5">
+        <p className="text-[0.6875rem] text-muted-foreground/70 font-mono break-all leading-4 mt-0.5">
           {copyId}
         </p>
       </header>
@@ -800,7 +800,7 @@ function RelatedClusterRow({
         <div className="flex items-center gap-2 min-w-0">
           <TrackedEntityStatus status={cluster.status} />
           <span className="text-sm truncate">{cluster.headline}</span>
-          <span className="text-[11px] tabular-nums text-muted-foreground shrink-0">
+          <span className="text-[0.6875rem] tabular-nums text-muted-foreground shrink-0">
             ×{cluster.members.length}
           </span>
         </div>

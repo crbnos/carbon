@@ -11,26 +11,24 @@ import { isUniqueViolation, pluckUnique, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
-import {
-  getTrackedEntityExpirations,
-  InventoryDetails
-} from "~/modules/inventory";
+import { getTrackedEntityExpirations } from "~/modules/inventory/inventory.service";
+import { InventoryDetails } from "~/modules/inventory/ui";
 import {
   getItem,
   getItemQuantities,
   getItemShelfLife,
-  getItemStorageUnitQuantities,
   getMakeMethodById,
   getMakeMethods,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
   getPickMethod,
   upsertPickMethod
-} from "~/modules/items";
-import { getLocationsList } from "~/modules/resources";
-import type { MethodItemType, MethodType } from "~/modules/shared";
-import { getTagsList } from "~/modules/shared";
-import { getUserDefaults } from "~/modules/users/users.server";
+} from "~/modules/items/items.service";
+import { getItemStorageUnitQuantities } from "~/modules/items/items.utils";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getTagsList } from "~/modules/shared/shared.service";
+import type { MethodItemType, MethodType } from "~/modules/shared/types";
+import { getUserDefaults } from "~/modules/users/users.service";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
 
@@ -144,7 +142,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (quantities.error) {
     throw redirect(
       path.to.inventory,
-      await flash(request, error(quantities, "Failed to load part quantities"))
+      await flash(
+        request,
+        error(quantities.error, "Failed to load part quantities")
+      )
     );
   }
 
@@ -247,6 +248,7 @@ export default function ItemInventoryRoute() {
         }}
         quantities={quantities}
         storageUnits={storageUnits.options}
+        variant="quantity"
       />
     </VStack>
   );

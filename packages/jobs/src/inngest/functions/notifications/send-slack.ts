@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { resolveIntegrationSecrets } from "@carbon/ee";
+import { getSlackWorkspace } from "@carbon/ee/slack.server";
 import { getSlackClient } from "@carbon/lib/slack.server";
 import { inngest } from "../../client";
 import { slackDeliveryFailure } from "./delivery-failure";
@@ -17,35 +17,22 @@ export const sendSlackFunction = inngest.createFunction(
   async ({ event, step }) => {
     const { channel, text, blocks, companyId } = event.data;
 
-    const accessToken = await step.run("resolve-slack-token", async () => {
-      const client = getCarbonServiceRole();
-      const { data, error } = await client
-        .from("companyIntegration")
-        .select("active, metadata, secretRef")
-        .eq("companyId", companyId)
-        .eq("id", "slack")
-        .maybeSingle();
-      if (error || !data?.active) return null;
-      // Secret material (access_token) lives in Supabase Vault; merge it back
-      // so we read the same shape as before. `client` is service-role.
-      const metadata = (await resolveIntegrationSecrets(
-        client,
-        companyId,
-        "slack",
-        data.metadata,
-        data.secretRef
-      )) as { access_token?: string } | null;
-      return metadata?.access_token ?? null;
-    });
+    // One step, so the token never becomes a step OUTPUT that Inngest would
+    // persist in its run state — it lives only in this closure.
+    const result = await step.run("post-message", async () => {
+      // The company's own Slack connection. A failed read throws, so the step
+      // retries: it must not read as "not linked" and drop the message.
+      const accessToken = (
+        await getSlackWorkspace(getCarbonServiceRole(), companyId)
+      )?.token;
 
-    // The channel id only exists in the company's linked workspace, so without
-    // that workspace's token there is nothing valid to post — the old env-token
-    // fallback sent the id into Carbon's own workspace (channel_not_found).
-    if (!accessToken) {
-      return { success: false, skipped: "slack-integration-not-linked" };
-    }
+      // The channel id only exists in the company's linked workspace, so without
+      // that workspace's token there is nothing valid to post — the old env-token
+      // fallback sent the id into Carbon's own workspace (channel_not_found).
+      if (!accessToken) {
+        return { success: false, skipped: "slack-integration-not-linked" };
+      }
 
-    await step.run("post-message", async () => {
       // Client is a no-op on localhost — see slack.server.ts.
       // `retries: 0` because Inngest owns the retry policy here: the SDK's
       // default is ~10 attempts over ~30 minutes, which would both stall this
@@ -63,8 +50,9 @@ export const sendSlackFunction = inngest.createFunction(
       } catch (err) {
         throw slackDeliveryFailure(err);
       }
+      return { success: true };
     });
 
-    return { success: true };
+    return result;
   }
 );

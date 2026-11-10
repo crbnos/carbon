@@ -9,6 +9,7 @@ import {
   HStack,
   MenuIcon,
   MenuItem,
+  NonNettableBadge,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -43,7 +44,8 @@ import {
 } from "~/components";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { usePermissions, useRouteData, useUrlParams } from "~/hooks";
-import type { JobMaterialPick } from "~/modules/inventory";
+import { useNonNettableStorageUnits } from "~/hooks/useNonNettableStorageUnits";
+import type { JobMaterialPick } from "~/modules/inventory/inventory.service";
 import { type Item, useItems } from "~/stores";
 import { path } from "~/utils/path";
 import {
@@ -107,6 +109,7 @@ const JobMaterialsTable = memo(
   }: JobMaterialsTableProps) => {
     const { jobId } = useParams();
     const { t } = useLingui();
+    const nonNettable = useNonNettableStorageUnits();
     if (!jobId) throw new Error("Job ID is required");
 
     // orderStatus is a derived value, not a real column, so its URL filter is
@@ -251,6 +254,7 @@ const JobMaterialsTable = memo(
             );
           },
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />,
             // Filter by item id (a real column) so it filters server-side;
             // scoped to items on this job, with the readable id as the label.
@@ -295,6 +299,7 @@ const JobMaterialsTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuShoppingCart />,
             // `header` is JSX (tooltip), so name the column for the filter UI.
             filterHeader: t`Status`,
@@ -400,6 +405,7 @@ const JobMaterialsTable = memo(
           ),
           cell: ({ row }) => formatter.format(row.original.estimatedQuantity),
           meta: {
+            mobile: "P2",
             icon: <LuHash />
           }
         },
@@ -428,6 +434,10 @@ const JobMaterialsTable = memo(
                     ? t`WIP`
                     : t`Default Storage Unit`)}
               </Badge>
+              {row.original.storageUnitId &&
+                nonNettable.has(row.original.storageUnitId) && (
+                  <NonNettableBadge />
+                )}
             </HStack>
           )
         },
@@ -676,7 +686,8 @@ const JobMaterialsTable = memo(
       jobItemIdSet,
       orderStatusByMaterialId,
       picksByMaterialId,
-      consumeFirstByItemId
+      consumeFirstByItemId,
+      nonNettable
     ]);
 
     const renderContextMenu = useMemo(() => {

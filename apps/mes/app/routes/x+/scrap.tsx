@@ -4,13 +4,14 @@
 
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
+import { erpPosting } from "~/services/erp";
 import { scrapQuantityValidator } from "~/services/models";
+import { abilityBlockRefusal } from "~/services/operations.service";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -35,13 +36,24 @@ export async function action({ request }: ActionFunctionArgs) {
     machineProductionEventId
   } = validation.data;
 
-  // One transactional server-function call: Scrap productionQuantity row, BOM
+  const serviceRole = await getCarbonServiceRole();
+  const refusal = await abilityBlockRefusal(serviceRole, {
+    operationId: jobOperationId,
+    employeeId: userId,
+    companyId
+  });
+  if (refusal) {
+    return data({}, await flash(request, error(null, refusal)));
+  }
+
+  // One transactional posting: Scrap productionQuantity row, BOM
   // backflush, tracked-entity terminal status + replacement serial spawn
   // (serial parents), Done-operation reopen / capacity top-up beyond the
   // planned allowance, and the WIP→scrap journal.
-  const issued = await serverFns
-    .system({ db: getDatabaseClient(), companyId, userId })
-    .invoke("issue", {
+  const issued = await erpPosting(
+    "issue",
+    { companyId, userId },
+    {
       type: "jobOperationScrap",
       jobOperationId,
       quantity,
@@ -51,7 +63,8 @@ export async function action({ request }: ActionFunctionArgs) {
       laborProductionEventId,
       machineProductionEventId,
       trackedEntityId: trackingType === "Serial" ? trackedEntityId : undefined
-    });
+    }
+  );
 
   if (issued.error) {
     return data(

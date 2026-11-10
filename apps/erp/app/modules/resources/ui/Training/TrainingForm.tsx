@@ -20,7 +20,7 @@ import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { Ability, Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { trainingValidator } from "~/modules/resources";
+import { trainingValidator } from "~/modules/resources/resources.models";
 import { path } from "~/utils/path";
 
 type TrainingFormProps = {

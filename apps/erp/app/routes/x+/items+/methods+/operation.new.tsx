@@ -8,11 +8,11 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { methodOperationValidator } from "~/modules/items/items.models";
 import {
-  methodOperationValidator,
+  checkRevisionLock,
   upsertMethodOperation
-} from "~/modules/items";
-import { checkRevisionLock } from "~/modules/items/items.server";
+} from "~/modules/items/items.service";
 import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -68,10 +68,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       {
         id: null
       },
-      await flash(
-        request,
-        error(insertMethodOperation, "Failed to insert method operation")
-      )
+      await flash(request, error(null, "Failed to insert method operation"))
     );
   }
 

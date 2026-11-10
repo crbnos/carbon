@@ -31,7 +31,8 @@ import {
   SelectValue,
   VStack
 } from "@carbon/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Trans } from "@lingui/react/macro";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import ConfettiExplosion from "react-confetti-explosion";
 import {
   LuArrowRight,
@@ -52,19 +53,22 @@ import {
   useLoaderData,
   useSubmit
 } from "react-router";
-import { notifyScheduleInputsChanged } from "~/modules/production";
 import {
   getTrainingAssignmentForCompletion,
-  getTrainingGrantedAbilityId,
-  insertTrainingCompletion
-} from "~/modules/resources";
+  recordTrainingCompletion
+} from "~/modules/resources/resources.service";
 import type { TrainingQuestion } from "~/modules/resources/types";
+import {
+  TrainingGuideViewer,
+  TrainingVideoPlayer
+} from "~/modules/resources/ui";
 
 const logger = getLogger("erp", "share", "training");
 
 const PASSING_THRESHOLD = 0.8;
 
 interface ActionData {
+  error?: string;
   passed: boolean;
   score: number;
   totalQuestions: number;
@@ -94,7 +98,9 @@ async function getAuthorizedAssignment(
     serviceRole,
     assignmentId
   );
-  if (assignment.error || !assignment.data) {
+  // An external assignment (no training) is completed by an admin; the
+  // employee never opens it.
+  if (assignment.error || !assignment.data || !assignment.data.trainingId) {
     throw new Response("Training assignment not found", { status: 404 });
   }
 
@@ -145,7 +151,9 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       content: training.content,
       frequency: training.frequency,
       type: training.type,
-      estimatedDuration: training.estimatedDuration
+      estimatedDuration: training.estimatedDuration,
+      guidePath: training.guidePath,
+      videoUrl: training.videoUrl
     },
     questions: sortedQuestions,
     userId,
@@ -269,36 +277,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const passed = score >= PASSING_THRESHOLD;
 
   if (passed) {
-    const { data: period } = await serviceRole.rpc(
-      "get_current_training_period",
-      {
-        frequency: training.frequency
-      }
-    );
-
-    await insertTrainingCompletion(serviceRole, {
+    const recorded = await recordTrainingCompletion(serviceRole, {
+      companyId: assignment.companyId,
       trainingAssignmentId: id,
       employeeId: userId,
-      period: period ?? null,
-      companyId: assignment.companyId,
       completedBy: userId,
-      createdBy: userId
+      assignment: { trainingId: assignment.trainingId, training }
     });
-
-    // Passing the training grants an ability (via the grant trigger) — restamp
-    // the scheduler for that ability's operator pool.
-    const grantedAbilityId = await getTrainingGrantedAbilityId(
-      serviceRole,
-      id,
-      assignment.companyId
-    );
-    if (grantedAbilityId) {
-      await notifyScheduleInputsChanged(
-        assignment.companyId,
-        "ability",
-        "Operator qualified via training",
-        grantedAbilityId
-      );
+    if (recorded.error !== null) {
+      return data({ error: recorded.error }, { status: recorded.status });
     }
   }
 
@@ -328,7 +315,7 @@ export default function TrainingWizard() {
   const isLastStep = currentStep === totalSteps - 1;
 
   useEffect(() => {
-    if (actionData) {
+    if (actionData && !actionData.error) {
       setIsSubmitted(true);
       if (actionData.passed && audioRef.current) {
         // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
@@ -444,7 +431,7 @@ export default function TrainingWizard() {
                 <LuFlag />
               </div>
               <div className="flex flex-col">
-                <span className="uppercase text-[10px] font-display font-bold text-muted-foreground">
+                <span className="uppercase text-[0.625rem] font-display font-semibold text-muted-foreground">
                   Training
                 </span>
                 <CardTitle className="text-2xl">{training.name}</CardTitle>
@@ -472,6 +459,16 @@ export default function TrainingWizard() {
           )}
         </CardContent>
       </Card>
+
+      {actionData?.error && (
+        <Alert variant="destructive">
+          <LuCircleX className="h-4 w-4" />
+          <AlertTitle>
+            <Trans>Training not recorded</Trans>
+          </AlertTitle>
+          <AlertDescription>{actionData.error}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="flex justify-between w-full gap-4">
         <Button
@@ -537,6 +534,8 @@ function ContentStep({
     description: string | null;
     content: unknown;
     estimatedDuration: string | null;
+    guidePath: string | null;
+    videoUrl: string | null;
   };
 }) {
   const hasContent =
@@ -565,7 +564,12 @@ function ContentStep({
         </div>
       )}
 
-      {htmlContent ? (
+      {/* A training's content is its PDF guide, its video or written text. */}
+      {training.guidePath ? (
+        <TrainingGuideViewer guidePath={training.guidePath} />
+      ) : training.videoUrl ? (
+        <TrainingVideoPlayer videoUrl={training.videoUrl} />
+      ) : htmlContent ? (
         <div
           className="prose dark:prose-invert max-w-none w-full"
           dangerouslySetInnerHTML={{
@@ -598,6 +602,7 @@ function QuestionStep({
     value: string | string[] | number | boolean | Record<string, string>
   ) => void;
 }) {
+  const questionTextId = useId();
   const renderQuestionInput = () => {
     switch (question.type) {
       case "MultipleChoice":
@@ -681,7 +686,12 @@ function QuestionStep({
                   key={index}
                   className="flex items-center gap-4 p-3 border rounded-md"
                 >
-                  <span className="font-medium min-w-[120px]">{pair.left}</span>
+                  <span
+                    id={`${questionTextId}-pair-${index}`}
+                    className="font-medium min-w-[120px]"
+                  >
+                    {pair.left}
+                  </span>
                   <span className="text-muted-foreground">
                     <LuArrowRight className="text-muted-foreground" />
                   </span>
@@ -695,7 +705,10 @@ function QuestionStep({
                       onAnswerChange(question.id, question.type, newPairs);
                     }}
                   >
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger
+                      className="flex-1"
+                      aria-labelledby={`${questionTextId}-pair-${index}`}
+                    >
                       <SelectValue placeholder="Select a match..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -716,6 +729,7 @@ function QuestionStep({
         return (
           <div className="space-y-2">
             <NumberField
+              aria-labelledby={questionTextId}
               value={parseFloat((answer?.value as string) ?? "") || undefined}
               onChange={(value) =>
                 onAnswerChange(
@@ -744,10 +758,12 @@ function QuestionStep({
   return (
     <VStack spacing={4} className="w-full">
       <div className="flex flex-col gap-2">
-        <h3 className="text-lg font-display font-bold">
+        <h3 className="text-lg font-display font-semibold">
           Question {questionIndex + 1} of {totalQuestions}
         </h3>
-        <p className="text-base">{question.question}</p>
+        <p id={questionTextId} className="text-base">
+          {question.question}
+        </p>
       </div>
 
       {renderQuestionInput()}
@@ -789,7 +805,7 @@ function ResultsView({
               {actionData.passed ? <LuCircleCheck /> : <LuCircleX />}
             </div>
             <div className="flex flex-col">
-              <span className="uppercase text-[10px] font-display font-bold text-muted-foreground">
+              <span className="uppercase text-[0.625rem] font-display font-semibold text-muted-foreground">
                 Training Complete
               </span>
               <CardTitle className="text-2xl">{training.name}</CardTitle>
@@ -801,7 +817,7 @@ function ResultsView({
             <div className="flex flex-col items-center justify-center gap-2">
               <span
                 className={cn(
-                  "text-xl uppercase font-mono font-bold tracking-tight",
+                  "text-xl uppercase font-mono font-semibold tracking-tight",
                   actionData.passed ? "text-emerald-500" : "text-red-500"
                 )}
               >
@@ -809,7 +825,7 @@ function ResultsView({
               </span>
               <div
                 className={cn(
-                  "text-6xl font-mono font-bold",
+                  "text-6xl font-mono font-semibold",
                   actionData.passed ? "text-emerald-500" : "text-red-500"
                 )}
               >

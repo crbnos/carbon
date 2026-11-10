@@ -424,17 +424,17 @@ export const TRAININGS: TrainingSpec[] = [
 ];
 
 export const TIMECARDS: TimecardSpec[] = [
-  { dayOffset: -5, clockIn: "06:30:00", clockOut: "15:02:00" },
-  { dayOffset: -4, clockIn: "06:28:00", clockOut: "15:05:00" },
-  { dayOffset: -3, clockIn: "06:33:00", clockOut: "15:00:00" },
+  { workdaysBack: 5, clockIn: "06:30:00", clockOut: "15:02:00" },
+  { workdaysBack: 4, clockIn: "06:28:00", clockOut: "15:05:00" },
+  { workdaysBack: 3, clockIn: "06:33:00", clockOut: "15:00:00" },
   {
-    dayOffset: -2,
+    workdaysBack: 2,
     clockIn: "06:25:00",
     clockOut: "17:40:00",
     note: "Stayed to run the Halcyon actuator motors through the dyno."
   },
-  { dayOffset: -1, clockIn: "06:31:00", clockOut: "11:00:00" },
-  { dayOffset: -1, clockIn: "11:30:00", clockOut: "15:03:00" }
+  { workdaysBack: 1, clockIn: "06:31:00", clockOut: "11:00:00" },
+  { workdaysBack: 1, clockIn: "11:30:00", clockOut: "15:03:00" }
 ];
 
 // None on today, so the MES schedule opens on every work center, not one station.

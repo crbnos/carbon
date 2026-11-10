@@ -8,12 +8,12 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { purchaseReturnOrderCreditValidator } from "~/modules/purchasing/purchasing.models";
 import {
   createPurchaseReturnOrderCredit,
-  getCreditableQuantitiesForPurchaseReturn,
-  purchaseReturnOrderCreditValidator
-} from "~/modules/purchasing";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+  getCreditableQuantitiesForPurchaseReturn
+} from "~/modules/purchasing/purchasing.service";
+import { getCompanyTimeZone } from "~/modules/shared/shared.service";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 

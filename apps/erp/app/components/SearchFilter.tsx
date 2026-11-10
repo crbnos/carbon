@@ -27,7 +27,7 @@ const SearchFilter = ({ param, size, ...props }: SearchFilterProps) => {
   const written = useRef(urlQuery);
   const debounceQuery = useDebounce((q: string) => {
     written.current = q.trim();
-    setParams({ [param]: q.trim(), offset: null, limit: null });
+    setParams({ [param]: q.trim() });
   }, 500);
 
   useEffect(() => {
@@ -40,7 +40,7 @@ const SearchFilter = ({ param, size, ...props }: SearchFilterProps) => {
   return (
     <InputGroup size={size}>
       <InputLeftElement>
-        <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px]" />
+        <LuSearch className="text-muted-foreground w-3.5 h-3.5 mt-[-2px] max-md:size-4 max-md:mt-0" />
       </InputLeftElement>
       <Input
         value={query}
@@ -48,7 +48,7 @@ const SearchFilter = ({ param, size, ...props }: SearchFilterProps) => {
           setQuery(e.target.value);
           debounceQuery(e.target.value);
         }}
-        className="w-[100px] sm:w-[200px] text-sm"
+        className="w-[100px] sm:w-[200px] text-sm max-md:w-full max-md:text-base"
         {...props}
       />
     </InputGroup>

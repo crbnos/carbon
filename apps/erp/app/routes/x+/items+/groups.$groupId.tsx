@@ -6,15 +6,15 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { itemPostingGroupValidator } from "~/modules/items/items.models";
 import {
   getItemPostingGroup,
-  itemPostingGroupValidator,
   upsertItemPostingGroup
-} from "~/modules/items";
+} from "~/modules/items/items.service";
 import { ItemPostingGroupForm } from "~/modules/items/ui/ItemPostingGroups";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
@@ -78,7 +78,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditItemPostingGroupsRoute() {
   const { itemPostingGroup } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const initialValues = {
     id: itemPostingGroup?.id ?? undefined,
@@ -91,7 +91,8 @@ export default function EditItemPostingGroupsRoute() {
     <ItemPostingGroupForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

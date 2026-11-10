@@ -5,7 +5,7 @@
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -13,7 +13,7 @@ import {
   getBatchOutputLots,
   getJobOperationBatchEvents,
   getJobOperationBatchWithMembers
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import { BatchDetailDrawer } from "~/modules/production/ui/Batches/BatchDetailDrawer";
 import { path } from "~/utils/path";
 
@@ -47,14 +47,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function BatchRoute() {
   const { batch, events, outputLots } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   return (
     <BatchDetailDrawer
       batch={batch}
       events={events}
       outputLots={outputLots}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

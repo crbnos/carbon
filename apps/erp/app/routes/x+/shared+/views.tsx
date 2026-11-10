@@ -2,8 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
@@ -11,14 +11,11 @@ import {
   savedViewStateValidator,
   savedViewValidator
 } from "~/modules/shared/shared.models";
-import { upsertSavedView } from "~/modules/shared/shared.service";
 
 const logger = getLogger("erp", "views");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {});
-
   const formData = await request.formData();
   const validation = await validator(savedViewValidator).validate(formData);
 
@@ -36,11 +33,10 @@ export async function action({ request }: ActionFunctionArgs) {
     const parsedState = JSON.parse(state);
     const validatedState = savedViewStateValidator.parse(parsedState);
 
-    const result = await upsertSavedView(client, {
+    const api = await carbon(request);
+    const result = await api.shared.upsertSavedView({
       ...d,
-      ...validatedState,
-      userId,
-      companyId
+      ...validatedState
     });
 
     if (result.error) {
@@ -62,7 +58,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     return {
       success: true,
-      id: result.data.id,
+      id: result.data?.id ?? null,
       message: "View saved"
     };
   } catch (_error) {

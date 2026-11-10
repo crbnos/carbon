@@ -10,7 +10,10 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getCurrencies, getExchangeRates } from "~/modules/accounting";
+import {
+  getCurrencies,
+  getExchangeRates
+} from "~/modules/accounting/accounting.service";
 import { ExchangeRatesTable } from "~/modules/accounting/ui/ExchangeRates";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -33,14 +36,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
+  const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
   const [currencies, exchangeRates] = await Promise.all([
     getCurrencies(client, companyGroupId, {
       search,
       limit,
-      offset,
+      cursor,
       sorts,
       filters
     }),

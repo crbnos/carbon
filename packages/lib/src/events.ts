@@ -5,11 +5,46 @@
 import type { Database } from "@carbon/database";
 import type {
   NotificationDestination,
-  NotificationEvent
+  NotificationEvent,
+  RecurringInvoicingDocumentType
 } from "@carbon/notifications";
+import type { InvoiceAutomation } from "@carbon/utils";
 import type { RunTrigger } from "@carbon/workflows-core";
 
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
+
+type OnshapeElementSyncData = {
+  companyId: string;
+  userId: string;
+  integrationId?: string;
+  itemId: string;
+  sourceDocument: "Part";
+  documentId: string;
+  versionId: string;
+  sourceWvm?: "w" | "v";
+  sourceMicroversionId?: string;
+  modelElementId: string;
+  modelElementKind: "partstudio" | "assembly";
+  partId?: string | null;
+  configuration?: string | null;
+  drawingElementIds?: string[];
+  assetBaseName?: string;
+};
+
+type OnshapeDrawingSyncData = {
+  companyId: string;
+  userId: string;
+  integrationId?: string;
+  itemId: string;
+  sourceDocument: "Part";
+  documentId: string;
+  versionId: string;
+  drawingElementId: string;
+  assetBaseName?: string;
+  sourceWvm?: "w" | "v";
+  /** More items the same PDF attaches to, each under its own name. */
+  moreItems?: Array<{ itemId: string; assetBaseName: string }>;
+};
 
 /**
  * Event definitions for the Carbon inngest functions.
@@ -31,7 +66,9 @@ export type Events = {
         | { type: "group"; groupIds: string[] }
         | { type: "users"; userIds: string[] };
       from?: string;
-      documentType?: ApprovalDocumentType;
+      /** The approvable document of an Approval* event, or what a Recurring
+       *  invoicing notification lists. */
+      documentType?: ApprovalDocumentType | RecurringInvoicingDocumentType;
       /** Set by a workflow: the message is authored by the customer, not read from a document. */
       title?: string;
       body?: string;
@@ -51,6 +88,20 @@ export type Events = {
     };
   };
 
+  // Web Push events: one per pushSubscription row. userId is the recipient:
+  // send-push only sends when the row still belongs to them.
+  "carbon/send-push": {
+    data: {
+      subscriptionId: string;
+      userId: string;
+      companyId: string;
+      title: string;
+      body: string;
+      url: string;
+      tag: string;
+    };
+  };
+
   // Email events
   "carbon/send-email": {
     data: {
@@ -64,7 +115,13 @@ export type Events = {
         | { filename: string; content: string }
         | { filename: string; path: string }
       >;
+      // Extra mail headers (an invite's X-Entity-Ref-ID). Gmail cannot set them.
+      headers?: Record<string, string>;
       companyId: string;
+      // A quote, order, invoice, purchase order or RFQ to a customer or
+      // supplier. Every event follows the company's Email settings; on
+      // server mail this flag also puts the company's name on the From.
+      document?: true;
       // Recurring notification emails only: after the provider accepts the
       // send, the send-email function bumps the delivery counters for these.
       tracking?: {
@@ -143,7 +200,9 @@ export type Events = {
     data: {
       modelUploadId: string;
       companyId: string;
-      userId: string;
+      // Absent when the database sends it: the `queue_model_pipeline` handler
+      // on a new modelUpload row, and the stuck-job cleanup's resend.
+      userId?: string;
       // format is derived from the stored file inside the job, not passed here.
       // Force a fresh optimise of an already-Successful model (the badge's
       // refresh action) — bypasses the already-optimized guard and mints a
@@ -153,10 +212,22 @@ export type Events = {
     };
   };
 
+  // Make an inspection plan from a model's PMI (`pmi-inspection-plan`). Sent
+  // by model-optimize when a run wrote `pmi.json` (every item on the model),
+  // and by the `queue_pmi_inspection_plans` handler on `item` when an item
+  // starts using a model that has PMI (that item only).
+  "carbon/pmi-inspection-plan": {
+    data: {
+      companyId: string;
+      modelUploadId: string;
+      itemId?: string;
+    };
+  };
+
   // Compact the retained raw (STEP → BinXCAF `.xbf.zst`, mesh → `.{ext}.zst`)
-  // so it never lingers as the fat upload. Fired after model-optimize settles
-  // (success, already-optimized, or failure) — decoupled so an optimize
-  // failure can't strand a fat raw for the prune to delete.
+  // so it never lingers as the fat upload. A successful optimise compacts
+  // inline; this fires when model-optimize skips (already optimised, a format
+  // it does not read, no assembler) or fails, so the raw still leaves staging.
   "carbon/model-compact": {
     data: {
       modelUploadId: string;
@@ -297,6 +368,16 @@ export type Events = {
       type: "jobRequirements" | "jobMakeMethodRequirements";
       id: string;
       companyId: string;
+      userId: string;
+    };
+  };
+
+  // Indirect rate period run (Government Contracting 5b), sent when an
+  // accounting period locks.
+  "carbon/indirect-rates.compute": {
+    data: {
+      companyId: string;
+      accountingPeriodId: string;
       userId: string;
     };
   };
@@ -514,6 +595,35 @@ export type Events = {
     };
   };
 
+  "carbon/event-issue-sync": {
+    data: {
+      records: Array<{
+        event: {
+          table: string;
+          recordId: string;
+          operation: "INSERT" | "UPDATE" | "DELETE" | "TRUNCATE";
+          [key: string]: unknown;
+        };
+        companyId: string;
+      }>;
+    };
+  };
+
+  // One company's synced-record changes, for the Linear and Jira push
+  "carbon/issue-sync.push": {
+    data: {
+      companyId: string;
+      /** A newly created issue: push every field Carbon has. */
+      initial?: boolean;
+      records: Array<{
+        table: string;
+        recordId: string;
+        operation: "UPDATE" | "DELETE";
+        old: Record<string, unknown> | null;
+      }>;
+    };
+  };
+
   "carbon/event-embedding": {
     data: {
       records: Array<{
@@ -567,6 +677,17 @@ export type Events = {
   };
   "carbon/workflow-run-retention.process": {
     data: Record<string, never>;
+  };
+  // `util.sweep_timesheet_missing_time`, daily while a company runs DCAA
+  // timekeeping.
+  "carbon/timesheet-missing-time.process": {
+    data: Record<string, never>;
+  };
+  // Sent by the database (queue_kanban_level_checks, sync_kanban_level_check,
+  // util.sweep_kanban_levels), never by app code. Every id is a Transfer
+  // kanban whose projected quantity was below its replenishment level.
+  "carbon/kanban.level-check": {
+    data: { companyId: string; kanbanIds: string[] };
   };
 
   // Weekly tasks
@@ -628,11 +749,225 @@ export type Events = {
   };
 
   // Mount publish sweep (the integration's "Push customers / suppliers /
-  // parts" actions): push Carbon records Mount is missing or holds stale
+  // parts" actions, and the daily mount-sweep): push Carbon records Mount is
+  // missing or holds stale
   "carbon/mount-publish": {
     data: {
       companyId: string;
       entityTypes?: Array<"customer" | "supplier" | "item">;
+      // Who pressed Push; notified when the run needs attention.
+      userId?: string;
+      // Echoed into the run record so the page can find its own run.
+      requestId?: string;
+      trigger?: "manual" | "schedule";
+    };
+  };
+
+  // A table's CSV export past the browser's 1,000-row limit. The ERP route
+  // (api+/table.export.ts) takes the per-company lock and sends it; the job
+  // pages the list's registry query as the user and notifies them with the file.
+  "carbon/table-export": {
+    data: {
+      companyId: string;
+      userId: string;
+      // The file's id, `{listKey}.{random}`: the file is
+      // `{companyId}/exports/{userId}/{exportId}.csv` in temp-staging, served
+      // to this user only by the ERP's export download route.
+      exportId: string;
+      // A key of the ERP's list registry (`utils/list-registry`).
+      listKey: string;
+      // The list's URL search (filters, sorts, search), with or without "?".
+      search: string;
+      // The visible columns in display order, with their translated headers.
+      columns: Array<{ key: string; label: string }>;
+    };
+  };
+
+  // A table's bulk action on every row that matches the list's URL search,
+  // past the browser's 1,000-row limit. The ERP action route takes the
+  // per-company lock and sends it; the job pages the list's ids as the user
+  // (10,000 rows per step, stored in temp-staging), runs the action one slice
+  // per step, 100 ids per call, and notifies the user with the counts.
+  "carbon/table-bulk-action": {
+    data: {
+      companyId: string;
+      userId: string;
+      // The run's id; also the value of the per-company Redis lock.
+      bulkActionId: string;
+      // A key of the ERP's bulk actions (`utils/table-jobs.server.ts`).
+      actionKey: string;
+      // The action's English name for the notification ("Release jobs").
+      actionLabel: string;
+      // The action's own values, for example `{ field, value }`.
+      params: Record<string, unknown>;
+      // A key of the ERP's list registry (`utils/list-registry`).
+      listKey: string;
+      // The list's URL search (filters, sorts, search), with or without "?".
+      search: string;
+      // The most rows the run acts on (default 100,000). Jobs Release and
+      // Batches Release stop at 2,000.
+      maxRows?: number;
+      // Ids per apply step (default 1,000); an action that does more per
+      // row sets fewer, so one step stays well below 600 s.
+      idsPerStep?: number;
+      // The rows the user selected, when there are too many for one request.
+      // The run acts on these ids and reads no list pages; `search` is "".
+      ids?: string[];
+    };
+  };
+
+  // Panel push: export one element's assets onto the item the push linked.
+  "carbon/onshape-panel-sync": {
+    data: {
+      companyId: string;
+      userId: string;
+      itemId: string;
+      documentId: string;
+      wvm: "w" | "v";
+      wvmId: string;
+      elementId: string;
+      elementKind: "partstudio" | "assembly" | "drawing";
+      partId?: string;
+      /** Non-default configuration to export; absent = default. */
+      configuration?: string;
+      assetBaseName?: string;
+      /** Workspace pushes: the part microversion the review saw. */
+      microversionId?: string;
+    };
+  };
+
+  // Assembly push: the child rows' STEP models, at most 100 rows per event,
+  // exported onto the items the push linked.
+  "carbon/onshape-panel-assets": {
+    data: {
+      companyId: string;
+      userId: string;
+      planId: string;
+      models: Array<{
+        itemId: string;
+        /** The key of the item's link to this source. */
+        externalId: string;
+        partNumber: string;
+        kind: "partstudio" | "assembly";
+        documentId: string;
+        wvm: "w" | "v";
+        wvmId: string;
+        elementId: string;
+        partId?: string;
+        /** Normalized; absent or null = the default configuration. */
+        configuration?: string | null;
+      }>;
+      /** Find each row's drawings and attach their PDFs. */
+      drawings?: {
+        /** The rows that take the PDF of every drawing that shows them. */
+        targets: Array<{
+          itemId: string;
+          partNumber: string;
+          kind: "partstudio" | "assembly";
+          documentId: string;
+          wvm: "w" | "v";
+          wvmId: string;
+          elementId: string;
+          partId?: string;
+          configuration?: string | null;
+        }>;
+        /**
+         * Every assembly the push shows, rows that take no files included: a
+         * drawing of one is that assembly's, never its parts'.
+         */
+        assemblies: Array<{
+          documentId: string;
+          wvm: "w" | "v";
+          wvmId: string;
+          elementId: string;
+          configuration?: string | null;
+        }>;
+        /** Drawings the push exports on its own: a release's released ones. */
+        skipElementIds?: string[];
+      };
+    };
+  };
+
+  // One Onshape element's export onto an item (step.invoked by the backfill)
+  "carbon/onshape-element-sync": {
+    data: OnshapeElementSyncData;
+  };
+
+  // One released Onshape drawing's PDF onto an item (step.invoked by the backfill)
+  "carbon/onshape-drawing-sync": {
+    data: OnshapeDrawingSyncData;
+  };
+
+  // One model of an assembly push (step.invoked by onshape-panel-assets): a
+  // run of its own so a per-company key bounds every push's exports together.
+  "carbon/onshape-panel-asset-export": {
+    data:
+      | {
+          kind: "model";
+          companyId: string;
+          itemId: string;
+          model: OnshapeElementSyncData;
+        }
+      | {
+          kind: "drawing";
+          companyId: string;
+          /** The first item the PDF attaches to. */
+          itemId: string;
+          drawing: OnshapeDrawingSyncData;
+        };
+  };
+
+  // A batch of an assembly push's exports (step.invoked by onshape-panel-assets),
+  // so a push of any size stays under Inngest's per-run step limit.
+  "carbon/onshape-panel-asset-batch": {
+    data: {
+      companyId: string;
+      userId: string;
+      /** Failures in a row before this batch, so a streak spans batches. */
+      consecutiveFailures: number;
+      tasks: Array<
+        | {
+            kind: "model";
+            id: string;
+            label: string;
+            data: OnshapeElementSyncData;
+          }
+        | {
+            kind: "drawing";
+            id: string;
+            label: string;
+            data: OnshapeDrawingSyncData;
+            /** Recorded on each item once its PDF attaches. */
+            records: Array<{
+              itemId: string;
+              sourceKey: string;
+              fileName: string;
+            }>;
+          }
+      >;
+    };
+  };
+
+  // The assembler copies one finished Onshape translation into staging
+  // (step.invoked by the element sync)
+  "carbon/onshape-fetch": {
+    data: {
+      companyId: string;
+      userId: string;
+      integrationId?: string;
+      translationId: string;
+      documentId: string;
+      foreignId: string;
+      stagedPath: string;
+    };
+  };
+
+  // Onshape's translation.complete webhook, forwarded: wakes an element sync
+  // waiting on the translation (matched on companyId + translationId)
+  "carbon/onshape-translation-complete": {
+    data: {
+      companyId: string;
+      translationId: string;
     };
   };
 
@@ -689,6 +1024,19 @@ export type Events = {
       reason?: string;
     };
   };
+  "carbon/oee-sync": {
+    data: {
+      companyId: string;
+      integrationId: string;
+    };
+  };
+  "carbon/oee-device-sync": {
+    data: {
+      companyId: string;
+      integrationId: string;
+      externalDeviceId: string;
+    };
+  };
 
   // Paperless parts integration (full webhook payload)
   "carbon/paperless-parts": {
@@ -713,7 +1061,7 @@ export type Events = {
         action: string;
         data: {
           id: string;
-          assigneeId?: string;
+          assigneeId?: string | null;
           [key: string]: unknown;
         };
       };
@@ -781,6 +1129,22 @@ export type Events = {
       actorId: string | null;
       /** Output name -> entity id, per the moment's declaration. */
       outputs: Record<string, { id: string }>;
+    };
+  };
+
+  // Invoice automation: post (and email) one drafted recurring invoice.
+  // Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part II
+  "carbon/invoice.automate": {
+    data: {
+      companyId: string;
+      invoiceId: string;
+      /** Absent = the invoice's recurring source's effective mode. */
+      mode?: InvoiceAutomation;
+      /**
+       * The invoice's Send action: retry a failed send of a posted invoice —
+       * via Stripe when that is the effective mode, else by email.
+       */
+      resend?: boolean;
     };
   };
 };

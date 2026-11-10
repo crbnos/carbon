@@ -7,19 +7,19 @@ import type {
   CertificateOfConformanceShipmentData,
   getBatchProperties,
   getCertificatesOfConformance,
+  getInventoryCountGroupSummaries,
+  getInventoryCountGroups,
   getInventoryCountLines,
   getInventoryCounts,
   getInventoryItems,
   getInventoryValuation,
   getInventoryValuationTieOut,
   getItemLedgerPage,
-  getKanbans,
+  getKanbanItems,
   getReceiptLines,
   getReceipts,
-  getReceiptTracking,
   getShipmentLines,
   getShipments,
-  getShipmentTracking,
   getShippingMethods,
   getStockMovements,
   getStockTransferLines,
@@ -28,6 +28,10 @@ import type {
   getWarehouseTransferLines,
   getWarehouseTransfers
 } from "./inventory.service";
+import type {
+  getReceiptTracking,
+  getShipmentTracking
+} from "./inventory.utils";
 
 export type CertificateOfConformance = NonNullable<
   Awaited<ReturnType<typeof getCertificatesOfConformance>>["data"]
@@ -60,9 +64,11 @@ export type ItemTracking = NonNullable<
   Awaited<ReturnType<typeof getReceiptTracking>>["data"]
 >[number];
 
-export type Kanban = NonNullable<
-  Awaited<ReturnType<typeof getKanbans>>["data"]
+export type KanbanItem = NonNullable<
+  Awaited<ReturnType<typeof getKanbanItems>>["data"]
 >[number];
+
+export type { KanbanSummary } from "./inventory.service";
 
 export type InventoryCount = NonNullable<
   Awaited<ReturnType<typeof getInventoryCounts>>["data"]
@@ -70,6 +76,14 @@ export type InventoryCount = NonNullable<
 
 export type InventoryCountLine = NonNullable<
   Awaited<ReturnType<typeof getInventoryCountLines>>["data"]
+>[number];
+
+export type InventoryCountGroup = NonNullable<
+  Awaited<ReturnType<typeof getInventoryCountGroups>>["data"]
+>[number];
+
+export type InventoryCountGroupSummary = Awaited<
+  ReturnType<typeof getInventoryCountGroupSummaries>
 >[number];
 
 export type Receipt = NonNullable<
@@ -112,6 +126,30 @@ export type ShippingMethod = NonNullable<
 
 export type ShipmentSourceDocument =
   Database["public"]["Enums"]["shipmentSourceDocument"];
+
+export type RentalShipmentLine = {
+  id: string;
+  rentalAgreementLineId: string;
+  shipped: boolean;
+  meter: number | null;
+  unitName: string;
+  thumbnailPath: string | null;
+  itemType: Database["public"]["Enums"]["itemType"] | null;
+  assetReadableId: string | null;
+  serialNumber: string | null;
+  lineStatus: Database["public"]["Enums"]["rentalAgreementLineStatus"];
+};
+
+export type RentalReceiptLine = Omit<RentalShipmentLine, "shipped"> & {
+  received: boolean;
+  notes: string | null;
+  takeOutOfService: boolean;
+  outOfServiceReason: string | null;
+  residualDestination: "Fleet" | "Inventory" | null;
+  lessorClassification:
+    | Database["public"]["Enums"]["lessorClassification"]
+    | null;
+};
 
 export type StockTransfer = NonNullable<
   Awaited<ReturnType<typeof getStockTransfers>>["data"]
@@ -177,3 +215,35 @@ export interface GraphData {
   nodes: GraphNode[];
   links: GraphLink[];
 }
+
+export type StepRecord = {
+  id: string;
+  jobOperationStepId: string;
+  index: number;
+  type: string;
+  name: string;
+  value: string | null;
+  numericValue: number | null;
+  booleanValue: boolean | null;
+  userValue: string | null;
+  unitOfMeasureCode: string | null;
+  minValue: number | null;
+  maxValue: number | null;
+  operationId: string;
+  operationDescription: string | null;
+  itemId: string | null;
+  itemReadableId: string | null;
+  createdAt: string;
+  createdBy: string | null;
+};
+
+export type IssueContainmentStatus = "Contained" | "Uncontained";
+
+export type IssueContainment = {
+  id: string;
+  readableId: string | null;
+  containmentStatus: IssueContainmentStatus;
+  status: string;
+  priority: string | null;
+  trackedEntityId: string;
+};

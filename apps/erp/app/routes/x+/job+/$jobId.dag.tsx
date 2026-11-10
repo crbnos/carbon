@@ -14,7 +14,7 @@ import {
   getJob,
   getJobOperationDependencies,
   getJobOperations
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import { JobDag } from "~/modules/production/ui/Jobs";
 import { path } from "~/utils/path";
 

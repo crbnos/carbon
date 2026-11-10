@@ -3,6 +3,11 @@ description: How the shared ERP data table exports its rows to CSV (the Download
 paths:
   - "apps/erp/app/components/Table/**"
   - "apps/erp/app/modules/**/ui/**"
+  - "apps/erp/app/routes/api+/table.export.ts"
+  - "apps/erp/app/routes/api+/table.export.$exportId.ts"
+  - "apps/erp/app/utils/table-jobs*.ts"
+  - "packages/jobs/src/table-jobs/**"
+  - "packages/jobs/src/inngest/functions/tasks/table-export.ts"
 ---
 
 # Table CSV export (ERP)
@@ -45,8 +50,11 @@ once by `buildColumnMaps(columns, translateLabel)` in
 (`useSavedViews()`) so the export mirrors what the user currently sees.
 
 `TableHeader` (`apps/erp/app/components/Table/components/TableHeader.tsx`) always
-renders `<Download data columnAccessors exportValues columnOrder columnVisibility />`
-and passes `sortKeyToLabel` to `<Sort>`.
+renders `<Download data columnAccessors exportValues columnOrder columnVisibility infinite />`
+and passes `sortKeyToLabel` to `<Sort>`. `infinite` (`InfiniteExport`) is set
+only on a table with the `infinite` prop. It carries the header `count`,
+`hasMore`, the list's `listKey` and `loadAll(limit)` from `useInfiniteRows`.
+The phone list's ⋯ menu runs the same `useCsvDownload` hook.
 
 ## meta hooks (`types.ts`)
 
@@ -114,6 +122,110 @@ optional, export/sort-related fields:
   `Map<id, name>` per store; falls back to the raw value if not found.
 - Renders nothing (and does nothing on click) when `data` is empty.
 
+## Two export paths: browser and background job
+
+An infinite list holds only the rows loaded so far. `useCsvDownload`
+(`Download.tsx`) picks one of 2 paths on each click. `BROWSER_ROW_LIMIT` is
+1,000 (`components/Table/infiniteRowsStore.ts`).
+
+| Case (checked in this order) | Path |
+|---|---|
+| No `infinite`, or `hasMore` is false | The browser exports the table's own `data`. Inline edits stay in the file. |
+| `listKey` is set and `count` is above 1,000 | The browser POSTs to the export route at once. |
+| Else | `loadAll(1000)` loads pages in the browser. If rows remain and `listKey` is set, the browser POSTs to the export route. If rows remain and no `listKey` is set, it downloads the first 1,000 rows and shows "Exported the first 1,000 rows." |
+
+**Browser path.** Every cell uses the on-screen value (`meta.exportValue`, the
+id → name maps). The columns are the visible columns, as described above.
+
+**Background path.** The browser POSTs `{ listKey, search, columns: [{ key,
+label }] }` with `fetch`, not a fetcher: a fetcher action would revalidate the
+list and re-read every loaded page. The steps:
+
+1. `api+/table.export.ts` finds the list in the registry (`getListDefinition`).
+   It runs `requirePermissions` with the list's permission and `role: "employee"`.
+2. It makes the export id, `{listKey}.{random}` (`newTableExportId`,
+   `utils/table-jobs.ts`).
+3. `startTableJob("export", …)` (`utils/table-jobs.server.ts`, the bulk
+   actions' start path too) takes the company's export lock
+   (`takeTableJobLock`, `packages/jobs/src/table-jobs/lock.ts`). The value is
+   the export id.
+   - If another export holds it, the route answers 409 with
+     `tableJobBusyMessage`: "An export is already running for your company.
+     Try again when it ends, at the latest in N minutes." N comes from the
+     lock's TTL.
+   - The same script takes one of `MAX_RUNNING_TABLE_JOBS` (4) slots shared by
+     every company's exports and bulk actions (`TABLE_JOB_SLOTS_KEY`, a sorted
+     set scored by expiry). With none free the route answers 503 with
+     `TABLE_JOBS_FULL_MESSAGE` ("Too many exports and bulk actions are running
+     right now…"). It refuses, never queues: a queue many companies fill
+     would make every user wait. Release and extend free and renew the slot.
+   - If Redis does not answer, the route starts the job anyway and logs a
+     warning. Inngest's per-company concurrency still runs one export at a time.
+4. It triggers `table-export` (`packages/jobs/src/inngest/functions/tasks/table-export.ts`,
+   `concurrency: { key: "event.data.companyId", limit: 1 }`, `retries: 1`).
+   If `trigger` fails, the route deletes the lock.
+5. Step `check-permission`: the job reads the user's claims again
+   (`canReadList`, `utils/table-jobs.server.ts`). If the user lost the list's
+   permission, it notifies "Your export did not run" in-app and stops. A
+   failed claims read throws, so the step retries instead.
+6. Steps `write-part-0`, `write-part-1`, …: each step extends the lock, then
+   reads at most 20 pages of 500 rows (`TABLE_JOB_ROWS_PER_STEP`, 10,000,
+   `table-jobs/paging.ts`) as the user (`getUserScopedClient`, `fetchListPage`).
+   It writes them as one part file (`writeExportPart`, `table-jobs/export-run.ts`).
+   Part 0 starts with the header row. The step returns the counts and the next
+   cursor only.
+7. The parts stop at the end of the list, at 100,000 rows (`MAX_EXPORT_ROWS`),
+   or after the page that passes 200 MB (`MAX_EXPORT_BYTES`, `table-jobs/csv.ts`).
+8. Step `compose` uploads one `ReadableStream` that downloads the parts one at
+   a time (`composeExport`, `concatParts`). Only one part is in memory.
+9. Step `remove-parts` deletes the parts (`removeExportParts`). It is its own
+   step so a retried `compose` still finds them.
+10. Step `notify` sends `NotificationEvent.TableExport`. The title says "first
+    N rows" when the export stopped at a limit.
+11. Step `release-lock` deletes the lock.
+
+| File | Key (`table-jobs/storage.ts`, bucket `temp-staging`) |
+|---|---|
+| The export | `{companyId}/exports/{userId}/{exportId}.csv` (`tableExportStorageKey`) |
+| One part | `{companyId}/exports/{userId}/{exportId}.parts/{n}.csv` (`tableExportPartKey`) |
+
+**The lock.** One Redis key per company and job kind, value = the job id,
+TTL 15 minutes (`TABLE_JOB_LOCK_TTL_SECONDS`), so a run Inngest lost or
+cancelled (no `onFailure`) frees its lock and slot within 15 minutes. Take, release and extend are each
+one Lua script: `SET NX EX` that returns the TTL on refusal,
+compare-and-delete, compare-and-expire. A job deletes or extends only a lock
+that still holds its own id. `onFailure` also releases it and deletes the
+parts.
+
+**The download.** The notification row links to
+`api+/table.export.$exportId.ts` (`path.to.api.tableExport` + `/{exportId}`,
+`notificationTarget`). The route reads the list key from the export id and
+runs `requirePermissions` with that list's permission again. It builds the
+storage key from the session's company and user, so a user only reaches their
+own exports. A missing file answers 404 "Exports are kept for 7 days". A failed
+or refused export has documentId `failed:{exportId}`, notifies in-app only and
+has no link.
+
+**One notification per outcome.** `notifyTableJobUser` (`table-jobs/notify.ts`)
+sends `notify` with an Inngest event id: `table-export:{exportId}:ready`,
+`:failed` or `:denied`. Inngest drops a second event with the same id for
+24 hours, so a retried step does not notify twice.
+
+The background file holds plain database values (`formatExportValue`,
+`packages/jobs/src/table-jobs/csv.ts`): `2026-10-13`, `1250.5`, the stored
+status. The on-screen formatters run in the browser only. An array cell joins
+with `; `, an object cell becomes JSON, and a `customFields->>{id}` column reads
+the custom field. The header row holds the translated labels in display order.
+
+The daily cleanup (`prune-staged-raw-models`, `scheduled/cleanup.ts`) deletes
+`temp-staging` objects after 7 days (`STAGED_RAW_TTL_DAYS`), so an export link
+expires after 7 days. It also removes a part file that a job could not delete.
+
+The job page size is 500, not 1,000 (`TABLE_JOB_PAGE_SIZE`). The list query
+asks for `limit + 1` rows, and PostgREST returns at most 1,000 (`max_rows`).
+With a limit of 1,000, `toPage` sees no next page and the export stops at
+row 1,000.
+
 The stores are live-list hooks (`useLiveList`, `@carbon/query`) consumed as tuples,
 e.g. `const [items] = useItems();`; each element exposes at least `{ id, name }`.
 
@@ -131,8 +243,17 @@ Just render `<Table>` — the button comes for free. No `enableExport`-style pro
 - The underscore restriction is enforced in `buildColumnMaps` (`utils.ts`), not in
   `Download.tsx` — a `_` in any accessorKey crashes the table (it's the first map
   built) before export is even possible.
-- Export uses `data` currently passed to the table (the current page/result set),
-  not a full server-side dump.
+- A list without a `listKey` (a loader that calls `toPage` itself, with no
+  registry entry) never reaches the background path. Its export stops at
+  1,000 rows.
+- A column whose value comes from a lookup the list's view lacks is the
+  registry entry's `rows`, which the loader and the export both run
+  (`exportListRows`, `utils/list-registry/index.server.ts`). A column whose
+  `meta.exportValue` computes from the row needs the same function in the
+  entry's `exportValues`. Jobs (Batches, Tracking), Batches (Jobs, Quantity,
+  Process, Work Center), Suppliers (contacts, addresses), Workflows (Last
+  Run) and Workflow Runs (Workflow, Record) have them. Any other
+  `meta.exportValue` is not run: the background file holds the raw value.
 - The `name` substitution is keyed on the literal accessor strings `itemId` /
   `supplierId` / `employeeId` / `customerId` **and only runs when the column has no
   `meta.exportValue`**; a column holding one of those ids under a different

@@ -2,34 +2,161 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database, Json } from "@carbon/database";
-import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { storage } from "@carbon/files";
-import { getLogger } from "@carbon/logger";
-import { serverFns } from "@carbon/server-functions";
 import {
+  InvalidInputError,
+  isDataLayerError,
+  NotFoundError,
+  ServerFnError
+} from "@carbon/api/errors";
+import type { PermissionRule } from "@carbon/api/permissions";
+import {
+  CarbonError,
+  type ServiceContext
+} from "@carbon/api/service-fn.server";
+import { hasPermission } from "@carbon/auth";
+import { getUserClaims } from "@carbon/auth/users.server";
+import type { Database, Json } from "@carbon/database";
+import {
+  fetchAllByIds,
+  fetchAllFromTable,
+  fetchAllRecords,
+  getCompanyTimeZone
+} from "@carbon/database";
+import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
+import {
+  type Kysely,
+  type KyselyDatabase,
+  type KyselyTx,
+  withTransaction
+} from "@carbon/database/client";
+import {
+  type AutomaticJournalStatus,
+  journalPostingStatus,
+  readAccountingCutoverDate
+} from "@carbon/database/journal-posting-status";
+import { toJson } from "@carbon/database/json";
+import type { AccountClass } from "@carbon/database/ledger";
+import { toStoredAmount } from "@carbon/database/ledger";
+import { assertBalanced, equals } from "@carbon/database/precision";
+import {
+  gte,
+  inOrder,
+  many,
+  maybeSingle,
+  selectRows,
+  updateRowsById
+} from "@carbon/database/rows";
+import { getNextSequence } from "@carbon/database/sequence";
+import {
+  findStorageObjectBuckets,
+  listStorageObjects
+} from "@carbon/database/storage-objects";
+import {
+  convertUnitPrice,
+  supplierPartCurrency
+} from "@carbon/database/supplier-part-price";
+import { PurchaseOrderEmail } from "@carbon/documents/email";
+import {
+  getPurchaseOrderDisplayId,
+  type PurchaseOrderApproval
+} from "@carbon/documents/pdf";
+import {
+  getApprovalRuleByAmount,
+  getApproverUserIdsForRule,
+  getDocumentApproval,
+  isApprovalRequired,
+  rejectRequest
+} from "@carbon/ee/approvals.server";
+import { insertAuditLogEntries } from "@carbon/ee/audit.server";
+import {
+  getCompanyPrivateBucket,
+  getFileExtension,
+  isStoredDocumentPdf,
+  storage,
+  storedDocumentPdfName,
+  TEMP_STAGING_BUCKET
+} from "@carbon/files";
+import { isModelRawDownloadable } from "@carbon/files/cad";
+import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
+import { NotificationEvent } from "@carbon/notifications";
+import {
+  addDays,
+  addMonths,
   async,
+  BILLABLE_LEASE_STATUSES,
+  buildJournalLineDimensionInserts,
+  buildLesseeSchedule,
   datetime,
+  EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
+  escalatedLeasePayment,
+  escapeHTMLChars,
+  getCompletionAfterQuantityChange,
   getPurchaseOrderStatus,
   getPurchaseReturnOrderStatus,
-  RoundingMode,
-  round
+  groupBy,
+  isBillableLeaseStatus,
+  isPaidBeforeOpening,
+  isTermWithinTwelveMonths,
+  type LeasePaymentPoint,
+  type LesseeCarrying,
+  type LesseeLeg,
+  type LesseeLegAccount,
+  type LesseeScheduleLine,
+  leaseMonthsAt,
+  lesseeCarryingAt,
+  lesseeCommencementLegs,
+  lesseeOpeningBalanceLegs,
+  lesseePurchaseLegs,
+  lesseeRemeasurementLegs,
+  lesseeScheduleSpan,
+  lesseeTerminationLegs,
+  measureLesseeAsset,
+  normalizeLesseeLegs,
+  openEndedLeaseHorizon,
+  PO_EMAIL_ATTACHMENT_LIMIT_MB,
+  paymentMonthIndex,
+  remeasureLease,
+  requireAffected,
+  round,
+  SIGNATURES_BUCKET,
+  searchFilter
 } from "@carbon/utils";
-import type {
+import { parseDate } from "@internationalized/date";
+import {
   PostgrestError,
-  PostgrestResponse,
-  PostgrestSingleResponse,
-  SupabaseClient
+  type PostgrestResponse,
+  type PostgrestSingleResponse,
+  type SupabaseClient
 } from "@supabase/supabase-js";
-import { sql } from "kysely";
-import type { z } from "zod";
-import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
-import { getEmployeeJob } from "~/modules/people";
-import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { sql, type Transaction } from "kysely";
+import { nanoid } from "nanoid";
+import { render } from "react-email";
+import { z } from "zod";
+import { getPaymentTermsList } from "~/modules/accounting/accounting.service";
+import {
+  createDocumentUploadUrl,
+  upsertDocument
+} from "~/modules/documents/documents.service";
+import { shippableEntityStatuses } from "~/modules/inventory/inventory.utils";
+import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
+import { getEmployeeJob } from "~/modules/people/people.service";
+import { isEmailableContact } from "~/modules/settings/party-contact";
+import {
+  getCompany,
+  getCompanySettings
+} from "~/modules/settings/settings.service";
+import { getUser } from "~/modules/users/users.service";
+import {
+  contactNameOrEmailMessage,
+  hasContactNameOrEmail
+} from "~/types/validators";
+import { path } from "~/utils/path";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
+import { listCount, setGenericQueryFilters } from "~/utils/query";
+import { searchTerms, withSearchLines } from "~/utils/search";
+import { ruleError, sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
   getExchangeRate
@@ -39,74 +166,103 @@ import {
   claimPlanningActions,
   releasePlanningActionClaims
 } from "../production/planning-action-claims";
-import { upsertExternalLink } from "../shared/shared.service";
+import { planningSegmentFilter } from "../production/ui/Planning/planning-action-scope";
+import * as sharedPostings from "../shared/shared.service";
+import {
+  allocateJournalLineIds,
+  createAdjustmentJournal,
+  currencyDecimals,
+  cutLeasePaymentRows,
+  fromServerFn,
+  getSupplierPartPriceConverter,
+  insertNegatedJournal,
+  invokePosting,
+  invokePostingOrThrow,
+  isContactEmailRequired,
+  resolveAccountingPeriod,
+  upsertExternalLink
+} from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
+  leasePaymentValidator,
+  leaseValidator,
   purchaseOrderDeliveryValidator,
   purchaseOrderLineValidator,
   purchaseOrderPaymentValidator,
   purchaseOrderStatusType,
   purchaseOrderTypeType,
-  purchaseOrderValidator,
   purchaseReturnOrderLineValidator,
   purchaseReturnOrderStatusType,
-  purchaseReturnOrderValidator,
   purchasingRfqStatusType,
   selectedLinesValidator,
-  supplierAccountingValidator,
   supplierBankAccountValidator,
   supplierContactValidator,
   supplierPaymentValidator,
   supplierProcessValidator,
   supplierQuoteLineValidator,
   supplierQuoteStatusType,
-  supplierQuoteValidator,
   supplierShippingValidator,
   supplierTaxValidator,
   supplierTypeValidator,
   supplierValidator
 } from "./purchasing.models";
 import {
+  exceedsApprovedAmount,
+  isPurchaseOrderAmendable,
+  leaseDetailFields,
+  leaseLineColumns,
+  leaseLinePaymentFields,
+  type leaseLineValidator,
+  leasePaymentTermFields,
+  leaseTermColumns,
+  orderItemSupplierFiles,
   PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES,
+  PURCHASE_ORDER_AMENDABLE_STATUSES,
+  PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS,
+  PURCHASE_ORDER_LINE_VERSION_COLUMNS,
   PURCHASE_ORDER_LOCKED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
+  type PurchaseOrderDateField,
+  type PurchaseOrderFundsIntent,
+  type PurchaseOrderLineDateField,
+  type PurchaseOrderLineIdentity,
+  type PurchaseOrderLineReceivingIntent,
+  type PurchaseOrderVersion,
+  planningLineCurrencyCode,
+  planningQuantityChange,
+  planPurchaseOrderRestore,
+  purchaseOrderEditRefusal,
+  purchaseOrderFundsRefusal,
+  purchaseOrderLineAmendRefusal,
+  purchaseOrderLineDateOfOrderDate,
+  purchaseOrderLineDateRefusal,
+  purchaseOrderLineDeleteRefusal,
+  purchaseOrderPromisedDateRefusal,
+  SUPPLIER_CONTACT_EMAIL_REQUIRED,
+  shortClosePurchaseOrderLineRefusal,
+  splitRfqFileAttachments,
   taxPairForQuantity
 } from "./purchasing.models";
-import type { PurchaseOrder, PurchasingRFQ, SupplierQuote } from "./types";
+import { renderPurchaseOrderPdf } from "./purchasing.pdf";
+import type {
+  PurchaseOrder,
+  PurchaseOrderStatus,
+  PurchasingRFQ,
+  SupplierQuote
+} from "./types";
+
+// The supplier list's columns: its table, filters, custom field columns and
+// cursor (the contact columns come from the list's rows loader, by id). Leaving
+// out orderCount and partCount (grouped counts), externalId (a subquery) and
+// embedding lets Postgres skip them.
+const SUPPLIERS_LIST_COLUMNS =
+  "id,readableId,name,supplierTypeId,status,type,accountManagerId,tags,website,currencyCode,phone,fax,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy" as const;
 
 const PURCHASE_ORDERS_LIST_COLUMNS =
   "id,purchaseOrderId,revisionId,status,orderDate,supplierId,supplierReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,orderTotal,receivableQuantity,receivedQuantity,shippingMethodId,receiptRequestedDate,receiptPromisedDate,deliveryDate,dropShipment,paymentTermId,createdByFullName,assigneeFullName" as const;
 
 const logger = getLogger("erp", "purchasing-service");
 
-export async function closePurchaseOrder(
-  client: SupabaseClient<Database>,
-  purchaseOrderId: string,
-  userId: string
-) {
-  const purchaseOrder = await client
-    .from("purchaseOrder")
-    .select("companyId")
-    .eq("id", purchaseOrderId)
-    .single();
-  const companyTz = await getCompanyTimeZone(
-    client,
-    purchaseOrder.data?.companyId ?? ""
-  );
-  return client
-    .from("purchaseOrder")
-    .update({
-      status: "Closed",
-      closedAt: datetime.today(companyTz).toString(),
-      closedBy: userId,
-      updatedBy: userId
-    })
-    .eq("id", purchaseOrderId)
-    .select("id")
-    .single();
-}
-
-/** @mcp update */
 export async function convertSupplierQuoteToOrder(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -118,18 +274,24 @@ export async function convertSupplierQuoteToOrder(
   }
 ) {
   const { companyId, userId, ...input } = payload;
-  return serverFns.as({ client, db, companyId, userId }).invoke("convert", {
-    type: "supplierQuoteToPurchaseOrder",
-    ...input
-  });
+  return invokePosting(
+    { client, db, companyId, userId },
+    "convert",
+    // The type last: a loose payload must not pick another conversion.
+    { ...input, type: "supplierQuoteToPurchaseOrder" },
+    sharedPostings.convertDocument,
+    { as: sharedPostings.convertDocumentPermission }
+  );
 }
 
-/** @mcp delete */
+/** Not published: `purchasing_deletePurchaseOrders` deletes, with the status and approval checks this skips. */
 export async function deletePurchaseOrder(
   client: SupabaseClient<Database>,
   purchaseOrderId: string
 ) {
-  return client.from("purchaseOrder").delete().eq("id", purchaseOrderId);
+  return requireAffected(
+    client.from("purchaseOrder").delete().eq("id", purchaseOrderId).select("id")
+  );
 }
 
 /**
@@ -166,23 +328,24 @@ async function clearPlanningOrigin(
   return { error: cleared.error };
 }
 
-/** @mcp delete */
 export async function deletePurchaseOrderLine(
   client: SupabaseClient<Database>,
   purchaseOrderLineId: string
 ) {
   const cleared = await clearPlanningOrigin(client, { purchaseOrderLineId });
   if (cleared.error) return { data: null, error: cleared.error };
-  return client
-    .from("purchaseOrderLine")
-    .delete()
-    .eq("id", purchaseOrderLineId);
+  return requireAffected(
+    client
+      .from("purchaseOrderLine")
+      .delete()
+      .eq("id", purchaseOrderLineId)
+      .select("id")
+  );
 }
 
 // Creates a new Draft PO header + delivery + payment via insertPurchaseOrder
 // and copies the source PO's lines into it. Receipt/invoice progress is
 // reset; only the order/line definition is duplicated.
-/** @mcp create */
 export async function duplicatePurchaseOrder(
   client: SupabaseClient<Database>,
   {
@@ -274,15 +437,15 @@ export async function duplicatePurchaseOrder(
   return insertResult;
 }
 
-/** @mcp delete */
 export async function deleteSupplier(
   client: SupabaseClient<Database>,
   supplierId: string
 ) {
-  return client.from("supplier").delete().eq("id", supplierId);
+  return requireAffected(
+    client.from("supplier").delete().eq("id", supplierId).select("id")
+  );
 }
 
-/** @mcp delete */
 export async function deleteSupplierContact(
   client: SupabaseClient<Database>,
   supplierId: string,
@@ -295,10 +458,13 @@ export async function deleteSupplierContact(
     .eq("id", supplierContactId)
     .single();
   if (supplierContact.data) {
-    const contactDelete = await client
-      .from("contact")
-      .delete()
-      .eq("id", supplierContact.data.contactId);
+    const contactDelete = await requireAffected(
+      client
+        .from("contact")
+        .delete()
+        .eq("id", supplierContact.data.contactId)
+        .select("id")
+    );
 
     if (contactDelete.error) {
       return contactDelete;
@@ -307,7 +473,6 @@ export async function deleteSupplierContact(
   return supplierContact;
 }
 
-/** @mcp delete */
 export async function deleteSupplierLocation(
   client: SupabaseClient<Database>,
   supplierId: string,
@@ -321,26 +486,41 @@ export async function deleteSupplierLocation(
     .single();
 
   if (supplierLocation?.addressId) {
-    return client.from("address").delete().eq("id", supplierLocation.addressId);
+    return requireAffected(
+      client
+        .from("address")
+        .delete()
+        .eq("id", supplierLocation.addressId)
+        .select("id")
+    );
   } else {
     // The supplierLocation should always have an addressId, but just in case
-    return client
-      .from("supplierLocation")
-      .delete()
-      .eq("supplierId", supplierId)
-      .eq("id", supplierLocationId);
+    return requireAffected(
+      client
+        .from("supplierLocation")
+        .delete()
+        .eq("supplierId", supplierId)
+        .eq("id", supplierLocationId)
+        .select("id")
+    );
   }
 }
 
-/** @mcp delete */
 export async function deleteSupplierBankAccount(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("supplierBankAccount").delete().eq("id", id);
+  return requireAffected(
+    client.from("supplierBankAccount").delete().eq("id", id).select("id")
+  );
 }
 
-/** @mcp read */
+/**
+ * Lists a supplier's bank accounts.
+ *
+ * Gated on accounting, as the table's RLS and every bank-account screen are:
+ * a changed payee account is how payment fraud starts.
+ */
 export async function getSupplierBankAccounts(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -352,7 +532,6 @@ export async function getSupplierBankAccounts(
     .order("name");
 }
 
-/** @mcp upsert */
 export async function upsertSupplierBankAccount(
   db: Kysely<KyselyDatabase>,
   bankAccount:
@@ -369,63 +548,92 @@ export async function upsertSupplierBankAccount(
       })
 ) {
   const { supplierId, companyId } = bankAccount;
+  // Named columns only: an API body can carry any other (isPrimary, active,
+  // createdAt), and this write bypasses row-level security.
+  const fields = {
+    name: bankAccount.name,
+    accountHolderName: bankAccount.accountHolderName,
+    bankName: bankAccount.bankName,
+    bankAddress: bankAccount.bankAddress,
+    countryCode: bankAccount.countryCode,
+    currencyCode: bankAccount.currencyCode,
+    accountNumber: bankAccount.accountNumber,
+    bankCode: bankAccount.bankCode,
+    swiftBic: bankAccount.swiftBic,
+    notes: bankAccount.notes,
+    customFields: bankAccount.customFields
+  };
 
   if ("createdBy" in bankAccount) {
     return await db
       .insertInto("supplierBankAccount")
-      .values(bankAccount)
+      .values({
+        ...fields,
+        supplierId,
+        companyId,
+        createdBy: bankAccount.createdBy
+      })
       .returning("id")
       .executeTakeFirstOrThrow();
   }
 
-  const { id, ...update } = bankAccount;
-
   // supplierId and companyId are scoping columns, not editable fields. They are
-  // also re-asserted in the WHERE clause so a forged form value cannot move
-  // this row to another supplier.
+  // re-asserted in the WHERE clause so a forged form value cannot move this
+  // row to another supplier.
   return await db
     .updateTable("supplierBankAccount")
-    .set({ ...update, updatedAt: datetime.timestamp() })
-    .where("id", "=", id)
+    .set({
+      ...fields,
+      updatedBy: bankAccount.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .where("id", "=", bankAccount.id)
     .where("supplierId", "=", supplierId)
     .where("companyId", "=", companyId)
     .returning("id")
     .executeTakeFirstOrThrow();
 }
 
-/** @mcp delete */
 export async function deleteSupplierProcess(
   client: SupabaseClient<Database>,
   supplierProcessId: string
 ) {
-  return client.from("supplierProcess").delete().eq("id", supplierProcessId);
+  return requireAffected(
+    client
+      .from("supplierProcess")
+      .delete()
+      .eq("id", supplierProcessId)
+      .select("id")
+  );
 }
 
-/** @mcp delete */
 export async function deleteSupplierQuote(
   client: SupabaseClient<Database>,
   supplierQuoteId: string
 ) {
-  return client.from("supplierQuote").delete().eq("id", supplierQuoteId);
+  return requireAffected(
+    client.from("supplierQuote").delete().eq("id", supplierQuoteId).select("id")
+  );
 }
 
-/** @mcp delete */
 export async function deleteSupplierQuoteLine(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("supplierQuoteLine").delete().eq("id", id);
+  return requireAffected(
+    client.from("supplierQuoteLine").delete().eq("id", id).select("id")
+  );
 }
 
-/** @mcp delete */
 export async function deleteSupplierType(
   client: SupabaseClient<Database>,
   supplierTypeId: string
 ) {
-  return client.from("supplierType").delete().eq("id", supplierTypeId);
+  return requireAffected(
+    client.from("supplierType").delete().eq("id", supplierTypeId).select("id")
+  );
 }
 
-/** @mcp read */
 export async function getPurchaseOrder(
   client: SupabaseClient<Database>,
   purchaseOrderId: string
@@ -437,31 +645,10 @@ export async function getPurchaseOrder(
     .single();
 }
 
-/** @mcp update */
-export async function finalizeSupplierQuote(
-  client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
-  payload: { supplierQuoteId: string; companyId: string; userId: string }
-) {
-  const { companyId, userId, ...input } = payload;
-  return serverFns
-    .as({ client, db, companyId, userId })
-    .invoke("finalize-supplier-quote", input);
-}
+export const PURCHASE_ORDERS_PAGING: Paging = {
+  defaultSorts: [{ column: "purchaseOrderId", ascending: false }]
+};
 
-/** @mcp update */
-export async function finalizePurchasingRfq(
-  client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
-  payload: { rfqId: string; companyId: string; userId: string }
-) {
-  const { companyId, userId, ...input } = payload;
-  return serverFns
-    .as({ client, db, companyId, userId })
-    .invoke("finalize-purchasing-rfq", input);
-}
-
-/** @mcp read */
 export async function getPurchaseOrders(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -473,27 +660,40 @@ export async function getPurchaseOrders(
 ) {
   let query = client
     .from("purchaseOrders")
-    .select(PURCHASE_ORDERS_LIST_COLUMNS, { count: LIST_COUNT })
+    // Later pages (`cursor`) skip the count: the first page already has it.
+    .select(withSearchLines(PURCHASE_ORDERS_LIST_COLUMNS, args), {
+      count: listCount(args)
+    })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `purchaseOrderId.ilike.%${args.search}%,supplierReference.ilike.%${args.search}%`
-    );
+  // Every word must occur in the order or one of its lines. `searchPurchaseOrders`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchPurchaseOrders",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(PURCHASE_ORDERS_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   if (args.supplierId) {
     query = query.eq("supplierId", args.supplierId);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "purchaseOrderId", ascending: false }
-  ]);
+  if (args.status) {
+    query = query.eq("status", args.status as never);
+  }
+
+  query = setGenericQueryFilters(query, args, PURCHASE_ORDERS_PAGING);
 
   return query;
 }
 
-/** @mcp read */
 export async function getPurchaseOrderDelivery(
   client: SupabaseClient<Database>,
   purchaseOrderId: string
@@ -505,7 +705,6 @@ export async function getPurchaseOrderDelivery(
     .single();
 }
 
-/** @mcp read */
 export async function getPurchaseOrderLocations(
   client: SupabaseClient<Database>,
   purchaseOrderId: string
@@ -517,7 +716,90 @@ export async function getPurchaseOrderLocations(
     .single();
 }
 
-/** @mcp read */
+/**
+ * Who approved a purchase order and on which day in the company's timezone:
+ * the PDF's `order.approved*` merge fields, the order's properties panel and
+ * `purchasing.getPurchaseOrderApproval`. Null when it was not approved.
+ * `withSignature` also reads the approver's signature recorded at approval,
+ * as a data URL for the PDF; a missing file prints the name and date only.
+ */
+export async function getPurchaseOrderApproval(
+  serviceRole: SupabaseClient<Database>,
+  {
+    companyId,
+    purchaseOrderId,
+    timezone,
+    withSignature = false
+  }: {
+    companyId: string;
+    purchaseOrderId: string;
+    timezone: string;
+    withSignature?: boolean;
+  }
+): Promise<(PurchaseOrderApproval & { approvedById: string | null }) | null> {
+  const [approval, order] = await Promise.all([
+    getDocumentApproval(
+      serviceRole,
+      "purchaseOrder",
+      purchaseOrderId,
+      companyId
+    ),
+    serviceRole
+      .from("purchaseOrder")
+      .select("status")
+      .eq("id", purchaseOrderId)
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
+  // A Rejected order (a first approval refused, or an edit's rejection that
+  // could not restore it) runs under no approval, whatever came before.
+  if (!approval || order.data?.status === "Rejected") return null;
+  return {
+    approvedBy: approval.approvedBy,
+    approvedById: approval.approvedById,
+    approvedDate: datetime
+      .businessDay(approval.approvedAt, timezone)
+      .toString(),
+    signature:
+      withSignature && approval.signaturePath
+        ? await getSignatureDataUrl(serviceRole, approval.signaturePath)
+        : null
+  };
+}
+
+async function getSignatureDataUrl(
+  serviceRole: SupabaseClient<Database>,
+  path: string
+) {
+  const { data, error } = await serviceRole.storage
+    .from(SIGNATURES_BUCKET)
+    .download(path);
+  if (!data) {
+    logger.warn("Failed to read an approval signature", { path, error });
+    return null;
+  }
+  // The owner can write any bytes under a PNG or JPEG name, and an image
+  // react-pdf cannot decode fails the whole PDF. Trust the bytes, not the name.
+  const bytes = Buffer.from(await data.arrayBuffer());
+  const type = imageTypeOf(bytes);
+  if (!type) {
+    logger.warn("An approval signature is not a PNG or JPEG", { path });
+    return null;
+  }
+  return `data:${type};base64,${bytes.toString("base64")}`;
+}
+
+const PNG_SIGNATURE = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a
+]);
+const JPEG_SIGNATURE = Buffer.from([0xff, 0xd8, 0xff]);
+
+function imageTypeOf(bytes: Buffer): "image/png" | "image/jpeg" | null {
+  if (bytes.subarray(0, 8).equals(PNG_SIGNATURE)) return "image/png";
+  if (bytes.subarray(0, 3).equals(JPEG_SIGNATURE)) return "image/jpeg";
+  return null;
+}
+
 export async function getPurchaseOrderPayment(
   client: SupabaseClient<Database>,
   purchaseOrderId: string
@@ -529,7 +811,6 @@ export async function getPurchaseOrderPayment(
     .single();
 }
 
-/** @mcp read */
 export async function getPurchaseOrderLines(
   client: SupabaseClient<Database>,
   purchaseOrderId: string
@@ -542,7 +823,6 @@ export async function getPurchaseOrderLines(
     .order("createdAt", { ascending: true });
 }
 
-/** @mcp read */
 export async function getPurchaseOrderLine(
   client: SupabaseClient<Database>,
   purchaseOrderLineId: string
@@ -554,7 +834,6 @@ export async function getPurchaseOrderLine(
     .single();
 }
 
-/** @mcp read */
 export async function getPurchaseOrderSuppliers(
   client: SupabaseClient<Database>,
   companyId: string
@@ -566,7 +845,6 @@ export async function getPurchaseOrderSuppliers(
     .order("name");
 }
 
-/** @mcp read */
 export async function getPurchasingDocumentsAssignedToMe(
   client: SupabaseClient<Database>,
   userId: string,
@@ -608,7 +886,19 @@ export async function getPurchasingDocumentsAssignedToMe(
   return merged;
 }
 
-/** @mcp read */
+// What the row's Order / Make button offers (the grid RPC's orderQuantity,
+// from MRP's open new-supply actions), then the part number so a page is
+// stable when many rows have nothing to order. An item has one row per
+// netting segment ('' is common, then each project with project stock), so
+// the segment breaks the tie between its rows before the id does.
+export const PURCHASING_PLANNING_PAGING: Paging = {
+  defaultSorts: [
+    { column: "orderQuantity", ascending: false },
+    { column: "readableIdWithRevision", ascending: true },
+    { column: "planningSegmentId", ascending: true }
+  ]
+};
+
 export async function getPurchasingPlanning(
   client: SupabaseClient<Database>,
   locationId: string,
@@ -625,6 +915,9 @@ export async function getPurchasingPlanning(
     /** Keep only items with such an action assigned to this user ("Assigned
      *  to me"). Combined with `actionTypes` on the SAME action. */
     actionAssignees?: string[];
+    /** Keep only the rows of these netting segments ('' is common; the
+     *  grid's Segment filter). */
+    segments?: string[];
   }
 ) {
   // The grid RPC wraps get_purchasing_planning: same rows and projection, plus the
@@ -643,28 +936,42 @@ export async function getPurchasingPlanning(
       action_assignees: args.actionAssignees
     },
     {
-      count: LIST_COUNT
+      // Later pages (`cursor`) skip the count: the first page already has it.
+      count: listCount(args)
     }
   );
 
   if (args?.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
+      searchFilter(["name", "readableIdWithRevision"], args.search)
     );
   }
 
-  // What the row's Order / Make button offers (the grid RPC's orderQuantity,
-  // from MRP's open new-supply actions), then the part number so a page is
-  // stable when many rows have nothing to order.
-  query = setGenericQueryFilters(query, args, [
-    { column: "orderQuantity", ascending: false },
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  if (args.segments && args.segments.length > 0) {
+    query = query.or(planningSegmentFilter(args.segments));
+  }
+
+  query = setGenericQueryFilters(query, args, PURCHASING_PLANNING_PAGING);
 
   return query;
 }
 
-/** @mcp read */
+/** The default suppliers (`defaultSupplierId`) of the items the purchasing
+ *  plan lists, each once: the options of the grid's Supplier filter. Read over
+ *  the whole plan, not the loaded page, and before the grid's filters. */
+export async function getPurchasingPlanningSuppliers(
+  client: SupabaseClient<Database>,
+  locationId: string,
+  companyId: string,
+  periods: string[]
+) {
+  return client.rpc("get_purchasing_planning_suppliers", {
+    location_id: locationId,
+    company_id: companyId,
+    periods
+  });
+}
+
 export async function getPurchasingTerms(
   client: SupabaseClient<Database>,
   companyId: string
@@ -676,7 +983,6 @@ export async function getPurchasingTerms(
     .single();
 }
 
-/** @mcp read */
 export async function getSupplier(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -684,7 +990,6 @@ export async function getSupplier(
   return client.from("suppliers").select("*").eq("id", supplierId).single();
 }
 
-/** @mcp read */
 export async function getSupplierContact(
   client: SupabaseClient<Database>,
   supplierContactId: string,
@@ -700,7 +1005,16 @@ export async function getSupplierContact(
   return query.single();
 }
 
-/** @mcp read */
+/** Whether a supplier contact can be emailed. A failed read counts as no. */
+export async function supplierContactHasEmail(
+  client: SupabaseClient<Database>,
+  supplierContactId: string,
+  companyId: string
+) {
+  const row = await getSupplierContact(client, supplierContactId, companyId);
+  return !!row.data?.contact && isEmailableContact(row.data.contact);
+}
+
 export async function getSupplierContacts(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -713,7 +1027,6 @@ export async function getSupplierContacts(
     .eq("supplierId", supplierId);
 }
 
-/** @mcp read */
 export async function getSupplierInteraction(
   client: SupabaseClient<Database>,
   opportunityId: string | null
@@ -755,7 +1068,6 @@ export async function getSupplierInteraction(
   }>;
 }
 
-/** @mcp read */
 export async function getSupplierInteractionDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -778,7 +1090,6 @@ export async function getSupplierInteractionDocuments(
   }));
 }
 
-/** @mcp read */
 export async function getSupplierInteractionLineDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -809,7 +1120,7 @@ export async function getSupplierInteractionLineAttachments(
   client: SupabaseClient<Database>,
   companyId: string,
   lineIds: string[]
-): Promise<{ filename: string; path: string }[]> {
+): Promise<{ filename: string; path: string; size?: number }[]> {
   const perLine = await async.map(lineIds, async (lineId) => {
     const docs = await getSupplierInteractionLineDocuments(
       client,
@@ -820,7 +1131,7 @@ export async function getSupplierInteractionLineAttachments(
       const storagePath = `${companyId}/supplier-interaction-line/${lineId}/${doc.name}`;
       const { data, error } = await storage(client)
         .company(companyId)
-        .createSignedUrl(storagePath, 3600);
+        .createSignedUrl(storagePath, EMAIL_ATTACHMENT_URL_SECONDS);
       if (!data) {
         logger.error("Failed to create signed URL for attachment", {
           storagePath,
@@ -828,7 +1139,11 @@ export async function getSupplierInteractionLineAttachments(
         });
         return null;
       }
-      return { filename: doc.name, path: data.signedUrl };
+      return {
+        filename: doc.name,
+        path: data.signedUrl,
+        size: doc.metadata?.size as number | undefined
+      };
     });
   });
   return perLine
@@ -836,7 +1151,6 @@ export async function getSupplierInteractionLineAttachments(
     .flatMap((attachment) => (attachment ? [attachment] : []));
 }
 
-/** @mcp read */
 export async function getSupplierLocations(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -849,7 +1163,6 @@ export async function getSupplierLocations(
     .eq("supplierId", supplierId);
 }
 
-/** @mcp read */
 export async function getSupplierLocation(
   client: SupabaseClient<Database>,
   supplierContactId: string
@@ -863,7 +1176,6 @@ export async function getSupplierLocation(
     .single();
 }
 
-/** @mcp read */
 export async function getSupplierPayment(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -875,7 +1187,6 @@ export async function getSupplierPayment(
     .single();
 }
 
-/** @mcp read */
 export async function getSupplierProcessById(
   client: SupabaseClient<Database>,
   supplierProcessId: string
@@ -887,7 +1198,6 @@ export async function getSupplierProcessById(
     .single();
 }
 
-/** @mcp read */
 export async function getSupplierProcessesByProcess(
   client: SupabaseClient<Database>,
   processId: string
@@ -898,7 +1208,6 @@ export async function getSupplierProcessesByProcess(
     .eq("processId", processId);
 }
 
-/** @mcp read */
 export async function getSupplierProcessesBySupplier(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -909,7 +1218,6 @@ export async function getSupplierProcessesBySupplier(
     .eq("supplierId", supplierId);
 }
 
-/** @mcp read */
 export async function getSupplierQuote(
   client: SupabaseClient<Database>,
   supplierQuoteId: string
@@ -921,7 +1229,6 @@ export async function getSupplierQuote(
     .single();
 }
 
-/** @mcp read */
 export async function getSupplierQuoteByInteractionId(
   client: SupabaseClient<Database>,
   interactionId: string
@@ -933,7 +1240,6 @@ export async function getSupplierQuoteByInteractionId(
     .single();
 }
 
-/** @mcp read */
 export async function getSupplierQuoteByExternalLinkId(
   client: SupabaseClient<Database>,
   externalLinkId: string
@@ -945,7 +1251,10 @@ export async function getSupplierQuoteByExternalLinkId(
     .single();
 }
 
-/** @mcp read */
+export const SUPPLIER_QUOTES_PAGING: Paging = {
+  defaultSorts: [{ column: "supplierQuoteId", ascending: false }]
+};
+
 export async function getSupplierQuotes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -955,22 +1264,26 @@ export async function getSupplierQuotes(
 ) {
   let query = client
     .from("supplierQuotes")
-    .select("*", { count: LIST_COUNT })
+    .select(withSearchLines("*", args), { count: listCount(args) })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `supplierQuoteId.ilike.%${args.search}%,name.ilike.%${args.search}%,supplierReference.ilike%${args.search}%`
-    );
+  // Every word must occur in the quote or one of its lines. `searchSupplierQuotes`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchSupplierQuotes",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(withSearchLines("*", args)) as unknown as typeof query;
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "supplierQuoteId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, SUPPLIER_QUOTES_PAGING);
   return query;
 }
 
-/** @mcp read */
 export async function getSupplierQuoteLine(
   client: SupabaseClient<Database>,
   supplierQuoteLineId: string
@@ -982,7 +1295,6 @@ export async function getSupplierQuoteLine(
     .single();
 }
 
-/** @mcp read */
 export async function getSupplierQuoteLines(
   client: SupabaseClient<Database>,
   supplierQuoteId: string
@@ -994,7 +1306,6 @@ export async function getSupplierQuoteLines(
     .order("sortOrder", { ascending: true });
 }
 
-/** @mcp read */
 export async function getSupplierQuoteLinePrices(
   client: SupabaseClient<Database>,
   supplierQuoteLineId: string
@@ -1005,7 +1316,6 @@ export async function getSupplierQuoteLinePrices(
     .eq("supplierQuoteLineId", supplierQuoteLineId);
 }
 
-/** @mcp read */
 export async function getSupplierQuoteLinePricesByQuoteId(
   client: SupabaseClient<Database>,
   supplierQuoteId: string
@@ -1017,7 +1327,6 @@ export async function getSupplierQuoteLinePricesByQuoteId(
     .order("supplierQuoteLineId", { ascending: true });
 }
 
-/** @mcp read */
 export async function getSupplierQuotesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1030,7 +1339,6 @@ export async function getSupplierQuotesList(
   );
 }
 
-/** @mcp read */
 export async function getSupplierShipping(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -1049,42 +1357,53 @@ export async function getSupplierShipping(
 // (supplierId, companyId), which supabase-js's type generator marks `isOneToOne:
 // false` even though supplierId alone is the real PK, so a reverse embed would type
 // (and risk behaving) as an array instead of a single object.
-/** @mcp read */
 export async function getSupplierReportContacts(
   client: SupabaseClient<Database>,
   companyId: string,
   supplierIds: string[]
 ) {
   return Promise.all([
-    client
-      .from("supplier")
-      .select(
-        `id, purchasingContact:supplierContact!supplier_purchasingContactId_fkey(contact(fullName, email, workPhone))`
-      )
-      .eq("companyId", companyId)
-      .in("id", supplierIds),
-    client
-      .from("supplierPayment")
-      .select(
-        `supplierId,
+    fetchAllByIds(supplierIds, (batch) =>
+      client
+        .from("supplier")
+        .select(
+          `id, purchasingContact:supplierContact!supplier_purchasingContactId_fkey(contact(fullName, email, workPhone))`
+        )
+        .eq("companyId", companyId)
+        .in("id", batch)
+        .order("id", { ascending: true })
+    ),
+    fetchAllByIds(supplierIds, (batch) =>
+      client
+        .from("supplierPayment")
+        .select(
+          `supplierId,
          invoiceContact:supplierContact!supplierPayment_invoiceSupplierContactId_fkey(contact(fullName, email, workPhone)),
          invoiceLocation:supplierLocation!supplierPayment_invoiceSupplierLocationId_fkey(address(addressLine1, addressLine2, city, stateProvince, postalCode, country(name)))`
-      )
-      .eq("companyId", companyId)
-      .in("supplierId", supplierIds),
-    client
-      .from("supplierShipping")
-      .select(
-        `supplierId,
+        )
+        .eq("companyId", companyId)
+        .in("supplierId", batch)
+        .order("supplierId", { ascending: true })
+    ),
+    fetchAllByIds(supplierIds, (batch) =>
+      client
+        .from("supplierShipping")
+        .select(
+          `supplierId,
          shippingContact:supplierContact!supplierShipping_shippingSupplierContactId_fkey(contact(fullName, email, workPhone)),
          shippingLocation:supplierLocation!supplierShipping_shippingSupplierLocationId_fkey(address(addressLine1, addressLine2, city, stateProvince, postalCode, country(name)))`
-      )
-      .eq("companyId", companyId)
-      .in("supplierId", supplierIds)
+        )
+        .eq("companyId", companyId)
+        .in("supplierId", batch)
+        .order("supplierId", { ascending: true })
+    )
   ]);
 }
 
-/** @mcp read */
+export const SUPPLIERS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getSuppliers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1096,8 +1415,8 @@ export async function getSuppliers(
 ) {
   let query = client
     .from("suppliers")
-    .select("*", {
-      count: LIST_COUNT
+    .select(SUPPLIERS_LIST_COLUMNS, {
+      count: listCount(args)
     })
     .eq("companyId", companyId);
 
@@ -1116,13 +1435,10 @@ export async function getSuppliers(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, SUPPLIERS_PAGING);
   return query;
 }
 
-/** @mcp read */
 export async function getSuppliersList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1135,7 +1451,6 @@ export async function getSuppliersList(
   );
 }
 
-/** @mcp read */
 export async function getSupplierType(
   client: SupabaseClient<Database>,
   supplierTypeId: string
@@ -1147,7 +1462,10 @@ export async function getSupplierType(
     .single();
 }
 
-/** @mcp read */
+export const SUPPLIER_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 export async function getSupplierTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1155,7 +1473,7 @@ export async function getSupplierTypes(
 ) {
   let query = client
     .from("supplierType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1163,15 +1481,12 @@ export async function getSupplierTypes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, SUPPLIER_TYPES_PAGING);
   }
 
   return query;
 }
 
-/** @mcp read */
 export async function getSupplierTypesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1183,7 +1498,6 @@ export async function getSupplierTypesList(
     .order("name");
 }
 
-/** @mcp create */
 export async function insertSupplier(
   client: SupabaseClient<Database>,
   supplier: Omit<z.infer<typeof supplierValidator>, "id"> & {
@@ -1195,9 +1509,8 @@ export async function insertSupplier(
   return client.from("supplier").insert([supplier]).select("*").single();
 }
 
-/** @mcp create */
 export async function insertSupplierContact(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   supplierContact: {
     supplierId: string;
     companyId: string;
@@ -1206,40 +1519,78 @@ export async function insertSupplierContact(
     customFields?: Json;
   }
 ) {
-  const insertContact = await client
-    .from("contact")
-    .insert([
-      {
-        ...supplierContact.contact,
-        companyId: supplierContact.companyId,
-        isCustomer: false
-      }
-    ])
-    .select("id")
-    .single();
-
-  if (insertContact.error) {
-    return insertContact;
+  const { supplierId, companyId, supplierLocationId, contact } =
+    supplierContact;
+  if (!hasContactNameOrEmail(contact)) {
+    return { data: null, error: ruleError(contactNameOrEmailMessage.message) };
   }
-
-  const contactId = insertContact.data?.id;
-  if (!contactId) {
-    return { data: null, error: new Error("Contact ID not found") };
-  }
-
-  return client
-    .from("supplierContact")
-    .insert([
-      {
-        supplierId: supplierContact.supplierId,
-        contactId,
-        supplierLocationId: supplierContact.supplierLocationId,
-        companyId: supplierContact.companyId,
-        customFields: supplierContact.customFields
+  try {
+    // One transaction: a contact with no supplier link is invisible in the app.
+    const id = await withTransaction(db, async (trx) => {
+      const owner = await trx
+        .selectFrom("supplier")
+        .select("id")
+        .where("id", "=", supplierId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!owner) return "Supplier not found";
+      if (
+        !contact.email?.trim() &&
+        (await isContactEmailRequired(trx, companyId, "supplier"))
+      ) {
+        return SUPPLIER_CONTACT_EMAIL_REQUIRED;
       }
-    ])
-    .select("id")
-    .single();
+      if (supplierLocationId) {
+        const location = await trx
+          .selectFrom("supplierLocation")
+          .select("id")
+          .where("id", "=", supplierLocationId)
+          .where("supplierId", "=", supplierId)
+          .executeTakeFirst();
+        if (!location) return "Location not found";
+      }
+
+      const inserted = await trx
+        .insertInto("contact")
+        .values({
+          companyId,
+          isCustomer: false,
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+          title: contact.title,
+          email: contact.email,
+          mobilePhone: contact.mobilePhone,
+          homePhone: contact.homePhone,
+          workPhone: contact.workPhone,
+          notes: contact.notes
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      const link = await trx
+        .insertInto("supplierContact")
+        .values({
+          supplierId,
+          contactId: inserted.id,
+          supplierLocationId,
+          companyId,
+          customFields: toJson(supplierContact.customFields)
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      return { id: link.id };
+    });
+    return typeof id === "string"
+      ? { data: null, error: ruleError(id) }
+      : { data: id, error: null };
+  } catch (error) {
+    logger.error("Failed to create supplier contact", {
+      companyId,
+      supplierId,
+      error
+    });
+    return { data: null, error: error as Error };
+  }
 }
 
 export async function insertSupplierInteraction(
@@ -1254,7 +1605,6 @@ export async function insertSupplierInteraction(
     .single();
 }
 
-/** @mcp create */
 export async function insertSupplierLocation(
   client: SupabaseClient<Database>,
   supplierLocation: {
@@ -1303,7 +1653,7 @@ export async function insertSupplierLocation(
     .single();
 }
 
-/** @mcp update */
+/** Not published: `purchasing_finalizePurchaseOrderAndNotify` finalizes, and runs the approval rule this skips. */
 export async function finalizePurchaseOrder(
   client: SupabaseClient<Database>,
   purchaseOrderId: string,
@@ -1330,26 +1680,34 @@ export async function finalizePurchaseOrder(
     updateData.orderDate = datetime.today(companyTz).toString();
   }
 
-  return client
-    .from("purchaseOrder")
-    .update(updateData)
-    .eq("id", purchaseOrderId);
+  return requireAffected(
+    client
+      .from("purchaseOrder")
+      .update(updateData)
+      .eq("id", purchaseOrderId)
+      .select("id")
+  );
 }
 
-/** @mcp update */
+/** Not published: `purchasing_sendSupplierQuoteToSupplier` sends a quote, with its share link and email. */
 export async function sendSupplierQuote(
   client: SupabaseClient<Database>,
   supplierQuoteId: string,
-  userId: string
+  userId: string,
+  sharedFilePaths?: string[]
 ) {
   // Send keeps status as Draft, just updates timestamp
-  const quoteUpdate = await client
-    .from("supplierQuote")
-    .update({
-      updatedAt: datetime.timestamp(),
-      updatedBy: userId
-    })
-    .eq("id", supplierQuoteId);
+  const quoteUpdate = await requireAffected(
+    client
+      .from("supplierQuote")
+      .update({
+        ...(sharedFilePaths ? { sharedFilePaths } : {}),
+        updatedAt: datetime.timestamp(),
+        updatedBy: userId
+      })
+      .eq("id", supplierQuoteId)
+      .select("id")
+  );
 
   if (quoteUpdate.error) {
     return quoteUpdate;
@@ -1358,22 +1716,6 @@ export async function sendSupplierQuote(
   return { data: null, error: null };
 }
 
-/** @deprecated Use updatePurchaseOrderStatus or the new updatePurchaseOrder instead */
-export async function updatePurchaseOrderStatusLegacy(
-  client: SupabaseClient<Database>,
-  purchaseOrder: {
-    id: string;
-    status: (typeof purchaseOrderStatusType)[number];
-    updatedBy: string;
-  }
-) {
-  return client
-    .from("purchaseOrder")
-    .update(purchaseOrder)
-    .eq("id", purchaseOrder.id);
-}
-
-/** @mcp update */
 export async function updatePurchaseOrderExchangeRate(
   client: SupabaseClient<Database>,
   data: {
@@ -1387,10 +1729,11 @@ export async function updatePurchaseOrderExchangeRate(
     exchangeRateUpdatedAt: new Date().toISOString()
   };
 
-  return client.from("purchaseOrder").update(update).eq("id", update.id);
+  return requireAffected(
+    client.from("purchaseOrder").update(update).eq("id", update.id).select("id")
+  );
 }
 
-/** @mcp update destructive */
 export async function updatePurchaseOrderFavorite(
   client: SupabaseClient<Database>,
   args: {
@@ -1413,7 +1756,7 @@ export async function updatePurchaseOrderFavorite(
   }
 }
 
-/** @mcp update */
+/** Not published: a bare status write skips approval. Use `purchasing_finalizePurchaseOrderAndNotify`, `_reopen` or `_close`. */
 export async function updatePurchaseOrderStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -1423,7 +1766,1132 @@ export async function updatePurchaseOrderStatus(
     updatedBy: string;
   }
 ) {
-  return client.from("purchaseOrder").update(update).eq("id", update.id);
+  return requireAffected(
+    client.from("purchaseOrder").update(update).eq("id", update.id).select("id")
+  );
+}
+
+/** `updatePurchaseOrderStatus` on a Kysely handle, for a status change that
+ *  must share a transaction with other writes. Returns the rows updated. */
+export async function setPurchaseOrderStatus(
+  db: Kysely<KyselyDatabase>,
+  {
+    id,
+    companyId,
+    status,
+    assignee,
+    updatedBy
+  }: {
+    id: string;
+    companyId: string;
+    status: (typeof purchaseOrderStatusType)[number];
+    assignee: null | undefined;
+    updatedBy: string;
+  }
+) {
+  const result = await db
+    .updateTable("purchaseOrder")
+    .set({ status, assignee, updatedBy, updatedAt: datetime.timestamp() })
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  return Number(result.numUpdatedRows ?? 0);
+}
+
+/**
+ * Sends a purchase order to Needs Approval and opens its approval request,
+ * unless one is already pending. Call it inside a transaction, so an order
+ * never waits for an approval that was not requested. The status update
+ * locks the order first, which serialises two finalizes of one order.
+ * Returns whether a request was opened; throws when the order is not found.
+ */
+export async function submitPurchaseOrderForApproval(
+  db: Kysely<KyselyDatabase>,
+  {
+    id,
+    companyId,
+    userId,
+    amount,
+    orderDate,
+    fromStatuses,
+    priorVersion
+  }: {
+    id: string;
+    companyId: string;
+    userId: string;
+    amount: number;
+    /** Today in the company's timezone: set only when the order has none. */
+    orderDate: string;
+    /**
+     * Move the order only from these statuses. An order in another status is
+     * left alone and the call returns false (it changed since it was read).
+     */
+    fromStatuses?: readonly (typeof purchaseOrderStatusType)[number][];
+    /** The order as it was before the edit this request is for. */
+    priorVersion?: PurchaseOrderVersion;
+  }
+) {
+  let update = db
+    .updateTable("purchaseOrder")
+    .set({
+      status: "Needs Approval",
+      orderDate: sql<string>`COALESCE("orderDate", ${orderDate})`,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .where("id", "=", id)
+    .where("companyId", "=", companyId);
+  if (fromStatuses) update = update.where("status", "in", [...fromStatuses]);
+  const updated = await update.executeTakeFirst();
+  if (Number(updated.numUpdatedRows ?? 0) !== 1) {
+    if (fromStatuses) return false;
+    throw new NotFoundError("Purchase order not found");
+  }
+
+  const pending = await db
+    .selectFrom("approvalRequest")
+    .select("id")
+    .where("documentType", "=", "purchaseOrder")
+    .where("documentId", "=", id)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Pending")
+    .executeTakeFirst();
+  if (pending) return false;
+
+  const request = await db
+    .insertInto("approvalRequest")
+    .values({
+      documentType: "purchaseOrder",
+      documentId: id,
+      requestedBy: userId,
+      amount,
+      hasPriorVersion: priorVersion !== undefined,
+      companyId,
+      createdBy: userId
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  if (priorVersion) {
+    await insertPurchaseOrderVersion(db, {
+      companyId,
+      userId,
+      approvalRequestId: request.id,
+      purchaseOrderId: id,
+      version: priorVersion
+    });
+  }
+  return true;
+}
+
+/**
+ * Keeps an order's version with its approval request, as rows of
+ * `purchaseOrderVersion` (the exchange rate and the delivery) and
+ * `purchaseOrderLineVersion` (one per line, naming the live line). The rows
+ * carry the same foreign keys as the live rows, so a row they name that is
+ * deleted later is nulled here too, and a company restore renumbers the line
+ * references with the lines.
+ */
+async function insertPurchaseOrderVersion(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    userId,
+    approvalRequestId,
+    purchaseOrderId,
+    version
+  }: {
+    companyId: string;
+    userId: string;
+    approvalRequestId: string;
+    purchaseOrderId: string;
+    version: PurchaseOrderVersion;
+  }
+) {
+  const delivery: Record<string, unknown> = {};
+  for (const column of PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS) {
+    if (version.delivery && column in version.delivery) {
+      delivery[column] = version.delivery[column];
+    }
+  }
+  if ("customFields" in delivery) {
+    delivery.customFields = toJson(delivery.customFields);
+  }
+  // The delivery and line columns come from the version column lists, which
+  // are typed against the live tables; the version tables repeat them.
+  const header = await db
+    .insertInto("purchaseOrderVersion")
+    .values({
+      companyId,
+      approvalRequestId,
+      purchaseOrderId,
+      exchangeRate: version.exchangeRate,
+      hasDelivery: version.delivery !== null,
+      ...delivery,
+      createdBy: userId
+    } as never)
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  if (version.lines.length === 0) return;
+  await db
+    .insertInto("purchaseOrderLineVersion")
+    .values(
+      version.lines.map(({ id, ...line }) => {
+        const columns: Record<string, unknown> = {};
+        for (const column of PURCHASE_ORDER_LINE_VERSION_COLUMNS) {
+          if (column in line) columns[column] = line[column];
+        }
+        for (const json of ["customFields", "externalNotes", "internalNotes"]) {
+          if (json in columns) columns[json] = toJson(columns[json]);
+        }
+        return {
+          companyId,
+          purchaseOrderVersionId: header.id,
+          purchaseOrderLineId: id,
+          ...columns,
+          createdBy: userId
+        } as never;
+      })
+    )
+    .execute();
+}
+
+/**
+ * The version an approval request kept, read back from its rows into the
+ * shape `restorePurchaseOrderVersion` takes, or null when it kept none. A
+ * line whose live line is gone (`purchaseOrderLineId` nulled by its delete)
+ * gets an id no line has, so the restore plan finds the version no longer
+ * fits the order.
+ */
+export async function getKeptPurchaseOrderVersion(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  approvalRequestId: string
+): Promise<PurchaseOrderVersion | null> {
+  const header = await db
+    .selectFrom("purchaseOrderVersion")
+    .select([
+      "id",
+      "exchangeRate",
+      "hasDelivery",
+      ...PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS
+    ])
+    .where("approvalRequestId", "=", approvalRequestId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!header) return null;
+  const lines = await db
+    .selectFrom("purchaseOrderLineVersion")
+    .select(["purchaseOrderLineId", ...PURCHASE_ORDER_LINE_VERSION_COLUMNS])
+    .where("purchaseOrderVersionId", "=", header.id)
+    .where("companyId", "=", companyId)
+    .execute();
+  const { id: _id, exchangeRate, hasDelivery, ...delivery } = header;
+  return {
+    exchangeRate: exchangeRate === null ? null : Number(exchangeRate),
+    delivery: hasDelivery ? delivery : null,
+    lines: lines.map(({ purchaseOrderLineId, ...line }) => ({
+      id: purchaseOrderLineId ?? "",
+      ...line
+    }))
+  };
+}
+
+/**
+ * Each released order as it is now, to keep with an approval request its
+ * edit raises (`priorVersion`): the header's exchange rate, the delivery and
+ * the lines, in three queries.
+ */
+export async function getPurchaseOrderVersions(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  purchaseOrderIds: string[]
+): Promise<Map<string, PurchaseOrderVersion>> {
+  const ids = [...new Set(purchaseOrderIds)];
+  const versions = new Map<string, PurchaseOrderVersion>();
+  if (ids.length === 0) return versions;
+  const [orders, deliveries, lines] = await Promise.all([
+    db
+      .selectFrom("purchaseOrder")
+      .select(["id", "exchangeRate"])
+      .where("id", "in", ids)
+      .where("companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("purchaseOrderDelivery")
+      .select(["id", ...PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS])
+      .where("id", "in", ids)
+      .where("companyId", "=", companyId)
+      .execute(),
+    db
+      .selectFrom("purchaseOrderLine")
+      .select(["id", "purchaseOrderId", ...PURCHASE_ORDER_LINE_VERSION_COLUMNS])
+      .where("purchaseOrderId", "in", ids)
+      .where("companyId", "=", companyId)
+      .execute()
+  ]);
+  for (const order of orders) {
+    const delivery = deliveries.find((row) => row.id === order.id);
+    versions.set(order.id, {
+      exchangeRate:
+        order.exchangeRate === null ? null : Number(order.exchangeRate),
+      delivery: delivery ? omitKey(delivery, "id") : null,
+      lines: lines
+        .filter((line) => line.purchaseOrderId === order.id)
+        .map((line) => omitKey(line, "purchaseOrderId"))
+    });
+  }
+  return versions;
+}
+
+function omitKey<T extends Record<string, unknown>, K extends keyof T>(
+  row: T,
+  key: K
+): Omit<T, K> {
+  const { [key]: _omitted, ...rest } = row;
+  return rest;
+}
+
+/**
+ * Puts a rejected order back to the version its request kept, inside the
+ * rejection's transaction: the lines (`planPurchaseOrderRestore`), the
+ * delivery and the exchange rate, then the status its lines give, as at
+ * release. Returns false, changing nothing, when the order is not Rejected or
+ * the version no longer fits its lines.
+ */
+export async function restorePurchaseOrderVersion(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    userId,
+    purchaseOrderId,
+    version
+  }: {
+    companyId: string;
+    userId: string;
+    purchaseOrderId: string;
+    version: PurchaseOrderVersion;
+  }
+): Promise<boolean> {
+  return withTransaction(db, async (trx) => {
+    const order = await trx
+      .selectFrom("purchaseOrder")
+      .select("status")
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (order?.status !== "Rejected") return false;
+
+    const current = await trx
+      .selectFrom("purchaseOrderLine")
+      .select([
+        "id",
+        "purchaseQuantity",
+        "quantityReceived",
+        "quantityInvoiced",
+        "receivedComplete"
+      ])
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .execute();
+    const plan = planPurchaseOrderRestore(version, current);
+    if (!plan.restorable) return false;
+
+    const stamp = { updatedBy: userId, updatedAt: datetime.timestamp() };
+    if (plan.deleteIds.length > 0) {
+      await trx
+        .deleteFrom("purchaseOrderLine")
+        .where("id", "in", plan.deleteIds)
+        .where("purchaseOrderId", "=", purchaseOrderId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    await updateRowsById(
+      trx,
+      "purchaseOrderLine",
+      companyId,
+      plan.updates.map(({ id, data }) => ({
+        id,
+        data: { ...data, ...stamp } as never
+      }))
+    );
+    if (version.delivery) {
+      const delivery: Record<string, unknown> = {};
+      for (const column of PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS) {
+        if (column in version.delivery) {
+          delivery[column] = version.delivery[column];
+        }
+      }
+      await updateRowsById(trx, "purchaseOrderDelivery", companyId, [
+        { id: purchaseOrderId, data: { ...delivery, ...stamp } as never }
+      ]);
+    }
+
+    const lines = await trx
+      .selectFrom("purchaseOrderLine")
+      .select(["purchaseOrderLineType", "invoicedComplete", "receivedComplete"])
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+    const { status } = getPurchaseOrderStatus(lines);
+    await trx
+      .updateTable("purchaseOrder")
+      .set({ status, exchangeRate: version.exchangeRate, ...stamp })
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Rejected")
+      .execute();
+    return true;
+  });
+}
+
+/**
+ * Rejects a purchase order's pending request. When the request is for an
+ * edit of a released order (it kept a `priorVersion`), the order goes back
+ * to that version and to the status its lines give, in the same transaction:
+ * the version that was approved stays live. A first approval, or a version
+ * that no longer fits, leaves the order Rejected.
+ *
+ * `restored` says whether the order went back to its approved version;
+ * `versionKept` whether the request had one to go back to. A request with a
+ * version that was not restored leaves the order Rejected with the edit's
+ * values, which the caller tells the approver.
+ */
+export async function rejectPurchaseOrderApproval(
+  db: Kysely<KyselyDatabase>,
+  {
+    approvalRequestId,
+    purchaseOrderId,
+    companyId,
+    userId
+  }: {
+    approvalRequestId: string;
+    purchaseOrderId: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<
+  | { data: { restored: boolean; versionKept: boolean }; error: null }
+  | { data: null; error: { message: string } }
+> {
+  class RejectionRefused extends Error {
+    constructor(readonly refusal: { message: string }) {
+      super(refusal.message);
+    }
+  }
+  try {
+    return await withTransaction(db, async (trx) => {
+      const rejected = await rejectRequest(trx, approvalRequestId, userId);
+      // Roll back whatever the rejection wrote before it failed.
+      if (rejected.error) throw new RejectionRefused(rejected.error);
+
+      const request = await trx
+        .selectFrom("approvalRequest")
+        .select("hasPriorVersion")
+        .where("id", "=", approvalRequestId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!request?.hasPriorVersion) {
+        return { data: { restored: false, versionKept: false }, error: null };
+      }
+      const version = await getKeptPurchaseOrderVersion(
+        trx,
+        companyId,
+        approvalRequestId
+      );
+      if (!version) {
+        logger.warn("A rejected approval kept no version rows", {
+          companyId,
+          purchaseOrderId,
+          approvalRequestId
+        });
+        return { data: { restored: false, versionKept: true }, error: null };
+      }
+      // The version's references are kept by the database (a deleted row is
+      // nulled, never dangling), so the restore fails only on a rule the live
+      // row refuses: a constraint, or a trigger. Such a version can never be
+      // written back; without the savepoint the failure would roll the
+      // rejection back too, and the order could never leave Needs Approval.
+      // With it, the rejection stands and the order stays Rejected, as for
+      // any version that no longer fits. Any other failure (a lock timeout, a
+      // lost connection) fails the rejection, so the approver can try again
+      // and the order is restored.
+      await sql`SAVEPOINT restore_purchase_order_version`.execute(trx);
+      let restored: boolean;
+      try {
+        restored = await restorePurchaseOrderVersion(trx, {
+          companyId,
+          userId,
+          purchaseOrderId,
+          version
+        });
+        await sql`RELEASE SAVEPOINT restore_purchase_order_version`.execute(
+          trx
+        );
+      } catch (error) {
+        if (!isUnrestorableVersionError(error)) throw error;
+        await sql`ROLLBACK TO SAVEPOINT restore_purchase_order_version`.execute(
+          trx
+        );
+        logger.warn("A rejected edit's version was refused by the live row", {
+          companyId,
+          purchaseOrderId,
+          approvalRequestId,
+          error
+        });
+        restored = false;
+      }
+      if (!restored) {
+        logger.warn(
+          "A rejected edit could not be undone; the order stays Rejected",
+          {
+            companyId,
+            purchaseOrderId,
+            approvalRequestId
+          }
+        );
+      }
+      return { data: { restored, versionKept: true }, error: null };
+    });
+  } catch (error) {
+    if (error instanceof RejectionRefused) {
+      return { data: null, error: error.refusal };
+    }
+    throw error;
+  }
+}
+
+/**
+ * A failure that means a stored version can never be written back: an
+ * integrity constraint (SQLSTATE class 23: a check, a not-null, a unique, a
+ * foreign key) or a rule a trigger raised (P0001). Not a lock timeout, a
+ * deadlock or a lost connection, which a retry gets past.
+ */
+function isUnrestorableVersionError(error: unknown): boolean {
+  const code = (error as { code?: unknown } | null)?.code;
+  return (
+    typeof code === "string" && (code.startsWith("23") || code === "P0001")
+  );
+}
+
+export type PurchaseOrderApprovalState = {
+  id: string;
+  readableId: string | null;
+  status: (typeof purchaseOrderStatusType)[number] | null;
+  /** The `purchaseOrders` view's total: base currency, tax and shipping in. */
+  total: number;
+  /** The amount of the latest Approved request, or null when none exists. */
+  approvedAmount: number | null;
+  /** The `purchaseOrders` view's received quantity over the lines. */
+  receivedQuantity: number;
+};
+
+/**
+ * Each order's status, total and approved amount, in two queries. Pass the
+ * service role: `approvalRequest` has no API read policy.
+ */
+export async function getPurchaseOrderApprovalStates(
+  system: SupabaseClient<Database>,
+  companyId: string,
+  purchaseOrderIds: string[]
+): Promise<
+  | { data: Map<string, PurchaseOrderApprovalState>; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const ids = [...new Set(purchaseOrderIds.filter(Boolean))];
+  const states = new Map<string, PurchaseOrderApprovalState>();
+  if (ids.length === 0) return { data: states, error: null };
+
+  const [orders, approved] = await Promise.all([
+    system
+      .from("purchaseOrders")
+      .select("id, purchaseOrderId, status, orderTotal, receivedQuantity")
+      .eq("companyId", companyId)
+      .in("id", ids),
+    // Paged: many orders at once (an invoice's) can hold more approved
+    // requests than one response returns, and a cut tail would read as
+    // "no approved amount".
+    fetchAllRecords(() =>
+      system
+        .from("approvalRequest")
+        .select("id, documentId, amount, decisionAt")
+        .eq("companyId", companyId)
+        .eq("documentType", "purchaseOrder")
+        .eq("status", "Approved")
+        .in("documentId", ids)
+        .order("decisionAt", { ascending: false })
+        .order("id")
+    )
+  ]);
+  if (orders.error) return { data: null, error: orders.error };
+  if (approved.error) return { data: null, error: approved.error };
+
+  const approvedAmountById = new Map<string, number | null>();
+  for (const request of approved.data ?? []) {
+    // Newest first: the first row per order is its latest approval. A latest
+    // approval with no amount approved no amount to hold the order to: null,
+    // never $0 (which would hold every such order) and never an older
+    // approval's amount.
+    if (approvedAmountById.has(request.documentId)) continue;
+    approvedAmountById.set(
+      request.documentId,
+      request.amount === null ? null : Number(request.amount)
+    );
+  }
+
+  for (const order of orders.data ?? []) {
+    if (!order.id) continue;
+    states.set(order.id, {
+      id: order.id,
+      readableId: order.purchaseOrderId ?? null,
+      status: order.status ?? null,
+      total: Number(order.orderTotal ?? 0),
+      approvedAmount: approvedAmountById.get(order.id) ?? null,
+      receivedQuantity: Number(order.receivedQuantity ?? 0)
+    });
+  }
+  return { data: states, error: null };
+}
+
+/**
+ * Why goods may not be received or invoiced against these orders, or null
+ * when every one is released (for an invoice, released or Closed) and within
+ * its approved amount. An id with no order is left to the caller's own
+ * not-found check.
+ */
+export async function getPurchaseOrderFundsRefusal(
+  system: SupabaseClient<Database>,
+  companyId: string,
+  purchaseOrderIds: string[],
+  intent: PurchaseOrderFundsIntent
+): Promise<
+  { data: string | null; error: null } | { data: null; error: PostgrestError }
+> {
+  const states = await getPurchaseOrderApprovalStates(
+    system,
+    companyId,
+    purchaseOrderIds
+  );
+  if (states.error) return states;
+  for (const order of states.data.values()) {
+    // An order above its approved amount with no rule covering the new
+    // total is not waiting for anyone (`settlePurchaseOrderAmendment` raised
+    // no request), so nothing holds it.
+    const held =
+      exceedsApprovedAmount(order.total, order.approvedAmount) &&
+      (await isApprovalRequired(
+        system,
+        "purchaseOrder",
+        companyId,
+        order.total
+      ));
+    const refusal = purchaseOrderFundsRefusal(
+      held ? order : { ...order, approvedAmount: null },
+      intent
+    );
+    if (refusal) return { data: refusal, error: null };
+  }
+  return { data: null, error: null };
+}
+
+/**
+ * The funds gate as a service-function refusal: a `rule` error when goods may
+ * not be received or invoiced against these orders, else null. Every caller
+ * that moves goods or money against a purchase order runs it (receipts,
+ * invoices from an order, invoice posting), so the API and MCP get the same
+ * answer as the page.
+ */
+export async function purchaseOrderFundsGate(
+  ctx: ServiceContext,
+  purchaseOrderIds: string | null | undefined | (string | null | undefined)[],
+  {
+    intent,
+    purchaseOrderLineIds = []
+  }: {
+    intent: PurchaseOrderFundsIntent;
+    purchaseOrderLineIds?: (string | null | undefined)[];
+  }
+): Promise<CarbonError | null> {
+  const ids = (
+    Array.isArray(purchaseOrderIds) ? purchaseOrderIds : [purchaseOrderIds]
+  ).filter((id): id is string => Boolean(id));
+  const lineIds = purchaseOrderLineIds.filter((id): id is string =>
+    Boolean(id)
+  );
+  if (lineIds.length > 0) {
+    const lines = await ctx.asSystem.supabase
+      .from("purchaseOrderLine")
+      .select("purchaseOrderId")
+      .eq("companyId", ctx.company.id)
+      .in("id", lineIds);
+    if (lines.error) {
+      return ctx.error(
+        "internal",
+        "Failed to read the purchase order lines",
+        lines.error
+      );
+    }
+    for (const line of lines.data ?? []) ids.push(line.purchaseOrderId);
+  }
+  if (ids.length === 0) return null;
+  const funds = await getPurchaseOrderFundsRefusal(
+    ctx.asSystem.supabase,
+    ctx.company.id,
+    ids,
+    intent
+  );
+  if (funds.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the purchase order",
+      funds.error
+    );
+  }
+  return funds.data ? ctx.error("rule", funds.data) : null;
+}
+
+/**
+ * Read before an edit: the order's status, its total before the edit (the
+ * baseline `settlePurchaseOrderAmendment` compares against when the order has
+ * no approved request), and why the edit is refused, or null.
+ * `supplierId` / `currencyCode`: the values the edit would write, if any.
+ */
+export async function getPurchaseOrderEditRefusal(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  purchaseOrderId: string,
+  edit: { supplierId?: string | null; currencyCode?: string | null } = {}
+): Promise<
+  | {
+      data: {
+        status: (typeof purchaseOrderStatusType)[number] | null;
+        total: number;
+        refusal: string | null;
+      } | null;
+      error: null;
+    }
+  | { data: null; error: PostgrestError }
+> {
+  const order = await client
+    .from("purchaseOrders")
+    .select("status, orderTotal, supplierId, currencyCode")
+    .eq("id", purchaseOrderId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (order.error) return { data: null, error: order.error };
+  if (!order.data) return { data: null, error: null };
+  const changesSupplierOrCurrency =
+    (edit.supplierId !== undefined &&
+      edit.supplierId !== order.data.supplierId) ||
+    (edit.currencyCode !== undefined &&
+      edit.currencyCode !== order.data.currencyCode);
+  return {
+    data: {
+      status: order.data.status,
+      total: Number(order.data.orderTotal ?? 0),
+      refusal: purchaseOrderEditRefusal(order.data.status, {
+        changesSupplierOrCurrency
+      })
+    },
+    error: null
+  };
+}
+
+/**
+ * Runs `run` while holding each order's edit lock, so two edits of one order
+ * run one after the other: the second reads the status the first left, and
+ * is refused if the first sent the order back to approval. Without it, an
+ * edit could pass the status check, then land on an order another edit had
+ * just sent to approval, and the pending request would not include it.
+ *
+ * The lock is a transaction-scoped advisory lock on a connection of its own.
+ * It holds no row locks, so the reads and writes `run` makes on other
+ * connections never wait on it. A caller that waits more than 5 seconds for
+ * the lock is refused as a conflict: shorter than the pool's 10-second
+ * connection timeout, so callers waiting for one order's lock give their
+ * connections back before the edit holding it runs out of time for one.
+ */
+export async function withPurchaseOrderEditLock<T>(
+  ctx: ServiceContext,
+  purchaseOrderIds: string[],
+  run: () => Promise<T>
+): Promise<T | CarbonError> {
+  class EditLockBusy extends Error {}
+  const keys = [...new Set(purchaseOrderIds)].map(
+    (id) => `purchase-order-edit:${ctx.company.id}:${id}`
+  );
+  try {
+    return await withTransaction(ctx.asSystem.pg, async (trx) => {
+      await sql`SET LOCAL lock_timeout = '5s'`.execute(trx);
+      try {
+        // Sorted by key, so two edits of the same orders cannot deadlock.
+        await sql`SELECT pg_advisory_xact_lock(k) FROM (SELECT DISTINCT hashtextextended(key, 0) AS k FROM unnest(${keys}::text[]) AS key ORDER BY k) AS locks`.execute(
+          trx
+        );
+      } catch (error) {
+        if ((error as { code?: unknown } | null)?.code === "55P03") {
+          throw new EditLockBusy();
+        }
+        throw error;
+      }
+      return run();
+    });
+  } catch (error) {
+    if (error instanceof EditLockBusy) {
+      return ctx.error(
+        "conflict",
+        "Another change to this purchase order is being saved. Try again in a moment."
+      );
+    }
+    throw error;
+  }
+}
+
+type AmendPurchaseOrderOptions = {
+  supplierId?: string | null;
+  currencyCode?: string | null;
+  line?: {
+    quantityReceived: number | null;
+    quantityInvoiced: number | null;
+    purchaseQuantity: number | null | undefined;
+    receivedComplete?: boolean;
+    /** The line's own identity fields, compared with `edit`'s. */
+    purchaseOrderLineType?: string | null;
+    itemId?: string | null;
+    assetId?: string | null;
+    purchaseUnitOfMeasureCode?: string | null;
+    conversionFactor?: number | null;
+    /** The line's own dates, compared with `dates`. */
+    requiredDate?: string | null;
+    promisedDate?: string | null;
+    receivedDate?: string | null;
+    /** The identity fields the edit writes. */
+    edit?: Partial<PurchaseOrderLineIdentity>;
+    /** The dates the edit writes, each under its own rule. */
+    dates?: Partial<Record<PurchaseOrderLineDateField, string | null>>;
+  };
+  /** False for an edit that cannot change the total. */
+  settle?: boolean;
+  restatesStatus?: boolean;
+};
+
+/**
+ * Runs one edit of a purchase order for a service function: refuses it as
+ * `purchaseOrderEditRefusal` says, runs `write`, then settles the approval
+ * (`settlePurchaseOrderAmendment`) when the order is released. A failed
+ * settle is logged, not returned: the edit is saved. When the order has an
+ * approved request, the funds gate then refuses to receive or invoice it
+ * above that amount; an order released with no request has no amount to hold
+ * it to, so it stays released until an edit settles again.
+ *
+ * `line`: the line the edit changes, with the quantity it writes (null for a
+ * delete), checked against what was received and invoiced. A released order
+ * never deletes a line (`purchaseOrderLineDeleteRefusal`).
+ * `restatesStatus`: the edit adds, changes or deletes a line, so a released
+ * order's status is derived from its lines again (`restatePurchaseOrderStatus`)
+ * before the approval is settled.
+ */
+export async function amendPurchaseOrder<T>(
+  ctx: ServiceContext,
+  purchaseOrderId: string,
+  write: () => Promise<T>,
+  options: AmendPurchaseOrderOptions = {}
+): Promise<T | CarbonError> {
+  return withPurchaseOrderEditLock(ctx, [purchaseOrderId], () =>
+    amendLockedPurchaseOrder(ctx, purchaseOrderId, write, options)
+  );
+}
+
+/** `amendPurchaseOrder`'s body, run under the order's edit lock. */
+async function amendLockedPurchaseOrder<T>(
+  ctx: ServiceContext,
+  purchaseOrderId: string,
+  write: () => Promise<T>,
+  {
+    supplierId,
+    currencyCode,
+    line,
+    settle = true,
+    restatesStatus = false
+  }: AmendPurchaseOrderOptions = {}
+): Promise<T | CarbonError> {
+  const gate = await getPurchaseOrderEditRefusal(
+    ctx.asCaller.supabase,
+    ctx.company.id,
+    purchaseOrderId,
+    { supplierId, currencyCode }
+  );
+  if (gate.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the purchase order",
+      gate.error
+    );
+  }
+  if (!gate.data) return ctx.error("notFound", "Purchase order not found");
+  if (gate.data.refusal) return ctx.error("rule", gate.data.refusal);
+  if (line) {
+    const lineRefusal =
+      (line.purchaseQuantity === null
+        ? purchaseOrderLineDeleteRefusal(gate.data.status)
+        : null) ??
+      purchaseOrderLineAmendRefusal(line, line.purchaseQuantity, line.edit);
+    if (lineRefusal) return ctx.error("rule", lineRefusal);
+    // A date the edit changes follows the same rule as the date routes. A
+    // date the edit leaves out is not a change.
+    for (const [field, value] of Object.entries(line.dates ?? {})) {
+      const dateField = field as PurchaseOrderLineDateField;
+      if (value === undefined) continue;
+      if ((value ?? null) === (line[dateField] ?? null)) continue;
+      const dateRefusal = purchaseOrderLineDateRefusal(dateField, {
+        status: gate.data.status,
+        receivedComplete: line.receivedComplete ?? false
+      });
+      if (dateRefusal) return ctx.error("rule", dateRefusal);
+    }
+  }
+
+  // The order before the edit: if the edit sends it back to approval, a
+  // rejection restores this version.
+  const settles = settle && isPurchaseOrderAmendable(gate.data.status);
+  let priorVersion: PurchaseOrderVersion | undefined;
+  if (settles) {
+    try {
+      priorVersion = (
+        await getPurchaseOrderVersions(ctx.asSystem.pg, ctx.company.id, [
+          purchaseOrderId
+        ])
+      ).get(purchaseOrderId);
+    } catch (error) {
+      return ctx.error("internal", "Failed to read the purchase order", error);
+    }
+  }
+
+  const result = await write();
+  if (result instanceof CarbonError) return result;
+
+  if (settles) {
+    try {
+      await settlePurchaseOrderAmendment(
+        ctx.asSystem.pg,
+        ctx.asSystem.supabase,
+        {
+          companyId: ctx.company.id,
+          userId: ctx.auditUserId,
+          purchaseOrderId,
+          previousTotal: gate.data.total,
+          priorVersion
+        }
+      );
+    } catch (error) {
+      logger.error(
+        "Failed to settle the approval of an edited purchase order",
+        {
+          companyId: ctx.company.id,
+          purchaseOrderId,
+          error
+        }
+      );
+    }
+  }
+  // After the settle: an edit that completes every line while taking the
+  // total above the approved amount would otherwise read as Completed, which
+  // the settle leaves alone. A restate is a no-op on an order sent back.
+  if (restatesStatus && isPurchaseOrderAmendable(gate.data.status)) {
+    try {
+      await restatePurchaseOrderStatus(ctx.asSystem.pg, {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        purchaseOrderId
+      });
+    } catch (error) {
+      logger.error("Failed to restate the status of an edited purchase order", {
+        companyId: ctx.company.id,
+        purchaseOrderId,
+        error
+      });
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Why `itemId` may not go on a purchase order line, or null: an item a
+ * change notice is still holding is a draft revision the supplier has never
+ * been shown. Read as the system, as the line routes did; nothing when the
+ * edit names no item.
+ */
+export async function unreleasedChangeOrderRefusal(
+  ctx: ServiceContext,
+  itemId: string | null | undefined
+): Promise<CarbonError | null> {
+  if (!itemId) return null;
+  const issue = await getUnreleasedChangeOrderIssue(ctx.asSystem.supabase, {
+    itemId,
+    companyId: ctx.company.id
+  });
+  return issue ? ctx.error("rule", `${issue} It cannot be purchased.`) : null;
+}
+
+/** The line an edit names, with what was received and invoiced on it. */
+export async function getPurchaseOrderLineForAmendment(
+  ctx: ServiceContext,
+  purchaseOrderLineId: string
+) {
+  return ctx.asCaller.supabase
+    .from("purchaseOrderLine")
+    .select(
+      "id, purchaseOrderId, quantityReceived, quantityInvoiced, receivedComplete, purchaseOrderLineType, itemId, assetId, purchaseUnitOfMeasureCode, conversionFactor, requiredDate, promisedDate, receivedDate"
+    )
+    .eq("id", purchaseOrderLineId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+}
+
+/**
+ * After a line is added, changed or deleted on a released order, sets the
+ * order's status from its lines again (`getPurchaseOrderStatus`), as receipt
+ * and invoice posting do. Only an order still in an amendable status moves,
+ * and an order with no line to receive or invoice is left alone: with no
+ * lines the rule would call it Completed. Returns the status written, or null.
+ */
+export async function restatePurchaseOrderStatus(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    userId,
+    purchaseOrderId
+  }: { companyId: string; userId: string; purchaseOrderId: string }
+) {
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("purchaseOrder")
+      .select("status")
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!order || !isPurchaseOrderAmendable(order.status)) return null;
+
+    const lines = await trx
+      .selectFrom("purchaseOrderLine")
+      .select(["purchaseOrderLineType", "invoicedComplete", "receivedComplete"])
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+    if (!lines.some((line) => line.purchaseOrderLineType !== "Comment")) {
+      return null;
+    }
+
+    const { status } = getPurchaseOrderStatus(lines);
+    if (status === order.status) return null;
+    await trx
+      .updateTable("purchaseOrder")
+      .set({ status, updatedBy: userId, updatedAt: datetime.timestamp() })
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .where("status", "in", [...PURCHASE_ORDER_AMENDABLE_STATUSES])
+      .execute();
+    return status;
+  });
+}
+
+/**
+ * After an edit of a released order: when its new total is above what was
+ * approved (with no approved request, above its total before the edit) and an
+ * approval rule applies to the new total, send it back to Needs Approval with a request for the new total, and
+ * notify the rule's approvers. Returns whether it was sent back.
+ *
+ * The edit has already been written. If this fails, the order stays released
+ * above its approved amount. With an approved request,
+ * `getPurchaseOrderFundsRefusal` refuses to receive or invoice it until it is
+ * approved again; with none, nothing holds it back.
+ */
+export async function settlePurchaseOrderAmendment(
+  db: Kysely<KyselyDatabase>,
+  system: SupabaseClient<Database>,
+  {
+    companyId,
+    userId,
+    purchaseOrderId,
+    previousTotal,
+    priorVersion
+  }: {
+    companyId: string;
+    userId: string;
+    purchaseOrderId: string;
+    /** The total before the edit, from `getPurchaseOrderEditRefusal`. */
+    previousTotal: number;
+    /** The order before the edit (`getPurchaseOrderVersions`), kept on the request. */
+    priorVersion?: PurchaseOrderVersion;
+  }
+): Promise<{ resubmitted: boolean; amount: number }> {
+  const states = await getPurchaseOrderApprovalStates(system, companyId, [
+    purchaseOrderId
+  ]);
+  if (states.error) throw states.error;
+  const order = states.data.get(purchaseOrderId);
+  if (!order || !isPurchaseOrderAmendable(order.status)) {
+    return { resubmitted: false, amount: order?.total ?? 0 };
+  }
+  const amount = order.total;
+  // The approved amount, or, for an order released with no request, what it
+  // totalled before this edit: only an increase can need an approval.
+  if (!exceedsApprovedAmount(amount, order.approvedAmount ?? previousTotal)) {
+    return { resubmitted: false, amount };
+  }
+
+  // No planning bypass here: every caller is an edit by hand, and planning's
+  // own writes never come through it. The bypass covers only the order as
+  // planning sized it, at finalize.
+  if (!(await isApprovalRequired(system, "purchaseOrder", companyId, amount))) {
+    return { resubmitted: false, amount };
+  }
+
+  const orderDate = datetime
+    .today(await getCompanyTimeZone(system, companyId))
+    .toString();
+  const resubmitted = await db.transaction().execute((tx) =>
+    submitPurchaseOrderForApproval(tx, {
+      id: purchaseOrderId,
+      companyId,
+      userId,
+      amount,
+      orderDate,
+      fromStatuses: PURCHASE_ORDER_AMENDABLE_STATUSES,
+      priorVersion
+    })
+  );
+  if (!resubmitted) return { resubmitted: false, amount };
+
+  const rule = await getApprovalRuleByAmount(
+    system,
+    "purchaseOrder",
+    companyId,
+    amount
+  );
+  const approverIds = rule.data
+    ? await getApproverUserIdsForRule(system, rule.data)
+    : [];
+  if (approverIds.length > 0) {
+    await trigger("notify", {
+      event: NotificationEvent.ApprovalRequested,
+      companyId,
+      documentId: purchaseOrderId,
+      documentType: "purchaseOrder",
+      recipient: { type: "users", userIds: approverIds },
+      from: userId
+    }).catch((error) =>
+      logger.error("Failed to trigger approval notification", {
+        companyId,
+        purchaseOrderId,
+        error
+      })
+    );
+  }
+  return { resubmitted: true, amount };
 }
 
 /**
@@ -1433,7 +2901,8 @@ export async function updatePurchaseOrderStatus(
  * Compare-and-swap: the increment and the eligibility conditions are both in
  * SQL, so concurrent requests can't share a revision number and an ineligible
  * order matches no rows. Returns rows updated — 0 means it was not eligible.
- * @mcp action
+ *
+ * Not published: `purchasing_reopenPurchaseOrder` with `createRevision` does it, with the permission and approval checks.
  */
 export async function reopenPurchaseOrderAsRevision(
   db: Kysely<KyselyDatabase>,
@@ -1467,28 +2936,62 @@ export async function reopenPurchaseOrderAsRevision(
   return Number(result.numUpdatedRows ?? 0);
 }
 
-export async function updateSupplierAccounting(
-  client: SupabaseClient<Database>,
-  supplierAccounting: z.infer<typeof supplierAccountingValidator> & {
-    updatedBy: string;
-  }
-) {
-  return client
-    .from("supplier")
-    .update(sanitize(supplierAccounting))
-    .eq("id", supplierAccounting.id);
-}
-
-/** @mcp update */
 export async function updateSupplierContact(
   client: SupabaseClient<Database>,
   supplierContact: {
     contactId: string;
+    companyId: string;
     contact: z.infer<typeof supplierContactValidator>;
     supplierLocationId?: string;
     customFields?: Json;
   }
 ) {
+  if (!supplierContact.contact.email?.trim()) {
+    const [owner, settings] = await Promise.all([
+      client
+        .from("supplierContact")
+        .select("contact(firstName, lastName, email)")
+        .eq("contactId", supplierContact.contactId)
+        .eq("companyId", supplierContact.companyId)
+        .maybeSingle(),
+      client
+        .from("companySettings")
+        .select("requireSupplierContactEmail")
+        .eq("id", supplierContact.companyId)
+        .maybeSingle()
+    ]);
+    if (owner.error) return { data: null, error: owner.error };
+    if (settings.error) return { data: null, error: settings.error };
+    // A field left out of the update keeps the stored value; a blank one
+    // clears it.
+    const stored = owner.data?.contact;
+    const { contact } = supplierContact;
+    const merged = {
+      firstName: "firstName" in contact ? contact.firstName : stored?.firstName,
+      lastName: "lastName" in contact ? contact.lastName : stored?.lastName,
+      email: "email" in contact ? contact.email : stored?.email
+    };
+    const email = merged.email;
+    if (
+      !hasContactNameOrEmail({
+        firstName: merged.firstName ?? undefined,
+        lastName: merged.lastName ?? undefined,
+        email: email ?? undefined
+      })
+    ) {
+      return {
+        data: null,
+        error: ruleError(contactNameOrEmailMessage.message)
+      };
+    }
+    if (settings.data?.requireSupplierContactEmail && !email?.trim()) {
+      return {
+        data: null,
+        error: ruleError(SUPPLIER_CONTACT_EMAIL_REQUIRED)
+      };
+    }
+  }
+
   if (supplierContact.customFields) {
     const customFieldUpdate = await client
       .from("supplierContact")
@@ -1517,7 +3020,6 @@ export async function updateSupplierContact(
     .single();
 }
 
-/** @mcp update */
 export async function updateSupplierLocation(
   client: SupabaseClient<Database>,
   supplierLocation: {
@@ -1555,7 +3057,6 @@ export async function updateSupplierLocation(
     .single();
 }
 
-/** @mcp update */
 export async function updateSupplierPayment(
   client: SupabaseClient<Database>,
   supplierPayment: z.infer<typeof supplierPaymentValidator> & {
@@ -1569,7 +3070,6 @@ export async function updateSupplierPayment(
     .eq("supplierId", supplierPayment.supplierId);
 }
 
-/** @mcp update */
 export async function updateSupplierQuoteExchangeRate(
   client: SupabaseClient<Database>,
   data: {
@@ -1583,7 +3083,9 @@ export async function updateSupplierQuoteExchangeRate(
     exchangeRateUpdatedAt: new Date().toISOString()
   };
 
-  return client.from("supplierQuote").update(update).eq("id", update.id);
+  return requireAffected(
+    client.from("supplierQuote").update(update).eq("id", update.id).select("id")
+  );
 }
 
 export async function updateSupplierQuoteFavorite(
@@ -1608,7 +3110,6 @@ export async function updateSupplierQuoteFavorite(
   }
 }
 
-/** @mcp update */
 export async function updateSupplierQuoteStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -1618,10 +3119,11 @@ export async function updateSupplierQuoteStatus(
     updatedBy: string;
   }
 ) {
-  return client.from("supplierQuote").update(update).eq("id", update.id);
+  return requireAffected(
+    client.from("supplierQuote").update(update).eq("id", update.id).select("id")
+  );
 }
 
-/** @mcp update */
 export async function updateSupplierShipping(
   client: SupabaseClient<Database>,
   supplierShipping: z.infer<typeof supplierShippingValidator> & {
@@ -1635,7 +3137,6 @@ export async function updateSupplierShipping(
     .eq("supplierId", supplierShipping.supplierId);
 }
 
-/** @mcp read */
 export async function getSupplierTax(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -1647,7 +3148,6 @@ export async function getSupplierTax(
     .maybeSingle();
 }
 
-/** @mcp update */
 export async function updateSupplierTax(
   client: SupabaseClient<Database>,
   supplierTax: z.infer<typeof supplierTaxValidator> & {
@@ -1663,7 +3163,6 @@ export async function updateSupplierTax(
     .eq("companyId", supplierTax.companyId);
 }
 
-/** @mcp create */
 export async function insertPurchaseOrder(
   client: SupabaseClient<Database>,
   input: {
@@ -1687,7 +3186,7 @@ export async function insertPurchaseOrder(
     customFields?: Json;
   }
 ): Promise<{
-  data: { id: string; purchaseOrderId: string } | null;
+  data: { id: string; purchaseOrderId: string; exchangeRate: number } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;
 }> {
   let purchaseOrderId: string;
@@ -1812,16 +3311,25 @@ export async function insertPurchaseOrder(
     return { data: null, error: delivery.error ?? payment.error };
   }
 
-  return { data: { id: orderId, purchaseOrderId }, error: null };
+  return { data: { id: orderId, purchaseOrderId, exchangeRate }, error: null };
 }
 
-/** @mcp update */
+const PURCHASE_ORDER_HEADER_COLUMNS = [
+  "currencyCode",
+  "orderDate",
+  "supplierId",
+  "supplierContactId",
+  "supplierLocationId",
+  "supplierReference",
+  "purchaseOrderType",
+  "customFields"
+] as const;
+
 export async function updatePurchaseOrder(
   client: SupabaseClient<Database>,
   input: {
     id: string;
     updatedBy: string;
-    status?: (typeof purchaseOrderStatusType)[number];
     currencyCode?: string;
     orderDate?: string;
     supplierId?: string;
@@ -1836,7 +3344,16 @@ export async function updatePurchaseOrder(
   data: { id: string } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;
 }> {
-  const { id, updatedBy, notes, ...updates } = input;
+  const { id, updatedBy, notes } = input;
+  // Only these columns, and only the ones sent: the status changes through
+  // finalize, reopen and close, never through a header edit.
+  const updates = Object.fromEntries(
+    PURCHASE_ORDER_HEADER_COLUMNS.filter((column) => column in input).map(
+      (column) => [column, input[column]]
+    )
+  ) as Partial<
+    Pick<typeof input, (typeof PURCHASE_ORDER_HEADER_COLUMNS)[number]>
+  >;
 
   let exchangeRate: number | undefined;
   let exchangeRateUpdatedAt: string | undefined;
@@ -1873,158 +3390,6 @@ export async function updatePurchaseOrder(
     .single();
 }
 
-/**
- * @deprecated Use insertPurchaseOrder for new orders, updatePurchaseOrder for existing orders
- * @mcp upsert
- */
-export async function upsertPurchaseOrder(
-  client: SupabaseClient<Database>,
-  purchaseOrder:
-    | (Omit<
-        z.infer<typeof purchaseOrderValidator>,
-        "id" | "purchaseOrderId"
-      > & {
-        purchaseOrderId: string;
-        status?: (typeof purchaseOrderStatusType)[number];
-        companyId: string;
-        companyGroupId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<
-        z.infer<typeof purchaseOrderValidator>,
-        "id" | "purchaseOrderId"
-      > & {
-        id: string;
-        purchaseOrderId: string;
-        companyGroupId?: string;
-        updatedBy: string;
-        customFields?: Json;
-      }),
-  receiptRequestedDate?: string
-) {
-  if ("id" in purchaseOrder) {
-    // locationId belongs on the delivery record, as in the insert below, and
-    // notes are stored as internalNotes/externalNotes. companyGroupId is not a
-    // column of the order at all.
-    const {
-      locationId: _locationId,
-      companyGroupId: _companyGroupId,
-      notes: _notes,
-      ...orderUpdate
-    } = purchaseOrder;
-    return client
-      .from("purchaseOrder")
-      .update(sanitize(orderUpdate))
-      .eq("id", purchaseOrder.id)
-      .select("id, purchaseOrderId");
-  }
-
-  // Resolve the rate BEFORE inserting the supplier interaction — a resolver
-  // failure must not leave an orphaned interaction row behind.
-  if (purchaseOrder.currencyCode) {
-    const rate = await getExchangeRate(
-      client,
-      purchaseOrder.companyId,
-      purchaseOrder.currencyCode
-    );
-    if (rate.error) return { data: null, error: rate.error };
-    purchaseOrder.exchangeRate = rate.data;
-    purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
-  } else {
-    purchaseOrder.exchangeRate = 1;
-    purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
-  }
-
-  const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
-    await Promise.all([
-      insertSupplierInteraction(
-        client,
-        purchaseOrder.companyId,
-        purchaseOrder.supplierId
-      ),
-      getSupplierPayment(client, purchaseOrder.supplierId),
-      getSupplierShipping(client, purchaseOrder.supplierId),
-      getEmployeeJob(client, purchaseOrder.createdBy, purchaseOrder.companyId)
-    ]);
-
-  if (supplierInteraction.error) return supplierInteraction;
-  if (supplierPayment.error) return supplierPayment;
-  if (supplierShipping.error) return supplierShipping;
-
-  const {
-    paymentTermId,
-    invoiceSupplierId,
-    invoiceSupplierContactId,
-    invoiceSupplierLocationId
-  } = supplierPayment.data;
-
-  const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
-    supplierShipping.data;
-
-  const locationId =
-    purchaseOrder.locationId ?? purchaser?.data?.locationId ?? null;
-
-  // locationId is not a column on purchaseOrder -- it belongs on the delivery record
-  const {
-    locationId: _locationId,
-    companyGroupId: _companyGroupId,
-    ...purchaseOrderData
-  } = purchaseOrder;
-
-  const order = await client
-    .from("purchaseOrder")
-    .insert([
-      {
-        ...purchaseOrderData,
-        supplierInteractionId: supplierInteraction.data?.id,
-        status: purchaseOrder.status ?? "Draft"
-      }
-    ])
-    .select("id, purchaseOrderId");
-
-  if (order.error) return order;
-
-  const purchaseOrderId = order.data[0].id;
-
-  const [delivery, payment] = await Promise.all([
-    client.from("purchaseOrderDelivery").insert([
-      {
-        id: purchaseOrderId,
-        receiptRequestedDate: receiptRequestedDate ?? null,
-        locationId: locationId,
-        shippingMethodId: shippingMethodId,
-        shippingTermId: shippingTermId,
-        incoterm: incoterm,
-        incotermLocation: incotermLocation,
-        companyId: purchaseOrder.companyId
-      }
-    ]),
-    client.from("purchaseOrderPayment").insert([
-      {
-        id: purchaseOrderId,
-        invoiceSupplierId: invoiceSupplierId,
-        invoiceSupplierContactId: invoiceSupplierContactId,
-        invoiceSupplierLocationId: invoiceSupplierLocationId,
-        paymentTermId: paymentTermId,
-        companyId: purchaseOrder.companyId
-      }
-    ])
-  ]);
-
-  if (delivery.error) {
-    await deletePurchaseOrder(client, purchaseOrderId);
-    return payment;
-  }
-  if (payment.error) {
-    await deletePurchaseOrder(client, purchaseOrderId);
-    return payment;
-  }
-
-  return order;
-}
-
-/** @mcp upsert */
 export async function upsertPurchaseOrderDelivery(
   client: SupabaseClient<Database>,
   purchaseOrderDelivery:
@@ -2095,7 +3460,96 @@ function normalizePurchaseOrderLineReferences<
   return { ...line, itemId: null, accountId: null, assetId: null };
 }
 
-/** @mcp upsert */
+/** The columns a quantity edit's completion flags are derived from. */
+const COMPLETION_SOURCE_COLUMNS = [
+  "purchaseQuantity",
+  "quantityReceived",
+  "quantityInvoiced",
+  "receivedComplete"
+] as const;
+
+/** A quantity edit retries this many times when a receipt or invoice lands. */
+const COMPLETION_CAS_ATTEMPTS = 3;
+
+/**
+ * Update an existing line, restating its completion flags when the edit
+ * changes `purchaseQuantity` (`getCompletionAfterQuantityChange`). The flags
+ * are derived from a read, so the UPDATE is a compare-and-swap on the columns
+ * they came from: a receipt or invoice posted in between matches no row, and
+ * the edit re-reads and tries again rather than overwriting what it posted.
+ */
+async function updatePurchaseOrderLineRestatingCompletion(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  line: { id: string; purchaseQuantity?: number }
+) {
+  for (let attempt = 0; attempt < COMPLETION_CAS_ATTEMPTS; attempt++) {
+    const current = await client
+      .from("purchaseOrderLine")
+      .select(COMPLETION_SOURCE_COLUMNS.join(", "))
+      .eq("id", line.id)
+      .eq("companyId", companyId)
+      .single<
+        Pick<
+          Database["public"]["Tables"]["purchaseOrderLine"]["Row"],
+          (typeof COMPLETION_SOURCE_COLUMNS)[number]
+        >
+      >();
+    if (current.error) return { data: null, error: current.error };
+
+    const quantityChanged =
+      line.purchaseQuantity !== undefined &&
+      !equals(
+        Number(current.data.purchaseQuantity ?? 0),
+        line.purchaseQuantity
+      );
+    // The floor again, on this read: a receipt or invoice posted since the
+    // service function checked it can have raised it past the new quantity.
+    if (quantityChanged) {
+      const refusal = purchaseOrderLineAmendRefusal(
+        current.data,
+        line.purchaseQuantity
+      );
+      if (refusal) {
+        return { data: null, error: new InvalidInputError(refusal) };
+      }
+    }
+
+    let update = client
+      .from("purchaseOrderLine")
+      .update(
+        sanitize({
+          ...line,
+          ...(quantityChanged
+            ? getCompletionAfterQuantityChange(
+                current.data,
+                line.purchaseQuantity!
+              )
+            : {})
+        })
+      )
+      .eq("id", line.id)
+      .eq("companyId", companyId);
+    if (quantityChanged) {
+      for (const column of COMPLETION_SOURCE_COLUMNS) {
+        const value = current.data[column];
+        update =
+          value === null ? update.is(column, null) : update.eq(column, value);
+      }
+    }
+
+    const updated = await update.select("id").maybeSingle();
+    if (updated.error) return { data: null, error: updated.error };
+    if (updated.data) return { data: updated.data, error: null };
+  }
+  return {
+    data: null,
+    error: new Error(
+      "The line was received or invoiced while saving. Try again."
+    )
+  };
+}
+
 export async function upsertPurchaseOrderLine(
   client: SupabaseClient<Database>,
   purchaseOrderLine:
@@ -2103,9 +3557,12 @@ export async function upsertPurchaseOrderLine(
         companyId: string;
         createdBy: string;
         customFields?: Json;
+        /** Projects Phase 3: a line bought for a planning group (no project). */
+        planningGroupId?: string;
       })
     | (Omit<z.infer<typeof purchaseOrderLineValidator>, "id"> & {
         id: string;
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -2119,18 +3576,23 @@ export async function upsertPurchaseOrderLine(
   if (cleared.error) return { data: null, error: cleared.error };
 
   if ("id" in normalized) {
-    return client
-      .from("purchaseOrderLine")
-      .update(sanitize(normalized))
-      .eq("id", normalized.id)
-      .select("id")
-      .single();
+    const { companyId, ...line } = normalized;
+    return updatePurchaseOrderLineRestatingCompletion(client, companyId, line);
   }
 
-  const existing = await client
-    .from("purchaseOrderLine")
-    .select("sortOrder")
-    .eq("purchaseOrderId", normalized.purchaseOrderId);
+  const [existing, delivery] = await Promise.all([
+    client
+      .from("purchaseOrderLine")
+      .select("sortOrder")
+      .eq("purchaseOrderId", normalized.purchaseOrderId),
+    client
+      .from("purchaseOrderDelivery")
+      .select("receiptRequestedDate, receiptPromisedDate")
+      .eq("id", normalized.purchaseOrderId)
+      .eq("companyId", normalized.companyId)
+      .maybeSingle()
+  ]);
+  if (delivery.error) return { data: null, error: delivery.error };
 
   const maxSortOrder = (existing.data ?? []).reduce(
     (max, row) => Math.max(max, row.sortOrder ?? 0),
@@ -2139,12 +3601,24 @@ export async function upsertPurchaseOrderLine(
 
   return client
     .from("purchaseOrderLine")
-    .insert([{ ...normalized, sortOrder: maxSortOrder + 1 }])
+    .insert([
+      {
+        ...normalized,
+        requiredDate:
+          normalized.requiredDate ??
+          delivery.data?.receiptRequestedDate ??
+          undefined,
+        promisedDate:
+          normalized.promisedDate ??
+          delivery.data?.receiptPromisedDate ??
+          undefined,
+        sortOrder: maxSortOrder + 1
+      }
+    ])
     .select("id")
     .single();
 }
 
-/** @mcp update */
 export async function updatePurchaseOrderLineOrder(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -2175,7 +3649,12 @@ export async function updatePurchaseOrderLineOrder(
  * received quantity is already fully invoiced gets `invoicedComplete` too —
  * otherwise the order could never reach Completed. Reopening restores the
  * natural rule (fully invoiced = ordered quantity).
- * @mcp action
+ *
+ * The rule (`shortClosePurchaseOrderLineRefusal`) is checked in the same
+ * transaction as the write, on the line's row and its order's status: the
+ * header recompute would otherwise release an unreleased order — a Draft
+ * with every line closed reads as Completed — with no approval. Every
+ * caller shares it; the page has no check of its own.
  */
 export async function shortClosePurchaseOrderLine(
   db: Kysely<KyselyDatabase>,
@@ -2190,24 +3669,52 @@ export async function shortClosePurchaseOrderLine(
     purchaseOrderId: string;
     companyId: string;
     userId: string;
-    intent: "close" | "reopen";
+    intent: PurchaseOrderLineReceivingIntent;
   }
-) {
+): Promise<
+  | { found: false; refusal: null; status: null }
+  | { found: true; refusal: string; status: null }
+  | { found: true; refusal: null; status: PurchaseOrderStatus }
+> {
   return db.transaction().execute(async (trx) => {
     const line = await trx
       .selectFrom("purchaseOrderLine")
-      .select(["purchaseQuantity", "quantityReceived", "quantityInvoiced"])
-      .where("id", "=", lineId)
-      .where("purchaseOrderId", "=", purchaseOrderId)
-      .where("companyId", "=", companyId)
+      .innerJoin("purchaseOrder", (join) =>
+        join
+          .onRef("purchaseOrder.id", "=", "purchaseOrderLine.purchaseOrderId")
+          .onRef("purchaseOrder.companyId", "=", "purchaseOrderLine.companyId")
+      )
+      .select([
+        "purchaseOrderLine.purchaseOrderLineType",
+        "purchaseOrderLine.purchaseQuantity",
+        "purchaseOrderLine.quantityReceived",
+        "purchaseOrderLine.quantityInvoiced",
+        "purchaseOrderLine.quantityToReceive",
+        "purchaseOrderLine.receivedComplete",
+        "purchaseOrder.status"
+      ])
+      .where("purchaseOrderLine.id", "=", lineId)
+      .where("purchaseOrderLine.purchaseOrderId", "=", purchaseOrderId)
+      .where("purchaseOrderLine.companyId", "=", companyId)
+      .forUpdate()
       .executeTakeFirst();
 
-    if (!line) throw new Error("Purchase order line not found");
+    // No line was found for the ID
+    if (!line) return { found: false, refusal: null, status: null };
 
-    // NUMERIC columns come back from the pg driver as strings
-    const ordered = Number(line.purchaseQuantity ?? 0);
-    const received = Number(line.quantityReceived ?? 0);
-    const invoiced = Number(line.quantityInvoiced ?? 0);
+    const refusal = shortClosePurchaseOrderLineRefusal(intent, {
+      status: line.status,
+      purchaseOrderLineType: line.purchaseOrderLineType,
+      quantityToReceive: line.quantityToReceive ?? 0,
+      receivedComplete: line.receivedComplete
+    });
+
+    // The close was refused
+    if (refusal) return { found: true, refusal, status: null };
+
+    const ordered = line.purchaseQuantity ?? 0;
+    const received = line.quantityReceived ?? 0;
+    const invoiced = line.quantityInvoiced ?? 0;
 
     const invoicedComplete =
       intent === "close" ? invoiced >= received : invoiced >= ordered;
@@ -2218,7 +3725,7 @@ export async function shortClosePurchaseOrderLine(
         receivedComplete: intent === "close",
         invoicedComplete,
         updatedBy: userId,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .where("id", "=", lineId)
       .where("purchaseOrderId", "=", purchaseOrderId)
@@ -2239,11 +3746,13 @@ export async function shortClosePurchaseOrderLine(
       .set({
         status,
         updatedBy: userId,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .where("id", "=", purchaseOrderId)
       .where("companyId", "=", companyId)
       .execute();
+
+    return { found: true, refusal: null, status };
   });
 }
 
@@ -2388,37 +3897,36 @@ export async function applyPurchasingPlanningActions(
     );
     if (quantities.length > 0) {
       const lineIds = [...new Set(quantities.map((a) => a.lineId))];
-      // A PO with no currency is in the company's base currency, as the PO
-      // line form reads it; refusing it failed every Increase / Decrease on
-      // such a PO with "Currency (none) has no precision".
-      const lines = (
-        await trx
-          .selectFrom("purchaseOrderLine as pol")
-          .innerJoin("purchaseOrder as po", "po.id", "pol.purchaseOrderId")
-          .innerJoin("company as c", "c.id", "po.companyId")
-          .select([
-            "pol.id",
-            "pol.supplierUnitPrice",
-            "pol.supplierShippingCost",
-            "pol.purchaseQuantity",
-            "pol.quantityReceived",
-            "pol.taxPercent",
-            "pol.supplierTaxAmount",
-            "pol.conversionFactor",
-            "po.currencyCode",
-            "c.baseCurrencyCode"
-          ])
-          .where("pol.id", "in", lineIds)
-          .where("pol.companyId", "=", companyId)
-          .execute()
-      ).map(({ baseCurrencyCode, ...line }) => ({
-        ...line,
-        currencyCode: line.currencyCode ?? baseCurrencyCode
-      }));
+      const lines = await trx
+        .selectFrom("purchaseOrderLine as pol")
+        .innerJoin("purchaseOrder as po", "po.id", "pol.purchaseOrderId")
+        .innerJoin("company as c", "c.id", "po.companyId")
+        .select([
+          "pol.id",
+          "pol.supplierUnitPrice",
+          "pol.supplierShippingCost",
+          "pol.purchaseQuantity",
+          "pol.quantityReceived",
+          "pol.quantityInvoiced",
+          "pol.receivedComplete",
+          "pol.taxPercent",
+          "pol.supplierTaxAmount",
+          "pol.conversionFactor",
+          "po.currencyCode",
+          "c.baseCurrencyCode"
+        ])
+        .where("pol.id", "in", lineIds)
+        .where("pol.companyId", "=", companyId)
+        // the completion flags below are derived from these rows
+        .forUpdate("pol")
+        .execute();
       const lineById = new Map(lines.map((line) => [line.id, line]));
       const codes = [
         ...new Set(
-          lines.flatMap((l) => (l.currencyCode ? [l.currencyCode] : []))
+          lines.flatMap((l) => {
+            const code = planningLineCurrencyCode(l);
+            return code ? [code] : [];
+          })
         )
       ];
       const currencies =
@@ -2441,46 +3949,26 @@ export async function applyPurchasingPlanningActions(
         quantity: number;
         percent: number;
         amount: number;
+        receivedComplete: boolean;
+        invoicedComplete: boolean;
       }[] = [];
       const unheld: string[] = [];
       for (const action of quantities) {
-        const line = lineById.get(action.lineId);
-        const decimals = line?.currencyCode
-          ? decimalsByCode.get(line.currencyCode)
-          : undefined;
-        if (!line || decimals === undefined) {
+        const change = planningQuantityChange(
+          lineById.get(action.lineId),
+          decimalsByCode,
+          Number(action.suggestedQuantity)
+        );
+        if (!change.ok) {
           result.failed.push({
             id: action.planningActionId,
-            message: line
-              ? `Currency ${line.currencyCode ?? "(none)"} has no precision`
-              : "Purchase order line not found"
+            message: change.message
           });
           unheld.push(action.planningActionId);
           continue;
         }
-        const conversionFactor = Number(line.conversionFactor) || 1;
-        // MRP suggests a whole number of purchase units already
-        // (`quantityAfterApply`, @carbon/planning); the inner round strips
-        // float noise (1.1 / 0.1 = 11.000000000000002) that would otherwise
-        // ceil it a whole purchase unit up.
-        const toReceive =
-          conversionFactor > 0
-            ? round(
-                round(Number(action.suggestedQuantity) / conversionFactor),
-                0,
-                RoundingMode.Up
-              )
-            : Number(action.suggestedQuantity);
-        const quantity = round(
-          (Number(line.quantityReceived) || 0) + toReceive
-        );
-        const pair = taxPairForQuantity(line, quantity, decimals);
-        values.push({
-          lineId: action.lineId,
-          quantity,
-          percent: pair.percent,
-          amount: pair.amount
-        });
+        const { ok: _, ...value } = change;
+        values.push({ lineId: action.lineId, ...value });
       }
       // a failed computation never holds its claim
       for (const id of unheld) claimed.delete(id);
@@ -2491,14 +3979,16 @@ export async function applyPurchasingPlanningActions(
           SET "purchaseQuantity" = v."purchaseQuantity"::numeric,
               "taxPercent" = v."taxPercent"::numeric,
               "supplierTaxAmount" = v."supplierTaxAmount"::numeric,
+              "receivedComplete" = v."receivedComplete"::boolean,
+              "invoicedComplete" = v."invoicedComplete"::boolean,
               "updatedBy" = ${userId},
               "updatedAt" = ${now}
           FROM (VALUES ${sql.join(
             values.map(
               (v) =>
-                sql`(${v.lineId}, ${v.quantity}, ${v.percent}, ${v.amount})`
+                sql`(${v.lineId}, ${v.quantity}, ${v.percent}, ${v.amount}, ${v.receivedComplete}, ${v.invoicedComplete})`
             )
-          )}) AS v("id", "purchaseQuantity", "taxPercent", "supplierTaxAmount")
+          )}) AS v("id", "purchaseQuantity", "taxPercent", "supplierTaxAmount", "receivedComplete", "invoicedComplete")
           WHERE l."id" = v."id"
             AND l."companyId" = ${companyId}
             AND l."purchaseOrderId" IN (${editablePurchaseOrders})
@@ -2578,7 +4068,6 @@ export async function applyPurchasingPlanningActions(
   return result;
 }
 
-/** @mcp upsert */
 export async function upsertPurchaseOrderPayment(
   client: SupabaseClient<Database>,
   purchaseOrderPayment:
@@ -2607,7 +4096,6 @@ export async function upsertPurchaseOrderPayment(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertSupplier(
   client: SupabaseClient<Database>,
   supplier:
@@ -2640,7 +4128,6 @@ export async function upsertSupplier(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertSupplierProcess(
   client: SupabaseClient<Database>,
   supplierProcess:
@@ -2670,7 +4157,6 @@ export async function upsertSupplierProcess(
     .single();
 }
 
-/** @mcp create */
 export async function insertSupplierQuote(
   client: SupabaseClient<Database>,
   input: {
@@ -2787,7 +4273,6 @@ export async function insertSupplierQuote(
   return { data: { id: createdQuoteId, supplierQuoteId }, error: null };
 }
 
-/** @mcp update */
 export async function updateSupplierQuote(
   client: SupabaseClient<Database>,
   input: {
@@ -2847,153 +4332,6 @@ export async function updateSupplierQuote(
     .single();
 }
 
-/** @deprecated Use insertSupplierQuote for new quotes, updateSupplierQuote for existing quotes */
-export async function upsertSupplierQuote(
-  client: SupabaseClient<Database>,
-  supplierQuote:
-    | (Omit<
-        z.infer<typeof supplierQuoteValidator>,
-        "id" | "supplierQuoteId"
-      > & {
-        supplierQuoteId: string;
-        companyId: string;
-        companyGroupId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<
-        z.infer<typeof supplierQuoteValidator>,
-        "id" | "supplierQuoteId"
-      > & {
-        id: string;
-        supplierQuoteId: string;
-        companyGroupId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in supplierQuote) {
-    if (supplierQuote.currencyCode) {
-      const rate = await getExchangeRate(
-        client,
-        supplierQuote.companyId,
-        supplierQuote.currencyCode
-      );
-      if (rate.error) return { data: null, error: rate.error };
-      supplierQuote.exchangeRate = rate.data;
-      supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
-    } else {
-      supplierQuote.exchangeRate = 1;
-      supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
-    }
-
-    const supplierInteraction = await insertSupplierInteraction(
-      client,
-      supplierQuote.companyId,
-      supplierQuote.supplierId
-    );
-
-    if (supplierInteraction.error) return supplierInteraction;
-
-    // supplierQuote stores notes as internalNotes/externalNotes, not `notes`.
-    const {
-      companyGroupId: _companyGroupId,
-      notes: _notes,
-      ...supplierQuoteData
-    } = supplierQuote;
-    const insert = await client
-      .from("supplierQuote")
-      .insert([
-        {
-          ...supplierQuoteData,
-          status: supplierQuoteData.status ?? "Draft",
-          supplierInteractionId: supplierInteraction.data?.id
-        }
-      ])
-      .select("id, supplierQuoteId, externalLinkId")
-      .single();
-
-    if (insert.error) {
-      return insert;
-    }
-
-    const supplierQuoteId = insert.data?.id;
-    if (!supplierQuoteId) return insert;
-
-    // Only create external link if one doesn't exist
-    if (!insert.data.externalLinkId) {
-      const externalLink = await upsertExternalLink(client, {
-        documentType: "SupplierQuote",
-        documentId: supplierQuoteId,
-        supplierId: supplierQuote.supplierId,
-        expiresAt: supplierQuote.expirationDate,
-        companyId: supplierQuote.companyId
-      });
-
-      if (externalLink.data) {
-        const update = await client
-          .from("supplierQuote")
-          .update({ externalLinkId: externalLink.data.id })
-          .eq("id", supplierQuoteId);
-
-        if (update.error) {
-          return update;
-        }
-      }
-    }
-
-    return insert;
-  } else {
-    // Only update the exchange rate if the currency code has changed
-    const existingQuote = await client
-      .from("supplierQuote")
-      .select("currencyCode, status, companyId")
-      .eq("id", supplierQuote.id)
-      .single();
-
-    if (existingQuote.error) return existingQuote;
-
-    const {
-      currencyCode,
-      status: existingStatus,
-      companyId
-    } = existingQuote.data;
-
-    if (
-      supplierQuote.currencyCode &&
-      currencyCode !== supplierQuote.currencyCode
-    ) {
-      const rate = await getExchangeRate(
-        client,
-        companyId,
-        supplierQuote.currencyCode
-      );
-      if (rate.error) return { data: null, error: rate.error };
-      supplierQuote.exchangeRate = rate.data;
-      supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
-    }
-    const {
-      companyGroupId: _companyGroupId2,
-      notes: _notes,
-      ...supplierQuoteUpdateData
-    } = supplierQuote;
-    const companyTz = await getCompanyTimeZone(client, companyId);
-    return client
-      .from("supplierQuote")
-      .update({
-        ...sanitize(supplierQuoteUpdateData),
-        status:
-          supplierQuote.expirationDate &&
-          datetime.today(companyTz).toString() > supplierQuote.expirationDate
-            ? "Expired"
-            : (supplierQuote.status ?? existingStatus ?? "Draft"),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", supplierQuote.id);
-  }
-}
-
-/** @mcp upsert */
 export async function upsertSupplierQuoteLine(
   client: SupabaseClient<Database>,
   supplierQuoteLine:
@@ -3040,7 +4378,6 @@ export async function upsertSupplierQuoteLine(
     .single();
 }
 
-/** @mcp update */
 export async function updateSupplierQuoteLineOrder(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -3058,7 +4395,6 @@ export async function updateSupplierQuoteLineOrder(
   });
 }
 
-/** @mcp upsert */
 export async function upsertSupplierType(
   client: SupabaseClient<Database>,
   supplierType:
@@ -3080,10 +4416,13 @@ export async function upsertSupplierType(
       .select("id")
       .single();
   } else {
-    return client
-      .from("supplierType")
-      .update(sanitize(supplierType))
-      .eq("id", supplierType.id);
+    return requireAffected(
+      client
+        .from("supplierType")
+        .update(sanitize(supplierType))
+        .eq("id", supplierType.id)
+        .select("id")
+    );
   }
 }
 
@@ -3091,26 +4430,28 @@ export async function upsertSupplierType(
 // PURCHASING RFQ FUNCTIONS
 // ============================================================
 
-/** @mcp delete */
 export async function deletePurchasingRFQ(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
 ) {
-  return client.from("purchasingRfq").delete().eq("id", purchasingRfqId);
+  return requireAffected(
+    client.from("purchasingRfq").delete().eq("id", purchasingRfqId).select("id")
+  );
 }
 
-/** @mcp delete */
 export async function deletePurchasingRFQLine(
   client: SupabaseClient<Database>,
   purchasingRfqLineId: string
 ) {
-  return client
-    .from("purchasingRfqLine")
-    .delete()
-    .eq("id", purchasingRfqLineId);
+  return requireAffected(
+    client
+      .from("purchasingRfqLine")
+      .delete()
+      .eq("id", purchasingRfqLineId)
+      .select("id")
+  );
 }
 
-/** @mcp read */
 export async function getPurchasingRFQ(
   client: SupabaseClient<Database>,
   id: string
@@ -3118,7 +4459,10 @@ export async function getPurchasingRFQ(
   return client.from("purchasingRfqs").select("*").eq("id", id).single();
 }
 
-/** @mcp read */
+export const PURCHASING_RFQS_PAGING: Paging = {
+  defaultSorts: [{ column: "rfqId", ascending: false }]
+};
+
 export async function getPurchasingRFQs(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3128,20 +4472,26 @@ export async function getPurchasingRFQs(
 ) {
   let query = client
     .from("purchasingRfqs")
-    .select("*", { count: LIST_COUNT })
+    .select(withSearchLines("*", args), { count: listCount(args) })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.ilike("rfqId", `%${args.search}%`);
+  // Every word must occur in the RFQ or one of its lines. `searchPurchasingRfqs`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchPurchasingRfqs",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(withSearchLines("*", args)) as unknown as typeof query;
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "rfqId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, PURCHASING_RFQS_PAGING);
   return query;
 }
 
-/** @mcp read */
 export async function getPurchasingRFQLine(
   client: SupabaseClient<Database>,
   lineId: string
@@ -3153,7 +4503,6 @@ export async function getPurchasingRFQLine(
     .single();
 }
 
-/** @mcp read */
 export async function getPurchasingRFQLines(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
@@ -3179,20 +4528,19 @@ type LinkedSupplierQuote = {
     | null;
 };
 
-/** @mcp read */
 export async function getPurchasingRFQSuppliers(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
 ): Promise<PostgrestResponse<PurchasingRfqSupplierWithSupplier>> {
-  // tsgo's limit; the cliff shifts as unrelated modules join the program.
-  // ts-ignore, not ts-expect-error, so it satisfies both tsc and tsgo.
+  // TypeScript's limit; the cliff shifts as unrelated modules join the
+  // program. ts-ignore, not ts-expect-error, since the error comes and goes.
   return client
     .from("purchasingRfqSupplier")
     .select("*, supplier(id, name)")
     .eq("purchasingRfqId", purchasingRfqId);
 }
 
-/** @mcp create */
+/** Not published: `purchasing_createPurchasingRfq` creates an RFQ with its suppliers. */
 export async function insertPurchasingRFQ(
   client: SupabaseClient<Database>,
   input: {
@@ -3292,7 +4640,6 @@ export async function updatePurchasingRFQ(
 
 /**
  * @deprecated Use insertPurchasingRFQ for new RFQs, updatePurchasingRFQ for existing RFQs
- * @mcp upsert
  */
 export async function upsertPurchasingRFQ(
   client: SupabaseClient<Database>,
@@ -3325,7 +4672,6 @@ export async function upsertPurchasingRFQ(
     .single();
 }
 
-/** @mcp upsert */
 export async function upsertPurchasingRFQLine(
   client: SupabaseClient<Database>,
   purchasingRfqLine:
@@ -3372,7 +4718,6 @@ export async function upsertPurchasingRFQLine(
     .single();
 }
 
-/** @mcp update */
 export async function updatePurchasingRFQLineOrder(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -3390,7 +4735,6 @@ export async function updatePurchasingRFQLineOrder(
   });
 }
 
-/** @mcp upsert destructive */
 export async function upsertPurchasingRFQSuppliers(
   client: SupabaseClient<Database>,
   purchasingRfqId: string,
@@ -3422,7 +4766,6 @@ export async function upsertPurchasingRFQSuppliers(
     .select("id");
 }
 
-/** @mcp update */
 export async function updatePurchasingRFQStatus(
   client: SupabaseClient<Database>,
   args: {
@@ -3445,7 +4788,6 @@ export async function updatePurchasingRFQStatus(
     .single();
 }
 
-/** @mcp read */
 export async function getLinkedSupplierQuotes(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
@@ -3461,7 +4803,6 @@ export async function getLinkedSupplierQuotes(
     .eq("purchasingRfqId", purchasingRfqId);
 }
 
-/** @mcp read */
 export async function getLinkedPurchasingRfqs(
   client: SupabaseClient<Database>,
   supplierQuoteId: string
@@ -3477,37 +4818,7 @@ export async function getLinkedPurchasingRfqs(
     .eq("supplierQuoteId", supplierQuoteId);
 }
 
-/** @mcp read */
-export async function getLinkedPurchasingRfqsForInteraction(
-  client: SupabaseClient<Database>,
-  supplierInteractionId: string
-) {
-  // First get all supplier quote IDs in this interaction
-  const { data: quotes, error: quotesError } = await client
-    .from("supplierQuote")
-    .select("id")
-    .eq("supplierInteractionId", supplierInteractionId);
-
-  if (quotesError || !quotes || quotes.length === 0) {
-    return { data: [], error: quotesError };
-  }
-
-  const quoteIds = quotes.map((q) => q.id);
-
-  // Then get all purchasing RFQs linked to any of these quotes
-  return client
-    .from("purchasingRfqToSupplierQuote")
-    .select(
-      `
-      purchasingRfqId,
-      purchasingRfq:purchasingRfqId (*)
-    `
-    )
-    .in("supplierQuoteId", quoteIds);
-}
-
 // Get sibling quotes (quotes sharing any RFQ with current quote)
-/** @mcp read */
 export async function getSiblingQuotesForQuote(
   client: SupabaseClient<Database>,
   supplierQuoteId: string
@@ -3540,24 +4851,6 @@ export async function getSiblingQuotesForQuote(
     .neq("supplierQuoteId", supplierQuoteId);
 }
 
-// Direct Order→RFQ lookup (more efficient than going through interaction)
-/** @mcp read */
-export async function getLinkedPurchasingRfqsForOrder(
-  client: SupabaseClient<Database>,
-  purchaseOrderId: string
-) {
-  return client
-    .from("purchasingRfqToPurchaseOrder")
-    .select(
-      `
-      purchasingRfqId,
-      purchasingRfq:purchasingRfqId (*)
-    `
-    )
-    .eq("purchaseOrderId", purchaseOrderId);
-}
-
-/** @mcp read */
 export async function getSupplierQuotesForComparison(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
@@ -3622,7 +4915,6 @@ export async function getSupplierQuotesForComparison(
 }
 
 // Get RFQ suppliers with their supplier info
-/** @mcp read */
 export async function getPurchasingRFQSuppliersWithLinks(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
@@ -3640,7 +4932,6 @@ export type PoDefaultAttachment = {
   path: string;
 };
 
-/** @mcp read */
 export async function getDefaultAttachmentsForPO(
   client: SupabaseClient<Database>,
   args: {
@@ -3706,6 +4997,82 @@ export async function getDefaultAttachmentsForPO(
 }
 
 /**
+ * Copies a changed order date to the lines that have no date or the order's
+ * current one. Run it before the delivery row changes, in the same
+ * transaction. The delivery date (when goods arrived) goes only to lines that
+ * received something; received-complete lines keep the other two.
+ *
+ * It locks the delivery rows first, so a concurrent save of the same order
+ * waits and then compares against the date this one commits.
+ */
+export async function cascadePurchaseOrderDateToLines(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    purchaseOrderIds: string[];
+    field: PurchaseOrderDateField;
+    value: string | null;
+  }
+) {
+  const { companyId, userId, purchaseOrderIds, field, value } = args;
+  if (!value || purchaseOrderIds.length === 0) return;
+  const lineField = purchaseOrderLineDateOfOrderDate[field];
+
+  await db
+    .selectFrom("purchaseOrderDelivery")
+    .select("id")
+    .where("companyId", "=", companyId)
+    .where("id", "in", purchaseOrderIds)
+    .orderBy("id")
+    .forUpdate()
+    .execute();
+
+  let update = db
+    .updateTable("purchaseOrderLine")
+    .set({
+      [lineField]: value,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .where("purchaseOrderLine.companyId", "=", companyId)
+    .where("purchaseOrderLine.purchaseOrderId", "in", purchaseOrderIds)
+    .where((eb) =>
+      eb.exists(
+        eb
+          .selectFrom("purchaseOrderDelivery")
+          .select(sql.lit(1).as("one"))
+          .whereRef(
+            "purchaseOrderDelivery.id",
+            "=",
+            "purchaseOrderLine.purchaseOrderId"
+          )
+          .whereRef(
+            "purchaseOrderDelivery.companyId",
+            "=",
+            "purchaseOrderLine.companyId"
+          )
+          .where(`purchaseOrderDelivery.${field}`, "is distinct from", value)
+          .where((delivery) =>
+            delivery.or([
+              delivery(`purchaseOrderLine.${lineField}`, "is", null),
+              delivery(
+                `purchaseOrderLine.${lineField}`,
+                "=",
+                delivery.ref(`purchaseOrderDelivery.${field}`)
+              )
+            ])
+          )
+      )
+    );
+  update =
+    field === "deliveryDate"
+      ? update.where("purchaseOrderLine.quantityReceived", ">", 0)
+      : update.where("purchaseOrderLine.receivedComplete", "=", false);
+  await update.execute();
+}
+
+/**
  * Apply a planning schedule/quantity change to a PO line.
  * `purchaseQuantity` is in PURCHASE units — the caller converts from inventory
  * units via the line's conversionFactor.
@@ -3737,7 +5104,7 @@ export async function updatePurchaseOrderLineSchedule(
     const line = await client
       .from("purchaseOrderLine")
       .select(
-        "supplierUnitPrice, supplierShippingCost, purchaseQuantity, taxPercent, supplierTaxAmount, purchaseOrder!inner(currencyCode)"
+        "supplierUnitPrice, supplierShippingCost, purchaseQuantity, taxPercent, supplierTaxAmount, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey!inner(currencyCode)"
       )
       .eq("id", args.lineId)
       .eq("companyId", args.companyId)
@@ -3784,30 +5151,54 @@ export async function updatePurchaseOrderLineSchedule(
   }
 
   try {
-    const updated = await db
-      .updateTable("purchaseOrderLine")
-      .set({
-        ...(args.requiredDate !== undefined
-          ? { requiredDate: args.requiredDate }
-          : {}),
-        ...(args.purchaseQuantity !== undefined
-          ? { purchaseQuantity: args.purchaseQuantity }
-          : {}),
-        ...(tax ?? {}),
-        updatedBy: args.userId,
-        updatedAt: datetime.timestamp()
-      })
-      .where("id", "=", args.lineId)
-      .where("companyId", "=", args.companyId)
-      .where("purchaseOrderId", "in", (eb) =>
-        eb
-          .selectFrom("purchaseOrder")
-          .select("id")
-          .where("companyId", "=", args.companyId)
-          .where("status", "in", [...PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES])
-      )
-      .returning("id")
-      .execute();
+    const updated = await db.transaction().execute(async (trx) => {
+      // The completion flags are derived from the row locked here, so a
+      // receipt or invoice posted meanwhile is not overwritten.
+      const current =
+        args.purchaseQuantity !== undefined
+          ? await trx
+              .selectFrom("purchaseOrderLine")
+              .select([...COMPLETION_SOURCE_COLUMNS])
+              .where("id", "=", args.lineId)
+              .where("companyId", "=", args.companyId)
+              .forUpdate()
+              .executeTakeFirst()
+          : undefined;
+      const completion =
+        current &&
+        args.purchaseQuantity !== undefined &&
+        !equals(Number(current.purchaseQuantity ?? 0), args.purchaseQuantity)
+          ? getCompletionAfterQuantityChange(current, args.purchaseQuantity)
+          : {};
+
+      return trx
+        .updateTable("purchaseOrderLine")
+        .set({
+          ...(args.requiredDate !== undefined
+            ? { requiredDate: args.requiredDate }
+            : {}),
+          ...(args.purchaseQuantity !== undefined
+            ? { purchaseQuantity: args.purchaseQuantity }
+            : {}),
+          ...(tax ?? {}),
+          ...completion,
+          updatedBy: args.userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", args.lineId)
+        .where("companyId", "=", args.companyId)
+        .where("purchaseOrderId", "in", (eb) =>
+          eb
+            .selectFrom("purchaseOrder")
+            .select("id")
+            .where("companyId", "=", args.companyId)
+            .where("status", "in", [
+              ...PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES
+            ])
+        )
+        .returning("id")
+        .execute();
+    });
     return { updated: updated.length > 0, error: null };
   } catch (err) {
     return {
@@ -3821,7 +5212,10 @@ export async function updatePurchaseOrderLineSchedule(
 
 // ─── Purchase Return Orders (Supplier Returns) ───
 
-/** @mcp read */
+export const PURCHASE_RETURN_ORDERS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getPurchaseReturnOrders(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3833,12 +5227,12 @@ export async function getPurchaseReturnOrders(
 ) {
   let query = client
     .from("purchaseReturnOrders")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: listCount(args) })
     .eq("companyId", companyId);
 
   if (args.search) {
     query = query.or(
-      `purchaseReturnOrderId.ilike.%${args.search}%,supplierReference.ilike.%${args.search}%`
+      searchFilter(["purchaseReturnOrderId", "supplierReference"], args.search)
     );
   }
 
@@ -3853,13 +5247,10 @@ export async function getPurchaseReturnOrders(
     query = query.eq("supplierId", args.supplierId);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, PURCHASE_RETURN_ORDERS_PAGING);
   return query;
 }
 
-/** @mcp read */
 export async function getPurchaseReturnOrder(
   client: SupabaseClient<Database>,
   purchaseReturnOrderId: string
@@ -3871,7 +5262,6 @@ export async function getPurchaseReturnOrder(
     .single();
 }
 
-/** @mcp read */
 export async function getPurchaseReturnOrderLines(
   client: SupabaseClient<Database>,
   purchaseReturnOrderId: string,
@@ -3887,7 +5277,6 @@ export async function getPurchaseReturnOrderLines(
     .order("lineNumber");
 }
 
-/** @mcp read */
 export async function getPurchaseReturnOrderLine(
   client: SupabaseClient<Database>,
   lineId: string
@@ -3899,7 +5288,6 @@ export async function getPurchaseReturnOrderLine(
     .single();
 }
 
-/** @mcp read */
 export async function getPurchaseReturnOrderLineTrackedEntities(
   client: SupabaseClient<Database>,
   lineIds: string[]
@@ -3910,7 +5298,6 @@ export async function getPurchaseReturnOrderLineTrackedEntities(
     .in("purchaseReturnOrderLineId", lineIds);
 }
 
-/** @mcp create */
 export async function insertPurchaseReturnOrder(
   client: SupabaseClient<Database>,
   input: {
@@ -4014,27 +5401,7 @@ export async function insertPurchaseReturnOrder(
   return order;
 }
 
-export async function updatePurchaseReturnOrder(
-  client: SupabaseClient<Database>,
-  purchaseReturnOrder: Omit<
-    z.infer<typeof purchaseReturnOrderValidator>,
-    "id" | "purchaseReturnOrderId" | "status"
-  > & {
-    id: string;
-    updatedBy: string;
-    customFields?: Json;
-  }
-) {
-  const { id, ...update } = purchaseReturnOrder;
-  return client
-    .from("purchaseReturnOrder")
-    .update({ ...sanitize(update), updatedAt: datetime.timestamp() })
-    .eq("id", id)
-    .select("id")
-    .single();
-}
-
-/** @mcp upsert */
+/** Not published: `purchasing_addReturnOrderLine` / `_updateLine` write a line, with the Draft and post-confirm checks this skips. */
 export async function upsertPurchaseReturnOrderLine(
   client: SupabaseClient<Database>,
   line:
@@ -4085,26 +5452,33 @@ export async function upsertPurchaseReturnOrderLine(
     .single();
 }
 
-/** @mcp delete */
 export async function deletePurchaseReturnOrder(
   client: SupabaseClient<Database>,
   purchaseReturnOrderId: string
 ) {
-  return client
-    .from("purchaseReturnOrder")
-    .delete()
-    .eq("id", purchaseReturnOrderId);
+  return requireAffected(
+    client
+      .from("purchaseReturnOrder")
+      .delete()
+      .eq("id", purchaseReturnOrderId)
+      .select("id")
+  );
 }
 
-/** @mcp delete */
 export async function deletePurchaseReturnOrderLine(
   client: SupabaseClient<Database>,
   lineId: string
 ) {
-  return client.from("purchaseReturnOrderLine").delete().eq("id", lineId);
+  return requireAffected(
+    client
+      .from("purchaseReturnOrderLine")
+      .delete()
+      .eq("id", lineId)
+      .select("id")
+  );
 }
 
-/** @mcp update destructive */
+/** Not published: `purchasing_updateReturnOrderLine` sets a line's entities, with its lock check. */
 export async function setPurchaseReturnOrderLineTrackedEntities(
   client: SupabaseClient<Database>,
   lineId: string,
@@ -4131,7 +5505,6 @@ export async function setPurchaseReturnOrderLineTrackedEntities(
   );
 }
 
-/** @mcp read */
 export async function getPurchaseReturnOrderShipments(
   client: SupabaseClient<Database>,
   purchaseReturnOrderId: string,
@@ -4146,7 +5519,6 @@ export async function getPurchaseReturnOrderShipments(
     .order("createdAt", { ascending: false });
 }
 
-/** @mcp read */
 export async function getPurchaseReturnOrderCredits(
   client: SupabaseClient<Database>,
   purchaseReturnOrderId: string,
@@ -4160,7 +5532,6 @@ export async function getPurchaseReturnOrderCredits(
     .order("createdAt", { ascending: false });
 }
 
-/** @mcp read */
 export async function getPurchaseReturnOrderIssues(
   client: SupabaseClient<Database>,
   purchaseReturnOrderId: string,
@@ -4181,7 +5552,8 @@ export async function getPurchaseReturnOrderIssues(
  * row-locked so two concurrent confirms against the same source line
  * serialize, and the aggregates are re-read under that lock
  * (replaceInvoiceSettlements pattern).
- * @mcp action
+ *
+ * Not published: `purchasing_confirmReturnOrder` confirms, and stores the PDF.
  */
 export async function confirmPurchaseReturnOrder(
   db: Kysely<KyselyDatabase>,
@@ -4407,7 +5779,8 @@ export async function confirmPurchaseReturnOrder(
  * No cap is released: a Draft return still counts as authorized against its
  * source lines (the confirm check excludes only "Cancelled"), so the
  * authorization it holds is unchanged — only its editability.
- * @mcp action
+ *
+ * Not published: `purchasing_reopenReturnOrder` runs it.
  */
 export async function reopenPurchaseReturnOrder(
   db: Kysely<KyselyDatabase>,
@@ -4467,7 +5840,8 @@ export async function reopenPurchaseReturnOrder(
  * a shipment posting racing this cancel serializes: whichever commits first
  * wins, and the loser sees the new state instead of producing a Cancelled
  * order with shipped stock (whose caps and Issue coverage then vanish).
- * @mcp action
+ *
+ * Not published: `purchasing_cancelReturnOrder` runs it.
  */
 export async function cancelPurchaseReturnOrder(
   db: Kysely<KyselyDatabase>,
@@ -4532,7 +5906,6 @@ export async function cancelPurchaseReturnOrder(
  * shortClosePurchaseOrderLine mechanic. The header status is derived from the
  * lines afterwards, so short-closing the last open line completes the return
  * (there is no separate manual Complete action, mirroring the Purchase Order).
- * @mcp action
  */
 export async function shortClosePurchaseReturnOrderLine(
   db: Kysely<KyselyDatabase>,
@@ -4624,7 +5997,6 @@ export async function shortClosePurchaseReturnOrderLine(
  * receipt" modal stays responsive when a supplier has thousands of receipt
  * lines. Each row carries `totalCount` — the size of the full returnable set
  * before limit/offset — so the UI can page through the rest.
- * @mcp read
  */
 export async function getReturnableLinesForSupplier(
   client: SupabaseClient<Database>,
@@ -4647,12 +6019,18 @@ export async function getReturnableLinesForSupplier(
   });
 }
 
+/** The statuses a supplier return ships (`shippableEntityStatuses`). */
+const RETURNABLE_ENTITY_STATUSES = shippableEntityStatuses(
+  "Purchase Return Order"
+);
+
 /**
  * Entity picker source for supplier return lines: serials/batches on hand
- * that were received from this supplier. Provenance is the Receipt attribute
- * (written by the receipt tracking route) resolved to the receipt's supplier
- * — no code writes a Supplier attribute onto tracked entities.
- * @mcp read
+ * that were received from this supplier, Available or Rejected (by an
+ * inspection or an issue — the units most worth sending back). Provenance is
+ * the Receipt attribute (written by the receipt tracking route) resolved to
+ * the receipt's supplier — no code writes a Supplier attribute onto tracked
+ * entities.
  */
 export async function getReturnableEntitiesForSupplier(
   client: SupabaseClient<Database>,
@@ -4678,15 +6056,14 @@ export async function getReturnableEntitiesForSupplier(
     .select("id, readableId, quantity, status, attributes")
     .eq("companyId", companyId)
     .eq("itemId", itemId)
-    .eq("status", "Available")
+    .in("status", RETURNABLE_ENTITY_STATUSES)
     .in("attributes ->> Receipt", receiptIds);
 }
 
 /**
- * The Available tracked entities that came in on ONE receipt line, for the item.
+ * The Available or Rejected tracked entities that came in on ONE receipt line, for the item.
  * Used to pre-select the batch/serial when a return line is added from a specific
  * receipt — provenance is the `Receipt Line` attribute stamped at receipt.
- * @mcp read
  */
 export async function getReturnableEntitiesForReceiptLine(
   client: SupabaseClient<Database>,
@@ -4699,7 +6076,7 @@ export async function getReturnableEntitiesForReceiptLine(
     .select("id, readableId, quantity, status")
     .eq("companyId", companyId)
     .eq("itemId", itemId)
-    .eq("status", "Available")
+    .in("status", RETURNABLE_ENTITY_STATUSES)
     .eq("attributes ->> Receipt Line", receiptLineId);
 }
 
@@ -4707,7 +6084,6 @@ export async function getReturnableEntitiesForReceiptLine(
  * Per-line creditable pool = shipped − already credited. Draft memos count
  * against the pool (two Drafts must not double-credit); the VIEW's displayed
  * quantityCredited still derives from Posted memos only.
- * @mcp read
  */
 export async function getCreditableQuantitiesForPurchaseReturn(
   client: SupabaseClient<Database>,
@@ -4780,8 +6156,6 @@ export async function getCreditableQuantitiesForPurchaseReturn(
  * `getCompanyHasOpenCredits` select supplier memos with
  * `direction = "Debit"`, so a Credit-direction memo here is also invisible to
  * "Apply Credit" on a supplier invoice.
- * @mcp create
- * @mcp audit companyGroupId, createdBy, updatedBy, userId
  */
 export async function createPurchaseReturnOrderCredit(
   client: SupabaseClient<Database>,
@@ -4966,7 +6340,6 @@ export async function createPurchaseReturnOrderCredit(
  * Create Replacement Purchase Order: a draft PO from the return lines,
  * priced from the linked PO line (purchase-UOM price + conversion factor
  * copied) else the supplierPart default. One replacement per return.
- * @mcp create
  */
 export async function createReplacementPurchaseOrder(
   client: SupabaseClient<Database>,
@@ -5038,7 +6411,9 @@ export async function createReplacementPurchaseOrder(
 
   const supplierParts = await client
     .from("supplierPart")
-    .select("itemId, unitPrice, conversionFactor, supplierUnitOfMeasureCode")
+    .select(
+      "itemId, currencyCode, supplierUnitPrice, conversionFactor, supplierUnitOfMeasureCode"
+    )
     .eq("supplierId", order.data.supplierId)
     .eq("companyId", companyId)
     .in(
@@ -5068,6 +6443,54 @@ export async function createReplacementPurchaseOrder(
   }
   const purchaseOrderId = purchaseOrder.data.id;
 
+  // A supplier part's price is in its own currency; the replacement order is
+  // in the return's, so it converts at today's rate.
+  const [company, exchangeRates] = await Promise.all([
+    client
+      .from("company")
+      .select("baseCurrencyCode")
+      .eq("id", companyId)
+      .single(),
+    client.rpc("get_exchange_rates", { p_company_id: companyId })
+  ]);
+  if (company.error || exchangeRates.error) {
+    await deletePurchaseOrder(client, purchaseOrderId);
+    return { data: null, error: company.error ?? exchangeRates.error };
+  }
+  const baseCurrencyCode = company.data.baseCurrencyCode;
+  const exchangeRateByCurrency = new Map(
+    exchangeRates.data.map((rate) => [rate.currencyCode, rate.rate])
+  );
+  const orderCurrency = {
+    currencyCode: order.data.currencyCode ?? baseCurrencyCode,
+    exchangeRate: purchaseOrder.data.exchangeRate
+  };
+  const supplierPartPrice = (
+    supplierPart:
+      | { currencyCode: string | null; supplierUnitPrice: number | null }
+      | undefined
+  ) => {
+    if (supplierPart?.supplierUnitPrice == null) return null;
+    const currencyCode = supplierPartCurrency(
+      supplierPart.currencyCode,
+      baseCurrencyCode
+    );
+    // Base is always 1, whether or not the group lists it.
+    const exchangeRate =
+      currencyCode === orderCurrency.currencyCode
+        ? orderCurrency.exchangeRate
+        : currencyCode === baseCurrencyCode
+          ? 1
+          : exchangeRateByCurrency.get(currencyCode);
+    // No rate: leave it to the next fallback rather than price it at par.
+    if (!exchangeRate) return null;
+    return convertUnitPrice(
+      supplierPart.supplierUnitPrice,
+      { currencyCode, exchangeRate },
+      orderCurrency
+    );
+  };
+
   const lineTypeFor = (
     itemType: string | null | undefined
   ): Database["public"]["Enums"]["purchaseOrderLineType"] => {
@@ -5095,7 +6518,7 @@ export async function createReplacementPurchaseOrder(
     // unitPrice generated column is base currency and would double-convert
     const unitPrice = Number(
       poLine?.supplierUnitPrice ??
-        supplierPart?.unitPrice ??
+        supplierPartPrice(supplierPart) ??
         Number(line.unitPrice) * conversionFactor
     );
     const purchaseQuantity =
@@ -5109,6 +6532,7 @@ export async function createReplacementPurchaseOrder(
       itemId: line.itemId,
       purchaseQuantity,
       supplierUnitPrice: unitPrice,
+      exchangeRate: orderCurrency.exchangeRate,
       conversionFactor,
       purchaseUnitOfMeasureCode:
         poLine?.purchaseUnitOfMeasureCode ??
@@ -5129,15 +6553,18 @@ export async function createReplacementPurchaseOrder(
     return { data: null, error: insertLines.error };
   }
 
-  const link = await client
-    .from("purchaseReturnOrder")
-    .update({
-      replacementPurchaseOrderId: purchaseOrderId,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", purchaseReturnOrderId)
-    .eq("companyId", companyId);
+  const link = await requireAffected(
+    client
+      .from("purchaseReturnOrder")
+      .update({
+        replacementPurchaseOrderId: purchaseOrderId,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", purchaseReturnOrderId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
   if (link.error) return { data: null, error: link.error };
 
   return { data: { id: purchaseOrderId }, error: null };
@@ -5149,7 +6576,6 @@ export async function createReplacementPurchaseOrder(
  * the returned `signedUrl`, then call `documents_insertUploadedDocument` with the
  * returned `path`, the document type as `sourceDocument`, and the document id as
  * `sourceDocumentId`. The storage folder is scoped by `interactionId`.
- * @mcp create — part of the documented MCP signed-URL upload flow
  *       (packages/files/AGENTS.md): a non-browser caller mints a staged
  *       upload URL, then insertUploadedDocument converts and lands it.
  */
@@ -5170,7 +6596,6 @@ export async function createSupplierInteractionDocumentUploadUrl(
  * of the two-step upload flow: PUT the file bytes to the returned `signedUrl`, then
  * call `documents_insertUploadedDocument` with the returned `path`, the line's
  * document type as `sourceDocument`, and the line id as `sourceDocumentId`.
- * @mcp create — part of the documented MCP signed-URL upload flow
  *       (packages/files/AGENTS.md): a non-browser caller mints a staged
  *       upload URL, then insertUploadedDocument converts and lands it.
  */
@@ -5183,5 +6608,5858 @@ export async function createSupplierInteractionLineDocumentUploadUrl(
     folder: "supplier-interaction-line",
     entityId: args.lineId,
     name: args.name
+  });
+}
+
+// ----------------------------------------------------------------------
+// Leases (lessee, ASC 842; spec `.ai/specs/2026-10-11-lessee-leases.md`).
+// Lifecycle changes — activate, modify, terminate, purchase, cancel — go
+// through the `post-lease` server function; invoices are drafted by
+// `create-lease-invoices`. These are the plain reads and the Draft writes.
+// ----------------------------------------------------------------------
+
+/** A refusal shaped like a PostgREST error, so every caller's existing
+ *  `result.error` handling (routes, MCP dispatch) reports it unchanged. */
+function leaseRefusal(code: string, message: string) {
+  return {
+    data: null,
+    error: new PostgrestError({ message, details: "", hint: "", code })
+  };
+}
+
+export const LEASES_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
+export async function getLeases(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("leases")
+    .select("*", { count: listCount(args) })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      searchFilter(["leaseId", "name", "supplierName"], args.search)
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, LEASES_PAGING);
+  return query;
+}
+
+export async function getLease(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  return client
+    .from("leases")
+    .select("*")
+    .eq("id", leaseId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+/** `leaseId` (the readable LSE number) comes from the caller — the route
+ *  draws it from the sequence. The leased assets are added, and their
+ *  payment rows cut, by `saveDraftLeaseLine` (`purchasing.server.ts`).
+ */
+export async function insertLease(
+  client: SupabaseClient<Database>,
+  lease: Omit<z.infer<typeof leaseValidator>, "id"> & {
+    leaseId: string;
+    companyId: string;
+    createdBy: string;
+    customFields?: Json;
+  }
+) {
+  return client
+    .from("lease")
+    .insert([
+      {
+        ...leaseTermColumns(lease),
+        leaseId: lease.leaseId,
+        companyId: lease.companyId,
+        createdBy: lease.createdBy,
+        customFields: lease.customFields
+      }
+    ])
+    .select("id, leaseId")
+    .single();
+}
+
+/** A lease's details — its name, notes, owner and notice date
+ *  (`leaseDetailFields`) — which stay editable in every status: nothing was
+ *  measured from them. A Draft's terms are saved with `updateDraftLease`
+ *  (`purchasing.server.ts`), which cuts the payment rows again in the same
+ *  transaction; an active lease's terms change only with Modify.
+ */
+export async function updateLeaseDetails(
+  client: SupabaseClient<Database>,
+  lease: {
+    id: string;
+    companyId: string;
+    updatedBy: string;
+    name?: string | null;
+    description?: string | null;
+    assignee?: string | null;
+    /** `YYYY-MM-DD`; on or before the end date. */
+    noticeDate?: string | null;
+  }
+) {
+  const details = Object.fromEntries(
+    leaseDetailFields
+      .filter((field) => lease[field] !== undefined)
+      .map((field) => [field, lease[field] || null])
+  );
+  if (Object.keys(details).length === 0) {
+    return leaseRefusal("LEASE_NO_DETAILS", "Nothing to update");
+  }
+  const updated = await client
+    .from("lease")
+    .update({
+      ...details,
+      updatedBy: lease.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", lease.id)
+    .eq("companyId", lease.companyId)
+    .select("id")
+    .maybeSingle();
+  if (updated.error) return updated;
+  if (!updated.data) return leaseRefusal("LEASE_NOT_FOUND", "Lease not found");
+  return updated;
+}
+
+/** Only a Draft lease can be deleted; cancel an active one. */
+export async function deleteLease(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  const deleted = await client
+    .from("lease")
+    .delete()
+    .eq("id", leaseId)
+    .eq("companyId", companyId)
+    .eq("status", "Draft")
+    .select("id");
+  if (deleted.error) return deleted;
+  if (deleted.data.length === 0) {
+    return leaseRefusal(
+      "LEASE_NOT_DRAFT",
+      "No Draft lease was found to delete. Cancel or terminate an active lease instead."
+    );
+  }
+  return deleted;
+}
+
+/** The lease's assets in their order. */
+export async function getLeaseLines(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  return fetchAllRecords(() =>
+    client
+      .from("leaseLine")
+      .select("*, fixedAsset(item(thumbnailPath))")
+      .eq("leaseId", leaseId)
+      .eq("companyId", companyId)
+      .order("sortOrder")
+      .order("createdAt")
+      .order("id")
+  );
+}
+
+/** Every payment row of every asset: a long lease of many assets runs past
+ *  PostgREST's 1,000-row page. */
+export async function getLeasePayments(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  return fetchAllRecords(() =>
+    client
+      .from("leasePayment")
+      .select("*")
+      .eq("leaseId", leaseId)
+      .eq("companyId", companyId)
+      .order("dueDate")
+      .order("paymentType")
+      .order("leaseLineId")
+      .order("id")
+  );
+}
+
+/** The lease when it is a Draft, else why it cannot change. */
+async function requireDraftLease(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string,
+  what = "A payment row"
+) {
+  const lease = await client
+    .from("lease")
+    .select("status, invoiceFromDate")
+    .eq("id", leaseId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (lease.error) return { lease: null, refusal: lease.error.message };
+  if (!lease.data) return { lease: null, refusal: "Lease not found" };
+  if (lease.data.status !== "Draft") {
+    return {
+      lease: null,
+      refusal: `${what} changes only while the lease is Draft; modify an active lease instead`
+    };
+  }
+  return { lease: lease.data, refusal: null };
+}
+
+/** Removes an asset, and its payment rows with it, from a Draft lease. */
+export async function deleteLeaseLine(
+  client: SupabaseClient<Database>,
+  args: { leaseId: string; leaseLineId: string; companyId: string }
+) {
+  const { refusal } = await requireDraftLease(
+    client,
+    args.leaseId,
+    args.companyId,
+    "An asset"
+  );
+  if (refusal) return leaseRefusal("LEASE_NOT_DRAFT", refusal);
+  const deleted = await client
+    .from("leaseLine")
+    .delete()
+    .eq("id", args.leaseLineId)
+    .eq("leaseId", args.leaseId)
+    .eq("companyId", args.companyId)
+    .select("id");
+  if (deleted.error) return deleted;
+  if (deleted.data.length === 0) {
+    return leaseRefusal("LEASE_LINE_NOT_FOUND", "Asset not found");
+  }
+  return deleted;
+}
+
+/** Add or change one payment row of a Draft lease's asset (a rent holiday,
+ *  an irregular step). A row due before the lease's invoice-from date was
+ *  paid outside Carbon and is Skipped. */
+export async function upsertLeasePayment(
+  client: SupabaseClient<Database>,
+  payment: z.infer<typeof leasePaymentValidator> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { lease, refusal } = await requireDraftLease(
+    client,
+    payment.leaseId,
+    payment.companyId
+  );
+  if (refusal || !lease) {
+    return leaseRefusal("LEASE_NOT_DRAFT", refusal ?? "Lease not found");
+  }
+  const line = await client
+    .from("leaseLine")
+    .select("id")
+    .eq("id", payment.leaseLineId)
+    .eq("leaseId", payment.leaseId)
+    .eq("companyId", payment.companyId)
+    .maybeSingle();
+  if (line.error) return line;
+  if (!line.data) {
+    return leaseRefusal("LEASE_LINE_NOT_FOUND", "Asset not found");
+  }
+
+  const row = {
+    leaseId: payment.leaseId,
+    leaseLineId: payment.leaseLineId,
+    paymentType: payment.paymentType,
+    periodStart: payment.periodStart,
+    periodEnd: payment.periodEnd,
+    dueDate: payment.dueDate,
+    amount: payment.amount,
+    status:
+      payment.dueDate < lease.invoiceFromDate
+        ? ("Skipped" as const)
+        : ("Pending" as const)
+  };
+  if (payment.id) {
+    return client
+      .from("leasePayment")
+      .update({
+        ...row,
+        updatedBy: payment.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", payment.id)
+      .eq("leaseId", payment.leaseId)
+      .eq("companyId", payment.companyId)
+      .select("id")
+      .single();
+  }
+  return client
+    .from("leasePayment")
+    .insert([
+      { ...row, companyId: payment.companyId, createdBy: payment.userId }
+    ])
+    .select("id")
+    .single();
+}
+
+export async function deleteLeasePayment(
+  client: SupabaseClient<Database>,
+  args: { leaseId: string; paymentId: string; companyId: string }
+) {
+  const { refusal } = await requireDraftLease(
+    client,
+    args.leaseId,
+    args.companyId
+  );
+  if (refusal) return leaseRefusal("LEASE_NOT_DRAFT", refusal);
+  const deleted = await client
+    .from("leasePayment")
+    .delete()
+    .eq("id", args.paymentId)
+    .eq("leaseId", args.leaseId)
+    .eq("companyId", args.companyId)
+    .select("id");
+  if (deleted.error) return deleted;
+  if (deleted.data.length === 0) {
+    return leaseRefusal("LEASE_PAYMENT_NOT_FOUND", "Payment not found");
+  }
+  return deleted;
+}
+
+/** The monthly schedule of every asset, each line with whether its lease run
+ *  rows have posted: a long lease of many assets runs past PostgREST's
+ *  1,000-row page. */
+export async function getLeaseSchedule(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  return fetchAllRecords(() =>
+    client
+      .from("leaseScheduleLine")
+      .select(
+        "*, rows:revenueRecognitionSchedule!revenueRecognitionSchedule_leaseScheduleLine_fkey(id, type, status, journalId)"
+      )
+      .eq("leaseId", leaseId)
+      .eq("companyId", companyId)
+      .order("periodDate")
+      .order("id")
+  );
+}
+
+export async function getLeaseEvents(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  return fetchAllRecords(() =>
+    client
+      .from("leaseEvent")
+      .select("*")
+      .eq("leaseId", leaseId)
+      .eq("companyId", companyId)
+      .order("effectiveDate", { ascending: false })
+      .order("id")
+  );
+}
+
+/** The purchase invoices that bill the lease, and the journals that name it. */
+export async function getLeaseRelatedDocuments(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  // Plain id reads, then one read per document table: the embedded selects
+  // trip TS2589 on these busy tables (.ai/lessons.md).
+  // Paged: every lease run month adds journal lines.
+  const [invoiceLines, journalLines] = await Promise.all([
+    fetchAllRecords(() =>
+      client
+        .from("purchaseInvoiceLine")
+        .select("id, invoiceId")
+        .eq("leaseId", leaseId)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllRecords(() =>
+      client
+        .from("journalLine")
+        .select("id, journalId")
+        .eq("documentType", "Lease")
+        .eq("documentId", leaseId)
+        .eq("companyId", companyId)
+        .order("id")
+    )
+  ]);
+  if (invoiceLines.error) return { data: null, error: invoiceLines.error };
+  if (journalLines.error) return { data: null, error: journalLines.error };
+
+  const invoiceIds = [
+    ...new Set((invoiceLines.data ?? []).map((line) => line.invoiceId))
+  ];
+  const journalIds = [
+    ...new Set((journalLines.data ?? []).map((line) => line.journalId))
+  ];
+  // In groups of ids, so each `.in()` fits in the request URL.
+  const [invoices, journals] = await Promise.all([
+    fetchAllByIds(invoiceIds, (batch) =>
+      // The view, not the table: Paid and Overdue exist only in the view.
+      client
+        .from("purchaseInvoices")
+        .select("id, invoiceId, status, dateIssued")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllByIds(journalIds, (batch) =>
+      client
+        .from("journal")
+        .select("id, journalEntryId, postingDate, status, sourceType")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    )
+  ]);
+  if (invoices.error) return { data: null, error: invoices.error };
+  if (journals.error) return { data: null, error: journals.error };
+
+  return {
+    data: {
+      // Newest first. ISO dates sort as strings.
+      purchaseInvoices: (
+        invoices.data as Pick<
+          Database["public"]["Tables"]["purchaseInvoice"]["Row"],
+          "id" | "invoiceId" | "status" | "dateIssued"
+        >[]
+      ).sort((a, b) => (b.dateIssued ?? "").localeCompare(a.dateIssued ?? "")),
+      journals: journals.data.sort((a, b) =>
+        b.postingDate.localeCompare(a.postingDate)
+      )
+    },
+    error: null
+  };
+}
+/**
+ * Server-only purchasing helpers: the lease writes that need a Kysely
+ * transaction. Lives in a `.server.ts`, not the barrel-exported
+ * `purchasing.service.ts`, because the module barrel is bundled for the
+ * browser.
+ */
+
+export type Trx = Transaction<KyselyDatabase>;
+
+/** A Draft lease, locked for the rest of the transaction. Throws when it is
+ *  missing or no longer a Draft: its rows were cut and measured at
+ *  activation, and change only with Modify. */
+async function lockDraftLease(
+  trx: Trx,
+  args: { leaseId: string; companyId: string; what: string }
+) {
+  const lease = await trx
+    .selectFrom("lease")
+    .select([
+      "status",
+      "currencyCode",
+      "paymentFrequency",
+      "paymentTiming",
+      "annualEscalationPercent",
+      sql<string>`"commencementDate"::text`.as("commencementDate"),
+      sql<string | null>`"endDate"::text`.as("endDate"),
+      sql<string>`"invoiceFromDate"::text`.as("invoiceFromDate")
+    ])
+    .where("id", "=", args.leaseId)
+    .where("companyId", "=", args.companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!lease) throw new Error("Lease not found");
+  if (lease.status !== "Draft") {
+    throw new Error(
+      `${args.what} changes only while the lease is Draft; modify an active lease instead`
+    );
+  }
+  return lease;
+}
+
+/** Replaces the payment rows of a locked Draft lease's assets (one asset with
+ *  `leaseLineId`) with the ones its terms cut (`cutLeasePaymentRows`). An
+ *  asset with no payment has no rows. An open-ended lease is cut through one
+ *  period past today (`openEndedLeaseHorizon`); the daily job rolls it
+ *  forward from there. */
+async function cutDraftLeasePayments(
+  trx: Trx,
+  args: {
+    lease: Awaited<ReturnType<typeof lockDraftLease>>;
+    leaseId: string;
+    leaseLineId?: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<number> {
+  const { lease, leaseId, companyId, userId } = args;
+  let linesQuery = trx
+    .selectFrom("leaseLine")
+    .select([
+      "id",
+      "paymentAmount",
+      "purchaseOptionAmount",
+      "purchaseOptionReasonablyCertain"
+    ])
+    .where("leaseId", "=", leaseId)
+    .where("companyId", "=", companyId);
+  if (args.leaseLineId) {
+    linesQuery = linesQuery.where("id", "=", args.leaseLineId);
+  }
+  const lines = await linesQuery.execute();
+  if (args.leaseLineId && lines.length === 0) {
+    throw new Error("Asset not found");
+  }
+  if (lines.length === 0) return 0;
+
+  const currency = await trx
+    .selectFrom("currency")
+    .innerJoin("company", "company.companyGroupId", "currency.companyGroupId")
+    .select("currency.decimalPlaces")
+    .where("company.id", "=", companyId)
+    .where("currency.code", "=", lease.currencyCode)
+    .executeTakeFirst();
+  if (!currency) {
+    throw new Error(`Currency ${lease.currencyCode} is not set up`);
+  }
+  const through = lease.endDate
+    ? undefined
+    : openEndedLeaseHorizon(
+        lease.commencementDate,
+        datetime.today(await getCompanyTimeZone(trx, companyId)).toString(),
+        lease.paymentFrequency
+      );
+
+  const rows = lines
+    .filter((line) => line.paymentAmount > 0)
+    .flatMap(
+      (line) =>
+        cutLeasePaymentRows({
+          lease,
+          asset: line,
+          decimals: currency.decimalPlaces,
+          through
+        }).rows
+    );
+
+  await trx
+    .deleteFrom("leasePayment")
+    .where("leaseId", "=", leaseId)
+    .where("companyId", "=", companyId)
+    .where(
+      "leaseLineId",
+      "in",
+      lines.map((line) => line.id)
+    )
+    .execute();
+  if (rows.length > 0) {
+    await trx
+      .insertInto("leasePayment")
+      .values(
+        rows.map((row) => ({ ...row, leaseId, companyId, createdBy: userId }))
+      )
+      .execute();
+  }
+  return rows.length;
+}
+
+/** Whether any of `fields` differs between a saved row and its new values. */
+function changed(
+  saved: Record<string, unknown>,
+  next: Record<string, unknown>,
+  fields: readonly string[]
+): boolean {
+  return fields.some(
+    (field) =>
+      next[field] !== undefined &&
+      String(saved[field] ?? "") !== String(next[field] ?? "")
+  );
+}
+
+/**
+ * Cuts a Draft lease's payment rows again from its terms, one set per asset
+ * at the asset's payment amount, replacing the rows (and any edits to them)
+ * in one transaction. Pass `leaseLineId` to cut one asset's rows only. A row
+ * due before the lease's `invoiceFromDate` was paid outside Carbon and is
+ * created `Skipped`, so the daily job never invoices it. A purchase option row
+ * is added only when it is reasonably certain (it is then part of the lease
+ * liability).
+ */
+export async function regenerateLeasePayments(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    leaseId: string;
+    leaseLineId?: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ count: number }> {
+  return db.transaction().execute(async (trx) => {
+    const lease = await lockDraftLease(trx, {
+      leaseId: args.leaseId,
+      companyId: args.companyId,
+      what: "A payment row"
+    });
+    return { count: await cutDraftLeasePayments(trx, { ...args, lease }) };
+  });
+}
+
+/**
+ * Saves a Draft lease's terms and, when a term the payment rows are cut from
+ * changed (`leasePaymentTermFields`), cuts every asset's rows again — one
+ * transaction, so the rows never describe terms the lease no longer has. An
+ * invoice-from date that still equals the commencement follows a new one
+ * (`resolveLeaseDates`). `customFields` replaces the stored set; leave it out
+ * to keep it.
+ */
+export async function updateDraftLease(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    leaseId: string;
+    companyId: string;
+    userId: string;
+    terms: Omit<z.infer<typeof leaseValidator>, "id" | "leaseId">;
+    customFields?: Json;
+  }
+): Promise<{ paymentsCut: boolean }> {
+  const { leaseId, companyId, userId } = args;
+  return db.transaction().execute(async (trx) => {
+    const saved = await lockDraftLease(trx, {
+      leaseId,
+      companyId,
+      what: "A lease's terms"
+    });
+    const columns = leaseTermColumns(args.terms, saved);
+    await trx
+      .updateTable("lease")
+      .set({
+        ...columns,
+        ...(args.customFields !== undefined
+          ? { customFields: JSON.stringify(args.customFields) }
+          : {}),
+        updatedBy: userId,
+        updatedAt: sql`now()`
+      })
+      .where("id", "=", leaseId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    if (!changed(saved, columns, leasePaymentTermFields)) {
+      return { paymentsCut: false };
+    }
+    await cutDraftLeasePayments(trx, {
+      lease: { ...saved, ...columns },
+      leaseId,
+      companyId,
+      userId
+    });
+    return { paymentsCut: true };
+  });
+}
+
+/**
+ * Adds an asset to a Draft lease (no `leaseLineId`) or changes one, and cuts
+ * its payment rows again when it is new or a field they are cut from changed
+ * (`leaseLinePaymentFields`) — one transaction. Only the asset's own fields
+ * are written (`leaseLineColumns`), never its status, classification or
+ * measurement.
+ */
+export async function saveDraftLeaseLine(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    leaseId: string;
+    leaseLineId?: string;
+    companyId: string;
+    userId: string;
+    line: Omit<z.infer<typeof leaseLineValidator>, "id" | "leaseId">;
+  }
+): Promise<{ id: string; paymentsCut: boolean }> {
+  const { leaseId, companyId, userId } = args;
+  return db.transaction().execute(async (trx) => {
+    const lease = await lockDraftLease(trx, {
+      leaseId,
+      companyId,
+      what: "A leased asset"
+    });
+    const columns = leaseLineColumns(args.line);
+
+    let id: string;
+    let recut: boolean;
+    if (args.leaseLineId) {
+      const saved = await trx
+        .selectFrom("leaseLine")
+        .select([...leaseLinePaymentFields])
+        .where("id", "=", args.leaseLineId)
+        .where("leaseId", "=", leaseId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!saved) throw new Error("Asset not found");
+      await trx
+        .updateTable("leaseLine")
+        .set({ ...columns, updatedBy: userId, updatedAt: sql`now()` })
+        .where("id", "=", args.leaseLineId)
+        .where("leaseId", "=", leaseId)
+        .where("companyId", "=", companyId)
+        .execute();
+      id = args.leaseLineId;
+      recut = changed(saved, columns, leaseLinePaymentFields);
+    } else {
+      const last = await trx
+        .selectFrom("leaseLine")
+        .select((eb) => eb.fn.max("sortOrder").as("sortOrder"))
+        .where("leaseId", "=", leaseId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      const inserted = await trx
+        .insertInto("leaseLine")
+        .values({
+          ...columns,
+          leaseId,
+          sortOrder: Number(last?.sortOrder ?? 0) + 1,
+          companyId,
+          createdBy: userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      id = inserted.id;
+      recut = true;
+    }
+
+    if (recut) {
+      await cutDraftLeasePayments(trx, {
+        lease,
+        leaseId,
+        leaseLineId: id,
+        companyId,
+        userId
+      });
+    }
+    return { id, paymentsCut: recut };
+  });
+}
+
+/** Returns the lease payment rows billed by these purchase invoice lines to
+ *  Pending, so the next invoice run bills them again, stamped with who did
+ *  it. The `purchaseInvoiceLine_release_lease_payment` trigger releases a
+ *  row on ANY delete of its line (it cannot know the user); this runs first,
+ *  so the trigger then finds nothing left to release. */
+async function releaseLeasePayments(
+  trx: Trx,
+  args: { companyId: string; purchaseInvoiceLineIds: string[]; userId: string }
+): Promise<void> {
+  const { companyId, purchaseInvoiceLineIds, userId } = args;
+  if (purchaseInvoiceLineIds.length === 0) return;
+  await trx
+    .updateTable("leasePayment")
+    .set({
+      status: "Pending",
+      purchaseInvoiceLineId: null,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("companyId", "=", companyId)
+    .where("purchaseInvoiceLineId", "in", purchaseInvoiceLineIds)
+    .execute();
+}
+
+/**
+ * Deletes a Draft purchase invoice and, in the same transaction, returns the
+ * lease payment rows it billed to Pending (see `releaseLeasePayments`).
+ * Checked here under a row lock, because releasing a POSTED invoice's rows
+ * would bill them twice. Throws on a missing or non-Draft invoice.
+ */
+export async function deletePurchaseInvoiceReleasingLeases(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; invoiceId: string; userId: string }
+): Promise<void> {
+  const { companyId, invoiceId, userId } = args;
+  await db.transaction().execute(async (trx) => {
+    const invoice = await trx
+      .selectFrom("purchaseInvoice")
+      .select(["id", "status"])
+      .where("id", "=", invoiceId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!invoice) throw new Error("Purchase invoice not found");
+    if (invoice.status !== "Draft") {
+      throw new Error(
+        `Cannot delete purchase invoice with status "${invoice.status}". Only Draft invoices can be deleted.`
+      );
+    }
+
+    const lines = await trx
+      .selectFrom("purchaseInvoiceLine")
+      .select("id")
+      .where("invoiceId", "=", invoiceId)
+      .where("companyId", "=", companyId)
+      .where("leasePaymentId", "is not", null)
+      .execute();
+    await releaseLeasePayments(trx, {
+      companyId,
+      purchaseInvoiceLineIds: lines.map((line) => line.id),
+      userId
+    });
+
+    await trx
+      .deleteFrom("purchaseInvoice")
+      .where("id", "=", invoiceId)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+}
+
+/** One line of a Draft purchase invoice, returning the lease payment row it
+ *  billed to Pending (see `deletePurchaseInvoiceReleasingLeases`). The line
+ *  must belong to `invoiceId` and that invoice must be Draft — checked here,
+ *  under a row lock. Throws otherwise. */
+export async function deletePurchaseInvoiceLineReleasingLeases(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    invoiceId: string;
+    purchaseInvoiceLineId: string;
+    userId: string;
+  }
+): Promise<void> {
+  const { companyId, invoiceId, purchaseInvoiceLineId, userId } = args;
+  await db.transaction().execute(async (trx) => {
+    const line = await trx
+      .selectFrom("purchaseInvoiceLine")
+      .innerJoin("purchaseInvoice", (join) =>
+        join
+          .onRef("purchaseInvoice.id", "=", "purchaseInvoiceLine.invoiceId")
+          .onRef(
+            "purchaseInvoice.companyId",
+            "=",
+            "purchaseInvoiceLine.companyId"
+          )
+      )
+      .select([
+        "purchaseInvoiceLine.invoiceId as invoiceId",
+        "purchaseInvoice.status as status"
+      ])
+      .where("purchaseInvoiceLine.id", "=", purchaseInvoiceLineId)
+      .where("purchaseInvoiceLine.companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!line || line.invoiceId !== invoiceId) {
+      throw new Error("Purchase invoice line not found on this invoice");
+    }
+    if (line.status !== "Draft") {
+      throw new Error(
+        `Cannot delete a line of a purchase invoice with status "${line.status}". Only Draft invoices can be edited.`
+      );
+    }
+
+    await releaseLeasePayments(trx, {
+      companyId,
+      purchaseInvoiceLineIds: [purchaseInvoiceLineId],
+      userId
+    });
+    await trx
+      .deleteFrom("purchaseInvoiceLine")
+      .where("id", "=", purchaseInvoiceLineId)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+}
+
+/** The date a lease that commenced before the accounting cutover opens on, as
+ *  `post-lease` activate resolves it (`resolveAccountingPeriod`,
+ *  "historical-with-shift"): the cutover, or the first day of the first open
+ *  period after it when the cutover's period is locked or closed. Read only —
+ *  activation is what locks or opens the period — so the Draft's Skipped
+ *  payment check (`skippedPaymentBlockers`) matches activation. */
+export async function leaseOpeningAsOf(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; cutoverDate: string }
+): Promise<string> {
+  const { companyId, cutoverDate } = args;
+  const period = await db
+    .selectFrom("accountingPeriod")
+    .select(["closeStatus", "closedAt"])
+    .where("companyId", "=", companyId)
+    .where("startDate", "<=", cutoverDate)
+    .where("endDate", ">=", cutoverDate)
+    .orderBy("startDate")
+    .orderBy("id")
+    .executeTakeFirst();
+  const closed =
+    period &&
+    (period.closeStatus === "Locked" ||
+      period.closeStatus === "Closed" ||
+      period.closedAt !== null);
+  if (!closed) return cutoverDate;
+  const next = await db
+    .selectFrom("accountingPeriod")
+    .select(sql<string>`"startDate"::text`.as("startDate"))
+    .where("companyId", "=", companyId)
+    .where("startDate", ">", cutoverDate)
+    .where("closeStatus", "=", "Open")
+    .where("closedAt", "is", null)
+    .orderBy("startDate")
+    .orderBy("id")
+    .executeTakeFirst();
+  // With no open period after it, activation refuses; the cutover stands.
+  return next?.startDate ?? cutoverDate;
+}
+
+/** The lease page's "Invoice": drafts the purchase invoices the lease has
+ *  due, exactly as the daily job would — the `create-lease-invoices` server
+ *  function. */
+export async function generateLeaseInvoicesNow(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    /** `YYYY-MM-DD` in the company's timezone. */
+    asOf: string;
+    leaseId: string;
+  }
+): Promise<{ invoices: DraftedLeaseInvoice[]; invoiceIds: string[] }> {
+  const { companyId, userId, asOf, leaseId } = args;
+  const { invoices, invoiceIds, failures } = await invokePostingOrThrow(
+    { db, companyId, userId },
+    "create-lease-invoices",
+    { asOf, leaseId },
+    createLeaseInvoices
+  );
+  // One lease is billed here, so its failure is the action's failure.
+  if (failures.length > 0) {
+    throw new Error(failures.map((f) => f.error).join("; "));
+  }
+  return { invoices, invoiceIds };
+}
+
+/** Where a Draft lease is worked on: its setup wizard, for someone who can
+ *  edit it. Null for any other lease, or a viewer, who sees the lease page —
+ *  as `draftRentalAgreementSetupPath`. */
+export async function draftLeaseSetupPath(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; userId: string; id: string }
+): Promise<string | null> {
+  const { companyId, userId, id } = args;
+  const [lease, claims] = await Promise.all([
+    client
+      .from("lease")
+      .select("status")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    getUserClaims(userId, companyId)
+  ]);
+  if (lease.data?.status !== "Draft") return null;
+  if (!hasPermission(claims?.permissions, "purchasing", "update", companyId)) {
+    return null;
+  }
+  return path.to.leaseSetup(id, "assets");
+}
+
+/**
+ * A supplier interaction's files without the PDFs finalize stored for its
+ * purchase orders. Every order converted from one supplier quote shares the
+ * interaction's folder, so attaching the whole listing sent a supplier the
+ * other orders' PDFs and every earlier copy of the order's own. Throws when
+ * the orders cannot be read, rather than let those PDFs through.
+ */
+export async function withoutStoredPurchaseOrderPdfs<
+  T extends { name: string }
+>(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  interactionId: string,
+  docs: T[]
+): Promise<T[]> {
+  if (docs.length === 0) return docs;
+  // Paged: a page missing would let that order's PDF through.
+  const orders = await fetchAllFromTable<{
+    id: string;
+    purchaseOrderId: string;
+  }>(client, "purchaseOrder", "id, purchaseOrderId", (query) =>
+    query
+      .eq("companyId", companyId)
+      .eq("supplierInteractionId", interactionId)
+      .order("id")
+  );
+  if (orders.error) {
+    logger.error("Failed to read the supplier interaction's purchase orders", {
+      companyId,
+      interactionId,
+      error: orders.error
+    });
+    throw new Error(
+      "Failed to read the supplier interaction's purchase orders"
+    );
+  }
+  const purchaseOrderIds = orders.data.flatMap((order) =>
+    order.purchaseOrderId ? [order.purchaseOrderId] : []
+  );
+  return docs.filter((doc) => !isStoredDocumentPdf(doc.name, purchaseOrderIds));
+}
+
+/** Signed links to a supplier interaction's documents, for an email. A file
+ *  that cannot be signed is logged and left out. With
+ *  `withoutPurchaseOrderPdfs`, the PDFs finalize stored for the interaction's
+ *  purchase orders are left out too (`withoutStoredPurchaseOrderPdfs`). */
+export async function interactionAttachments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  interactionId: string,
+  {
+    withoutPurchaseOrderPdfs = false
+  }: { withoutPurchaseOrderPdfs?: boolean } = {}
+): Promise<{ filename: string; path: string; size?: number }[]> {
+  const listed = await getSupplierInteractionDocuments(
+    client,
+    companyId,
+    interactionId
+  );
+  const docs = withoutPurchaseOrderPdfs
+    ? await withoutStoredPurchaseOrderPdfs(
+        client,
+        companyId,
+        interactionId,
+        listed
+      )
+    : listed;
+  return signedAttachments(
+    client,
+    companyId,
+    docs.map((doc) => ({
+      filename: doc.name,
+      path: `${companyId}/supplier-interaction/${interactionId}/${doc.name}`,
+      size: doc.metadata?.size as number | undefined
+    }))
+  );
+}
+
+export async function signedAttachments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  files: { filename: string; path: string; size?: number }[]
+): Promise<{ filename: string; path: string; size?: number }[]> {
+  const signed = await async.map(files, async (file) => {
+    const { data, error } = await storage(client)
+      .company(companyId)
+      .createSignedUrl(file.path, EMAIL_ATTACHMENT_URL_SECONDS);
+    if (!data) {
+      logger.error("Failed to create signed URL for attachment", {
+        storagePath: file.path,
+        error
+      });
+      return null;
+    }
+    return { filename: file.filename, path: data.signedUrl, size: file.size };
+  });
+  return signed.flatMap((file) => (file ? [file] : []));
+}
+
+/** A file a supplier gets with an item: its model, or a file on its Files tab. */
+export type ItemSupplierFile = {
+  itemId: string;
+  filename: string;
+  bucket: string;
+  path: string;
+  size: number;
+};
+
+/**
+ * The original CAD file of each item's model, found where the model's Download button
+ * finds it: `originalPath`, else a `modelPath` that is still the uploaded file,
+ * in the company bucket or in temp-staging before compaction settles. A model
+ * with no original, or only a compressed `.zst` raw no CAD tool opens, is left
+ * out.
+ */
+export async function getItemModelFiles(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  itemIds: string[]
+): Promise<ItemSupplierFile[]> {
+  if (itemIds.length === 0) return [];
+  const items = await client
+    .from("item")
+    .select("id, modelUploadId")
+    .in("id", itemIds)
+    .eq("companyId", companyId);
+  const modelByItem = new Map(
+    (items.data ?? []).map((item) => [item.id, item.modelUploadId])
+  );
+  const modelIds = [
+    ...new Set(
+      itemIds.flatMap((id) => {
+        const modelId = modelByItem.get(id);
+        return modelId ? [modelId] : [];
+      })
+    )
+  ];
+  if (items.error || modelIds.length === 0) {
+    if (items.error) {
+      logger.error("Failed to read items for model attachments", {
+        companyId,
+        error: items.error
+      });
+    }
+    return [];
+  }
+  const models = await client
+    .from("modelUpload")
+    .select("id, name, size, modelPath, originalPath")
+    .in("id", modelIds)
+    .eq("companyId", companyId);
+  if (models.error) {
+    logger.error("Failed to read models for attachments", {
+      companyId,
+      error: models.error
+    });
+    return [];
+  }
+
+  const candidates = models.data.flatMap((model) => {
+    const path =
+      model.originalPath ??
+      (model.modelPath && isModelRawDownloadable(model.modelPath)
+        ? model.modelPath
+        : null);
+    if (!path || getFileExtension(path) === "zst") return [];
+    return [{ model, path }];
+  });
+  const buckets = await findStorageObjectBuckets(db, {
+    names: candidates.map((candidate) => candidate.path),
+    buckets: [getCompanyPrivateBucket(companyId), TEMP_STAGING_BUCKET]
+  });
+
+  const byId = new Map(
+    candidates.flatMap(({ model, path }) => {
+      const bucket = buckets.get(path);
+      if (!bucket) return [];
+      const extension = getFileExtension(path);
+      const name = model.name || model.id;
+      const filename = name.toLowerCase().endsWith(`.${extension}`)
+        ? name
+        : `${name}.${extension}`;
+      return [
+        [
+          model.id,
+          {
+            filename,
+            bucket,
+            path,
+            size: model.size ?? Number.POSITIVE_INFINITY
+          }
+        ]
+      ] as const;
+    })
+  );
+  return itemIds.flatMap((itemId) => {
+    const modelId = modelByItem.get(itemId);
+    const file = modelId ? byId.get(modelId) : undefined;
+    return file ? [{ itemId, ...file }] : [];
+  });
+}
+
+/**
+ * Every file a supplier gets with each item, in item order: the model's
+ * original CAD file (`getItemModelFiles`), then each file on the item's Files
+ * tab (`${companyId}/parts/${itemId}`: drawings, other models, specs). With
+ * `onlyPaths`, just those of them (`orderItemSupplierFiles`).
+ */
+export async function getItemSupplierFiles(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  itemIds: string[],
+  onlyPaths?: string[]
+): Promise<ItemSupplierFile[]> {
+  const ids = [...new Set(itemIds)];
+  if (ids.length === 0) return [];
+  const bucket = getCompanyPrivateBucket(companyId);
+  const folderOf = (itemId: string) => `${companyId}/parts/${itemId}`;
+  const [models, partFiles] = await Promise.all([
+    getItemModelFiles(client, db, companyId, ids),
+    listStorageObjects(db, { bucket, folders: ids.map(folderOf) })
+  ]);
+  const itemByFolder = new Map(ids.map((id) => [folderOf(id), id]));
+  return orderItemSupplierFiles(
+    ids,
+    [
+      ...models,
+      ...partFiles.flatMap((file) => {
+        const itemId = itemByFolder.get(file.folder);
+        return itemId
+          ? [
+              {
+                itemId,
+                filename: file.name,
+                bucket,
+                path: file.path,
+                // Unknown size: sent as a link, never attached blind.
+                size: file.size ?? Number.POSITIVE_INFINITY
+              }
+            ]
+          : [];
+      })
+    ],
+    onlyPaths
+  );
+}
+
+/**
+ * The item files of a supplier email: attached in order while the email stays
+ * under the attachment limit (`documentBytes` already used by its documents),
+ * the rest as links in the body. Each file is signed once for 7 days, so an
+ * attachment still opens when the send job runs late or retries. A file that
+ * cannot be signed is named, so the supplier knows to ask for it. A file two
+ * lines share is sent once.
+ */
+export async function supplierFileEmailParts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  files: ItemSupplierFile[],
+  documentBytes: number
+): Promise<{
+  attachments: { filename: string; path: string }[];
+  html: string;
+  text: string;
+}> {
+  const unique = [
+    ...new Map(
+      files.map((file) => [`${file.bucket}/${file.path}`, file])
+    ).values()
+  ];
+  const signed = await async.map(unique, async (file) => ({
+    ...file,
+    url: await signItemFile(
+      client,
+      companyId,
+      file,
+      EMAIL_ATTACHMENT_URL_SECONDS
+    )
+  }));
+  const missing = signed.flatMap((file) => (file.url ? [] : [file.filename]));
+  const split = splitRfqFileAttachments(
+    signed.flatMap((file) => (file.url ? [{ ...file, url: file.url }] : [])),
+    PO_EMAIL_ATTACHMENT_LIMIT_MB * 1024 * 1024 - documentBytes
+  );
+  const links = split.link;
+
+  const linksHtml = links.length
+    ? `<br><br>Files too large to attach (links valid for 7 days):<br>${links
+        .map(
+          (link) =>
+            `<a href="${escapeHTMLChars(link.url)}">${escapeHTMLChars(link.filename)}</a>`
+        )
+        .join("<br>")}`
+    : "";
+  const linksText = links.length
+    ? `\n\nFiles too large to attach (links valid for 7 days):\n${links
+        .map((link) => `${link.filename}: ${link.url}`)
+        .join("\n")}`
+    : "";
+  const missingHtml = missing.length
+    ? `<br><br>These files could not be included; reply to ask for them: ${missing
+        .map(escapeHTMLChars)
+        .join(", ")}`
+    : "";
+  const missingText = missing.length
+    ? `\n\nThese files could not be included; reply to ask for them: ${missing.join(", ")}`
+    : "";
+
+  return {
+    attachments: split.attach.map((file) => ({
+      filename: file.filename,
+      path: file.url
+    })),
+    html: linksHtml + missingHtml,
+    text: linksText + missingText
+  };
+}
+
+/** A signed link to a file `getItemSupplierFiles` found, valid `seconds`. */
+export async function signItemFile(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  file: { bucket: string; path: string },
+  seconds: number,
+  // A file name: the link downloads under it instead of opening inline (a
+  // cross-origin <a download> is ignored).
+  download?: string
+): Promise<string | null> {
+  const bucket =
+    file.bucket === TEMP_STAGING_BUCKET
+      ? storage(client).from(TEMP_STAGING_BUCKET)
+      : storage(client).company(companyId);
+  const { data, error } = await bucket.createSignedUrl(file.path, seconds);
+  if (!data) {
+    logger.error("Failed to sign an item file", {
+      companyId,
+      storagePath: file.path,
+      error
+    });
+    return null;
+  }
+  if (!download) return data.signedUrl;
+  // Set here, not through createSignedUrl's `download` option: that encodes
+  // the name twice, so `A+B.pdf` would download as `A%2BB.pdf`.
+  const url = new URL(data.signedUrl);
+  url.searchParams.set("download", download);
+  return url.toString();
+}
+
+/** The statuses of records an edit is about to touch, for a lock check. */
+export async function statusesOf(
+  ctx: ServiceContext,
+  table:
+    | "purchaseOrder"
+    | "purchaseReturnOrder"
+    | "purchasingRfq"
+    | "supplierQuote",
+  ids: string[]
+): Promise<(string | null)[] | CarbonError> {
+  const rows = await ctx.asCaller.supabase
+    .from(table as "purchaseOrder")
+    .select("status")
+    .in("id", ids)
+    .eq("companyId", ctx.company.id);
+  if (rows.error) {
+    return ctx.error("internal", "Failed to read the records", rows.error);
+  }
+  return rows.data.map((row) => row.status);
+}
+
+/**
+ * Why a delivery write may not change the order's promised date, or null.
+ * A changed promised date follows the properties panel's rule: fixed once
+ * the order is fully received. A write that leaves the date out, or re-sends
+ * the stored one, changes nothing.
+ */
+export async function purchaseOrderPromisedDateChangeRefusal(
+  ctx: ServiceContext,
+  purchaseOrderId: string,
+  receiptPromisedDate: string | undefined
+): Promise<CarbonError | null> {
+  if (receiptPromisedDate === undefined) return null;
+  const [statuses, stored] = await Promise.all([
+    statusesOf(ctx, "purchaseOrder", [purchaseOrderId]),
+    ctx.asCaller.supabase
+      .from("purchaseOrderDelivery")
+      .select("receiptPromisedDate")
+      .eq("id", purchaseOrderId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle()
+  ]);
+  if (statuses instanceof CarbonError) return statuses;
+  if (stored.error) {
+    return ctx.error(
+      "internal",
+      "Failed to read the purchase order delivery",
+      stored.error
+    );
+  }
+  if (
+    (stored.data?.receiptPromisedDate ?? null) === (receiptPromisedDate || null)
+  ) {
+    return null;
+  }
+  const refusal = statuses
+    .map(purchaseOrderPromisedDateRefusal)
+    .find((message) => message !== null);
+  return refusal ? ctx.error("rule", refusal) : null;
+}
+
+/**
+ * The quote's share link: the existing one, or a new one, saved on the quote.
+ * The link expires with the quote.
+ */
+export async function supplierQuoteLink(
+  ctx: ServiceContext,
+  quote: {
+    id: string;
+    externalLinkId: string | null;
+    supplierId: string | null;
+    expirationDate: string | null;
+  }
+): Promise<string | CarbonError> {
+  const client = ctx.asSystem.supabase;
+  const link = await upsertExternalLink(client, {
+    id: quote.externalLinkId ?? undefined,
+    documentType: "SupplierQuote",
+    documentId: quote.id,
+    supplierId: quote.supplierId,
+    expiresAt: quote.expirationDate,
+    companyId: ctx.company.id
+  });
+  if (link.error || !link.data) {
+    return ctx.error("internal", "Failed to create the share link", link.error);
+  }
+  if (quote.externalLinkId !== link.data.id) {
+    await client
+      .from("supplierQuote")
+      .update({ externalLinkId: link.data.id })
+      .eq("id", quote.id)
+      .eq("companyId", ctx.company.id);
+  }
+  return link.data.id;
+}
+
+// ── Supplier quote share link ────────────────────────────────────────────────
+// The supplier answers through the quote's share link, which is the only
+// credential: these run as the system, in the quote's company, on behalf of
+// the quote's creator (`shareLinkContext`).
+
+/** The supplier quote a share link answers, read with the service role. */
+export async function sharedSupplierQuote(
+  ctx: ServiceContext,
+  supplierQuoteId: string
+) {
+  const quote = await ctx.asSystem.supabase
+    .from("supplierQuote")
+    .select("id, createdBy, exchangeRate, externalLinkId, externalNotes")
+    .eq("id", supplierQuoteId)
+    .eq("companyId", ctx.company.id)
+    .maybeSingle();
+  if (quote.error) {
+    return ctx.error("internal", "Failed to read the quote", quote.error);
+  }
+  if (!quote.data) return ctx.error("notFound", "Quote not found");
+  return quote.data;
+}
+
+/** A refusal thrown by a Kysely write that guards its own rule ("Cannot
+ *  cancel a return order in Completed status"): its message is for the
+ *  person, unless it came from the data layer. */
+export function refusedBy(
+  ctx: ServiceContext,
+  err: unknown,
+  fallback: string
+): CarbonError {
+  return err instanceof Error && !isDataLayerError(err)
+    ? ctx.error("rule", err.message, err)
+    : ctx.error("internal", fallback, err);
+}
+
+// ── Leases (lessee) ─────────────────────────────────────────────────────────
+
+/** A refusal unless the lease is the caller's company's (readable as the
+ *  caller). */
+async function leaseNotFound(
+  ctx: ServiceContext,
+  leaseId: string
+): Promise<CarbonError | null> {
+  const lease = await getLease(ctx.asCaller.supabase, leaseId, ctx.company.id);
+  return lease.error || lease.data?.companyId !== ctx.company.id
+    ? ctx.error("notFound", "Lease not found", lease.error)
+    : null;
+}
+
+/** Runs one `post-lease` lifecycle action, which locks the lease and checks
+ *  its own rules in one transaction. */
+export async function postLease(
+  ctx: ServiceContext,
+  input: z.input<typeof postLeaseInput>,
+  fallback: string
+): Promise<CarbonError | null> {
+  const missing = await leaseNotFound(ctx, input.leaseId);
+  if (missing) return missing;
+  const result = await invokePosting(
+    {
+      db: ctx.asSystem.pg,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    },
+    "post-lease",
+    input,
+    postLeaseAction
+  );
+  return result.error ? fromServerFn(ctx, result.error, fallback) : null;
+}
+
+/**
+ * Write (or clear) a Draft lease asset's classification override, audit
+ * logged. An accounting decision, so it runs as the system on the caller's
+ * `update: accounting`: an accountant need not hold the purchasing write the
+ * lease's own policies ask for.
+ */
+export async function writeClassificationOverride(
+  ctx: ServiceContext,
+  {
+    leaseId,
+    leaseLineId,
+    override
+  }: {
+    leaseId: string;
+    leaseLineId: string;
+    override: {
+      classification: "Operating" | "Finance";
+      reason: string;
+    } | null;
+  }
+): Promise<CarbonError | null> {
+  const client = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const [lease, line] = await Promise.all([
+    client
+      .from("lease")
+      .select("id, status")
+      .eq("id", leaseId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    client
+      .from("leaseLine")
+      .select("id, classificationOverride, classificationOverrideReason")
+      .eq("id", leaseLineId)
+      .eq("leaseId", leaseId)
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
+  if (lease.error || line.error) {
+    return ctx.error(
+      "internal",
+      "Leased asset not found",
+      lease.error ?? line.error
+    );
+  }
+  if (!lease.data || !line.data) {
+    return ctx.error("notFound", "Leased asset not found");
+  }
+  const fixed = () =>
+    ctx.error(
+      "rule",
+      "The classification is fixed once the lease is activated"
+    );
+  if (lease.data.status !== "Draft") return fixed();
+
+  // Activation stamps `lesseeClassification`, so an unstamped asset is one
+  // still to be classified: an asset activated since the read above matches
+  // no row, and its commenced treatment is never overwritten.
+  const update = await client
+    .from("leaseLine")
+    .update({
+      classificationOverride: override?.classification ?? null,
+      classificationOverrideReason: override?.reason ?? null,
+      updatedBy: ctx.auditUserId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", leaseLineId)
+    .eq("leaseId", leaseId)
+    .eq("companyId", companyId)
+    .is("lesseeClassification", null)
+    .select("id")
+    .maybeSingle();
+  if (update.error) {
+    return ctx.error(
+      "internal",
+      override
+        ? "Failed to override the classification"
+        : "Failed to remove the classification override",
+      update.error
+    );
+  }
+  if (!update.data) return fixed();
+
+  // Best-effort: a failed audit write never undoes the change.
+  try {
+    await insertAuditLogEntries(client, companyId, [
+      {
+        tableName: "leaseLine",
+        entityType: "lease",
+        entityId: leaseId,
+        recordId: leaseLineId,
+        operation: "UPDATE",
+        actorId: ctx.auditUserId,
+        diff: {
+          classificationOverride: {
+            old: line.data.classificationOverride,
+            new: override?.classification ?? null
+          },
+          classificationOverrideReason: {
+            old: line.data.classificationOverrideReason,
+            new: override?.reason ?? null
+          }
+        }
+      }
+    ]);
+  } catch (err) {
+    logger.warn("audit write skipped for a lease classification override", {
+      error: err
+    });
+  }
+  return null;
+}
+
+/** Cancels the orders' pending approval requests. Approved and Rejected ones
+ *  stay: they are the audit trail. Run it in the transaction that changes the
+ *  orders, so a failed change leaves the requests pending. */
+export async function cancelPendingApprovals(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    userId,
+    purchaseOrderIds
+  }: { companyId: string; userId: string; purchaseOrderIds: string[] }
+) {
+  if (purchaseOrderIds.length === 0) return [];
+  return db
+    .updateTable("approvalRequest")
+    .set({
+      status: "Cancelled",
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .where("documentType", "=", "purchaseOrder")
+    .where("documentId", "in", purchaseOrderIds)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Pending")
+    .returning("id")
+    .execute();
+}
+
+/** A file's size as the documents table stores it: whole kilobytes. */
+export function kilobytes(file: Buffer): number {
+  return Math.round(file.byteLength / 1024);
+}
+
+type PurchaseOrderRow = NonNullable<
+  Awaited<ReturnType<typeof getPurchaseOrder>>["data"]
+>;
+
+/**
+ * Renders the order's PDF, stores it with the supplier interaction's files
+ * and adds it as a document. The step that fails is the message.
+ */
+export async function attachPurchaseOrderPdf(
+  ctx: ServiceContext,
+  { purchaseOrder, locale }: { purchaseOrder: PurchaseOrderRow; locale: string }
+): Promise<{ fileName: string; path: string; size: number } | CarbonError> {
+  const companyId = ctx.company.id;
+  const purchaseOrderId = purchaseOrder.id!;
+  let pdf: Awaited<ReturnType<typeof renderPurchaseOrderPdf>>;
+  try {
+    pdf = await renderPurchaseOrderPdf(ctx.asCaller.supabase, {
+      companyId,
+      companyGroupId: ctx.company.groupId,
+      purchaseOrderId,
+      locale
+    });
+  } catch (err) {
+    return ctx.error("internal", "Failed to generate PDF", err);
+  }
+
+  const fileName = storedDocumentPdfName(
+    getPurchaseOrderDisplayId(purchaseOrder),
+    datetime.timestamp()
+  );
+  const path = `${companyId}/supplier-interaction/${purchaseOrder.supplierInteractionId}/${fileName}`;
+  const upload = await storage(ctx.asSystem.supabase)
+    .company(companyId)
+    .upload(path, pdf.body, {
+      cacheControl: `${12 * 60 * 60}`,
+      contentType: "application/pdf",
+      upsert: true
+    });
+  if (upload.error) {
+    return ctx.error("internal", "Failed to upload file", upload.error);
+  }
+
+  const size = kilobytes(pdf.body);
+  const document = await upsertDocument(ctx.asSystem.supabase, {
+    path,
+    name: fileName,
+    size,
+    sourceDocument: "Purchase Order",
+    sourceDocumentId: purchaseOrderId,
+    readGroups: [ctx.auditUserId],
+    writeGroups: [ctx.auditUserId],
+    createdBy: ctx.auditUserId,
+    companyId
+  });
+  if (document.error) {
+    return ctx.error("internal", "Failed to create document", document.error);
+  }
+  return { fileName, path, size };
+}
+
+/**
+ * The purchase order email to the supplier contact, copied to the buyer:
+ * null when the contact has no email address.
+ */
+export async function purchaseOrderEmail(
+  ctx: ServiceContext,
+  {
+    purchaseOrderId,
+    supplierContactId,
+    locale
+  }: { purchaseOrderId: string; supplierContactId: string; locale: string }
+) {
+  const client = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const [
+    company,
+    contact,
+    purchaseOrder,
+    lines,
+    locations,
+    paymentTerms,
+    buyer
+  ] = await Promise.all([
+    getCompany(client, companyId),
+    getSupplierContact(client, supplierContactId, companyId),
+    getPurchaseOrder(client, purchaseOrderId),
+    getPurchaseOrderLines(client, purchaseOrderId),
+    getPurchaseOrderLocations(client, purchaseOrderId),
+    getPaymentTermsList(client, companyId),
+    getUser(client, ctx.auditUserId)
+  ]);
+  if (!contact.data?.contact) throw new Error("Failed to get supplier contact");
+  if (!company.data) throw new Error("Failed to get company");
+  if (!buyer.data) throw new Error("Failed to get user");
+  if (!purchaseOrder.data) throw new Error("Failed to get purchase order");
+  if (!locations.data)
+    throw new Error("Failed to get purchase order locations");
+  if (!paymentTerms.data) throw new Error("Failed to get payment terms");
+  const supplierEmail = contact.data.contact.email;
+  if (!supplierEmail) return null;
+  // Never send one supplier's order to another supplier's contact.
+  if (contact.data.supplierId !== purchaseOrder.data.supplierId) return null;
+
+  // Same decimals the PDF of this order uses.
+  const currency = purchaseOrder.data.currencyCode
+    ? await getCurrencyByCode(
+        client,
+        ctx.company.groupId,
+        purchaseOrder.data.currencyCode
+      )
+    : null;
+  const template = PurchaseOrderEmail({
+    // @ts-expect-error TS2739 - TODO: fix type
+    company: company.data,
+    currencyDecimals: currency?.data?.decimalPlaces ?? null,
+    locale,
+    purchaseOrder: purchaseOrder.data,
+    purchaseOrderLines: lines.data ?? [],
+    purchaseOrderLocations: locations.data,
+    recipient: {
+      email: supplierEmail,
+      firstName: contact.data.contact.firstName ?? undefined,
+      lastName: contact.data.contact.lastName ?? undefined
+    },
+    sender: {
+      email: buyer.data.email,
+      firstName: buyer.data.firstName,
+      lastName: buyer.data.lastName
+    },
+    paymentTerms: paymentTerms.data
+  });
+  return {
+    to: [buyer.data.email, supplierEmail],
+    from: buyer.data.email,
+    subject: `Purchase Order ${getPurchaseOrderDisplayId(purchaseOrder.data)} from ${company.data.name}`,
+    html: await render(template),
+    text: await render(template, { plainText: true }),
+    purchaseOrder: purchaseOrder.data,
+    lines: lines.data ?? []
+  };
+}
+
+/** Updates the supplier prices from the order when the company updates them
+ *  on finalize. A failure is logged: the order stands. */
+export async function updatePricesOnFinalize(
+  ctx: ServiceContext,
+  purchaseOrderId: string
+) {
+  const settings = await getCompanySettings(
+    ctx.asSystem.supabase,
+    ctx.company.id
+  );
+  if (settings.data?.purchasePriceUpdateTiming !== "Purchase Order Finalize") {
+    return;
+  }
+  const update = await invokePosting(
+    {
+      db: ctx.asSystem.pg,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    },
+    "update-purchased-prices",
+    {
+      purchaseOrderId,
+      source: "purchaseOrder",
+      updatePrices: true,
+      updateLeadTimes: false
+    },
+    updatePurchasedPrices
+  );
+  if (update.error) {
+    logger.error("Failed to update purchased prices", { error: update.error });
+  }
+}
+
+/** After an approval: the PDF, the email and the prices, each logged when it
+ *  fails. */
+export async function releaseApprovedPurchaseOrder(
+  ctx: ServiceContext,
+  {
+    purchaseOrderId,
+    notification,
+    supplierContact,
+    cc,
+    locale
+  }: {
+    purchaseOrderId: string;
+    notification?: "Email" | "None";
+    supplierContact?: string;
+    cc?: string[];
+    locale?: string;
+  }
+) {
+  const purchaseOrder = await getPurchaseOrder(
+    ctx.asSystem.supabase,
+    purchaseOrderId
+  );
+  if (!purchaseOrder.data) return;
+
+  const pdf = await attachPurchaseOrderPdf(ctx, {
+    purchaseOrder: purchaseOrder.data,
+    locale: locale ?? "en-US"
+  });
+  if (pdf instanceof CarbonError) {
+    logger.error("Failed to generate PDF after approval", { error: pdf.cause });
+  } else if (notification === "Email" && supplierContact) {
+    try {
+      const email = await purchaseOrderEmail(ctx, {
+        purchaseOrderId,
+        supplierContactId: supplierContact,
+        locale: locale ?? "en-US"
+      });
+      if (email) {
+        const [attachment] = await signedAttachments(
+          ctx.asSystem.supabase,
+          ctx.company.id,
+          [{ filename: pdf.fileName, path: pdf.path }]
+        );
+        await trigger("send-email", {
+          document: true,
+          to: email.to,
+          cc: cc?.length ? cc : undefined,
+          from: email.from,
+          subject: email.subject,
+          html: email.html,
+          text: email.text,
+          attachments: attachment ? [attachment] : undefined,
+          companyId: ctx.company.id
+        });
+      } else {
+        logger.warn(
+          "Purchase order not emailed after approval: the supplier contact has no email",
+          { purchaseOrderId, supplierContactId: supplierContact }
+        );
+      }
+    } catch (err) {
+      logger.error("Failed to send email after approval", { error: err });
+    }
+  }
+
+  await updatePricesOnFinalize(ctx, purchaseOrderId);
+}
+
+// ── Purchasing planning ─────────────────────────────────────────────────────
+
+/**
+ * The date the supplier promised for a PO line: the line's own, else its
+ * order's delivery date — the same COALESCE the `openPurchaseOrderLines` view
+ * gives MRP. MRP dates the line by this ahead of the required date, so a
+ * planning date change (which writes the required date) cannot move it.
+ */
+export function promisedDateOf(line: {
+  promisedDate: string | null;
+  receiptPromisedDate: string | null | undefined;
+}): string | null {
+  return line.promisedDate ?? line.receiptPromisedDate ?? null;
+}
+
+/** Sums forecasts that land on the same (item, location, period). */
+export function deduplicateForecasts<
+  T extends {
+    itemId: string;
+    locationId: string;
+    periodId: string;
+    planningSegmentId: string;
+    forecastQuantity: number;
+  }
+>(forecasts: T[]): T[] {
+  const map = new Map<string, T>();
+  for (const forecast of forecasts) {
+    const key = [
+      forecast.itemId,
+      forecast.locationId,
+      forecast.periodId,
+      forecast.planningSegmentId
+    ].join("\u001f");
+    const existing = map.get(key);
+    if (existing) {
+      existing.forecastQuantity += forecast.forecastQuantity;
+    } else {
+      map.set(key, { ...forecast });
+    }
+  }
+  return Array.from(map.values());
+}
+
+/** How many of `requested` worklist rows a dismiss, reopen or assign changed,
+ *  as the message; a refusal when none did. */
+export function worklistChange(
+  ctx: ServiceContext,
+  verb: "Dismissed" | "Reopened" | "Assigned",
+  changed: number,
+  requested: number
+) {
+  if (changed === 0) {
+    const what = {
+      Dismissed: "dismiss",
+      Reopened: "reopen",
+      Assigned: "assign"
+    }[verb];
+    return ctx.error(
+      "conflict",
+      `Nothing to ${what} — these actions changed since the page loaded`
+    );
+  }
+  return {
+    changed,
+    message: `${verb} ${changed} planning action${changed === 1 ? "" : "s"}${
+      changed < requested
+        ? `; ${requested - changed} changed since the page loaded`
+        : ""
+    }`
+  };
+}
+export const finalizeSupplierQuoteInput = z.object({
+  supplierQuoteId: z.string()
+});
+
+export const finalizeSupplierQuotePermission = {
+  create: "purchasing"
+} satisfies PermissionRule<z.output<typeof finalizeSupplierQuoteInput>>;
+
+/**
+ * Marks a supplier quote Active and copies its prices into the supplier's
+ * price list, in one transaction: a supplier part per quoted item (created
+ * when the supplier has none), one price break per quoted quantity, and the
+ * lowest quoted price as the part's own.
+ *
+ * Prices are recorded as quoted — per purchase unit, in the quote's currency.
+ * A part created here takes the quote's currency; an existing part in another
+ * currency gets the price converted into its own.
+ */
+export async function finalizeSupplierQuote(
+  ctx: ServiceContext,
+  raw: z.input<typeof finalizeSupplierQuoteInput>
+) {
+  const { supplierQuoteId } = finalizeSupplierQuoteInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  await db.transaction().execute(async (trx) => {
+    const quote = await trx
+      .selectFrom("supplierQuote")
+      .select(["id", "supplierId", "currencyCode", "exchangeRate"])
+      .where("id", "=", supplierQuoteId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!quote) throw new NotFoundError("Supplier quote not found");
+    if (!quote.supplierId) {
+      throw new ServerFnError("Supplier quote has no supplier", 400);
+    }
+    const supplierId = quote.supplierId;
+
+    const lines = await selectRows(
+      trx,
+      "supplierQuoteLine",
+      { supplierQuoteId, companyId },
+      {
+        columns: [
+          "id",
+          "itemId",
+          "supplierPartId",
+          "purchaseUnitOfMeasureCode",
+          "conversionFactor"
+        ],
+        orderBy: ["sortOrder", "id"]
+      }
+    );
+    const prices = await many(trx, "supplierQuoteLinePrice", {
+      supplierQuoteId,
+      companyId
+    });
+    const pricesByLine = groupBy(
+      prices.data,
+      (price) => price.supplierQuoteLineId
+    );
+
+    // Every line needs one quantity with a price and a lead time: a price
+    // list entry without either is worse than none.
+    const unpriced = lines.find(
+      (line) =>
+        !(pricesByLine[line.id] ?? []).some(
+          (price) => price.supplierUnitPrice && price.leadTime
+        )
+    );
+    if (unpriced) {
+      const item = unpriced.itemId
+        ? await trx
+            .selectFrom("item")
+            .select("readableIdWithRevision")
+            .where("id", "=", unpriced.itemId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst()
+        : undefined;
+      throw new InvalidInputError(
+        `Line ${item?.readableIdWithRevision ?? unpriced.id} must have at least one quantity with price and lead time`
+      );
+    }
+
+    await trx
+      .updateTable("supplierQuote")
+      .set({
+        status: "Active",
+        updatedAt: datetime.timestamp(),
+        updatedBy: userId
+      })
+      .where("id", "=", supplierQuoteId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    const pricedLines = lines.flatMap((line) => {
+      const linePrices = pricesByLine[line.id] ?? [];
+      return line.itemId && linePrices.length > 0
+        ? [{ ...line, itemId: line.itemId, prices: linePrices }]
+        : [];
+    });
+    if (pricedLines.length === 0) return;
+
+    // An item the supplier already has a part for keeps that part as it is.
+    await trx
+      .insertInto("supplierPart")
+      .values(
+        pricedLines.map((line) => ({
+          itemId: line.itemId,
+          supplierId,
+          supplierPartId: line.supplierPartId ?? undefined,
+          supplierUnitOfMeasureCode:
+            line.purchaseUnitOfMeasureCode ?? undefined,
+          conversionFactor: line.conversionFactor ?? 1,
+          currencyCode: quote.currencyCode,
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .onConflict((oc) =>
+        oc.columns(["itemId", "supplierId", "companyId"]).doNothing()
+      )
+      .execute();
+
+    const supplierParts = await trx
+      .selectFrom("supplierPart")
+      .select(["id", "itemId", "currencyCode"])
+      .where("supplierId", "=", supplierId)
+      .where("companyId", "=", companyId)
+      .where("itemId", "in", [
+        ...new Set(pricedLines.map((line) => line.itemId))
+      ])
+      .execute();
+    const supplierPartByItem = new Map(
+      supplierParts.map((part) => [part.itemId, part])
+    );
+    const converter = await getSupplierPartPriceConverter(
+      trx,
+      companyId,
+      {
+        currencyCode: quote.currencyCode,
+        exchangeRate: quote.exchangeRate ?? 1
+      },
+      supplierParts.map((part) => part.currencyCode)
+    );
+
+    // Keyed by (part, quantity): when two lines quote one item at one
+    // quantity the later line wins, as it did when these were written in turn.
+    const priceBreaks = new Map<
+      string,
+      {
+        supplierPartId: string;
+        quantity: number;
+        supplierUnitPrice: number;
+        leadTime: number;
+      }
+    >();
+    const updatedAt = datetime.timestamp();
+
+    const supplierPartUpdates: {
+      id: string;
+      data: Database["public"]["Tables"]["supplierPart"]["Update"];
+    }[] = [];
+    for (const line of pricedLines) {
+      const supplierPart = supplierPartByItem.get(line.itemId);
+      if (!supplierPart) {
+        throw new ServerFnError("Failed to create supplier part", 500);
+      }
+      const supplierPartId = supplierPart.id;
+      // Quote prices are per purchase unit, the basis a supplier part keeps.
+      const toPartCurrency = (price: number) =>
+        converter.toPartCurrency(price, supplierPart.currencyCode);
+
+      for (const price of line.prices) {
+        if (!price.supplierUnitPrice) continue;
+        const quantity = price.quantity ?? 1;
+        priceBreaks.set(`${supplierPartId}:${quantity}`, {
+          supplierPartId,
+          quantity,
+          supplierUnitPrice: toPartCurrency(price.supplierUnitPrice),
+          leadTime: price.leadTime ?? 0
+        });
+      }
+
+      const bestPrice = line.prices
+        .filter((price) => !!price.supplierUnitPrice)
+        .sort((a, b) => a.supplierUnitPrice - b.supplierUnitPrice)[0];
+      if (bestPrice) {
+        supplierPartUpdates.push({
+          id: supplierPartId,
+          data: {
+            supplierUnitPrice: toPartCurrency(bestPrice.supplierUnitPrice),
+            minimumOrderQuantity: bestPrice.quantity ?? 1
+          }
+        });
+      }
+    }
+    await updateRowsById(trx, "supplierPart", companyId, supplierPartUpdates);
+
+    if (priceBreaks.size > 0) {
+      await trx
+        .insertInto("supplierPartPrice")
+        .values(
+          [...priceBreaks.values()].map((priceBreak) => ({
+            ...priceBreak,
+            sourceType: "Quote" as const,
+            sourceDocumentId: supplierQuoteId,
+            companyId,
+            createdBy: userId,
+            updatedBy: userId,
+            updatedAt
+          }))
+        )
+        .onConflict((oc) =>
+          oc.columns(["supplierPartId", "quantity"]).doUpdateSet((eb) => ({
+            supplierUnitPrice: eb.ref("excluded.supplierUnitPrice"),
+            leadTime: eb.ref("excluded.leadTime"),
+            sourceType: eb.ref("excluded.sourceType"),
+            sourceDocumentId: eb.ref("excluded.sourceDocumentId"),
+            companyId: eb.ref("excluded.companyId"),
+            createdBy: eb.ref("excluded.createdBy"),
+            updatedBy: eb.ref("excluded.updatedBy"),
+            updatedAt: eb.ref("excluded.updatedAt")
+          }))
+        )
+        .execute();
+    }
+  });
+
+  return { success: true };
+}
+export const finalizePurchasingRfqInput = z.object({
+  rfqId: z.string(),
+  // The part files each new supplier quote is shared with.
+  sharedFilePaths: z.array(z.string()).default([])
+});
+
+const ITEM_TYPES = [
+  "Part",
+  "Material",
+  "Tool",
+  "Consumable",
+  "Service"
+] as const;
+
+export type FinalizedSupplierQuote = {
+  id: string;
+  supplierQuoteId: string;
+  supplierId: string;
+  externalLinkId: string;
+};
+
+export const finalizePurchasingRfqPermission = {
+  create: "purchasing"
+} satisfies PermissionRule<z.output<typeof finalizePurchasingRfqInput>>;
+
+/**
+ * Sends a purchasing RFQ out: one Draft supplier quote per RFQ supplier, each
+ * with its share link and a line per RFQ line that names an item, then the RFQ
+ * is marked Requested. One transaction — a failure leaves no quotes behind,
+ * and only a Draft RFQ is finalized, so a repeated request creates nothing.
+ */
+export async function finalizePurchasingRfq(
+  ctx: ServiceContext,
+  raw: z.input<typeof finalizePurchasingRfqInput>
+) {
+  const { rfqId, sharedFilePaths } = finalizePurchasingRfqInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const quotes = await db.transaction().execute(async (trx) => {
+    // Locked: a second submit waits here, then finds the RFQ Requested.
+    const rfq = await trx
+      .selectFrom("purchasingRfq")
+      .select(["id", "status"])
+      .where("id", "=", rfqId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!rfq) throw new NotFoundError("RFQ not found");
+    if (rfq.status !== "Draft") {
+      throw new InvalidInputError(
+        `Only a draft RFQ can be finalized; this one is ${rfq.status}`
+      );
+    }
+
+    const suppliers = await trx
+      .selectFrom("purchasingRfqSupplier")
+      .select("supplierId")
+      .where("purchasingRfqId", "=", rfqId)
+      .where("companyId", "=", companyId)
+      .orderBy("createdAt")
+      .orderBy("id")
+      .execute();
+    if (suppliers.length === 0) {
+      throw new InvalidInputError("No suppliers found for this RFQ");
+    }
+
+    const lines = await selectRows(
+      trx,
+      "purchasingRfqLines",
+      { purchasingRfqId: rfqId, companyId },
+      { orderBy: ["order"] }
+    );
+    if (lines.length === 0) {
+      throw new InvalidInputError("No line items found for this RFQ");
+    }
+    // supplierQuoteLine.itemId is NOT NULL
+    const quotableLines = lines.flatMap((line) =>
+      line.itemId ? [{ ...line, itemId: line.itemId }] : []
+    );
+
+    const created: FinalizedSupplierQuote[] = [];
+    for (const { supplierId } of suppliers) {
+      const supplierQuoteId = await getNextSequence(
+        trx,
+        "supplierQuote",
+        companyId
+      );
+      const interaction = await trx
+        .insertInto("supplierInteraction")
+        .values({ companyId, supplierId })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const now = datetime.timestamp();
+      const quote = await trx
+        .insertInto("supplierQuote")
+        .values({
+          supplierQuoteId,
+          supplierId,
+          supplierInteractionId: interaction.id,
+          status: "Draft",
+          exchangeRate: 1,
+          exchangeRateUpdatedAt: now,
+          quotedDate: now,
+          supplierQuoteType: "Purchase",
+          sharedFilePaths,
+          companyId,
+          createdBy: userId,
+          updatedBy: userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      const externalLink = await trx
+        .insertInto("externalLink")
+        .values({
+          documentType: "SupplierQuote",
+          documentId: quote.id,
+          supplierId,
+          companyId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      await trx
+        .updateTable("supplierQuote")
+        .set({ externalLinkId: externalLink.id })
+        .where("id", "=", quote.id)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      if (quotableLines.length > 0) {
+        await trx
+          .insertInto("supplierQuoteLine")
+          .values(
+            quotableLines.map((line, index) => ({
+              supplierQuoteId: quote.id,
+              supplierQuoteLineType: ITEM_TYPES.some(
+                (type) => type === line.itemType
+              )
+                ? (line.itemType as string)
+                : "Part",
+              itemId: line.itemId,
+              description: line.description ?? "",
+              quantity: line.quantity ?? [1],
+              inventoryUnitOfMeasureCode:
+                line.inventoryUnitOfMeasureCode ?? "EA",
+              purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode ?? "EA",
+              conversionFactor: line.conversionFactor ?? 1,
+              sortOrder: index + 1,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      }
+
+      await trx
+        .insertInto("purchasingRfqToSupplierQuote")
+        .values({
+          purchasingRfqId: rfqId,
+          supplierQuoteId: quote.id,
+          companyId
+        })
+        .execute();
+
+      created.push({
+        id: quote.id,
+        supplierQuoteId,
+        supplierId,
+        externalLinkId: externalLink.id
+      });
+    }
+
+    await trx
+      .updateTable("purchasingRfq")
+      .set({
+        status: "Requested",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", rfqId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return created;
+  });
+
+  return { quotes };
+}
+const updatePurchasedPricesLogger = getLogger(
+  "server-functions",
+  "update-purchased-prices"
+);
+
+export const updatePurchasedPricesInput = z.discriminatedUnion("source", [
+  z.object({
+    source: z.literal("purchaseOrder"),
+    purchaseOrderId: z.string(),
+    updatePrices: z.boolean().optional(),
+    updateLeadTimes: z.boolean().optional()
+  }),
+  z.object({
+    source: z.literal("purchaseInvoice"),
+    invoiceId: z.string(),
+    updatePrices: z.boolean().optional(),
+    updateLeadTimes: z.boolean().optional()
+  })
+]);
+
+interface PurchaseLineData {
+  itemId: string | null;
+  jobOperationId: string | null;
+  /** Base currency, per purchase unit. */
+  unitPrice: number;
+  /** The document's currency, per purchase unit — what the supplier charged. */
+  supplierUnitPrice: number;
+  quantity: number;
+  conversionFactor: number | null;
+  purchaseUnitOfMeasureCode: string | null;
+}
+
+/** Whole days from order to delivery (`YYYY-MM-DD` each); 0 when either is unparseable. */
+const calculateLeadTimeInDays = (
+  orderDate: string,
+  deliveryDate: string
+): number => {
+  try {
+    return Math.max(0, parseDate(deliveryDate).compare(parseDate(orderDate)));
+  } catch {
+    return 0;
+  }
+};
+
+export const updatePurchasedPricesPermission = {
+  update: "purchasing"
+} satisfies PermissionRule<z.output<typeof updatePurchasedPricesInput>>;
+
+export async function updatePurchasedPrices(
+  ctx: ServiceContext,
+  raw: z.input<typeof updatePurchasedPricesInput>
+) {
+  const parsedPayload = updatePurchasedPricesInput.parse(raw);
+
+  const { source } = parsedPayload;
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const shouldUpdatePrices = parsedPayload.updatePrices ?? true;
+  const shouldUpdateLeadTimes = parsedPayload.updateLeadTimes ?? false;
+
+  updatePurchasedPricesLogger.info("update-purchased-prices", {
+    source,
+    companyId,
+    shouldUpdatePrices,
+    shouldUpdateLeadTimes
+  });
+
+  let supplierId: string;
+  let lines: PurchaseLineData[];
+  let documentCurrency: { currencyCode: string | null; exchangeRate: number };
+
+  switch (source) {
+    case "purchaseOrder": {
+      const { purchaseOrderId } = parsedPayload;
+
+      updatePurchasedPricesLogger.info("update-purchased-prices", {
+        source,
+        purchaseOrderId,
+        companyId
+      });
+
+      const [purchaseOrder, purchaseOrderLines] = await inOrder([
+        () =>
+          maybeSingle(db, "purchaseOrder", {
+            id: purchaseOrderId,
+            companyId
+          }),
+        () => many(db, "purchaseOrderLine", { purchaseOrderId, companyId })
+      ]);
+
+      if (purchaseOrder.error) throw new Error("Failed to fetch purchaseOrder");
+      if (!purchaseOrder.data)
+        throw new NotFoundError("Purchase order not found");
+      if (purchaseOrderLines.error)
+        throw new Error("Failed to fetch purchase order lines");
+      if (!purchaseOrder.data.supplierId)
+        throw new Error("Purchase order has no supplier");
+
+      supplierId = purchaseOrder.data.supplierId;
+      documentCurrency = {
+        currencyCode: purchaseOrder.data.currencyCode,
+        exchangeRate: purchaseOrder.data.exchangeRate ?? 1
+      };
+      lines = purchaseOrderLines.data
+        .map((line) => ({
+          itemId: line.itemId,
+          jobOperationId: null,
+          unitPrice: line.unitPrice ?? 0,
+          supplierUnitPrice: line.supplierUnitPrice ?? 0,
+          quantity: (line.purchaseQuantity ?? 0) * (line.conversionFactor ?? 1),
+          conversionFactor: line.conversionFactor,
+          purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode
+        }))
+        .filter((line) => line.quantity > 0);
+
+      if (shouldUpdatePrices) {
+        const today = datetime
+          .today(await getCompanyTimeZone(db, companyId))
+          .toString();
+
+        // Delete any existing cost ledger entries for this PO (handles re-finalization)
+        await db
+          .deleteFrom("costLedger")
+          .where("documentType", "=", "Purchase Order")
+          .where("documentId", "=", purchaseOrderId)
+          .where("companyId", "=", companyId)
+          .execute();
+
+        // Create new cost ledger entries for each line item. These are
+        // planning/cost-history rows, NOT inventory layers — real layers
+        // are created at receipt posting. remainingQuantity stays 0 so
+        // FIFO/LIFO consumption can never eat unreceived stock.
+        const costLedgerInserts = lines
+          .filter((line) => line.itemId && line.unitPrice !== 0)
+          .map((line) => ({
+            itemLedgerType: "Purchase" as const,
+            costLedgerType: "Direct Cost" as const,
+            adjustment: false,
+            documentType: "Purchase Order" as const,
+            documentId: purchaseOrderId,
+            itemId: line.itemId!,
+            quantity: line.quantity,
+            cost:
+              (line.quantity / (line.conversionFactor ?? 1)) * line.unitPrice,
+            remainingQuantity: 0,
+            postingDate: today,
+            supplierId,
+            companyId
+          }));
+
+        if (costLedgerInserts.length > 0) {
+          await db.insertInto("costLedger").values(costLedgerInserts).execute();
+        }
+      }
+
+      break;
+    }
+
+    case "purchaseInvoice": {
+      const { invoiceId } = parsedPayload;
+
+      updatePurchasedPricesLogger.info("update-purchased-prices", {
+        source,
+        invoiceId,
+        companyId
+      });
+
+      const [purchaseInvoice, purchaseInvoiceLines] = await inOrder([
+        () => maybeSingle(db, "purchaseInvoice", { id: invoiceId, companyId }),
+        () => many(db, "purchaseInvoiceLine", { invoiceId, companyId })
+      ]);
+
+      if (purchaseInvoice.error)
+        throw new Error("Failed to fetch purchaseInvoice");
+      if (!purchaseInvoice.data)
+        throw new NotFoundError("Purchase invoice not found");
+      if (purchaseInvoiceLines.error)
+        throw new Error("Failed to fetch invoice lines");
+      if (!purchaseInvoice.data.supplierId)
+        throw new Error("Purchase invoice has no supplier");
+
+      supplierId = purchaseInvoice.data.supplierId;
+      documentCurrency = {
+        currencyCode: purchaseInvoice.data.currencyCode,
+        exchangeRate: purchaseInvoice.data.exchangeRate ?? 1
+      };
+      lines = purchaseInvoiceLines.data
+        .map((line) => ({
+          itemId: line.itemId,
+          jobOperationId: line.jobOperationId,
+          unitPrice: line.unitPrice ?? 0,
+          supplierUnitPrice: line.supplierUnitPrice ?? 0,
+          quantity: (line.quantity ?? 0) * (line.conversionFactor ?? 1),
+          conversionFactor: line.conversionFactor,
+          purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode
+        }))
+        .filter((line) => line.quantity > 0);
+      break;
+    }
+  }
+
+  const itemIds = Array.from(
+    new Set(
+      lines
+        .filter((line) => Boolean(line.itemId))
+        .map((line) => line.itemId as string)
+    )
+  );
+
+  // Rolling one-year window over postingDate, anchored on the company's
+  // calendar day (postingDate itself is company-tz derived).
+  const dateOneYearAgo = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .subtract({ years: 1 })
+    .toString();
+
+  const itemCostUpdates: Database["public"]["Tables"]["itemCost"]["Update"][] =
+    [];
+  const itemReplenishmentUpdates: Database["public"]["Tables"]["itemReplenishment"]["Update"][] =
+    [];
+  const supplierPartInserts: Database["public"]["Tables"]["supplierPart"]["Insert"][] =
+    [];
+  const supplierPartUpdates: Database["public"]["Tables"]["supplierPart"]["Update"][] =
+    [];
+
+  const jobOperationUpdates: Database["public"]["Tables"]["jobOperation"]["Update"][] =
+    [];
+
+  const historicalPartCosts: Record<
+    string,
+    { quantity: number; cost: number }
+  > = {};
+  const historicalPartLeadTimes: Record<
+    string,
+    { quantity: number; weightedLeadTime: number }
+  > = {};
+
+  let supplierPartRows: Database["public"]["Tables"]["supplierPart"]["Row"][] =
+    [];
+
+  if (shouldUpdatePrices && itemIds.length > 0) {
+    // Aggregate in SQL: fetching raw rows through PostgREST silently caps
+    // at 1000, which skewed the weighted average for high-volume items.
+    const [costLedgerTotals, supplierParts] = await inOrder([
+      () =>
+        db
+          .selectFrom("costLedger")
+          .select(({ fn }) => [
+            "itemId",
+            // Adjustment child rows (invoice-vs-receipt price corrections)
+            // carry cost but no additional physical quantity, so they count
+            // toward cost but not quantity.
+            sql<number>`sum(case when "adjustment" then 0 else "quantity" end)`.as(
+              "quantity"
+            ),
+            fn.sum<number>("cost").as("cost")
+          ])
+          .where("itemId", "in", itemIds)
+          .where("companyId", "=", companyId)
+          .where("postingDate", ">=", dateOneYearAgo)
+          .groupBy("itemId")
+          .execute(),
+      () => many(db, "supplierPart", { supplierId, itemId: itemIds, companyId })
+    ]);
+
+    if (supplierParts.error) {
+      throw new Error("Failed to fetch supplier parts");
+    }
+
+    supplierPartRows = supplierParts.data ?? [];
+
+    costLedgerTotals.forEach((row) => {
+      if (row.itemId) {
+        historicalPartCosts[row.itemId] = {
+          quantity: Number(row.quantity ?? 0),
+          cost: Number(row.cost ?? 0)
+        };
+      }
+    });
+  }
+
+  if (shouldUpdateLeadTimes && itemIds.length > 0) {
+    const receipts = await many(
+      db,
+      "receipt",
+      {
+        companyId,
+        sourceDocument: "Purchase Order",
+        postingDate: gte(dateOneYearAgo)
+      },
+      { columns: ["id", "postingDate", "sourceDocumentId"] }
+    );
+
+    if (receipts.error) {
+      throw new Error("Failed to fetch historical receipts");
+    }
+
+    const receiptIds = receipts.data?.map((receipt) => receipt.id) ?? [];
+    const purchaseOrderIds = Array.from(
+      new Set(
+        (receipts.data ?? [])
+          .map((receipt) => receipt.sourceDocumentId)
+          .filter((id): id is string => Boolean(id))
+      )
+    );
+
+    if (receiptIds.length > 0 && purchaseOrderIds.length > 0) {
+      const [receiptLines, purchaseOrders] = await inOrder([
+        () =>
+          many(
+            db,
+            "receiptLine",
+            { receiptId: receiptIds, itemId: itemIds, companyId },
+            {
+              columns: [
+                "receiptId",
+                "itemId",
+                "receivedQuantity",
+                "conversionFactor"
+              ]
+            }
+          ),
+        () =>
+          many(
+            db,
+            "purchaseOrder",
+            { id: purchaseOrderIds, companyId },
+            { columns: ["id", "orderDate"] }
+          )
+      ]);
+
+      if (receiptLines.error) {
+        throw new Error("Failed to fetch historical receipt lines");
+      }
+      if (purchaseOrders.error) {
+        throw new Error("Failed to fetch historical purchase orders");
+      }
+
+      const receiptsById = (receipts.data ?? []).reduce<
+        Record<string, { postingDate: string; sourceDocumentId: string | null }>
+      >((acc, receipt) => {
+        if (receipt.postingDate) {
+          acc[receipt.id] = {
+            postingDate: receipt.postingDate,
+            sourceDocumentId: receipt.sourceDocumentId
+          };
+        }
+        return acc;
+      }, {});
+
+      const purchaseOrdersById = purchaseOrders.data.reduce<
+        Record<string, { orderDate: string | null }>
+      >((acc, row) => {
+        acc[row.id] = { orderDate: row.orderDate };
+        return acc;
+      }, {});
+
+      receiptLines.data.forEach((line) => {
+        if (!line.itemId) return;
+
+        const receipt = receiptsById[line.receiptId];
+        if (!receipt?.sourceDocumentId) return;
+
+        const orderDate =
+          purchaseOrdersById[receipt.sourceDocumentId]?.orderDate;
+        if (!orderDate || !receipt.postingDate) return;
+
+        const safeConversionFactor =
+          line.conversionFactor && line.conversionFactor > 0
+            ? line.conversionFactor
+            : 1;
+        const quantity = Math.abs(
+          (line.receivedQuantity ?? 0) / safeConversionFactor
+        );
+        if (quantity <= 0) return;
+
+        const leadTimeInDays = calculateLeadTimeInDays(
+          orderDate,
+          receipt.postingDate
+        );
+
+        historicalPartLeadTimes[line.itemId] ??= {
+          quantity: 0,
+          weightedLeadTime: 0
+        };
+        const history = historicalPartLeadTimes[line.itemId]!;
+        history.quantity += quantity;
+        history.weightedLeadTime += leadTimeInDays * quantity;
+      });
+    }
+  }
+
+  // The supplier part records what the supplier charged, in its own
+  // currency: copied exactly when it matches the document's, converted at
+  // today's rate when it does not.
+  const priceConverter =
+    shouldUpdatePrices && itemIds.length > 0
+      ? await getSupplierPartPriceConverter(
+          db,
+          companyId,
+          documentCurrency,
+          supplierPartRows
+            .filter((sp) => sp.supplierId === supplierId)
+            .map((sp) => sp.currencyCode)
+        )
+      : null;
+
+  lines.forEach((line) => {
+    if (line.itemId && !line.jobOperationId) {
+      const costHistory = historicalPartCosts[line.itemId];
+      const hasLeadTimeHistory =
+        (historicalPartLeadTimes[line.itemId]?.quantity ?? 0) > 0;
+
+      if (
+        shouldUpdatePrices &&
+        line.unitPrice !== 0 &&
+        costHistory &&
+        costHistory.quantity > 0
+      ) {
+        itemCostUpdates.push({
+          itemId: line.itemId,
+          unitCost: costHistory.cost / costHistory.quantity,
+          updatedBy: "system"
+        });
+
+        const supplierPart = supplierPartRows.find(
+          (sp) => sp.itemId === line.itemId && sp.supplierId === supplierId
+        );
+
+        if (supplierPart && supplierPart.id) {
+          supplierPartUpdates.push({
+            id: supplierPart.id,
+            supplierUnitPrice: priceConverter!.toPartCurrency(
+              line.supplierUnitPrice,
+              supplierPart.currencyCode
+            ),
+            conversionFactor: line.conversionFactor ?? 1,
+            supplierUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
+            updatedBy: "system"
+          });
+        } else {
+          supplierPartInserts.push({
+            itemId: line.itemId,
+            supplierId: supplierId,
+            supplierUnitPrice: line.supplierUnitPrice,
+            currencyCode: documentCurrency.currencyCode,
+            conversionFactor: line.conversionFactor ?? 1,
+            supplierUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
+            createdBy: "system",
+            companyId
+          });
+        }
+      }
+
+      if (shouldUpdatePrices || (shouldUpdateLeadTimes && hasLeadTimeHistory)) {
+        const itemReplenishmentUpdate: Database["public"]["Tables"]["itemReplenishment"]["Update"] =
+          {
+            itemId: line.itemId,
+            updatedBy: "system"
+          };
+
+        if (shouldUpdatePrices) {
+          itemReplenishmentUpdate.preferredSupplierId = supplierId;
+          itemReplenishmentUpdate.purchasingUnitOfMeasureCode =
+            line.purchaseUnitOfMeasureCode;
+          itemReplenishmentUpdate.conversionFactor = line.conversionFactor ?? 1;
+        }
+
+        const history = historicalPartLeadTimes[line.itemId];
+        if (shouldUpdateLeadTimes && hasLeadTimeHistory && history) {
+          itemReplenishmentUpdate.leadTime = Math.round(
+            history.weightedLeadTime / history.quantity
+          );
+        }
+
+        itemReplenishmentUpdates.push(itemReplenishmentUpdate);
+      }
+    }
+
+    if (shouldUpdatePrices && line.jobOperationId && line.unitPrice !== 0) {
+      jobOperationUpdates.push({
+        id: line.jobOperationId,
+        operationMinimumCost: 0,
+        operationUnitCost: line.unitPrice ?? 0,
+        updatedBy: "system"
+      });
+    }
+  });
+
+  await db.transaction().execute(async (trx) => {
+    if (itemCostUpdates.length > 0) {
+      for await (const itemCostUpdate of itemCostUpdates) {
+        await trx
+          .updateTable("itemCost")
+          .set(itemCostUpdate)
+          .where("itemId", "=", itemCostUpdate.itemId!)
+          .where("companyId", "=", companyId)
+          // An Average item's unit cost is its moving average, kept by the
+          // receipts and invoices that move its value; a year of purchase
+          // history is not what is on hand.
+          .where("costingMethod", "!=", "Average")
+          .execute();
+      }
+    }
+
+    if (jobOperationUpdates.length > 0) {
+      await updateRowsById(
+        trx,
+        "jobOperation",
+        companyId,
+        jobOperationUpdates.map((update) => ({ id: update.id!, data: update }))
+      );
+    }
+
+    if (supplierPartInserts.length > 0) {
+      await trx
+        .insertInto("supplierPart")
+        .values(supplierPartInserts)
+        .onConflict((oc) =>
+          oc.columns(["itemId", "supplierId", "companyId"]).doUpdateSet({
+            supplierUnitPrice: (eb) => eb.ref("excluded.supplierUnitPrice"),
+            currencyCode: (eb) => eb.ref("excluded.currencyCode"),
+            conversionFactor: (eb) => eb.ref("excluded.conversionFactor"),
+            supplierUnitOfMeasureCode: (eb) =>
+              eb.ref("excluded.supplierUnitOfMeasureCode"),
+            updatedBy: "system"
+          })
+        )
+        .execute();
+    }
+
+    if (supplierPartUpdates.length > 0) {
+      await updateRowsById(
+        trx,
+        "supplierPart",
+        companyId,
+        supplierPartUpdates.map((update) => ({ id: update.id!, data: update }))
+      );
+    }
+
+    if (itemReplenishmentUpdates.length > 0) {
+      for await (const itemReplenishmentUpdate of itemReplenishmentUpdates) {
+        await trx
+          .updateTable("itemReplenishment")
+          .set(itemReplenishmentUpdate)
+          .where("itemId", "=", itemReplenishmentUpdate.itemId!)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+    }
+  });
+
+  return { success: true };
+}
+export type Db = Kysely<KyselyDatabase>;
+type Enums = Database["public"]["Enums"];
+
+/** The lease header: the term and the payment terms every asset shares. */
+export type LeaseRow = {
+  id: string;
+  leaseId: string;
+  status: Enums["leaseStatus"];
+  name: string | null;
+  supplierId: string;
+  locationId: string | null;
+  commencementDate: string;
+  /** Null is open-ended: every asset is short-term (spec Addendum A10). */
+  endDate: string | null;
+  invoiceFromDate: string;
+  paymentFrequency: Enums["leasePaymentFrequency"];
+  paymentTiming: Enums["rentalBillingTiming"];
+  annualEscalationPercent: number;
+  discountRate: number;
+  currencyCode: string;
+  commencementJournalId: string | null;
+};
+
+/** One leased asset: a separate lease component (ASC 842-10-15-28), with its
+ *  own payment, classification inputs, classification and measurement. */
+export type LeaseLineRow = {
+  id: string;
+  description: string;
+  serialNumber: string | null;
+  locationId: string | null;
+  paymentAmount: number;
+  fairValue: number | null;
+  economicLifeMonths: number | null;
+  ownershipTransfers: boolean;
+  specializedAsset: boolean;
+  purchaseOptionAmount: number | null;
+  purchaseOptionReasonablyCertain: boolean;
+  status: Enums["leaseLineStatus"];
+  lesseeClassification: Enums["lesseeClassification"] | null;
+  classificationOverride: Enums["lesseeClassification"] | null;
+  initialLiability: number | null;
+  rouAssetCost: number | null;
+};
+
+const num = (value: unknown): number | null =>
+  value === null || value === undefined ? null : Number(value);
+
+// Re-read under the caller's company and lock: the id comes from the payload,
+// and the permission check proves nothing about it. The lock serializes two
+// actions on one lease (a double-clicked Activate, a Modify racing a
+// Terminate of one asset). DATE columns are selected as text — the lease
+// math works on `YYYY-MM-DD` strings.
+export async function lockLease(
+  trx: Trx,
+  companyId: string,
+  id: string
+): Promise<LeaseRow> {
+  const lease = await trx
+    .selectFrom("lease")
+    .select([
+      "id",
+      "leaseId",
+      "status",
+      "name",
+      "supplierId",
+      "locationId",
+      sql<string>`"commencementDate"::text`.as("commencementDate"),
+      sql<string | null>`"endDate"::text`.as("endDate"),
+      sql<string>`"invoiceFromDate"::text`.as("invoiceFromDate"),
+      "paymentFrequency",
+      "paymentTiming",
+      "annualEscalationPercent",
+      "discountRate",
+      "currencyCode",
+      "commencementJournalId"
+    ])
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!lease) throw new NotFoundError("Lease not found");
+  return {
+    ...lease,
+    annualEscalationPercent: Number(lease.annualEscalationPercent),
+    discountRate: Number(lease.discountRate)
+  };
+}
+
+/** The lease's assets in their order. The lease row's lock covers them:
+ *  every writer of a line locks the lease first. */
+export async function readLines(
+  trx: Trx,
+  companyId: string,
+  leaseId: string
+): Promise<LeaseLineRow[]> {
+  const rows = await trx
+    .selectFrom("leaseLine")
+    .select([
+      "id",
+      "description",
+      "serialNumber",
+      "locationId",
+      "paymentAmount",
+      "fairValue",
+      "economicLifeMonths",
+      "ownershipTransfers",
+      "specializedAsset",
+      "purchaseOptionAmount",
+      "purchaseOptionReasonablyCertain",
+      "status",
+      "lesseeClassification",
+      "classificationOverride",
+      "initialLiability",
+      "rouAssetCost"
+    ])
+    .where("leaseId", "=", leaseId)
+    .where("companyId", "=", companyId)
+    .orderBy("sortOrder")
+    .orderBy("createdAt")
+    .execute();
+  return rows.map((row) => ({
+    ...row,
+    paymentAmount: Number(row.paymentAmount),
+    fairValue: num(row.fairValue),
+    economicLifeMonths: num(row.economicLifeMonths),
+    purchaseOptionAmount: num(row.purchaseOptionAmount),
+    initialLiability: num(row.initialLiability),
+    rouAssetCost: num(row.rouAssetCost)
+  }));
+}
+
+/** The one asset of the lease the payload names, or a 404. */
+export function findLine(lines: LeaseLineRow[], id: string): LeaseLineRow {
+  const line = lines.find((row) => row.id === id);
+  if (!line) throw new NotFoundError("Leased asset not found");
+  return line;
+}
+
+/** The classification of an asset past Draft. Activation stores one for
+ *  every asset, so a missing one is a broken row, not a default. */
+export function classificationOf(
+  line: Pick<LeaseLineRow, "description" | "lesseeClassification">
+): Enums["lesseeClassification"] {
+  if (!line.lesseeClassification) {
+    throw new Error(`${line.description} has no lessee classification`);
+  }
+  return line.lesseeClassification;
+}
+
+export type LeasePaymentRow = {
+  id: string;
+  leaseLineId: string;
+  paymentType: Enums["leasePaymentType"];
+  periodStart: string;
+  periodEnd: string;
+  dueDate: string;
+  amount: number;
+  status: Enums["leasePaymentStatus"];
+};
+
+export async function readPayments(
+  trx: Trx,
+  companyId: string,
+  leaseId: string
+): Promise<LeasePaymentRow[]> {
+  const rows = await trx
+    .selectFrom("leasePayment")
+    .select([
+      "id",
+      "leaseLineId",
+      "paymentType",
+      sql<string>`"periodStart"::text`.as("periodStart"),
+      sql<string>`"periodEnd"::text`.as("periodEnd"),
+      sql<string>`"dueDate"::text`.as("dueDate"),
+      "amount",
+      "status"
+    ])
+    .where("leaseId", "=", leaseId)
+    .where("companyId", "=", companyId)
+    .orderBy("dueDate")
+    .execute();
+  return rows.map((row) => ({ ...row, amount: Number(row.amount) }));
+}
+
+export type LesseeAccounting = {
+  // Provisional before the company's accounting cutover, Posted after it.
+  postingStatus: AutomaticJournalStatus;
+  accounts: LesseeAccounts;
+  // active dimensions for the company group, entityType → dimension id
+  dimensionMap: Map<string, string>;
+};
+
+export const LESSEE_ACCOUNTS_REQUIRED =
+  "Set the lease (lessee) accounts in Accounting → Default Accounts before activating a lease";
+
+const LESSEE_DEFAULT_COLUMNS = [
+  "rightOfUseAssetAccount",
+  "accumulatedRightOfUseAmortizationAccount",
+  "leaseLiabilityAccount",
+  "operatingLeaseExpenseAccount",
+  "rightOfUseAmortizationExpenseAccount",
+  "leaseInterestExpenseAccount",
+  "assetGainOnDisposalAccount",
+  "assetLossOnDisposalAccount"
+] as const;
+
+/** The lessee lease accounts with their classes, and the dimensions. Every
+ *  account is required — the migration seeds and maps them for every
+ *  company — because the schedule rows name them and are never re-pointed. */
+export async function loadLesseeAccounting(
+  trx: Trx,
+  args: { companyId: string; companyGroupId: string | null }
+): Promise<LesseeAccounting> {
+  const { companyId } = args;
+  const postingStatus = await journalPostingStatus(trx, companyId);
+  const defaults = await trx
+    .selectFrom("accountDefault")
+    .select([...LESSEE_DEFAULT_COLUMNS])
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!defaults) throw new Error("Error getting account defaults");
+  const ids = LESSEE_DEFAULT_COLUMNS.map((column) => defaults[column]);
+  if (ids.some((id) => !id)) {
+    throw new InvalidInputError(LESSEE_ACCOUNTS_REQUIRED);
+  }
+
+  // `account` is group-scoped; the ids came from this company's defaults.
+  const accounts = await trx
+    .selectFrom("account")
+    .select(["id", "class"])
+    .where("id", "in", ids as string[])
+    .execute();
+  const classOf = (id: string): AccountClass => {
+    const account = accounts.find((row) => row.id === id);
+    if (!account?.class) {
+      throw new InvalidInputError(
+        `Account ${id} in the lease account defaults has no class. Set its class in Accounting → Chart of Accounts.`
+      );
+    }
+    return account.class;
+  };
+  const account = (column: (typeof LESSEE_DEFAULT_COLUMNS)[number]) => {
+    const id = defaults[column] as string;
+    return { id, class: classOf(id) };
+  };
+
+  // Dimensions are configured per company group; a company outside one
+  // tags nothing.
+  const dimensions =
+    args.companyGroupId === null
+      ? []
+      : await trx
+          .selectFrom("dimension")
+          .select(["id", "entityType"])
+          .where("companyGroupId", "=", args.companyGroupId)
+          .where("active", "=", true)
+          .where("entityType", "in", ["Supplier", "Location"])
+          .execute();
+
+  return {
+    postingStatus,
+    accounts: {
+      rightOfUseAsset: account("rightOfUseAssetAccount"),
+      accumulatedRightOfUseAmortization: account(
+        "accumulatedRightOfUseAmortizationAccount"
+      ),
+      leaseLiability: account("leaseLiabilityAccount"),
+      operatingLeaseExpense: account("operatingLeaseExpenseAccount"),
+      rightOfUseAmortizationExpense: account(
+        "rightOfUseAmortizationExpenseAccount"
+      ),
+      leaseInterestExpense: account("leaseInterestExpenseAccount"),
+      gain: account("assetGainOnDisposalAccount"),
+      loss: account("assetLossOnDisposalAccount")
+    },
+    dimensionMap: new Map(
+      dimensions.map((dimension) => [dimension.entityType, dimension.id])
+    )
+  };
+}
+
+/** One asset's balanced journal lines. */
+export type AssetLines = {
+  leaseLineId: string;
+  /** The asset's location, else the lease's: the Location dimension. */
+  locationId: string | null;
+  lines: PostingLine[];
+};
+
+/** One 'Lease' journal from each asset's balanced lines: Provisional before
+ *  the accounting cutover (no period), Posted after it in the period of its
+ *  date (the next open period when that one is Locked or Closed). Every line
+ *  carries the lease as its document and its asset line as the document
+ *  line, tagged with Supplier and the asset's Location. Null when no asset
+ *  has a line to post. */
+export async function postLesseeJournal(
+  trx: Trx,
+  args: {
+    accounting: LesseeAccounting;
+    companyId: string;
+    userId: string;
+    postingDate: string;
+    description: string;
+    assets: AssetLines[];
+    lease: Pick<LeaseRow, "id" | "supplierId">;
+  }
+): Promise<string | null> {
+  const { accounting, companyId, userId } = args;
+  const lines = args.assets.flatMap((asset) =>
+    asset.lines.map((line) => ({ ...line, asset }))
+  );
+  if (lines.length === 0) return null;
+
+  const period =
+    accounting.postingStatus === "Posted"
+      ? await resolveAccountingPeriod(
+          trx,
+          companyId,
+          args.postingDate,
+          "historical-with-shift"
+        )
+      : null;
+  const journalId = await createAdjustmentJournal(trx, {
+    companyId,
+    accountingPeriodId: period?.id ?? null,
+    status: accounting.postingStatus,
+    description: args.description,
+    postingDate: period?.postingDate ?? args.postingDate,
+    userId,
+    sourceType: "Lease"
+  });
+
+  const journalLineReference = nanoid();
+  const journalLineIds = await allocateJournalLineIds(trx, lines.length);
+  await trx
+    .insertInto("journalLine")
+    .values(
+      lines.map((line, index) => ({
+        id: journalLineIds[index],
+        journalId,
+        accountId: line.accountId,
+        description: line.description,
+        amount: round(line.amount),
+        quantity: 1,
+        documentType: "Lease" as const,
+        documentId: args.lease.id,
+        documentLineReference: line.asset.leaseLineId,
+        journalLineReference,
+        companyId
+      }))
+    )
+    .execute();
+
+  const dimensionInserts = buildJournalLineDimensionInserts({
+    journalLineIds: journalLineIds as string[],
+    meta: lines.map((line) => ({
+      supplierId: args.lease.supplierId,
+      locationId: line.asset.locationId
+    })),
+    dimensionMap: accounting.dimensionMap,
+    companyId
+  });
+  if (dimensionInserts.length > 0) {
+    await trx
+      .insertInto("journalLineDimension")
+      .values(dimensionInserts)
+      .execute();
+  }
+
+  return journalId;
+}
+
+/** One asset's schedule from lease month `fromMonth` on: line `i` is lease
+ *  month `fromMonth + i` of the lease that commenced on `commencementDate`. */
+export type AssetSchedule = {
+  leaseLineId: string;
+  commencementDate: string;
+  fromMonth: number;
+  lines: LesseeScheduleLine[];
+  classification: "Operating" | "Finance";
+};
+
+/**
+ * Writes each asset's schedule lines, and two `revenueRecognitionSchedule`
+ * rows per line (Interest and Amortization, each on its own accounts — spec
+ * §3) that the lease run posts. A row with no amount is not written. Rows
+ * dated before `postedBefore` are written Posted with no journal, and their
+ * lines with `postedAt`: their entries are in an opening balance, as the
+ * enable's step 5 does for rows before the cutover.
+ */
+export async function writeSchedules(
+  trx: Trx,
+  args: {
+    leaseId: string;
+    schedules: AssetSchedule[];
+    accounts: LesseeAccounts;
+    companyId: string;
+    userId: string;
+    postedBefore?: string;
+  }
+): Promise<void> {
+  const { leaseId, companyId, userId } = args;
+  const lines = args.schedules.flatMap((schedule) =>
+    schedule.lines.map((line, index) => ({ schedule, line, index }))
+  );
+  if (lines.length === 0) return;
+  const postedAt = datetime.timestamp();
+
+  const inserted = await trx
+    .insertInto("leaseScheduleLine")
+    .values(
+      lines.map(({ schedule, line }) => ({
+        leaseId,
+        leaseLineId: schedule.leaseLineId,
+        periodDate: line.periodDate,
+        openingLiability: line.openingLiability,
+        paymentAmount: line.paymentAmount,
+        interestAmount: line.interestAmount,
+        principalAmount: line.principalAmount,
+        closingLiability: line.closingLiability,
+        leaseCost: line.leaseCost,
+        rouAmortization: line.rouAmortization,
+        closingRouAsset: line.closingRouAsset,
+        // An opening-balance month is on the books like a run-posted one;
+        // the `leases` view and the lease page read posted state from here.
+        postedAt:
+          args.postedBefore !== undefined && line.periodDate < args.postedBefore
+            ? postedAt
+            : null,
+        companyId,
+        createdBy: userId
+      }))
+    )
+    .returning([
+      "id",
+      "leaseLineId",
+      sql<string>`"periodDate"::text`.as("periodDate")
+    ])
+    .execute();
+  const key = (leaseLineId: string, periodDate: string) =>
+    `${leaseLineId}|${periodDate}`;
+  const idByKey = new Map(
+    inserted.map((row) => [key(row.leaseLineId, row.periodDate), row.id])
+  );
+
+  const rows = lines.flatMap(({ schedule, line, index }) => {
+    const leaseScheduleLineId = idByKey.get(
+      key(schedule.leaseLineId, line.periodDate)
+    );
+    if (!leaseScheduleLineId) {
+      throw new Error(`Schedule line ${line.periodDate} was not written`);
+    }
+    const accounts = scheduleRowAccounts(
+      schedule.classification,
+      args.accounts
+    );
+    const posted =
+      args.postedBefore !== undefined && line.periodDate < args.postedBefore;
+    const base = {
+      status: posted ? ("Posted" as const) : ("Planned" as const),
+      leaseId,
+      leaseScheduleLineId,
+      periodStart: addMonths(
+        schedule.commencementDate,
+        schedule.fromMonth + index
+      ),
+      periodEnd: line.periodDate,
+      scheduledDate: line.periodDate,
+      companyId,
+      createdBy: userId
+    };
+    return [
+      {
+        ...base,
+        type: "Interest" as const,
+        amount: line.interestAmount,
+        ...accounts.interest
+      },
+      {
+        ...base,
+        type: "Amortization" as const,
+        amount: line.rouAmortization,
+        ...accounts.amortization
+      }
+    ].filter((row) => row.amount !== 0);
+  });
+  if (rows.length > 0) {
+    await trx.insertInto("revenueRecognitionSchedule").values(rows).execute();
+  }
+}
+
+/** Deletes the schedule lines of `leaseLineIds` dated on or after
+ *  `startDate`; their Planned run rows cascade with them. */
+export async function deleteSchedulesFrom(
+  trx: Trx,
+  args: { companyId: string; leaseLineIds: string[]; startDate: string }
+): Promise<void> {
+  if (args.leaseLineIds.length === 0) return;
+  await trx
+    .deleteFrom("leaseScheduleLine")
+    .where("leaseLineId", "in", args.leaseLineIds)
+    .where("companyId", "=", args.companyId)
+    .where("periodDate", ">=", args.startDate)
+    .execute();
+}
+
+/** The run holding a schedule row of the lease from `fromDate` on, or null.
+ *  A row a run holds cannot be rewritten until the run is recalculated or
+ *  deleted. */
+export async function heldByRun(
+  trx: Trx,
+  args: {
+    companyId: string;
+    leaseId: string;
+    fromDate?: string;
+    /** Only the rows of these assets; every asset when absent. */
+    leaseLineIds?: string[];
+  }
+): Promise<string | null> {
+  let query = trx
+    .selectFrom("revenueRecognitionSchedule as s")
+    .innerJoin("revenueRecognitionRunLine as l", (join) =>
+      join
+        .onRef("l.id", "=", "s.runLineId")
+        .onRef("l.companyId", "=", "s.companyId")
+    )
+    .innerJoin("revenueRecognitionRun as r", (join) =>
+      join
+        .onRef("r.id", "=", "l.runId")
+        .onRef("r.companyId", "=", "l.companyId")
+    )
+    .select("r.runId")
+    .where("s.companyId", "=", args.companyId)
+    .where("s.leaseId", "=", args.leaseId)
+    .where("s.status", "=", "Planned");
+  if (args.fromDate) {
+    query = query.where("s.scheduledDate", ">=", args.fromDate);
+  }
+  if (args.leaseLineIds) {
+    const ids = args.leaseLineIds;
+    if (ids.length === 0) return null;
+    query = query.where("s.leaseScheduleLineId", "in", (eb) =>
+      eb
+        .selectFrom("leaseScheduleLine")
+        .select("id")
+        .where("leaseLineId", "in", ids)
+        .where("companyId", "=", args.companyId)
+    );
+  }
+  const row = await query.executeTakeFirst();
+  return row?.runId ?? null;
+}
+
+/** Voids a lease journal with a negated copy dated today (the next open
+ *  period when today's is Locked or Closed), keeping its documents and
+ *  dimensions. */
+export async function voidLeaseJournal(
+  trx: Trx,
+  args: {
+    journalId: string;
+    postingStatus: AutomaticJournalStatus;
+    companyId: string;
+    userId: string;
+    today: string;
+  }
+): Promise<string> {
+  const { companyId } = args;
+  const original = await trx
+    .selectFrom("journal")
+    .select(["id", "sourceType", "description"])
+    .where("id", "=", args.journalId)
+    .where("companyId", "=", companyId)
+    .forShare()
+    .executeTakeFirst();
+  if (!original || original.sourceType !== "Lease") {
+    throw new Error("The lease journal has invalid provenance");
+  }
+  const originalLines = await trx
+    .selectFrom("journalLine")
+    .selectAll()
+    .where("journalId", "=", original.id)
+    .where("companyId", "=", companyId)
+    .orderBy("id")
+    .execute();
+  return insertNegatedJournal(trx, {
+    companyId,
+    userId: args.userId,
+    originalLines,
+    description: `VOID ${original.description ?? "Lease"}`,
+    sourceType: "Lease",
+    postingStatus: args.postingStatus,
+    date: args.today,
+    periodMode: "historical-with-shift",
+    postedAt: datetime.timestamp()
+  });
+}
+
+export type Scope = { db: Db; companyId: string; userId: string };
+
+/** The payments' whole-month points from lease month `fromMonth` (0 at
+ *  commencement). Counted from the commencement, never from a later date: a
+ *  lease from the 29th–31st has clamped months that a later start would
+ *  not line up with. */
+export function paymentPoints(
+  payments: Pick<
+    LeasePaymentRow,
+    "periodStart" | "periodEnd" | "dueDate" | "paymentType" | "amount"
+  >[],
+  commencementDate: string,
+  timing: LeaseRow["paymentTiming"],
+  fromMonth = 0
+): LeasePaymentPoint[] {
+  return payments.map((payment) => ({
+    monthIndex:
+      paymentMonthIndex(payment, commencementDate, timing) - fromMonth,
+    amount: payment.amount
+  }));
+}
+
+/** Straight-line ROU amortization runs over what is left of the useful life
+ *  when the lessee will own the asset, else over the `months` the schedule
+ *  covers. `elapsedMonths` are the lease months before the schedule starts
+ *  (0 at commencement). */
+export function amortizationMonths(
+  line: Pick<
+    LeaseLineRow,
+    | "ownershipTransfers"
+    | "purchaseOptionReasonablyCertain"
+    | "economicLifeMonths"
+  >,
+  months: number,
+  elapsedMonths = 0
+): number {
+  const remainingLife = (line.economicLifeMonths ?? 0) - elapsedMonths;
+  return (line.ownershipTransfers || line.purchaseOptionReasonablyCertain) &&
+    remainingLife > months
+    ? remainingLife
+    : months;
+}
+
+type Thresholds = { majorPartPercent: number; substantiallyAllPercent: number };
+
+export type MeasuredAsset = {
+  line: LeaseLineRow;
+  liability: number;
+  classification: "Operating" | "Finance" | "Short-Term";
+  classificationInputs: Json;
+};
+
+/** One asset's liability (the PV of its payment rows) and classification
+ *  over the term from lease month `fromMonth` (0 at commencement) to
+ *  `endDate`. An override wins. */
+export function measureAsset(args: {
+  line: LeaseLineRow;
+  payments: Pick<
+    LeasePaymentRow,
+    "periodStart" | "periodEnd" | "dueDate" | "paymentType" | "amount"
+  >[];
+  fromMonth?: number;
+  endDate: string;
+  lease: Pick<LeaseRow, "commencementDate" | "paymentTiming" | "discountRate">;
+  thresholds: Thresholds;
+  shortTermExpedient: boolean;
+}): MeasuredAsset {
+  const { line, lease, thresholds } = args;
+  const { liability, termMonths, ...result } = measureLesseeAsset({
+    commencementDate: lease.commencementDate,
+    endDate: args.endDate,
+    timing: lease.paymentTiming,
+    discountRate: lease.discountRate,
+    payments: args.payments,
+    fromMonth: args.fromMonth,
+    inputs: line,
+    shortTermExpedient: args.shortTermExpedient,
+    thresholds
+  });
+  return {
+    line,
+    liability,
+    classification: line.classificationOverride ?? result.classification,
+    classificationInputs: {
+      ...result,
+      termMonths,
+      pvPayments: liability,
+      discountRate: lease.discountRate,
+      thresholds,
+      override: line.classificationOverride
+    }
+  };
+}
+
+export async function readThresholds(
+  trx: Trx,
+  companyId: string
+): Promise<Thresholds & { shortTermExpedient: boolean }> {
+  const settings = await trx
+    .selectFrom("companySettings")
+    .select([
+      "leaseMajorPartThresholdPercent",
+      "leaseSubstantiallyAllThresholdPercent",
+      "leaseShortTermExpedient"
+    ])
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  return {
+    majorPartPercent: Number(settings.leaseMajorPartThresholdPercent),
+    substantiallyAllPercent: Number(
+      settings.leaseSubstantiallyAllThresholdPercent
+    ),
+    shortTermExpedient: settings.leaseShortTermExpedient
+  };
+}
+
+/** Writes each asset's measurement in one statement. Columns left out of a
+ *  row keep their value. */
+export async function updateLineMeasurements(
+  trx: Trx,
+  args: {
+    companyId: string;
+    userId: string;
+    rows: {
+      id: string;
+      lesseeClassification: "Operating" | "Finance" | "Short-Term";
+      classificationInputs?: Json;
+      initialLiability?: number | null;
+      rouAssetCost?: number | null;
+      paymentAmount?: number;
+    }[];
+  }
+): Promise<void> {
+  if (args.rows.length === 0) return;
+  const values = sql.join(
+    args.rows.map(
+      (row) =>
+        sql`(${row.id}, ${row.lesseeClassification}, ${
+          row.classificationInputs === undefined
+            ? null
+            : JSON.stringify(row.classificationInputs)
+        }, ${row.classificationInputs !== undefined}, ${
+          row.initialLiability ?? null
+        }, ${row.initialLiability !== undefined}, ${row.rouAssetCost ?? null}, ${
+          row.rouAssetCost !== undefined
+        }, ${row.paymentAmount ?? null}, ${row.paymentAmount !== undefined})`
+    )
+  );
+  await sql`
+    UPDATE "leaseLine" AS l SET
+      "lesseeClassification" = v.classification::"lesseeClassification",
+      "classificationInputs" = CASE WHEN v."setInputs"::boolean
+        THEN v.inputs::jsonb ELSE l."classificationInputs" END,
+      "initialLiability" = CASE WHEN v."setInitial"::boolean
+        THEN v.initial::numeric ELSE l."initialLiability" END,
+      "initialRouAsset" = CASE WHEN v."setInitial"::boolean
+        THEN v.initial::numeric ELSE l."initialRouAsset" END,
+      "rouAssetCost" = CASE WHEN v."setCost"::boolean
+        THEN v.cost::numeric ELSE l."rouAssetCost" END,
+      "paymentAmount" = CASE WHEN v."setPayment"::boolean
+        THEN v.payment::numeric ELSE l."paymentAmount" END,
+      "updatedBy" = ${args.userId},
+      "updatedAt" = ${datetime.timestamp()}
+    FROM (VALUES ${values}) AS v(
+      id, classification, inputs, "setInputs", initial, "setInitial",
+      cost, "setCost", payment, "setPayment"
+    )
+    WHERE l."id" = v.id AND l."companyId" = ${args.companyId}
+  `.execute(trx);
+}
+export type LeaseAccount = { id: string; class: AccountClass };
+
+export type LesseeAccounts = {
+  rightOfUseAsset: LeaseAccount;
+  accumulatedRightOfUseAmortization: LeaseAccount;
+  leaseLiability: LeaseAccount;
+  operatingLeaseExpense: LeaseAccount;
+  rightOfUseAmortizationExpense: LeaseAccount;
+  leaseInterestExpense: LeaseAccount;
+  gain: LeaseAccount;
+  loss: LeaseAccount;
+};
+
+/** A journal line with its amount in the account's natural balance. */
+export type PostingLine = {
+  accountId: string;
+  description: string;
+  amount: number;
+};
+
+type Leg = {
+  side: "debit" | "credit";
+  account: LeaseAccount;
+  description: string;
+  amount: number;
+};
+
+/** Legs → natural-balance-signed journal lines, dropping zero legs and
+ *  refusing an unbalanced set. A negative leg amount flips its side. */
+export function toPostingLines(legs: Leg[], label: string): PostingLine[] {
+  let debits = 0;
+  let credits = 0;
+  const lines: PostingLine[] = [];
+  for (const leg of legs) {
+    const amount = round(leg.amount);
+    if (amount === 0) continue;
+    const side =
+      amount > 0 ? leg.side : leg.side === "debit" ? "credit" : "debit";
+    const value = Math.abs(amount);
+    if (side === "debit") debits += value;
+    else credits += value;
+    lines.push({
+      accountId: leg.account.id,
+      description: leg.description,
+      amount:
+        side === "debit"
+          ? toStoredAmount(value, 0, leg.account.class)
+          : toStoredAmount(0, value, leg.account.class)
+    });
+  }
+  assertBalanced(round(debits), round(credits), EPSILON, label);
+  return lines;
+}
+
+/** The accounts of the roles a leg names. `fixedAsset` and
+ *  `retainedEarnings` are not lease defaults: a purchase passes the asset
+ *  class's account and an opening balance the retained earnings default. */
+type LegAccounts = Partial<Record<LesseeLegAccount, LeaseAccount>>;
+
+/** The shared legs posted to the company's accounts. A role with no account
+ *  is a programming error, never a user's. */
+function postLegs(
+  legs: LesseeLeg[],
+  accounts: LesseeAccounts,
+  extra: LegAccounts,
+  label: string
+): PostingLine[] {
+  const resolved: LegAccounts = { ...accounts, ...extra };
+  return toPostingLines(
+    normalizeLesseeLegs(legs).map((leg) => {
+      const account = resolved[leg.account];
+      if (!account) {
+        throw new Error(`${label}: no account for ${leg.account}`);
+      }
+      return { ...leg, account };
+    }),
+    label
+  );
+}
+
+/** Commencement: Dr ROU asset / Cr Lease liability, both at the PV. */
+export function commencementLines(args: {
+  liability: number;
+  accounts: LesseeAccounts;
+}): PostingLine[] {
+  return postLegs(
+    lesseeCommencementLegs({ liability: args.liability }),
+    args.accounts,
+    {},
+    "Lease commencement journal"
+  );
+}
+
+/** Opening balance of a lease that commenced before the accounting cutover
+ *  (spec Q8): the balances its schedule reaches on the as-of date, with the
+ *  difference — the lease cost of the months before it, already in the
+ *  opening equity — to retained earnings.
+ *
+ *   Dr ROU asset                       cost
+ *       Cr Accumulated ROU amortization        amortization before the date
+ *       Cr Lease liability                     carrying liability on the date
+ *       Cr / Dr Retained earnings              the difference
+ */
+export function openingBalanceLines(args: {
+  rouAssetCost: number;
+  accumulated: number;
+  carryingLiability: number;
+  retainedEarnings: LeaseAccount;
+  accounts: LesseeAccounts;
+}): PostingLine[] {
+  return postLegs(
+    lesseeOpeningBalanceLegs(args),
+    args.accounts,
+    { retainedEarnings: args.retainedEarnings },
+    "Lease opening balance journal"
+  );
+}
+
+/** Remeasurement (Modify): the ROU asset moves by the liability change; a
+ *  decrease larger than the ROU asset leaves it at zero and the rest is a
+ *  gain. `adjustment` = new liability − carrying liability. */
+export function remeasurementLines(args: {
+  adjustment: number;
+  gain: number;
+  accounts: LesseeAccounts;
+}): PostingLine[] {
+  return postLegs(
+    lesseeRemeasurementLegs(args),
+    args.accounts,
+    {},
+    "Lease remeasurement journal"
+  );
+}
+
+/** Early termination (ASC 842-20-40-1): the liability and the ROU asset
+ *  leave the books, and the difference is a gain or loss. A penalty stays in
+ *  the liability as a payment row the next invoice settles.
+ *
+ *   Dr Lease liability                 carrying − penalty
+ *   Dr Accumulated ROU amortization    accumulated
+ *       Cr ROU asset                           cost
+ *       Cr / Dr gain or loss                   the difference
+ */
+export function terminationLines(args: {
+  carryingLiability: number;
+  penalty: number;
+  rouAssetCost: number;
+  accumulated: number;
+  accounts: LesseeAccounts;
+}): { lines: PostingLine[]; gainLoss: number } {
+  const { legs, gainLoss } = lesseeTerminationLegs(args);
+  return {
+    lines: postLegs(legs, args.accounts, {}, "Lease termination journal"),
+    gainLoss
+  };
+}
+
+/** Purchase option exercise (ASC 842-20-40-2): not a termination. The ROU
+ *  asset moves into PP&E at its net book value, adjusted by the price less
+ *  the carrying liability; the price stays in the liability as a payment row
+ *  the next invoice settles. A price that leaves the asset a negative cost
+ *  is refused as a 400.
+ *
+ *   Dr Fixed asset class asset account  net ROU + price − carrying liability
+ *   Dr Accumulated ROU amortization     accumulated
+ *   Dr Lease liability                  carrying liability
+ *       Cr ROU asset                            cost
+ *       Cr Lease liability                      price
+ */
+export function purchaseLines(args: {
+  carryingLiability: number;
+  price: number;
+  rouAssetCost: number;
+  accumulated: number;
+  assetAccount: LeaseAccount;
+  accounts: LesseeAccounts;
+}): { lines: PostingLine[]; assetCost: number } {
+  const { legs, assetCost } = lesseePurchaseLegs(args);
+  if (assetCost < 0) {
+    throw new InvalidInputError(
+      "The purchased asset would have a negative cost; check the purchase price"
+    );
+  }
+  return {
+    lines: postLegs(
+      legs,
+      args.accounts,
+      { fixedAsset: args.assetAccount },
+      "Lease purchase journal"
+    ),
+    assetCost
+  };
+}
+
+/** The accounts of one month's two schedule rows (spec §3): an operating
+ *  lease books both to the lease cost; a finance lease books interest and
+ *  amortization separately. */
+export function scheduleRowAccounts(
+  classification: "Operating" | "Finance",
+  accounts: LesseeAccounts
+): {
+  interest: { debitAccountId: string; creditAccountId: string };
+  amortization: { debitAccountId: string; creditAccountId: string };
+} {
+  return {
+    interest: {
+      debitAccountId:
+        classification === "Operating"
+          ? accounts.operatingLeaseExpense.id
+          : accounts.leaseInterestExpense.id,
+      creditAccountId: accounts.leaseLiability.id
+    },
+    amortization: {
+      debitAccountId:
+        classification === "Operating"
+          ? accounts.operatingLeaseExpense.id
+          : accounts.rightOfUseAmortizationExpense.id,
+      creditAccountId: accounts.accumulatedRightOfUseAmortization.id
+    }
+  };
+}
+type Classification = "Operating" | "Finance" | "Short-Term";
+
+/** The lease month that starts on `startDate`, or null when `startDate` is
+ *  not a lease-month boundary (the commencement day of a month). */
+export function leaseMonthStarting(
+  commencementDate: string,
+  startDate: string
+): number | null {
+  if (startDate < commencementDate) return null;
+  const month = leaseMonthsAt(commencementDate, startDate);
+  return addMonths(commencementDate, month) === startDate ? month : null;
+}
+
+/** The payment period `startDate` falls inside (after its first day), or
+ *  null. A change takes effect where a payment period starts: the period
+ *  before it is paid in full and the one after it is cut from the new terms. */
+export function straddledPeriod(
+  rows: { paymentType: string; periodStart: string; periodEnd: string }[],
+  startDate: string
+): { periodStart: string; periodEnd: string } | null {
+  return (
+    rows.find(
+      (row) =>
+        row.paymentType === "Rent" &&
+        row.periodStart < startDate &&
+        row.periodEnd >= startDate
+    ) ?? null
+  );
+}
+
+/**
+ * The checks every lifecycle action shares, and each asset's carrying
+ * amounts at `startDate` (the first day after the change takes effect).
+ * Refuses a date that is not a lease-month boundary or falls inside a
+ * payment period, a month before it whose run rows are not Posted, a month
+ * on or after it that is already Posted, a later row a run holds, and an
+ * Invoiced payment due on or after `startDate`.
+ */
+async function prepare(
+  trx: Trx,
+  args: {
+    companyId: string;
+    lease: LeaseRow;
+    lines: LeaseLineRow[];
+    startDate: string;
+    label: string;
+  }
+): Promise<Map<string, LesseeCarrying>> {
+  const { companyId, lease, lines, startDate, label } = args;
+  if (lease.status !== "Active") {
+    throw new InvalidInputError(
+      `The lease is ${lease.status}; only an Active lease can be ${label}`
+    );
+  }
+  const ended = lines.find((line) => line.status !== "Active");
+  if (ended) {
+    throw new InvalidInputError(
+      `${ended.description} is ${ended.status}; only an active asset can be ${label}`
+    );
+  }
+  if (leaseMonthStarting(lease.commencementDate, startDate) === null) {
+    throw new InvalidInputError(
+      `The date must fall on a lease-month boundary: the month starts on day ${lease.commencementDate.slice(8)} of a month`
+    );
+  }
+  if (lease.endDate && startDate > addDays(lease.endDate, 1)) {
+    throw new InvalidInputError("The date is after the end of the lease");
+  }
+
+  const lineIds = lines.map((line) => line.id);
+  const payments = (await readPayments(trx, companyId, lease.id)).filter(
+    (payment) => lineIds.includes(payment.leaseLineId)
+  );
+  const straddled = straddledPeriod(payments, startDate);
+  if (straddled) {
+    throw new InvalidInputError(
+      `The date falls inside the payment period ${straddled.periodStart} to ${straddled.periodEnd}; choose a date where a payment period starts or ends`
+    );
+  }
+  const invoiced = payments.find(
+    (payment) => payment.status === "Invoiced" && payment.dueDate >= startDate
+  );
+  if (invoiced) {
+    throw new InvalidInputError(
+      `The payment due ${invoiced.dueDate} is already invoiced; choose a later date or delete the invoice`
+    );
+  }
+  // A Skipped row was paid outside Carbon. One on or after the date would
+  // outlive the change: it is neither cut again nor ever invoiced. Checked
+  // after the posted months, whose message names the date to choose.
+  const refuseSkipped = () => {
+    const skipped = payments.find(
+      (payment) => payment.status === "Skipped" && payment.dueDate >= startDate
+    );
+    if (skipped) {
+      throw new InvalidInputError(
+        `The payment due ${skipped.dueDate} is Skipped (paid outside Carbon); choose a date after it`
+      );
+    }
+  };
+
+  const carrying = new Map<string, LesseeCarrying>(
+    lines.map((line) => [
+      line.id,
+      { liability: 0, accumulated: 0, rouAsset: 0 }
+    ])
+  );
+  const recognized = lines.filter(
+    (line) => line.lesseeClassification !== "Short-Term"
+  );
+  if (recognized.length === 0) {
+    refuseSkipped();
+    return carrying;
+  }
+  const recognizedIds = recognized.map((line) => line.id);
+
+  const unposted = await trx
+    .selectFrom("revenueRecognitionSchedule as s")
+    .innerJoin("leaseScheduleLine as l", (join) =>
+      join
+        .onRef("l.id", "=", "s.leaseScheduleLineId")
+        .onRef("l.companyId", "=", "s.companyId")
+    )
+    .select(sql<string>`s."scheduledDate"::text`.as("scheduledDate"))
+    .where("s.companyId", "=", companyId)
+    .where("l.leaseLineId", "in", recognizedIds)
+    .where("s.status", "=", "Planned")
+    .where("s.scheduledDate", "<", startDate)
+    .orderBy("s.scheduledDate")
+    .executeTakeFirst();
+  if (unposted) {
+    throw new InvalidInputError(
+      `Post the lease run for ${unposted.scheduledDate} first: the months before the change must be on the books`
+    );
+  }
+  // A month already posted — by a lease run or in an opening balance — is in
+  // the GL. Rewriting it from an earlier date would post it twice, or leave
+  // its amortization out of the carrying amounts below.
+  const postedLater = await trx
+    .selectFrom("revenueRecognitionSchedule as s")
+    .innerJoin("leaseScheduleLine as l", (join) =>
+      join
+        .onRef("l.id", "=", "s.leaseScheduleLineId")
+        .onRef("l.companyId", "=", "s.companyId")
+    )
+    .select(sql<string>`s."scheduledDate"::text`.as("scheduledDate"))
+    .where("s.companyId", "=", companyId)
+    .where("l.leaseLineId", "in", recognizedIds)
+    .where("s.status", "=", "Posted")
+    .where("s.scheduledDate", ">=", startDate)
+    .orderBy("s.scheduledDate", "desc")
+    .executeTakeFirst();
+  if (postedLater) {
+    throw new InvalidInputError(
+      `The month ending ${postedLater.scheduledDate} is already posted; choose a date after it`
+    );
+  }
+  const run = await heldByRun(trx, {
+    companyId,
+    leaseId: lease.id,
+    fromDate: startDate,
+    leaseLineIds: recognizedIds
+  });
+  if (run) {
+    throw new InvalidInputError(
+      `${run} holds this lease's entries from ${startDate}; delete or recalculate it first`
+    );
+  }
+  refuseSkipped();
+
+  const before = await trx
+    .selectFrom("leaseScheduleLine")
+    .select([
+      "leaseLineId",
+      "closingLiability",
+      "rouAmortization",
+      sql<string>`"periodDate"::text`.as("periodDate")
+    ])
+    .where("leaseLineId", "in", recognizedIds)
+    .where("companyId", "=", companyId)
+    .where("periodDate", "<", startDate)
+    .orderBy("periodDate")
+    .execute();
+  for (const line of recognized) {
+    carrying.set(
+      line.id,
+      lesseeCarryingAt({
+        schedule: before.filter((row) => row.leaseLineId === line.id),
+        startDate,
+        initialLiability: line.initialLiability,
+        rouAssetCost: line.rouAssetCost
+      })
+    );
+  }
+  return carrying;
+}
+
+/**
+ * Deletes the Pending payment rows a change ends, for each asset: rows due
+ * after `lastDay`, and its Purchase Option row. Returns, per asset, what the
+ * deleted rows due on or before `lastDay` add back to the carrying
+ * liability: the schedule already counted them as paid, and now they never
+ * will be.
+ */
+async function deleteEndedPayments(
+  trx: Trx,
+  args: { companyId: string; leaseLineIds: string[]; lastDay: string }
+): Promise<Map<string, number>> {
+  const addBack = new Map(args.leaseLineIds.map((id) => [id, 0]));
+  if (args.leaseLineIds.length === 0) return addBack;
+  const deleted = await trx
+    .deleteFrom("leasePayment")
+    .where("leaseLineId", "in", args.leaseLineIds)
+    .where("companyId", "=", args.companyId)
+    .where("status", "=", "Pending")
+    .where((eb) =>
+      eb.or([
+        eb("dueDate", ">", args.lastDay),
+        eb("paymentType", "=", "Purchase Option")
+      ])
+    )
+    .returning([
+      "leaseLineId",
+      "amount",
+      sql<string>`"dueDate"::text`.as("dueDate")
+    ])
+    .execute();
+  for (const row of deleted) {
+    if (row.dueDate > args.lastDay) continue;
+    addBack.set(
+      row.leaseLineId,
+      round((addBack.get(row.leaseLineId) ?? 0) + Number(row.amount))
+    );
+  }
+  return addBack;
+}
+
+type EventRow = {
+  leaseLineId: string;
+  eventType: "Modification" | "Termination" | "Purchase";
+  effectiveDate: string;
+  liabilityBefore: number;
+  liabilityAfter: number;
+  rouAssetBefore: number;
+  rouAssetAfter: number;
+  gainLoss: number;
+  classificationBefore: Classification;
+  classificationAfter: Classification;
+  fixedAssetId?: string | null;
+  journalId: string | null;
+  notes?: string | null;
+};
+
+async function insertEvents(
+  trx: Trx,
+  args: { companyId: string; userId: string; leaseId: string; rows: EventRow[] }
+) {
+  if (args.rows.length === 0) return;
+  await trx
+    .insertInto("leaseEvent")
+    .values(
+      args.rows.map((row) => ({
+        ...row,
+        leaseId: args.leaseId,
+        fixedAssetId: row.fixedAssetId ?? null,
+        notes: row.notes ?? null,
+        companyId: args.companyId,
+        createdBy: args.userId
+      }))
+    )
+    .execute();
+}
+
+/** Ends one asset and, when it was the last active one, the lease: the lease
+ *  takes the last asset's status and end date (spec Addendum A8). */
+async function endAsset(
+  trx: Trx,
+  args: {
+    companyId: string;
+    userId: string;
+    lease: LeaseRow;
+    lines: LeaseLineRow[];
+    leaseLineId: string;
+    status: "Terminated" | "Purchased";
+    endDate: string;
+    fixedAssetId?: string;
+  }
+): Promise<void> {
+  const { companyId, userId } = args;
+  const now = datetime.timestamp();
+  await trx
+    .updateTable("leaseLine")
+    .set({
+      status: args.status,
+      ...(args.fixedAssetId ? { fixedAssetId: args.fixedAssetId } : {}),
+      updatedBy: userId,
+      updatedAt: now
+    })
+    .where("id", "=", args.leaseLineId)
+    .where("companyId", "=", companyId)
+    .execute();
+  const stillActive = args.lines.some(
+    (line) => line.id !== args.leaseLineId && line.status === "Active"
+  );
+  if (stillActive) return;
+  await trx
+    .updateTable("lease")
+    .set({
+      status: args.status,
+      endDate: args.endDate,
+      closedAt: now,
+      updatedBy: userId,
+      updatedAt: now
+    })
+    .where("id", "=", args.lease.id)
+    .where("companyId", "=", companyId)
+    .execute();
+}
+
+async function companyAccounting(trx: Trx, companyId: string) {
+  const company = await trx
+    .selectFrom("company")
+    .select("companyGroupId")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  return loadLesseeAccounting(trx, {
+    companyId,
+    companyGroupId: company.companyGroupId
+  });
+}
+
+export async function modify(
+  scope: Scope,
+  payload: Extract<LeasePayload, { type: "modify" }>
+): Promise<{ id: string }> {
+  const { db, companyId, userId } = scope;
+  return db.transaction().execute(async (trx) => {
+    const lease = await lockLease(trx, companyId, payload.leaseId);
+    const lines = (await readLines(trx, companyId, lease.id)).filter(
+      (line) => line.status === "Active"
+    );
+    if (lines.length === 0) {
+      throw new InvalidInputError("The lease has no active asset to modify");
+    }
+    if (!lease.endDate) {
+      throw new InvalidInputError(
+        "An open-ended lease has no term to modify; terminate it and enter the new terms as a new lease"
+      );
+    }
+    for (const entry of payload.lines) findLine(lines, entry.leaseLineId);
+    const startDate = payload.effectiveDate;
+    const carrying = await prepare(trx, {
+      companyId,
+      lease,
+      lines,
+      startDate,
+      label: "modified"
+    });
+    if (
+      lines.some((line) => line.lesseeClassification === "Short-Term") &&
+      !isTermWithinTwelveMonths(lease.commencementDate, payload.endDate)
+    ) {
+      throw new InvalidInputError(
+        "A short-term lease cannot run past 12 months; end it and enter the extension as a new lease"
+      );
+    }
+    // `prepare` accepted the date as a lease-month boundary.
+    const fromMonth = leaseMonthsAt(lease.commencementDate, startDate);
+
+    // The remaining payments, cut again from the new terms. A Pending
+    // purchase option the schedule paid before the date is never paid now:
+    // it goes back into the carrying liability.
+    const addBack = await deleteEndedPayments(trx, {
+      companyId,
+      leaseLineIds: lines.map((line) => line.id),
+      lastDay: addDays(startDate, -1)
+    });
+    const decimals = await currencyDecimals(trx, companyId, lease.currencyCode);
+    // The payment entered is the one at the effective date; an asset the
+    // payload does not name keeps the rate it pays then.
+    const paymentAtStart = (line: LeaseLineRow) =>
+      payload.lines.find((entry) => entry.leaseLineId === line.id)
+        ?.paymentAmount ??
+      escalatedLeasePayment(
+        line.paymentAmount,
+        lease.annualEscalationPercent,
+        fromMonth
+      );
+    const cut = new Map(
+      lines.map((line) => [
+        line.id,
+        cutLeasePaymentRows({
+          lease: {
+            commencementDate: lease.commencementDate,
+            endDate: payload.endDate,
+            invoiceFromDate: lease.invoiceFromDate,
+            paymentFrequency: payload.paymentFrequency,
+            paymentTiming: lease.paymentTiming,
+            annualEscalationPercent: payload.annualEscalationPercent
+          },
+          asset: line,
+          decimals,
+          from: { month: fromMonth, paymentAtStart: paymentAtStart(line) }
+        })
+      ])
+    );
+    const rowsOf = (line: LeaseLineRow) => cut.get(line.id)?.rows ?? [];
+    const newRows = lines.flatMap((line) =>
+      rowsOf(line).map((row) => ({
+        ...row,
+        leaseId: lease.id,
+        companyId,
+        createdBy: userId
+      }))
+    );
+    if (newRows.length > 0) {
+      await trx.insertInto("leasePayment").values(newRows).execute();
+    }
+
+    const now = datetime.timestamp();
+    await trx
+      .updateTable("lease")
+      .set({
+        endDate: payload.endDate,
+        discountRate: payload.discountRate,
+        paymentFrequency: payload.paymentFrequency,
+        annualEscalationPercent: payload.annualEscalationPercent,
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("id", "=", lease.id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    // Remeasure each recognized asset over what is left of the lease, and
+    // reassess its classification (a Short-Term asset stays Short-Term).
+    const { shortTermExpedient: _, ...thresholds } = await readThresholds(
+      trx,
+      companyId
+    );
+    const modified = { ...lease, discountRate: payload.discountRate };
+    const span = lesseeScheduleSpan(
+      lease.commencementDate,
+      payload.endDate,
+      fromMonth
+    );
+    const remeasured = lines
+      .filter((line) => classificationOf(line) !== "Short-Term")
+      .map((line) => {
+        const rows = rowsOf(line);
+        const points = paymentPoints(
+          rows,
+          lease.commencementDate,
+          lease.paymentTiming,
+          fromMonth
+        );
+        const carried = carrying.get(line.id)!;
+        const before = {
+          ...carried,
+          liability: round(carried.liability + (addBack.get(line.id) ?? 0))
+        };
+        const result = remeasureLease({
+          carryingLiability: before.liability,
+          carryingRouAsset: before.rouAsset,
+          remainingPayments: points,
+          annualRate: payload.discountRate
+        });
+        const measured = measureAsset({
+          line,
+          payments: rows,
+          fromMonth,
+          endDate: payload.endDate,
+          lease: modified,
+          thresholds,
+          shortTermExpedient: false
+        });
+        const after: "Operating" | "Finance" =
+          line.classificationOverride === "Operating" ||
+          line.classificationOverride === "Finance"
+            ? line.classificationOverride
+            : measured.classification === "Finance"
+              ? "Finance"
+              : "Operating";
+        return { line, points, before, result, after, measured };
+      });
+
+    let journalId: string | null = null;
+    if (remeasured.length > 0) {
+      const accounting = await companyAccounting(trx, companyId);
+      journalId = await postLesseeJournal(trx, {
+        accounting,
+        companyId,
+        userId,
+        postingDate: startDate,
+        description: `Lease Modification ${lease.leaseId}`,
+        assets: remeasured.map(
+          (asset): AssetLines => ({
+            leaseLineId: asset.line.id,
+            locationId: asset.line.locationId ?? lease.locationId,
+            lines:
+              asset.result.adjustment === 0 && asset.result.gain === 0
+                ? []
+                : remeasurementLines({
+                    adjustment: asset.result.adjustment,
+                    gain: asset.result.gain,
+                    accounts: accounting.accounts
+                  })
+          })
+        ),
+        lease
+      });
+
+      await deleteSchedulesFrom(trx, {
+        companyId,
+        leaseLineIds: remeasured.map((asset) => asset.line.id),
+        startDate
+      });
+      await writeSchedules(trx, {
+        leaseId: lease.id,
+        schedules: remeasured.map(
+          (asset): AssetSchedule => ({
+            // The months after the change are still the commencement's.
+            leaseLineId: asset.line.id,
+            commencementDate: lease.commencementDate,
+            fromMonth,
+            classification: asset.after,
+            lines: buildLesseeSchedule({
+              openingLiability: asset.result.liability,
+              openingRouAsset: asset.result.rouAsset,
+              payments: asset.points,
+              months: span.months,
+              annualRate: payload.discountRate,
+              timing: lease.paymentTiming,
+              classification: asset.after,
+              amortizationMonths: amortizationMonths(
+                asset.line,
+                span.months,
+                fromMonth
+              ),
+              periodDates: span.periodDates,
+              lastMonthShare: span.lastMonthShare
+            })
+          })
+        ),
+        accounts: accounting.accounts,
+        companyId,
+        userId
+      });
+    }
+
+    await updateLineMeasurements(trx, {
+      companyId,
+      userId,
+      rows: lines.map((line) => {
+        const asset = remeasured.find((row) => row.line.id === line.id);
+        return {
+          id: line.id,
+          paymentAmount: cut.get(line.id)!.commencementPayment,
+          lesseeClassification: asset?.after ?? "Short-Term",
+          ...(asset
+            ? {
+                classificationInputs: asset.measured.classificationInputs,
+                rouAssetCost: round(
+                  Number(line.rouAssetCost ?? 0) +
+                    asset.result.rouAsset -
+                    asset.before.rouAsset
+                )
+              }
+            : {})
+        };
+      })
+    });
+    await insertEvents(trx, {
+      companyId,
+      userId,
+      leaseId: lease.id,
+      rows: lines.map((line) => {
+        const asset = remeasured.find((row) => row.line.id === line.id);
+        const before = classificationOf(line);
+        return {
+          leaseLineId: line.id,
+          eventType: "Modification",
+          effectiveDate: startDate,
+          liabilityBefore: asset?.before.liability ?? 0,
+          liabilityAfter: asset?.result.liability ?? 0,
+          rouAssetBefore: asset?.before.rouAsset ?? 0,
+          rouAssetAfter: asset?.result.rouAsset ?? 0,
+          gainLoss: asset?.result.gain ?? 0,
+          classificationBefore: before,
+          classificationAfter: asset?.after ?? before,
+          journalId: asset ? journalId : null,
+          notes: payload.notes
+        };
+      })
+    });
+    return { id: lease.id };
+  });
+}
+
+export async function terminate(
+  scope: Scope,
+  payload: Extract<LeasePayload, { type: "terminate" }>
+): Promise<{ id: string }> {
+  const { db, companyId, userId } = scope;
+  return db.transaction().execute(async (trx) => {
+    const lease = await lockLease(trx, companyId, payload.leaseId);
+    const lines = await readLines(trx, companyId, lease.id);
+    const line = findLine(lines, payload.leaseLineId);
+    const endOfLease = payload.terminationDate;
+    if (endOfLease < lease.commencementDate) {
+      throw new InvalidInputError(
+        `The termination date cannot be before the commencement date, ${lease.commencementDate}`
+      );
+    }
+    const startDate = addDays(endOfLease, 1);
+    const carrying = (
+      await prepare(trx, {
+        companyId,
+        lease,
+        lines: [line],
+        startDate,
+        label: "terminated"
+      })
+    ).get(line.id)!;
+    const before = classificationOf(line);
+
+    // Payments after the date are never owed, nor is the purchase option; a
+    // penalty is a final row.
+    const addBack =
+      (
+        await deleteEndedPayments(trx, {
+          companyId,
+          leaseLineIds: [line.id],
+          lastDay: endOfLease
+        })
+      ).get(line.id) ?? 0;
+    if (payload.penaltyAmount > 0) {
+      await trx
+        .insertInto("leasePayment")
+        .values({
+          leaseId: lease.id,
+          leaseLineId: line.id,
+          paymentType: "Termination Penalty",
+          periodStart: endOfLease,
+          periodEnd: endOfLease,
+          dueDate: endOfLease,
+          amount: payload.penaltyAmount,
+          status: "Pending",
+          companyId,
+          createdBy: userId
+        })
+        .execute();
+    }
+
+    let journalId: string | null = null;
+    let gainLoss = 0;
+    const carryingLiability = round(carrying.liability + addBack);
+    if (before !== "Short-Term") {
+      const accounting = await companyAccounting(trx, companyId);
+      const termination = terminationLines({
+        carryingLiability,
+        penalty: payload.penaltyAmount,
+        rouAssetCost: Number(line.rouAssetCost ?? 0),
+        accumulated: carrying.accumulated,
+        accounts: accounting.accounts
+      });
+      gainLoss = termination.gainLoss;
+      journalId = await postLesseeJournal(trx, {
+        accounting,
+        companyId,
+        userId,
+        postingDate: endOfLease,
+        description: `Lease Termination ${lease.leaseId} ${line.description}`,
+        assets: [
+          {
+            leaseLineId: line.id,
+            locationId: line.locationId ?? lease.locationId,
+            lines: termination.lines
+          }
+        ],
+        lease
+      });
+      await deleteSchedulesFrom(trx, {
+        companyId,
+        leaseLineIds: [line.id],
+        startDate
+      });
+    }
+
+    await endAsset(trx, {
+      companyId,
+      userId,
+      lease,
+      lines,
+      leaseLineId: line.id,
+      status: "Terminated",
+      endDate: endOfLease
+    });
+    await insertEvents(trx, {
+      companyId,
+      userId,
+      leaseId: lease.id,
+      rows: [
+        {
+          leaseLineId: line.id,
+          eventType: "Termination",
+          effectiveDate: endOfLease,
+          liabilityBefore: carryingLiability,
+          liabilityAfter: payload.penaltyAmount,
+          rouAssetBefore: carrying.rouAsset,
+          rouAssetAfter: 0,
+          gainLoss,
+          classificationBefore: before,
+          classificationAfter: before,
+          journalId,
+          notes: payload.notes
+        }
+      ]
+    });
+    return { id: lease.id };
+  });
+}
+
+export async function purchase(
+  scope: Scope,
+  payload: Extract<LeasePayload, { type: "purchase" }>
+): Promise<{ id: string }> {
+  const { db, companyId, userId } = scope;
+  return db.transaction().execute(async (trx) => {
+    const lease = await lockLease(trx, companyId, payload.leaseId);
+    const lines = await readLines(trx, companyId, lease.id);
+    const line = findLine(lines, payload.leaseLineId);
+    if (line.lesseeClassification === "Short-Term") {
+      throw new InvalidInputError(
+        "A short-term asset has no right-of-use asset to purchase; end it and buy the asset on a purchase order"
+      );
+    }
+    if (!lease.endDate) {
+      throw new InvalidInputError(
+        "An open-ended lease is short-term and has no right-of-use asset to purchase; end it and buy the asset on a purchase order"
+      );
+    }
+    const exerciseDate = payload.exerciseDate;
+    if (exerciseDate < lease.commencementDate) {
+      throw new InvalidInputError(
+        `The exercise date cannot be before the commencement date, ${lease.commencementDate}`
+      );
+    }
+    // An asset whose ownership transfers is the lessee's at the end of the
+    // lease with no option to exercise: it is "purchased" then, for nothing.
+    const hasOption = (line.purchaseOptionAmount ?? 0) > 0;
+    if (!hasOption) {
+      if (!line.ownershipTransfers) {
+        throw new InvalidInputError(
+          `${line.description} has no purchase option`
+        );
+      }
+      if (exerciseDate !== lease.endDate) {
+        throw new InvalidInputError(
+          `Ownership of ${line.description} passes at the end of the lease; take it on ${lease.endDate}`
+        );
+      }
+      if (!equals(payload.purchasePrice, 0)) {
+        throw new InvalidInputError(
+          `${line.description} has no purchase option: ownership passes at the end of the lease for nothing, so the price is 0`
+        );
+      }
+    }
+    const startDate = addDays(exerciseDate, 1);
+    const carrying = (
+      await prepare(trx, {
+        companyId,
+        lease,
+        lines: [line],
+        startDate,
+        label: "purchased"
+      })
+    ).get(line.id)!;
+
+    const assetClass = await trx
+      .selectFrom("fixedAssetClass")
+      .select([
+        "id",
+        "assetAccountId",
+        "depreciationMethod",
+        "usefulLifeMonths",
+        "residualValuePercent",
+        "isConstructionInProgress"
+      ])
+      .where("id", "=", payload.fixedAssetClassId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!assetClass || assetClass.isConstructionInProgress) {
+      throw new InvalidInputError("Choose an in-service fixed asset class");
+    }
+    // `account` is group-scoped; the id came from this company's class.
+    const assetAccount = await trx
+      .selectFrom("account")
+      .select(["id", "class"])
+      .where("id", "=", assetClass.assetAccountId)
+      .executeTakeFirst();
+    if (!assetAccount?.class) {
+      throw new InvalidInputError(
+        "The fixed asset class's asset account has no class"
+      );
+    }
+    const assetAccountWithClass = {
+      id: assetAccount.id,
+      class: assetAccount.class
+    };
+
+    // An option row already invoiced on or before the exercise date is the
+    // price: its invoice settles the liability, so nothing more is payable.
+    const invoicedOption = await trx
+      .selectFrom("leasePayment")
+      .select(["amount"])
+      .where("leaseLineId", "=", line.id)
+      .where("companyId", "=", companyId)
+      .where("paymentType", "=", "Purchase Option")
+      .where("status", "=", "Invoiced")
+      .where("dueDate", "<=", exerciseDate)
+      .executeTakeFirst();
+    if (
+      invoicedOption &&
+      round(Number(invoicedOption.amount)) !== round(payload.purchasePrice)
+    ) {
+      throw new InvalidInputError(
+        `The purchase option is already invoiced at ${Number(invoicedOption.amount)}; exercise it at that price or delete the invoice`
+      );
+    }
+
+    // Otherwise the option is paid once, on the exercise date; nothing after
+    // it. A Pending option row the schedule already counted as paid goes back
+    // into the carrying liability before the price replaces it.
+    const addBack =
+      (
+        await deleteEndedPayments(trx, {
+          companyId,
+          leaseLineIds: [line.id],
+          lastDay: exerciseDate
+        })
+      ).get(line.id) ?? 0;
+    if (!invoicedOption && payload.purchasePrice > 0) {
+      await trx
+        .insertInto("leasePayment")
+        .values({
+          leaseId: lease.id,
+          leaseLineId: line.id,
+          paymentType: "Purchase Option",
+          periodStart: exerciseDate,
+          periodEnd: exerciseDate,
+          dueDate: exerciseDate,
+          amount: payload.purchasePrice,
+          status: "Pending",
+          companyId,
+          createdBy: userId
+        })
+        .execute();
+    }
+
+    const carryingLiability = round(carrying.liability + addBack);
+    const accounting = await companyAccounting(trx, companyId);
+    const purchased = purchaseLines({
+      carryingLiability,
+      price: invoicedOption ? 0 : payload.purchasePrice,
+      rouAssetCost: Number(line.rouAssetCost ?? 0),
+      accumulated: carrying.accumulated,
+      assetAccount: assetAccountWithClass,
+      accounts: accounting.accounts
+    });
+    const journalId = await postLesseeJournal(trx, {
+      accounting,
+      companyId,
+      userId,
+      postingDate: exerciseDate,
+      description: `Lease Purchase ${lease.leaseId} ${line.description}`,
+      assets: [
+        {
+          leaseLineId: line.id,
+          locationId: line.locationId ?? lease.locationId,
+          lines: purchased.lines
+        }
+      ],
+      lease
+    });
+
+    const asset = await trx
+      .insertInto("fixedAsset")
+      .values({
+        fixedAssetId: await getNextSequence(trx, "fixedAsset", companyId),
+        fixedAssetClassId: assetClass.id,
+        name: payload.name,
+        serialNumber: line.serialNumber,
+        locationId: line.locationId ?? lease.locationId,
+        quantity: 1,
+        acquisitionCost: purchased.assetCost,
+        acquisitionDate: exerciseDate,
+        depreciationStartDate: exerciseDate,
+        depreciationMethod: assetClass.depreciationMethod,
+        usefulLifeMonths: assetClass.usefulLifeMonths,
+        residualValuePercent: assetClass.residualValuePercent,
+        status: "Active",
+        companyId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    await deleteSchedulesFrom(trx, {
+      companyId,
+      leaseLineIds: [line.id],
+      startDate
+    });
+    await endAsset(trx, {
+      companyId,
+      userId,
+      lease,
+      lines,
+      leaseLineId: line.id,
+      status: "Purchased",
+      endDate: exerciseDate,
+      fixedAssetId: asset.id
+    });
+    const classification = classificationOf(line);
+    await insertEvents(trx, {
+      companyId,
+      userId,
+      leaseId: lease.id,
+      rows: [
+        {
+          leaseLineId: line.id,
+          eventType: "Purchase",
+          effectiveDate: exerciseDate,
+          liabilityBefore: carryingLiability,
+          liabilityAfter: invoicedOption ? 0 : payload.purchasePrice,
+          rouAssetBefore: carrying.rouAsset,
+          rouAssetAfter: 0,
+          gainLoss: 0,
+          classificationBefore: classification,
+          classificationAfter: classification,
+          fixedAssetId: asset.id,
+          journalId,
+          notes: payload.notes
+        }
+      ]
+    });
+    return { id: lease.id };
+  });
+}
+/**
+ * Payload contract and pure blockers for `post-lease` (a lessee lease, spec
+ * `.ai/specs/2026-10-11-lessee-leases.md`). No I/O, so the server function's
+ * decisions can be pinned without a database.
+ */
+
+// Calendar dates travel as `YYYY-MM-DD` text end to end: a JavaScript Date
+// would shift the day by the runtime timezone.
+const calendarDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Expected a YYYY-MM-DD date");
+
+// companyId and userId come from the server function's context, not the input.
+const scope = { leaseId: z.string().min(1) };
+
+// Terminate and Purchase act on one leased asset (one lease component).
+const asset = { leaseLineId: z.string().min(1) };
+
+/** Draft → Active: classify, measure, post the commencement journal and
+ *  write the monthly schedule. */
+export const activateValidator = z.object({
+  type: z.literal("activate"),
+  ...scope
+});
+
+/** Draft (delete), or Active with nothing invoiced or posted (void the
+ *  commencement journal) → Cancelled. */
+export const cancelValidator = z.object({
+  type: z.literal("cancel"),
+  ...scope
+});
+
+/** Remeasure every active asset from an effective date: the remaining
+ *  payments are cut again from these terms. An active asset the payload does
+ *  not name keeps its payment amount. */
+export const modifyValidator = z
+  .object({
+    type: z.literal("modify"),
+    ...scope,
+    effectiveDate: calendarDate,
+    endDate: calendarDate,
+    discountRate: z.number().min(0),
+    paymentFrequency: z.enum(["Monthly", "Quarterly", "Annual"]),
+    annualEscalationPercent: z.number().min(0).default(0),
+    lines: z
+      .array(
+        z.object({
+          leaseLineId: z.string().min(1),
+          paymentAmount: z.number().min(0)
+        })
+      )
+      .default([]),
+    notes: z.string().optional().nullable()
+  })
+  .refine((value) => value.endDate >= value.effectiveDate, {
+    message: "The end date cannot be before the effective date",
+    path: ["endDate"]
+  });
+
+/** End one asset early: derecognize its ROU asset and its liability. */
+export const terminateValidator = z.object({
+  type: z.literal("terminate"),
+  ...scope,
+  ...asset,
+  terminationDate: calendarDate,
+  penaltyAmount: z.number().min(0).default(0),
+  notes: z.string().optional().nullable()
+});
+
+/** Exercise one asset's purchase option: its ROU asset becomes a fixed
+ *  asset. */
+export const purchaseValidator = z.object({
+  type: z.literal("purchase"),
+  ...scope,
+  ...asset,
+  exerciseDate: calendarDate,
+  purchasePrice: z.number().min(0),
+  fixedAssetClassId: z.string().min(1),
+  name: z.string().trim().min(1),
+  notes: z.string().optional().nullable()
+});
+
+export const payloadValidator = z.discriminatedUnion("type", [
+  activateValidator,
+  cancelValidator,
+  modifyValidator,
+  terminateValidator,
+  purchaseValidator
+]);
+
+export type LeasePayload = z.infer<typeof payloadValidator>;
+
+/** Why an open-ended lease cannot activate without the short-term expedient,
+ *  and the two ways to fix it. An open-ended lease can be ended on notice, so
+ *  its term is short (ASC 842-10-30-1) and carrying it on the balance sheet
+ *  one notice period at a time is not supported. */
+export const OPEN_ENDED_NEEDS_EXPEDIENT =
+  "An open-ended lease is a short-term lease, and this company has the short-term lease expedient turned off. Turn on Short-Term Lease Expedient in Settings → Accounting, or give the lease a fixed duration on its Details step.";
+
+/** Why a Draft lease cannot activate, or null. */
+export function activateBlocker(args: {
+  status: string;
+  assetCount: number;
+  /** The descriptions of the assets that have no payment row. */
+  assetsWithoutPayments: string[];
+  currencyCode: string;
+  baseCurrencyCode: string | null;
+}): string | null {
+  if (args.status !== "Draft") {
+    return `The lease is ${args.status}; only a Draft lease can be activated`;
+  }
+  if (args.assetCount === 0) {
+    return "A lease needs at least one asset to activate";
+  }
+  if (args.assetsWithoutPayments.length > 0) {
+    return `Every asset needs a payment row to activate: ${args.assetsWithoutPayments.join(", ")}`;
+  }
+  if (args.baseCurrencyCode && args.currencyCode !== args.baseCurrencyCode) {
+    return "Leases in a foreign currency are not supported yet";
+  }
+  return null;
+}
+// The lifecycle of a lessee lease (spec `.ai/specs/2026-10-11-lessee-leases.md`).
+// A lease holds one or more assets (`leaseLine`); each asset is a separate
+// lease component (ASC 842-10-15-28) with its own classification,
+// measurement, payment rows and schedule. Each action is ONE transaction that
+// locks the lease row first:
+//
+//   activate   Draft → Active: classify each asset (ASC 842-10-25-2 or the
+//              short-term election), measure its liability at the PV of its
+//              payment rows, post ONE commencement journal with lines per
+//              asset and write each asset's monthly schedule with its lease
+//              run rows. A Short-Term asset posts nothing: its invoices go to
+//              lease expense. A lease that started before the accounting
+//              cutover posts an opening balance instead (spec Q8).
+//   cancel     Active with nothing invoiced, posted by a run, modified or
+//              ended → Cancelled, the commencement journal voided. A Draft
+//              is deleted instead (the app's delete route).
+//   modify     remeasure every active asset from an effective date
+//              (lifecycle.ts).
+//   terminate  end one asset early, derecognize it, gain or loss
+//              (lifecycle.ts).
+//   purchase   exercise one asset's purchase option into a fixed asset
+//              (lifecycle.ts).
+//
+// Business-validation failures are 400s (InvalidInputError) with the message
+// the app shows; a record the caller's company does not own is a 404.
+
+/** The carrying liability and the accumulated ROU amortization a schedule
+ *  reaches before `asOf`: the last line's closing liability (the initial
+ *  liability when no line falls before it) and every earlier line's
+ *  amortization. */
+export function balancesBefore(
+  lines: LesseeScheduleLine[],
+  asOf: string,
+  initialLiability: number
+): { carryingLiability: number; accumulated: number } {
+  const before = lines.filter((line) => line.periodDate < asOf);
+  return {
+    carryingLiability: before.at(-1)?.closingLiability ?? initialLiability,
+    accumulated: round(
+      before.reduce((sum, line) => sum + line.rouAmortization, 0)
+    )
+  };
+}
+
+/** Why a Skipped payment of a capitalized asset cannot activate, or null.
+ *  Skipped means paid outside Carbon (before Invoice From): its invoice will
+ *  never relieve the lease liability, so it must be one the opening balance
+ *  holds. A payment due before the commencement is not in the schedule's
+ *  months and is left alone. */
+export function skippedPaymentBlocker(
+  payment: Pick<
+    LeasePaymentRow,
+    "periodStart" | "periodEnd" | "dueDate" | "paymentType" | "status"
+  >,
+  args: {
+    description: string;
+    lease: Pick<LeaseRow, "commencementDate" | "paymentTiming">;
+    periodDates: string[];
+    /** The opening balance's as-of date; null when there is none. */
+    openingAsOf: string | null;
+  }
+): string | null {
+  if (payment.status !== "Skipped") return null;
+  if (payment.dueDate < args.lease.commencementDate) return null;
+  if (
+    args.openingAsOf &&
+    isPaidBeforeOpening(payment, {
+      commencementDate: args.lease.commencementDate,
+      timing: args.lease.paymentTiming,
+      periodDates: args.periodDates,
+      asOf: args.openingAsOf
+    })
+  ) {
+    return null;
+  }
+  const settledBy = args.openingAsOf
+    ? `the opening balance on ${args.openingAsOf} still owes it`
+    : "only its invoice settles the lease liability";
+  return `${args.description}: the payment due ${payment.dueDate} is Skipped (paid outside Carbon), but ${settledBy}. Set Invoice From on or before ${payment.dueDate} so it is invoiced.`;
+}
+
+/** The retained earnings account default, with its class: an opening
+ *  balance's difference goes there. */
+async function retainedEarningsAccount(
+  trx: Trx,
+  companyId: string
+): Promise<LeaseAccount> {
+  const row = await trx
+    .selectFrom("accountDefault")
+    .innerJoin(
+      "account",
+      "account.id",
+      "accountDefault.retainedEarningsAccount"
+    )
+    .select(["account.id", "account.class"])
+    .where("accountDefault.companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!row?.class) {
+    throw new InvalidInputError(
+      "Set the retained earnings account in Accounting → Default Accounts before activating a lease that started before accounting was set up"
+    );
+  }
+  return { id: row.id, class: row.class };
+}
+
+async function activate(
+  scope: Scope,
+  payload: Extract<LeasePayload, { type: "activate" }>
+): Promise<{ id: string }> {
+  const { db, companyId, userId } = scope;
+  return db.transaction().execute(async (trx) => {
+    const lease = await lockLease(trx, companyId, payload.leaseId);
+    const lines = await readLines(trx, companyId, lease.id);
+    const payments = await readPayments(trx, companyId, lease.id);
+    const paymentsOf = (line: LeaseLineRow) =>
+      payments.filter((payment) => payment.leaseLineId === line.id);
+
+    const company = await trx
+      .selectFrom("company")
+      .select(["baseCurrencyCode", "companyGroupId"])
+      .where("id", "=", companyId)
+      .executeTakeFirstOrThrow();
+    const blocker = activateBlocker({
+      status: lease.status,
+      assetCount: lines.length,
+      assetsWithoutPayments: lines
+        .filter((line) => paymentsOf(line).length === 0)
+        .map((line) => line.description),
+      currencyCode: lease.currencyCode,
+      baseCurrencyCode: company.baseCurrencyCode
+    });
+    if (blocker) throw new InvalidInputError(blocker);
+
+    const { shortTermExpedient, ...thresholds } = await readThresholds(
+      trx,
+      companyId
+    );
+    // An open-ended lease can be ended on notice, so every asset is
+    // short-term (spec Addendum A10); it needs the expedient.
+    const endDate = lease.endDate;
+    if (!endDate && !shortTermExpedient) {
+      throw new InvalidInputError(OPEN_ENDED_NEEDS_EXPEDIENT);
+    }
+    const measured: MeasuredAsset[] = lines.map((line) =>
+      endDate
+        ? measureAsset({
+            line,
+            payments: paymentsOf(line),
+            endDate,
+            lease,
+            thresholds,
+            shortTermExpedient
+          })
+        : {
+            line,
+            liability: 0,
+            classification: "Short-Term",
+            classificationInputs: { openEnded: true }
+          }
+    );
+    const recognized = measured.filter(
+      (
+        asset
+      ): asset is MeasuredAsset & {
+        classification: "Operating" | "Finance";
+      } => asset.classification !== "Short-Term"
+    );
+    const now = datetime.timestamp();
+
+    let commencementJournalId: string | null = null;
+    if (endDate && recognized.length > 0) {
+      const span = lesseeScheduleSpan(lease.commencementDate, endDate);
+
+      // A lease that started before the accounting cutover opens with the
+      // balances its schedules reach on the as-of date (spec Q8) — the
+      // cutover, or the first open period after it — and the months before
+      // that are already in the opening equity: written Posted with no
+      // journal. The payments those months pay are in that balance too, so
+      // they are not invoiced.
+      const cutoverDate = await readAccountingCutoverDate(trx, companyId);
+      const openingAsOf =
+        cutoverDate && lease.commencementDate < cutoverDate
+          ? (
+              await resolveAccountingPeriod(
+                trx,
+                companyId,
+                cutoverDate,
+                "historical-with-shift"
+              )
+            ).postingDate
+          : null;
+      for (const asset of recognized) {
+        for (const payment of paymentsOf(asset.line)) {
+          const skipped = skippedPaymentBlocker(payment, {
+            description: asset.line.description,
+            lease,
+            periodDates: span.periodDates,
+            openingAsOf
+          });
+          if (skipped) throw new InvalidInputError(skipped);
+        }
+      }
+
+      const accounting = await loadLesseeAccounting(trx, {
+        companyId,
+        companyGroupId: company.companyGroupId
+      });
+      const schedules: AssetSchedule[] = recognized.map((asset) => ({
+        leaseLineId: asset.line.id,
+        commencementDate: lease.commencementDate,
+        fromMonth: 0,
+        classification: asset.classification,
+        lines: buildLesseeSchedule({
+          openingLiability: asset.liability,
+          openingRouAsset: asset.liability,
+          payments: paymentPoints(
+            paymentsOf(asset.line),
+            lease.commencementDate,
+            lease.paymentTiming
+          ),
+          months: span.months,
+          annualRate: lease.discountRate,
+          timing: lease.paymentTiming,
+          classification: asset.classification,
+          amortizationMonths: amortizationMonths(asset.line, span.months),
+          periodDates: span.periodDates,
+          lastMonthShare: span.lastMonthShare
+        })
+      }));
+
+      const retainedEarnings = openingAsOf
+        ? await retainedEarningsAccount(trx, companyId)
+        : null;
+      const assets: AssetLines[] = recognized.map((asset, index) => ({
+        leaseLineId: asset.line.id,
+        locationId: asset.line.locationId ?? lease.locationId,
+        lines:
+          openingAsOf && retainedEarnings
+            ? openingBalanceLines({
+                ...balancesBefore(
+                  schedules[index]!.lines,
+                  openingAsOf,
+                  asset.liability
+                ),
+                rouAssetCost: asset.liability,
+                retainedEarnings,
+                accounts: accounting.accounts
+              })
+            : commencementLines({
+                liability: asset.liability,
+                accounts: accounting.accounts
+              })
+      }));
+      commencementJournalId = await postLesseeJournal(trx, {
+        accounting,
+        companyId,
+        userId,
+        postingDate: openingAsOf ?? lease.commencementDate,
+        description: `${openingAsOf ? "Lease Opening Balance" : "Lease Commencement"} ${lease.leaseId}`,
+        assets,
+        lease
+      });
+
+      await writeSchedules(trx, {
+        leaseId: lease.id,
+        schedules,
+        accounts: accounting.accounts,
+        companyId,
+        userId,
+        postedBefore: openingAsOf ?? undefined
+      });
+
+      const inOpening = openingAsOf
+        ? recognized.flatMap((asset) =>
+            paymentsOf(asset.line)
+              .filter(
+                (payment) =>
+                  payment.status === "Pending" &&
+                  isPaidBeforeOpening(payment, {
+                    commencementDate: lease.commencementDate,
+                    timing: lease.paymentTiming,
+                    periodDates: span.periodDates,
+                    asOf: openingAsOf
+                  })
+              )
+              .map((payment) => payment.id)
+          )
+        : [];
+      if (inOpening.length > 0) {
+        await trx
+          .updateTable("leasePayment")
+          .set({ status: "Skipped", updatedBy: userId, updatedAt: now })
+          .where("id", "in", inOpening)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+    }
+
+    await updateLineMeasurements(trx, {
+      companyId,
+      userId,
+      rows: measured.map((asset) => {
+        const isRecognized = asset.classification !== "Short-Term";
+        return {
+          id: asset.line.id,
+          lesseeClassification: asset.classification,
+          classificationInputs: asset.classificationInputs,
+          initialLiability: isRecognized ? asset.liability : null,
+          rouAssetCost: isRecognized ? asset.liability : null
+        };
+      })
+    });
+    await trx
+      .updateTable("lease")
+      .set({
+        status: "Active",
+        commencementJournalId,
+        activatedAt: now,
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("id", "=", lease.id)
+      .where("companyId", "=", companyId)
+      .execute();
+    return { id: lease.id };
+  });
+}
+
+async function cancel(
+  scope: Scope,
+  payload: Extract<LeasePayload, { type: "cancel" }>
+): Promise<{ id: string }> {
+  const { db, companyId, userId } = scope;
+  const today = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .toString();
+  return db.transaction().execute(async (trx: Trx) => {
+    const lease = await lockLease(trx, companyId, payload.leaseId);
+    if (lease.status === "Draft") {
+      throw new InvalidInputError(
+        "A Draft lease is deleted, not cancelled; delete it instead"
+      );
+    }
+    if (lease.status !== "Active") {
+      throw new InvalidInputError(
+        `The lease is ${lease.status}; only an Active lease with nothing invoiced or posted can be cancelled`
+      );
+    }
+
+    // Cancel undoes the activation and nothing else: once an asset has
+    // ended or the lease has changed, its journals and its fixed asset are
+    // history that a void would leave half undone.
+    const ended = (await readLines(trx, companyId, lease.id)).find(
+      (line) => line.status !== "Active"
+    );
+    if (ended) {
+      throw new InvalidInputError(
+        `${ended.description} is ${ended.status}; a lease with an ended asset cannot be cancelled. Terminate its other assets instead.`
+      );
+    }
+    const event = await trx
+      .selectFrom("leaseEvent")
+      .select("eventType")
+      .where("leaseId", "=", lease.id)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (event) {
+      throw new InvalidInputError(
+        `The lease has a ${event.eventType} since it commenced; terminate it instead`
+      );
+    }
+    const invoiced = await trx
+      .selectFrom("leasePayment")
+      .select("id")
+      .where("leaseId", "=", lease.id)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Invoiced")
+      .executeTakeFirst();
+    if (invoiced) {
+      throw new InvalidInputError(
+        "A payment of this lease is already invoiced; terminate the lease instead"
+      );
+    }
+    const run = await heldByRun(trx, { companyId, leaseId: lease.id });
+    if (run) {
+      throw new InvalidInputError(
+        `${run} holds this lease's entries; delete or recalculate it first`
+      );
+    }
+    // Rows an opening balance wrote Posted carry no run line; voiding the
+    // opening journal takes them back out with the rest.
+    const posted = await trx
+      .selectFrom("revenueRecognitionSchedule")
+      .select("id")
+      .where("leaseId", "=", lease.id)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Posted")
+      .where("runLineId", "is not", null)
+      .executeTakeFirst();
+    if (posted) {
+      throw new InvalidInputError(
+        "A lease run has posted entries of this lease; terminate the lease instead"
+      );
+    }
+
+    // The only journal an unchanged lease has: its commencement (or opening
+    // balance). A Short-Term lease has none.
+    if (lease.commencementJournalId) {
+      const journal = await trx
+        .selectFrom("journal")
+        .select(sql<string>`"postingDate"::text`.as("postingDate"))
+        .where("id", "=", lease.commencementJournalId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirstOrThrow();
+      const cutoverDate = await readAccountingCutoverDate(trx, companyId);
+      if (isBeforeCutover(journal.postingDate, cutoverDate)) {
+        throw new InvalidInputError(
+          "This lease commenced before accounting was set up; its balances came from the opening journal. Terminate it instead."
+        );
+      }
+      await voidLeaseJournal(trx, {
+        journalId: lease.commencementJournalId,
+        postingStatus: await journalPostingStatus(trx, companyId),
+        companyId,
+        userId,
+        today
+      });
+    }
+
+    // The Planned run rows cascade with their schedule lines.
+    await trx
+      .deleteFrom("leaseScheduleLine")
+      .where("leaseId", "=", lease.id)
+      .where("companyId", "=", companyId)
+      .execute();
+    const now = datetime.timestamp();
+    await trx
+      .updateTable("lease")
+      .set({
+        status: "Cancelled",
+        closedAt: now,
+        updatedBy: userId,
+        updatedAt: now
+      })
+      .where("id", "=", lease.id)
+      .where("companyId", "=", companyId)
+      .execute();
+    return { id: lease.id };
+  });
+}
+
+export const postLeaseInput = payloadValidator;
+
+export type PostLeaseInput = LeasePayload;
+
+export const postLeaseActionPermission = {
+  update: "purchasing"
+} satisfies PermissionRule<z.output<typeof postLeaseInput>>;
+
+export async function postLeaseAction(
+  ctx: ServiceContext,
+  raw: z.input<typeof postLeaseInput>
+) {
+  const payload = postLeaseInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const scope = { db, companyId, userId };
+  switch (payload.type) {
+    case "activate":
+      return activate(scope, payload);
+    case "cancel":
+      return cancel(scope, payload);
+    case "modify":
+      return modify(scope, payload);
+    case "terminate":
+      return terminate(scope, payload);
+    case "purchase":
+      return purchase(scope, payload);
+  }
+}
+export type LeaseInvoiceGenerationArgs = {
+  companyId: string;
+  /** `YYYY-MM-DD` in the company's timezone: rows due on or before it are
+   *  billed. */
+  asOf: string;
+  /** Bill one lease only (the lease page's action). */
+  leaseId?: string;
+  userId: string;
+};
+
+/** One invoice the generator drafted. */
+export type DraftedLeaseInvoice = {
+  invoiceId: string;
+  leaseId: string;
+};
+
+export type LeaseInvoiceGenerationFailure = {
+  leaseId: string;
+  error: string;
+};
+
+export type LeaseInvoiceGenerationResult = {
+  invoices: DraftedLeaseInvoice[];
+  /** `invoices.map(i => i.invoiceId)`. */
+  invoiceIds: string[];
+  /** Leases whose transaction rolled back; their rows stay Pending. */
+  failures: LeaseInvoiceGenerationFailure[];
+};
+
+/**
+ * Drafts the purchase invoices of every lease with a Pending payment row due
+ * on or before `asOf`: one Draft invoice per lease and due date, one Lease
+ * line per row (a lease with several assets has a row per asset). Each
+ * lease is its own transaction, so one lease's failure never rolls back another's invoice. The billed rows are stamped Invoiced
+ * with their invoice line, which is what makes a second call for the same
+ * day a no-op; deleting the Draft invoice or voiding a posted one returns
+ * them to Pending.
+ */
+async function createLeaseInvoicesForDuePayments(
+  db: Kysely<KyselyDatabase>,
+  args: LeaseInvoiceGenerationArgs
+): Promise<LeaseInvoiceGenerationResult> {
+  const { companyId, asOf, leaseId } = args;
+
+  let dueQuery = db
+    .selectFrom("lease")
+    .select("lease.id")
+    .where("lease.companyId", "=", companyId)
+    // An ended lease can still owe a termination penalty, a purchase
+    // price, or a row a voided invoice returned to Pending.
+    .where("lease.status", "in", BILLABLE_LEASE_STATUSES)
+    .where((eb) =>
+      eb.or([
+        eb.exists(
+          eb
+            .selectFrom("leasePayment as p")
+            .select("p.id")
+            .whereRef("p.leaseId", "=", "lease.id")
+            .whereRef("p.companyId", "=", "lease.companyId")
+            .where("p.status", "=", "Pending")
+            .where("p.dueDate", "<=", asOf)
+        ),
+        // An Active open-ended lease's next rows are cut by this run.
+        eb.and([
+          eb("lease.status", "=", "Active"),
+          eb("lease.endDate", "is", null)
+        ])
+      ])
+    )
+    .orderBy("lease.leaseId");
+  if (leaseId) dueQuery = dueQuery.where("lease.id", "=", leaseId);
+  const leases = await dueQuery.execute();
+
+  const invoices: DraftedLeaseInvoice[] = [];
+  const failures: LeaseInvoiceGenerationFailure[] = [];
+  for (const lease of leases) {
+    try {
+      const drafted = await db
+        .transaction()
+        .execute((trx) => draftLeaseInvoices(trx, args, lease.id));
+      invoices.push(...drafted);
+    } catch (error) {
+      failures.push({
+        leaseId: lease.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+  return {
+    invoices,
+    invoiceIds: invoices.map((i) => i.invoiceId),
+    failures
+  };
+}
+
+async function draftLeaseInvoices(
+  trx: KyselyTx,
+  args: LeaseInvoiceGenerationArgs,
+  leaseId: string
+): Promise<DraftedLeaseInvoice[]> {
+  const { companyId, asOf, userId } = args;
+
+  const lease = await trx
+    .selectFrom("lease")
+    .select([
+      "id",
+      "status",
+      "endDate",
+      "supplierId",
+      "supplierContactId",
+      "supplierLocationId",
+      "locationId",
+      "currencyCode"
+    ])
+    .where("id", "=", leaseId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirstOrThrow();
+  if (!isBillableLeaseStatus(lease.status)) return [];
+  if (lease.status === "Active" && lease.endDate === null) {
+    await rollOpenEndedLeasePayments(trx, { companyId, userId, leaseId, asOf });
+  }
+
+  const rows = await trx
+    .selectFrom("leasePayment as p")
+    .innerJoin("leaseLine as l", (join) =>
+      join
+        .onRef("l.id", "=", "p.leaseLineId")
+        .onRef("l.companyId", "=", "p.companyId")
+    )
+    .select([
+      "p.id",
+      "p.paymentType",
+      "p.amount",
+      sql<string>`p."periodStart"::text`.as("periodStart"),
+      sql<string>`p."periodEnd"::text`.as("periodEnd"),
+      sql<string>`p."dueDate"::text`.as("dueDate"),
+      "l.description",
+      "l.locationId"
+    ])
+    .where("p.leaseId", "=", leaseId)
+    .where("p.companyId", "=", companyId)
+    .where("p.status", "=", "Pending")
+    .where("p.dueDate", "<=", asOf)
+    .orderBy("p.dueDate")
+    .orderBy("l.sortOrder")
+    .orderBy("p.paymentType")
+    .forUpdate("p")
+    .execute();
+  if (rows.length === 0) return [];
+
+  const payment = await trx
+    .selectFrom("supplierPayment")
+    .select([
+      "invoiceSupplierId",
+      "invoiceSupplierContactId",
+      "invoiceSupplierLocationId",
+      "paymentTermId"
+    ])
+    .where("supplierId", "=", lease.supplierId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+
+  const byDueDate = new Map<string, typeof rows>();
+  for (const row of rows) {
+    const group = byDueDate.get(row.dueDate) ?? [];
+    group.push(row);
+    byDueDate.set(row.dueDate, group);
+  }
+
+  const drafted: DraftedLeaseInvoice[] = [];
+  for (const [dueDate, group] of byDueDate) {
+    const subtotal = round(
+      group.reduce((sum, row) => sum + Number(row.amount), 0)
+    );
+    const invoiceId = await getNextSequence(trx, "purchaseInvoice", companyId);
+    // Every purchase invoice hangs off a supplier interaction, as the ERP's
+    // `insertPurchaseInvoice` creates one.
+    const interaction = await trx
+      .insertInto("supplierInteraction")
+      .values({ companyId, supplierId: lease.supplierId })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    const invoice = await trx
+      .insertInto("purchaseInvoice")
+      .values({
+        invoiceId,
+        status: "Draft",
+        supplierId: lease.supplierId,
+        invoiceSupplierId: payment?.invoiceSupplierId ?? lease.supplierId,
+        invoiceSupplierContactId:
+          payment?.invoiceSupplierContactId ?? lease.supplierContactId,
+        invoiceSupplierLocationId:
+          payment?.invoiceSupplierLocationId ?? lease.supplierLocationId,
+        supplierInteractionId: interaction.id,
+        locationId: lease.locationId,
+        paymentTermId: payment?.paymentTermId ?? null,
+        // v1 leases are base currency only.
+        currencyCode: lease.currencyCode,
+        exchangeRate: 1,
+        dateIssued: dueDate,
+        subtotal,
+        totalDiscount: 0,
+        totalAmount: subtotal,
+        totalTax: 0,
+        companyId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    await trx
+      .insertInto("purchaseInvoiceDelivery")
+      .values({
+        id: invoice.id,
+        locationId: lease.locationId,
+        supplierShippingCost: 0,
+        companyId,
+        updatedBy: userId
+      })
+      .execute();
+
+    await trx
+      .insertInto("purchaseInvoiceLine")
+      .values(
+        group.map((row, index) => ({
+          invoiceId: invoice.id,
+          invoiceLineType: "Lease" as const,
+          leaseId,
+          leasePaymentId: row.id,
+          locationId: row.locationId ?? lease.locationId,
+          description: leasePaymentDescription(row.description, row),
+          quantity: 1,
+          supplierUnitPrice: Number(row.amount),
+          supplierShippingCost: 0,
+          supplierTaxAmount: 0,
+          taxPercent: 0,
+          exchangeRate: 1,
+          sortOrder: index + 1,
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .execute();
+
+    await trx
+      .updateTable("leasePayment")
+      .set((eb) => ({
+        status: "Invoiced",
+        purchaseInvoiceLineId: eb
+          .selectFrom("purchaseInvoiceLine")
+          .select("purchaseInvoiceLine.id")
+          .whereRef(
+            "purchaseInvoiceLine.leasePaymentId",
+            "=",
+            "leasePayment.id"
+          )
+          .where("purchaseInvoiceLine.invoiceId", "=", invoice.id)
+          .where("purchaseInvoiceLine.companyId", "=", companyId),
+        updatedBy: userId,
+        updatedAt: sql`now()`
+      }))
+      .where("companyId", "=", companyId)
+      .where(
+        "id",
+        "in",
+        group.map((row) => row.id)
+      )
+      .execute();
+
+    drafted.push({ invoiceId: invoice.id, leaseId });
+  }
+  return drafted;
+}
+
+/**
+ * Cuts an open-ended lease's payment rows forward to one period past `asOf`
+ * (`openEndedLeaseHorizon`), for each active asset with a payment: only the
+ * periods after its last Rent row, so an edited or deleted row is never cut
+ * again (`cutLeasePaymentRows`, as at setup). The lease row is locked by the
+ * caller.
+ */
+export async function rollOpenEndedLeasePayments(
+  trx: KyselyTx,
+  args: { companyId: string; userId: string; leaseId: string; asOf: string }
+): Promise<number> {
+  const { companyId, userId, leaseId, asOf } = args;
+  const lease = await trx
+    .selectFrom("lease")
+    .select([
+      sql<string>`"commencementDate"::text`.as("commencementDate"),
+      sql<string>`"invoiceFromDate"::text`.as("invoiceFromDate"),
+      "paymentFrequency",
+      "paymentTiming",
+      "annualEscalationPercent",
+      "currencyCode"
+    ])
+    .where("id", "=", leaseId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const lines = await trx
+    .selectFrom("leaseLine as l")
+    .leftJoin("leasePayment as p", (join) =>
+      join
+        .onRef("p.leaseLineId", "=", "l.id")
+        .onRef("p.companyId", "=", "l.companyId")
+        .on("p.paymentType", "=", "Rent")
+    )
+    .select([
+      "l.id",
+      "l.paymentAmount",
+      "l.purchaseOptionAmount",
+      "l.purchaseOptionReasonablyCertain",
+      sql<string | null>`max(p."periodStart")::text`.as("lastPeriodStart")
+    ])
+    .where("l.leaseId", "=", leaseId)
+    .where("l.companyId", "=", companyId)
+    .where("l.status", "=", "Active")
+    .where("l.paymentAmount", ">", 0)
+    .groupBy([
+      "l.id",
+      "l.paymentAmount",
+      "l.purchaseOptionAmount",
+      "l.purchaseOptionReasonablyCertain"
+    ])
+    .execute();
+  if (lines.length === 0) return 0;
+
+  const decimals = await currencyDecimals(trx, companyId, lease.currencyCode);
+  const through = openEndedLeaseHorizon(
+    lease.commencementDate,
+    asOf,
+    lease.paymentFrequency
+  );
+  const rows = lines.flatMap(
+    (line) =>
+      cutLeasePaymentRows({
+        lease: { ...lease, endDate: null },
+        asset: line,
+        decimals,
+        through,
+        after: line.lastPeriodStart
+      }).rows
+  );
+  if (rows.length > 0) {
+    await trx
+      .insertInto("leasePayment")
+      .values(
+        rows.map((row) => ({ ...row, leaseId, companyId, createdBy: userId }))
+      )
+      .execute();
+  }
+  return rows.length;
+}
+
+/** "Forklift FL-12 — 2027-01-01 to 2027-01-31", or for a one-off payment
+ *  "Forklift FL-12 — Purchase Option": the leased asset and what is paid. */
+export function leasePaymentDescription(
+  assetDescription: string,
+  row: {
+    paymentType: Database["public"]["Enums"]["leasePaymentType"];
+    periodStart: string;
+    periodEnd: string;
+  }
+): string {
+  if (row.paymentType !== "Rent") {
+    return `${assetDescription} — ${row.paymentType}`;
+  }
+  return `${assetDescription} — ${row.periodStart} to ${row.periodEnd}`;
+}
+
+export const createLeaseInvoicesInput = z.object({
+  /** `YYYY-MM-DD` in the company's timezone. */
+  asOf: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  /** Bill one lease only. */
+  leaseId: z.string().optional()
+});
+
+export const createLeaseInvoicesPermission = {
+  update: "purchasing",
+  create: "invoicing"
+} satisfies PermissionRule<z.output<typeof createLeaseInvoicesInput>>;
+
+/** Drafts the lease invoices due on or before `asOf` (see
+ *  `createLeaseInvoicesForDuePayments`). A lease that fails is reported in
+ *  `failures`, never thrown, so the others still draft. */
+export async function createLeaseInvoices(
+  ctx: ServiceContext,
+  raw: z.input<typeof createLeaseInvoicesInput>
+) {
+  const { asOf, leaseId } = createLeaseInvoicesInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  return createLeaseInvoicesForDuePayments(db, {
+    companyId,
+    userId,
+    asOf,
+    leaseId
   });
 }

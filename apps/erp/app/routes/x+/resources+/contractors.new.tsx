@@ -9,11 +9,9 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useUrlParams } from "~/hooks";
-import {
-  ContractorForm,
-  contractorValidator,
-  upsertContractor
-} from "~/modules/resources";
+import { contractorValidator } from "~/modules/resources/resources.models";
+import { upsertContractor } from "~/modules/resources/resources.service";
+import { ContractorForm } from "~/modules/resources/ui";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

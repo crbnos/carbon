@@ -3,6 +3,7 @@ paths:
   - "apps/mes/app/components/JobOperation/**"
   - "apps/mes/app/routes/x+/operation.$operationId.tsx"
   - "apps/mes/app/routes/x+/batch.$batchId.tsx"
+  - "packages/react/src/hooks/useKeyboardWedge.ts"
 ---
 
 # MES Job Operation UI
@@ -20,13 +21,20 @@ else → this operation view. Each route opens with a redirect guard that only
 redirects kinds it does not serve (no loops).
 
 - **Route:** `apps/mes/app/routes/x+/operation.$operationId.tsx` — `/x/operation/:operationId`.
-- **Loader** (uses `getCarbonServiceRole()`, not the user client) fetches via
-  `~/services/operations.service`: `getJobOperationById`, `getJobByOperationId`,
-  `getProductionEventsForJobOperation`, `getProductionQuantitiesForJobOperation`,
-  `getTrackedEntitiesByMakeMethodId`, `getJobMakeMethod`, `getKanbanByJobId`,
-  plus deferred promises for `files`, `materials`, `procedure`, `workCenter`,
-  `nonConformanceActions`. `operation` is wrapped with `makeDurations(...)` →
-  `OperationWithDetails`. Quantities are reduced into `{ scrap, production, rework }`.
+- **Loader** (uses `getCarbonServiceRole()`, not the user client) first runs the
+  company check `getJobOperationForCompany`, which also returns the operation's
+  `jobId`, `jobMakeMethodId` and `jobOperationBatchId`. Every other read starts
+  right after it in ONE `Promise.all`, before the redirect checks:
+  `getJobOperationById`, `getJob`, `getProductionEventsForJobOperation`,
+  `getProductionQuantitiesForJobOperation`, `getTrackedEntitiesByMakeMethodId`,
+  `getJobMakeMethod`, `getKanbanByJobId`, `isFirstOperationOfMakeMethod`, the
+  batch reads when the op is in a batch, and the thumbnail (chained on the
+  operation read). A redirect throws those reads away; the ids are the
+  company's, so nothing leaks. Keep new reads in that wave rather than adding
+  a step after it. Deferred promises: `files`, `materials`, `procedure`,
+  `workCenter`, `nonConformanceActions`. `operation` is wrapped with
+  `makeDurations(...)` → `OperationWithDetails`. Quantities are reduced into
+  `{ scrap, production, rework }`.
 - If serial-tracked and no `?trackedEntityId` is set, the loader **redirects** to the
   same URL with the last tracked entity appended.
 - The default export passes everything to `<JobOperation key={...} .../>`.
@@ -60,13 +68,40 @@ redirects kinds it does not serve (no loops).
 - **`finishJobOperation`** (`operations.service.ts`) flips the op to `Done` (firing
   the `sync_finish_job_operation` trigger that completes the job to inventory when
   it's the last op). It then runs `returnPickedRemainders`: one `post-picking`
-  `returnOperationRemainders` sweep — the server function sweeps the whole job when
+  `returnOperationRemainders` sweep — the posting sweeps the whole job when
   `job.status='Completed'`, else no-ops unless
   `companySettings.returnPickedMaterialTiming = 'operation'`. The sweep
   returns un-consumed lineside remainders (tracked AND untracked) to their
   warehouse source, booking `pickingListLine.quantityReturned`. The SQL trigger
-  can't call server functions, so this is orchestrated in TS. See
+  can't call postings, so this is orchestrated in TS. See
   `.ai/specs/2026-08-04-picked-material-return-timing.md`.
+
+## Ability gate
+
+When the operation's process has `requiresAbility` on and the operator has no
+current `employeeAbility` row, `getAbilityShortfall` (`operations.service.ts`)
+returns what is missing: the process's `abilityPolicy`, the process name, the
+expiry date and an Active training whose `grantsAbilityId` is the ability. It
+fails open on any read error. The operation, assembly and inspection loaders
+pass it to the view as `abilityWarning`, which `AbilityWarning` renders as a
+banner.
+
+- `Warn`: banner only.
+- `Block`: the view disables production work (start, complete, scrap, rework,
+  finish, step records, material issue, inspection verdicts) and skips timer
+  auto-start; pausing a running timer stays enabled. Every write route calls
+  `abilityBlockRefusal` before it writes: `event` (Start only), `start.$operationId`,
+  `end.$operationId` (the kanban complete scan), `batch.$batchId.complete`,
+  `batch.$batchId.record` (one member checked: every member runs the batch's one
+  process), `complete`, `finish`, `scrap`, `rework`, `record`, `record.$id.delete`, `issue`,
+  `issue-tracked-entity` (single operation), `unconsume`, `entity+/…scrap`, and the
+  inspection `sample`, `measurement`, `disposition` and `complete-passed` routes.
+  Not gated: `steps.complete-all` (a manager override), `steps.inspection` (an
+  automatic sync) and a batch pick.
+
+`event.tsx` also redirects a full-page POST (`Sec-Fetch-Mode: navigate`, a press
+before the page hydrates) back to the referrer with the flash, so the operator never
+lands on the bare resource route.
 
 ## Batch mode (operation batching)
 
@@ -136,7 +171,7 @@ so the loader passes `batch: null` and the page is a plain operation view.
 operation (`path.to.operation`). Legacy links keep working: the ERP board's "Open
 in MES" (`path.to.external.mesBatch`) and the MES kanban batch card
 (`path.to.batch`). Completion still POSTs to `batch.$batchId.complete.tsx`
-(unchanged) → `batch-operations` server function.
+(unchanged) → `batch-operations` posting.
 
 In batch mode `JobOperation` derives `isBatched = !!batch`,
 `isCompleting = batch.status === "Completing"`, and:
@@ -209,6 +244,54 @@ In batch mode `JobOperation` derives `isBatched = !!batch`,
   `/file/batch/:id.pdf` route, `BatchListPDF`). The kanban keyboard wedge is
   disabled (`active: !!kanban?.id && !isBatched`) — it completes a single op,
   never a batched member.
+
+## Barcode scans (keyboard wedge)
+
+`useKeyboardWedge` (`@carbon/react`) registers a handler with ONE capture-phase
+`keydown` listener on `window`, shared by every wedge on the page, so a
+component that stops a key (Combobox, Dock) cannot hide a scan from it.
+`ScanReader` splits the keys into bursts at any gap over 80 ms. A stray key is
+therefore dropped rather than kept in front of the next scan, and two
+scanner-speed bursts are joined (a Bluetooth pause). From the fourth
+scanner-speed key on, the keys are kept from the page, so a scan never hits
+Space (Start/Pause) or clicks the focused button with its Enter. A scan with no
+Enter or Tab ends after 700 ms of quiet. Ending sooner acted on the first half
+of a paused URL, which is itself a valid link.
+
+- The MES layout opens MES/ERP links; `JobOperation` and `AssemblyView`
+  complete the kanban (`isKanbanCompleteScan`, `~/utils/kanban`). That check
+  compares the label's PATH, because a label holds the origin it was printed
+  from. It accepts the completed barcode override and the printed label.
+- A kanban Complete scan on a serial part completes the unit ON SCREEN:
+  `kanbanCompleteTarget` (`~/utils/kanban`, tested) sends the URL's
+  `?trackedEntityId` to `end.$operationId` when that unit is still open at the
+  operation. With none, the first operation lets the route take the next unit
+  in order; a later operation opens the serial picker instead, because the
+  route's own pick (first incomplete by `createdAt`) need not be the unit in
+  the operator's hands. The route refuses a named unit already complete there,
+  and at a later operation redirects back onto the completed unit (never a
+  next or spawned one), so the view's held-unit edge (`useOperation`, and
+  `heldEntityRef` in `AssemblyView`) asks for the next scan. A scan through the
+  ERP URL names no unit and still takes the route's pick.
+- A completion is recorded once per unit. The ERP refuses a serial unit
+  already complete on the operation (its `Operation <id>` marker, which also
+  hides the unit here). No production row names its unit, so deleting one
+  does not reopen a unit. The `AssemblyView` auto-complete of an untracked parent
+  sends `expectedQuantityComplete` (the count its page showed); `complete.tsx`
+  records nothing and returns `{ alreadyRecorded: true }` when the operation's
+  `quantityComplete` has moved on, since an untracked unit is addressed by
+  that count. A manual completion sends no count.
+- All three wedges (layout, `JobOperation`, `AssemblyView`) set `inTextFields`: a matching scan is taken even while a field
+  has focus, and the field is set back to its value from before the scan.
+  A scan no handler takes stays in the field.
+- A scan outside a field that no handler takes is kept from the page, and
+  the layout's `onUnrecognized` shows a toast.
+- A callback that returns a promise (`navigate`, `fetcher.load`, or the
+  cross-origin `location.assign` that the default callback waits on) keeps
+  the scan pending. `useScanPending` drives `ScanPendingOverlay` in the
+  layout, and every other scan is ignored until the promise settles (at most
+  20 s). A kanban start label loads the ERP and then the MES, so without
+  this state operators scanned it twice.
 
 ## Components
 

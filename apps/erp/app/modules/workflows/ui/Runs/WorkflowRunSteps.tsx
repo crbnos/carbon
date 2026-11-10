@@ -7,7 +7,8 @@ import { topologicalNodeOrder } from "@carbon/ee/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
-import { MAX_RUN_STEPS, type WorkflowRunStep } from "../../workflows.service";
+import type { WorkflowRunStep } from "../../workflows.service";
+import { MAX_RUN_STEPS } from "../../workflows.utils";
 import { useWorkflowLabel } from "../Builder/catalog";
 import {
   actionInputLabelKey,
@@ -20,6 +21,7 @@ import {
   NODE_KIND_META
 } from "../Builder/nodes/meta";
 import { ConditionDetail } from "./ConditionDetail";
+import { DataDetail } from "./DataDetail";
 import { StepStatus } from "./RunStatus";
 import { ValueMap } from "./RuntimeValueView";
 import { useNodeLabel } from "./useNodeLabel";
@@ -178,8 +180,9 @@ function StepRow({
   return (
     <div className="border-b border-border/50">
       <button
+        aria-expanded={hasDetail ? expanded : undefined}
         type="button"
-        className="w-full flex items-center gap-3 py-3 px-3 hover:bg-muted/50 transition-colors text-left"
+        className="w-full flex items-center gap-3 py-3 px-3 hover:bg-muted/50 transition-colors text-left max-md:flex-wrap max-md:gap-y-1"
         onClick={() => hasDetail && setToggled(!expanded)}
         disabled={!hasDetail}
       >
@@ -218,7 +221,7 @@ function StepRow({
             <p className="text-xs text-muted-foreground">{step.statusReason}</p>
           )}
         </div>
-        <div className="ml-auto flex items-center gap-2 shrink-0">
+        <div className="ml-auto flex items-center gap-2 shrink-0 max-md:ml-0 max-md:basis-full max-md:pl-[52px]">
           <span className="text-xs text-muted-foreground tabular-nums">
             {durationLabel(step.durationMs)}
           </span>
@@ -230,7 +233,7 @@ function StepRow({
         <div className="px-10 pb-3 space-y-3">
           <button
             type="button"
-            className="text-xs text-muted-foreground underline underline-offset-2"
+            className="text-xs text-muted-foreground underline underline-offset-2 max-md:hit-area"
             onClick={() => setRaw((p) => !p)}
           >
             {raw ? t`Show summary` : t`Show raw`}
@@ -276,10 +279,12 @@ function StepRow({
               )}
               {step.detail !== null && (
                 <ExpandedSection label={t`Why`}>
+                  {/* Each answers only for its own detail kind. */}
                   <ConditionDetail
                     detail={step.detail}
                     node={node?.type === "condition" ? node : undefined}
                   />
+                  <DataDetail detail={step.detail} />
                 </ExpandedSection>
               )}
             </>
@@ -385,7 +390,7 @@ export function WorkflowRunSteps({
       {compacted && (
         <div className="px-4 py-2 text-xs text-muted-foreground border-b border-border/50">
           <Trans>
-            Values in this run have been summarised. Full detail is kept for 7
+            Values in this run have been summarized. Full detail is kept for 7
             days.
           </Trans>
         </div>

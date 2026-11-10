@@ -17,11 +17,7 @@ import { publishVariableMenuData, retractVariableMenuData } from "./menuBridge";
 import { leafOfLabel } from "./tokenId";
 import type { FieldContext } from "./types";
 import { useVariableMenuData } from "./useVariableMenuData";
-import {
-  fromEditorParts,
-  toEditorParts,
-  withoutTrailingSpace
-} from "./valueParts";
+import { fromEditorParts, toEditorParts, withoutEdgeSpace } from "./valueParts";
 
 /** Typing this opens the variable menu. The closing brace is drawn by the chip. */
 const TRIGGER = "{";
@@ -115,7 +111,7 @@ export function InlineValueEditor({
         if (isReadOnly) return;
         onFocusChange?.(false);
         const parts = toEditorParts(value, nodeName, undefined, segmentLabels);
-        const trimmed = withoutTrailingSpace(parts);
+        const trimmed = withoutEdgeSpace(parts);
         // Same array back means nothing to trim; writing anyway dirties the workflow
         // on every focus change.
         if (trimmed !== parts) {

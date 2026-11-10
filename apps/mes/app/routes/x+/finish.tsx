@@ -10,9 +10,12 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getDatabaseClient } from "~/services/database.server";
 import { finishValidator } from "~/services/models";
-import { finishJobOperation } from "~/services/operations.service";
+import {
+  abilityBlockRefusal,
+  finishJobOperation
+} from "~/services/operations.service";
+import { readOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -27,15 +30,20 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const finishOperation = await finishJobOperation(
-    serviceRole,
-    getDatabaseClient(),
-    {
-      ...validation.data,
-      userId,
-      companyId
-    }
-  );
+  const refusal = await abilityBlockRefusal(serviceRole, {
+    operationId: validation.data.jobOperationId,
+    employeeId: userId,
+    companyId
+  });
+  if (refusal) {
+    return data({}, await flash(request, error(null, refusal)));
+  }
+
+  const finishOperation = await finishJobOperation(serviceRole, {
+    ...validation.data,
+    userId,
+    companyId
+  });
 
   if (finishOperation.error) {
     return data(
@@ -48,7 +56,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.operations,
+    readOrigin(formData) ?? path.to.operations,
     await flash(request, success("Operation finished successfully"))
   );
 }

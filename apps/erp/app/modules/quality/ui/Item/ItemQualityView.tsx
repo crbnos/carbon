@@ -24,7 +24,7 @@ import { usePermissions } from "~/hooks";
 import {
   inspectionDocumentUsages,
   itemInspectionDocumentAssignmentValidator
-} from "~/modules/quality";
+} from "~/modules/quality/quality.models";
 import type { ItemInspectionDocumentAssignment } from "~/modules/quality/types";
 import InspectionDocumentForm from "~/modules/quality/ui/InspectionDocument/InspectionDocumentForm";
 import { path } from "~/utils/path";
@@ -108,7 +108,10 @@ const ItemQualityView = ({
                       {doc.drawingNumber ?? doc.fileName ?? doc.id}
                     </span>
                   </Hyperlink>
-                  <Badge variant="secondary" className="font-mono text-[10px]">
+                  <Badge
+                    variant="secondary"
+                    className="font-mono text-[0.625rem]"
+                  >
                     v{doc.version}
                   </Badge>
                 </HStack>
@@ -170,12 +173,11 @@ const ItemQualityView = ({
         </CardContent>
       </Card>
 
-      {newDocumentDisclosure.isOpen && (
-        <InspectionDocumentForm
-          initialValues={{ name: "", partId: itemId, drawingNumber: "" }}
-          onClose={newDocumentDisclosure.onClose}
-        />
-      )}
+      <InspectionDocumentForm
+        open={newDocumentDisclosure.isOpen}
+        initialValues={{ name: "", partId: itemId, drawingNumber: "" }}
+        onClose={newDocumentDisclosure.onClose}
+      />
     </VStack>
   );
 };

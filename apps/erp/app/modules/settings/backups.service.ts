@@ -8,7 +8,9 @@ import type {
   CompatibilityFinding,
   Manifest
 } from "@carbon/jobs/backups";
+import { removeBucketPrefix } from "@carbon/jobs/backups";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { RowsByTable } from "./settings.utils";
 
 // Company backup data access. Export is enqueued server-side
 // (exportCompanyBackup in backups.server.ts) and runs in the
@@ -34,19 +36,6 @@ export type ScopeViolationSummary = {
   refTable: string;
   rows: number;
 };
-
-/** DISTINCT rows per table. The ONLY shape a user-facing total may be summed from. */
-export type RowsByTable = { table: string; rows: number };
-
-/**
- * How many ROWS a skip or purge affects. `violations`/`excludedRows` are per FK
- * EDGE — a row escaping scope through three of its foreign keys appears three
- * times there — so totals must come from the per-table distinct counts.
- */
-export function totalScopeRows(rowsByTable: RowsByTable[]): number {
-  return rowsByTable.reduce((sum, t) => sum + t.rows, 0);
-}
-
 /** Supabase storage caps a `list` call; page until a short page comes back. */
 const BACKUP_LIST_PAGE_SIZE = 100;
 const BACKUP_LIST_MAX_PAGES = 50;
@@ -55,29 +44,6 @@ const BACKUP_LIST_MAX_PAGES = 50;
  * Remove every object under a prefix (recursing into folders) so a deleted
  * backup actually releases its bucket space rather than orphaning files.
  */
-async function removeStoragePrefix(
-  client: SupabaseClient<Database>,
-  bucket: string,
-  prefix: string
-) {
-  const { data } = await client.storage
-    .from(bucket)
-    .list(prefix, { limit: 1000 });
-  if (!data) return;
-  const files: string[] = [];
-  for (const entry of data) {
-    const path = `${prefix}/${entry.name}`;
-    if (entry.id === null) {
-      await removeStoragePrefix(client, bucket, path);
-    } else {
-      files.push(path);
-    }
-  }
-  if (files.length > 0) {
-    await client.storage.from(bucket).remove(files);
-  }
-}
-
 export type CompanyBackupSummary = {
   /** Backup folder name (also the restore `source` identifier). */
   name: string;
@@ -91,7 +57,7 @@ export type CompanyBackupSummary = {
   sizeBytes: number;
   /**
    * "Would this backup restore into TODAY's schema?" — computed live against
-   * the current schema by `getCompanyBackups` (backups.server.ts) on every
+   * the current schema by `getCompanyBackups` (settings.service.ts) on every
    * load, never stored. The hard refusal is still `assertBackupImportable`
    * inside the restore job; this is the same diff, disclosed upfront.
    *
@@ -114,7 +80,7 @@ export type CompanyBackupSummary = {
 /**
  * List a company's backup folders (`exports/<name>/`, snapshots excluded),
  * reading each manifest for its metadata. Storage layer only: `compatibility`
- * is a placeholder here — `getCompanyBackups` in backups.server.ts computes
+ * is a placeholder here — `getCompanyBackups` in settings.service.ts computes
  * the real verdict from the returned `manifest` (server-only, since it needs
  * `@carbon/jobs/backups` and a schema read) and strips it before the loader
  * returns.
@@ -206,8 +172,14 @@ export async function deleteCompanyBackup(
   companyId: string,
   name: string
 ) {
-  await removeStoragePrefix(client, companyId, `exports/${name}`);
-  return { error: null as Error | null };
+  try {
+    await removeBucketPrefix(client, companyId, `exports/${name}`, {
+      strict: true
+    });
+    return { error: null as Error | null };
+  } catch (err) {
+    return { error: err instanceof Error ? err : new Error(String(err)) };
+  }
 }
 
 /**

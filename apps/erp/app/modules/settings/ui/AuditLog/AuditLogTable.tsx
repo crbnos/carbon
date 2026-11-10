@@ -23,6 +23,7 @@ import { path } from "~/utils/path";
 type AuditLogTableProps = {
   entries: AuditLogEntry[];
   count: number;
+  nextCursor: string | null;
 };
 
 const operationConfig: Record<
@@ -121,7 +122,8 @@ const ExpandedRowContent = memo(({ entry }: { entry: AuditLogEntry }) => {
 });
 ExpandedRowContent.displayName = "ExpandedRowContent";
 
-const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
+const AuditLogTable = memo((props: AuditLogTableProps) => {
+  const { entries, count, nextCursor } = props;
   const { t } = useLingui();
   const columns = useMemo<ColumnDef<AuditLogEntry>[]>(
     () => [
@@ -154,6 +156,7 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
           );
         },
         meta: {
+          mobile: "P1",
           filter: {
             type: "static",
             options: getEntityTypes().map((entityType) => ({
@@ -182,6 +185,7 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: [
@@ -195,6 +199,7 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
       {
         accessorKey: "actorId",
         header: t`Changed By`,
+        meta: { mobile: "P3" },
         cell: ({ row }) => {
           const entry = row.original;
           return entry.actorId ? (
@@ -227,6 +232,7 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
       {
         accessorKey: "createdAt",
         header: t`When`,
+        meta: { mobile: "P2" },
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">
             <DateTime value={row.original.createdAt} variant="absolute" />
@@ -251,6 +257,7 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
       table="auditLog"
       withSearch
       withPagination
+      infinite={{ dataKey: "entries", nextCursor }}
       renderExpandedRow={renderExpandedRow}
     />
   );

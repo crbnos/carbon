@@ -33,7 +33,8 @@ const git = (cwd: string, ...args: string[]) =>
     }
   });
 
-describe("initWorktree", () => {
+// Real git and docker processes can outlast 5s on a busy CI runner.
+describe("initWorktree", { timeout: 30_000 }, () => {
   const parent = mkdtempSync(join(tmpdir(), "carbon-init-"));
   // basename "carbon" (no `-slug` suffix) → repoBase resolves to "carbon".
   const mainDir = join(parent, "carbon");
@@ -68,7 +69,6 @@ describe("initWorktree", () => {
     });
     expect(expected).toBe("carbon-feat-scope-test");
     expect(readFileSync(join(wtDir, slugFile), "utf8").trim()).toBe(expected);
-    // Must NOT have provisioned the main checkout.
     expect(existsSync(join(mainDir, slugFile))).toBe(false);
   });
 

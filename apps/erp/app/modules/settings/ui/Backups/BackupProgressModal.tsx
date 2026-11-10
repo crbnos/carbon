@@ -320,7 +320,7 @@ export function JobProgressModal({
                       <summary className="cursor-pointer text-center">
                         <Trans>Technical details</Trans>
                       </summary>
-                      <pre className="mt-1 whitespace-pre-wrap break-words font-mono text-[11px]">
+                      <pre className="mt-1 whitespace-pre-wrap break-words font-mono text-[0.6875rem]">
                         {error}
                       </pre>
                     </details>

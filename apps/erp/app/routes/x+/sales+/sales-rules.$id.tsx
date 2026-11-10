@@ -8,14 +8,18 @@ import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { upsertEnforcementRule } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import type { SalesRuleSurface } from "@carbon/utils";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
 import type { z } from "zod";
-import { type salesRuleSeverities, salesRuleValidator } from "~/modules/sales";
+import {
+  type salesRuleSeverities,
+  salesRuleValidator
+} from "~/modules/sales/sales.models";
 import { SalesRuleForm } from "~/modules/sales/ui/SalesRules";
-import { getEnforcementRule } from "~/modules/shared";
+import { getEnforcementRule } from "~/modules/shared/shared.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -69,7 +73,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditSalesRuleRoute() {
   const { rule } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.salesRules);
   return (
     <SalesRuleForm
       // Per-field mapping from the DB row; the three casts below are genuine
@@ -90,7 +94,8 @@ export default function EditSalesRuleRoute() {
           typeof salesRuleValidator
         >["conditionAst"]
       }}
-      onClose={() => navigate(path.to.salesRules)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

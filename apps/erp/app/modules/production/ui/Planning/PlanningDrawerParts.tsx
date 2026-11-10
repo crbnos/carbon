@@ -15,7 +15,7 @@ import type { ReactNode } from "react";
 import { LuCalendarRange } from "react-icons/lu";
 import { useQuantityFormatter } from "~/hooks";
 import { ItemReorderPolicy } from "~/modules/items/ui/Item/ItemReorderPolicy";
-import type { ProductionPlanningItem } from "~/modules/production";
+import type { ProductionPlanningItem } from "~/modules/production/types";
 import { TimeFenceCell } from "~/modules/production/ui/Planning/PlanningFence";
 
 // What the production and purchasing order drawers share. They used to keep
@@ -46,6 +46,7 @@ type PolicyFields = Pick<
   | "demandAccumulationPeriod"
   | "demandAccumulationSafetyStock"
   | "lotSize"
+  | "orderMultiple"
   | "minimumOrderQuantity"
   | "maximumOrderQuantity"
 >;
@@ -142,6 +143,11 @@ export function PlanningPolicySummary({
       {item.lotSize > 0 && (
         <PlanningSummaryRow label={<Trans>Lot Size:</Trans>}>
           <span>{formatQuantity(item.lotSize)}</span>
+        </PlanningSummaryRow>
+      )}
+      {item.orderMultiple > 1 && (
+        <PlanningSummaryRow label={<Trans>Order Multiple:</Trans>}>
+          <span>{formatQuantity(item.orderMultiple)}</span>
         </PlanningSummaryRow>
       )}
       {item.minimumOrderQuantity > 0 && (

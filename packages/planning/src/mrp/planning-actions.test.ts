@@ -2,7 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { DB } from "@carbon/database/client";
+import * as pegging from "@carbon/ee/pegging";
 import { computePlanningOrders } from "@carbon/utils";
+import {
+  type CompiledQuery,
+  type DatabaseConnection,
+  DummyDriver,
+  Kysely,
+  PostgresAdapter,
+  PostgresIntrospector,
+  PostgresQueryCompiler,
+  type QueryResult
+} from "kysely";
 import { describe, expect, it } from "vitest";
 import type {
   ExistingPlanningAction,
@@ -13,13 +25,18 @@ import {
   daysBetween,
   deriveChangeActions,
   deriveReleaseActions,
+  deriveRowActions,
   diffPlanningActions,
   earlierDate,
   earlierRelease,
   firstNeedPeriodByOrder,
   isCommittedJobStatus,
   isCommittedPurchaseOrderStatus,
+  isOrderFrozen,
+  itemLocationSegmentKey,
   keyPeriodFor,
+  loadSegmentOnHand,
+  memberMoveCandidates,
   naturalKey,
   projectionsWithExpedites,
   releaseByDate
@@ -631,6 +648,166 @@ describe("deriveChangeActions", () => {
   });
 });
 
+describe("order-quantity rules on change actions", () => {
+  const jobDecrease = (
+    need: number,
+    quantity: number,
+    orderRules: { minimum: number; multiples: number[] }
+  ) =>
+    deriveChangeActions({
+      ...base,
+      onHand: 0,
+      demandPeriods: [
+        { periodId: "p2", startDate: "2026-10-12", quantity: need }
+      ],
+      openOrders: [
+        {
+          jobId: "job-1",
+          quantity,
+          dueDate: "2026-10-12", // on time → no date action
+          requiresManualAction: false
+        }
+      ],
+      orderRules
+    });
+
+  it("decreases a job to a whole order multiple, not the bare requirement", () => {
+    const actions = jobDecrease(37, 50, { minimum: 0, multiples: [10] });
+    expect(actions).toHaveLength(1);
+    expect(actions[0]).toMatchObject({
+      type: "Decrease",
+      suggestedQuantity: 40
+    });
+  });
+
+  it("raises nothing when the order is already the smallest multiple that covers", () => {
+    expect(jobDecrease(37, 40, { minimum: 0, multiples: [10] })).toEqual([]);
+  });
+
+  it("keeps a Fixed Reorder Quantity order on whole reorder quantities", () => {
+    const actions = jobDecrease(150, 300, { minimum: 0, multiples: [100] });
+    expect(actions[0]).toMatchObject({
+      type: "Decrease",
+      suggestedQuantity: 200
+    });
+  });
+
+  it("never decreases below the minimum order quantity", () => {
+    const actions = jobDecrease(12, 50, { minimum: 25, multiples: [] });
+    expect(actions[0]).toMatchObject({
+      type: "Decrease",
+      suggestedQuantity: 25
+    });
+  });
+});
+
+// An order whose due date less lead time is before today is already being
+// made or shipped. HR-TORSO: an overdue job J000438 (111) got "Increase to
+// 131" beside a Make for the same week, and the planner read the two as
+// ordering twice. Nothing can change such an order in time.
+describe("frozen orders (due date less lead time before today)", () => {
+  // TODAY is 2026-09-11
+  it("is frozen when overdue, or due sooner than a lead time away", () => {
+    expect(isOrderFrozen({ dueDate: "2026-09-04" }, TODAY)).toBe(true);
+    expect(isOrderFrozen({ dueDate: "2026-09-11" }, TODAY)).toBe(false);
+    expect(isOrderFrozen({ dueDate: "2026-09-15" }, TODAY, 7)).toBe(true);
+    expect(isOrderFrozen({ dueDate: "2026-09-18" }, TODAY, 7)).toBe(false);
+  });
+
+  const overdueJob = {
+    jobId: "job-1",
+    quantity: 111,
+    dueDate: "2026-09-04",
+    requiresManualAction: true
+  };
+
+  it("never increases an overdue order — the shortfall stays a new order", () => {
+    const make = {
+      type: "Make" as const,
+      periodId: "p1",
+      suggestedQuantity: 20,
+      suggestedDate: "2026-09-11",
+      horizonDate: "2026-09-11",
+      latestOrderDate: "2026-09-04",
+      isASAP: true,
+      purchaseOrderLineId: null,
+      jobId: null,
+      requiresManualAction: false,
+      supplierId: null,
+      policyName: "Demand-Based Reorder",
+      reason: null,
+      triggerValues: null
+    };
+    const [action] = convertOrdersToIncreases({
+      sizingCandidates: [make],
+      openOrders: [overdueJob],
+      changeActions: [],
+      toleranceDays: TOLERANCE,
+      todayDate: TODAY,
+      leadTimeDays: 7
+    });
+    expect(action).toMatchObject({ type: "Make", suggestedQuantity: 20 });
+  });
+
+  it("never decreases a frozen order", () => {
+    expect(
+      deriveChangeActions({
+        ...base,
+        onHand: 0,
+        demandPeriods: [
+          { periodId: "p1", startDate: "2026-10-05", quantity: 30 }
+        ],
+        openOrders: [overdueJob],
+        leadTimeDays: 7
+      }).filter((action) => action.type === "Decrease")
+    ).toEqual([]);
+  });
+
+  it("never expedites a frozen order, and the projection leaves it where it lands", () => {
+    // needed in p1 (Oct 5), lands in p3 (Oct 19); a 60-day lead time means
+    // it is already in flight
+    const late = {
+      purchaseOrderLineId: "pol-1",
+      quantity: 10,
+      dueDate: "2026-10-19",
+      requiresManualAction: false
+    };
+    const coverage = {
+      onHand: 0,
+      demandPeriods: [
+        { periodId: "p1", startDate: "2026-10-05", quantity: 10 }
+      ],
+      openOrders: [late],
+      periods: PERIODS,
+      policyFloor: 0
+    };
+    expect(
+      deriveChangeActions({
+        ...coverage,
+        toleranceDays: TOLERANCE,
+        todayDate: TODAY,
+        leadTimeDays: 60
+      })
+    ).toEqual([]);
+    expect(
+      firstNeedPeriodByOrder(coverage, {
+        toleranceDays: TOLERANCE,
+        todayDate: TODAY,
+        leadTimeDays: 60
+      }).has("pol-1")
+    ).toBe(false);
+    // with time to change it, it is expedited as before
+    expect(
+      deriveChangeActions({
+        ...coverage,
+        toleranceDays: TOLERANCE,
+        todayDate: TODAY,
+        leadTimeDays: 7
+      })[0]
+    ).toMatchObject({ type: "Expedite" });
+  });
+});
+
 describe("convertOrdersToIncreases", () => {
   const orderCandidate = {
     type: "Order" as const,
@@ -726,6 +903,79 @@ describe("convertOrdersToIncreases", () => {
       todayDate: TODAY
     });
     expect(action?.type).toBe("Order");
+  });
+
+  it("never grows a job past the batch size — the batch stays a new job", () => {
+    const make = {
+      ...orderCandidate,
+      type: "Make" as const,
+      supplierId: null,
+      suggestedQuantity: 50
+    };
+    const [action] = convertOrdersToIncreases({
+      sizingCandidates: [make],
+      openOrders: [
+        {
+          jobId: "job-1",
+          quantity: 50,
+          dueDate: "2026-10-12",
+          requiresManualAction: false
+        }
+      ],
+      changeActions: [],
+      toleranceDays: TOLERANCE,
+      todayDate: TODAY,
+      maximumPerOrder: 50
+    });
+    expect(action).toMatchObject({ type: "Make", suggestedQuantity: 50 });
+  });
+
+  it("still folds a suggestion the open order has room for", () => {
+    const make = {
+      ...orderCandidate,
+      type: "Make" as const,
+      supplierId: null,
+      suggestedQuantity: 20
+    };
+    const [action] = convertOrdersToIncreases({
+      sizingCandidates: [make],
+      openOrders: [
+        {
+          jobId: "job-1",
+          quantity: 30,
+          dueDate: "2026-10-12",
+          requiresManualAction: false
+        }
+      ],
+      changeActions: [],
+      toleranceDays: TOLERANCE,
+      todayDate: TODAY,
+      maximumPerOrder: 50
+    });
+    expect(action).toMatchObject({
+      type: "Increase",
+      jobId: "job-1",
+      suggestedQuantity: 50
+    });
+  });
+
+  it("never grows a PO line past the maximum order quantity", () => {
+    const [action] = convertOrdersToIncreases({
+      sizingCandidates: [orderCandidate],
+      openOrders: [
+        {
+          purchaseOrderLineId: "pol-1",
+          quantity: 10,
+          dueDate: "2026-10-12",
+          requiresManualAction: false
+        }
+      ],
+      changeActions: [],
+      toleranceDays: TOLERANCE,
+      todayDate: TODAY,
+      maximumPerOrder: 12
+    });
+    expect(action).toMatchObject({ type: "Order", suggestedQuantity: 5 });
   });
 
   it("never folds a Make suggestion into a purchase order", () => {
@@ -1028,6 +1278,51 @@ describe("diffPlanningActions", () => {
     expect(expediteA).not.toBe(expediteB);
   });
 
+  // A project with project stock nets in its own segment, so one item and
+  // week can hold a common Order and the project's Order.
+  it("keys an action by its netting segment and its transfer owners", () => {
+    const order = {
+      itemId: "item-1",
+      locationId: "loc-1",
+      type: "Order",
+      periodId: "p1",
+      purchaseOrderLineId: null,
+      jobId: null
+    };
+    expect(naturalKey(order)).toBe(
+      naturalKey({ ...order, planningSegmentId: "" })
+    );
+    expect(naturalKey(order)).not.toBe(
+      naturalKey({ ...order, planningSegmentId: "prj_1" })
+    );
+
+    const transfer = {
+      ...order,
+      type: "Transfer",
+      planningSegmentId: "prj_1",
+      toProjectId: "prj_1"
+    };
+    expect(naturalKey({ ...transfer, fromProjectId: null })).not.toBe(
+      naturalKey({ ...transfer, fromProjectId: "prj_2" })
+    );
+  });
+
+  it("keeps matching an existing common action on the next run", () => {
+    const diff = diffPlanningActions({
+      existing: [
+        {
+          ...existing,
+          planningSegmentId: "",
+          fromProjectId: null,
+          toProjectId: null
+        }
+      ],
+      candidates: [{ ...candidate, planningSegmentId: "" }],
+      toleranceDays: TOLERANCE
+    });
+    expect(diff).toEqual({ inserts: [], updates: [], deleteIds: [] });
+  });
+
   it("passes candidate fields (incl. assignee) through to inserts unchanged", () => {
     const diff = diffPlanningActions({
       existing: [],
@@ -1220,6 +1515,68 @@ describe("projectionsWithExpedites", () => {
   });
 });
 
+// Raising what MRP suggests must not earn a Defer on the next run. A
+// Demand-Based Reorder order split into batches was dated all in the window's
+// first week, while the reschedule check dates each PO line by the first
+// demand it covers — the later batches were deferred as soon as they existed.
+describe("Demand-Based Reorder batches raised as suggested", () => {
+  it("get no Defer from the reschedule check", () => {
+    const periods = [
+      { id: "w1", startDate: "2026-10-11" },
+      { id: "w2", startDate: "2026-10-18" },
+      { id: "w3", startDate: "2026-10-25" },
+      { id: "w4", startDate: "2026-11-01" },
+      { id: "w5", startDate: "2026-11-08" }
+    ];
+    const demand = [25, 25, 25, 25, 0];
+    let balance = 0;
+    const projections = demand.map((quantity) => (balance -= quantity));
+    const suggestions = computePlanningOrders({
+      reorderingPolicy: "Demand-Based Reorder",
+      periods,
+      projections,
+      todayDate: "2026-10-11",
+      params: {
+        reorderPoint: 0,
+        reorderQuantity: 0,
+        minimumOrderQuantity: 0,
+        maximumOrderQuantity: 0,
+        orderMultiple: 0,
+        lotSize: 25,
+        maximumInventoryQuantity: 0,
+        demandAccumulationPeriod: 4,
+        demandAccumulationSafetyStock: 0,
+        leadTime: 0
+      }
+    });
+    expect(suggestions).toHaveLength(4);
+
+    const actions = deriveChangeActions({
+      onHand: 0,
+      demandPeriods: periods
+        .map((p, i) => ({
+          periodId: p.id,
+          startDate: p.startDate,
+          quantity: demand[i]!
+        }))
+        .filter((d) => d.quantity > 0),
+      // the Order button writes each suggestion's due date as the line's
+      // required date, which is its arrival date until a supplier promises one
+      openOrders: suggestions.map((s, i) => ({
+        purchaseOrderLineId: `line-${i + 1}`,
+        quantity: s.quantity,
+        dueDate: s.dueDate,
+        requiresManualAction: false
+      })),
+      periods,
+      policyFloor: 0,
+      toleranceDays: TOLERANCE,
+      todayDate: "2026-10-11"
+    });
+    expect(actions).toEqual([]);
+  });
+});
+
 // The whole new-supply path for one item, as generatePlanningActions runs it:
 // the change actions, then sizing on the adjusted projection, then the fold
 // into an open order.
@@ -1382,7 +1739,7 @@ describe("deriveReleaseActions", () => {
       openOrders: [planned("pol-1", "2026-10-12")],
       changeActions: [],
       periods,
-      todayDate: today
+      todayDate: "2026-10-11"
     });
     expect(release).toMatchObject({
       type: "Release",
@@ -1409,6 +1766,22 @@ describe("deriveReleaseActions", () => {
     ).toEqual([
       ["today", true, "w0"],
       ["late", true, "w0"]
+    ]);
+  });
+
+  it("waits until the day before the release day", () => {
+    const actions = deriveReleaseActions({
+      openOrders: [
+        planned("tomorrow", "2026-10-07"),
+        planned("in-two-days", "2026-10-08"),
+        planned("next-week", "2026-10-12")
+      ],
+      changeActions: [],
+      periods,
+      todayDate: today
+    });
+    expect(actions.map((a) => [a.purchaseOrderLineId, a.isASAP])).toEqual([
+      ["tomorrow", false]
     ]);
   });
 
@@ -1447,5 +1820,250 @@ describe("deriveReleaseActions", () => {
         todayDate: today
       })
     ).toHaveLength(1);
+  });
+});
+
+describe("loadSegmentOnHand", () => {
+  // One item and location with three project stock stripes: common (''), a
+  // project with project stock, and a project whose project stock was turned
+  // off (its stripe nets in common). The driver answers like Postgres for
+  // equality predicates.
+  const STOCK: Record<string, unknown>[] = [
+    {
+      itemId: "itm_1",
+      locationId: "loc_1",
+      projectId: "",
+      companyId: "co_1",
+      quantityOnHand: 5
+    },
+    {
+      itemId: "itm_1",
+      locationId: "loc_1",
+      projectId: "prj_1",
+      companyId: "co_1",
+      quantityOnHand: 3
+    },
+    {
+      itemId: "itm_1",
+      locationId: "loc_1",
+      projectId: "prj_2",
+      companyId: "co_1",
+      quantityOnHand: 2
+    }
+  ];
+  const PROJECTS: Record<string, unknown>[] = [
+    { id: "prj_1", companyId: "co_1", projectStock: true },
+    { id: "prj_2", companyId: "co_1", projectStock: false }
+  ];
+
+  class StockTableDriver extends DummyDriver {
+    override async acquireConnection(): Promise<DatabaseConnection> {
+      return {
+        executeQuery: async <R>(
+          query: CompiledQuery
+        ): Promise<QueryResult<R>> => {
+          const table = query.sql.includes('from "project"') ? PROJECTS : STOCK;
+          const predicates = [...query.sql.matchAll(/"(\w+)" = \$(\d+)/g)];
+          const rows = table.filter((row) =>
+            predicates.every(
+              ([, column, n]) =>
+                row[column!] === query.parameters[Number(n) - 1]
+            )
+          );
+          return { rows: rows as R[] };
+        },
+        // biome-ignore lint/correctness/useYield: never streamed
+        streamQuery: async function* () {
+          throw new Error("not streamed");
+        }
+      };
+    }
+  }
+
+  it("sums each stripe into its netting segment", async () => {
+    const db = new Kysely<DB>({
+      dialect: {
+        createAdapter: () => new PostgresAdapter(),
+        createDriver: () => new StockTableDriver(),
+        createIntrospector: (k) => new PostgresIntrospector(k),
+        createQueryCompiler: () => new PostgresQueryCompiler()
+      }
+    });
+
+    const onHand = await loadSegmentOnHand(db, "co_1");
+
+    expect(onHand.get(itemLocationSegmentKey("itm_1", "loc_1"))).toBe(7);
+    expect(onHand.get(itemLocationSegmentKey("itm_1", "loc_1", "prj_1"))).toBe(
+      3
+    );
+    expect(onHand.size).toBe(2);
+  });
+});
+
+describe("deriveRowActions in a project segment", () => {
+  // The spec case: P-101 needs 20 in week 1 and holds 5. The common segment
+  // has 8 it does not need within the horizon, so MRP drew 8.
+  const projectRow = (weeks: number[]) =>
+    ({
+      id: "item-1",
+      planningSegmentId: "prj_1",
+      reorderingPolicy: "Fixed Reorder Quantity",
+      reorderPoint: 10,
+      reorderQuantity: 50,
+      minimumOrderQuantity: 0,
+      maximumOrderQuantity: 0,
+      orderMultiple: 0,
+      lotSize: 0,
+      maximumInventoryQuantity: 0,
+      demandAccumulationPeriod: 1,
+      demandAccumulationSafetyStock: 0,
+      leadTime: 0,
+      quantityOnHand: 5,
+      quantityToOrder: 15,
+      preferredSupplierId: "sup-1",
+      supersessionMode: null,
+      minimumReserveQuantity: 0,
+      ...Object.fromEntries(weeks.map((value, i) => [`week${i + 1}`, value]))
+    }) as unknown as Parameters<typeof deriveRowActions>[0]["row"];
+
+  const input = (draws: { periodId: string; quantity: number }[]) => ({
+    row: projectRow([-15, -15, -15, -15, -15]),
+    kind: "Order" as const,
+    periods: PERIODS,
+    demandByPeriod: new Map([["p1", 20]]),
+    openOrders: [],
+    onHand: 5,
+    draws,
+    toleranceDays: TOLERANCE,
+    todayDate: TODAY
+  });
+
+  it("emits Transfer 8 and Order 7, both in the project's segment", () => {
+    const actions = deriveRowActions(input([{ periodId: "p1", quantity: 8 }]));
+
+    expect(
+      actions.map((a) => ({
+        type: a.type,
+        periodId: a.periodId,
+        quantity: a.suggestedQuantity,
+        segment: a.planningSegmentId,
+        from: a.fromProjectId ?? null,
+        to: a.toProjectId ?? null
+      }))
+    ).toEqual([
+      {
+        type: "Order",
+        periodId: "p1",
+        quantity: 7,
+        segment: "prj_1",
+        from: null,
+        to: null
+      },
+      {
+        type: "Transfer",
+        periodId: "p1",
+        quantity: 8,
+        segment: "prj_1",
+        from: null,
+        to: "prj_1"
+      }
+    ]);
+    const transfer = actions.find((a) => a.type === "Transfer");
+    expect(transfer?.reason).toBe("Common stock not needed within the horizon");
+    expect(transfer?.suggestedDate).toBe("2026-10-05");
+  });
+
+  // Lot-for-lot: the row's reorder point of 10 and quantity of 50 do not apply.
+  it("orders the shortfall alone, with no reorder policy", () => {
+    const actions = deriveRowActions(input([]));
+    expect(actions.map((a) => [a.type, a.suggestedQuantity])).toEqual([
+      ["Order", 15]
+    ]);
+    expect(actions[0]?.policyName).toBe("Lot-for-Lot");
+  });
+});
+
+// Projects Phase 3: a member short by 4, with a sibling that needs its 6 in 3
+// weeks, gets a Borrow action in the group's segment.
+describe("memberMoveCandidates", () => {
+  it("emits a Borrow in the group segment and moves the stock in the peg input", () => {
+    const result = memberMoveCandidates(
+      {
+        inputs: [
+          {
+            planningGroupId: "plg-1",
+            itemId: "item-1",
+            locationId: "loc-1",
+            demands: [
+              {
+                projectId: "p-101",
+                projectElementId: null,
+                priority: 100,
+                sourceType: "Project Material",
+                sourceId: "pem-1",
+                needDate: "2026-10-19",
+                quantity: 4
+              },
+              {
+                projectId: "p-102",
+                projectElementId: null,
+                priority: 100,
+                sourceType: "Project Material",
+                sourceId: "pem-2",
+                needDate: "2026-11-02",
+                quantity: 6
+              }
+            ],
+            supplies: [
+              {
+                supplyType: "Stock",
+                supplyId: "p-102",
+                ownerProjectId: "p-102",
+                availableDate: "2026-10-12",
+                quantity: 6
+              }
+            ]
+          }
+        ],
+        planningGroups: [{ id: "plg-1", memberProjectIds: ["p-101", "p-102"] }],
+        priorityRuleByGroup: { "plg-1": "Earliest Need" },
+        priorityByProject: { "p-101": 100, "p-102": 100 },
+        leadTimeByItemLocation: new Map([["item-1\x1floc-1", 5]]),
+        periods: [
+          { id: "w1", startDate: "2026-10-11" },
+          { id: "w2", startDate: "2026-10-18" },
+          { id: "w3", startDate: "2026-10-25" },
+          // the horizon ends 2026-11-07, so p-102's need is inside it
+          { id: "w4", startDate: "2026-11-01" }
+        ],
+        todayDate: "2026-10-12",
+        assigneeOf: () => "emp-1"
+      },
+      pegging
+    );
+    expect(result.candidates).toEqual([
+      expect.objectContaining({
+        type: "Borrow",
+        itemId: "item-1",
+        locationId: "loc-1",
+        periodId: "w2",
+        suggestedQuantity: 4,
+        suggestedDate: "2026-10-19",
+        planningSegmentId: "plg-1",
+        fromProjectId: "p-102",
+        toProjectId: "p-101",
+        triggerValues: { paybackDueDate: "2026-10-28" },
+        assignee: "emp-1"
+      })
+    ]);
+    expect(
+      result.inputs[0]?.supplies.map((supply) => [
+        supply.ownerProjectId,
+        supply.quantity
+      ])
+    ).toEqual([
+      ["p-102", 2],
+      ["p-101", 4]
+    ]);
   });
 });

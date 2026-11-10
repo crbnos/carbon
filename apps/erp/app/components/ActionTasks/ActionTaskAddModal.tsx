@@ -29,13 +29,16 @@ export function ActionTaskAddModal({
   onAdd,
   isSubmitting = false,
   isDisabled = false,
-  emptyMessage
+  emptyMessage,
+  trigger = "tile"
 }: {
   templates: ListItem[];
   onAdd: (selectedIds: string[]) => void;
   isSubmitting?: boolean;
   isDisabled?: boolean;
   emptyMessage?: string;
+  /** `button`: a compact "Add" for a card header (phones) instead of the dashed tile. */
+  trigger?: "tile" | "button";
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -61,17 +64,28 @@ export function ActionTaskAddModal({
 
   return (
     <>
-      <button
-        type="button"
-        className="flex items-center justify-start bg-card border-2 border-dashed border-background w-full hover:bg-background/80 rounded-lg px-10 py-6 text-muted-foreground hover:text-foreground gap-2 transition-colors duration-200 text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-        onClick={() => setIsOpen(true)}
-        disabled={isDisabled}
-      >
-        <LuCirclePlus size={16} />
-        <span>
-          <Trans>Add Actions</Trans>
-        </span>
-      </button>
+      {trigger === "button" ? (
+        <Button
+          variant="secondary"
+          leftIcon={<LuCirclePlus />}
+          isDisabled={isDisabled}
+          onClick={() => setIsOpen(true)}
+        >
+          <Trans>Add</Trans>
+        </Button>
+      ) : (
+        <button
+          type="button"
+          className="flex items-center justify-start bg-card border-2 border-dashed border-background w-full hover:bg-background/80 rounded-lg px-10 py-6 text-muted-foreground hover:text-foreground gap-2 transition-colors duration-200 text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={() => setIsOpen(true)}
+          disabled={isDisabled}
+        >
+          <LuCirclePlus size={16} />
+          <span>
+            <Trans>Add Actions</Trans>
+          </span>
+        </button>
+      )}
 
       <Modal
         open={isOpen}

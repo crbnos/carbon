@@ -17,18 +17,13 @@ import {
   IconButton,
   MENU_ITEM_SHORTCUTS,
   PrefetchLink,
-  ShortcutKey,
   Spinner,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   useDisclosure,
-  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
 import { useDroppable } from "@dnd-kit/core";
-import { Trans } from "@lingui/react/macro";
-import { useRef, useState } from "react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 import {
   LuCirclePlus,
   LuEllipsisVertical,
@@ -46,7 +41,7 @@ import {
   useLineOrderEditMode
 } from "~/components/LineReorder";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
-import type { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared/types";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import { isSalesRfqLocked, salesRfqDragValidator } from "../../sales.models";
@@ -55,7 +50,9 @@ import DeleteSalesRFQLine from "./DeleteSalesRFQLine";
 import MapExtractedLinesModal from "./MapExtractedLinesModal";
 import SalesRFQLineForm from "./SalesRFQLineForm";
 import { useOptimisticDocumentDrag } from "./useOptimiticDocumentDrag";
+
 export default function SalesRFQExplorer() {
+  const { t } = useLingui();
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("Could not find rfqId");
   const salesRfqData = useRouteData<{
@@ -86,20 +83,8 @@ export default function SalesRFQExplorer() {
   };
 
   const onDeleteCancel = () => {
-    setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
-
-  const newButtonRef = useRef<HTMLButtonElement>(null);
-  useShortcutKeyMap([
-    {
-      shortcut: EXPLORER_SHORTCUTS.addLine,
-      action: (event: KeyboardEvent) => {
-        event.stopPropagation();
-        newButtonRef.current?.click();
-      }
-    }
-  ]);
 
   const salesRfqLineInitialValues = {
     salesRfqId: rfqId,
@@ -239,36 +224,19 @@ export default function SalesRFQExplorer() {
             />
           ) : (
             <>
-              <Tooltip>
-                <TooltipTrigger className="flex-1">
-                  <Button
-                    ref={newButtonRef}
-                    className="w-full"
-                    isDisabled={
-                      isDisabled || !permissions.can("update", "sales")
-                    }
-                    leftIcon={<LuCirclePlus />}
-                    variant="secondary"
-                    onClick={newSalesRFQLineDisclosure.onOpen}
-                  >
-                    <Trans>Add Line Item</Trans>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <HStack>
-                    <span>
-                      <Trans>New Line Item</Trans>
-                    </span>
-                    <ShortcutKey
-                      shortcut={EXPLORER_SHORTCUTS.addLine}
-                      variant="small"
-                    />
-                  </HStack>
-                </TooltipContent>
-              </Tooltip>
+              <Button
+                className="flex-1"
+                shortcut={EXPLORER_SHORTCUTS.addLine}
+                isDisabled={isDisabled || !permissions.can("update", "sales")}
+                leftIcon={<LuCirclePlus />}
+                variant="secondary"
+                onClick={newSalesRFQLineDisclosure.onOpen}
+              >
+                <Trans>Add Line Item</Trans>
+              </Button>
               {canReorder && realLines.length > 0 && (
                 <IconButton
-                  aria-label="Reorder lines"
+                  aria-label={t`Reorder lines`}
                   icon={<LuSettings2 />}
                   variant="ghost"
                   className="text-muted-foreground"
@@ -279,23 +247,28 @@ export default function SalesRFQExplorer() {
           )}
         </div>
       </VStack>
-      {newSalesRFQLineDisclosure.isOpen && (
+      {newSalesRFQLineDisclosure.openCount > 0 && (
         <SalesRFQLineForm
+          key={newSalesRFQLineDisclosure.openCount}
+          open={newSalesRFQLineDisclosure.isOpen}
           initialValues={salesRfqLineInitialValues}
           type="modal"
           onClose={newSalesRFQLineDisclosure.onClose}
         />
       )}
-      {deleteLineDisclosure.isOpen && (
-        <DeleteSalesRFQLine line={deleteLine!} onCancel={onDeleteCancel} />
-      )}
-      {mapLinesDisclosure.isOpen && (
-        <MapExtractedLinesModal
-          rfqId={rfqId}
-          customerId={salesRfqData?.rfqSummary?.customerId ?? undefined}
-          onClose={mapLinesDisclosure.onClose}
+      {deleteLine && (
+        <DeleteSalesRFQLine
+          isOpen={deleteLineDisclosure.isOpen}
+          line={deleteLine}
+          onCancel={onDeleteCancel}
         />
       )}
+      <MapExtractedLinesModal
+        rfqId={rfqId}
+        customerId={salesRfqData?.rfqSummary?.customerId ?? undefined}
+        open={mapLinesDisclosure.isOpen}
+        onClose={mapLinesDisclosure.onClose}
+      />
     </div>
   );
 }
@@ -405,23 +378,27 @@ function SalesRFQLineItem({
   isDisabled,
   onDelete
 }: SalesRFQLineItemProps) {
+  const { t } = useLingui();
   const { rfqId, lineId } = useParams();
   if (!rfqId) throw new Error("Could not find rfqId");
   const permissions = usePermissions();
 
   const isSelected = lineId === line.id;
+  const lineName = line.customerPartRevision
+    ? `${line.customerPartId}-${line.customerPartRevision}`
+    : line.customerPartId;
 
   return (
     <VStack spacing={0} className="border-b">
-      <PrefetchLink
-        className="w-full"
-        to={path.to.salesRfqLine(rfqId, line.id!)}
+      <HStack
+        className={cn(
+          "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
+          isSelected && "bg-accent/60 hover:bg-accent/50"
+        )}
       >
-        <HStack
-          className={cn(
-            "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
-            isSelected && "bg-accent/60 hover:bg-accent/50"
-          )}
+        <PrefetchLink
+          to={path.to.salesRfqLine(rfqId, line.id!)}
+          className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
         >
           <HStack spacing={2} className="flex-grow min-w-0 pr-10">
             <ItemThumbnail
@@ -439,35 +416,35 @@ function SalesRFQLineItem({
               </span>
             </VStack>
           </HStack>
-          <div className="absolute right-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label="More"
-                  className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
-                  icon={<LuEllipsisVertical />}
-                  variant="solid"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem
-                  shortcut={MENU_ITEM_SHORTCUTS.delete}
-                  destructive
-                  disabled={isDisabled || !permissions.can("update", "sales")}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(line);
-                  }}
-                >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  <Trans>Delete Line</Trans>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </HStack>
-      </PrefetchLink>
+        </PrefetchLink>
+        <div className="absolute right-2 z-10">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                aria-label={t`More actions for ${lineName}`}
+                className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                icon={<LuEllipsisVertical />}
+                variant="solid"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
+                destructive
+                disabled={isDisabled || !permissions.can("update", "sales")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(line);
+                }}
+              >
+                <DropdownMenuIcon icon={<LuTrash />} />
+                <Trans>Delete Line</Trans>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </HStack>
     </VStack>
   );
 }

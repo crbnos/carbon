@@ -5,13 +5,16 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteMaterialType, getMaterialType } from "~/modules/items";
+import {
+  deleteMaterialType,
+  getMaterialType
+} from "~/modules/items/items.service";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -44,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) {
     throw redirect(
       path.to.materialTypes,
-      await flash(request, error(params, "Failed to get a material type id"))
+      await flash(request, error(null, "Failed to get a material type id"))
     );
   }
 
@@ -70,19 +73,18 @@ export default function DeleteMaterialTypeRoute() {
   if (!id) throw new Error("id not found");
 
   const { materialType } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const { t } = useLingui();
 
   if (!materialType) return null;
-
-  const onCancel = () => closeRoute();
 
   return (
     <ConfirmDelete
       action={path.to.deleteMaterialType(id)}
       name={materialType.name}
       text={t`Are you sure you want to delete the material type: ${materialType.name}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

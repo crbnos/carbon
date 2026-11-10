@@ -16,17 +16,19 @@ import {
   Td,
   Tr,
   TruncatedTooltipText,
+  useViewport,
   VStack
 } from "@carbon/react";
-import { getItemReadableId } from "@carbon/utils";
-import { Trans } from "@lingui/react/macro";
+import { distinctItemText, getItemReadableId } from "@carbon/utils";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
 import { CustomerAvatar, DateTime, MethodIcon } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { SummaryLineList, SummaryLineRow } from "~/components/SummaryLineRow";
 import {
   useCurrencyFormatter,
   usePercentFormatter,
@@ -35,12 +37,16 @@ import {
 } from "~/hooks";
 import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
-import { isSalesInvoiceLocked } from "../../invoicing.models";
+import {
+  isItemlessServiceLine,
+  isSalesInvoiceLocked
+} from "../../invoicing.models";
 import type {
   SalesInvoice,
   SalesInvoiceLine,
   SalesInvoiceShipment
 } from "../../types";
+import { useRentalLineTypeLabel } from "./useRentalLineTypeLabel";
 
 const LineItems = ({
   currencyCode,
@@ -60,8 +66,11 @@ const LineItems = ({
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
+  const { t } = useLingui();
+  const { isPhone } = useViewport();
   const [items] = useItems();
   const percentFormatter = usePercentFormatter();
+  const rentalLineTypeLabel = useRentalLineTypeLabel();
   const [openItems, setOpenItems] = useState<string[]>([]);
   const unitOfMeasures = useUnitOfMeasure();
 
@@ -71,160 +80,207 @@ const LineItems = ({
     );
   };
 
-  return (
-    <VStack spacing={8} className="w-full overflow-hidden">
-      {salesInvoiceLines.map((line) => {
-        if (!line.id) return null;
+  const rows = salesInvoiceLines.map((line) => {
+    if (!line.id) return null;
 
-        const itemReadableId =
-          line.invoiceLineType === "Fixed Asset"
-            ? (line as any).assetReadableId || "Fixed Asset"
+    const itemReadableId =
+      line.invoiceLineType === "Rental"
+        ? rentalLineTypeLabel(line.rentalLineType)
+        : line.invoiceLineType === "Fixed Asset"
+          ? (line as any).assetReadableId || "Fixed Asset"
+          : isItemlessServiceLine(line)
+            ? line.description || t`Service`
             : getItemReadableId(items, line.itemId);
-        const lineSubtotal = (line.unitPrice ?? 0) * (line.quantity ?? 0);
-        const customerSubtotal =
-          (line.convertedUnitPrice ?? 0) * (line.quantity ?? 0);
-        const total =
-          (lineSubtotal + (line.addOnCost ?? 0) + (line.shippingCost ?? 0)) *
-            (1 + (line.taxPercent ?? 0)) +
-          (line.nonTaxableAddOnCost ?? 0);
-        const customerTotal =
-          (customerSubtotal +
-            (line.convertedAddOnCost ?? 0) +
-            (line.convertedShippingCost ?? 0)) *
-            (1 + (line.taxPercent ?? 0)) +
-          (line.convertedNonTaxableAddOnCost ?? 0);
+    const description = distinctItemText(itemReadableId, line.description);
+    const lineName = itemReadableId ?? "";
+    // The discount reduces the merchandise only (the generated net
+    // prices); add-ons and shipping are not discounted.
+    const discountPercent = line.discountPercent ?? 0;
+    const discount = percentFormatter.format(discountPercent);
+    const lineSubtotal = (line.netUnitPrice ?? 0) * (line.quantity ?? 0);
+    const customerSubtotal =
+      (line.convertedNetUnitPrice ?? 0) * (line.quantity ?? 0);
+    const total =
+      (lineSubtotal + (line.addOnCost ?? 0) + (line.shippingCost ?? 0)) *
+        (1 + (line.taxPercent ?? 0)) +
+      (line.nonTaxableAddOnCost ?? 0);
+    const customerTotal =
+      (customerSubtotal +
+        (line.convertedAddOnCost ?? 0) +
+        (line.convertedShippingCost ?? 0)) *
+        (1 + (line.taxPercent ?? 0)) +
+      (line.convertedNonTaxableAddOnCost ?? 0);
 
-        const lineTaxAmount =
-          (line.taxPercent ?? 0) *
-          (lineSubtotal + (line.addOnCost ?? 0) + (line.shippingCost ?? 0));
+    const lineTaxAmount =
+      (line.taxPercent ?? 0) *
+      (lineSubtotal + (line.addOnCost ?? 0) + (line.shippingCost ?? 0));
 
-        const customerLineTaxAmount =
-          (line.taxPercent ?? 0) *
-          (customerSubtotal +
-            (line.convertedAddOnCost ?? 0) +
-            (line.convertedShippingCost ?? 0));
+    const customerLineTaxAmount =
+      (line.taxPercent ?? 0) *
+      (customerSubtotal +
+        (line.convertedAddOnCost ?? 0) +
+        (line.convertedShippingCost ?? 0));
 
-        return (
-          <motion.div
-            key={line.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="border-b border-input py-6 w-full"
-          >
-            <HStack spacing={4} className="items-start">
-              {line.thumbnailPath ? (
-                <img
-                  alt={itemReadableId ?? ""}
-                  className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
-                  src={getPrivateUrl(line.thumbnailPath)}
-                />
-              ) : (
-                <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
-                  <LuImage className="w-16 h-16 text-muted-foreground" />
-                </div>
-              )}
+    // Phones: one row that opens the line page (its Edit link, the
+    // badges and the breakdown stay on desktop).
+    if (isPhone) {
+      return (
+        <SummaryLineRow
+          key={line.id}
+          to={path.to.salesInvoiceLine(invoiceId, line.id)}
+          title={itemReadableId}
+          value={formatter.format(total)}
+          description={description}
+          meta={
+            <>
+              {line.quantity} × {formatter.format(line.unitPrice ?? 0)}{" "}
+              {
+                unitOfMeasures.find(
+                  (uom) => uom.value === line.unitOfMeasureCode
+                )?.label
+              }
+            </>
+          }
+        />
+      );
+    }
 
-              <VStack spacing={0} className="flex-1 min-w-0">
-                <div
-                  className="flex flex-col cursor-pointer w-full"
-                  onClick={() => toggleOpen(line.id!)}
-                >
-                  {/* The text column must shrink (flex-1 min-w-0) or a long
+    return (
+      <div key={line.id} className="border-b border-input py-6 w-full">
+        <HStack spacing={4} className="items-start">
+          {line.thumbnailPath ? (
+            <img
+              alt={itemReadableId ?? ""}
+              className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+              src={getPrivateUrl(line.thumbnailPath)}
+            />
+          ) : (
+            <div className="w-24 h-24 shrink-0 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
+              <LuImage className="w-16 h-16 text-muted-foreground" />
+            </div>
+          )}
+
+          <VStack spacing={0} className="flex-1 min-w-0">
+            {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
+            <div
+              className="flex flex-col cursor-pointer w-full"
+              onClick={(e) => {
+                if ((e.target as HTMLElement).closest("a, button")) return;
+                toggleOpen(line.id!);
+              }}
+            >
+              {/* The text column must shrink (flex-1 min-w-0) or a long
                       description shoves the totals out of the card, and its
                       children need w-full because VStack is items-start, which
                       sizes each child to its own content and leaves truncate
                       inert no matter how narrow the column gets. */}
-                  <div className="flex items-center justify-between w-full">
-                    <VStack spacing={0} className="flex-1 min-w-0">
-                      <HStack spacing={2} className="flex min-w-0 w-full">
-                        <Heading className="truncate">{itemReadableId}</Heading>
-                        <Button
-                          asChild
-                          variant="link"
-                          size="sm"
-                          className="text-muted-foreground flex-shrink-0"
-                        >
-                          <Link
-                            to={path.to.salesInvoiceLine(invoiceId, line.id!)}
-                          >
-                            Edit
-                          </Link>
-                        </Button>
-                      </HStack>
-                      <TruncatedTooltipText
-                        className="text-muted-foreground text-sm truncate w-full"
-                        tooltip={line.description}
-                      >
-                        {line.description}
-                      </TruncatedTooltipText>
-                    </VStack>
-                    <VStack
-                      spacing={2}
-                      className="flex-shrink-0 items-end w-auto"
+              <div className="flex items-center justify-between w-full">
+                <VStack spacing={0} className="flex-1 min-w-0">
+                  <HStack spacing={2} className="flex min-w-0 w-full">
+                    <Heading className="truncate">{itemReadableId}</Heading>
+                    <Button
+                      asChild
+                      variant="link"
+                      size="sm"
+                      className="text-muted-foreground flex-shrink-0"
                     >
-                      <HStack spacing={4}>
-                        <VStack spacing={0}>
-                          <span className="font-bold text-xl whitespace-nowrap">
-                            {formatter.format(total)}
-                          </span>
-                          {shouldConvertCurrency && (
-                            <span className="text-muted-foreground text-sm">
-                              {presentationCurrencyFormatter.format(
-                                customerTotal
-                              )}
-                            </span>
-                          )}
-                        </VStack>
-                        <motion.div
-                          animate={{
-                            rotate: openItems.includes(line.id) ? 90 : 0
-                          }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <LuChevronRight size={24} />
-                        </motion.div>
-                      </HStack>
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant="outline"
-                          className="flex items-center gap-2"
-                        >
-                          {line.quantity}
-                          {line.invoiceLineType !== "Fixed Asset" && (
-                            <MethodIcon
-                              type={line.methodType ?? "Pull from Inventory"}
-                            />
-                          )}
-                        </Badge>
-                        <Badge variant="green">
-                          {formatter.format(line.unitPrice ?? 0)}{" "}
-                          {
-                            unitOfMeasures.find(
-                              (uom) => uom.value === line.unitOfMeasureCode
-                            )?.label
-                          }
-                        </Badge>
-                        {(line.taxPercent ?? 0) > 0 ? (
-                          <Badge variant="red">
-                            {percentFormatter.format(line.taxPercent ?? 0)} Tax
-                          </Badge>
-                        ) : null}
-                      </div>
+                      <Link to={path.to.salesInvoiceLine(invoiceId, line.id!)}>
+                        Edit
+                      </Link>
+                    </Button>
+                  </HStack>
+                  {description && (
+                    <TruncatedTooltipText
+                      className="text-muted-foreground text-sm truncate w-full"
+                      tooltip={description}
+                    >
+                      {description}
+                    </TruncatedTooltipText>
+                  )}
+                </VStack>
+                <VStack spacing={2} className="flex-shrink-0 items-end w-auto">
+                  <HStack spacing={4}>
+                    <VStack spacing={0}>
+                      <span className="font-semibold text-xl whitespace-nowrap">
+                        {formatter.format(total)}
+                      </span>
+                      {shouldConvertCurrency && (
+                        <span className="text-muted-foreground text-sm">
+                          {presentationCurrencyFormatter.format(customerTotal)}
+                        </span>
+                      )}
                     </VStack>
+                    <motion.button
+                      type="button"
+                      aria-expanded={openItems.includes(line.id)}
+                      aria-controls={
+                        openItems.includes(line.id)
+                          ? `sales-invoice-line-details-${line.id}`
+                          : undefined
+                      }
+                      aria-label={
+                        openItems.includes(line.id)
+                          ? t`Hide details for ${lineName}`
+                          : t`Show details for ${lineName}`
+                      }
+                      className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      onClick={() => toggleOpen(line.id!)}
+                      animate={{
+                        rotate: openItems.includes(line.id) ? 90 : 0
+                      }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <LuChevronRight size={24} aria-hidden />
+                    </motion.button>
+                  </HStack>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      {line.quantity}
+                      {line.invoiceLineType !== "Fixed Asset" &&
+                        line.invoiceLineType !== "Rental" &&
+                        !isItemlessServiceLine(line) && (
+                          <MethodIcon
+                            type={line.methodType ?? "Pull from Inventory"}
+                          />
+                        )}
+                    </Badge>
+                    <Badge variant="green">
+                      {formatter.format(line.unitPrice ?? 0)}{" "}
+                      {
+                        unitOfMeasures.find(
+                          (uom) => uom.value === line.unitOfMeasureCode
+                        )?.label
+                      }
+                    </Badge>
+                    {discountPercent > 0 ? (
+                      <Badge variant="secondary">
+                        <Trans>{discount} off</Trans>
+                      </Badge>
+                    ) : null}
+                    {(line.taxPercent ?? 0) > 0 ? (
+                      <Badge variant="red">
+                        {percentFormatter.format(line.taxPercent ?? 0)} Tax
+                      </Badge>
+                    ) : null}
                   </div>
-                </div>
-              </VStack>
-            </HStack>
+                </VStack>
+              </div>
+            </div>
+          </VStack>
+        </HStack>
 
+        <AnimatePresence initial={false}>
+          {openItems.includes(line.id) ? (
             <motion.div
-              initial="collapsed"
-              animate={openItems.includes(line.id) ? "open" : "collapsed"}
-              variants={{
-                open: { opacity: 1, height: "auto", marginTop: 16 },
-                collapsed: { opacity: 0, height: 0, marginTop: 0 }
-              }}
-              transition={{ duration: 0.3 }}
+              id={`sales-invoice-line-details-${line.id}`}
+              key="panel"
+              initial={{ opacity: 0, height: 0, marginTop: 0 }}
+              animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+              exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
               className="w-full overflow-hidden"
             >
               <div className="w-full">
@@ -259,6 +315,11 @@ const LineItems = ({
                               {presentationCurrencyFormatter.format(
                                 line.convertedUnitPrice ?? 0
                               )}
+                            </span>
+                          )}
+                          {discountPercent > 0 && (
+                            <span className="text-muted-foreground text-xs">
+                              <Trans>{discount} off</Trans>
                             </span>
                           )}
                         </VStack>
@@ -317,7 +378,7 @@ const LineItems = ({
                       </Td>
                     </Tr>
 
-                    <Tr key="total" className="font-bold">
+                    <Tr key="total" className="font-semibold">
                       <Td>
                         <Trans>Total</Trans>
                       </Td>
@@ -338,9 +399,19 @@ const LineItems = ({
                 </Table>
               </div>
             </motion.div>
-          </motion.div>
-        );
-      })}
+          ) : null}
+        </AnimatePresence>
+      </div>
+    );
+  });
+
+  if (isPhone) {
+    return <SummaryLineList>{rows}</SummaryLineList>;
+  }
+
+  return (
+    <VStack spacing={8} className="w-full overflow-hidden">
+      {rows}
     </VStack>
   );
 };
@@ -358,6 +429,7 @@ const SalesInvoiceSummary = ({
     salesInvoice: SalesInvoice;
     salesInvoiceLines: SalesInvoiceLine[];
     salesInvoiceShipment: SalesInvoiceShipment;
+    expectedLiquidation: number | null;
   }>(path.to.salesInvoice(invoiceId));
 
   const { locale } = useLocale();
@@ -375,11 +447,12 @@ const SalesInvoiceSummary = ({
 
   const isEditable = !isSalesInvoiceLocked(routeData?.salesInvoice?.status);
 
-  // Calculate totals
+  // Calculate totals. Merchandise is NET of the line discount, as in the
+  // `salesInvoices` view.
   const subtotal =
     routeData?.salesInvoiceLines?.reduce((acc, line) => {
       const lineSubtotal =
-        (line.unitPrice ?? 0) * (line.quantity ?? 0) +
+        (line.netUnitPrice ?? 0) * (line.quantity ?? 0) +
         (line.shippingCost ?? 0) +
         (line.addOnCost ?? 0) +
         (line.nonTaxableAddOnCost ?? 0);
@@ -389,7 +462,7 @@ const SalesInvoiceSummary = ({
   const customerSubtotal =
     routeData?.salesInvoiceLines?.reduce((acc, line) => {
       const lineSubtotal =
-        (line.convertedUnitPrice ?? 0) * (line.quantity ?? 0) +
+        (line.convertedNetUnitPrice ?? 0) * (line.quantity ?? 0) +
         (line.convertedShippingCost ?? 0) +
         (line.convertedAddOnCost ?? 0) +
         (line.convertedNonTaxableAddOnCost ?? 0);
@@ -401,7 +474,7 @@ const SalesInvoiceSummary = ({
     routeData?.salesInvoiceLines?.reduce((acc, line) => {
       const lineTaxAmount =
         (line.taxPercent ?? 0) *
-        ((line.unitPrice ?? 0) * (line.quantity ?? 0) +
+        ((line.netUnitPrice ?? 0) * (line.quantity ?? 0) +
           (line.shippingCost ?? 0) +
           (line.addOnCost ?? 0));
       return acc + lineTaxAmount;
@@ -411,7 +484,7 @@ const SalesInvoiceSummary = ({
     routeData?.salesInvoiceLines?.reduce((acc, line) => {
       const lineTaxAmount =
         (line.taxPercent ?? 0) *
-        ((line.convertedUnitPrice ?? 0) * (line.quantity ?? 0) +
+        ((line.convertedNetUnitPrice ?? 0) * (line.quantity ?? 0) +
           (line.convertedShippingCost ?? 0) +
           (line.convertedAddOnCost ?? 0));
       return acc + lineTaxAmount;
@@ -538,6 +611,15 @@ const SalesInvoiceSummary = ({
               )}
             </VStack>
           </HStack>
+
+          {routeData?.expectedLiquidation ? (
+            <HStack className="justify-between text-sm text-muted-foreground w-full">
+              <span>
+                <Trans>Progress payment liquidation expected</Trans>
+              </span>
+              <span>{formatter.format(routeData.expectedLiquidation)}</span>
+            </HStack>
+          ) : null}
         </VStack>
       </CardContent>
     </Card>

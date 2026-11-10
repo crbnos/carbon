@@ -20,15 +20,16 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
   - `./ui` (`src/ui/index.ts`) — `PrintingProvider`/`usePrinting`, `PrintButton`, `LabelDownloadModal`
 - **`@carbon/documents`** (`packages/documents/`) — actual renderers. PDFs via `@react-pdf/renderer`
   React components (`pdf/ProductLabelPDF`, `pdf/StorageUnitLabelPDF`, `pdf/KanbanLabelPDF`, plus
-  invoice/PO/quote/traveler docs); ZPL via `zpl/ProductLabelZPL`, `zpl/StorageUnitLabelZPL`
-  (`generateProductLabelZPL`, `generateStorageUnitLabelZPL`).
+  invoice/PO/quote/traveler docs); ZPL via `zpl/ProductLabelZPL`, `zpl/StorageUnitLabelZPL`,
+  `zpl/KanbanLabelZPL` (`generateProductLabelZPL`, `generateStorageUnitLabelZPL`,
+  `generateKanbanLabelZPL`).
 
 ## Document type registry — `packages/printing/src/registry.ts`
 
 `documentTypeRegistry` entries (`id`, `sourceDocuments[]`, `builtInRenderer: "zpl"|"pdf"|null`,
 `defaultFormat`):
 - `productLabel` — sources `Receipt, Shipment, Operation, Entity, Job, Split, StockTransfer`; default zpl
-- `kanbanCard` — source `Kanban`; pdf (built-in renderer only supports PDF)
+- `kanbanCard` — source `Kanban`; default pdf, ZPL on media of 3" x 2" and up (see `kanban-system.md` → Labels)
 - `storageUnitLabel` — source `StorageUnit`; default zpl
 
 `getDocumentTypesForSource(sourceDocument)` maps a source doc → the doc-type ids to print.
@@ -40,16 +41,23 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
    workCenterId?, printerRouteId? }` (`packages/lib/src/events.ts`).
 2. **Generate** — `print-job/index.tsx` (`packages/jobs/src/inngest/functions/tasks/print-job/`,
    `retries: 0`):
+   - **One step, `create-print-jobs`,** holds the dedupe, the printer config and every job write, so
+     they run once. A step makes Inngest run the function again from the top; when the job writes
+     sat outside a step, each `deliver-<jobId>` send re-ran the dedupe, which found the job just
+     written and threw — only a document's FIRST label ever printed (a Make kanban's Create card,
+     never Start or Complete).
    - **30s auto-dedupe:** if an `origin="auto"` `printJob` for the same `sourceDocumentId`+`companyId`
-     was created in the last 30s, throws `NonRetriableError`.
+     was created in the last 30s, throws `NonRetriableError`. Every job the task writes is
+     `origin="auto"`, the manual route's included.
    - **Resolve printer config once:** explicit `printerRouteId` → fetch that route; else if `locationId`,
      `getCachedPrinterConfig(client, companyId, locationId, getPrinterContextForSource(sourceDocument,
      workCenterId), workCenterId)`. Falls back to `docType.defaultFormat` and media size `"label2x1"`
      when no config.
    - For each doc-type-for-source: resolve items (`resolvers.ts`: `resolveTrackedEntityData` /
      `resolveKanbanData` / `resolveStorageUnitData`), then per item create a `printJob` (`generating`),
-     render (`renderers.tsx`), update content (→ `queued`), and if a `printerUrl` exists send a
-     `carbon/print-job-deliver` event (else mark `completed`).
+     render (`renderers.tsx`), update content (→ `queued`), and if a `printerUrl` exists collect it
+     for delivery (else mark `completed`). After the step, one `step.sendEvent("deliver", …)` sends a
+     `carbon/print-job-deliver` event per collected job.
 3. **Deliver** — `print-job-deliver.ts` (event `carbon/print-job-deliver`, `retries: 0`): loads the job,
    sets `printing`, looks up the route `apiKey` by `printerUrl`, `sendToProxyBox` (PDF content is
    base64 → Buffer), then `completed`. Timeouts throw `NonRetriableError` (content may already have
@@ -63,7 +71,9 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
 - `renderItemBuiltIn` — used when no template but `builtInRenderer !== null`. PDF path renders the
   React-PDF component via `renderToStream` → base64. `productLabel` loads the company's
   `documentTemplate` (`documentType="trackingLabel"`) + logo so queued jobs match the customizer.
-  ZPL requires a `labelSize.zpl` config (`requireZplCapable`); kanban built-in is PDF-only.
+  ZPL requires a `labelSize.zpl` config (`requireZplCapable`). A kanban card needs media that
+  `canHoldKanbanLabel` accepts for ZPL; a PDF printer with smaller media prints the company's
+  `kanbanLabelSize` instead.
 - If neither (`builtInRenderer === null`, no template) → job fails asking for a BinderyPress template.
 
 ## Printer routing & assignments
@@ -73,9 +83,11 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
   name)`. (`20260326000000_print-manager.sql`; `templateId` added `20260509000000`.)
 - **Assignments** live in `companySettings.printing` JSONB (`PrintingSettings` →
   `assignments[locationId]: LocationAssignment`). Contexts (`printerContexts`, `assignments.ts`):
-  `default | shipping | receiving | inventory | workCenter`. `getPrinterContextForSource` maps
-  Shipment→shipping, Receipt→receiving, StockTransfer/StorageUnit→inventory, else workCenter if a
-  workCenterId is present, else default.
+  `default | shipping | receiving | inventory | kanban | workCenter`. `getPrinterContextForSource` maps
+  Shipment→shipping, Receipt→receiving, StockTransfer/StorageUnit→inventory, Kanban→kanban, else
+  workCenter if a workCenterId is present, else default. Stored settings written before a context
+  existed have no key for it; every reader uses `?.` and resolution falls back to the default.
+  `removePrinterRoute` clears the deleted route from every context.
 - **Resolution** is shared via `resolveContextAssignment(assignment, context, workCenterId?)` in
   `assignments.ts` — called by both the server cache (`cache.server.ts`) and the client
   (`ui/PrintingProvider.tsx` `usePrinting`), so they stay in sync. A context with no printer falls back
@@ -111,8 +123,11 @@ Realtime-enabled. RLS gated on `printing_*` permissions (Printing module). Clean
 - **Manual route** `apps/{erp,mes}/app/routes/x+/print.tsx` (`path.to.manualPrint` = `/x/print`):
   validates `manualPrintValidator`, calls `trigger("print-job", ...)`.
 - **Settings** `apps/erp/app/routes/x+/settings+/printing.tsx` (`path.to.printingSettings`): printers CRUD
-  + test print, per-location assignment rows; actions invalidate the Redis cache. Print jobs UI:
-  `printing.jobs.tsx` (`path.to.printingSettingsJobs`) with reprint (origin `reprint`) + realtime.
+  + test print, per-location assignment rows, through the `savePrinterRoute` / `testPrinterRoute` /
+  `removePrinterRoute` and `assignPrinter` service functions (`apps/erp/app/modules/settings/settings.server.ts`),
+  which invalidate the Redis cache; deleting a route clears every assignment that named it. Print jobs
+  UI: `printing.jobs.tsx` (`path.to.printingSettingsJobs`) with reprint (`reprintPrintJob`,
+  origin `reprint`) + realtime.
 - **Label file routes** (interactive download, ERP) under `apps/erp/app/routes/file+/` — e.g.
   `stock-transfer+/$id.labels[.]{pdf,zpl}.tsx` (+ `labels.server.ts` `getStockTransferLabelItems`),
   `storage-unit+/labels[.]{pdf,zpl}.tsx`, plus `entity+`, `receipt+`, `shipment+`, `operation+`, `kanban+`.
@@ -121,14 +136,23 @@ Realtime-enabled. RLS gated on `printing_*` permissions (Printing module). Clean
 
 After a business event, code checks `getCachedPrinterConfig(...).autoPrint` (default `true` when null),
 wrapped in try/catch that never blocks the parent op, then `trigger("print-job", ...)`:
-- Receipt post `x+/receipt+/$receiptId.post.tsx` (receiving); Shipment post `$shipmentId.post.tsx`
-  (shipping; also prints `Split` entities); Stock-transfer split `x+/stock-transfer+/$id.line.quantity.tsx`
-  (Split + Entity reprint); MES first-operation completion `apps/mes/app/routes/x+/complete.tsx` (workCenter).
+- Receipt post `postReceipt` (receiving); Shipment post `postShipment` (shipping; also prints
+  `Split` entities); Kanban create `createKanban` (kanban; one card per action, three for Make) — these three through
+  `autoPrint` in `inventory.service.ts`; Stock-transfer split, from the line pick operations (Split + Entity reprint) —
+  all in `apps/erp/app/modules/inventory/inventory.server.ts`; MES first-operation completion of a serial or batch unit,
+  `autoPrintFirstOperationLabel` (`apps/mes/app/services/printing.server.ts`, workCenter), called by
+  every completion path: the Complete form (`x+/complete.tsx`), the QR / kanban Complete scan
+  (`x+/end.$operationId.tsx`), and inspection lots (`postSerialCompletions` / `postBulkCompletion`
+  in `services/quality.server.ts`). A new path that completes a tracked unit must call it too, or that
+  path mints serials with no label. "First" is the routing's answer, `isFirstOperationOfMakeMethod`
+  (`services/operations.service.ts`: no `jobOperationDependency` predecessor in the same make method),
+  the check the operation and assembly views use. Counting the unit's `Operation <id>` markers
+  reprinted a label at every later operation whenever the unit completed there had one or none.
 
 ## Gotchas
 
-- Built-in **ZPL** needs `labelSize.zpl`; kanban built-in is **PDF only** — printing kanban to a ZPL
-  printer fails unless a BinderyPress template handles it.
+- Built-in **ZPL** needs `labelSize.zpl`; a kanban card also needs media of at least 3" x 2"
+  (`label3x2`, `label4x2`, `label100x50mm`), or the job fails.
 - Both Inngest fns use `retries: 0`; delivery timeouts are intentionally non-retriable to avoid dupes.
 - `print-job/` is a **directory** (`index.tsx` / `renderers.tsx` / `resolvers.ts`), not a single file.
   `.tsx` because renderers instantiate React-PDF components.

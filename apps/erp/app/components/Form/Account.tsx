@@ -7,7 +7,8 @@ import { Combobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { Badge, Combobox as ComboboxBase } from "@carbon/react";
 import { useMemo } from "react";
-import type { AccountClass, getAccountsList } from "~/modules/accounting";
+import type { getAccountsList } from "~/modules/accounting/accounting.service";
+import type { AccountClass } from "~/modules/accounting/types";
 import { path } from "~/utils/path";
 
 type AccountData = {
@@ -88,6 +89,8 @@ type AccountControlledProps = {
   size?: "sm" | "md" | "lg";
   placeholder?: string;
   isReadOnly?: boolean;
+  /** The picker's name when no FormControl labels it (a table cell). */
+  "aria-label"?: string;
 };
 
 export const AccountControlled = ({

@@ -16,7 +16,7 @@ import {
   Timezone
 } from "~/components/Form";
 import AddressAutocomplete from "~/components/Form/AddressAutocomplete";
-import { companyValidator } from "~/modules/settings";
+import { companyValidator } from "~/modules/settings/settings.models";
 import { path } from "~/utils/path";
 
 type CompanyFormProps = {

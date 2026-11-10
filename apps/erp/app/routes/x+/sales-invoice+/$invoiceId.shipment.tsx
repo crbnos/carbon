@@ -9,11 +9,13 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
-  getSalesInvoice,
   isSalesInvoiceLocked,
-  salesInvoiceShipmentValidator,
+  salesInvoiceShipmentValidator
+} from "~/modules/invoicing/invoicing.models";
+import {
+  getSalesInvoice,
   upsertSalesInvoiceShipment
-} from "~/modules/invoicing";
+} from "~/modules/invoicing/invoicing.service";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";

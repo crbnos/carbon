@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import type { LineagePayload } from "~/modules/inventory/lineage.server";
+import type { LineagePayload } from "~/modules/inventory/inventory.service";
 import type { TrackedEntity } from "~/modules/inventory/types";
 import { getEntityJobId, jobNodeId, withJobNode } from "./jobNode";
 

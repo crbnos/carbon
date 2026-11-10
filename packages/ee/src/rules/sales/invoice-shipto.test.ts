@@ -5,11 +5,12 @@
 // Ship-to resolution for the sales-invoice document gate.
 //
 // An invoice raised with no upstream document is the bypass this surface
-// exists to close: a standalone line has no ship-to and none may be invented,
-// so a destination rule must fail CLOSED (required-field violation) rather
-// than pass — and must never fall back to the bill-to, which is a different
-// address and frequently a different country. An order-derived line resolves
-// the real destination through its source order, drop-ship included.
+// exists to close: a standalone line uses the invoice's own ship-to
+// (`salesInvoiceShipment.customerLocationId`); with none set, none may be
+// invented, so a destination rule must fail CLOSED (required-field violation)
+// rather than pass — and must never fall back to the bill-to, which is a
+// different address and frequently a different country. An order-derived line
+// resolves the real destination through its source order, drop-ship included.
 //
 // These tests drive the real document evaluator against a fake PostgREST
 // client, so a future "fix" that substitutes the bill-to — or reads the order
@@ -155,6 +156,69 @@ describe("sales invoice ship-to resolution", () => {
     expect(violations[0]).toMatchObject({
       ruleId: "rule_embargo",
       severity: "error",
+      message: "Customer country is required",
+      lineId: "line_standalone"
+    });
+  });
+
+  it("a standalone line evaluates against the invoice's own ship-to — never the bill-to", async () => {
+    const rows = {
+      ...BASE_ROWS,
+      salesInvoice: [
+        {
+          id: "inv_1",
+          companyId: COMPANY_ID,
+          customerId: "cust_1",
+          // The bill-to is permitted; the ship-to is what decides.
+          invoiceCustomerLocationId: "loc_us"
+        }
+      ],
+      salesInvoiceShipment: [
+        { id: "inv_1", companyId: COMPANY_ID, customerLocationId: "loc_ir" }
+      ],
+      salesInvoiceLine: [
+        {
+          id: "line_standalone",
+          companyId: COMPANY_ID,
+          invoiceId: "inv_1",
+          itemId: "item_1",
+          quantity: 1,
+          salesOrderId: null
+        }
+      ]
+    };
+
+    // Ship-to is the embargoed country → the rule fires with its own message
+    // (the country RESOLVED — not the required-field path).
+    const { violations } = await evaluateInvoice(rows);
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toMatchObject({
+      ruleId: "rule_embargo",
+      message: "Cannot sell Widget to this destination",
+      lineId: "line_standalone"
+    });
+
+    // Ship-to is a permitted country → no violation.
+    expect(
+      (
+        await evaluateInvoice({
+          ...rows,
+          salesInvoiceShipment: [
+            { id: "inv_1", companyId: COMPANY_ID, customerLocationId: "loc_us" }
+          ]
+        })
+      ).violations
+    ).toEqual([]);
+
+    // A shipment row with no ship-to still fails closed.
+    const unset = await evaluateInvoice({
+      ...rows,
+      salesInvoiceShipment: [
+        { id: "inv_1", companyId: COMPANY_ID, customerLocationId: null }
+      ]
+    });
+    expect(unset.violations).toHaveLength(1);
+    expect(unset.violations[0]).toMatchObject({
       message: "Customer country is required",
       lineId: "line_standalone"
     });

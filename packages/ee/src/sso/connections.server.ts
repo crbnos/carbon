@@ -16,7 +16,9 @@ import {
 } from "./provider.server";
 import {
   backfillSsoIdentitiesForDomain,
-  removeSsoIdentitiesForDomain
+  findOrphanedSsoProviders,
+  removeSsoIdentitiesForDomain,
+  removeSsoIdentitiesForProvider
 } from "./provisioning.server";
 import {
   checkDomainVerification,
@@ -227,6 +229,87 @@ async function syncGoTrueDomains(
   return { error: provider.error };
 }
 
+/**
+ * Delete domain claims held by an INACTIVE connection. Deactivating releases a
+ * connection's claims, but if GoTrue deleted the provider and the release then
+ * failed, the rows stay behind — invisible to every lookup (they read active
+ * connections only), yet still holding UNIQUE("companyId", "domain") and the
+ * one-verified-row-per-domain index. An inactive connection never owns a live
+ * claim, so they are always safe to remove; the flows that would trip over
+ * them call this first, so the leftover clears itself. Failures are logged:
+ * the caller's own write then reports the conflict as it would have.
+ */
+async function releaseDeadDomainClaims(
+  serviceRole: SupabaseClient<Database>,
+  filter: { domain?: string; companyId?: string }
+) {
+  let dead = serviceRole
+    .from("ssoDomain")
+    .select("id, ssoConnection!inner(active)")
+    .eq("ssoConnection.active", false);
+  if (filter.domain) dead = dead.eq("domain", filter.domain);
+  if (filter.companyId) dead = dead.eq("companyId", filter.companyId);
+  const rows = await dead;
+  if (rows.error) {
+    logger.error("Failed to read domain claims of inactive SSO connections", {
+      ...filter,
+      error: rows.error
+    });
+    return;
+  }
+  if (rows.data.length === 0) return;
+
+  const removal = await serviceRole
+    .from("ssoDomain")
+    .delete()
+    .in(
+      "id",
+      rows.data.map((row) => row.id)
+    );
+  if (removal.error) {
+    logger.error(
+      "Failed to release domain claims of inactive SSO connections",
+      {
+        ...filter,
+        error: removal.error
+      }
+    );
+  }
+}
+
+/**
+ * Delete GoTrue providers left alive under an inactive connection (see
+ * findOrphanedSsoProviders), with their identities. Failures are logged.
+ */
+async function releaseOrphanedProviders(
+  db: Kysely<KyselyDatabase>,
+  filter: { domain: string } | { companyId: string }
+) {
+  const orphaned = await findOrphanedSsoProviders(db, filter);
+  for (const providerId of orphaned.data ?? []) {
+    const removal = await deleteGoTrueSsoProvider(providerId);
+    if (removal.error) {
+      logger.error("Failed to delete an orphaned SSO provider", {
+        ...filter,
+        providerId,
+        error: removal.error
+      });
+      continue;
+    }
+    logger.info("Deleted an orphaned SSO provider", { ...filter, providerId });
+    const identities = await removeSsoIdentitiesForProvider(db, {
+      providerId
+    });
+    if (identities.error) {
+      logger.error("Failed to remove identities of an orphaned SSO provider", {
+        ...filter,
+        providerId,
+        error: identities.error
+      });
+    }
+  }
+}
+
 const DOMAIN_ALREADY_ADDED_ERROR =
   "This domain has already been added — check its status in the Email Domains list";
 // Generic on purpose — a distinct message would let any tenant probe whether
@@ -248,6 +331,7 @@ export async function addSsoDomain(
   }
 
   const normalized = args.domain.trim().toLowerCase();
+  await releaseDeadDomainClaims(serviceRole, { domain: normalized });
 
   // Claims are per-company; the unique constraint is the race-safe backstop.
   const existing = await serviceRole
@@ -323,6 +407,8 @@ export async function verifySsoDomain(
     return { data: null, error: "Domain is not part of the active connection" };
   }
 
+  await releaseDeadDomainClaims(serviceRole, { domain: row.data.domain });
+
   // Another company already verified this domain — refuse before the DNS check.
   const conflict = await serviceRole
     .from("ssoDomain")
@@ -345,6 +431,13 @@ export async function verifySsoDomain(
   if (!check.verified) {
     return { data: check, error: null };
   }
+
+  // A provider left alive by a failed deactivate still holds the domain in
+  // GoTrue, which then refuses it for this connection. The DNS check above
+  // proved this company owns the domain, and that provider belongs to no
+  // active connection, so delete it (and its identities) first. On failure
+  // the update below reports GoTrue's refusal as before.
+  await releaseOrphanedProviders(db, { domain: row.data.domain });
 
   const provider = await updateGoTrueSsoProvider(connection.data.providerId, {
     metadataUrl: connection.data.metadataUrl ?? undefined,
@@ -477,6 +570,7 @@ export async function removeSsoDomain(
 
 export async function upsertSsoConnection(
   serviceRole: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     companyId: string;
     metadataUrl?: string;
@@ -519,6 +613,12 @@ export async function upsertSsoConnection(
 
   // A new connection starts with no domains — they are claimed and DNS-verified
   // individually afterwards, and only verified domains ever reach GoTrue.
+  // Claims a previous connection failed to release would otherwise show in
+  // the domain list beside the new connection's, and a provider a failed
+  // deactivate left alive still owns the IdP's entity id, so GoTrue would
+  // refuse to create the new one ("saml_idp_already_exists").
+  await releaseDeadDomainClaims(serviceRole, { companyId });
+  await releaseOrphanedProviders(db, { companyId });
   const provider = await createGoTrueSsoProvider({
     metadataUrl,
     metadataXml,
@@ -578,6 +678,7 @@ export async function updateSsoRequireSso(
 
 export async function deactivateSsoConnection(
   serviceRole: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { companyId: string; userId: string }
 ) {
   if (!isSsoEnabled()) return { data: null, error: DISABLED_ERROR };
@@ -611,17 +712,53 @@ export async function deactivateSsoConnection(
     return update;
   }
 
-  // Release the domain claims: the inactive row survives for audit, but its
-  // domains must not stay claimed under a dead connection — the global
-  // UNIQUE("domain") would otherwise block this company (or the domain's real
-  // owner) from ever registering them again. A re-created connection starts
-  // with no domains and re-verifies, matching the modal's "cannot be undone".
-  const domainRemoval = await serviceRole
-    .from("ssoDomain")
-    .delete()
-    .eq("connectionId", existing.data.id)
-    .eq("companyId", args.companyId);
-  if (domainRemoval.error) {
+  // Release the domain claims and delete the GoTrue provider together. The
+  // inactive row survives for audit, but its domains must not stay claimed
+  // under a dead connection — the global UNIQUE("domain") would otherwise block
+  // this company (or the domain's real owner) from ever registering them
+  // again. The rows are deleted in a transaction that commits only after
+  // GoTrue has deleted the provider: when GoTrue refuses, the rows come back
+  // with the rollback, so a failed deactivate leaves the connection exactly as
+  // it was. Deleting them first left an "active" connection with no domains,
+  // which silently stopped both SSO routing and Require SSO.
+  const connection = existing.data;
+  let providerDeleted = false;
+  let domainsReleased = false;
+  let failure: unknown = null;
+  try {
+    await db.transaction().execute(async (trx) => {
+      await trx
+        .deleteFrom("ssoDomain")
+        .where("connectionId", "=", connection.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      const removal = await deleteGoTrueSsoProvider(connection.providerId);
+      if (removal.error) throw new Error(removal.error);
+      providerDeleted = true;
+    });
+    domainsReleased = true;
+  } catch (err) {
+    failure = err;
+  }
+  if (providerDeleted && !domainsReleased) {
+    // GoTrue deleted the provider but the transaction releasing the domain
+    // rows did not commit. The row stays inactive — restoring it would
+    // enforce Require SSO with no provider to sign in through — and the
+    // deactivate has done its job, so it succeeds. Try the release once more
+    // now; if that fails too, the next connect, add or verify of these
+    // domains clears them (releaseDeadDomainClaims).
+    logger.warn("SSO provider deleted; releasing its domain claims again", {
+      companyId: args.companyId,
+      connectionId: connection.id
+    });
+    await releaseDeadDomainClaims(serviceRole, {
+      companyId: args.companyId
+    });
+  } else if (!providerDeleted) {
+    // Nothing changed in GoTrue: restore the row so the admin sees "still
+    // active, try again". If this restore ALSO fails, the leftover is "row
+    // inactive + provider alive" — the callback rejects logins against an
+    // inactive connection and nobody is locked out.
     await serviceRole
       .from("ssoConnection")
       .update({
@@ -631,30 +768,27 @@ export async function deactivateSsoConnection(
       })
       .eq("id", existing.data.id)
       .eq("companyId", args.companyId);
-    return { data: null, error: domainRemoval.error };
+    return {
+      data: null,
+      error:
+        failure instanceof Error
+          ? failure.message
+          : "Failed to delete SSO provider"
+    };
   }
 
-  const removal = await deleteGoTrueSsoProvider(existing.data.providerId);
-  if (removal.error) {
-    // Compensate: restore the row so the admin sees "still active, try again"
-    // rather than an orphaned GoTrue provider squatting on the domains (GoTrue
-    // enforces domain uniqueness, so an orphan blocks re-creating the
-    // connection later). The domain rows are already deleted — after a retry
-    // the admin re-adds and re-verifies them, which is safe; the opposite
-    // leftover (claimed domains under a dead connection) is not. If this
-    // restore ALSO fails, the leftover state is "row inactive + provider
-    // alive" — the safe half: the callback rejects logins against an inactive
-    // connection and nobody is locked out.
-    await serviceRole
-      .from("ssoConnection")
-      .update({
-        active: true,
-        updatedBy: args.userId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", existing.data.id)
-      .eq("companyId", args.companyId);
-    return { data: null, error: removal.error };
+  // The provider is gone, so its identities can never sign in again. A
+  // failure here is logged, not returned: the connection is already off, and
+  // the backfill on the next domain verification clears what is left.
+  const identities = await removeSsoIdentitiesForProvider(db, {
+    providerId: existing.data.providerId
+  });
+  if (identities.error) {
+    logger.error("Failed to remove identities of a deactivated SSO provider", {
+      companyId: args.companyId,
+      providerId: existing.data.providerId,
+      error: identities.error
+    });
   }
 
   return update;

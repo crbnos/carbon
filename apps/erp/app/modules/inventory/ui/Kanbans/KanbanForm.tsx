@@ -14,7 +14,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
-  toast,
+  toastError,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -44,10 +44,15 @@ type KanbanFormValues = z.infer<typeof kanbanValidator>;
 type KanbanFormProps = {
   initialValues: KanbanFormValues;
   locationId?: string;
+  open?: boolean;
   onClose: () => void;
 };
 
-const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
+const KanbanForm = ({
+  initialValues,
+  open = true,
+  onClose
+}: KanbanFormProps) => {
   const { t } = useLingui();
   const [selectedReplenishmentSystem, setSelectedReplenishmentSystem] =
     useState<string>(initialValues.replenishmentSystem || "Buy");
@@ -97,13 +102,19 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
         .maybeSingle()
     ]);
     if (item.error) {
-      toast.error(t`Failed to load item details`);
+      toastError(t`Failed to load item details`, item.error);
       return;
     }
     // The item-level enum can be "Buy and Make", which a kanban cannot be —
     // map anything other than "Make" (incl. "Buy and Make"/null) to "Buy".
-    setSelectedReplenishmentSystem(
-      item.data?.replenishmentSystem === "Make" ? "Make" : "Buy"
+    // A user who already chose Transfer keeps it: the item's own
+    // replenishment says nothing about moving stock between storage units.
+    setSelectedReplenishmentSystem((current) =>
+      current === "Transfer"
+        ? current
+        : item.data?.replenishmentSystem === "Make"
+          ? "Make"
+          : "Buy"
     );
     if (storageUnit.data?.defaultStorageUnitId) {
       setStorageUnitId(storageUnit.data.defaultStorageUnitId);
@@ -186,7 +197,12 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
   const isTransfer = selectedReplenishmentSystem === "Transfer";
 
   return (
-    <Drawer open onOpenChange={onClose}>
+    <Drawer
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
       <DrawerContent>
         <ValidatedForm
           method="post"
@@ -224,12 +240,14 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                   isReadOnly={isEditing}
                 />
 
-                <Number
-                  name="quantity"
-                  label={t`Quantity`}
-                  minValue={1}
-                  helperText={t`The quantity of the item to be reordered on scan-based replenishment.`}
-                />
+                {!isTransfer && (
+                  <Number
+                    name="quantity"
+                    label={t`Quantity`}
+                    minValue={1}
+                    helperText={t`The quantity of the item to be reordered on scan-based replenishment.`}
+                  />
+                )}
 
                 <SelectControlled
                   value={selectedReplenishmentSystem}
@@ -313,6 +331,24 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                   value={storageUnitId ?? undefined}
                   onChange={(value) => setStorageUnitId(value?.id ?? null)}
                 />
+
+                {isTransfer && (
+                  <>
+                    <Number
+                      name="quantity"
+                      label={t`Quantity`}
+                      minValue={1}
+                      helperText={t`The quantity moved from the From storage unit on each signal.`}
+                    />
+                    <Number
+                      name="replenishmentLevel"
+                      label={t`Replenishment Level`}
+                      termId="kanban-replenishment-level"
+                      minValue={0}
+                      helperText={t`When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only.`}
+                    />
+                  </>
+                )}
 
                 {selectedReplenishmentSystem === "Make" && (
                   <>

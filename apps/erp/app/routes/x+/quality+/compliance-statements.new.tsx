@@ -9,10 +9,8 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useNavigate } from "react-router";
-import {
-  complianceStatementValidator,
-  upsertComplianceStatement
-} from "~/modules/quality";
+import { complianceStatementValidator } from "~/modules/quality/quality.models";
+import { upsertComplianceStatement } from "~/modules/quality/quality.service";
 import ComplianceStatementForm from "~/modules/quality/ui/ComplianceStatements/ComplianceStatementForm";
 import { getDatabaseClient } from "~/services/database.server";
 import { getParams, path, requestReferrer } from "~/utils/path";
