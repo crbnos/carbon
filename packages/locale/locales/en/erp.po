@@ -4104,6 +4104,9 @@ msgstr "Any"
 msgid "Any day in the month adds that month"
 msgstr "Any day in the month adds that month"
 
+msgid "any fields set to update on every push"
+msgstr "any fields set to update on every push"
+
 msgid "Any item group"
 msgstr "Any item group"
 
@@ -5889,6 +5892,9 @@ msgstr "BoM explorer setting updated"
 msgid "BOM synced successfully"
 msgstr "BOM synced successfully"
 
+msgid "BOM synced. Not written: {notWritten}"
+msgstr "BOM synced. Not written: {notWritten}"
+
 msgid "BOMs"
 msgstr "BOMs"
 
@@ -6175,6 +6181,9 @@ msgstr "By storage unit"
 
 msgid "By you · edited <0/>"
 msgstr "By you · edited <0/>"
+
+msgid "CAD model"
+msgstr "CAD model"
 
 msgid "CAD Model"
 msgstr "CAD Model"
@@ -11030,6 +11039,9 @@ msgstr "Drawing"
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 
+msgid "drawings"
+msgstr "drawings"
+
 msgid "Drop a drawing or model"
 msgstr "Drop a drawing or model"
 
@@ -11310,10 +11322,6 @@ msgstr "Each period is one month, for the month rate."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
-
-#. placeholder {0}: replaced.join(", ")
-msgid "Each push replaces: {0}. Other edits stay."
-msgstr "Each push replaces: {0}. Other edits stay."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
@@ -15141,6 +15149,9 @@ msgstr "Inactive actions will not appear in selection lists"
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Inactive categories cannot be picked for new time"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr "Inactive units are not offered when choosing a unit"
+
 msgid "Inbound inspection"
 msgstr "Inbound inspection"
 
@@ -16482,8 +16493,8 @@ msgstr "Last push {when} failed: {0}"
 msgid "Last push {when}:"
 msgstr "Last push {when}:"
 
-msgid "Last pushed {lastPushed}."
-msgstr "Last pushed {lastPushed}."
+msgid "Last pushed {lastPushed}"
+msgstr "Last pushed {lastPushed}"
 
 msgid "Last Quarter"
 msgstr "Last Quarter"
@@ -23480,14 +23491,14 @@ msgstr "Push the journal without the dimension"
 msgid "Push to accounting"
 msgstr "Push to accounting"
 
-msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr "Pushes don't change this item's fields, so edits made here stay."
+msgid "Pushes from Onshape can update this item's {pushTargets}, but not its fields."
+msgstr "Pushes from Onshape can update this item's {pushTargets}, but not its fields."
 
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
+msgid "Pushes from Onshape can update this item's {pushTargets}."
+msgstr "Pushes from Onshape can update this item's {pushTargets}."
 
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
+msgid "Pushes stop updating this item, and its current data stays. Any later push that includes this part number links it again."
+msgstr "Pushes stop updating this item, and its current data stays. Any later push that includes this part number links it again."
 
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
@@ -32433,6 +32444,9 @@ msgstr "Try again"
 msgid "Tuesday"
 msgstr "Tuesday"
 
+msgid "Turn Off"
+msgstr "Turn Off"
+
 msgid "Turn On"
 msgstr "Turn On"
 
@@ -32656,6 +32670,9 @@ msgstr "Uninvoiced Shipments"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Unique, uppercase, without spaces (max 10 characters)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr "Unique, without spaces (max 10 characters), such as kg or BX"
 
 msgid "Unit"
 msgstr "Unit"

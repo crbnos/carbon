@@ -58,7 +58,10 @@ import { nanoid } from "nanoid";
 import { data } from "react-router";
 import { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
-import { getCompanySettings } from "~/modules/settings/settings.service";
+import {
+  getCompanySettings,
+  loadMethodWriteRefusals
+} from "~/modules/settings/settings.service";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import {
   listCount,
@@ -2600,13 +2603,17 @@ export async function getUnitOfMeasures(
   return query;
 }
 
+/**
+ * Every unit of the company, inactive ones too: records that use an inactive
+ * unit still show its name. The unit pickers offer active units only.
+ */
 export async function getUnitOfMeasuresList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
   return client
     .from("unitOfMeasure")
-    .select("name, code")
+    .select("name, code, active")
     .eq("companyId", companyId)
     .order("name");
 }
@@ -6652,6 +6659,32 @@ export async function updateServiceName(
   });
 }
 
+/**
+ * Turns units of measure on or off. Each stays active: the database refuses
+ * to change it, so it is left out of the update.
+ */
+export async function updateUnitsOfMeasureActive(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    ids: string[];
+    active: boolean;
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("unitOfMeasure")
+    .update({
+      active: args.active,
+      updatedBy: args.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .in("id", args.ids)
+    .eq("companyId", args.companyId)
+    .neq("code", EACH_UNIT_OF_MEASURE_CODE)
+    .select("id");
+}
+
 export async function upsertUnitOfMeasure(
   client: SupabaseClient<Database>,
   unitOfMeasure:
@@ -9635,6 +9668,27 @@ export function getLockVerdict(lock: {
   return { ok: false, warn: false, message: LOCKED_REVISION_MESSAGE };
 }
 
+/**
+ * Why a CAD sync must not write this BOM, or null: a change notice's Draft at
+ * any stage, or a Production revision under `enforce` (`checkRevisionLock`).
+ */
+export function methodWriteRefusal(
+  target: {
+    changeOrderId: string | null | undefined;
+    revisionStatus: ItemRevisionStatus | null | undefined;
+  },
+  context: { noticeNumber?: string | null; releaseControl: ReleaseControl }
+): string | null {
+  if (target.changeOrderId) {
+    return `its make method is a Draft on ${context.noticeNumber ? `change notice ${context.noticeNumber}` : "a change notice"}. Change the BOM there.`;
+  }
+  const verdict = getLockVerdict({
+    isLocked: target.revisionStatus === "Production",
+    releaseControl: context.releaseControl
+  });
+  return verdict.ok ? null : verdict.message;
+}
+
 type MethodLock = {
   revisionStatus: ItemRevisionStatus | null;
   changeNoticeId: string | null;
@@ -10826,6 +10880,52 @@ export const syncMakeMethodPermission = {
   update: "resources"
 } satisfies PermissionRule<z.output<typeof syncInput>>;
 
+/**
+ * What the Onshape sync does with a make method. An Active one is never
+ * edited: the sync writes into `pickSyncDraft`'s Draft, else a new version.
+ * An Archived one is frozen, as in the BOM editor.
+ */
+export type SyncMethodChoice =
+  | { action: "skip"; makeMethodId: string; reason: string }
+  | { action: "write"; makeMethodId: string }
+  | { action: "draftFromActive"; activeMakeMethodId: string };
+
+export function chooseSyncMethod(
+  method: { id: string; status: string },
+  refusal: string | null | undefined
+): SyncMethodChoice {
+  if (refusal) {
+    return { action: "skip", makeMethodId: method.id, reason: refusal };
+  }
+  if (method.status === "Active") {
+    return { action: "draftFromActive", activeMakeMethodId: method.id };
+  }
+  if (method.status !== "Draft") {
+    return {
+      action: "skip",
+      makeMethodId: method.id,
+      reason:
+        "its make method is archived. Sync the Active version or a Draft instead."
+    };
+  }
+  return { action: "write", makeMethodId: method.id };
+}
+
+/**
+ * The Draft the sync writes in place of an Active method: the newest one no
+ * change notice holds, as the panel's `pickReusableDraft` picks.
+ */
+export function pickSyncDraft<
+  T extends { version: number | null; changeOrderId: string | null }
+>(drafts: readonly T[]): T | null {
+  let chosen: T | null = null;
+  for (const draft of drafts) {
+    if (draft.changeOrderId) continue;
+    if (!chosen || (draft.version ?? 0) > (chosen.version ?? 0)) chosen = draft;
+  }
+  return chosen;
+}
+
 /** Syncs an external CAD structure (Onshape) into a make method's BOM, per `type`. */
 export async function syncMakeMethod(
   ctx: ServiceContext,
@@ -10849,18 +10949,18 @@ export async function syncMakeMethod(
         userId
       });
 
-      // Check if top-level make method is Active and find or create a Draft
       const topLevelMakeMethod = await maybeSingle(
         db,
         "makeMethod",
         { id: makeMethodId, companyId },
-        { columns: ["id", "itemId", "version", "status"] }
+        { columns: ["id", "itemId", "version", "status", "changeOrderId"] }
       );
 
       // Service-role client: a make method outside companyId is a 404.
       if (!topLevelMakeMethod.data) {
         throw new NotFoundError("Make method not found");
       }
+      const topLevelItemId = topLevelMakeMethod.data.itemId;
 
       const existingItemIds = new Set(
         data.map((item) => item.id).filter((id): id is string => Boolean(id))
@@ -10877,15 +10977,17 @@ export async function syncMakeMethod(
             "readableIdWithRevision",
             "unitOfMeasureCode",
             "type",
-            "revision"
+            "revision",
+            "revisionStatus"
           ]
         }
       );
       if (existingItems.error) throw new Error("Failed to fetch items");
 
-      const existingItemsByItemId = new Map(
-        existingItems.data?.map((item) => [item.id, item]) ?? []
-      );
+      const existingItemsByItemId = new Map<
+        string,
+        Omit<(typeof existingItems.data)[number], "revisionStatus">
+      >(existingItems.data?.map((item) => [item.id, item]) ?? []);
 
       // Every item id in the body is updated by id alone below, so each must
       // have come back from the companyId-scoped read above. Checked before
@@ -10896,65 +10998,7 @@ export async function syncMakeMethod(
         }
       }
 
-      let activeMakeMethodId = makeMethodId;
-      let topLevelSourceMakeMethodId: string | null = null;
-
-      if (topLevelMakeMethod.data?.status === "Active") {
-        // Check if there's already a Draft version we can use
-        const existingDraft = await maybeSingle(
-          db,
-          "makeMethod",
-          {
-            itemId: topLevelMakeMethod.data.itemId,
-            status: "Draft",
-            companyId
-          },
-          {
-            columns: ["id", "version"],
-            orderBy: [{ desc: "version" }],
-            limit: 1
-          }
-        );
-
-        if (existingDraft.data) {
-          // Use the existing Draft
-          activeMakeMethodId = existingDraft.data.id;
-        } else {
-          // Get max version across ALL make methods for this item
-          const allVersions = await maybeSingle(
-            db,
-            "makeMethod",
-            { itemId: topLevelMakeMethod.data.itemId, companyId },
-            { columns: ["version"], orderBy: [{ desc: "version" }], limit: 1 }
-          );
-
-          const maxVersion = Number(allVersions.data?.version ?? 0);
-          const newVersion = maxVersion + 1;
-
-          logger.info({
-            action: "creating_top_level_draft",
-            itemId: topLevelMakeMethod.data.itemId,
-            maxVersion,
-            newVersion
-          });
-
-          const newTopLevelMakeMethod = await insertRows(db, "makeMethod", {
-            itemId: topLevelMakeMethod.data.itemId,
-            version: newVersion,
-            status: "Draft",
-            companyId,
-            createdBy: userId
-          });
-
-          const inserted = newTopLevelMakeMethod.data[0];
-          if (inserted) {
-            activeMakeMethodId = inserted.id;
-            topLevelSourceMakeMethodId = makeMethodId;
-          }
-        }
-      }
-
-      // Read after the Draft above may have been created, as before.
+      // Read before any write, so a refusal below leaves nothing behind.
       const existingMakeMethods = await many(
         db,
         "activeMakeMethods",
@@ -10971,6 +11015,127 @@ export async function syncMakeMethod(
         data: existingMakeMethods.data
       });
 
+      // With no Active method the view names the newest Draft, which can be a
+      // change notice's; the view does not carry `changeOrderId`.
+      const draftOwners = await many(
+        db,
+        "makeMethod",
+        {
+          companyId,
+          id: existingMakeMethods.data
+            .filter((method) => method.id && method.status !== "Active")
+            .map((method) => method.id as string)
+        },
+        { columns: ["id", "changeOrderId"] }
+      );
+      const changeOrderIdByMethodId = new Map(
+        draftOwners.data.map((method) => [method.id, method.changeOrderId])
+      );
+      const topLevelItem = await maybeSingle(
+        db,
+        "item",
+        { id: topLevelItemId, companyId },
+        { columns: ["readableIdWithRevision", "revisionStatus"] }
+      );
+      const revisionStatusByItemId = new Map(
+        existingItems.data.map((item) => [item.id, item.revisionStatus])
+      );
+
+      // Refused as the Onshape panel refuses them (`methodWriteRefusal`).
+      const refusalByItemId = await loadMethodWriteRefusals(
+        ctx.asSystem.supabase,
+        companyId,
+        [
+          {
+            itemId: topLevelItemId,
+            method: {
+              changeOrderId:
+                topLevelMakeMethod.data.status === "Active"
+                  ? null
+                  : topLevelMakeMethod.data.changeOrderId
+            },
+            revisionStatus: topLevelItem.data?.revisionStatus
+          },
+          ...existingMakeMethods.data.flatMap((method) =>
+            method.id && method.itemId
+              ? [
+                  {
+                    itemId: method.itemId,
+                    method: {
+                      changeOrderId:
+                        changeOrderIdByMethodId.get(method.id) ?? null
+                    },
+                    revisionStatus: revisionStatusByItemId.get(method.itemId)
+                  }
+                ]
+              : []
+          )
+        ]
+      );
+
+      const topLevel = chooseSyncMethod(
+        topLevelMakeMethod.data,
+        refusalByItemId.get(topLevelItemId)
+      );
+      if (topLevel.action === "skip") {
+        // The sync writes nothing when the method it was given is refused.
+        throw new ServerFnError(
+          `${topLevelItem.data?.readableIdWithRevision ?? "This item"}: ${topLevel.reason}`,
+          422
+        );
+      }
+
+      let activeMakeMethodId = makeMethodId;
+      let topLevelSourceMakeMethodId: string | null = null;
+
+      if (topLevel.action === "draftFromActive") {
+        // Check if there's already a Draft version we can use
+        const drafts = await many(
+          db,
+          "makeMethod",
+          { itemId: topLevelItemId, status: "Draft", companyId },
+          { columns: ["id", "version", "changeOrderId"] }
+        );
+        const existingDraft = pickSyncDraft(drafts.data);
+
+        if (existingDraft) {
+          // Use the existing Draft
+          activeMakeMethodId = existingDraft.id;
+        } else {
+          // Get max version across ALL make methods for this item
+          const allVersions = await maybeSingle(
+            db,
+            "makeMethod",
+            { itemId: topLevelItemId, companyId },
+            { columns: ["version"], orderBy: [{ desc: "version" }], limit: 1 }
+          );
+
+          const maxVersion = Number(allVersions.data?.version ?? 0);
+          const newVersion = maxVersion + 1;
+
+          logger.info({
+            action: "creating_top_level_draft",
+            itemId: topLevelItemId,
+            maxVersion,
+            newVersion
+          });
+
+          const newTopLevelMakeMethod = await insertRows(db, "makeMethod", {
+            itemId: topLevelItemId,
+            version: newVersion,
+            status: "Draft",
+            companyId,
+            createdBy: userId
+          });
+
+          const inserted = newTopLevelMakeMethod.data[0];
+          if (inserted) {
+            activeMakeMethodId = inserted.id;
+            topLevelSourceMakeMethodId = makeMethodId;
+          }
+        }
+      }
+
       const existingMakeMethodsByItemId = new Map<string, MakeMethodInfo>(
         existingMakeMethods.data?.map((makeMethod) => [
           makeMethod.itemId!,
@@ -10982,6 +11147,9 @@ export async function syncMakeMethod(
           }
         ]) ?? []
       );
+
+      // Refused sub-assemblies, as `<part number>: <reason>` like the panel.
+      const skipped = new Set<string>();
 
       {
         interface TreeNode {
@@ -11241,6 +11409,8 @@ export async function syncMakeMethod(
               if (!itemId) throw new Error("Failed to create item");
 
               let materialMakeMethodId: string | undefined;
+              // Set when the sub-assembly's BOM is not the sync's to write.
+              let refusal: string | undefined;
               const existingMakeMethod =
                 existingMakeMethodsByItemId.get(itemId) ||
                 newlyCreatedMakeMethodsByItemId.get(itemId);
@@ -11256,19 +11426,29 @@ export async function syncMakeMethod(
 
               if (defaultMethodType === "Make to Order" || isMade) {
                 if (existingMakeMethod) {
-                  if (existingMakeMethod.status === "Draft") {
+                  const choice = chooseSyncMethod(
+                    existingMakeMethod,
+                    refusalByItemId.get(itemId)
+                  );
+                  if (choice.action === "skip") {
+                    // The line still points at the method; its BOM stays.
+                    materialMakeMethodId = choice.makeMethodId;
+                    refusal = choice.reason;
+                    skipped.add(`${externalPartId}: ${choice.reason}`);
+                  } else if (choice.action === "write") {
                     // Draft - use existing make method directly
-                    materialMakeMethodId = existingMakeMethod.id;
+                    materialMakeMethodId = choice.makeMethodId;
                   } else {
                     // Active - check if there's already a Draft we can use
-                    const existingDraft = await trx
-                      .selectFrom("makeMethod")
-                      .select(["id", "version"])
-                      .where("itemId", "=", itemId)
-                      .where("status", "=", "Draft")
-                      .where("companyId", "=", companyId)
-                      .orderBy("version", "desc")
-                      .executeTakeFirst();
+                    const existingDraft = pickSyncDraft(
+                      await trx
+                        .selectFrom("makeMethod")
+                        .select(["id", "version", "changeOrderId"])
+                        .where("itemId", "=", itemId)
+                        .where("status", "=", "Draft")
+                        .where("companyId", "=", companyId)
+                        .execute()
+                    );
 
                     logger.info({
                       action: "check_existing_draft",
@@ -11425,7 +11605,7 @@ export async function syncMakeMethod(
                 })
                 .execute();
 
-              if (materialMakeMethodId) {
+              if (materialMakeMethodId && !refusal) {
                 await trx
                   .deleteFrom("methodMaterial")
                   .where("makeMethodId", "=", materialMakeMethodId)
@@ -11450,7 +11630,8 @@ export async function syncMakeMethod(
 
       return {
         success: true,
-        makeMethodId: activeMakeMethodId
+        makeMethodId: activeMakeMethodId,
+        skipped: [...skipped]
       };
     }
   }

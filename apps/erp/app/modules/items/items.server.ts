@@ -29,6 +29,7 @@ import {
 } from "@carbon/utils";
 import { z } from "zod";
 import { flattenTree } from "~/components/TreeView";
+import { postingFailure } from "~/modules/inventory/inventory.service";
 import { replanAfterItemChange } from "~/modules/production/production.server";
 import {
   booleanField,
@@ -1096,6 +1097,12 @@ export const createMethodVersion = defineServiceFn({
  * or updates the parts it names and rewrites the method's materials. The
  * method's item is then mapped to the Onshape document, version and element
  * (replacing its earlier mapping), stamped with the sync time.
+ *
+ * It writes nothing into a Draft a change notice holds, or into a released
+ * (Production) revision when release control enforces it, as the Onshape
+ * panel refuses them (`loadMethodWriteRefusals`): a refused method given is
+ * a `rule` error and nothing is written; a refused sub-assembly keeps its
+ * BOM and is listed in `skipped` as `<part number>: <reason>`.
  */
 export const syncOnshapeMethod = defineServiceFn({
   input: z.object({
@@ -1130,7 +1137,8 @@ export const syncOnshapeMethod = defineServiceFn({
       service.syncMakeMethod
     );
     if (synced.error) {
-      return ctx.error("internal", "Failed to sync onshape data", synced.error);
+      // Below 500 the sync refused, in words for the person.
+      return postingFailure(ctx, synced.error, "Failed to sync onshape data");
     }
 
     const cleared = await ctx.asSystem.supabase
@@ -1163,7 +1171,7 @@ export const syncOnshapeMethod = defineServiceFn({
       });
     }
 
-    return { itemId };
+    return { itemId, skipped: synced.data.skipped };
   }
 });
 
@@ -6092,6 +6100,12 @@ export const createUnitOfMeasure = defineServiceFn({
   input: z.looseObject({
     code: z.string().min(1).max(10),
     name: z.string().min(1).max(50),
+    active: z
+      .boolean()
+      .describe(
+        "Inactive units stay out of the unit pickers. Defaults to true."
+      )
+      .optional(),
     customFields: z.unknown().optional(),
     id: z
       .string()
@@ -6111,6 +6125,48 @@ export const createUnitOfMeasure = defineServiceFn({
 });
 
 /**
+ * Turn units of measure on or off
+ *
+ * @remarks
+ * Every company holds Carbon's standard units of measure; the units of the
+ * other measurement system start inactive. An inactive unit stays out of the
+ * unit pickers, and records that use it keep it. Each (EA) is always active and
+ * is left unchanged.
+ *
+ * @param ids - Ids of the units to change.
+ * @param active - true to turn the units on, false to turn them off.
+ * @returns `updated`, the ids of the units changed.
+ *
+ * @mcp
+ */
+export const updateUnitsOfMeasureActive = defineServiceFn({
+  input: z.object({
+    ids: z.array(z.string().min(1)).min(1),
+    active: z.boolean()
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    const result = await service.updateUnitsOfMeasureActive(
+      ctx.asCaller.supabase,
+      {
+        companyId: ctx.company.id,
+        ids: input.ids,
+        active: input.active,
+        updatedBy: ctx.auditUserId
+      }
+    );
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update units of measure",
+        result.error
+      );
+    }
+    return { updated: (result.data ?? []).map((unit) => unit.id) };
+  }
+});
+
+/**
  * Update a unit of measure
  *
  * @remarks
@@ -6123,6 +6179,10 @@ export const updateUnitOfMeasure = defineServiceFn({
     .looseObject({
       code: z.string().min(1).max(10),
       name: z.string().min(1).max(50),
+      active: z
+        .boolean()
+        .describe("Inactive units stay out of the unit pickers.")
+        .optional(),
       customFields: z.unknown().optional(),
       id: z
         .string()

@@ -4104,6 +4104,9 @@ msgstr "아무거나"
 msgid "Any day in the month adds that month"
 msgstr "월의 어느 날짜를 선택해도 해당 월이 추가됩니다."
 
+msgid "any fields set to update on every push"
+msgstr "푸시할 때마다 업데이트되도록 설정된 모든 필드"
+
 msgid "Any item group"
 msgstr "모든 품목 그룹"
 
@@ -5889,6 +5892,9 @@ msgstr "BOM 탐색기 설정 업데이트"
 msgid "BOM synced successfully"
 msgstr "BOM이 동기화되었습니다"
 
+msgid "BOM synced. Not written: {notWritten}"
+msgstr "BOM이 동기화되었습니다. 기록되지 않음: {notWritten}"
+
 msgid "BOMs"
 msgstr "BOM"
 
@@ -6175,6 +6181,9 @@ msgstr "보관 단위별"
 
 msgid "By you · edited <0/>"
 msgstr "당신이 편집함 · <0/>"
+
+msgid "CAD model"
+msgstr "CAD 모델"
 
 msgid "CAD Model"
 msgstr "CAD 모델"
@@ -11030,6 +11039,9 @@ msgstr "도면"
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "도면이 교체되었습니다. 풍선 배치가 제거되었으며 특성 행은 변경되지 않았습니다."
 
+msgid "drawings"
+msgstr "도면"
+
 msgid "Drop a drawing or model"
 msgstr "도면이나 모델을 끌어다 놓으세요"
 
@@ -11310,10 +11322,6 @@ msgstr "각 기간은 1개월이며, 월별 요금으로 청구됩니다."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "각 물리적 개는 자신의 추적 대상과 고유 번호를 받습니다 — 하나의 추적 대상, 하나의 개."
-
-#. placeholder {0}: replaced.join(", ")
-msgid "Each push replaces: {0}. Other edits stay."
-msgstr "각 푸시는 다음을 대체합니다: {0}. 다른 편집은 유지됩니다."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "각 임차료 계약 또는 계약의 영업 담당자(또는 작성자)는 매일 해당 송장 요약을 받습니다."
@@ -15141,6 +15149,9 @@ msgstr "비활성 조치는 선택 목록에 표시되지 않습니다"
 msgid "Inactive categories cannot be picked for new time"
 msgstr "비활성 카테고리는 새로운 시간을 위해 선택될 수 없습니다."
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "수입 검사"
 
@@ -16482,8 +16493,8 @@ msgstr "마지막 전송 {when} 실패: {0}"
 msgid "Last push {when}:"
 msgstr "마지막 푸시 {when}:"
 
-msgid "Last pushed {lastPushed}."
-msgstr "마지막 푸시: {lastPushed}."
+msgid "Last pushed {lastPushed}"
+msgstr "마지막 푸시: {lastPushed}"
 
 msgid "Last Quarter"
 msgstr "지난 분기"
@@ -23480,14 +23491,14 @@ msgstr "차원 없이 전표를 전기하세요"
 msgid "Push to accounting"
 msgstr "회계로 푸시"
 
-msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr "푸시는 이 품목의 필드를 변경하지 않으므로 여기서 만든 편집은 유지됩니다."
+msgid "Pushes from Onshape can update this item's {pushTargets}, but not its fields."
+msgstr "Onshape에서의 푸시는 이 품목의 {pushTargets}을(를) 업데이트할 수 있지만 필드는 변경하지 않습니다."
 
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "Onshape에서의 푸시가 이 품목을 더 이상 업데이트하지 않습니다. Onshape에서 이 부품을 다시 푸시하면 다시 연결됩니다."
+msgid "Pushes from Onshape can update this item's {pushTargets}."
+msgstr "Onshape에서의 푸시는 이 품목의 {pushTargets}을(를) 업데이트할 수 있습니다."
 
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "푸시는 Onshape 필드 페이지에서 \"매번 푸시할 때 업데이트\"로 설정된 필드만 대체합니다."
+msgid "Pushes stop updating this item, and its current data stays. Any later push that includes this part number links it again."
+msgstr "푸시가 더 이상 이 품목을 업데이트하지 않으며 현재 데이터는 그대로 유지됩니다. 이후 이 부품 번호가 포함된 푸시가 있으면 다시 연결됩니다."
 
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "계약 프로젝트를 중단 명령에 따라 보류 상태로 전환하고 90일 종료 날짜를 설정한 후 명령이 종료되면 재개합니다."
@@ -32433,6 +32444,9 @@ msgstr "다시 시도"
 msgid "Tuesday"
 msgstr "화요일"
 
+msgid "Turn Off"
+msgstr ""
+
 msgid "Turn On"
 msgstr "켜기"
 
@@ -32656,6 +32670,9 @@ msgstr "미청구 출하"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "고유하고 대문자이며 공백 없이(최대 10자)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "단위"

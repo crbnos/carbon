@@ -3,11 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ComboboxProps } from "@carbon/form";
-import { CreatableCombobox } from "@carbon/form";
+import { CreatableCombobox, useControlField } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
 import { useMemo, useRef } from "react";
 import { useDrawerItem, useRouteData } from "~/hooks";
 import type { getUnitOfMeasuresList } from "~/modules/items/items.service";
+import { selectableUnitsOfMeasure } from "~/modules/items/items.utils";
 import type { UnitOfMeasureListItem } from "~/modules/items/types";
 import UnitOfMeasureForm from "~/modules/items/ui/UnitOfMeasure/UnitOfMeasureForm";
 import { path } from "~/utils/path";
@@ -30,7 +31,13 @@ const UnitOfMeasurePreview = (
 };
 
 const UnitOfMeasure = (props: UnitOfMeasureSelectProps) => {
-  const options = useUnitOfMeasure();
+  const units = useUnitOfMeasure();
+  const [fieldValue] = useControlField<string | undefined>(props.name);
+  const selected = props.value ?? fieldValue;
+  const options = useMemo(
+    () => selectableUnitsOfMeasure(units, selected),
+    [units, selected]
+  );
 
   const create = useDrawerItem<string>();
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -63,7 +70,8 @@ const UnitOfMeasure = (props: UnitOfMeasureSelectProps) => {
           }}
           initialValues={{
             name: create.item,
-            code: ""
+            code: "",
+            active: true
           }}
         />
       )}
@@ -94,7 +102,8 @@ export const useUnitOfMeasure = () => {
 
     return dataSource.map((c) => ({
       value: c.code,
-      label: c.name
+      label: c.name,
+      active: c.active
     }));
   }, [
     hasSharedPartData,

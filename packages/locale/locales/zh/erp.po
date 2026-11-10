@@ -4104,6 +4104,9 @@ msgstr "任何"
 msgid "Any day in the month adds that month"
 msgstr "月份中的任何一天都会添加该月份"
 
+msgid "any fields set to update on every push"
+msgstr "任何设置为每次推送时更新的字段"
+
 msgid "Any item group"
 msgstr "任何项目组"
 
@@ -5889,6 +5892,9 @@ msgstr "BoM浏览器设置已更新"
 msgid "BOM synced successfully"
 msgstr "BOM 同步成功"
 
+msgid "BOM synced. Not written: {notWritten}"
+msgstr "BOM 已同步。未写入：{notWritten}"
+
 msgid "BOMs"
 msgstr "BOMs"
 
@@ -6175,6 +6181,9 @@ msgstr "按存储单元"
 
 msgid "By you · edited <0/>"
 msgstr "由你·编辑于<0/>"
+
+msgid "CAD model"
+msgstr "CAD 模型"
 
 msgid "CAD Model"
 msgstr "CAD 模型"
@@ -11030,6 +11039,9 @@ msgstr "提取"
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "绘图已替换。气泡位置已移除；特性行保持不变。"
 
+msgid "drawings"
+msgstr "图纸"
+
 msgid "Drop a drawing or model"
 msgstr "拖放图纸或模型"
 
@@ -11310,10 +11322,6 @@ msgstr "每个周期为一个月,按月费率计算。"
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "每个物理件获得其自己的追踪实体和唯一编号——一个实体，一个件。"
-
-#. placeholder {0}: replaced.join(", ")
-msgid "Each push replaces: {0}. Other edits stay."
-msgstr "每次推送替换: {0}. 其他编辑保留。"
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "每个租赁协议或合约的销售人员（或其创建者）每日获得其发票摘要。"
@@ -15141,6 +15149,9 @@ msgstr "已停用的操作不会出现在选择列表中"
 msgid "Inactive categories cannot be picked for new time"
 msgstr "已停用的分类无法为新工时选择"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "来料检验"
 
@@ -16482,8 +16493,8 @@ msgstr "上次推送 {when} 失败：{0}"
 msgid "Last push {when}:"
 msgstr "最后一次推送 {when}："
 
-msgid "Last pushed {lastPushed}."
-msgstr "最后推送：{lastPushed}。"
+msgid "Last pushed {lastPushed}"
+msgstr "最后推送：{lastPushed}"
 
 msgid "Last Quarter"
 msgstr "上一季度"
@@ -23480,14 +23491,14 @@ msgstr "发布不包含维度的凭证"
 msgid "Push to accounting"
 msgstr "推送到会计系统"
 
-msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr "推送不会更改此物料的字段，所以在此处进行的编辑保留。"
+msgid "Pushes from Onshape can update this item's {pushTargets}, but not its fields."
+msgstr "来自 Onshape 的推送可以更新此物料的{pushTargets}，但不会更改其字段。"
 
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "来自 Onshape 的推送停止更新此物料。再次从 Onshape 推送此零件将其链接回。"
+msgid "Pushes from Onshape can update this item's {pushTargets}."
+msgstr "来自 Onshape 的推送可以更新此物料的{pushTargets}。"
 
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "推送仅替换 Onshape 的 Fields 页面在每次推送时设置为更新的字段。"
+msgid "Pushes stop updating this item, and its current data stays. Any later push that includes this part number links it again."
+msgstr "推送将停止更新此物料，其当前数据保持不变。之后任何包含此零件号的推送都会重新链接它。"
 
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "将合同项目根据停工令搁置，包含其90天结束日期，当订单结束时恢复。"
@@ -32433,6 +32444,9 @@ msgstr "重试"
 msgid "Tuesday"
 msgstr "星期二"
 
+msgid "Turn Off"
+msgstr ""
+
 msgid "Turn On"
 msgstr "打开"
 
@@ -32656,6 +32670,9 @@ msgstr "未开票发货"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "唯一、大写、无空格（最多 10 个字符）"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "单位"

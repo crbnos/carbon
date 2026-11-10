@@ -4104,6 +4104,9 @@ msgstr "Qualquer"
 msgid "Any day in the month adds that month"
 msgstr "Qualquer dia do mês adiciona esse mês"
 
+msgid "any fields set to update on every push"
+msgstr "quaisquer campos definidos para atualizar a cada envio"
+
 msgid "Any item group"
 msgstr "Qualquer grupo de itens"
 
@@ -5889,6 +5892,9 @@ msgstr "Configuração do explorador de BOM atualizada"
 msgid "BOM synced successfully"
 msgstr "BOM sincronizado com sucesso"
 
+msgid "BOM synced. Not written: {notWritten}"
+msgstr "BOM sincronizado. Não gravado: {notWritten}"
+
 msgid "BOMs"
 msgstr "BOMs"
 
@@ -6175,6 +6181,9 @@ msgstr "Por unidade de armazenamento"
 
 msgid "By you · edited <0/>"
 msgstr "Por você · editado <0/>"
+
+msgid "CAD model"
+msgstr "modelo CAD"
 
 msgid "CAD Model"
 msgstr "Modelo CAD"
@@ -11030,6 +11039,9 @@ msgstr "Sacando"
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "Desenho substituído. Os posicionamentos de balão foram removidos; as linhas de características permanecem inalteradas."
 
+msgid "drawings"
+msgstr "desenhos"
+
 msgid "Drop a drawing or model"
 msgstr "Solte um desenho ou modelo"
 
@@ -11310,10 +11322,6 @@ msgstr "Cada período dura um mês, com taxa mensal."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Cada unidade física obtém sua própria entidade rastreada e número único — uma entidade, uma unidade."
-
-#. placeholder {0}: replaced.join(", ")
-msgid "Each push replaces: {0}. Other edits stay."
-msgstr "Cada envio substitui: {0}. Outras edições permanecem."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "O vendedor (ou criador) de cada contrato de aluguel ou contrato recebe um resumo diário de suas faturas."
@@ -15141,6 +15149,9 @@ msgstr "Ações inativas não aparecerão nas listas de seleção"
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Categorias inativas não podem ser selecionadas para novo tempo"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "Inspeção de recebimento"
 
@@ -16482,8 +16493,8 @@ msgstr "Último envio {when} falhou: {0}"
 msgid "Last push {when}:"
 msgstr "Último envio {when}:"
 
-msgid "Last pushed {lastPushed}."
-msgstr "Último envio em {lastPushed}."
+msgid "Last pushed {lastPushed}"
+msgstr "Último envio em {lastPushed}"
 
 msgid "Last Quarter"
 msgstr "Último Trimestre"
@@ -23480,14 +23491,14 @@ msgstr "Enviar o diário sem a dimensão"
 msgid "Push to accounting"
 msgstr "Enviar para contabilidade"
 
-msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr "Os envios não alteram os campos deste item, portanto as edições feitas aqui permanecem."
+msgid "Pushes from Onshape can update this item's {pushTargets}, but not its fields."
+msgstr "Os envios do Onshape podem atualizar {pushTargets} deste item, mas não os seus campos."
 
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "Os envios do Onshape deixam de atualizar este item. Enviar esta peça do Onshape novamente a revincula."
+msgid "Pushes from Onshape can update this item's {pushTargets}."
+msgstr "Os envios do Onshape podem atualizar {pushTargets} deste item."
 
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "Os envios substituem apenas os campos que a página Campos do Onshape define como Atualizar em cada envio."
+msgid "Pushes stop updating this item, and its current data stays. Any later push that includes this part number links it again."
+msgstr "Os envios deixam de atualizar este item, e os seus dados atuais permanecem. Qualquer envio posterior que inclua este número de peça volta a vinculá-lo."
 
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "Coloque um projeto de contrato em suspensão sob uma ordem de parada de trabalho, com sua data de término de 90 dias, e retome quando a ordem terminar."
@@ -32433,6 +32444,9 @@ msgstr "Tente novamente"
 msgid "Tuesday"
 msgstr "Terça-feira"
 
+msgid "Turn Off"
+msgstr ""
+
 msgid "Turn On"
 msgstr "Ativar"
 
@@ -32656,6 +32670,9 @@ msgstr "Remessas não faturadas"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Único, em maiúsculas, sem espaços (máx. 10 caracteres)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "Unidade"

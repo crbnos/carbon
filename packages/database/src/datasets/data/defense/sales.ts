@@ -10,6 +10,7 @@ import type {
   ContractSpec,
   CustomerAssetSpec,
   PriceBreak,
+  RentalAgreementSpec,
   SalesData,
   SalesOpportunitySpec,
   SalesReturnSpec,
@@ -1251,6 +1252,65 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
   }
 ];
 
+// Rental agreements over the fleet units (accounting FIXED_ASSETS "fleet-*").
+// The Active one is open-ended, so every line classifies as a Rental.
+export const RENTAL_AGREEMENTS: RentalAgreementSpec[] = [
+  {
+    key: "active",
+    customer: "State Emergency Response Agency",
+    primaryContact: "Lindqvist",
+    contacts: [{ contact: "Ortiz", role: "Site contact" }],
+    status: "Active",
+    startOffset: -45,
+    billingCycle: "Calendar Month",
+    billingTiming: "Advance",
+    lines: [
+      {
+        fixedAsset: "fleet-1",
+        rateUnit: "Month",
+        rate: 2200,
+        fairValue: 38000,
+        economicLifeMonths: 60,
+        deliveredOffset: -40
+      },
+      {
+        fixedAsset: "fleet-2",
+        rateUnit: "Month",
+        rate: 2200,
+        fairValue: 38000,
+        economicLifeMonths: 60
+      }
+    ],
+    charges: [
+      {
+        line: 1,
+        description: "Delivery and operator handover",
+        amount: 1500,
+        dateOffset: -40
+      }
+    ]
+  },
+  {
+    key: "draft",
+    customer: "Defense Innovation Pilot Office",
+    primaryContact: "Whitaker",
+    status: "Draft",
+    startOffset: 14,
+    endOffset: 379,
+    billingCycle: "Calendar Month",
+    billingTiming: "Advance",
+    lines: [
+      {
+        fixedAsset: "fleet-3",
+        rateUnit: "Month",
+        rate: 16500,
+        fairValue: 280000,
+        economicLifeMonths: 60
+      }
+    ]
+  }
+];
+
 export const defenseSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
@@ -1307,5 +1367,6 @@ export const defenseSales: SalesData = {
   ],
   customerAssets: CUSTOMER_ASSETS,
   serviceLaborRates: { cost: 88, bill: 205 },
-  serviceJobs: SERVICE_JOBS
+  serviceJobs: SERVICE_JOBS,
+  rentalAgreements: RENTAL_AGREEMENTS
 };

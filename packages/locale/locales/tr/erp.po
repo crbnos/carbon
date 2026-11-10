@@ -4104,6 +4104,9 @@ msgstr "Herhangi bir"
 msgid "Any day in the month adds that month"
 msgstr "Aydaki herhangi bir gün o ayı ekler"
 
+msgid "any fields set to update on every push"
+msgstr "her gönderimde güncellenecek şekilde ayarlanan alanlar"
+
 msgid "Any item group"
 msgstr "Herhangi bir ürün grubu"
 
@@ -5889,6 +5892,9 @@ msgstr "BoM explorer ayarı güncellendi"
 msgid "BOM synced successfully"
 msgstr "BOM başarıyla senkronize edildi"
 
+msgid "BOM synced. Not written: {notWritten}"
+msgstr "BOM senkronize edildi. Yazılmayanlar: {notWritten}"
+
 msgid "BOMs"
 msgstr "BOM'lar"
 
@@ -6175,6 +6181,9 @@ msgstr "Depolama birimine göre"
 
 msgid "By you · edited <0/>"
 msgstr "Sizin tarafından · düzenlenmiş <0/>"
+
+msgid "CAD model"
+msgstr "CAD modeli"
 
 msgid "CAD Model"
 msgstr "CAD Modeli"
@@ -11030,6 +11039,9 @@ msgstr "Çekiliyor"
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "Çizim değiştirildi. Balon yerleştirmeleri kaldırıldı; özellik satırları değişmedi."
 
+msgid "drawings"
+msgstr "teknik resimler"
+
 msgid "Drop a drawing or model"
 msgstr "Çizim veya model bırakın"
 
@@ -11310,10 +11322,6 @@ msgstr "Her dönem bir aydır, aylık oran için."
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Her fiziksel birim kendi izlenen varlığını ve benzersiz numarasını alır — bir varlık, bir birim."
-
-#. placeholder {0}: replaced.join(", ")
-msgid "Each push replaces: {0}. Other edits stay."
-msgstr "Her gönderim şunları değiştirir: {0}. Diğer düzenlemeler kalır."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Her kiralama anlaşmasının veya sözleşmenin satış temsilcisi (veya yaratıcısı) faturalarının günlük bir özetini alır."
@@ -15141,6 +15149,9 @@ msgstr "Pasif eylemler seçim listelerinde görünmeyecektir"
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Pasif kategoriler yeni zaman için seçilemez"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "Girdi kontrolü"
 
@@ -16482,8 +16493,8 @@ msgstr "Son itme {when} başarısız oldu: {0}"
 msgid "Last push {when}:"
 msgstr "Son gönderim {when}:"
 
-msgid "Last pushed {lastPushed}."
-msgstr "Son gönderim: {lastPushed}."
+msgid "Last pushed {lastPushed}"
+msgstr "Son gönderim: {lastPushed}"
 
 msgid "Last Quarter"
 msgstr "Son Çeyrek"
@@ -23480,14 +23491,14 @@ msgstr "Muhasebe fişini boyut olmadan gönder"
 msgid "Push to accounting"
 msgstr "Muhasebede gönder"
 
-msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr "Gönderimleri bu stok kartının alanlarını değiştirmez, bu yüzden burada yapılan düzenlemeler kalır."
+msgid "Pushes from Onshape can update this item's {pushTargets}, but not its fields."
+msgstr "Onshape'ten gelen gönderimler bu stok kartında şunları güncelleyebilir: {pushTargets}, ancak alanlarını değil."
 
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "Onshape'ten gelen gönderimleri bu stok kartını artık güncellemeyecektir. Bu parçayı Onshape'ten yeniden göndermek onu yeniden bağlayacaktır."
+msgid "Pushes from Onshape can update this item's {pushTargets}."
+msgstr "Onshape'ten gelen gönderimler bu stok kartında şunları güncelleyebilir: {pushTargets}."
 
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "Gönderimleri yalnızca Onshape'nin Fields sayfasında her gönderimde Güncelle olarak ayarlanmış alanları değiştirir."
+msgid "Pushes stop updating this item, and its current data stays. Any later push that includes this part number links it again."
+msgstr "Gönderimler bu stok kartını artık güncellemez ve mevcut verileri korunur. Bu parça numarasını içeren sonraki herhangi bir gönderim onu yeniden bağlar."
 
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "Bir sözleşme projesini durdurma emri kapsamında askıya alın, 90 günlük bitiş tarihiyle ve emir sona erdiğinde devam ettirin."
@@ -32433,6 +32444,9 @@ msgstr "Tekrar deneyin"
 msgid "Tuesday"
 msgstr "Salı"
 
+msgid "Turn Off"
+msgstr ""
+
 msgid "Turn On"
 msgstr "Aç"
 
@@ -32656,6 +32670,9 @@ msgstr "Faturalanmamış sevkiyatlar"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Benzersiz, büyük harf, boşluksuz (en fazla 10 karakter)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "Birim"

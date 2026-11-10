@@ -322,6 +322,14 @@ export const CUSTOMER_CONTACTS = [
     lastName: "Kestenbaum",
     email: "akestenbaum@solsticemedical.com",
     title: "NPI Program Manager"
+  },
+  {
+    customer: "Dominion Ag Equipment",
+    firstName: "Grace",
+    lastName: "Holloway",
+    email: "gholloway@dominionag.com",
+    title: "Maintenance Planner",
+    sharesLocation: true as const
   }
 ];
 
