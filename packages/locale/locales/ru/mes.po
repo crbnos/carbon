@@ -18,6 +18,10 @@ msgstr ", не запущен"
 msgid ", running"
 msgstr ", запущен"
 
+#. placeholder {0}: suggestion.reason
+msgid "\"{0}\" suggests a correction for this unit."
+msgstr ""
+
 msgid "\"{column}\" is required."
 msgstr "«{column}» требуется."
 
@@ -429,6 +433,9 @@ msgstr "Исполнитель"
 
 msgid "Attach file"
 msgstr "Прикрепить файл"
+
+msgid "Attempt limit reached"
+msgstr ""
 
 msgid "Authentication Error"
 msgstr "Ошибка аутентификации"
@@ -1712,6 +1719,9 @@ msgstr "Для вас не установлен текст сертификац�
 msgid "No color"
 msgstr "Без цвета"
 
+msgid "No correction"
+msgstr ""
+
 msgid "No country found."
 msgstr "Страна не найдена."
 
@@ -2863,8 +2873,14 @@ msgstr "Запустить {workType}"
 msgid "Start {workTypeLabel} timer"
 msgstr "Запустить таймер: {workTypeLabel}"
 
+msgid "Start a correction?"
+msgstr ""
+
 msgid "Start clock"
 msgstr "Начать отсчет времени"
+
+msgid "Start correction"
+msgstr ""
 
 msgid "Start Job"
 msgstr "Начать производственный заказ"
@@ -2938,6 +2954,9 @@ msgstr "Отправить анонимно"
 
 msgid "Submit week"
 msgstr "Отправить неделю"
+
+msgid "Suggested"
+msgstr ""
 
 msgid "Suggested coverage"
 msgstr "Предложенное покрытие"
@@ -3041,6 +3060,12 @@ msgstr "Темы"
 msgid "then"
 msgstr "затем"
 
+msgid "Then continues to the next operation"
+msgstr ""
+
+msgid "Then re-inspects here"
+msgstr ""
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Для этого материала нет доступных или израсходованных отслеживаемых деталей."
 
@@ -3091,6 +3116,9 @@ msgstr "Этот образец был удалён"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Это останавливает ваш таймер и проводит рабочее время производственного заказа. Производственный заказ больше не может изменяться."
+
+msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Эта единица будет окончательно списана, и будет создана единица на замену."
@@ -3319,6 +3347,11 @@ msgstr "Загрузка {0}"
 
 msgid "Use a different account"
 msgstr "Использовать другой аккаунт"
+
+#. placeholder {0}: correction.uses
+#. placeholder {1}: correction.maxAttempts
+msgid "Used {0} of {1}"
+msgstr ""
 
 msgid "Used automatically at completion"
 msgstr "Используется автоматически при завершении"

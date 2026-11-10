@@ -371,6 +371,25 @@ For the ERP editor the sibling is **operations on the Bill of Process**:
 ## Changelog
 
 - 2026-11-10: Created after resolving the open questions with Dane.
+- 2026-11-10: Phase 3 implemented (job snapshot, posting, MES prompt).
+  `jobCorrection` (definition JSONB: the job operation, step, tool and
+  parameter rows job creation builds, with rates frozen, plus materials per
+  unit) and `jobCorrectionTrigger`, written per method level by both
+  job-creation paths (`snapshotJobCorrections`; getting a job's method again
+  replaces the level's snapshot). `trigger-correction` posting
+  (`triggerCorrection`): checks job, operation, correction level and units;
+  refuses past `maxAttempts` per serial unit; writes a `rework` row with
+  `jobCorrectionId` (its target is the triggering operation and its reason is
+  the recorded result, instead of the spec's step-record link); inserts the
+  correction's operations after the triggering one, wired in groups
+  (`correction-groups.ts`); with Re-inspect a copy of the triggering operation
+  whose steps keep their result mappings; scope rows; materials; a Rework
+  production quantity; reschedule. MES: the record route returns a
+  suggestion (`getCorrectionSuggestion`), and the record window turns into
+  the correction prompt (`CorrectionPrompt.tsx`), which posts to
+  `x+/trigger-correction`. Each prompt sends one unit (quantity 1). Not yet:
+  the batch record window, correction-operation step slides in the snapshot,
+  and the escalation buttons (the prompt says to scrap or raise an issue).
 - 2026-11-10: Phase 2b implemented (ERP editor). A **Corrections** card on the
   part, tool and service make method pages (`MethodCorrections.tsx`): create,
   edit and delete corrections (name, description, return rule, attempt

@@ -18,6 +18,10 @@ msgstr ", arrêté"
 msgid ", running"
 msgstr ", en cours"
 
+#. placeholder {0}: suggestion.reason
+msgid "\"{0}\" suggests a correction for this unit."
+msgstr ""
+
 msgid "\"{column}\" is required."
 msgstr "« {column} » est requise."
 
@@ -429,6 +433,9 @@ msgstr "Assigné à"
 
 msgid "Attach file"
 msgstr "Joindre un fichier"
+
+msgid "Attempt limit reached"
+msgstr ""
 
 msgid "Authentication Error"
 msgstr "Erreur d'authentification"
@@ -1712,6 +1719,9 @@ msgstr "Aucun texte de certification n'est défini pour vous. Demandez à un adm
 msgid "No color"
 msgstr "Aucune couleur"
 
+msgid "No correction"
+msgstr ""
+
 msgid "No country found."
 msgstr "Aucun pays trouvé."
 
@@ -2863,8 +2873,14 @@ msgstr "Démarrer {workType}"
 msgid "Start {workTypeLabel} timer"
 msgstr "Démarrer le chronomètre {workTypeLabel}"
 
+msgid "Start a correction?"
+msgstr ""
+
 msgid "Start clock"
 msgstr "Démarrer le chrono"
+
+msgid "Start correction"
+msgstr ""
 
 msgid "Start Job"
 msgstr "Démarrer l'ordre de fabrication"
@@ -2938,6 +2954,9 @@ msgstr "Soumettre anonymement"
 
 msgid "Submit week"
 msgstr "Soumettre la semaine"
+
+msgid "Suggested"
+msgstr ""
 
 msgid "Suggested coverage"
 msgstr "Couverture suggérée"
@@ -3041,6 +3060,12 @@ msgstr "Thèmes"
 msgid "then"
 msgstr "puis"
 
+msgid "Then continues to the next operation"
+msgstr ""
+
+msgid "Then re-inspects here"
+msgstr ""
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Il n'y a aucune pièce traçable disponible ou consommée pour cette matière."
 
@@ -3091,6 +3116,9 @@ msgstr "Cet échantillon a été supprimé"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Cela arrête votre chronomètre et comptabilise le temps de l'ordre. L'ordre ne peut plus être modifié."
+
+msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Cette unité sera définitivement mise au rebut et une unité de remplacement sera créée."
@@ -3319,6 +3347,11 @@ msgstr "Téléversement de {0}"
 
 msgid "Use a different account"
 msgstr "Utiliser un compte différent"
+
+#. placeholder {0}: correction.uses
+#. placeholder {1}: correction.maxAttempts
+msgid "Used {0} of {1}"
+msgstr ""
 
 msgid "Used automatically at completion"
 msgstr "Utilisé automatiquement à l'achèvement"

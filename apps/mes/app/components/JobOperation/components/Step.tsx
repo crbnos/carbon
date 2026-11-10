@@ -71,10 +71,12 @@ import {
   measurementStepRecordValidator,
   stepRecordValidator
 } from "~/services/models";
+import type { CorrectionSuggestion } from "~/services/operations.service";
 import type { JobOperationStep } from "~/services/types";
 import { useItems, usePeople } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import FileDropzone from "../../FileDropzone";
+import { CorrectionPrompt } from "./CorrectionPrompt";
 
 // Reference-image annotation pins (mirrors ImageZoomViewer's Annotation shape). The
 // slide row stores these as JSON, so we cast when passing them to the viewer.
@@ -560,6 +562,11 @@ export function RecordModal({
   open?: boolean;
   onClose: () => void;
 }) {
+  // A recorded result mapped to a correction turns the window into the
+  // correction prompt instead of closing it.
+  const [suggestion, setSuggestion] = useState<CorrectionSuggestion | null>(
+    null
+  );
   return (
     <Modal
       open={open}
@@ -570,11 +577,16 @@ export function RecordModal({
       }}
     >
       <ModalContent>
-        <RecordBody
-          attribute={attribute}
-          activeStep={activeStep}
-          onClose={onClose}
-        />
+        {suggestion ? (
+          <CorrectionPrompt suggestion={suggestion} onClose={onClose} />
+        ) : (
+          <RecordBody
+            attribute={attribute}
+            activeStep={activeStep}
+            onClose={onClose}
+            onSuggestCorrection={setSuggestion}
+          />
+        )}
       </ModalContent>
     </Modal>
   );
@@ -583,11 +595,13 @@ export function RecordModal({
 function RecordBody({
   attribute,
   activeStep,
-  onClose
+  onClose,
+  onSuggestCorrection
 }: {
   attribute: JobOperationStep;
   activeStep: number;
   onClose: () => void;
+  onSuggestCorrection?: (suggestion: CorrectionSuggestion) => void;
 }) {
   const [employees] = usePeople();
   const employeeOptions = useMemo(() => {
@@ -605,9 +619,15 @@ function RecordBody({
   const [filePath, setFilePath] = useState<string | null>(null);
   // Bumped on every drop/remove so a stale in-flight upload can't set state
   const uploadIdRef = useRef(0);
-  const fetcher = useAction<{ success: boolean }>({
+  const fetcher = useAction<{
+    success: boolean;
+    correction?: CorrectionSuggestion | null;
+  }>({
     onSuccess: (data) => {
-      if (data?.success) {
+      if (!data?.success) return;
+      if (data.correction && onSuggestCorrection) {
+        onSuggestCorrection(data.correction);
+      } else {
         onClose();
       }
     }

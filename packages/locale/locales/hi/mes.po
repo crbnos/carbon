@@ -18,6 +18,10 @@ msgstr ", चल नहीं रहा"
 msgid ", running"
 msgstr ", चल रहा है"
 
+#. placeholder {0}: suggestion.reason
+msgid "\"{0}\" suggests a correction for this unit."
+msgstr ""
+
 msgid "\"{column}\" is required."
 msgstr "«{column}» आवश्यक है।"
 
@@ -429,6 +433,9 @@ msgstr "असाइनी"
 
 msgid "Attach file"
 msgstr "फ़ाइल संलग्न करें"
+
+msgid "Attempt limit reached"
+msgstr ""
 
 msgid "Authentication Error"
 msgstr "प्रमाणीकरण त्रुटि"
@@ -1712,6 +1719,9 @@ msgstr "आपके लिए कोई प्रमाणपत्र पा�
 msgid "No color"
 msgstr "कोई रंग नहीं"
 
+msgid "No correction"
+msgstr ""
+
 msgid "No country found."
 msgstr "कोई देश नहीं मिला।"
 
@@ -2863,8 +2873,14 @@ msgstr "{workType} शुरू करें"
 msgid "Start {workTypeLabel} timer"
 msgstr "{workTypeLabel} टाइमर शुरू करें"
 
+msgid "Start a correction?"
+msgstr ""
+
 msgid "Start clock"
 msgstr "घड़ी शुरू करें"
+
+msgid "Start correction"
+msgstr ""
 
 msgid "Start Job"
 msgstr "जॉब शुरू करें"
@@ -2938,6 +2954,9 @@ msgstr "गुमनाम रूप से सबमिट करें"
 
 msgid "Submit week"
 msgstr "सप्ताह सबमिट करें"
+
+msgid "Suggested"
+msgstr ""
 
 msgid "Suggested coverage"
 msgstr "सुझाया गया कवरेज"
@@ -3041,6 +3060,12 @@ msgstr "थीम"
 msgid "then"
 msgstr "फिर"
 
+msgid "Then continues to the next operation"
+msgstr ""
+
+msgid "Then re-inspects here"
+msgstr ""
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "इस सामग्री के लिए कोई उपलब्ध या उपयोग की गई ट्रैक की गई पार्ट नहीं है।"
 
@@ -3091,6 +3116,9 @@ msgstr "यह नमूना हटा दिया गया था"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "यह आपकी घड़ी को रोकता है और जॉब के समय को पोस्ट करता है। जॉब अब बदल नहीं सकता।"
+
+msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "इस इकाई को स्थायी रूप से स्क्रैप किया जाएगा और एक रिप्लेसमेंट इकाई बनाई जाएगी।"
@@ -3319,6 +3347,11 @@ msgstr "अपलोड किया जा रहा है {0}"
 
 msgid "Use a different account"
 msgstr "एक अलग खाता उपयोग करें"
+
+#. placeholder {0}: correction.uses
+#. placeholder {1}: correction.maxAttempts
+msgid "Used {0} of {1}"
+msgstr ""
 
 msgid "Used automatically at completion"
 msgstr "पूर्णता पर स्वचालित रूप से उपयोग किया जाता है"

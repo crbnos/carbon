@@ -18,6 +18,10 @@ msgstr ", 실행 중지됨"
 msgid ", running"
 msgstr ", 실행 중"
 
+#. placeholder {0}: suggestion.reason
+msgid "\"{0}\" suggests a correction for this unit."
+msgstr ""
+
 msgid "\"{column}\" is required."
 msgstr "«{column}»은(는) 필수입니다."
 
@@ -429,6 +433,9 @@ msgstr "담당자"
 
 msgid "Attach file"
 msgstr "파일 첨부"
+
+msgid "Attempt limit reached"
+msgstr ""
 
 msgid "Authentication Error"
 msgstr "인증 오류"
@@ -1712,6 +1719,9 @@ msgstr "설정된 인증 텍스트가 없습니다. 설정 → 시간에서 설�
 msgid "No color"
 msgstr "색상 없음"
 
+msgid "No correction"
+msgstr ""
+
 msgid "No country found."
 msgstr "국가를 찾을 수 없습니다."
 
@@ -2863,8 +2873,14 @@ msgstr "{workType} 시작"
 msgid "Start {workTypeLabel} timer"
 msgstr "{workTypeLabel} 타이머 시작"
 
+msgid "Start a correction?"
+msgstr ""
+
 msgid "Start clock"
 msgstr "시간 기록 시작"
+
+msgid "Start correction"
+msgstr ""
 
 msgid "Start Job"
 msgstr "작업 지시 시작"
@@ -2938,6 +2954,9 @@ msgstr "익명으로 제출"
 
 msgid "Submit week"
 msgstr "주 제출"
+
+msgid "Suggested"
+msgstr ""
 
 msgid "Suggested coverage"
 msgstr "권장 범위"
@@ -3041,6 +3060,12 @@ msgstr "테마"
 msgid "then"
 msgstr "그 다음"
 
+msgid "Then continues to the next operation"
+msgstr ""
+
+msgid "Then re-inspects here"
+msgstr ""
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "이 자재에 대해 가용 또는 소모된 추적 부품이 없습니다."
 
@@ -3091,6 +3116,9 @@ msgstr "이 샘플은 삭제되었습니다"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "이는 시계를 중지하고 작업 지시의 시간을 전기합니다. 작업 지시는 더 이상 변경할 수 없습니다."
+
+msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "이 유닛은 영구적으로 스크랩되고 대체 유닛이 생성됩니다."
@@ -3319,6 +3347,11 @@ msgstr "{0} 업로드 중"
 
 msgid "Use a different account"
 msgstr "다른 계정 사용"
+
+#. placeholder {0}: correction.uses
+#. placeholder {1}: correction.maxAttempts
+msgid "Used {0} of {1}"
+msgstr ""
 
 msgid "Used automatically at completion"
 msgstr "완료 시 자동으로 사용됨"

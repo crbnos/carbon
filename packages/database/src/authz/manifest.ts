@@ -914,6 +914,8 @@ export const manifest = {
     read: anyOf("parts_view", "sales_view")
   }),
   job: company("production"),
+  jobCorrection: company("production"),
+  jobCorrectionTrigger: company("production"),
   jobFavorite: policies({
     select: owner("userId"),
     insert: owner("userId"),

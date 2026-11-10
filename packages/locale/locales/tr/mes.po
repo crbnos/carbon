@@ -18,6 +18,10 @@ msgstr ", çalışmıyor"
 msgid ", running"
 msgstr ", çalışıyor"
 
+#. placeholder {0}: suggestion.reason
+msgid "\"{0}\" suggests a correction for this unit."
+msgstr ""
+
 msgid "\"{column}\" is required."
 msgstr "\"{column}\" gereklidir."
 
@@ -429,6 +433,9 @@ msgstr "Atanan"
 
 msgid "Attach file"
 msgstr "Dosya ekle"
+
+msgid "Attempt limit reached"
+msgstr ""
 
 msgid "Authentication Error"
 msgstr "Kimlik Doğrulama Hatası"
@@ -1712,6 +1719,9 @@ msgstr "Sizin için sertifika metni ayarlanmadı. Bir yöneticiden Ayarlar → Z
 msgid "No color"
 msgstr "Renk yok"
 
+msgid "No correction"
+msgstr ""
+
 msgid "No country found."
 msgstr "Ülke bulunamadı."
 
@@ -2863,8 +2873,14 @@ msgstr "{workType} başlat"
 msgid "Start {workTypeLabel} timer"
 msgstr "{workTypeLabel} zamanlayıcısını başlat"
 
+msgid "Start a correction?"
+msgstr ""
+
 msgid "Start clock"
 msgstr "Saati Başlat"
+
+msgid "Start correction"
+msgstr ""
 
 msgid "Start Job"
 msgstr "İş emrini Başlat"
@@ -2938,6 +2954,9 @@ msgstr "Anonim olarak gönder"
 
 msgid "Submit week"
 msgstr "Haftayı Gönder"
+
+msgid "Suggested"
+msgstr ""
 
 msgid "Suggested coverage"
 msgstr "Önerilen kapsam"
@@ -3041,6 +3060,12 @@ msgstr "Temalar"
 msgid "then"
 msgstr "sonra"
 
+msgid "Then continues to the next operation"
+msgstr ""
+
+msgid "Then re-inspects here"
+msgstr ""
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Bu malzeme için hiçbir kullanılabilir veya tüketilmiş izlenmiş parça yoktur."
 
@@ -3091,6 +3116,9 @@ msgstr "Bu numune kaldırıldı"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Bu, saatini durdurur ve iş emrinin süresini muhasebeleştirir. İş emri artık değiştirilemez."
+
+msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir birim oluşturulacaktır."
@@ -3319,6 +3347,11 @@ msgstr "Yükleniyor {0}"
 
 msgid "Use a different account"
 msgstr "Farklı bir hesap kullan"
+
+#. placeholder {0}: correction.uses
+#. placeholder {1}: correction.maxAttempts
+msgid "Used {0} of {1}"
+msgstr ""
 
 msgid "Used automatically at completion"
 msgstr "Tamamlama sırasında otomatik olarak kullanılır"

@@ -2132,6 +2132,161 @@ export async function getTrackedEntitiesForOperation(
   };
 }
 
+export type CorrectionSuggestion = {
+  jobId: string;
+  triggeredAtJobOperationId: string;
+  /** The recorded result, stored as the rework's reason. */
+  reason: string;
+  trackedEntityId: string | null;
+  suggestedJobCorrectionId: string;
+  corrections: {
+    id: string;
+    name: string;
+    returnTo: string;
+    maxAttempts: number | null;
+    /** Earlier uses of this correction by the unit. */
+    uses: number;
+  }[];
+};
+
+/**
+ * The correction a just-recorded step result suggests, with the operation's
+ * other corrections and the unit's earlier uses of each, or null when the
+ * result maps to none. A List or Inspection value matches a mapped value; a
+ * Measurement matches "Below Minimum" or "Above Maximum".
+ */
+export async function getCorrectionSuggestion(
+  client: SupabaseClient<Database>,
+  args: {
+    jobOperationStepId: string;
+    index: number;
+    value?: string | null;
+    numericValue?: number | null;
+    companyId: string;
+  }
+): Promise<CorrectionSuggestion | null> {
+  const triggers = await client
+    .from("jobCorrectionTrigger")
+    .select("jobCorrectionId, listValue, measurementCondition")
+    .eq("jobOperationStepId", args.jobOperationStepId)
+    .eq("companyId", args.companyId);
+  if (triggers.error || !triggers.data?.length) return null;
+
+  const step = await client
+    .from("jobOperationStep")
+    .select("type, minValue, maxValue, operationId")
+    .eq("id", args.jobOperationStepId)
+    .eq("companyId", args.companyId)
+    .single();
+  if (step.error) return null;
+
+  let match: { jobCorrectionId: string; reason: string } | undefined;
+  if (step.data.type === "List" || step.data.type === "Inspection") {
+    const trigger = triggers.data.find(
+      (t) => args.value && t.listValue === args.value
+    );
+    if (trigger && args.value) {
+      match = { jobCorrectionId: trigger.jobCorrectionId, reason: args.value };
+    }
+  } else if (
+    step.data.type === "Measurement" &&
+    args.numericValue !== null &&
+    args.numericValue !== undefined
+  ) {
+    const condition =
+      step.data.minValue !== null && args.numericValue < step.data.minValue
+        ? "Below Minimum"
+        : step.data.maxValue !== null && args.numericValue > step.data.maxValue
+          ? "Above Maximum"
+          : null;
+    const trigger = condition
+      ? triggers.data.find((t) => t.measurementCondition === condition)
+      : undefined;
+    if (trigger) {
+      match = {
+        jobCorrectionId: trigger.jobCorrectionId,
+        reason: `${args.numericValue} (${condition})`
+      };
+    }
+  }
+  if (!match) return null;
+
+  const operation = await client
+    .from("jobOperation")
+    .select("id, jobId, jobMakeMethodId")
+    .eq("id", step.data.operationId)
+    .eq("companyId", args.companyId)
+    .single();
+  if (operation.error || !operation.data.jobMakeMethodId) return null;
+
+  const [corrections, jobMakeMethod] = await Promise.all([
+    client
+      .from("jobCorrection")
+      .select("id, name, returnTo, maxAttempts")
+      .eq("jobMakeMethodId", operation.data.jobMakeMethodId)
+      .eq("companyId", args.companyId)
+      .order("order", { ascending: true }),
+    client
+      .from("jobMakeMethod")
+      .select("requiresSerialTracking")
+      .eq("id", operation.data.jobMakeMethodId)
+      .single()
+  ]);
+  if (corrections.error) return null;
+
+  // A serial unit is the record's position in the unit axis.
+  let trackedEntityId: string | null = null;
+  const uses = new Map<string, number>();
+  if (jobMakeMethod.data?.requiresSerialTracking) {
+    const entities = await getTrackedEntitiesByMakeMethodId(
+      client,
+      operation.data.jobMakeMethodId,
+      args.companyId
+    );
+    trackedEntityId = entities.data?.[args.index]?.id ?? null;
+  }
+  if (trackedEntityId) {
+    const scoped = await client
+      .from("jobOperationTrackedEntity")
+      .select("jobOperation!inner(reworkId)")
+      .eq("trackedEntityId", trackedEntityId)
+      .eq("companyId", args.companyId);
+    const reworkIds = [
+      ...new Set(
+        (scoped.data ?? [])
+          .map((row) => row.jobOperation?.reworkId)
+          .filter((id): id is string => !!id)
+      )
+    ];
+    if (reworkIds.length > 0) {
+      const reworks = await client
+        .from("rework")
+        .select("jobCorrectionId")
+        .in("id", reworkIds)
+        .eq("companyId", args.companyId);
+      for (const rework of reworks.data ?? []) {
+        if (!rework.jobCorrectionId) continue;
+        uses.set(
+          rework.jobCorrectionId,
+          (uses.get(rework.jobCorrectionId) ?? 0) + 1
+        );
+      }
+    }
+  }
+
+  return {
+    jobId: operation.data.jobId,
+    triggeredAtJobOperationId: operation.data.id,
+    reason: match.reason,
+    trackedEntityId,
+    suggestedJobCorrectionId: match.jobCorrectionId,
+    corrections: corrections.data.map((correction) => ({
+      ...correction,
+      uses: uses.get(correction.id) ?? 0
+    }))
+  };
+}
+
 export async function getTrackedEntity(
   client: SupabaseClient<Database>,
   id: string

@@ -319,6 +319,15 @@ export const triggerReworkValidator = z.object({
   inspectionId: zfd.text(z.string().optional())
 });
 
+export const triggerCorrectionValidator = z.object({
+  jobId: z.string().min(1),
+  triggeredAtJobOperationId: z.string().min(1),
+  jobCorrectionId: z.string().min(1, { message: "Choose a correction" }),
+  reason: z.string().min(1),
+  quantity: zfd.numeric(z.number().positive().default(1)),
+  trackedEntityId: zfd.text(z.string().optional())
+});
+
 export const maintenanceDispatchValidator = z.object({
   workCenterId: z.string().min(1, { message: "Work Center is required" }),
   priority: z.enum(maintenanceDispatchPriority, {

@@ -18,6 +18,10 @@ msgstr ", 停止中"
 msgid ", running"
 msgstr ", 実行中"
 
+#. placeholder {0}: suggestion.reason
+msgid "\"{0}\" suggests a correction for this unit."
+msgstr ""
+
 msgid "\"{column}\" is required."
 msgstr "「{column}」は必須です。"
 
@@ -429,6 +433,9 @@ msgstr "担当者"
 
 msgid "Attach file"
 msgstr "ファイルを添付"
+
+msgid "Attempt limit reached"
+msgstr ""
 
 msgid "Authentication Error"
 msgstr "認証エラー"
@@ -1712,6 +1719,9 @@ msgstr "認証テキストが設定されていません。管理者に設定 �
 msgid "No color"
 msgstr "色なし"
 
+msgid "No correction"
+msgstr ""
+
 msgid "No country found."
 msgstr "国が見つかりません。"
 
@@ -2863,8 +2873,14 @@ msgstr "{workType} を開始"
 msgid "Start {workTypeLabel} timer"
 msgstr "{workTypeLabel} タイマーを開始"
 
+msgid "Start a correction?"
+msgstr ""
+
 msgid "Start clock"
 msgstr "クロック開始"
+
+msgid "Start correction"
+msgstr ""
 
 msgid "Start Job"
 msgstr "製造指図を開始"
@@ -2938,6 +2954,9 @@ msgstr "匿名で提出"
 
 msgid "Submit week"
 msgstr "週を提出"
+
+msgid "Suggested"
+msgstr ""
 
 msgid "Suggested coverage"
 msgstr "推奨カバレッジ"
@@ -3041,6 +3060,12 @@ msgstr "テーマ"
 msgid "then"
 msgstr "その後"
 
+msgid "Then continues to the next operation"
+msgstr ""
+
+msgid "Then re-inspects here"
+msgstr ""
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "このマテリアルについて、利用可能または消費済みの追跡部品がありません。"
 
@@ -3091,6 +3116,9 @@ msgstr "このサンプルは削除されました"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "これはクロックを停止して、製造指図の時間を転記します。製造指図は変更できなくなります。"
+
+msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "このユニットは永久にスクラップされ、代替ユニットが作成されます。"
@@ -3319,6 +3347,11 @@ msgstr "{0} をアップロード中"
 
 msgid "Use a different account"
 msgstr "別のアカウントを使用"
+
+#. placeholder {0}: correction.uses
+#. placeholder {1}: correction.maxAttempts
+msgid "Used {0} of {1}"
+msgstr ""
 
 msgid "Used automatically at completion"
 msgstr "完了時に自動使用"

@@ -14,6 +14,7 @@ import {
   postProductionEventInput,
   recalculateInput,
   rescheduleInput,
+  triggerCorrectionInput,
   triggerReworkInput
 } from "@carbon/api/postings";
 import type {
@@ -223,6 +224,10 @@ import {
 import { invokePosting } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import type { MethodType } from "../shared/types";
+import {
+  correctionDependencyEdges,
+  correctionOperationGroups
+} from "./correction-groups";
 import {
   claimPlanningActions,
   releasePlanningActionClaims
@@ -14730,6 +14735,243 @@ async function copyMethodCorrections(
   }
 }
 
+/**
+ * A job correction's `definition`: its operations as the job operation,
+ * step, tool and parameter rows job creation builds (rates frozen with the
+ * job's), and its materials with their quantity per unit. trigger-correction
+ * spreads these rows into inserts for the units sent into the correction.
+ */
+export type JobCorrectionDefinition = {
+  version: 1;
+  operations: {
+    /** The source method operation, which materials point at. */
+    key: string;
+    operation: Record<string, unknown>;
+    steps: Record<string, unknown>[];
+    tools: { toolId: string; quantity: number }[];
+    parameters: { key: string; value: string }[];
+  }[];
+  materials: {
+    itemId: string;
+    itemType: string;
+    methodType: string;
+    description: string;
+    quantity: number;
+    unitOfMeasureCode: string;
+    order: number;
+    operationKey: string | null;
+  }[];
+};
+
+const CORRECTION_STEP_COLUMNS = [
+  "name",
+  "type",
+  "required",
+  "sortOrder",
+  "minValue",
+  "maxValue",
+  "listValues",
+  "unitOfMeasureCode",
+  "fileTypes",
+  "description"
+] as const;
+
+/**
+ * Snapshots one make method level's corrections onto the job, with the result
+ * mappings moved onto the job's own steps (`stepMap`: method step id -> job
+ * step id). Replaces the level's earlier snapshot, so getting a job's method
+ * again refreshes it.
+ */
+async function snapshotJobCorrections(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    makeMethodId: string;
+    jobId: string;
+    jobMakeMethodId: string;
+    companyId: string;
+    userId: string;
+    stepMap: Record<string, string>;
+    laborAndOverheadRates: ReturnType<typeof getRatesFromWorkCenters>;
+    outsideOperationRates: ReturnType<typeof getRatesFromSupplierProcesses>;
+  }
+) {
+  const { makeMethodId, jobId, jobMakeMethodId, companyId, userId } = args;
+
+  await trx
+    .deleteFrom("jobCorrection")
+    .where("jobMakeMethodId", "=", jobMakeMethodId)
+    .where("companyId", "=", companyId)
+    .execute();
+
+  const corrections = await trx
+    .selectFrom("methodCorrection")
+    .selectAll()
+    .where("makeMethodId", "=", makeMethodId)
+    .where("companyId", "=", companyId)
+    .execute();
+  if (corrections.length === 0) return;
+
+  const correctionIds = corrections.map((correction) => correction.id);
+  const [operations, materials, triggers] = await Promise.all([
+    trx
+      .selectFrom("methodOperation")
+      .selectAll()
+      .where("methodCorrectionId", "in", correctionIds)
+      .where("companyId", "=", companyId)
+      .orderBy("order", "asc")
+      .execute(),
+    trx
+      .selectFrom("methodMaterial")
+      .innerJoin("item", "item.id", "methodMaterial.itemId")
+      .select([
+        "methodMaterial.methodCorrectionId",
+        "methodMaterial.itemId",
+        "methodMaterial.itemType",
+        "methodMaterial.methodType",
+        "methodMaterial.quantity",
+        "methodMaterial.unitOfMeasureCode",
+        "methodMaterial.order",
+        "methodMaterial.methodOperationId",
+        "item.name"
+      ])
+      .where("methodMaterial.methodCorrectionId", "in", correctionIds)
+      .where("methodMaterial.companyId", "=", companyId)
+      .execute(),
+    trx
+      .selectFrom("methodCorrectionTrigger")
+      .selectAll()
+      .where("methodCorrectionId", "in", correctionIds)
+      .where("companyId", "=", companyId)
+      .execute()
+  ]);
+
+  const operationIds = operations.map((operation) => operation.id);
+  const [steps, tools, parameters] =
+    operationIds.length > 0
+      ? await Promise.all([
+          trx
+            .selectFrom("methodOperationStep")
+            .selectAll()
+            .where("operationId", "in", operationIds)
+            .execute(),
+          trx
+            .selectFrom("methodOperationTool")
+            .selectAll()
+            .where("operationId", "in", operationIds)
+            .execute(),
+          trx
+            .selectFrom("methodOperationParameter")
+            .selectAll()
+            .where("operationId", "in", operationIds)
+            .execute()
+        ])
+      : [[], [], []];
+
+  const jobCorrectionIds = await newIds(trx, "jcor", corrections.length);
+  const jobCorrectionIdMap = new Map(
+    corrections.map((correction, i) => [correction.id, jobCorrectionIds[i]!])
+  );
+
+  const rows = corrections.map((correction) => {
+    const definition: JobCorrectionDefinition = {
+      version: 1,
+      operations: operations
+        .filter((operation) => operation.methodCorrectionId === correction.id)
+        .map((operation) => ({
+          key: operation.id,
+          operation: {
+            processId: operation.processId,
+            procedureId: operation.procedureId,
+            workCenterId: operation.workCenterId,
+            description: operation.description,
+            setupTime: operation.setupTime,
+            setupUnit: operation.setupUnit,
+            laborTime: operation.laborTime,
+            laborUnit: operation.laborUnit,
+            machineTime: operation.machineTime,
+            machineUnit: operation.machineUnit,
+            ...args.laborAndOverheadRates(
+              operation.processId,
+              operation.workCenterId
+            ),
+            operationOrder: operation.operationOrder,
+            operationType: normalizeOperationType(operation.operationType),
+            assemblyInstructionId: operation.assemblyInstructionId,
+            inspectionDocumentId: operation.inspectionDocumentId,
+            operationSupplierProcessId: operation.operationSupplierProcessId,
+            ...args.outsideOperationRates(
+              operation.processId,
+              operation.operationSupplierProcessId
+            ),
+            workInstruction: operation.workInstruction ?? {},
+            tags: operation.tags
+          },
+          steps: steps
+            .filter((step) => step.operationId === operation.id)
+            .map((step) =>
+              Object.fromEntries(
+                CORRECTION_STEP_COLUMNS.map((column) => [column, step[column]])
+              )
+            ),
+          tools: tools
+            .filter((tool) => tool.operationId === operation.id)
+            .map((tool) => ({ toolId: tool.toolId, quantity: tool.quantity })),
+          parameters: parameters
+            .filter((parameter) => parameter.operationId === operation.id)
+            .map((parameter) => ({
+              key: parameter.key,
+              value: parameter.value
+            }))
+        })),
+      materials: materials
+        .filter((material) => material.methodCorrectionId === correction.id)
+        .map((material) => ({
+          itemId: material.itemId,
+          itemType: material.itemType,
+          methodType: material.methodType,
+          description: material.name,
+          quantity: Number(material.quantity),
+          unitOfMeasureCode: material.unitOfMeasureCode,
+          order: Number(material.order),
+          operationKey: material.methodOperationId
+        }))
+    };
+    return {
+      id: jobCorrectionIdMap.get(correction.id)!,
+      companyId,
+      jobId,
+      jobMakeMethodId,
+      methodCorrectionId: correction.id,
+      name: correction.name,
+      description: correction.description,
+      returnTo: correction.returnTo,
+      maxAttempts: correction.maxAttempts,
+      order: correction.order,
+      definition: JSON.stringify(definition),
+      createdBy: userId
+    };
+  });
+  await trx.insertInto("jobCorrection").values(rows).execute();
+
+  const triggerRows = triggers.flatMap((trigger) => {
+    const jobOperationStepId = args.stepMap[trigger.methodOperationStepId];
+    if (!jobOperationStepId) return [];
+    return [
+      {
+        jobOperationStepId,
+        jobCorrectionId: jobCorrectionIdMap.get(trigger.methodCorrectionId)!,
+        listValue: trigger.listValue,
+        measurementCondition: trigger.measurementCondition,
+        companyId,
+        createdBy: userId
+      }
+    ];
+  });
+  if (triggerRows.length > 0) {
+    await trx.insertInto("jobCorrectionTrigger").values(triggerRows).execute();
+  }
+}
+
 // Many-to-many step links (Phase 2): remap a parent's OLD operation-step ids onto the freshly
 // inserted step ids via stepMap, dropping any that don't map. Empty in = the parent applies to
 // the whole operation (no join rows, shown on every step in the MES).
@@ -16028,6 +16270,16 @@ export async function getMethod(
                 return acc;
               }, {});
             }
+            await snapshotJobCorrections(trx, {
+              makeMethodId: node.data.materialMakeMethodId,
+              jobId,
+              jobMakeMethodId: parentJobMakeMethodId!,
+              companyId,
+              userId,
+              stepMap: methodStepsToJobSteps,
+              laborAndOverheadRates: getLaborAndOverheadRates,
+              outsideOperationRates: getOutsideOperationRates
+            });
           } // end if (parts.billOfProcess)
 
           if (parts.billOfMaterial) {
@@ -16904,6 +17156,16 @@ export async function getMethod(
                   {}
                 ) ?? {};
             }
+            await snapshotJobCorrections(trx, {
+              makeMethodId: node.data.materialMakeMethodId,
+              jobId: jobMakeMethod.data?.jobId!,
+              jobMakeMethodId: parentJobMakeMethodId!,
+              companyId,
+              userId,
+              stepMap: methodStepsToJobSteps,
+              laborAndOverheadRates: getLaborAndOverheadRates,
+              outsideOperationRates: getOutsideOperationRates
+            });
           } // end if (parts.billOfProcess)
 
           if (parts.billOfMaterial) {
@@ -26213,6 +26475,555 @@ export async function triggerRework(
 
   return { success: true, ...result };
 }
+
+export const triggerCorrectionPermission = {
+  update: "production"
+} satisfies PermissionRule<z.output<typeof triggerCorrectionInput>>;
+
+/**
+ * Sends units through one of the job's corrections: inserts the correction's
+ * operations after the operation that found the problem (scoped to the units
+ * for a serial part), adds its materials, and with "Re-inspect" a copy of that
+ * operation after them, then reschedules the job. Refuses a unit that has
+ * already used the correction its limit number of times.
+ */
+export async function triggerCorrection(
+  ctx: ServiceContext,
+  raw: z.input<typeof triggerCorrectionInput>
+) {
+  const input = triggerCorrectionInput.parse(raw);
+  const db = ctx.asSystem.pg;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+
+  const job = await db
+    .selectFrom("job")
+    .select(["id", "companyId"])
+    .where("id", "=", input.jobId)
+    .executeTakeFirst();
+  if (!job || job.companyId !== companyId) {
+    throw new NotFoundError("Job not found in this company");
+  }
+
+  const triggeringOperation = await db
+    .selectFrom("jobOperation")
+    .selectAll()
+    .where("id", "=", input.triggeredAtJobOperationId)
+    .where("jobId", "=", input.jobId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!triggeringOperation) {
+    throw new NotFoundError("Job operation not found in this company");
+  }
+
+  const correction = await db
+    .selectFrom("jobCorrection")
+    .selectAll()
+    .where("id", "=", input.jobCorrectionId)
+    .where("jobId", "=", input.jobId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!correction) {
+    throw new NotFoundError("Correction not found on this job");
+  }
+  if (correction.jobMakeMethodId !== triggeringOperation.jobMakeMethodId) {
+    throw new InvalidInputError(
+      "The correction belongs to another part of this job"
+    );
+  }
+
+  const trackedEntityIds = input.trackedEntityIds ?? [];
+  await assertCompanyRecords(
+    db,
+    "trackedEntity",
+    trackedEntityIds,
+    companyId,
+    "Tracked entity"
+  );
+  await assertCompanyRecords(
+    db,
+    "inspection",
+    [input.inspectionId],
+    companyId,
+    "Inspection"
+  );
+
+  const definition =
+    correction.definition as unknown as JobCorrectionDefinition;
+  if (definition?.version !== 1 || definition.operations.length === 0) {
+    throw new InvalidInputError("The correction has no operations");
+  }
+
+  // The attempt limit counts earlier uses of this correction by each unit.
+  if (correction.maxAttempts !== null && trackedEntityIds.length > 0) {
+    const uses = await db
+      .selectFrom("rework")
+      .innerJoin("jobOperation", "jobOperation.reworkId", "rework.id")
+      .innerJoin(
+        "jobOperationTrackedEntity",
+        "jobOperationTrackedEntity.jobOperationId",
+        "jobOperation.id"
+      )
+      .select([
+        "jobOperationTrackedEntity.trackedEntityId",
+        sql<string>`count(DISTINCT "rework"."id")`.as("uses")
+      ])
+      .where("rework.jobCorrectionId", "=", correction.id)
+      .where("rework.companyId", "=", companyId)
+      .where(
+        "jobOperationTrackedEntity.trackedEntityId",
+        "in",
+        trackedEntityIds
+      )
+      .groupBy("jobOperationTrackedEntity.trackedEntityId")
+      .execute();
+    const overLimit = uses.find(
+      (use) => Number(use.uses) >= correction.maxAttempts!
+    );
+    if (overLimit) {
+      throw new InvalidInputError(
+        `This unit has used "${correction.name}" ${overLimit.uses} times, its limit. Scrap it or raise a quality issue.`
+      );
+    }
+  }
+
+  const result = await db.transaction().execute((trx) =>
+    insertCorrectionOperations(trx, {
+      input,
+      correction: {
+        id: correction.id,
+        returnTo: correction.returnTo,
+        definition
+      },
+      triggeringOperation,
+      companyId,
+      userId
+    })
+  );
+
+  const rescheduled = await invokePosting(
+    { db, companyId, userId },
+    "reschedule",
+    { jobId: input.jobId },
+    rescheduleJob
+  );
+  if (rescheduled.error) {
+    triggerReworkLogger.error("Failed to reschedule after a correction", {
+      error: rescheduled.error
+    });
+  }
+
+  return { success: true, ...result };
+}
+
+async function insertCorrectionOperations(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    input: z.output<typeof triggerCorrectionInput>;
+    correction: {
+      id: string;
+      returnTo: Database["public"]["Enums"]["correctionReturnTo"];
+      definition: JobCorrectionDefinition;
+    };
+    triggeringOperation: Database["public"]["Tables"]["jobOperation"]["Row"];
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { input, correction, triggeringOperation, companyId, userId } = args;
+  const { definition } = correction;
+  const trackedEntityIds = input.trackedEntityIds ?? [];
+  const jobMakeMethodId = triggeringOperation.jobMakeMethodId!;
+  const reinspect = correction.returnTo === "Re-inspect";
+
+  const [rework] = await trx
+    .insertInto("rework")
+    .values({
+      jobId: input.jobId,
+      triggeredAtJobOperationId: triggeringOperation.id,
+      // A correction has no earlier operation to go back to.
+      targetJobOperationId: triggeringOperation.id,
+      reason: input.reason,
+      quantity: input.quantity,
+      requestedById: userId,
+      jobCorrectionId: correction.id,
+      companyId
+    })
+    .returning(["id"])
+    .execute();
+
+  if (trackedEntityIds.length > 0) {
+    const activityId = nanoid();
+    await trx
+      .insertInto("trackedActivity")
+      .values({
+        id: activityId,
+        type: "Rework",
+        sourceDocument: "Rework",
+        sourceDocumentId: rework!.id,
+        attributes: {
+          Job: input.jobId,
+          "Triggered At": triggeringOperation.id,
+          Correction: correction.id,
+          Reason: input.reason,
+          Quantity: input.quantity
+        },
+        companyId,
+        createdBy: userId
+      })
+      .execute();
+    await trx
+      .insertInto("trackedActivityInput")
+      .values(
+        trackedEntityIds.map((trackedEntityId) => ({
+          trackedActivityId: activityId,
+          trackedEntityId,
+          quantity: trackedEntityIds.length > 1 ? 1 : input.quantity,
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .execute();
+  }
+
+  // Between the triggering operation and the next one, like a rework.
+  const nextOperation = await trx
+    .selectFrom("jobOperation")
+    .select("order")
+    .where("jobId", "=", input.jobId)
+    .where("order", ">", triggeringOperation.order)
+    .orderBy("order", "asc")
+    .executeTakeFirst();
+  const triggerOrder = Number(triggeringOperation.order);
+  const upperBound = nextOperation
+    ? Number(nextOperation.order)
+    : triggerOrder + 1;
+  const count = definition.operations.length + (reinspect ? 1 : 0);
+  const increment = (upperBound - triggerOrder) / (count + 1);
+
+  const correctionInserts = definition.operations.map((entry, i) => ({
+    ...entry.operation,
+    workInstruction: toJson(entry.operation.workInstruction ?? {}),
+    // The first runs alongside the triggering operation's successors until
+    // the routing converges, as a rework's first copy does.
+    operationOrder:
+      i === 0 ? "With Previous" : (entry.operation.operationOrder as string),
+    jobId: input.jobId,
+    jobMakeMethodId,
+    order: triggerOrder + increment * (i + 1),
+    operationQuantity: input.quantity,
+    targetQuantity: input.quantity,
+    status: i === 0 ? "Ready" : "Waiting",
+    reworkId: rework!.id,
+    companyId,
+    createdBy: userId,
+    customFields: {}
+  }));
+  const inserted = await trx
+    .insertInto("jobOperation")
+    .values(correctionInserts as never)
+    .returning(["id"])
+    .execute();
+  const correctionOperationIds = inserted.map((row) => row.id);
+  const operationIdByKey = new Map(
+    definition.operations.map((entry, i) => [
+      entry.key,
+      correctionOperationIds[i]!
+    ])
+  );
+
+  // Steps, tools and parameters of the correction's operations.
+  const stepRows = definition.operations.flatMap((entry, i) =>
+    entry.steps.map((step) => ({
+      ...step,
+      operationId: correctionOperationIds[i]!,
+      companyId,
+      createdBy: userId
+    }))
+  );
+  const toolRows = definition.operations.flatMap((entry, i) =>
+    entry.tools.map((tool) => ({
+      ...tool,
+      operationId: correctionOperationIds[i]!,
+      companyId,
+      createdBy: userId
+    }))
+  );
+  const parameterRows = definition.operations.flatMap((entry, i) =>
+    entry.parameters.map((parameter) => ({
+      ...parameter,
+      operationId: correctionOperationIds[i]!,
+      companyId,
+      createdBy: userId
+    }))
+  );
+  for (const rows of chunked(stepRows)) {
+    await trx
+      .insertInto("jobOperationStep")
+      .values(rows as never)
+      .execute();
+  }
+  for (const rows of chunked(toolRows)) {
+    await trx.insertInto("jobOperationTool").values(rows).execute();
+  }
+  for (const rows of chunked(parameterRows)) {
+    await trx.insertInto("jobOperationParameter").values(rows).execute();
+  }
+
+  // With "Re-inspect", a copy of the triggering operation follows.
+  let reinspectOperationId: string | null = null;
+  if (reinspect) {
+    const {
+      id: _id,
+      createdAt: _createdAt,
+      updatedAt: _updatedAt,
+      updatedBy: _updatedBy,
+      ...source
+    } = triggeringOperation;
+    const [copy] = await trx
+      .insertInto("jobOperation")
+      .values({
+        jobId: source.jobId,
+        jobMakeMethodId: source.jobMakeMethodId,
+        order: triggerOrder + increment * count,
+        processId: source.processId,
+        workCenterId: source.workCenterId,
+        description: source.description,
+        setupTime: source.setupTime,
+        setupUnit: source.setupUnit,
+        laborTime: source.laborTime,
+        laborUnit: source.laborUnit,
+        machineTime: source.machineTime,
+        machineUnit: source.machineUnit,
+        operationOrder: "After Previous",
+        laborRate: source.laborRate,
+        overheadRate: source.overheadRate,
+        machineRate: source.machineRate,
+        operationType: source.operationType,
+        operationMinimumCost: source.operationMinimumCost,
+        operationLeadTime: source.operationLeadTime,
+        operationUnitCost: source.operationUnitCost,
+        operationSupplierProcessId: source.operationSupplierProcessId,
+        workInstruction: source.workInstruction,
+        procedureId: source.procedureId,
+        inspectionDocumentId: source.inspectionDocumentId,
+        assemblyInstructionId: source.assemblyInstructionId,
+        operationQuantity: input.quantity,
+        targetQuantity: input.quantity,
+        tags: source.tags,
+        companyId,
+        createdBy: userId,
+        reworkId: rework!.id,
+        status: "Waiting",
+        customFields: source.customFields
+      })
+      .returning(["id"])
+      .execute();
+    reinspectOperationId = copy!.id;
+
+    const [steps, tools, parameters] = await Promise.all([
+      trx
+        .selectFrom("jobOperationStep")
+        .selectAll()
+        .where("operationId", "=", triggeringOperation.id)
+        .execute(),
+      trx
+        .selectFrom("jobOperationTool")
+        .selectAll()
+        .where("operationId", "=", triggeringOperation.id)
+        .execute(),
+      trx
+        .selectFrom("jobOperationParameter")
+        .selectAll()
+        .where("operationId", "=", triggeringOperation.id)
+        .execute()
+    ]);
+    if (steps.length > 0) {
+      // Ids made here so the re-inspection's steps keep the original steps'
+      // result mappings: a second bad result suggests a correction again.
+      const stepIds = await newIds(trx, STEP_ID_PREFIX.job, steps.length);
+      const stepIdMap = new Map(steps.map((step, i) => [step.id, stepIds[i]!]));
+      await trx
+        .insertInto("jobOperationStep")
+        .values(
+          steps.map(
+            ({
+              id: stepId,
+              createdAt: _ca,
+              updatedAt: _ua,
+              updatedBy: _ub,
+              ...step
+            }) => ({
+              ...step,
+              id: stepIdMap.get(stepId)!,
+              operationId: reinspectOperationId!,
+              createdBy: userId
+            })
+          )
+        )
+        .execute();
+      const mappings = await trx
+        .selectFrom("jobCorrectionTrigger")
+        .selectAll()
+        .where("jobOperationStepId", "in", [...stepIdMap.keys()])
+        .where("companyId", "=", companyId)
+        .execute();
+      if (mappings.length > 0) {
+        await trx
+          .insertInto("jobCorrectionTrigger")
+          .values(
+            mappings.map((mapping) => ({
+              jobOperationStepId: stepIdMap.get(mapping.jobOperationStepId)!,
+              jobCorrectionId: mapping.jobCorrectionId,
+              listValue: mapping.listValue,
+              measurementCondition: mapping.measurementCondition,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      }
+    }
+    if (tools.length > 0) {
+      await trx
+        .insertInto("jobOperationTool")
+        .values(
+          tools.map((tool) => ({
+            toolId: tool.toolId,
+            quantity: tool.quantity,
+            operationId: reinspectOperationId!,
+            companyId,
+            createdBy: userId
+          }))
+        )
+        .execute();
+    }
+    if (parameters.length > 0) {
+      await trx
+        .insertInto("jobOperationParameter")
+        .values(
+          parameters.map((parameter) => ({
+            key: parameter.key,
+            value: parameter.value,
+            operationId: reinspectOperationId!,
+            companyId,
+            createdBy: userId
+          }))
+        )
+        .execute();
+    }
+  }
+
+  // Dependencies: each group waits for the group before; the routing waits
+  // for where the correction converges.
+  const groups = correctionOperationGroups(
+    definition.operations.map((entry, i) => ({
+      id: correctionOperationIds[i]!,
+      operationOrder: String(entry.operation.operationOrder ?? "")
+    }))
+  );
+  const newOperationIds = [
+    ...correctionOperationIds,
+    ...(reinspectOperationId ? [reinspectOperationId] : [])
+  ];
+  const downstream = await trx
+    .selectFrom("jobOperationDependency")
+    .select(["operationId"])
+    .where("jobId", "=", input.jobId)
+    .where("dependsOnId", "=", triggeringOperation.id)
+    .where("operationId", "not in", newOperationIds)
+    .execute();
+  const edges = correctionDependencyEdges({
+    groups,
+    reinspectOperationId,
+    downstreamOperationIds: downstream.map((row) => row.operationId)
+  }).map((edge) => ({ ...edge, jobId: input.jobId, companyId }));
+  if (edges.length > 0) {
+    await trx.insertInto("jobOperationDependency").values(edges).execute();
+  }
+
+  // Scope every new operation to the units sent in (serial parts).
+  if (trackedEntityIds.length > 0) {
+    const jobMakeMethod = await trx
+      .selectFrom("jobMakeMethod")
+      .select("requiresSerialTracking")
+      .where("id", "=", jobMakeMethodId)
+      .executeTakeFirst();
+    if (jobMakeMethod?.requiresSerialTracking) {
+      const scopeRows = newOperationIds.flatMap((jobOperationId) =>
+        trackedEntityIds.map((trackedEntityId) => ({
+          jobOperationId,
+          trackedEntityId,
+          companyId,
+          createdBy: userId
+        }))
+      );
+      for (const rows of chunked(scopeRows)) {
+        await trx
+          .insertInto("jobOperationTrackedEntity")
+          .values(rows)
+          .execute();
+      }
+    }
+  }
+
+  // The correction's materials join the job only now.
+  if (definition.materials.length > 0) {
+    const itemIds = [...new Set(definition.materials.map((m) => m.itemId))];
+    const items = await trx
+      .selectFrom("item")
+      .leftJoin("itemCost", "itemCost.itemId", "item.id")
+      .select(["item.id", "item.itemTrackingType", "itemCost.unitCost"])
+      .where("item.id", "in", itemIds)
+      .where("item.companyId", "=", companyId)
+      .execute();
+    const itemById = new Map(items.map((item) => [item.id, item]));
+    await trx
+      .insertInto("jobMaterial")
+      .values(
+        definition.materials.map((material) => {
+          const item = itemById.get(material.itemId);
+          return {
+            jobId: input.jobId,
+            jobMakeMethodId,
+            jobOperationId:
+              (material.operationKey &&
+                operationIdByKey.get(material.operationKey)) ||
+              correctionOperationIds[0]!,
+            itemId: material.itemId,
+            itemType: material.itemType,
+            methodType: material.methodType,
+            description: material.description,
+            quantity: material.quantity,
+            estimatedQuantity: material.quantity * input.quantity,
+            unitOfMeasureCode: material.unitOfMeasureCode,
+            unitCost: Number(item?.unitCost ?? 0),
+            requiresSerialTracking: item?.itemTrackingType === "Serial",
+            requiresBatchTracking: item?.itemTrackingType === "Batch",
+            order: material.order,
+            companyId,
+            createdBy: userId
+          };
+        }) as never
+      )
+      .execute();
+  }
+
+  await trx
+    .insertInto("productionQuantity")
+    .values({
+      jobOperationId: triggeringOperation.id,
+      type: "Rework",
+      quantity: input.quantity,
+      inspectionId: input.inspectionId ?? null,
+      companyId,
+      createdBy: userId
+    })
+    .execute();
+
+  return { reworkId: rework!.id, operationIds: newOperationIds };
+}
+
 const NOT_STARTED = ["Todo", "Ready", "Waiting"];
 // The produced item + tracking of each member, and its live WIP entity (the
 // entity a member's output lot is finalized from; its readableId is the lot

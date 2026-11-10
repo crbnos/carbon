@@ -18,6 +18,10 @@ msgstr ", läuft nicht"
 msgid ", running"
 msgstr ", läuft"
 
+#. placeholder {0}: suggestion.reason
+msgid "\"{0}\" suggests a correction for this unit."
+msgstr ""
+
 msgid "\"{column}\" is required."
 msgstr "\"{column}\" ist erforderlich."
 
@@ -429,6 +433,9 @@ msgstr "Bearbeiter"
 
 msgid "Attach file"
 msgstr "Datei anhängen"
+
+msgid "Attempt limit reached"
+msgstr ""
 
 msgid "Authentication Error"
 msgstr "Authentifizierungsfehler"
@@ -1712,6 +1719,9 @@ msgstr "Es ist kein Zertifizierungstext für Sie festgelegt. Bitten Sie einen Ad
 msgid "No color"
 msgstr "Keine Farbe"
 
+msgid "No correction"
+msgstr ""
+
 msgid "No country found."
 msgstr "Kein Land gefunden."
 
@@ -2863,8 +2873,14 @@ msgstr "{workType} starten"
 msgid "Start {workTypeLabel} timer"
 msgstr "Timer für {workTypeLabel} starten"
 
+msgid "Start a correction?"
+msgstr ""
+
 msgid "Start clock"
 msgstr "Zeit starten"
+
+msgid "Start correction"
+msgstr ""
 
 msgid "Start Job"
 msgstr "Fertigungsauftrag starten"
@@ -2938,6 +2954,9 @@ msgstr "Anonym einreichen"
 
 msgid "Submit week"
 msgstr "Woche einreichen"
+
+msgid "Suggested"
+msgstr ""
 
 msgid "Suggested coverage"
 msgstr "Empfohlene Abdeckung"
@@ -3041,6 +3060,12 @@ msgstr "Designs"
 msgid "then"
 msgstr "dann"
 
+msgid "Then continues to the next operation"
+msgstr ""
+
+msgid "Then re-inspects here"
+msgstr ""
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Es gibt keine verfügbaren oder verbrauchten verfolgten Teile für dieses Material."
 
@@ -3091,6 +3116,9 @@ msgstr "Diese Probe wurde entfernt"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Dies stoppt Ihre Uhr und bucht die Zeit des Fertigungsauftrags. Der Fertigungsauftrag kann sich nicht mehr ändern."
+
+msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Diese Einheit wird endgültig verschrottet und es wird eine Ersatzeinheit erstellt."
@@ -3319,6 +3347,11 @@ msgstr "{0} wird hochgeladen"
 
 msgid "Use a different account"
 msgstr "Verwenden Sie ein anderes Konto"
+
+#. placeholder {0}: correction.uses
+#. placeholder {1}: correction.maxAttempts
+msgid "Used {0} of {1}"
+msgstr ""
 
 msgid "Used automatically at completion"
 msgstr "Wird automatisch bei Fertigstellung verwendet"

@@ -18,6 +18,10 @@ msgstr ", 未运行"
 msgid ", running"
 msgstr ", 运行中"
 
+#. placeholder {0}: suggestion.reason
+msgid "\"{0}\" suggests a correction for this unit."
+msgstr ""
+
 msgid "\"{column}\" is required."
 msgstr "\"{column}\" 是必需的。"
 
@@ -429,6 +433,9 @@ msgstr "经办人"
 
 msgid "Attach file"
 msgstr "附加文件"
+
+msgid "Attempt limit reached"
+msgstr ""
 
 msgid "Authentication Error"
 msgstr "认证错误"
@@ -1712,6 +1719,9 @@ msgstr "未为您设置认证文本。请要求管理员在设置 → 时间中�
 msgid "No color"
 msgstr "无颜色"
 
+msgid "No correction"
+msgstr ""
+
 msgid "No country found."
 msgstr "未找到国家。"
 
@@ -2863,8 +2873,14 @@ msgstr "开始{workType}"
 msgid "Start {workTypeLabel} timer"
 msgstr "开始{workTypeLabel}计时器"
 
+msgid "Start a correction?"
+msgstr ""
+
 msgid "Start clock"
 msgstr "开始计时"
+
+msgid "Start correction"
+msgstr ""
 
 msgid "Start Job"
 msgstr "开始工单"
@@ -2938,6 +2954,9 @@ msgstr "匿名提交"
 
 msgid "Submit week"
 msgstr "提交周"
+
+msgid "Suggested"
+msgstr ""
 
 msgid "Suggested coverage"
 msgstr "建议覆盖"
@@ -3041,6 +3060,12 @@ msgstr "主题"
 msgid "then"
 msgstr "然后"
 
+msgid "Then continues to the next operation"
+msgstr ""
+
+msgid "Then re-inspects here"
+msgstr ""
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "此原材料没有可用或已消耗的受追踪零件。"
 
@@ -3091,6 +3116,9 @@ msgstr "此样本已被删除"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "这将停止您的时钟并过账工单的时间。工单不再能更改。"
+
+msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
+msgstr ""
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "此单元将被永久报废，并将创建替换单元。"
@@ -3319,6 +3347,11 @@ msgstr "正在上传 {0}"
 
 msgid "Use a different account"
 msgstr "使用不同的帐户"
+
+#. placeholder {0}: correction.uses
+#. placeholder {1}: correction.maxAttempts
+msgid "Used {0} of {1}"
+msgstr ""
 
 msgid "Used automatically at completion"
 msgstr "在完成时自动使用"

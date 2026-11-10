@@ -31445,6 +31445,129 @@ export type Database = {
           }
         ]
       }
+      jobCorrection: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          definition: Json
+          description: string | null
+          id: string
+          jobId: string
+          jobMakeMethodId: string
+          maxAttempts: number | null
+          methodCorrectionId: string | null
+          name: string
+          order: number
+          returnTo: Database["public"]["Enums"]["correctionReturnTo"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          definition: Json
+          description?: string | null
+          id?: string
+          jobId: string
+          jobMakeMethodId: string
+          maxAttempts?: number | null
+          methodCorrectionId?: string | null
+          name: string
+          order?: number
+          returnTo: Database["public"]["Enums"]["correctionReturnTo"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          definition?: Json
+          description?: string | null
+          id?: string
+          jobId?: string
+          jobMakeMethodId?: string
+          maxAttempts?: number | null
+          methodCorrectionId?: string | null
+          name?: string
+          order?: number
+          returnTo?: Database["public"]["Enums"]["correctionReturnTo"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobCorrection_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobCorrection_jobMakeMethodId_fkey"
+            columns: ["jobMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "jobMakeMethod"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      jobCorrectionTrigger: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          jobCorrectionId: string
+          jobOperationStepId: string
+          listValue: string | null
+          measurementCondition: Database["public"]["Enums"]["correctionMeasurementCondition"] | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          jobCorrectionId: string
+          jobOperationStepId: string
+          listValue?: string | null
+          measurementCondition?: Database["public"]["Enums"]["correctionMeasurementCondition"] | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          jobCorrectionId?: string
+          jobOperationStepId?: string
+          listValue?: string | null
+          measurementCondition?: Database["public"]["Enums"]["correctionMeasurementCondition"] | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobCorrectionTrigger_jobCorrectionId_fkey"
+            columns: ["jobCorrectionId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "jobCorrection"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "jobCorrectionTrigger_jobOperationStepId_fkey"
+            columns: ["jobOperationStepId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationStep"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       jobFavorite: {
         Row: {
           jobId: string
@@ -68271,6 +68394,7 @@ export type Database = {
           createdAt: string
           id: string
           jobId: string
+          jobCorrectionId: string | null
           quantity: number
           reason: string
           requestedById: string
@@ -68284,6 +68408,7 @@ export type Database = {
           createdAt?: string
           id?: string
           jobId: string
+          jobCorrectionId?: string | null
           quantity: number
           reason: string
           requestedById: string
@@ -68297,6 +68422,7 @@ export type Database = {
           createdAt?: string
           id?: string
           jobId?: string
+          jobCorrectionId?: string | null
           quantity?: number
           reason?: string
           requestedById?: string
