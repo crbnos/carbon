@@ -1114,9 +1114,6 @@ msgstr "{name}은 {end}에 끝남 (이전: 제한 없음)"
 msgid "{name} is inactive. Choose an active storage unit."
 msgstr "{name}은(는) 비활성 상태입니다. 활성 보관 단위를 선택하세요."
 
-msgid "{name} is nettable now. Choose a non-nettable storage unit."
-msgstr "{name}은(는) 이제 MRP에 포함됩니다. MRP 제외 보관 단위를 선택하세요."
-
 msgid "{name} needs an account number."
 msgstr "{name}은 계정 번호가 필요합니다."
 
@@ -6826,12 +6823,6 @@ msgstr "고객 선택"
 msgid "Choose a labor category or an employee"
 msgstr "노무 범주 또는 직원 선택"
 
-msgid "Choose a non-nettable storage unit at this location for inspected parts."
-msgstr "검사 대상 부품에는 이 위치의 MRP 제외 보관 단위를 선택하세요."
-
-msgid "Choose a non-nettable storage unit at this location."
-msgstr "이 위치의 MRP 제외 보관 단위를 선택하세요."
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}가 대체하는 부품을 선택하세요. 규칙은 해당 부품에 저장되며 {itemReadableId}가 후속 품목으로 지정됩니다."
 
@@ -6846,6 +6837,12 @@ msgstr "풀 선택"
 
 msgid "Choose a serial number"
 msgstr "시리얼 번호를 선택하십시오"
+
+msgid "Choose a storage unit at this location for inspected parts."
+msgstr "검사 대상 부품에 대해 이 위치의 보관 단위를 선택하세요."
+
+msgid "Choose a storage unit at this location."
+msgstr "이 위치의 보관 단위를 선택하세요."
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
@@ -19569,9 +19566,6 @@ msgstr "모듈이 없습니다"
 msgid "No new notifications"
 msgstr "새 알림이 없습니다"
 
-msgid "No non-nettable storage units at this location"
-msgstr "이 위치에 MRP 제외 보관 단위가 없습니다"
-
 msgid "No notes"
 msgstr "메모 없음"
 
@@ -19941,6 +19935,9 @@ msgstr "이 사업장의 보관 단위에는 재고가 없습니다."
 
 msgid "No storage unit is short for open jobs or below zero."
 msgstr "미결 작업 지시에 부족하거나 0 미만인 보관 단위가 없습니다."
+
+msgid "No storage units at this location"
+msgstr "이 위치에 보관 단위가 없습니다"
 
 msgid "No storage units or tracking numbers match."
 msgstr "일치하는 보관 단위 또는 추적 번호가 없습니다."
@@ -23964,8 +23961,8 @@ msgstr ""
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "이 공급업체로부터 반품할 수량이 남아 있는 수령된 라인"
 
-msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr "검사가 필요한 입고 부품은 검사 보관 단위로 갑니다. 반려된 재고는 반려품 보관 단위로 이동합니다. 둘 다 MRP 제외여야 합니다."
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
+msgstr "검사가 필요한 입고 부품은 검사 보관 단위로 들어갑니다. 거부된 재고는 거부품 보관 단위로 이동합니다. 재고를 계획에서 제외하려면 각 보관 단위의 설정에서 MRP 제외로 지정하세요."
 
 msgid "Received Qty"
 msgstr "입고 수량"

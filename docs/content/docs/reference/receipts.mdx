@@ -45,18 +45,18 @@ Each location needs an inspection storage unit before it can receive a part that
   <Step>Optionally, in **Rejected**, choose the storage unit where rejected stock goes.</Step>
 </Steps>
 
-Both pickers offer only active, <Term id="non-nettable">non-nettable</Term> storage units at that location. Held stock is then never counted as supply by MRP, and picking lists never take from it. A row reads **"No non-nettable storage units"** until the location has one. See [locations and storage units](/docs/reference/inventory#locations-and-storage-units) to mark a unit non-nettable.
+Both pickers offer the active storage units at that location. Held stock cannot move until its lot is decided, whatever the unit. To keep it out of MRP's supply and off picking lists too, mark the unit <Term id="non-nettable">non-nettable</Term> in its own settings: see [locations and storage units](/docs/reference/inventory#locations-and-storage-units).
 
 <Screenshot label="Settings → Quality, Goods-in storage card with an Inspection and a Rejected storage unit picker per location" />
 
 ### On the receipt
 
-A new purchase-order receipt puts each line that needs inspection in the location's inspection storage unit. The line and the receipt header show an **"Inspection required"** badge. You can change the line to another non-nettable unit at the same location, for an overflow area. If you choose a nettable unit, the line warns you.
+A new purchase-order receipt puts each line that needs inspection in the location's inspection storage unit. The line and the receipt header show an **"Inspection required"** badge. You can change the line to another unit at the same location, for an overflow area. A line with no storage unit warns you.
 
 Posting refuses a line that needs inspection in three cases:
 
 - The location has no inspection storage unit.
-- The line's storage unit is nettable, or the line has none.
+- The line has no storage unit.
 - The line's storage unit is at another location.
 
 A non-inventory part is not checked. It has no stock to hold, so its lot names no storage unit and the receipt's inspection status ignores it.
@@ -170,8 +170,8 @@ A posted receipt is history and can't be deleted. Void it instead, which writes 
 ### "… has no inspection storage unit. Set one in Settings → Quality."
 A line's part has an inspection plan assigned to Receipt, and the receipt's location has no inspection storage unit. Set one on the **Goods-in storage** card in Settings → Quality, then post again. Outside processing receipts never need one.
 
-### "… needs inspection. Choose a non-nettable storage unit at …."
-A line that needs inspection sits in a nettable storage unit, in a unit of another location, or in none. Change the line to the location's inspection storage unit or another non-nettable unit at that location.
+### "… needs inspection. Choose a storage unit at …."
+A line that needs inspection sits in a unit of another location, or in none. Change the line to the location's inspection storage unit or another unit at that location.
 
 ### "… is held for inspection in …. Quality must decide its inspection lot before it can move."
 The movement would take stock that an open inspection lot holds. For an untracked part, only the held quantity is blocked: other stock of the part in that unit can still move. An untracked Partial lot keeps holding its rejected quantity until its NCR is Closed. The variant without "in …" is a serial or batch unit at **On Hold**. Decide the lot on the inspection page first.
@@ -179,8 +179,8 @@ The movement would take stock that an open inspection lot holds. For an untracke
 ### "Nothing is ready for putaway on this receipt." / "Only a posted receipt can be put away."
 Put Away found no passed stock still in the unit it was received into and not already on a linked transfer, or the receipt is not Posted. Check the receipt's inspection status and its linked putaway transfers in the menu.
 
-### "Choose a non-nettable storage unit." / "Choose a storage unit at this location."
-Refusals from the Goods-in storage card in Settings → Quality. Both units must be non-nettable and belong to the row's location. "You do not have permission to change this location" means the user lacks Resources update permission. A storage unit set on the card cannot be deleted; clear the setting first.
+### "Choose an active storage unit." / "Choose a storage unit at this location."
+Refusals from the Goods-in storage card in Settings → Quality. Both units must be active and belong to the row's location. "You do not have permission to change this location" means the user lacks Resources update permission. A storage unit set on the card cannot be deleted; clear the setting first.
 
 ### "Choose the To storage unit of every Put Away line first."
 A Put Away line has no To storage unit, so the transfer cannot be released or picked. Open the line, choose the To unit, then release the transfer.

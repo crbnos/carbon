@@ -355,7 +355,8 @@ export const updateReceipt = defineServiceFn({
  *   1. A Posted or Voided receipt is refused (`conflict`): posting it again
  *      would duplicate its ledger entries, cost layers and journal lines.
  *   2. A purchase order receipt refuses a line that needs inspection unless
- *      it is in a non-nettable storage unit at the receipt's location.
+ *      it is in a storage unit at the receipt's location, and that location
+ *      has an inspection storage unit.
  *   3. Storage rules run on the `receipt` and `place` surfaces (and
  *      `warehouseTransfer` for an inbound transfer), and a purchase order
  *      receipt is checked for over-receipt against the live order lines. A

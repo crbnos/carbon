@@ -1114,9 +1114,6 @@ msgstr "{name} は {end} に終了します（以前は期限なし）"
 msgid "{name} is inactive. Choose an active storage unit."
 msgstr "{name} は無効です。有効な保管ユニットを選択してください。"
 
-msgid "{name} is nettable now. Choose a non-nettable storage unit."
-msgstr "{name} は MRP 対象になりました。MRP 対象外の保管ユニットを選択してください。"
-
 msgid "{name} needs an account number."
 msgstr "{name} にはアカウント番号が必要です。"
 
@@ -6826,12 +6823,6 @@ msgstr "得意先を選択"
 msgid "Choose a labor category or an employee"
 msgstr "労務カテゴリまたは従業員を選択してください"
 
-msgid "Choose a non-nettable storage unit at this location for inspected parts."
-msgstr "検査対象の部品には、このロケーションの MRP 対象外の保管ユニットを選択してください。"
-
-msgid "Choose a non-nettable storage unit at this location."
-msgstr "このロケーションの MRP 対象外の保管ユニットを選択してください。"
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}が置き換える部品を選択してください。そのルールはその部品に{itemReadableId}を後継品目として保存されます。"
 
@@ -6846,6 +6837,12 @@ msgstr "プールを選択してください"
 
 msgid "Choose a serial number"
 msgstr "シリアル番号を選択"
+
+msgid "Choose a storage unit at this location for inspected parts."
+msgstr "検査対象の部品には、この拠点の保管ユニットを選択してください。"
+
+msgid "Choose a storage unit at this location."
+msgstr "この拠点の保管ユニットを選択してください。"
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
@@ -19569,9 +19566,6 @@ msgstr "モジュールが見つかりません"
 msgid "No new notifications"
 msgstr "新しい通知はありません"
 
-msgid "No non-nettable storage units at this location"
-msgstr "このロケーションに MRP 対象外の保管ユニットがありません"
-
 msgid "No notes"
 msgstr "メモなし"
 
@@ -19941,6 +19935,9 @@ msgstr "この拠点には在庫を保管している保管ユニットがあり
 
 msgid "No storage unit is short for open jobs or below zero."
 msgstr "未完了の製造指図に対して不足している、またはマイナスの保管ユニットはありません。"
+
+msgid "No storage units at this location"
+msgstr "この拠点に保管ユニットがありません"
 
 msgid "No storage units or tracking numbers match."
 msgstr "保管ユニットまたはトラッキング番号に一致するものはありません。"
@@ -23964,8 +23961,8 @@ msgstr ""
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "この仕入先から入荷した明細で返却数量が残っているもの"
 
-msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr "検査が必要な入荷部品は検査用保管ユニットに入ります。却下品は却下品保管ユニットに移動します。どちらも MRP 対象外である必要があります。"
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
+msgstr "検査が必要な受入部品は検査用の保管ユニットに入ります。却下された在庫は却下品用の保管ユニットに移動します。在庫を計画に含めない場合は、各保管ユニットの設定でMRP対象外にしてください。"
 
 msgid "Received Qty"
 msgstr "受け取り数量"

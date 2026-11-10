@@ -1114,9 +1114,6 @@ msgstr "{name} endet {end} (war unbegrenzt)"
 msgid "{name} is inactive. Choose an active storage unit."
 msgstr "{name} ist inaktiv. Wählen Sie eine aktive Lagereinheit."
 
-msgid "{name} is nettable now. Choose a non-nettable storage unit."
-msgstr "{name} ist jetzt disponierbar. Wählen Sie eine nicht disponierbare Lagereinheit."
-
 msgid "{name} needs an account number."
 msgstr "{name} benötigt eine Kontonummer."
 
@@ -6826,12 +6823,6 @@ msgstr "Wählen Sie einen Kunden"
 msgid "Choose a labor category or an employee"
 msgstr "Wählen Sie eine Personalkategorie oder einen Mitarbeiter"
 
-msgid "Choose a non-nettable storage unit at this location for inspected parts."
-msgstr "Wählen Sie für prüfpflichtige Teile eine nicht disponierbare Lagereinheit an diesem Standort."
-
-msgid "Choose a non-nettable storage unit at this location."
-msgstr "Wählen Sie eine nicht disponierbare Lagereinheit an diesem Standort."
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Wählen Sie ein Teil aus, das {itemReadableId} ersetzt. Die Regel wird auf diesem Teil mit {itemReadableId} als Nachfolger gespeichert."
 
@@ -6846,6 +6837,12 @@ msgstr "Wählen Sie einen Pool"
 
 msgid "Choose a serial number"
 msgstr "Wählen Sie eine Seriennummer"
+
+msgid "Choose a storage unit at this location for inspected parts."
+msgstr "Wählen Sie für prüfpflichtige Teile eine Lagereinheit an diesem Standort."
+
+msgid "Choose a storage unit at this location."
+msgstr "Wählen Sie eine Lagereinheit an diesem Standort."
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
@@ -19569,9 +19566,6 @@ msgstr "Keine Module gefunden"
 msgid "No new notifications"
 msgstr "Keine neuen Benachrichtigungen"
 
-msgid "No non-nettable storage units at this location"
-msgstr "Keine nicht disponierbaren Lagereinheiten an diesem Standort"
-
 msgid "No notes"
 msgstr "Keine Notizen"
 
@@ -19941,6 +19935,9 @@ msgstr "An diesem Standort enthält keine Lagereinheit Bestand."
 
 msgid "No storage unit is short for open jobs or below zero."
 msgstr "Keine Lagereinheit hat für offene Fertigungsaufträge einen Fehlbestand oder einen negativen Bestand."
+
+msgid "No storage units at this location"
+msgstr "Keine Lagereinheiten an diesem Standort"
 
 msgid "No storage units or tracking numbers match."
 msgstr "Keine Lagereinheiten oder Verfolgungsnummern stimmen überein."
@@ -23964,8 +23961,8 @@ msgstr ""
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Von diesem Lieferanten eingegangene Zeilen mit verbleibender Menge zur Rückgabe"
 
-msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr "Prüfpflichtige Wareneingänge kommen in die Prüf-Lagereinheit. Abgelehnte Ware wird in die Lagereinheit für abgelehnte Ware verschoben. Beide müssen nicht disponierbar sein."
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
+msgstr "Prüfpflichtige Wareneingänge kommen in die Prüf-Lagereinheit. Abgelehnte Ware wird in die Lagereinheit für abgelehnte Ware verschoben. Damit ihr Bestand nicht in die Planung eingeht, stellen Sie die Lagereinheiten in ihren eigenen Einstellungen auf nicht disponierbar."
 
 msgid "Received Qty"
 msgstr "Empfangene Menge"
