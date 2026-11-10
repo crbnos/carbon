@@ -47,7 +47,7 @@ Branch `claude/service-function-wrapping-13f04f`. main at `cca2a0beea` (2026-11-
   - `integration-metadata-patch` fails the same way on main: anon has EXECUTE since
     `20260924192316`.
 - [x] `db:check:datasets`: all 5 datasets apply. The defense dataset gained a Buyer role.
-- [ ] `db:check:backups`: broken on main, so not run. `packages/jobs/src/backups/derived-groups.ts`
+- [x] `db:check:backups`: fixed in a follow-up commit (see Known breakage). Originally broken on main, so not run. `packages/jobs/src/backups/derived-groups.ts`
       (from main) named-imports `@carbon/database/seed-data`, which `tsx` loads as CommonJS without
       named exports; it fails under Node 22 and Node 24. `packages/jobs/manifests/schema.json` is
       main's copy (the baseline the check compares against). It regenerates once the import is fixed.
@@ -109,12 +109,13 @@ Branch `claude/service-function-wrapping-13f04f`. main at `cca2a0beea` (2026-11-
   `quality+/actions` (wrapper needs Action Types), `projects+/reports._index` (wrapper needs
   Accounting → Reporting), and project borrows on the planning pages (wrapper needs Projects).
 
-**Known breakage from main.** None of these come from this merge:
+**Breakage from main.** None of these come from this merge:
 
-- `db:check:backups` cannot run, on main either. `derived-groups.ts` named-imports
-  `@carbon/database/seed-data`, and `tsx` loads that as CommonJS with no named exports. The merge
-  commits used `CARBON_SKIP_BACKUP_CHECK=1` for that check only. `packages/jobs/manifests/schema.json`
-  is main's copy; regenerate it once the import is fixed.
+- `db:check:backups` could not run, on main either. `derived-groups.ts` named-imported
+  `@carbon/database/seed-data`, and `tsx` loads that as CommonJS with no named exports. Fixed in
+  `08b96826e4`: the file reads the exports from either shape, and `schema.json` is regenerated
+  (449 tables, `permission` included). The two merge commits used `CARBON_SKIP_BACKUP_CHECK=1`
+  before the fix.
 - `integration-metadata-patch.test.sql` fails on main too: anon has EXECUTE on
   `upsert_company_integration_patch` since `20260924192316`.
 
