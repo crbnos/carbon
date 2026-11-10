@@ -2,6 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ACTIVATABLE_CONTROL } from "./keyboard";
+
 // Radix stamps open dialogs (Modal, Drawer, ModalDrawer, …) with this
 // attribute pair. Keep the selector here — it is an implementation detail of
 // Radix that must not be hand-written at call sites.
@@ -171,6 +173,48 @@ export function keepOpenOnToast<E extends Event>(handler?: (event: E) => void) {
     }
     handler?.(event);
   };
+}
+
+const SHEET_DRAG_HANDLE = "[data-sheet-grabber], [data-bottom-sheet-header]";
+// Anything in a header that takes a press or a drag of its own: what Enter
+// or Space activates, and the fields and sliders that do not.
+const SHEET_HEADER_CONTROL = [
+  ACTIVATABLE_CONTROL,
+  "input",
+  "textarea",
+  "label",
+  '[contenteditable]:not([contenteditable="false"])',
+  '[tabindex]:not([tabindex="-1"])',
+  '[role="slider"]',
+  '[role="combobox"]'
+].join(", ");
+
+// A control between the press and the handle; one around the whole header
+// (a sheet inside a `label`) does not count.
+function isControlInHandle(target: Element, handle: Element) {
+  const control = target.closest(SHEET_HEADER_CONTROL);
+  return control !== null && handle.contains(control);
+}
+
+/**
+ * Whether a press on `target` starts dragging `sheet` down: it is on the
+ * sheet's grabber or header (a sheet's, a modal's or a drawer's on a phone),
+ * not on a control in that header, and in this sheet. React passes a press up
+ * through portals, so a sheet opened from this one (a dialog in account
+ * settings) reaches this sheet's handler too.
+ */
+export function startsSheetDrag(
+  target: EventTarget | null,
+  sheet: Element
+): boolean {
+  if (!(target instanceof Element)) return false;
+  const handle = target.closest(SHEET_DRAG_HANDLE);
+  return (
+    handle !== null &&
+    // Not a sheet opened from this one (`handle` is in that sheet).
+    sheet.contains(handle) &&
+    !isControlInHandle(target, handle)
+  );
 }
 
 function whenDialogRemoved(dialog: Element, timeoutMs = 500): Promise<void> {

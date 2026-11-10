@@ -15,6 +15,7 @@ and the starter. Each app mounts it once in its shell; it opens over any page.
   route (`proxyToErp`, `@carbon/auth/erp-proxy.server`), so the package never ships a copy.
   The ERP loaders end in `satisfies Account*Data` — change a response shape in `types.ts`
   and the route together.
+- **A modal that is a sheet on phones.** `AccountSettings` is one `Modal`: on phones `ModalContent` renders a full-height bottom sheet (`@carbon/react`), whose header is the modal's title (`ModalHeader className="md:sr-only"`: screen-reader only on desktop, where the sidebar is the chrome) and whose sidebar becomes a strip of tabs above the pane. A dialog opened from a pane (signature, avatar picker, the Security dialogs) is a plain `Modal` too, so on phones it is a sheet stacked above the settings.
 - **Open it through the store**: `useAccountSettings((s) => s.open)(tab?)`. `?account=<tab>`
   on any URL also opens it (the host drops the param at once); the ERP's old
   `/x/account/<tab>` pages redirect to `/x?account=<tab>`.
