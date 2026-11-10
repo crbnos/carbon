@@ -15105,6 +15105,8 @@ msgstr "Las acciones inactivas no aparecerán en las listas de selección"
 
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Las categorías inactivas no se pueden seleccionar para nuevo tiempo"
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
 
 msgid "Inbound inspection"
 msgstr "Inspección de recepción"
@@ -32347,6 +32349,8 @@ msgstr "Martes"
 
 msgid "Turn On"
 msgstr "Activar"
+msgid "Turn Off"
+msgstr ""
 
 msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 msgstr "Activa <0>la Opción de Arrendamiento a Corto Plazo en Configuración → Contabilidad</0>, o"
@@ -32568,6 +32572,9 @@ msgstr "Envíos sin facturar"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Único, en mayúsculas, sin espacios (máx. 10 caracteres)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "Unidad"

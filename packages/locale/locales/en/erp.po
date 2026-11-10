@@ -15105,6 +15105,8 @@ msgstr "Inactive actions will not appear in selection lists"
 
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Inactive categories cannot be picked for new time"
+msgid "Inactive units are not offered when choosing a unit"
+msgstr "Inactive units are not offered when choosing a unit"
 
 msgid "Inbound inspection"
 msgstr "Inbound inspection"
@@ -32345,6 +32347,9 @@ msgstr "Try again"
 msgid "Tuesday"
 msgstr "Tuesday"
 
+msgid "Turn Off"
+msgstr "Turn Off"
+
 msgid "Turn On"
 msgstr "Turn On"
 
@@ -32568,6 +32573,9 @@ msgstr "Uninvoiced Shipments"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Unique, uppercase, without spaces (max 10 characters)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr "Unique, without spaces (max 10 characters), such as kg or BX"
 
 msgid "Unit"
 msgstr "Unit"
