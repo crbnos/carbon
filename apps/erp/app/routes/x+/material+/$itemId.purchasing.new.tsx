@@ -4,9 +4,9 @@
 
 import { carbon } from "@carbon/api/carbon.server";
 import { validationError, validator } from "@carbon/form";
-import { useRouteData } from "@carbon/react";
+import { useRouteData, useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { supplierPartFormValidator } from "~/modules/items/items.models";
 import type { MaterialSummary } from "~/modules/items/types";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
@@ -52,15 +52,15 @@ export default function NewMaterialSupplierRoute() {
     conversionFactor: 1
   };
 
-  const navigate = useNavigate();
-  const onClose = () => navigate(path.to.materialPurchasing(itemId));
+  const dialog = useRouteDialog(path.to.materialPurchasing(itemId));
 
   return (
     <SupplierPartForm
       type="Material"
       initialValues={initialValues}
       unitOfMeasureCode={routeData?.materialSummary?.unitOfMeasureCode ?? ""}
-      onClose={onClose}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

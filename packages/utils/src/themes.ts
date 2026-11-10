@@ -11,6 +11,7 @@ import {
   hexTriplet,
   parseThemeColors,
   THEME_PRESETS,
+  themeAccent,
   themeMesh
 } from "./theme-colors";
 
@@ -585,19 +586,24 @@ export const DEFAULT_THEME_NAME = themes[0].name;
 
 type ColorsTheme = Theme & { colors: ThemeColors };
 
-/** Keeps the default theme's accent. */
+/** The default theme's variables, with the accent (buttons, focus rings) in
+ *  the theme's highlight (`themeAccent`). */
 function themeFromColors(
   name: string,
   label: string,
   colors: ThemeColors
 ): ColorsTheme {
   const swatch = hexTriplet(colors.highlight);
+  const accent = themeAccent(colors);
   return {
     name,
     label,
     mesh: themeMesh(colors),
     activeColor: { light: swatch, dark: swatch },
-    cssVars: defaultTheme.cssVars,
+    cssVars: {
+      light: { ...defaultTheme.cssVars.light, ...accent.light },
+      dark: { ...defaultTheme.cssVars.dark, ...accent.dark }
+    },
     colors
   };
 }

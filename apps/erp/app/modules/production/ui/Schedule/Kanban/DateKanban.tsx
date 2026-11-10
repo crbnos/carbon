@@ -17,7 +17,6 @@ import {
   useSensor,
   useSensors
 } from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import { useLingui } from "@lingui/react/macro";
 import {
   createContext,
@@ -30,6 +29,10 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { useFetchers, useSubmit } from "react-router";
+import {
+  POINTER_SENSOR_OPTIONS,
+  SORTABLE_KEYBOARD_SENSOR_OPTIONS
+} from "~/utils/drag-sensors";
 import { path } from "~/utils/path";
 import { BoardContainer, ColumnCard } from "./components/ColumnCard";
 import { JobCard } from "./components/JobCard";
@@ -51,12 +54,6 @@ import {
 } from "./placement";
 import type { Column, DisplaySettings, JobItem, Progress } from "./types";
 import { kanbanCollisionDetection } from "./utils";
-
-// Module constants: a new options object makes a new sensor, and with it new
-// listeners for every draggable on every render.
-const KEYBOARD_SENSOR_OPTIONS = {
-  coordinateGetter: sortableKeyboardCoordinates
-};
 
 const logger = getLogger("erp", "datekanban");
 
@@ -192,8 +189,8 @@ const DateKanban = ({
   const [dragState, setDragState] = useState<DatesDragState>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
+    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
+    useSensor(KeyboardSensor, SORTABLE_KEYBOARD_SENSOR_OPTIONS)
   );
 
   function dispatchDrag(event: BoardDragEvent) {

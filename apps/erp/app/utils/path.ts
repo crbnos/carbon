@@ -114,6 +114,8 @@ export const path = {
         ),
       batchNumbers: (itemId: string) =>
         generatePath(`${api}/inventory/batch-numbers?itemId=${itemId}`),
+      batchPropertyValues: (key: string) =>
+        `${api}/inventory/batch-property-values?${new URLSearchParams({ key })}`,
       batchReleaseReadiness: (
         target: { batchId: string } | { jobIds: string[] }
       ) =>
@@ -181,6 +183,8 @@ export const path = {
         ),
       inspectionDocuments: (itemId: string) =>
         generatePath(`${api}/quality/inspection-documents/${itemId}`),
+      inspectionTrackedEntities: (itemId: string) =>
+        generatePath(`${api}/quality/inspection-tracked-entities/${itemId}`),
       integrationConnect: (piece: string) =>
         generatePath(`${api}/integrations/connections/${piece}/connect`),
       integrationConnectionCallback: `${api}/integrations/connections/callback`,
@@ -285,6 +289,7 @@ export const path = {
         generatePath(
           `${api}/mrp${locationId ? `?location=${locationId}` : ""}`
         ),
+      nonNettableStorageUnits: `${api}/inventory/non-nettable-storage-units`,
       onShapeBom: (documentId: string, versionId: string, elementId: string) =>
         generatePath(
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/e/${elementId}/bom`
@@ -1243,7 +1248,7 @@ export const path = {
         );
       },
       kanbanQrCode: (id: string, action: "order" | "start" | "complete") =>
-        generatePath(`${file}/kanban/${id}/${action}.png`),
+        generatePath(`${file}/kanban/${id}/${action}.svg`),
       nonConformance: (id: string) => generatePath(`${file}/issue/${id}.pdf`),
       operationLabelsPdf: (
         id: string,
@@ -1514,9 +1519,19 @@ export const path = {
       generatePath(`${x}/inspection/${id}/accept`),
     inspectionAssignedDocument: (id: string) =>
       generatePath(`${x}/inspection/${id}/document`),
+    inspectionCancel: (id: string) =>
+      generatePath(`${x}/inspection/${id}/cancel`),
+    inspectionDelete: (id: string) =>
+      generatePath(`${x}/inspection/${id}/delete`),
     inspectionDocument: (id: string) =>
       generatePath(`${x}/inspection-document/${id}`),
+    inspectionDocumentActivate: (id: string) =>
+      generatePath(`${x}/inspection-document/${id}/activate`),
+    inspectionDocumentModel: (id: string) =>
+      generatePath(`${x}/inspection-document/${id}/model`),
     inspectionDocuments: `${x}/quality/inspection-plans`,
+    inspectionDocumentVersion: (id: string) =>
+      generatePath(`${x}/inspection-document/${id}/version`),
     inspectionGauge: (id: string) =>
       generatePath(`${x}/inspection/${id}/gauge`),
     inspectionMeasurement: (id: string) =>
@@ -1894,6 +1909,7 @@ export const path = {
     newGroup: `${x}/users/groups/new`,
     newHoliday: `${x}/people/holidays/new`,
     newIndirectPool: `${x}/accounting/indirect-pools/new`,
+    newInspection: `${x}/quality/inspections/new`,
     newInspectionDocument: `${x}/quality/inspection-plans/new`,
     newIntercompanyTransaction: `${x}/accounting/intercompany/new`,
     newInventoryCount: `${x}/inventory/inventory-count/new`,
@@ -2453,6 +2469,7 @@ export const path = {
     receiptLinesTracking: (id: string) =>
       generatePath(`${x}/receipt/lines/tracking`),
     receiptPost: (id: string) => generatePath(`${x}/receipt/${id}/post`),
+    receiptPutAway: (id: string) => generatePath(`${x}/receipt/${id}/put-away`),
     receiptRoot: `${x}/receipt`,
     receipts: `${x}/inventory/receipts`,
     receiptVoid: (id: string) => generatePath(`${x}/receipt/${id}/void`),
@@ -2887,6 +2904,8 @@ export const path = {
     updateChangeNotice: `${x}/items/change-notice/update`,
     updateInspectionDocumentName: (id: string) =>
       generatePath(`${x}/inspection-document/${id}/update-name`),
+    updateInspectionDocumentWorkInstruction: (id: string) =>
+      generatePath(`${x}/inspection-document/${id}/update-work-instruction`),
     updateIssueItem: `${x}/issue/item/update`,
     userAttribute: (id: string) => generatePath(`${x}/account/${id}/attribute`),
     users: `${x}/users`,

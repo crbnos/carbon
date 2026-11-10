@@ -26,10 +26,13 @@ const toast: typeof sonnerToast = Object.assign(
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
-const Toaster = ({ ...props }: ToasterProps) => {
+const Toaster = ({ style, ...props }: ToasterProps) => {
   return (
     <Sonner
       className="toaster group"
+      // An open modal, drawer or menu sets pointer-events: none on <body>;
+      // the toaster opts back in, so its close buttons and hover still work.
+      style={{ pointerEvents: "auto", ...style }}
       closeButton
       toastOptions={{
         classNames: {

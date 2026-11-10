@@ -32,13 +32,31 @@ import { path } from "~/utils/path";
 
 type SalesReturnOrderCreditModalProps = {
   currencyCode?: string;
+  open?: boolean;
   onClose: () => void;
 };
 
 const SalesReturnOrderCreditModal = ({
+  open = true,
+  onClose,
+  ...props
+}: SalesReturnOrderCreditModalProps) => (
+  <Modal
+    open={open}
+    onOpenChange={(open) => {
+      if (!open) onClose();
+    }}
+  >
+    <ModalContent size="xlarge">
+      <SalesReturnOrderCreditBody onClose={onClose} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+const SalesReturnOrderCreditBody = ({
   currencyCode,
   onClose
-}: SalesReturnOrderCreditModalProps) => {
+}: Omit<SalesReturnOrderCreditModalProps, "open">) => {
   const { t } = useLingui();
   const { id: orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
@@ -117,127 +135,114 @@ const SalesReturnOrderCreditModal = ({
   }, [submitFetcher.state, submitFetcher.data, onClose]);
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
+    <submitFetcher.Form
+      method="post"
+      action={path.to.salesReturnOrderCredit(orderId)}
     >
-      <ModalContent size="xlarge">
-        <submitFetcher.Form
-          method="post"
-          action={path.to.salesReturnOrderCredit(orderId)}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Issue Credit</Trans>
-            </ModalTitle>
-            <ModalDescription>
-              <Trans>
-                Received quantity not yet credited. The credit memo is created
-                as a draft.
-              </Trans>
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            {isLoading ? (
-              <p className="text-sm text-muted-foreground py-6 text-center">
-                <Trans>Loading creditable lines...</Trans>
-              </p>
-            ) : lines.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-6 text-center">
-                <Trans>No received quantity remains creditable</Trans>
-              </p>
-            ) : (
-              <ScrollArea className="max-h-[50dvh] w-full">
-                <VStack spacing={2} className="w-full">
-                  {lines.map((line) => {
-                    const quantity = selected[line.salesReturnOrderLineId] ?? 0;
-                    const lineNumber = line.lineNumber;
-                    return (
-                      <HStack
-                        key={line.salesReturnOrderLineId}
-                        className="w-full justify-between p-3 border rounded-lg"
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Issue Credit</Trans>
+        </ModalTitle>
+        <ModalDescription>
+          <Trans>
+            Received quantity not yet credited. The credit memo is created as a
+            draft.
+          </Trans>
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">
+            <Trans>Loading creditable lines...</Trans>
+          </p>
+        ) : lines.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-6 text-center">
+            <Trans>No received quantity remains creditable</Trans>
+          </p>
+        ) : (
+          <ScrollArea className="max-h-[50dvh] w-full">
+            <VStack spacing={2} className="w-full">
+              {lines.map((line) => {
+                const quantity = selected[line.salesReturnOrderLineId] ?? 0;
+                const lineNumber = line.lineNumber;
+                return (
+                  <HStack
+                    key={line.salesReturnOrderLineId}
+                    className="w-full justify-between p-3 border rounded-lg"
+                  >
+                    <VStack spacing={0} className="min-w-0 items-start">
+                      <span className="text-sm font-medium">
+                        <Trans>Line {line.lineNumber}</Trans>
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        <Trans>
+                          {quantityFormatter(line.quantityReceived)} received
+                          {" · "}
+                          {quantityFormatter(line.quantityCredited)} credited
+                        </Trans>
+                      </span>
+                      {line.restockFeePercent > 0 && (
+                        <span className="text-xs text-muted-foreground">
+                          <Trans>
+                            Restocking fee{" "}
+                            {percentFormatter.format(line.restockFeePercent)}
+                          </Trans>
+                        </span>
+                      )}
+                    </VStack>
+                    <HStack spacing={4}>
+                      <NumberField
+                        aria-label={t`Quantity to credit for line ${lineNumber}`}
+                        formatOptions={INPUT_FORMAT.quantity}
+                        step={INPUT_STEP.quantity}
+                        value={quantity}
+                        onChange={(value) =>
+                          setQuantity(
+                            line.salesReturnOrderLineId,
+                            value,
+                            line.creditableQuantity
+                          )
+                        }
                       >
-                        <VStack spacing={0} className="min-w-0 items-start">
-                          <span className="text-sm font-medium">
-                            <Trans>Line {line.lineNumber}</Trans>
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            <Trans>
-                              {quantityFormatter(line.quantityReceived)}{" "}
-                              received
-                              {" · "}
-                              {quantityFormatter(line.quantityCredited)}{" "}
-                              credited
-                            </Trans>
-                          </span>
-                          {line.restockFeePercent > 0 && (
-                            <span className="text-xs text-muted-foreground">
-                              <Trans>
-                                Restocking fee{" "}
-                                {percentFormatter.format(
-                                  line.restockFeePercent
-                                )}
-                              </Trans>
-                            </span>
-                          )}
-                        </VStack>
-                        <HStack spacing={4}>
-                          <NumberField
-                            aria-label={t`Quantity to credit for line ${lineNumber}`}
-                            formatOptions={INPUT_FORMAT.quantity}
-                            step={INPUT_STEP.quantity}
-                            value={quantity}
-                            onChange={(value) =>
-                              setQuantity(
-                                line.salesReturnOrderLineId,
-                                value,
-                                line.creditableQuantity
-                              )
-                            }
-                          >
-                            <NumberInput
-                              className="min-w-[100px]"
-                              size="sm"
-                              min={0}
-                              max={line.creditableQuantity}
-                            />
-                          </NumberField>
-                          <span className="text-sm font-medium tabular-nums whitespace-nowrap min-w-[80px] text-right">
-                            {currencyFormatter.format(amountFor(line))}
-                          </span>
-                        </HStack>
-                      </HStack>
-                    );
-                  })}
-                </VStack>
-              </ScrollArea>
-            )}
-            <input type="hidden" name="lines" value={JSON.stringify(payload)} />
-          </ModalBody>
-          <ModalFooter>
-            <HStack className="w-full justify-between">
-              <span className="text-sm font-medium tabular-nums">
-                <Trans>Total</Trans> {currencyFormatter.format(total)}
-              </span>
-              <HStack>
-                <Button variant="secondary" onClick={onClose} type="button">
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Button
-                  type="submit"
-                  isLoading={isSubmitting}
-                  isDisabled={isSubmitting || payload.length === 0}
-                >
-                  <Trans>Issue Credit</Trans>
-                </Button>
-              </HStack>
-            </HStack>
-          </ModalFooter>
-        </submitFetcher.Form>
-      </ModalContent>
-    </Modal>
+                        <NumberInput
+                          className="min-w-[100px]"
+                          size="sm"
+                          min={0}
+                          max={line.creditableQuantity}
+                        />
+                      </NumberField>
+                      <span className="text-sm font-medium tabular-nums whitespace-nowrap min-w-[80px] text-right">
+                        {currencyFormatter.format(amountFor(line))}
+                      </span>
+                    </HStack>
+                  </HStack>
+                );
+              })}
+            </VStack>
+          </ScrollArea>
+        )}
+        <input type="hidden" name="lines" value={JSON.stringify(payload)} />
+      </ModalBody>
+      <ModalFooter>
+        <HStack className="w-full justify-between">
+          <span className="text-sm font-medium tabular-nums">
+            <Trans>Total</Trans> {currencyFormatter.format(total)}
+          </span>
+          <HStack>
+            <Button variant="secondary" onClick={onClose} type="button">
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              type="submit"
+              isLoading={isSubmitting}
+              isDisabled={isSubmitting || payload.length === 0}
+            >
+              <Trans>Issue Credit</Trans>
+            </Button>
+          </HStack>
+        </HStack>
+      </ModalFooter>
+    </submitFetcher.Form>
   );
 };
 

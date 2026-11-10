@@ -7,7 +7,9 @@ import {
   hasUnsavedRows,
   mergeSaveResponse,
   newBalloonId,
-  newFeatureId
+  newFeatureId,
+  newParameterId,
+  sendableParameters
 } from "./autosave";
 
 type Row = {
@@ -152,5 +154,24 @@ describe("minted ids", () => {
     expect(newFeatureId()).toMatch(/^ift_[A-Za-z0-9_-]{8,60}$/);
     expect(newBalloonId()).toMatch(/^bbn_[A-Za-z0-9_-]{8,60}$/);
     expect(newFeatureId()).not.toBe(newFeatureId());
+  });
+});
+
+describe("sendableParameters", () => {
+  it("keeps the order, trims, and leaves out a row with no key yet", () => {
+    expect(
+      sendableParameters([
+        { id: "idp_1", key: " Ambient temp ", value: " 20 ±2 °C " },
+        { id: "idp_2", key: "  ", value: "typed before the key" },
+        { id: "idp_3", key: "Fixture", value: "" }
+      ])
+    ).toEqual([
+      { id: "idp_1", key: "Ambient temp", value: "20 ±2 °C" },
+      { id: "idp_3", key: "Fixture", value: "" }
+    ]);
+  });
+
+  it("mints idp_ ids", () => {
+    expect(newParameterId()).toMatch(/^idp_/);
   });
 });

@@ -547,57 +547,33 @@ const DocumentsTable = memo(
 
         {selectedDocument && selectedDocument.id && (
           <>
-            {moveDocumentModal.isOpen && filter !== "trash" && (
-              <ConfirmDelete
-                action={path.to.deleteDocument(selectedDocument.id)}
-                isOpen
-                name={selectedDocument.name ?? ""}
-                text={`Are you sure you want to move ${selectedDocument.name} to the trash?`}
-                onCancel={() => {
-                  moveDocumentModal.onClose();
-                  setSelectedDocument(null);
-                }}
-                onSubmit={() => {
-                  moveDocumentModal.onClose();
-                  setSelectedDocument(null);
-                }}
-              />
-            )}
+            <ConfirmDelete
+              action={path.to.deleteDocument(selectedDocument.id)}
+              isOpen={moveDocumentModal.isOpen && filter !== "trash"}
+              name={selectedDocument.name ?? ""}
+              text={`Are you sure you want to move ${selectedDocument.name} to the trash?`}
+              onCancel={moveDocumentModal.onClose}
+              onSubmit={moveDocumentModal.onClose}
+            />
 
-            {moveDocumentModal.isOpen && filter === "trash" && (
-              <Confirm
-                action={path.to.documentRestore(selectedDocument.id)}
-                isOpen
-                title={`Restore ${selectedDocument.name}`}
-                text={`Are you sure you want to restore ${selectedDocument.name} from the trash?`}
-                confirmText="Restore"
-                onCancel={() => {
-                  moveDocumentModal.onClose();
-                  setSelectedDocument(null);
-                }}
-                onSubmit={() => {
-                  moveDocumentModal.onClose();
-                  setSelectedDocument(null);
-                }}
-              />
-            )}
+            <Confirm
+              action={path.to.documentRestore(selectedDocument.id)}
+              isOpen={moveDocumentModal.isOpen && filter === "trash"}
+              title={`Restore ${selectedDocument.name}`}
+              text={`Are you sure you want to restore ${selectedDocument.name} from the trash?`}
+              confirmText="Restore"
+              onCancel={moveDocumentModal.onClose}
+              onSubmit={moveDocumentModal.onClose}
+            />
 
-            {deleteDocumentModal.isOpen && (
-              <ConfirmDelete
-                action={path.to.deleteDocumentPermanently(selectedDocument.id)}
-                isOpen
-                name={selectedDocument.name ?? ""}
-                text={`Are you sure you want to delete ${selectedDocument.name} permanently? This cannot be undone.`}
-                onCancel={() => {
-                  deleteDocumentModal.onClose();
-                  setSelectedDocument(null);
-                }}
-                onSubmit={() => {
-                  deleteDocumentModal.onClose();
-                  setSelectedDocument(null);
-                }}
-              />
-            )}
+            <ConfirmDelete
+              action={path.to.deleteDocumentPermanently(selectedDocument.id)}
+              isOpen={deleteDocumentModal.isOpen}
+              name={selectedDocument.name ?? ""}
+              text={`Are you sure you want to delete ${selectedDocument.name} permanently? This cannot be undone.`}
+              onCancel={deleteDocumentModal.onClose}
+              onSubmit={deleteDocumentModal.onClose}
+            />
           </>
         )}
       </>

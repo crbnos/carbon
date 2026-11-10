@@ -63,12 +63,14 @@ type PurchasingRFQLineFormProps = {
     itemType: ItemType;
   };
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const PurchasingRFQLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose
 }: PurchasingRFQLineFormProps) => {
   const { t } = useLingui();
@@ -151,6 +153,7 @@ const PurchasingRFQLineForm = ({
     <>
       <ModalCardProvider type={type}>
         <ModalCard
+          open={open}
           onClose={onClose}
           isCollapsible={isEditing}
           defaultCollapsed={false}
@@ -357,8 +360,9 @@ const PurchasingRFQLineForm = ({
           </ModalCardContent>
         </ModalCard>
       </ModalCardProvider>
-      {isEditing && deleteDisclosure.isOpen && (
+      {isEditing && (
         <DeletePurchasingRFQLine
+          isOpen={deleteDisclosure.isOpen}
           line={initialValues as PurchasingRFQLine}
           onCancel={deleteDisclosure.onClose}
         />

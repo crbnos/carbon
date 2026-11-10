@@ -16,15 +16,22 @@ import { forwardRef, useEffect } from "react";
 
 import { LuX } from "react-icons/lu";
 import { ActionPresentationBoundary } from "./ActionPresentation";
-import { ClientOnly } from "./ClientOnly";
 import {
-  compactFooterClassName,
-  DialogRoot,
-  useDialogDismissable
-} from "./Modal";
+  sheetFooterClassName,
+  sheetHeaderClassName,
+  sheetTitleClassName
+} from "./BottomSheet";
+import { ClientOnly } from "./ClientOnly";
+import { DialogRoot, useDialogDismissable } from "./DialogRoot";
+import { compactFooterClassName, DialogSheetContent } from "./Modal";
+import { ReportDialogExit } from "./RouteDialogScope";
 import { cn } from "./utils/cn";
-import { returnFocusOnClose, trackPageFocus } from "./utils/dialog";
-import { usePhoneOpenAutoFocus, useViewport } from "./Viewport";
+import {
+  keepOpenOnToast,
+  returnFocusOnClose,
+  trackPageFocus
+} from "./utils/dialog";
+import { useViewport } from "./Viewport";
 
 const Drawer = DialogRoot;
 
@@ -39,7 +46,7 @@ const DrawerCloseButton = DialogPrimitive.Close;
 // without it the portal removes the panel before it can slide out. The
 // duration must match the panel's closing duration below.
 const portalVariants = cva(
-  "fixed inset-0 z-50 flex p-3 max-md:p-0 max-md:items-end [&:has(>[role=dialog][data-state=closed])]:animate-out [&:has(>[role=dialog][data-state=closed])]:duration-200",
+  "fixed inset-0 z-50 flex p-3 [&:has(>[role=dialog][data-state=closed])]:animate-out [&:has(>[role=dialog][data-state=closed])]:duration-200",
   {
     variants: {
       position: {
@@ -71,7 +78,7 @@ const DrawerOverlay = forwardRef<
   <DialogPrimitive.Overlay
     data-backdrop=""
     className={cn(
-      "fixed inset-0 z-50 bg-black/20 max-md:bg-black/40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-black/20 data-[state=closed]:!pointer-events-none data-[state=open]:duration-300 data-[state=closed]:duration-200 ease-drawer data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props}
@@ -88,7 +95,8 @@ const DrawerBody = ({
     className={cn(
       "flex flex-col flex-1 items-start justify-start overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full p-6 bg-card dark:bg-muted/40 rounded-xl border border-border",
       // A caller that wants the body flush on phones passes `max-md:p-0`.
-      "max-md:min-h-0 max-md:rounded-none max-md:border-x-0 max-md:p-4",
+      // Phones: a sheet's body, with no card band of its own.
+      "max-md:min-h-0 max-md:rounded-none max-md:border-0 max-md:bg-transparent max-md:px-4 max-md:pt-0 max-md:pb-4 max-md:dark:bg-transparent",
       className
     )}
     {...props}
@@ -99,16 +107,16 @@ DrawerBody.displayName = "DrawerBody";
 // Phones show every drawer as a bottom sheet, so it also slides up from the
 // bottom whatever its desktop side.
 const sheetVariants = cva(
-  "flex flex-col z-50 scale-100 bg-accent dark:bg-card opacity-100 shadow-button-base dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)] border border-border transition-[background-color,box-shadow,border-color] duration-100 focus-visible:outline-none focus-visible:ring-0 rounded-xl max-md:max-h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:w-full max-md:max-w-none max-md:overflow-hidden max-md:rounded-t-[14px] max-md:rounded-b-none max-md:border-0 max-md:bg-card max-md:h-auto max-md:[&>form]:min-h-0 max-md:data-[state=open]:[--tw-enter-translate-x:0] max-md:data-[state=open]:[--tw-enter-translate-y:100%] max-md:data-[state=closed]:[--tw-exit-translate-x:0] max-md:data-[state=closed]:[--tw-exit-translate-y:100%]",
+  "data-[state=closed]:!pointer-events-none flex flex-col z-50 scale-100 bg-accent dark:bg-card opacity-100 shadow-button-base dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)] border border-border transition-[background-color,box-shadow,border-color] duration-100 focus-visible:outline-none focus-visible:ring-0 rounded-xl",
   {
     variants: {
       position: {
-        top: "data-[state=open]:animate-in data-[state=open]:slide-in-from-top data-[state=closed]:animate-out data-[state=closed]:slide-out-to-top data-[state=closed]:duration-200 w-full duration-300 ease-drawer",
+        top: "data-[state=open]:animate-in data-[state=open]:slide-in-from-top data-[state=closed]:animate-out data-[state=closed]:slide-out-to-top data-[state=closed]:duration-200 w-full data-[state=open]:duration-300 ease-drawer",
         bottom:
-          "data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=closed]:duration-200 w-full duration-300 ease-drawer",
-        left: "data-[state=open]:animate-in data-[state=open]:slide-in-from-left data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=closed]:duration-200 h-full duration-300 ease-drawer",
+          "data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=closed]:duration-200 w-full data-[state=open]:duration-300 ease-drawer",
+        left: "data-[state=open]:animate-in data-[state=open]:slide-in-from-left data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=closed]:duration-200 h-full data-[state=open]:duration-300 ease-drawer",
         right:
-          "data-[state=open]:animate-in data-[state=open]:slide-in-from-right data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=closed]:duration-200 h-full duration-300 ease-drawer"
+          "data-[state=open]:animate-in data-[state=open]:slide-in-from-right data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=closed]:duration-200 h-full data-[state=open]:duration-300 ease-drawer"
       },
       size: {
         content: "",
@@ -116,9 +124,8 @@ const sheetVariants = cva(
         md: "",
         lg: "",
         xl: "",
-        // Phones: sheets fit their content (the form shrinks under the max
-        // height so its body scrolls); `full` keeps the whole height.
-        full: "max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)]"
+        // On a phone `full` is the sheet's full height (`DrawerContent`).
+        full: ""
       }
     },
     compoundVariants: [
@@ -210,6 +217,7 @@ const DrawerContent = forwardRef<
       className,
       children,
       onCloseAutoFocus,
+      onInteractOutside,
       ...props
     },
     ref
@@ -217,7 +225,28 @@ const DrawerContent = forwardRef<
     useEffect(trackPageFocus, []);
     const dismissable = useDialogDismissable();
     const { isPhone } = useViewport();
-    const onOpenAutoFocus = usePhoneOpenAutoFocus(props.onOpenAutoFocus);
+
+    // Phones: a bottom sheet, dragged down to close. A side drawer slides up
+    // from the bottom on a phone too, so `position` does not apply, and a
+    // sheet always has its backdrop on the page (`overlay`, `container`).
+    if (isPhone) {
+      return (
+        <DialogSheetContent
+          ref={ref}
+          size={size === "full" ? "full" : "auto"}
+          // As the drawer did, it fits its content, whatever height the
+          // caller gives the desktop panel (`h-full`).
+          className={cn(size !== "full" && "max-md:h-auto", className)}
+          onCloseAutoFocus={onCloseAutoFocus}
+          onInteractOutside={onInteractOutside}
+          {...props}
+        >
+          {children}
+        </DialogSheetContent>
+      );
+    }
+
+    // Not on a phone (that is the sheet above), so nothing here styles one.
     return (
       <ClientOnly fallback={null}>
         {() => (
@@ -227,19 +256,17 @@ const DrawerContent = forwardRef<
               ref={ref}
               className={cn(sheetVariants({ position, size }), className)}
               {...props}
-              onOpenAutoFocus={onOpenAutoFocus}
+              onInteractOutside={keepOpenOnToast(onInteractOutside)}
               onCloseAutoFocus={returnFocusOnClose(onCloseAutoFocus)}
             >
-              {isPhone && (
-                <div className="mx-auto mt-1.5 h-[5px] w-9 shrink-0 rounded-full bg-muted-foreground/20" />
-              )}
+              <ReportDialogExit />
               <ActionPresentationBoundary>
                 {children}
               </ActionPresentationBoundary>
               {dismissable && (
                 <DialogPrimitive.Close
                   type="button"
-                  className="absolute right-4 top-3 rounded-full p-2 opacity-70 transition-opacity hover:opacity-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none data-[state=open]:bg-secondary max-md:right-1 max-md:top-[15px] max-md:flex max-md:size-11 max-md:items-center max-md:justify-center max-md:p-0"
+                  className="absolute right-4 top-3 rounded-full p-2 opacity-70 transition-opacity hover:opacity-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none data-[state=open]:bg-secondary"
                 >
                   <LuX className="h-5 w-5" />
                   <span className="sr-only">Close</span>
@@ -259,9 +286,12 @@ const DrawerHeader = ({
   ...props
 }: HTMLAttributes<HTMLDivElement>) => (
   <div
+    data-bottom-sheet-header=""
     className={cn(
       "flex flex-col flex-0 gap-1 text-left px-6 py-4 text-muted-foreground",
-      "max-md:min-h-[52px] max-md:justify-center max-md:px-4 max-md:py-2 max-md:pr-14",
+      // Phones: a sheet's header (a centred 44px row beside its close button).
+      sheetHeaderClassName,
+      "max-md:gap-0.5 max-md:py-0 max-md:text-center",
       className
     )}
     {...props}
@@ -278,7 +308,8 @@ const DrawerFooter = ({
       "flex flex-0 sm:flex-row flex-col-reverse px-6 py-4 sm:justify-end sm:space-x-2",
       compactFooterClassName,
       // Phones: above the safe area.
-      "max-md:gap-2 max-md:space-x-0 max-md:pt-3 max-md:pb-safe-4",
+      "max-md:gap-2 max-md:space-x-0",
+      sheetFooterClassName,
       className
     )}
     {...props}
@@ -294,6 +325,7 @@ const DrawerTitle = forwardRef<
     ref={ref}
     className={cn(
       "text-base font-medium leading-none tracking-tight text-foreground/90 text-balance line-clamp-1",
+      sheetTitleClassName,
       className
     )}
     {...props}

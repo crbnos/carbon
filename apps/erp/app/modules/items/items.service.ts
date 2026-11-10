@@ -111,7 +111,6 @@ import {
   type customerPartValidator,
   EACH_UNIT_OF_MEASURE_CODE,
   type getMethodValidator,
-  ItemTrackingType,
   isAllowedChangeNoticeTransition,
   type itemCostValidator,
   type itemManufacturingValidator,
@@ -160,7 +159,6 @@ import {
   sentFields,
   sentMaterialProperties
 } from "./material-properties";
-import type { InventoryItemType } from "./types";
 
 const PARTS_LIST_COLUMNS =
   "active,defaultMethodType,description,itemTrackingType,name,replenishmentSystem,unitOfMeasureCode,revision,readableId,readableIdWithRevision,id,companyId,thumbnailPath,supplierIds,revisions,customFields,tags,itemPostingGroupId,createdBy,createdAt,updatedBy,updatedAt,supersessionMode,mpn,suppliers" as const;
@@ -3190,149 +3188,6 @@ export async function upsertPickMethodWithShelfLife(
         companyId: args.companyId,
         createdBy: args.userId
       })
-      .execute();
-  });
-}
-
-/**
- * Cascades a change to item.itemTrackingType onto the snapshot columns
- * `requiresSerialTracking` and `requiresBatchTracking` on child rows that
- * belong to OPEN parents (jobs, receipts, shipments, stock transfers).
- *
- * Without this, snapshot flags drift from the live item value and leave the
- * UI reading stale (often sticky-true) tracking flags after an item is
- * flipped back to Inventory / Non-Inventory. The cascade only:
- * `setItemTrackingType` also writes the item.
- */
-export async function cascadeItemTrackingType(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    itemIds: string[];
-    companyId: string;
-    newType: InventoryItemType;
-    userId: string;
-  }
-) {
-  if (args.itemIds.length === 0) return;
-
-  const requiresSerialTracking = args.newType === ItemTrackingType.Serial;
-  const requiresBatchTracking = args.newType === ItemTrackingType.Batch;
-  const updatedAt = datetime.timestamp();
-
-  return db.transaction().execute(async (trx) => {
-    await trx
-      .updateTable("jobMakeMethod")
-      .set({
-        requiresSerialTracking,
-        requiresBatchTracking,
-        updatedBy: args.userId,
-        updatedAt
-      })
-      .where("itemId", "in", args.itemIds)
-      .where("companyId", "=", args.companyId)
-      .where((eb) =>
-        eb(
-          "jobId",
-          "in",
-          eb
-            .selectFrom("job")
-            .select("id")
-            .where("companyId", "=", args.companyId)
-            .where("status", "in", ["Draft", "Planned"])
-        )
-      )
-      .execute();
-
-    await trx
-      .updateTable("jobMaterial")
-      .set({
-        requiresSerialTracking,
-        requiresBatchTracking,
-        updatedBy: args.userId,
-        updatedAt
-      })
-      .where("itemId", "in", args.itemIds)
-      .where("companyId", "=", args.companyId)
-      .where((eb) =>
-        eb(
-          "jobId",
-          "in",
-          eb
-            .selectFrom("job")
-            .select("id")
-            .where("companyId", "=", args.companyId)
-            .where("status", "in", ["Draft", "Planned"])
-        )
-      )
-      .execute();
-
-    await trx
-      .updateTable("receiptLine")
-      .set({
-        requiresSerialTracking,
-        requiresBatchTracking,
-        updatedBy: args.userId,
-        updatedAt
-      })
-      .where("itemId", "in", args.itemIds)
-      .where("companyId", "=", args.companyId)
-      .where((eb) =>
-        eb(
-          "receiptId",
-          "in",
-          eb
-            .selectFrom("receipt")
-            .select("id")
-            .where("companyId", "=", args.companyId)
-            .where("status", "=", "Draft")
-        )
-      )
-      .execute();
-
-    await trx
-      .updateTable("shipmentLine")
-      .set({
-        requiresSerialTracking,
-        requiresBatchTracking,
-        updatedBy: args.userId,
-        updatedAt
-      })
-      .where("itemId", "in", args.itemIds)
-      .where("companyId", "=", args.companyId)
-      .where((eb) =>
-        eb(
-          "shipmentId",
-          "in",
-          eb
-            .selectFrom("shipment")
-            .select("id")
-            .where("companyId", "=", args.companyId)
-            .where("status", "=", "Draft")
-        )
-      )
-      .execute();
-
-    await trx
-      .updateTable("stockTransferLine")
-      .set({
-        requiresSerialTracking,
-        requiresBatchTracking,
-        updatedBy: args.userId,
-        updatedAt
-      })
-      .where("itemId", "in", args.itemIds)
-      .where("companyId", "=", args.companyId)
-      .where((eb) =>
-        eb(
-          "stockTransferId",
-          "in",
-          eb
-            .selectFrom("stockTransfer")
-            .select("id")
-            .where("companyId", "=", args.companyId)
-            .where("status", "=", "Draft")
-        )
-      )
       .execute();
   });
 }
@@ -8811,11 +8666,11 @@ async function stampOperationRefNames(
   if (inspectionDocumentIds.length > 0) {
     const docs = await client
       .from("inspectionDocument")
-      .select("id, drawingNumber, fileName")
+      .select("id, name, fileName")
       .in("id", inspectionDocumentIds)
       .eq("companyId", companyId);
     for (const d of docs.data ?? []) {
-      if (d.id) names.set(d.id, d.drawingNumber || d.fileName || d.id);
+      if (d.id) names.set(d.id, d.name || d.fileName || d.id);
     }
   }
 

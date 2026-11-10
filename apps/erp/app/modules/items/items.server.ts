@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { ServerFnError } from "@carbon/api/errors";
+import { raisedMessage, ServerFnError } from "@carbon/api/errors";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import {
@@ -93,10 +93,11 @@ const itemIdsInput = z.array(z.string()).min(1);
  * Change items' tracking type.
  *
  * @remarks
- * Writes `itemTrackingType` on every item, then carries the serial and batch
- * flags onto the open jobs, receipts, shipments and stock transfers that copied
- * them (`cascadeItemTrackingType`). A failed carry-over leaves the items
- * changed and returns an error.
+ * Writes `itemTrackingType` on every item. In the same statement the database
+ * (`sync_item_tracking_type_change`) gives the new serial and batch flags to
+ * the Draft and Planned jobs, and the Draft receipts, shipments and stock
+ * transfers, that copied them. It refuses the change while an item has stock
+ * the new type cannot use, or is on a released job that is not finished.
  *
  * @mcp
  */
@@ -108,7 +109,6 @@ export const setItemTrackingType = defineServiceFn({
   permission: { update: "parts" },
 
   async run(ctx, { ids, itemTrackingType }) {
-    const companyId = ctx.company.id;
     const update = await ctx.asCaller.supabase
       .from("item")
       .update({
@@ -117,20 +117,15 @@ export const setItemTrackingType = defineServiceFn({
         updatedAt: datetime.timestamp()
       })
       .in("id", ids)
-      .eq("companyId", companyId);
+      .eq("companyId", ctx.company.id);
     if (update.error) {
-      return ctx.error("internal", update.error.message, update.error);
-    }
-
-    try {
-      await service.cascadeItemTrackingType(ctx.asSystem.pg, {
-        itemIds: ids,
-        companyId,
-        newType: itemTrackingType,
-        userId: ctx.auditUserId
-      });
-    } catch (err) {
-      return ctx.error("internal", "Failed to cascade tracking flags", err);
+      const refusal = raisedMessage(update.error);
+      if (refusal) return ctx.error("rule", refusal, update.error);
+      return ctx.error(
+        "internal",
+        "Failed to change the tracking type",
+        update.error
+      );
     }
     return { ids };
   }

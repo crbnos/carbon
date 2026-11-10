@@ -3065,8 +3065,33 @@ the portal and the animated node — each `Presence` looks only at its own child
 a trace of `data-state` and `getBoundingClientRect()` per frame, not by eye.
 
 **Applies to:** `packages/react/src/Drawer.tsx` (`portalVariants` + `sheetVariants` closing
-durations must match), `useDrawerItem` (`apps/erp/app/hooks`), both planning tables, and the
-other state-driven drawers that still unmount on close.
+durations must match), `useDrawerItem` (`apps/erp/app/hooks`), both planning tables, and every
+other modal and drawer (see the next lesson).
+
+## A route dialog closed by navigating cannot animate closed either
+
+**Context:** Every modal and drawer in the ERP animated in and vanished on close (New Gauge was
+the report). The drawer lesson above fixed only the planning drawers.
+
+**Problem:** Two patterns removed the dialog in the same render. A route that renders a form as
+a dialog held `open` at `true` and closed by `useCloseRoute()` / `navigate(...)`: the navigation
+removed the route, so `open` never turned false. And about 300 call sites rendered
+`{disclosure.isOpen && <ConfirmDelete />}`. The modal backdrop also closed in 150ms while the
+box closed in 200ms, and Radix removes both when the backdrop ends.
+
+**Rule:** A route dialog uses `useRouteDialog()` (`@carbon/react`): `close` sets `open` false
+and navigates only when Radix has removed the dialog. With unsaved changes it navigates at once,
+so the `Submit` blocker asks over the open dialog — closing first would unmount the blocker and
+lose the edits silently. A conditional dialog passes its condition as `open`/`isOpen` and keeps
+its record until the next open. State or a mount-time fetch that must be fresh per open goes in a
+body component inside `ModalContent` / `DrawerContent`, which Radix unmounts on close. A `key` that
+counts opens is only for state that cannot move there (a `ModalCard` form, or `Modal` /
+`ModalContent` props that read it). The first attempt keyed about 150 dialogs per open: it worked,
+but it fought Radix's own unmount, and the guard around it mounted nothing until the first open for
+no reason. Enforced by `no-unmounting-dialog`.
+
+**Applies to:** every `Modal`, `Drawer`, `ModalDrawer`, `Confirm`, `ConfirmDelete` and
+`*Modal`/`*Drawer` component; `ModalOverlay` and `ModalContent` durations must match.
 
 ## A cast that silences excess-property errors hides failed writes
 
@@ -4498,6 +4523,16 @@ an operation `@mcp`, ask what its gate means for a key, not only for a person.
 
 **Applies to:** `permission: {}` on any published write, `packages/api/src/permissions.ts`.
 
+## A posting that moves held stock must say it is the release
+
+**Context:** The goods-in inspection hold is one statement handler on `itemLedger` (`check_inspection_hold`) plus BEFORE interceptors on `inspection`, `trackedEntity`, `storageUnit`, `location` and `nonConformance`.
+
+**Problem:** A posting that moves stock out of an inspection unit without `setInspectionRelease` is refused with "held for inspection". The quick way out was to set `app.sync_in_progress`, which also switches the hold off. But that flag also stops the event queue, the contact and address sync handlers, the kanban and PMI queues and `queue_model_pipeline`. A company restore set it for its whole load and silenced all of them.
+
+**Rule:** The release flag covers only the write that IS the release: run it through `withInspectionRelease(trx, fn)` (the lot's decision, the NCR's close, a void's cancelled lots), and let the stock moves that follow run with the guard on. A decided lot holds nothing, so the guard lets its stock go and still refuses what another lot holds. A flag left on for a whole posting let an NCR close scrap units of an open lot and a void drain another receipt's held stock. `setInspectionRelease(trx)` for a whole transaction is only for a posting that records reality (a count) or re-checks the hold itself (a return shipment). Never set `app.sync_in_progress` only to get past the hold or to silence events. A company restore or import sets `app.inspection_release` in its load transaction. A posting that runs under the release flag but must not take an open lot's stock checks that itself (`refuseShippingOpenLotStock`).
+
+**Applies to:** Any new posting that writes negative `itemLedger` rows in a non-nettable unit; `company-restore.ts`, `company-import.ts`; every hold interceptor (each honours both flags).
+
 ## Vercel's route limit counts dynamic routes twice
 
 **Context:** The ERP deploy failed with "Maximum number of routes (rewrites, redirects, etc)
@@ -4688,6 +4723,26 @@ took 20 from the bin and left the 3. TypeScript `id !== null` and SQL
 **Applies to:** `packages/database/src/picked-consumption.ts`, `backflush_job_materials`,
 and any bin or stripe filter where `null` is both a key and "unset".
 
+## The desktop rail can be transparent, and a sortable row can be tall
+
+**Context:** Customize added a tree under each module row in `NavRail`. The rail scrolled as a whole, so the footer with Save and Cancel needed to stay in view.
+
+**Problem:** A sticky footer with `bg-background` passed in the default theme. A color theme makes the rail transparent, so the footer painted a solid patch on the frame. Separately, `closestCenter` compared the center of a tall row with an open tree, so the row did not reorder.
+
+**Rule:** In the rail, never paint a background to hide content that scrolls under it. Scroll the list and keep the footer outside the scroll area. Check rail changes with a color theme (`theme=forge`). For a sortable item with variable height, follow the pointer with `pointerWithin`, and keep `closestCenter` as the fallback for the keyboard.
+
+**Applies to:** `packages/react/src/NavRail.tsx`, `apps/erp/app/components/Layout/Navigation/`.
+
+## A plain `duration-*` does not time `animate-in` / `animate-out`
+
+**Context:** The modal was meant to open in 200ms and the drawer in 300ms; both opened in 150ms.
+
+**Problem:** `tailwindcss-animate`'s `animate-in` / `animate-out` set `animation-duration` themselves (the 150ms default). They are used as `data-[state=open]:animate-in`, and a state-variant rule comes after a plain `duration-300` in the CSS, so the plain duration never applied. Only the closing durations, already written as `data-[state=closed]:duration-200`, worked. Nothing looked wrong: the motion was simply shorter than the class said.
+
+**Rule:** Time an enter/exit animation on its state variant — `data-[state=open]:duration-300 data-[state=closed]:duration-200` — never with a bare `duration-*` beside `animate-in`. Verify with `getComputedStyle(el).animationDuration` in each state, not by reading the class list. The motion scale is in `.claude/rules/conventions-ui.md` (Animations).
+
+**Applies to:** `Modal.tsx`, `Drawer.tsx`, `BottomSheet.tsx` (fixed), and any component that pairs `animate-in`/`animate-out` with a duration.
+
 ## The edge runtime reuses a worker, env and all, per pool key
 
 **Context:** One shared `supabase/edge-runtime` serving every worktree, with the
@@ -4723,3 +4778,106 @@ shared ones by `container_name` (`carbon-*`). Check a new name with
 
 **Applies to:** `packages/dev/docker/envoy/cds.template.yaml`,
 `packages/dev/docker/docker-compose.dev.yml`, `.claude/rules/dev-shared-services.md`.
+
+## A touch drag needs pointer events, `touch-action`, and speed from the moves
+
+**Context:** A gesture audit drove the code with Chrome's real touch input. The
+inspection splitters, a dozen drag handles and the bottom sheet's flick all failed.
+
+**Problem:** A finger fires no `mousemove`, so a `onMouseDown` drag is dead on touch,
+and `touch-none` hides that. A `PointerSensor` or Motion `dragControls` handle without
+`touch-action: none` gets one move, then `pointercancel`, and the page scrolls. A
+`pointerup` carries the last move's position, so its distance from that move is 0 and
+a flick reads as no speed. A `TouchSensor` activates with a `TouchEvent`, which has no
+`clientY`.
+
+**Rule:** Start a drag with pointer events and capture. Put `touch-none` on a handle;
+a whole draggable row or card uses `MouseSensor` + `TouchSensor` with a delay instead,
+plus `pointer-coarse:select-none`, because the hold that starts the drag also selects text.
+ERP sensor options come from `~/utils/drag-sensors`, never a local constant, so every
+drag starts the same way; only a custom keyboard `coordinateGetter` stays with its board.
+Read a release's speed from the moves (`releaseVelocity`). Read a dnd-kit
+`activatorEvent` with `getEventCoordinates`. The `width >= 48rem` clause of the `hover`
+variant in `theme.css` is what lets a tap reveal `md:opacity-0 group-hover:opacity-100`
+controls on a tablet: do not remove it without another way to reach them.
+
+**Applies to:** anything the user drags; `packages/react/src/utils/drag.ts`,
+`usePaneResize`, dnd-kit sensor choices, `packages/config/tailwind/theme.css`.
+
+## Node 24's readline splits a JSON line at U+2028 and U+2029
+
+**Context:** `deserializeTable` read a backup table's NDJSON with
+`readline.createInterface`. Restores worked locally (Node 22) and failed on BYOC
+(Node 24) with "Unterminated string in JSON at position 662".
+
+**Problem:** From Node 24, readline also ends a line at U+2028 (line separator)
+and U+2029 (paragraph separator). `JSON.stringify` leaves both unescaped, so a
+row holding text pasted from Word or a PDF was cut mid-string. `jq` reads the
+same file without complaint, so checking the archive with it passes.
+
+**Rule:** Read NDJSON by splitting on "\n" yourself (the one separator the
+writer emits), never with readline. Reproduce JSON-reading bugs on the Node
+version the deployment runs (`mise exec node@24 -- …`).
+
+**Applies to:** `packages/jobs/src/inngest/functions/tasks/company-backup.ts`
+(`deserializeTable`) and any new NDJSON or JSON-lines reader.
+
+## A rule about a column belongs where every writer of that column passes
+
+**Context:** An item's tracking type (Inventory, Batch, Serial) is copied onto job
+materials, job make methods and open document lines when they are made. Draws read the
+copy to choose untracked or tracked stock. `setItemTrackingType` updated the copy, but
+only on Draft and Planned jobs, and it did not check stock.
+
+**Problem:** Six code paths write `item.itemTrackingType` on an existing item: the
+properties panel, `updateItem`, `updatePart` and its siblings, CSV import, the Onshape
+field writer and the bulk update. Only two of them updated the copy, and none checked
+stock or released jobs. An item changed from Batch to Inventory kept its lots, which no
+untracked draw can see, so the next issue drove the bin negative. A released job kept
+the old copy, so its issues selected materials by the copy and moved stock by the item.
+
+**Rule:** When a column change must be checked or carried to other rows, put that rule
+in the database (a statement handler on the table), not in one service function. Before
+you choose the place, list every writer of the column with `git grep`. A rule in one
+writer is a rule the other writers skip.
+
+**Applies to:** `sync_item_tracking_type_change`
+(`packages/database/src/event-system/handlers/`), and any flag copied from a master
+record onto open documents.
+
+## A React handler on a dialog also hears the dialogs opened from inside it
+
+**Context:** On phones every `Modal` and `Drawer` is a bottom sheet, and a sheet drags
+down from its header. The drag handlers sit on the sheet's panel (`BottomSheetContent`).
+Account settings is a sheet, and the signature dialog opens from one of its panes.
+
+**Problem:** React passes a synthetic event up through the React tree, not the DOM
+tree, so it crosses portals. The signature sheet is portaled to `<body>`, but it is
+rendered inside the account pane, so a press on its header also reached the account
+sheet's `onPointerDown`. Both sheets started a drag, and closing the signature also
+closed account settings.
+
+**Rule:** A handler on a dialog panel that acts on `event.target` checks that the
+target is in its own panel (`panel.contains(...)`), never only that it matches a
+selector. A dialog opened from inside it is a different panel that still delivers its
+events here.
+
+**Applies to:** `startsSheetDrag` (`packages/react/src/utils/dialog.ts`), and any
+`onPointer*`, `onKeyDown` or `onClick` placed on a `Modal`, `Drawer`, `BottomSheet` or
+popover content.
+
+## Pointer capture taken on press steals the tap's click
+
+**Context:** A bottom sheet drags down from its whole header, so its handlers sit on the
+panel and a press anywhere in the header that is not a control starts a drag.
+
+**Problem:** The drag called `setPointerCapture` on `pointerdown`. With the pointer
+captured, `pointerup` goes to the panel, and the browser sends the `click` to the
+panel too. A header chip with an `onClick` (not a `button`, so not excluded as a
+control) stopped responding to taps.
+
+**Rule:** A drag that starts on content which can also be tapped takes the pointer
+only once it has moved a few pixels (`DRAG_SLOP_PX`). Until then a tap is a tap.
+
+**Applies to:** `BottomSheetContent` (`packages/react/src/BottomSheet.tsx`), and any
+drag handle that wraps clickable content.

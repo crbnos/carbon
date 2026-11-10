@@ -60,7 +60,7 @@ function ReorderableActionItem({
         <button
           type="button"
           aria-label={t`Reorder ${action.name}`}
-          className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors p-1"
+          className="cursor-grab touch-none active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors p-1"
           onPointerDown={(e) => dragControls.start(e)}
         >
           <LuGripVertical size={16} />

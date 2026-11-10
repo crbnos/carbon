@@ -9,7 +9,7 @@
 
 import { failSpan, inSpan } from "@carbon/logger/span";
 import { databaseRefusal } from "./database-refusal";
-import { RAISED_EXCEPTION, ServerFnError, toServerFnError } from "./errors";
+import { raisedMessage, ServerFnError, toServerFnError } from "./errors";
 import { SERVICE_RULE_ERROR_CODE } from "./rule-error";
 import {
   CarbonError,
@@ -165,14 +165,8 @@ function serviceRefusal(ctx: ServiceContext, error: unknown): CarbonError {
     return ctx.error("rule", String(error.message));
   }
   // A RAISE in our own SQL: its message was written for the person.
-  if (
-    isRecord(error) &&
-    error.code === RAISED_EXCEPTION &&
-    typeof error.message === "string" &&
-    error.message !== ""
-  ) {
-    return ctx.error("rule", error.message, error);
-  }
+  const raised = raisedMessage(error);
+  if (raised) return ctx.error("rule", raised, error);
   const known = databaseRefusal(error);
   return known
     ? ctx.error(known.category, known.message, error)

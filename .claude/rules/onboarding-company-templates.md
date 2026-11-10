@@ -456,6 +456,33 @@ The full decision log, with the code each convention was copied from, is
 `.ai/specs/2026-09-22-demo-data-completeness.md` and
 `.ai/specs/2026-09-23-demo-data-screen-coverage.md` → Autonomous Decisions.
 
+## Rental agreements
+
+Every dataset seeds two rental agreements (`sales.rentalAgreements`,
+`RentalAgreementSpec`; spec `.ai/specs/2026-11-10-rental-agreements-demo-data.md`).
+Tier 09 seeds them right after the fixed assets (`tiers/rentals.ts`
+`seedRentalAgreements`), because every line rents a fleet unit.
+
+- **Fleet units** — three `FixedAssetSpec`s per dataset with `fleet: { item, serial }`,
+  class "Rental Fleet", Active. Tier 09 mints a Consumed serial for each, sets
+  `fixedAsset.itemId` / `trackedEntityId`, and tags the serial `{"Fixed Asset": <id>}`.
+- **Active** — open-ended (so every line is a `Rental`), with `lessorClassification` and
+  `classificationInputs` from `classifyRentalLine`, Pending billing periods from
+  `generateRentalBillingPeriods` through `billingHorizon` (both moved into
+  `@carbon/database`), one unit On Rent through a Posted rental shipment
+  (`shipmentFixedAssetLine` + a `Rental Delivery` activity, no ledger, no journal), one
+  unit Pending, a second contact (`rentalAgreementContact`) and one unbilled charge.
+- **Draft** — a 12-month term starting in 14 days, one line, no periods.
+- Every seeded agreement has `invoiceAutomation = 'Draft Only'`: the nightly
+  `recurring-billing` job drafts every due Pending period, and the company default would
+  post and email those invoices.
+- The second contact is a `CustomerContactSpec` with `sharesLocation: true`: tier 01
+  reuses the customer's "Billing" location, so `cloc:<customer>` is unchanged. Tier 01
+  stores every `customerContact` id at `ctx.refs.contacts["cc:<customer>:<lastName>"]`.
+- `shipmentFixedAssetLine` is in `PARENT_CHECK_TABLES` (a sales order line OR a rental
+  line). The validator's `rentals` rule checks activation's own rules. Not seeded:
+  invoices, deposits, credit memos, Sale lines, returns.
+
 ## Service jobs
 
 Every dataset seeds service work (`SalesData` in `types.ts`, tier 04

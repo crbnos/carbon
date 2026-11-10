@@ -5,7 +5,7 @@
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
@@ -44,8 +44,8 @@ export default function EditAttributeRoute() {
   if (!categoryId) throw new Error("categoryId is not found");
   if (Number.isNaN(categoryId)) throw new Error("categoryId is not a number");
 
-  const closeRoute = useCloseRoute();
-  const onClose = () => closeRoute();
+  const dialog = useRouteDialog();
+  const onClose = dialog.close;
   const attributesRouteData = useRouteData<{
     dataTypes: AttributeDataType[];
   }>(path.to.attributes);
@@ -64,6 +64,7 @@ export default function EditAttributeRoute() {
       }}
       // @ts-expect-error TS2322 - TODO: fix type
       dataTypes={attributesRouteData?.dataTypes ?? []}
+      open={dialog.open}
       onClose={onClose}
     />
   );

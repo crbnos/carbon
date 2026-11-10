@@ -54,6 +54,7 @@ function KanbanQrCodeHoverCard({
   label: ReactNode;
   tooltip: ReactNode;
 }) {
+  const { t } = useLingui();
   const openQrCode = useContext(OpenQrCodeContext);
   const key = `${kanbanId}:${action}`;
   const isOpen = openQrCode ? openQrCode[0] === key : undefined;
@@ -85,11 +86,11 @@ function KanbanQrCodeHoverCard({
         align="center"
         className="size-[236px] overflow-hidden z-[100] bg-white p-4"
       >
-        <iframe
-          seamless
-          title={"Kanban QR Code"}
-          width="198"
-          height="198"
+        {/* Fills the card whatever the code's size: a longer URL (Start,
+            Complete) makes a denser code, not a bigger box. */}
+        <img
+          alt={t`Kanban QR code`}
+          className="size-full object-contain"
           src={path.to.file.kanbanQrCode(kanbanId, action)}
         />
       </HoverCardContent>

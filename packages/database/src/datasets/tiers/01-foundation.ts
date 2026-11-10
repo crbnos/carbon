@@ -233,6 +233,17 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       active: true
     });
   }
+  // Goods-in receipts of inspected items land in the inspection shelf; a
+  // rejected lot moves to the rejected shelf.
+  await ctx.client.query(
+    `UPDATE "location" SET "inspectionStorageUnitId" = $1, "rejectedStorageUnitId" = $2 WHERE id = $3 AND "companyId" = $4`,
+    [
+      need(ctx.refs.shelves, data.inspectionShelf, "shelf"),
+      need(ctx.refs.shelves, data.rejectedShelf, "shelf"),
+      plantId,
+      ctx.companyId
+    ]
+  );
 
   // ── Work centers (need dept + ability + location) ─────────────────────────
   ctx.log("work centers");
@@ -379,27 +390,32 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     });
     ctx.refs.contacts[`${cc.customer}:${cc.lastName}`] = contactId;
 
-    const addrId = await insertId(
-      ctx,
-      "address",
-      partyAddress(
-        data,
-        data.customers.find((c) => c.name === cc.customer)?.address,
-        "See parent"
-      )
-    );
-    const locId = await insertId(ctx, "customerLocation", {
-      customerId,
-      addressId: addrId,
-      name: "Billing"
-    });
-    ctx.refs.misc[`cloc:${cc.customer}`] = locId;
+    let locId: string;
+    if (cc.sharesLocation) {
+      locId = need(ctx.refs.misc, `cloc:${cc.customer}`, "customer location");
+    } else {
+      const addrId = await insertId(
+        ctx,
+        "address",
+        partyAddress(
+          data,
+          data.customers.find((c) => c.name === cc.customer)?.address,
+          "See parent"
+        )
+      );
+      locId = await insertId(ctx, "customerLocation", {
+        customerId,
+        addressId: addrId,
+        name: "Billing"
+      });
+      ctx.refs.misc[`cloc:${cc.customer}`] = locId;
+    }
 
-    await insertId(ctx, "customerContact", {
-      customerId,
-      contactId,
-      customerLocationId: locId
-    });
+    ctx.refs.contacts[`cc:${cc.customer}:${cc.lastName}`] = await insertId(
+      ctx,
+      "customerContact",
+      { customerId, contactId, customerLocationId: locId }
+    );
   }
 
   // ── Suppliers ─────────────────────────────────────────────────────────────

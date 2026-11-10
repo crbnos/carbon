@@ -44,7 +44,7 @@ const CustomerStatusForm = ({
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
@@ -54,7 +54,7 @@ const CustomerStatusForm = ({
         t`Failed to create customer status: ${fetcher.data.error.message}`
       );
     }
-  }, [fetcher.data, fetcher.state, onClose, t, type]);
+  }, [fetcher.data, fetcher.state, onClose, open, t, type]);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing

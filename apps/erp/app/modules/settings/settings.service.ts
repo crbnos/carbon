@@ -266,7 +266,6 @@ import {
 } from "~/modules/invoicing/invoicing.service";
 import { canEditChangeNoticeEngineering } from "~/modules/items/items.models";
 import {
-  cascadeItemTrackingType,
   createMakeMethodVersion,
   createRevision,
   deleteChangeNotice,
@@ -1482,6 +1481,58 @@ export async function setLocationResponsibleEmployee(
     .eq("id", args.locationId)
     .eq("companyId", args.companyId)
     .select("id");
+}
+
+/**
+ * Set a location's goods-in storage units (null clears one). The Kysely handle
+ * bypasses row-level security, so the caller checks `resources` update.
+ * Undefined when the location is not the company's; "sameUnit" when the two
+ * would be one unit.
+ */
+export async function setLocationGoodsInStorage(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    inspectionStorageUnitId?: string | null;
+    rejectedStorageUnitId?: string | null;
+    userId: string;
+  }
+) {
+  return withTransaction(db, async (trx) => {
+    const stored = await trx
+      .selectFrom("location")
+      .select(["inspectionStorageUnitId", "rejectedStorageUnitId"])
+      .where("id", "=", args.locationId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!stored) return undefined;
+    const inspection =
+      args.inspectionStorageUnitId === undefined
+        ? stored.inspectionStorageUnitId
+        : args.inspectionStorageUnitId;
+    const rejected =
+      args.rejectedStorageUnitId === undefined
+        ? stored.rejectedStorageUnitId
+        : args.rejectedStorageUnitId;
+    if (inspection && inspection === rejected) return "sameUnit" as const;
+    return trx
+      .updateTable("location")
+      .set({
+        ...(args.inspectionStorageUnitId !== undefined
+          ? { inspectionStorageUnitId: args.inspectionStorageUnitId }
+          : {}),
+        ...(args.rejectedStorageUnitId !== undefined
+          ? { rejectedStorageUnitId: args.rejectedStorageUnitId }
+          : {}),
+        updatedBy: args.userId
+      })
+      .where("id", "=", args.locationId)
+      .where("companyId", "=", args.companyId)
+      .returning("id")
+      .executeTakeFirst();
+  });
 }
 
 /**
@@ -3501,6 +3552,27 @@ export async function saveCompanySettings(
   return error ? ctx.error("internal", failure, error) : null;
 }
 
+/**
+ * Writes the company's settings row on a Kysely handle, so an operation can
+ * write it in one transaction with another table. Bypasses row-level security:
+ * the operation's permission is the gate. False when the row was not written.
+ */
+export async function saveCompanySettingsIn(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  fields: CompanySettingsUpdate
+): Promise<boolean> {
+  const changes = sentFields(fields);
+  if (Object.keys(changes).length === 0) return true;
+  const row = await db
+    .updateTable("companySettings")
+    .set(changes)
+    .where("id", "=", companyId)
+    .returning("id")
+    .executeTakeFirst();
+  return row !== undefined;
+}
+
 const timekeepingLogger = getLogger("erp", "settings", "time");
 
 /**
@@ -5307,14 +5379,9 @@ const STANDARD_FIELD_WRITERS: Record<
       })
       .eq("id", ctx.itemId)
       .eq("companyId", ctx.companyId);
-    if (updated.error) return updated.error.message;
-    await cascadeItemTrackingType(ctx.db, {
-      itemIds: [ctx.itemId],
-      companyId: ctx.companyId,
-      newType: write.itemTrackingType,
-      userId: ctx.userId
-    });
-    return null;
+    // The database gives the new flags to the open documents in the same
+    // statement (`sync_item_tracking_type_change`), or refuses the change.
+    return updated.error ? updated.error.message : null;
   },
   itemColumn: async (ctx, write) => {
     const updated = await updateItemColumns(ctx.client, {

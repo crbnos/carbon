@@ -78,6 +78,22 @@ type BatchTotals = {
 };
 
 /**
+ * The board's dispatch order, as on the ERP operations board: priority, then id
+ * so equal priorities keep a stable order. The RPC orders by start date first,
+ * so a reorder on the ERP board, which writes only priority, would not show.
+ */
+function comparePriorityThenId(a: Item, b: Item): number {
+  const aPriority = Number.isFinite(a.priority)
+    ? a.priority
+    : Number.POSITIVE_INFINITY;
+  const bPriority = Number.isFinite(b.priority)
+    ? b.priority
+    : Number.POSITIVE_INFINITY;
+  if (aPriority !== bPriority) return aPriority - bPriority;
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
+/**
  * Per batch: the member count, summed quantities and member job numbers, from
  * the batch members' rows.
  */
@@ -146,6 +162,8 @@ function collapseBatches(
     }, undefined);
     result.push({
       ...members[0],
+      // The batch runs at its most urgent member's place, as on the ERP board.
+      priority: Math.min(...members.map((m) => m.priority)),
       dueDate: earliest?.dueDate ?? members[0].dueDate,
       deadlineType: earliest?.deadlineType ?? members[0].deadlineType,
       hasConflict: conflicted.length > 0 || undefined,
@@ -471,7 +489,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
           };
         }) ?? []) satisfies Item[],
         batchTotals
-      ),
+      ).sort(comparePriorityThenId),
       processes: processes.data ?? [],
       workCenters: workCenters.data ?? [],
       customers: customers.data ?? [],
@@ -510,9 +528,17 @@ const defaultDisplaySettings: DisplaySettings = {
 };
 
 const DISPLAY_SETTINGS_KEY = "kanban-schedule-display-settings";
+const displaySettingsMigration = {
+  key: DISPLAY_SETTINGS_KEY,
+  parse: (value: unknown): DisplaySettings | null =>
+    value && typeof value === "object" && !Array.isArray(value)
+      ? { ...defaultDisplaySettings, ...(value as Partial<DisplaySettings>) }
+      : null
+};
 
 function KanbanSchedule() {
   const { t } = useLingui();
+  const { id: userId, company } = useUser();
   const {
     columns,
     items: initialItems,
@@ -529,9 +555,11 @@ function KanbanSchedule() {
     setItems(initialItems);
   }, [initialItems]);
 
+  const displayKey = `${DISPLAY_SETTINGS_KEY}:${userId}:${company.id}`;
   const [displaySettings, setDisplaySettings] = useLocalStorage(
-    DISPLAY_SETTINGS_KEY,
-    defaultDisplaySettings
+    displayKey,
+    defaultDisplaySettings,
+    displaySettingsMigration
   );
   const mergedDisplaySettings = useMemo(
     () => ({ ...defaultDisplaySettings, ...displaySettings }),
@@ -539,7 +567,7 @@ function KanbanSchedule() {
   );
 
   const sortItems = useCallback((items: Item[]) => {
-    return items.sort((a, b) => a.priority - b.priority);
+    return [...items].sort(comparePriorityThenId);
   }, []);
 
   const visibleColumns = useMemo(() => {

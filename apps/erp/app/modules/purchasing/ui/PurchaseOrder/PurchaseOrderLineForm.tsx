@@ -115,6 +115,7 @@ type PurchaseOrderLineFormProps = {
    */
   isReceived?: boolean;
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
@@ -123,6 +124,7 @@ const PurchaseOrderLineForm = ({
   lineDates,
   isReceived = false,
   type,
+  open = true,
   onClose
 }: PurchaseOrderLineFormProps) => {
   const { t, i18n } = useLingui();
@@ -582,6 +584,7 @@ const PurchaseOrderLineForm = ({
       >
         <ModalCardProvider type={type}>
           <ModalCard
+            open={open}
             onClose={onClose}
             defaultCollapsed={false}
             isCollapsible={isEditing}
@@ -1186,9 +1189,10 @@ const PurchaseOrderLineForm = ({
           </ModalCard>
         </ModalCardProvider>
       </Tabs>
-      {isEditing && deleteDisclosure.isOpen && (
+      {isEditing && (
         <DeletePurchaseOrderLine
           line={initialValues as PurchaseOrderLine}
+          isOpen={deleteDisclosure.isOpen}
           onCancel={deleteDisclosure.onClose}
         />
       )}
@@ -1286,7 +1290,7 @@ function NewLineDates({
     <FormSection title={t`Dates`}>
       <DatePicker
         name="requiredDate"
-        label={t`Requested Date`}
+        label={t`Required Date`}
         termId="purchase-order-line-required-date"
         value={requiredDate ?? undefined}
         onChange={onRequiredDateChange}

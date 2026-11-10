@@ -511,37 +511,34 @@ const SalesInvoiceHeader = () => {
         }
       />
 
-      {postingModal.isOpen && (
-        <SalesInvoicePostModal
-          invoiceId={invoiceId}
-          customerId={salesInvoice.invoiceCustomerId}
-          customerContactId={salesInvoice.invoiceCustomerContactId}
-          dateDue={salesInvoice.dateDue}
-          isOpen={postingModal.isOpen}
-          onClose={postingModal.onClose}
-          linesToShip={linesNotAssociatedWithSO}
-          fetcher={postFetcher}
-          defaultCc={routeData?.defaultCc ?? []}
-        />
-      )}
+      <SalesInvoicePostModal
+        invoiceId={invoiceId}
+        customerId={salesInvoice.invoiceCustomerId}
+        customerContactId={salesInvoice.invoiceCustomerContactId}
+        dateDue={salesInvoice.dateDue}
+        isOpen={postingModal.isOpen}
+        onClose={postingModal.onClose}
+        linesToShip={linesNotAssociatedWithSO}
+        fetcher={postFetcher}
+        defaultCc={routeData?.defaultCc ?? []}
+      />
       <postRules.ViolationModal />
-      {voidModal.isOpen && (
-        <SalesInvoiceVoidModal onClose={voidModal.onClose} />
-      )}
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteSalesInvoice(invoiceId)}
-          isOpen={deleteModal.isOpen}
-          name={salesInvoice.invoiceId ?? "sales invoice"}
-          text={t`Are you sure you want to delete ${salesInvoice.invoiceId}? This cannot be undone.`}
-          onCancel={() => {
-            deleteModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteModal.onClose();
-          }}
-        />
-      )}
+      <SalesInvoiceVoidModal
+        open={voidModal.isOpen}
+        onClose={voidModal.onClose}
+      />
+      <ConfirmDelete
+        isOpen={deleteModal.isOpen}
+        action={path.to.deleteSalesInvoice(invoiceId)}
+        name={salesInvoice.invoiceId ?? "sales invoice"}
+        text={t`Are you sure you want to delete ${salesInvoice.invoiceId}? This cannot be undone.`}
+        onCancel={() => {
+          deleteModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteModal.onClose();
+        }}
+      />
       {auditLogDrawer}
       {documentEdit.modal}
     </>

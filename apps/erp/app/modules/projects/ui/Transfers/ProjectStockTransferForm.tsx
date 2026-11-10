@@ -42,6 +42,7 @@ type ProjectStockTransferFormProps = {
   owners: StockOwnerProject[];
   /** The open borrows a Payback can settle. */
   openBorrows: ProjectBorrow[];
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -54,6 +55,7 @@ const ProjectStockTransferForm = ({
   initialValues,
   owners,
   openBorrows,
+  open = true,
   onClose
 }: ProjectStockTransferFormProps) => {
   const { t } = useLingui();
@@ -97,7 +99,7 @@ const ProjectStockTransferForm = ({
   return (
     <ModalDrawerProvider type="drawer">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose();
         }}

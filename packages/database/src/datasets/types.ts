@@ -113,7 +113,11 @@ export type ContactSpec = {
   title: string;
 };
 
-export type CustomerContactSpec = ContactSpec & { customer: string };
+export type CustomerContactSpec = ContactSpec & {
+  customer: string;
+  /** A second contact at the same site: reuses the customer's "Billing" location. */
+  sharesLocation?: true;
+};
 
 export type SupplierContactSpec = ContactSpec & { supplier: string };
 
@@ -260,6 +264,10 @@ export type FoundationData = {
   nonNettableStorageTypes: string[];
   /** Insertion order matters — a parent shelf must precede its children. */
   shelves: ShelfSpec[];
+  /** The plant's goods-in inspection storage unit (location.inspectionStorageUnitId). */
+  inspectionShelf: string;
+  /** The plant's rejected-goods storage unit (location.rejectedStorageUnitId). */
+  rejectedShelf: string;
   printerRoute: PrinterRouteSpec | null;
   holidays: HolidaySpec[];
   tags: TagSpec[];
@@ -537,7 +545,7 @@ export type RevisionLadderSpec = {
 export type InspectionPlanSpec = {
   key: string;
   item: string;
-  drawingNumber: string;
+  name: string;
   aql: number;
   features: InspectionFeatureSpec[];
 };
@@ -956,6 +964,41 @@ export type ContractSpec = {
   }[];
 };
 
+/** A rental agreement as activation writes it (ERP `sales.service.ts`); `Rental`
+ *  lines only, so no journal. Tier 09 seeds it after the fleet units. */
+export type RentalAgreementSpec = {
+  /** Registered in ctx.refs.documents as `ra:<key>`. */
+  key: string;
+  customer: string;
+  /** The lastName of the primary customer contact. */
+  primaryContact: string;
+  /** The other contacts, by lastName, in the order they were added. */
+  contacts?: { contact: string; role?: string }[];
+  status: "Draft" | "Active";
+  startOffset: DayOffset;
+  /** Omitted = open-ended. */
+  endOffset?: DayOffset;
+  billingCycle: "Calendar Month" | "Monthly" | "28 Days";
+  billingTiming: "Advance" | "Arrears";
+  lines: {
+    /** A `FixedAssetSpec.key` with `fleet` set. */
+    fixedAsset: string;
+    rateUnit: "Day" | "Week" | "Month";
+    rate: number;
+    fairValue: number;
+    economicLifeMonths: number;
+    /** Active only: a posted rental shipment delivered the unit on this day. */
+    deliveredOffset?: DayOffset;
+  }[];
+  /** Unbilled charges; `line` is the 1-based position in `lines`. */
+  charges?: {
+    line: number;
+    description: string;
+    amount: number;
+    dateOffset: DayOffset;
+  }[];
+};
+
 /**
  * A unit at a customer, registered the way `registerCustomerAsset` does it
  * (the datasets ship no serials to customers): a Consumed `trackedEntity`
@@ -1091,6 +1134,7 @@ export type SalesData = {
    */
   serviceLaborRates: { cost: number; bill: number };
   serviceJobs: ServiceJobSpec[];
+  rentalAgreements: RentalAgreementSpec[];
 };
 
 export type RfqLineSpec = {
@@ -1659,8 +1703,11 @@ export type InspectionSampleSpec = {
 
 type InspectionLotSpec = {
   ref: string;
-  /** "Partial" = some samples passed, some failed. */
-  status: "Pending" | "In Progress" | "Passed" | "Partial";
+  /**
+   * "Partial" = some samples passed, some failed. "Cancelled" is a manual lot's
+   * only (ManualInspectionSpec).
+   */
+  status: "Pending" | "In Progress" | "Passed" | "Partial" | "Cancelled";
   /** Required iff dispositioned; on/after every sample's inspectedOffset. */
   dispositionOffset?: DayOffset;
   notes?: string;
@@ -1680,7 +1727,7 @@ export type ReceiptInspectionSpec = InspectionLotSpec & {
   source: "Receipt";
   receipt: string;
   item: string;
-  drawingNumber: string;
+  name: string;
   /** Resolved sample size must be ≤ 5 so every sample is authored. */
   aql: number;
   features: InspectionFeatureSpec[];
@@ -1696,7 +1743,26 @@ export type JobOperationInspectionSpec = InspectionLotSpec & {
   job: string;
 };
 
-export type InspectionSpec = ReceiptInspectionSpec | JobOperationInspectionSpec;
+/**
+ * A lot a person creates for specific tracked entities (createManualInspection):
+ * no plan (every unit inspected), lot size = the serial count or the batches'
+ * quantity. Seeded open only: an On Hold entity stays On Hold until a verdict.
+ */
+export type ManualInspectionSpec = InspectionLotSpec & {
+  source: "Manual";
+  /** A Cancelled lot gave its entities back, so they may be in an open lot. */
+  status: "Pending" | "Cancelled";
+  /** onHandTracked readableIds, all of one item and all On Hold. */
+  trackedEntities: string[];
+  /** A foundation work center name. */
+  workCenter?: string;
+  assignee?: "self";
+};
+
+export type InspectionSpec =
+  | ReceiptInspectionSpec
+  | JobOperationInspectionSpec
+  | ManualInspectionSpec;
 
 export type QualityDocumentStepType =
   | "Value"
@@ -1912,6 +1978,8 @@ export type FixedAssetSpec = {
   usageLogs?: { monthsBack: number; unitsProduced: number }[];
   /** Required iff "Disposed"; the tier derives NBV and gainLoss as post-sales-invoice does. */
   disposal?: { dateOffset: DayOffset; method: "Sale"; saleProceeds: number };
+  /** A rentable fleet unit: a Serial-tracked item and a new Consumed serial of it. */
+  fleet?: { item: string; serial: string };
 };
 
 export type AccountClass =

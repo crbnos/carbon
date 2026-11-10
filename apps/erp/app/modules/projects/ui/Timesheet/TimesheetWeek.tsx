@@ -21,7 +21,8 @@ import {
   ModalTitle,
   Tooltip,
   TooltipContent,
-  TooltipTrigger
+  TooltipTrigger,
+  useDisclosure
 } from "@carbon/react";
 import { WeekHoursChart, weekHoursTones } from "@carbon/react/WeekHours";
 import {
@@ -48,6 +49,7 @@ import {
 import { Link, useFetcher, useNavigate } from "react-router";
 import { useCellSave } from "~/components/Setup";
 import { useDateFormatter, useQuantityFormatter } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import { path } from "~/utils/path";
 import type { TimesheetEntryStatus as TimesheetEntryStatusType } from "../../projects.models";
 import { timesheetRowKey } from "../../projects.models";
@@ -148,20 +150,19 @@ export default function TimesheetWeek({
   const [addedRows, setAddedRows] = useState<AddedRow[]>([]);
   const [addedServiceJobIds, setAddedServiceJobIds] = useState<string[]>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [adding, setAdding] = useState<"row" | "pto" | null>(null);
-  const [removing, setRemoving] = useState<GridRow | null>(null);
-  const [correcting, setCorrecting] = useState<{
+  const adding = useDrawerItem<"row" | "pto">();
+  const removing = useDrawerItem<GridRow>();
+  const correcting = useDrawerItem<{
     entryId: string;
     hours: number;
     label: string;
     projectId: string;
     projectElementId: string | null;
     laborCategoryId: string;
-  } | null>(null);
-  const [pendingChange, setPendingChange] = useState<PendingChange | null>(
-    null
-  );
-  const [certifying, setCertifying] = useState(false);
+  }>();
+  const pendingChange = useDrawerItem<PendingChange>();
+  const { open: openPendingChange } = pendingChange;
+  const certifyModal = useDisclosure();
   // The hours the user just set, shown until the saved value comes back.
   const [overrides, setOverrides] = useState<Record<string, number>>({});
   const [savingCount, setSavingCount] = useState(0);
@@ -316,7 +317,7 @@ export default function TimesheetWeek({
         : null;
       if (reasons?.requiresReason || reasons?.requiresLateReason) {
         result = await new Promise((resolve) =>
-          setPendingChange({
+          openPendingChange({
             label: `${row.readableId} · ${formatDate(day)}`,
             fields,
             hours,
@@ -339,7 +340,7 @@ export default function TimesheetWeek({
         });
       }
     },
-    [controls, formatDate, overrides, save]
+    [controls, formatDate, overrides, save, openPendingChange]
   );
 
   // Sets a service job's total for a day; the job takes the difference as
@@ -375,7 +376,7 @@ export default function TimesheetWeek({
   );
 
   const removeRow = async (row: GridRow) => {
-    setRemoving(null);
+    removing.close();
     for (const day of days) {
       if (row.cells[day]) await commit(row, day, 0);
     }
@@ -392,6 +393,8 @@ export default function TimesheetWeek({
   };
 
   const weekLabel = `${formatDate(weekStart)} – ${formatDate(weekEnd)}`;
+  const removedRow = removing.item;
+  const change = pendingChange.item;
 
   return (
     <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] min-h-0 w-full flex-col">
@@ -441,7 +444,7 @@ export default function TimesheetWeek({
             }
             onSubmit={() => {
               if (controls) {
-                setCertifying(true);
+                certifyModal.onOpen();
                 return;
               }
               submitFetcher.submit(
@@ -474,7 +477,7 @@ export default function TimesheetWeek({
                 variant="ghost"
                 size="sm"
                 leftIcon={<LuTreePalm />}
-                onClick={() => setAdding("pto")}
+                onClick={() => adding.open("pto")}
               >
                 <Trans>PTO</Trans>
               </Button>
@@ -482,7 +485,7 @@ export default function TimesheetWeek({
                 variant="ghost"
                 size="sm"
                 leftIcon={<LuPlus />}
-                onClick={() => setAdding("row")}
+                onClick={() => adding.open("row")}
               >
                 <Trans>Add</Trans>
               </Button>
@@ -554,7 +557,7 @@ export default function TimesheetWeek({
                         className="text-muted-foreground hover:text-foreground"
                         onClick={(event) => {
                           event.stopPropagation();
-                          if (hasEntries) setRemoving(row);
+                          if (hasEntries) removing.open(row);
                           else void removeRow(row);
                         }}
                       >
@@ -652,7 +655,7 @@ export default function TimesheetWeek({
                   isRevised={revisedEntryIds.has(cell.entryId)}
                   canCorrect={cell.status === "Posted"}
                   onCorrect={() =>
-                    setCorrecting({
+                    correcting.open({
                       entryId: cell.entryId,
                       hours: cell.hours,
                       label: `${row.readableId} · ${formatDate(day)}`,
@@ -693,9 +696,10 @@ export default function TimesheetWeek({
         </section>
       </div>
 
-      {adding && (
+      {adding.item && (
         <AddRowModal
-          pto={adding === "pto"}
+          open={adding.isOpen}
+          pto={adding.item === "pto"}
           laborCategories={laborCategories}
           jobLocationId={jobLocationId}
           serviceJobs={serviceJobs.filter(
@@ -704,41 +708,44 @@ export default function TimesheetWeek({
           onAddServiceJob={(serviceJobId) => {
             setAddedServiceJobIds((previous) => [...previous, serviceJobId]);
             setSelectedKey(serviceRowKey(serviceJobId));
-            setAdding(null);
+            adding.close();
           }}
           onAdd={(row) => {
             setAddedRows((previous) => [...previous, row]);
             // The new charge number is the one the next click gives time to.
             setSelectedKey(timesheetRowKey(row));
-            setAdding(null);
+            adding.close();
           }}
-          onClose={() => setAdding(null)}
+          onClose={adding.close}
         />
       )}
 
-      {removing && (
-        <Modal open onOpenChange={(open) => !open && setRemoving(null)}>
+      {removedRow && (
+        <Modal
+          open={removing.isOpen}
+          onOpenChange={(open) => !open && removing.close()}
+        >
           <ModalOverlay />
           <ModalContent>
             <ModalHeader>
               <ModalTitle>
-                <Trans>Remove {removing.readableId}?</Trans>
+                <Trans>Remove {removedRow.readableId}?</Trans>
               </ModalTitle>
               <ModalDescription>
                 <Trans>
-                  Its {formatQuantity(rowTotal(removing))} h of draft time this
-                  week are deleted.
+                  Its {formatQuantity(rowTotal(removedRow))} h of draft time
+                  this week are deleted.
                 </Trans>
               </ModalDescription>
             </ModalHeader>
             <ModalBody />
             <ModalFooter>
-              <Button variant="secondary" onClick={() => setRemoving(null)}>
+              <Button variant="secondary" onClick={removing.close}>
                 <Trans>Cancel</Trans>
               </Button>
               <Button
                 variant="destructive"
-                onClick={() => void removeRow(removing)}
+                onClick={() => void removeRow(removedRow)}
               >
                 <Trans>Remove</Trans>
               </Button>
@@ -747,54 +754,57 @@ export default function TimesheetWeek({
         </Modal>
       )}
 
-      {correcting && (
+      {correcting.item && (
         <CorrectionModal
-          entryId={correcting.entryId}
-          hours={correcting.hours}
-          label={correcting.label}
-          original={correcting}
+          open={correcting.isOpen}
+          entryId={correcting.item.entryId}
+          hours={correcting.item.hours}
+          label={correcting.item.label}
+          original={correcting.item}
           laborCategories={laborCategories}
-          onClose={() => setCorrecting(null)}
+          onClose={correcting.close}
         />
       )}
 
-      {pendingChange && (
+      {change && (
         <TimesheetChangeModal
-          label={pendingChange.label}
-          previousHours={pendingChange.previousHours}
-          hours={pendingChange.hours}
-          requiresReason={pendingChange.requiresReason}
-          requiresLateReason={pendingChange.requiresLateReason}
+          open={pendingChange.isOpen}
+          label={change.label}
+          previousHours={change.previousHours}
+          hours={change.hours}
+          requiresReason={change.requiresReason}
+          requiresLateReason={change.requiresLateReason}
           onConfirm={async (reasons: TimesheetChangeReasons) => {
             const result = await save(path.to.timesheetUpdate, {
-              ...pendingChange.fields,
+              ...change.fields,
               ...(reasons.reason ? { reason: reasons.reason } : {}),
               ...(reasons.lateReason ? { lateReason: reasons.lateReason } : {})
             });
             // A refusal toasts and keeps the modal open.
             if (result.error) return false;
-            pendingChange.resolve(result);
-            setPendingChange(null);
+            change.resolve(result);
+            pendingChange.close();
             return true;
           }}
           onCancel={() => {
-            pendingChange.resolve({
+            change.resolve({
               data: null,
               error: { message: t`Change cancelled` }
             } as unknown as PostgrestSingleResponse<unknown>);
-            setPendingChange(null);
+            pendingChange.close();
           }}
         />
       )}
 
-      {certifying && controls && (
+      {controls && (
         <CertificationModal
+          open={certifyModal.isOpen}
           certificationText={controls.certificationText}
           weekStart={weekStart}
           weekEnd={weekEnd}
           weekOffset={weekOffset}
           weekLabel={weekLabel}
-          onClose={() => setCertifying(false)}
+          onClose={certifyModal.onClose}
         />
       )}
     </div>

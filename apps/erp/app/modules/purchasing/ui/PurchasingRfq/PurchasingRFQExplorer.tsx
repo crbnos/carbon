@@ -66,7 +66,6 @@ export default function PurchasingRFQExplorer() {
   };
 
   const onDeleteCancel = () => {
-    setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
 
@@ -176,15 +175,21 @@ export default function PurchasingRFQExplorer() {
           )}
         </div>
       </VStack>
-      {newPurchasingRFQLineDisclosure.isOpen && (
+      {newPurchasingRFQLineDisclosure.openCount > 0 && (
         <PurchasingRFQLineForm
+          key={newPurchasingRFQLineDisclosure.openCount}
+          open={newPurchasingRFQLineDisclosure.isOpen}
           initialValues={purchasingRfqLineInitialValues}
           type="modal"
           onClose={newPurchasingRFQLineDisclosure.onClose}
         />
       )}
-      {deleteLineDisclosure.isOpen && (
-        <DeletePurchasingRFQLine line={deleteLine!} onCancel={onDeleteCancel} />
+      {deleteLine && (
+        <DeletePurchasingRFQLine
+          isOpen={deleteLineDisclosure.isOpen}
+          line={deleteLine}
+          onCancel={onDeleteCancel}
+        />
       )}
     </div>
   );

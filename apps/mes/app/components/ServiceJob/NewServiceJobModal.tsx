@@ -71,9 +71,32 @@ type Lookup =
  */
 export function NewServiceJobModal({
   today,
+  open = true,
   onClose
 }: {
   /** The company's day, `YYYY-MM-DD`: the warranty is read on it. */
+  today: string;
+  open?: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalContent>
+        <NewServiceJobBody today={today} onClose={onClose} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function NewServiceJobBody({
+  today,
+  onClose
+}: {
   today: string;
   onClose: () => void;
 }) {
@@ -174,175 +197,166 @@ export function NewServiceJobModal({
   const isSubmitting = fetcher.state !== "idle";
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalContent>
-        {/* Keyed by the asset, so its customer and suggested coverage become
+    <>
+      {/* Keyed by the asset, so its customer and suggested coverage become
             the form's defaults when a scan finds it. */}
-        <ValidatedForm
-          key={asset?.id ?? "no-asset"}
-          method="post"
-          action={path.to.newServiceJob}
-          validator={serviceJobNewValidator}
-          fetcher={fetcher}
-          defaultValues={{
-            customerAssetId: asset?.id ?? "",
-            customerId: asset?.customerId ?? "",
-            problem: "",
-            workSite: "Customer Site",
-            coverage: suggested
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>New Service Job</Trans>
-            </ModalTitle>
-            <ModalDescription>
-              <Trans>The job opens with your clock running.</Trans>
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <VStack spacing={4}>
-              <div className="flex w-full flex-col gap-1">
-                <Label htmlFor="serviceJobSerial">
-                  <Trans>Serial</Trans>
-                </Label>
-                <InputGroup>
-                  <Input
-                    id="serviceJobSerial"
+      <ValidatedForm
+        key={asset?.id ?? "no-asset"}
+        method="post"
+        action={path.to.newServiceJob}
+        validator={serviceJobNewValidator}
+        fetcher={fetcher}
+        defaultValues={{
+          customerAssetId: asset?.id ?? "",
+          customerId: asset?.customerId ?? "",
+          problem: "",
+          workSite: "Customer Site",
+          coverage: suggested
+        }}
+      >
+        <ModalHeader>
+          <ModalTitle>
+            <Trans>New Service Job</Trans>
+          </ModalTitle>
+          <ModalDescription>
+            <Trans>The job opens with your clock running.</Trans>
+          </ModalDescription>
+        </ModalHeader>
+        <ModalBody>
+          <VStack spacing={4}>
+            <div className="flex w-full flex-col gap-1">
+              <Label htmlFor="serviceJobSerial">
+                <Trans>Serial</Trans>
+              </Label>
+              <InputGroup>
+                <Input
+                  id="serviceJobSerial"
+                  size="lg"
+                  autoFocus
+                  placeholder={t`Scan or enter a serial`}
+                  value={serial}
+                  onChange={(event) => setSerial(event.target.value)}
+                  onKeyDown={(event) => {
+                    // A scanner ends with Enter: look the serial up, do
+                    // not submit the form.
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      findAsset(serial);
+                    }
+                  }}
+                  onBlur={() => findAsset(serial)}
+                />
+                <InputRightElement className="pl-2">
+                  {lookup.state === "loading" ? (
+                    <Spinner />
+                  ) : asset ? (
+                    <LuCheck className="text-emerald-500" />
+                  ) : (
+                    <LuQrCode />
+                  )}
+                </InputRightElement>
+              </InputGroup>
+              {lookup.state === "none" && (
+                <span className="text-xs text-muted-foreground">
+                  <Trans>
+                    No customer asset has the serial {lookup.serial}. Choose the
+                    customer.
+                  </Trans>
+                </span>
+              )}
+            </div>
+
+            {assets.length > 1 && (
+              <div className="flex w-full flex-col gap-2">
+                <span className="text-xs text-muted-foreground">
+                  <Trans>More than one unit has this serial. Choose one.</Trans>
+                </span>
+                {assets.map((option) => (
+                  <Button
+                    key={option.id}
+                    type="button"
                     size="lg"
-                    autoFocus
-                    placeholder={t`Scan or enter a serial`}
-                    value={serial}
-                    onChange={(event) => setSerial(event.target.value)}
-                    onKeyDown={(event) => {
-                      // A scanner ends with Enter: look the serial up, do
-                      // not submit the form.
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        findAsset(serial);
-                      }
-                    }}
-                    onBlur={() => findAsset(serial)}
-                  />
-                  <InputRightElement className="pl-2">
-                    {lookup.state === "loading" ? (
-                      <Spinner />
-                    ) : asset ? (
-                      <LuCheck className="text-emerald-500" />
-                    ) : (
-                      <LuQrCode />
-                    )}
-                  </InputRightElement>
-                </InputGroup>
-                {lookup.state === "none" && (
-                  <span className="text-xs text-muted-foreground">
-                    <Trans>
-                      No customer asset has the serial {lookup.serial}. Choose
-                      the customer.
-                    </Trans>
-                  </span>
-                )}
-              </div>
-
-              {assets.length > 1 && (
-                <div className="flex w-full flex-col gap-2">
-                  <span className="text-xs text-muted-foreground">
-                    <Trans>
-                      More than one unit has this serial. Choose one.
-                    </Trans>
-                  </span>
-                  {assets.map((option) => (
-                    <Button
-                      key={option.id}
-                      type="button"
-                      size="lg"
-                      variant={option.id === assetId ? "primary" : "secondary"}
-                      className="justify-start"
-                      onClick={() => setAssetId(option.id)}
-                    >
-                      <span className="truncate">
-                        {option.item?.name} · {option.customer?.name}
-                      </span>
-                    </Button>
-                  ))}
-                </div>
-              )}
-
-              {asset && (
-                <div className="flex w-full flex-col gap-2 rounded-lg border border-border p-3">
-                  <span className="text-base font-semibold truncate">
-                    {asset.customer?.name}
-                  </span>
-                  <span className="text-sm text-muted-foreground truncate">
-                    {[asset.item?.name, asset.trackedEntity?.readableId]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </span>
-                  <HStack spacing={2} className="flex-wrap">
-                    <WarrantyBadge asset={asset} today={today} />
-                    <span className="text-xs text-muted-foreground">
-                      <Trans>Suggested coverage</Trans>
+                    variant={option.id === assetId ? "primary" : "secondary"}
+                    className="justify-start"
+                    onClick={() => setAssetId(option.id)}
+                  >
+                    <span className="truncate">
+                      {option.item?.name} · {option.customer?.name}
                     </span>
-                    <CoverageBadge coverage={suggested} />
-                  </HStack>
-                </div>
-              )}
-
-              <Hidden name="customerAssetId" value={asset?.id ?? ""} />
-              {asset ? (
-                <Hidden name="customerId" value={asset.customerId} />
-              ) : (
-                <Combobox
-                  name="customerId"
-                  label={t`Customer`}
-                  size="lg"
-                  isLoading={customersLoading}
-                  options={customers}
-                  placeholder={t`Select a customer`}
-                />
-              )}
-              <TextArea name="problem" label={t`Problem`} size="lg" />
-              <div className="grid w-full grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
-                <Select
-                  name="workSite"
-                  label={t`Work Site`}
-                  size="lg"
-                  options={serviceWorkSites.map((workSite) => ({
-                    value: workSite,
-                    label: workSiteLabels[workSite]
-                  }))}
-                />
-                <Select
-                  name="coverage"
-                  label={t`Coverage`}
-                  size="lg"
-                  options={serviceCoverages.map((coverage) => ({
-                    value: coverage,
-                    label: coverageLabels[coverage]
-                  }))}
-                />
+                  </Button>
+                ))}
               </div>
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button size="lg" variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit
-              size="lg"
-              isDisabled={isSubmitting || lookup.state === "loading"}
-              isLoading={isSubmitting}
-            >
-              <Trans>Start Job</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+            )}
+
+            {asset && (
+              <div className="flex w-full flex-col gap-2 rounded-lg border border-border p-3">
+                <span className="text-base font-semibold truncate">
+                  {asset.customer?.name}
+                </span>
+                <span className="text-sm text-muted-foreground truncate">
+                  {[asset.item?.name, asset.trackedEntity?.readableId]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+                <HStack spacing={2} className="flex-wrap">
+                  <WarrantyBadge asset={asset} today={today} />
+                  <span className="text-xs text-muted-foreground">
+                    <Trans>Suggested coverage</Trans>
+                  </span>
+                  <CoverageBadge coverage={suggested} />
+                </HStack>
+              </div>
+            )}
+
+            <Hidden name="customerAssetId" value={asset?.id ?? ""} />
+            {asset ? (
+              <Hidden name="customerId" value={asset.customerId} />
+            ) : (
+              <Combobox
+                name="customerId"
+                label={t`Customer`}
+                size="lg"
+                isLoading={customersLoading}
+                options={customers}
+                placeholder={t`Select a customer`}
+              />
+            )}
+            <TextArea name="problem" label={t`Problem`} size="lg" />
+            <div className="grid w-full grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
+              <Select
+                name="workSite"
+                label={t`Work Site`}
+                size="lg"
+                options={serviceWorkSites.map((workSite) => ({
+                  value: workSite,
+                  label: workSiteLabels[workSite]
+                }))}
+              />
+              <Select
+                name="coverage"
+                label={t`Coverage`}
+                size="lg"
+                options={serviceCoverages.map((coverage) => ({
+                  value: coverage,
+                  label: coverageLabels[coverage]
+                }))}
+              />
+            </div>
+          </VStack>
+        </ModalBody>
+        <ModalFooter>
+          <Button size="lg" variant="secondary" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+          <Submit
+            size="lg"
+            isDisabled={isSubmitting || lookup.state === "loading"}
+            isLoading={isSubmitting}
+          >
+            <Trans>Start Job</Trans>
+          </Submit>
+        </ModalFooter>
+      </ValidatedForm>
+    </>
   );
 }

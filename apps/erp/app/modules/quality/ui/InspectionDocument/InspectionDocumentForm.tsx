@@ -21,22 +21,23 @@ import { path } from "~/utils/path";
 type InspectionDocumentFormProps = {
   initialValues: {
     id?: string;
-    name: string;
+    name?: string;
     partId: string;
-    drawingNumber?: string;
   };
+  open?: boolean;
   onClose: () => void;
 };
 
 export default function InspectionDocumentForm({
   initialValues,
+  open = true,
   onClose
 }: InspectionDocumentFormProps) {
   const { t } = useLingui();
   const isEditing = Boolean(initialValues.id);
 
   return (
-    <Drawer open onOpenChange={(open) => !open && onClose()}>
+    <Drawer open={open} onOpenChange={(open) => !open && onClose()}>
       <DrawerContent>
         <ValidatedForm
           validator={inspectionDocumentValidator}
@@ -59,10 +60,10 @@ export default function InspectionDocumentForm({
               {isEditing && <Hidden name="id" />}
               <Item name="partId" type="Part" />
               <Input
-                name="drawingNumber"
-                label={t`Drawing Number`}
-                termId="inspection-document-drawing-number"
-                placeholder={t`e.g. DWG-1234`}
+                name="name"
+                label={t`Inspection Name`}
+                termId="inspection-document-name"
+                placeholder={t`e.g. R1234 Receipt`}
               />
             </VStack>
           </DrawerBody>

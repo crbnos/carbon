@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useLoaderQuery } from "@carbon/query";
+import type { JSONContent } from "@carbon/react";
 import {
   Alert,
   AlertDescription,
@@ -29,7 +30,12 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure,
+  usePaneResize,
+  useViewport,
   VStack
 } from "@carbon/react";
 import {
@@ -50,12 +56,15 @@ import {
 import {
   LuChevronDown,
   LuChevronUp,
+  LuCircleX,
+  LuEllipsisVertical,
   LuEye,
   LuEyeOff,
   LuFileText,
   LuScan,
   LuShieldAlert,
   LuShieldX,
+  LuTrash,
   LuTriangleAlert
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
@@ -79,8 +88,20 @@ import type {
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
 import type { DrawingBalloon } from "./InspectionDrawingPane";
-import type { MeasurementSaveResult } from "./InspectionMeasurementGrid";
+import type {
+  InspectionParameter,
+  MeasurementSaveResult
+} from "./InspectionMeasurementGrid";
 import InspectionMeasurementGrid from "./InspectionMeasurementGrid";
+import { InspectionStatus } from "./InspectionStatus";
+import {
+  canCancelInspection,
+  canDeleteInspection,
+  type ManualInspectionAction,
+  ManualInspectionConfirm
+} from "./ManualInspectionConfirm";
+import OpenNcrModal from "./OpenNcrModal";
+import PartialLotModal from "./PartialLotModal";
 import type { FailedFeatureSummary } from "./RejectLotModal";
 import RejectLotModal from "./RejectLotModal";
 import ScanInspectionSample from "./ScanInspectionSample";
@@ -138,6 +159,10 @@ export type InspectionViewProps = {
     regionHeight: number;
   }[];
   documentName: string | null;
+  /** The plan's parameters, read live from the plan. */
+  parameters: InspectionParameter[];
+  /** The plan's work instructions (Tiptap JSON), read live from the plan. */
+  workInstruction: JSONContent | null;
   pdfUrl: string | null;
   /** A plan made from a model's PMI: the drawing pane shows the model. */
   model: { modelUploadId: string; modelPath: string | null } | null;
@@ -169,6 +194,8 @@ const InspectionView = ({
   recentGaugeIds,
   balloons,
   documentName,
+  parameters,
+  workInstruction,
   pdfUrl,
   model,
   lotEntities,
@@ -179,6 +206,7 @@ const InspectionView = ({
 }: InspectionViewProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const { isPhone } = useViewport();
   const {
     company: { id: companyId }
   } = useUser();
@@ -186,12 +214,19 @@ const InspectionView = ({
   const [items] = useItems();
 
   const isSerial = itemTrackingType === "Serial";
+  // A manual lot's serials are its samples from the start; receipt lots scan
+  // theirs in.
+  const scansSamples = isSerial && inspection.sourceDocument !== "Manual";
+  const isBatch = itemTrackingType === "Batch";
+  const isTrackedLot = isSerial || isBatch;
   // Accept/Reject dispositions here carry no physical production posting, so they
-  // are Receipt-only. Job Operation lots are verdict-only in the ERP — their
-  // complete/scrap/rework outcome is orchestrated by the MES disposition route
-  // (which closes the lot one-shot). Exposing Accept/Reject on a job-op lot would
-  // hard-terminate it with no posting and wedge the operation.
+  // are for Receipt and Manual lots only. Job Operation lots are verdict-only in
+  // the ERP — their complete/scrap/rework outcome is orchestrated by the MES
+  // disposition route (which closes the lot one-shot). Exposing Accept/Reject on
+  // a job-op lot would hard-terminate it with no posting and wedge the operation.
   const isReceiptSource = inspection.sourceDocument === "Receipt";
+  const hasErpDisposition =
+    isReceiptSource || inspection.sourceDocument === "Manual";
   const liveFeatures = useMemo(
     () => features.filter((f) => f.inspectionFeature != null),
     [features]
@@ -238,7 +273,11 @@ const InspectionView = ({
 
   const scannerDisclosure = useDisclosure();
   const rejectConfirmDisclosure = useDisclosure();
+  const partialDisclosure = useDisclosure();
+  const openNcrDisclosure = useDisclosure();
   const acceptConfirmDisclosure = useDisclosure();
+  const [manualAction, setManualAction] =
+    useState<ManualInspectionAction | null>(null);
   const documentSwitchDisclosure = useDisclosure();
 
   const [activeFeatureId, setActiveFeatureId] = useState<string | null>(null);
@@ -247,10 +286,6 @@ const InspectionView = ({
   const [gridExpanded, setGridExpanded] = useState(true);
   const [pdfPaneHeightPx, setPdfPaneHeightPx] = useState(360);
   const [stackHeightPx, setStackHeightPx] = useState(0);
-  const [isResizingSplit, setIsResizingSplit] = useState(false);
-  const splitDragRef = useRef<{ startY: number; startPdfPx: number } | null>(
-    null
-  );
   // Until the user drags the splitter, the PDF takes ~45% of the measured
   // stack (capped by the grid's half-stack minimum) instead of a fixed pixel
   // default — portrait drawings get a usable slice on tall viewports.
@@ -276,41 +311,15 @@ const InspectionView = ({
     return () => ro.disconnect();
   }, [gridExpanded, showDrawing]);
 
-  useEffect(() => {
-    if (!isResizingSplit) return;
-    const onMove = (e: MouseEvent) => {
-      const start = splitDragRef.current;
-      if (!start) return;
-      const dy = e.clientY - start.startY;
-      setPdfPaneHeightPx(
-        clampPdfPaneHeight(start.startPdfPx + dy, stackHeightPx, gridExpanded)
-      );
-    };
-    const onUp = () => {
-      setIsResizingSplit(false);
-      splitDragRef.current = null;
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, [isResizingSplit, stackHeightPx, gridExpanded]);
-
-  const onSplitResizeMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (!gridExpanded) return;
-      e.preventDefault();
+  const splitResize = usePaneResize({
+    height: pdfPaneHeightPx,
+    clamp: (height) => clampPdfPaneHeight(height, stackHeightPx, gridExpanded),
+    enabled: gridExpanded && stackHeightPx > 0,
+    onStart: () => {
       hasUserResizedRef.current = true;
-      splitDragRef.current = {
-        startY: e.clientY,
-        startPdfPx: pdfPaneHeightPx
-      };
-      setIsResizingSplit(true);
     },
-    [gridExpanded, pdfPaneHeightPx]
-  );
+    onCommit: setPdfPaneHeightPx
+  });
 
   // Per-cell saves are quiet (no revalidation), so measurement + derived
   // sample statuses are mirrored locally from the save responses and merged
@@ -402,6 +411,11 @@ const InspectionView = ({
     [samples]
   );
   const remaining = lotEntities.filter((e) => !sampledIds.has(e.id));
+  // Receipt and manual lots (hasErpDisposition) load their units; Add Sample
+  // shows only while one has no sample (an "inspect all" lot and a manual lot
+  // start with every unit sampled, prefillInspectionSamples). A job operation
+  // lot loads none here, so it can always add one.
+  const canAddSample = isSerial && (!hasErpDisposition || remaining.length > 0);
 
   // Item display id from the live items store (snapshot may be stale).
   const item = items.find((i) => i.id === inspection.itemId);
@@ -425,8 +439,11 @@ const InspectionView = ({
 
   const lotClosed =
     receiptVoided ||
+    inspection.status === "Cancelled" ||
     (inspection.dispositionedAt != null &&
-      (inspection.status === "Passed" || inspection.status === "Failed"));
+      (inspection.status === "Passed" ||
+        inspection.status === "Failed" ||
+        inspection.status === "Partial"));
 
   // Serial lots build their sample columns by scanning tracked entities. The
   // header "Add Sample" button stays primary until the plan's sample size is
@@ -436,11 +453,24 @@ const InspectionView = ({
   const hasAutoOpenedScanRef = useRef(false);
   useEffect(() => {
     if (hasAutoOpenedScanRef.current) return;
-    if (isSerial && samples.length === 0 && !lotClosed && canUpdate) {
+    if (
+      scansSamples &&
+      canAddSample &&
+      samples.length === 0 &&
+      !lotClosed &&
+      canUpdate
+    ) {
       hasAutoOpenedScanRef.current = true;
       scannerDisclosure.onOpen();
     }
-  }, [isSerial, samples.length, lotClosed, canUpdate, scannerDisclosure]);
+  }, [
+    scansSamples,
+    canAddSample,
+    samples.length,
+    lotClosed,
+    canUpdate,
+    scannerDisclosure
+  ]);
 
   const maxSampleSize = hasFeatures
     ? Math.max(1, ...liveFeatures.map((f) => f.sampleSize))
@@ -468,17 +498,48 @@ const InspectionView = ({
       const counts = featureCounts.get(feature.inspectionFeatureId);
       return counts != null && counts.failed >= feature.rejectionNumber;
     });
-    canAccept = isReceiptSource && !lotClosed && allFeaturesSatisfied;
+    canAccept = hasErpDisposition && !lotClosed && allFeaturesSatisfied;
     failedStatistically = anyFeatureRejectable || fails > 0;
   } else {
     canAccept =
-      isReceiptSource &&
+      hasErpDisposition &&
       !lotClosed &&
       inspected >= inspection.sampleSize &&
       fails <= inspection.acceptanceNumber;
     failedStatistically = fails > inspection.acceptanceNumber;
   }
-  const canReject = isReceiptSource && !lotClosed;
+  const canReject = hasErpDisposition && !lotClosed;
+  const sampledComplete = hasFeatures
+    ? liveFeatures.every(
+        (feature) =>
+          (featureCounts.get(feature.inspectionFeatureId)?.recorded ?? 0) >=
+          feature.sampleSize
+      )
+    : inspected >= inspection.sampleSize;
+  const hasFailedUnit = samples.some(
+    (sample) =>
+      !!sample.trackedEntityId &&
+      (sampleStatuses.get(sample.id) ?? sample.status) === "Failed"
+  );
+  // Partial is a receipt decision: a manual lot is accepted or rejected.
+  const canPartial =
+    isReceiptSource &&
+    canReject &&
+    !isBatch &&
+    itemTrackingType !== "Non-Inventory" &&
+    (!isSerial || (hasFailedUnit && passes > 0 && sampledComplete));
+  const ncrMissing =
+    isReceiptSource &&
+    !receiptVoided &&
+    inspection.status === "Partial" &&
+    issues.length === 0 &&
+    ((itemTrackingType === "Inventory" &&
+      inspection.acceptedQuantity !== null &&
+      Number(inspection.acceptedQuantity) < Number(inspection.lotSize)) ||
+      ((itemTrackingType === "Serial" || itemTrackingType === "Batch") &&
+        samples.some(
+          (sample) => sample.status === "Failed" && !!sample.trackedEntityId
+        )));
 
   const failedFeatureSummary = useMemo<FailedFeatureSummary[]>(() => {
     if (!hasFeatures) return [];
@@ -541,13 +602,6 @@ const InspectionView = ({
 
   const hasMeasurements = effectiveMeasurements.size > 0;
 
-  const statusBadgeVariant =
-    inspection.status === "Passed"
-      ? ("green" as const)
-      : inspection.status === "Failed"
-        ? ("red" as const)
-        : ("secondary" as const);
-
   const planSummary =
     inspection.samplingPlanType === "AQL"
       ? `AQL ${inspection.aql ?? ""} · Lvl ${inspection.inspectionLevel ?? ""} · ${inspection.severity ?? ""}`
@@ -563,9 +617,20 @@ const InspectionView = ({
     .filter(Boolean)
     .join("  ·  ");
 
+  const acceptedQuantity = Number(inspection.acceptedQuantity);
+  const lotSize = Number(inspection.lotSize);
+  const partialDecision =
+    isReceiptSource &&
+    inspection.status === "Partial" &&
+    inspection.acceptedQuantity !== null
+      ? itemTrackingType === "Inventory" && acceptedQuantity < lotSize
+        ? t`${acceptedQuantity} of ${lotSize} accepted. The rest stays held until its NCR is closed.`
+        : t`${acceptedQuantity} of ${lotSize} accepted.`
+      : null;
+
   const statusBadge = (
     <HStack spacing={1}>
-      <Badge variant={statusBadgeVariant}>{inspection.status}</Badge>
+      <InspectionStatus status={inspection.status} />
       {receiptVoided && (
         <Badge variant="red">
           <Trans>Receipt voided</Trans>
@@ -574,9 +639,44 @@ const InspectionView = ({
     </HStack>
   );
 
+  // The lot's less frequent actions, in one menu beside its name.
+  const lotActions = [
+    canUpdate && !lotClosed && !hasMeasurements
+      ? {
+          key: "change-document",
+          icon: <LuFileText />,
+          label: t`Change Document`,
+          onSelect: documentSwitchDisclosure.onOpen
+        }
+      : null,
+    canCancelInspection(inspection) && permissions.can("update", "quality")
+      ? {
+          key: "cancel",
+          icon: <LuCircleX />,
+          label: t`Cancel Inspection`,
+          onSelect: () => setManualAction("cancel")
+        }
+      : null,
+    canDeleteInspection(inspection, samples) &&
+    measurements.length === 0 &&
+    permissions.can("delete", "quality")
+      ? {
+          key: "delete",
+          icon: <LuTrash />,
+          label: t`Delete Inspection`,
+          onSelect: () => setManualAction("delete")
+        }
+      : null
+  ].filter((action) => action !== null);
+
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <RecordHero subtitle={metaLine} status={statusBadge} />
+      <RecordHero
+        subtitle={
+          partialDecision ? `${metaLine}  ·  ${partialDecision}` : metaLine
+        }
+        status={statusBadge}
+      />
       <RecordPhoneChrome />
       {/* Header bar — mirrors InspectionDocumentEditor's header */}
       <div className="flex min-h-[var(--header-height)] flex-shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 overflow-x-auto border-b border-border bg-card px-4 py-2 scrollbar-hide max-md:hidden">
@@ -585,11 +685,54 @@ const InspectionView = ({
             <h1 className="truncate text-base font-semibold">
               {inspection.inspectionId}
             </h1>
+            {lotActions.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <IconButton
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    aria-label={t`Actions for ${inspection.inspectionId}`}
+                    icon={<LuEllipsisVertical />}
+                  />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="min-w-56">
+                  {lotActions.map((action) => (
+                    <DropdownMenuItem
+                      key={action.key}
+                      onClick={action.onSelect}
+                    >
+                      <span className="mr-2 flex size-4 items-center">
+                        {action.icon}
+                      </span>
+                      {action.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             {statusBadge}
           </HStack>
           <p className="truncate text-xs text-muted-foreground">{metaLine}</p>
+          {partialDecision && (
+            <p className="truncate text-xs text-muted-foreground">
+              {partialDecision}
+            </p>
+          )}
         </div>
         <HStack spacing={2} className="flex-shrink-0 flex-wrap justify-end">
+          {isPhone &&
+            lotActions.map((action) => (
+              <RecordAction key={action.key} slot="overflow">
+                <Button
+                  variant="secondary"
+                  leftIcon={action.icon}
+                  onClick={action.onSelect}
+                >
+                  {action.label}
+                </Button>
+              </RecordAction>
+            ))}
           {issues.length === 1 && (
             <RecordAction slot="overflow">
               <Button variant="secondary" leftIcon={<LuShieldX />} asChild>
@@ -620,30 +763,26 @@ const InspectionView = ({
             </RecordAction>
           )}
           <RecordAction slot="overflow">
-            <Button
-              variant="secondary"
-              leftIcon={<LuShieldAlert />}
-              asChild
-              isDisabled={failedTrackedEntityIds.length === 0}
-            >
-              <a href={newIssueHref} target="_blank" rel="noreferrer">
-                <Trans>Create Issue</Trans>
-              </a>
-            </Button>
-          </RecordAction>
-          {canUpdate && !lotClosed && !hasMeasurements && (
-            <RecordAction slot="overflow">
+            {/* A disabled link still navigates, so with nothing failed the
+                button is a real disabled button, not a link. */}
+            {failedTrackedEntityIds.length === 0 ? (
               <Button
                 variant="secondary"
-                leftIcon={<LuFileText />}
-                onClick={documentSwitchDisclosure.onOpen}
+                leftIcon={<LuShieldAlert />}
+                isDisabled
               >
-                <Trans>Change Document</Trans>
+                <Trans>Create Issue</Trans>
               </Button>
-            </RecordAction>
-          )}
-          {isSerial && !lotClosed && (
-            <RecordAction slot={isReceiptSource ? "overflow" : "primary"}>
+            ) : (
+              <Button variant="secondary" leftIcon={<LuShieldAlert />} asChild>
+                <a href={newIssueHref} target="_blank" rel="noreferrer">
+                  <Trans>Create Issue</Trans>
+                </a>
+              </Button>
+            )}
+          </RecordAction>
+          {canAddSample && !lotClosed && (
+            <RecordAction slot={hasErpDisposition ? "overflow" : "primary"}>
               <Button
                 variant={allSamplesLoaded ? "secondary" : "primary"}
                 leftIcon={<LuScan />}
@@ -654,7 +793,18 @@ const InspectionView = ({
               </Button>
             </RecordAction>
           )}
-          {isReceiptSource && (
+          {ncrMissing && (
+            <RecordAction slot={isTrackedLot ? "secondary" : "primary"}>
+              <Button
+                variant={isTrackedLot ? "secondary" : "primary"}
+                onClick={openNcrDisclosure.onOpen}
+                isDisabled={!canUpdate}
+              >
+                <Trans>Open NCR</Trans>
+              </Button>
+            </RecordAction>
+          )}
+          {hasErpDisposition && (
             <>
               <RecordAction slot="secondary">
                 <Button
@@ -665,6 +815,34 @@ const InspectionView = ({
                   <Trans>Reject Lot</Trans>
                 </Button>
               </RecordAction>
+              {isReceiptSource && (
+                <RecordAction slot="secondary">
+                  {isBatch && !lotClosed ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span tabIndex={0} className="inline-flex">
+                          <Button variant="secondary" isDisabled>
+                            <Trans>Partial</Trans>
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <Trans>
+                          A batch lot is accepted or rejected as a whole.
+                        </Trans>
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      onClick={partialDisclosure.onOpen}
+                      isDisabled={!canUpdate || !canPartial || gridBusy}
+                    >
+                      <Trans>Partial</Trans>
+                    </Button>
+                  )}
+                </RecordAction>
+              )}
               <RecordAction slot="primary">
                 <Button
                   onClick={acceptConfirmDisclosure.onOpen}
@@ -704,6 +882,7 @@ const InspectionView = ({
           >
             {/* PDF viewer — pinned height while the grid is expanded */}
             <div
+              ref={splitResize.paneRef}
               className={`flex min-h-0 min-w-full flex-col overflow-hidden rounded-lg border bg-muted ${
                 gridExpanded
                   ? "shrink-0 max-md:!h-[40dvh]"
@@ -758,10 +937,10 @@ const InspectionView = ({
                 aria-orientation="horizontal"
                 aria-label={t`Drag to resize drawing and characteristics`}
                 aria-valuenow={Math.round(pdfPaneHeightPx)}
-                className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 max-md:hidden ${
-                  isResizingSplit ? "bg-muted" : ""
+                className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 pointer-coarse:h-6 pointer-coarse:hit-area max-md:hidden ${
+                  splitResize.isResizing ? "bg-muted" : ""
                 }`}
-                onMouseDown={onSplitResizeMouseDown}
+                {...splitResize.handleProps}
               >
                 <span className="h-1 w-14 shrink-0 rounded-full bg-muted-foreground/40 group-hover:bg-muted-foreground/65" />
               </div>
@@ -788,6 +967,10 @@ const InspectionView = ({
                 }
               >
                 <InspectionMeasurementGrid
+                  parameters={
+                    inspection.inspectionDocumentId ? parameters : undefined
+                  }
+                  workInstruction={workInstruction}
                   inspectionId={inspection.id}
                   isReadOnly={!canUpdate || lotClosed}
                   isSerial={isSerial}
@@ -844,13 +1027,17 @@ const InspectionView = ({
           </div>
         </div>
       ) : (
-        // No drawing: the grid takes the full body. Feature-driven lots still
-        // render their features; lots without a document collapse to the
-        // single "Overall result" row inside the same grid.
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2 max-md:px-0">
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg bg-card">
+        // No drawing: the grid takes the full body, edge to edge with no inset
+        // card. Feature-driven lots still render their features; lots without
+        // a document collapse to the single "Overall result" row.
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-card">
             <div className="min-h-0 flex-1 overflow-auto">
               <InspectionMeasurementGrid
+                parameters={
+                  inspection.inspectionDocumentId ? parameters : undefined
+                }
+                workInstruction={workInstruction}
                 inspectionId={inspection.id}
                 isReadOnly={!canUpdate || lotClosed}
                 isSerial={isSerial}
@@ -888,88 +1075,139 @@ const InspectionView = ({
         </div>
       )}
 
-      {scannerDisclosure.isOpen && (
-        <ScanInspectionSample
-          inspectionId={inspection.id}
-          isSerial={isSerial}
-          remaining={remaining}
-          inspected={inspected}
-          sampleSize={inspection.sampleSize}
-          fails={fails}
-          acceptanceNumber={inspection.acceptanceNumber}
-          onClose={scannerDisclosure.onClose}
+      {manualAction && (
+        <ManualInspectionConfirm
+          action={manualAction}
+          lot={inspection}
+          onClose={() => setManualAction(null)}
         />
       )}
+      <ScanInspectionSample
+        open={scannerDisclosure.isOpen}
+        inspectionId={inspection.id}
+        isSerial={isSerial}
+        remaining={remaining}
+        inspected={inspected}
+        sampleSize={inspection.sampleSize}
+        fails={fails}
+        acceptanceNumber={inspection.acceptanceNumber}
+        onClose={scannerDisclosure.onClose}
+      />
 
-      {acceptConfirmDisclosure.isOpen && (
-        <Confirm
-          action={path.to.inspectionAccept(inspection.id)}
-          title={t`Accept lot?`}
-          text={
-            isSerial
-              ? t`${lotEntities.length - inspected} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected.`
-              : t`The lot will be marked Passed. ${fails} sampled failure(s) are recorded for your records.`
-          }
-          confirmText={t`Accept Lot`}
-          onCancel={acceptConfirmDisclosure.onClose}
-          onSubmit={acceptConfirmDisclosure.onClose}
-        />
-      )}
+      <Confirm
+        isOpen={acceptConfirmDisclosure.isOpen}
+        action={path.to.inspectionAccept(inspection.id)}
+        title={t`Accept lot?`}
+        text={
+          isSerial
+            ? t`${lotEntities.length - inspected} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected.`
+            : t`The lot will be marked Passed. ${fails} sampled failure(s) are recorded for your records.`
+        }
+        confirmText={t`Accept Lot`}
+        onCancel={acceptConfirmDisclosure.onClose}
+        onSubmit={acceptConfirmDisclosure.onClose}
+      />
 
-      {rejectConfirmDisclosure.isOpen && (
-        <RejectLotModal
-          action={path.to.inspectionReject(inspection.id)}
-          issueTypes={issueTypes}
-          requiresReason={!failedStatistically}
-          summary={
-            failedStatistically
-              ? isSerial
-                ? t`Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All ${lotEntities.length} entities — ${passes} sampled pass(es), ${fails} failure(s), and ${Math.max(0, lotEntities.length - inspected)} un-inspected — will be marked Rejected.`
-                : t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s).`
-              : isSerial
-                ? t`No characteristic has failed, so say why the lot is rejected. All ${lotEntities.length} entities will be marked Rejected.`
-                : t`No characteristic has failed, so say why the lot is rejected. The entire lot of ${inspection.lotSize} will be rejected.`
-          }
-          failedFeatureSummary={failedFeatureSummary}
-          onCancel={rejectConfirmDisclosure.onClose}
-          onSubmit={rejectConfirmDisclosure.onClose}
-        />
-      )}
+      <RejectLotModal
+        open={rejectConfirmDisclosure.isOpen}
+        action={path.to.inspectionReject(inspection.id)}
+        issueTypes={issueTypes}
+        requiresReason={!failedStatistically}
+        summary={
+          failedStatistically
+            ? isSerial
+              ? t`Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All ${lotEntities.length} entities — ${passes} sampled pass(es), ${fails} failure(s), and ${Math.max(0, lotEntities.length - inspected)} un-inspected — will be marked Rejected.`
+              : t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s).`
+            : isSerial
+              ? t`No characteristic has failed, so say why the lot is rejected. All ${lotEntities.length} entities will be marked Rejected.`
+              : t`No characteristic has failed, so say why the lot is rejected. The entire lot of ${inspection.lotSize} will be rejected.`
+        }
+        failedFeatureSummary={failedFeatureSummary}
+        onCancel={rejectConfirmDisclosure.onClose}
+        onSubmit={rejectConfirmDisclosure.onClose}
+      />
 
-      {documentSwitchDisclosure.isOpen && (
-        <DocumentSwitchModal
-          inspectionId={inspection.id}
-          itemId={inspection.itemId}
-          currentDocumentId={inspection.inspectionDocumentId ?? null}
-          onClose={documentSwitchDisclosure.onClose}
-        />
-      )}
+      <PartialLotModal
+        open={partialDisclosure.isOpen}
+        action={path.to.inspectionPartial(inspection.id)}
+        issueTypes={issueTypes}
+        lotSize={inspection.lotSize}
+        isUntracked={itemTrackingType === "Inventory"}
+        onCancel={partialDisclosure.onClose}
+        onSubmit={partialDisclosure.onClose}
+      />
+
+      <OpenNcrModal
+        open={openNcrDisclosure.isOpen}
+        action={path.to.inspectionPartial(inspection.id)}
+        issueTypes={issueTypes}
+        isTrackedLot={isTrackedLot}
+        onCancel={openNcrDisclosure.onClose}
+        onSubmit={openNcrDisclosure.onClose}
+      />
+
+      <DocumentSwitchModal
+        open={documentSwitchDisclosure.isOpen}
+        inspectionId={inspection.id}
+        itemId={inspection.itemId}
+        currentDocumentId={inspection.inspectionDocumentId ?? null}
+        onClose={documentSwitchDisclosure.onClose}
+      />
     </div>
   );
+};
+
+type DocumentSwitchModalProps = {
+  inspectionId: string;
+  itemId: string;
+  currentDocumentId: string | null;
+  open: boolean;
+  onClose: () => void;
 };
 
 // Swap the assigned inspection document on an open, unmeasured lot. Options
 // are the item's documents (same source as the Form/InspectionDocument
 // combobox's api route).
 function DocumentSwitchModal({
+  open,
+  onClose,
+  ...props
+}: DocumentSwitchModalProps) {
+  // Not in the body: the modal closes on submit, and React Router drops the
+  // redirect this action answers with once its fetcher has unmounted.
+  const fetcher = useFetcher<{}>();
+
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <DocumentSwitchBody fetcher={fetcher} onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function DocumentSwitchBody({
   inspectionId,
   itemId,
   currentDocumentId,
+  fetcher,
   onClose
-}: {
-  inspectionId: string;
-  itemId: string;
-  currentDocumentId: string | null;
-  onClose: () => void;
+}: Omit<DocumentSwitchModalProps, "open"> & {
+  fetcher: ReturnType<typeof useFetcher<{}>>;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<{}>();
   const optionsFetcher = useLoaderQuery<{
     data:
       | {
           id: string;
           fileName: string | null;
-          drawingNumber: string | null;
+          name: string | null;
           version: number;
         }[]
       | null;
@@ -979,64 +1217,56 @@ function DocumentSwitchModal({
   const options = optionsFetcher.data?.data ?? [];
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Change Inspection Plan</Trans>
-          </ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <VStack spacing={2}>
-            <p className="text-sm text-muted-foreground">
-              <Trans>
-                The lot's per-characteristic sampling plan will be re-resolved
-                from the selected document.
-              </Trans>
-            </p>
-            <Select value={documentId} onValueChange={setDocumentId}>
-              <SelectTrigger aria-label={t`Inspection document`}>
-                <SelectValue placeholder={t`Select a document`} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">{t`None`}</SelectItem>
-                {options.map((option) => (
-                  <SelectItem key={option.id} value={option.id}>
-                    {(option.drawingNumber ?? option.fileName ?? option.id) +
-                      ` v${option.version}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </VStack>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            <Trans>Cancel</Trans>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Change Inspection Plan</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={2}>
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              The lot's per-characteristic sampling plan will be re-resolved
+              from the selected document.
+            </Trans>
+          </p>
+          <Select value={documentId} onValueChange={setDocumentId}>
+            <SelectTrigger aria-label={t`Inspection document`}>
+              <SelectValue placeholder={t`Select a document`} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">{t`None`}</SelectItem>
+              {options.map((option) => (
+                <SelectItem key={option.id} value={option.id}>
+                  {(option.name ?? option.fileName ?? option.id) +
+                    ` v${option.version}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <fetcher.Form
+          method="post"
+          action={path.to.inspectionAssignedDocument(inspectionId)}
+          onSubmit={onClose}
+        >
+          <input
+            type="hidden"
+            name="inspectionDocumentId"
+            value={documentId === "none" ? "" : documentId}
+          />
+          <Button type="submit" isLoading={fetcher.state !== "idle"}>
+            <Trans>Save</Trans>
           </Button>
-          <fetcher.Form
-            method="post"
-            action={path.to.inspectionAssignedDocument(inspectionId)}
-            onSubmit={onClose}
-          >
-            <input
-              type="hidden"
-              name="inspectionDocumentId"
-              value={documentId === "none" ? "" : documentId}
-            />
-            <Button type="submit" isLoading={fetcher.state !== "idle"}>
-              <Trans>Save</Trans>
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </fetcher.Form>
+      </ModalFooter>
+    </>
   );
 }
 

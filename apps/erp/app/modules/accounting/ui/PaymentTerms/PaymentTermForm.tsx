@@ -56,7 +56,7 @@ const PaymentTermForm = ({
     useState<PaymentTermCalculationMethod>(initialValues.calculationMethod);
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
@@ -66,7 +66,7 @@ const PaymentTermForm = ({
         t`Failed to create payment term: ${fetcher.data.error.message}`
       );
     }
-  }, [fetcher.data, fetcher.state, onClose, type, t]);
+  }, [fetcher.data, fetcher.state, onClose, open, type, t]);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing

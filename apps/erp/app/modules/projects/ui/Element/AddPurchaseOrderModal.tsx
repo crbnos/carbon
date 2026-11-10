@@ -71,6 +71,14 @@ function AddToField({
   return <Select name="purchaseOrderId" label={t`Add to`} options={options} />;
 }
 
+type AddPurchaseOrderModalProps = {
+  open?: boolean;
+  projectId: string;
+  elementId: string;
+  defaultRequiredDate?: string;
+  onClose: () => void;
+};
+
 /**
  * A task's Add Purchase Order: a purchase order line charged to the task, with
  * no plan line. It buys an item, a G/L account or a fixed asset, on the
@@ -78,16 +86,26 @@ function AddToField({
  * action redirects to the purchase order; a refusal shows in the modal.
  */
 export function AddPurchaseOrderModal({
+  open = true,
+  onClose,
+  ...props
+}: AddPurchaseOrderModalProps) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <AddPurchaseOrderBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function AddPurchaseOrderBody({
   projectId,
   elementId,
   defaultRequiredDate,
   onClose
-}: {
-  projectId: string;
-  elementId: string;
-  defaultRequiredDate?: string;
-  onClose: () => void;
-}) {
+}: Omit<AddPurchaseOrderModalProps, "open">) {
   const { t } = useLingui();
   const resource = path.to.projectElementCreatePurchaseOrderLine(
     projectId,
@@ -142,191 +160,185 @@ export function AddPurchaseOrderModal({
   ];
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        {options === undefined ? (
+    <>
+      {options === undefined ? (
+        <ModalBody>
+          <div className="flex h-40 items-center justify-center">
+            <Spinner />
+          </div>
+        </ModalBody>
+      ) : (
+        <ValidatedForm
+          validator={createProjectPurchaseOrderLineValidator}
+          method="post"
+          action={resource}
+          fetcher={fetcher}
+          defaultValues={{
+            lineType: "Item",
+            supplierId: "",
+            quantity: 1,
+            requiredDate: defaultRequiredDate,
+            purchaseOrderId: NEW_PURCHASE_ORDER
+          }}
+        >
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Add Purchase Order</Trans>
+            </ModalTitle>
+            <ModalDescription>
+              <Trans>A purchase order line charged to this task.</Trans>
+            </ModalDescription>
+          </ModalHeader>
           <ModalBody>
-            <div className="flex h-40 items-center justify-center">
-              <Spinner />
-            </div>
-          </ModalBody>
-        ) : (
-          <ValidatedForm
-            validator={createProjectPurchaseOrderLineValidator}
-            method="post"
-            action={resource}
-            fetcher={fetcher}
-            defaultValues={{
-              lineType: "Item",
-              supplierId: "",
-              quantity: 1,
-              requiredDate: defaultRequiredDate,
-              purchaseOrderId: NEW_PURCHASE_ORDER
-            }}
-          >
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Add Purchase Order</Trans>
-              </ModalTitle>
-              <ModalDescription>
-                <Trans>A purchase order line charged to this task.</Trans>
-              </ModalDescription>
-            </ModalHeader>
-            <ModalBody>
-              <Hidden name="lineType" value={lineType} />
-              <VStack spacing={4}>
-                {errorMessage && (
-                  <Alert variant="destructive">
-                    <LuTriangleAlert />
-                    <AlertDescription>{errorMessage}</AlertDescription>
-                  </Alert>
-                )}
-                <Tabs
-                  value={lineType}
-                  onValueChange={(value) => {
-                    setLineType(value as LineType);
+            <Hidden name="lineType" value={lineType} />
+            <VStack spacing={4}>
+              {errorMessage && (
+                <Alert variant="destructive">
+                  <LuTriangleAlert />
+                  <AlertDescription>{errorMessage}</AlertDescription>
+                </Alert>
+              )}
+              <Tabs
+                value={lineType}
+                onValueChange={(value) => {
+                  setLineType(value as LineType);
+                  setTypedPrice(undefined);
+                }}
+              >
+                <TabsList>
+                  <TabsTrigger value="Item">
+                    <Trans>Item</Trans>
+                  </TabsTrigger>
+                  <TabsTrigger value="G/L Account">
+                    <Trans>GL Account</Trans>
+                  </TabsTrigger>
+                  <TabsTrigger value="Fixed Asset">
+                    <Trans>Fixed Asset</Trans>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <Supplier
+                name="supplierId"
+                label={t`Supplier`}
+                onChange={(option) => {
+                  if (option?.value) {
+                    setSupplierId(option.value);
+                    setTypedPrice(undefined);
+                  }
+                }}
+              />
+              {lineType === "Item" && (
+                <Item
+                  name="itemId"
+                  label={t`Item`}
+                  type="Item"
+                  validItemTypes={[
+                    "Part",
+                    "Material",
+                    "Tool",
+                    "Consumable",
+                    "Service"
+                  ]}
+                  replenishmentSystem="Buy"
+                  isOptional={false}
+                  onChange={(option) => {
+                    setItemId(option?.value as string | undefined);
                     setTypedPrice(undefined);
                   }}
-                >
-                  <TabsList>
-                    <TabsTrigger value="Item">
-                      <Trans>Item</Trans>
-                    </TabsTrigger>
-                    <TabsTrigger value="G/L Account">
-                      <Trans>GL Account</Trans>
-                    </TabsTrigger>
-                    <TabsTrigger value="Fixed Asset">
-                      <Trans>Fixed Asset</Trans>
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-                <Supplier
-                  name="supplierId"
-                  label={t`Supplier`}
-                  onChange={(option) => {
-                    if (option?.value) {
-                      setSupplierId(option.value);
-                      setTypedPrice(undefined);
-                    }
+                />
+              )}
+              {lineType === "G/L Account" && (
+                <>
+                  <Account
+                    name="accountId"
+                    label={t`GL Account`}
+                    classes={["Expense"]}
+                    isOptional={false}
+                  />
+                  <CostCenter
+                    name="costCenterId"
+                    label={t`Cost Center`}
+                    isOptional
+                  />
+                  <Input
+                    name="description"
+                    label={t`Description`}
+                    isOptional={false}
+                  />
+                </>
+              )}
+              {lineType === "Fixed Asset" && (
+                <Combobox
+                  name="assetId"
+                  label={t`Fixed Asset`}
+                  isOptional={false}
+                  options={assets.map((asset) => ({
+                    value: asset.id,
+                    label: `${asset.fixedAssetId} — ${asset.name}`
+                  }))}
+                />
+              )}
+              {lineType !== "Fixed Asset" && (
+                <NumberControlled
+                  name="quantity"
+                  label={
+                    terms ? t`Quantity (${terms.inventoryUnit})` : t`Quantity`
+                  }
+                  isOptional={false}
+                  value={quantity}
+                  onChange={(value) => {
+                    setQuantity(value);
+                    setTypedPrice(undefined);
                   }}
+                  helperText={
+                    terms &&
+                    (terms.purchaseUnit !== terms.inventoryUnit ||
+                      purchaseQuantity !== quantity)
+                      ? t`Buys ${purchaseQuantity} ${terms.purchaseUnit}`
+                      : undefined
+                  }
+                  minValue={0}
+                  formatOptions={INPUT_FORMAT.quantity}
+                  step={INPUT_STEP.quantity}
                 />
-                {lineType === "Item" && (
-                  <Item
-                    name="itemId"
-                    label={t`Item`}
-                    type="Item"
-                    validItemTypes={[
-                      "Part",
-                      "Material",
-                      "Tool",
-                      "Consumable",
-                      "Service"
-                    ]}
-                    replenishmentSystem="Buy"
-                    isOptional={false}
-                    onChange={(option) => {
-                      setItemId(option?.value as string | undefined);
-                      setTypedPrice(undefined);
-                    }}
-                  />
-                )}
-                {lineType === "G/L Account" && (
-                  <>
-                    <Account
-                      name="accountId"
-                      label={t`GL Account`}
-                      classes={["Expense"]}
-                      isOptional={false}
-                    />
-                    <CostCenter
-                      name="costCenterId"
-                      label={t`Cost Center`}
-                      isOptional
-                    />
-                    <Input
-                      name="description"
-                      label={t`Description`}
-                      isOptional={false}
-                    />
-                  </>
-                )}
-                {lineType === "Fixed Asset" && (
-                  <Combobox
-                    name="assetId"
-                    label={t`Fixed Asset`}
-                    isOptional={false}
-                    options={assets.map((asset) => ({
-                      value: asset.id,
-                      label: `${asset.fixedAssetId} — ${asset.name}`
-                    }))}
-                  />
-                )}
-                {lineType !== "Fixed Asset" && (
-                  <NumberControlled
-                    name="quantity"
-                    label={
-                      terms ? t`Quantity (${terms.inventoryUnit})` : t`Quantity`
-                    }
-                    isOptional={false}
-                    value={quantity}
-                    onChange={(value) => {
-                      setQuantity(value);
-                      setTypedPrice(undefined);
-                    }}
-                    helperText={
-                      terms &&
-                      (terms.purchaseUnit !== terms.inventoryUnit ||
-                        purchaseQuantity !== quantity)
-                        ? t`Buys ${purchaseQuantity} ${terms.purchaseUnit}`
-                        : undefined
-                    }
-                    minValue={0}
-                    formatOptions={INPUT_FORMAT.quantity}
-                    step={INPUT_STEP.quantity}
-                  />
-                )}
-                {currencyCode && (
-                  <NumberControlled
-                    name="unitPrice"
-                    label={
-                      terms
-                        ? t`Unit Price (per ${terms.purchaseUnit})`
-                        : t`Unit Price`
-                    }
-                    isOptional={false}
-                    value={unitPrice}
-                    onChange={setTypedPrice}
-                    minValue={0}
-                    formatOptions={INPUT_FORMAT.rate(
-                      currencyCode,
-                      decimals ?? 2
-                    )}
-                    step={INPUT_STEP.rate}
-                  />
-                )}
-                <DatePicker name="requiredDate" label={t`Required Date`} />
-                <AddToField
-                  firstDraftId={options.purchaseOrders[0]?.id}
-                  options={purchaseOrderOptions}
+              )}
+              {currencyCode && (
+                <NumberControlled
+                  name="unitPrice"
+                  label={
+                    terms
+                      ? t`Unit Price (per ${terms.purchaseUnit})`
+                      : t`Unit Price`
+                  }
+                  isOptional={false}
+                  value={unitPrice}
+                  onChange={setTypedPrice}
+                  minValue={0}
+                  formatOptions={INPUT_FORMAT.rate(currencyCode, decimals ?? 2)}
+                  step={INPUT_STEP.rate}
                 />
-              </VStack>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              {/* A price still loading must not go out as the old item's. */}
-              <Submit
-                withBlocker={false}
-                isDisabled={optionsFetcher.state !== "idle"}
-              >
-                <Trans>Add Purchase Order</Trans>
-              </Submit>
-            </ModalFooter>
-          </ValidatedForm>
-        )}
-      </ModalContent>
-    </Modal>
+              )}
+              <DatePicker name="requiredDate" label={t`Required Date`} />
+              <AddToField
+                firstDraftId={options.purchaseOrders[0]?.id}
+                options={purchaseOrderOptions}
+              />
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            {/* A price still loading must not go out as the old item's. */}
+            <Submit
+              withBlocker={false}
+              isDisabled={optionsFetcher.state !== "idle"}
+            >
+              <Trans>Add Purchase Order</Trans>
+            </Submit>
+          </ModalFooter>
+        </ValidatedForm>
+      )}
+    </>
   );
 }

@@ -89,6 +89,7 @@ export function AssignmentBlock({
 }
 
 type AssignmentModalProps = {
+  open?: boolean;
   assignment: ScheduleAssignment;
   employeeName: string | null;
   isDisabled: boolean;
@@ -100,11 +101,31 @@ type AssignmentModalProps = {
  * intent with the assignment's id.
  */
 export function AssignmentModal({
+  open = true,
+  onClose,
+  ...props
+}: AssignmentModalProps) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <AssignmentBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function AssignmentBody({
   assignment,
   employeeName,
   isDisabled,
   onClose
-}: AssignmentModalProps) {
+}: Omit<AssignmentModalProps, "open">) {
   const { t } = useLingui();
   const { locale } = useLocale();
   const fetcher = useAction({ onSuccess: onClose });
@@ -115,76 +136,66 @@ export function AssignmentModal({
   );
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
+    <ValidatedForm
+      method="post"
+      action={path.to.serviceScheduleUpdate}
+      validator={serviceJobAssignmentValidator}
+      defaultValues={{
+        id: assignment.id,
+        serviceJobId: assignment.serviceJobId,
+        employeeId: assignment.employeeId,
+        scheduledDate: assignment.date,
+        plannedHours: assignment.plannedHours ?? undefined,
+        note: assignment.note ?? ""
       }}
+      fetcher={fetcher}
+      isDisabled={isDisabled}
     >
-      <ModalOverlay />
-      <ModalContent>
-        <ValidatedForm
-          method="post"
-          action={path.to.serviceScheduleUpdate}
-          validator={serviceJobAssignmentValidator}
-          defaultValues={{
-            id: assignment.id,
-            serviceJobId: assignment.serviceJobId,
-            employeeId: assignment.employeeId,
-            scheduledDate: assignment.date,
-            plannedHours: assignment.plannedHours ?? undefined,
-            note: assignment.note ?? ""
-          }}
-          fetcher={fetcher}
-          isDisabled={isDisabled}
+      <ModalHeader>
+        <ModalTitle>{assignment.jobReadableId}</ModalTitle>
+        <ModalDescription>
+          {[assignment.customerName, employeeName, day]
+            .filter(Boolean)
+            .join(" · ")}
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="intent" value="assign" />
+        <Hidden name="id" />
+        <Hidden name="serviceJobId" />
+        <Hidden name="employeeId" />
+        <Hidden name="scheduledDate" />
+        <VStack spacing={4}>
+          <Number
+            name="plannedHours"
+            label={t`Planned Hours`}
+            minValue={0}
+            maxValue={24}
+            formatOptions={INPUT_FORMAT.quantity}
+            step={INPUT_STEP.quantity}
+          />
+          <TextArea name="note" label={t`Note`} rows={3} />
+          <Link
+            to={path.to.serviceJob(assignment.serviceJobId)}
+            className="inline-flex items-center gap-1.5 text-sm font-medium underline-offset-4 hover:underline"
+          >
+            <Trans>Open job</Trans>
+            <LuExternalLink className="size-3.5" />
+          </Link>
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit
+          isLoading={fetcher.state !== "idle"}
+          isDisabled={isDisabled || fetcher.state !== "idle"}
+          withBlocker={false}
         >
-          <ModalHeader>
-            <ModalTitle>{assignment.jobReadableId}</ModalTitle>
-            <ModalDescription>
-              {[assignment.customerName, employeeName, day]
-                .filter(Boolean)
-                .join(" · ")}
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="intent" value="assign" />
-            <Hidden name="id" />
-            <Hidden name="serviceJobId" />
-            <Hidden name="employeeId" />
-            <Hidden name="scheduledDate" />
-            <VStack spacing={4}>
-              <Number
-                name="plannedHours"
-                label={t`Planned Hours`}
-                minValue={0}
-                maxValue={24}
-                formatOptions={INPUT_FORMAT.quantity}
-                step={INPUT_STEP.quantity}
-              />
-              <TextArea name="note" label={t`Note`} rows={3} />
-              <Link
-                to={path.to.serviceJob(assignment.serviceJobId)}
-                className="inline-flex items-center gap-1.5 text-sm font-medium underline-offset-4 hover:underline"
-              >
-                <Trans>Open job</Trans>
-                <LuExternalLink className="size-3.5" />
-              </Link>
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={isDisabled || fetcher.state !== "idle"}
-              withBlocker={false}
-            >
-              <Trans>Save</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+          <Trans>Save</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
