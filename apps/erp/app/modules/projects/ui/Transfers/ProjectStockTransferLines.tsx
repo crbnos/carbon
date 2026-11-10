@@ -54,6 +54,7 @@ import {
   Submit
 } from "~/components/Form";
 import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import { useQuantityFormatter } from "~/hooks/useQuantityFormatter";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -131,15 +132,29 @@ type EditingLine = {
   quantity: number;
 };
 
-function LineModal({
-  transfer,
-  initialValues,
-  onClose
-}: {
+type LineModalProps = {
+  open?: boolean;
   transfer: ProjectStockTransfer;
   initialValues: EditingLine;
   onClose: () => void;
-}) {
+};
+
+function LineModal({ open = true, onClose, ...props }: LineModalProps) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <LineBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function LineBody({
+  transfer,
+  initialValues,
+  onClose
+}: Omit<LineModalProps, "open">) {
   const { t } = useLingui();
   const [items] = useItems();
   const formatQuantity = useQuantityFormatter();
@@ -198,83 +213,76 @@ function LineModal({
     : undefined;
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        <ValidatedForm
-          validator={projectStockTransferLineValidator}
-          method="post"
-          action={path.to.projectStockTransferLines(transfer.id)}
-          fetcher={fetcher}
-          defaultValues={initialValues}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              {initialValues.id ? (
-                <Trans>Edit Line</Trans>
-              ) : (
-                <Trans>Add Line</Trans>
-              )}
-            </ModalTitle>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="id" />
-            <Hidden name="intent" value="save" />
-            <VStack spacing={4}>
-              <Item
-                name="itemId"
-                label={t`Item`}
-                type="Item"
-                whitelist={stockedItemIds}
-                onChange={(option) => {
-                  setItemId(option?.value ?? null);
-                  setTrackedEntityId(null);
-                }}
-              />
-              <StorageUnit
-                name="storageUnitId"
-                label={t`Storage Unit`}
-                locationId={transfer.locationId}
-                itemId={itemId ?? undefined}
-                isOptional
-                allowCreate={false}
-                onChange={(unit) => setStorageUnitId(unit?.id ?? null)}
-              />
-              {isTracked && (
-                <Select
-                  name="trackedEntityId"
-                  label={
-                    item?.itemTrackingType === "Serial"
-                      ? t`Serial Number`
-                      : t`Batch Number`
-                  }
-                  options={lotOptions}
-                  onChange={(option) =>
-                    setTrackedEntityId(option?.value ?? null)
-                  }
-                />
-              )}
-              <NumberField
-                name="quantity"
-                label={t`Quantity`}
-                minValue={0}
-                formatOptions={INPUT_FORMAT.quantity}
-                step={INPUT_STEP.quantity}
-                helperText={availableText}
-              />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit withBlocker={false}>
-              <Trans>Save</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+    <ValidatedForm
+      validator={projectStockTransferLineValidator}
+      method="post"
+      action={path.to.projectStockTransferLines(transfer.id)}
+      fetcher={fetcher}
+      defaultValues={initialValues}
+    >
+      <ModalHeader>
+        <ModalTitle>
+          {initialValues.id ? (
+            <Trans>Edit Line</Trans>
+          ) : (
+            <Trans>Add Line</Trans>
+          )}
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <Hidden name="id" />
+        <Hidden name="intent" value="save" />
+        <VStack spacing={4}>
+          <Item
+            name="itemId"
+            label={t`Item`}
+            type="Item"
+            whitelist={stockedItemIds}
+            onChange={(option) => {
+              setItemId(option?.value ?? null);
+              setTrackedEntityId(null);
+            }}
+          />
+          <StorageUnit
+            name="storageUnitId"
+            label={t`Storage Unit`}
+            locationId={transfer.locationId}
+            itemId={itemId ?? undefined}
+            isOptional
+            allowCreate={false}
+            onChange={(unit) => setStorageUnitId(unit?.id ?? null)}
+          />
+          {isTracked && (
+            <Select
+              name="trackedEntityId"
+              label={
+                item?.itemTrackingType === "Serial"
+                  ? t`Serial Number`
+                  : t`Batch Number`
+              }
+              options={lotOptions}
+              onChange={(option) => setTrackedEntityId(option?.value ?? null)}
+            />
+          )}
+          <NumberField
+            name="quantity"
+            label={t`Quantity`}
+            minValue={0}
+            formatOptions={INPUT_FORMAT.quantity}
+            step={INPUT_STEP.quantity}
+            helperText={availableText}
+          />
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit withBlocker={false}>
+          <Trans>Save</Trans>
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }
 
@@ -298,7 +306,7 @@ export default function ProjectStockTransferLines({
   const formatQuantity = useQuantityFormatter();
   const formatCost = useCurrencyFormatter({ rate: true });
   const deleteFetcher = useFetcher<{}>();
-  const [editing, setEditing] = useState<EditingLine | null>(null);
+  const editing = useDrawerItem<EditingLine>();
 
   const isEditable =
     transfer.status === "Draft" && permissions.can("update", "projects");
@@ -322,7 +330,7 @@ export default function ProjectStockTransferLines({
               variant="secondary"
               leftIcon={<LuCirclePlus />}
               isDisabled={!isEditable}
-              onClick={() => setEditing({ itemId: "", quantity: 1 })}
+              onClick={() => editing.open({ itemId: "", quantity: 1 })}
             >
               <Trans>Add Line</Trans>
             </Button>
@@ -405,7 +413,7 @@ export default function ProjectStockTransferLines({
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
                               onClick={() =>
-                                setEditing({
+                                editing.open({
                                   id: line.id,
                                   itemId: line.itemId,
                                   storageUnitId:
@@ -447,11 +455,12 @@ export default function ProjectStockTransferLines({
           )}
         </CardContent>
       </Card>
-      {editing && (
+      {editing.item && (
         <LineModal
+          open={editing.isOpen}
           transfer={transfer}
-          initialValues={editing}
-          onClose={() => setEditing(null)}
+          initialValues={editing.item}
+          onClose={editing.close}
         />
       )}
     </>

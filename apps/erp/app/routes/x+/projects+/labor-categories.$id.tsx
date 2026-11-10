@@ -8,7 +8,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
@@ -132,7 +132,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function LaborCategoryRoute() {
   const { category, rates } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   return (
     <LaborCategoryForm
@@ -145,7 +145,8 @@ export default function LaborCategoryRoute() {
         active: category.active
       }}
       rates={rates}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

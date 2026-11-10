@@ -41,6 +41,7 @@ import {
 } from "~/components/LineReorder";
 import { Confirm } from "~/components/Modals";
 import {
+  useDrawerItem,
   useOptimisticLocation,
   usePermissions,
   useRouteData,
@@ -94,9 +95,7 @@ export default function PurchaseOrderExplorer() {
   const newPurchaseOrderLineDisclosure = useDisclosure();
   const deleteLineDisclosure = useDisclosure();
   const [deleteLine, setDeleteLine] = useState<PurchaseOrderLine | null>(null);
-  const [duplicateLine, setDuplicateLine] = useState<PurchaseOrderLine | null>(
-    null
-  );
+  const duplicateLine = useDrawerItem<PurchaseOrderLine>();
 
   // A released order keeps its lines editable while it is not complete; an
   // edit above the approved amount sends it back for approval.
@@ -128,7 +127,6 @@ export default function PurchaseOrderExplorer() {
   };
 
   const onDeleteCancel = () => {
-    setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
 
@@ -161,7 +159,7 @@ export default function PurchaseOrderExplorer() {
                   isDuplicateDisabled={isDisabled}
                   line={line}
                   onDelete={onDeleteLine}
-                  onDuplicate={setDuplicateLine}
+                  onDuplicate={duplicateLine.open}
                 />
               ))
             )
@@ -213,23 +211,30 @@ export default function PurchaseOrderExplorer() {
           )}
         </div>
       </VStack>
-      {newPurchaseOrderLineDisclosure.isOpen && (
+      {newPurchaseOrderLineDisclosure.openCount > 0 && (
         <PurchaseOrderLineForm
+          key={`newPurchaseOrderLineDisclosure-${newPurchaseOrderLineDisclosure.openCount}`}
+          open={newPurchaseOrderLineDisclosure.isOpen}
           initialValues={purchaseOrderLineInitialValues}
           type="modal"
           onClose={newPurchaseOrderLineDisclosure.onClose}
         />
       )}
-      {duplicateLine && (
+      {duplicateLine.item && (
         <PurchaseOrderLineForm
-          key={duplicateLine.id}
-          initialValues={getDuplicateLineValues(duplicateLine)}
+          key={`duplicateLine-${duplicateLine.key}`}
+          open={duplicateLine.isOpen}
+          initialValues={getDuplicateLineValues(duplicateLine.item)}
           type="modal"
-          onClose={() => setDuplicateLine(null)}
+          onClose={duplicateLine.close}
         />
       )}
-      {deleteLineDisclosure.isOpen && (
-        <DeletePurchaseOrderLine line={deleteLine!} onCancel={onDeleteCancel} />
+      {deleteLine && (
+        <DeletePurchaseOrderLine
+          line={deleteLine}
+          isOpen={deleteLineDisclosure.isOpen}
+          onCancel={onDeleteCancel}
+        />
       )}
     </>
   );
@@ -495,32 +500,29 @@ function PurchaseOrderLineItem({
           </DropdownMenu>
         </div>
       </HStack>
-      {receivingDisclosure.isOpen && (
-        <Confirm
-          action={path.to.purchaseOrderLineReceiving(orderId, line.id!)}
-          title={canStopReceiving ? t`Stop Receiving` : t`Resume Receiving`}
-          text={
-            canStopReceiving
-              ? t`The remaining ${line.quantityToReceive} ${
-                  line.purchaseUnitOfMeasureCode ?? ""
-                } will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged.`
-              : t`The remaining ${line.quantityToReceive} ${
-                  line.purchaseUnitOfMeasureCode ?? ""
-                } will be expected again and counted as incoming supply.`
-          }
-          confirmText={
-            canStopReceiving ? t`Stop Receiving` : t`Resume Receiving`
-          }
-          onCancel={receivingDisclosure.onClose}
-          onSubmit={receivingDisclosure.onClose}
-        >
-          <input
-            type="hidden"
-            name="intent"
-            value={canStopReceiving ? "close" : "reopen"}
-          />
-        </Confirm>
-      )}
+      <Confirm
+        isOpen={receivingDisclosure.isOpen}
+        action={path.to.purchaseOrderLineReceiving(orderId, line.id!)}
+        title={canStopReceiving ? t`Stop Receiving` : t`Resume Receiving`}
+        text={
+          canStopReceiving
+            ? t`The remaining ${line.quantityToReceive} ${
+                line.purchaseUnitOfMeasureCode ?? ""
+              } will no longer be expected. On-order supply and MRP will stop counting it. The ordered quantity and pricing are unchanged.`
+            : t`The remaining ${line.quantityToReceive} ${
+                line.purchaseUnitOfMeasureCode ?? ""
+              } will be expected again and counted as incoming supply.`
+        }
+        confirmText={canStopReceiving ? t`Stop Receiving` : t`Resume Receiving`}
+        onCancel={receivingDisclosure.onClose}
+        onSubmit={receivingDisclosure.onClose}
+      >
+        <input
+          type="hidden"
+          name="intent"
+          value={canStopReceiving ? "close" : "reopen"}
+        />
+      </Confirm>
     </VStack>
   );
 }

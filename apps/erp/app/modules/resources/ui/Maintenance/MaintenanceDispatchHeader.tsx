@@ -155,20 +155,18 @@ const MaintenanceDispatchHeader = () => {
           </>
         }
       />
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteMaintenanceDispatch(dispatchId)}
-          isOpen={deleteModal.isOpen}
-          name={routeData?.dispatch?.maintenanceDispatchId!}
-          text={t`Are you sure you want to delete this maintenance dispatch? This cannot be undone.`}
-          onCancel={() => {
-            deleteModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteModal.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteMaintenanceDispatch(dispatchId)}
+        isOpen={deleteModal.isOpen}
+        name={routeData?.dispatch?.maintenanceDispatchId!}
+        text={t`Are you sure you want to delete this maintenance dispatch? This cannot be undone.`}
+        onCancel={() => {
+          deleteModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteModal.onClose();
+        }}
+      />
     </>
   );
 };

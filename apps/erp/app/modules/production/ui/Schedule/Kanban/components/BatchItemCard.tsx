@@ -24,7 +24,7 @@ import {
 } from "@carbon/react";
 import { useSortable } from "@dnd-kit/sortable";
 import { useLingui } from "@lingui/react/macro";
-import { memo, useState } from "react";
+import { memo } from "react";
 import {
   LuCircleCheck,
   LuEllipsisVertical,
@@ -42,6 +42,7 @@ import { CustomerAvatar, OperationStatusIcon } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { MoveToSubmenu } from "~/components/MoveToSubmenu";
 import { useDateFormatter } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
 import { path } from "~/utils/path";
 import {
   KANBAN_CARD_SHELL,
@@ -183,7 +184,7 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
 
   // Removing a member sends its operation back to the schedule to run on its
   // own — easy to trigger by accident on a dense board, so it's confirmed.
-  const [removing, setRemoving] = useState<OperationItem | null>(null);
+  const removing = useDrawerItem<OperationItem>();
 
   return (
     <>
@@ -393,7 +394,7 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
                     variant="ghost"
                     size="sm"
                     className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 text-muted-foreground hover:text-destructive"
-                    onClick={() => setRemoving(m)}
+                    onClick={() => removing.open(m)}
                   />
                 )}
               </HStack>
@@ -401,22 +402,23 @@ const BatchItemCardBody = memo(function BatchItemCardBody({
           ))}
         </CardContent>
       </Card>
-      {removing && (
+      {removing.item && (
         <ConfirmDelete
           action={path.to.priorityBatchingUpdate}
+          isOpen={removing.isOpen}
           title={t`Remove from batch`}
-          name={removing.jobReadableId ?? t`operation`}
+          name={removing.item.jobReadableId ?? t`operation`}
           text={t`Remove ${
-            removing.jobReadableId ?? "this operation"
+            removing.item.jobReadableId ?? "this operation"
           } from this batch? Its operation goes back to the schedule to run on its own.`}
           deleteText={t`Remove`}
           fields={{
             intent: "remove",
             batchId: item.batchId,
-            jobOperationIds: removing.id
+            jobOperationIds: removing.item.id
           }}
-          onCancel={() => setRemoving(null)}
-          onSubmit={() => setRemoving(null)}
+          onCancel={removing.close}
+          onSubmit={removing.close}
         />
       )}
     </>

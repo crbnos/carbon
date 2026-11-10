@@ -528,48 +528,45 @@ const SalesReturnOrderProperties = () => {
         />
       </VStack>
 
-      {unlinkDisclosure.isOpen && (
-        <Modal
-          open={unlinkDisclosure.isOpen}
-          onOpenChange={(open) => {
-            if (!open) unlinkDisclosure.onClose();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Unlink RMA from sales order?</Trans>
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <p className="text-sm text-muted-foreground">
-                <Trans>
-                  This will remove the link between{" "}
-                  {routeData?.salesReturnOrder?.salesReturnOrderId} and its
-                  sales order. The RMA will no longer appear under the sales
-                  order.
-                </Trans>
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={unlinkDisclosure.onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button
-                variant="destructive"
-                leftIcon={<LuUnlink2 className="w-3 h-3" />}
-                onClick={() => {
-                  onUpdate("salesOrderId", null);
-                  unlinkDisclosure.onClose();
-                }}
-              >
-                <Trans>Unlink</Trans>
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={unlinkDisclosure.isOpen}
+        onOpenChange={(open) => {
+          if (!open) unlinkDisclosure.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Unlink RMA from sales order?</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-muted-foreground">
+              <Trans>
+                This will remove the link between{" "}
+                {routeData?.salesReturnOrder?.salesReturnOrderId} and its sales
+                order. The RMA will no longer appear under the sales order.
+              </Trans>
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={unlinkDisclosure.onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              variant="destructive"
+              leftIcon={<LuUnlink2 className="w-3 h-3" />}
+              onClick={() => {
+                onUpdate("salesOrderId", null);
+                unlinkDisclosure.onClose();
+              }}
+            >
+              <Trans>Unlink</Trans>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
       <CustomFormInlineFields
         customFields={

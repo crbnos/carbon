@@ -30,10 +30,44 @@ export function WeekCertificationModal({
   certificationText,
   weekLabel,
   isSubmitting,
+  open = true,
   onSubmit,
   onClose
 }: {
   /** The text for the employee's FLSA status, or null when none is set. */
+  certificationText: string | null;
+  weekLabel: string;
+  isSubmitting: boolean;
+  open?: boolean;
+  onSubmit: (certificationText: string) => void;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => !open && !isSubmitting && onClose()}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <WeekCertificationBody
+          certificationText={certificationText}
+          weekLabel={weekLabel}
+          isSubmitting={isSubmitting}
+          onSubmit={onSubmit}
+          onClose={onClose}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function WeekCertificationBody({
+  certificationText,
+  weekLabel,
+  isSubmitting,
+  onSubmit,
+  onClose
+}: {
   certificationText: string | null;
   weekLabel: string;
   isSubmitting: boolean;
@@ -44,68 +78,65 @@ export function WeekCertificationModal({
   const [certified, setCertified] = useState(false);
 
   return (
-    <Modal open onOpenChange={(open) => !open && !isSubmitting && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Certify and Submit</Trans>
-          </ModalTitle>
-          <ModalDescription>{weekLabel}</ModalDescription>
-        </ModalHeader>
-        <ModalBody>
-          {certificationText ? (
-            <div className="flex flex-col gap-4">
-              <blockquote className="w-full whitespace-pre-wrap rounded-lg border border-border bg-muted/40 p-4 text-base">
-                {certificationText}
-              </blockquote>
-              {/* The whole row is the touch target, not only the box. */}
-              <label
-                htmlFor={checkboxId}
-                className="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border border-border px-4 text-base"
-              >
-                <Checkbox
-                  id={checkboxId}
-                  className="size-6"
-                  isChecked={certified}
-                  onCheckedChange={(checked) => setCertified(checked === true)}
-                />
-                <Trans>I certify this statement</Trans>
-              </label>
-            </div>
-          ) : (
-            <Alert variant="warning">
-              <LuTriangleAlert />
-              <AlertDescription>
-                <Trans>
-                  No certification text is set for you. Ask an administrator to
-                  set it in Settings → Time.
-                </Trans>
-              </AlertDescription>
-            </Alert>
-          )}
-        </ModalBody>
-        <ModalFooter>
-          <Button
-            size="lg"
-            variant="secondary"
-            isDisabled={isSubmitting}
-            onClick={onClose}
-          >
-            <Trans>Cancel</Trans>
-          </Button>
-          <Button
-            size="lg"
-            isDisabled={!certificationText || !certified || isSubmitting}
-            isLoading={isSubmitting}
-            onClick={() => {
-              if (certificationText && certified) onSubmit(certificationText);
-            }}
-          >
-            <Trans>Certify and submit</Trans>
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Certify and Submit</Trans>
+        </ModalTitle>
+        <ModalDescription>{weekLabel}</ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        {certificationText ? (
+          <div className="flex flex-col gap-4">
+            <blockquote className="w-full whitespace-pre-wrap rounded-lg border border-border bg-muted/40 p-4 text-base">
+              {certificationText}
+            </blockquote>
+            {/* The whole row is the touch target, not only the box. */}
+            <label
+              htmlFor={checkboxId}
+              className="flex min-h-12 cursor-pointer items-center gap-3 rounded-lg border border-border px-4 text-base"
+            >
+              <Checkbox
+                id={checkboxId}
+                className="size-6"
+                isChecked={certified}
+                onCheckedChange={(checked) => setCertified(checked === true)}
+              />
+              <Trans>I certify this statement</Trans>
+            </label>
+          </div>
+        ) : (
+          <Alert variant="warning">
+            <LuTriangleAlert />
+            <AlertDescription>
+              <Trans>
+                No certification text is set for you. Ask an administrator to
+                set it in Settings → Time.
+              </Trans>
+            </AlertDescription>
+          </Alert>
+        )}
+      </ModalBody>
+      <ModalFooter>
+        <Button
+          size="lg"
+          variant="secondary"
+          isDisabled={isSubmitting}
+          onClick={onClose}
+        >
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          size="lg"
+          isDisabled={!certificationText || !certified || isSubmitting}
+          isLoading={isSubmitting}
+          onClick={() => {
+            if (certificationText && certified) onSubmit(certificationText);
+          }}
+        >
+          <Trans>Certify and submit</Trans>
+        </Button>
+      </ModalFooter>
+    </>
   );
 }

@@ -66,6 +66,7 @@ import type { SalesReturnOrder, SalesReturnOrderLine } from "./types";
 type SalesReturnOrderLineFormProps = {
   initialValues: z.infer<typeof salesReturnOrderLineValidator>;
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
   /** Full line row when editing (drives disposition, short close, tracking) */
   line?: SalesReturnOrderLine;
@@ -122,6 +123,7 @@ function SourceReference({
 const SalesReturnOrderLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose,
   line,
   returnReasons,
@@ -422,7 +424,7 @@ const SalesReturnOrderLineForm = ({
 
   return (
     <ModalCardProvider type={type}>
-      <ModalCard onClose={onClose} isCollapsible={isEditing}>
+      <ModalCard open={open} onClose={onClose} isCollapsible={isEditing}>
         <ModalCardContent size="xxlarge">
           <ValidatedForm
             defaultValues={initialValues}

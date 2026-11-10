@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { upsertCustomerPortal } from "@carbon/ee/customer-portals.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
@@ -134,7 +134,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function EditCustomerPortalRoute() {
   const { customerPortal, expiresOn } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const initialValues = {
     id: customerPortal.id ?? undefined,
@@ -146,7 +146,8 @@ export default function EditCustomerPortalRoute() {
     <CustomerPortalForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

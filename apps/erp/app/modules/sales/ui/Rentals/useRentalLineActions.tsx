@@ -3,10 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useLingui } from "@lingui/react/macro";
-import { useState } from "react";
 import { useSubmit } from "react-router";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
-import { useCompanyToday, useCurrencyFormatter, usePermissions } from "~/hooks";
+import {
+  useCompanyToday,
+  useCurrencyFormatter,
+  useDrawerItem,
+  usePermissions
+} from "~/hooks";
 import { path } from "~/utils/path";
 import RentalAgreementReleaseForm from "./RentalAgreementReleaseForm";
 import type { RentalAgreement, RentalAgreementLine } from "./types";
@@ -46,10 +50,15 @@ export function useRentalLineActions(rentalAgreement: RentalAgreement) {
   const permissions = usePermissions();
   const submit = useSubmit();
   const today = useCompanyToday();
-  const [pending, setPending] = useState<{
+  const {
+    item: pending,
+    isOpen,
+    open: openPending,
+    close
+  } = useDrawerItem<{
     action: RentalLineAction;
     line: RentalAgreementLine;
-  } | null>(null);
+  }>();
 
   const id = rentalAgreement.id!;
   const isDraft = rentalAgreement.status === "Draft";
@@ -113,9 +122,8 @@ export function useRentalLineActions(rentalAgreement: RentalAgreement) {
       });
       return;
     }
-    setPending({ action, line });
+    openPending({ action, line });
   };
-  const close = () => setPending(null);
 
   const label = pending ? rentalUnitLabel(pending.line) : "";
 
@@ -124,6 +132,7 @@ export function useRentalLineActions(rentalAgreement: RentalAgreement) {
       {pending.action === "sell" && (
         <Confirm
           action={path.to.rentalAgreementLineSell(id, pending.line.id)}
+          isOpen={isOpen}
           title={t`Sell ${label} to the customer`}
           text={t`The customer exercises the purchase option. A purchase option charge of ${currencyFormatter.format(purchaseOptionAmount)} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold.`}
           confirmText={t`Sell to Customer`}
@@ -135,7 +144,7 @@ export function useRentalLineActions(rentalAgreement: RentalAgreement) {
       {pending.action === "delete" && (
         <ConfirmDelete
           action={path.to.deleteRentalAgreementLine(id, pending.line.id)}
-          isOpen
+          isOpen={isOpen}
           name={label}
           text={t`Are you sure you want to remove ${label} from this agreement?`}
           onCancel={close}
@@ -144,6 +153,7 @@ export function useRentalLineActions(rentalAgreement: RentalAgreement) {
       )}
       {pending.action === "release" && (
         <RentalAgreementReleaseForm
+          open={isOpen}
           action={path.to.rentalAgreementLineRelease(id, pending.line.id)}
           initialValues={{
             rentalAgreementLineId: pending.line.id,

@@ -381,45 +381,43 @@ const CadModel = ({
                 </div>
               ) : null}
             </div>
-            {deleteModal.isOpen && (
-              <Modal
-                open
-                onOpenChange={(open) => {
-                  if (!open) deleteModal.onClose();
-                }}
-              >
-                <ModalOverlay />
-                <ModalContent>
-                  <ModalHeader>
-                    <ModalTitle>Delete 3D model</ModalTitle>
-                  </ModalHeader>
-                  <ModalBody>
-                    <p className="text-sm text-muted-foreground">
-                      Are you sure you want to delete this 3D file and image?
-                      Continuing will remove both the preview image and the 3D
-                      file from this record. This action cannot be undone.
-                    </p>
-                  </ModalBody>
-                  <ModalFooter>
-                    <Button
-                      variant="secondary"
-                      onClick={deleteModal.onClose}
-                      isDisabled={isDeleting}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={onDelete}
-                      isLoading={isDeleting}
-                      isDisabled={isDeleting}
-                    >
-                      Delete
-                    </Button>
-                  </ModalFooter>
-                </ModalContent>
-              </Modal>
-            )}
+            <Modal
+              open={deleteModal.isOpen}
+              onOpenChange={(open) => {
+                if (!open) deleteModal.onClose();
+              }}
+            >
+              <ModalOverlay />
+              <ModalContent>
+                <ModalHeader>
+                  <ModalTitle>Delete 3D model</ModalTitle>
+                </ModalHeader>
+                <ModalBody>
+                  <p className="text-sm text-muted-foreground">
+                    Are you sure you want to delete this 3D file and image?
+                    Continuing will remove both the preview image and the 3D
+                    file from this record. This action cannot be undone.
+                  </p>
+                </ModalBody>
+                <ModalFooter>
+                  <Button
+                    variant="secondary"
+                    onClick={deleteModal.onClose}
+                    isDisabled={isDeleting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={onDelete}
+                    isLoading={isDeleting}
+                    isDisabled={isDeleting}
+                  >
+                    Delete
+                  </Button>
+                </ModalFooter>
+              </ModalContent>
+            </Modal>
           </>
         ) : (
           <CadModelUpload

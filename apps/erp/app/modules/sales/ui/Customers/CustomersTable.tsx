@@ -369,11 +369,9 @@ const CustomersTable = memo(
             text={t`Are you sure you want to delete ${selectedCustomer.name!}? This cannot be undone.`}
             onCancel={() => {
               deleteModal.onClose();
-              setSelectedCustomer(null);
             }}
             onSubmit={() => {
               deleteModal.onClose();
-              setSelectedCustomer(null);
             }}
           />
         )}

@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261106203716",
+  "schemaVersion": "20261106214206",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-09T10:15:29.473Z",
+  "exportedAt": "2026-11-09T10:06:40.493Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -1413,7 +1413,9 @@
         "tags",
         "code",
         "requiresStaffing",
-        "responsibleEmployee"
+        "responsibleEmployee",
+        "inspectionStorageUnitId",
+        "rejectedStorageUnitId"
       ]
     },
     {
@@ -5334,7 +5336,9 @@
         "sourceDocument",
         "sourceDocumentId",
         "sourceDocumentLineId",
-        "sourceDocumentReadableId"
+        "sourceDocumentReadableId",
+        "storageUnitId",
+        "acceptedQuantity"
       ]
     },
     {
@@ -6967,7 +6971,8 @@
         "assignee",
         "customFields",
         "tags",
-        "kanbanId"
+        "kanbanId",
+        "receiptId"
       ]
     },
     {
@@ -6990,7 +6995,8 @@
         "createdAt",
         "createdBy",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "receiptLineId"
       ]
     },
     {
@@ -7752,7 +7758,8 @@
         "updatedBy",
         "conversionFactor",
         "requiresSerialTracking",
-        "requiresBatchTracking"
+        "requiresBatchTracking",
+        "requiresInspection"
       ]
     },
     {
@@ -8328,7 +8335,8 @@
         "tags",
         "internalNotes",
         "supplierInteractionId",
-        "postedBy"
+        "postedBy",
+        "inspectionStatus"
       ]
     },
     {

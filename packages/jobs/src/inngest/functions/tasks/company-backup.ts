@@ -3,8 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { randomUUID } from "node:crypto";
-import { createInterface } from "node:readline";
 import { Readable } from "node:stream";
+import { StringDecoder } from "node:string_decoder";
 import { createGunzip, createGzip } from "node:zlib";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getCompanyPrivateBucket } from "@carbon/files";
@@ -288,10 +288,13 @@ export async function serializeTable(
     gzip.on("error", reject);
   });
   for (const row of rows) {
+    // JSON.stringify leaves U+2028/U+2029 raw; escaped, every line-based
+    // reader sees one row per line.
+    const line = JSON.stringify(row)
+      .replaceAll("\u2028", "\\u2028")
+      .replaceAll("\u2029", "\\u2029");
     await new Promise<void>((resolve, reject) => {
-      gzip.write(`${JSON.stringify(row)}\n`, (err) =>
-        err ? reject(err) : resolve()
-      );
+      gzip.write(`${line}\n`, (err) => (err ? reject(err) : resolve()));
     });
   }
   gzip.end();
@@ -302,20 +305,26 @@ export async function serializeTable(
 /**
  * Parse a `tables/<table>.ndjson.gz` into rows. Streams the gunzip line by line,
  * so a huge table is never one giant string nor a single JSON.parse.
+ *
+ * Splits on "\n" only, the one separator `serializeTable` writes. Not readline:
+ * from Node 24 it also ends a line at U+2028/U+2029, which JSON.stringify
+ * leaves unescaped, so a row with pasted text was cut mid-string.
  */
 export async function deserializeTable(
   bytes: ArrayBuffer
 ): Promise<Record<string, unknown>[]> {
   const gunzip = createGunzip();
   Readable.from(Buffer.from(bytes)).pipe(gunzip);
-  const rl = createInterface({
-    input: gunzip,
-    crlfDelay: Number.POSITIVE_INFINITY
-  });
+  const decoder = new StringDecoder("utf8");
   const rows: Record<string, unknown>[] = [];
-  for await (const line of rl) {
-    if (line) rows.push(JSON.parse(line));
+  let rest = "";
+  for await (const chunk of gunzip) {
+    const lines = (rest + decoder.write(chunk as Buffer)).split("\n");
+    rest = lines.pop() ?? "";
+    for (const line of lines) if (line) rows.push(JSON.parse(line));
   }
+  rest += decoder.end();
+  if (rest) rows.push(JSON.parse(rest));
   return rows;
 }
 
@@ -521,6 +530,11 @@ export function isUserScopedIdentityTable(table: TableInfo): boolean {
   );
   return table.foreignKeys.some(
     (fk) =>
+      // The tenant half of a composite FK (`(employeeId, companyId) ->
+      // employee`) keys nothing to a user; counting it marked `payment` and
+      // `reimbursement` as identity, and a foreign restore dropped them.
+      fk.column !== "companyId" &&
+      fk.column !== "companyGroupId" &&
       uniqueCols.has(fk.column) &&
       (fk.refTable === "user" || fk.refTable === "employee")
   );
@@ -528,20 +542,17 @@ export function isUserScopedIdentityTable(table: TableInfo): boolean {
 
 export function selectWipeableTables(
   catalog: Catalog,
-  opts: { includeGroup?: boolean; remap?: boolean } = {}
+  opts: { includeGroup?: boolean } = {}
 ): TableInfo[] {
   const skip = new Set([...SECRET_TABLES, ...IN_PLACE_SKIPPED_TABLES]);
   return catalog.tables.filter(
     (t) =>
       !skip.has(t.name) &&
-      // Identity tables (per-source-user rows) are normally KEPT. But a FOREIGN
-      // restore (remap) re-keys their parents' ids, and `ON DELETE CASCADE` does
-      // NOT fire under `session_replication_role='replica'` — so a kept child would
-      // be left dangling at a deleted/remapped parent. On remap we therefore WIPE
-      // them (reverse-topo wipe clears children before parents) and never reload
-      // them (the load set drops them separately). On an own restore parent ids are
-      // stable, so keeping them is safe.
-      (opts.remap === true || !isUserScopedIdentityTable(t)) &&
+      // Identity tables (per-user rows) are wiped like any other. An own restore
+      // and a revert reload them from the backup, whose users are this
+      // company's; a foreign restore can't (its users collapse onto one) and
+      // leaves them empty. Kept, they missed the backup's state, and a revert
+      // after a foreign restore never brought them back.
       (t.scopeColumn === "companyId" ||
         (opts.includeGroup === true && t.scopeColumn === "companyGroupId"))
   );
@@ -745,32 +756,4 @@ export async function restoreAssetsFromBackup(
     await onProgress?.(++done, total);
   });
   return { copied, failed };
-}
-
-/**
- * Remove every object under a prefix in a bucket (e.g. a backup's `.assets/`
- * folder), recursing into subfolders, so deleting a backup or snapshot leaves no
- * orphaned files.
- */
-export async function removeStoragePrefix(
-  client: SupabaseClient,
-  bucket: string,
-  prefix: string
-): Promise<void> {
-  const { data, error } = await client.storage
-    .from(bucket)
-    .list(prefix, { limit: 1000 });
-  if (error || !data) return;
-  const files: string[] = [];
-  for (const entry of data) {
-    const path = `${prefix}/${entry.name}`;
-    if (entry.id === null) {
-      await removeStoragePrefix(client, bucket, path);
-    } else {
-      files.push(path);
-    }
-  }
-  if (files.length > 0) {
-    await client.storage.from(bucket).remove(files);
-  }
 }

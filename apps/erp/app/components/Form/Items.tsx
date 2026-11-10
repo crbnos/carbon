@@ -16,6 +16,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useRef, useState } from "react";
+import { useDrawerItem } from "~/hooks";
 import ConsumableForm from "~/modules/items/ui/Consumables/ConsumableForm";
 import MaterialForm from "~/modules/items/ui/Materials/MaterialForm";
 import PartForm from "~/modules/items/ui/Parts/PartForm";
@@ -49,7 +50,7 @@ const Items = (props: ItemsSelectProps) => {
   };
   const [items] = useItems();
   const selectTypeModal = useDisclosure();
-  const newItemsModal = useDisclosure();
+  const newItem = useDrawerItem<ItemType>();
   const [created, setCreated] = useState<string>("");
   const [type, setType] = useState<ItemType>("Part");
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -67,13 +68,15 @@ const Items = (props: ItemsSelectProps) => {
   );
 
   const handleCreateClose = () => {
-    setCreated("");
-    newItemsModal.onClose();
-    triggerRef.current?.click();
+    newItem.close();
+    newItem.afterClose(() => triggerRef.current?.click());
   };
 
   const storeEmptyMessage = useEmptyState("item", {
-    onCreate: () => selectTypeModal.onOpen()
+    onCreate: () => {
+      setCreated("");
+      selectTypeModal.onOpen();
+    }
   });
   // Suppress when the store has inactive items but no active ones (filter
   // narrowed to zero) — see Item.tsx for the same pattern.
@@ -94,57 +97,57 @@ const Items = (props: ItemsSelectProps) => {
         }}
       />
 
-      {selectTypeModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) selectTypeModal.onClose();
-          }}
-        >
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>
-                <Trans>Select Item Type</Trans>
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <div className="grid grid-cols-1 gap-4">
-                {itemType.map((option) => (
-                  <Button
-                    key={option}
-                    leftIcon={<MethodItemTypeIcon type={option} />}
-                    className="flex w-full"
-                    variant={type === option ? "primary" : "secondary"}
-                    size="lg"
-                    onClick={() => setType(option)}
-                  >
-                    {translateType(option)}
-                  </Button>
-                ))}
-              </div>
-            </ModalBody>
-            <ModalFooter>
-              <Button
-                variant="secondary"
-                onClick={() => selectTypeModal.onClose()}
-              >
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button
-                onClick={() => {
-                  selectTypeModal.onClose();
-                  newItemsModal.onOpen();
-                }}
-              >
-                <Trans>Create</Trans>
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={selectTypeModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) selectTypeModal.onClose();
+        }}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>
+              <Trans>Select Item Type</Trans>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <div className="grid grid-cols-1 gap-4">
+              {itemType.map((option) => (
+                <Button
+                  key={option}
+                  leftIcon={<MethodItemTypeIcon type={option} />}
+                  className="flex w-full"
+                  variant={type === option ? "primary" : "secondary"}
+                  size="lg"
+                  onClick={() => setType(option)}
+                >
+                  {translateType(option)}
+                </Button>
+              ))}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="secondary"
+              onClick={() => selectTypeModal.onClose()}
+            >
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              onClick={() => {
+                selectTypeModal.onClose();
+                newItem.open(type);
+              }}
+            >
+              <Trans>Create</Trans>
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
-      {type === "Part" && newItemsModal.isOpen && (
+      {newItem.item === "Part" && (
         <PartForm
+          key={newItem.key}
+          open={newItem.isOpen}
           type="modal"
           onClose={handleCreateClose}
           initialValues={{
@@ -163,8 +166,10 @@ const Items = (props: ItemsSelectProps) => {
           }}
         />
       )}
-      {type === "Material" && newItemsModal.isOpen && (
+      {newItem.item === "Material" && (
         <MaterialForm
+          key={newItem.key}
+          open={newItem.isOpen}
           type="modal"
           onClose={handleCreateClose}
           initialValues={{
@@ -183,8 +188,10 @@ const Items = (props: ItemsSelectProps) => {
           }}
         />
       )}
-      {type === "Tool" && newItemsModal.isOpen && (
+      {newItem.item === "Tool" && (
         <ToolForm
+          key={newItem.key}
+          open={newItem.isOpen}
           type="modal"
           onClose={handleCreateClose}
           initialValues={{
@@ -202,8 +209,10 @@ const Items = (props: ItemsSelectProps) => {
           }}
         />
       )}
-      {type === "Consumable" && newItemsModal.isOpen && (
+      {newItem.item === "Consumable" && (
         <ConsumableForm
+          key={newItem.key}
+          open={newItem.isOpen}
           type="modal"
           onClose={handleCreateClose}
           initialValues={{
@@ -220,8 +229,10 @@ const Items = (props: ItemsSelectProps) => {
           }}
         />
       )}
-      {type === "Service" && newItemsModal.isOpen && (
+      {newItem.item === "Service" && (
         <ServiceForm
+          key={newItem.key}
+          open={newItem.isOpen}
           type="modal"
           onClose={handleCreateClose}
           initialValues={{

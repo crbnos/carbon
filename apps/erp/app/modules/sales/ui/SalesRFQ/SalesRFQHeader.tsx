@@ -21,11 +21,10 @@ import {
   ModalHeader,
   ModalTitle,
   useDisclosure,
-  useMount,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LuCircleCheck,
   LuCircleX,
@@ -237,38 +236,35 @@ const SalesRFQHeader = () => {
           </>
         }
       />
-      {convertToQuoteModal.isOpen && (
-        <ConvertToQuoteModal
-          lines={routeData?.lines ?? []}
-          rfqId={rfqId}
-          onClose={convertToQuoteModal.onClose}
-        />
-      )}
-      {requiresCustomerAlert.isOpen && (
-        <RequiresCustomerAlert onClose={requiresCustomerAlert.onClose} />
-      )}
-      {noQuoteReasonModal.isOpen && (
-        <NoQuoteReasonModal
-          fetcher={statusFetcher}
-          rfqId={rfqId}
-          onClose={noQuoteReasonModal.onClose}
-        />
-      )}
-      {deleteRFQModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteSalesRfq(rfqId)}
-          isOpen={deleteRFQModal.isOpen}
-          name={routeData?.rfqSummary?.rfqId!}
-          text={t`Are you sure you want to delete ${routeData?.rfqSummary
-            ?.rfqId!}? This cannot be undone.`}
-          onCancel={() => {
-            deleteRFQModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteRFQModal.onClose();
-          }}
-        />
-      )}
+      <ConvertToQuoteModal
+        open={convertToQuoteModal.isOpen}
+        lines={routeData?.lines ?? []}
+        rfqId={rfqId}
+        onClose={convertToQuoteModal.onClose}
+      />
+      <RequiresCustomerAlert
+        open={requiresCustomerAlert.isOpen}
+        onClose={requiresCustomerAlert.onClose}
+      />
+      <NoQuoteReasonModal
+        open={noQuoteReasonModal.isOpen}
+        fetcher={statusFetcher}
+        rfqId={rfqId}
+        onClose={noQuoteReasonModal.onClose}
+      />
+      <ConfirmDelete
+        action={path.to.deleteSalesRfq(rfqId)}
+        isOpen={deleteRFQModal.isOpen}
+        name={routeData?.rfqSummary?.rfqId!}
+        text={t`Are you sure you want to delete ${routeData?.rfqSummary
+          ?.rfqId!}? This cannot be undone.`}
+        onCancel={() => {
+          deleteRFQModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteRFQModal.onClose();
+        }}
+      />
     </>
   );
 };
@@ -281,10 +277,12 @@ const rfqNoQuoteReasonValidator = z.object({
 });
 
 function NoQuoteReasonModal({
+  open,
   fetcher,
   rfqId,
   onClose
 }: {
+  open: boolean;
   fetcher: FetcherWithComponents<{}>;
   rfqId: string;
   onClose: () => void;
@@ -310,12 +308,13 @@ function NoQuoteReasonModal({
     );
   };
 
-  useMount(() => {
-    fetchReasons();
-  });
+  // biome-ignore lint/correctness/useExhaustiveDependencies: load the reasons each time the modal opens
+  useEffect(() => {
+    if (open) fetchReasons();
+  }, [open]);
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <ValidatedForm
           method="post"
@@ -358,9 +357,15 @@ function NoQuoteReasonModal({
   );
 }
 
-function RequiresCustomerAlert({ onClose }: { onClose: () => void }) {
+function RequiresCustomerAlert({
+  open,
+  onClose
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <ModalHeader>
           <ModalTitle>
@@ -392,10 +397,12 @@ function RequiresCustomerAlert({ onClose }: { onClose: () => void }) {
 }
 
 function ConvertToQuoteModal({
+  open,
   lines,
   rfqId,
   onClose
 }: {
+  open: boolean;
   lines: SalesRFQLine[];
   rfqId: string;
   onClose: () => void;
@@ -428,7 +435,7 @@ function ConvertToQuoteModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();

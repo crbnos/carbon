@@ -145,11 +145,9 @@ const RevenueRecognitionRunsTable = memo(
             text={t`Are you sure you want to delete ${selectedRun.runId}? This cannot be undone.`}
             onCancel={() => {
               deleteModal.onClose();
-              setSelectedRun(null);
             }}
             onSubmit={() => {
               deleteModal.onClose();
-              setSelectedRun(null);
             }}
           />
         )}

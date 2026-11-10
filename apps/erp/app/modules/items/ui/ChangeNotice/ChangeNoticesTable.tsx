@@ -365,18 +365,12 @@ const ChangeNoticesTable = memo(
           table="changeOrder"
           withSavedView
         />
-        {deleteDisclosure.isOpen && selectedChangeNotice && (
+        {selectedChangeNotice && (
           <ConfirmDelete
             action={path.to.deleteChangeNotice(selectedChangeNotice.id!)}
-            isOpen
-            onCancel={() => {
-              setSelectedChangeNotice(null);
-              deleteDisclosure.onClose();
-            }}
-            onSubmit={() => {
-              setSelectedChangeNotice(null);
-              deleteDisclosure.onClose();
-            }}
+            isOpen={deleteDisclosure.isOpen}
+            onCancel={deleteDisclosure.onClose}
+            onSubmit={deleteDisclosure.onClose}
             name={selectedChangeNotice.name ?? "change notice"}
             text={t`Are you sure you want to delete this change notice?`}
           />

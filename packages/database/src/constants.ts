@@ -389,6 +389,7 @@ export const Constants = {
         "Passed",
         "Failed",
         "Partial",
+        "Cancelled",
       ],
       intercompanyEliminationRole: [
         "Control",
@@ -911,6 +912,15 @@ export const Constants = {
         "Direct Supervision",
         "Direct Support",
         "Not Qualified",
+      ],
+      receiptInspectionStatus: [
+        "Not Required",
+        "Pending Inspection",
+        "Inspection In Progress",
+        "Inspection Passed",
+        "Inspection Failed",
+        "Partially Passed",
+        "Put Away",
       ],
       receiptSourceDocument: [
         "Sales Order",

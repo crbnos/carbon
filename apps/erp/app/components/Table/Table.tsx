@@ -23,8 +23,8 @@ import {
   Tr,
   useEscape,
   useIsomorphicLayoutEffect,
-  useMount,
   useOutsideClick,
+  useRouteData,
   useViewport,
   VStack
 } from "@carbon/react";
@@ -57,7 +57,7 @@ import {
   LuTrendingUpDown,
   LuTriangleAlert
 } from "react-icons/lu";
-import { useNavigation } from "react-router";
+import { useLocation, useNavigate, useNavigation } from "react-router";
 import { useSpinDelay } from "spin-delay";
 import type {
   EditableTableCellComponent,
@@ -66,6 +66,7 @@ import type {
 import { useUrlParams } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { fieldMappings } from "~/modules/shared/imports.models";
+import { path } from "~/utils/path";
 import { Row, TableHeader, useSort } from "./components";
 import { CompactList } from "./components/Compact";
 import { CompactToolbar } from "./components/Compact/CompactToolbar";
@@ -84,6 +85,15 @@ import {
 } from "./components/SyntheticColumns";
 import { TableLoadingSkeleton } from "./components/TableLoadingSkeleton";
 import { readRowId } from "./infiniteRowsStore";
+import {
+  columnsDiffer,
+  columnsForTable,
+  parseRememberedTableState,
+  type RememberedTableState,
+  rememberedQuery,
+  type TableColumnsState,
+  tableStateKey
+} from "./rememberedState";
 import { applyRowEdits, pruneRowEdits, type RowEdits, tick } from "./rowEdits";
 import type {
   BulkActionScope,
@@ -423,6 +433,18 @@ const Table = <T extends object>({
   autoHeight = false
 }: TableProps<T>) => {
   const { t } = useLingui();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const navigation = useNavigation();
+  const [params] = useUrlParams();
+  const identity = useRouteData<{
+    user?: { id?: string };
+    company?: { id?: string };
+  }>(path.to.authenticatedRoot);
+  const storageKey =
+    tableName && identity?.user?.id && identity?.company?.id
+      ? tableStateKey(identity.user.id, identity.company.id, tableName)
+      : null;
   const tableContainerRef = useRef<HTMLDivElement>(null);
   // Visible width of the scroll container, for `pinExpandedRows` and the
   // `groupRowsBy` header rows: both stay in view as the table scrolls sideways.
@@ -545,16 +567,6 @@ const Table = <T extends object>({
   // Anchor row (by id) for shift-click range selection.
   const selectionAnchorRef = useRef<string | null>(null);
 
-  /* Column Visibility */
-  const [columnVisibility, setColumnVisibility] = useState(
-    currentView?.columnVisibility ?? defaultColumnVisibility ?? {}
-  );
-
-  /* Column Ordering */
-  const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(
-    currentView?.columnOrder ?? defaultColumnOrder ?? []
-  );
-
   // The synthetic columns first (left) and last (right), then the caller's
   // default pins.
   const getDefaultColumnPinning = (): ColumnPinningState => ({
@@ -572,9 +584,180 @@ const Table = <T extends object>({
         : [])
     ]
   });
-  const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(
-    () => currentView?.columnPinning ?? getDefaultColumnPinning()
+  const inferredColumnOrder = columns.map(
+    (column) =>
+      column.id ??
+      getAccessorKey(column) ??
+      (typeof column.header === "string" ? column.header : undefined)
   );
+  const naturalColumnOrder = inferredColumnOrder.every(
+    (id): id is string => !!id
+  )
+    ? [
+        ...(tableName && renderExpandedRow ? ["Expand"] : []),
+        ...(tableName && withSelectableRows ? ["Select"] : []),
+        ...inferredColumnOrder,
+        ...(tableName && renderContextMenu ? ["Actions"] : [])
+      ]
+    : [];
+  const defaultColumnsSignature = JSON.stringify({
+    columnVisibility: defaultColumnVisibility ?? {},
+    columnOrder: defaultColumnOrder ?? naturalColumnOrder,
+    columnPinning: getDefaultColumnPinning()
+  });
+  const defaultColumns = useMemo<TableColumnsState>(
+    () => JSON.parse(defaultColumnsSignature),
+    [defaultColumnsSignature]
+  );
+  const [columnVisibility, setColumnVisibility] = useState(
+    currentView?.columnVisibility ?? defaultColumns.columnVisibility
+  );
+  const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(
+    currentView?.columnOrder ?? defaultColumns.columnOrder
+  );
+  const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(
+    () => currentView?.columnPinning ?? defaultColumns.columnPinning
+  );
+  const remembered = useRef<RememberedTableState | null>(null);
+  const applyingColumns = useRef<typeof defaultColumns | null>(null);
+  const previousQuery = useRef<{ search: string; view: string | null } | null>(
+    null
+  );
+  const restoringQuery = useRef<string | null>(null);
+  const resetting = useRef(false);
+  const [hydratedKey, setHydratedKey] = useState<string | null>(null);
+
+  // Read only after hydration. The server and first client render use the
+  // same defaults, then the browser's preference replaces them.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: defaults are caller literals and view is the saved-view identity
+  useEffect(() => {
+    let saved: RememberedTableState | null = null;
+    if (storageKey) {
+      try {
+        saved = parseRememberedTableState(
+          window.localStorage.getItem(storageKey)
+        );
+      } catch {
+        // Storage may be disabled.
+      }
+    }
+    remembered.current = saved;
+    previousQuery.current = null;
+    restoringQuery.current = null;
+    const columns = columnsForTable(currentView, saved, defaultColumns);
+    applyingColumns.current = columns;
+    setColumnVisibility(columns.columnVisibility);
+    setColumnOrder(columns.columnOrder);
+    setColumnPinning(columns.columnPinning);
+    setHydratedKey(storageKey);
+  }, [storageKey, view]);
+
+  // A list's loader reads URL filters. Restore them by replacing the bare
+  // navigation before writing any empty URL state back to localStorage.
+  useEffect(() => {
+    if (!storageKey || hydratedKey !== storageKey) return;
+    if (restoringQuery.current) {
+      if (location.search !== restoringQuery.current) {
+        if (navigation.state !== "idle") return;
+        // A newer navigation superseded restoration. Try from the settled URL
+        // rather than leaving future preference writes blocked.
+        previousQuery.current = null;
+      }
+      restoringQuery.current = null;
+    }
+    if (resetting.current) {
+      if (view || params.has("filter") || params.has("sort")) return;
+      resetting.current = false;
+    }
+    const previous = previousQuery.current;
+    if (view) {
+      previousQuery.current = { search: location.search, view };
+      return;
+    }
+    if (!previous || previous.view || location.state?.restoreRememberedTable) {
+      const next = rememberedQuery(params, remembered.current, false);
+      if (next) {
+        const search = `?${next}`;
+        previousQuery.current = { search, view: null };
+        restoringQuery.current = search;
+        navigate({ search }, { replace: true });
+        return;
+      }
+    }
+    previousQuery.current = { search: location.search, view: null };
+    const applying = applyingColumns.current;
+    if (applying) {
+      if (
+        columnVisibility !== applying.columnVisibility ||
+        JSON.stringify(columnOrder) !== JSON.stringify(applying.columnOrder) ||
+        columnPinning !== applying.columnPinning
+      ) {
+        return;
+      }
+      applyingColumns.current = null;
+    }
+    const state: RememberedTableState = {
+      columnVisibility,
+      columnOrder,
+      columnPinning,
+      filters: params.getAll("filter").filter(Boolean),
+      sorts: params.getAll("sort").filter(Boolean)
+    };
+    try {
+      if (
+        !columnsDiffer(state, defaultColumns) &&
+        !state.filters.length &&
+        !state.sorts.length
+      ) {
+        window.localStorage.removeItem(storageKey);
+      } else {
+        window.localStorage.setItem(storageKey, JSON.stringify(state));
+      }
+      remembered.current = state;
+    } catch {
+      // The table still works if storage is unavailable.
+    }
+  }, [
+    storageKey,
+    hydratedKey,
+    view,
+    location.search,
+    location.state?.restoreRememberedTable,
+    params,
+    navigate,
+    navigation.state,
+    columnVisibility,
+    columnOrder,
+    columnPinning,
+    defaultColumns
+  ]);
+
+  const resetRememberedState = useCallback(() => {
+    resetting.current = true;
+    remembered.current = null;
+    try {
+      if (storageKey) window.localStorage.removeItem(storageKey);
+    } catch {
+      // The on-screen reset still works if storage is unavailable.
+    }
+    setColumnVisibility(defaultColumns.columnVisibility);
+    setColumnOrder(defaultColumns.columnOrder);
+    setColumnPinning(defaultColumns.columnPinning);
+    const next = new URLSearchParams(params);
+    next.delete("view");
+    next.delete("filter");
+    next.delete("sort");
+    navigate({ search: next.toString() ? `?${next}` : "" }, { replace: true });
+  }, [storageKey, params, navigate, defaultColumns]);
+
+  const hasRememberedChanges =
+    !!view ||
+    columnsDiffer(
+      { columnVisibility, columnOrder, columnPinning },
+      defaultColumns
+    ) ||
+    params.has("filter") ||
+    params.has("sort");
 
   // "Expand" stays first on the left whenever rows can expand: a list can
   // turn expansion on after mount (a search), and a saved view from before
@@ -586,19 +769,6 @@ const Table = <T extends object>({
       left: renderExpandedRow ? ["Expand", ...left] : left
     };
   }, [columnPinning, renderExpandedRow]);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (currentView) {
-      setColumnVisibility(currentView.columnVisibility);
-      setColumnOrder(currentView.columnOrder);
-      setColumnPinning(currentView.columnPinning);
-    } else {
-      setColumnVisibility(defaultColumnVisibility ?? {});
-      setColumnOrder(defaultColumnOrder ?? []);
-      setColumnPinning(getDefaultColumnPinning());
-    }
-  }, [view]);
 
   /* Sorting */
   const { isSorted, toggleSortByAscending, toggleSortByDescending } = useSort();
@@ -1011,10 +1181,6 @@ const Table = <T extends object>({
     if (selectedCell) setSelectedCell(null);
   }, [editMode]);
 
-  useMount(() => {
-    setColumnOrder(table.getAllLeafColumns().map((column) => column.id));
-  });
-
   const filters = useMemo(
     () =>
       columns.reduce<ColumnFilter[]>((acc, column) => {
@@ -1377,8 +1543,6 @@ const Table = <T extends object>({
     };
   };
 
-  const navigation = useNavigation();
-  const [params] = useUrlParams();
   const { hasFilters, clearFilters } = useFilters();
   const isLoading = useSpinDelay(navigation.state === "loading", {
     delay: 300
@@ -1444,6 +1608,8 @@ const Table = <T extends object>({
         isTableEmpty={isTableEmpty}
         hasFilters={hasFilters}
         clearFilters={clearFilters}
+        hasRememberedChanges={hasRememberedChanges}
+        onResetRememberedState={resetRememberedState}
         csvExport={csvExport}
         importCSV={importCSV}
         renderContextMenu={renderContextMenu}
@@ -1552,7 +1718,9 @@ const Table = <T extends object>({
           csvExport={csvExport}
           titleBadge={titleBadge}
           importCSV={importCSV}
-          hideControls={isTableEmpty}
+          hideControls={isTableEmpty && !hasRememberedChanges}
+          hasRememberedChanges={hasRememberedChanges}
+          onResetRememberedState={resetRememberedState}
         />
       ) : (
         <TableHeader
@@ -1578,6 +1746,8 @@ const Table = <T extends object>({
           renderActions={scopedRenderActions}
           selectedRows={selectedRows}
           selectedCount={allMatching?.count ?? selectedRows.length}
+          hasRememberedChanges={hasRememberedChanges}
+          onResetRememberedState={resetRememberedState}
           setColumnOrder={setColumnOrder}
           setEditMode={setEditMode}
           table={tableName}

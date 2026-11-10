@@ -717,7 +717,6 @@ export async function insertManualInventoryAdjustment(
   );
 
   if (result.error) {
-    // The route string-matches "Insufficient quantity..." on this message.
     return {
       data: null,
       error: {

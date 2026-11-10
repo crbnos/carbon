@@ -23,6 +23,7 @@ import {
   Spinner,
   useDisclosure,
   useMode,
+  usePaneResize,
   useViewport,
   VStack
 } from "@carbon/react";
@@ -263,10 +264,6 @@ export function InspectionView({
   const [gridExpanded, setGridExpanded] = useState(true);
   const [pdfPaneHeightPx, setPdfPaneHeightPx] = useState(360);
   const [stackHeightPx, setStackHeightPx] = useState(0);
-  const [isResizingSplit, setIsResizingSplit] = useState(false);
-  const splitDragRef = useRef<{ startY: number; startPdfPx: number } | null>(
-    null
-  );
   // Until the user drags the splitter, the PDF takes ~45% of the measured stack
   // (capped by the table's half-stack minimum) instead of a fixed pixel default.
   const hasUserResizedRef = useRef(false);
@@ -291,41 +288,15 @@ export function InspectionView({
     return () => ro.disconnect();
   }, [gridExpanded, showDrawing]);
 
-  useEffect(() => {
-    if (!isResizingSplit) return;
-    const onMove = (e: MouseEvent) => {
-      const start = splitDragRef.current;
-      if (!start) return;
-      const dy = e.clientY - start.startY;
-      setPdfPaneHeightPx(
-        clampPdfPaneHeight(start.startPdfPx + dy, stackHeightPx, gridExpanded)
-      );
-    };
-    const onUp = () => {
-      setIsResizingSplit(false);
-      splitDragRef.current = null;
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, [isResizingSplit, stackHeightPx, gridExpanded]);
-
-  const onSplitResizeMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (!gridExpanded) return;
-      e.preventDefault();
+  const splitResize = usePaneResize({
+    height: pdfPaneHeightPx,
+    clamp: (height) => clampPdfPaneHeight(height, stackHeightPx, gridExpanded),
+    enabled: gridExpanded && stackHeightPx > 0,
+    onStart: () => {
       hasUserResizedRef.current = true;
-      splitDragRef.current = {
-        startY: e.clientY,
-        startPdfPx: pdfPaneHeightPx
-      };
-      setIsResizingSplit(true);
     },
-    [gridExpanded, pdfPaneHeightPx]
-  );
+    onCommit: setPdfPaneHeightPx
+  });
 
   // Per-cell saves are quiet (no revalidation), so measurement + derived
   // sample statuses are mirrored locally from the save responses and merged
@@ -886,6 +857,7 @@ export function InspectionView({
             >
               {/* PDF viewer — pinned height while the features table is expanded */}
               <div
+                ref={splitResize.paneRef}
                 className={cn(
                   "flex min-h-0 min-w-full flex-col overflow-hidden rounded-lg border bg-muted",
                   gridExpanded ? "shrink-0" : "min-h-[220px] flex-1"
@@ -940,10 +912,10 @@ export function InspectionView({
                   aria-label={t`Drag to resize drawing and characteristics`}
                   aria-valuenow={Math.round(pdfPaneHeightPx)}
                   className={cn(
-                    "group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80",
-                    isResizingSplit && "bg-muted"
+                    "group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 pointer-coarse:h-6 pointer-coarse:hit-area",
+                    splitResize.isResizing && "bg-muted"
                   )}
-                  onMouseDown={onSplitResizeMouseDown}
+                  {...splitResize.handleProps}
                 >
                   <span className="h-1 w-14 shrink-0 rounded-full bg-muted-foreground/40 group-hover:bg-muted-foreground/65" />
                 </div>
@@ -1115,69 +1087,65 @@ export function InspectionView({
       )}
 
       {/* ── MODALS ── */}
-      {scannerDisclosure.isOpen && (
-        <ScanInspectionSample
-          inspectionId={inspection.id}
-          isSerial={isSerial}
-          remaining={remaining}
-          inspected={inspected}
-          sampleSize={inspection.sampleSize}
-          fails={fails}
-          acceptanceNumber={inspection.acceptanceNumber}
-          onClose={scannerDisclosure.onClose}
-        />
-      )}
+      <ScanInspectionSample
+        open={scannerDisclosure.isOpen}
+        inspectionId={inspection.id}
+        isSerial={isSerial}
+        remaining={remaining}
+        inspected={inspected}
+        sampleSize={inspection.sampleSize}
+        fails={fails}
+        acceptanceNumber={inspection.acceptanceNumber}
+        onClose={scannerDisclosure.onClose}
+      />
 
-      {acceptDisclosure.isOpen && (
-        <AcceptLotModal
-          inspectionId={inspection.id}
-          operationId={operationId}
-          fails={fails}
-          remaining={acceptRemaining}
-          eventIds={eventIds}
-          onClose={acceptDisclosure.onClose}
-        />
-      )}
+      <AcceptLotModal
+        open={acceptDisclosure.isOpen}
+        inspectionId={inspection.id}
+        operationId={operationId}
+        fails={fails}
+        remaining={acceptRemaining}
+        eventIds={eventIds}
+        onClose={acceptDisclosure.onClose}
+      />
 
-      {rejectDisclosure.isOpen && (
-        <DispositionModal
-          decision="Reject"
-          inspectionId={inspection.id}
-          operationId={operationId}
-          isSerial={isSerial}
-          units={allocatableUnits}
-          maxAllocatable={opRemaining}
-          completions={0}
-          issueTypes={issueTypes}
-          summary={
-            failedStatistically
-              ? t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s). Route the units below to scrap or rework, or record the verdict only.`
-              : t`The entire lot of ${inspection.lotSize} will be rejected as non-conforming — ${passes} sampled pass(es) and ${fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only.`
-          }
-          failedFeatureSummary={failedFeatureSummary}
-          eventIds={eventIds}
-          onCancel={rejectDisclosure.onClose}
-          onSubmit={rejectDisclosure.onClose}
-        />
-      )}
+      <DispositionModal
+        open={rejectDisclosure.isOpen}
+        decision="Reject"
+        inspectionId={inspection.id}
+        operationId={operationId}
+        isSerial={isSerial}
+        units={allocatableUnits}
+        maxAllocatable={opRemaining}
+        completions={0}
+        issueTypes={issueTypes}
+        summary={
+          failedStatistically
+            ? t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s). Route the units below to scrap or rework, or record the verdict only.`
+            : t`The entire lot of ${inspection.lotSize} will be rejected as non-conforming — ${passes} sampled pass(es) and ${fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only.`
+        }
+        failedFeatureSummary={failedFeatureSummary}
+        eventIds={eventIds}
+        onCancel={rejectDisclosure.onClose}
+        onSubmit={rejectDisclosure.onClose}
+      />
 
-      {partialDisclosure.isOpen && (
-        <DispositionModal
-          decision="Partial"
-          inspectionId={inspection.id}
-          operationId={operationId}
-          isSerial={isSerial}
-          units={allocatableUnits.filter((unit) => unit.failed)}
-          maxAllocatable={isSerial ? fails : Math.min(fails, opRemaining)}
-          completions={completablePassed}
-          issueTypes={issueTypes}
-          summary={t`Every unit has a verdict: ${passes} passed and ${fails} failed. The lot closes with each unit routed to its own outcome.`}
-          failedFeatureSummary={failedFeatureSummary}
-          eventIds={eventIds}
-          onCancel={partialDisclosure.onClose}
-          onSubmit={partialDisclosure.onClose}
-        />
-      )}
+      <DispositionModal
+        open={partialDisclosure.isOpen}
+        decision="Partial"
+        inspectionId={inspection.id}
+        operationId={operationId}
+        isSerial={isSerial}
+        units={allocatableUnits.filter((unit) => unit.failed)}
+        maxAllocatable={isSerial ? fails : Math.min(fails, opRemaining)}
+        completions={completablePassed}
+        issueTypes={issueTypes}
+        summary={t`Every unit has a verdict: ${passes} passed and ${fails} failed. The lot closes with each unit routed to its own outcome.`}
+        failedFeatureSummary={failedFeatureSummary}
+        eventIds={eventIds}
+        onCancel={partialDisclosure.onClose}
+        onSubmit={partialDisclosure.onClose}
+      />
 
       <QualityIssueModal
         operationId={operationId}
@@ -1188,8 +1156,10 @@ export function InspectionView({
         onClose={qualityModal.onClose}
       />
 
-      {scrapModal.isOpen && operation && (
+      {operation && scrapModal.openCount > 0 && (
         <QuantityModal
+          key={`scrap-${scrapModal.openCount}`}
+          open={scrapModal.isOpen}
           type="scrap"
           operation={operation}
           parentIsSerial={requiresSerialTracking}
@@ -1202,8 +1172,10 @@ export function InspectionView({
         />
       )}
 
-      {finishModal.isOpen && operation && (
+      {operation && finishModal.openCount > 0 && (
         <QuantityModal
+          key={`finish-${finishModal.openCount}`}
+          open={finishModal.isOpen}
           type="finish"
           operation={operation}
           parentIsSerial={requiresSerialTracking}
@@ -1217,8 +1189,9 @@ export function InspectionView({
         />
       )}
 
-      {reworkModal.isOpen && operation && jobId && (
+      {operation && jobId && reworkModal.openCount > 0 && (
         <ReworkModal
+          key={`rework-${reworkModal.openCount}`}
           operation={operation}
           jobId={jobId}
           isOpen={reworkModal.isOpen}
@@ -1420,6 +1393,45 @@ function AcceptLotModal({
   fails,
   remaining,
   eventIds,
+  open,
+  onClose
+}: {
+  inspectionId: string;
+  operationId: string;
+  fails: number;
+  remaining: number;
+  eventIds: ProductionEventIdFields;
+  open: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <AcceptLotBody
+          inspectionId={inspectionId}
+          operationId={operationId}
+          fails={fails}
+          remaining={remaining}
+          eventIds={eventIds}
+          onClose={onClose}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function AcceptLotBody({
+  inspectionId,
+  operationId,
+  fails,
+  remaining,
+  eventIds,
   onClose
 }: {
   inspectionId: string;
@@ -1440,61 +1452,53 @@ function AcceptLotModal({
   const submitted = useRef(false);
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Accept lot?</Trans>
-          </ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <VStack spacing={2}>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Accept lot?</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={2}>
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              The lot will be marked Passed and {remaining} remaining unit(s)
+              will be completed at this operation.
+            </Trans>
+          </p>
+          {fails > 0 ? (
             <p className="text-sm text-muted-foreground">
               <Trans>
-                The lot will be marked Passed and {remaining} remaining unit(s)
-                will be completed at this operation.
+                {fails} sampled failure(s) are recorded and will NOT be
+                completed — resolve them from the actions menu.
               </Trans>
             </p>
-            {fails > 0 ? (
-              <p className="text-sm text-muted-foreground">
-                <Trans>
-                  {fails} sampled failure(s) are recorded and will NOT be
-                  completed — resolve them from the actions menu.
-                </Trans>
-              </p>
-            ) : null}
-          </VStack>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <fetcher.Form
-            method="post"
-            action={path.to.inspectionDisposition(inspectionId)}
-            onSubmit={() => (submitted.current = true)}
+          ) : null}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <fetcher.Form
+          method="post"
+          action={path.to.inspectionDisposition(inspectionId)}
+          onSubmit={() => (submitted.current = true)}
+        >
+          <input type="hidden" name="decision" value="Accept" />
+          <input type="hidden" name="operationId" value={operationId} />
+          <EventIdInputs eventIds={eventIds} />
+          <OriginInput />
+          <Button
+            type="submit"
+            isLoading={fetcher.state !== "idle"}
+            isDisabled={fetcher.state !== "idle"}
           >
-            <input type="hidden" name="decision" value="Accept" />
-            <input type="hidden" name="operationId" value={operationId} />
-            <EventIdInputs eventIds={eventIds} />
-            <OriginInput />
-            <Button
-              type="submit"
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-            >
-              <Trans>Accept Lot</Trans>
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+            <Trans>Accept Lot</Trans>
+          </Button>
+        </fetcher.Form>
+      </ModalFooter>
+    </>
   );
 }
 
