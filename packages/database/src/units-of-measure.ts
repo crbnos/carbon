@@ -5,7 +5,7 @@
 /**
  * Carbon's standard units of measure: the master list every company holds.
  * A new company gets all of them, the units of its measurement system active
- * and the others inactive; migration 20261109050102_units-of-measure-master-list
+ * and the others inactive; migration 20261110211529_units-of-measure-master-list
  * gave existing companies the units they lacked. Client-safe and free of imports.
  */
 
