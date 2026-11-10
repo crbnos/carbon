@@ -292,6 +292,7 @@ export const path = {
         generatePath(
           `${api}/mrp${locationId ? `?location=${locationId}` : ""}`
         ),
+      onboardingBackupUpload: `${api}/onboarding/backup-upload`,
       onShapeBom: (documentId: string, versionId: string, elementId: string) =>
         generatePath(
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/e/${elementId}/bom`

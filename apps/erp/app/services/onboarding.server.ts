@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Readable } from "node:stream";
 import {
   CarbonEdition,
   getClaims,
@@ -27,7 +26,7 @@ import {
   insertCompany,
   seedCompany,
   startCompanyTemplate,
-  unpackBackupArchive,
+  unpackStagedBackupArchive,
   updateCompany
 } from "~/modules/settings/settings.service";
 import { invokePosting } from "~/modules/shared/shared.service";
@@ -37,9 +36,14 @@ type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
 
 const logger = getLogger("erp", "onboarding");
 
+/** Where onboarding stages a user's `.carbon.tar.gz` before the company exists. */
+export function onboardingBackupPrefix(userId: string): string {
+  return `onboarding/${userId}`;
+}
+
 /**
  * Provision a freshly-created company's data. "Restore from a backup" resolves
- * to the user's uploaded `.carbon.tar.gz`, reseed-imported on top of an
+ * to the user's staged `.carbon.tar.gz`, reseed-imported on top of an
  * identity-only seed (the backup carries the chart of accounts + business data).
  * With no backup — a clean choice — fall back to a full clean seed.
  */
@@ -48,14 +52,15 @@ export async function provisionCompanyData(
   {
     companyId,
     userId,
-    backup
+    backupPath
   }: {
     companyId: string;
     userId: string;
-    backup: Blob | null;
+    /** The staged archive, from `onboardingBackupPrefix`. */
+    backupPath: string | null;
   }
 ): Promise<void> {
-  if (!backup) {
+  if (!backupPath) {
     const seed = await invokePosting(
       { db: getDatabaseClient(), companyId, userId },
       "seed-company",
@@ -80,17 +85,13 @@ export async function provisionCompanyData(
     throw new Error("Fatal: failed to seed company");
   }
 
-  // The user's `.carbon.tar.gz`: unpack into a fresh `exports/<name>/` folder so
-  // it imports like any other backup. Uploading the archive as one object would
-  // exceed the bucket's per-object size cap (413) for a real prod backup carrying
-  // media.
-  const source = Readable.fromWeb(
-    backup.stream() as Parameters<typeof Readable.fromWeb>[0]
-  );
-  const { name: filePath, assetErrors } = await unpackBackupArchive(
+  // Unpacked into a fresh `exports/<name>/` folder so it imports like any other
+  // backup. One object per file: the archive as a single object would exceed the
+  // bucket's per-object size cap (413) for a real backup carrying media.
+  const { name: filePath, assetErrors } = await unpackStagedBackupArchive(
     serviceRole,
     companyId,
-    source
+    backupPath
   );
   if (assetErrors > 0) {
     logger.warn("Backup upload lost files; its data still imports", {
@@ -179,7 +180,7 @@ export async function provisionOnboardingCompany(
   {
     userId,
     companyData,
-    backup,
+    backupPath,
     template
   }: {
     userId: string;
@@ -187,7 +188,7 @@ export async function provisionOnboardingCompany(
       industryId?: string | null;
       customIndustryDescription?: string | null;
     };
-    backup: Blob | null;
+    backupPath: string | null;
     /** Dataset key for "Use a demo template", else null. */
     template: string | null;
   }
@@ -209,6 +210,13 @@ export async function provisionOnboardingCompany(
 
   // Re-entry: a company + location already exist — just update them. No reseed.
   if (company && location) {
+    // An import needs a company that isn't set up yet; ignoring the backup would
+    // report success over data that never arrives.
+    if (backupPath) {
+      throw new Error(
+        "This company is already set up. Restore the backup from Settings → Backups."
+      );
+    }
     // The re-entry target is simply the caller's first membership, and the
     // writes below run with the service role: they overwrite the company
     // profile and, for a template, wipe its business data. So the caller must
@@ -259,7 +267,7 @@ export async function provisionOnboardingCompany(
   await provisionCompanyData(serviceRole, {
     companyId,
     userId,
-    backup
+    backupPath
   });
 
   if (CarbonEdition === Edition.Cloud) {

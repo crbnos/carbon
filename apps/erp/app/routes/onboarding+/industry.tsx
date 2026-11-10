@@ -8,6 +8,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
 import { updateCompanySession } from "@carbon/auth/session.server";
 import { datasetForIndustry } from "@carbon/database/datasets";
+import { TEMP_STAGING_BUCKET } from "@carbon/files";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
   Button,
@@ -22,7 +23,7 @@ import {
   PrefetchLink
 } from "@carbon/react";
 import { isInternalEmail, redirect } from "@carbon/utils";
-import { type ReactNode, useState } from "react";
+import { type FormEvent, type ReactNode, useState } from "react";
 import {
   LuBot,
   LuCog,
@@ -38,7 +39,8 @@ import {
   type ActionFunctionArgs,
   Form,
   useLoaderData,
-  useNavigation
+  useNavigation,
+  useSubmit
 } from "react-router";
 import { z } from "zod";
 import {
@@ -47,17 +49,26 @@ import {
   onboardingFormClassName
 } from "~/components";
 import { Hidden, Submit } from "~/components/Form";
+import { UploadProgress } from "~/components/UploadProgress";
 import { useOnboarding } from "~/hooks";
 import { onboardingCompanyValidator } from "~/modules/settings/settings.models";
-import { getCompany, getIndustries } from "~/modules/settings/settings.service";
+import {
+  getCompany,
+  getIndustries,
+  isStagedBackupPath
+} from "~/modules/settings/settings.service";
 import {
   clearOnboardingDraft,
   getOnboardingDraft,
   type OnboardingDraft
 } from "~/modules/shared/shared.service";
-import { provisionOnboardingCompany } from "~/services/onboarding.server";
+import {
+  onboardingBackupPrefix,
+  provisionOnboardingCompany
+} from "~/services/onboarding.server";
 import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
+import { uploadToSignedUrlWithProgress } from "~/utils/signed-upload";
 
 type DataChoice = "template" | "import" | "none";
 
@@ -166,13 +177,19 @@ export async function action({ request }: ActionFunctionArgs) {
     industryId: d.industryId || null
   };
 
-  // "Restore from a backup" → the user's uploaded `.carbon.tar.gz`; every other
-  // choice → a clean seed (no backup).
-  const backupFile = formData.get("backup");
-  const backup: Blob | null =
-    dataChoice === "import" && backupFile instanceof File && backupFile.size > 0
-      ? backupFile
+  // "Restore from a backup" → the archive the browser staged for this user;
+  // every other choice → a clean seed (no backup).
+  const staged = formData.get("backupPath");
+  const backupPath =
+    dataChoice === "import" &&
+    isStagedBackupPath(staged, onboardingBackupPrefix(userId))
+      ? staged
       : null;
+  if (dataChoice === "import" && !backupPath) {
+    return validationError({
+      fieldErrors: { backupPath: "Upload a Carbon backup" }
+    });
+  }
 
   // "Use a demo template" → the dataset registered for the chosen industry.
   // The loader only offers industries that have one; refuse rather than fall
@@ -193,7 +210,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const companyId = await provisionOnboardingCompany(serviceRole, client, {
     userId,
     companyData,
-    backup,
+    backupPath,
     template
   });
 
@@ -243,10 +260,44 @@ export default function OnboardingIndustry() {
     canUseTemplate ? "template" : "none"
   );
   const [importFile, setImportFile] = useState<File | null>(null);
+  const [uploaded, setUploaded] = useState<number | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const navigation = useNavigation();
+  const submit = useSubmit();
   // Provisioning (unpack + seed + enqueue import) runs in the action and can take
   // a while for a real backup — keep the button busy so the user doesn't re-submit.
-  const isSubmitting = navigation.state !== "idle";
+  const isSubmitting = navigation.state !== "idle" || uploaded !== null;
+
+  // The archive goes straight to storage with a signed token (a serverless
+  // request body is capped well below a real backup); the form posts its path.
+  const onImport = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!importFile) return;
+    setUploadError(null);
+    setUploaded(0);
+    try {
+      const res = await fetch(path.to.api.onboardingBackupUpload, {
+        method: "POST"
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const slot = (await res.json()) as { path: string; token: string };
+      await uploadToSignedUrlWithProgress({
+        bucket: TEMP_STAGING_BUCKET,
+        path: slot.path,
+        token: slot.token,
+        file: importFile,
+        onProgress: (done) => setUploaded(done)
+      });
+      submit(
+        { next, dataChoice: "import", backupPath: slot.path },
+        { method: "post" }
+      );
+    } catch (err) {
+      setUploadError((err as Error).message || "Upload failed");
+    } finally {
+      setUploaded(null);
+    }
+  };
   const [selectedIndustryId, setSelectedIndustryId] = useState<string>(
     company?.industryId ?? ""
   );
@@ -307,7 +358,7 @@ export default function OnboardingIndustry() {
       <OnboardingCard>
         <Form
           method="post"
-          encType="multipart/form-data"
+          onSubmit={onImport}
           className={onboardingFormClassName}
         >
           <CardHeader>
@@ -345,12 +396,25 @@ export default function OnboardingIndustry() {
               )}
               <input
                 type="file"
-                name="backup"
                 accept=".tar.gz,.tgz,application/gzip"
                 className="sr-only"
                 onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
               />
             </label>
+            {uploaded !== null && importFile && (
+              <UploadProgress
+                percent={
+                  importFile.size ? (uploaded / importFile.size) * 100 : 0
+                }
+                uploaded={uploaded}
+                total={importFile.size}
+                label="Uploading backup"
+                description="Uploading the backup file"
+              />
+            )}
+            {uploadError && (
+              <p className="text-sm text-destructive">{uploadError}</p>
+            )}
           </OnboardingCardContent>
           <CardFooter>
             <HStack>

@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Readable } from "node:stream";
+import { Readable } from "node:stream";
 import { createGunzip, createGzip } from "node:zlib";
 import { NotFoundError } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
@@ -219,7 +219,7 @@ import {
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { resolveCapabilities } from "@carbon/ee/sync";
 import { flags } from "@carbon/env/flags.server";
-import { getCompanyPrivateBucket } from "@carbon/files";
+import { getCompanyPrivateBucket, TEMP_STAGING_BUCKET } from "@carbon/files";
 import { type Events, trigger } from "@carbon/jobs";
 import {
   backupAssetsDir,
@@ -1679,6 +1679,68 @@ export async function packBackupArchive(
  * Shared by the Settings upload route and the onboarding "restore from a
  * backup" flow.
  */
+/**
+ * A signed upload slot for a `.carbon.tar.gz` under `prefix` in the staging
+ * bucket. The browser PUTs the archive there, so a real backup never passes
+ * through a serverless request body (Vercel caps it at 4.5 MB).
+ */
+export async function signBackupStaging(
+  client: SupabaseClient<Database>,
+  prefix: string
+): Promise<{ path: string; token: string }> {
+  const signed = await client.storage
+    .from(TEMP_STAGING_BUCKET)
+    .createSignedUploadUrl(`${prefix}/${nanoid()}.tar.gz`);
+  if (signed.error) throw new Error(signed.error.message);
+  return { path: signed.data.path, token: signed.data.token };
+}
+
+/** Whether `path` is a slot `signBackupStaging` hands out under `prefix`. */
+export function isStagedBackupPath(
+  path: unknown,
+  prefix: string
+): path is string {
+  return (
+    typeof path === "string" &&
+    path.startsWith(`${prefix}/`) &&
+    /^[A-Za-z0-9_-]+\.tar\.gz$/.test(path.slice(prefix.length + 1))
+  );
+}
+
+/**
+ * Stream a staged archive back and unpack it into a new backup folder of the
+ * company, then drop the staged object, whatever happened.
+ */
+export async function unpackStagedBackupArchive(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  path: string
+): Promise<{ name: string; assetErrors: number }> {
+  const staging = client.storage.from(TEMP_STAGING_BUCKET);
+  try {
+    const signed = await staging.createSignedUrl(path, 60 * 60);
+    if (signed.error) throw new Error(signed.error.message);
+    const res = await fetch(signed.data.signedUrl);
+    if (!res.ok || !res.body) {
+      throw new Error(`Failed to read the uploaded archive (${res.status})`);
+    }
+    return await unpackBackupArchive(
+      client,
+      companyId,
+      Readable.fromWeb(res.body as Parameters<typeof Readable.fromWeb>[0])
+    );
+  } finally {
+    const removed = await staging.remove([path]);
+    if (removed.error) {
+      log.error("Failed to remove staged backup archive", {
+        companyId,
+        path,
+        error: removed.error
+      });
+    }
+  }
+}
+
 export async function unpackBackupArchive(
   client: SupabaseClient<Database>,
   companyId: string,
