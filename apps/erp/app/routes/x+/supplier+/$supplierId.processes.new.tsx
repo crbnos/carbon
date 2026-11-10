@@ -19,7 +19,7 @@ import { path } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await authorize(request, {
-    "purchasing.suppliers": "Create"
+    "purchasing.suppliers": "Edit"
   });
 
   const { supplierId } = params;

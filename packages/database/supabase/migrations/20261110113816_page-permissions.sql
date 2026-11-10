@@ -71,6 +71,16 @@ AS $function$
   END, util.page_max_level(p_page))
 $function$;
 
+CREATE OR REPLACE FUNCTION util.action_levels()
+ RETURNS TABLE(action text, level public."permissionLevel")
+ LANGUAGE sql
+ IMMUTABLE
+AS $function$
+  -- Generated from packages/database/src/access/levels.ts (authz/registry-sql.ts). Do not edit.
+  -- Each action of a '<page>_<action>' key and the lowest level that holds it.
+  VALUES ('view', 'View'::public."permissionLevel"), ('create', 'Create'::public."permissionLevel"), ('update', 'Edit'::public."permissionLevel"), ('delete', 'Full'::public."permissionLevel")
+$function$;
+
 CREATE OR REPLACE FUNCTION util.request_api_key()
  RETURNS TABLE(id text, company_id text)
  LANGUAGE sql
@@ -103,17 +113,9 @@ BEGIN
   SELECT k.id, k.company_id INTO api_key_id, api_key_company FROM util.request_api_key() k;
 
   WITH wanted AS (
-    SELECT
-      m[1] AS page,
-      (CASE m[2]
-        WHEN 'view' THEN 'View'
-        WHEN 'create' THEN 'Create'
-        WHEN 'update' THEN 'Edit'
-        ELSE 'Full'
-      END)::"permissionLevel" AS needed
-    FROM unnest(permissions) AS k(key),
-      LATERAL regexp_match(k.key, '^(.*)_(view|create|update|delete)$') AS m
-    WHERE m IS NOT NULL
+    SELECT left(k.key, -length(a.action) - 1) AS page, a.level AS needed
+    FROM unnest(permissions) AS k(key)
+    JOIN util.action_levels() AS a ON right(k.key, length(a.action) + 1) = '_' || a.action
   )
   SELECT array_agg(c.id)
   INTO companies
@@ -249,8 +251,7 @@ AS $function$
       SELECT COALESCE(jsonb_object_agg(lower(m.module::text) || '_' || a.action, jsonb_build_array(company)), '{}'::jsonb)
       INTO legacy_keys
       FROM unnest(enum_range(NULL::"module")) AS m(module)
-      JOIN (VALUES ('view', 'View'::"permissionLevel"), ('create', 'Create'), ('update', 'Edit'), ('delete', 'Full'))
-        AS a(action, needs) ON util.access_level(uid, NULL, company, lower(m.module::text)) >= a.needs;
+      JOIN util.action_levels() AS a ON util.access_level(uid, NULL, company, lower(m.module::text)) >= a.level;
     END IF;
 
     -- A portal account still holds its keys in userPermission. An employee's old

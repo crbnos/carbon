@@ -11,7 +11,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCarbonServiceRole } from "../lib/supabase/client.server";
 import type { Permission, Result } from "../types";
 import { error, success } from "../utils/result";
-import { logRoleChange } from "./auth-events.server";
+import { type AuditGrant, logRoleChange } from "./auth-events.server";
 import {
   getClaims,
   getPermissionCacheKey,
@@ -69,9 +69,7 @@ async function loadUserClaims(userId: string, companyId: string) {
   } catch (e) {
     log.error("Failed to get claims from redis", { error: e });
   } finally {
-    // if we don't have permissions from redis, get them from the database
     if (!claims) {
-      // TODO: remove service role from here, and move it up a level
       const rawClaims = await getClaims(
         getCarbonServiceRole(),
         userId,
@@ -82,14 +80,14 @@ async function loadUserClaims(userId: string, companyId: string) {
         throw new Error("Failed to get claims");
       }
 
-      // convert rawClaims to permissions
       claims = makePermissionsFromClaims(rawClaims.data, companyId);
 
       // store claims in redis — best-effort. A null/failed write (Redis down,
       // fail-soft via @carbon/kv withResilience) must not abort the in-flight
       // request; we already have the claims from the DB.
-      // Never claims in the old shape (no `grants`): the database has not run
-      // the permission migrations yet, and an hour of cache would outlive them.
+      // TRANSITIONAL(#1958): never claims in the old shape (no `grants`): the
+      // database has not run the permission migrations yet, and an hour of
+      // cache would outlive them.
       try {
         if (!isLegacyClaims(rawClaims.data))
           await redis
@@ -114,108 +112,74 @@ async function loadUserClaims(userId: string, companyId: string) {
   }
 }
 
-export async function deactivateCustomer(
-  serviceRole: SupabaseClient<Database>,
-  userId: string,
-  companyId: string,
-  actorId?: string,
-  ip?: string
-): Promise<Result> {
-  const currentPermissions = await serviceRole
-    .from("userPermission")
-    .select("*")
-    .eq("id", userId)
-    .maybeSingle();
+type CompanyRole = "customer" | "employee" | "supplier";
 
-  if (currentPermissions.error) {
-    return error(currentPermissions.error, "Failed to get user permissions");
-  }
+type Write = PromiseLike<{ error: unknown }>;
 
-  const before = (currentPermissions.data?.permissions ?? {}) as Record<
-    string,
-    string[]
-  >;
-  const permissions = Object.entries(before).reduce<Record<string, string[]>>(
-    (acc, [key, value]) => {
-      acc[key] = value.filter((id) => id !== companyId);
-      return acc;
-    },
-    {}
-  );
-
-  const companyGroups = await serviceRole
-    .from("group")
-    .select("id")
-    .eq("companyId", companyId);
-
-  const groupIds = companyGroups.data?.map((g) => g.id) ?? [];
-
-  const [updatePermissions, userToCompanyDelete, customerAccountDelete] =
-    await Promise.all([
-      serviceRole
-        .from("userPermission")
-        .update({ permissions })
-        .eq("id", userId),
-      serviceRole
-        .from("userToCompany")
-        .delete()
-        .eq("userId", userId)
-        .eq("companyId", companyId),
+/** What each role's deactivation removes beside the membership, with the error each answers. */
+const ROLE_WRITES: Record<
+  CompanyRole,
+  (
+    serviceRole: SupabaseClient<Database>,
+    userId: string,
+    companyId: string
+  ) => [Write, string][]
+> = {
+  customer: (serviceRole, userId, companyId) => [
+    [
       serviceRole
         .from("customerAccount")
         .delete()
         .eq("id", userId)
         .eq("companyId", companyId),
-      ...(groupIds.length > 0
-        ? [
-            serviceRole
-              .from("membership")
-              .delete()
-              .eq("memberUserId", userId)
-              .in("groupId", groupIds)
-          ]
-        : [])
-    ]);
-
-  if (updatePermissions.error) {
-    return error(updatePermissions.error, "Failed to update user permissions");
-  }
-
-  if (userToCompanyDelete.error) {
-    return error(
-      userToCompanyDelete.error,
-      "Failed to remove user from company"
-    );
-  }
-
-  if (customerAccountDelete.error) {
-    return error(
-      customerAccountDelete.error,
       "Failed to remove customer account"
-    );
-  }
+    ]
+  ],
+  supplier: (serviceRole, userId, companyId) => [
+    [
+      serviceRole
+        .from("supplierAccount")
+        .delete()
+        .eq("id", userId)
+        .eq("companyId", companyId),
+      "Failed to remove supplier account"
+    ]
+  ],
+  employee: (serviceRole, userId, companyId) => [
+    [
+      serviceRole
+        .from("employee")
+        .update({ active: false })
+        .eq("id", userId)
+        .eq("companyId", companyId),
+      "Failed to deactivate employee"
+    ],
+    // The person's own grants: a re-invite gives the role's access, and an
+    // old override must not come back with it.
+    [
+      serviceRole
+        .from("permission")
+        .delete()
+        .eq("userId", userId)
+        .eq("companyId", companyId),
+      "Failed to remove the employee's access"
+    ]
+  ]
+};
 
-  logRoleChange({
-    actor: actorId,
-    targetUserId: userId,
-    companyId,
-    beforeRole: "customer",
-    afterRole: null,
-    before,
-    after: permissions,
-    ip,
-    reason: "deactivate"
-  });
-
-  // Same ownership as the employee path below: invalidate here so the
-  // create*Account rollbacks, which call this directly, cannot leave revoked
-  // grants readable from cache.
-  await redis.del(getPermissionCacheKey(userId));
-
-  return success("Sucessfully deactivated customer");
-}
-
-export async function deactivateEmployee(
+/**
+ * Remove the user from the company as `role`: the company is stripped from
+ * their `userPermission` keys, and their membership, group memberships and
+ * the role's own rows go. "employeeJob" is deliberately left in place. It
+ * carries org placement (title, start date, department, shift, manager,
+ * location, tags, custom fields), none of which grants access. Deleting it
+ * made deactivation lossy: nothing in the re-invite path can reconstruct it.
+ *
+ * Clears the user's cached claims itself: the create*Account rollbacks call
+ * the role functions directly, not through `deactivateUser`.
+ */
+async function deactivateAs(
+  role: CompanyRole,
   serviceRole: SupabaseClient<Database>,
   userId: string,
   companyId: string,
@@ -244,15 +208,19 @@ export async function deactivateEmployee(
     {}
   );
 
-  // The person's own grants, which this deletes: the audit records them.
-  const personGrants = await serviceRole
-    .from("permission")
-    .select("module, page, level")
-    .eq("userId", userId)
-    .eq("companyId", companyId);
-
-  if (personGrants.error) {
-    return error(personGrants.error, "Failed to get the employee's access");
+  // An employee's access is their `permission` rows, which this deletes: the
+  // audit records them. A portal account's is its `userPermission` keys.
+  let personGrants: AuditGrant[] = [];
+  if (role === "employee") {
+    const grants = await serviceRole
+      .from("permission")
+      .select("module, page, level")
+      .eq("userId", userId)
+      .eq("companyId", companyId);
+    if (grants.error) {
+      return error(grants.error, "Failed to get the employee's access");
+    }
+    personGrants = grants.data ?? [];
   }
 
   const companyGroups = await serviceRole
@@ -262,87 +230,87 @@ export async function deactivateEmployee(
 
   const groupIds = companyGroups.data?.map((g) => g.id) ?? [];
 
-  const [updatePermissions, userToCompanyDelete, employeeDeactivate, grants] =
-    await Promise.all([
+  const writes: [Write, string][] = [
+    [
       serviceRole
         .from("userPermission")
         .update({ permissions })
         .eq("id", userId),
+      "Failed to update user permissions"
+    ],
+    [
       serviceRole
         .from("userToCompany")
         .delete()
         .eq("userId", userId)
         .eq("companyId", companyId),
-      serviceRole
-        .from("employee")
-        .update({ active: false })
-        .eq("id", userId)
-        .eq("companyId", companyId),
-      // The person's own grants: a re-invite gives the role's access, and an
-      // old override must not come back with it.
-      serviceRole
-        .from("permission")
-        .delete()
-        .eq("userId", userId)
-        .eq("companyId", companyId),
-      // "employeeJob" is deliberately left in place. It carries org placement —
-      // title, start date, department, shift, manager, location, tags, custom
-      // fields — none of which grants access; membership ("userToCompany"),
-      // permissions, and "employee".active are what gate it, and all three are
-      // cleared here. Deleting the row made deactivation lossy: nothing in the
-      // re-invite path can reconstruct it, so a revoked employee who was later
-      // re-invited came back with their placement silently blanked.
-      ...(groupIds.length > 0
-        ? [
-            serviceRole
-              .from("membership")
-              .delete()
-              .eq("memberUserId", userId)
-              .in("groupId", groupIds)
-          ]
-        : [])
-    ]);
-
-  if (updatePermissions.error) {
-    return error(updatePermissions.error, "Failed to update user permissions");
-  }
-
-  if (userToCompanyDelete.error) {
-    return error(
-      userToCompanyDelete.error,
       "Failed to remove user from company"
-    );
-  }
+    ],
+    ...ROLE_WRITES[role](serviceRole, userId, companyId)
+  ];
 
-  if (employeeDeactivate.error) {
-    return error(employeeDeactivate.error, "Failed to deactivate employee");
-  }
+  const results = await Promise.all([
+    ...writes.map(([write]) => write),
+    ...(groupIds.length > 0
+      ? [
+          serviceRole
+            .from("membership")
+            .delete()
+            .eq("memberUserId", userId)
+            .in("groupId", groupIds)
+        ]
+      : [])
+  ]);
 
-  if (grants.error) {
-    return error(grants.error, "Failed to remove the employee's access");
+  for (const [index, [, message]] of writes.entries()) {
+    const failed = results[index]?.error;
+    if (failed) return error(failed, message);
   }
 
   logRoleChange({
     actor: actorId,
     targetUserId: userId,
     companyId,
-    beforeRole: "employee",
+    beforeRole: role,
     afterRole: null,
-    grantsBefore: personGrants.data ?? [],
-    grantsAfter: [],
+    ...(role === "employee"
+      ? { grantsBefore: personGrants, grantsAfter: [] }
+      : { before, after: permissions }),
     ip,
     reason: "deactivate"
   });
 
-  // The permissions this function just revoked are cached in Redis, and
-  // `requirePermissions` reads that cache before the database. Invalidating
-  // here rather than only in `deactivateUser` covers the callers that reach
-  // this function directly — the create*Account rollback paths — which
-  // otherwise left a deactivated user's grants live until the 1h TTL.
   await redis.del(getPermissionCacheKey(userId));
 
-  return success("Sucessfully deactivated employee");
+  return success(`Sucessfully deactivated ${role}`);
 }
+
+export const deactivateCustomer = (
+  serviceRole: SupabaseClient<Database>,
+  userId: string,
+  companyId: string,
+  actorId?: string,
+  ip?: string
+) => deactivateAs("customer", serviceRole, userId, companyId, actorId, ip);
+
+export const deactivateEmployee = (
+  serviceRole: SupabaseClient<Database>,
+  userId: string,
+  companyId: string,
+  actorId?: string,
+  ip?: string
+) => deactivateAs("employee", serviceRole, userId, companyId, actorId, ip);
+
+export const deactivateSupplier = (
+  serviceRole: SupabaseClient<Database>,
+  userId: string,
+  companyId: string,
+  actorId?: string,
+  ip?: string
+) => deactivateAs("supplier", serviceRole, userId, companyId, actorId, ip);
+
+const isCompanyRole = (role: unknown): role is CompanyRole =>
+  role === "customer" || role === "employee" || role === "supplier";
 
 export async function deactivateUser(
   serviceRole: SupabaseClient<Database>,
@@ -358,7 +326,7 @@ export async function deactivateUser(
     .eq("companyId", companyId)
     .single();
 
-  let result: Result;
+  let role: unknown = userToCompany.data?.role;
 
   if (userToCompany.error) {
     // No userToCompany row — either pending invite, or already deactivated.
@@ -379,75 +347,25 @@ export async function deactivateUser(
       .maybeSingle();
 
     if (!invite.data) {
-      // No userToCompany and no invite — already fully deactivated.
       return success("User already deactivated");
     }
-
-    if (invite.data.role === "customer") {
-      result = await deactivateCustomer(
-        serviceRole,
-        userId,
-        companyId,
-        actorId,
-        ip
-      );
-    } else if (invite.data.role === "employee") {
-      result = await deactivateEmployee(
-        serviceRole,
-        userId,
-        companyId,
-        actorId,
-        ip
-      );
-    } else if (invite.data.role === "supplier") {
-      result = await deactivateSupplier(
-        serviceRole,
-        userId,
-        companyId,
-        actorId,
-        ip
-      );
-    } else {
-      throw new Error("Invalid user role");
-    }
-  } else {
-    if (userToCompany.data?.role === "customer") {
-      result = await deactivateCustomer(
-        serviceRole,
-        userId,
-        companyId,
-        actorId,
-        ip
-      );
-    } else if (userToCompany.data?.role === "employee") {
-      result = await deactivateEmployee(
-        serviceRole,
-        userId,
-        companyId,
-        actorId,
-        ip
-      );
-    } else if (userToCompany.data?.role === "supplier") {
-      result = await deactivateSupplier(
-        serviceRole,
-        userId,
-        companyId,
-        actorId,
-        ip
-      );
-    } else {
-      throw new Error("Invalid user role");
-    }
+    role = invite.data.role;
   }
 
-  // Clear stale permission cache
-  if (result && result.success) {
-    await redis.del(getPermissionCacheKey(userId));
-  }
+  if (!isCompanyRole(role)) throw new Error("Invalid user role");
+
+  const result = await deactivateAs(
+    role,
+    serviceRole,
+    userId,
+    companyId,
+    actorId,
+    ip
+  );
 
   // Mark any invite for this user/company as revoked so the link cannot be
   // redeemed and the UI no longer surfaces resend/revoke actions on it.
-  if (result && result.success) {
+  if (result.success) {
     const userRecord = await serviceRole
       .from("user")
       .select("email")
@@ -464,103 +382,4 @@ export async function deactivateUser(
   }
 
   return result;
-}
-
-export async function deactivateSupplier(
-  serviceRole: SupabaseClient<Database>,
-  userId: string,
-  companyId: string,
-  actorId?: string,
-  ip?: string
-): Promise<Result> {
-  const currentPermissions = await serviceRole
-    .from("userPermission")
-    .select("*")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (currentPermissions.error) {
-    return error(currentPermissions.error, "Failed to get user permissions");
-  }
-
-  const before = (currentPermissions.data?.permissions ?? {}) as Record<
-    string,
-    string[]
-  >;
-  const permissions = Object.entries(before).reduce<Record<string, string[]>>(
-    (acc, [key, value]) => {
-      acc[key] = value.filter((id) => id !== companyId);
-      return acc;
-    },
-    {}
-  );
-
-  const companyGroups = await serviceRole
-    .from("group")
-    .select("id")
-    .eq("companyId", companyId);
-
-  const groupIds = companyGroups.data?.map((g) => g.id) ?? [];
-
-  const [updatePermissions, userToCompanyDelete, supplierAccountDelete] =
-    await Promise.all([
-      serviceRole
-        .from("userPermission")
-        .update({ permissions })
-        .eq("id", userId),
-      serviceRole
-        .from("userToCompany")
-        .delete()
-        .eq("userId", userId)
-        .eq("companyId", companyId),
-      serviceRole
-        .from("supplierAccount")
-        .delete()
-        .eq("id", userId)
-        .eq("companyId", companyId),
-      ...(groupIds.length > 0
-        ? [
-            serviceRole
-              .from("membership")
-              .delete()
-              .eq("memberUserId", userId)
-              .in("groupId", groupIds)
-          ]
-        : [])
-    ]);
-
-  if (updatePermissions.error) {
-    return error(updatePermissions.error, "Failed to update user permissions");
-  }
-
-  if (userToCompanyDelete.error) {
-    return error(
-      userToCompanyDelete.error,
-      "Failed to remove user from company"
-    );
-  }
-
-  if (supplierAccountDelete.error) {
-    return error(
-      supplierAccountDelete.error,
-      "Failed to remove supplier account"
-    );
-  }
-
-  logRoleChange({
-    actor: actorId,
-    targetUserId: userId,
-    companyId,
-    beforeRole: "supplier",
-    afterRole: null,
-    before,
-    after: permissions,
-    ip,
-    reason: "deactivate"
-  });
-
-  // See deactivateEmployee: the direct callers own nothing, this function does.
-  await redis.del(getPermissionCacheKey(userId));
-
-  return success("Sucessfully deactivated supplier");
 }

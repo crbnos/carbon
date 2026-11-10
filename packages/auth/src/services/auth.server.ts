@@ -113,7 +113,6 @@ export async function getAuthAccountByAccessToken(accessToken: string) {
   return data.user;
 }
 
-/** Hash an OAuth token or secret using SHA-256 for secure storage/lookup */
 export function hashOAuthSecret(raw: string): string {
   return createHash("sha256").update(raw).digest("hex");
 }
@@ -140,7 +139,8 @@ export type ApiKeyRefusal = {
  * within its rate limit, and its company on a plan with API access. Every
  * caller presenting a key goes through it: `authorize` and the postings'
  * caller check. Once per request, so the rate limit counts a request once
- * however many gates it meets.
+ * however many gates it meets; safe for a credential, since nothing inside the
+ * request can revoke the key and then expect the same request to see it.
  */
 export function authenticateApiKey(
   rawKey: string
@@ -253,10 +253,6 @@ export function makeAuthSession(
 }
 
 /**
- * Determines the effective user based on console mode and pin-in state.
- * If console mode is on and an operator is pinned in, returns
- * the operator's ID. Otherwise returns the session user's ID.
- *
  * Console mode is read from the auth session; the pin-in from the SIGNED
  * `console-pin-{companyId}` cookie, re-validated against the database on every
  * request (`resolveConsolePinIn`): a forged, legacy, stale or foreign cookie,
@@ -274,7 +270,6 @@ async function getEffectiveUser(
   return pinIn?.userId ?? sessionUserId;
 }
 
-/** A claims role as one of the company roles; anything else is no role. */
 function companyRole(
   role: string | null
 ): "employee" | "customer" | "supplier" | null {
@@ -309,9 +304,8 @@ async function requirePermissions(
   userId: string;
   sessionUserId: string;
   consoleMode: boolean;
-  /** How the caller authenticated: a session, or an API key. */
   caller: "session" | "apiKey";
-  /** The session user's claims, or the API key's scopes, per module. */
+  /** The session user's claims, or the API key's scopes, per page. */
   permissions: Record<string, Permission>;
   /** The session user's role in the company; `null` for an API key. */
   role: "employee" | "customer" | "supplier" | null;
@@ -705,7 +699,6 @@ export async function signInWithPasskey(
 
   if (linkError || !linkData.properties?.hashed_token) return null;
 
-  // Verify the token server-side to obtain a Supabase session
   const { data: sessionData, error: sessionError } =
     await serviceRole.auth.verifyOtp({
       token_hash: linkData.properties.hashed_token,

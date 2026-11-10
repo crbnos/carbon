@@ -170,5 +170,5 @@ Problems it removes:
 6. Full verification: every check, plus the 173-page one-page-role pass.
 
 ## Progress
-- [x] 1 core — [x] 1 authz — [x] 2 auth/api — [~] 2 ee/editors (follow-ups) — [ ] 2 ERP — [~] F10 (TS marker)
+- [x] 1 core — [x] 1 authz — [x] 2 auth/api — [x] 2 ee/editors — [x] 2 ERP (commit 4b36420e75) — [~] F10 (TS marker)
 - [ ] comments — [ ] re-survey — [ ] tests — [ ] verify

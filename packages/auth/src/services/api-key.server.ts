@@ -11,7 +11,6 @@ import {
 } from "@carbon/database/access";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { oncePerRequest } from "@carbon/logger/middleware.server";
 import { getCarbonServiceRole } from "../lib/supabase/client.server";
 import type { Permission } from "../types";
 
@@ -27,7 +26,6 @@ const API_KEY_CACHE_TTL_SECONDS = 30;
 /** PostgREST's code for a `.single()` that matched no rows. */
 const NO_ROWS_FOUND = "PGRST116";
 
-/** Hash an API key using SHA-256 for secure storage/lookup */
 export function hashApiKey(rawKey: string): string {
   return createHash("sha256").update(rawKey).digest("hex");
 }
@@ -48,19 +46,11 @@ export function apiKeyCacheKey(keyHash: string): string {
   return `${API_KEY_CACHE_PREFIX}${keyHash}`;
 }
 
-/**
- * The apiKey row for a raw key, through a ~30s Redis cache. One HTTP API call
- * resolves the key twice (requirePermissions and the v1 scope read), so the
- * lookup is also memoized per request — safe for a credential row because the
- * request is authenticated BY that credential; nothing inside the request can
- * revoke it and then expect the same request to see the revocation.
- */
-export function getApiKeyRecord(rawKey: string): Promise<ApiKeyRecord | null> {
+/** The apiKey row for a raw key, through a ~30s Redis cache. */
+export async function getApiKeyRecord(
+  rawKey: string
+): Promise<ApiKeyRecord | null> {
   const keyHash = hashApiKey(rawKey);
-  return oncePerRequest(`apikey:${keyHash}`, () => loadApiKeyRecord(keyHash));
-}
-
-async function loadApiKeyRecord(keyHash: string): Promise<ApiKeyRecord | null> {
   try {
     const cached = await redis.get(apiKeyCacheKey(keyHash));
     // The literal string "null" is a cached negative — an unknown key we already
@@ -107,9 +97,9 @@ async function loadApiKeyRecord(keyHash: string): Promise<ApiKeyRecord | null> {
 }
 
 /**
- * The key's old `scopes` (`<module>_<action>: [companyIds]`) as module grants,
- * for a database the permission migrations have not reached yet (no
- * `permission` table to embed). Never cached: the next read after the
+ * TRANSITIONAL(#1958): the key's old `scopes` (`<module>_<action>: [companyIds]`)
+ * as module grants, for a database the permission migrations have not reached
+ * yet (no `permission` table to embed). Never cached: the next read after the
  * migrations must see the grants.
  */
 async function loadLegacyApiKeyRecord(

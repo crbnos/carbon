@@ -172,8 +172,7 @@ const grantRows = (apiKeyAction: "view" | "create" | "update" | "delete") =>
 
 /**
  * A project table, governed by projects_* (any employee reads) in its project's company.
- * `column` names the row's project, or its element with `via: "projectElement"`;
- * `project` itself passes "id".
+ * `column` names the row's project, or its element with `via: "projectElement"`.
  */
 const projectTable = <T extends Table>(
   column = "projectId",
@@ -1230,7 +1229,7 @@ export const manifest = {
   process: company({ read: "employee" }),
   productionEvent: company(),
   productionQuantity: company({ read: "employee" }),
-  project: projectTable("id"),
+  project: company({ read: "employee" }),
   projectBaseline: company({ read: "employee", update: false, delete: false }),
   projectChangeRequest: company({ read: "employee" }),
   projectChangeRequestComment: company({

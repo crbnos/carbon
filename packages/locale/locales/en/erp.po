@@ -13942,7 +13942,7 @@ msgstr "Gain on Lease Termination"
 msgid "Gain/Loss"
 msgstr "Gain/Loss"
 
-#. placeholder {0}: row.gained.join(", ")
+#. placeholder {0}: actions.join(", ")
 msgid "Gained {0} when permissions became levels"
 msgstr "Gained {0} when permissions became levels"
 
@@ -27180,7 +27180,7 @@ msgid "Set due date"
 msgstr "Set due date"
 
 #. placeholder {0}: module.row.label
-#. placeholder {1}: stepLabel[step]
+#. placeholder {1}: stepLabel(step)
 msgid "Set every page of {0} to {1}"
 msgstr "Set every page of {0} to {1}"
 

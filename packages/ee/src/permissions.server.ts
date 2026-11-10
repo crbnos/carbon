@@ -6,10 +6,9 @@ import type { Result } from "@carbon/auth";
 import { error, getClaims, getPermissionCacheKey, success } from "@carbon/auth";
 import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import {
-  logAuthEvent,
+  logApiKeyAccessChange,
   logPermissionChange,
-  logRoleAccessChange,
-  SYSTEM_ACTOR
+  logRoleAccessChange
 } from "@carbon/auth/auth-events.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
@@ -26,7 +25,7 @@ import {
   removeGrant,
   replaceGrants
 } from "@carbon/database/access-write";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { redis } from "@carbon/kv";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireEntitlement } from "./entitlements.server";
@@ -36,27 +35,18 @@ import {
   claimsMayEditAccounts,
   type GrantRow,
   type LeveledGrant,
-  refusedModules
+  refusedModules,
+  subjectTypeOf
 } from "./permission-grants";
 
 /**
- * Commercial (Enterprise) RBAC authoring — the single, licensed source of truth
- * for creating/editing employee types and editing the access of a role, a
- * person or an API key. Every grant write is `writeAccessGrants`. Gated to the
- * Business plan via the `PERMISSIONS` feature (`@carbon/ee/plan`); Community ships
- * an "everyone is an admin" experience so none of this is reachable there.
- *
- * Consumed on the server by the ERP authoring routes AND by the `@carbon/jobs`
- * bulk-edit task (`carbon/update-permissions`), which previously carried its own
- * drifting copy of `updatePermissions` — this is now the only copy.
+ * Gated to the Business plan via the `PERMISSIONS` feature (`@carbon/ee/plan`);
+ * Community ships an "everyone is an admin" experience so none of this is
+ * reachable there.
  *
  * The invite flow's permission merge stays in the ERP `users.service.ts`: only
  * portal invites carry permissions through it, and it is not authoring.
  */
-
-// ---------------------------------------------------------------------------
-// Employee-type CRUD
-// ---------------------------------------------------------------------------
 
 export async function deleteEmployeeType(
   client: SupabaseClient<Database>,
@@ -72,66 +62,8 @@ export async function deleteEmployeeType(
     .eq("protected", false);
 }
 
-export async function insertEmployeeType(
-  client: SupabaseClient<Database>,
-  employeeType: { name: string; companyId: string }
-) {
-  await requireEntitlement(client, employeeType.companyId, "PERMISSIONS");
-  return client
-    .from("employeeType")
-    .insert([employeeType])
-    .select("id")
-    .single();
-}
-
-export async function upsertEmployeeType(
-  client: SupabaseClient<Database>,
-  employeeType:
-    | { name: string; companyId: string }
-    | { id: string; name: string }
-) {
-  if ("id" in employeeType) {
-    // The update input carries no companyId — read it from the row so the
-    // entitlement check (the lock) can run before the write.
-    const existing = await client
-      .from("employeeType")
-      .select("companyId")
-      .eq("id", employeeType.id)
-      .single();
-
-    if (existing.error || !existing.data) {
-      return {
-        data: null,
-        error: existing.error || { message: "Employee type not found" }
-      };
-    }
-
-    await requireEntitlement(client, existing.data.companyId, "PERMISSIONS");
-
-    return client
-      .from("employeeType")
-      .update(employeeType)
-      .eq("id", employeeType.id)
-      .eq("companyId", existing.data.companyId)
-      .select("id")
-      .single();
-  }
-
-  await requireEntitlement(client, employeeType.companyId, "PERMISSIONS");
-  return client
-    .from("employeeType")
-    .insert([employeeType])
-    .select("id")
-    .single();
-}
-
-// ---------------------------------------------------------------------------
-// Grant writes: every subject, one entry point
-// ---------------------------------------------------------------------------
-
 export type AccessSubject = GrantSubject;
 
-/** Replace the subject's grants with a set, or remove one of them. */
 export type AccessChange =
   | { set: readonly GrantInput[] }
   | { remove: GrantRow };
@@ -141,17 +73,12 @@ export type AccessWriteError = {
   message: string;
 };
 
-const subjectTypeOf = (subject: AccessSubject): AccessSubjectType =>
-  "employeeTypeId" in subject ? "role" : "userId" in subject ? "person" : "key";
-
-/** The user's claims in the company, as flat keys for the audit event. */
 async function auditedClaims(userId: string, companyId: string) {
   const claims = await getClaims(getCarbonServiceRole(), userId, companyId);
   if (claims.error || claims.data === null) return null;
   return claimKeys(claimsFor(claims.data, companyId).permissions);
 }
 
-/** What a write changed: one entry per module or page whose grant moved. */
 function grantChanges(
   before: readonly { module: string; page: string | null; level: string }[],
   after: readonly { module: string; page: string | null; level: string }[]
@@ -176,9 +103,8 @@ function grantChanges(
   return changes;
 }
 
-/** The subject's own row in the company, with what the write needs from it. */
 async function ownedSubject(
-  db: Kysely<KyselyDatabase>,
+  db: Kysely<KyselyDatabase> | KyselyTx,
   companyId: string,
   subject: AccessSubject
 ): Promise<{ employeeTypeId?: string | null; keyHash?: string } | null> {
@@ -209,6 +135,16 @@ async function ownedSubject(
   return key ? { keyHash: key.keyHash } : null;
 }
 
+class Refusal extends Error {
+  constructor(
+    code: AccessWriteError["code"],
+    message: string,
+    readonly refusal: AccessWriteError = { code, message }
+  ) {
+    super(message);
+  }
+}
+
 const NOT_FOUND: Record<AccessSubjectType, string> = {
   role: "Employee type not found",
   person: "Employee not found",
@@ -227,7 +163,9 @@ const NOT_FOUND: Record<AccessSubjectType, string> = {
  * role, and `permission_changed` with the grant changes for a key.
  *
  * A person can be moved to another employee type of the company in the same
- * transaction (`employeeType`).
+ * transaction (`employeeType`). `subjectRow` writes the subject's own row in
+ * that transaction too, before the grants: an API key is created or renamed
+ * with its grants, or not at all.
  */
 export async function writeAccessGrants(
   client: SupabaseClient<Database>,
@@ -237,6 +175,7 @@ export async function writeAccessGrants(
     subject,
     change,
     employeeType,
+    subjectRow,
     actorId,
     ip,
     reason
@@ -246,6 +185,7 @@ export async function writeAccessGrants(
     change: AccessChange;
     /** A person only: the employee type to move them to. */
     employeeType?: string;
+    subjectRow?: (tx: KyselyTx) => Promise<unknown>;
     actorId: string;
     ip?: string;
     reason?: string;
@@ -257,25 +197,6 @@ export async function writeAccessGrants(
     companyId,
     type === "key" ? "API_KEYS" : "PERMISSIONS"
   );
-
-  const owned = await ownedSubject(db, companyId, subject);
-  if (!owned) return { error: { code: "notFound", message: NOT_FOUND[type] } };
-
-  const typeBefore = owned.employeeTypeId ?? null;
-  const moveTo =
-    "userId" in subject && employeeType && employeeType !== typeBefore
-      ? employeeType
-      : null;
-  if (moveTo) {
-    const ownType = await db
-      .selectFrom("employeeType")
-      .select("id")
-      .where("id", "=", moveTo)
-      .where("companyId", "=", companyId)
-      .executeTakeFirst();
-    if (!ownType)
-      return { error: { code: "notFound", message: NOT_FOUND.role } };
-  }
 
   if ("set" in change) {
     const refused = refusedModules(type, change.set);
@@ -289,36 +210,58 @@ export async function writeAccessGrants(
     }
   }
 
-  const before = await readGrants(db, companyId, subject);
   const userId = "userId" in subject ? subject.userId : null;
   const claimsBefore = userId ? await auditedClaims(userId, companyId) : null;
 
+  let written: Awaited<ReturnType<typeof writeInTransaction>>;
   try {
-    await db.transaction().execute(async (tx) => {
-      if (userId && moveTo) {
-        await tx
-          .updateTable("employee")
-          .set({ employeeTypeId: moveTo })
-          .where("id", "=", userId)
-          .where("companyId", "=", companyId)
-          .execute();
-      }
-      if ("set" in change) {
-        await replaceGrants(tx, {
-          companyId,
-          subject,
-          grants: change.set,
-          userId: actorId
-        });
-      } else {
-        await removeGrant(tx, { companyId, subject, ...change.remove });
-      }
-    });
+    written = await db.transaction().execute(writeInTransaction);
   } catch (err) {
+    if (err instanceof Refusal) return { error: err.refusal };
     error(err, "Failed to update permissions");
     return {
       error: { code: "internal", message: "Failed to update permissions" }
     };
+  }
+  const { owned, before, moveTo } = written;
+
+  async function writeInTransaction(tx: KyselyTx) {
+    await subjectRow?.(tx);
+    const owned = await ownedSubject(tx, companyId, subject);
+    if (!owned) throw new Refusal("notFound", NOT_FOUND[type]);
+
+    const moveTo =
+      userId && employeeType && employeeType !== owned.employeeTypeId
+        ? employeeType
+        : null;
+    if (userId && moveTo) {
+      const ownType = await tx
+        .selectFrom("employeeType")
+        .select("id")
+        .where("id", "=", moveTo)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!ownType) throw new Refusal("notFound", NOT_FOUND.role);
+      await tx
+        .updateTable("employee")
+        .set({ employeeTypeId: moveTo })
+        .where("id", "=", userId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    const before = await readGrants(tx, companyId, subject);
+    if ("set" in change) {
+      await replaceGrants(tx, {
+        companyId,
+        subject,
+        grants: change.set,
+        userId: actorId
+      });
+    } else {
+      await removeGrant(tx, { companyId, subject, ...change.remove });
+    }
+    return { owned, before, moveTo };
   }
 
   let affected = 0;
@@ -366,9 +309,8 @@ export async function writeAccessGrants(
         affected
       });
     } else if ("apiKeyId" in subject) {
-      // Main audited no key write; a key has no event helper of its own.
-      logAuthEvent("permission_changed", {
-        actor: actorId || SYSTEM_ACTOR,
+      logApiKeyAccessChange({
+        actor: actorId,
         apiKeyId: subject.apiKeyId,
         companyId,
         ip,
@@ -378,6 +320,54 @@ export async function writeAccessGrants(
   }
 
   return { error: null };
+}
+
+/**
+ * Create an employee type (`name` only) or rename one (`id` given), and set
+ * its grants, in one transaction (`writeAccessGrants`): a failed grant write
+ * leaves no type and no half-saved edit. Returns the type's id.
+ */
+export async function saveEmployeeType(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    employeeType,
+    grants,
+    actorId,
+    ip
+  }: {
+    companyId: string;
+    employeeType: { name: string } | { id: string; name: string };
+    grants: readonly GrantInput[];
+    actorId: string;
+    ip?: string;
+  }
+): Promise<{ id: string | null; error: AccessWriteError | null }> {
+  const { name } = employeeType;
+  const id = "id" in employeeType ? employeeType.id : crypto.randomUUID();
+  const written = await writeAccessGrants(client, db, {
+    companyId,
+    subject: { employeeTypeId: id },
+    change: { set: grants },
+    actorId,
+    ip,
+    subjectRow: (tx) =>
+      "id" in employeeType
+        ? tx
+            .updateTable("employeeType")
+            .set({ name })
+            .where("id", "=", id)
+            .where("companyId", "=", companyId)
+            .execute()
+        : tx
+            .insertInto("employeeType")
+            .values({ id, name, companyId })
+            .execute()
+  });
+  return written.error
+    ? { id: null, error: written.error }
+    : { id, error: null };
 }
 
 /**
@@ -416,7 +406,6 @@ export async function updatePermissions(
     .where("employee.companyId", "=", companyId)
     .executeTakeFirst();
   if (!employee) {
-    // error() logs the context when it is non-null.
     return error({ companyId, userId: id }, "Employee not found");
   }
   const actorClaims = await getClaims(

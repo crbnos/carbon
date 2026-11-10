@@ -10232,8 +10232,8 @@ export async function returnFixedAssetToService(
 
 /** Capitalize a unit, return an asset to inventory, attach a job to a CIP
  *  asset or capitalize a CIP asset (`postAssetTransfer`), run as the caller:
- *  the caller holds the transfer's permission, and `update: accounting` too
- *  when a capitalization enters its own cost.
+ *  the caller holds the transfer's permission, raised to Edit on
+ *  `accounting.assets` when a capitalization enters its own cost.
  */
 export async function invokeAssetTransfer(
   client: SupabaseClient<Database>,
@@ -10250,17 +10250,10 @@ export async function invokeAssetTransfer(
     transfer as z.input<typeof postAssetTransferInput>,
     postAssetTransfer,
     {
-      as: (input) => {
-        const required = resolvePermissions(postAssetTransferPermission, input);
-        return input.type === "capitalize" &&
-          input.cost != null &&
-          required !== "system"
-          ? {
-              ...(required === "employee" ? {} : required),
-              "accounting.assets": "Edit"
-            }
-          : required;
-      }
+      as: (input) =>
+        input.type === "capitalize" && input.cost != null
+          ? { "accounting.assets": "Edit" }
+          : resolvePermissions(postAssetTransferPermission, input)
     }
   );
 }

@@ -83,7 +83,8 @@ export const cancelJob = defineServiceFn({
   user actor carries `role` for this check: `requirePermissions` returns it,
   and a workflow runs only while its owner is an employee
   (`readOwnerPermissions`). A call made from inside another function's
-  `run` is not checked again.
+  `run` is not checked again, except that a `"system"` function still admits
+  only the system actor.
 - **Context**: `ctx.asCaller.supabase` (RLS), `ctx.asSystem.supabase` /
   `ctx.asSystem.pg` (no RLS: scope every query by `ctx.company.id`), `ctx.kv`,
   `ctx.auditUserId` for `createdBy` / `updatedBy`. `ctx.can(required, { reads? })` (`admits`; a gate,

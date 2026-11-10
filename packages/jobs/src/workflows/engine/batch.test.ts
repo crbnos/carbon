@@ -37,8 +37,12 @@ vi.mock("./owner", () => ({
       })
     })
   })),
-  readOwnerPermissions: vi.fn(async () => ({})),
-  hasPermission: () => true
+  // The owner holds every page in co1.
+  readOwnerPermissions: vi.fn(async () => {
+    const { ACTIONS, PAGES } = await import("@carbon/database/access");
+    const all = Object.fromEntries(ACTIONS.map((action) => [action, ["co1"]]));
+    return Object.fromEntries(PAGES.map((page) => [page.id, all]));
+  })
 }));
 vi.mock("../actions", () => ({ createWorkflowServices: vi.fn() }));
 

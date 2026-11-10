@@ -476,7 +476,7 @@ export async function updateProjectStatus(
 
   if (args.status === "Closed") {
     // Not the caller's client: RLS hides purchase order lines from a user with
-    // no purchasing_view, and that count of 0 would let the close through.
+    // no View on a Purchasing page, and that count of 0 would let the close through.
     const [openLines, openJobs] = await Promise.all([
       db
         .selectFrom("purchaseOrderLine")
@@ -4290,7 +4290,7 @@ export async function getTimesheetApprovalCount(
 /**
  * Lists Submitted entries, grouped by employee and week (Monday). When
  * `ownerId` is set, only entries on projects that user owns are listed;
- * pass null for a user with `projects_update`.
+ * pass null for a user with Edit on Approvals.
  */
 export async function getTimesheetApprovals(
   client: Client,

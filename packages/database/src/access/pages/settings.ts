@@ -4,7 +4,6 @@
 
 import type { Page } from "../registry";
 
-/** The module's name in the sidebar. */
 export const LABEL = "Settings";
 
 // The pages that configure a module (Settings → Inventory and the others) stay

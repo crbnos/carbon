@@ -50,12 +50,6 @@ import { stripSpecialCharacters } from "~/utils/string";
 
 const logger = getLogger("erp", "recorddocuments");
 
-/**
- * Documents filed against a master record (a supplier or a customer as a
- * company), as opposed to a transaction. Files land in the `private` bucket
- * under `${companyId}/${bucketPrefix}/${id}`, and each upload also writes a
- * `document` row so the file is searchable in the global Documents module.
- */
 /** PDFs and images are the only types a browser reliably renders inline; for
  *  anything else a new tab would just trigger a download, so the action is hidden. */
 function isViewableInBrowser(fileName: string): boolean {
@@ -63,19 +57,24 @@ function isViewableInBrowser(fileName: string): boolean {
   return type === "PDF" || type === "Image";
 }
 
+/**
+ * Documents filed against a master record (a supplier or a customer as a
+ * company), as opposed to a transaction. Files land in the `private` bucket
+ * under `${companyId}/${bucketPrefix}/${id}`, and each upload also writes a
+ * `document` row so the file is searchable in the global Documents module.
+ * `page` is the page whose level gates upload and delete.
+ */
+const RECORDS = {
+  Supplier: { bucketPrefix: "supplier", page: "purchasing.suppliers" },
+  Customer: { bucketPrefix: "customer", page: "sales.customers" }
+} as const;
+
 type RecordDocumentsProps = {
   files: FileObject[];
   /** The record's id — becomes document.sourceDocumentId */
   id: string;
-  /** Storage prefix segment under ${companyId}/, e.g. "supplier" */
-  bucketPrefix: string;
-  /**
-   * documentSourceType value. Without one, the upload writes no `document`
-   * row: the file lives with the record only (a service order's files).
-   */
-  sourceDocument?: "Supplier" | "Customer";
-  /** The page whose level gates upload and delete */
-  page: "purchasing.suppliers" | "sales.customers" | "service.jobs";
+  /** The record's documentSourceType. */
+  record: keyof typeof RECORDS;
   isReadOnly?: boolean;
   /**
    * `section`: a small heading over a bordered box, as on a project's or a
@@ -87,15 +86,13 @@ type RecordDocumentsProps = {
 const RecordDocuments = ({
   files,
   id,
-  bucketPrefix,
-  sourceDocument,
-  page,
+  record,
   isReadOnly,
   variant = "card"
 }: RecordDocumentsProps) => {
   const { t } = useLingui();
   const { canDelete, download, view, deleteAttachment, getPath, upload } =
-    useRecordDocuments({ id, bucketPrefix, sourceDocument, page });
+    useRecordDocuments({ id, record });
 
   const effectiveCanDelete = isReadOnly ? false : canDelete;
 
@@ -234,12 +231,7 @@ const RecordDocuments = ({
     </>
   );
   const uploadButton = !isReadOnly && (
-    <RecordDocumentUpload
-      id={id}
-      bucketPrefix={bucketPrefix}
-      sourceDocument={sourceDocument}
-      page={page}
-    />
+    <RecordDocumentUpload id={id} record={record} />
   );
 
   if (variant === "section") {
@@ -275,12 +267,7 @@ const RecordDocuments = ({
   );
 };
 
-type RecordDocumentUploadProps = {
-  id: string;
-  bucketPrefix: string;
-  sourceDocument?: "Supplier" | "Customer";
-  page: "purchasing.suppliers" | "sales.customers" | "service.jobs";
-};
+type RecordDocumentUploadProps = Pick<RecordDocumentsProps, "id" | "record">;
 
 const RecordDocumentUpload = (props: RecordDocumentUploadProps) => {
   const { t } = useLingui();
@@ -295,7 +282,7 @@ const RecordDocumentUpload = (props: RecordDocumentUploadProps) => {
 
   return (
     <File
-      isDisabled={!permissions.has({ [props.page]: "Edit" })}
+      isDisabled={!permissions.has({ [RECORDS[props.record].page]: "Edit" })}
       leftIcon={<LuUpload />}
       onChange={uploadFiles}
       multiple
@@ -307,10 +294,9 @@ const RecordDocumentUpload = (props: RecordDocumentUploadProps) => {
 
 export const useRecordDocuments = ({
   id,
-  bucketPrefix,
-  sourceDocument,
-  page
+  record: sourceDocument
 }: RecordDocumentUploadProps) => {
+  const { bucketPrefix, page } = RECORDS[sourceDocument];
   const { t } = useLingui();
   const permissions = usePermissions();
   const { company } = useUser();
@@ -385,7 +371,6 @@ export const useRecordDocuments = ({
       name: string;
       size: number;
     }) => {
-      if (!sourceDocument) return;
       const formData = new FormData();
       formData.append("path", filePath);
       formData.append("name", name);

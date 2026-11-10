@@ -90,9 +90,7 @@ export type ListDefinition<
 > = Paging & {
   /** The list's key, for example "sales-orders". */
   key: string;
-  /** The loader's permission check, without `bypassRls`. */
   permission: ListPermission;
-  /** The loader's query for one page. */
   query: (
     client: SupabaseClient<Database>,
     companyId: string,
@@ -124,7 +122,6 @@ export type ListPage<TRow> = {
   error: unknown;
 };
 
-// One file per module. A module batch adds its entries to its own file only.
 export const LIST_REGISTRY: Record<string, ListDefinition> = {
   ...accountingLists,
   ...documentsLists,
@@ -238,7 +235,6 @@ export async function resolveCompanyGroupId(
   };
 }
 
-/** A URL param the list passes to its service: its name, or a reader. */
 type ParamReader = string | ((params: URLSearchParams) => unknown);
 
 /**

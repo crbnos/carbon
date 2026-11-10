@@ -10,10 +10,7 @@ import { deactivateUser } from "@carbon/auth/users.server";
 import { LEVELS, pageById } from "@carbon/database/access";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { generateConsolePin, setEmployeePin } from "@carbon/ee/console.server";
-import {
-  insertEmployeeType,
-  upsertEmployeeType
-} from "@carbon/ee/permissions.server";
+import { subjectGates } from "@carbon/ee/permission-grants";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { batchTrigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -552,7 +549,7 @@ export const bulkUpdatePermissions = defineServiceFn({
  *
  * @remarks
  * Needs role authoring (the PERMISSIONS feature). The type and its grants
- * are two writes: when the grants fail, the type stays.
+ * are written in one transaction: when the grants fail, no type is created.
  */
 export const createEmployeeType = defineServiceFn({
   input: z.object({
@@ -567,26 +564,10 @@ export const createEmployeeType = defineServiceFn({
     if (!ctx.can({ "users.employeeTypes": "Edit" })) {
       return ctx.error("forbidden", "You do not have permission to do this");
     }
-
-    const client = ctx.asCaller.supabase;
-    const companyId = ctx.company.id;
-    const created = await insertEmployeeType(client, { name, companyId });
-    const employeeTypeId = created.data?.id;
-    if (created.error || !employeeTypeId) {
-      return ctx.error(
-        "internal",
-        "Failed to insert employee type",
-        created.error
-      );
-    }
-
-    const refused = await service.saveAccessGrants(ctx, {
-      subjectType: "role",
-      subjectId: employeeTypeId,
-      change: { set: grants }
+    return service.writeEmployeeType(ctx, {
+      employeeType: { name },
+      grants
     });
-    if (refused) return refused;
-    return { id: employeeTypeId };
   }
 });
 
@@ -594,7 +575,7 @@ export const createEmployeeType = defineServiceFn({
  * Rename an employee type and replace its grants.
  *
  * @remarks
- * Needs role authoring (the PERMISSIONS feature). Two writes, as for
+ * Needs role authoring (the PERMISSIONS feature). One transaction, as for
  * `createEmployeeType`.
  */
 export const updateEmployeeType = defineServiceFn({
@@ -607,32 +588,12 @@ export const updateEmployeeType = defineServiceFn({
   async run(ctx, { id, name, grants }) {
     const gated = await service.refuseUnlessPermissionsFeature(ctx);
     if (gated) return gated;
-
-    const client = ctx.asCaller.supabase;
-    const updated = await upsertEmployeeType(client, { id, name });
-    if (updated.error) {
-      return ctx.error(
-        "internal",
-        "Failed to update employee type",
-        updated.error
-      );
-    }
-
-    const refused = await service.saveAccessGrants(ctx, {
-      subjectType: "role",
-      subjectId: id,
-      change: { set: grants }
+    return service.writeEmployeeType(ctx, {
+      employeeType: { id, name },
+      grants
     });
-    if (refused) return refused;
-    return { id };
   }
 });
-
-const grantSubjectRules = {
-  role: { "users.employeeTypes": "Edit" },
-  person: { "users.accounts": "Edit" },
-  key: { "settings.apiKeys": "Edit" }
-} as const;
 
 /**
  * What an employee can do on each page, and the grant that decides it: the
@@ -695,14 +656,7 @@ export const getAccessGrants = defineServiceFn({
     subjectType: permissionsValidator.shape.subjectType,
     subjectId: z.string().min(1)
   }),
-  permission: {
-    by: "subjectType",
-    rules: {
-      role: { "users.employeeTypes": "View" },
-      person: { "users.accounts": "View" },
-      key: { "settings.apiKeys": "View" }
-    }
-  },
+  permission: { by: "subjectType", rules: subjectGates("View") },
   async run(ctx, { subjectType, subjectId }) {
     return service.readAccessGrants(ctx, subjectType, subjectId);
   }
@@ -720,7 +674,7 @@ export const getAccessGrants = defineServiceFn({
  */
 export const upsertAccessGrants = defineServiceFn({
   input: permissionsValidator.extend({ ip: z.string().optional() }),
-  permission: { by: "subjectType", rules: grantSubjectRules },
+  permission: { by: "subjectType", rules: subjectGates("Edit") },
   async run(ctx, { subjectType, subjectId, grants, ip }) {
     const refused = await service.saveAccessGrants(ctx, {
       subjectType,
@@ -745,7 +699,7 @@ export const deleteAccessGrant = defineServiceFn({
     page: z.string().min(1).nullable(),
     ip: z.string().optional()
   }),
-  permission: { by: "subjectType", rules: grantSubjectRules },
+  permission: { by: "subjectType", rules: subjectGates("Edit") },
   async run(ctx, { subjectType, subjectId, module, page, ip }) {
     const refused = await service.saveAccessGrants(ctx, {
       subjectType,

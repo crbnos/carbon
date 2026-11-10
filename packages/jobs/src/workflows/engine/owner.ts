@@ -9,8 +9,7 @@ import {
 } from "@carbon/auth";
 import { getUserScopedClient } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import { admits, holds } from "@carbon/database/access";
-import type { PermissionAction } from "@carbon/ee/workflows";
+import { admits } from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -91,14 +90,4 @@ export async function readOwnerPermissions(
     return null;
   }
   return claims.permissions;
-}
-
-/** Whether the owner holds the action on the page (`<page>_<action>`) in the company. */
-export function hasPermission(
-  permissions: OwnerPermissions,
-  page: string,
-  action: PermissionAction,
-  companyId: string
-): boolean {
-  return holds(permissions, `${page}_${action}`, companyId);
 }

@@ -18,6 +18,7 @@ vi.mock("@carbon/logger", () => ({
 
 import {
   grantedPermissionKeys,
+  logApiKeyAccessChange,
   logPermissionChange,
   logRoleChange
 } from "./auth-events.server";
@@ -172,5 +173,39 @@ describe("logRoleChange", () => {
     expect(payload.after).toBeUndefined();
     expect(payload.beforeRole).toBe("employee");
     expect(payload.afterRole).toBeNull();
+  });
+});
+
+describe("logApiKeyAccessChange", () => {
+  it("emits permission_changed with the key and its grant changes", () => {
+    const changes = [
+      { module: "Sales", page: null, from: "inherit", to: "View" }
+    ];
+    logApiKeyAccessChange({
+      actor: "usr_admin",
+      apiKeyId: "key_1",
+      companyId: COMPANY,
+      changes
+    });
+    const [message, payload] = info.mock.calls[0]!;
+    expect(message).toContain("auth.permission_changed");
+    expect(payload).toMatchObject({
+      authEvent: "permission_changed",
+      actor: "usr_admin",
+      apiKeyId: "key_1",
+      companyId: COMPANY,
+      changes
+    });
+  });
+
+  it("stamps a system actor when actor is missing", () => {
+    logApiKeyAccessChange({
+      actor: "",
+      apiKeyId: "key_1",
+      companyId: COMPANY,
+      changes: []
+    });
+    const [, payload] = info.mock.calls[0]!;
+    expect(payload.actor).toBe("system");
   });
 });

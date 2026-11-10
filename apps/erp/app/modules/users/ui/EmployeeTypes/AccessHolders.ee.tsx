@@ -3,8 +3,10 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import {
+  ACTIONS,
   LEVELS,
   type Level,
+  levelHolds,
   MODULES,
   moduleOf,
   PAGES
@@ -25,6 +27,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuKeyRound } from "react-icons/lu";
 import { path } from "~/utils/path";
+import { useLevelWord } from "../components/AccessGrid.ee";
 
 type Holders = {
   people: { userId: string; name: string; level: Level; source: string }[];
@@ -40,12 +43,12 @@ const Meter = ({ level, label }: { level: Level; label: string }) => (
     title={label}
     className="flex w-16 shrink-0 gap-0.5"
   >
-    {[1, 2, 3, 4].map((step) => (
+    {ACTIONS.map((action) => (
       <span
-        key={step}
+        key={action}
         className={cn(
           "h-1.5 flex-1 rounded-full",
-          step <= LEVELS.indexOf(level) ? "bg-primary" : "bg-foreground/10"
+          levelHolds(level, action) ? "bg-primary" : "bg-foreground/10"
         )}
       />
     ))}
@@ -69,13 +72,7 @@ const AccessHolders = () => {
     Edit: t`can update`,
     Full: t`can delete`
   };
-  const reaches: Record<Level, string> = {
-    None: t`None`,
-    View: t`View`,
-    Create: t`Create`,
-    Edit: t`Update`,
-    Full: t`Delete`
-  };
+  const levelWord = useLevelWord();
   const from: Record<string, string> = {
     admin: t`Admin`,
     person: t`Override`,
@@ -130,7 +127,7 @@ const AccessHolders = () => {
             <span className="text-xs text-muted-foreground">
               {from[person.source] ?? person.source}
             </span>
-            <Meter level={person.level} label={reaches[person.level]} />
+            <Meter level={person.level} label={levelWord(person.level)} />
           </li>
         ))}
         {apiKeys.map((key) => (
@@ -145,7 +142,7 @@ const AccessHolders = () => {
             <span className="text-xs text-muted-foreground">
               <Trans>API key</Trans>
             </span>
-            <Meter level={key.level} label={reaches[key.level]} />
+            <Meter level={key.level} label={levelWord(key.level)} />
           </li>
         ))}
         {!holders.isLoading && people.length + apiKeys.length === 0 ? (

@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { manifest } from "../authz/manifest";
 import { type AnyRule, render } from "../authz/rules";
+import { Constants } from "../constants";
 import {
   childPath,
   isPageModule,
@@ -284,6 +285,26 @@ describe("PAGES", () => {
         ? [`${page.id}: ${page.where.table}.${page.where.column}`]
         : []
     );
+    expect(problems).toEqual([]);
+  });
+
+  it("picks rows of an enum column by a value of its enum", () => {
+    const enums: Record<string, readonly string[]> = {
+      "item.type": Constants.public.Enums.itemType,
+      "revenueRecognitionRun.type": Constants.public.Enums.runType,
+      "enforcementRule.family": Constants.public.Enums.enforcementRuleFamily
+    };
+    const problems = (PAGES as readonly Page[]).flatMap((page) => {
+      if (typeof page.where?.value !== "string") return [];
+      const values = enums[`${page.where.table}.${page.where.column}`];
+      if (!values)
+        return [
+          `${page.id}: ${page.where.table}.${page.where.column} is not listed here`
+        ];
+      return values.includes(page.where.value)
+        ? []
+        : [`${page.id}: ${page.where.value} is no value of the enum`];
+    });
     expect(problems).toEqual([]);
   });
 

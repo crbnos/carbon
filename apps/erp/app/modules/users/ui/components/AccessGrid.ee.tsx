@@ -5,6 +5,7 @@
 import type { TermId } from "@carbon/content/glossary";
 import {
   type Grant,
+  LEVEL_ACTION,
   LEVELS,
   type Level,
   type LevelSubject,
@@ -17,6 +18,9 @@ import {
 import type { GrantModule } from "@carbon/database/access-write";
 import { rowLevel } from "@carbon/ee/permission-grants";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Checkbox,
   cn,
   IconButton,
@@ -27,7 +31,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { LuChevronRight, LuUndo2 } from "react-icons/lu";
+import { LuChevronRight, LuShieldCheck, LuUndo2 } from "react-icons/lu";
 
 /** One grant as the grid edits it. `module` is the `module` enum label. */
 export type AccessGrant = {
@@ -36,21 +40,25 @@ export type AccessGrant = {
   level: Level;
 };
 
+/**
+ * What the grid edits. `grants`: a role's or a key's own grants. `overrides`:
+ * a person's grants over their role's (`inherited`, named `from`). `bulk`:
+ * the same overrides for several people, whose roles differ, so a row without
+ * a grant is "no change".
+ */
+export type AccessGridMode =
+  | { edits: "grants" }
+  | { edits: "overrides"; inherited: readonly AccessGrant[]; from: string }
+  | { edits: "bulk" };
+
 type AccessGridProps = {
   pages?: readonly Page[];
   value: AccessGrant[];
-  /** The grants a row falls back to with no grant here: a person's role's. */
-  inherited?: readonly AccessGrant[];
-  /** What clearing a row returns to: "Inherit", or "Role default" on a person. */
-  inheritLabel?: string;
-  /** Rows without a grant follow `inherited`. Off where it differs per row
-   *  owner, as in a bulk edit: there a row without a grant is "no change". */
-  showInherited?: boolean;
-  /** Where inherited levels come from, such as the person's role: shown in a
-   *  "From" column. */
-  inheritsFrom?: string;
-  /** A note per module or page id, such as access that grew in the conversion. */
-  notes?: Record<string, string>;
+  mode?: AccessGridMode;
+  /** The subject is the company's Admin type, or a person on it: Full everywhere, nothing to set. */
+  admin?: boolean;
+  /** Per module or page id, the actions a converted grant gained over its old checkboxes. */
+  gained?: Record<string, readonly string[]>;
   /** Where "select all" and a column header stop on a module
    *  (`SUBJECT_RULES[…].selectAllCaps`); a row can still go higher. */
   selectAllCaps?: Partial<Record<ModuleId, Level>>;
@@ -61,7 +69,20 @@ type AccessGridProps = {
 };
 
 /** The checkbox columns; column N holds level LEVELS[N]. */
-const STEPS = [1, 2, 3, 4] as const;
+const STEPS = LEVELS.slice(1).map((level) => LEVELS.indexOf(level));
+
+/** A level by the action it adds, as the grid's columns name it. */
+export function useLevelWord() {
+  const { t } = useLingui();
+  const words = {
+    view: t`View`,
+    create: t`Create`,
+    update: t`Update`,
+    delete: t`Delete`
+  };
+  return (level: Level) =>
+    level === "None" ? t`None` : words[LEVEL_ACTION[level]];
+}
 
 const index = (level: Level) => LEVELS.indexOf(level);
 
@@ -78,11 +99,9 @@ type Row = { page: string | null; label: string; max: Level };
 const AccessGrid = ({
   pages = PAGES,
   value,
-  inherited = [],
-  inheritLabel,
-  showInherited = true,
-  inheritsFrom,
-  notes = {},
+  mode = { edits: "grants" },
+  admin = false,
+  gained = {},
   selectAllCaps = {},
   onChange,
   label,
@@ -90,18 +109,62 @@ const AccessGrid = ({
   isDisabled
 }: AccessGridProps) => {
   const { t } = useLingui();
+  const inherits = mode.edits === "overrides";
+  const showInherited = mode.edits !== "bulk";
+  const inherited = inherits ? mode.inherited : [];
+  const inheritsFrom = inherits ? mode.from : undefined;
+  const resettable = mode.edits !== "grants";
+  const resetLabel = inherits ? t`Role default` : t`No change`;
+  const levelWord = useLevelWord();
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   // The cell under the pointer: the row previews what clicking it would set.
   const [hover, setHover] = useState<{ key: string; step: number } | null>(
     null
   );
 
-  const stepLabel: Record<(typeof STEPS)[number], string> = {
-    1: t`View`,
-    2: t`Create`,
-    3: t`Update`,
-    4: t`Delete`
-  };
+  if (admin) {
+    return (
+      <Alert>
+        <LuShieldCheck />
+        {inherits ? (
+          <>
+            <AlertTitle>
+              <Trans>Full access through the Admin type</Trans>
+            </AlertTitle>
+            <AlertDescription>
+              <Trans>
+                Admin has every level on every module, including modules added
+                later. Overrides don't apply while this person is an Admin.
+              </Trans>
+            </AlertDescription>
+          </>
+        ) : (
+          <>
+            <AlertTitle>
+              <Trans>Admin has full access</Trans>
+            </AlertTitle>
+            <AlertDescription>
+              <Trans>
+                Every level on every module, including modules added later.
+                There is nothing to set.
+              </Trans>
+            </AlertDescription>
+          </>
+        )}
+      </Alert>
+    );
+  }
+
+  const notes = Object.fromEntries(
+    Object.entries(gained)
+      .filter(([, actions]) => actions.length > 0)
+      .map(([id, actions]) => [
+        id,
+        t`Gained ${actions.join(", ")} when permissions became levels`
+      ])
+  );
+
+  const stepLabel = (step: number) => levelWord(LEVELS[step]!);
 
   const present = new Set(pages.map((page) => moduleOf(page.id)));
   const modules = MODULES.filter((module) => present.has(module.id)).map(
@@ -169,12 +232,6 @@ const AccessGrid = ({
       : [...rest, { module: module.enumValue, page: row.page, level }];
   };
 
-  // Only a person's rows inherit: a role or a key row simply clears.
-  const inherits = showInherited && inheritsFrom !== undefined;
-  // A row can go back to something only on a person (the type) or in a bulk
-  // edit (no change); a role or a key row just unchecks.
-  const resettable = inherits || !showInherited;
-  const resetLabel = inheritLabel ?? (inherits ? t`Inherit` : t`Clear`);
   const canSetColumn = !inherits && !isDisabled;
 
   /** Every row of a module to one level each. A role, key or bulk edit sets a
@@ -239,7 +296,6 @@ const AccessGrid = ({
   ).length;
   const overrides = inherits ? value.length : 0;
 
-  /** A small amber mark beside a name, with its note on hover. */
   const note = (id: string | null) =>
     id && notes[id] ? (
       <Tooltip>
@@ -277,7 +333,7 @@ const AccessGrid = ({
         <td key={step} className="w-16 py-2 text-center">
           {step <= max ? (
             <Checkbox
-              aria-label={`${row.label}: ${stepLabel[step]}`}
+              aria-label={`${row.label}: ${stepLabel(step)}`}
               checked={checked}
               disabled={isDisabled}
               onCheckedChange={() =>
@@ -430,14 +486,14 @@ const AccessGrid = ({
                             {canSetColumn ? (
                               <button
                                 type="button"
-                                title={t`Set every page of ${module.row.label} to ${stepLabel[step]}`}
+                                title={t`Set every page of ${module.row.label} to ${stepLabel(step)}`}
                                 onClick={() => setColumn(module, step)}
                                 className="rounded px-1 py-0.5 uppercase tracking-wide transition-colors duration-100 hover:bg-foreground/5 hover:text-foreground active:scale-[0.97]"
                               >
-                                {stepLabel[step]}
+                                {stepLabel(step)}
                               </button>
                             ) : (
-                              stepLabel[step]
+                              stepLabel(step)
                             )}
                           </th>
                         ))}

@@ -33,7 +33,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // Regenerate the whole location's forecast IN-PROCESS (Node). Awaited before
   // we return, so the fetcher's revalidation reads fully-committed
   // reservations. Service-role client for the privileged execution; the route's
-  // requirePermissions is the gate.
+  // authorize is the gate.
   try {
     const result = await runLocationSchedule({
       db: getDatabaseClient(),

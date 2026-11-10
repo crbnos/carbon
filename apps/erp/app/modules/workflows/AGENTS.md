@@ -29,7 +29,7 @@ The definition schema, validator, catalogs, matcher and engine all live outside 
 
 ### Never
 - Never write `workflowTriggerEvent`, `workflow.nextRunAt` or `eventSystemSubscription` directly. `syncWorkflowTriggers` is their sole writer, and it is what makes a workflow able to fire at all.
-- Never let `$id.owner.tsx` accept a submitted `ownerId`. It writes the session user, always. An arbitrary id would let anyone with `workflows_update` borrow someone else's access.
+- Never let a workflow route accept a submitted `ownerId`. The owner is the person who created the workflow (`insertWorkflow` sets it from `createdBy`). An arbitrary id would let anyone with Edit on Workflows borrow someone else's access.
 - Never derive node output handles from a hand-written list — use `getNodeHandles(node)`, the same function the validator uses, or the canvas can draw a handle the validator calls `UNKNOWN_HANDLE`.
 - Never add a per-kind component or a second per-kind lookup. All six node kinds render through one `WorkflowNodeCard`; everything that differs between them is data in `ui/Builder/nodes/meta.ts`, which the palette and the card both read. A new kind is a row in `NODE_KIND_META` plus a row in `nodeTypes` — both are exhaustive `Record<WorkflowNodeType, …>`, so missing either fails the build.
 - Never re-export `@carbon/workflows/labels` through the package barrel. `msg` is a build-time macro; only Vite-built app code may import it.
@@ -70,7 +70,7 @@ Routes split in two trees: `x+/workflows+/` (list, create, rename, delete, with 
 - `updateWorkflowOwner` — takes the session user, never a submitted id
 - `checkWorkflowVersionLock` — the published-version lock; the rule is one equality against `publishedVersionId`, so there is no helper wrapping it
 - `updateWorkflowNodePositions` — the positions-only writer behind `$id.positions.tsx`
-- `publishWorkflowVersion` / `unpublishWorkflow` — both call `syncWorkflowTriggers`, which uses Kysely and **bypasses RLS**; the route's `requirePermissions` is the only authorization gate
+- `publishWorkflowVersion` / `unpublishWorkflow` — both call `syncWorkflowTriggers`, which uses Kysely and **bypasses RLS**; the route's `authorize(request, { "workflows.workflows": "Edit" })` is the only authorization gate
 
 ## Operations (`workflows.server.ts`)
 

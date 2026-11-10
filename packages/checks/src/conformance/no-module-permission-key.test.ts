@@ -56,7 +56,6 @@ describe("no-module-permission-key — TypeScript", () => {
           `permissions.has({ "sales.quotes": "Edit" });`,
           `permissions.hasAny("inventory", "View");`,
           `await authorize(request, anyOf(pagesOf("sales"), "View"));`,
-          `holdsAny(expanded, "sales", "view", companyId);`,
           `holds(claims, "inventory.receipts_update", companyId);`,
           `permission: { page: "production.jobs", action: "create" },`,
           `permission: "employee",`,

@@ -107,11 +107,6 @@ export function levelOf<G extends Grant>(
   return result("None", "none", null);
 }
 
-// The level the resolver hands out. `granted`, not `level`, until the gates
-// that ask above a page's `maxLevel` are fixed (untangle F5): clamping here
-// would refuse them to everyone.
-const resolved = (of: LevelOf<Grant>): Level => of.level;
-
 /** Whether an employee type is the company's own Admin type: one of another company grants nothing. */
 export function isAdminType(
   type: { systemType?: string | null; companyId?: string | null },
@@ -120,13 +115,12 @@ export function isAdminType(
   return type.systemType === "Admin" && type.companyId === companyId;
 }
 
-/** The level of one subject on one page, as claims carry it (`levelOf`). */
 export function resolveLevel(
   grants: readonly Grant[],
   pageId: string,
   { admin = false }: { admin?: boolean } = {}
 ): Level {
-  return resolved(levelOf({ admin, grants }, pageId));
+  return levelOf({ admin, grants }, pageId).level;
 }
 
 /** A person or an API key, with every grant that applies to it. */
@@ -142,10 +136,9 @@ export function accessHolders<G extends Grant>(
   atLeast: Level
 ) {
   return subjects.flatMap((subject) => {
-    const of = levelOf(subject, pageId);
-    const level = resolved(of);
+    const { level, grant } = levelOf(subject, pageId);
     return levelReaches(level, atLeast)
-      ? [{ id: subject.id, level, grant: of.grant }]
+      ? [{ id: subject.id, level, grant }]
       : [];
   });
 }
@@ -156,14 +149,17 @@ export type RawClaims = {
   /** The user's employee type is the Admin type: Full on every page. */
   admin: boolean;
   grants: readonly Grant[];
-  /** Portal accounts' keys, still held in `userPermission`. */
+  /**
+   * A portal account's keys (`sales_view`), as `userPermission` holds them:
+   * what the RLS portal helpers read. Never part of `permissions`.
+   */
   portal: Record<string, string[]>;
 };
 
 const LEVEL_SET = new Set<string>(LEVELS);
 const SUBJECTS = new Set<string>(["person", "role", "key"]);
 
-/** A legacy `<module>_<action>` key: a module id is lowercase letters, no dot. */
+/** TRANSITIONAL(#1958): a legacy `<module>_<action>` key: a module id is lowercase letters, no dot. */
 const legacyKey = (key: string) => {
   const parsed = parsePermissionKey(key);
   return parsed && /^[a-z]+$/.test(parsed.subject) ? parsed : null;
@@ -175,15 +171,19 @@ const asObject = (json: unknown): Record<string, unknown> =>
     : {};
 
 /**
- * `get_claims` from before page permissions: `{ role, "<module>_<action>":
- * [companyIds] }`, with no `grants`. A database the permission migrations have
- * not reached yet still answers in it (migrations and the app deploy apart).
+ * TRANSITIONAL(#1958): `get_claims` from before page permissions: `{ role,
+ * "<module>_<action>": [companyIds] }`, with no `grants`. A database the
+ * permission migrations have not reached yet still answers in it (migrations
+ * and the app deploy apart). Removal: packages/database/AGENTS.md, "Page
+ * permissions transition".
  */
 export function isLegacyClaims(json: unknown): boolean {
   return !Array.isArray(asObject(json).grants);
 }
 
 /**
+ * TRANSITIONAL(#1958), as `isLegacyClaims`; also reads an API key's old
+ * `scopes` (packages/auth api-key.server.ts).
  * Old `<module>_<action>: [companyIds]` keys as module grants in one company,
  * each at the lowest level that holds every action listed for it there: the
  * rule the conversion migration (20261110050003) applied. A module with no
@@ -220,6 +220,7 @@ export function legacyGrants(
 export function claimsFromJson(json: unknown, companyId: string): RawClaims {
   const value = asObject(json);
   const role = typeof value.role === "string" ? value.role : null;
+  // TRANSITIONAL(#1958), as `isLegacyClaims`.
   if (isLegacyClaims(value)) {
     if (role === "customer" || role === "supplier") {
       const portal: Record<string, string[]> = {};
@@ -276,8 +277,8 @@ const empty = (): ExpandedPermission => ({
 
 /**
  * Grants as the shape the app reads: one entry per page, each action holding
- * the company when the page's level includes it. Only the registry knows a
- * module's pages, so this runs in TS, not in SQL.
+ * the company when the page's level includes it. A portal account's keys stay
+ * in `portal`: they name no page, and RLS reads them from `userPermission`.
  */
 export function expandClaims(
   raw: RawClaims,
@@ -292,15 +293,6 @@ export function expandClaims(
     }
     out[page.id] = permission;
   }
-  for (const [key, companies] of Object.entries(raw.portal)) {
-    const parsed = parsePermissionKey(key);
-    if (!parsed || !Array.isArray(companies)) continue;
-    const entry = (out[parsed.subject] ??= empty());
-    for (const company of companies) {
-      if (!entry[parsed.action].includes(company))
-        entry[parsed.action].push(company);
-    }
-  }
   return out;
 }
 
@@ -313,7 +305,6 @@ export function claimsFor(json: unknown, companyId: string): Claims {
   return { ...raw, permissions: expandClaims(raw, companyId) };
 }
 
-/** Whether the expanded claims hold `<page>_<action>` in the company. */
 export function holds(
   expanded: ExpandedClaims,
   key: string,
@@ -400,7 +391,6 @@ export function widenReads(gate: AnyGate): AnyGate {
   };
 }
 
-/** Whether every entry of one gate holds. */
 function holdsAll(
   expanded: ExpandedClaims,
   gate: PageGate,
@@ -432,19 +422,6 @@ export function holdsGate(
   if (!expanded) return false;
   return alternatives(reads ? widenReads(gate) : gate).some((one) =>
     holdsAll(expanded, one, companyId)
-  );
-}
-
-/** Whether any page of the module holds the action in the company (navigation). */
-export function holdsAny(
-  expanded: ExpandedClaims,
-  module: string,
-  action: Action,
-  companyId: string
-): boolean {
-  return Object.entries(expanded).some(
-    ([page, permission]) =>
-      moduleOf(page) === module && permission[action].includes(companyId)
   );
 }
 

@@ -28,7 +28,7 @@ packages/ee/src/workflows/runtime/  pure. no I/O, no client, no database.
 
 packages/jobs/src/workflows/engine/  everything that touches the world
   walk.ts    pure graph maths — frontier, handles, MAX_NODE_EXECUTIONS (500)
-  owner.ts   getOwnerClient / readOwnerPermissions / hasPermission
+  owner.ts   getOwnerClient / readOwnerPermissions (the owner's claims, checked by admits)
   loader.ts  EntityLoader over the owner's connection + triggerOutputs
   ledger.ts  claimStep / settleStep / failInterruptedSteps / redactForLog
   log.ts     loadRunContext / claimRun / finishRun / failCrashedRun (workflowRun)

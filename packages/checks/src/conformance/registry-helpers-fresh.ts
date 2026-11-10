@@ -12,9 +12,10 @@ export const REGISTRY_HELPERS_DIR = "packages/database/src/authz/helpers";
 export const REGISTRY_HELPERS_FIX = "pnpm --filter @carbon/database authz sync";
 
 /**
- * The managed helpers whose bodies are the registry (`util.module_pages`,
- * `util.page_max_level`) are written from `access/pages` by `authz sync`. A page
- * edit without a sync leaves the database answering from the old registry.
+ * The managed helpers whose bodies are the registry (every file
+ * `renderRegistryHelpers()` renders) are written from `access/pages` by
+ * `authz sync`. A page edit without a sync leaves the database answering from
+ * the old registry.
  *
  * `rendered` is what each file must hold (`renderRegistryHelpers()` in
  * `@carbon/database/authz-registry-sql`); `files` is what the repo holds, a

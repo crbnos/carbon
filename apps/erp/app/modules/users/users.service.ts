@@ -34,14 +34,20 @@ import {
   levelReaches,
   PAGES
 } from "@carbon/database/access";
-import { type GrantSubject, readGrants } from "@carbon/database/access-write";
+import { readGrants } from "@carbon/database/access-write";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { InviteEmail } from "@carbon/documents/email";
+import { saveApiKey } from "@carbon/ee/api-keys.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
-import type { AccessSubjectType } from "@carbon/ee/permission-grants";
+import {
+  type AccessSubjectType,
+  accessSubject
+} from "@carbon/ee/permission-grants";
 import {
   type AccessChange,
+  type AccessWriteError,
+  saveEmployeeType,
   writeAccessGrants
 } from "@carbon/ee/permissions.server";
 import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
@@ -2362,13 +2368,6 @@ export async function emailAccountInvite(
 
 export type { AccessSubjectType };
 
-function grantSubject(type: AccessSubjectType, id: string): GrantSubject {
-  if (type === "role") return { employeeTypeId: id };
-  if (type === "person") return { userId: id };
-  return { apiKeyId: id };
-}
-
-/** A role's, a person's or an API key's grants in the company. */
 export function readAccessGrants(
   ctx: ServiceContext,
   subjectType: AccessSubjectType,
@@ -2377,7 +2376,7 @@ export function readAccessGrants(
   return readGrants(
     ctx.asSystem.pg,
     ctx.company.id,
-    grantSubject(subjectType, subjectId)
+    accessSubject(subjectType, subjectId)
   );
 }
 
@@ -2401,7 +2400,6 @@ function toGrant(row: GrantRow): Grant & { convertedFrom: string[] | null } {
   };
 }
 
-/** Every grant in the company, in one read. */
 function readCompanyGrants(ctx: ServiceContext) {
   return ctx.asSystem.pg
     .selectFrom("permission")
@@ -2542,16 +2540,12 @@ export async function readPageAccessHolders(
   return { people, apiKeys };
 }
 
-/** Every role's grants in the company, in one read. */
 export async function readRoleGrants(ctx: ServiceContext) {
-  const rows = await ctx.asSystem.pg
-    .selectFrom("permission")
-    .select(["employeeTypeId", "module", "page", "level"])
-    .where("companyId", "=", ctx.company.id)
-    .where("employeeTypeId", "is not", null)
-    .execute();
-  return rows.flatMap((row) =>
-    isPageModule(row.module) ? [{ ...row, module: row.module }] : []
+  const rows = await readCompanyGrants(ctx);
+  return rows.flatMap(({ employeeTypeId, module, page, level }) =>
+    employeeTypeId !== null && isPageModule(module)
+      ? [{ employeeTypeId, module, page, level }]
+      : []
   );
 }
 
@@ -2585,16 +2579,62 @@ export async function saveAccessGrants(
     ip?: string;
   }
 ): Promise<CarbonError | null> {
-  let written: Awaited<ReturnType<typeof writeAccessGrants>>;
-  try {
-    written = await writeAccessGrants(ctx.asCaller.supabase, ctx.asSystem.pg, {
+  return refusalOf(
+    ctx,
+    subjectType,
+    writeAccessGrants(ctx.asCaller.supabase, ctx.asSystem.pg, {
       companyId: ctx.company.id,
-      subject: grantSubject(subjectType, subjectId),
+      subject: accessSubject(subjectType, subjectId),
       change,
       employeeType,
       actorId: ctx.auditUserId,
       ip
-    });
+    })
+  );
+}
+
+/** Create or rename an employee type with its grants, in one transaction (`saveEmployeeType`, `@carbon/ee`). */
+export async function writeEmployeeType(
+  ctx: ServiceContext,
+  input: Pick<
+    Parameters<typeof saveEmployeeType>[2],
+    "employeeType" | "grants" | "ip"
+  >
+): Promise<{ id: string } | CarbonError> {
+  const write = saveEmployeeType(ctx.asCaller.supabase, ctx.asSystem.pg, {
+    ...input,
+    companyId: ctx.company.id,
+    actorId: ctx.auditUserId
+  });
+  const refused = await refusalOf(ctx, "role", write);
+  if (refused) return refused;
+  return { id: (await write).id as string };
+}
+
+/** Create or update an API key with its grants, in one transaction (`saveApiKey`, `@carbon/ee`). */
+export function writeApiKey(
+  ctx: ServiceContext,
+  input: Pick<Parameters<typeof saveApiKey>[2], "key" | "grants" | "ip">
+): Promise<CarbonError | null> {
+  return refusalOf(
+    ctx,
+    "key",
+    saveApiKey(ctx.asCaller.supabase, ctx.asSystem.pg, {
+      ...input,
+      companyId: ctx.company.id,
+      actorId: ctx.auditUserId
+    })
+  );
+}
+
+async function refusalOf(
+  ctx: ServiceContext,
+  subjectType: AccessSubjectType,
+  write: Promise<{ error: AccessWriteError | null }>
+): Promise<CarbonError | null> {
+  let written: { error: AccessWriteError | null };
+  try {
+    written = await write;
   } catch (err) {
     if (!(err instanceof EntitlementError)) throw err;
     return ctx.error("entitlement", ENTITLEMENT_REFUSAL[subjectType]());

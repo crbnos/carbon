@@ -556,7 +556,6 @@ export function leafPermission(leaf: ServiceFnLeaf): {
     }
     modules.add(moduleOf(page));
     pages.add(page);
-    // A level lists every action it holds.
     for (const action of ACTIONS) {
       if (levelHolds(level[0] as Level, action)) actions.add(action);
     }

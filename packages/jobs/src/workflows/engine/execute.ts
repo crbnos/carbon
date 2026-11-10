@@ -2,7 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { MODULES, moduleOf, pageById } from "@carbon/database/access";
+import {
+  ACTION_LEVEL,
+  anyOf,
+  holdsGate,
+  MODULES,
+  moduleOf,
+  type PageId,
+  pageById
+} from "@carbon/database/access";
 import {
   batchCandidates,
   buildCatalogOverlay,
@@ -42,7 +50,6 @@ import { createEntityLoader, type EntityCache, triggerOutputs } from "./loader";
 import { claimRun, finishRun, loadRunContext } from "./log";
 import {
   getOwnerClient,
-  hasPermission,
   type OwnerPermissions,
   readOwnerPermissions
 } from "./owner";
@@ -190,16 +197,11 @@ async function runExecutor(args: NodeArgs): Promise<NodeResult> {
   const required = executor.permission(node, catalog);
   if (
     required !== undefined &&
-    ![required.page]
-      .flat()
-      .some((page) =>
-        hasPermission(
-          args.permissions,
-          page,
-          required.action,
-          payload.companyId
-        )
-      )
+    !holdsGate(
+      args.permissions,
+      anyOf([required.page].flat() as PageId[], ACTION_LEVEL[required.action]),
+      payload.companyId
+    )
   ) {
     return { status: "Failed", error: noAccess(required.page) };
   }
@@ -556,11 +558,11 @@ export async function walkWorkflow(params: {
     const pages = catalog.getEvent(payload.eventId)?.permission;
     if (
       pages !== undefined &&
-      ![pages]
-        .flat()
-        .some((page) =>
-          hasPermission(permissions, page, "view", payload.companyId)
-        )
+      !holdsGate(
+        permissions,
+        anyOf([pages].flat() as PageId[], "View"),
+        payload.companyId
+      )
     ) {
       return refuse(noAccess(pages));
     }

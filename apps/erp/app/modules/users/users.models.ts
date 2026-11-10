@@ -72,7 +72,6 @@ export const grantsField = z
   })
   .pipe(grantsSchema);
 
-/** A role's, a person's or an API key's grants. */
 export const permissionsValidator = z.object({
   subjectType: z.enum(["role", "person", "key"]),
   subjectId: z.string().min(1),

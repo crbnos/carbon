@@ -5,7 +5,6 @@
 import type { Page } from "../registry";
 import { ITEM_PAGE_IDS } from "./parts";
 
-/** The module's name in the sidebar. */
 export const LABEL = "Sales";
 
 export const PAGES = [

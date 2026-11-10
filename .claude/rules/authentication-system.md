@@ -455,7 +455,7 @@ calls `registerApi`). Two paths:
    - On failure: if `role === null` destroy session → `/`; else flash "Access Denied"
      → authenticated root.
    - Returns `{ client, companyId, companyGroupId, email, userId, sessionUserId,
-     consoleMode }`. The `bypassRls: true` option + employee role returns a service-role client;
+     consoleMode, caller, permissions, role }`. The `bypassRls: true` option + employee role returns a service-role client;
      otherwise a Bearer-authed `getCarbon(accessToken)` client (RLS enforced).
    - `consoleMode` is `authSession.console === companyId`. In console mode `userId`
      is the pinned operator from `resolveConsolePinIn` (falling back to the session
@@ -463,8 +463,11 @@ calls `registerApi`). Two paths:
      terminal is signed in with. Gate terminal-level actions (entering console mode)
      on `sessionUserId`, never `userId`.
 
-Claims cache must be invalidated when permissions change — `users.server.ts` deactivate
-flows call `redis.del(getPermissionCacheKey(userId))`.
+Claims cache must be invalidated when permissions change. Grant writes go through
+`writeAccessGrants` (`@carbon/ee/permissions.server`), which clears it; the deactivation
+flows (`users.server.ts`, one `deactivateAs(role, …)` behind `deactivateCustomer` /
+`deactivateEmployee` / `deactivateSupplier` / `deactivateUser`) clear it themselves; a
+membership change elsewhere calls `redis.del(getPermissionCacheKey(userId))`.
 
 ## API key auth
 
@@ -473,9 +476,7 @@ flows call `redis.del(getPermissionCacheKey(userId))`.
 postings' `authorizePostingCaller` calls it too). It is memoized per request, so the rate
 limit counts a request once however many gates it meets. It reads via `getApiKeyRecord`
 (`packages/auth/src/services/api-key.server.ts`): a **30s Redis cache** at
-`apikey:auth:<keyHash>`, per-request memoized (`oncePerRequest`) so one HTTP call
-does one lookup even though both `requirePermissions` and the v1 scope read need
-the row. Unknown keys are cached too (the literal `"null"`), so a bad key
+`apikey:auth:<keyHash>`. Unknown keys are cached too (the literal `"null"`), so a bad key
 hammering the endpoint doesn't hammer Postgres. Redis being down falls through to
 the DB. Busting: every grant write of a key goes through `writeAccessGrants`
 (`@carbon/ee/permissions.server`), which calls `bustApiKeyCache` after it commits

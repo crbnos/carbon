@@ -8,12 +8,8 @@ import { updatePermissions } from "@carbon/ee/permissions.server";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
-// `updatePermissions` (a person's overrides, as grants) is the licensed
-// authoring logic and lives once in `@carbon/ee/permissions.server`. This task
-// is just the durable wrapper for the bulk-edit path: one run, and one
-// transaction, per person. It runs as the service role, so `updatePermissions`
-// authorizes the actor who queued it by their claims; an event with no actor
-// writes nothing.
+// Runs as the service role, so `updatePermissions` authorizes the actor who
+// queued it by their claims; an event with no actor writes nothing.
 export const updatePermissionsFunction = inngest.createFunction(
   { id: "update-permissions", retries: 3 },
   { event: "carbon/update-permissions" },
@@ -29,6 +25,8 @@ export const updatePermissionsFunction = inngest.createFunction(
         });
         return { success: false, message: "No actor to authorize" };
       }
+      // TRANSITIONAL(#1958): an event queued by an app version from before
+      // grants carries the old checkboxes (`permissions`).
       const grants =
         payload.grants ??
         Object.entries(payload.permissions ?? {}).map(([module, flags]) => ({

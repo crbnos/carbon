@@ -39,7 +39,7 @@ import { blankComments } from "./no-unscoped-kysely-write";
  * - portal keys: `get_customer_ids_with_customer_permission('parts_view')` and
  *   its supplier twin read a portal account's own keys in `userPermission`,
  *   which keep their names (the generated authz migrations carry them).
- * - `hasAny` / `holdsAny` and `pagesOf("<module>")`, which name every page of
+ * - `hasAny` and `pagesOf("<module>")`, which name every page of
  *   a module on purpose (navigation, a module's dashboard).
  * - `documents`: it is a module with one page whose id is the module's, so
  *   `documents_view` is a page key.

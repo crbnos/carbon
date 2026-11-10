@@ -304,7 +304,7 @@ async function buildTrigger(
   const recordId = (input as { recordId: string }).recordId;
 
   // Service role bypasses RLS so the lookup works regardless of whether the caller
-  // authenticated via session or API key. requirePermissions already verified the
+  // authenticated via session or API key. authorize already verified the
   // company scope; the companyId filter here ensures cross-tenant safety.
   const row = await getCarbonServiceRole()
     .from(match.table as never)

@@ -93,7 +93,7 @@ export type Route<T = {}> = T & {
     to: string;
     sortOrder: number;
   }[];
-  q?: string; // TODO: this is dumb
+  q?: string;
   table?: string;
   /**
    * The page the entry opens, when `pageOfUrl(to)` cannot tell. Without a

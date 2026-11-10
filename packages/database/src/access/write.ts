@@ -68,7 +68,6 @@ export async function replaceGrants(
     companyId: string;
     subject: GrantSubject;
     grants: readonly GrantInput[];
-    /** Who made the change, for `createdBy`. */
     userId: string;
   }
 ) {

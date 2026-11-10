@@ -564,9 +564,6 @@ async function jobServiceContext({ companyId, userId }: TableJobContext) {
   });
 }
 
-/** Whether the user may still run the action on the list: an employee with
- *  the list's view permission and the action's own permission, in a company
- *  whose plan has the action's feature. */
 async function canRunBulkAction(
   listKey: string,
   action: TableBulkAction,

@@ -36,14 +36,12 @@ type NavRoute = Pick<Route, "to" | "page" | "gate">;
 
 type NavPermissions = { has: (gate: Gate) => boolean };
 
-/** The page a sidebar entry opens: its `page`, else the page of its `to`. */
 export function pageOfRoute(
   route: Pick<Route, "to" | "page">
 ): PageId | undefined {
   return route.page ?? pageOfUrl(route.to);
 }
 
-/** The gate a sidebar entry shows behind: its `gate`, else View on its page. */
 export function gateOfRoute(route: Pick<Route, "to" | "page" | "gate">): Gate {
   if (route.gate) return route.gate;
   const page = pageOfRoute(route);
@@ -53,7 +51,6 @@ export function gateOfRoute(route: Pick<Route, "to" | "page" | "gate">): Gate {
 const segments = (url: string) =>
   (url.split(/[?#]/)[0] ?? "").split("/").filter(Boolean);
 
-/** How many segments of `to` the URL starts with; 0 when it does not start with all of them. */
 function coverage(to: string, url: readonly string[]): number {
   const want = segments(to);
   return want.every((part, i) => url[i] === part) ? want.length : 0;
@@ -87,7 +84,6 @@ export function routeOwnsUrl(
   return coverage(route.to, url) === best;
 }
 
-/** The entries a person sees: those whose gate they pass and that `extraRule` keeps. */
 export function visibleRoutes<R extends NavRoute>(
   routes: readonly R[],
   permissions: NavPermissions,
@@ -99,7 +95,6 @@ export function visibleRoutes<R extends NavRoute>(
   );
 }
 
-/** `visibleRoutes` for each group; a group left with no entry goes. */
 export function visibleGroups<G extends { routes: readonly NavRoute[] }>(
   groups: readonly G[],
   permissions: NavPermissions,

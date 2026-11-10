@@ -10,7 +10,7 @@ Authentication, RBAC, session management, Supabase client factories, API key aut
 - `authorize` refuses customer and supplier portal sessions with a 403, and a session with no role in the company (deactivated, or company-less before onboarding) by destroying it. `{}` used to admit both. Pass `{ allowPortalAccounts: true }` as the options ONLY on a route that acts on the user's own identity (onboarding, company switch, notification links, academy progress) — it admits any signed-in user whatever their role — never on one that returns company data.
 - Use the factory from `@carbon/auth/client.server`: `getCarbon(accessToken)` for user-scoped (RLS), `getCarbonServiceRole()` for privileged server ops only.
 - Every server client built while a request is being handled is bound to it through `requestFetch()` (`lib/supabase/client.server.ts`): all of that request's clients share one limit of 8 calls in flight (a wait for a slot is a `supabase slot wait` span), and on a GET/HEAD request their reads (PostgREST GET/HEAD, storage reads) are cancelled when the request is. RPCs, table writes, auth and edge-function calls are never cancelled. Outside a request (jobs, scripts) `requestFetch()` is `undefined` and the client is unbound. A new client factory must pass `requestFetch()` too, or its calls escape both. The browser-safe `getCarbon(accessToken)` (`lib/supabase/client.ts`) passes nothing: on the server use `getCarbonForRequest(accessToken, request)` (`./client.server`), the same bound client `requirePermissions` returns, shared per request.
-- Invalidate Redis permission cache (`redis.del(getPermissionCacheKey(userId))`) when changing user permissions — stale cache is the #1 cause of "Access Denied" bugs.
+- Grant writes go through `writeAccessGrants` (`@carbon/ee/permissions.server`), which clears the claims and API-key caches it reaches, and the deactivation flows (`users.server.ts`) clear the user's claims themselves. Any other write that changes a user's company membership or role (invite accept, company switch, SSO provisioning) clears `redis.del(getPermissionCacheKey(userId))` by hand — stale cache is the #1 cause of "Access Denied" bugs.
 - An API key with no `permission` rows **denies all**, `{}` included (`admits`) — never treat no grants as full access. Every key is authenticated by `authenticateApiKey(rawKey)` (`./auth.server`): the cached record, expiry, rate limit and plan gate, once per request; `authorize` and the postings' caller check both call it.
 - Import env constants from `@carbon/auth` (re-exports `@carbon/env`) — not `process.env` directly.
 - Keep `securityMiddleware` in every app's root `middleware`. It refuses cross-origin POST/PUT/PATCH/DELETE (CSRF), issues the CSP nonce and sets `nosniff`/`X-Frame-Options`/`Referrer-Policy`/HSTS on every response. A route that browsers must reach from another origin goes in `CROSS_ORIGIN_ENDPOINTS` (`lib/security.ts`) — webhooks and API-key callers do not need it (servers send neither `Sec-Fetch-Site` nor `Origin`).
@@ -60,7 +60,7 @@ The Onshape panel's bearer credential (the `cps_` iframe session) lives in
 `@carbon/ee/onshape/panel-session.server`, not here, with its own gate
 `authorizePanel`. `authorize` stays cookie and API key
 only. ee imports `getUserClaims`, `userHasVerifiedTotpFactor`,
-`getUserScopedClient` from auth, never the reverse. (`hasPermission` is a deprecated alias of `holdsGate`.)
+`getUserScopedClient` from auth, never the reverse.
 
 ## Cross-References
 

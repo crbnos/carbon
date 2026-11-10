@@ -15,17 +15,9 @@ BEGIN
   SELECT k.id, k.company_id INTO api_key_id, api_key_company FROM util.request_api_key() k;
 
   WITH wanted AS (
-    SELECT
-      m[1] AS page,
-      (CASE m[2]
-        WHEN 'view' THEN 'View'
-        WHEN 'create' THEN 'Create'
-        WHEN 'update' THEN 'Edit'
-        ELSE 'Full'
-      END)::"permissionLevel" AS needed
-    FROM unnest(permissions) AS k(key),
-      LATERAL regexp_match(k.key, '^(.*)_(view|create|update|delete)$') AS m
-    WHERE m IS NOT NULL
+    SELECT left(k.key, -length(a.action) - 1) AS page, a.level AS needed
+    FROM unnest(permissions) AS k(key)
+    JOIN util.action_levels() AS a ON right(k.key, length(a.action) + 1) = '_' || a.action
   )
   SELECT array_agg(c.id)
   INTO companies

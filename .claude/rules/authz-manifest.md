@@ -33,7 +33,7 @@ The same machinery owns the event system's 45 functions, its 86 table handlers a
 | `manifest.ts` | one rule per public table, typed by table name (`satisfies Manifest`) |
 | `rules.ts` | the pieces and builders; `render()` compiles a rule to `CREATE POLICY` SQL with Kysely |
 | `helpers/<name>.sql` | one `CREATE OR REPLACE FUNCTION public.<name>` per file (validated with Postgres's parser) |
-| `registry-sql.ts` | renders `helpers/util.module_pages.sql` and `helpers/util.page_max_level.sql` from the access registry |
+| `registry-sql.ts` | renders `helpers/util.module_pages.sql` and `helpers/util.page_max_level.sql` from the access registry, and `helpers/util.action_levels.sql` from `access/levels.ts` |
 | `../event-system/functions/<name>.sql` | the event system's functions, same format; `util.<name>.sql` for one in the `util` schema |
 | `sync.ts` | `authz sync` / `check`: make a database match, in one transaction |
 | `migration.ts` | `authz migration`: ship changes to databases that do not sync; `unshipped()` |
@@ -123,9 +123,12 @@ list `packages/checks/src/conformance/module-key-migrations.json`, the migration
 at the cutoff `20261110050010` — so a late-landing migration dated earlier is checked too);
 portal keys (`get_customer_ids_with_customer_permission('parts_view')`) are exempt.
 
-The registry helpers `util.module_pages` and `util.page_max_level` are rendered from the pages
-by `registry-sql.ts`: `authz sync` and `authz migration` rewrite their files first, and
-`registry-sql.test.ts` fails when a file is stale.
+The registry helpers `util.module_pages` and `util.page_max_level` are rendered from the pages,
+and `util.action_levels` (each action and the lowest level that holds it, the `ACTION_LEVEL`
+map) from `access/levels.ts`, by `registry-sql.ts`: `authz sync` and `authz migration` rewrite
+their files first, and `registry-helpers-fresh` (`@carbon/checks`) fails when a file is stale.
+SQL that reads a `<page>_<action>` key (`get_companies_with_any_employee_permission`, the
+legacy keys of `get_claims`) joins `util.action_levels()` instead of spelling the map.
 
 ## Shipping a change
 

@@ -43,7 +43,7 @@ export type Child =
   | { table: string; via: string }
   | { table: string; path: readonly Hop[] };
 
-/** A permission subject: one sidebar entry (`use<Module>Submodules.tsx`). */
+/** A permission subject: a screen, usually one sidebar entry (`use<Module>Submodules.tsx`). */
 export type Page = {
   /** `<module>.<page>`, or the module key for a module that has one page. */
   id: string;
@@ -128,7 +128,6 @@ export function pageById(pageId: string): Page | undefined {
   return PAGE_BY_ID.get(pageId);
 }
 
-/** The module a page belongs to: the text before the first `.`. */
 export function moduleOf(pageId: string): string {
   const dot = pageId.indexOf(".");
   return dot === -1 ? pageId : pageId.slice(0, dot);
@@ -193,14 +192,7 @@ export type TablePlace =
 export const childPath = (child: Child, parent: string): readonly Hop[] =>
   "path" in child ? child.path : [[child.via, parent]];
 
-let built:
-  | { places: Map<string, TablePlace>; readers: Map<string, string[]> }
-  | undefined;
-
-// Built on first use, so a registry mistake fails the RLS render and its
-// tests, not every importer of the registry.
-function index() {
-  if (built) return built;
+function buildIndex() {
   const places = new Map<string, TablePlace>();
   const readers = new Map<string, string[]>();
   const put = (table: string, next: TablePlace) => {
@@ -248,18 +240,19 @@ function index() {
     for (const table of page.readers ?? [])
       readers.set(table, [...(readers.get(table) ?? []), page.id]);
   }
-  built = { places, readers };
-  return built;
+  return { places, readers };
 }
+
+const INDEX = buildIndex();
 
 /** The table's place in the registry; undefined when no page lists it. */
 export function placeOf(table: string): TablePlace | undefined {
-  return index().places.get(table);
+  return INDEX.places.get(table);
 }
 
 /** The pages that list the table in `readers`. */
 export function readersOf(table: string): readonly string[] {
-  return index().readers.get(table) ?? [];
+  return INDEX.readers.get(table) ?? [];
 }
 
 /**
@@ -353,5 +346,10 @@ function fnv1a(text: string): string {
   return hash.toString(16).padStart(8, "0");
 }
 
-/** Changes whenever the registry changes; part of the claims cache key. */
-export const REGISTRY_HASH = fnv1a(JSON.stringify(PAGES));
+/**
+ * Part of the claims cache key. Cached claims hold a level per page id, at
+ * most its `maxLevel`, so only those retire them: a label or path edit does not.
+ */
+export const REGISTRY_HASH = fnv1a(
+  JSON.stringify(PAGES.map((page) => [page.id, page.maxLevel]))
+);

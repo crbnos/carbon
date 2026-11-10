@@ -380,6 +380,10 @@ function forbidden(ctx: ServiceContext, required: unknown) {
   return new CarbonError("forbidden", "You do not have permission to do this");
 }
 
+type Refused = CarbonError<
+  "validation" | "forbidden" | "notFound" | "internal"
+> | null;
+
 /**
  * The refusal `rule` gives the context's actor for `input`, or null: the
  * entry gate of every service function, and the check of a permission only
@@ -387,13 +391,25 @@ function forbidden(ctx: ServiceContext, required: unknown) {
  * row rule reads its rows as the system; the system actor holds everything
  * and reads nothing.
  */
-export async function refusalOf<I>(
+export function refusalOf<I>(
   ctx: ServiceContext,
   rule: PermissionRule<I>,
   input: I
-): Promise<CarbonError<
-  "validation" | "forbidden" | "notFound" | "internal"
-> | null> {
+): Promise<Refused> {
+  return gate(ctx, rule, input, false);
+}
+
+/**
+ * `refusalOf`, or for a nested call (one an outer function's gate already
+ * authorized) only the rule that survives nesting: no one but the system
+ * passes a system-only function.
+ */
+async function gate<I>(
+  ctx: ServiceContext,
+  rule: PermissionRule<I>,
+  input: I,
+  nested: boolean
+): Promise<Refused> {
   let resolved: Requirement | RowsToRead;
   try {
     resolved = resolvePermissions(rule, input);
@@ -406,6 +422,7 @@ export async function refusalOf<I>(
     );
   }
   if (ctx.actor.type === "system") return null;
+  if (nested) return resolved === "system" ? forbidden(ctx, resolved) : null;
   let required: Requirement;
   if (typeof resolved === "object" && "ids" in resolved) {
     try {
@@ -489,27 +506,13 @@ export function defineServiceFn<I extends z.ZodType, R>(definition: {
       );
     }
 
-    // A nested call was authorized by the outer function's gate, but no gate
-    // admits anyone but the system to a system-only function.
-    if (ctx instanceof Context && ctx.nested) {
-      let required: Requirement | RowsToRead;
-      try {
-        required = resolvePermissions(permission, parsed.data);
-      } catch (err) {
-        return failed(
-          new CarbonError(
-            "validation",
-            err instanceof Error ? err.message : "Invalid input"
-          )
-        );
-      }
-      if (required === "system" && ctx.actor.type !== "system") {
-        return failed(forbidden(ctx, required));
-      }
-    } else {
-      const refusal = await refusalOf(ctx, permission, parsed.data);
-      if (refusal) return failed(refusal);
-    }
+    const refusal = await gate(
+      ctx,
+      permission,
+      parsed.data,
+      ctx instanceof Context && ctx.nested
+    );
+    if (refusal) return failed(refusal);
 
     try {
       const out = await definition.run(

@@ -4,11 +4,7 @@
 
 import { getClaims, makePermissionsFromClaims } from "@carbon/auth";
 import { describe, expect, it, vi } from "vitest";
-import {
-  hasPermission,
-  type OwnerPermissions,
-  readOwnerPermissions
-} from "./owner";
+import { type OwnerPermissions, readOwnerPermissions } from "./owner";
 
 // The @carbon/auth barrel pulls @carbon/react (lingui macros) — unloadable under node vitest.
 vi.mock("@carbon/auth", () => ({
@@ -34,58 +30,6 @@ function permissions(
   }
   return base;
 }
-
-describe("hasPermission", () => {
-  it("no longer grants on the retired all-companies wildcard (NIST 3.1.5)", () => {
-    // "0" was the global-company wildcard; it was removed. It is now just a
-    // literal company id that never matches a real one.
-    const perms = permissions({ "purchasing.purchaseOrders": { view: ["0"] } });
-    expect(
-      hasPermission(perms, "purchasing.purchaseOrders", "view", "cmp_1")
-    ).toBe(false);
-  });
-
-  it("grants when the action names the company exactly", () => {
-    const perms = permissions({
-      "purchasing.purchaseOrders": { view: ["cmp_1", "cmp_2"] }
-    });
-    expect(
-      hasPermission(perms, "purchasing.purchaseOrders", "view", "cmp_1")
-    ).toBe(true);
-  });
-
-  it("denies a company the action does not name", () => {
-    const perms = permissions({
-      "purchasing.purchaseOrders": { view: ["cmp_2"] }
-    });
-    expect(
-      hasPermission(perms, "purchasing.purchaseOrders", "view", "cmp_1")
-    ).toBe(false);
-  });
-
-  it("denies a page the owner does not hold at all", () => {
-    const perms = permissions({ "purchasing.purchaseOrders": { view: ["0"] } });
-    expect(hasPermission(perms, "sales.salesOrders", "view", "cmp_1")).toBe(
-      false
-    );
-  });
-
-  it("denies an action whose array is empty", () => {
-    const perms = permissions({ "purchasing.purchaseOrders": { view: ["0"] } });
-    expect(
-      hasPermission(perms, "purchasing.purchaseOrders", "update", "cmp_1")
-    ).toBe(false);
-  });
-
-  it("denies when the action array is missing entirely", () => {
-    const perms = {
-      "purchasing.purchaseOrders": { view: ["0"] }
-    } as unknown as OwnerPermissions;
-    expect(
-      hasPermission(perms, "purchasing.purchaseOrders", "delete", "cmp_1")
-    ).toBe(false);
-  });
-});
 
 describe("readOwnerPermissions", () => {
   const client = {} as Parameters<typeof readOwnerPermissions>[0];

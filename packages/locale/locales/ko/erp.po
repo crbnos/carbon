@@ -13942,7 +13942,7 @@ msgstr "리스 종료로 인한 이익"
 msgid "Gain/Loss"
 msgstr "이득/손실"
 
-#. placeholder {0}: row.gained.join(", ")
+#. placeholder {0}: actions.join(", ")
 msgid "Gained {0} when permissions became levels"
 msgstr ""
 
@@ -27180,7 +27180,7 @@ msgid "Set due date"
 msgstr "마감일 설정"
 
 #. placeholder {0}: module.row.label
-#. placeholder {1}: stepLabel[step]
+#. placeholder {1}: stepLabel(step)
 msgid "Set every page of {0} to {1}"
 msgstr ""
 

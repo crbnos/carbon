@@ -2,11 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { Constants } from "../constants";
+
 /**
  * One choice per page; each level holds every action of the levels below it.
- * The order is the `permissionLevel` enum's: SQL compares levels with `>=`.
+ * The `permissionLevel` enum, in its order: SQL compares levels with `>=`.
  */
-export const LEVELS = ["None", "View", "Create", "Edit", "Full"] as const;
+export const LEVELS = Constants.public.Enums.permissionLevel;
 export type Level = (typeof LEVELS)[number];
 
 export const ACTIONS = ["view", "create", "update", "delete"] as const;
@@ -32,7 +34,6 @@ export function levelHolds(level: Level, action: Action): boolean {
   return LEVELS.indexOf(level) >= LEVELS.indexOf(ACTION_LEVEL[action]);
 }
 
-/** Whether `level` reaches `atLeast`. */
 export function levelReaches(level: Level, atLeast: Level): boolean {
   return LEVELS.indexOf(level) >= LEVELS.indexOf(atLeast);
 }
@@ -76,7 +77,6 @@ export function permissionKey(subject: string, action: Action): string {
 
 const ACTION_SET = new Set<string>(ACTIONS);
 
-/** `permissionKey` read back; null for anything else. */
 export function parsePermissionKey(
   key: string
 ): { subject: string; action: Action } | null {

@@ -29,13 +29,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function SupplierDocumentsRoute() {
   const { supplierId, files } = useLoaderData<typeof loader>();
 
-  return (
-    <RecordDocuments
-      files={files}
-      id={supplierId}
-      bucketPrefix="supplier"
-      sourceDocument="Supplier"
-      page="purchasing.suppliers"
-    />
-  );
+  return <RecordDocuments files={files} id={supplierId} record="Supplier" />;
 }

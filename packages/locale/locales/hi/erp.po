@@ -13942,7 +13942,7 @@ msgstr "लीज समाप्ति पर लाभ"
 msgid "Gain/Loss"
 msgstr "लाभ/हानि"
 
-#. placeholder {0}: row.gained.join(", ")
+#. placeholder {0}: actions.join(", ")
 msgid "Gained {0} when permissions became levels"
 msgstr ""
 
@@ -27180,7 +27180,7 @@ msgid "Set due date"
 msgstr "नियत तिथि सेट करें"
 
 #. placeholder {0}: module.row.label
-#. placeholder {1}: stepLabel[step]
+#. placeholder {1}: stepLabel(step)
 msgid "Set every page of {0} to {1}"
 msgstr ""
 

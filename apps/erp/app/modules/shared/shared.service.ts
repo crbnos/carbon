@@ -1427,7 +1427,7 @@ type CompanyScopedTable = {
  * belongs to the company AND hangs off that quote. One query.
  *
  * Record ids in a URL or form body prove nothing about tenancy:
- * `requirePermissions` authorizes the CALLER for `companyId`, not the ids it
+ * `authorize` authorizes the CALLER for `companyId`, not the ids it
  * sends. Most tables have single-column foreign keys, so a service-role or
  * Kysely write happily accepts another company's row as a parent. Call this
  * before any RLS-bypassing read or write keyed on a caller-supplied id.
@@ -2248,7 +2248,7 @@ async function runPosting<I, R>(
     async (span) => {
       if (handles.client && as) {
         const parsed = (schema ? schema.parse(input) : input) as I;
-        const caller = postingCaller(handles.client, handles.userId);
+        const caller = postingCredential(handles.client, handles.userId);
         span.setAttribute("carbon.function.actor", caller.type);
         await authorizePostingCaller(
           handles,
@@ -18597,11 +18597,12 @@ export function attributesContain(values: Record<string, string>) {
   return sql<boolean>`"attributes" @> ${JSON.stringify(values)}::jsonb`;
 }
 /**
- * Who stands behind a posting's client: the service role (the system), an API
- * key (checked against its scopes) or the signed-in user (checked against the
- * user's claims). Never derive it from input.
+ * The credential a posting's client carries: the service role (the system),
+ * an API key (checked against its scopes) or the signed-in user's token
+ * (checked against the user's claims). Not an `Actor`: the key is not yet
+ * authenticated and no claims are read. Never derive it from input.
  */
-export type PostingCaller =
+export type PostingCredential =
   | { type: "system" }
   | { type: "apiKey"; apiKey: string }
   | { type: "user" };
@@ -18611,10 +18612,10 @@ export type PostingCaller =
  * since the permissions are read for that user. Never replace this with a flag
  * the caller passes: /api/v1 fills unknown parameters from the body.
  */
-export function postingCaller(
+export function postingCredential(
   client: SupabaseClient<Database>,
   userId: string
-): PostingCaller {
+): PostingCredential {
   const { supabaseKey, headers = {} } = client as unknown as {
     supabaseKey?: string;
     headers?: Record<string, string>;
@@ -18652,7 +18653,7 @@ export async function authorizePostingCaller(
     companyId,
     userId
   }: Pick<PostingHandles, "db" | "companyId" | "userId">,
-  caller: PostingCaller,
+  caller: PostingCredential,
   resolved: Requirement | RowsToRead
 ): Promise<void> {
   if (caller.type === "system") return;

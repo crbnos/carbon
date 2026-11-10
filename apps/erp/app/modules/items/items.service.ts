@@ -9358,7 +9358,7 @@ const methodLockQueries = {
 
 // Every base query is scoped by companyId (defense-in-depth; the id is a global
 // UUID but tenant scoping is a golden rule). The lock is advisory — RLS +
-// requirePermissions are the real boundary — so a null/unresolvable status
+// authorize are the real boundary — so a null/unresolvable status
 // leaves the gate open by design (see checkRevisionLock).
 async function resolveMethodLock(
   client: SupabaseClient<Database>,

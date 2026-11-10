@@ -6,10 +6,13 @@ import type { Level } from "@carbon/database/access";
 import { describe, expect, it } from "vitest";
 
 import {
+  accessSubject,
   bulkEditGrants,
   claimsMayEditAccounts,
   refusedModules,
   rowLevel,
+  subjectGates,
+  subjectTypeOf,
   toModule
 } from "./permission-grants";
 
@@ -227,5 +230,23 @@ describe("claimsMayEditAccounts", () => {
     expect(claimsMayEditAccounts({ ...claims([]), admin: true }, "co_1")).toBe(
       true
     );
+  });
+});
+
+describe("subjectGates", () => {
+  it("gates each subject's grants on the page that owns them", () => {
+    expect(subjectGates("Edit")).toEqual({
+      role: { "users.employeeTypes": "Edit" },
+      person: { "users.accounts": "Edit" },
+      key: { "settings.apiKeys": "Edit" }
+    });
+  });
+});
+
+describe("accessSubject", () => {
+  it("round-trips through subjectTypeOf", () => {
+    for (const type of ["role", "person", "key"] as const) {
+      expect(subjectTypeOf(accessSubject(type, "id_1"))).toBe(type);
+    }
   });
 });

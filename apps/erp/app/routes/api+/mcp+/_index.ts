@@ -85,7 +85,7 @@ function addCorsHeaders(response: Response): Response {
  * is the house tool (the login limiter is the precedent). Keyed by USER, not by
  * token, so minting extra tokens does not multiply the allowance. Without this,
  * the OAuth branch was the one authenticated path with no rate limit at all —
- * it never touches requirePermissions, where the API-key limit lives.
+ * it never touches authorize, where the API-key limit lives.
  */
 const OAUTH_RATE_LIMIT = 60;
 const oauthRatelimit = new Ratelimit({

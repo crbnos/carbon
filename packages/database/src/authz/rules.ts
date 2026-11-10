@@ -44,8 +44,6 @@ export type Permission = Action | PermissionKey;
 /** A portal account's own key in `userPermission` (`sales_view`): another namespace than pages. */
 export type PortalKey = `${Lowercase<Public["Enums"]["module"]>}_${Action}`;
 
-// ─── Who: the companies a caller belongs to ──────────────────────────────────
-
 /**
  * - `"employee"`: get_companies_with_employee_role() — any employee of the company, and
  *   any API key of it regardless of the key's scopes.
@@ -68,8 +66,6 @@ export const anyPageOf = (...modules: ModuleId[]): Who => ({
   anyOf: [],
   modules
 });
-
-// ─── Predicates ──────────────────────────────────────────────────────────────
 
 /**
  * The row a predicate is about: `table` is its table in the registry, `ref` the
@@ -328,10 +324,9 @@ export const exists = (
 
 /**
  * The rule that governs a project row: the owner's `action` (or `standard`, for a read
- * open to any employee) in the project's company. `column` names the row's project; on
- * `project` itself the row's own company decides (`column` is "id"), so the policy never
- * queries the table it guards. With `via: "projectElement"`, `column` names an element
- * and its project decides. The project (and element) must be in the row's own company.
+ * open to any employee) in the project's company. `column` names the row's project; with
+ * `via: "projectElement"`, an element, and its project decides. The project (and
+ * element) must be in the row's own company.
  */
 export const projectModule = (
   column: string,
@@ -339,13 +334,8 @@ export const projectModule = (
   { standard = action, via }: { standard?: Who; via?: "projectElement" } = {}
 ): Pred =>
   pred((row) => {
-    const governs = (alias: string | null) =>
-      belongsTo(
-        sql.ref(alias ? `${alias}.companyId` : "companyId"),
-        standard,
-        row
-      );
-    if (row.table === "project") return governs(null);
+    const governs = (alias: string) =>
+      belongsTo(sql.ref(`${alias}.companyId`), standard, row);
     const own = (name: string) => sql.ref(`${row.ref}.${name}`);
     if (via === "projectElement") {
       return sql`EXISTS (SELECT 1 FROM ${sql.id("public", "projectElement")} e JOIN ${sql.id("public", "project")} p ON ${sql.ref("p.id")} = ${sql.ref("e.projectId")} AND ${sql.ref("p.companyId")} = ${sql.ref("e.companyId")} WHERE ${sql.ref("e.id")} = ${own(column)} AND ${sql.ref("e.companyId")} = ${own("companyId")} AND ${governs("p")})`;
@@ -450,8 +440,6 @@ const eb = expressionBuilder<KyselyDatabase, Table>();
 /** Any other condition, written with Kysely against table T's real columns. */
 export const where = <T extends Table>(predicate: Predicate<T>): Pred =>
   pred(() => sql`${(predicate as Predicate<Table>)(eb)}`);
-
-// ─── Rules ───────────────────────────────────────────────────────────────────
 
 /** One predicate per command. A missing command has no policy, so it is denied. */
 export type Commands = {
@@ -620,8 +608,6 @@ export const external = (
   reason: string,
   sql: (target: string) => string
 ): CustomRule => ({ kind: "custom", reason, sql });
-
-// ─── Rendering ───────────────────────────────────────────────────────────────
 
 /** Policies cannot take bind parameters, so every value is written inline as a literal. */
 class InlineValueCompiler extends PostgresQueryCompiler {

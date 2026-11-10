@@ -34,7 +34,7 @@ import {
   upsertDimensionValueMapping,
   validateDimensionSlots
 } from "@carbon/ee/accounting";
-import { deleteApiKey, upsertApiKey } from "@carbon/ee/api-keys.server";
+import { deleteApiKey } from "@carbon/ee/api-keys.server";
 import {
   disableAuditLog,
   enableAuditLog,
@@ -96,7 +96,7 @@ import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import * as accountingPostings from "../accounting/accounting.service";
 import { fromServerFn } from "../shared/shared.service";
 import { grantsSchema } from "../users/users.models";
-import { saveAccessGrants } from "../users/users.service";
+import { writeApiKey } from "../users/users.service";
 import {
   accountMappingEntrySchema,
   apiKeyValidator,
@@ -2038,45 +2038,17 @@ export const createApiKey = defineServiceFn({
   permission: { "settings.apiKeys": "Create" },
   async run(ctx, { name, grants, expiresAt, rateLimit }) {
     const rawKey = `crbn_${nanoid()}`;
-    let created: Awaited<ReturnType<typeof upsertApiKey>>;
-    try {
-      created = await upsertApiKey(ctx.asCaller.supabase, {
+    const refused = await writeApiKey(ctx, {
+      key: {
         name,
-        expiresAt: expiresAt || undefined,
+        expiresAt,
         rateLimit,
-        rawKey,
         keyHash: hashApiKey(rawKey),
-        keyPreview: rawKey.slice(-5),
-        companyId: ctx.company.id,
-        createdBy: ctx.auditUserId
-      });
-    } catch (err) {
-      return service.apiKeysEntitlement(ctx, err);
-    }
-    const key = created.data && "key" in created.data ? created.data.key : null;
-    if (created.error || !key || !created.data) {
-      return ctx.error("internal", "Failed to create API key", created.error);
-    }
-    const apiKeyId = created.data.id;
-    const refused = await saveAccessGrants(ctx, {
-      subjectType: "key",
-      subjectId: apiKeyId,
-      change: { set: grants }
-    }).catch((err: unknown) => ctx.error("internal", "Failed", err));
-    if (refused) {
-      // A key without its grants authorizes nothing; remove it rather than
-      // leave a key the person never saw. A Create-level caller cannot delete
-      // keys, so the cleanup of the key it just made runs as the system.
-      await deleteApiKey(ctx.asSystem.supabase, apiKeyId);
-      return refused.category === "internal"
-        ? ctx.error(
-            "internal",
-            "Failed to save the API key's permissions",
-            refused
-          )
-        : refused;
-    }
-    return { key };
+        keyPreview: rawKey.slice(-5)
+      },
+      grants
+    });
+    return refused ?? { key: rawKey };
   }
 });
 
@@ -2092,37 +2064,11 @@ export const updateApiKey = defineServiceFn({
   input: z.object({ id: z.string().min(1), ...apiKeyFields }),
   permission: { "settings.apiKeys": "Edit" },
   async run(ctx, { id, name, grants, expiresAt, rateLimit }) {
-    let updated: Awaited<ReturnType<typeof upsertApiKey>>;
-    try {
-      updated = await upsertApiKey(ctx.asCaller.supabase, {
-        id,
-        name,
-        expiresAt: expiresAt || undefined,
-        rateLimit
-      });
-    } catch (err) {
-      return service.apiKeysEntitlement(ctx, err);
-    }
-    if (updated.error) {
-      return ctx.error("internal", "Failed to update API key", updated.error);
-    }
-    // Clears the key's cached authentication, so the new grants, expiry and
-    // limit apply at once.
-    const refused = await saveAccessGrants(ctx, {
-      subjectType: "key",
-      subjectId: id,
-      change: { set: grants }
+    const refused = await writeApiKey(ctx, {
+      key: { id, name, expiresAt, rateLimit },
+      grants
     });
-    if (refused) {
-      return refused.category === "internal"
-        ? ctx.error(
-            "internal",
-            "Failed to update the API key's permissions",
-            refused
-          )
-        : refused;
-    }
-    return { id };
+    return refused ?? { id };
   }
 });
 

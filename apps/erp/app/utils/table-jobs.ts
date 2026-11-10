@@ -202,10 +202,8 @@ export function bulkStartFormResponse(start: BulkActionStart) {
  */
 export const ALL_MATCHING_RELEASE_LIMIT = 2_000;
 
-/** A list a bulk action may run on: its key and its own gate. */
 export type BulkActionList = { key: string; permission: ListPermission };
 
-/** The one page a list's gate names (`{ "parts.tools": "View" }`), or null. */
 function pageOfList(list: BulkActionList): string | null {
   const { gate } = list.permission;
   if (Array.isArray(gate)) return null;
@@ -213,7 +211,6 @@ function pageOfList(list: BulkActionList): string | null {
   return pages.length === 1 ? pages[0]! : null;
 }
 
-/** The item type an items list shows: the `where` of its page; null for another list. */
 export function itemListType(
   list: BulkActionList
 ): Database["public"]["Enums"]["itemType"] | null {
@@ -224,7 +221,6 @@ export function itemListType(
     : null;
 }
 
-/** The page of an items list at `level`, or null when it is not an items list. */
 export function itemListPermission(
   list: BulkActionList,
   level: "View" | "Create" | "Edit" | "Full"

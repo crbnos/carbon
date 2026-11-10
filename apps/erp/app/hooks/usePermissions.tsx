@@ -3,11 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  anyOf,
   type Gate,
   type GateLevel,
-  holdsAny,
   holdsGate,
-  LEVEL_ACTION
+  pagesOf
 } from "@carbon/database/access";
 import { useRouteData } from "@carbon/react";
 import { useCallback } from "react";
@@ -28,13 +28,11 @@ export function usePermissions() {
   } = useUser();
 
   if (!isPermissions(data?.permissions) || !isRole(data?.role)) {
-    // TODO: force logout -- the likely cause is development changes
     throw new Error(
       "usePermissions must be used within an authenticated route. If you are seeing this error, you are likely in development and have changed the session variables. Try deleting the cookies."
     );
   }
 
-  /** Whether the person passes the gate: `has({ "sales.quotes": "Edit" })`. */
   const has = useCallback(
     (gate: Gate) => holdsGate(data?.permissions ?? {}, gate, companyId),
     [companyId, data?.permissions]
@@ -43,7 +41,11 @@ export function usePermissions() {
   /** Whether any page of the module holds the level (navigation, dashboards). */
   const hasAny = useCallback(
     (module: string, level: GateLevel) =>
-      holdsAny(data?.permissions ?? {}, module, LEVEL_ACTION[level], companyId),
+      holdsGate(
+        data?.permissions ?? {},
+        anyOf(pagesOf(module), level),
+        companyId
+      ),
     [companyId, data?.permissions]
   );
 

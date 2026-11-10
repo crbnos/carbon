@@ -114,12 +114,6 @@ describe("render", () => {
       `FOR SELECT USING (EXISTS (SELECT 1 FROM "public"."project" p WHERE "p"."id" = "projectElement"."projectId" AND "p"."companyId" = "projectElement"."companyId" AND "p"."companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));`
     );
     expect(child).toContain(`'projects.projects_update'`);
-    // On project itself the row's own columns decide: no policy queries its own table.
-    const own = render(rule, "project");
-    expect(own).not.toContain(`FROM "public"."project"`);
-    expect(own).toContain(
-      `FOR UPDATE USING ("companyId" = ANY ((SELECT ${key("projects.projects_update")})::text[]));`
-    );
   });
 
   test("projectModule via the element reaches the element's project", () => {

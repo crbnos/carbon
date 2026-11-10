@@ -50,6 +50,9 @@ describe("a client bound to a request", () => {
         })
     );
 
+  // A Request's signal follows the one it was built with only while the
+  // Request is alive (undici holds the link weakly), as the framework keeps it
+  // for the whole request. A test that aborts later must hold the Request too.
   const pageLoad = (controller: AbortController, method = "GET") =>
     new Request("http://erp.test/x/part/1", {
       method,
@@ -60,11 +63,8 @@ describe("a client bound to a request", () => {
     const fetchMock = hangingFetch();
     vi.stubGlobal("fetch", fetchMock);
     const controller = new AbortController();
-    const client = getCarbonClient(
-      "anon",
-      "user-jwt",
-      requestFetch(pageLoad(controller))
-    );
+    const request = pageLoad(controller);
+    const client = getCarbonClient("anon", "user-jwt", requestFetch(request));
 
     const calls = Array.from({ length: 12 }, () =>
       client.from("item").select("id")
@@ -81,6 +81,7 @@ describe("a client bound to a request", () => {
     controller.abort();
     await Promise.all(calls);
     expect(waitEnded).toHaveBeenCalledTimes(4);
+    expect(request.signal.aborted).toBe(true);
   });
 
   it("shares the limit between every client built during the request", async () => {
@@ -118,11 +119,8 @@ describe("a client bound to a request", () => {
     const fetchMock = hangingFetch();
     vi.stubGlobal("fetch", fetchMock);
     const controller = new AbortController();
-    const client = getCarbonClient(
-      "anon",
-      "user-jwt",
-      requestFetch(pageLoad(controller))
-    );
+    const request = pageLoad(controller);
+    const client = getCarbonClient("anon", "user-jwt", requestFetch(request));
 
     const pending = client.from("item").select("id");
     setTimeout(() => controller.abort(), 5);
@@ -132,6 +130,7 @@ describe("a client bound to a request", () => {
 
     const second = await client.from("job").select("id");
     expect(second.error?.message).toContain("AbortError");
+    expect(request.signal.aborted).toBe(true);
   });
 
   it("leaves RPCs, table writes, auth and edge function calls alone, and every call of an action", async () => {

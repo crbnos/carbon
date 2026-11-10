@@ -17,8 +17,8 @@ import {
 import { ForbiddenError } from "@carbon/api/errors";
 import {
   authorizePostingCaller,
-  type PostingCaller,
-  postingCaller
+  type PostingCredential,
+  postingCredential
 } from "~/modules/shared/shared.service";
 
 vi.mock("@carbon/env", async (importOriginal) => ({
@@ -30,7 +30,7 @@ const jwt = (payload: object) =>
   `h.${Buffer.from(JSON.stringify(payload)).toString("base64url")}.s`;
 
 type Caller = Parameters<typeof authorizePostingCaller>[0] & {
-  caller: PostingCaller;
+  caller: PostingCredential;
 };
 const authorize = (
   ctx: Caller,
@@ -54,7 +54,7 @@ describe("authorizePostingCaller", () => {
   });
 });
 
-describe("postingCaller", () => {
+describe("postingCredential", () => {
   const clientWith = (key: string, headers: Record<string, string> = {}) =>
     createClient<Database>("http://localhost:54321", key, {
       global: { headers }
@@ -62,7 +62,7 @@ describe("postingCaller", () => {
 
   it("makes a carbon-key client an API key, whatever user it names", async () => {
     expect(
-      postingCaller(
+      postingCredential(
         clientWith("anon-key", { "carbon-key": "crbn_k" }),
         fields.userId
       )
@@ -70,7 +70,7 @@ describe("postingCaller", () => {
   });
 
   it("makes the service-role client the system", async () => {
-    expect(postingCaller(clientWith("service-role-key"), fields.userId)).toEqual(
+    expect(postingCredential(clientWith("service-role-key"), fields.userId)).toEqual(
       { type: "system" }
     );
   });
@@ -79,13 +79,13 @@ describe("postingCaller", () => {
     const own = clientWith("anon-key", {
       Authorization: `Bearer ${jwt({ sub: "u1", role: "authenticated" })}`
     });
-    expect(postingCaller(own, fields.userId)).toEqual({ type: "user" });
+    expect(postingCredential(own, fields.userId)).toEqual({ type: "user" });
 
     const other = clientWith("anon-key", {
       Authorization: `Bearer ${jwt({ sub: "u2", role: "authenticated" })}`
     });
-    expect(() => postingCaller(other, fields.userId)).toThrow(ForbiddenError);
-    expect(() => postingCaller(clientWith("anon-key"), fields.userId)).toThrow(
+    expect(() => postingCredential(other, fields.userId)).toThrow(ForbiddenError);
+    expect(() => postingCredential(clientWith("anon-key"), fields.userId)).toThrow(
       ForbiddenError
     );
   });
@@ -131,7 +131,7 @@ describe("authorizePostingCaller (API key)", () => {
           db,
           companyId,
           userId,
-          caller: postingCaller(
+          caller: postingCredential(
             createClient<Database>("http://localhost:54321", "anon-key", {
               global: { headers: { "carbon-key": rawKey } }
             }),

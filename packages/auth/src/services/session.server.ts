@@ -61,7 +61,6 @@ export const isTestEdition = CarbonEdition === Edition.Test;
 
 const cookieDomain = isTestEdition ? undefined : getCookieDomain(DOMAIN);
 
-// Shared by every signed cookie in this file.
 const signedCookieOptions: CookieOptions = {
   httpOnly: true,
   path: "/",

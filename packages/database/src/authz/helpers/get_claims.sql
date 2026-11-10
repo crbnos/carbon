@@ -54,8 +54,7 @@ AS $function$
       SELECT COALESCE(jsonb_object_agg(lower(m.module::text) || '_' || a.action, jsonb_build_array(company)), '{}'::jsonb)
       INTO legacy_keys
       FROM unnest(enum_range(NULL::"module")) AS m(module)
-      JOIN (VALUES ('view', 'View'::"permissionLevel"), ('create', 'Create'), ('update', 'Edit'), ('delete', 'Full'))
-        AS a(action, needs) ON util.access_level(uid, NULL, company, lower(m.module::text)) >= a.needs;
+      JOIN util.action_levels() AS a ON util.access_level(uid, NULL, company, lower(m.module::text)) >= a.level;
     END IF;
 
     -- A portal account still holds its keys in userPermission. An employee's old

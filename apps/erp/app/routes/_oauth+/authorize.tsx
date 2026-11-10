@@ -120,7 +120,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // The token acts in the SELECTED company, so the user must be able to
-  // authorize there — requirePermissions above only checked the active one.
+  // act there — `authorize` above only checked the active one.
   const [membership, claims] = await Promise.all([
     client
       .from("userToCompany")

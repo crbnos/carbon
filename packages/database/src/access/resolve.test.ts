@@ -30,7 +30,6 @@ import {
   expandClaims,
   type Grant,
   holds,
-  holdsAny,
   holdsGate,
   isAdminType,
   isLegacyClaims,
@@ -186,9 +185,9 @@ describe("expandClaims", () => {
     }
   });
 
-  it("merges portal keys", () => {
-    expect(holds(expanded, "customerPortal_view", "c2")).toBe(true);
-    expect(holds(expanded, "customerPortal_view", "c1")).toBe(false);
+  it("leaves portal keys out of the pages", () => {
+    expect(expanded.customerPortal).toBeUndefined();
+    expect(holds(expanded, "customerPortal_view", "c2")).toBe(false);
   });
 
   it("gives an admin every page's maxLevel", () => {
@@ -406,24 +405,6 @@ describe("landingOf", () => {
       page: "service.customerAssets",
       path: "/x/service-jobs/assets"
     });
-  });
-});
-
-describe("holdsAny", () => {
-  const expanded = {
-    "inventory.receipts": { view: ["c1"], create: [], update: [], delete: [] },
-    "inventory.shipments": { view: [], create: [], update: [], delete: [] },
-    accounting: { view: [], create: [], update: [], delete: [] }
-  };
-
-  it("is true when any page of the module holds the action", () => {
-    expect(holdsAny(expanded, "inventory", "view", "c1")).toBe(true);
-  });
-
-  it("is false for another action, company or module", () => {
-    expect(holdsAny(expanded, "inventory", "create", "c1")).toBe(false);
-    expect(holdsAny(expanded, "inventory", "view", "c2")).toBe(false);
-    expect(holdsAny(expanded, "accounting", "view", "c1")).toBe(false);
   });
 });
 

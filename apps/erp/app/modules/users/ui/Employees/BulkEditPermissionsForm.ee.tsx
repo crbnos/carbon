@@ -134,8 +134,7 @@ const BulkEditPermissionsBody = ({
           <AccessGrid
             value={grants}
             onChange={setGrants}
-            inheritLabel={t`No change`}
-            showInherited={false}
+            mode={{ edits: "bulk" }}
             label={t`Access`}
             isDisabled={!canEditPermissions}
           />

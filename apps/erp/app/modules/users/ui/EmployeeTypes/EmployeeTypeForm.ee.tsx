@@ -4,9 +4,6 @@
 
 import { ValidatedForm } from "@carbon/form";
 import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
   Button,
   HStack,
   Modal,
@@ -19,7 +16,6 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { LuShieldCheck } from "react-icons/lu";
 import type { z } from "zod";
 import { Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -105,33 +101,16 @@ const EmployeeTypeForm = ({
                   </Trans>
                 </p>
               </div>
-              {isAdmin ? (
-                <Alert>
-                  <LuShieldCheck />
-                  <AlertTitle>
-                    <Trans>Admin has full access</Trans>
-                  </AlertTitle>
-                  <AlertDescription>
-                    <Trans>
-                      Every level on every module, including modules added
-                      later. There is nothing to set.
-                    </Trans>
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <AccessGrid
-                  value={grants}
-                  onChange={setGrants}
-                  termId="employee-type-default-permissions"
-                  notes={Object.fromEntries(
-                    convertedGrowth.map((row) => [
-                      row.id,
-                      t`Gained ${row.gained.join(", ")} when permissions became levels`
-                    ])
-                  )}
-                  isDisabled={isDisabled}
-                />
-              )}
+              <AccessGrid
+                value={grants}
+                onChange={setGrants}
+                termId="employee-type-default-permissions"
+                admin={isAdmin}
+                gained={Object.fromEntries(
+                  convertedGrowth.map((row) => [row.id, row.gained])
+                )}
+                isDisabled={isDisabled}
+              />
             </section>
 
             {isEditing ? <AccessHolders /> : null}

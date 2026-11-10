@@ -14,16 +14,16 @@ import {
   MODULES,
   type ModuleId,
   moduleId,
+  type PageGate,
+  type PageId,
   pageById,
   pagesOf
 } from "@carbon/database/access";
-import type { GrantInput, GrantModule } from "@carbon/database/access-write";
-
-/**
- * The decisions of permission authoring, with no I/O: what one row of the
- * access grid holds, what a bulk edit leaves a person with, what a subject may
- * be granted, and whether an actor may edit accounts.
- */
+import type {
+  GrantInput,
+  GrantModule,
+  GrantSubject
+} from "@carbon/database/access-write";
 
 /** A form's module name ("parts", "Parts") as the `module` enum label; null for a module with no pages. */
 export function toModule(name: string): GrantModule | null {
@@ -66,7 +66,6 @@ export function rowLevel(
   ).granted;
 }
 
-/** A level at most what a row allows: its page's `maxLevel`, else unchanged. */
 const clampRow = (row: GrantRow, level: Level) => {
   const id = row.page ?? moduleId(row.module);
   const max = id ? pageById(id)?.maxLevel : undefined;
@@ -138,16 +137,29 @@ export function bulkEditGrants({
   ];
 }
 
-/** Who holds a grant: an employee type, a person, or an API key. */
 export type AccessSubjectType = "role" | "person" | "key";
+
+export function accessSubject(
+  type: AccessSubjectType,
+  id: string
+): GrantSubject {
+  if (type === "role") return { employeeTypeId: id };
+  if (type === "person") return { userId: id };
+  return { apiKeyId: id };
+}
+
+export const subjectTypeOf = (subject: GrantSubject): AccessSubjectType =>
+  "employeeTypeId" in subject ? "role" : "userId" in subject ? "person" : "key";
 
 /**
  * What a subject may be granted: the modules it may hold, enforced on every
  * write. `selectAllCaps` is where the grid's "select all" stops on a module;
  * a higher level stays a choice made on the module's own rows, and the server
- * accepts it.
+ * accepts it. `page` is the page that reads (View) and writes (Edit) the
+ * subject's grants.
  */
 export type SubjectRules = {
+  page: PageId;
   modules: readonly ModuleId[];
   selectAllCaps: Partial<Record<ModuleId, Level>>;
 };
@@ -155,17 +167,30 @@ export type SubjectRules = {
 const ALL_MODULES = MODULES.map((m) => m.id);
 
 export const SUBJECT_RULES: Record<AccessSubjectType, SubjectRules> = {
-  role: { modules: ALL_MODULES, selectAllCaps: {} },
-  person: { modules: ALL_MODULES, selectAllCaps: {} },
+  role: {
+    page: "users.employeeTypes",
+    modules: ALL_MODULES,
+    selectAllCaps: {}
+  },
+  person: { page: "users.accounts", modules: ALL_MODULES, selectAllCaps: {} },
   // Keys were never offered Workflows. Deleting accounting data through the
   // API is never part of "select all".
   key: {
+    page: "settings.apiKeys",
     modules: ALL_MODULES.filter((id) => id !== "workflows"),
     selectAllCaps: { accounting: "Edit" }
   }
 };
 
-/** The modules of `grants` the subject may not hold, by their labels. */
+export function subjectGates(
+  level: "View" | "Edit"
+): Record<AccessSubjectType, PageGate> {
+  const gate = (type: AccessSubjectType): PageGate => ({
+    [SUBJECT_RULES[type].page]: level
+  });
+  return { role: gate("role"), person: gate("person"), key: gate("key") };
+}
+
 export function refusedModules(
   type: AccessSubjectType,
   grants: readonly GrantInput[]
@@ -179,7 +204,6 @@ export function refusedModules(
   return [...refused];
 }
 
-/** Whether a person's `get_claims` hold Users → Accounts at Edit in the company. */
 export function claimsMayEditAccounts(claims: unknown, companyId: string) {
   return holdsGate(
     claimsFor(claims, companyId).permissions,

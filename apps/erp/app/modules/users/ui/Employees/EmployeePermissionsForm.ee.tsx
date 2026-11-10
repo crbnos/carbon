@@ -4,9 +4,6 @@
 
 import { ValidatedForm } from "@carbon/form";
 import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
   Avatar,
   Button,
   HStack,
@@ -20,7 +17,6 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { LuShieldCheck } from "react-icons/lu";
 import type { z } from "zod";
 import { Hidden, Select, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -73,15 +69,6 @@ const EmployeePermissionsForm = ({
   const isDirty =
     employeeTypeId !== initialValues.employeeType ||
     JSON.stringify(grants) !== JSON.stringify(initialValues.grants);
-
-  const notes = Object.fromEntries(
-    effectiveAccess
-      .filter((row) => row.gained.length > 0)
-      .map((row) => [
-        row.page,
-        t`Gained ${row.gained.join(", ")} when permissions became levels`
-      ])
-  );
 
   return (
     <Modal
@@ -158,31 +145,20 @@ const EmployeePermissionsForm = ({
                   </Button>
                 ) : null}
               </div>
-              {isAdmin ? (
-                <Alert>
-                  <LuShieldCheck />
-                  <AlertTitle>
-                    <Trans>Full access through the Admin type</Trans>
-                  </AlertTitle>
-                  <AlertDescription>
-                    <Trans>
-                      Admin has every level on every module, including modules
-                      added later. Overrides don't apply while this person is an
-                      Admin.
-                    </Trans>
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <AccessGrid
-                  value={grants}
-                  onChange={setGrants}
-                  inherited={inherited}
-                  inheritsFrom={type?.name ?? t`Role`}
-                  inheritLabel={t`Role default`}
-                  notes={notes}
-                  isDisabled={!canEdit}
-                />
-              )}
+              <AccessGrid
+                value={grants}
+                onChange={setGrants}
+                mode={{
+                  edits: "overrides",
+                  inherited,
+                  from: type?.name ?? t`Role`
+                }}
+                admin={isAdmin}
+                gained={Object.fromEntries(
+                  effectiveAccess.map((row) => [row.page, row.gained])
+                )}
+                isDisabled={!canEdit}
+              />
             </section>
           </ModalBody>
           <ModalFooter>
