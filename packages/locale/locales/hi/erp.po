@@ -14137,6 +14137,7 @@ msgid "Hide"
 msgstr "छिपाएं"
 
 #. placeholder {0}: module.name
+#. placeholder {0}: route.name
 msgid "Hide {0}"
 msgstr "{0} छिपाएँ"
 
@@ -14148,6 +14149,10 @@ msgstr "खाता संख्या छिपाएँ"
 
 msgid "Hide Again"
 msgstr "फिर से छिपाएँ"
+
+#. placeholder {0}: group.name
+msgid "Hide all in {0}"
+msgstr ""
 
 msgid "Hide calculation"
 msgstr "गणना छिपाएं"
@@ -15859,6 +15864,9 @@ msgstr "मेल खाने वाले आइटम रखें"
 
 msgid "Keep navigation open"
 msgstr "नेविगेशन खुला रखें"
+
+msgid "Keep one, or hide {moduleName} itself"
+msgstr ""
 
 msgid "Keep only items where…"
 msgstr "केवल आइटम रखें जहां…"
@@ -17768,6 +17776,7 @@ msgid "Move"
 msgstr "स्थानांतरित करें"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: route.name
 msgid "Move {0}"
 msgstr "स्थानांतरित करें {0}"
 
@@ -26979,6 +26988,7 @@ msgid "Show"
 msgstr "दिखाएँ"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: route.name
 msgid "Show {0}"
 msgstr "{0} दिखाएँ"
 
@@ -27006,6 +27016,10 @@ msgstr "सभी दिखाएँ"
 
 msgid "Show all hidden on this step"
 msgstr "इस चरण पर सभी छिपे हुए दिखाएँ"
+
+#. placeholder {0}: group.name
+msgid "Show all in {0}"
+msgstr ""
 
 msgid "Show available batch numbers"
 msgstr "उपलब्ध बैच नंबर दिखाएं"
@@ -27965,6 +27979,10 @@ msgstr "सब-असेंबली मार्ग"
 
 msgid "Sub-Departments"
 msgstr "उप-विभाग"
+
+#. placeholder {0}: module.name
+msgid "Sub-modules of {0}"
+msgstr ""
 
 msgid "Subassembly"
 msgstr "सब-असेंबली"
