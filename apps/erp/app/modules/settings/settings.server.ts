@@ -6,6 +6,9 @@ import { defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { hashApiKey } from "@carbon/auth/auth.server";
+import { logOwnershipTransfer } from "@carbon/auth/auth-events.server";
+import { isCompanyOwner } from "@carbon/auth/company.server";
+import { ownershipTransferRefusal } from "@carbon/database/access";
 import {
   blockSchema,
   COMPANY_MERGE_FIELDS,
@@ -54,6 +57,7 @@ import {
   upsertWorkCenterDevice
 } from "@carbon/ee/oee.server";
 import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape";
+import { subjectGates } from "@carbon/ee/permission-grants";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { updateRequireMfaSetting } from "@carbon/ee/two-factor.server";
@@ -2035,7 +2039,8 @@ const apiKeyFields = {
  */
 export const createApiKey = defineServiceFn({
   input: z.object(apiKeyFields),
-  permission: { "settings.apiKeys": "Create" },
+  // Edit, not Create: the key's grants are written without RLS.
+  permission: subjectGates("Edit").key,
   async run(ctx, { name, grants, expiresAt, rateLimit }) {
     const rawKey = `crbn_${nanoid()}`;
     const refused = await writeApiKey(ctx, {
@@ -2083,18 +2088,12 @@ export const revokeApiKey = defineServiceFn({
   input: z.object({ id: z.string().min(1) }),
   permission: { "settings.apiKeys": "Edit" },
   async run(ctx, { id }) {
-    let deleted: Awaited<ReturnType<typeof deleteApiKey>>;
-    try {
-      deleted = await deleteApiKey(ctx.asCaller.supabase, ctx.asSystem.pg, {
-        companyId: ctx.company.id,
-        id
-      });
-    } catch (err) {
-      return service.apiKeysEntitlement(ctx, err);
-    }
-    if (deleted.error) {
-      return ctx.error("internal", "Failed to delete API key", deleted.error);
-    }
+    const { error } = await deleteApiKey(
+      ctx.asCaller.supabase,
+      ctx.asSystem.pg,
+      { companyId: ctx.company.id, id }
+    );
+    if (error) return ctx.error(error.code, error.message, error.cause);
     return { id };
   }
 });
@@ -2312,6 +2311,14 @@ export const getBillingPortalUrl = defineServiceFn({
   input: z.object({}),
   permission: { "settings.billing": "Edit" },
   async run(ctx) {
+    // An API key or a job is never the owner.
+    const callerId = ctx.actor.type === "user" ? ctx.actor.userId : null;
+    if (!(await isCompanyOwner(ctx.company.id, callerId))) {
+      return ctx.error(
+        "forbidden",
+        "Only the company owner can manage the subscription"
+      );
+    }
     try {
       const plans = await ctx.asCaller.supabase
         .from("plan")
@@ -2333,22 +2340,61 @@ export const getBillingPortalUrl = defineServiceFn({
  * Transfer ownership of the company group to another user.
  *
  * @remarks
- * The owner holds billing and the group's administrative settings.
+ * The owner holds billing and the group's administrative settings. Only the
+ * current owner may transfer, to an active employee of a company in the group
+ * (`ownershipTransferRefusal`). `companyGroup` has no update policy, so the
+ * write runs as the system, for this company's group only.
  */
 export const transferCompanyOwnership = defineServiceFn({
   input: z.object({ newOwnerId: z.string().min(1) }),
   permission: { "settings.billing": "Edit" },
   async run(ctx, { newOwnerId }) {
-    const { error } = await requireAffected(
-      ctx.asCaller.supabase
-        .from("companyGroup")
-        .update({ ownerId: newOwnerId })
-        .eq("id", ctx.company.groupId)
-        .select("id")
-    );
-    if (error) {
-      return ctx.error("internal", "Failed to transfer ownership", error);
+    const callerId = ctx.actor.type === "user" ? ctx.actor.userId : null;
+    const transfer = await service.readOwnershipTransfer(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      newOwnerId
+    });
+    if (!transfer) {
+      return ctx.error("notFound", "The company has no group");
     }
+    const refusal = ownershipTransferRefusal({
+      ownerId: transfer.ownerId,
+      callerId,
+      newOwnerId,
+      newOwnerIsGroupEmployee: transfer.newOwnerIsGroupEmployee
+    });
+    if (refusal === "notOwner" || !callerId) {
+      return ctx.error(
+        "forbidden",
+        "Only the company owner can transfer ownership"
+      );
+    }
+    if (refusal === "sameOwner") {
+      return ctx.error("validation", "Choose another employee as the owner");
+    }
+    if (refusal === "notEmployee") {
+      return ctx.error(
+        "validation",
+        "The new owner must be an active employee of the company"
+      );
+    }
+
+    const transferred = await service.setCompanyGroupOwner(ctx.asSystem.pg, {
+      groupId: transfer.groupId,
+      fromOwnerId: callerId,
+      toOwnerId: newOwnerId,
+      userId: ctx.auditUserId
+    });
+    if (!transferred) {
+      return ctx.error("conflict", "The company's owner changed meanwhile");
+    }
+    logOwnershipTransfer({
+      actor: callerId,
+      companyId: ctx.company.id,
+      companyGroupId: transfer.groupId,
+      fromOwnerId: callerId,
+      toOwnerId: newOwnerId
+    });
     return { ownerId: newOwnerId };
   }
 });

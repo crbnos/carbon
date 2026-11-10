@@ -5,7 +5,6 @@
 import { createHash } from "node:crypto";
 import {
   claimsFor,
-  expandClaims,
   legacyGrants,
   REGISTRY_HASH
 } from "@carbon/database/access";
@@ -18,8 +17,8 @@ const log = getLogger("auth");
 
 // The registry hash retires records whose permissions a deploy reshaped.
 const API_KEY_CACHE_PREFIX = `apikey:auth:${REGISTRY_HASH}:`;
-// Short on purpose: the record carries scopes/expiry/rate-limit config, so a
-// revoked or re-scoped key can act for at most this long (the api-keys routes
+// Short on purpose: the record carries the key's grants, expiry and rate limit,
+// so a revoked or re-granted key can act for at most this long (the api-keys routes
 // additionally bust the entry on edit/revoke). Negative results are cached too —
 // a bad key hammering the endpoint must not hammer Postgres.
 const API_KEY_CACHE_TTL_SECONDS = 30;
@@ -122,15 +121,10 @@ async function loadLegacyApiKeyRecord(
     ...key,
     companyGroupId: key.companyGroupId as string,
     rateLimitWindow: key.rateLimitWindow as ApiKeyRecord["rateLimitWindow"],
-    permissions: expandClaims(
-      {
-        role: null,
-        admin: false,
-        grants: legacyGrants(keys, key.companyId, "key"),
-        portal: {}
-      },
+    permissions: claimsFor(
+      { grants: legacyGrants(keys, key.companyId, "key") },
       key.companyId
-    )
+    ).permissions
   };
 }
 

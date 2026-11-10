@@ -9,9 +9,12 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { newIds } from "@carbon/database/rows";
 import { SINGLE_TENANT } from "@carbon/env";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { requireEntitlement } from "./entitlements.server";
 import { SUBJECT_RULES } from "./permission-grants";
-import { type AccessWriteError, writeAccessGrants } from "./permissions.server";
+import {
+  type AccessWriteError,
+  subjectEntitlement,
+  writeAccessGrants
+} from "./permissions.server";
 
 /**
  * Commercial (Business) API-key AUTHORING — creating, editing, and deleting a
@@ -21,14 +24,15 @@ import { type AccessWriteError, writeAccessGrants } from "./permissions.server";
  * is NOT gated here — an already-issued key keeps authenticating regardless of
  * plan.
  *
- * The key is generated and hashed in the open route action (server-only:
- * `hashApiKey` from `@carbon/auth/auth.server` + `nanoid`); this file only
+ * The key is generated and hashed by the ERP's `createApiKey` service function
+ * (`hashApiKey` from `@carbon/auth/auth.server` + `nanoid`); this file only
  * receives the already-computed `keyHash`/`keyPreview` and stores them, so no
  * crypto crosses the package boundary.
  *
  * The entitlement LOCK lives in this commercial package so it cannot be
  * stripped from open-licensed app code: `writeAccessGrants` holds it for
- * `saveApiKey`, and `deleteApiKey` calls `requireEntitlement` itself.
+ * `saveApiKey`, and `deleteApiKey` checks it itself (`subjectEntitlement`).
+ * Both return a company without the plan an `entitlement` error.
  */
 
 /**
@@ -114,22 +118,35 @@ export async function deleteApiKey(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   { companyId, id }: { companyId: string; id: string }
-): Promise<{ error: { message: string } | null }> {
-  await requireEntitlement(client, companyId, SUBJECT_RULES.key.feature);
+): Promise<{ error: (AccessWriteError & { cause?: unknown }) | null }> {
+  const unentitled = await subjectEntitlement(client, companyId, "key");
+  if (unentitled) return { error: unentitled };
   const key = await db
     .selectFrom("apiKey")
     .select("keyHash")
     .where("id", "=", id)
     .where("companyId", "=", companyId)
     .executeTakeFirst();
-  if (!key) return { error: { message: "API key not found" } };
+  if (!key) {
+    return {
+      error: { code: "notFound", message: SUBJECT_RULES.key.notFound }
+    };
+  }
 
   const deleted = await client
     .from("apiKey")
     .delete()
     .eq("id", id)
     .eq("companyId", companyId);
-  if (deleted.error) return { error: deleted.error };
+  if (deleted.error) {
+    return {
+      error: {
+        code: "internal",
+        message: "Failed to delete API key",
+        cause: deleted.error
+      }
+    };
+  }
   await bustApiKeyCache(key.keyHash);
   return { error: null };
 }

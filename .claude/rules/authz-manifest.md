@@ -58,7 +58,8 @@ which page owns a table, so a rule names only what differs from the default.
 
 - An actor is a bare action (`"view"`, `"create"`, `"update"`, `"delete"`: the key of the page
   that owns the table), a page key (`purchasing.suppliers_create`, written as is),
-  `"employee"`, `"member"`, `anyOf(...)`, `anyPageOf(...modules)` (View on any page of those
+  `"employee"` (an employee, or an API key holding a grant on a module with pages:
+  `util.request_api_key`, as `admits`), `"member"`, `anyOf(...)`, `anyPageOf(...modules)` (View on any page of those
   modules), a predicate, or `false` (denied).
 - `company(overrides)` — each action needs the owner's: read `"view"`, writes
   `"create"`/`"update"`/`"delete"`. Override an action that differs (`read: "employee"` for a
@@ -94,7 +95,8 @@ which page owns a table, so a rule names only what differs from the default.
 - A write checks `<page>_<action>` (`inventory.receipts_update`), or any page the owner lists
   for the table in `alsoWrittenBy` (`inventory.shipments` → `shipmentLine`: `sales.salesOrders`).
   Another page that writes the table at the same action goes there, not in a per-command
-  `anyOf` (`address`: `purchasing.suppliers`); a different action stays in the rule
+  `anyOf` (`address`: `purchasing.suppliers`; `customerPartToItem`: `sales.customers`;
+  `enforcementRuleWorkCenterAssignment`: `resources.workCenters`); a different action stays in the rule
   (`supplierProcess` create by `purchasing.suppliers_update`). `buildIndex` throws on an entry
   whose page does not own the table, or whose writer is no other page; `writersOf` reads it.
 - A read admits View on any page of the owner's module, plus every page that lists the table

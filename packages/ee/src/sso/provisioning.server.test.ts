@@ -4,15 +4,11 @@
 
 import { describe, expect, it, vi } from "vitest";
 
-// Isolation mocks — provisioning's cache/redis/logger dependencies are stubbed
+// Isolation mocks — provisioning's claims-cache/logger dependencies are stubbed
 // so the pure decision logic can be tested without dragging in the full module
 // graph. The Kysely db is a caller-supplied parameter and is not needed here.
-vi.mock("@carbon/auth", () => ({
-  getPermissionCacheKey: vi.fn((id: string) => `permissions:${id}`)
-}));
-
-vi.mock("@carbon/kv", () => ({
-  redis: { del: vi.fn().mockResolvedValue(null) }
+vi.mock("@carbon/auth/users.server", () => ({
+  clearClaims: vi.fn().mockResolvedValue(undefined)
 }));
 
 vi.mock("@carbon/logger", () => ({

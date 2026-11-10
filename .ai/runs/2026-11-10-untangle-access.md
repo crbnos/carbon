@@ -172,3 +172,17 @@ Problems it removes:
 ## Progress
 - [x] 1 core — [x] 1 authz — [x] 2 auth/api — [x] 2 ee/editors — [x] 2 ERP (commit 4b36420e75) — [~] F10 (TS marker)
 - [ ] comments — [ ] re-survey — [ ] tests — [ ] verify
+
+## User decisions (round 5)
+
+- **Billing is owner only, on the server too.** One decision, `ownsCompany` (`@carbon/database/access`,
+  `owner.ts`), read by the client's `isOwner` and by `isCompanyOwner` / `requireCompanyOwner`
+  (`@carbon/auth/company.server`). Applied to the Billing loader, the onboarding checkout action,
+  `getBillingPortalUrl` and `transferCompanyOwnership`. The page gate (Settings → Billing) stays.
+  Stripe webhooks and the seat sync are not user calls and are left alone.
+- **Ownership transfer runs as the system.** `companyGroup` has no update policy, so the caller-RLS
+  write always failed (on main too). The operation now checks first (`ownershipTransferRefusal`: the
+  caller owns the group, the new owner is someone else and an active employee in the group), writes
+  through `setCompanyGroupOwner` while the caller still owns the group, and logs
+  `ownership_transferred`. No update policy was added. Baseline entry for the `companyGroup` update
+  (no `companyId`; its `id` is the tenant-group key), like the purge job's delete.

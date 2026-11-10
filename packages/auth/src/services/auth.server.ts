@@ -311,8 +311,8 @@ export type Caller = {
  */
 export async function authorizeApiKey(
   rawKey: string,
-  gate: Gate = {},
-  request?: Request
+  gate: Gate,
+  request: Request
 ): Promise<Caller> {
   const { key, refusal } = await authenticateApiKey(rawKey);
   if (refusal) {

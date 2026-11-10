@@ -103,8 +103,6 @@ import {
   type BalloonRegionAnalysis,
   balloonRegionAnalysisResultSchema,
   type inspectionDispositionValidator,
-  type inspectionMeasurementValidator,
-  type inspectionSampleValidator,
   type inspectionSaveAnchorsPayloadValidator,
   type inspectionSaveBalloonsGeometryPayloadValidator,
   type inspectionSaveBalloonsPayloadValidator,
@@ -5720,16 +5718,6 @@ export async function closeIssue(
 }
 export type { Result } from "@carbon/database/quality";
 
-export async function upsertInspectionSample(
-  db: Kysely<KyselyDatabase>,
-  sample: z.infer<typeof inspectionSampleValidator> & {
-    companyId: string;
-    inspectedBy: string;
-  }
-) {
-  return engine.upsertInspectionSample(db, sample);
-}
-
 export async function dispositionInspection(
   db: Kysely<KyselyDatabase>,
   args: z.infer<typeof inspectionDispositionValidator> & {
@@ -5743,41 +5731,12 @@ export async function dispositionInspection(
   return engine.dispositionInspection(db, args);
 }
 
-export async function upsertInspectionMeasurement(
-  db: Kysely<KyselyDatabase>,
-  args: z.infer<typeof inspectionMeasurementValidator> & {
-    companyId: string;
-    userId: string;
-  }
-) {
-  return engine.upsertInspectionMeasurement(db, args);
-}
-
 export async function reconcileInspectionSamplingPlans(
   db: Kysely<KyselyDatabase>,
   inspectionId: string,
   companyId: string
 ) {
   return engine.reconcileInspectionSamplingPlans(db, inspectionId, companyId);
-}
-
-export async function changeInspectionDocument(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    inspectionId: string;
-    inspectionDocumentId: string | null;
-    companyId: string;
-    userId: string;
-  }
-) {
-  return engine.changeInspectionDocument(db, args);
-}
-
-export async function recordInspectionGauge(
-  db: Kysely<KyselyDatabase>,
-  args: Parameters<typeof engine.recordInspectionGauge>[1]
-) {
-  return engine.recordInspectionGauge(db, args);
 }
 
 export async function getRecentInspectionGauges(

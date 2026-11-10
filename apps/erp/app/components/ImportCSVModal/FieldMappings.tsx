@@ -6,7 +6,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
-import type { PageId } from "@carbon/database/access";
+import { pageOfTable } from "@carbon/database/access";
 import { Combobox, CreatableCombobox, useFormContext } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -61,12 +61,6 @@ import {
 } from "./enumMatch";
 import { useCreateLookup } from "./useCreateLookup";
 import { useCsvContext } from "./useCsvContext";
-
-/** The page whose Create level gates each creatable form. */
-const CREATABLE_FORM_PAGES: Record<CreatableForm, PageId> = {
-  paymentTerm: "accounting.paymentTerms",
-  shippingMethod: "inventory.shippingMethods"
-};
 
 type EnumData =
   | {
@@ -532,7 +526,7 @@ function EnumMappingStep({
   const permissions = usePermissions();
   const canCreateViaForm =
     !!creatableForm &&
-    permissions.has({ [CREATABLE_FORM_PAGES[creatableForm]]: "Create" });
+    permissions.has({ [pageOfTable(creatableForm)]: "Create" });
   const formModal = useDisclosure();
   const [formCreatedName, setFormCreatedName] = useState("");
   const pendingFormCsvValueRef = useRef<string | null>(null);

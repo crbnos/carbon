@@ -17,8 +17,8 @@ package is the single source of truth; ERP and MES consume it.
 Export subpaths (`package.json`): `.` (`index.ts`), `./auth.server`, `./session.server`,
 `./company.server`, `./users.server`, `./passkey.server`, `./verification.server`,
 `./middleware/flash.{server,client}`. User query helpers split across
-`services/users.ts` (client-safe: `getClaims`, `getPermissionCacheKey`,
-`getCompaniesForUser`, `readClaimsFresh`) and `services/users.server.ts`
+`services/users.ts` (client-safe: `getClaims`, `getCompaniesForUser`,
+`readClaimsFresh`; `getPermissionCacheKey` is internal to the package) and `services/users.server.ts`
 (server-only: `getUserClaims`, deactivate flows).
 
 ## Supabase client factories (`lib/supabase/client.ts`, `client.server.ts`)
@@ -437,7 +437,7 @@ calls `registerApi`). Two paths:
      `packages/database/src/authz/helpers/get_claims.sql`). Cached in a **Redis**
      hash (`@carbon/kv`) at `getPermissionCacheKey(userId)` =
      `permissions:<REGISTRY_HASH>:<userId>`, one field per company, so
-     `redis.del(getPermissionCacheKey(userId))` clears every company. On a miss it
+     `clearClaims([userId])` (`@carbon/auth/users.server`) clears every company. On a miss it
      reads `get_claims` (`getCarbonServiceRole`) and writes the field.
    - `getUserClaims` is additionally memoized **per read request** via
      `oncePerRead` (`@carbon/logger/middleware.server`), so the several loaders a
@@ -473,11 +473,11 @@ Claims cache must be invalidated when permissions change. Grant writes go throug
 `writeAccessGrants` (`@carbon/ee/permissions.server`), which clears it; the deactivation
 flows (`users.server.ts`, one `deactivateAs(role, …)` behind `deactivateCustomer` /
 `deactivateEmployee` / `deactivateSupplier` / `deactivateUser`) clear it themselves; a
-membership change elsewhere calls `redis.del(getPermissionCacheKey(userId))`.
+membership change elsewhere (company switch, invite accept) calls `clearClaims([userId])`.
 
 ## API key auth
 
-`carbon-key: <key>` header. `requirePermissions` hands it to `authorizeApiKey(rawKey, gate)`, which the v1 API and the MCP endpoint call with the key they read. It authenticates it with
+`carbon-key: <key>` header. `requirePermissions` hands it to `authorizeApiKey(rawKey, gate, request)`, which the v1 API and the MCP endpoint call with the key they read. It authenticates it with
 `authenticateApiKey(rawKey)` (`auth.server.ts`), the one path every key takes (the
 postings' `authorizePostingCaller` calls it too). It is memoized per request, so the rate
 limit counts a request once however many gates it meets. It reads via `getApiKeyRecord`

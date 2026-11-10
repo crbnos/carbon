@@ -27,6 +27,7 @@ export type AuthEvent =
   | "permission_changed"
   | "role_changed"
   | "role_access_changed"
+  | "ownership_transferred"
   | "logout";
 
 /**
@@ -187,6 +188,28 @@ export function logApiKeyAccessChange(fields: {
     companyId: fields.companyId,
     ip: fields.ip ?? undefined,
     changes: fields.changes
+  });
+}
+
+/**
+ * Emit an `ownership_transferred` audit event (NIST 800-171 3.3.1 / 3.3.2 /
+ * AC-2): the owner of a company group, who alone holds billing, changed.
+ */
+export function logOwnershipTransfer(fields: {
+  actor: string;
+  companyId: string;
+  companyGroupId: string;
+  fromOwnerId: string;
+  toOwnerId: string;
+  ip?: string | null;
+}): void {
+  logAuthEvent("ownership_transferred", {
+    actor: fields.actor,
+    companyId: fields.companyId,
+    companyGroupId: fields.companyGroupId,
+    fromOwnerId: fields.fromOwnerId,
+    targetUserId: fields.toOwnerId,
+    ip: fields.ip ?? undefined
   });
 }
 

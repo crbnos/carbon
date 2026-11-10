@@ -10,14 +10,10 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import invariant from "tiny-invariant";
 import { inspectionGaugeValidator } from "~/modules/quality/quality.models";
-import { recordInspectionGauge } from "~/modules/quality/quality.service";
-import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await authorize(request, {
-    "quality.inspections": "Edit"
-  });
+  const { api } = await authorize(request);
   const { id } = params;
   invariant(id, "id is required");
 
@@ -34,12 +30,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await recordInspectionGauge(getDatabaseClient(), {
+  const result = await api.quality.setInspectionGauge({
     inspectionId: id,
     inspectionFeatureId: validation.data.inspectionFeatureId,
-    gaugeId: validation.data.gaugeId || null,
-    companyId,
-    userId
+    gaugeId: validation.data.gaugeId
   });
 
   if (result.error) {

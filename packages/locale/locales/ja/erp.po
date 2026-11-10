@@ -2602,9 +2602,6 @@ msgstr "勘定科目タイプ"
 msgid "Account Type (inherited)"
 msgstr "アカウントタイプ（継承）"
 
-msgid "accounting"
-msgstr "会計"
-
 msgid "Accounting"
 msgstr "会計"
 
@@ -4950,7 +4947,7 @@ msgstr "会社責任者として、別の従業員に所有権を譲渡できま
 msgid "Ascending"
 msgstr "昇順"
 
-#. placeholder {0}: copy.moduleLabel
+#. placeholder {0}: moduleNames[module]
 #. placeholder {1}: copy.noun
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "{0}権限を持つ管理者に最初の{1}を追加するよう依頼してください。"
@@ -15528,9 +15525,6 @@ msgstr "無効な適用"
 msgid "Invalid Invite"
 msgstr "無効な招待"
 
-msgid "inventory"
-msgstr "在庫"
-
 msgid "Inventory"
 msgstr "在庫"
 
@@ -21987,9 +21981,6 @@ msgstr "検査待ち"
 msgid "Pending Inspection"
 msgstr "検査待ち"
 
-msgid "people"
-msgstr "人員"
-
 msgid "People"
 msgstr "人員"
 
@@ -22931,9 +22922,6 @@ msgstr "ハイパーケア中の製品の問題"
 msgid "Product support"
 msgstr "製品サポート"
 
-msgid "production"
-msgstr "生産差異"
-
 msgid "Production"
 msgstr "生産"
 
@@ -23406,9 +23394,6 @@ msgstr "購買外注サービス"
 msgid "Purchases"
 msgstr "購買"
 
-msgid "purchasing"
-msgstr "購買と売上原価"
-
 msgid "Purchasing"
 msgstr "購買"
 
@@ -23545,9 +23530,6 @@ msgstr "各事業コンポーネントの適格研究費"
 
 msgid "Qualified to run it"
 msgstr "実行する資格があります"
-
-msgid "quality"
-msgstr "品質"
 
 msgid "Quality"
 msgstr "品質"
@@ -25208,9 +25190,6 @@ msgstr "リソース"
 msgid "Resource Planning"
 msgstr "リソース計画"
 
-msgid "resources"
-msgstr "リソース"
-
 msgid "Resources"
 msgstr "リソース"
 
@@ -25920,9 +25899,6 @@ msgstr "販売価格"
 
 msgid "Sale Proceeds"
 msgstr "売上高"
-
-msgid "sales"
-msgstr "販売"
 
 msgid "Sales"
 msgstr "販売"
@@ -33209,9 +33185,6 @@ msgstr "ユーザーロール"
 
 msgid "Username"
 msgstr "ユーザー名"
-
-msgid "users"
-msgstr "ユーザー"
 
 msgid "Users"
 msgstr "ユーザー"

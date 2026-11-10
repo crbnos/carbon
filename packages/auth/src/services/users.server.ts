@@ -10,9 +10,10 @@ import { oncePerRead } from "@carbon/logger/middleware.server";
 import { chunkArray } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCarbonServiceRole } from "../lib/supabase/client.server";
-import type { CompanyRole, Permission, Result } from "../types";
+import type { CompanyRole, Result } from "../types";
 import { error, success } from "../utils/result";
 import { type AuditGrant, logRoleChange } from "./auth-events.server";
+import type { SessionClaims } from "./session-access";
 import { getClaims, getPermissionCacheKey } from "./users";
 
 const log = getLogger("auth");
@@ -46,16 +47,11 @@ export function getUserClaims(userId: string, companyId: string) {
   );
 }
 
-type UserClaims = {
-  permissions: Record<string, Permission>;
-  role: CompanyRole | null;
-};
-
 async function loadUserClaims(
   userId: string,
   companyId: string
-): Promise<UserClaims> {
-  let claims: UserClaims | null = null;
+): Promise<SessionClaims> {
+  let claims: SessionClaims | null = null;
 
   try {
     const cachedClaims = await redis.hget(
@@ -63,7 +59,7 @@ async function loadUserClaims(
       companyId
     );
     if (cachedClaims) {
-      claims = JSON.parse(cachedClaims) as UserClaims;
+      claims = JSON.parse(cachedClaims) as SessionClaims;
     }
   } catch (e) {
     log.error("Failed to get claims from redis", { error: e });
@@ -287,7 +283,7 @@ async function deactivateAs(
     reason: "deactivate"
   });
 
-  await redis.del(getPermissionCacheKey(userId));
+  await clearClaims([userId]);
 
   return success(`Sucessfully deactivated ${role}`);
 }

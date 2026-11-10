@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { Edition, type FailureReason, redirect } from "@carbon/utils";
 import type { AuthSession as SupabaseAuthSession } from "@supabase/supabase-js";
@@ -40,7 +39,7 @@ import {
   userHasVerifiedTotpFactor,
   verifyTotpChallenge
 } from "./mfa.server";
-import { getPermissionCacheKey } from "./users";
+import { clearClaims } from "./users.server";
 
 async function assertAuthSession(
   request: Request,
@@ -548,9 +547,9 @@ export async function updateCompanySession(
 
   if (authSession !== undefined) {
     // Fire-and-forget cache invalidation. If Redis is down, @carbon/kv fails
-    // soft and this resolves null — benign: a stale permission cache entry (if
-    // any) simply expires on its own TTL, and the session cookie is still returned.
-    redis.del(getPermissionCacheKey(authSession?.userId!));
+    // soft — benign: a stale permission cache entry (if any) simply expires on
+    // its own TTL, and the session cookie is still returned.
+    if (authSession?.userId) void clearClaims([authSession.userId]);
     session.set(SESSION_KEY, {
       ...authSession,
       companyId,

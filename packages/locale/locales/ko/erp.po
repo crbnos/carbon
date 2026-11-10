@@ -2602,9 +2602,6 @@ msgstr "계정 유형"
 msgid "Account Type (inherited)"
 msgstr "계정 유형(상속됨)"
 
-msgid "accounting"
-msgstr "회계"
-
 msgid "Accounting"
 msgstr "회계"
 
@@ -4950,7 +4947,7 @@ msgstr "회사의 책임자로서 다른 직원에게 책임을 이전할 수 �
 msgid "Ascending"
 msgstr "오름차순"
 
-#. placeholder {0}: copy.moduleLabel
+#. placeholder {0}: moduleNames[module]
 #. placeholder {1}: copy.noun
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "{0} 권한이 있는 관리자에게 첫 {1} 추가를 요청하세요."
@@ -15528,9 +15525,6 @@ msgstr "잘못된 적용"
 msgid "Invalid Invite"
 msgstr "유효하지 않은 초대"
 
-msgid "inventory"
-msgstr "재고"
-
 msgid "Inventory"
 msgstr "재고"
 
@@ -21987,9 +21981,6 @@ msgstr "검사 대기"
 msgid "Pending Inspection"
 msgstr "검사 대기"
 
-msgid "people"
-msgstr "인원"
-
 msgid "People"
 msgstr "인원"
 
@@ -22931,9 +22922,6 @@ msgstr "하이퍼케어 기간 중 발생한 제품 이슈"
 msgid "Product support"
 msgstr "제품 지원"
 
-msgid "production"
-msgstr "생산"
-
 msgid "Production"
 msgstr "생산"
 
@@ -23406,9 +23394,6 @@ msgstr "구매 서비스"
 msgid "Purchases"
 msgstr "구매"
 
-msgid "purchasing"
-msgstr "구매"
-
 msgid "Purchasing"
 msgstr "구매"
 
@@ -23545,9 +23530,6 @@ msgstr "각 비즈니스 구성 요소의 적격 연구 비용"
 
 msgid "Qualified to run it"
 msgstr "이를 실행할 수 있는 자격이 있음"
-
-msgid "quality"
-msgstr "품질"
 
 msgid "Quality"
 msgstr "품질"
@@ -25208,9 +25190,6 @@ msgstr "리소스"
 msgid "Resource Planning"
 msgstr "리소스 계획"
 
-msgid "resources"
-msgstr "자원"
-
 msgid "Resources"
 msgstr "자원"
 
@@ -25920,9 +25899,6 @@ msgstr "판매가"
 
 msgid "Sale Proceeds"
 msgstr "판매 대금"
-
-msgid "sales"
-msgstr "영업"
 
 msgid "Sales"
 msgstr "영업"
@@ -33209,9 +33185,6 @@ msgstr "사용자 역할"
 
 msgid "Username"
 msgstr "사용자명"
-
-msgid "users"
-msgstr "사용자"
 
 msgid "Users"
 msgstr "사용자"

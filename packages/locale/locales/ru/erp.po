@@ -2602,9 +2602,6 @@ msgstr "Тип счета"
 msgid "Account Type (inherited)"
 msgstr "Тип счета (унаследованный)"
 
-msgid "accounting"
-msgstr "бухгалтерия"
-
 msgid "Accounting"
 msgstr "Бухгалтерия"
 
@@ -4950,7 +4947,7 @@ msgstr "Как владелец организации, вы можете пер
 msgid "Ascending"
 msgstr "По возрастанию"
 
-#. placeholder {0}: copy.moduleLabel
+#. placeholder {0}: moduleNames[module]
 #. placeholder {1}: copy.noun
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "Попросите администратора с правом доступа {0} добавить первую {1}."
@@ -15528,9 +15525,6 @@ msgstr "Недействительные применения"
 msgid "Invalid Invite"
 msgstr "Недействительное приглашение"
 
-msgid "inventory"
-msgstr "инвентарь"
-
 msgid "Inventory"
 msgstr "Инвентарь"
 
@@ -21987,9 +21981,6 @@ msgstr "Ожидает контроля"
 msgid "Pending Inspection"
 msgstr "Ожидает контроля"
 
-msgid "people"
-msgstr "сотрудники"
-
 msgid "People"
 msgstr "Сотрудники"
 
@@ -22931,9 +22922,6 @@ msgstr "Проблемы с продуктом во время гиперпом�
 msgid "Product support"
 msgstr "Поддержка продукта"
 
-msgid "production"
-msgstr "Производственное отклонение"
-
 msgid "Production"
 msgstr "Производство"
 
@@ -23406,9 +23394,6 @@ msgstr "Закупленная услуга"
 msgid "Purchases"
 msgstr "Покупки"
 
-msgid "purchasing"
-msgstr "Закупки и стоимость проданных товаров"
-
 msgid "Purchasing"
 msgstr "Закупки"
 
@@ -23545,9 +23530,6 @@ msgstr "Квалифицированные расходы на исследов�
 
 msgid "Qualified to run it"
 msgstr "Имеет требуемый навык"
-
-msgid "quality"
-msgstr "качество"
 
 msgid "Quality"
 msgstr "Качество"
@@ -25208,9 +25190,6 @@ msgstr "Ресурс"
 msgid "Resource Planning"
 msgstr "Планирование ресурсов"
 
-msgid "resources"
-msgstr "ресурсы"
-
 msgid "Resources"
 msgstr "Ресурсы"
 
@@ -25920,9 +25899,6 @@ msgstr "Цена продажи"
 
 msgid "Sale Proceeds"
 msgstr "Выручка от продажи"
-
-msgid "sales"
-msgstr "продажи"
 
 msgid "Sales"
 msgstr "Продажи"
@@ -33209,9 +33185,6 @@ msgstr "Роли пользователей"
 
 msgid "Username"
 msgstr "Имя пользователя"
-
-msgid "users"
-msgstr "пользователи"
 
 msgid "Users"
 msgstr "Пользователи"

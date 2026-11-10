@@ -108,6 +108,13 @@ BEGIN
     RAISE EXCEPTION 'a key grant of None must not make the key a member';
   END IF;
   INSERT INTO permission ("companyId", "apiKeyId", module, level, "createdBy") VALUES
+    (company_a, key_id, 'Items', 'Full', 'system'),
+    (company_a, key_id, 'Messaging', 'Full', 'system');
+  IF cardinality(get_companies_with_employee_role()) <> 0
+    OR has_valid_api_key_for_company(company_a) THEN
+    RAISE EXCEPTION 'a key holding only grants on modules with no pages must not be a member';
+  END IF;
+  INSERT INTO permission ("companyId", "apiKeyId", module, level, "createdBy") VALUES
     (company_a, key_id, 'Sales', 'View', 'system');
   IF get_companies_with_employee_role() IS DISTINCT FROM ARRAY[company_a]
     OR get_companies_with_any_role() IS DISTINCT FROM ARRAY[company_a]

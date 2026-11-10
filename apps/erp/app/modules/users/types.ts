@@ -30,9 +30,7 @@ export type EmployeeType = NonNullable<
   Awaited<ReturnType<typeof getEmployeeTypes>>["data"]
 >[number];
 
-export type Module = NonNullable<
-  Awaited<ReturnType<typeof getModules>>["data"]
->[number];
+export type Module = ReturnType<typeof getModules>[number];
 
 export type Group = {
   data: {

@@ -11,6 +11,8 @@ export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary
 
 export const meta = moduleMeta("People");
 
+// The only check on this layout's own URL, which has no index route; the
+// children gate themselves.
 export async function loader({ request }: LoaderFunctionArgs) {
   await authorize(request, { "people.employees": "View" });
 

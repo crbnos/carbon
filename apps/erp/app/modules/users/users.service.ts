@@ -9,13 +9,13 @@ import type {
 import {
   CarbonEdition,
   CONTROLLED_ENVIRONMENT,
-  getPermissionCacheKey,
   ITAR_RIDER_SHA256,
   ITAR_RIDER_VERSION
 } from "@carbon/auth";
 import { deleteAuthAccount } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
+  clearClaims,
   deactivateCustomer,
   deactivateEmployee,
   deactivateSupplier,
@@ -24,6 +24,7 @@ import {
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import {
+  type AccessSubjectType,
   actionsGained,
   type Grant,
   holdsGate,
@@ -31,6 +32,8 @@ import {
   type Level,
   levelOf,
   levelReaches,
+  MODULES,
+  type ModuleEnum,
   PAGES
 } from "@carbon/database/access";
 import {
@@ -42,11 +45,10 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { InviteEmail } from "@carbon/documents/email";
 import { saveApiKey } from "@carbon/ee/api-keys.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
-import { EntitlementError } from "@carbon/ee/entitlements.server";
 import {
-  type AccessSubjectType,
   accessSubject,
-  SUBJECT_RULES
+  SUBJECT_RULES,
+  subjectGates
 } from "@carbon/ee/permission-grants";
 import {
   type AccessChange,
@@ -453,8 +455,15 @@ export async function getInvitable(
     .order("lastName");
 }
 
-export async function getModules(client: SupabaseClient<Database>) {
-  return client.from("modules").select("name").order("name");
+/**
+ * The modules a grant can hold: those with pages (`MODULES`), by name. The
+ * `module` enum also names modules with no pages (Items, Messaging, Printing),
+ * which no grant holds, so they are left out.
+ */
+export function getModules(): { name: ModuleEnum }[] {
+  return MODULES.map((module) => ({ name: module.enum })).sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
 }
 
 export async function getGroup(
@@ -990,7 +999,7 @@ export async function acceptInvite(
     // Post-commit and failure-tolerant: the grants just written are cached by
     // authorize, so a stale entry would outlive the acceptance.
     try {
-      await redis.del(getPermissionCacheKey(userId));
+      await clearClaims([userId]);
     } catch (err) {
       logger.error(
         "Failed to invalidate permission cache after invite accept",
@@ -2483,7 +2492,7 @@ export async function readPageAccessHolders(
   page: string,
   level: Level
 ) {
-  const withKeys = ctx.can({ "settings.apiKeys": "View" });
+  const withKeys = ctx.can(subjectGates("View").key);
   const [employees, rows, keys] = await Promise.all([
     readCompanyEmployees(ctx),
     readCompanyGrants(ctx.asSystem.pg, ctx.company.id),
@@ -2549,7 +2558,6 @@ export async function saveAccessGrants(
 ): Promise<CarbonError | null> {
   return refusalOf(
     ctx,
-    subjectType,
     writeAccessGrants(ctx.asCaller.supabase, ctx.asSystem.pg, {
       companyId: ctx.company.id,
       subject: accessSubject(subjectType, subjectId),
@@ -2574,7 +2582,7 @@ export async function writeEmployeeType(
     companyId: ctx.company.id,
     actorId: ctx.auditUserId
   });
-  const refused = await refusalOf(ctx, "role", write);
+  const refused = await refusalOf(ctx, write);
   if (refused) return refused;
   return { id: (await write).id as string };
 }
@@ -2586,7 +2594,6 @@ export function writeApiKey(
 ): Promise<CarbonError | null> {
   return refusalOf(
     ctx,
-    "key",
     saveApiKey(ctx.asCaller.supabase, ctx.asSystem.pg, {
       ...input,
       companyId: ctx.company.id,
@@ -2597,19 +2604,10 @@ export function writeApiKey(
 
 async function refusalOf(
   ctx: ServiceContext,
-  subjectType: AccessSubjectType,
   write: Promise<{ error: AccessWriteError | null }>
 ): Promise<CarbonError | null> {
-  let written: { error: AccessWriteError | null };
-  try {
-    written = await write;
-  } catch (err) {
-    if (!(err instanceof EntitlementError)) throw err;
-    return ctx.error("entitlement", SUBJECT_RULES[subjectType].refusal);
-  }
-  return written.error
-    ? ctx.error(written.error.code, written.error.message)
-    : null;
+  const { error } = await write;
+  return error ? ctx.error(error.code, error.message) : null;
 }
 
 /**

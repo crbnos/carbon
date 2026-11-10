@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ConformanceCheck, Violation } from "../check";
+import { blankSqlComments } from "../sources/comments";
 import { REGISTRY_HELPERS_DIR } from "./registry-helpers-fresh";
 
 /**
@@ -81,12 +82,6 @@ const FUNCTION_DDL = new RegExp(
   "gi"
 );
 
-/** Blank out SQL comments, keeping newlines so line numbers stay right. */
-export const stripComments = (sql: string) =>
-  sql
-    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "))
-    .replace(/--[^\n]*/g, (m) => " ".repeat(m.length));
-
 export const noAuthzDdlInMigrations = (
   functions: ManagedFunction[]
 ): ConformanceCheck => ({
@@ -111,7 +106,7 @@ export const noAuthzDdlInMigrations = (
     const managed = new Map(
       functions.map((f) => [`${f.schema}.${f.name}`.toLowerCase(), f])
     );
-    const sql = stripComments(contents);
+    const sql = blankSqlComments(contents);
     const line = (index: number) => sql.slice(0, index).split("\n").length;
     const violations: Violation[] = [];
     for (const m of sql.matchAll(POLICY_DDL)) {

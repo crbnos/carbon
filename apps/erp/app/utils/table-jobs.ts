@@ -220,14 +220,6 @@ export function itemListType(
     : null;
 }
 
-export function itemListGate(
-  list: BulkActionList,
-  level: "View" | "Create" | "Edit" | "Full"
-): Gate | null {
-  const page = itemListType(list) ? pageOfList(list) : null;
-  return page ? { [page]: level } : null;
-}
-
 /** A bulk action's gate: one gate, or a gate of the list it runs on (null
  *  for a list it does not serve). */
 export type BulkActionGate = Gate | ((list: BulkActionList) => Gate | null);
@@ -247,8 +239,10 @@ export function bulkActionGate(
  * route. The job runs as the system, which skips that rule, so a broader gate
  * (any item page) would let Tools Edit update parts.
  */
-export const itemsBulkUpdateGate: BulkActionGate = (list) =>
-  itemListGate(list, "Edit");
+export const itemsBulkUpdateGate: BulkActionGate = (list) => {
+  const page = itemListType(list) ? pageOfList(list) : null;
+  return page ? { [page]: "Edit" } : null;
+};
 
 export type BulkActionMeta = {
   /** The action's English name for the notification ("Release jobs"). */

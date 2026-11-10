@@ -29,9 +29,13 @@ import {
   readPages
 } from "./registry";
 
+/** The subjects a grant belongs to: a role, a person's override, an API key. */
+export const ACCESS_SUBJECT_TYPES = ["role", "person", "key"] as const;
+export type AccessSubjectType = (typeof ACCESS_SUBJECT_TYPES)[number];
+
 /** One row of the `permission` table, as the resolver reads it. */
 export type Grant = {
-  subject: "person" | "role" | "key";
+  subject: AccessSubjectType;
   /** The `module` enum label ("Inventory"); `moduleId` maps it to the page ids' module. */
   module: string;
   /** NULL: the grant covers the whole module. */
@@ -251,12 +255,7 @@ export function claimsFromJson(json: unknown, companyId: string): RawClaims {
       ((g as Grant).page === null || typeof (g as Grant).page === "string") &&
       LEVEL_SET.has((g as Grant).level)
   );
-  const portal =
-    typeof value.portal === "object" &&
-    value.portal !== null &&
-    !Array.isArray(value.portal)
-      ? (value.portal as Record<string, string[]>)
-      : {};
+  const portal = asObject(value.portal) as Record<string, string[]>;
   return {
     role,
     admin: value.admin === true,

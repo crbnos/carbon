@@ -4,5 +4,6 @@
 
 export * from "./admits";
 export * from "./levels";
+export * from "./owner";
 export * from "./registry";
 export * from "./resolve";

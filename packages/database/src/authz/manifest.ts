@@ -451,21 +451,21 @@ export const manifest = {
       )
     ),
     insert: or(
-      inCompany("companyId", anyOf("create", "sales.customers_create")),
+      inCompany("companyId", "create"),
       or(
         portal.customer("customerId", "sales_create"),
         portal.customer("customerId", "parts_create")
       )
     ),
     update: or(
-      inCompany("companyId", anyOf("update", "sales.customers_update")),
+      inCompany("companyId", "update"),
       or(
         portal.customer("customerId", "sales_update"),
         portal.customer("customerId", "parts_update")
       )
     ),
     delete: or(
-      inCompany("companyId", anyOf("delete", "sales.customers_delete")),
+      inCompany("companyId", "delete"),
       or(
         portal.customer("customerId", "sales_delete"),
         portal.customer("customerId", "parts_delete")
@@ -608,7 +608,7 @@ export const manifest = {
         where<"enforcementRule">((eb) => eb("targetType", "=", "workCenter")),
         { sameCompany: true }
       ),
-      inCompany("companyId", anyOf("create", "resources.workCenters_create"))
+      inCompany("companyId", "create")
     ),
     update: and(
       exists(
@@ -617,12 +617,9 @@ export const manifest = {
         where<"enforcementRule">((eb) => eb("targetType", "=", "workCenter")),
         { sameCompany: true }
       ),
-      inCompany("companyId", anyOf("update", "resources.workCenters_update"))
+      inCompany("companyId", "update")
     ),
-    delete: inCompany(
-      "companyId",
-      anyOf("delete", "resources.workCenters_delete")
-    )
+    delete: inCompany("companyId", "delete")
   }),
   // Also written by the audit log switch, from its Settings page, as before.
   // Audit Logs tops out at Edit.

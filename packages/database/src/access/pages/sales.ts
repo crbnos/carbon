@@ -12,7 +12,7 @@ export const PAGES = [
     id: "sales.customers",
     label: "Customers",
     maxLevel: "Full",
-    // ponytail: address has no column that tells a customer's row from a
+    // address has no column that tells a customer's row from a
     // supplier's, so Customers owns it and Suppliers reads it.
     tables: [
       "customer",

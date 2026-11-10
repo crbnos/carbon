@@ -53,6 +53,9 @@ import {
   disposition,
   inspectionDocumentParametersValidator,
   inspectionDocumentSamplingValidator,
+  inspectionGaugeValidator,
+  inspectionMeasurementValidator,
+  inspectionSampleValidator,
   inspectionSaveAnchorsPayloadValidator,
   inspectionSaveBalloonsGeometryPayloadValidator,
   inspectionSaveBalloonsPayloadValidator,
@@ -1742,6 +1745,112 @@ export const partialInspection = defineServiceFn({
     return { id, issueId: opened.issueId, ncrOpened: true };
   }
 });
+
+/**
+ * Accept a receipt or manual inspection lot: its tracked entities become
+ * Available and the lot Passed. A Job Operation lot is accepted from the shop
+ * floor, with its production outcome.
+ */
+export const acceptInspection = defineServiceFn({
+  input: z.object({ id: z.string().min(1) }),
+  permission: { "quality.inspections": "Edit" },
+
+  async run(ctx, { id }) {
+    const accepted = await engine.dispositionInspection(ctx.asSystem.pg, {
+      id,
+      decision: "Accept",
+      companyId: ctx.company.id,
+      dispositionedBy: ctx.auditUserId,
+      requireSource: ["Receipt", "Manual"]
+    });
+    if (accepted.error) {
+      return ctx.error("rule", accepted.error.message, accepted.error);
+    }
+    return { id: accepted.data.id };
+  }
+});
+
+/** Record a sample of an open lot, with its verdict or as Pending. */
+export const recordInspectionSample = defineServiceFn({
+  input: inspectionSampleValidator,
+  permission: { "quality.inspections": "Edit" },
+
+  async run(ctx, input) {
+    const saved = await engine.upsertInspectionSample(ctx.asSystem.pg, {
+      ...input,
+      companyId: ctx.company.id,
+      inspectedBy: ctx.auditUserId
+    });
+    if (saved.error) {
+      return ctx.error("rule", saved.error.message, saved.error);
+    }
+    return saved.data;
+  }
+});
+
+/** Record one reading of a feature on a sample of an open lot. */
+export const recordInspectionMeasurement = defineServiceFn({
+  input: inspectionMeasurementValidator,
+  permission: { "quality.inspections": "Edit" },
+
+  async run(ctx, input) {
+    const saved = await engine.upsertInspectionMeasurement(ctx.asSystem.pg, {
+      ...input,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (saved.error) {
+      return ctx.error("rule", saved.error.message, saved.error);
+    }
+    return saved.data;
+  }
+});
+
+/** Record the gauge used for one feature of a lot; no `gaugeId` clears it. */
+export const setInspectionGauge = defineServiceFn({
+  input: inspectionGaugeValidator,
+  permission: { "quality.inspections": "Edit" },
+
+  async run(ctx, { inspectionId, inspectionFeatureId, gaugeId }) {
+    const saved = await engine.recordInspectionGauge(ctx.asSystem.pg, {
+      inspectionId,
+      inspectionFeatureId,
+      gaugeId: gaugeId || null,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (saved.error) {
+      return ctx.error("rule", saved.error.message, saved.error);
+    }
+    return saved.data;
+  }
+});
+
+/**
+ * Swap the inspection plan an open lot follows, while it has no readings; no
+ * plan returns it to manual Pass/Fail.
+ */
+export const setInspectionDocument = defineServiceFn({
+  input: z.object({
+    inspectionId: z.string().min(1),
+    inspectionDocumentId: z.string().nullish()
+  }),
+  permission: { "quality.inspections": "Edit" },
+
+  async run(ctx, { inspectionId, inspectionDocumentId }) {
+    const changed = await engine.changeInspectionDocument(ctx.asSystem.pg, {
+      inspectionId,
+      inspectionDocumentId: inspectionDocumentId ?? null,
+      companyId: ctx.company.id,
+      userId: ctx.auditUserId
+    });
+    if (changed.error) {
+      return ctx.error("rule", changed.error.message, changed.error);
+    }
+    return changed.data;
+  }
+});
+
 // --- Inspection documents ---------------------------------------------------------
 
 const emptyInspectionSave = { create: [], update: [], delete: [] };

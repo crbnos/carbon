@@ -82,6 +82,32 @@ the `customer.subscription.*` family (`created/updated/deleted/paused/resumed/tr
 the `invoice.*` family, and `payment_intent.*`. Most mutate state via `syncStripeDataToKV`;
 several `invoice.*` events are forwarded to GTM.
 
+## Who may manage billing: the company owner
+
+The owner is the company group's `companyGroup.ownerId` (the user who created the group, until
+they transfer it). Billing is the owner's alone, whatever grants anyone else holds: Settings →
+Billing at Edit is needed as well, never instead.
+
+- The decision is `ownsCompany(ownerId, userId)` (`@carbon/database/access`, `owner.ts`): the
+  client's `usePermissions().isOwner()` (sidebar, avatar menu, the Billing page) and the server
+  share it.
+- The server check is `isCompanyOwner(companyId, userId)` (`@carbon/auth/company.server`): the
+  owner read past RLS; a failed read is no owner. A route uses `requireCompanyOwner({ companyId,
+  userId })` (403 otherwise): the Billing loader (`x+/settings+/billing.tsx`) and the checkout
+  action (`onboarding+/plan.tsx`). The service functions `getBillingPortalUrl` and
+  `transferCompanyOwnership` (`settings.server.ts`) refuse a non-owner as `forbidden`; an API key
+  or a job is never the owner.
+- **Transfer** (`transferCompanyOwnership`): the caller must be the current owner (and hold
+  Billing at Edit), and the new owner an active employee (`employee.active`, `userToCompany.role
+  = 'employee'`) of a company in the group — `ownershipTransferRefusal`, tested by value in
+  `packages/database/src/access/owner.test.ts`. `companyGroup` has no update policy (do not add
+  one), so it writes as the system through `setCompanyGroupOwner` (`settings.service.ts`), for
+  the company's own group and only while the caller still owns it, then emits
+  `ownership_transferred` (`logOwnershipTransfer`, `@carbon/auth/auth-events.server`). DB test:
+  `apps/erp/test/database/transfer-company-ownership.test.ts`.
+- Stripe's webhooks (`webhook.stripe.ts`) are not user calls and have no owner check; nor does
+  the seat sync (`updateSubscriptionQuantityForCompany`), a side effect of user changes.
+
 ## Plan gating (`packages/ee/src/plan.ts` + `plan.server.ts`)
 
 `FEATURE_PLANS` (`plan.ts`) is the source of truth — both client and server read it:

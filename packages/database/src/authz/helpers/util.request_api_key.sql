@@ -8,6 +8,8 @@ AS $function$
   -- reads the header, hashes it and checks expiry. A key with no grant is no
   -- member of the company, as admits (packages/database/src/access/admits.ts)
   -- refuses it, so every helper built on this one reads it as no key at all.
+  -- Only grants on modules that have pages count: admits drops the rest (Items,
+  -- Messaging, Printing), which no page can hold.
   -- Not SECURITY DEFINER and no SET search_path (names are qualified), so Postgres
   -- inlines it into its callers, which are SECURITY DEFINER.
   SELECT k.id, k."companyId"
@@ -19,5 +21,6 @@ AS $function$
       WHERE p."apiKeyId" = k.id
         AND p."companyId" = k."companyId"
         AND p.level <> 'None'::public."permissionLevel"
+        AND util.module_pages(lower(p.module::text)) <> '{}'
     )
 $function$;

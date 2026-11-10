@@ -2,10 +2,9 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { getPermissionCacheKey } from "@carbon/auth";
+import { clearClaims } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
-import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -787,7 +786,7 @@ export async function migrateUserToSso(
 
   // Post-commit side effect: idempotent, failure-tolerant — log, never throw.
   try {
-    await redis.del(getPermissionCacheKey(newUserId));
+    await clearClaims([newUserId]);
   } catch (err) {
     logger.error("Failed to invalidate permission cache after SSO migration", {
       error: err,

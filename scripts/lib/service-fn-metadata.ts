@@ -393,15 +393,7 @@ function publishChoice(
         `${where}: each branch of a published ${kind} rule names one page`
       );
     }
-    const [page, level] = entry;
-    if (!pageById(page)) {
-      throw new Error(`${where}: ${kind} rule names ${page}, not a page of the registry`);
-    }
-    if (!GATE_LEVELS.includes(level)) {
-      throw new Error(
-        `${where}: ${kind} rule's ${page} must be one of ${GATE_LEVELS.join(", ")}`
-      );
-    }
+    const [page, level] = checkedEntry(where, entry);
     levels.add(level);
     if (!pages.includes(page)) pages.push(page);
   }
@@ -522,7 +514,8 @@ export function leafPermission(leaf: ServiceFnLeaf): {
 
   // Publish what `defineServiceFn` checks: the rule as its read (`readGate`),
   // every page a widened read admits.
-  const asRule = gates.map((gate) => asGate(entriesOf(gate)));
+  const entries = gates.map((gate) => entriesOf(where, gate));
+  const asRule = entries.map(asGate);
   const read = readGate(
     gates.length === 1 && !value.getProperty("by")
       ? asRule[0]!
@@ -549,31 +542,14 @@ export function leafPermission(leaf: ServiceFnLeaf): {
       pages.add(page);
     }
   }
-  for (const entry of gates.flatMap((gate) => gate.getProperties())) {
-    const page = Node.isPropertyAssignment(entry)
-      ? (literalName(entry) ?? null)
-      : null;
-    const level = Node.isPropertyAssignment(entry)
-      ? stringsOf(entry.getInitializer())
-      : null;
-    if (!page || !pageById(page)) {
-      throw new Error(
-        `${where}: permission names a page of the registry ({ "inventory.receipts": "Edit" }), not ${entry.getText()}`
-      );
-    }
-    if (level?.length !== 1 || !GATE_LEVELS.includes(level[0]!)) {
-      throw new Error(
-        `${where}: permission.${page} must be one of ${GATE_LEVELS.join(", ")}`
-      );
-    }
+  for (const [page, level] of entries.flat()) {
     modules.add(moduleOf(page));
     pages.add(page);
     for (const action of ACTIONS) {
-      if (levelHolds(level[0] as Level, action)) actions.add(action);
+      if (levelHolds(level as Level, action)) actions.add(action);
     }
   }
   const held = ACTIONS.filter((action) => actions.has(action));
-  // Pages of several modules publish as membership; the function's own gate decides.
   const [module] = modules;
   const [page] = pages;
   return {
@@ -585,15 +561,39 @@ export function leafPermission(leaf: ServiceFnLeaf): {
   };
 }
 
-/** A gate literal's `[page, level]` entries; what is not a literal is left out. */
-function entriesOf(gate: ObjectLiteralExpression): [string, string][] {
-  return gate.getProperties().flatMap((entry): [string, string][] => {
+/** A gate literal's `[page, level]` entries, each checked (`checkedEntry`). */
+function entriesOf(
+  where: string,
+  gate: ObjectLiteralExpression
+): [string, string][] {
+  return gate.getProperties().map((entry) => {
     const page = literalName(entry);
     const level = Node.isPropertyAssignment(entry)
       ? stringsOf(entry.getInitializer())
       : null;
-    return page && level?.length === 1 ? [[page, level[0]!]] : [];
+    return checkedEntry(where, [
+      page ?? entry.getText(),
+      level?.length === 1 ? level[0]! : ""
+    ]);
   });
+}
+
+/** `[page, level]` when the page is the registry's and the level a gate level; else throws. */
+function checkedEntry(
+  where: string,
+  [page, level]: [string, string]
+): [string, string] {
+  if (!pageById(page)) {
+    throw new Error(
+      `${where}: permission names a page of the registry ({ "inventory.receipts": "Edit" }), not ${page}`
+    );
+  }
+  if (!GATE_LEVELS.includes(level)) {
+    throw new Error(
+      `${where}: permission.${page} must be one of ${GATE_LEVELS.join(", ")}`
+    );
+  }
+  return [page, level];
 }
 
 const asGate = (entries: [string, string][]) =>

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { ConformanceCheck, Violation } from "../check";
+import { blankSqlComments } from "../sources/comments";
 
 /**
  * Matches a `CREATE [OR REPLACE] VIEW` header up to `AS`, capturing an optional
@@ -32,16 +33,6 @@ const CREATE_VIEW =
 const RESET_INVOKER =
   /ALTER\s+VIEW\s+(?:IF\s+EXISTS\s+)?((?:"[^"]+"|\w+)(?:\s*\.\s*(?:"[^"]+"|\w+))?)\s+RESET\s*\([^)]*security_invoker[^)]*\)/gi;
 
-/**
- * Blank out `--` and `/* … *\/` comments, keeping every newline so line numbers
- * stay right.
- */
-function stripComments(sql: string): string {
-  return sql
-    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "))
-    .replace(/--[^\n]*/g, (m) => " ".repeat(m.length));
-}
-
 function lineOf(sql: string, index: number | undefined): number {
   return sql.slice(0, index).split("\n").length;
 }
@@ -57,7 +48,7 @@ export const noViewWithoutInvoker: ConformanceCheck = {
   },
   scan(file, contents) {
     const violations: Violation[] = [];
-    const sql = stripComments(contents);
+    const sql = blankSqlComments(contents);
     for (const m of sql.matchAll(CREATE_VIEW)) {
       const options = m[2] ?? "";
       if (/security_invoker/i.test(options)) continue;

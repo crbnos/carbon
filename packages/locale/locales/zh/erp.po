@@ -2602,9 +2602,6 @@ msgstr "账户类型"
 msgid "Account Type (inherited)"
 msgstr "账户类型（继承）"
 
-msgid "accounting"
-msgstr "会计"
-
 msgid "Accounting"
 msgstr "会计"
 
@@ -4950,7 +4947,7 @@ msgstr "作为公司所有者，您可以将所有权转移给另一名员工。
 msgid "Ascending"
 msgstr "升序"
 
-#. placeholder {0}: copy.moduleLabel
+#. placeholder {0}: moduleNames[module]
 #. placeholder {1}: copy.noun
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "请求具有{0}权限的管理员添加第一个{1}。"
@@ -15528,9 +15525,6 @@ msgstr "无效应用"
 msgid "Invalid Invite"
 msgstr "无效邀请"
 
-msgid "inventory"
-msgstr "库存管理"
-
 msgid "Inventory"
 msgstr "库存管理"
 
@@ -21987,9 +21981,6 @@ msgstr "待检验"
 msgid "Pending Inspection"
 msgstr "待检验"
 
-msgid "people"
-msgstr "人员"
-
 msgid "People"
 msgstr "人员"
 
@@ -22931,9 +22922,6 @@ msgstr "超级护理期间的产品问题"
 msgid "Product support"
 msgstr "产品支持"
 
-msgid "production"
-msgstr "生产差异"
-
 msgid "Production"
 msgstr "生产"
 
@@ -23406,9 +23394,6 @@ msgstr "采购服务"
 msgid "Purchases"
 msgstr "采购"
 
-msgid "purchasing"
-msgstr "采购和已售商品成本"
-
 msgid "Purchasing"
 msgstr "采购"
 
@@ -23545,9 +23530,6 @@ msgstr "每个业务部门的合格研究费用"
 
 msgid "Qualified to run it"
 msgstr "有资质运行它"
-
-msgid "quality"
-msgstr "质量"
 
 msgid "Quality"
 msgstr "质量"
@@ -25208,9 +25190,6 @@ msgstr "资源"
 msgid "Resource Planning"
 msgstr "资源规划"
 
-msgid "resources"
-msgstr "资源"
-
 msgid "Resources"
 msgstr "资源"
 
@@ -25920,9 +25899,6 @@ msgstr "销售价格"
 
 msgid "Sale Proceeds"
 msgstr "销售收入"
-
-msgid "sales"
-msgstr "销售"
 
 msgid "Sales"
 msgstr "销售"
@@ -33209,9 +33185,6 @@ msgstr "用户角色"
 
 msgid "Username"
 msgstr "用户名"
-
-msgid "users"
-msgstr "用户"
 
 msgid "Users"
 msgstr "用户"

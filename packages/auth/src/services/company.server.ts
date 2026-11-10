@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ownsCompany } from "@carbon/database/access";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { oncePerRead } from "@carbon/logger/middleware.server";
@@ -97,6 +98,45 @@ async function loadCompanyPlanId(companyId: string): Promise<string | null> {
   const planId = data?.planId ?? null;
   await redis.set(cacheKey, planId ?? "", "EX", PLAN_CACHE_TTL_SECONDS);
   return planId;
+}
+
+/**
+ * Whether the user owns the company (`ownsCompany`: its group's `ownerId`), read
+ * past RLS. The one server check behind billing; a failed read is no owner.
+ */
+export async function isCompanyOwner(
+  companyId: string,
+  userId: string | null
+): Promise<boolean> {
+  if (!userId) return false;
+  const company = await getCarbonServiceRole()
+    .from("company")
+    .select("companyGroup(ownerId)")
+    .eq("id", companyId)
+    .maybeSingle();
+  if (company.error) {
+    logger.error("Failed to read company owner", {
+      companyId,
+      error: company.error
+    });
+    return false;
+  }
+  return ownsCompany(company.data?.companyGroup?.ownerId, userId);
+}
+
+/**
+ * Refuse, with a 403, a route caller who does not own the company
+ * (`isCompanyOwner`).
+ */
+export async function requireCompanyOwner(auth: {
+  companyId: string;
+  userId: string;
+}): Promise<void> {
+  if (!(await isCompanyOwner(auth.companyId, auth.userId))) {
+    throw new Response("Only the company owner can manage billing", {
+      status: 403
+    });
+  }
 }
 
 /**

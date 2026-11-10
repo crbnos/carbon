@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Gate } from "@carbon/database/access";
 import { useLingui } from "@lingui/react/macro";
 import {
   LuBuilding,
@@ -22,12 +21,8 @@ import {
 import { useParams } from "react-router";
 import { usePermissions } from "~/hooks";
 import { DETAIL_TAB_SHORTCUTS } from "~/shortcuts";
-import { visibleRoutes } from "~/utils/nav";
+import { OPEN_LIST, visibleRoutes } from "~/utils/nav";
 import { path } from "~/utils/path";
-
-// The record's links to other modules' lists, filtered to it, show to
-// everyone who can open the record; the list checks its own page.
-const OPEN_LIST: Gate = {};
 
 type Props = {
   contacts: number;
@@ -105,8 +100,6 @@ export function useSupplierSidebar({ contacts, locations, parts }: Props) {
     {
       name: t`Bank Accounts`,
       to: path.to.supplierBankAccounts(supplierId),
-      // Bank details need Accounting, not the partner page.
-      gate: { "accounting.bankAccounts": "View" } as Gate,
       icon: <LuLandmark />
     },
     {
@@ -132,20 +125,6 @@ export function useSupplierSidebar({ contacts, locations, parts }: Props) {
       gate: OPEN_LIST,
       icon: <LuCreditCard />
     }
-    // {
-    //   name: t`Shipping`,
-    //   to: path.to.supplierShipping(supplierId),
-    //   role: ["employee"],
-    //   icon: <LuTruck />,
-    //   shortcut: DETAIL_TAB_SHORTCUTS.shipping,
-    // },
-    // {
-    //   name: t`Accounting`,
-    //   to: path.to.supplierAccounting(supplierId),
-    //   role: ["employee"],
-    //   icon: <LuLandmark />,
-    //   shortcut: DETAIL_TAB_SHORTCUTS.accounting,
-    // },
   ];
   return visibleRoutes(tabs, permissions);
 }

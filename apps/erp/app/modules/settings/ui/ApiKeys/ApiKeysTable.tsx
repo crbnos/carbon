@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { subjectGates } from "@carbon/ee/permission-grants";
 import {
   Badge,
   Button,
@@ -225,7 +226,7 @@ const ApiKeysTable = memo((props: ApiKeysTableProps) => {
       count={count ?? 0}
       primaryAction={
         <HStack>
-          {permissions.has({ "settings.apiKeys": "Edit" }) && (
+          {permissions.has(subjectGates("Edit").key) && (
             <New
               label={t`API Key`}
               to={`${path.to.newApiKey}?${params.toString()}`}

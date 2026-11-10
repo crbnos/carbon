@@ -2,11 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { authorize } from "@carbon/auth/auth.server";
-import { anyOf, pagesOf } from "@carbon/database/access";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
 
 import { GroupedContentSidebar } from "~/components/Layout";
 import useInvoicingSubmodules from "~/modules/invoicing/ui/useInvoicingSubmodules";
@@ -29,12 +26,6 @@ export const handle: Handle = {
   module: "invoicing",
   sidebar: InvoicingSidebar
 };
-
-export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, anyOf(pagesOf("invoicing"), "View"));
-
-  return null;
-}
 
 export default function InvoicingRoute() {
   return (

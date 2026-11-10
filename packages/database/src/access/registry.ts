@@ -168,7 +168,7 @@ export const ITEM_TYPE_PAGES: Readonly<Record<string, PageId>> =
   );
 
 /** The five item type pages: Parts, Materials, Tools, Consumables and Services. */
-export const ITEM_PAGES: readonly PageId[] = Object.values(ITEM_TYPE_PAGES);
+export const ITEM_PAGES: readonly PageId[] = parts.ITEM_PAGE_IDS;
 
 /** One page's rows of a shared table: the column, and the value that picks them. */
 export type Branch = {
@@ -192,6 +192,15 @@ export const childPath = (child: Child, parent: string): readonly Hop[] =>
   "path" in child ? child.path : [[child.via, parent]];
 
 function buildIndex() {
+  // Page files cannot import the registry, so parts.ts lists the item pages
+  // by hand; they must be the pages that pick their rows of `item`.
+  if (
+    [...Object.values(ITEM_TYPE_PAGES)].sort().join() !==
+    [...parts.ITEM_PAGE_IDS].sort().join()
+  )
+    throw new Error(
+      "registry: parts.ITEM_PAGE_IDS must be the pages whose where is on item"
+    );
   const places = new Map<string, TablePlace>();
   const readers = new Map<string, string[]>();
   const writers = new Map<string, string[]>();

@@ -12,8 +12,9 @@ import { employeeTypeValidator } from "~/modules/users/users.models";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  // Edit, as `createEmployeeType` asks: the grants are written without RLS.
   const { client, companyId } = await authorize(request, {
-    "users.employeeTypes": "Create"
+    "users.employeeTypes": "Edit"
   });
   await requireFeature({
     request,

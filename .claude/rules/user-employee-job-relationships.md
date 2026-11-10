@@ -105,7 +105,7 @@ is the separate `job` table from `20240909194622_jobs.sql`).
   It does **not** clear `user.active`, delete the `employee` or `employeeJob` rows, or scrub stored
   userId references (assignee columns, `workCenterEmployee`, notification-group settings arrays).
 - **The claims cache is invalidated by the deactivate\* functions themselves**, not by their
-  callers. `deactivateEmployee`/`Customer`/`Supplier` each `redis.del(getPermissionCacheKey(userId))`
+  callers. `deactivateEmployee`/`Customer`/`Supplier` each clear the user's cached claims (`clearClaims`)
   on success, and `deactivateUser` deletes it again after delegating. That matters because
   `requirePermissions` reads the cache (1h TTL) before the database, and the `create*Account`
   rollback paths in the ERP call the role-specific functions directly rather than going through

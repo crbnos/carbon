@@ -533,14 +533,14 @@ export const bulkUpdatePermissions = defineServiceFn({
     }
 
     await service.queuePermissionUpdates({
-      userIds,
+      userIds: uniqueUserIds,
       companyId,
       actorId: ctx.auditUserId,
       grants,
       addOnly: editType === "add",
       ip
     });
-    return { count: userIds.length };
+    return { count: uniqueUserIds.length };
   }
 });
 
@@ -595,7 +595,7 @@ export const updateEmployeeType = defineServiceFn({
  */
 export const getEffectiveAccess = defineServiceFn({
   input: z.object({ userId: z.string().min(1) }),
-  permission: { "users.accounts": "View" },
+  permission: subjectGates("View").person,
   async run(ctx, { userId }) {
     const access = await service.readEffectiveAccess(ctx, userId);
     if (!access) return ctx.error("notFound", "Employee not found");
@@ -1239,8 +1239,8 @@ export const getInvitable = defineServiceFn({
 export const getModules = defineServiceFn({
   input: z.record(z.string(), z.unknown()),
   permission: { "users.employeeTypes": "View" },
-  async run(ctx) {
-    return unwrap(ctx, await service.getModules(ctx.asCaller.supabase));
+  async run() {
+    return service.getModules();
   }
 });
 

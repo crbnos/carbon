@@ -2602,9 +2602,6 @@ msgstr "Tipo di Conto"
 msgid "Account Type (inherited)"
 msgstr "Tipo di account (ereditato)"
 
-msgid "accounting"
-msgstr "contabilità"
-
 msgid "Accounting"
 msgstr "Contabilità"
 
@@ -4950,7 +4947,7 @@ msgstr "Come proprietario dell'azienda, puoi trasferire la proprietà a un altro
 msgid "Ascending"
 msgstr "Ascendente"
 
-#. placeholder {0}: copy.moduleLabel
+#. placeholder {0}: moduleNames[module]
 #. placeholder {1}: copy.noun
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "Chiedi a un amministratore con autorizzazione {0} di aggiungere il primo {1}."
@@ -15528,9 +15525,6 @@ msgstr "Applicazioni non valide"
 msgid "Invalid Invite"
 msgstr "Invito Non Valido"
 
-msgid "inventory"
-msgstr "inventario"
-
 msgid "Inventory"
 msgstr "Inventario"
 
@@ -21987,9 +21981,6 @@ msgstr "Controllo in attesa"
 msgid "Pending Inspection"
 msgstr "Controllo In Attesa"
 
-msgid "people"
-msgstr "personale"
-
 msgid "People"
 msgstr "Persone"
 
@@ -22931,9 +22922,6 @@ msgstr "Problemi di prodotto durante l'hypercare"
 msgid "Product support"
 msgstr "Supporto prodotto"
 
-msgid "production"
-msgstr "Varianza di Produzione"
-
 msgid "Production"
 msgstr "Produzione"
 
@@ -23406,9 +23394,6 @@ msgstr "Servizio acquistato"
 msgid "Purchases"
 msgstr "Acquisti"
 
-msgid "purchasing"
-msgstr "Acquisti e Costo del Venduto"
-
 msgid "Purchasing"
 msgstr "Acquisti"
 
@@ -23545,9 +23530,6 @@ msgstr "Spese di ricerca qualificate di ogni componente aziendale"
 
 msgid "Qualified to run it"
 msgstr "Qualificato per eseguirlo"
-
-msgid "quality"
-msgstr "qualità"
 
 msgid "Quality"
 msgstr "Qualità"
@@ -25208,9 +25190,6 @@ msgstr "Risorsa"
 msgid "Resource Planning"
 msgstr "Pianificazione delle risorse"
 
-msgid "resources"
-msgstr "risorse"
-
 msgid "Resources"
 msgstr "Risorse"
 
@@ -25920,9 +25899,6 @@ msgstr "Prezzo di Vendita"
 
 msgid "Sale Proceeds"
 msgstr "Ricavi di vendita"
-
-msgid "sales"
-msgstr "vendite"
 
 msgid "Sales"
 msgstr "Vendite"
@@ -33209,9 +33185,6 @@ msgstr "Ruoli utente"
 
 msgid "Username"
 msgstr "Nome utente"
-
-msgid "users"
-msgstr "utenti"
 
 msgid "Users"
 msgstr "Utenti"

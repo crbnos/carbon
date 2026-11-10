@@ -2602,9 +2602,6 @@ msgstr "खाता प्रकार"
 msgid "Account Type (inherited)"
 msgstr "खाता प्रकार (विरासत)"
 
-msgid "accounting"
-msgstr "लेखांकन"
-
 msgid "Accounting"
 msgstr "लेखांकन"
 
@@ -4950,7 +4947,7 @@ msgstr "कंपनी के मालिक के रूप में, आ�
 msgid "Ascending"
 msgstr "आरोही"
 
-#. placeholder {0}: copy.moduleLabel
+#. placeholder {0}: moduleNames[module]
 #. placeholder {1}: copy.noun
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "{0} अनुमति वाले एक व्यवस्थापक से पहले {1} जोड़ने के लिए कहें।"
@@ -15528,9 +15525,6 @@ msgstr "अमान्य आवंटन"
 msgid "Invalid Invite"
 msgstr "अमान्य निमंत्रण"
 
-msgid "inventory"
-msgstr "इन्वेंटरी"
-
 msgid "Inventory"
 msgstr "इन्वेंटरी"
 
@@ -21987,9 +21981,6 @@ msgstr "निरीक्षण लंबित"
 msgid "Pending Inspection"
 msgstr "निरीक्षण लंबित"
 
-msgid "people"
-msgstr "लोग"
-
 msgid "People"
 msgstr "लोग"
 
@@ -22931,9 +22922,6 @@ msgstr "हाइपरकेयर के दौरान उत्पाद �
 msgid "Product support"
 msgstr "उत्पाद समर्थन"
 
-msgid "production"
-msgstr "उत्पादन विचरण"
-
 msgid "Production"
 msgstr "उत्पादन"
 
@@ -23406,9 +23394,6 @@ msgstr "खरीदी गई सेवा"
 msgid "Purchases"
 msgstr "खरीद"
 
-msgid "purchasing"
-msgstr "क्रय और बेचे गए माल की लागत"
-
 msgid "Purchasing"
 msgstr "क्रय"
 
@@ -23545,9 +23530,6 @@ msgstr "प्रत्येक व्यावसायिक घटक के
 
 msgid "Qualified to run it"
 msgstr "इसे चलाने के लिए योग्य"
-
-msgid "quality"
-msgstr "गुणवत्ता"
 
 msgid "Quality"
 msgstr "गुणवत्ता"
@@ -25208,9 +25190,6 @@ msgstr "संसाधन"
 msgid "Resource Planning"
 msgstr "संसाधन योजना"
 
-msgid "resources"
-msgstr "संसाधन"
-
 msgid "Resources"
 msgstr "संसाधन"
 
@@ -25920,9 +25899,6 @@ msgstr "विक्रय मूल्य"
 
 msgid "Sale Proceeds"
 msgstr "बिक्री की आय"
-
-msgid "sales"
-msgstr "बिक्रय"
 
 msgid "Sales"
 msgstr "बिक्रय"
@@ -33209,9 +33185,6 @@ msgstr "उपयोगकर्ता भूमिकाएं"
 
 msgid "Username"
 msgstr "उपयोगकर्ता नाम"
-
-msgid "users"
-msgstr "उपयोगकर्ता"
 
 msgid "Users"
 msgstr "उपयोगकर्ता"

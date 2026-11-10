@@ -14,6 +14,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { clearClaims } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
 import {
+  type AccessSubjectType,
   claimKeys,
   claimsFor,
   isAdminType,
@@ -28,9 +29,8 @@ import {
 } from "@carbon/database/access-write";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { requireEntitlement } from "./entitlements.server";
+import { EntitlementError, requireEntitlement } from "./entitlements.server";
 import {
-  type AccessSubjectType,
   bulkEditGrants,
   claimsMayEditAccounts,
   type GrantRow,
@@ -68,10 +68,32 @@ export type AccessChange =
   | { set: readonly GrantInput[] }
   | { remove: GrantRow };
 
+/**
+ * Why a grant write wrote nothing. `entitlement`: the company's plan lacks the
+ * subject's feature (`SUBJECT_RULES[…].refusal` is the message).
+ */
 export type AccessWriteError = {
-  code: "notFound" | "validation" | "internal";
+  code: "entitlement" | "notFound" | "validation" | "internal";
   message: string;
 };
+
+/**
+ * The entitlement lock (`requireEntitlement`) for a subject type, as a returned
+ * refusal: every refusal of a grant write is returned, none thrown.
+ */
+export async function subjectEntitlement(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  type: AccessSubjectType
+): Promise<AccessWriteError | null> {
+  try {
+    await requireEntitlement(client, companyId, SUBJECT_RULES[type].feature);
+    return null;
+  } catch (err) {
+    if (!(err instanceof EntitlementError)) throw err;
+    return { code: "entitlement", message: SUBJECT_RULES[type].refusal };
+  }
+}
 
 async function auditedClaims(userId: string, companyId: string) {
   const claims = await getClaims(getCarbonServiceRole(), userId, companyId);
@@ -145,17 +167,10 @@ class Refusal extends Error {
   }
 }
 
-const NOT_FOUND: Record<AccessSubjectType, string> = {
-  role: "Employee type not found",
-  person: "Employee not found",
-  key: "API key not found"
-};
-
 /**
  * Write the grants of a role, a person or an API key in the company: the one
- * grant write. It checks the entitlement (`SUBJECT_RULES[…].feature`; throws
- * `EntitlementError`), that the subject is the
- * company's, and the modules the subject may hold (`refusedModules`); clamps each
+ * grant write. It checks the entitlement (`SUBJECT_RULES[…].feature`; an
+ * `entitlement` error), that the subject is the company's, and the modules the subject may hold (`refusedModules`); clamps each
  * level to its page; writes in one transaction; clears the caches the change
  * reaches (the person's claims, every member of the role, the key's record);
  * and writes the audit event: `permission_changed` with the claim keys before
@@ -193,7 +208,8 @@ export async function writeAccessGrants(
   }
 ): Promise<{ error: AccessWriteError | null }> {
   const type = subjectTypeOf(subject);
-  await requireEntitlement(client, companyId, SUBJECT_RULES[type].feature);
+  const unentitled = await subjectEntitlement(client, companyId, type);
+  if (unentitled) return { error: unentitled };
 
   if ("set" in change) {
     const refused = refusedModules(type, change.set);
@@ -201,7 +217,7 @@ export async function writeAccessGrants(
       return {
         error: {
           code: "validation",
-          message: `${refused.join(", ")} cannot be granted to an API key`
+          message: `${refused.join(", ")} cannot be granted to ${SUBJECT_RULES[type].noun}`
         }
       };
     }
@@ -225,7 +241,7 @@ export async function writeAccessGrants(
   async function writeInTransaction(tx: KyselyTx) {
     await subjectRow?.(tx);
     const owned = await ownedSubject(tx, companyId, subject);
-    if (!owned) throw new Refusal("notFound", NOT_FOUND[type]);
+    if (!owned) throw new Refusal("notFound", SUBJECT_RULES[type].notFound);
 
     const moveTo =
       userId && employeeType && employeeType !== owned.employeeTypeId
@@ -238,7 +254,7 @@ export async function writeAccessGrants(
         .where("id", "=", moveTo)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
-      if (!ownType) throw new Refusal("notFound", NOT_FOUND.role);
+      if (!ownType) throw new Refusal("notFound", SUBJECT_RULES.role.notFound);
       await tx
         .updateTable("employee")
         .set({ employeeTypeId: moveTo })

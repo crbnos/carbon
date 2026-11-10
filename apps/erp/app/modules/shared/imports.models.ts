@@ -52,7 +52,7 @@ export type CreatableLookup = (typeof creatableLookups)[number];
 
 // Rich lookups need more than a name (Net days, carrier, ...), so during a CSV
 // import they are created through their existing form modal, pre-filled with
-// the typed value.
+// the typed value. Each is the table its form writes, whose page gates it.
 export type CreatableForm = "paymentTerm" | "shippingMethod";
 
 // Shared supplier-part import fields. Spread into every item-type entry

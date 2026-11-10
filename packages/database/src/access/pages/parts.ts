@@ -73,6 +73,7 @@ export const ITEM_PAGE_IDS = [
 /** Item tables that moved here and keep the page that wrote them before (Page.alsoWrittenBy). */
 const ITEM_ALSO_WRITTEN_BY = {
   batchProperty: ["inventory.trackedEntities"],
+  customerPartToItem: ["sales.customers"],
   methodOperationStep: ["production.jobs"],
   methodOperationStepSlide: ["production.jobs"]
 };

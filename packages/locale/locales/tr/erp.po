@@ -2602,9 +2602,6 @@ msgstr "Hesap Türü"
 msgid "Account Type (inherited)"
 msgstr "Hesap türü (devralınan)"
 
-msgid "accounting"
-msgstr "muhasebe"
-
 msgid "Accounting"
 msgstr "Muhasebe"
 
@@ -4950,7 +4947,7 @@ msgstr "Şirket sahibi olarak, sahipliği başka bir çalışana devredebilirsin
 msgid "Ascending"
 msgstr "Artan"
 
-#. placeholder {0}: copy.moduleLabel
+#. placeholder {0}: moduleNames[module]
 #. placeholder {1}: copy.noun
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "{0} İzni olan bir yöneticiden ilk {1} öğesini eklemesini isteyin."
@@ -15528,9 +15525,6 @@ msgstr "Geçersiz uygulamalar"
 msgid "Invalid Invite"
 msgstr "Geçersiz Davetiye"
 
-msgid "inventory"
-msgstr "envanter"
-
 msgid "Inventory"
 msgstr "Stok"
 
@@ -21987,9 +21981,6 @@ msgstr "Muayene bekliyor"
 msgid "Pending Inspection"
 msgstr "Muayene Bekliyor"
 
-msgid "people"
-msgstr "personel"
-
 msgid "People"
 msgstr "Personel"
 
@@ -22931,9 +22922,6 @@ msgstr "Hypercare sırasında ürün sorunları"
 msgid "Product support"
 msgstr "Ürün desteği"
 
-msgid "production"
-msgstr "Üretim Sapması"
-
 msgid "Production"
 msgstr "Üretim"
 
@@ -23406,9 +23394,6 @@ msgstr "Satın Alınan Hizmet"
 msgid "Purchases"
 msgstr "Satın almalar"
 
-msgid "purchasing"
-msgstr "Satın Alma ve Satılan Malların Maliyeti"
-
 msgid "Purchasing"
 msgstr "Satın Alma"
 
@@ -23545,9 +23530,6 @@ msgstr "Her İş Bileşeninin Nitelikli Araştırma Giderleri"
 
 msgid "Qualified to run it"
 msgstr "Bunu çalıştırmaya yeterli nitelikli"
-
-msgid "quality"
-msgstr "kalite"
 
 msgid "Quality"
 msgstr "Kalite"
@@ -25208,9 +25190,6 @@ msgstr "Kaynak"
 msgid "Resource Planning"
 msgstr "Kaynak Planlama"
 
-msgid "resources"
-msgstr "kaynaklar"
-
 msgid "Resources"
 msgstr "Kaynaklar"
 
@@ -25920,9 +25899,6 @@ msgstr "Satış Fiyatı"
 
 msgid "Sale Proceeds"
 msgstr "Satış Geliri"
-
-msgid "sales"
-msgstr "satış"
 
 msgid "Sales"
 msgstr "Satışlar"
@@ -33209,9 +33185,6 @@ msgstr "Kullanıcı rolleri"
 
 msgid "Username"
 msgstr "Kullanıcı adı"
-
-msgid "users"
-msgstr "kullanıcılar"
 
 msgid "Users"
 msgstr "Kullanıcılar"

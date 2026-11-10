@@ -4,11 +4,9 @@
 
 import type { TermId } from "@carbon/content/glossary";
 import {
-  type Grant,
   LEVEL_ACTION,
   LEVELS,
   type Level,
-  type LevelSubject,
   lowerLevel,
   MODULES,
   type ModuleId,
@@ -17,7 +15,7 @@ import {
   type Page
 } from "@carbon/database/access";
 import type { StoredGrant } from "@carbon/database/access-write";
-import { rowLevel } from "@carbon/ee/permission-grants";
+import { overrideSubject, rowLevel } from "@carbon/ee/permission-grants";
 import {
   Alert,
   AlertDescription,
@@ -183,12 +181,7 @@ const AccessGrid = ({
 
   // The grid's grants as the resolver reads them (`levelOf`): its own first,
   // then the ones it inherits.
-  const subject: LevelSubject = {
-    grants: [
-      ...value.map((g): Grant => ({ ...g, subject: "person" })),
-      ...inherited.map((g): Grant => ({ ...g, subject: "role" }))
-    ]
-  };
+  const subject = overrideSubject({ own: value, inherited });
   const at = (module: Module, row: Row) => ({
     module: module.enumValue,
     page: row.page

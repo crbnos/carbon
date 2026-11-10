@@ -2602,9 +2602,6 @@ msgstr "Account Type"
 msgid "Account Type (inherited)"
 msgstr "Account Type (inherited)"
 
-msgid "accounting"
-msgstr "accounting"
-
 msgid "Accounting"
 msgstr "Accounting"
 
@@ -4950,7 +4947,7 @@ msgstr "As the company owner, you can transfer ownership to another employee. Th
 msgid "Ascending"
 msgstr "Ascending"
 
-#. placeholder {0}: copy.moduleLabel
+#. placeholder {0}: moduleNames[module]
 #. placeholder {1}: copy.noun
 msgid "Ask an admin with {0} permission to add the first {1}."
 msgstr "Ask an admin with {0} permission to add the first {1}."
@@ -15528,9 +15525,6 @@ msgstr "Invalid applications"
 msgid "Invalid Invite"
 msgstr "Invalid Invite"
 
-msgid "inventory"
-msgstr "inventory"
-
 msgid "Inventory"
 msgstr "Inventory"
 
@@ -21987,9 +21981,6 @@ msgstr "Pending inspection"
 msgid "Pending Inspection"
 msgstr "Pending Inspection"
 
-msgid "people"
-msgstr "people"
-
 msgid "People"
 msgstr "People"
 
@@ -22931,9 +22922,6 @@ msgstr "Product issues during hypercare"
 msgid "Product support"
 msgstr "Product support"
 
-msgid "production"
-msgstr "production"
-
 msgid "Production"
 msgstr "Production"
 
@@ -23406,9 +23394,6 @@ msgstr "Purchased Service"
 msgid "Purchases"
 msgstr "Purchases"
 
-msgid "purchasing"
-msgstr "purchasing"
-
 msgid "Purchasing"
 msgstr "Purchasing"
 
@@ -23545,9 +23530,6 @@ msgstr "Qualified research expenses of each business component"
 
 msgid "Qualified to run it"
 msgstr "Qualified to run it"
-
-msgid "quality"
-msgstr "quality"
 
 msgid "Quality"
 msgstr "Quality"
@@ -25208,9 +25190,6 @@ msgstr "Resource"
 msgid "Resource Planning"
 msgstr "Resource Planning"
 
-msgid "resources"
-msgstr "resources"
-
 msgid "Resources"
 msgstr "Resources"
 
@@ -25920,9 +25899,6 @@ msgstr "Sale Price"
 
 msgid "Sale Proceeds"
 msgstr "Sale Proceeds"
-
-msgid "sales"
-msgstr "sales"
 
 msgid "Sales"
 msgstr "Sales"
@@ -33209,9 +33185,6 @@ msgstr "User roles"
 
 msgid "Username"
 msgstr "Username"
-
-msgid "users"
-msgstr "users"
 
 msgid "Users"
 msgstr "Users"

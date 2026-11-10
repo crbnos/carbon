@@ -2,11 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { authorize } from "@carbon/auth/auth.server";
-import { anyOf, pagesOf } from "@carbon/database/access";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import type { MetaFunction } from "react-router";
 
 import { GroupedContentSidebar } from "~/components/Layout";
 import useServiceSubmodules from "~/modules/service/ui/useServiceSubmodules";
@@ -30,12 +28,6 @@ export const handle: Handle = {
   module: "service",
   sidebar: ServiceSidebar
 };
-
-export async function loader({ request }: LoaderFunctionArgs) {
-  await authorize(request, anyOf(pagesOf("service"), "View"));
-
-  return {};
-}
 
 export default function ServiceJobsLayoutRoute() {
   return (

@@ -21,6 +21,8 @@ export const handle: Handle = {
   module: "purchasing"
 };
 
+// The only check on this layout's own URL, which has no index route; the
+// children gate themselves.
 export async function loader({ request }: LoaderFunctionArgs) {
   await authorize(request, { "purchasing.supplierQuotes": "View" });
 

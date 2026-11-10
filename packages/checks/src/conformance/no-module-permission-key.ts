@@ -7,8 +7,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ACTIONS, MODULES, pageById } from "@carbon/database/access";
 import type { ConformanceCheck, Violation } from "../check";
-import { stripComments } from "./no-authz-ddl-in-migrations";
-import { blankComments } from "./no-unscoped-kysely-write";
+import { blankComments, blankSqlComments } from "../sources/comments";
 
 /**
  * Phase 3 of page-level permissions: no module key decides access. A module
@@ -148,7 +147,7 @@ function scanSql(file: string, contents: string): Violation[] {
   const migration = /^\d{14}_/.test(base);
   if (migration && MODULE_KEY_MIGRATIONS.has(base)) return [];
   if (!migration && !file.startsWith("packages/database/src/")) return [];
-  const sql = stripComments(contents).replace(PORTAL_CALL, (m) =>
+  const sql = blankSqlComments(contents).replace(PORTAL_CALL, (m) =>
     " ".repeat(m.length)
   );
   return [...sql.matchAll(SQL_KEY)].map((m) => ({

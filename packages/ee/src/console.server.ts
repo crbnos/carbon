@@ -124,9 +124,9 @@ export async function verifyEmployeePin(
  * Commercial (Enterprise) console / kiosk mode. Enabling it provisions the
  * protected "Console Operator" employee type (MES-only permissions) and a PIN
  * for the enabling user — role provisioning, gated to the Business plan via the
- * `PERMISSIONS` feature. The console settings route
- * (`apps/erp/.../x+/settings+/people.tsx`) blocks this for Community/Starter
- * before calling it; the `.server` file is server-only and the `@carbon/ee`
+ * `PERMISSIONS` feature. The ERP's settings service function calls it and
+ * turns its `EntitlementError` into a refusal for Community/Starter; the
+ * `.server` file is server-only and the `@carbon/ee`
  * package boundary carries the commercial license (see root LICENSE).
  *
  * `companySettings.consoleEnabled` is written over `db` (the server's direct

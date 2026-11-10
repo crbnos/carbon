@@ -115,8 +115,8 @@ Managed/cloud deployments override `REDIS_URL` with an external URL.
 
 ## Gotchas
 
-- `getPermissionCacheKey` is duplicated (`@carbon/auth` and the ERP users module).
-  Both produce the same key today but could drift.
+- `getPermissionCacheKey` is internal to `@carbon/auth`; outside it, clear claims with
+  `clearClaims(userIds)` (`@carbon/auth/users.server`).
 - An old root `docker-compose.yml` once held redis and used volume
   `carbon-shared_redis-data`; that path is gone — current volume is
   `carbon-redis-data`. Any old volume is orphaned but harmless (dev redis is cache).

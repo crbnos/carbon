@@ -13,13 +13,13 @@ import type {
 import {
   CarbonEdition,
   CONTROLLED_ENVIRONMENT,
-  getPermissionCacheKey,
   SUPABASE_INTERNAL_URL,
   SUPABASE_URL,
   VERCEL_URL
 } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
+import { clearClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
 import { ACCOUNT_DEFAULT_COLUMNS } from "@carbon/database/account-import";
@@ -160,7 +160,6 @@ import {
   type XeroProvider
 } from "@carbon/ee/accounting";
 import { enableAuditLog } from "@carbon/ee/audit.server";
-import { EntitlementError } from "@carbon/ee/entitlements.server";
 import {
   ensureOnshapeReleaseWebhook,
   getIntegrationServerHooks,
@@ -207,7 +206,6 @@ import {
   patchOnshapeOAuthGrant,
   patchOnshapeSettings
 } from "@carbon/ee/onshape.server";
-import { SUBJECT_RULES } from "@carbon/ee/permission-grants";
 import {
   isIntegrationComingSoon,
   isIntegrationWhitelisted
@@ -1262,6 +1260,73 @@ export async function updateSubsidiary(
       .eq("companyGroupId", companyGroupId)
       .select("id")
   );
+}
+
+/**
+ * What deciding a transfer of the company group's ownership reads: the group
+ * and its owner, and whether the new owner is an active employee of a company
+ * in that group. Read past RLS: `transferCompanyOwnership` decides itself.
+ */
+export async function readOwnershipTransfer(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; newOwnerId: string }
+): Promise<{
+  groupId: string;
+  ownerId: string | null;
+  newOwnerIsGroupEmployee: boolean;
+} | null> {
+  const group = await db
+    .selectFrom("company")
+    .innerJoin("companyGroup", "companyGroup.id", "company.companyGroupId")
+    .select(["companyGroup.id as groupId", "companyGroup.ownerId"])
+    .where("company.id", "=", args.companyId)
+    .executeTakeFirst();
+  if (!group) return null;
+
+  const employee = await db
+    .selectFrom("employee")
+    .innerJoin("company", "company.id", "employee.companyId")
+    .innerJoin("userToCompany", (join) =>
+      join
+        .onRef("userToCompany.userId", "=", "employee.id")
+        .onRef("userToCompany.companyId", "=", "employee.companyId")
+    )
+    .select("employee.id")
+    .where("employee.id", "=", args.newOwnerId)
+    .where("employee.active", "=", true)
+    .where("userToCompany.role", "=", "employee")
+    .where("company.companyGroupId", "=", group.groupId)
+    .limit(1)
+    .executeTakeFirst();
+
+  return {
+    groupId: group.groupId,
+    ownerId: group.ownerId,
+    newOwnerIsGroupEmployee: employee !== undefined
+  };
+}
+
+/**
+ * Hand the company group to `toOwnerId`, only while `fromOwnerId` still owns
+ * it. False when the group changed hands since it was read.
+ */
+export async function setCompanyGroupOwner(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    groupId: string;
+    fromOwnerId: string;
+    toOwnerId: string;
+    userId: string;
+  }
+): Promise<boolean> {
+  const updated = await db
+    .updateTable("companyGroup")
+    .set({ ownerId: args.toOwnerId, updatedBy: args.userId })
+    .where("id", "=", args.groupId)
+    .where("ownerId", "=", args.fromOwnerId)
+    .returning("id")
+    .executeTakeFirst();
+  return updated !== undefined;
 }
 
 export async function updateCompanyPlan(
@@ -3706,7 +3771,7 @@ export async function createHeadquarters(
       companyId,
       locationId: headquarters.data.id
     }),
-    redis.del(getPermissionCacheKey(ctx.auditUserId))
+    clearClaims([ctx.auditUserId])
   ]);
   if (job.error) {
     return ctx.error(
@@ -3742,12 +3807,6 @@ export function generateTestLabel(
     `^FO20,90^A0N,16,16^FD${timestamp}^FS`,
     "^XZ"
   ].join("\n");
-}
-
-/** An API key action on a company without the plan. */
-export function apiKeysEntitlement(ctx: ServiceContext, err: unknown) {
-  if (!(err instanceof EntitlementError)) throw err;
-  return ctx.error("entitlement", SUBJECT_RULES.key.refusal);
 }
 
 /** The integration's stored metadata and its `settings` object, for a merge. */

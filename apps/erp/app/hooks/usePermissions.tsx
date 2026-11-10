@@ -3,11 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  ACTIONS,
   anyOf,
   type ExpandedClaims,
   type Gate,
   type GateLevel,
   holdsGate,
+  ownsCompany,
   pagesOf
 } from "@carbon/database/access";
 import { useRouteData } from "@carbon/react";
@@ -57,7 +59,7 @@ export function usePermissions() {
   );
 
   const isOwner = useCallback(() => {
-    return ownerId === userId;
+    return ownsCompany(ownerId, userId);
   }, [ownerId, userId]);
 
   return {
@@ -74,12 +76,8 @@ function isPermissions(value: unknown): value is ExpandedClaims {
     Array.isArray(value) === false &&
     value !== null
   ) {
-    return Object.values(value as object).every(
-      (permission) =>
-        "view" in permission &&
-        "create" in permission &&
-        "update" in permission &&
-        "delete" in permission
+    return Object.values(value as object).every((permission) =>
+      ACTIONS.every((action) => action in permission)
     );
   } else {
     return false;

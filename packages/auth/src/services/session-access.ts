@@ -2,13 +2,10 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { admits, type Gate } from "@carbon/database/access";
-import type { CompanyRole, Permission } from "../types";
+import { admits, type Claims, type Gate } from "@carbon/database/access";
 
-export type SessionClaims = {
-  permissions: Record<string, Permission>;
-  role: CompanyRole | null;
-};
+/** What a session gate reads of a user's claims: `getUserClaims` returns it. */
+export type SessionClaims = Pick<Claims, "permissions" | "role">;
 
 export type SessionAccess = {
   /** The claims every gate of the request checks: the pinned operator's on a console, else the session user's. */

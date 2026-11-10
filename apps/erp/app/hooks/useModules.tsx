@@ -127,6 +127,13 @@ function useModuleLinks(): Record<
   };
 }
 
+/** Each module's translated name, as its nav entry shows it. */
+export function useModuleNames(): Record<ModuleId, string> {
+  return Object.fromEntries(
+    Object.entries(useModuleLinks()).map(([id, link]) => [id, link.name])
+  ) as Record<ModuleId, string>;
+}
+
 type ModulePreference = {
   module: string;
   position: number;

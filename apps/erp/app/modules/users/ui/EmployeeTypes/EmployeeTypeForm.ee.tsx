@@ -50,9 +50,8 @@ const EmployeeTypeForm = ({
   const [grants, setGrants] = useState(initialValues.grants);
 
   const isEditing = initialValues.id !== undefined;
-  const isDisabled = isEditing
-    ? !userPermissions.has(subjectGates("Edit").role)
-    : !userPermissions.has({ "users.employeeTypes": "Create" });
+  // Creating a type writes its grants too, so it asks Edit like an edit.
+  const isDisabled = !userPermissions.has(subjectGates("Edit").role);
 
   return (
     <Modal

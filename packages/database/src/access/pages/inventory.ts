@@ -118,6 +118,9 @@ export const PAGES = [
       { table: "enforcementRuleWorkCenterAssignment", via: "ruleId" },
       { table: "enforcementRuleAcknowledgment", via: "ruleId" }
     ],
+    alsoWrittenBy: {
+      enforcementRuleWorkCenterAssignment: ["resources.workCenters"]
+    },
     paths: ["/x/inventory/storage-rules"]
   },
   {

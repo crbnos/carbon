@@ -11,9 +11,7 @@ import {
   type ModuleEnum,
   moduleId
 } from "./registry";
-
-/** The `module` enum label of a module with pages: the only modules a grant can hold. */
-export type GrantModule = ModuleEnum;
+import type { Grant } from "./resolve";
 
 export type GrantSubject =
   | { employeeTypeId: string }
@@ -22,7 +20,7 @@ export type GrantSubject =
 
 /** One stored grant: a level on a module (`page` null) or on one of its pages. */
 export type StoredGrant = {
-  module: GrantModule;
+  module: ModuleEnum;
   page: string | null;
   level: Level;
 };
@@ -30,7 +28,7 @@ export type StoredGrant = {
 /** One grant to store. A null level stores nothing: the subject inherits. */
 export type GrantInput = Omit<StoredGrant, "level"> & { level: Level | null };
 
-export function subjectColumn(subject: GrantSubject) {
+function subjectColumn(subject: GrantSubject) {
   if ("employeeTypeId" in subject)
     return ["employeeTypeId", subject.employeeTypeId] as const;
   if ("userId" in subject) return ["userId", subject.userId] as const;
@@ -41,7 +39,7 @@ export function subjectColumn(subject: GrantSubject) {
 export function subjectTypeOfRow(row: {
   employeeTypeId: string | null;
   userId: string | null;
-}): "role" | "person" | "key" {
+}): Grant["subject"] {
   return row.userId ? "person" : row.employeeTypeId ? "role" : "key";
 }
 
@@ -153,7 +151,7 @@ export async function removeGrant(
   }: {
     companyId: string;
     subject: GrantSubject;
-    module: GrantModule;
+    module: ModuleEnum;
     page: string | null;
   }
 ) {

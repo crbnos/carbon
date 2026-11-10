@@ -4,6 +4,7 @@
 
 import { respond } from "@carbon/api/carbon.server";
 import { authorize } from "@carbon/auth/auth.server";
+import { requireCompanyOwner } from "@carbon/auth/company.server";
 import {
   SelectControlled,
   Submit,
@@ -47,9 +48,10 @@ const transferOwnershipValidator = z.object({
 });
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await authorize(request, {
+  const { client, companyId, userId } = await authorize(request, {
     "settings.billing": "View"
   });
+  await requireCompanyOwner({ companyId, userId });
 
   // Get company plan and usage data for payment section
   const [companyPlan, companyUsage, userToCompany] = await Promise.all([

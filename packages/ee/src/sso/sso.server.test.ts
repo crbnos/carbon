@@ -40,14 +40,11 @@ vi.mock("@carbon/logger", () => ({
   })
 }));
 
-// connections.server now imports provisioning.server, which pulls in the auth
-// client and Redis at module load. Stub them so the module graph loads without a
-// real Supabase/Redis connection — these tests never reach code that uses them.
-vi.mock("@carbon/auth", () => ({
-  getPermissionCacheKey: (id: string) => `permissions:${id}`
-}));
-vi.mock("@carbon/kv", () => ({
-  redis: { del: vi.fn() }
+// connections.server now imports provisioning.server, which pulls in the
+// claims cache (and so Redis) at module load. Stub it so the module graph loads
+// without a real Redis connection — these tests never reach code that uses it.
+vi.mock("@carbon/auth/users.server", () => ({
+  clearClaims: vi.fn()
 }));
 
 // Stub the DNS challenge so no test resolves real TXT records.

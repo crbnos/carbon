@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  ACCESS_SUBJECT_TYPES,
   LEVELS,
   MODULES,
   type ModuleEnum,
@@ -10,7 +11,6 @@ import {
   moduleOf,
   pageById
 } from "@carbon/database/access";
-import { ACCESS_SUBJECT_TYPES } from "@carbon/ee/permission-grants";
 import { supportedLanguages } from "@carbon/locale";
 import { NotificationTopic } from "@carbon/notifications";
 import { z } from "zod";

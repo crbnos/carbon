@@ -45,9 +45,9 @@ export type PortalKey = `${Lowercase<Public["Enums"]["module"]>}_${Action}`;
 
 /**
  * - `"employee"`: get_companies_with_employee_role() — any employee of the company, and
- *   any API key of it regardless of the key's scopes.
+ *   any API key that holds a grant there (util.request_api_key).
  * - `"member"`: get_companies_with_any_role() — employees, customers and suppliers.
- * - a Permission: scope-checked for API keys.
+ * - a Permission: checked against the key's grants for API keys.
  * - `anyOf(...)`: holds at least one of the permissions, or View on any page of `modules`.
  */
 export type Who =

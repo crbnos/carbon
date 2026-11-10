@@ -7,7 +7,7 @@ import { anyOf, type Gate, pagesOf } from "@carbon/database/access";
 /**
  * What the item tabs that show another module's data need, beside View on the
  * item's own page, for the five item types: View on any page of that module.
- * Accounting shows with View on any Purchasing page.
+ * Accounting keeps main's module-wide `permission: "purchasing"` on the tab.
  */
 export const ITEM_TAB_GATES = {
   purchasing: anyOf(pagesOf("purchasing"), "View"),

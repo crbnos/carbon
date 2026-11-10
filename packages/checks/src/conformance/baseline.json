@@ -1004,6 +1004,7 @@
   "no-unmounting-dialog::apps/erp/app/routes/x+/issue-workflow+/new.tsx::useCloseRoute(",
   "no-unmounting-dialog::apps/erp/app/routes/x+/settings+/backups.tsx::<JobProgressModal mode={active.mode} runId={active.runId} completed={exportCompleted} onClose={() => setActive(null)} />",
   "no-unmounting-dialog::apps/erp/app/routes/x+/workflow+/$id.tsx::<WorkflowLockModal workflowId={workflow.id} versionId={versionId} />",
+  "no-unscoped-kysely-write::apps/erp/app/modules/settings/settings.service.ts::.updateTable(\"companyGroup\")",
   "no-unscoped-kysely-write::packages/jobs/src/inngest/functions/scheduled/purge-company.ts::.deleteFrom(\"companyGroup\")",
   "no-view-without-invoker::20230123004409_permissions.sql::CREATE VIEW \"modules\" AS",
   "no-view-without-invoker::20230123004436_employee.sql::CREATE OR REPLACE VIEW \"companies\" AS",

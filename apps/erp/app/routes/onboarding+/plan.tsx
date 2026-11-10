@@ -4,6 +4,7 @@
 
 import { CarbonEdition, getUser } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
+import { requireCompanyOwner } from "@carbon/auth/company.server";
 import { getLogger } from "@carbon/logger";
 import {
   Button,
@@ -105,6 +106,7 @@ export async function loader({ request }: ActionFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await authorize(request);
+  await requireCompanyOwner({ companyId, userId });
   const formData = await request.formData();
   const planId = String(formData.get("planId"));
 

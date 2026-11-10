@@ -38,6 +38,13 @@ type NavRoute = Pick<Route, "to" | "gate">;
 
 type NavPermissions = { has: (gate: Gate) => boolean };
 
+/**
+ * The gate of a record's link to another module's list, filtered to the
+ * record: it shows to everyone who can open the record, and the list checks
+ * its own page.
+ */
+export const OPEN_LIST: Gate = {};
+
 export function gateOfRoute(route: NavRoute): Gate {
   if (route.gate) return route.gate;
   const page = pageOfUrl(route.to);
