@@ -10588,6 +10588,7 @@ export async function getFlattenedBomMaterials(
         "id, itemId, quantity, methodType, materialMakeMethodId, item(id, name, readableIdWithRevision)"
       )
       .eq("makeMethodId", makeMethodId)
+      .is("methodCorrectionId", null)
       .order("order", { ascending: true });
 
     for (const material of materials.data ?? []) {
@@ -14506,6 +14507,229 @@ async function insertOperationChildren(
   return stepMap;
 }
 
+/**
+ * Copies a make method's corrections onto another make method: each
+ * correction, its operations (steps, slides, tools, parameters), its materials
+ * and its step-result mappings. `stepIdMap` maps the source routing's step ids
+ * to their copies; a mapping whose step was not copied is dropped. The
+ * target's own corrections are replaced.
+ */
+async function copyMethodCorrections(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    sourceMakeMethodId: string;
+    targetMakeMethodId: string;
+    companyId: string;
+    userId: string;
+    stepIdMap: Record<string, string>;
+  }
+) {
+  const { sourceMakeMethodId, targetMakeMethodId, companyId, userId } = args;
+
+  await trx
+    .deleteFrom("methodCorrection")
+    .where("makeMethodId", "=", targetMakeMethodId)
+    .where("companyId", "=", companyId)
+    .execute();
+
+  const corrections = await trx
+    .selectFrom("methodCorrection")
+    .selectAll()
+    .where("makeMethodId", "=", sourceMakeMethodId)
+    .where("companyId", "=", companyId)
+    .execute();
+  if (corrections.length === 0) return;
+
+  const correctionIds = await newIds(trx, "mcor", corrections.length);
+  const correctionIdMap = new Map(
+    corrections.map((correction, i) => [correction.id, correctionIds[i]!])
+  );
+  await trx
+    .insertInto("methodCorrection")
+    .values(
+      corrections.map(
+        ({
+          id,
+          createdAt: _createdAt,
+          updatedAt: _updatedAt,
+          updatedBy: _updatedBy,
+          ...correction
+        }) => ({
+          ...correction,
+          id: correctionIdMap.get(id)!,
+          makeMethodId: targetMakeMethodId,
+          createdBy: userId
+        })
+      )
+    )
+    .execute();
+
+  const sourceCorrectionIds = [...correctionIdMap.keys()];
+
+  const operations = await trx
+    .selectFrom("methodOperation")
+    .selectAll()
+    .where("methodCorrectionId", "in", sourceCorrectionIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  const operationIds = await newIds(trx, "mop", operations.length);
+  const operationIdMap = new Map(
+    operations.map((operation, i) => [operation.id, operationIds[i]!])
+  );
+  if (operations.length > 0) {
+    const operationRows = operations.map(
+      ({
+        id,
+        createdAt: _createdAt,
+        updatedAt: _updatedAt,
+        updatedBy: _updatedBy,
+        ...operation
+      }) => ({
+        ...operation,
+        id: operationIdMap.get(id)!,
+        makeMethodId: targetMakeMethodId,
+        methodCorrectionId: correctionIdMap.get(operation.methodCorrectionId!)!,
+        createdBy: userId
+      })
+    );
+    for (const rows of chunked(operationRows)) {
+      await trx
+        .insertInto("methodOperation")
+        .values(rows as never)
+        .execute();
+    }
+
+    const sourceOperationIds = [...operationIdMap.keys()];
+    const [steps, tools, parameters] = await Promise.all([
+      trx
+        .selectFrom("methodOperationStep")
+        .selectAll()
+        .where("operationId", "in", sourceOperationIds)
+        .execute(),
+      trx
+        .selectFrom("methodOperationTool")
+        .selectAll()
+        .where("operationId", "in", sourceOperationIds)
+        .execute(),
+      trx
+        .selectFrom("methodOperationParameter")
+        .selectAll()
+        .where("operationId", "in", sourceOperationIds)
+        .execute()
+    ]);
+    const children = newOperationChildren();
+    children.steps.push(
+      ...steps.map(
+        ({
+          id,
+          createdAt: _createdAt,
+          updatedAt: _updatedAt,
+          updatedBy: _updatedBy,
+          ...step
+        }) => ({
+          sourceStepId: id,
+          row: {
+            ...step,
+            operationId: operationIdMap.get(step.operationId)!,
+            companyId,
+            createdBy: userId
+          } as Record<string, unknown>
+        })
+      )
+    );
+    children.tools.push(
+      ...tools.map((tool) => ({
+        row: {
+          toolId: tool.toolId,
+          quantity: tool.quantity,
+          operationId: operationIdMap.get(tool.operationId)!,
+          companyId,
+          createdBy: userId
+        },
+        sourceStepIds: null
+      }))
+    );
+    children.parameters.push(
+      ...parameters.map((parameter) => ({
+        operationId: operationIdMap.get(parameter.operationId)!,
+        key: parameter.key,
+        value: parameter.value,
+        companyId,
+        createdBy: userId
+      }))
+    );
+    await insertOperationChildren(
+      trx,
+      "method",
+      "methodOperationStepSlide",
+      children,
+      companyId,
+      userId
+    );
+  }
+
+  const materials = await trx
+    .selectFrom("methodMaterial")
+    .selectAll()
+    .where("methodCorrectionId", "in", sourceCorrectionIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  if (materials.length > 0) {
+    await trx
+      .insertInto("methodMaterial")
+      .values(
+        materials.map(
+          ({
+            id: _id,
+            createdAt: _createdAt,
+            updatedAt: _updatedAt,
+            updatedBy: _updatedBy,
+            productionQuantity: _productionQuantity,
+            ...material
+          }) => ({
+            ...material,
+            makeMethodId: targetMakeMethodId,
+            methodCorrectionId: correctionIdMap.get(
+              material.methodCorrectionId!
+            )!,
+            methodOperationId: material.methodOperationId
+              ? (operationIdMap.get(material.methodOperationId) ?? null)
+              : null,
+            createdBy: userId
+          })
+        ) as never
+      )
+      .execute();
+  }
+
+  const triggers = await trx
+    .selectFrom("methodCorrectionTrigger")
+    .selectAll()
+    .where("methodCorrectionId", "in", sourceCorrectionIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  const triggerRows = triggers.flatMap((trigger) => {
+    const methodOperationStepId = args.stepIdMap[trigger.methodOperationStepId];
+    if (!methodOperationStepId) return [];
+    return [
+      {
+        methodOperationStepId,
+        methodCorrectionId: correctionIdMap.get(trigger.methodCorrectionId)!,
+        listValue: trigger.listValue,
+        measurementCondition: trigger.measurementCondition,
+        companyId,
+        createdBy: userId
+      }
+    ];
+  });
+  if (triggerRows.length > 0) {
+    await trx
+      .insertInto("methodCorrectionTrigger")
+      .values(triggerRows)
+      .execute();
+  }
+}
+
 // Many-to-many step links (Phase 2): remap a parent's OLD operation-step ids onto the freshly
 // inserted step ids via stepMap, dropping any that don't map. Empty in = the parent applies to
 // the whole operation (no join rows, shown on every step in the MES).
@@ -14751,7 +14975,9 @@ export async function getMethod(
           parts.billOfMaterial
             ? many(db, "methodMaterial", {
                 makeMethodId: sourceMakeMethod.data.id,
-                companyId
+                companyId,
+                // Corrections are copied on their own (copyMethodCorrections).
+                methodCorrectionId: isNull
               })
             : Promise.resolve({ data: [], error: null }),
         () =>
@@ -14766,7 +14992,11 @@ export async function getMethod(
               >(
                 db,
                 "methodOperation",
-                { makeMethodId: sourceMakeMethod.data.id, companyId },
+                {
+                  makeMethodId: sourceMakeMethod.data.id,
+                  companyId,
+                  methodCorrectionId: isNull
+                },
                 {
                   embed: {
                     methodOperationTool: {
@@ -14799,6 +15029,7 @@ export async function getMethod(
                 .deleteFrom("methodMaterial")
                 .where("makeMethodId", "=", targetMakeMethod.data.id)
                 .where("companyId", "=", companyId)
+                .where("methodCorrectionId", "is", null)
                 .execute()
             : Promise.resolve(),
           parts.billOfProcess
@@ -14806,6 +15037,7 @@ export async function getMethod(
                 .deleteFrom("methodOperation")
                 .where("makeMethodId", "=", targetMakeMethod.data.id)
                 .where("companyId", "=", companyId)
+                .where("methodCorrectionId", "is", null)
                 .execute()
             : Promise.resolve()
         ]);
@@ -18389,6 +18621,9 @@ export async function getMethod(
                   .deleteFrom("methodMaterial")
                   .where("makeMethodId", "in", makeMethodsToDelete)
                   .where("companyId", "=", companyId)
+                  // A job or quote saved back to the item replaces its routing and BOM,
+                  // not its corrections.
+                  .where("methodCorrectionId", "is", null)
                   .execute()
               : Promise.resolve(),
             parts.billOfProcess
@@ -18396,6 +18631,9 @@ export async function getMethod(
                   .deleteFrom("methodOperation")
                   .where("makeMethodId", "in", makeMethodsToDelete)
                   .where("companyId", "=", companyId)
+                  // A job or quote saved back to the item replaces its routing and BOM,
+                  // not its corrections.
+                  .where("methodCorrectionId", "is", null)
                   .execute()
               : Promise.resolve()
           ]);
@@ -18732,6 +18970,9 @@ export async function getMethod(
                   .deleteFrom("methodMaterial")
                   .where("makeMethodId", "in", makeMethodsToDelete)
                   .where("companyId", "=", companyId)
+                  // A job or quote saved back to the item replaces its routing and BOM,
+                  // not its corrections.
+                  .where("methodCorrectionId", "is", null)
                   .execute()
               : Promise.resolve(),
             parts.billOfProcess
@@ -18739,6 +18980,9 @@ export async function getMethod(
                   .deleteFrom("methodOperation")
                   .where("makeMethodId", "in", makeMethodsToDelete)
                   .where("companyId", "=", companyId)
+                  // A job or quote saved back to the item replaces its routing and BOM,
+                  // not its corrections.
+                  .where("methodCorrectionId", "is", null)
                   .execute()
               : Promise.resolve()
           ]);
@@ -19683,7 +19927,9 @@ export async function getMethod(
           parts.billOfMaterial
             ? many(db, "methodMaterial", {
                 makeMethodId: sourceMakeMethod.data.id,
-                companyId
+                companyId,
+                // Corrections are copied on their own (copyMethodCorrections).
+                methodCorrectionId: isNull
               })
             : Promise.resolve({ data: [], error: null }),
         () =>
@@ -19698,7 +19944,11 @@ export async function getMethod(
               >(
                 db,
                 "methodOperation",
-                { makeMethodId: sourceMakeMethod.data.id, companyId },
+                {
+                  makeMethodId: sourceMakeMethod.data.id,
+                  companyId,
+                  methodCorrectionId: isNull
+                },
                 {
                   embed: {
                     methodOperationTool: {
@@ -19726,6 +19976,8 @@ export async function getMethod(
       // A new version inserts its header in a transaction and copies inside
       // it, so a failed copy leaves no empty version behind.
       await withTransaction(db, async (trx) => {
+        // Source routing step id -> copy, for the corrections' result mappings.
+        let routingStepIdMap: Record<string, string> = {};
         // The lines about to be replaced, whose configuration rules go with them.
         const [targetMaterialIds, targetOperationIds] = await Promise.all([
           trx
@@ -19733,6 +19985,7 @@ export async function getMethod(
             .select("id")
             .where("makeMethodId", "=", targetMakeMethod.data.id)
             .where("companyId", "=", companyId)
+            .where("methodCorrectionId", "is", null)
             .execute()
             .then((rows) => rows.map((row) => row.id)),
           trx
@@ -19740,6 +19993,7 @@ export async function getMethod(
             .select("id")
             .where("makeMethodId", "=", targetMakeMethod.data.id)
             .where("companyId", "=", companyId)
+            .where("methodCorrectionId", "is", null)
             .execute()
             .then((rows) => rows.map((row) => row.id))
         ]);
@@ -19751,6 +20005,7 @@ export async function getMethod(
                 .deleteFrom("methodMaterial")
                 .where("makeMethodId", "=", targetMakeMethod.data.id)
                 .where("companyId", "=", companyId)
+                .where("methodCorrectionId", "is", null)
                 .execute()
             : Promise.resolve(),
           parts.billOfProcess
@@ -19758,6 +20013,7 @@ export async function getMethod(
                 .deleteFrom("methodOperation")
                 .where("makeMethodId", "=", targetMakeMethod.data.id)
                 .where("companyId", "=", companyId)
+                .where("methodCorrectionId", "is", null)
                 .execute()
             : Promise.resolve()
         ]);
@@ -19882,7 +20138,7 @@ export async function getMethod(
               }
             }
           }
-          await insertOperationChildren(
+          routingStepIdMap = await insertOperationChildren(
             trx,
             "method",
             "methodOperationStepSlide",
@@ -19925,6 +20181,16 @@ export async function getMethod(
 
         // Configuration rules are keyed by method line and operation ids:
         // follow the copied lines, and drop the rules of the lines replaced.
+        if (parts.billOfProcess) {
+          await copyMethodCorrections(trx, {
+            sourceMakeMethodId: sourceMakeMethod.data.id,
+            targetMakeMethodId: targetMakeMethod.data.id,
+            companyId,
+            userId,
+            stepIdMap: routingStepIdMap
+          });
+        }
+
         await copyConfigurationRules(trx, {
           sourceItemId: sourceMakeMethod.data.itemId,
           targetItemId: targetMakeMethod.data.itemId,
@@ -20264,6 +20530,9 @@ export async function getMethod(
                   .deleteFrom("methodMaterial")
                   .where("makeMethodId", "in", makeMethodsToDelete)
                   .where("companyId", "=", companyId)
+                  // A job or quote saved back to the item replaces its routing and BOM,
+                  // not its corrections.
+                  .where("methodCorrectionId", "is", null)
                   .execute()
               : Promise.resolve(),
             parts.billOfProcess
@@ -20271,6 +20540,9 @@ export async function getMethod(
                   .deleteFrom("methodOperation")
                   .where("makeMethodId", "in", makeMethodsToDelete)
                   .where("companyId", "=", companyId)
+                  // A job or quote saved back to the item replaces its routing and BOM,
+                  // not its corrections.
+                  .where("methodCorrectionId", "is", null)
                   .execute()
               : Promise.resolve()
           ]);
@@ -20605,6 +20877,9 @@ export async function getMethod(
                   .deleteFrom("methodMaterial")
                   .where("makeMethodId", "in", makeMethodsToDelete)
                   .where("companyId", "=", companyId)
+                  // A job or quote saved back to the item replaces its routing and BOM,
+                  // not its corrections.
+                  .where("methodCorrectionId", "is", null)
                   .execute()
               : Promise.resolve(),
             parts.billOfProcess
@@ -20612,6 +20887,9 @@ export async function getMethod(
                   .deleteFrom("methodOperation")
                   .where("makeMethodId", "in", makeMethodsToDelete)
                   .where("companyId", "=", companyId)
+                  // A job or quote saved back to the item replaces its routing and BOM,
+                  // not its corrections.
+                  .where("methodCorrectionId", "is", null)
                   .execute()
               : Promise.resolve()
           ]);
@@ -22903,7 +23181,8 @@ function readMethodOperations(
   return selectRows<"methodOperation", MethodOperationRow>(
     db,
     "methodOperation",
-    { makeMethodId: makeMethodIds, companyId },
+    // Corrections are not part of the routing a job or quote copies.
+    { makeMethodId: makeMethodIds, companyId, methodCorrectionId: isNull },
     {
       orderBy: ["order", "id"],
       embed: {
@@ -23215,7 +23494,7 @@ async function readOperationsForTree(
   const operations = await many<"methodOperation", TreeOperation>(
     trx,
     "methodOperation",
-    { makeMethodId: [...makeMethodIds] },
+    { makeMethodId: [...makeMethodIds], methodCorrectionId: isNull },
     {
       embed: {
         methodOperationTool: {

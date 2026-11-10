@@ -117,7 +117,7 @@ CREATE TABLE "methodCorrection" (
     "makeMethodId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" JSONB,
-    "returnTo" "correctionReturnTo" NOT NULL DEFAULT 'Reinspect',
+    "returnTo" "correctionReturnTo" NOT NULL DEFAULT 'Re-inspect',
     "maxAttempts" INTEGER CHECK ("maxAttempts" IS NULL OR "maxAttempts" > 0),
     "createdBy" TEXT NOT NULL REFERENCES "user"("id"),
     "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -127,7 +127,7 @@ CREATE TABLE "methodCorrection" (
     FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
     FOREIGN KEY ("makeMethodId") REFERENCES "makeMethod"("id") ON DELETE CASCADE
 );
-CREATE TYPE "correctionReturnTo" AS ENUM ('Reinspect', 'Continue');
+CREATE TYPE "correctionReturnTo" AS ENUM ('Re-inspect', 'Continue');
 
 -- Correction operations and materials reuse the method tables.
 ALTER TABLE "methodOperation" ADD COLUMN "methodCorrectionId" TEXT;
@@ -146,7 +146,7 @@ CREATE TABLE "methodCorrectionTrigger" (
     PRIMARY KEY ("id", "companyId"),
     CHECK (("listValue" IS NULL) <> ("measurementCondition" IS NULL))
 );
-CREATE TYPE "measurementCondition" AS ENUM ('BelowMin', 'AboveMax');
+CREATE TYPE "correctionMeasurementCondition" AS ENUM ('Below Minimum', 'Above Maximum');
 -- One correction per result: UNIQUE (methodOperationStepId, listValue)
 -- and UNIQUE (methodOperationStepId, measurementCondition).
 
@@ -371,6 +371,21 @@ For the ERP editor the sibling is **operations on the Bill of Process**:
 ## Changelog
 
 - 2026-11-10: Created after resolving the open questions with Dane.
+- 2026-11-10: Phase 2a implemented (data model, exclusions, version copy,
+  services). Shipped names: enums `correctionReturnTo` ('Re-inspect',
+  'Continue') and `correctionMeasurementCondition` ('Below Minimum',
+  'Above Maximum'); `methodCorrection.order` for display order. Correction
+  rows are excluded from `get_method_tree` (forked), job and quote creation,
+  costing, MRP, strict backflush, BOM/BOP getters and lists, BOM exports,
+  project build trees, the issue-material picker, assembly-instruction BOMs,
+  the change-notice diff (v1) and Onshape sync. Every "replace the routing"
+  delete (copy method, version copy, job/quote saved back to the item,
+  Onshape) keeps correction rows. A new version copies corrections with their
+  operations, steps, slides, tools, parameters, materials and remapped
+  result mappings (`copyMethodCorrections`); copying a method from another
+  item does not copy corrections and keeps the target's. Membership in a
+  correction is fixed at create. Not yet: change-notice diff of corrections,
+  correction material step links, MCP tools.
 - 2026-11-10: Phase 1 implemented: `jobOperationTrackedEntity`, rework
   copies scoped to their serial units, MES and the serial-complete posting
   honour the scope. Not run against a database yet.

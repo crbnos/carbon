@@ -39748,6 +39748,126 @@ export type Database = {
           }
         ]
       }
+      methodCorrection: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          description: string | null
+          id: string
+          makeMethodId: string
+          maxAttempts: number | null
+          name: string
+          order: number
+          returnTo: Database["public"]["Enums"]["correctionReturnTo"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          description?: string | null
+          id?: string
+          makeMethodId: string
+          maxAttempts?: number | null
+          name: string
+          order?: number
+          returnTo?: Database["public"]["Enums"]["correctionReturnTo"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          description?: string | null
+          id?: string
+          makeMethodId?: string
+          maxAttempts?: number | null
+          name?: string
+          order?: number
+          returnTo?: Database["public"]["Enums"]["correctionReturnTo"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "methodCorrection_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodCorrection_makeMethodId_fkey"
+            columns: ["makeMethodId"]
+            isOneToOne: false
+            referencedRelation: "makeMethod"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      methodCorrectionTrigger: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          listValue: string | null
+          measurementCondition:
+            | Database["public"]["Enums"]["correctionMeasurementCondition"]
+            | null
+          methodCorrectionId: string
+          methodOperationStepId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          listValue?: string | null
+          measurementCondition?:
+            | Database["public"]["Enums"]["correctionMeasurementCondition"]
+            | null
+          methodCorrectionId: string
+          methodOperationStepId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          listValue?: string | null
+          measurementCondition?:
+            | Database["public"]["Enums"]["correctionMeasurementCondition"]
+            | null
+          methodCorrectionId?: string
+          methodOperationStepId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "methodCorrectionTrigger_methodCorrectionId_fkey"
+            columns: ["methodCorrectionId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "methodCorrection"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "methodCorrectionTrigger_methodOperationStepId_fkey"
+            columns: ["methodOperationStepId"]
+            isOneToOne: false
+            referencedRelation: "methodOperationStep"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       methodMaterial: {
         Row: {
           companyId: string
@@ -39759,6 +39879,7 @@ export type Database = {
           itemType: string
           kit: boolean
           makeMethodId: string
+          methodCorrectionId: string | null
           materialMakeMethodId: string | null
           methodOperationId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
@@ -39783,6 +39904,7 @@ export type Database = {
           itemType?: string
           kit?: boolean
           makeMethodId: string
+          methodCorrectionId?: string | null
           materialMakeMethodId?: string | null
           methodOperationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
@@ -39807,6 +39929,7 @@ export type Database = {
           itemType?: string
           kit?: boolean
           makeMethodId?: string
+          methodCorrectionId?: string | null
           materialMakeMethodId?: string | null
           methodOperationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
@@ -40082,6 +40205,7 @@ export type Database = {
           machineTime: number
           machineUnit: Database["public"]["Enums"]["factor"]
           makeMethodId: string
+          methodCorrectionId: string | null
           operationLeadTime: number | null
           operationMinimumCost: number | null
           operationOrder: Database["public"]["Enums"]["methodOperationOrder"]
@@ -40113,6 +40237,7 @@ export type Database = {
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
           makeMethodId: string
+          methodCorrectionId?: string | null
           operationLeadTime?: number | null
           operationMinimumCost?: number | null
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
@@ -40144,6 +40269,7 @@ export type Database = {
           machineTime?: number
           machineUnit?: Database["public"]["Enums"]["factor"]
           makeMethodId?: string
+          methodCorrectionId?: string | null
           operationLeadTime?: number | null
           operationMinimumCost?: number | null
           operationOrder?: Database["public"]["Enums"]["methodOperationOrder"]
@@ -109454,6 +109580,8 @@ export type Database = {
         | "Percent Complete"
       contractRevenueStatus: "Planned" | "Recognized" | "Recognized Externally"
       contractRevenueType: "One-time" | "Recurring"
+      correctionMeasurementCondition: "Below Minimum" | "Above Maximum"
+      correctionReturnTo: "Re-inspect" | "Continue"
       costLedgerType:
         | "Direct Cost"
         | "Revaluation"

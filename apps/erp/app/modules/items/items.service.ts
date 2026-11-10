@@ -126,6 +126,8 @@ import {
   type materialSubstanceValidator,
   type materialTypeValidator,
   type materialValidator,
+  type methodCorrectionTriggerValidator,
+  type methodCorrectionValidator,
   type methodMaterialValidator,
   type methodOperationValidator,
   type OperationChildrenDiff,
@@ -1814,7 +1816,9 @@ export async function getMethodMaterials(
         count: listCount(args)
       }
     )
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    // Correction materials are not part of a bill of materials.
+    .is("methodCorrectionId", null);
 
   if (args?.search) {
     query = query.ilike("item.readableIdWithRevision", `%${args.search}%`);
@@ -1849,6 +1853,7 @@ export async function getMethodMaterialsByMakeMethod(
       "*, item(name, itemTrackingType, replenishmentSystem, defaultMethodType, sourcingType), methodMaterialStep(methodOperationStepId, quantity)"
     )
     .eq("makeMethodId", makeMethodId)
+    .is("methodCorrectionId", null)
     .order("order", { ascending: true });
   if (isMissingQuantityColumn(result.error)) {
     return (await client
@@ -1857,6 +1862,7 @@ export async function getMethodMaterialsByMakeMethod(
         "*, item(name, itemTrackingType, replenishmentSystem, defaultMethodType, sourcingType), methodMaterialStep(methodOperationStepId)"
       )
       .eq("makeMethodId", makeMethodId)
+      .is("methodCorrectionId", null)
       .order("order", { ascending: true })) as unknown as typeof result;
   }
   return result;
@@ -1879,7 +1885,9 @@ export async function getMethodOperations(
         count: listCount(args)
       }
     )
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    // Correction operations are not part of a routing.
+    .is("methodCorrectionId", null);
 
   if (args?.search) {
     query = query.ilike("description", `%${args.search}%`);
@@ -1896,13 +1904,17 @@ export async function getMethodOperationsByMakeMethodId(
   client: SupabaseClient<Database>,
   makeMethodId: string
 ) {
-  return client
-    .from("methodOperation")
-    .select(
-      "*, methodOperationTool(*, methodOperationToolStep(methodOperationStepId)), methodOperationParameter(*), methodOperationStep(*, methodOperationStepSlide(*))"
-    )
-    .eq("makeMethodId", makeMethodId)
-    .order("order", { ascending: true });
+  return (
+    client
+      .from("methodOperation")
+      .select(
+        "*, methodOperationTool(*, methodOperationToolStep(methodOperationStepId)), methodOperationParameter(*), methodOperationStep(*, methodOperationStepSlide(*))"
+      )
+      .eq("makeMethodId", makeMethodId)
+      // Corrections list their own operations (getMethodCorrectionOperations).
+      .is("methodCorrectionId", null)
+      .order("order", { ascending: true })
+  );
 }
 
 type Method = NonNullable<
@@ -2864,7 +2876,8 @@ export async function getRecipeProcessIdsForItem(
   const operations = await client
     .from("methodOperation")
     .select("processId")
-    .eq("makeMethodId", makeMethod.data.id);
+    .eq("makeMethodId", makeMethod.data.id)
+    .is("methodCorrectionId", null);
   if (operations.error) {
     return { data: [] as string[], error: operations.error };
   }
@@ -3135,6 +3148,7 @@ export async function upsertPickMethodWithShelfLife(
         .where("amm.itemId", "=", args.itemId)
         .where("amm.companyId", "=", args.companyId)
         .where("mo.processId", "is not", null)
+        .where("mo.methodCorrectionId", "is", null)
         .execute();
       const allowed = new Set(
         recipeProcessIds
@@ -4630,6 +4644,11 @@ export async function upsertMethodMaterial(
   // so `sanitize` can't null it), while an explicit null / {} / map is written —
   // null and {} both clear it. The web form always submits the field, so its
   // behavior is unchanged; only the MCP/API caller can omit it.
+  // Membership in a correction is set on create and never moved by an update.
+  if ("updatedBy" in methodMaterial) {
+    delete (methodMaterial as { methodCorrectionId?: string })
+      .methodCorrectionId;
+  }
   if (methodMaterial.storageUnitIds === undefined) {
     const { storageUnitIds: _omitted, ...preserved } = methodMaterial;
     return client
@@ -4680,10 +4699,234 @@ export async function upsertMethodOperation(
       .select("id")
       .single();
   }
+  // Membership in a correction is set on create and never moved by an update:
+  // an edit form that leaves the field out must not pull a correction
+  // operation into the normal routing.
+  const { methodCorrectionId: _membership, ...update } = methodOperation;
   return client
     .from("methodOperation")
-    .update(sanitize(normalizeOperationSourceIds(methodOperation)))
+    .update(sanitize(normalizeOperationSourceIds(update)))
     .eq("id", methodOperation.id)
+    .select("id")
+    .single();
+}
+
+/** A make method's corrections, in display order. */
+export async function getMethodCorrections(
+  client: SupabaseClient<Database>,
+  makeMethodId: string,
+  companyId: string
+) {
+  return client
+    .from("methodCorrection")
+    .select("*")
+    .eq("makeMethodId", makeMethodId)
+    .eq("companyId", companyId)
+    .order("order", { ascending: true })
+    .order("createdAt", { ascending: true });
+}
+
+/** The step-result mappings of a make method's corrections. */
+export async function getMethodCorrectionTriggers(
+  client: SupabaseClient<Database>,
+  makeMethodId: string,
+  companyId: string
+) {
+  const corrections = await getMethodCorrections(
+    client,
+    makeMethodId,
+    companyId
+  );
+  if (corrections.error) return { data: null, error: corrections.error };
+  if (corrections.data.length === 0) return { data: [], error: null };
+
+  return client
+    .from("methodCorrectionTrigger")
+    .select("*")
+    .eq("companyId", companyId)
+    .in(
+      "methodCorrectionId",
+      corrections.data.map((correction) => correction.id)
+    );
+}
+
+export async function upsertMethodCorrection(
+  client: SupabaseClient<Database>,
+  correction:
+    | (Omit<z.infer<typeof methodCorrectionValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof methodCorrectionValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in correction) {
+    return client
+      .from("methodCorrection")
+      .insert([
+        {
+          ...correction,
+          maxAttempts: correction.maxAttempts ?? null,
+          order: correction.order ?? 1
+        }
+      ])
+      .select("id")
+      .single();
+  }
+  // The make method a correction belongs to never changes.
+  const { makeMethodId: _makeMethodId, companyId, ...update } = correction;
+  return client
+    .from("methodCorrection")
+    .update(
+      sanitize({
+        ...update,
+        updatedAt: new Date().toISOString()
+      })
+    )
+    .eq("id", correction.id)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+}
+
+/** Deletes a correction with its operations, materials and mappings. */
+export async function deleteMethodCorrection(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return requireAffected(
+    client
+      .from("methodCorrection")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
+}
+
+/**
+ * Maps one step result to a correction, replacing any earlier mapping of that
+ * result, or clears it when `methodCorrectionId` is empty. The correction must
+ * belong to the step's make method, the result must suit the step type, and a
+ * step inside a correction can't map to one (no corrections mid-correction).
+ */
+export async function setMethodCorrectionTrigger(
+  client: SupabaseClient<Database>,
+  trigger: z.infer<typeof methodCorrectionTriggerValidator> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { companyId, userId, methodOperationStepId, methodCorrectionId } =
+    trigger;
+  const listValue = trigger.listValue ?? null;
+  const measurementCondition = trigger.measurementCondition ?? null;
+
+  const step = await client
+    .from("methodOperationStep")
+    .select("id, type, listValues, minValue, maxValue, operationId")
+    .eq("id", methodOperationStepId)
+    .eq("companyId", companyId)
+    .single();
+  if (step.error) return { data: null, error: step.error };
+
+  const operation = await client
+    .from("methodOperation")
+    .select("makeMethodId, methodCorrectionId")
+    .eq("id", step.data.operationId)
+    .eq("companyId", companyId)
+    .single();
+  if (operation.error) return { data: null, error: operation.error };
+
+  if (operation.data.methodCorrectionId) {
+    return {
+      data: null,
+      error: {
+        message: "A step inside a correction can't start another correction"
+      }
+    };
+  }
+
+  if (listValue !== null) {
+    if (step.data.type !== "List" && step.data.type !== "Inspection") {
+      return {
+        data: null,
+        error: { message: "Only List and Inspection steps map values" }
+      };
+    }
+    if (!(step.data.listValues ?? []).includes(listValue)) {
+      return {
+        data: null,
+        error: { message: `"${listValue}" is not a value of this step` }
+      };
+    }
+  } else {
+    if (step.data.type !== "Measurement") {
+      return {
+        data: null,
+        error: { message: "Only Measurement steps map out-of-range results" }
+      };
+    }
+    const bound =
+      measurementCondition === "Below Minimum"
+        ? step.data.minValue
+        : step.data.maxValue;
+    if (bound === null || bound === undefined) {
+      return {
+        data: null,
+        error: {
+          message:
+            measurementCondition === "Below Minimum"
+              ? "Set a minimum on the step first"
+              : "Set a maximum on the step first"
+        }
+      };
+    }
+  }
+
+  if (methodCorrectionId) {
+    const correction = await client
+      .from("methodCorrection")
+      .select("id")
+      .eq("id", methodCorrectionId)
+      .eq("companyId", companyId)
+      .eq("makeMethodId", operation.data.makeMethodId)
+      .maybeSingle();
+    if (correction.error) return { data: null, error: correction.error };
+    if (!correction.data) {
+      return {
+        data: null,
+        error: { message: "The correction is not on this make method" }
+      };
+    }
+  }
+
+  const existing = client
+    .from("methodCorrectionTrigger")
+    .delete()
+    .eq("methodOperationStepId", methodOperationStepId)
+    .eq("companyId", companyId);
+  const cleared = await (listValue !== null
+    ? existing.eq("listValue", listValue)
+    : existing.eq("measurementCondition", measurementCondition!));
+  if (cleared.error) return { data: null, error: cleared.error };
+
+  if (!methodCorrectionId) return { data: null, error: null };
+
+  return client
+    .from("methodCorrectionTrigger")
+    .insert({
+      methodOperationStepId,
+      methodCorrectionId,
+      listValue,
+      measurementCondition,
+      companyId,
+      createdBy: userId
+    })
     .select("id")
     .single();
 }
@@ -8348,12 +8591,15 @@ async function readMethodRows(
       .select("*")
       .eq("makeMethodId", makeMethodId)
       .eq("companyId", companyId)
+      // v1: corrections are not part of the change-notice diff.
+      .is("methodCorrectionId", null)
       .order("order", { ascending: true }),
     client
       .from("methodOperation")
       .select("*")
       .eq("makeMethodId", makeMethodId)
       .eq("companyId", companyId)
+      .is("methodCorrectionId", null)
       .order("order", { ascending: true })
   ]);
   if (materials.error) return { ...empty, error: materials.error };
@@ -10303,6 +10549,7 @@ async function copyMakeMethodOperations(
     .selectAll()
     .where("makeMethodId", "=", sourceMakeMethodId)
     .where("companyId", "=", companyId)
+    .where("methodCorrectionId", "is", null)
     .execute();
 
   if (sourceOperations.length === 0) return;
@@ -10650,10 +10897,12 @@ export async function syncMakeMethod(
               );
             }
 
+            // A sync replaces the bill of materials, not the corrections.
             await trx
               .deleteFrom("methodMaterial")
               .where("makeMethodId", "=", activeMakeMethodId)
               .where("companyId", "=", companyId)
+              .where("methodCorrectionId", "is", null)
               .execute();
 
             // Track newly created items and make methods to avoid duplicate inserts
@@ -11019,6 +11268,7 @@ export async function syncMakeMethod(
                   .deleteFrom("methodMaterial")
                   .where("makeMethodId", "=", materialMakeMethodId)
                   .where("companyId", "=", companyId)
+                  .where("methodCorrectionId", "is", null)
                   .execute();
 
                 for await (const child of children) {

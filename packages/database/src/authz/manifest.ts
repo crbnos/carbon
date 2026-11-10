@@ -1133,6 +1133,8 @@ export const manifest = {
       inCompany("companyId", "invoicing_delete")
     )
   }),
+  methodCorrection: company("parts", { read: "parts_view" }),
+  methodCorrectionTrigger: company("parts", { read: "parts_view" }),
   methodMaterial: company("parts", { read: "parts_view" }),
   methodMaterialStep: policies({
     select: exists("methodMaterial", "methodMaterialId", "employee"),

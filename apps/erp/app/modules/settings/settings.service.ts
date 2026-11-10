@@ -9205,6 +9205,7 @@ function methodLinesMissingPullFrom(
         .on("component.companyId", "=", companyId)
     )
     .where("methodMaterial.companyId", "=", companyId)
+    .where("methodMaterial.methodCorrectionId", "is", null)
     .where("methodMaterial.methodType", "!=", "Make to Order")
     .where("methodMaterial.itemType", "in", [...PULLED_ITEM_TYPES])
     .where(
