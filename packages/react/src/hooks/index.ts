@@ -37,6 +37,7 @@ import { useThemePreview } from "./useThemePreview";
 import {
   setThemePreview,
   ThemeStyleProvider,
+  useSavedThemeValue,
   useShellThemeStyle,
   useThemeContent,
   useThemeStyle,
@@ -77,6 +78,7 @@ export {
   useRevalidator,
   useRouteData,
   useRouteDialog,
+  useSavedThemeValue,
   useScanPending,
   useShellThemeStyle,
   useShortcutKeyMap,

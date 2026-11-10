@@ -16189,6 +16189,9 @@ msgstr "칸반 산출물"
 msgid "Kanban output setting updated"
 msgstr "칸반 출력 설정 업데이트"
 
+msgid "Kanban QR code"
+msgstr "칸반 QR 코드"
+
 msgid "Kanbans"
 msgstr "칸반"
 

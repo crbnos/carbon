@@ -16189,6 +16189,9 @@ msgstr "कानबन आउटपुट"
 msgid "Kanban output setting updated"
 msgstr "कानबान आउटपुट सेटिंग अपडेट की गई"
 
+msgid "Kanban QR code"
+msgstr "कानबान QR कोड"
+
 msgid "Kanbans"
 msgstr "कानबान"
 

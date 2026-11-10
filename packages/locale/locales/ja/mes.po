@@ -872,6 +872,9 @@ msgstr "説明"
 msgid "Details"
 msgstr "詳細"
 
+msgid "Discard"
+msgstr "破棄"
+
 msgid "Dismiss"
 msgstr "閉じる"
 

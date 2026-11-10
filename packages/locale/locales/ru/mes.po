@@ -872,6 +872,9 @@ msgstr "Описание"
 msgid "Details"
 msgstr "Детали"
 
+msgid "Discard"
+msgstr "Отклонить"
+
 msgid "Dismiss"
 msgstr "Отклонить"
 

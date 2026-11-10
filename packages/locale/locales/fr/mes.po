@@ -872,6 +872,9 @@ msgstr "Description"
 msgid "Details"
 msgstr "Détails"
 
+msgid "Discard"
+msgstr "Rejeter"
+
 msgid "Dismiss"
 msgstr "Fermer"
 
