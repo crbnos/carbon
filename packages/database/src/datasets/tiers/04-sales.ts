@@ -500,7 +500,8 @@ export async function runTier4(ctx: Ctx): Promise<void> {
   // In Progress and Completed mirror post-receipt's Sales Return Order branch:
   // a Posted receipt plus a Sales Return Receipt ledger row per Return to Stock
   // line. A Service or Warranty line enters no stock (receipt-service-return.ts):
-  // no ledger row, its asset goes At Depot, and seedServiceJobs creates its job.
+  // no ledger row, its serial goes Available and its asset At Depot, and
+  // seedServiceJobs creates its job.
   // A `credit` adds Issue Credit's memo (helpers/return-credit.ts); tier 09
   // journals it if Posted.
   if (data.salesReturns.length > 0) {
@@ -590,6 +591,11 @@ export async function runTier4(ctx: Ctx): Promise<void> {
                 `UPDATE "customerAsset" SET status = 'At Depot'
                  WHERE id = $1 AND "companyId" = $2`,
                 [need(ctx.refs.misc, `asset:${line.asset}`), companyId]
+              );
+              await ctx.client.query(
+                `UPDATE "trackedEntity" SET status = 'Available'
+                 WHERE id = $1 AND "companyId" = $2`,
+                [need(ctx.refs.misc, `asset-serial:${line.asset}`), companyId]
               );
             }
             continue;

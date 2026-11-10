@@ -4723,3 +4723,69 @@ shared ones by `container_name` (`carbon-*`). Check a new name with
 
 **Applies to:** `packages/dev/docker/envoy/cds.template.yaml`,
 `packages/dev/docker/docker-compose.dev.yml`, `.claude/rules/dev-shared-services.md`.
+
+## A touch drag needs pointer events, `touch-action`, and speed from the moves
+
+**Context:** A gesture audit drove the code with Chrome's real touch input. The
+inspection splitters, a dozen drag handles and the bottom sheet's flick all failed.
+
+**Problem:** A finger fires no `mousemove`, so a `onMouseDown` drag is dead on touch,
+and `touch-none` hides that. A `PointerSensor` or Motion `dragControls` handle without
+`touch-action: none` gets one move, then `pointercancel`, and the page scrolls. A
+`pointerup` carries the last move's position, so its distance from that move is 0 and
+a flick reads as no speed. A `TouchSensor` activates with a `TouchEvent`, which has no
+`clientY`.
+
+**Rule:** Start a drag with pointer events and capture. Put `touch-none` on a handle;
+a whole draggable row or card uses `MouseSensor` + `TouchSensor` with a delay instead,
+plus `pointer-coarse:select-none`, because the hold that starts the drag also selects text.
+ERP sensor options come from `~/utils/drag-sensors`, never a local constant, so every
+drag starts the same way; only a custom keyboard `coordinateGetter` stays with its board.
+Read a release's speed from the moves (`releaseVelocity`). Read a dnd-kit
+`activatorEvent` with `getEventCoordinates`. The `width >= 48rem` clause of the `hover`
+variant in `theme.css` is what lets a tap reveal `md:opacity-0 group-hover:opacity-100`
+controls on a tablet: do not remove it without another way to reach them.
+
+**Applies to:** anything the user drags; `packages/react/src/utils/drag.ts`,
+`usePaneResize`, dnd-kit sensor choices, `packages/config/tailwind/theme.css`.
+
+## Node 24's readline splits a JSON line at U+2028 and U+2029
+
+**Context:** `deserializeTable` read a backup table's NDJSON with
+`readline.createInterface`. Restores worked locally (Node 22) and failed on BYOC
+(Node 24) with "Unterminated string in JSON at position 662".
+
+**Problem:** From Node 24, readline also ends a line at U+2028 (line separator)
+and U+2029 (paragraph separator). `JSON.stringify` leaves both unescaped, so a
+row holding text pasted from Word or a PDF was cut mid-string. `jq` reads the
+same file without complaint, so checking the archive with it passes.
+
+**Rule:** Read NDJSON by splitting on "\n" yourself (the one separator the
+writer emits), never with readline. Reproduce JSON-reading bugs on the Node
+version the deployment runs (`mise exec node@24 -- …`).
+
+**Applies to:** `packages/jobs/src/inngest/functions/tasks/company-backup.ts`
+(`deserializeTable`) and any new NDJSON or JSON-lines reader.
+
+## A rule about a column belongs where every writer of that column passes
+
+**Context:** An item's tracking type (Inventory, Batch, Serial) is copied onto job
+materials, job make methods and open document lines when they are made. Draws read the
+copy to choose untracked or tracked stock. `setItemTrackingType` updated the copy, but
+only on Draft and Planned jobs, and it did not check stock.
+
+**Problem:** Six code paths write `item.itemTrackingType` on an existing item: the
+properties panel, `updateItem`, `updatePart` and its siblings, CSV import, the Onshape
+field writer and the bulk update. Only two of them updated the copy, and none checked
+stock or released jobs. An item changed from Batch to Inventory kept its lots, which no
+untracked draw can see, so the next issue drove the bin negative. A released job kept
+the old copy, so its issues selected materials by the copy and moved stock by the item.
+
+**Rule:** When a column change must be checked or carried to other rows, put that rule
+in the database (a statement handler on the table), not in one service function. Before
+you choose the place, list every writer of the column with `git grep`. A rule in one
+writer is a rule the other writers skip.
+
+**Applies to:** `sync_item_tracking_type_change`
+(`packages/database/src/event-system/handlers/`), and any flag copied from a master
+record onto open documents.
