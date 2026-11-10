@@ -15,6 +15,7 @@ import {
   useViewport,
   VStack
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { useReactFlow } from "@xyflow/react";
 import {
   LuArrowDownWideNarrow,
@@ -165,6 +166,7 @@ function GraphControlsChip({
   activityOrder?: ActivityOrder;
   onActivityOrderChange?: (next: ActivityOrder) => void;
 }) {
+  const { t } = useLingui();
   const { fitView } = useReactFlow();
   const { isPhone } = useViewport();
 
@@ -273,8 +275,8 @@ function GraphControlsChip({
             }
             aria-label={
               activityOrder === "newest"
-                ? "Sorted by activity date, newest first"
-                : "Sorted by activity date, oldest first"
+                ? t`Sorted by activity date, newest first`
+                : t`Sorted by activity date, oldest first`
             }
             className={cn(
               "h-7 px-2 rounded-md flex items-center gap-1.5 transition-colors text-xs",
@@ -288,7 +290,7 @@ function GraphControlsChip({
               <LuArrowUpNarrowWide className="w-3.5 h-3.5" />
             )}
             <span>
-              {activityOrder === "newest" ? "Newest first" : "Oldest first"}
+              {activityOrder === "newest" ? t`Newest first` : t`Oldest first`}
             </span>
           </button>
         </>

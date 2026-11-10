@@ -33,6 +33,7 @@ import { useDateFormatter, usePermissions } from "~/hooks";
 import { trackedEntityStatus } from "~/modules/inventory/inventory.models";
 import {
   type BatchPropertyColumn,
+  batchPropertyExportValue,
   batchPropertyValue
 } from "~/modules/inventory/inventory.utils";
 import type { TrackedEntity } from "~/modules/inventory/types";
@@ -258,12 +259,7 @@ const TrackedEntitiesTable = memo(
               ),
             meta: {
               icon: <PropertyIcon dataType={column.dataType} />,
-              exportValue: (row) => {
-                const value = batchPropertyValue(column, row);
-                return value === undefined || value === null
-                  ? null
-                  : String(value);
-              },
+              exportValue: (row) => batchPropertyExportValue(column, row),
               filter: propertyFilter(column, yesNo)
             }
           })

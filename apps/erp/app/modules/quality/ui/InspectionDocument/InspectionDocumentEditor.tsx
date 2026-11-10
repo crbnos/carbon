@@ -67,7 +67,6 @@ import {
   LuEllipsisVertical,
   LuExternalLink,
   LuFileDown,
-  LuLoader,
   LuMaximize,
   LuMinus,
   LuPlus,
@@ -717,6 +716,7 @@ export default function InspectionDocumentEditor({
   const permissions = usePermissions();
   // Active and Archived versions are what lots were inspected against.
   const isLocked = status !== "Draft";
+  const canUpdate = permissions.can("update", "quality") && !isLocked;
   const newVersionFetcher = useFetcher();
   const activateFetcher = useAction({
     onSuccess: () => toast.success(t`Version published`)
@@ -734,7 +734,11 @@ export default function InspectionDocumentEditor({
   const fetcher = useFetcher<typeof saveAction>();
   const nameFetcher = useAction();
   const [title, setTitle] = useState(name);
+  // A typed name or work instruction waiting out its debounce, so Publish
+  // waits for it rather than locking the version under it.
+  const [namePending, setNamePending] = useState(false);
   const debouncedSaveName = useDebounce((value: string) => {
+    setNamePending(false);
     nameFetcher.submit(
       { name: value },
       {
@@ -771,8 +775,10 @@ export default function InspectionDocumentEditor({
   // What was typed here, so switching tabs does not drop an unsaved edit.
   const [typedWorkInstruction, setTypedWorkInstruction] =
     useState<JSONContent | null>(null);
+  const [workInstructionPending, setWorkInstructionPending] = useState(false);
   const debouncedSaveWorkInstruction = useDebounce(
     (content: JSONContent) => {
+      setWorkInstructionPending(false);
       workInstructionFetcher.submit(
         { workInstruction: content },
         {
@@ -1731,7 +1737,7 @@ export default function InspectionDocumentEditor({
       const evt = ke.evt;
       if (!evt) return;
 
-      if (placing) {
+      if (placing && canUpdate) {
         evt.preventDefault();
         const { x, y } = getRelativePosFromStage();
         setDragKind("anchor");
@@ -1739,7 +1745,7 @@ export default function InspectionDocumentEditor({
         return;
       }
 
-      if (placingAnnotation) {
+      if (placingAnnotation && canUpdate) {
         evt.preventDefault();
         const { x, y } = getRelativePosFromStage();
         setDragKind("annotation");
@@ -1757,7 +1763,10 @@ export default function InspectionDocumentEditor({
 
       const { x, y } = getRelativePosFromStage();
       const annotationId = getAnnotationIdAt(x, y);
-      const annotationResize = getAnnotationResizeHandleAt(x, y);
+      // A locked or view-only plan selects on a click but never drags.
+      const annotationResize = canUpdate
+        ? getAnnotationResizeHandleAt(x, y)
+        : null;
       if (annotationResize) {
         const annotation = annotations.find(
           (a) => a.id === annotationResize.annotationId
@@ -1791,7 +1800,7 @@ export default function InspectionDocumentEditor({
         return;
       }
 
-      const anchorResize = getSelectorResizeHandleAt(x, y);
+      const anchorResize = canUpdate ? getSelectorResizeHandleAt(x, y) : null;
       if (anchorResize) {
         const anchor = anchorRects.find(
           (s) => s.id === anchorResize.balloonAnchorId
@@ -1829,7 +1838,7 @@ export default function InspectionDocumentEditor({
         setSelectedAnnotationId(null);
         setSelectedSelectorId(linkedSelectorId);
         const dragged = featureRows.find((row) => row.balloonId === balloonId);
-        if (dragged) {
+        if (dragged && canUpdate) {
           evt.preventDefault();
           balloonDragRef.current = {
             balloonId,
@@ -1869,7 +1878,8 @@ export default function InspectionDocumentEditor({
       getSelectorIdAt,
       annotations,
       featureRows,
-      anchorRects
+      anchorRects,
+      canUpdate
     ]
   );
 
@@ -1947,7 +1957,9 @@ export default function InspectionDocumentEditor({
         localY <= top + height;
 
       // Top-most visual priority: annotation -> balloon -> anchor.
-      const annotationResize = getAnnotationResizeHandleAt(x, y);
+      const annotationResize = canUpdate
+        ? getAnnotationResizeHandleAt(x, y)
+        : null;
       if (annotationResize) {
         return cursorForSelectorResizeHandle(annotationResize.handle);
       }
@@ -1973,7 +1985,7 @@ export default function InspectionDocumentEditor({
         }
       }
 
-      const anchorResize = getSelectorResizeHandleAt(x, y);
+      const anchorResize = canUpdate ? getSelectorResizeHandleAt(x, y) : null;
       if (anchorResize) {
         return cursorForSelectorResizeHandle(anchorResize.handle);
       }
@@ -1993,7 +2005,8 @@ export default function InspectionDocumentEditor({
       anchorRects,
       pdfViewPage,
       getAnnotationResizeHandleAt,
-      getSelectorResizeHandleAt
+      getSelectorResizeHandleAt,
+      canUpdate
     ]
   );
 
@@ -2415,7 +2428,6 @@ export default function InspectionDocumentEditor({
   // drag saves when it ends, and one save at a time: an edit made while a save
   // is in flight is picked up when it returns. Someone without update
   // permission can still look around, but nothing they change is saved.
-  const canUpdate = permissions.can("update", "quality") && !isLocked;
   const isSaving = fetcher.state !== "idle";
   const hasUnsavedChanges =
     canUpdate &&
@@ -2518,6 +2530,17 @@ export default function InspectionDocumentEditor({
   // viewer replaces the sidebar.
   const modelUpload = useModelUpload(`inspection-document:${diagramId}`);
   const modelFetcher = useAction();
+  // Publishing locks the version, so it waits for every edit to land.
+  const hasPendingEdits =
+    hasUnsavedChanges ||
+    isSaving ||
+    uploading ||
+    namePending ||
+    nameFetcher.state !== "idle" ||
+    workInstructionPending ||
+    workInstructionFetcher.state !== "idle" ||
+    modelUpload.upload !== null ||
+    modelFetcher.state !== "idle";
   const handleModelUpload = useCallback(
     async (file: File) => {
       const staged = await modelUpload.runUpload(file);
@@ -2912,6 +2935,15 @@ export default function InspectionDocumentEditor({
         size: 148,
         cell: ({ row }) => {
           const summary = samplingRuleSummary(row.original);
+          if (!canUpdate) {
+            return (
+              <span className="text-sm">
+                {summary ?? (
+                  <span className="text-muted-foreground">{t`Inherit`}</span>
+                )}
+              </span>
+            );
+          }
           return (
             <button
               type="button"
@@ -3143,6 +3175,7 @@ export default function InspectionDocumentEditor({
             readOnly={!canUpdate}
             onChange={(e) => {
               setTitle(e.target.value);
+              setNamePending(true);
               debouncedSaveName(e.target.value);
             }}
           />
@@ -3271,7 +3304,8 @@ export default function InspectionDocumentEditor({
                     isLoading={activateFetcher.state !== "idle"}
                     isDisabled={
                       !permissions.can("update", "quality") ||
-                      activateFetcher.state !== "idle"
+                      activateFetcher.state !== "idle" ||
+                      hasPendingEdits
                     }
                     onClick={() =>
                       activateFetcher.submit(
@@ -3287,9 +3321,11 @@ export default function InspectionDocumentEditor({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {status === "Archived"
-                    ? t`Makes this version Active again and archives the Active version.`
-                    : t`This version is a Draft. Publishing makes it Active and archives the Active version.`}
+                  {hasPendingEdits
+                    ? t`Publish once your changes are saved.`
+                    : status === "Archived"
+                      ? t`Makes this version Active again and archives the Active version.`
+                      : t`This version is a Draft. Publishing makes it Active and archives the Active version.`}
                 </TooltipContent>
               </Tooltip>
             )}
@@ -3336,7 +3372,7 @@ export default function InspectionDocumentEditor({
         className={
           hasDocument
             ? "flex min-h-0 flex-1 gap-4 overflow-hidden px-4 pb-4 pt-2"
-            : "flex min-h-0 flex-1 overflow-hidden"
+            : "flex min-h-0 flex-1 overflow-hidden max-lg:flex-col"
         }
       >
         <div
@@ -3873,28 +3909,9 @@ export default function InspectionDocumentEditor({
                       className="h-full rounded-none"
                     />
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={uploading}
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center justify-center min-w-full h-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
-                  >
-                    <VStack className="items-center gap-2">
-                      {uploading ? (
-                        <LuLoader className="h-12 w-12 opacity-30 animate-spin" />
-                      ) : (
-                        <LuUpload className="h-12 w-12 opacity-30" />
-                      )}
-                      <p>
-                        {uploading
-                          ? t`Uploading…`
-                          : t`Click to upload a PDF drawing`}
-                      </p>
-                    </VStack>
-                  </button>
-                )}
-                {annotationDraft &&
+                ) : null}
+                {canUpdate &&
+                  annotationDraft &&
                   annotationDraft.pageNumber === pdfViewPage &&
                   renderedWidth > 0 &&
                   overlayHeight > 0 && (
@@ -3988,7 +4005,8 @@ export default function InspectionDocumentEditor({
                       </VStack>
                     </div>
                   )}
-                {!annotationDraft &&
+                {canUpdate &&
+                  !annotationDraft &&
                   annotationEditDraft &&
                   annotationEditDraft.pageNumber === pdfViewPage &&
                   renderedWidth > 0 &&
@@ -4235,6 +4253,7 @@ export default function InspectionDocumentEditor({
                   onUpload={onUploadImage}
                   onChange={(content) => {
                     setTypedWorkInstruction(content);
+                    setWorkInstructionPending(true);
                     debouncedSaveWorkInstruction(content);
                   }}
                   // A toolbar flush with the pane's top and sides: pad the

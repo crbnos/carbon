@@ -135,6 +135,9 @@ msgstr "{columns} ne correspond pas à un « {target} » existant."
 msgid "{columns} does not match an existing record."
 msgstr "{columns} ne correspond pas à un enregistrement existant."
 
+msgid "{companyName} logo"
+msgstr ""
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} sur {quantity}"
 
@@ -225,6 +228,9 @@ msgstr "À propos de ce champ"
 
 msgid "Above the upper limit"
 msgstr "Au-dessus de la limite supérieure"
+
+msgid "Ac"
+msgstr ""
 
 msgid "Accept"
 msgstr "Accepter"
@@ -375,6 +381,12 @@ msgstr "Appliquer le lien"
 
 msgid "Approvals"
 msgstr "Approbations"
+
+msgid "AQL"
+msgstr ""
+
+msgid "AQL {aql} · Lvl {level} · {severity}"
+msgstr ""
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Êtes-vous sûr de vouloir supprimer cette clé d'accès ? Vous ne pourrez plus l'utiliser pour vous connecter."
@@ -1145,6 +1157,9 @@ msgstr "Terminez la configuration de votre compte"
 msgid "Finish with material unpicked?"
 msgstr "Terminer avec du matériel non prélevé?"
 
+msgid "First"
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "Première échéance {0}"
@@ -1854,6 +1869,9 @@ msgstr "Aucun poste de travail n'existe"
 msgid "None"
 msgstr "Aucun"
 
+msgid "Normal"
+msgstr ""
+
 msgid "Not scheduled"
 msgstr "Non planifié"
 
@@ -2021,6 +2039,9 @@ msgstr "Conforme"
 msgid "Pass all empty cells of {0}"
 msgstr "Marquer toutes les cellules vides de {0} comme conformes"
 
+msgid "Passed"
+msgstr ""
+
 msgid "Passed inspection"
 msgstr "Contrôle réussi"
 
@@ -2057,6 +2078,9 @@ msgstr "Mettre la maintenance en pause"
 
 msgid "Pending"
 msgstr "En attente"
+
+msgid "Percentage"
+msgstr ""
 
 msgid "Phone"
 msgstr "Téléphone"
@@ -2259,6 +2283,9 @@ msgstr "File d'attente vide"
 msgid "Quotes"
 msgstr "Devis"
 
+msgid "Re"
+msgstr ""
+
 msgid "Reason"
 msgstr "Motif"
 
@@ -2317,6 +2344,9 @@ msgstr "Sections de l'enregistrement"
 
 msgid "Recorded"
 msgstr "Enregistré"
+
+msgid "Reduced"
+msgstr ""
 
 msgid "Reference image"
 msgstr "Image de référence"
@@ -3061,6 +3091,9 @@ msgstr "Miniature"
 
 msgid "Tick the jobs this was done for."
 msgstr "Cochez les ordres de fabrication pour lesquels c'est effectué."
+
+msgid "Tightened"
+msgstr ""
 
 msgid "Tighter or roomier layout. The text stays put."
 msgstr "Disposition plus serrée ou plus spacieuse. Le texte reste à sa place."

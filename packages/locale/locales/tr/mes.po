@@ -135,6 +135,9 @@ msgstr "{columns} mevcut bir \"{target}\" ile eşleşmiyor."
 msgid "{columns} does not match an existing record."
 msgstr "{columns} mevcut bir kayıt ile eşleşmiyor."
 
+msgid "{companyName} logo"
+msgstr ""
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} / {quantity}"
 
@@ -225,6 +228,9 @@ msgstr "Bu alan hakkında"
 
 msgid "Above the upper limit"
 msgstr "Üst sınırın üzerinde"
+
+msgid "Ac"
+msgstr ""
 
 msgid "Accept"
 msgstr "Kabul Et"
@@ -375,6 +381,12 @@ msgstr "Bağlantıyı uygula"
 
 msgid "Approvals"
 msgstr "Onaylar"
+
+msgid "AQL"
+msgstr ""
+
+msgid "AQL {aql} · Lvl {level} · {severity}"
+msgstr ""
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Bu geçiş anahtarını silmek istediğinizden emin misiniz? Artık bununla oturum açamayacaksınız."
@@ -1145,6 +1157,9 @@ msgstr "Hesabınızı ayarlamayı tamamlayın"
 msgid "Finish with material unpicked?"
 msgstr "Malzeme seçilmeden bitir?"
 
+msgid "First"
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "İlk vade {0}"
@@ -1854,6 +1869,9 @@ msgstr "Çalışma merkezi bulunmamaktadır"
 msgid "None"
 msgstr "Hiçbiri"
 
+msgid "Normal"
+msgstr ""
+
 msgid "Not scheduled"
 msgstr "Planlanmamış"
 
@@ -2021,6 +2039,9 @@ msgstr "Uygun"
 msgid "Pass all empty cells of {0}"
 msgstr "{0} için tüm boş hücreleri uygun olarak işaretle"
 
+msgid "Passed"
+msgstr ""
+
 msgid "Passed inspection"
 msgstr "Muayeneden geçti"
 
@@ -2057,6 +2078,9 @@ msgstr "Bakımı duraklat"
 
 msgid "Pending"
 msgstr "Beklemede"
+
+msgid "Percentage"
+msgstr ""
 
 msgid "Phone"
 msgstr "Telefon"
@@ -2259,6 +2283,9 @@ msgstr "Kuyruk boş"
 msgid "Quotes"
 msgstr "Teklifler"
 
+msgid "Re"
+msgstr ""
+
 msgid "Reason"
 msgstr "Neden"
 
@@ -2317,6 +2344,9 @@ msgstr "Kayıt bölümleri"
 
 msgid "Recorded"
 msgstr "Kaydedildi"
+
+msgid "Reduced"
+msgstr ""
 
 msgid "Reference image"
 msgstr "Referans görseli"
@@ -3061,6 +3091,9 @@ msgstr "Küçük Resim"
 
 msgid "Tick the jobs this was done for."
 msgstr "Bunun için yapılan iş emirlerini işaretleyin."
+
+msgid "Tightened"
+msgstr ""
 
 msgid "Tighter or roomier layout. The text stays put."
 msgstr "Daha sıkı veya daha geniş yerleşim. Metin yerinde kalır."

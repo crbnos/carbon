@@ -286,6 +286,7 @@ import {
 import {
   BATCH_PROPERTY_COLUMN_PREFIX,
   type BatchPropertyColumn,
+  type BatchPropertyDataType,
   batchPropertyColumns,
   batchPropertyFilter,
   batchPropertyValue,
@@ -1380,7 +1381,9 @@ async function lineSerialProperties(
 
 /**
  * Sets the batch properties of every serial on a receipt line. Each unit's
- * previous property values are replaced; its other attributes stay.
+ * previous property values are replaced; its other attributes stay. The
+ * values live on the units, so a line with no serial yet is refused
+ * (`noUnits`), as is a line that is not serial-tracked (`notSerial`).
  */
 export async function saveReceiptSerialProperties(
   db: Kysely<KyselyDatabase>,
@@ -1391,7 +1394,10 @@ export async function saveReceiptSerialProperties(
     itemId: string;
     properties: Record<string, unknown>;
   }
-): Promise<{ ok: true } | { ok: false; reason: "notFound" | "locked" }> {
+): Promise<
+  | { ok: true }
+  | { ok: false; reason: "notFound" | "locked" | "notSerial" | "noUnits" }
+> {
   const { companyId, receiptId, receiptLineId, itemId } = args;
   return db.transaction().execute(async (trx) => {
     await lockReceiptLine(trx, companyId, receiptLineId);
@@ -1401,8 +1407,24 @@ export async function saveReceiptSerialProperties(
       .where("id", "=", receiptId)
       .where("companyId", "=", companyId)
       .executeTakeFirst();
-    if (!receipt) return { ok: false, reason: "notFound" };
+    const line = await trx
+      .selectFrom("receiptLine")
+      .select("requiresSerialTracking")
+      .where("id", "=", receiptLineId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!receipt || !line) return { ok: false, reason: "notFound" };
     if (receipt.status !== "Draft") return { ok: false, reason: "locked" };
+    if (!line.requiresSerialTracking) return { ok: false, reason: "notSerial" };
+
+    const unit = await trx
+      .selectFrom("trackedEntity")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where(sql<string>`attributes->>'Receipt Line'`, "=", receiptLineId)
+      .limit(1)
+      .executeTakeFirst();
+    if (!unit) return { ok: false, reason: "noUnits" };
 
     const properties = await itemBatchProperties(
       trx,
@@ -2296,11 +2318,19 @@ export async function getBatchPropertyColumns(
   | { data: BatchPropertyColumn[]; error: null }
   | { data: null; error: PostgrestError }
 > {
-  const properties = await client
-    .from("batchProperty")
-    .select("id, itemId, label, dataType, listOptions")
-    .eq("companyId", companyId)
-    .order("sortOrder");
+  // Every item's properties, past PostgREST's 1,000-row cap.
+  const properties = await fetchAllFromTable<{
+    id: string;
+    itemId: string;
+    label: string;
+    dataType: BatchPropertyDataType;
+    listOptions: string[] | null;
+  }>(
+    client,
+    "batchProperty",
+    "id, itemId, label, dataType, listOptions",
+    (query) => query.eq("companyId", companyId).order("sortOrder").order("id")
+  );
   if (properties.error) return { data: null, error: properties.error };
   return { data: batchPropertyColumns(properties.data), error: null };
 }

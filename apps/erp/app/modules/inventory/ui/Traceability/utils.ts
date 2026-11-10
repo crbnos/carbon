@@ -15,7 +15,7 @@ import type {
 import type { ClusterResult, EntityCluster } from "./cluster";
 import { clusterEntities, DEFAULT_CLUSTER_THRESHOLD, edgeKey } from "./cluster";
 import { NODE_SIZE } from "./constants";
-import { isInspectionActivity, isMovementActivity } from "./metadata";
+import { isInspectActivity, isMovementActivity } from "./metadata";
 
 export type EntityNodeData = {
   kind: "entity";
@@ -98,9 +98,7 @@ export function normalizeInspectionLinks<T extends LineagePayload>(
   payload: T
 ): T {
   const inspectionIds = new Set(
-    payload.activities
-      .filter((a) => isInspectionActivity(a.type))
-      .map((a) => a.id)
+    payload.activities.filter((a) => isInspectActivity(a.type)).map((a) => a.id)
   );
   if (inspectionIds.size === 0) return payload;
   const quantityById = new Map(
@@ -122,7 +120,7 @@ export function normalizeInspectionLinks<T extends LineagePayload>(
 
 /** A move or an inspection passes the unit through; anything else consumes it. */
 function inputEdgeKind(type: string | null | undefined): "movement" | "input" {
-  return isMovementActivity(type) || isInspectionActivity(type)
+  return isMovementActivity(type) || isInspectActivity(type)
     ? "movement"
     : "input";
 }
@@ -310,7 +308,7 @@ export function payloadToFlow(
         activityId,
         type: activity?.type ?? null,
         movement: isMovementActivity(activity?.type),
-        inspection: isInspectionActivity(activity?.type),
+        inspection: isInspectActivity(activity?.type),
         createdAt: (activity?.createdAt as string | undefined) ?? "",
         inQty: null,
         outQty: null,

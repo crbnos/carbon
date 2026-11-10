@@ -152,7 +152,7 @@ const INSPECTION_CLOSED_STATUSES = [
   "Cancelled"
 ] as const;
 
-function isInspectionClosed(status: string): boolean {
+export function isInspectionClosed(status: string): boolean {
   return (INSPECTION_CLOSED_STATUSES as readonly string[]).includes(status);
 }
 
@@ -196,6 +196,51 @@ async function assertSampleNotLinked(
     throw new Error(
       "Sample is locked: its unit was already completed from this verdict"
     );
+  }
+}
+
+// A serial sample of a lot that holds stock must be one of the lot's units: a
+// manual lot's listed entities, a receipt lot's receipt line. Its verdict
+// flips the entity, so a foreign serial would be released or rejected by a lot
+// that never held it.
+async function assertSampleEntityInLot(
+  trx: Transaction<KyselyDatabase>,
+  companyId: string,
+  inspection: {
+    id: string;
+    sourceDocument: string;
+    sourceDocumentLineId: string | null;
+  },
+  trackedEntityId: string
+): Promise<void> {
+  let member: { id: string } | undefined;
+  if (inspection.sourceDocument === "Manual") {
+    member = await trx
+      .selectFrom("inspectionTrackedEntity")
+      .select(["id"])
+      .where("inspectionId", "=", inspection.id)
+      .where("trackedEntityId", "=", trackedEntityId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+  } else if (inspection.sourceDocument === "Receipt") {
+    member = inspection.sourceDocumentLineId
+      ? await trx
+          .selectFrom("trackedEntity")
+          .select(["id"])
+          .where("id", "=", trackedEntityId)
+          .where(
+            sql<string>`attributes ->> 'Receipt Line'`,
+            "=",
+            inspection.sourceDocumentLineId
+          )
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      : undefined;
+  } else {
+    return;
+  }
+  if (!member) {
+    throw new Error("This tracked entity is not part of the inspection");
   }
 }
 
@@ -313,11 +358,20 @@ export async function upsertInspectionSample(
 
   try {
     const result = await db.transaction().execute(async (trx) => {
+      // Locked so a cancel or disposition committing meanwhile is seen here,
+      // not overwritten by the status recomputed below.
       const inspection = await trx
         .selectFrom("inspection")
-        .select(["id", "status", "sourceDocument", "sourceDocumentId"])
+        .select([
+          "id",
+          "status",
+          "sourceDocument",
+          "sourceDocumentId",
+          "sourceDocumentLineId"
+        ])
         .where("id", "=", sample.inspectionId)
         .where("companyId", "=", sample.companyId)
+        .forNoKeyUpdate()
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
       if (isInspectionClosed(inspection.status)) {
@@ -331,17 +385,13 @@ export async function upsertInspectionSample(
       // (idempotent re-toggle of the "Overall result" cell), otherwise each call
       // is a fresh anonymous sample.
       const trackedEntityId = sample.trackedEntityId || null;
-      if (trackedEntityId && inspection.sourceDocument === "Manual") {
-        const member = await trx
-          .selectFrom("inspectionTrackedEntity")
-          .select(["id"])
-          .where("inspectionId", "=", sample.inspectionId)
-          .where("trackedEntityId", "=", trackedEntityId)
-          .where("companyId", "=", sample.companyId)
-          .executeTakeFirst();
-        if (!member) {
-          throw new Error("This tracked entity is not part of the inspection");
-        }
+      if (trackedEntityId) {
+        await assertSampleEntityInLot(
+          trx,
+          sample.companyId,
+          inspection,
+          trackedEntityId
+        );
       }
       let existing: { id: string } | undefined;
       if (trackedEntityId) {
@@ -419,28 +469,25 @@ export async function upsertInspectionSample(
         });
       }
 
-      const isTerminal =
-        inspection.status === "Passed" ||
-        inspection.status === "Failed" ||
-        inspection.status === "Partial";
-      if (!isTerminal) {
-        const samples = await trx
-          .selectFrom("inspectionSample")
-          .select(["status"])
-          .where("inspectionId", "=", sample.inspectionId)
+      const samples = await trx
+        .selectFrom("inspectionSample")
+        .select(["status"])
+        .where("inspectionId", "=", sample.inspectionId)
+        .where("companyId", "=", sample.companyId)
+        .execute();
+      const nextStatus = computeLotStatus(samples);
+      if (nextStatus !== inspection.status) {
+        await trx
+          .updateTable("inspection")
+          .set({
+            status: nextStatus,
+            updatedBy: sample.inspectedBy,
+            updatedAt: nowIso
+          })
+          .where("id", "=", sample.inspectionId)
+          .where("companyId", "=", sample.companyId)
+          .where("status", "not in", [...INSPECTION_CLOSED_STATUSES])
           .execute();
-        const nextStatus = computeLotStatus(samples);
-        if (nextStatus !== inspection.status) {
-          await trx
-            .updateTable("inspection")
-            .set({
-              status: nextStatus,
-              updatedBy: sample.inspectedBy,
-              updatedAt: nowIso
-            })
-            .where("id", "=", sample.inspectionId)
-            .execute();
-        }
       }
 
       return { id: sampleId };
@@ -525,6 +572,10 @@ export async function dispositionInspection(
         ])
         .where("id", "=", args.id)
         .where("companyId", "=", args.companyId)
+        // The lot is locked before its entities, as a cancel locks them, so the
+        // two never deadlock; a second disposition or a cancel waits here and
+        // then reads the status the first one committed.
+        .forUpdate()
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
       if (inspection.status === "Cancelled") {
@@ -541,7 +592,12 @@ export async function dispositionInspection(
           `This disposition is only available for ${allowedSources.join(" and ")} inspections`
         );
       }
-      if (args.requireOpen && isInspectionClosed(inspection.status)) {
+      // Only a receipt lot is dispositioned again (the write-off retry); a
+      // manual lot's verdict is final.
+      if (
+        (args.requireOpen || inspection.sourceDocument === "Manual") &&
+        isInspectionClosed(inspection.status)
+      ) {
         throw new Error("Inspection is already dispositioned");
       }
       await assertReceiptNotVoided(trx, args.companyId, inspection);
@@ -702,12 +758,52 @@ export async function dispositionInspection(
           break;
       }
 
+      // A unit another open lot holds (a re-inspection opened after this lot
+      // first closed) is that lot's to release or reject.
       if (flipStatus && idsToFlip.length > 0) {
         await trx
           .updateTable("trackedEntity")
           .set({ status: flipStatus })
           .where("id", "in", idsToFlip)
           .where("companyId", "=", args.companyId)
+          .where((eb) =>
+            eb.not(
+              eb.or([
+                eb.exists(
+                  eb
+                    .selectFrom("inspectionTrackedEntity as ite")
+                    .innerJoin("inspection as other", (join) =>
+                      join
+                        .onRef("other.id", "=", "ite.inspectionId")
+                        .onRef("other.companyId", "=", "ite.companyId")
+                    )
+                    .select("ite.id")
+                    .whereRef("ite.trackedEntityId", "=", "trackedEntity.id")
+                    .where("ite.companyId", "=", args.companyId)
+                    .where("other.id", "!=", args.id)
+                    .where("other.status", "not in", [
+                      ...INSPECTION_CLOSED_STATUSES
+                    ])
+                ),
+                eb.exists(
+                  eb
+                    .selectFrom("inspection as other")
+                    .select("other.id")
+                    .where("other.sourceDocument", "=", "Receipt")
+                    .where(
+                      "other.sourceDocumentLineId",
+                      "=",
+                      sql<string>`"trackedEntity".attributes ->> 'Receipt Line'`
+                    )
+                    .where("other.companyId", "=", args.companyId)
+                    .where("other.id", "!=", args.id)
+                    .where("other.status", "not in", [
+                      ...INSPECTION_CLOSED_STATUSES
+                    ])
+                )
+              ])
+            )
+          )
           .execute();
       }
 
@@ -745,20 +841,8 @@ export async function dispositionInspection(
         })
         .where("id", "=", args.id)
         .where("companyId", "=", args.companyId)
-        // A cancel that committed while this read the lot wins.
-        .where("status", "!=", "Cancelled")
-        // One-shot under concurrency: a second disposition blocks on the row
-        // lock, re-evaluates this predicate against the committed terminal
-        // status, matches zero rows, and throws below — the early read check
-        // alone can't see an uncommitted concurrent disposition.
-        .$if(args.requireOpen === true, (qb) =>
-          qb.where("status", "not in", [...INSPECTION_CLOSED_STATUSES])
-        )
         .returning(["id", "status"])
-        .executeTakeFirst();
-      if (!updated) {
-        throw new Error("Inspection is already dispositioned");
-      }
+        .executeTakeFirstOrThrow();
 
       await trx
         .insertInto("inspectionHistory")
@@ -819,11 +903,14 @@ export async function upsertInspectionMeasurement(
 
   try {
     const result = await db.transaction().execute(async (trx) => {
+      // Locked so a cancel or disposition committing meanwhile is seen here,
+      // not overwritten by the status recomputed below.
       const inspection = await trx
         .selectFrom("inspection")
         .select(["id", "status", "sourceDocument", "sourceDocumentId"])
         .where("id", "=", args.inspectionId)
         .where("companyId", "=", args.companyId)
+        .forNoKeyUpdate()
         .executeTakeFirst();
       if (!inspection) throw new Error("Inspection not found");
       if (isInspectionClosed(inspection.status)) {
@@ -995,27 +1082,25 @@ export async function upsertInspectionMeasurement(
         }
       }
 
-      // Passed/Failed already threw above, so Partial is the only terminal
-      // status left to guard against.
-      const isTerminal = inspection.status === "Partial";
-      if (!isTerminal) {
-        const samples = await trx
-          .selectFrom("inspectionSample")
-          .select(["status"])
-          .where("inspectionId", "=", args.inspectionId)
+      const samples = await trx
+        .selectFrom("inspectionSample")
+        .select(["status"])
+        .where("inspectionId", "=", args.inspectionId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      const nextStatus = computeLotStatus(samples);
+      if (nextStatus !== inspection.status) {
+        await trx
+          .updateTable("inspection")
+          .set({
+            status: nextStatus,
+            updatedBy: args.userId,
+            updatedAt: nowIso
+          })
+          .where("id", "=", args.inspectionId)
+          .where("companyId", "=", args.companyId)
+          .where("status", "not in", [...INSPECTION_CLOSED_STATUSES])
           .execute();
-        const nextStatus = computeLotStatus(samples);
-        if (nextStatus !== inspection.status) {
-          await trx
-            .updateTable("inspection")
-            .set({
-              status: nextStatus,
-              updatedBy: args.userId,
-              updatedAt: nowIso
-            })
-            .where("id", "=", args.inspectionId)
-            .execute();
-        }
       }
 
       return {
@@ -1606,11 +1691,17 @@ export async function createManualInspection(
       if (args.inspectionDocumentId) {
         const document = await trx
           .selectFrom("inspectionDocument")
-          .select(["id"])
+          .select(["id", "partId", "status"])
           .where("id", "=", args.inspectionDocumentId)
           .where("companyId", "=", args.companyId)
           .executeTakeFirst();
         if (!document) throw new Error("Inspection plan not found");
+        if (document.partId !== itemId) {
+          throw new Error("This inspection plan is not for this item");
+        }
+        if (document.status !== "Active") {
+          throw new Error("Only an active inspection plan can be used");
+        }
       }
 
       if (args.assignee) {

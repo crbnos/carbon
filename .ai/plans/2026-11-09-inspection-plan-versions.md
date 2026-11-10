@@ -59,4 +59,4 @@ are, not by name as procedures are.
 - [x] Docs: `inspection-system.md`, quality `AGENTS.md`.
 - [x] Verify: scoped typecheck (erp, mes, database, jobs), biome, tests,
       `db:check:datasets`, `db:check:backups`.
-- [ ] Translate the new strings and commit (at commit time).
+- [x] Translate the new strings and commit (at commit time).

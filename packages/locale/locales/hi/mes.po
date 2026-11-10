@@ -135,6 +135,9 @@ msgstr "{columns} एक मौजूदा «{target}» से मेल नह
 msgid "{columns} does not match an existing record."
 msgstr "{columns} एक मौजूदा रिकॉर्ड से मेल नहीं खाता है।"
 
+msgid "{companyName} logo"
+msgstr ""
+
 msgid "{completed} of {quantity}"
 msgstr "{quantity} में से {completed}"
 
@@ -225,6 +228,9 @@ msgstr "इस फ़ील्ड के बारे में"
 
 msgid "Above the upper limit"
 msgstr "ऊपरी सीमा से अधिक"
+
+msgid "Ac"
+msgstr ""
 
 msgid "Accept"
 msgstr "स्वीकार करें"
@@ -375,6 +381,12 @@ msgstr "लिंक लागू करें"
 
 msgid "Approvals"
 msgstr "अनुमोदन"
+
+msgid "AQL"
+msgstr ""
+
+msgid "AQL {aql} · Lvl {level} · {severity}"
+msgstr ""
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "क्या आप निश्चित हैं कि आप इस पासकी को हटाना चाहते हैं? आप इसे साइन इन करने के लिए उपयोग नहीं कर पाएंगे।"
@@ -1145,6 +1157,9 @@ msgstr "अपना खाता सेट अप करना पूर्ण 
 msgid "Finish with material unpicked?"
 msgstr "सामग्री बिना चुने समाप्त करें?"
 
+msgid "First"
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "पहली देय {0}"
@@ -1854,6 +1869,9 @@ msgstr "कोई वर्क सेंटर मौजूद नहीं ह�
 msgid "None"
 msgstr "कोई नहीं"
 
+msgid "Normal"
+msgstr ""
+
 msgid "Not scheduled"
 msgstr "निर्धारित नहीं"
 
@@ -2021,6 +2039,9 @@ msgstr "उत्तीर्ण"
 msgid "Pass all empty cells of {0}"
 msgstr "{0} के सभी खाली सेल को उत्तीर्ण चिह्नित करें"
 
+msgid "Passed"
+msgstr ""
+
 msgid "Passed inspection"
 msgstr "निरीक्षण उत्तीर्ण"
 
@@ -2057,6 +2078,9 @@ msgstr "रखरखाव रोकें"
 
 msgid "Pending"
 msgstr "लंबित"
+
+msgid "Percentage"
+msgstr ""
 
 msgid "Phone"
 msgstr "फोन"
@@ -2259,6 +2283,9 @@ msgstr "कतार खाली"
 msgid "Quotes"
 msgstr "कोटेशन"
 
+msgid "Re"
+msgstr ""
+
 msgid "Reason"
 msgstr "कारण"
 
@@ -2317,6 +2344,9 @@ msgstr "रिकॉर्ड खंड"
 
 msgid "Recorded"
 msgstr "रिकॉर्ड किया गया"
+
+msgid "Reduced"
+msgstr ""
 
 msgid "Reference image"
 msgstr "संदर्भ छवि"
@@ -3061,6 +3091,9 @@ msgstr "थंबनेल"
 
 msgid "Tick the jobs this was done for."
 msgstr "उन जॉब्स को चेक करें जिनके लिए यह किया गया था।"
+
+msgid "Tightened"
+msgstr ""
 
 msgid "Tighter or roomier layout. The text stays put."
 msgstr "कसा हुआ या अधिक विशाल लेआउट। पाठ जगह में रहता है।"

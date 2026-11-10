@@ -7019,9 +7019,6 @@ msgstr "点击或拖动以替换"
 msgid "Click to rename"
 msgstr "单击以重命名"
 
-msgid "Click to upload a PDF drawing"
-msgstr "点击上传 PDF 图纸"
-
 msgid "CLIN"
 msgstr "CLIN"
 
@@ -15233,6 +15230,9 @@ msgstr "检查前N个"
 msgid "Inspect Item"
 msgstr "检查项目"
 
+msgid "Inspected by"
+msgstr ""
+
 msgid "Inspecting an item you received shows a warning."
 msgstr "检查您收到的物料会显示警告。"
 
@@ -23062,6 +23062,9 @@ msgstr "公开"
 msgid "Publish"
 msgstr "发布"
 
+msgid "Publish once your changes are saved."
+msgstr ""
+
 msgid "Publish Training"
 msgstr "发布培训"
 
@@ -27925,6 +27928,12 @@ msgstr "最早优先排序"
 
 msgid "Sort latest first"
 msgstr "最新优先排序"
+
+msgid "Sorted by activity date, newest first"
+msgstr ""
+
+msgid "Sorted by activity date, oldest first"
+msgstr ""
 
 msgid "Source"
 msgstr "来源"

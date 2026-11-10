@@ -250,16 +250,22 @@ references).
   `itemInspectionDocumentAssignment` and `methodOperation.inspectionDocumentId`
   from the other versions to it. Job operations, quote operations and lots keep
   their version. An Archived version is reactivated the same way.
-- **Lock** — only a Draft is editable. `inspectionDocumentLockRefusal`
-  refuses `saveInspectionDocument`, `setInspectionDocumentName`,
-  `attachInspectionDocumentModel`, `updateInspectionDocumentSampling`,
-  `saveInspectionDocumentAtomic` and an `upsertInspectionDocument` update on an
-  Active or Archived version. A lot reads its plan live, so a locked version
-  is what keeps a lot's characteristics fixed.
+- **Lock** — only a Draft is editable. The lock is part of each write: the
+  name, work instruction, model, sampling and `upsertInspectionDocument`
+  updates carry `status = 'Draft'` in the UPDATE, and a write that changes no
+  row is refused by `inspectionDocumentWriteRefusal`;
+  `replaceInspectionDocumentParameters` reads the status under its row lock.
+  `save_inspection_document_atomic` (characteristics and balloons) still relies
+  on `inspectionDocumentLockRefusal` read just before it. A lot reads its plan
+  live, so a locked version is what keeps a lot's characteristics fixed. The
+  editor disables every edit on a locked version (grids, drawing drags, the
+  Sampling cell, annotation actions) and Publish while a change is unsaved.
 - **Delete** — `deleteInspectionDocument` (Kysely; operation `delete: quality`)
-  makes the lowest remaining version the root when it deletes the root, and
-  returns the drawing path only when no other version holds the file, so the
-  operation never removes a PDF another version shows.
+  refuses a version any `inspection` used: its characteristics cascade to the
+  lots' measurements. Otherwise it makes the lowest remaining version the root
+  when it deletes the root, and returns the drawing path only when no other
+  version holds the file, so the operation never removes a PDF another version
+  shows.
 - **Screens** — the editor shows a `V{n}` version menu (versions with status,
   New Version) beside the title, Publish (Draft) or Reactivate (Archived) next
   to it, and the status badge for Active / Archived. A locked version hides the
@@ -465,8 +471,8 @@ Mechanics (in order, per POST):
    make-method entities; quantities clamped to the **op-column remaining** =
    `target − complete − scrapped − reworked`, so escape-hatch menu postings are
    never double-counted; serial divergence blocks with an error).
-2. `dispositionInspection({ requireOpen: true })` closes the lot FIRST — the
-   one-shot status UPDATE is the serialization point; a concurrent second POST
+2. `dispositionInspection({ requireOpen: true })` closes the lot FIRST — its
+   locked first read is the serialization point; a concurrent second POST
    dies before any posting can re-run (a re-POST can never re-clone the rework
    path).
 3. Postings, each carrying provenance links (`productionQuantity.inspectionId`
@@ -510,16 +516,21 @@ stock to its shelf either).
   lot size = serial count or the batches' summed quantity; sampling from the
   chosen plan via the shared `resolveLotSamplingPlans` / `insertLotSamplingPlans`
   (also used by `getOrCreateJobOperationInspection`); `Available` entities flip to
-  `On Hold`. **The picked serials are the samples**: a serial lot gets one Pending
+  `On Hold`. The plan must be an Active version of the item's own plans (the
+  drawer lists only those). **The picked serials are the samples**: a serial lot gets one Pending
   `inspectionSample` per entity at creation (serial order, each `createdAt` a
   microsecond apart so the grid keeps it), so nothing is scanned — the ERP view's
   `scansSamples` is false for Manual lots (no Add Sample, no auto-opened scanner) and
-  the MES manual view has no scanner. Receipt and Job Operation lots still scan their
+  the MES lot view opens no scanner for one. Receipt and Job Operation lots still scan their
   samples in. A batch lot keeps the grid's anonymous columns.
 - **Engine** — `holdsLotEntities(sourceDocument)` (Receipt or Manual) gates the
   sample / measurement entity flips; `dispositionInspection` reads a manual lot's
-  entities from `inspectionTrackedEntity`; a serial sample on a manual lot must
-  be one of its entities. `requireSource` takes one source or a list: the ERP
+  entities from `inspectionTrackedEntity`; a serial sample must be one of the
+  lot's units (`assertSampleEntityInLot`: a manual lot's entities, a receipt
+  lot's receipt line). A closed manual lot is never dispositioned again, and a
+  re-disposition of a receipt lot leaves alone the units another open lot holds.
+  Sample and measurement saves lock the lot first and never write over a closed
+  status, so a save that waited on a Cancel or a disposition is refused. `requireSource` takes one source or a list: the ERP
   Accept / Partial routes and `rejectInspection` pass `["Receipt", "Manual"]`.
   No write-off: a manual lot is always tracked. `rejectInspection` opens the NCR
   for a manual lot with the lot's own entities and no supplier or receipt line.
@@ -556,7 +567,10 @@ stock to its shelf either).
   in `MES_POSTINGS`), which runs the ERP's own `rejectInspection` operation
   (`apps/erp/app/modules/postings.server.ts`), so the write-off of an untracked
   Inventory item and the optional NCR ("Open an NCR for MRB disposition", on by
-  default) are the ERP's code (`x+/inspection-lot.$id.verdict.tsx`).
+  default) are the ERP's code (`x+/inspection-lot.$id.verdict.tsx`). Both
+  are one-shot: Accept passes `requireOpen`, and Reject sends `requireOpen` in
+  the posting (an optional field of `rejectInspectionInput`; the ERP's own
+  Reject leaves it off to keep its write-off retry).
 - **No timer.** Only production work is clocked: a job-operation lot's time is
   a `productionEvent` on its operation, costed and corrected like any other.
   A receipt or manual lot has no clock, no time record and no labor posting.
@@ -700,7 +714,8 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
     linked to it once, as an input at the unit's quantity and with no output
     (nothing is consumed or made). The unit's status carries the result. The
     traceability graph draws an inspection as one dashed edge per unit with no
-    new state (`isInspectionActivity`, `metadata.ts`), and
+    new state (`isInspectActivity`, `metadata.ts`: the exact type `Inspect`, never a
+    substring, so a production operation named "Final Inspection" keeps its output), and
     `normalizeInspectionLinks` (`utils.ts`) reads older inspections, stored as
     zero-quantity input + output self-loops, the same way. The `$id.sample.tsx` route returns the `sampleId` and,
     when `quiet=true` (grid overall-result POST), suppresses the success flash.
@@ -725,13 +740,13 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
     partially-inspected Pending samples included); Reject flips all lot entities to
     Rejected (and for a non-tracked Inventory item posts an `itemLedger` `Inbound Inspection`
     negative adjustment); Partial leaves entities; always writes `inspectionHistory`.
-    Optional **`requireOpen`** (one-shot mode, MES disposition route only): the
-    status UPDATE gains `WHERE status NOT IN (Passed,Failed,Partial)` and the
-    call throws "Inspection is already dispositioned" on zero rows — concurrency
-    safe because a second transaction blocks on the row lock, re-evaluates the
-    predicate against the committed terminal status, and matches nothing. ERP
-    receipt lots do NOT pass it, preserving re-disposition (write-off retry)
-    semantics.
+    The lot is read `FOR UPDATE` first, before any entity, so a disposition and
+    a Cancel take the same lock in the same order. Optional **`requireOpen`**
+    (one-shot mode: the MES disposition and verdict routes) throws "Inspection is
+    already dispositioned" when that locked read finds a closed lot — a second
+    transaction waits on the lock and then sees the committed terminal status.
+    ERP receipt lots do NOT pass it, preserving re-disposition (write-off retry)
+    semantics; a closed manual lot is refused either way.
   - NCR auto-creation lives in the **`rejectInspection` operation** (`quality.server.ts`,
     called by `x+/inspection+/$id.reject.tsx`), optional via `createNcr`, linking through `nonConformanceInspection`; the description
     includes the `reason` and a "Failed features" block built from the lot's measurements,

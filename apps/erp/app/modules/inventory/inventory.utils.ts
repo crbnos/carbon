@@ -487,6 +487,15 @@ export function batchPropertyValue(
   return property ? attributes[property.id] : undefined;
 }
 
+/** A row's CSV value for a property column: the value as text, or empty. */
+export function batchPropertyExportValue(
+  column: BatchPropertyColumn,
+  row: { itemId: string | null; attributes: unknown }
+): string | null {
+  const value = batchPropertyValue(column, row);
+  return value === undefined || value === null ? null : String(value);
+}
+
 /** A filter value quoted for a PostgREST `or` / `and` list. */
 function postgrestValue(value: string) {
   return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;

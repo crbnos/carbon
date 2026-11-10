@@ -25,6 +25,7 @@ import { NotificationEvent } from "@carbon/notifications";
 import {
   async,
   datetime,
+  NOT_APPLIED_CODE,
   pick,
   pluckUnique,
   requireAffected,
@@ -1418,6 +1419,8 @@ export const cancelManualInspection = defineServiceFn({
  * @param reason - Why the lot is rejected. Required when no characteristic
  * reached its rejection number and no sample failed (a suspected counterfeit,
  * the wrong part, transit damage); stored as the lot's notes.
+ * @param requireOpen - Refuse a lot that is already dispositioned. Left off,
+ * rejecting a rejected lot again retries its write-off.
  *
  * @mcp
  */
@@ -1426,7 +1429,7 @@ export const rejectInspection = defineServiceFn({
   input: rejectInspectionInput,
   permission: { update: "quality" },
 
-  async run(ctx, { id, nonConformanceTypeId, createNcr, reason }) {
+  async run(ctx, { id, nonConformanceTypeId, createNcr, reason, requireOpen }) {
     const client = ctx.asCaller.supabase;
     const serviceRole = ctx.asSystem.supabase;
     const companyId = ctx.company.id;
@@ -1440,7 +1443,8 @@ export const rejectInspection = defineServiceFn({
       dispositionedBy: userId,
       // A Job Operation lot's reject carries its production outcome, which
       // only the shop floor posts.
-      requireSource: ["Receipt", "Manual"]
+      requireSource: ["Receipt", "Manual"],
+      requireOpen
     });
     if (rejected.error) {
       return ctx.error("rule", "Failed to reject lot", rejected.error);
@@ -1765,8 +1769,6 @@ export const saveInspectionDocument = defineServiceFn({
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
     const id = input.inspectionDocumentId;
-    const locked = await service.inspectionDocumentLockRefusal(ctx, id);
-    if (locked) return locked;
 
     // The drawing is read back through the private bucket, so it must be a
     // file in this company's folder (the editor sends its preview URL).
@@ -1784,6 +1786,11 @@ export const saveInspectionDocument = defineServiceFn({
         "The drawing must be a file in this company's storage"
       );
     }
+
+    // The sampling and parameter writes refuse a locked version themselves;
+    // this read is what keeps the RPC off one.
+    const locked = await service.inspectionDocumentLockRefusal(ctx, id);
+    if (locked) return locked;
 
     let features: InspectionSaveFeaturesPayload =
       input.features ?? emptyInspectionSave;
@@ -1830,6 +1837,9 @@ export const saveInspectionDocument = defineServiceFn({
         companyId,
         userId: ctx.auditUserId
       });
+      if (sampling.error?.code === NOT_APPLIED_CODE) {
+        return service.inspectionDocumentWriteRefusal(ctx, id);
+      }
       if (sampling.error) {
         return ctx.error(
           "internal",
@@ -1858,6 +1868,7 @@ export const saveInspectionDocument = defineServiceFn({
       } catch (err) {
         return ctx.error("internal", "Failed to save parameters", err);
       }
+      if (!parameters) return service.inspectionDocumentWriteRefusal(ctx, id);
     }
 
     const saved = await service.saveInspectionDocumentAtomic(client, {
@@ -1902,27 +1913,27 @@ export const setInspectionDocumentName = defineServiceFn({
   permission: { update: "quality" },
 
   async run(ctx, { id, name }) {
-    const locked = await service.inspectionDocumentLockRefusal(ctx, id);
-    if (locked) return locked;
-
-    const { error } = await requireAffected(
-      ctx.asCaller.supabase
-        .from("inspectionDocument")
-        .update({
-          name: name?.trim() || null,
-          updatedBy: ctx.auditUserId,
-          updatedAt: datetime.timestamp()
-        })
-        .eq("id", id)
-        .eq("companyId", ctx.company.id)
-        .select("id")
-    );
-    if (error) {
+    // Only a Draft version is editable.
+    const updated = await ctx.asCaller.supabase
+      .from("inspectionDocument")
+      .update({
+        name: name?.trim() || null,
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", id)
+      .eq("companyId", ctx.company.id)
+      .eq("status", "Draft")
+      .select("id");
+    if (updated.error) {
       return ctx.error(
         "internal",
         "Failed to update the inspection name",
-        error
+        updated.error
       );
+    }
+    if (updated.data.length === 0) {
+      return service.inspectionDocumentWriteRefusal(ctx, id);
     }
     return { id };
   }
@@ -1942,27 +1953,27 @@ export const setInspectionDocumentWorkInstruction = defineServiceFn({
   permission: { update: "quality" },
 
   async run(ctx, { id, workInstruction }) {
-    const locked = await service.inspectionDocumentLockRefusal(ctx, id);
-    if (locked) return locked;
-
-    const { error } = await requireAffected(
-      ctx.asCaller.supabase
-        .from("inspectionDocument")
-        .update({
-          workInstruction: workInstruction ?? null,
-          updatedBy: ctx.auditUserId,
-          updatedAt: datetime.timestamp()
-        })
-        .eq("id", id)
-        .eq("companyId", ctx.company.id)
-        .select("id")
-    );
-    if (error) {
+    // Only a Draft version is editable.
+    const updated = await ctx.asCaller.supabase
+      .from("inspectionDocument")
+      .update({
+        workInstruction: workInstruction ?? null,
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", id)
+      .eq("companyId", ctx.company.id)
+      .eq("status", "Draft")
+      .select("id");
+    if (updated.error) {
       return ctx.error(
         "internal",
         "Failed to update the work instructions",
-        error
+        updated.error
       );
+    }
+    if (updated.data.length === 0) {
+      return service.inspectionDocumentWriteRefusal(ctx, id);
     }
     return { id };
   }
@@ -1994,6 +2005,8 @@ export const attachInspectionDocumentModel = defineServiceFn({
   permission: { update: "quality" },
 
   async run(ctx, { id, modelId, path, name, size }) {
+    // Refused before the model is recorded; the plan update below refuses a
+    // version locked since.
     const locked = await service.inspectionDocumentLockRefusal(ctx, id);
     if (locked) return locked;
 
@@ -2034,22 +2047,30 @@ export const attachInspectionDocumentModel = defineServiceFn({
       return ctx.error("rule", "Failed to record the model", model.error);
     }
 
-    const { error } = await requireAffected(
-      ctx.asCaller.supabase
-        .from("inspectionDocument")
-        .update({
-          modelUploadId: modelId,
-          updatedBy: ctx.auditUserId,
-          updatedAt: datetime.timestamp()
-        })
-        .eq("id", id)
-        .eq("companyId", ctx.company.id)
-        .is("storagePath", null)
-        .is("modelUploadId", null)
-        .select("id")
-    );
-    if (error) {
-      return ctx.error("internal", "Failed to attach the model", error);
+    const updated = await ctx.asCaller.supabase
+      .from("inspectionDocument")
+      .update({
+        modelUploadId: modelId,
+        updatedBy: ctx.auditUserId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", id)
+      .eq("companyId", ctx.company.id)
+      .eq("status", "Draft")
+      .is("storagePath", null)
+      .is("modelUploadId", null)
+      .select("id");
+    if (updated.error) {
+      return ctx.error("internal", "Failed to attach the model", updated.error);
+    }
+    if (updated.data.length === 0) {
+      return (
+        (await service.inspectionDocumentLockRefusal(ctx, id)) ??
+        ctx.error(
+          "rule",
+          "This inspection plan already has a drawing or a model"
+        )
+      );
     }
     return { id, modelUploadId: modelId };
   }
@@ -4319,17 +4340,15 @@ export const upsertInspectionDocument = defineServiceFn({
   }),
   permission: { create: "quality", update: "quality" },
   async run(ctx, input) {
-    if (input.id) {
-      const locked = await service.inspectionDocumentLockRefusal(ctx, input.id);
-      if (locked) return locked;
-    }
-    return unwrap(
-      ctx,
-      await service.upsertInspectionDocument(
-        ctx.asCaller.supabase,
-        payload(ctx, input).forUpsert() as never
-      )
+    const upserted = await service.upsertInspectionDocument(
+      ctx.asCaller.supabase,
+      payload(ctx, input).forUpsert() as never
     );
+    // The update matches only a Draft version.
+    if (input.id && !upserted.error && !upserted.data) {
+      return service.inspectionDocumentWriteRefusal(ctx, input.id);
+    }
+    return unwrap(ctx, upserted);
   }
 });
 
@@ -4337,6 +4356,8 @@ export const upsertInspectionDocument = defineServiceFn({
  * Delete one version of an inspection plan.
  *
  * @remarks
+ * Refused when a lot was inspected against the version: publishing a new
+ * version archives it instead.
  * Deleting the first version makes its lowest remaining version the plan's
  * first, so the other versions stay one plan. The drawing file is removed
  * only when no other version holds it.
@@ -4355,11 +4376,12 @@ export const deleteInspectionDocument = defineServiceFn({
         ctx.company.id
       );
     } catch (err) {
-      return ctx.error("rule", "Failed to delete inspection plan", err);
+      return ctx.error("internal", "Failed to delete inspection plan", err);
     }
     if (!deleted) {
       return ctx.error("notFound", "Inspection plan not found");
     }
+    if ("refused" in deleted) return ctx.error("rule", deleted.refused);
     if (deleted.storagePath) {
       const removed = await storage(ctx.asSystem.supabase)
         .company(ctx.company.id)
@@ -4558,19 +4580,18 @@ export const updateInspectionDocumentSampling = defineServiceFn({
   }),
   permission: { update: "quality" },
   async run(ctx, input) {
-    const locked = await service.inspectionDocumentLockRefusal(
-      ctx,
-      input.inspectionDocumentId
+    const updated = await service.updateInspectionDocumentSampling(
+      ctx.asCaller.supabase,
+      payload(ctx, input).withUser().forUpdate() as never
     );
-    if (locked) return locked;
-
-    return unwrap(
-      ctx,
-      await service.updateInspectionDocumentSampling(
-        ctx.asCaller.supabase,
-        payload(ctx, input).withUser().forUpdate() as never
-      )
-    );
+    // The update matches only a Draft version.
+    if (updated.error?.code === NOT_APPLIED_CODE) {
+      return service.inspectionDocumentWriteRefusal(
+        ctx,
+        input.inspectionDocumentId
+      );
+    }
+    return unwrap(ctx, updated);
   }
 });
 

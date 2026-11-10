@@ -6,7 +6,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { dispositionInspection } from "@carbon/database/quality";
+import {
+  dispositionInspection,
+  isInspectionClosed
+} from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
@@ -19,9 +22,9 @@ import { path } from "~/utils/path";
 
 const logger = getLogger("mes", "inspection-verdict");
 
-// Accept or Reject a receipt or manual inspection. Accept releases the lot's
-// tracked entities in the engine, one-shot like every MES disposition. Reject
-// is the ERP's own Reject Lot, sent as the `reject-inspection` posting: it
+// Accept or Reject a receipt or manual inspection, each one-shot like every
+// MES disposition. Accept releases the lot's tracked entities in the engine.
+// Reject is the ERP's own Reject Lot, sent as the `reject-inspection` posting: it
 // also writes off an untracked Inventory item and opens the NCR, which are
 // ERP code. Neither carries a production posting.
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -53,6 +56,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
       requireOpen: true
     });
     if (result.error) {
+      logger.error("Failed to accept inspection", {
+        companyId,
+        inspectionId: id,
+        error: result.error
+      });
       throw redirect(
         back,
         await flash(request, error(result.error, "Failed to accept inspection"))
@@ -64,10 +72,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // The posting refuses a decided lot too; reading it first tells the
+  // inspector so instead of reporting a failed write-off.
+  const before = await getCarbonServiceRole()
+    .from("inspection")
+    .select("status")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (before.data && isInspectionClosed(before.data.status)) {
+    throw redirect(
+      back,
+      await flash(request, error(null, "This inspection was already decided"))
+    );
+  }
+
   const rejected = await erpPosting(
     "reject-inspection",
     { companyId, userId, client },
-    { id, reason: reason || null, createNcr }
+    // One-shot, as Accept: a second Reject must not open a second NCR.
+    { id, reason: reason || null, createNcr, requireOpen: true }
   );
   if (rejected.error) {
     logger.error("Failed to reject inspection", {

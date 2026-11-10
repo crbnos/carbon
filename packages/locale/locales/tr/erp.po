@@ -7019,9 +7019,6 @@ msgstr "Değiştirmek için tıklayın veya sürükleyin"
 msgid "Click to rename"
 msgstr "Yeniden adlandırmak için tıklayın"
 
-msgid "Click to upload a PDF drawing"
-msgstr "PDF çizimi yüklemek için tıklayın"
-
 msgid "CLIN"
 msgstr "CLIN"
 
@@ -15233,6 +15230,9 @@ msgstr "İlk N'yi İncele"
 msgid "Inspect Item"
 msgstr "Ürünü İncele"
 
+msgid "Inspected by"
+msgstr ""
+
 msgid "Inspecting an item you received shows a warning."
 msgstr "Aldığınız bir ürünü denetleme uyarı gösterir."
 
@@ -23062,6 +23062,9 @@ msgstr "Herkese açık"
 msgid "Publish"
 msgstr "Yayınla"
 
+msgid "Publish once your changes are saved."
+msgstr ""
+
 msgid "Publish Training"
 msgstr "Eğitimi Yayınla"
 
@@ -27925,6 +27928,12 @@ msgstr "En Eskisini İlk Sırala"
 
 msgid "Sort latest first"
 msgstr "En Yenisini İlk Sırala"
+
+msgid "Sorted by activity date, newest first"
+msgstr ""
+
+msgid "Sorted by activity date, oldest first"
+msgstr ""
 
 msgid "Source"
 msgstr "Kaynak"

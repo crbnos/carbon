@@ -1043,8 +1043,10 @@ export const setReceiptLineSerial = defineServiceFn({
  * @remarks
  * `properties` is keyed by `batchProperty` id; keys that are not one of the
  * item's batch properties are ignored. Every unit on the line takes the same
- * values, and serials entered later carry them too. Only a Draft receipt's
- * serials change.
+ * values, and a serial entered later copies them from a unit already on the
+ * line. The values are stored on the units, so the line must be
+ * serial-tracked and have at least one serial number entered. Only a Draft
+ * receipt's serials change.
  *
  * @mcp
  */
@@ -1073,9 +1075,22 @@ export const setReceiptLineSerialProperties = defineServiceFn({
       return ctx.error("internal", "Failed to update tracking", error);
     }
     if (!saved.ok) {
-      return saved.reason === "notFound"
-        ? ctx.error("notFound", RECEIPT_NOT_FOUND)
-        : ctx.error("rule", RECEIPT_LOCKED);
+      switch (saved.reason) {
+        case "notFound":
+          return ctx.error("notFound", RECEIPT_NOT_FOUND);
+        case "locked":
+          return ctx.error("rule", RECEIPT_LOCKED);
+        case "notSerial":
+          return ctx.error(
+            "rule",
+            "Serial properties can only be set on a serial-tracked line"
+          );
+        case "noUnits":
+          return ctx.error(
+            "rule",
+            "Enter a serial number first. The properties are saved on the line's serials."
+          );
+      }
     }
     return { receiptLineId: input.receiptLineId };
   }

@@ -2893,13 +2893,16 @@ export async function upsertInspectionDocument(
       updatePayload.defaultPageHeight = defaultPageHeight;
     }
 
+    // Only a Draft version is editable; a locked one matches no row and
+    // comes back as no data.
     return client
       .from("inspectionDocument")
       .update(updatePayload)
       .eq("id", id)
       .eq("companyId", companyId)
+      .eq("status", "Draft")
       .select("id")
-      .single();
+      .maybeSingle();
   }
 
   if (!companyId) {
@@ -2939,17 +2942,19 @@ export async function upsertInspectionDocument(
 }
 
 /**
- * Deletes one version of an inspection plan, in one transaction. When it is
- * the first version, its lowest remaining version becomes the plan's root so
- * the others stay one plan. Returns the drawing's storage path only when no
- * other version holds the same file, so the caller never removes a PDF that
- * another version still shows.
+ * Deletes one version of an inspection plan, in one transaction. Refused
+ * (`refused`, nothing deleted) when a lot was inspected against the version:
+ * the delete would cascade to the lot's characteristics and recorded
+ * readings. When it is the first version, its lowest remaining version
+ * becomes the plan's root so the others stay one plan. Returns the drawing's
+ * storage path only when no other version holds the same file, so the caller
+ * never removes a PDF that another version still shows.
  */
 export async function deleteInspectionDocument(
   db: Kysely<KyselyDatabase>,
   id: string,
   companyId: string
-): Promise<{ storagePath: string | null } | null> {
+): Promise<{ storagePath: string | null } | { refused: string } | null> {
   return withTransaction(db, async (trx) => {
     const plan = await trx
       .selectFrom("inspectionDocument")
@@ -2959,6 +2964,22 @@ export async function deleteInspectionDocument(
       .forUpdate()
       .executeTakeFirst();
     if (!plan) return null;
+
+    // The row lock above conflicts with the key-share lock a new lot's
+    // foreign key takes, so no lot can name the version before the delete.
+    const inspected = await trx
+      .selectFrom("inspection")
+      .select("id")
+      .where("inspectionDocumentId", "=", id)
+      .where("companyId", "=", companyId)
+      .limit(1)
+      .executeTakeFirst();
+    if (inspected) {
+      return {
+        refused:
+          "This plan version has inspections, so it cannot be deleted. Publish a new version to replace it."
+      };
+    }
 
     if (plan.rootInspectionDocumentId === null) {
       const next = await trx
@@ -3045,6 +3066,23 @@ export async function inspectionDocumentLockRefusal(
     );
   }
   return null;
+}
+
+/**
+ * Why a write of plan `id` guarded on `status = 'Draft'` changed no row: the
+ * version's lock refusal, else that it changed under the caller.
+ */
+export async function inspectionDocumentWriteRefusal(
+  ctx: ServiceContext,
+  id: string
+) {
+  return (
+    (await inspectionDocumentLockRefusal(ctx, id)) ??
+    ctx.error(
+      "conflict",
+      "The inspection plan changed. Reload it and try again."
+    )
+  );
 }
 
 /**
@@ -3472,7 +3510,8 @@ export async function getInspectionDocumentParameters(
 /**
  * Make a plan's parameters exactly `parameters`, in that order: rows not sent
  * are deleted, the rest upserted by the ids the editor minted. An id that is
- * another plan's row is refused, so the whole save rolls back.
+ * another plan's row is refused, so the whole save rolls back. Returns null,
+ * writing nothing, when the plan is not a Draft.
  */
 export async function replaceInspectionDocumentParameters(
   db: Kysely<KyselyDatabase>,
@@ -3485,15 +3524,17 @@ export async function replaceInspectionDocumentParameters(
 ) {
   const { inspectionDocumentId, companyId, userId, parameters } = args;
   return withTransaction(db, async (trx) => {
-    // Locks the plan, so two saves of its parameters run one after the other.
+    // Locks the plan, so two saves of its parameters run one after the other
+    // and a publish cannot land between the status read and the writes.
     const document = await trx
       .selectFrom("inspectionDocument")
-      .select("id")
+      .select(["id", "status"])
       .where("id", "=", inspectionDocumentId)
       .where("companyId", "=", companyId)
       .forUpdate()
       .executeTakeFirst();
     if (!document) throw new Error("Inspection plan not found");
+    if (document.status !== "Draft") return null;
 
     const ids = parameters.map((p) => p.id);
     let deletion = trx
@@ -3571,6 +3612,8 @@ export async function updateInspectionDocumentSampling(
       })
       .eq("id", inspectionDocumentId)
       .eq("companyId", companyId)
+      // Only a Draft version is editable: a locked one is not applied.
+      .eq("status", "Draft")
       .select("id")
   );
 }

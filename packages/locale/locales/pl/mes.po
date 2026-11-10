@@ -135,6 +135,9 @@ msgstr "{columns} nie pasuje do istniejącego „{target}\"."
 msgid "{columns} does not match an existing record."
 msgstr "{columns} nie pasuje do istniejącego rekordu."
 
+msgid "{companyName} logo"
+msgstr ""
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} z {quantity}"
 
@@ -225,6 +228,9 @@ msgstr "O tym polu"
 
 msgid "Above the upper limit"
 msgstr "Powyżej górnej granicy"
+
+msgid "Ac"
+msgstr ""
 
 msgid "Accept"
 msgstr "Zaakceptuj"
@@ -375,6 +381,12 @@ msgstr "Zastosuj link"
 
 msgid "Approvals"
 msgstr "Zatwierdzenia"
+
+msgid "AQL"
+msgstr ""
+
+msgid "AQL {aql} · Lvl {level} · {severity}"
+msgstr ""
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Czy na pewno chcesz usunąć ten klucz dostępu? Nie będziesz już mógł go używać do logowania."
@@ -1145,6 +1157,9 @@ msgstr "Dokończ konfigurowanie swojego konta"
 msgid "Finish with material unpicked?"
 msgstr "Zakończyć bez wybranego materiału?"
 
+msgid "First"
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "Pierwszy termin {0}"
@@ -1854,6 +1869,9 @@ msgstr "Brak stanowisk roboczych"
 msgid "None"
 msgstr "Brak"
 
+msgid "Normal"
+msgstr ""
+
 msgid "Not scheduled"
 msgstr "Niezaplanowane"
 
@@ -2021,6 +2039,9 @@ msgstr "Zgodny"
 msgid "Pass all empty cells of {0}"
 msgstr "Oznacz wszystkie puste komórki {0} jako zgodne"
 
+msgid "Passed"
+msgstr ""
+
 msgid "Passed inspection"
 msgstr "Zaliczono kontrolę"
 
@@ -2057,6 +2078,9 @@ msgstr "Wstrzymaj utrzymanie ruchu"
 
 msgid "Pending"
 msgstr "Oczekujące"
+
+msgid "Percentage"
+msgstr ""
 
 msgid "Phone"
 msgstr "Telefon"
@@ -2259,6 +2283,9 @@ msgstr "Kolejka pusta"
 msgid "Quotes"
 msgstr "Oferty"
 
+msgid "Re"
+msgstr ""
+
 msgid "Reason"
 msgstr "Powód"
 
@@ -2317,6 +2344,9 @@ msgstr "Sekcje rekordu"
 
 msgid "Recorded"
 msgstr "Zaraportowano"
+
+msgid "Reduced"
+msgstr ""
 
 msgid "Reference image"
 msgstr "Obraz referencyjny"
@@ -3061,6 +3091,9 @@ msgstr "Miniatura"
 
 msgid "Tick the jobs this was done for."
 msgstr "Zaznacz zlecenia produkcyjne, dla których to zostało wykonane."
+
+msgid "Tightened"
+msgstr ""
 
 msgid "Tighter or roomier layout. The text stays put."
 msgstr "Ciasny lub bardziej przestronny układ. Tekst pozostaje na miejscu."

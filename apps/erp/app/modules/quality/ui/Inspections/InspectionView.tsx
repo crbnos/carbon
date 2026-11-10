@@ -430,11 +430,11 @@ const InspectionView = ({
     [samples]
   );
   const remaining = lotEntities.filter((e) => !sampledIds.has(e.id));
-  // A manual lot starts with every serial sampled; Add Sample only returns
-  // when one of its serials has no column (a sample removed since).
-  // Add Sample only while some unit has no sample: an "inspect all" lot and a
-  // manual lot start with every unit sampled (prefillInspectionSamples).
-  const canAddSample = isSerial && remaining.length > 0;
+  // Receipt and manual lots (hasErpDisposition) load their units; Add Sample
+  // shows only while one has no sample (an "inspect all" lot and a manual lot
+  // start with every unit sampled, prefillInspectionSamples). A job operation
+  // lot loads none here, so it can always add one.
+  const canAddSample = isSerial && (!hasErpDisposition || remaining.length > 0);
 
   // Item display id from the live items store (snapshot may be stale).
   const item = items.find((i) => i.id === inspection.itemId);
@@ -470,11 +470,24 @@ const InspectionView = ({
   const hasAutoOpenedScanRef = useRef(false);
   useEffect(() => {
     if (hasAutoOpenedScanRef.current) return;
-    if (scansSamples && samples.length === 0 && !lotClosed && canUpdate) {
+    if (
+      scansSamples &&
+      canAddSample &&
+      samples.length === 0 &&
+      !lotClosed &&
+      canUpdate
+    ) {
       hasAutoOpenedScanRef.current = true;
       scannerDisclosure.onOpen();
     }
-  }, [scansSamples, samples.length, lotClosed, canUpdate, scannerDisclosure]);
+  }, [
+    scansSamples,
+    canAddSample,
+    samples.length,
+    lotClosed,
+    canUpdate,
+    scannerDisclosure
+  ]);
 
   const maxSampleSize = hasFeatures
     ? Math.max(1, ...liveFeatures.map((f) => f.sampleSize))

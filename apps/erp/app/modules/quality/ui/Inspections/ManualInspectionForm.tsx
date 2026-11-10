@@ -22,8 +22,8 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import type { z } from "zod";
 import {
+  Combobox,
   Employee,
-  InspectionDocument,
   Item,
   MultiSelect,
   Submit,
@@ -32,7 +32,10 @@ import {
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { manualInspectionValidator } from "~/modules/quality/quality.models";
-import type { getInspectableTrackedEntities } from "~/modules/quality/quality.service";
+import type {
+  getInspectableTrackedEntities,
+  getInspectionDocumentsForItem
+} from "~/modules/quality/quality.service";
 import { path } from "~/utils/path";
 
 type ManualInspectionFormProps = {
@@ -86,6 +89,22 @@ const ManualInspectionForm = ({
     [entities.data, t]
   );
 
+  // A lot is inspected against a published plan: the item's Active versions.
+  const plans = useLoaderQuery<
+    Awaited<ReturnType<typeof getInspectionDocumentsForItem>>
+  >(itemId ? path.to.api.inspectionDocuments(itemId) : null);
+
+  const planOptions = useMemo(
+    () =>
+      (plans.data?.data ?? [])
+        .filter((plan) => plan.status === "Active")
+        .map((plan) => ({
+          value: plan.id,
+          label: `${plan.name ?? plan.fileName ?? plan.id} v${plan.version}`
+        })),
+    [plans.data]
+  );
+
   return (
     <ModalDrawerProvider type="drawer">
       <ModalDrawer
@@ -123,12 +142,13 @@ const ManualInspectionForm = ({
                   isReadOnly={!itemId}
                   helperText={t`Available or On Hold serials and batches. Available ones go On Hold until the inspection is dispositioned.`}
                 />
-                <InspectionDocument
+                <Combobox
                   key={`plan-${itemId}`}
                   name="inspectionDocumentId"
                   label={t`Inspection Plan`}
-                  itemId={itemId || undefined}
-                  isOptional={false}
+                  options={planOptions}
+                  isLoading={plans.isFetching}
+                  isReadOnly={!itemId}
                 />
                 <WorkCenter
                   name="workCenterId"

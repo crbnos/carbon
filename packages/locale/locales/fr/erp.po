@@ -7019,9 +7019,6 @@ msgstr "Cliquer ou déposer pour remplacer"
 msgid "Click to rename"
 msgstr "Cliquez pour renommer"
 
-msgid "Click to upload a PDF drawing"
-msgstr "Cliquer pour téléverser un dessin PDF"
-
 msgid "CLIN"
 msgstr "CLIN"
 
@@ -15233,6 +15230,9 @@ msgstr "Inspecter les Premiers N"
 msgid "Inspect Item"
 msgstr "Inspecter l'article"
 
+msgid "Inspected by"
+msgstr ""
+
 msgid "Inspecting an item you received shows a warning."
 msgstr "L'inspection d'un article que vous avez reçu affiche un avertissement."
 
@@ -23062,6 +23062,9 @@ msgstr "Public"
 msgid "Publish"
 msgstr "Publier"
 
+msgid "Publish once your changes are saved."
+msgstr ""
+
 msgid "Publish Training"
 msgstr "Publier Formation"
 
@@ -27925,6 +27928,12 @@ msgstr "Trier du plus ancien au plus récent"
 
 msgid "Sort latest first"
 msgstr "Trier du plus récent au plus ancien"
+
+msgid "Sorted by activity date, newest first"
+msgstr ""
+
+msgid "Sorted by activity date, oldest first"
+msgstr ""
 
 msgid "Source"
 msgstr "Source"

@@ -1356,7 +1356,9 @@ function SerialForm({
   const submit = useSubmit();
   const handlePropertiesChange = (newProperties: Record<string, unknown>) => {
     setProperties(newProperties);
-    if (!receipt?.id) return;
+    // With no serial on the line yet there is no unit to store them on (the
+    // server refuses); the first serial save sends them instead.
+    if (!receipt?.id || !tracking) return;
     const formData = new FormData();
     formData.append("receiptId", receipt.id);
     formData.append("receiptLineId", line.id!);

@@ -101,3 +101,35 @@ describe("payloadToFlow inspections", () => {
     expect(inspectEdges(payload)).toEqual(ONE_EDGE_PER_UNIT);
   });
 });
+
+describe("payloadToFlow production operations named like inspections", () => {
+  // The MES names a production event after its operation, so an operation
+  // called "Final Inspection" is an ordinary production activity.
+  it("keeps the output of a 'Final Inspection (Labor)' activity", () => {
+    const payload: LineagePayload = {
+      entities: [serial("S1"), serial("S2")],
+      activities: [
+        activity("RECEIVE", "Receive", "2026-08-01T10:00:00.000Z"),
+        activity("OP", "Final Inspection (Labor)", "2026-08-01T11:00:00.000Z")
+      ],
+      inputs: [{ trackedActivityId: "OP", trackedEntityId: "S1", quantity: 1 }],
+      outputs: [
+        { trackedActivityId: "RECEIVE", trackedEntityId: "S1", quantity: 1 },
+        { trackedActivityId: "OP", trackedEntityId: "S2", quantity: 1 }
+      ]
+    };
+    const { edges } = payloadToFlow(payload, undefined, { rootIds: ["S1"] });
+    const opEdges = edges
+      .filter((e) => e.source === "OP" || e.target === "OP")
+      .map((e) => ({
+        source: e.source,
+        target: e.target,
+        kind: e.data?.kind
+      }))
+      .sort((a, b) => a.source.localeCompare(b.source));
+    expect(opEdges).toEqual([
+      { source: "OP", target: "S2", kind: "output" },
+      { source: "S1", target: "OP", kind: "input" }
+    ]);
+  });
+});

@@ -7019,9 +7019,6 @@ msgstr "Щелкните или перетащите, чтобы заменит�
 msgid "Click to rename"
 msgstr "Нажмите, чтобы переименовать"
 
-msgid "Click to upload a PDF drawing"
-msgstr "Нажмите, чтобы загрузить чертеж PDF"
-
 msgid "CLIN"
 msgstr "CLIN"
 
@@ -15233,6 +15230,9 @@ msgstr "Проверить первые N"
 msgid "Inspect Item"
 msgstr "Проверить товар"
 
+msgid "Inspected by"
+msgstr ""
+
 msgid "Inspecting an item you received shows a warning."
 msgstr "При проверке полученной вами номенклатуры отображается предупреждение."
 
@@ -23062,6 +23062,9 @@ msgstr "Публичный"
 msgid "Publish"
 msgstr "Опубликовать"
 
+msgid "Publish once your changes are saved."
+msgstr ""
+
 msgid "Publish Training"
 msgstr "Опубликовать обучение"
 
@@ -27925,6 +27928,12 @@ msgstr "Сортировать сначала самые ранние"
 
 msgid "Sort latest first"
 msgstr "Сортировать сначала последние"
+
+msgid "Sorted by activity date, newest first"
+msgstr ""
+
+msgid "Sorted by activity date, oldest first"
+msgstr ""
 
 msgid "Source"
 msgstr "Источник"

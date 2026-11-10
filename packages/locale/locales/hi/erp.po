@@ -7019,9 +7019,6 @@ msgstr "प्रतिस्थापित करने के लिए क�
 msgid "Click to rename"
 msgstr "नाम बदलने के लिए क्लिक करें"
 
-msgid "Click to upload a PDF drawing"
-msgstr "PDF ड्राइंग अपलोड करने के लिए क्लिक करें"
-
 msgid "CLIN"
 msgstr "CLIN"
 
@@ -15233,6 +15230,9 @@ msgstr "पहले N निरीक्षण करें"
 msgid "Inspect Item"
 msgstr "आइटम का निरीक्षण करें"
 
+msgid "Inspected by"
+msgstr ""
+
 msgid "Inspecting an item you received shows a warning."
 msgstr "आपके द्वारा प्राप्त आइटम का निरीक्षण एक चेतावनी दिखाता है।"
 
@@ -23062,6 +23062,9 @@ msgstr "सार्वजनिक"
 msgid "Publish"
 msgstr "प्रकाशित करें"
 
+msgid "Publish once your changes are saved."
+msgstr ""
+
 msgid "Publish Training"
 msgstr "प्रशिक्षण प्रकाशित करें"
 
@@ -27925,6 +27928,12 @@ msgstr "पहले जल्द से जल्द क्रमित कर�
 
 msgid "Sort latest first"
 msgstr "पहले नवीनतम क्रमित करें"
+
+msgid "Sorted by activity date, newest first"
+msgstr ""
+
+msgid "Sorted by activity date, oldest first"
+msgstr ""
 
 msgid "Source"
 msgstr "स्रोत"

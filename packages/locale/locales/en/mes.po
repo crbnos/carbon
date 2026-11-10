@@ -135,6 +135,9 @@ msgstr "{columns} does not match an existing \"{target}\"."
 msgid "{columns} does not match an existing record."
 msgstr "{columns} does not match an existing record."
 
+msgid "{companyName} logo"
+msgstr "{companyName} logo"
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} of {quantity}"
 
@@ -225,6 +228,9 @@ msgstr "About this field"
 
 msgid "Above the upper limit"
 msgstr "Above the upper limit"
+
+msgid "Ac"
+msgstr "Ac"
 
 msgid "Accept"
 msgstr "Accept"
@@ -375,6 +381,12 @@ msgstr "Apply link"
 
 msgid "Approvals"
 msgstr "Approvals"
+
+msgid "AQL"
+msgstr "AQL"
+
+msgid "AQL {aql} · Lvl {level} · {severity}"
+msgstr "AQL {aql} · Lvl {level} · {severity}"
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
@@ -1145,6 +1157,9 @@ msgstr "Finish setting up your account"
 msgid "Finish with material unpicked?"
 msgstr "Finish with material unpicked?"
 
+msgid "First"
+msgstr "First"
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "First due {0}"
@@ -1854,6 +1869,9 @@ msgstr "No work centers exist"
 msgid "None"
 msgstr "None"
 
+msgid "Normal"
+msgstr "Normal"
+
 msgid "Not scheduled"
 msgstr "Not scheduled"
 
@@ -2021,6 +2039,9 @@ msgstr "Pass"
 msgid "Pass all empty cells of {0}"
 msgstr "Pass all empty cells of {0}"
 
+msgid "Passed"
+msgstr "Passed"
+
 msgid "Passed inspection"
 msgstr "Passed inspection"
 
@@ -2057,6 +2078,9 @@ msgstr "Pause maintenance"
 
 msgid "Pending"
 msgstr "Pending"
+
+msgid "Percentage"
+msgstr "Percentage"
 
 msgid "Phone"
 msgstr "Phone"
@@ -2259,6 +2283,9 @@ msgstr "Queue empty"
 msgid "Quotes"
 msgstr "Quotes"
 
+msgid "Re"
+msgstr "Re"
+
 msgid "Reason"
 msgstr "Reason"
 
@@ -2317,6 +2344,9 @@ msgstr "Record sections"
 
 msgid "Recorded"
 msgstr "Recorded"
+
+msgid "Reduced"
+msgstr "Reduced"
 
 msgid "Reference image"
 msgstr "Reference image"
@@ -3061,6 +3091,9 @@ msgstr "Thumbnail"
 
 msgid "Tick the jobs this was done for."
 msgstr "Tick the jobs this was done for."
+
+msgid "Tightened"
+msgstr "Tightened"
 
 msgid "Tighter or roomier layout. The text stays put."
 msgstr "Tighter or roomier layout. The text stays put."

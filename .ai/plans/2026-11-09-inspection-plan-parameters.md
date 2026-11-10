@@ -49,7 +49,7 @@ MES `ParametersListItem`). Differences, on purpose:
       show a Parameters control (hidden when the plan has none).
 - [x] Docs: `inspection-system.md`, quality `AGENTS.md`.
 - [x] Verify: scoped typecheck (erp, mes, database), biome.
-- [ ] Run `lingui:extract` and translate the new strings (at commit time).
+- [x] Run `lingui:extract` and translate the new strings (at commit time).
 
 ## Out of scope
 

@@ -7,11 +7,14 @@
 // copies the plan; publishing one archives the Active version and moves the
 // item's receipt assignment to it.
 
-import { expect } from "vitest";
+import { createServiceContext } from "@carbon/api/service-fn.server";
+import { expect, it } from "vitest";
+import * as quality from "../../app/modules/quality/quality.server";
 import {
   activateInspectionDocumentVersion,
   copyInspectionDocumentAsVersion,
-  deleteInspectionDocument
+  deleteInspectionDocument,
+  replaceInspectionDocumentParameters
 } from "../../app/modules/quality/quality.service";
 import {
   alwaysPostFixture,
@@ -19,7 +22,10 @@ import {
   seed,
   USER
 } from "./fixtures/always-post";
-import { databaseTest } from "./fixtures/local-database";
+import { databaseTest, hasLocalDatabase } from "./fixtures/local-database";
+import { localServiceRoleClient } from "./fixtures/local-supabase";
+
+const client = localServiceRoleClient();
 
 const WORK_INSTRUCTION = {
   type: "doc",
@@ -94,6 +100,70 @@ async function activePlan(f: Fixture) {
       .execute();
   });
   return id;
+}
+
+/** A lot inspected against `planId`, with one reading of its characteristic. */
+async function inspectedLot(f: Fixture, planId: string) {
+  const lotId = `${f.prefix}-lot`;
+  await seed(f, async (trx) => {
+    await trx
+      .insertInto("inspection")
+      .values({
+        id: lotId,
+        inspectionId: `${f.prefix}-INS`,
+        sourceDocument: "Manual",
+        sourceDocumentId: lotId,
+        itemId: f.partId,
+        inspectionDocumentId: planId,
+        lotSize: 1,
+        samplingStandard: "ANSI_Z1_4",
+        samplingPlanType: "All",
+        sampleSize: 1,
+        acceptanceNumber: 0,
+        rejectionNumber: 1,
+        status: "Passed",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("inspectionSample")
+      .values({
+        id: `${f.prefix}-s1`,
+        inspectionId: lotId,
+        status: "Passed",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("inspectionMeasurement")
+      .values({
+        inspectionId: lotId,
+        inspectionSampleId: `${f.prefix}-s1`,
+        inspectionFeatureId: `${f.prefix}-f1`,
+        value: 10.01,
+        status: "Passed",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+  });
+  return lotId;
+}
+
+// The system, so the permission gate passes: what refuses is the operation.
+function serviceContext(f: Fixture) {
+  return createServiceContext({
+    actor: { type: "system", onBehalfOf: USER },
+    company: { id: f.companyId, groupId: f.groupId },
+    caller: client!,
+    system: () => client!,
+    pg: () => f.db,
+    kv: () => {
+      throw new Error("No operation here reads the cache");
+    }
+  });
 }
 
 function versions(f: Fixture) {
@@ -209,4 +279,93 @@ databaseTest(
       await f.cleanup();
     }
   }
+);
+
+databaseTest(
+  "a version a lot was inspected against is not deleted, and its readings stay",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const v0 = await activePlan(f);
+      const lotId = await inspectedLot(f, v0);
+
+      const deleted = await deleteInspectionDocument(f.db, v0, f.companyId);
+
+      expect(deleted).toEqual({ refused: expect.any(String) });
+      expect(await versions(f)).toEqual([
+        { id: v0, version: 0, status: "Active", rootInspectionDocumentId: null }
+      ]);
+      const readings = await f.db
+        .selectFrom("inspectionMeasurement")
+        .select(["inspectionFeatureId", "value", "status"])
+        .where("inspectionId", "=", lotId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(readings).toEqual([
+        {
+          inspectionFeatureId: `${f.prefix}-f1`,
+          value: 10.01,
+          status: "Passed"
+        }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a parameter save on an Active version writes nothing",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const v0 = await activePlan(f);
+
+      const saved = await replaceInspectionDocumentParameters(f.db, {
+        inspectionDocumentId: v0,
+        companyId: f.companyId,
+        userId: USER,
+        parameters: [{ id: `${f.prefix}-p1`, key: "Torque", value: "4 Nm" }]
+      });
+
+      expect(saved).toBeNull();
+      const parameters = await f.db
+        .selectFrom("inspectionDocumentParameter")
+        .select(["key", "value"])
+        .where("inspectionDocumentId", "=", v0)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(parameters).toEqual([{ key: "Fixture", value: "F-12" }]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+// The rename goes through PostgREST, so it needs the local stack too.
+it.skipIf(!hasLocalDatabase || !client)(
+  "renaming an Active version is refused and the name stays",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const v0 = await activePlan(f);
+
+      const result = await quality.setInspectionDocumentName(serviceContext(f), {
+        id: v0,
+        name: "Renamed"
+      });
+
+      expect(result.error?.category).toBe("rule");
+      const plan = await f.db
+        .selectFrom("inspectionDocument")
+        .select("name")
+        .where("id", "=", v0)
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirstOrThrow();
+      expect(plan.name).toBe("Receipt plan");
+    } finally {
+      await f.cleanup();
+    }
+  },
+  60_000
 );

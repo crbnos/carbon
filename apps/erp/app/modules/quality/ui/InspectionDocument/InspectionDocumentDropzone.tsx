@@ -28,9 +28,10 @@ type InspectionDocumentDropzoneProps = {
 };
 
 /**
- * The right sidebar of a plan with no drawing or model: drop (or pick) a PDF
- * drawing to balloon, or a STEP model whose PMI the plan can follow. Once the
- * plan has either, the viewer takes the top of the page and this goes away.
+ * The right sidebar of a plan with no drawing or model (below the table on a
+ * narrow screen): drop (or pick) a PDF drawing to balloon, or a STEP model
+ * whose PMI the plan can follow. Once the plan has either, the viewer takes
+ * the top of the page and this goes away.
  */
 export default function InspectionDocumentDropzone({
   uploading,
@@ -59,7 +60,7 @@ export default function InspectionDocumentDropzone({
   });
 
   return (
-    <aside className="flex w-72 shrink-0 flex-col border-l border-border bg-card max-lg:hidden">
+    <aside className="flex w-72 shrink-0 flex-col border-l border-border bg-card max-lg:w-full max-lg:border-l-0 max-lg:border-t">
       <div
         {...getRootProps()}
         className={cn(

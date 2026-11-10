@@ -7019,9 +7019,6 @@ msgstr "クリックまたはドラッグして置き換え"
 msgid "Click to rename"
 msgstr "クリックして名前を変更"
 
-msgid "Click to upload a PDF drawing"
-msgstr "PDFドローイングをアップロードするにはクリック"
-
 msgid "CLIN"
 msgstr "CLIN"
 
@@ -15233,6 +15230,9 @@ msgstr "最初のNを検査"
 msgid "Inspect Item"
 msgstr "検査項目"
 
+msgid "Inspected by"
+msgstr ""
+
 msgid "Inspecting an item you received shows a warning."
 msgstr "受け取った品目の検査時に警告が表示されます。"
 
@@ -23062,6 +23062,9 @@ msgstr "公開"
 msgid "Publish"
 msgstr "公開"
 
+msgid "Publish once your changes are saved."
+msgstr ""
+
 msgid "Publish Training"
 msgstr "教育訓練を公開"
 
@@ -27925,6 +27928,12 @@ msgstr "最初に最初に並べ替え"
 
 msgid "Sort latest first"
 msgstr "最初に最新で並べ替え"
+
+msgid "Sorted by activity date, newest first"
+msgstr ""
+
+msgid "Sorted by activity date, oldest first"
+msgstr ""
 
 msgid "Source"
 msgstr "ソース"

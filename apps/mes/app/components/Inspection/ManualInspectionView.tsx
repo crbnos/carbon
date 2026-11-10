@@ -385,13 +385,41 @@ export function ManualInspectionView({
         ? ("red" as const)
         : ("secondary" as const);
 
+  const statusLabel: Record<InspectionRow["status"], string> = {
+    Pending: t`Pending`,
+    "In Progress": t`In Progress`,
+    Passed: t`Passed`,
+    Failed: t`Failed`,
+    Partial: t`Partial`,
+    Cancelled: t`Cancelled`
+  };
+  const severityLabel: Record<
+    NonNullable<InspectionRow["severity"]>,
+    string
+  > = {
+    Normal: t`Normal`,
+    Tightened: t`Tightened`,
+    Reduced: t`Reduced`
+  };
+  const planTypeLabel: Record<InspectionRow["samplingPlanType"], string> = {
+    All: t`All`,
+    First: t`First`,
+    Percentage: t`Percentage`,
+    AQL: t`AQL`
+  };
+  const aql = inspection.aql ?? "";
+  const level = inspection.inspectionLevel ?? "";
+  const severity = inspection.severity
+    ? severityLabel[inspection.severity]
+    : "";
   const planSummary =
     inspection.samplingPlanType === "AQL"
-      ? `AQL ${inspection.aql ?? ""} · Lvl ${inspection.inspectionLevel ?? ""} · ${inspection.severity ?? ""}`
-      : inspection.samplingPlanType;
+      ? t`AQL ${aql} · Lvl ${level} · ${severity}`
+      : planTypeLabel[inspection.samplingPlanType];
 
   const companyLogo =
     mode === "dark" ? user.company.logoDarkIcon : user.company.logoLightIcon;
+  const companyName = user.company.name;
 
   const matrix = (toolbarActions?: React.ReactNode) => (
     <InspectionMeasurementMatrix
@@ -444,7 +472,7 @@ export function ManualInspectionView({
             <div className="hidden h-full shrink-0 items-center border-r border-border px-4 sm:flex">
               <img
                 src={companyLogo}
-                alt={`${user.company.name} logo`}
+                alt={t`${companyName} logo`}
                 className="h-7 w-auto max-w-[140px] object-contain"
               />
             </div>
@@ -458,7 +486,7 @@ export function ManualInspectionView({
               variant={statusBadgeVariant}
               className="shrink-0 max-lg:hidden"
             >
-              {inspection.status}
+              {statusLabel[inspection.status]}
             </Badge>
             <span className="hidden text-muted-foreground xl:inline">·</span>
             <span className="hidden truncate text-sm text-foreground/90 xl:inline">
@@ -527,7 +555,7 @@ export function ManualInspectionView({
         {/* ── META BAR ── */}
         <div className="flex h-9 shrink-0 items-center gap-3 overflow-x-auto bg-card border-b border-border px-5 scrollbar-hide max-md:h-auto max-md:flex-wrap max-md:gap-x-3 max-md:gap-y-1 max-md:px-4 max-md:py-1.5">
           <Badge variant={statusBadgeVariant} className="shrink-0 lg:hidden">
-            {inspection.status}
+            {statusLabel[inspection.status]}
           </Badge>
           {receiptVoided ? (
             <Badge variant="red" className="shrink-0">
@@ -535,8 +563,9 @@ export function ManualInspectionView({
             </Badge>
           ) : null}
           <span className="whitespace-nowrap text-xs text-muted-foreground tabular-nums">
-            {inspected} / {inspection.sampleSize} <Trans>inspected</Trans> · Ac{" "}
-            {inspection.acceptanceNumber} · Re {inspection.rejectionNumber}
+            {inspected} / {inspection.sampleSize} <Trans>inspected</Trans> ·{" "}
+            <Trans>Ac</Trans> {inspection.acceptanceNumber} · <Trans>Re</Trans>{" "}
+            {inspection.rejectionNumber}
             {inspection.codeLetter ? ` · ${inspection.codeLetter}` : ""}
           </span>
           <span className="whitespace-nowrap text-xs text-muted-foreground">

@@ -33,7 +33,7 @@ import { edgeKey, sharedMemberAttributes } from "./cluster";
 import {
   ACTIVITY_KIND_META,
   activityKindFor,
-  isInspectionActivity,
+  isInspectActivity,
   isMovementActivity
 } from "./metadata";
 import { StepRecordsList } from "./StepRecordsList";
@@ -165,7 +165,7 @@ export function TraceabilitySidebar({
           cluster.quantitiesByEdge[edgeKey(entry.activityId, entry.side)] ?? 0;
         if (entry.side === "output") {
           producedBy.push({ activity: a, quantity });
-        } else if (isInspectionActivity(a.type)) {
+        } else if (isInspectActivity(a.type)) {
           inspectedBy.push({ activity: a, quantity });
         } else if (isMovementActivity(a.type)) {
           movedBy.push({ activity: a, quantity });
@@ -213,7 +213,7 @@ export function TraceabilitySidebar({
         // catches those.)
         if (a.type === "Split") {
           splits.push({ activity: a, quantity: i.quantity });
-        } else if (isInspectionActivity(a.type)) {
+        } else if (isInspectActivity(a.type)) {
           inspectedBy.push({ activity: a, quantity: i.quantity });
         } else if (isMovementActivity(a.type)) {
           // A transfer/pick relocated the lot — it did not consume it.
@@ -555,7 +555,7 @@ export function TraceabilitySidebar({
           </Section>
         )}
         {inspectedBy.length > 0 && (
-          <Section title="Inspected by" count={inspectedBy.length}>
+          <Section title={t`Inspected by`} count={inspectedBy.length}>
             <ul className="divide-y divide-border/30">
               {inspectedBy.map((item) => (
                 <RelatedActivityRow
