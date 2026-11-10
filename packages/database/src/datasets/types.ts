@@ -543,7 +543,7 @@ export type RevisionLadderSpec = {
 export type InspectionPlanSpec = {
   key: string;
   item: string;
-  drawingNumber: string;
+  name: string;
   aql: number;
   features: InspectionFeatureSpec[];
 };
@@ -1665,8 +1665,11 @@ export type InspectionSampleSpec = {
 
 type InspectionLotSpec = {
   ref: string;
-  /** "Partial" = some samples passed, some failed. */
-  status: "Pending" | "In Progress" | "Passed" | "Partial";
+  /**
+   * "Partial" = some samples passed, some failed. "Cancelled" is a manual lot's
+   * only (ManualInspectionSpec).
+   */
+  status: "Pending" | "In Progress" | "Passed" | "Partial" | "Cancelled";
   /** Required iff dispositioned; on/after every sample's inspectedOffset. */
   dispositionOffset?: DayOffset;
   notes?: string;
@@ -1686,7 +1689,7 @@ export type ReceiptInspectionSpec = InspectionLotSpec & {
   source: "Receipt";
   receipt: string;
   item: string;
-  drawingNumber: string;
+  name: string;
   /** Resolved sample size must be ≤ 5 so every sample is authored. */
   aql: number;
   features: InspectionFeatureSpec[];
@@ -1702,7 +1705,26 @@ export type JobOperationInspectionSpec = InspectionLotSpec & {
   job: string;
 };
 
-export type InspectionSpec = ReceiptInspectionSpec | JobOperationInspectionSpec;
+/**
+ * A lot a person creates for specific tracked entities (createManualInspection):
+ * no plan (every unit inspected), lot size = the serial count or the batches'
+ * quantity. Seeded open only: an On Hold entity stays On Hold until a verdict.
+ */
+export type ManualInspectionSpec = InspectionLotSpec & {
+  source: "Manual";
+  /** A Cancelled lot gave its entities back, so they may be in an open lot. */
+  status: "Pending" | "Cancelled";
+  /** onHandTracked readableIds, all of one item and all On Hold. */
+  trackedEntities: string[];
+  /** A foundation work center name. */
+  workCenter?: string;
+  assignee?: "self";
+};
+
+export type InspectionSpec =
+  | ReceiptInspectionSpec
+  | JobOperationInspectionSpec
+  | ManualInspectionSpec;
 
 export type QualityDocumentStepType =
   | "Value"

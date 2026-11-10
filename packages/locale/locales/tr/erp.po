@@ -222,6 +222,10 @@ msgstr "{0, plural, one {# test} other {# testler}}"
 msgid "{0, plural, one {# tool} other {# tools}}"
 msgstr "{0, plural, one {# takım} other {# takımlar}}"
 
+#. placeholder {0}: plan.versions.length
+msgid "{0, plural, one {# version} other {# versions}}"
+msgstr "{0, plural, one {# sürüm} other {# sürüm}}"
+
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# hafta} other {# hafta}}"
@@ -1198,6 +1202,9 @@ msgstr "{passing} / {total} varlık"
 msgid "{percent} picked"
 msgstr "{percent} toplandı"
 
+msgid "{percentage}%"
+msgstr "{percentage}%"
+
 msgid "{position} of {total}"
 msgstr "{position} / {total}"
 
@@ -1973,7 +1980,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "Sorununun başka yerlerde tekrarlanmasını durduran uygunsuzluk görevi — düzeltici onarım ve çevrelemeden farklı."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr "Bir rakamın yanındaki sayı veya işaret, söylediği anlamı değiştirir. Aralarına bir kelime yazın."
+msgstr "Bir rakamın yanındaki bir sayı veya işaret, yazdığı anlamı değiştirir. Aralarına bir kelime koyun."
 
 msgid "A part"
 msgstr "Bir parça"
@@ -1983,6 +1990,9 @@ msgstr "Bir parça, satın alınabilir veya üretilebilir belirli bir öğe hakk
 
 msgid "A part in this step may tip once placed — consider a fixture or a second person."
 msgstr "Bu adımda yerleştirildikten sonra bir parça devrilebilir — bir bağlama aparatı veya ikinci bir kişi göz önünde bulundurun."
+
+msgid "A PDF drawing to balloon, or a STEP model. Click to choose a file."
+msgstr "Balonlanacak bir PDF çizim veya bir STEP modeli. Dosya seçmek için tıklayın."
 
 msgid "A photo or PDF the operator sees on this step"
 msgstr "Operatörün bu adımda gördüğü bir fotoğraf veya PDF"
@@ -2774,6 +2784,10 @@ msgstr "Aksiyon Türleri"
 
 msgid "Actions"
 msgstr "Eylemler"
+
+#. placeholder {0}: inspection.inspectionId
+msgid "Actions for {0}"
+msgstr "{0} için işlemler"
 
 msgid "Actions for {attributeName}"
 msgstr "{attributeName} için işlemler"
@@ -5320,6 +5334,9 @@ msgstr "{plan} planında kullanılabilir"
 msgid "Available on the Business plan"
 msgstr "Business planında kullanılabilir"
 
+msgid "Available or On Hold serials and batches. Available ones go On Hold until the inspection is dispositioned."
+msgstr "Kullanılabilir veya askıdaki seri numaraları ve partiler. Kullanılabilir olanlar, muayene karara bağlanana kadar askıya alınır."
+
 msgid "Avatar style"
 msgstr "Avatar stili"
 
@@ -6251,6 +6268,9 @@ msgstr "İptal"
 msgid "Cancel {0}"
 msgstr "İptal Et {0}"
 
+msgid "Cancel {name}?"
+msgstr "{name} iptal edilsin mi?"
+
 msgid "Cancel {readableId}"
 msgstr "İptal Et {readableId}"
 
@@ -6265,6 +6285,9 @@ msgstr "Değişiklik Bildirisini İptal Et"
 
 msgid "Cancel Contract"
 msgstr "Sözleşmeyi İptal Et"
+
+msgid "Cancel Inspection"
+msgstr "Muayeneyi iptal et"
 
 msgid "Cancel Job"
 msgstr "İşi İptal Et"
@@ -7065,9 +7088,6 @@ msgstr "Değiştirmek için tıklayın veya sürükleyin"
 
 msgid "Click to rename"
 msgstr "Yeniden adlandırmak için tıklayın"
-
-msgid "Click to upload a PDF drawing"
-msgstr "PDF çizimi yüklemek için tıklayın"
 
 msgid "CLIN"
 msgstr "CLIN"
@@ -8834,6 +8854,10 @@ msgstr "Oluşturuldu <0/>"
 msgid "Created <0/> by <1/>"
 msgstr "Oluşturuldu <0/> tarafından <1/>"
 
+#. placeholder {0}: created.inspectionId
+msgid "Created <0>{0}</0>"
+msgstr "<0>{0}</0> oluşturuldu"
+
 msgid "Created account"
 msgstr "Oluşturulan hesap"
 
@@ -10049,6 +10073,9 @@ msgstr "Grubu Sil"
 msgid "Delete Holiday"
 msgstr "Tatili Sil"
 
+msgid "Delete Inspection"
+msgstr "Muayeneyi sil"
+
 msgid "Delete Inspection Plan"
 msgstr "Kontrol planını sil"
 
@@ -10111,6 +10138,10 @@ msgstr "Notu Sil"
 
 msgid "Delete Month"
 msgstr "Ayı Sil"
+
+#. placeholder {0}: row.original.key
+msgid "Delete parameter {0}"
+msgstr "{0} parametresini sil"
 
 msgid "Delete Part"
 msgstr "Parçayı Sil"
@@ -11018,11 +11049,14 @@ msgstr "Çizin veya bunun bir görüntüsünü yükleyin."
 msgid "Drawing"
 msgstr "Çekiliyor"
 
-msgid "Drawing Number"
-msgstr "Resim numarası"
-
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "Çizim değiştirildi. Balon yerleştirmeleri kaldırıldı; özellik satırları değişmedi."
+
+msgid "Drop a drawing or model"
+msgstr "Çizim veya model bırakın"
+
+msgid "Drop a PDF drawing or a STEP model"
+msgstr "Bir PDF çizim veya STEP modeli bırakın"
 
 msgid "Drop an image of your signature"
 msgstr "İmzanızın bir görüntüsünü bırakın"
@@ -11170,9 +11204,6 @@ msgstr "örn. Acme Manufacturing"
 msgid "e.g. Detroit"
 msgstr "örn. Detroit"
 
-msgid "e.g. DWG-1234"
-msgstr "örneğin DWG-1234"
-
 msgid "e.g. GB123456789"
 msgstr "örn. GB123456789"
 
@@ -11187,6 +11218,9 @@ msgstr "örn. Marco + alan liderleri"
 
 msgid "e.g. MI"
 msgstr "örn. MI"
+
+msgid "e.g. R1234 Receipt"
+msgstr "ör. R1234 Mal kabul"
 
 msgid "e.g. Suite 200"
 msgstr "örn. Daire 200"
@@ -11670,6 +11704,9 @@ msgstr "Üretim Miktarını Düzenle"
 
 msgid "Edit Project"
 msgstr "Projeyi Düzenle"
+
+msgid "Edit Properties"
+msgstr "Özellikleri düzenle"
 
 msgid "Edit purchase order line type"
 msgstr "Satın alma siparişi satır türünü düzenle"
@@ -13319,6 +13356,9 @@ msgstr "PDF yüklenemedi"
 msgid "Failed to upload signature"
 msgstr "İmza yüklenemedi"
 
+msgid "Failed to upload the model"
+msgstr "Model yüklenemedi"
+
 msgid "Failed to upload thumbnail"
 msgstr "Küçük resim yüklenemedi"
 
@@ -13548,6 +13588,9 @@ msgstr "Bitirme, her satır seçilene veya Kısa olarak işaretlenene kadar redd
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "Teklif satırlarında, satış siparişi satırlarında ve satış faturası satırlarında etkinleşir."
+
+msgid "First {count}"
+msgstr "İlk {count}"
 
 msgid "First invoice"
 msgstr "İlk fatura"
@@ -15312,6 +15355,9 @@ msgstr "İlk N'yi İncele"
 msgid "Inspect Item"
 msgstr "Ürünü İncele"
 
+msgid "Inspected by"
+msgstr "Inceleyen"
+
 msgid "Inspecting an item you received shows a warning."
 msgstr "Aldığınız bir ürünü denetleme uyarı gösterir."
 
@@ -15352,6 +15398,9 @@ msgstr "Muayene İş Emri"
 
 msgid "Inspection Level"
 msgstr "Muayene Seviyesi"
+
+msgid "Inspection Name"
+msgstr "Muayene adı"
 
 msgid "Inspection Passed"
 msgstr "Muayene Geçti"
@@ -16216,6 +16265,9 @@ msgstr "Kanban Çıktısı"
 msgid "Kanban output setting updated"
 msgstr "Kanban çıkış ayarı güncellendi"
 
+msgid "Kanban QR code"
+msgstr "Kanban QR kodu"
+
 msgid "Kanbans"
 msgstr "Kanbanlar"
 
@@ -16247,7 +16299,7 @@ msgid "Keep matching items"
 msgstr "Eşleşen öğeleri sakla"
 
 msgid "Keep mine"
-msgstr "Benimkini tut"
+msgstr "Benimkini koru"
 
 msgid "Keep navigation open"
 msgstr "Gezinmeyi açık tut"
@@ -17388,6 +17440,9 @@ msgstr "{date} için {amount} üretim"
 msgid "Make {quantity}"
 msgstr "{quantity} üret"
 
+msgid "Make a new version to change this plan"
+msgstr "Bu planı değiştirmek için yeni bir sürüm oluşturun"
+
 msgid "Make Active"
 msgstr "Aktif Yap"
 
@@ -17451,6 +17506,9 @@ msgstr "Bu belgeyi tekrar aktif hale getirir."
 
 msgid "Makes this document active and visible."
 msgstr "Bu belgeyi aktif ve görünür yapar."
+
+msgid "Makes this version Active again and archives the Active version."
+msgstr "Bu sürümü yeniden Aktif hâle getirir ve mevcut Aktif sürümü arşivler."
 
 msgid "Manage"
 msgstr "Yönet"
@@ -18699,6 +18757,9 @@ msgstr "Yeni Tatil"
 
 msgid "New IC Transaction"
 msgstr "Yeni IC İşlemi"
+
+msgid "New Inspection"
+msgstr "Yeni muayene"
 
 msgid "New Inspection Plan"
 msgstr "Yeni kontrol planı"
@@ -20602,6 +20663,10 @@ msgstr "Eldeki: {before} değerinden {after} değerine"
 
 msgid "On Hold"
 msgstr "Askıda"
+
+#. placeholder {0}: entity.quantity
+msgid "On Hold · {0}"
+msgstr "Askıda · {0}"
 
 msgid "On its side"
 msgstr "Yana yatık"
@@ -23134,6 +23199,9 @@ msgstr "Satın alma siparişlerini sonuçlandırmak için taahhüt tarihi zorunl
 msgid "Properties"
 msgstr "Özellikler"
 
+msgid "Properties (apply to all serials on this line)"
+msgstr "Özellikler (bu satırdaki tüm seri numaralarına uygulanır)"
+
 msgid "Property"
 msgstr "Özellik"
 
@@ -23196,6 +23264,9 @@ msgstr "Herkese açık"
 
 msgid "Publish"
 msgstr "Yayınla"
+
+msgid "Publish once your changes are saved."
+msgstr "Değişikliklerinizi kaydettikten sonra yayımlayın."
 
 msgid "Publish Training"
 msgstr "Eğitimi Yayınla"
@@ -24058,14 +24129,8 @@ msgstr "Alındı"
 msgid "Received {0} of {1}"
 msgstr "{1} öğeden {0} alındı"
 
-msgid "Received At"
-msgstr "Alındığı Tarih"
-
-msgid "Received By"
-msgstr "Kim Aldığı Kişi"
-
 msgid "Received Date"
-msgstr "Teslim alma tarihi"
+msgstr "Mal kabul tarihi"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "Bu tedarikçiden alınan ve iade edilmek üzere kalan miktar içeren satırlar"
@@ -27417,7 +27482,7 @@ msgid "Shared channel"
 msgstr "Paylaşılan kanal"
 
 msgid "Shared Section (deleted)"
-msgstr "Paylaşılan bölüm (silindi)"
+msgstr "Ortak bölüm (silindi)"
 
 msgid "Shared Sections"
 msgstr "Paylaşılan Bölümler"
@@ -28068,7 +28133,7 @@ msgid "Someone"
 msgstr "Birisi"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr "Başka biri bu şablonu az önce kaydetti. Onun sürümünü yüklemek için sayfayı yenileyin ya da kaydettiğinizde üzerine yazmak için düzenlemeye devam edin."
+msgstr "Bir başkası bu şablonu az önce kaydetti. Onların sürümünü yüklemek için yenileyin ya da düzenlemeye devam edip kaydettiğinizde üzerine yazın."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Muhasebeyi güncelleyebilen birinin, varlıklaştırılabilmesi için üretim maliyetini girmesi gerekir."
@@ -28108,6 +28173,12 @@ msgstr "En Eskisini İlk Sırala"
 
 msgid "Sort latest first"
 msgstr "En Yenisini İlk Sırala"
+
+msgid "Sorted by activity date, newest first"
+msgstr "Etkinlik tarihine göre sıralı, en yeniler önce"
+
+msgid "Sorted by activity date, oldest first"
+msgstr "Etkinlik tarihine göre sıralı, en eskiler önce"
 
 msgid "Source"
 msgstr "Kaynak"
@@ -30110,9 +30181,6 @@ msgstr "Müşteriye fiyat teklifi vermekten ödeme tahsilatına kadar uçtan uca
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "Tablo güncellendiğinde güncellenmiş verilerle bir POST isteği alan uç nokta"
 
-msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
-msgstr "Bu kontrol planının bağlı olduğu mühendislik çizimi; bu parçaya karşı kaydedilen muayeneler bu çizime geri referans verir."
-
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
 msgstr "Giriş penceresi, zaman kartı denetimi, seyreltme ve çalışanın gönderme sırasında imzaladığı sertifikasyon. DCAA, Ayarlar → Projeler'de açılıp kapatılır."
 
@@ -30265,6 +30333,12 @@ msgstr "Bu Müşteriye giden Sevkiyatlarda nakliyeyi kimin ödeyeceğini, riski 
 
 msgid "The indirect cost a pool's rate puts on a project: rate × the project's base, posted to the project ledger as Burden rows, year to date less what earlier runs posted."
 msgstr "Bir havuzun oranının bir projeye getirdiği dolaylı maliyet: Oran × Projenin Tabanı, Proje Defterine Yük Satırları olarak muhasebeleştirilmiş, YTD eksi daha önceki çalıştırmalar tarafından muhasebeleştirildi."
+
+msgid "The inspection is deleted and its tracked entities return to the status they had before it."
+msgstr "Muayene silinir ve izlenen varlıklar, muayeneden önceki durumlarına geri döner."
+
+msgid "The inspection leaves the shop floor with no verdict. What it recorded is kept, and its held tracked entities return to the status they had before it."
+msgstr "Muayene, karar verilmeden atölyeden çıkar. Kaydedilen bilgiler saklanır ve bekletilen izlenen varlıklar, muayeneden önceki durumlarına geri döner."
 
 msgid "The integration authorized the connection but saving it failed. Try connecting again."
 msgstr "Entegrasyon bağlantıyı yetkilendirdi ancak kaydetmesi başarısız oldu. Tekrar bağlanmayı deneyin."
@@ -31360,8 +31434,17 @@ msgstr "Bu bilgiler belge başlıklarında kullanılacaktır"
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Bu bilgi tüm kullanıcılara görünür olacak, bu nedenle paylaştığınız şeylere dikkat edin."
 
+msgid "this inspection"
+msgstr "bu muayene"
+
 msgid "this inspection plan"
 msgstr "bu kontrol planı"
+
+msgid "This inspection plan has no parameters."
+msgstr "Bu kontrol planında parametre bulunmuyor."
+
+msgid "This inspection plan has no work instructions."
+msgstr "Bu kontrol planında iş talimatı bulunmuyor."
 
 msgid "This integration can't be connected on this Carbon instance."
 msgstr "Bu entegrasyon bu Carbon örneğinde bağlanamaz."
@@ -31516,7 +31599,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Bu PIN bir daha gösterilmeyecek. MES terminal'lerinde konsol modundan çıkmak için gerekli olacak."
 
 msgid "This preview is paused because a text changes a figure."
-msgstr "Bir metin bir değeri değiştirdiği için bu önizleme duraklatıldı."
+msgstr "Bir metin bir rakamı değiştirdiği için bu önizleme duraklatıldı."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Bu fiyat manuel olarak girildi, bu nedenle hiçbir fiyatlandırma kuralı uygulanmadı."
@@ -31582,7 +31665,7 @@ msgid "This serial"
 msgstr "Bu seri numarası"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr "Bu paylaşılan bölüm artık yok. Bloğu kaldırın ya da bölümü yeniden oluşturun."
+msgstr "Bu ortak bölüm artık mevcut değil. Bloğu kaldırın veya bölümü yeniden oluşturun."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Bu istasyon yetkinlik kapısı geçmeli işleri çalıştırır — yalnızca nitelikli operatör vardiyada olduğu sürece çalışır; kadro tarafından atanan operatörler kullanılabilir işçiliği şekillendirir."
@@ -31634,8 +31717,11 @@ msgstr "Bu sürüm değişiklik bildirimi <0>{0}</0> ile ilgilidir. Orada düzen
 msgid "This version cannot be opened"
 msgstr "Bu sürüm açılamıyor"
 
+msgid "This version is a Draft. Publishing makes it Active and archives the Active version."
+msgstr "Bu sürüm bir Taslaktır. Yayınlandığında Aktif hâle gelir ve mevcut Aktif sürüm arşivlenir."
+
 msgid "This version is published"
-msgstr "Bu sürüm yayımlandı"
+msgstr "Bu sürüm yayınlandı"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Bu sürüm yayınlandı. Düzenlemek için yeni bir sürüm oluşturun."
@@ -33044,6 +33130,9 @@ msgstr "İmza yüklendi"
 msgid "Uploaded: {0}"
 msgstr "Yüklenildi: {0}"
 
+msgid "Uploading"
+msgstr "Yükleniyor"
+
 #. placeholder {0}: avatarFile.name
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
@@ -33388,6 +33477,9 @@ msgstr "Sürüm {0}"
 msgid "Version {0} is published now and will be replaced."
 msgstr "Sürüm {0} şu anda yayınlandı ve değiştirilecektir."
 
+msgid "Version published"
+msgstr "Sürüm yayınlandı"
+
 msgid "Version:"
 msgstr "Sürüm:"
 
@@ -33487,6 +33579,9 @@ msgstr "Yeni sekmede Görüntüle"
 
 msgid "View in project plan"
 msgstr "Proje planında görüntüle"
+
+msgid "View Inspection"
+msgstr "Muayeneyi görüntüle"
 
 msgid "View Issue"
 msgstr "Sorunu Görüntüle"
@@ -34010,6 +34105,9 @@ msgstr "Bu satırların anlamı"
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "Bu alanın değişiklikten önceki değeri. Hiçbir şey için boş bırakın."
 
+msgid "What this inspection plan is called (e.g. R1234 Receipt); it is how the plan is picked for a part's receipt or an inspection operation."
+msgstr "Bu kontrol planının adı (ör. R1234 Mal kabul). Planın bir parçanın mal kabulü veya bir muayene operasyonu için seçilme yoludur."
+
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "Bu makbuzun yerine getirdiği — satın alma siparişi, geri dönüş, gelen transfer veya ebeveynleri olmayan manuel makbuz."
 
@@ -34110,7 +34208,7 @@ msgid "When the buyer asked for the goods; the supplier may promise something el
 msgstr "Alıcının malları talep ettiği tarih. Tedarikçi, Mal kabul taahhüt tarihinde başka bir tarih taahhüt edebilir ve Teslim tarihinde yine başka bir tarih bildirebilir."
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr "Alıcının bu satırdaki malları teslimat rıhtımında istediği tarih. Yeni bir satır, siparişin Mal kabul talep edilen tarihinden başlar; planlama bu tarihi stok uygunluğu ve dış işlem planlaması için kullanır."
+msgstr "Satın almacının bu satırın mallarını rıhtımda istediği tarih. Yeni bir satır, siparişin Mal kabul talep edilen tarihiyle başlar; planlama bu tarihi stok kullanılabilirliği ve dış işlem çizelgelemesi için kullanır."
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "Sözleşme ne zaman çalıştırılır ve tamamlandığında ne olur."

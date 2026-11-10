@@ -226,7 +226,7 @@ export const SearchModal = () => {
     >
       <ModalContent
         data-instant=""
-        className="rounded-lg p-0 h-[520px] max-w-2xl overflow-hidden dark:shadow-button max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:max-h-none max-md:max-w-none max-md:pt-4"
+        className="rounded-lg p-0 h-[520px] max-w-2xl overflow-hidden md:dark:shadow-button max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:max-h-none"
         withCloseButton={false}
         // Sheets keep focus off their fields on phones; search is the
         // exception, since typing is the only thing it is opened for.

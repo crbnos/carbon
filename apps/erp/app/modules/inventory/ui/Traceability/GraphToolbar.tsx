@@ -15,8 +15,11 @@ import {
   useViewport,
   VStack
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { useReactFlow } from "@xyflow/react";
 import {
+  LuArrowDownWideNarrow,
+  LuArrowUpNarrowWide,
   LuFocus,
   LuMaximize,
   LuMinus,
@@ -29,6 +32,7 @@ import {
   LuTable
 } from "react-icons/lu";
 import { COMPACT_FIT_PADDING } from "./constants";
+import type { ActivityOrder } from "./TraceabilityTable";
 import type { LayoutDirection } from "./worker/core";
 
 export type ViewMode = "graph" | "table";
@@ -47,6 +51,9 @@ type Props = {
   onOpenSearch?: () => void;
   spacing?: number;
   onSpacingChange?: (next: number) => void;
+  /** Table view: the activity date order and its toggle. */
+  activityOrder?: ActivityOrder;
+  onActivityOrderChange?: (next: ActivityOrder) => void;
 };
 
 const PANEL =
@@ -65,7 +72,9 @@ export function GraphToolbar({
   onRelayout,
   onOpenSearch,
   spacing = 2,
-  onSpacingChange
+  onSpacingChange,
+  activityOrder,
+  onActivityOrderChange
 }: Props) {
   return (
     <>
@@ -83,6 +92,8 @@ export function GraphToolbar({
         spacing={spacing}
         onSpacingChange={onSpacingChange}
         showGraphOnly={view === "graph"}
+        activityOrder={activityOrder}
+        onActivityOrderChange={onActivityOrderChange}
       />
     </>
   );
@@ -136,7 +147,9 @@ function GraphControlsChip({
   onOpenSearch,
   spacing,
   onSpacingChange,
-  showGraphOnly
+  showGraphOnly,
+  activityOrder,
+  onActivityOrderChange
 }: {
   depth: number;
   onDepthChange: (next: number) => void;
@@ -150,7 +163,10 @@ function GraphControlsChip({
   spacing: number;
   onSpacingChange?: (next: number) => void;
   showGraphOnly: boolean;
+  activityOrder?: ActivityOrder;
+  onActivityOrderChange?: (next: ActivityOrder) => void;
 }) {
+  const { t } = useLingui();
   const { fitView } = useReactFlow();
   const { isPhone } = useViewport();
 
@@ -246,6 +262,39 @@ function GraphControlsChip({
           Max connections fetched per direction (1–5)
         </HoverCardContent>
       </HoverCard>
+
+      {!showGraphOnly && activityOrder && onActivityOrderChange && (
+        <>
+          <div className="w-px h-5 bg-border mx-1" />
+          <button
+            type="button"
+            onClick={() =>
+              onActivityOrderChange(
+                activityOrder === "newest" ? "oldest" : "newest"
+              )
+            }
+            aria-label={
+              activityOrder === "newest"
+                ? t`Sorted by activity date, newest first`
+                : t`Sorted by activity date, oldest first`
+            }
+            className={cn(
+              "h-7 px-2 rounded-md flex items-center gap-1.5 transition-colors text-xs",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "text-muted-foreground hover:text-foreground hover:bg-accent/60"
+            )}
+          >
+            {activityOrder === "newest" ? (
+              <LuArrowDownWideNarrow className="w-3.5 h-3.5" />
+            ) : (
+              <LuArrowUpNarrowWide className="w-3.5 h-3.5" />
+            )}
+            <span>
+              {activityOrder === "newest" ? t`Newest first` : t`Oldest first`}
+            </span>
+          </button>
+        </>
+      )}
 
       {showGraphOnly && (
         <>

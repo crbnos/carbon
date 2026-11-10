@@ -28,6 +28,7 @@ import type {
   postServiceJobInput,
   postTimesheetInput,
   recalculateInput,
+  rejectInspectionInput,
   SaveTimesheetEntryResult,
   SubmitTimesheetWeekResult,
   saveTimesheetEntryInput,
@@ -234,6 +235,10 @@ export type PostingContract = {
       clonedOperationIds: string[];
       operationsCloned: number;
     };
+  };
+  "reject-inspection": {
+    input: z.input<typeof rejectInspectionInput>;
+    output: { id: string; issueId: string | null };
   };
   "save-timesheet-entry": {
     input: z.input<typeof saveTimesheetEntryInput>;

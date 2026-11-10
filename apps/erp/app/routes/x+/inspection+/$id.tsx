@@ -6,6 +6,9 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { prefillInspectionSamples } from "@carbon/database/quality";
+import { getLogger } from "@carbon/logger";
+import type { JSONContent } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
@@ -15,12 +18,14 @@ import {
   getBalloons,
   getInspection,
   getInspectionDocument,
+  getInspectionDocumentParameters,
   getInspectionGauges,
   getInspectionIssues,
   getInspectionMeasurements,
   getInspectionSamplingPlans,
   getInspectionTrackedEntities,
   getIssueTypesList,
+  getManualInspectionTrackedEntities,
   getRecentInspectionGauges,
   reconcileInspectionSamplingPlans
 } from "~/modules/quality/quality.service";
@@ -40,6 +45,8 @@ import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "inspection");
 
 export const handle: Handle = {
   realtime: [
@@ -65,7 +72,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(id, "id is required");
 
   const [inspection, settings, issueTypes] = await Promise.all([
-    getInspection(client, id),
+    // A serial lot whose plan inspects every unit gets every unit as a sample
+    // up front, so the inspector records results without scanning. Scoped to
+    // the company inside the engine; a lot of another company is left alone.
+    // It runs before the lot is read, whose embed carries the samples. A
+    // failure only leaves the scanner to add them, so it is logged, not thrown.
+    prefillInspectionSamples(getDatabaseClient(), {
+      inspectionId: id,
+      companyId,
+      userId
+    }).then((prefill) => {
+      if (prefill.error) {
+        logger.error("Failed to prefill the inspection samples", {
+          companyId,
+          inspectionId: id,
+          error: prefill.error
+        });
+      }
+      return getInspection(client, id);
+    }),
     getCompanySettings(client, companyId),
     getIssueTypesList(client, companyId)
   ]);
@@ -109,7 +134,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     document,
     balloons,
     receipt,
-    issues
+    issues,
+    parameters
   ] = await Promise.all([
     getInspectionSamplingPlans(client, id, companyId),
     getInspectionMeasurements(client, id, companyId),
@@ -124,7 +150,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           insp.sourceDocumentLineId,
           companyId
         )
-      : Promise.resolve({ data: null, error: null }),
+      : insp.sourceDocument === "Manual"
+        ? getManualInspectionTrackedEntities(client, id, companyId).then(
+            (result) => ({
+              data: (result.data ?? [])
+                .map((row) => row.trackedEntity)
+                .filter(Boolean),
+              error: result.error
+            })
+          )
+        : Promise.resolve({ data: null, error: null }),
     insp.inspectionDocumentId
       ? getInspectionDocument(serviceRole, insp.inspectionDocumentId, companyId)
       : Promise.resolve({ data: null, error: null }),
@@ -140,13 +175,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .eq("id", insp.sourceDocumentId)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
-    getInspectionIssues(client, id, companyId)
+    getInspectionIssues(client, id, companyId),
+    insp.inspectionDocumentId
+      ? getInspectionDocumentParameters(
+          serviceRole,
+          insp.inspectionDocumentId,
+          companyId
+        )
+      : Promise.resolve({ data: null, error: null })
   ]);
 
   const doc = document.data as {
     name?: string | null;
     content?: { pdfUrl?: string | null };
     model?: { modelUploadId: string; modelPath: string | null } | null;
+    workInstruction?: JSONContent | null;
   } | null;
 
   return data({
@@ -174,6 +217,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       regionHeight: Number(b.regionHeight ?? 0)
     })),
     documentName: doc?.name ?? null,
+    parameters: parameters.data ?? [],
+    workInstruction: doc?.workInstruction ?? null,
     pdfUrl: doc?.content?.pdfUrl ?? null,
     model: doc?.model ?? null,
     lotEntities: (lotEntities.data ?? []) as InspectionTrackedEntity[],
@@ -206,6 +251,8 @@ export default function InspectionExecutionRoute() {
       recentGaugeIds={loaderData.recentGaugeIds}
       balloons={loaderData.balloons}
       documentName={loaderData.documentName}
+      parameters={loaderData.parameters}
+      workInstruction={loaderData.workInstruction as JSONContent | null}
       pdfUrl={loaderData.pdfUrl}
       model={loaderData.model}
       lotEntities={loaderData.lotEntities as InspectionTrackedEntity[]}

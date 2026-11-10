@@ -43,10 +43,16 @@ export function useThemeValue(): string {
     () => preview,
     () => undefined
   );
+  return resolveThemeValue(previewed, [], useSavedThemeValue());
+}
+
+/** The theme in use, or the one being saved: `useThemeValue` without the
+ *  preview. A picker compares a pick with it. */
+export function useSavedThemeValue(): string {
   const fetchers = useFetchers();
   const routeData = useRouteData<{ theme?: string }>("/");
   return resolveThemeValue(
-    previewed,
+    undefined,
     fetchers.map((fetcher) => fetcher.formData?.get("theme")),
     routeData?.theme
   );

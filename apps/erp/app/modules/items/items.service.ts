@@ -8678,11 +8678,11 @@ async function stampOperationRefNames(
   if (inspectionDocumentIds.length > 0) {
     const docs = await client
       .from("inspectionDocument")
-      .select("id, drawingNumber, fileName")
+      .select("id, name, fileName")
       .in("id", inspectionDocumentIds)
       .eq("companyId", companyId);
     for (const d of docs.data ?? []) {
-      if (d.id) names.set(d.id, d.drawingNumber || d.fileName || d.id);
+      if (d.id) names.set(d.id, d.name || d.fileName || d.id);
     }
   }
 

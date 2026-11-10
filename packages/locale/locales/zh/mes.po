@@ -135,6 +135,9 @@ msgstr "{columns} 与现有的 \"{target}\" 不匹配。"
 msgid "{columns} does not match an existing record."
 msgstr "{columns} 与现有记录不匹配。"
 
+msgid "{companyName} logo"
+msgstr "{companyName} 徽标"
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} 的 {quantity}"
 
@@ -226,8 +229,14 @@ msgstr "关于此字段"
 msgid "Above the upper limit"
 msgstr "高于上限"
 
+msgid "Ac"
+msgstr "接收数"
+
 msgid "Accept"
 msgstr "接受"
+
+msgid "Accept inspection?"
+msgstr "接受检验？"
 
 msgid "Accept Lot"
 msgstr "接受批次"
@@ -372,6 +381,12 @@ msgstr "应用链接"
 
 msgid "Approvals"
 msgstr "审批"
+
+msgid "AQL"
+msgstr "AQL"
+
+msgid "AQL {aql} · Lvl {level} · {severity}"
+msgstr "AQL {aql} · 检验水平 {level} · {severity}"
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "您确定要删除此通行密钥吗?删除后您将无法使用它登录。"
@@ -857,6 +872,9 @@ msgstr "描述"
 msgid "Details"
 msgstr "详情"
 
+msgid "Discard"
+msgstr "丢弃"
+
 msgid "Dismiss"
 msgstr "关闭"
 
@@ -1142,6 +1160,9 @@ msgstr "完成账户设置"
 msgid "Finish with material unpicked?"
 msgstr "物料未拣货的情况下要完成吗？"
 
+msgid "First"
+msgstr "第一次"
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "最早应交期 {0}"
@@ -1277,6 +1298,9 @@ msgstr "检验物品"
 msgid "inspected"
 msgstr "已检验"
 
+msgid "Inspections"
+msgstr "检验"
+
 msgid "Instructions"
 msgstr "作业指导"
 
@@ -1351,6 +1375,9 @@ msgstr "工单详情"
 
 msgid "Job due"
 msgstr "工单到期"
+
+msgid "Job Operation"
+msgstr "工单工序"
 
 msgid "Job Traveler"
 msgstr "工单流转卡"
@@ -1522,6 +1549,9 @@ msgstr "制作替换件"
 
 msgid "Manage how you sign in to Carbon."
 msgstr "管理您如何登录 Carbon。"
+
+msgid "Manual"
+msgstr "手动"
 
 msgid "Manually add items to inventory"
 msgstr "手动添加物料至库存管理"
@@ -1704,6 +1734,12 @@ msgstr "未找到量具。"
 msgid "No Impact"
 msgstr "无影响"
 
+msgid "No inspection plan"
+msgstr "没有检验计划"
+
+msgid "No inspections assigned to you"
+msgstr "没有分配给您的检验"
+
 msgid "No issue types configured"
 msgstr "未配置问题类型"
 
@@ -1730,6 +1766,9 @@ msgstr "没有原材料"
 
 msgid "No materials on this batch."
 msgstr "此生产批次上没有物料。"
+
+msgid "No open inspections"
+msgstr "没有未结的检验"
 
 msgid "No open jobs"
 msgstr "没有未结的工单"
@@ -1821,6 +1860,9 @@ msgstr "无件"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍可拣货 — 库存将为负数，直到数量被核对。"
 
+msgid "No work center"
+msgstr "没有工作中心"
+
 msgid "No Work Center"
 msgstr "无工作中心"
 
@@ -1836,6 +1878,9 @@ msgstr "不计入MRP"
 msgid "None"
 msgstr "无"
 
+msgid "Normal"
+msgstr "正常检验"
+
 msgid "Not scheduled"
 msgstr "未安排"
 
@@ -1847,6 +1892,10 @@ msgstr "不可用库存。MRP 和计划不计入此库存，拣货也不会从�
 
 msgid "Notes"
 msgstr "备注"
+
+#. placeholder {0}: inspection.lotSize
+msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
+msgstr "尚无失败项，因此请说明这些件被拒绝的原因。全部 {0} 件将被标记为已拒绝。"
 
 msgid "Nothing matches your search."
 msgstr "没有匹配您搜索的内容。"
@@ -2002,6 +2051,9 @@ msgstr "合格"
 msgid "Pass all empty cells of {0}"
 msgstr "将 {0} 的所有空单元格标记为合格"
 
+msgid "Passed"
+msgstr "已通过"
+
 msgid "Passed inspection"
 msgstr "已通过检验"
 
@@ -2035,6 +2087,12 @@ msgstr "暂停{workTypeLabel}计时器"
 
 msgid "Pause maintenance"
 msgstr "暂停维护"
+
+msgid "Pending"
+msgstr "待处理"
+
+msgid "Percentage"
+msgstr "百分比"
 
 msgid "Phone"
 msgstr "电话"
@@ -2237,6 +2295,18 @@ msgstr "队列为空"
 msgid "Quotes"
 msgstr "报价单"
 
+msgid "Re"
+msgstr "拒收数"
+
+msgid "Reason"
+msgstr "原因"
+
+msgid "Reason (optional)"
+msgstr "原因（可选）"
+
+msgid "Reason (required)"
+msgstr "原因（必填）"
+
 msgid "Reason for change"
 msgstr "变更原因"
 
@@ -2248,6 +2318,12 @@ msgstr "迟交原因"
 
 msgid "Reason for rework"
 msgstr "返工原因"
+
+msgid "Receipt"
+msgstr "收货"
+
+msgid "Receipt voided"
+msgstr "收货已作废"
 
 msgid "Recent"
 msgstr "最近"
@@ -2281,6 +2357,9 @@ msgstr "记录分区"
 msgid "Recorded"
 msgstr "已记录"
 
+msgid "Reduced"
+msgstr "放宽检验"
+
 msgid "Reference image"
 msgstr "参考图像"
 
@@ -2289,6 +2368,9 @@ msgstr "注册失败"
 
 msgid "Reject"
 msgstr "拒绝"
+
+msgid "Reject inspection?"
+msgstr "拒绝检验？"
 
 msgid "Reject Lot"
 msgstr "拒绝批次"
@@ -2912,6 +2994,16 @@ msgstr "日期在输入窗口之前。原因与条目一起保存。"
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "整个{0}批次将作为不符合规范进行拒绝——目前有{passes}个样品合格和{fails}个故障。将下面的件路由到报废或返工，或仅记录判定结果。"
 
+#. placeholder {0}: inspection.lotSize
+msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
+msgstr "检验未通过：{passes} 个样本已通过，{fails} 个样本未通过。全部 {0} 件将被标记为已拒绝。"
+
+msgid "The inspection will be marked Passed and its units released to Available."
+msgstr "检验将标记为已通过，其件将释放为可用。"
+
+msgid "The inspection will be marked Passed. Its units are released to Available, except the {fails} that failed a sample, which stay Rejected."
+msgstr "检验将标记为已通过。其件将释放为可用，但未通过样本检验的 {fails} 件仍保持已拒绝状态。"
+
 msgid "The job is closed"
 msgstr "工单已关闭"
 
@@ -2967,6 +3059,12 @@ msgstr "此生产批次没有作业指导书。"
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "此信息将对所有用户可见，请谨慎分享。"
 
+msgid "This inspection plan has no parameters."
+msgstr "此检验计划没有参数。"
+
+msgid "This inspection plan has no work instructions."
+msgstr "此检验计划没有作业指导书。"
+
 msgid "This is a pass / fail check. Press P or F."
 msgstr "这是合格 / 不合格检查。请按 P 或 F。"
 
@@ -3005,6 +3103,9 @@ msgstr "缩略图"
 
 msgid "Tick the jobs this was done for."
 msgstr "标记完成此项工作的工单。"
+
+msgid "Tightened"
+msgstr "加严检验"
 
 msgid "Tighter or roomier layout. The text stays put."
 msgstr "更紧凑或更宽松的布局。文本保持不变。"

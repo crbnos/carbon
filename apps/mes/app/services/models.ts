@@ -434,6 +434,17 @@ export const inspectionSampleValidator = z.object({
   notes: zfd.text(z.string().optional())
 });
 
+// A receipt or manual lot's verdict: no production outcome rides on it, so it
+// is only Accept or Reject, with the reason a Reject needs when nothing failed.
+export const inspectionVerdictValidator = z.object({
+  decision: z.enum(["Accept", "Reject"], {
+    error: "Decision is required"
+  }),
+  reason: zfd.text(z.string().optional()),
+  // A reject opens an NCR unless the inspector turns it off, as in the ERP.
+  createNcr: zfd.checkbox()
+});
+
 // One decision surface for closing an inspection lot: the verdict carries its
 // physical outcome. Accept completes the remaining lot; Reject/Partial split
 // the failed set between Scrap (reason) and Rework (upstream target op) — or

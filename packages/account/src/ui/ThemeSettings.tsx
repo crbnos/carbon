@@ -15,12 +15,11 @@ import {
   ToggleGroup,
   ToggleGroupItem,
   useMode,
-  useThemePreview,
-  useThemeValue
+  useSavedThemeValue,
+  useThemePreview
 } from "@carbon/react";
 import type { Theme, ThemeColors } from "@carbon/utils";
 import {
-  createTrailingCall,
   normalizeHex,
   pickableThemes,
   presetThemes,
@@ -35,7 +34,7 @@ import {
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { LuCheck, LuShuffle } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { AccountSettingsSection } from "./AccountSettingsLayout";
@@ -47,12 +46,21 @@ const CUSTOM_START = presetThemes.find(
   (theme) => theme.name === "graphite"
 )!.colors;
 
-const SAVE_DELAY_MS = 400;
-
 const PRESET_GROUPS = [
   { gradient: true, themes: presetThemes.filter((t) => t.colors.gradient) },
   { gradient: false, themes: presetThemes.filter((t) => !t.colors.gradient) }
 ];
+
+/** A theme's accent variables for `<html>`, minus the ones its page tint sets
+ *  (those come from the tint, which would drop under them). */
+function accentVariables(name: string, mode: "light" | "dark") {
+  const theme = themeByName(name);
+  const variables: Record<string, string> = theme.cssVars[mode];
+  const tinted = theme.colors ? themeStyle(theme.colors).content[mode] : {};
+  return Object.fromEntries(
+    Object.entries(variables).filter(([key]) => !tinted[`--${key}`])
+  );
+}
 
 const CARD = cn(
   "h-10 justify-start gap-2.5 rounded-lg border border-border bg-transparent px-3 text-foreground",
@@ -63,7 +71,9 @@ const CARD = cn(
 
 /**
  * Account → Appearance → Theme. `withThemePresets` is off where the shell has
- * no frame to paint (the starter), which lists only the color themes.
+ * no frame to paint (the starter), which lists only the color themes. A pick
+ * (a theme, a custom color) is previewed across the app but saved only by
+ * Save; Discard, or closing the pane, puts the saved theme back.
  */
 export function ThemeSettings({
   withThemePresets
@@ -73,73 +83,73 @@ export function ThemeSettings({
   const { t } = useLingui();
   const mode = useMode();
   const fetcher = useFetcher();
-  const value = useThemeValue();
+  // The theme in use, or the one being saved.
+  const saved = useSavedThemeValue();
+  // The pick waiting for Save; `null` is none. A pick stops being one when it
+  // is the theme in use, which is the same render its save is posted in, so
+  // the preview hands over to the pending save with nothing in between.
+  const [picked, setPicked] = useState<string | null>(null);
+  const draft = picked !== null && picked !== saved ? picked : null;
+  useEffect(() => {
+    if (picked !== null && picked === saved) setPicked(null);
+  }, [picked, saved]);
+  const value = draft ?? saved;
   const current = themeByName(value);
   const isCustom = value.startsWith("custom:");
   const selected = isCustom ? CUSTOM : value;
   const colorThemes = pickableThemes();
-  const previewAccent = useThemePreview(fetcher.state === "idle");
+  const isSaving = fetcher.state !== "idle";
+  const previewAccent = useThemePreview(false);
 
-  const { submit } = fetcher;
+  // The pick paints the frame and the page tint (`useThemeValue`) until it
+  // is saved or dropped.
+  useEffect(() => {
+    setThemePreview(draft ?? undefined);
+    return () => setThemePreview(undefined);
+  }, [draft]);
 
-  const save = (name: string) => {
-    drag.take();
-    // Preview the accent on <body> until the save lands, minus the variables
-    // the page tint sets from the pending pick.
-    const next = themeByName(name);
-    const variables: Record<string, string> = next.cssVars[mode];
-    const tinted = next.colors ? themeStyle(next.colors).content[mode] : {};
-    previewAccent(
-      Object.fromEntries(
-        Object.entries(variables).filter(([key]) => !tinted[`--${key}`])
-      )
-    );
-    submit({ theme: name }, ROOT_ACTION_SAVE);
+  // The accent on <body>: the pick, then the theme being saved, since the
+  // root renders the old one on <html> until it reloads.
+  const pending = fetcher.formData?.get("theme");
+  const shown = draft ?? (typeof pending === "string" ? pending : null);
+  useEffect(() => {
+    previewAccent(shown ? accentVariables(shown, mode) : {});
+  }, [shown, mode, previewAccent]);
+
+  const pick = (name: string) => setPicked(name === saved ? null : name);
+
+  const save = () => {
+    if (draft) fetcher.submit({ theme: draft }, ROOT_ACTION_SAVE);
   };
-
-  // A drag previews every move but saves once the pointer rests.
-  const saveLatest = useRef(save);
-  useEffect(() => {
-    saveLatest.current = save;
-  });
-  const [drag] = useState(() =>
-    createTrailingCall<string>(SAVE_DELAY_MS, (name) =>
-      saveLatest.current(name)
-    )
-  );
-
-  const submitted = fetcher.formData;
-  useEffect(() => {
-    if (submitted && !drag.isPending()) setThemePreview(undefined);
-  }, [submitted, drag]);
-
-  // Closing the pane mid-drag still saves the last color.
-  useEffect(
-    () => () => {
-      const unsaved = drag.take();
-      if (unsaved) submit({ theme: unsaved }, ROOT_ACTION_SAVE);
-      setThemePreview(undefined);
-    },
-    [drag, submit]
-  );
 
   const editing = current.colors ?? CUSTOM_START;
 
-  const saveCustom = (next: ThemeColors) => save(serializeThemeColors(next));
+  const pickCustom = (next: ThemeColors) => pick(serializeThemeColors(next));
 
   const onColorChange = (field: "base" | "highlight", input: string) => {
     const hex = normalizeHex(input);
     if (!hex) return;
-    const next = serializeThemeColors({ ...editing, [field]: hex });
-    setThemePreview(next);
-    drag.schedule(next);
+    pickCustom({ ...editing, [field]: hex });
   };
 
   const onPick = (next: string) => {
     // ToggleGroup deselects on a second click; keep the selection.
     if (!next || next === selected) return;
-    save(next);
+    pick(next);
   };
+
+  const footer = (
+    <div className="flex justify-end gap-2">
+      {draft && (
+        <Button variant="secondary" onClick={() => setPicked(null)}>
+          <Trans>Discard</Trans>
+        </Button>
+      )}
+      <Button isDisabled={!draft} isLoading={isSaving} onClick={save}>
+        <Trans>Save</Trans>
+      </Button>
+    </div>
+  );
 
   const themeGrid = (
     <ToggleGroup
@@ -190,6 +200,7 @@ export function ThemeSettings({
         description={<Trans>The accent color used across Carbon.</Trans>}
       >
         {themeGrid}
+        {footer}
       </AccountSettingsSection>
     );
   }
@@ -222,7 +233,7 @@ export function ThemeSettings({
               variant="secondary"
               size="sm"
               leftIcon={<LuShuffle />}
-              onClick={() => saveCustom(randomThemeColors(editing.gradient))}
+              onClick={() => pickCustom(randomThemeColors(editing.gradient))}
             >
               <Trans>Surprise me</Trans>
             </Button>
@@ -245,9 +256,10 @@ export function ThemeSettings({
           </div>
           <GradientSwitch
             checked={editing.gradient}
-            onCheckedChange={(gradient) => saveCustom({ ...editing, gradient })}
+            onCheckedChange={(gradient) => pickCustom({ ...editing, gradient })}
           />
         </TabsContent>
+        {footer}
       </AccountSettingsSection>
     </Tabs>
   );

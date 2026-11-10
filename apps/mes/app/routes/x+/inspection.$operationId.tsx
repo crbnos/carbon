@@ -9,9 +9,11 @@ import { flash } from "@carbon/auth/session.server";
 import {
   getOrCreateJobOperationInspection,
   getRecentInspectionGauges,
+  prefillInspectionSamples,
   reconcileInspectionSamplingPlans
 } from "@carbon/database/quality";
 import { getLogger } from "@carbon/logger";
+import type { JSONContent } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData, useParams } from "react-router";
@@ -143,6 +145,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // An "inspect all" serial lot gets every unit as a sample up front, so the
+  // operator records results without scanning each one.
+  // A failure only means the units are scanned in instead: log it and go on.
+  const prefill = await prefillInspectionSamples(getDatabaseClient(), {
+    inspectionId: lot.data.id,
+    companyId,
+    userId
+  });
+  if (prefill.error) {
+    logger.error("Failed to prefill inspection samples", {
+      companyId,
+      inspectionId: lot.data.id,
+      error: prefill.error
+    });
+  }
+
   const inspectionResult = await getInspection(serviceRole, lot.data.id);
   if (inspectionResult.error || !inspectionResult.data) {
     throw redirect(
@@ -157,12 +175,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // The lot references its document live: features added to the document
   // after lot creation get their per-lot plan rows resolved lazily.
+  // A failure leaves the new features without a column: log it and go on.
   if (inspection.inspectionDocumentId) {
-    await reconcileInspectionSamplingPlans(
+    const reconciled = await reconcileInspectionSamplingPlans(
       getDatabaseClient(),
       lot.data.id,
       companyId
     );
+    if (reconciled.error) {
+      logger.error("Failed to reconcile inspection sampling plans", {
+        companyId,
+        inspectionId: lot.data.id,
+        error: reconciled.error
+      });
+    }
   }
 
   const [
@@ -264,6 +290,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     jobId: job.data.id ?? null,
     balloons: document?.data?.balloons ?? [],
     documentName: document?.data?.name ?? null,
+    parameters: document?.data?.parameters ?? [],
+    workInstruction: (document?.data?.workInstruction ??
+      null) as JSONContent | null,
     pdfUrl: document?.data?.pdfUrl ?? null,
     model: document?.data?.model ?? null
   };

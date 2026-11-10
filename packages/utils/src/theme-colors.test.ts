@@ -10,6 +10,7 @@ import {
   randomThemeColors,
   serializeThemeColors,
   THEME_PRESETS,
+  type ThemeColors,
   textColorOn,
   themeStyle,
   themeTextColors
@@ -512,6 +513,56 @@ describe("themeStyle content and panel", () => {
       content.dark["--card"]!.split(" ")[1]!
     );
     expect(saturation).toBeLessThan(5);
+  });
+});
+
+describe("a theme's accent", () => {
+  // The button and its page in one mode, as hex.
+  const button = (theme: ThemeColors, mode: "light" | "dark") => {
+    const vars = themeByName(serializeThemeColors(theme)).cssVars[mode];
+    const content = themeStyle(theme).content[mode];
+    return {
+      fill: tripletToHex(vars.primary!),
+      label: tripletToHex(vars["primary-foreground"]!),
+      ring: tripletToHex(vars.ring!),
+      page: [content["--background"]!, content["--card"]!].map(tripletToHex)
+    };
+  };
+
+  it("reads its label at AA and stands out from the page at 3:1, for every preset and custom theme", () => {
+    const all = [
+      ...THEME_PRESETS.map((preset) => preset.colors),
+      ...seededCustomThemes()
+    ];
+    for (const theme of all) {
+      for (const mode of ["light", "dark"] as const) {
+        const { fill, label, page } = button(theme, mode);
+        expect(contrastRatio(label, fill)).toBeGreaterThanOrEqual(AA);
+        for (const surface of page) {
+          expect(contrastRatio(fill, surface)).toBeGreaterThanOrEqual(3);
+        }
+      }
+    }
+  });
+
+  it("keeps a highlight that already reads as picked", () => {
+    const oxide = { base: "1c1d21", highlight: "7c3aed", gradient: false };
+    expect(button(oxide, "light")).toMatchObject({
+      fill: "7c3aed",
+      label: "ffffff",
+      ring: "7c3aed"
+    });
+  });
+
+  it("puts white text on a mid-tone, and dark text on a yellow", () => {
+    const blue = { base: "1c1d21", highlight: "3b82f6", gradient: false };
+    const yellow = { base: "1c1d21", highlight: "eab308", gradient: false };
+    expect(button(blue, "light").label).toBe("ffffff");
+    expect(button(yellow, "light").label).toBe("18181b");
+  });
+
+  it("leaves a color theme's accent alone", () => {
+    expect(themeByName("blue").cssVars.light.primary).toBe("237 57% 30%");
   });
 });
 
