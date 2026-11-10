@@ -10,6 +10,7 @@ import {
   error,
   getRedirectTo,
   isAuthProviderEnabled,
+  isDevBypassEmail,
   magicLinkValidator,
   RATE_LIMIT,
   signInCodeValidator
@@ -212,10 +213,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const user = await getUserByEmail(email);
 
-  const devBypassEmail = process.env.DEV_BYPASS_EMAIL;
   if (
-    devBypassEmail &&
-    email.toLowerCase() === devBypassEmail.toLowerCase() &&
+    isDevBypassEmail(email, process.env.DEV_BYPASS_EMAIL) &&
     user.data?.active
   ) {
     const authSession = await signInWithBypassEmail(email);

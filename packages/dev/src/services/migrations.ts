@@ -427,21 +427,31 @@ async function ensureConfigRow(
 }
 
 const SMOKE_TEST_EMAIL = "test@carbon.ms";
+// The seed's second Admin (`devSecondAdminEmail` in @carbon/database), which
+// the dev login's bypass accepts as an alias of DEV_BYPASS_EMAIL.
+const SMOKE_TEST_SECOND_ADMIN_EMAIL = "test+admin2@carbon.ms";
 
+/**
+ * Seeds test@carbon.ms's company when the user is missing, and adds its second
+ * Admin to a stack seeded before there was one (without touching its data).
+ */
 export async function ensureSmokeTestUser(
   root: string,
   db: DbTarget,
   apiPort: number
-): Promise<{ seeded: boolean }> {
-  const exists = await withClient(db, async (c) => {
-    const r = await c.query<{ count: string }>(
-      `SELECT count(*)::text FROM "user" WHERE email = $1`,
-      [SMOKE_TEST_EMAIL]
+): Promise<{ seeded: "company" | "second admin" | null }> {
+  const existing = await withClient(db, async (c) => {
+    const r = await c.query<{ email: string }>(
+      `SELECT email FROM "user" WHERE email = ANY($1)`,
+      [[SMOKE_TEST_EMAIL, SMOKE_TEST_SECOND_ADMIN_EMAIL]]
     );
-    return Number(r.rows[0]?.count) > 0;
+    return new Set(r.rows.map((row) => row.email));
   });
 
-  if (exists) return { seeded: false };
+  const hasUser = existing.has(SMOKE_TEST_EMAIL);
+  if (hasUser && existing.has(SMOKE_TEST_SECOND_ADMIN_EMAIL)) {
+    return { seeded: null };
+  }
 
   const supabaseUrl = `http://localhost:${apiPort}`;
   await execa(
@@ -450,7 +460,7 @@ export async function ensureSmokeTestUser(
       "--filter",
       "@carbon/database",
       "run",
-      "db:seed:dev",
+      hasUser ? "db:seed:dev:admin" : "db:seed:dev",
       "--",
       "--email",
       SMOKE_TEST_EMAIL
@@ -467,7 +477,7 @@ export async function ensureSmokeTestUser(
     }
   );
 
-  return { seeded: true };
+  return { seeded: hasUser ? "second admin" : "company" };
 }
 
 type HostPgOpts = {
