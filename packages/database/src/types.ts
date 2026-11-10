@@ -68077,6 +68077,333 @@ export type Database = {
           }
         ]
       }
+      salesDimensionAssignment: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customerContractId: string | null
+          customerId: string | null
+          dimensionId: string
+          id: string
+          memoId: string | null
+          quoteId: string | null
+          rentalAgreementId: string | null
+          salesInvoiceId: string | null
+          salesOrderId: string | null
+          salesReturnOrderId: string | null
+          serviceJobId: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+          valueId: string
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customerContractId?: string | null
+          customerId?: string | null
+          dimensionId: string
+          id?: string
+          memoId?: string | null
+          quoteId?: string | null
+          rentalAgreementId?: string | null
+          salesInvoiceId?: string | null
+          salesOrderId?: string | null
+          salesReturnOrderId?: string | null
+          serviceJobId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+          valueId: string
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customerContractId?: string | null
+          customerId?: string | null
+          dimensionId?: string
+          id?: string
+          memoId?: string | null
+          quoteId?: string | null
+          rentalAgreementId?: string | null
+          salesInvoiceId?: string | null
+          salesOrderId?: string | null
+          salesReturnOrderId?: string | null
+          serviceJobId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+          valueId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salesDimensionAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_customerContractId_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContract"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_customerContractId_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContracts"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_customerId_fkey"
+            columns: ["customerId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_customerId_fkey"
+            columns: ["customerId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_customerId_fkey"
+            columns: ["customerId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_dimensionId_fkey"
+            columns: ["dimensionId"]
+            isOneToOne: false
+            referencedRelation: "dimension"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_dimensionId_fkey"
+            columns: ["dimensionId"]
+            isOneToOne: false
+            referencedRelation: "dimensionValues"
+            referencedColumns: ["dimensionId"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_memoId_fkey"
+            columns: ["memoId"]
+            isOneToOne: false
+            referencedRelation: "memo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quote"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quoteCustomerDetails"
+            referencedColumns: ["quoteId"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_rentalAgreementId_fkey"
+            columns: ["rentalAgreementId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "rentalAgreement"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_rentalAgreementId_fkey"
+            columns: ["rentalAgreementId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "rentalAgreements"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_salesInvoiceId_fkey"
+            columns: ["salesInvoiceId"]
+            isOneToOne: false
+            referencedRelation: "salesInvoice"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_salesInvoiceId_fkey"
+            columns: ["salesInvoiceId"]
+            isOneToOne: false
+            referencedRelation: "salesInvoiceLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_salesInvoiceId_fkey"
+            columns: ["salesInvoiceId"]
+            isOneToOne: false
+            referencedRelation: "salesInvoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_salesReturnOrderId_fkey"
+            columns: ["salesReturnOrderId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "salesReturnOrder"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_salesReturnOrderId_fkey"
+            columns: ["salesReturnOrderId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "salesReturnOrders"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_serviceJobId_fkey"
+            columns: ["serviceJobId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "serviceJob"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_valueId_fkey"
+            columns: ["valueId"]
+            isOneToOne: false
+            referencedRelation: "dimensionValue"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesDimensionAssignment_valueId_fkey"
+            columns: ["valueId"]
+            isOneToOne: false
+            referencedRelation: "dimensionValues"
+            referencedColumns: ["valueId"]
+          }
+        ]
+      }
       salesInvoice: {
         Row: {
           assignee: string | null

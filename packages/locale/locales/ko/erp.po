@@ -8594,6 +8594,9 @@ msgstr "생성 및 스냅샷"
 msgid "Create a change notice for the new revision and open it"
 msgstr "새 리비전에 대한 변경 통지를 생성하고 엽니다."
 
+msgid "Create a Custom dimension to view this report."
+msgstr ""
+
 msgid "Create a job"
 msgstr "작업 생성"
 
@@ -9078,6 +9081,12 @@ msgstr "나열된 항목 외의 맞춤 개발"
 
 msgid "Custom development, integrations, or self-hosting"
 msgstr "맞춤 개발, 연동 또는 자체 호스팅"
+
+msgid "Custom dimension"
+msgstr ""
+
+msgid "Custom dimensions"
+msgstr ""
 
 msgid "Custom field"
 msgstr "사용자 정의 필드"
@@ -18411,6 +18420,9 @@ msgstr "리스 순투자(기본값)"
 msgid "Net invoiced sales"
 msgstr ""
 
+msgid "Net Profit"
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "순 사용권 자산"
 
@@ -21418,6 +21430,9 @@ msgstr "임기 종료까지 귀사에 소유권 이전"
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "소유: {0}"
+
+msgid "P&L by Custom Dimension"
+msgstr ""
 
 msgid "Packing Slip"
 msgstr "포장명세서"
@@ -25315,6 +25330,9 @@ msgstr "매출 시작"
 
 msgid "Revenue Type"
 msgstr "매출 유형"
+
+msgid "Revenue, expenses, and profit by dimension value"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
@@ -31856,6 +31874,9 @@ msgstr "총 예상 원가"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "생산량비례법 감가상각을 위한 총 예상 생산 수량으로, 원가가 생산된 단위당 배분됩니다."
 
+msgid "Total Expenses"
+msgstr ""
+
 msgid "Total hours"
 msgstr "총 시간"
 
@@ -31903,6 +31924,9 @@ msgstr "이 사업장의 모든 활성 작업 지시 및 수주에서 필요한 
 
 msgid "Total records"
 msgstr "총 레코드"
+
+msgid "Total Revenue"
+msgstr ""
 
 msgid "Total scrap quantity"
 msgstr "스크랩 총 수량"
@@ -32303,6 +32327,9 @@ msgstr "미할당 기계 시간 항목"
 
 msgid "Unattributed Time"
 msgstr "미귀속 시간"
+
+msgid "Unavailable value"
+msgstr ""
 
 msgid "Unbalanced"
 msgstr "불균형"

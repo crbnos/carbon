@@ -157,6 +157,15 @@ export default function ReportsIndexRoute() {
         defaultPinned: true
       },
       {
+        key: "profit-and-loss-by-dimension",
+        name: t`P&L by Custom Dimension`,
+        description: t`Revenue, expenses, and profit by dimension value`,
+        to: path.to.profitAndLossByDimension,
+        icon: LuFileSpreadsheet,
+        category: t`Financial Statements`,
+        defaultPinned: false
+      },
+      {
         key: "executive-pnl",
         name: t`Executive P&L`,
         description: t`Condensed P&L with margins and key subtotals`,

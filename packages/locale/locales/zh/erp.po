@@ -8594,6 +8594,9 @@ msgstr "创建并快照"
 msgid "Create a change notice for the new revision and open it"
 msgstr "为新修订版创建变更通知并打开"
 
+msgid "Create a Custom dimension to view this report."
+msgstr ""
+
 msgid "Create a job"
 msgstr "创建工作"
 
@@ -9078,6 +9081,12 @@ msgstr "超出列表范围的自定义开发"
 
 msgid "Custom development, integrations, or self-hosting"
 msgstr "自定义开发、集成或自托管"
+
+msgid "Custom dimension"
+msgstr ""
+
+msgid "Custom dimensions"
+msgstr ""
 
 msgid "Custom field"
 msgstr "自定义字段"
@@ -18411,6 +18420,9 @@ msgstr "租赁净投资（默认）"
 msgid "Net invoiced sales"
 msgstr ""
 
+msgid "Net Profit"
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "使用权资产净额"
 
@@ -21418,6 +21430,9 @@ msgstr "所有权在租赁期末转移给您"
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "拥有：{0}"
+
+msgid "P&L by Custom Dimension"
+msgstr ""
 
 msgid "Packing Slip"
 msgstr "装箱单"
@@ -25315,6 +25330,9 @@ msgstr "收入开始"
 
 msgid "Revenue Type"
 msgstr "收入类型"
+
+msgid "Revenue, expenses, and profit by dimension value"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
@@ -31856,6 +31874,9 @@ msgstr "总预计成本"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "按产量折旧法的预期生产总单位数；成本按生产的每个单位分摊。"
 
+msgid "Total Expenses"
+msgstr ""
+
 msgid "Total hours"
 msgstr "总小时数"
 
@@ -31903,6 +31924,9 @@ msgstr "此地点所有启用的工单和销售订单所需的总数量——不
 
 msgid "Total records"
 msgstr "记录总数"
+
+msgid "Total Revenue"
+msgstr ""
 
 msgid "Total scrap quantity"
 msgstr "总报废数量"
@@ -32303,6 +32327,9 @@ msgstr "未分配的机器工时条目"
 
 msgid "Unattributed Time"
 msgstr "未归属时间"
+
+msgid "Unavailable value"
+msgstr ""
 
 msgid "Unbalanced"
 msgstr "不平衡"

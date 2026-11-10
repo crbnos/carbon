@@ -8594,6 +8594,9 @@ msgstr "Créer et capturer"
 msgid "Create a change notice for the new revision and open it"
 msgstr "Créer un avis de modification pour la nouvelle révision et l'ouvrir"
 
+msgid "Create a Custom dimension to view this report."
+msgstr ""
+
 msgid "Create a job"
 msgstr "Créer une commande"
 
@@ -9078,6 +9081,12 @@ msgstr "Développement personnalisé au-delà de ce qui est énuméré"
 
 msgid "Custom development, integrations, or self-hosting"
 msgstr "Développement personnalisé, intégrations ou auto-hébergement"
+
+msgid "Custom dimension"
+msgstr ""
+
+msgid "Custom dimensions"
+msgstr ""
 
 msgid "Custom field"
 msgstr "Champ personnalisé"
@@ -18411,6 +18420,9 @@ msgstr "Investissement net dans les contrats de location (par défaut)"
 msgid "Net invoiced sales"
 msgstr ""
 
+msgid "Net Profit"
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "Actif net de droit d'utilisation"
 
@@ -21418,6 +21430,9 @@ msgstr "La propriété vous est transférée d'ici la fin de la durée"
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "Responsable de : {0}"
+
+msgid "P&L by Custom Dimension"
+msgstr ""
 
 msgid "Packing Slip"
 msgstr "Bon de livraison"
@@ -25315,6 +25330,9 @@ msgstr "Début des revenus"
 
 msgid "Revenue Type"
 msgstr "Type de Revenus"
+
+msgid "Revenue, expenses, and profit by dimension value"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
@@ -31856,6 +31874,9 @@ msgstr "Coût estimé total"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Unités de production totales attendues pour l'amortissement des unités de production; le coût est réparti par unité produite."
 
+msgid "Total Expenses"
+msgstr ""
+
 msgid "Total hours"
 msgstr "Heures totales"
 
@@ -31903,6 +31924,9 @@ msgstr "Quantité totale requise pour tous les ordres de fabrication et commande
 
 msgid "Total records"
 msgstr "Total des enregistrements"
+
+msgid "Total Revenue"
+msgstr ""
 
 msgid "Total scrap quantity"
 msgstr "Quantité totale de rebut"
@@ -32303,6 +32327,9 @@ msgstr "Entrées de temps machine non attribuées"
 
 msgid "Unattributed Time"
 msgstr "Temps non attribué"
+
+msgid "Unavailable value"
+msgstr ""
 
 msgid "Unbalanced"
 msgstr "Déséquilibré"

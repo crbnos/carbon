@@ -1612,6 +1612,9 @@ export const manifest = {
   }),
   rework: company("production", { read: "production_view" }),
   riskRegister: company("quality", { create: "employee" }),
+  // Sales, Invoicing, and Service share this table. The source-specific
+  // permission and document-state checks belong to its service operations.
+  salesDimensionAssignment: serviceOnly(),
   salesInvoice: company("invoicing", { read: "invoicing_view" }),
   salesInvoiceLine: company("invoicing", { read: "invoicing_view" }),
   // Government contracting Phase 5a: the ACRN split of an invoice. Only the

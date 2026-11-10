@@ -15,8 +15,9 @@ import { useRef } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
+import { SalesDimensionAssignmentsPanel } from "~/components/SalesDimensionAssignmentsPanel";
 import { useRouteData } from "~/hooks";
-import { quoteValidator } from "~/modules/sales/sales.models";
+import { isQuoteLocked, quoteValidator } from "~/modules/sales/sales.models";
 import { getQuote } from "~/modules/sales/sales.service";
 import type {
   Opportunity,
@@ -54,9 +55,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const api = await carbon(request);
+  const dimensions = await api.shared.getSalesDimensionAssignments({
+    recordType: "quote",
+    recordId: quoteId
+  });
+  if (dimensions.error) throw new Error(dimensions.error.message);
+
   return {
     internalNotes: (quote.data?.internalNotes ?? {}) as JSONContent,
-    externalNotes: (quote.data?.externalNotes ?? {}) as JSONContent
+    externalNotes: (quote.data?.externalNotes ?? {}) as JSONContent,
+    availableDimensions: dimensions.data?.availableDimensions ?? [],
+    assignments: dimensions.data?.assignments ?? []
   };
 }
 
@@ -80,7 +90,8 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function QuoteDetailsRoute() {
   const { t } = useLingui();
-  const { internalNotes, externalNotes } = useLoaderData<typeof loader>();
+  const { internalNotes, externalNotes, availableDimensions, assignments } =
+    useLoaderData<typeof loader>();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
 
@@ -145,6 +156,13 @@ export default function QuoteDetailsRoute() {
         opportunity={quoteData?.opportunity!}
       />
       <QuoteSummary key={quoteId} onEditShippingCost={handleEditShippingCost} />
+      <SalesDimensionAssignmentsPanel
+        recordType="quote"
+        recordId={quoteId}
+        availableDimensions={availableDimensions}
+        assignments={assignments}
+        locked={isQuoteLocked(quoteData.quote.status)}
+      />
       <OpportunityNotes
         key={`notes-${initialValues.id}`}
         id={quoteData.quote.id}

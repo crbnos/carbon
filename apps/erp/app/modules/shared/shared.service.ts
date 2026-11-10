@@ -53,6 +53,7 @@ import type {
   KyselyDatabase,
   KyselyTx
 } from "@carbon/database/client";
+import { withTransaction } from "@carbon/database/client";
 import {
   type ContractPosition,
   EMPTY_POSITION
@@ -195,7 +196,10 @@ import {
   SUPPLIER_CONTACT_EMAIL_REQUIRED
 } from "~/modules/purchasing/purchasing.models";
 import { getLocationsList } from "~/modules/resources/resources.service";
-import { CUSTOMER_CONTACT_EMAIL_REQUIRED } from "~/modules/sales/sales.models";
+import {
+  CUSTOMER_CONTACT_EMAIL_REQUIRED,
+  isSalesOrderLocked
+} from "~/modules/sales/sales.models";
 import {
   getCustomerContact,
   getSalesOrder,
@@ -9836,6 +9840,15 @@ export async function convertDocument(
           throw new Error("sales order is not created");
         }
         insertedSalesOrderId = salesOrder.id;
+        await copySalesDimensionAssignments(
+          trx,
+          companyId,
+          "quote",
+          id,
+          "salesOrder",
+          insertedSalesOrderId,
+          userId
+        );
 
         // Copy quotePayment data to salesOrderPayment
         await trx
@@ -10205,6 +10218,15 @@ export async function convertDocument(
 
         if (!salesInvoice.id) throw new Error("Sales invoice not created");
         salesInvoiceId = salesInvoice.id;
+        await copySalesDimensionAssignments(
+          trx,
+          companyId,
+          "salesOrder",
+          order.id,
+          "salesInvoice",
+          salesInvoiceId,
+          userId
+        );
 
         await trx
           .insertInto("salesInvoiceShipment")
@@ -10861,6 +10883,15 @@ export async function convertDocument(
 
         if (!salesInvoice.id) throw new Error("Sales invoice not created");
         salesInvoiceId = salesInvoice.id;
+        await copySalesDimensionAssignments(
+          trx,
+          companyId,
+          "salesOrder",
+          order.id,
+          "salesInvoice",
+          salesInvoiceId,
+          userId
+        );
 
         await trx
           .insertInto("salesInvoiceShipment")
@@ -18640,4 +18671,370 @@ async function authorizeApiKey(
   if (!hasPermissions(scopes, companyId, required)) {
     throw new ForbiddenError("API key lacks required permissions");
   }
+}
+
+export const salesDimensionSourceColumns = {
+  customer: "customerId",
+  quote: "quoteId",
+  salesOrder: "salesOrderId",
+  salesInvoice: "salesInvoiceId",
+  memo: "memoId",
+  salesReturnOrder: "salesReturnOrderId",
+  customerContract: "customerContractId",
+  rentalAgreement: "rentalAgreementId",
+  serviceJob: "serviceJobId"
+} as const;
+
+export type SalesDimensionSource = keyof typeof salesDimensionSourceColumns;
+export type SalesDimensionSelection = { dimensionId: string; valueId: string };
+
+/** A single company-scoped read for all records of one source type. */
+export async function getSalesDimensionAssignments(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  recordType: SalesDimensionSource,
+  recordIds: string[]
+) {
+  if (recordIds.length === 0) return [];
+  const sourceColumn = salesDimensionSourceColumns[recordType];
+  return db
+    .selectFrom("salesDimensionAssignment")
+    .select([sourceColumn, "dimensionId", "valueId"])
+    .where("companyId", "=", companyId)
+    .where(sourceColumn, "in", recordIds)
+    .execute();
+}
+
+/** Reads all available Custom dimensions and their values for this company. */
+export async function getAvailableSalesDimensions(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+) {
+  const rows = await db
+    .selectFrom("dimension")
+    .innerJoin("company", "company.companyGroupId", "dimension.companyGroupId")
+    .leftJoin("dimensionValue", (join) =>
+      join
+        .onRef("dimensionValue.dimensionId", "=", "dimension.id")
+        .onRef("dimensionValue.companyGroupId", "=", "dimension.companyGroupId")
+    )
+    .select([
+      "dimension.id as id",
+      "dimension.name as name",
+      "dimensionValue.id as valueId",
+      "dimensionValue.name as valueName"
+    ])
+    .where("company.id", "=", companyId)
+    .where("dimension.entityType", "=", "Custom")
+    .where("dimension.active", "=", true)
+    .orderBy("dimension.name")
+    .orderBy("dimensionValue.name")
+    .execute();
+  const dimensions = new Map<
+    string,
+    { id: string; name: string; values: { id: string; name: string }[] }
+  >();
+  for (const row of rows) {
+    let dimension = dimensions.get(row.id);
+    if (!dimension) {
+      dimension = { id: row.id, name: row.name, values: [] };
+      dimensions.set(row.id, dimension);
+    }
+    if (row.valueId && row.valueName) {
+      dimension.values.push({ id: row.valueId, name: row.valueName });
+    }
+  }
+  return [...dimensions.values()];
+}
+
+/** Replaces one record's selections inside the caller's transaction if present. */
+export async function replaceSalesDimensionAssignments(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  recordType: SalesDimensionSource,
+  recordId: string,
+  assignments: SalesDimensionSelection[],
+  userId: string
+) {
+  return withTransaction(db, async (trx) => {
+    const sourceColumn = salesDimensionSourceColumns[recordType];
+    const source = await trx
+      .selectFrom(recordType)
+      .select("id")
+      .where("id", "=", recordId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!source) throw new NotFoundError("Sales dimension source not found");
+    const dimensions = new Set<string>();
+    for (const assignment of assignments) {
+      if (dimensions.has(assignment.dimensionId)) {
+        throw new InvalidInputError("A dimension can only have one value");
+      }
+      dimensions.add(assignment.dimensionId);
+    }
+    const existing = await getSalesDimensionAssignments(
+      trx,
+      companyId,
+      recordType,
+      [recordId]
+    );
+    if (assignments.length) {
+      const validValues = await trx
+        .selectFrom("dimensionValue")
+        .innerJoin("dimension", "dimension.id", "dimensionValue.dimensionId")
+        .innerJoin(
+          "company",
+          "company.companyGroupId",
+          "dimension.companyGroupId"
+        )
+        .select(["dimension.id as dimensionId", "dimensionValue.id as valueId"])
+        .where("company.id", "=", companyId)
+        .where("dimension.entityType", "=", "Custom")
+        .where("dimension.active", "=", true)
+        .where("dimensionValue.companyGroupId", "=", (eb) =>
+          eb.ref("dimension.companyGroupId")
+        )
+        .where(
+          "dimensionValue.id",
+          "in",
+          assignments.map((a) => a.valueId)
+        )
+        .execute();
+      const valid = new Set(
+        [...validValues, ...existing].map(
+          (v) => `${v.dimensionId}:${v.valueId}`
+        )
+      );
+      if (
+        assignments.some((a) => !valid.has(`${a.dimensionId}:${a.valueId}`))
+      ) {
+        throw new InvalidInputError(
+          "Select a valid value from an active Custom dimension"
+        );
+      }
+    }
+    await trx
+      .deleteFrom("salesDimensionAssignment")
+      .where("companyId", "=", companyId)
+      .where(sourceColumn, "=", recordId)
+      .execute();
+    if (assignments.length) {
+      await trx
+        .insertInto("salesDimensionAssignment")
+        .values(
+          assignments.map((a) => ({
+            companyId,
+            [sourceColumn]: recordId,
+            dimensionId: a.dimensionId,
+            valueId: a.valueId,
+            createdBy: userId
+          }))
+        )
+        .execute();
+    }
+    return assignments;
+  });
+}
+
+/** Locks an editable source so posting cannot race the replacement. */
+export async function replaceEditableSalesDimensionAssignments(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  recordType: "customer" | "quote" | "salesOrder" | "salesInvoice" | "memo",
+  recordId: string,
+  assignments: SalesDimensionSelection[],
+  userId: string
+) {
+  return withTransaction(db, async (trx) => {
+    if (recordType === "customer") {
+      const customer = await trx
+        .selectFrom("customer")
+        .select("id")
+        .where("id", "=", recordId)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!customer) throw new NotFoundError("Customer not found");
+    } else {
+      const document = await trx
+        .selectFrom(recordType)
+        .select(["id", "status"])
+        .where("id", "=", recordId)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!document) throw new NotFoundError("Sales document not found");
+      if (
+        recordType === "salesOrder"
+          ? isSalesOrderLocked(document.status)
+          : document.status !== "Draft"
+      ) {
+        throw new InvalidInputError(
+          "Dimensions cannot be changed on this sales document"
+        );
+      }
+    }
+    return replaceSalesDimensionAssignments(
+      trx,
+      companyId,
+      recordType,
+      recordId,
+      assignments,
+      userId
+    );
+  });
+}
+
+/** Copies the source snapshot, including its empty state, over target defaults. */
+export async function copySalesDimensionAssignments(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  sourceType: SalesDimensionSource,
+  sourceId: string,
+  targetType: SalesDimensionSource,
+  targetId: string,
+  userId: string
+) {
+  return withTransaction(db, async (trx) => {
+    const rows = await getSalesDimensionAssignments(
+      trx,
+      companyId,
+      sourceType,
+      [sourceId]
+    );
+    const targetColumn = salesDimensionSourceColumns[targetType];
+    const target = await trx
+      .selectFrom(targetType)
+      .select("id")
+      .where("id", "=", targetId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!target) throw new NotFoundError("Sales dimension target not found");
+    await trx
+      .deleteFrom("salesDimensionAssignment")
+      .where("companyId", "=", companyId)
+      .where(targetColumn, "=", targetId)
+      .execute();
+    if (rows.length) {
+      await trx
+        .insertInto("salesDimensionAssignment")
+        .values(
+          rows.map((row) => ({
+            companyId,
+            [targetColumn]: targetId,
+            dimensionId: row.dimensionId,
+            valueId: row.valueId,
+            createdBy: userId
+          }))
+        )
+        .execute();
+    }
+  });
+}
+
+/** Attaches source snapshots to a batch of journal lines without replacing built-in tags. */
+export async function insertSalesDimensionJournalLinesBySources(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  lines: {
+    journalLineId: string;
+    recordType: SalesDimensionSource;
+    recordId: string;
+  }[]
+) {
+  if (!lines.length) return;
+  const lineIds = [...new Set(lines.map((line) => line.journalLineId))];
+  const owned = await db
+    .selectFrom("journalLine")
+    .select("id")
+    .where("companyId", "=", companyId)
+    .where("id", "in", lineIds)
+    .execute();
+  if (owned.length !== lineIds.length)
+    throw new NotFoundError("Journal line not found");
+  const sourceIds = new Map<SalesDimensionSource, Set<string>>();
+  for (const line of lines) {
+    const ids = sourceIds.get(line.recordType) ?? new Set<string>();
+    ids.add(line.recordId);
+    sourceIds.set(line.recordType, ids);
+  }
+  const assignments = await db
+    .selectFrom("salesDimensionAssignment")
+    .innerJoin(
+      "dimension",
+      "dimension.id",
+      "salesDimensionAssignment.dimensionId"
+    )
+    .select([
+      "salesDimensionAssignment.dimensionId as dimensionId",
+      "salesDimensionAssignment.valueId as valueId",
+      ...Object.values(salesDimensionSourceColumns)
+    ])
+    .where("salesDimensionAssignment.companyId", "=", companyId)
+    .where("dimension.entityType", "=", "Custom")
+    .where((eb) =>
+      eb.or(
+        [...sourceIds].map(([recordType, ids]) =>
+          eb(salesDimensionSourceColumns[recordType], "in", [...ids])
+        )
+      )
+    )
+    .execute();
+  const bySource = new Map<string, SalesDimensionSelection[]>();
+  for (const assignment of assignments) {
+    for (const [recordType, column] of Object.entries(
+      salesDimensionSourceColumns
+    ) as [
+      SalesDimensionSource,
+      (typeof salesDimensionSourceColumns)[SalesDimensionSource]
+    ][]) {
+      const id = assignment[column];
+      if (id) {
+        const key = `${recordType}:${id}`;
+        const selections = bySource.get(key) ?? [];
+        selections.push({
+          dimensionId: assignment.dimensionId,
+          valueId: assignment.valueId
+        });
+        bySource.set(key, selections);
+        break;
+      }
+    }
+  }
+  const inserts = lines.flatMap((line) =>
+    (bySource.get(`${line.recordType}:${line.recordId}`) ?? []).map(
+      (selection) => ({
+        companyId,
+        journalLineId: line.journalLineId,
+        ...selection
+      })
+    )
+  );
+  if (inserts.length) {
+    await db
+      .insertInto("journalLineDimension")
+      .values(inserts)
+      .onConflict((oc) =>
+        oc.columns(["journalLineId", "dimensionId"]).doNothing()
+      )
+      .execute();
+  }
+}
+
+export async function insertSalesDimensionJournalLines(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  recordType: SalesDimensionSource,
+  recordId: string,
+  journalLineIds: string[]
+) {
+  return insertSalesDimensionJournalLinesBySources(
+    db,
+    companyId,
+    journalLineIds.map((journalLineId) => ({
+      journalLineId,
+      recordType,
+      recordId
+    }))
+  );
 }

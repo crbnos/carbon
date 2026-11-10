@@ -8594,6 +8594,9 @@ msgstr "Создать и снимок"
 msgid "Create a change notice for the new revision and open it"
 msgstr "Создать извещение об изменении для новой ревизии и открыть его"
 
+msgid "Create a Custom dimension to view this report."
+msgstr ""
+
 msgid "Create a job"
 msgstr "Создать задание"
 
@@ -9078,6 +9081,12 @@ msgstr "Пользовательская разработка сверх ука�
 
 msgid "Custom development, integrations, or self-hosting"
 msgstr "Пользовательская разработка, интеграции или самостоятельный хостинг"
+
+msgid "Custom dimension"
+msgstr ""
+
+msgid "Custom dimensions"
+msgstr ""
 
 msgid "Custom field"
 msgstr "Пользовательское поле"
@@ -18411,6 +18420,9 @@ msgstr "Чистые инвестиции в лизинг (по умолчани
 msgid "Net invoiced sales"
 msgstr ""
 
+msgid "Net Profit"
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "Чистый актив права использования"
 
@@ -21418,6 +21430,9 @@ msgstr "Право собственности переходит к вам к к
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "Владеет: {0}"
+
+msgid "P&L by Custom Dimension"
+msgstr ""
 
 msgid "Packing Slip"
 msgstr "Упаковочный лист"
@@ -25315,6 +25330,9 @@ msgstr "Начало выручки"
 
 msgid "Revenue Type"
 msgstr "Тип выручки"
+
+msgid "Revenue, expenses, and profit by dimension value"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
@@ -31856,6 +31874,9 @@ msgstr "Итоговая ожидаемая себестоимость"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Общее ожидаемое количество единиц производства для амортизации по единицам продукции; себестоимость распределяется на единицу произведенной продукции."
 
+msgid "Total Expenses"
+msgstr ""
+
 msgid "Total hours"
 msgstr "Итого часов"
 
@@ -31903,6 +31924,9 @@ msgstr "Общее количество, требуемое для всех ак
 
 msgid "Total records"
 msgstr "Всего записей"
+
+msgid "Total Revenue"
+msgstr ""
 
 msgid "Total scrap quantity"
 msgstr "Общее количество брака"
@@ -32303,6 +32327,9 @@ msgstr "неатрибутированные записи машинного в�
 
 msgid "Unattributed Time"
 msgstr "Неучтённое время"
+
+msgid "Unavailable value"
+msgstr ""
 
 msgid "Unbalanced"
 msgstr "Не сбалансировано"

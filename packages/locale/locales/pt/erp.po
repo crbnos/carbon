@@ -8594,6 +8594,9 @@ msgstr "Criar e Capturar"
 msgid "Create a change notice for the new revision and open it"
 msgstr "Criar um aviso de alteração para a nova revisão e abri-lo"
 
+msgid "Create a Custom dimension to view this report."
+msgstr ""
+
 msgid "Create a job"
 msgstr "Criar um trabalho"
 
@@ -9078,6 +9081,12 @@ msgstr "Desenvolvimento personalizado além do que está listado"
 
 msgid "Custom development, integrations, or self-hosting"
 msgstr "Desenvolvimento personalizado, integrações ou auto-hospedagem"
+
+msgid "Custom dimension"
+msgstr ""
+
+msgid "Custom dimensions"
+msgstr ""
 
 msgid "Custom field"
 msgstr "Campo personalizado"
@@ -18411,6 +18420,9 @@ msgstr "Investimento Líquido em Arrendamentos (padrão)"
 msgid "Net invoiced sales"
 msgstr ""
 
+msgid "Net Profit"
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "Ativo de direito de uso líquido"
 
@@ -21418,6 +21430,9 @@ msgstr "A propriedade é transferida para você no final do período"
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "Responsável por: {0}"
+
+msgid "P&L by Custom Dimension"
+msgstr ""
 
 msgid "Packing Slip"
 msgstr "Guia de Remessa"
@@ -25315,6 +25330,9 @@ msgstr "Início da Receita"
 
 msgid "Revenue Type"
 msgstr "Tipo de Receita"
+
+msgid "Revenue, expenses, and profit by dimension value"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
@@ -31856,6 +31874,9 @@ msgstr "Custo Estimado Total"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Total de unidades de produção esperadas para depreciação de unidades de produção; o custo é distribuído por unidade produzida."
 
+msgid "Total Expenses"
+msgstr ""
+
 msgid "Total hours"
 msgstr "Total de horas"
 
@@ -31903,6 +31924,9 @@ msgstr "Quantidade total necessária em todas as ordens de produção e pedidos 
 
 msgid "Total records"
 msgstr "Total de registros"
+
+msgid "Total Revenue"
+msgstr ""
 
 msgid "Total scrap quantity"
 msgstr "Quantidade total de refugo"
@@ -32303,6 +32327,9 @@ msgstr "entradas de tempo de máquina não atribuídas"
 
 msgid "Unattributed Time"
 msgstr "Tempo não atribuído"
+
+msgid "Unavailable value"
+msgstr ""
 
 msgid "Unbalanced"
 msgstr "Desequilibrado"

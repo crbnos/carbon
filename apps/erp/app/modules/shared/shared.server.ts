@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { NotFoundError } from "@carbon/api/errors";
+import { InvalidInputError, NotFoundError } from "@carbon/api/errors";
 import type { RequiredPermissions } from "@carbon/api/permissions";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
@@ -65,6 +65,107 @@ import { invokeCreate } from "./shared.service";
 import type { MethodRowsAdded } from "./types";
 
 const logger = getLogger("erp", "shared");
+const salesDimensionRecordTypes = [
+  "customer",
+  "quote",
+  "salesOrder",
+  "salesInvoice",
+  "memo",
+  "salesReturnOrder",
+  "customerContract",
+  "rentalAgreement",
+  "serviceJob"
+] as const;
+const salesDimensionReadRules = {
+  customer: { view: "sales" },
+  quote: { view: "sales" },
+  salesOrder: { view: "sales" },
+  salesInvoice: { view: "invoicing" },
+  memo: { view: "invoicing" },
+  salesReturnOrder: { view: "sales" },
+  customerContract: { view: "sales" },
+  rentalAgreement: { view: "sales" },
+  serviceJob: { view: "service" }
+} as const;
+const salesDimensionWriteRules = {
+  customer: { update: "sales" },
+  quote: { update: "sales" },
+  salesOrder: { update: "sales" },
+  salesInvoice: { update: "invoicing" },
+  memo: { update: "invoicing" }
+} as const;
+
+export const getSalesDimensionAssignments = defineServiceFn({
+  input: z.object({
+    recordType: z.enum(salesDimensionRecordTypes),
+    recordId: z.string().min(1)
+  }),
+  permission: { by: "recordType", rules: salesDimensionReadRules },
+  async run(ctx, { recordType, recordId }) {
+    const db = ctx.asSystem.pg;
+    const companyId = ctx.company.id;
+    const source = await db
+      .selectFrom(recordType)
+      .select("id")
+      .where("id", "=", recordId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!source)
+      return ctx.error("notFound", "Sales dimension source not found");
+    const [rows, availableDimensions] = await Promise.all([
+      service.getSalesDimensionAssignments(db, companyId, recordType, [
+        recordId
+      ]),
+      service.getAvailableSalesDimensions(db, companyId)
+    ]);
+    return {
+      assignments: rows.map(({ dimensionId, valueId }) => ({
+        dimensionId,
+        valueId
+      })),
+      availableDimensions
+    };
+  }
+});
+
+export const replaceSalesDimensionAssignments = defineServiceFn({
+  input: z.object({
+    recordType: z.enum([
+      "customer",
+      "quote",
+      "salesOrder",
+      "salesInvoice",
+      "memo"
+    ]),
+    recordId: z.string().min(1),
+    assignments: z.array(
+      z.object({
+        dimensionId: z.string().min(1),
+        valueId: z.string().min(1)
+      })
+    )
+  }),
+  permission: { by: "recordType", rules: salesDimensionWriteRules },
+  async run(ctx, { recordType, recordId, assignments }) {
+    try {
+      const saved = await service.replaceEditableSalesDimensionAssignments(
+        ctx.asSystem.pg,
+        ctx.company.id,
+        recordType,
+        recordId,
+        assignments,
+        ctx.auditUserId
+      );
+      return { assignments: saved };
+    } catch (error) {
+      if (error instanceof NotFoundError)
+        return ctx.error("notFound", error.message);
+      if (error instanceof InvalidInputError)
+        return ctx.error("validation", error.message);
+      throw error;
+    }
+  }
+});
 // ── Operations ──────────────────────────────────────────────────────────────
 /**
  * Assign a record to a person, and tell them.

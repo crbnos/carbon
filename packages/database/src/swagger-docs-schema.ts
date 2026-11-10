@@ -73941,6 +73941,249 @@ export default {
         tags: ["customerContractRevenue"]
       }
     },
+    "/salesDimensionAssignment": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.quoteId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.salesOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.salesInvoiceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.memoId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.salesReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.customerContractId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.rentalAgreementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.serviceJobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.dimensionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.valueId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/salesDimensionAssignment"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["salesDimensionAssignment"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.salesDimensionAssignment"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["salesDimensionAssignment"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.quoteId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.salesOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.salesInvoiceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.memoId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.salesReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.customerContractId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.rentalAgreementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.serviceJobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.dimensionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.valueId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["salesDimensionAssignment"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.quoteId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.salesOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.salesInvoiceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.memoId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.salesReturnOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.customerContractId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.rentalAgreementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.serviceJobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.dimensionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.valueId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesDimensionAssignment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.salesDimensionAssignment"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["salesDimensionAssignment"]
+      }
+    },
     "/methodOperationStepSlide": {
       get: {
         parameters: [
@@ -170768,6 +171011,108 @@ export default {
       },
       type: "object"
     },
+    salesDimensionAssignment: {
+      required: [
+        "id",
+        "companyId",
+        "dimensionId",
+        "valueId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('sda'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customerId: {
+          format: "text",
+          type: "string"
+        },
+        quoteId: {
+          description:
+            "Note:\nThis is a Foreign Key to `quote.id`.<fk table='quote' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        salesOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrder.id`.<fk table='salesOrder' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        salesInvoiceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesInvoice.id`.<fk table='salesInvoice' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        memoId: {
+          description:
+            "Note:\nThis is a Foreign Key to `memo.id`.<fk table='memo' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        salesReturnOrderId: {
+          format: "text",
+          type: "string"
+        },
+        customerContractId: {
+          format: "text",
+          type: "string"
+        },
+        rentalAgreementId: {
+          format: "text",
+          type: "string"
+        },
+        serviceJobId: {
+          format: "text",
+          type: "string"
+        },
+        dimensionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `dimension.id`.<fk table='dimension' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        valueId: {
+          description:
+            "Note:\nThis is a Foreign Key to `dimensionValue.id`.<fk table='dimensionValue' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     methodOperationStepSlide: {
       required: [
         "id",
@@ -231657,6 +232002,117 @@ export default {
     },
     "rowFilter.customerContractRevenue.progress": {
       name: "progress",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.salesDimensionAssignment": {
+      name: "salesDimensionAssignment",
+      description: "salesDimensionAssignment",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/salesDimensionAssignment"
+      }
+    },
+    "rowFilter.salesDimensionAssignment.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesDimensionAssignment.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesDimensionAssignment.customerId": {
+      name: "customerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesDimensionAssignment.quoteId": {
+      name: "quoteId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesDimensionAssignment.salesOrderId": {
+      name: "salesOrderId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesDimensionAssignment.salesInvoiceId": {
+      name: "salesInvoiceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesDimensionAssignment.memoId": {
+      name: "memoId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesDimensionAssignment.salesReturnOrderId": {
+      name: "salesReturnOrderId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesDimensionAssignment.customerContractId": {
+      name: "customerContractId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesDimensionAssignment.rentalAgreementId": {
+      name: "rentalAgreementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesDimensionAssignment.serviceJobId": {
+      name: "serviceJobId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesDimensionAssignment.dimensionId": {
+      name: "dimensionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesDimensionAssignment.valueId": {
+      name: "valueId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesDimensionAssignment.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesDimensionAssignment.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesDimensionAssignment.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesDimensionAssignment.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

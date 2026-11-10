@@ -8594,6 +8594,9 @@ msgstr "Crea e Snapshot"
 msgid "Create a change notice for the new revision and open it"
 msgstr "Crea un avviso di modifica per la nuova revisione e aprilo"
 
+msgid "Create a Custom dimension to view this report."
+msgstr ""
+
 msgid "Create a job"
 msgstr "Crea un lavoro"
 
@@ -9078,6 +9081,12 @@ msgstr "Sviluppo personalizzato oltre quanto elencato"
 
 msgid "Custom development, integrations, or self-hosting"
 msgstr "Sviluppo personalizzato, integrazioni o self-hosting"
+
+msgid "Custom dimension"
+msgstr ""
+
+msgid "Custom dimensions"
+msgstr ""
 
 msgid "Custom field"
 msgstr "Campo personalizzato"
@@ -18411,6 +18420,9 @@ msgstr "Investimento netto in locazioni (predefinito)"
 msgid "Net invoiced sales"
 msgstr ""
 
+msgid "Net Profit"
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "Cespite netto per diritto d'uso"
 
@@ -21418,6 +21430,9 @@ msgstr "La proprietà ti viene trasferita entro la fine del contratto"
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "Possiede: {0}"
+
+msgid "P&L by Custom Dimension"
+msgstr ""
 
 msgid "Packing Slip"
 msgstr "Documento di trasporto"
@@ -25315,6 +25330,9 @@ msgstr "Inizio ricavi"
 
 msgid "Revenue Type"
 msgstr "Tipo di ricavo"
+
+msgid "Revenue, expenses, and profit by dimension value"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
@@ -31856,6 +31874,9 @@ msgstr "Costo totale stimato"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Unità di produzione totali previste per ammortamento delle unità di produzione; il costo è distribuito per unità prodotta."
 
+msgid "Total Expenses"
+msgstr ""
+
 msgid "Total hours"
 msgstr "Ore totali"
 
@@ -31903,6 +31924,9 @@ msgstr "Quantità totale richiesta in tutti gli ordini di produzione e gli ordin
 
 msgid "Total records"
 msgstr "Totale record"
+
+msgid "Total Revenue"
+msgstr ""
 
 msgid "Total scrap quantity"
 msgstr "Quantità totale di scarto"
@@ -32303,6 +32327,9 @@ msgstr "voci di tempo macchina non attribuite"
 
 msgid "Unattributed Time"
 msgstr "Tempo non attribuito"
+
+msgid "Unavailable value"
+msgstr ""
 
 msgid "Unbalanced"
 msgstr "Sbilanciato"

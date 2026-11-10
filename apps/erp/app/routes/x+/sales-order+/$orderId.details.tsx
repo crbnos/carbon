@@ -15,8 +15,12 @@ import { useRef } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
+import { SalesDimensionAssignmentsPanel } from "~/components/SalesDimensionAssignmentsPanel";
 import { useRouteData } from "~/hooks";
-import { salesOrderValidator } from "~/modules/sales/sales.models";
+import {
+  isSalesOrderLocked,
+  salesOrderValidator
+} from "~/modules/sales/sales.models";
 import {
   getSalesOrder,
   getSalesOrderPayment,
@@ -79,11 +83,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const api = await carbon(request);
+  const dimensions = await api.shared.getSalesDimensionAssignments({
+    recordType: "salesOrder",
+    recordId: orderId
+  });
+  if (dimensions.error) throw new Error(dimensions.error.message);
+
   return {
     internalNotes: (order.data?.internalNotes ?? {}) as JSONContent,
     externalNotes: (order.data?.externalNotes ?? {}) as JSONContent,
     payment: payment.data || null,
-    shipment: shipment.data || null
+    shipment: shipment.data || null,
+    availableDimensions: dimensions.data?.availableDimensions ?? [],
+    assignments: dimensions.data?.assignments ?? []
   };
 }
 
@@ -107,8 +120,14 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function SalesOrderDetailsRoute() {
   const { t } = useLingui();
-  const { internalNotes, externalNotes, payment, shipment } =
-    useLoaderData<typeof loader>();
+  const {
+    internalNotes,
+    externalNotes,
+    payment,
+    shipment,
+    availableDimensions,
+    assignments
+  } = useLoaderData<typeof loader>();
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
 
@@ -163,6 +182,13 @@ export default function SalesOrderDetailsRoute() {
         opportunity={orderData?.opportunity!}
       />
       <SalesOrderSummary onEditShippingCost={handleEditShippingCost} />
+      <SalesDimensionAssignmentsPanel
+        recordType="salesOrder"
+        recordId={orderId}
+        availableDimensions={availableDimensions}
+        assignments={assignments}
+        locked={isSalesOrderLocked(orderData.salesOrder.status)}
+      />
 
       <OpportunityNotes
         key={`notes-${orderId}`}

@@ -8594,6 +8594,9 @@ msgstr "Create & Snapshot"
 msgid "Create a change notice for the new revision and open it"
 msgstr "Create a change notice for the new revision and open it"
 
+msgid "Create a Custom dimension to view this report."
+msgstr "Create a Custom dimension to view this report."
+
 msgid "Create a job"
 msgstr "Create a job"
 
@@ -9078,6 +9081,12 @@ msgstr "Custom development beyond what's listed"
 
 msgid "Custom development, integrations, or self-hosting"
 msgstr "Custom development, integrations, or self-hosting"
+
+msgid "Custom dimension"
+msgstr "Custom dimension"
+
+msgid "Custom dimensions"
+msgstr "Custom dimensions"
 
 msgid "Custom field"
 msgstr "Custom field"
@@ -18411,6 +18420,9 @@ msgstr "Net Investment in Leases (default)"
 msgid "Net invoiced sales"
 msgstr "Net invoiced sales"
 
+msgid "Net Profit"
+msgstr "Net Profit"
+
 msgid "Net right-of-use asset"
 msgstr "Net right-of-use asset"
 
@@ -21418,6 +21430,9 @@ msgstr "Ownership transfers to you by the end of the term"
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "Owns: {0}"
+
+msgid "P&L by Custom Dimension"
+msgstr "P&L by Custom Dimension"
 
 msgid "Packing Slip"
 msgstr "Packing Slip"
@@ -25315,6 +25330,9 @@ msgstr "Revenue Start"
 
 msgid "Revenue Type"
 msgstr "Revenue Type"
+
+msgid "Revenue, expenses, and profit by dimension value"
+msgstr "Revenue, expenses, and profit by dimension value"
 
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
@@ -31856,6 +31874,9 @@ msgstr "Total Estimated Cost"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 
+msgid "Total Expenses"
+msgstr "Total Expenses"
+
 msgid "Total hours"
 msgstr "Total hours"
 
@@ -31903,6 +31924,9 @@ msgstr "Total quantity required across all active jobs and sales orders at this 
 
 msgid "Total records"
 msgstr "Total records"
+
+msgid "Total Revenue"
+msgstr "Total Revenue"
 
 msgid "Total scrap quantity"
 msgstr "Total scrap quantity"
@@ -32303,6 +32327,9 @@ msgstr "unattributed machine time entries"
 
 msgid "Unattributed Time"
 msgstr "Unattributed Time"
+
+msgid "Unavailable value"
+msgstr "Unavailable value"
 
 msgid "Unbalanced"
 msgstr "Unbalanced"

@@ -8594,6 +8594,9 @@ msgstr "Oluştur & Anlık Görüntü"
 msgid "Create a change notice for the new revision and open it"
 msgstr "Yeni revizyon için bir değişiklik bildirisi oluştur ve aç"
 
+msgid "Create a Custom dimension to view this report."
+msgstr ""
+
 msgid "Create a job"
 msgstr "İş oluştur"
 
@@ -9078,6 +9081,12 @@ msgstr "Listelenenin ötesinde özel geliştirme"
 
 msgid "Custom development, integrations, or self-hosting"
 msgstr "Özel geliştirme, entegrasyonlar veya kendi barındırma"
+
+msgid "Custom dimension"
+msgstr ""
+
+msgid "Custom dimensions"
+msgstr ""
 
 msgid "Custom field"
 msgstr "Özel Alan"
@@ -18411,6 +18420,9 @@ msgstr "Net Kiralama Yatırımı (varsayılan)"
 msgid "Net invoiced sales"
 msgstr ""
 
+msgid "Net Profit"
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "Net kullanım hakkı varlığı"
 
@@ -21418,6 +21430,9 @@ msgstr "Mülkiyet kiralama döneminin sonunda size devredilir"
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "Sahibi: {0}"
+
+msgid "P&L by Custom Dimension"
+msgstr ""
 
 msgid "Packing Slip"
 msgstr "Paketleme Fişi"
@@ -25315,6 +25330,9 @@ msgstr "Hasılat Başlangıcı"
 
 msgid "Revenue Type"
 msgstr "Hasılat Türü"
+
+msgid "Revenue, expenses, and profit by dimension value"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
@@ -31856,6 +31874,9 @@ msgstr "Toplam Tahmini Maliyet"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Üretim birimleri amortismanı için toplam beklenen üretim birimleri; maliyet üretilen birim başına dağıtılır."
 
+msgid "Total Expenses"
+msgstr ""
+
 msgid "Total hours"
 msgstr "Toplam saatler"
 
@@ -31903,6 +31924,9 @@ msgstr "Bu konumdaki tüm devam eden iş emirleri ve satış siparişlerinde ger
 
 msgid "Total records"
 msgstr "Toplam kayıt"
+
+msgid "Total Revenue"
+msgstr ""
 
 msgid "Total scrap quantity"
 msgstr "Toplam fire miktarı"
@@ -32303,6 +32327,9 @@ msgstr "atfedilmemiş makine süresi girdileri"
 
 msgid "Unattributed Time"
 msgstr "Atanmamış Süre"
+
+msgid "Unavailable value"
+msgstr ""
 
 msgid "Unbalanced"
 msgstr "Dengesiz"

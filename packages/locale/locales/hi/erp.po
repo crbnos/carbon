@@ -8594,6 +8594,9 @@ msgstr "बनाएं और स्नैपशॉट लें"
 msgid "Create a change notice for the new revision and open it"
 msgstr "नए रिवीजन के लिए एक परिवर्तन सूचना बनाएँ और इसे खोलें"
 
+msgid "Create a Custom dimension to view this report."
+msgstr ""
+
 msgid "Create a job"
 msgstr "एक नौकरी बनाएँ"
 
@@ -9078,6 +9081,12 @@ msgstr "सूचीबद्ध से परे कस्टम विका�
 
 msgid "Custom development, integrations, or self-hosting"
 msgstr "कस्टम विकास, एकीकरण, या स्व-होस्टिंग"
+
+msgid "Custom dimension"
+msgstr ""
+
+msgid "Custom dimensions"
+msgstr ""
 
 msgid "Custom field"
 msgstr "कस्टम फ़ील्ड"
@@ -18411,6 +18420,9 @@ msgstr "पट्टों में शुद्ध निवेश (डिफ�
 msgid "Net invoiced sales"
 msgstr ""
 
+msgid "Net Profit"
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "शुद्ध उपयोग का अधिकार संपत्ति"
 
@@ -21418,6 +21430,9 @@ msgstr "अवधि के अंत तक आपको स्वामित�
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "स्वामित्व: {0}"
+
+msgid "P&L by Custom Dimension"
+msgstr ""
 
 msgid "Packing Slip"
 msgstr "पैकिंग स्लिप"
@@ -25315,6 +25330,9 @@ msgstr "राजस्व प्रारंभ"
 
 msgid "Revenue Type"
 msgstr "राजस्व प्रकार"
+
+msgid "Revenue, expenses, and profit by dimension value"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
@@ -31856,6 +31874,9 @@ msgstr "कुल अनुमानित लागत"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "उत्पादन-इकाई मूल्यह्रास के लिए कुल अपेक्षित उत्पादन इकाइयां; लागत उत्पादित प्रति यूनिट फैली हुई है।"
 
+msgid "Total Expenses"
+msgstr ""
+
 msgid "Total hours"
 msgstr "कुल घंटे"
 
@@ -31903,6 +31924,9 @@ msgstr "इस स्थान पर सभी सक्रिय जॉब औ
 
 msgid "Total records"
 msgstr "कुल रिकॉर्ड"
+
+msgid "Total Revenue"
+msgstr ""
 
 msgid "Total scrap quantity"
 msgstr "कुल स्क्रैप मात्रा"
@@ -32303,6 +32327,9 @@ msgstr "अनिर्दिष्ट मशीन समय प्रविष
 
 msgid "Unattributed Time"
 msgstr "अनिर्दिष्ट समय"
+
+msgid "Unavailable value"
+msgstr ""
 
 msgid "Unbalanced"
 msgstr "असंतुलित"

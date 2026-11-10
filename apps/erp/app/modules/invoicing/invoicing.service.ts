@@ -226,6 +226,7 @@ import {
   getCompanyTimeZone as getCachedCompanyTimeZone,
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
+  insertSalesDimensionJournalLines,
   type JournalLineDimensionValues,
   journalLineDimensionRows,
   loadContractPositions,
@@ -10043,6 +10044,13 @@ export async function postSalesInvoice(
                 .values(journalLineDimensionInserts)
                 .execute();
             }
+            await insertSalesDimensionJournalLines(
+              trx,
+              companyId,
+              "salesInvoice",
+              invoiceId,
+              journalLineResults.map((line) => line.id)
+            );
 
             // Straight-line each deferred line into Planned schedule rows; a
             // recognition run later moves each row from Deferred Revenue to
@@ -11922,6 +11930,15 @@ export function postMemoTransaction(
         .insertInto("journalLineDimension")
         .values(dimensionValues)
         .execute();
+    }
+    if (isAR) {
+      await insertSalesDimensionJournalLines(
+        trx,
+        companyId,
+        "memo",
+        memoId,
+        inserted.map((line) => line.id)
+      );
     }
     await trx
       .updateTable("memo")

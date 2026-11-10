@@ -8594,6 +8594,9 @@ msgstr "Erstellen & Snapshot"
 msgid "Create a change notice for the new revision and open it"
 msgstr "Erstellen Sie eine Änderungsmitteilung für die neue Revision und öffnen Sie sie"
 
+msgid "Create a Custom dimension to view this report."
+msgstr ""
+
 msgid "Create a job"
 msgstr "Auftrag erstellen"
 
@@ -9078,6 +9081,12 @@ msgstr "Benutzerdefinierte Entwicklung über das Aufgelistete hinaus"
 
 msgid "Custom development, integrations, or self-hosting"
 msgstr "Benutzerdefinierte Entwicklung, Integrationen oder Self-Hosting"
+
+msgid "Custom dimension"
+msgstr ""
+
+msgid "Custom dimensions"
+msgstr ""
 
 msgid "Custom field"
 msgstr "Benutzerdefiniertes Feld"
@@ -18411,6 +18420,9 @@ msgstr "Nettoinvestitionen in Leasingverhältnisse (Standard)"
 msgid "Net invoiced sales"
 msgstr ""
 
+msgid "Net Profit"
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "Netto-Nutzungsrecht"
 
@@ -21418,6 +21430,9 @@ msgstr "Eigentum wird bis zum Ende der Laufzeit auf Sie übertragen"
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "Verwaltet: {0}"
+
+msgid "P&L by Custom Dimension"
+msgstr ""
 
 msgid "Packing Slip"
 msgstr "Packzettel"
@@ -25315,6 +25330,9 @@ msgstr "Umsatzanfang"
 
 msgid "Revenue Type"
 msgstr "Umsatzerlöstyp"
+
+msgid "Revenue, expenses, and profit by dimension value"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
@@ -31856,6 +31874,9 @@ msgstr "Geschätzte Gesamtkosten"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Gesamterwartete Produktionseinheiten für Produktionseinheiten-Abschreibung; Kosten werden pro hergestellter Einheit verteilt."
 
+msgid "Total Expenses"
+msgstr ""
+
 msgid "Total hours"
 msgstr "Gesamtstunden"
 
@@ -31903,6 +31924,9 @@ msgstr "Gesamtmenge erforderlich über alle aktiven Fertigungsaufträge und Kund
 
 msgid "Total records"
 msgstr "Datensätze gesamt"
+
+msgid "Total Revenue"
+msgstr ""
 
 msgid "Total scrap quantity"
 msgstr "Gesamtausschussmenge"
@@ -32303,6 +32327,9 @@ msgstr "nicht zugeordnete Maschinenzeit-Einträge"
 
 msgid "Unattributed Time"
 msgstr "Nicht zugeordnete Zeit"
+
+msgid "Unavailable value"
+msgstr ""
 
 msgid "Unbalanced"
 msgstr "Nicht ausgeglichen"

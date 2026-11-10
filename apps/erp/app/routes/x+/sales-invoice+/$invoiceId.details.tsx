@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -14,6 +15,7 @@ import { Fragment } from "react/jsx-runtime";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
+import { SalesDimensionAssignmentsPanel } from "~/components/SalesDimensionAssignmentsPanel";
 import { useRouteData, useUser } from "~/hooks";
 import { isSalesInvoiceLocked } from "~/modules/invoicing/invoicing.models";
 import {
@@ -56,17 +58,31 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const api = await carbon(request);
+  const dimensions = await api.shared.getSalesDimensionAssignments({
+    recordType: "salesInvoice",
+    recordId: invoiceId
+  });
+  if (dimensions.error) throw new Error(dimensions.error.message);
+
   return {
     internalNotes: (invoice.data?.internalNotes ?? {}) as JSONContent,
     externalNotes: (invoice.data?.externalNotes ?? {}) as JSONContent,
-    paymentApplications: applications.data ?? []
+    paymentApplications: applications.data ?? [],
+    availableDimensions: dimensions.data?.availableDimensions ?? [],
+    assignments: dimensions.data?.assignments ?? []
   };
 }
 
 export default function SalesInvoiceBasicRoute() {
   const { t } = useLingui();
-  const { internalNotes, externalNotes, paymentApplications } =
-    useLoaderData<typeof loader>();
+  const {
+    internalNotes,
+    externalNotes,
+    paymentApplications,
+    availableDimensions,
+    assignments
+  } = useLoaderData<typeof loader>();
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("invoiceId not found");
 
@@ -106,6 +122,13 @@ export default function SalesInvoiceBasicRoute() {
   return (
     <Fragment key={invoiceId}>
       <SalesInvoiceSummary onEditShippingCost={handleEditShippingCost} />
+      <SalesDimensionAssignmentsPanel
+        recordType="salesInvoice"
+        recordId={invoiceId}
+        availableDimensions={availableDimensions}
+        assignments={assignments}
+        locked={isSalesInvoiceLocked(salesInvoice.status)}
+      />
       <InvoicePaymentsPanel rows={paymentApplications} />
       <OpportunityNotes
         key={`notes-${salesInvoice.id}`}

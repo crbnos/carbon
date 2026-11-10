@@ -8594,6 +8594,9 @@ msgstr "作成とスナップショット"
 msgid "Create a change notice for the new revision and open it"
 msgstr "新しいリビジョンの変更通知を作成して開く"
 
+msgid "Create a Custom dimension to view this report."
+msgstr ""
+
 msgid "Create a job"
 msgstr "ジョブを作成"
 
@@ -9078,6 +9081,12 @@ msgstr "リストに記載されていないカスタム開発"
 
 msgid "Custom development, integrations, or self-hosting"
 msgstr "カスタム開発、連携、またはセルフホスティング"
+
+msgid "Custom dimension"
+msgstr ""
+
+msgid "Custom dimensions"
+msgstr ""
 
 msgid "Custom field"
 msgstr "カスタムフィールド"
@@ -18411,6 +18420,9 @@ msgstr "リース投資純額（デフォルト）"
 msgid "Net invoiced sales"
 msgstr ""
 
+msgid "Net Profit"
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "純使用権資産"
 
@@ -21418,6 +21430,9 @@ msgstr "リース期間終了までに所有権があなたに移転する"
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "所有者: {0}"
+
+msgid "P&L by Custom Dimension"
+msgstr ""
 
 msgid "Packing Slip"
 msgstr "梱包明細書"
@@ -25315,6 +25330,9 @@ msgstr "売上高開始"
 
 msgid "Revenue Type"
 msgstr "売上種別"
+
+msgid "Revenue, expenses, and profit by dimension value"
+msgstr ""
 
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
@@ -31856,6 +31874,9 @@ msgstr "推定総原価"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "生産単位による減価償却に対する予想生産数。原価は生産単位当たりに配分されます。"
 
+msgid "Total Expenses"
+msgstr ""
+
 msgid "Total hours"
 msgstr "合計時間"
 
@@ -31903,6 +31924,9 @@ msgstr "この拠点の全有効製造指図および受注で必要な総数量
 
 msgid "Total records"
 msgstr "レコード合計"
+
+msgid "Total Revenue"
+msgstr ""
 
 msgid "Total scrap quantity"
 msgstr "合計スクラップ数量"
@@ -32303,6 +32327,9 @@ msgstr "属性なし機械時間エントリ"
 
 msgid "Unattributed Time"
 msgstr "未割り当て時間"
+
+msgid "Unavailable value"
+msgstr ""
 
 msgid "Unbalanced"
 msgstr "差額有り"
