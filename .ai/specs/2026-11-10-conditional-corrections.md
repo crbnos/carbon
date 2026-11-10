@@ -58,8 +58,12 @@ steps, possibly at another station. Carbon cannot express this:
 
 1. **Define corrections on the make method.** A correction has a name, a
    return rule (re-inspect, the default, or continue), an optional attempt
-   limit, operations with their own steps, tools, parameters and work centers,
-   and materials.
+   limit, an ordered sequence of one or more operations with their own steps,
+   tools, parameters and work centers, and materials. A sequence can start
+   with preparation before the rework itself, for example "Tear down" then
+   "Clean" then "Re-torque", each at its own work center. Operations run in
+   order (`After Previous`) or alongside the one before (`With Previous`),
+   as in the normal routing.
 2. **Map step results to corrections.** On a List or Inspection step, each
    value can name a correction. On a Measurement step, "below minimum" and
    "above maximum" can each name one.
@@ -86,6 +90,8 @@ steps, possibly at another station. Carbon cannot express this:
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
 | What a correction is | Its own operations (work center, steps, times, materials), not extra steps inside the checking operation | User decision. Matches SAP NC routings and AVEVA dynamic routing. A correction can run at another station and is timed and costed. |
+| Operations per correction | One or more, ordered by `order`, each `After Previous` or `With Previous`; instantiated with the same dependency wiring as the normal routing | User requirement: a unit may need several operations (teardown, clean, then the rework) before the rework proper. |
+| Corrections inside corrections | A correction operation's steps do not map to corrections in v1; the re-inspection copy of the triggering operation can still suggest one | Keeps the trigger graph one level deep, so a correction cannot start another correction mid-sequence. The attempt limit bounds the re-inspect loop. |
 | Trigger | Suggest and confirm | User decision. Carbon already refuses to auto-post on inspection results so a mistyped result needs no compensating transaction (`inspection-system.md`, "Complete (n passed)"). |
 | Trigger sources | List/Inspection values; Measurement below min or above max | User decision. Covers pass/fail checks and gauge readings. |
 | Return rule | Per correction: re-inspect (default) or continue | User decision. Re-inspect reuses the rework pattern of copying the triggering operation. |
@@ -216,7 +222,12 @@ whose operations are scoped to the unit.
      parameters after the triggering operation, from `definition`;
   4. with `Reinspect`, also copies the triggering operation after them;
   5. adds the correction's materials to the job make method;
-  6. rewires dependencies as `cloneReworkOperations` does;
+  6. wires dependencies: each `After Previous` operation in the sequence
+     depends on every operation of the group before it, a `With Previous`
+     operation joins the group of the one before it, the re-inspection copy
+     (or, with `Continue`, every operation that depended on the triggering
+     one) depends on the whole last group. Today's rework chains its copies
+     one after another; the sequence wiring is new;
   7. writes `jobOperationTrackedEntity` rows for the named units;
   8. writes the Rework `productionQuantity` on the triggering operation;
   9. reschedules, then the caller recalculates job requirements.
@@ -287,6 +298,9 @@ For the ERP editor the sibling is **operations on the Bill of Process**:
 - [ ] Recording a mapped result in MES opens the prompt with the mapped
       correction selected; confirming adds its operations after the
       triggering operation, scoped to the unit; choosing none adds nothing.
+- [ ] A correction with several operations instantiates all of them in
+      order, honouring `With Previous`; the unit must finish the whole
+      sequence before the re-inspection copy (or the next operation) starts.
 - [ ] With re-inspect, a copy of the triggering operation follows the
       correction and the unit must pass it; with continue, the next operation
       waits on the last correction operation.
@@ -348,3 +362,9 @@ For the ERP editor the sibling is **operations on the Bill of Process**:
 ## Changelog
 
 - 2026-11-10: Created after resolving the open questions with Dane.
+- 2026-11-10: Dane approved the three implementation decisions (reuse the
+  method tables with `methodCorrectionId`; job snapshot as `jobCorrection`
+  JSONB; corrections invisible to planning and quotes). Made explicit that a
+  correction is a sequence of one or more operations (preparation before the
+  rework proper), with `With Previous` support; correction-operation steps
+  don't trigger nested corrections in v1.
