@@ -297,7 +297,9 @@ export async function keepRun(
     throw new NonRetriableError(`Cannot keep a run that is ${meta.status}`);
   }
   if (meta.snapshotPath) {
-    await removeBucketPrefix(client, companyId, backupDir(meta.snapshotPath));
+    await removeBucketPrefix(client, companyId, backupDir(meta.snapshotPath), {
+      strict: true
+    });
   }
   await marker.clear();
   return true;
@@ -363,6 +365,7 @@ export async function revertRun(
       },
       (done, total) => report({ phase: "files", done, total })
     );
+    // Not strict: the data is already back, and a leftover snapshot is hidden.
     await removeBucketPrefix(client, companyId, backupDir(snapshotPath));
     await marker.clear();
     return { reverted: true, rows };

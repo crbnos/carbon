@@ -95,11 +95,14 @@ OAuth-connector and `carbon-key` auth paths (`api+/mcp+/_index.ts`).
 `APPROVAL_RULES` gates the `x+/settings+/approval-rules.*` routes (via `requireFeature`
 + hidden nav); the runtime approval engine (`$supplierId.approval`, request/approve/reject)
 stays ungated — a Community company just has no rules to trigger it. `BACKUPS` gates the
-company backup/restore feature, but through `canManageBackups`
-(`~/modules/settings/settings.service`) = `canAccessBackups(email) ||
-companyHasFeature(BACKUPS)` — i.e. Business/Enterprise customers get it AND internal staff
-/ local dev keep the escape hatch. Demo Data (`x+/settings+/demo-data`) stays internal /
-local-dev only via the plain `canAccessBackups`.
+company backup/restore feature through `requireBackupAccess`
+(`~/modules/settings/settings.service`), taken by every backup route: `update:
+settings`, then `canManageBackups` = `IS_LOCAL_DEV || isInternalEmail(email) ||
+companyHasFeature(BACKUPS)` — Business/Enterprise customers get it AND internal staff /
+local dev keep the escape hatch. The jobs' own lock, `requireBackupsEntitlement`
+(`@carbon/ee/backups.server`), exempts only local dev. Demo Data
+(`x+/settings+/demo-data`) is not gated by plan: `update: settings` only. See
+`company-backup-restore.md`.
 
 `PERMISSIONS` gates authoring RBAC — creating/editing employee types
 (`x+/users+/employee-types*`), editing an individual user's permissions
