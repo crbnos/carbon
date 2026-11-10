@@ -4086,6 +4086,9 @@ msgstr "Любой"
 msgid "Any day in the month adds that month"
 msgstr "Выбор любого дня месяца добавляет весь месяц"
 
+msgid "any fields set to update on every push"
+msgstr "любые поля, настроенные на обновление при каждой отправке"
+
 msgid "Any item group"
 msgstr "Любая группа товаров"
 
@@ -5864,6 +5867,9 @@ msgstr "Параметр обозревателя спецификации об�
 msgid "BOM synced successfully"
 msgstr "BOM успешно синхронизирован"
 
+msgid "BOM synced. Not written: {notWritten}"
+msgstr "BOM синхронизирован. Не записано: {notWritten}"
+
 msgid "BOMs"
 msgstr "BOM"
 
@@ -6150,6 +6156,9 @@ msgstr "По единице хранения"
 
 msgid "By you · edited <0/>"
 msgstr "Вы · отредактировано <0/>"
+
+msgid "CAD model"
+msgstr "3D модель"
 
 msgid "CAD Model"
 msgstr "3D модель"
@@ -10996,6 +11005,9 @@ msgstr "Снятие"
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "Чертеж заменен. Размещения выносок были удалены; строки характеристик остались без изменений."
 
+msgid "drawings"
+msgstr "чертежи"
+
 msgid "Drop a drawing or model"
 msgstr "Перетащите чертеж или модель"
 
@@ -11276,10 +11288,6 @@ msgstr "Каждый период — один месяц, по месячной
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Каждая физическая единица получает свой отслеживаемый объект и уникальный номер — один объект, одна единица."
-
-#. placeholder {0}: replaced.join(", ")
-msgid "Each push replaces: {0}. Other edits stay."
-msgstr "Каждая отправка заменяет: {0}. Остальные изменения сохраняются."
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Менеджер по продажам каждого договора аренды или контракта (или его создатель) получает ежедневное резюме своих счетов-фактур."
@@ -16439,8 +16447,8 @@ msgstr "Последняя попытка отправки {when} не удал�
 msgid "Last push {when}:"
 msgstr "Последняя отправка {when}:"
 
-msgid "Last pushed {lastPushed}."
-msgstr "Последний раз передано {lastPushed}."
+msgid "Last pushed {lastPushed}"
+msgstr "Последний раз передано {lastPushed}"
 
 msgid "Last Quarter"
 msgstr "Последний квартал"
@@ -23409,14 +23417,14 @@ msgstr "Провести операцию без измерения"
 msgid "Push to accounting"
 msgstr "Отправить в бухгалтерию"
 
-msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr "Отправки не изменяют поля этой номенклатуры, поэтому сделанные здесь изменения остаются."
+msgid "Pushes from Onshape can update this item's {pushTargets}, but not its fields."
+msgstr "Отправки из Onshape могут обновлять {pushTargets} этой номенклатуры, но не её поля."
 
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "Отправки из Onshape прекращают обновление этой номенклатуры. Повторная отправка этой детали из Onshape свяжет её обратно."
+msgid "Pushes from Onshape can update this item's {pushTargets}."
+msgstr "Отправки из Onshape могут обновлять {pushTargets} этой номенклатуры."
 
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "Отправки заменяют только поля, для которых на странице параметров Onshape установлено обновление при каждой отправке."
+msgid "Pushes stop updating this item, and its current data stays. Any later push that includes this part number links it again."
+msgstr "Отправки перестают обновлять эту номенклатуру, а её текущие данные сохраняются. Любая последующая отправка с этим номером детали снова свяжет её."
 
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "Приостановить проект контракта в соответствии с приказом об остановке работ с 90-дневной датой окончания и возобновить его по окончании приказа."

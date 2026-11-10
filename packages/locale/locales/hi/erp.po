@@ -4086,6 +4086,9 @@ msgstr "कोई भी"
 msgid "Any day in the month adds that month"
 msgstr "महीने का कोई भी दिन उस महीने को जोड़ता है"
 
+msgid "any fields set to update on every push"
+msgstr "हर पुश पर अपडेट होने के लिए सेट किए गए कोई भी फ़ील्ड"
+
 msgid "Any item group"
 msgstr "कोई भी आइटम समूह"
 
@@ -5864,6 +5867,9 @@ msgstr "BOM एक्सप्लोरर सेटिंग अपडेट �
 msgid "BOM synced successfully"
 msgstr "BOM सफलतापूर्वक सिंक हो गया"
 
+msgid "BOM synced. Not written: {notWritten}"
+msgstr "BOM सिंक हो गया। नहीं लिखा गया: {notWritten}"
+
 msgid "BOMs"
 msgstr "BOMs"
 
@@ -6150,6 +6156,9 @@ msgstr "भंडारण इकाई के अनुसार"
 
 msgid "By you · edited <0/>"
 msgstr "आपके द्वारा · संपादित <0/>"
+
+msgid "CAD model"
+msgstr "CAD मॉडल"
 
 msgid "CAD Model"
 msgstr "CAD मॉडल"
@@ -10996,6 +11005,9 @@ msgstr "आहरण"
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "चित्र को प्रतिस्थापित किया गया। बैलून प्लेसमेंट हटा दिए गए; विशेषता पंक्तियां अपरिवर्तित रहीं।"
 
+msgid "drawings"
+msgstr "ड्रॉइंग"
+
 msgid "Drop a drawing or model"
 msgstr "ड्रॉइंग या मॉडल यहाँ छोड़ें"
 
@@ -11276,10 +11288,6 @@ msgstr "प्रत्येक अवधि एक महीना है, म
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "प्रत्येक भौतिक इकाई को अपनी खुद की ट्रैक की गई इकाई और अद्वितीय संख्या मिलती है — एक इकाई, एक इकाई।"
-
-#. placeholder {0}: replaced.join(", ")
-msgid "Each push replaces: {0}. Other edits stay."
-msgstr "प्रत्येक पुश प्रतिस्थापित करता है: {0}। अन्य संपादन बने रहते हैं।"
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "प्रत्येक किराये की समझौते या अनुबंध के विक्रय प्रतिनिधि (या इसके निर्माता) को इसके चालानों का दैनिक सारांश मिलता है।"
@@ -16439,8 +16447,8 @@ msgstr "अंतिम पुश ({when}) विफल हुआ: {0}"
 msgid "Last push {when}:"
 msgstr "अंतिम पुश {when}:"
 
-msgid "Last pushed {lastPushed}."
-msgstr "अंतिम बार {lastPushed} को पुश किया गया।"
+msgid "Last pushed {lastPushed}"
+msgstr "अंतिम बार पुश किया गया: {lastPushed}"
 
 msgid "Last Quarter"
 msgstr "पिछली तिमाही"
@@ -23409,14 +23417,14 @@ msgstr "आयाम के बिना जर्नल पुश करें"
 msgid "Push to accounting"
 msgstr "लेखांकन को धकेलें"
 
-msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr "पुशेस इस आइटम के फील्ड को नहीं बदलते, इसलिए यहाँ किए गए संपादन बने रहते हैं।"
+msgid "Pushes from Onshape can update this item's {pushTargets}, but not its fields."
+msgstr "Onshape से पुश इस आइटम के {pushTargets} को अपडेट कर सकते हैं, लेकिन इसके फ़ील्ड को नहीं।"
 
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "Onshape से पुशेस इस आइटम को अपडेट करना बंद कर देते हैं। Onshape से इस पार्ट को फिर से पुश करने से यह फिर से लिंक हो जाता है।"
+msgid "Pushes from Onshape can update this item's {pushTargets}."
+msgstr "Onshape से पुश इस आइटम के {pushTargets} को अपडेट कर सकते हैं।"
 
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "पुशेस केवल उन फील्ड को प्रतिस्थापित करते हैं जिन्हें Onshape का Fields पेज हर पुश पर अपडेट करने के लिए सेट करता है।"
+msgid "Pushes stop updating this item, and its current data stays. Any later push that includes this part number links it again."
+msgstr "पुश इस आइटम को अपडेट करना बंद कर देते हैं, और इसका मौजूदा डेटा बना रहता है। इस पार्ट नंबर को शामिल करने वाला कोई भी बाद का पुश इसे फिर से लिंक कर देता है।"
 
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "एक अनुबंध परियोजना को एक रोक-कार्य आदेश के अंतर्गत होल्ड पर रखें, इसकी 90-दिन की समाप्ति तिथि के साथ, और जब आदेश समाप्त हो तो इसे फिर से शुरू करें।"
