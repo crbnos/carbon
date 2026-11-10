@@ -313,6 +313,14 @@ export const CUSTOMER_CONTACTS = [
     lastName: "Rahn",
     email: "erahn@alpineresearch.edu",
     title: "Principal Investigator"
+  },
+  {
+    customer: "Alpine Research Institute",
+    firstName: "Tomas",
+    lastName: "Weber",
+    email: "tweber@alpineresearch.edu",
+    title: "Robotics Lab Supervisor",
+    sharesLocation: true as const
   }
 ];
 
