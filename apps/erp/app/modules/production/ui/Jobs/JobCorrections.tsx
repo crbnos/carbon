@@ -12,7 +12,7 @@ import {
   HStack,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { formatDate, SCALE_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale, useNumberFormatter } from "@react-aria/i18n";
 import type { getJobCorrections } from "../../production.service";
@@ -33,7 +33,7 @@ export default function JobCorrections({
 }) {
   const { t } = useLingui();
   const { locale } = useLocale();
-  const formatter = useNumberFormatter({ maximumFractionDigits: 5 });
+  const formatter = useNumberFormatter(SCALE_FORMAT);
 
   if (corrections.length === 0) return null;
 
