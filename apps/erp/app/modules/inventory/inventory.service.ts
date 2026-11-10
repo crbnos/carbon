@@ -207,6 +207,7 @@ import {
   getTrackedEntityOnHandInBin,
   getUntrackedBinStock,
   INVENTORY_VOID_BEFORE_CUTOVER_ERROR,
+  insertSalesDimensionJournalLines,
   invokePosting,
   type JournalLineDimensionValues,
   journalLineDimensionRows,
@@ -16318,6 +16319,13 @@ export async function postReceipt(
                 .values(journalLineDimensionInserts)
                 .execute();
             }
+            await insertSalesDimensionJournalLines(
+              trx,
+              companyId,
+              "salesReturnOrder",
+              salesReturnOrderId,
+              journalLineResults.map((line) => line.id)
+            );
           }
 
           // Returned stock enters common stock, as its shipment left it.
@@ -18819,6 +18827,10 @@ export async function postShipment(
               if (journal.lines.length > 0) {
                 await insertShipmentJournal(trx, {
                   journal,
+                  salesDimensionSource: {
+                    recordType: "salesOrder",
+                    recordId: salesOrder.data.id
+                  },
                   accountingPeriodId,
                   postingDate: today,
                   postingStatus,
@@ -19700,6 +19712,10 @@ export async function postShipment(
               if (journal.lines.length > 0) {
                 await insertShipmentJournal(trx, {
                   journal,
+                  salesDimensionSource: {
+                    recordType: "salesReturnOrder",
+                    recordId: salesReturnOrder.data.id
+                  },
                   accountingPeriodId,
                   postingDate: today,
                   postingStatus,
@@ -22399,6 +22415,7 @@ async function insertShipmentJournal(
   trx: KyselyTx,
   {
     journal,
+    salesDimensionSource,
     accountingPeriodId,
     postingDate,
     postingStatus,
@@ -22407,6 +22424,10 @@ async function insertShipmentJournal(
     userId
   }: {
     journal: ShipmentJournal;
+    salesDimensionSource?: {
+      recordType: "salesOrder" | "salesReturnOrder";
+      recordId: string;
+    };
     accountingPeriodId: string | null;
     postingDate: string;
     postingStatus: AutomaticJournalStatus;
@@ -22459,6 +22480,15 @@ async function insertShipmentJournal(
       .insertInto("journalLineDimension")
       .values(dimensionRows)
       .execute();
+  }
+  if (salesDimensionSource) {
+    await insertSalesDimensionJournalLines(
+      trx,
+      companyId,
+      salesDimensionSource.recordType,
+      salesDimensionSource.recordId,
+      journalLineResults.map((line) => line.id)
+    );
   }
 }
 

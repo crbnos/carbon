@@ -106,6 +106,8 @@ const MODEL_SLIDE_TABLES = [
 // the FK-nulling pass would empty all of them and trip the CHECK. A new table
 // with a CHECK like that goes here (see .claude/rules/onboarding-company-templates.md).
 const PARENT_CHECK_TABLES = [
+  // Exactly one of its nullable source document/customer FKs must be set.
+  "salesDimensionAssignment",
   // customerContractInvoiceLine_parent_check: an invoice OR a credit memo
   "customerContractInvoiceLine",
   // projectStockTransfer_owner_check: fromProjectId IS DISTINCT FROM

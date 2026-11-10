@@ -268,6 +268,7 @@ import {
   getAccountingPeriodForDate,
   getDefaultPostingGroup,
   getOffsetAccount,
+  insertSalesDimensionJournalLinesBySources,
   invokePosting,
   loadContractPositions,
   lockContractPositions,
@@ -6281,6 +6282,105 @@ function getEntityDimensionValues(
   }
 }
 
+export type ProfitAndLossDimensionAccount = {
+  accountId: string;
+  accountNumber: string | null;
+  accountName: string;
+  accountClass: "Revenue" | "Expense";
+  valueId: string | null;
+  amount: number;
+};
+
+/** Posted, natural-sign P&L activity grouped by a Custom dimension. */
+export async function getProfitAndLossByDimension(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    startDate: string;
+    endDate: string;
+    dimensionId: string | null;
+  }
+) {
+  const dimensions = await db
+    .selectFrom("dimension")
+    .select(["id", "name"])
+    .where("companyGroupId", "=", args.companyGroupId)
+    .where("entityType", "=", "Custom")
+    .orderBy("name")
+    .execute();
+
+  const selectedDimension =
+    dimensions.find((dimension) => dimension.id === args.dimensionId) ??
+    dimensions[0] ??
+    null;
+  if (!selectedDimension) {
+    return { dimensions, selectedDimension: null, values: [], accounts: [] };
+  }
+
+  const [values, rows] = await Promise.all([
+    db
+      .selectFrom("dimensionValue")
+      .select(["id", "name"])
+      .where("companyGroupId", "=", args.companyGroupId)
+      .where("dimensionId", "=", selectedDimension.id)
+      .orderBy("name")
+      .execute(),
+    db
+      .selectFrom("journalLine as line")
+      .innerJoin("journal as journal", (join) =>
+        join
+          .onRef("journal.id", "=", "line.journalId")
+          .onRef("journal.companyId", "=", "line.companyId")
+      )
+      .innerJoin("account as account", (join) =>
+        join
+          .onRef("account.id", "=", "line.accountId")
+          .on("account.companyGroupId", "=", args.companyGroupId)
+      )
+      .leftJoin("journalLineDimension as assignment", (join) =>
+        join
+          .onRef("assignment.journalLineId", "=", "line.id")
+          .onRef("assignment.companyId", "=", "line.companyId")
+          .on("assignment.dimensionId", "=", selectedDimension.id)
+      )
+      .select([
+        "account.id as accountId",
+        "account.number as accountNumber",
+        "account.name as accountName",
+        "account.class as accountClass",
+        "assignment.valueId as valueId",
+        (eb) => eb.fn.sum<number>("line.amount").as("amount")
+      ])
+      .where("line.companyId", "=", args.companyId)
+      .where("journal.status", "in", [...GL_JOURNAL_STATUSES])
+      .where("journal.postingDate", ">=", args.startDate)
+      .where("journal.postingDate", "<=", args.endDate)
+      .where("account.class", "in", ["Revenue", "Expense"])
+      .groupBy([
+        "account.id",
+        "account.number",
+        "account.name",
+        "account.class",
+        "assignment.valueId"
+      ])
+      .orderBy("account.number")
+      .orderBy("account.name")
+      .execute()
+  ]);
+
+  return {
+    dimensions,
+    selectedDimension,
+    values,
+    accounts: rows.map((row) => ({
+      ...row,
+      accountClass: row.accountClass as "Revenue" | "Expense",
+      amount: Number(row.amount)
+    })) satisfies ProfitAndLossDimensionAccount[]
+  };
+}
+
 export async function getJournalLineDimensions(
   client: SupabaseClient<Database>,
   journalLineIds: string[]
@@ -11190,6 +11290,32 @@ async function insertPostedRunJournal(
       .values(dimensionRows)
       .execute();
   }
+  await insertSalesDimensionJournalLinesBySources(
+    trx,
+    companyId,
+    lines.flatMap((line, index) => {
+      const document = journal.lines[index];
+      const recordType =
+        document?.documentType === "Invoice"
+          ? "salesInvoice"
+          : document?.documentType === "Rental Agreement"
+            ? "rentalAgreement"
+            : document?.documentType === "Contract"
+              ? "customerContract"
+              : document?.documentType === "Service Job"
+                ? "serviceJob"
+                : null;
+      return recordType && document?.documentId
+        ? [
+            {
+              journalLineId: line.id,
+              recordType,
+              recordId: document.documentId
+            }
+          ]
+        : [];
+    })
+  );
   return { id, journalEntryId };
 }
 

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -15,6 +16,7 @@ import type {
 } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
+import { SalesDimensionAssignmentsPanel } from "~/components/SalesDimensionAssignmentsPanel";
 import { memoValidator } from "~/modules/invoicing/invoicing.models";
 import {
   getMemo,
@@ -75,10 +77,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const applications = await getMemoApplications(client, companyId, memoId);
+  const dimensions = memo.data.customerId
+    ? await (await carbon(request)).shared.getSalesDimensionAssignments({
+        recordType: "memo",
+        recordId: memoId
+      })
+    : null;
+  if (dimensions?.error) throw new Error(dimensions.error.message);
 
   return {
     memo: memo.data,
     applications: applications.data ?? [],
+    availableDimensions: dimensions?.data?.availableDimensions ?? [],
+    assignments: dimensions?.data?.assignments ?? [],
     relatedItems: getSettlementRelatedItems(client, companyId, {
       journalId: memo.data.journalId,
       targets: (applications.data ?? []).map(({ target }) => ({
@@ -146,7 +157,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function MemoDetailRoute() {
-  const { memo, applications } = useLoaderData<typeof loader>();
+  const { memo, applications, availableDimensions, assignments } =
+    useLoaderData<typeof loader>();
 
   const initialValues = {
     id: memo.id,
@@ -180,6 +192,15 @@ export default function MemoDetailRoute() {
       }
     >
       <MemoForm initialValues={initialValues} type={type} />
+      {memo.customerId && (
+        <SalesDimensionAssignmentsPanel
+          recordType="memo"
+          recordId={memo.id}
+          availableDimensions={availableDimensions}
+          assignments={assignments}
+          locked={memo.status !== "Draft"}
+        />
+      )}
       <MemoApplicationsPanel
         rows={applications}
         currencyCode={memo.currencyCode ?? "USD"}

@@ -2,12 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { createRequire } from "node:module";
 import type { KyselyDatabase } from "@carbon/database/client";
-import {
-  groups as companyGroups,
-  getGroupId
-} from "@carbon/database/seed-data";
 import { type Kysely, sql } from "kysely";
+
+// Bare tsx loads this package as ESM, while seed-data is compiled as CJS.
+const { groups: companyGroups, getGroupId } = createRequire(import.meta.url)(
+  "@carbon/database/seed-data"
+) as typeof import("@carbon/database/seed-data");
 
 /**
  * Loading a backup's `group` rows: a derived group's id is its row's id, so

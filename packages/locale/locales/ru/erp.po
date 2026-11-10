@@ -595,6 +595,11 @@ msgstr "{0} опер. · {1} шт"
 msgid "{0} orders"
 msgstr "{0} заказов"
 
+#. placeholder {0}: formatCount(report.backlog.count)
+#. placeholder {1}: formatDate(report.asOfDate, undefined, locale)
+msgid "{0} orders as of {1} · merchandise only"
+msgstr ""
+
 #. placeholder {0}: data.partsUnmatched
 msgid "{0} part links had no matching BOM line on the operation"
 msgstr "{0} ссылок на детали не имеют соответствующей строки спецификации в операции"
@@ -8589,6 +8594,9 @@ msgstr "Создать и снимок"
 msgid "Create a change notice for the new revision and open it"
 msgstr "Создать извещение об изменении для новой ревизии и открыть его"
 
+msgid "Create a Custom dimension to view this report."
+msgstr ""
+
 msgid "Create a job"
 msgstr "Создать задание"
 
@@ -9074,6 +9082,12 @@ msgstr "Пользовательская разработка сверх ука�
 msgid "Custom development, integrations, or self-hosting"
 msgstr "Пользовательская разработка, интеграции или самостоятельный хостинг"
 
+msgid "Custom dimension"
+msgstr ""
+
+msgid "Custom dimensions"
+msgstr ""
+
 msgid "Custom field"
 msgstr "Пользовательское поле"
 
@@ -9178,6 +9192,9 @@ msgstr "Строка контракта покупателя"
 
 msgid "Customer Country"
 msgstr "Страна покупателя"
+
+msgid "Customer credits"
+msgstr ""
 
 msgid "Customer deposit"
 msgstr "Депозит Покупателя"
@@ -12499,6 +12516,9 @@ msgstr "Исключено ({excludedCount})"
 msgid "Excluded from Missing Time"
 msgstr "Исключено из отсутствующего времени"
 
+msgid "Excludes tax and freight"
+msgstr ""
+
 msgid "Executive P&L"
 msgstr "П&У для руководства"
 
@@ -13774,6 +13794,9 @@ msgstr "Площадка отгрузки"
 
 msgid "Full name"
 msgstr "Полное имя"
+
+msgid "Full posted credits, including any tax or freight"
+msgstr ""
 
 msgid "Full setup and migrations"
 msgstr "Полная наладка и миграции"
@@ -15459,6 +15482,9 @@ msgstr "Выставить счет-фактуру {readableId} сейчас?"
 msgid "Invoice Address"
 msgstr "Адрес счета-фактуры"
 
+msgid "Invoice analytics"
+msgstr ""
+
 msgid "Invoice Contact"
 msgstr "Контактное лицо счета-фактуры"
 
@@ -15556,6 +15582,12 @@ msgstr "Выставлен счет"
 msgid "Invoiced Amount:"
 msgstr "Выставленная сумма счета-фактуры:"
 
+msgid "Invoiced sales trend"
+msgstr ""
+
+msgid "Invoiced sales, credits, and net sales by period"
+msgstr ""
+
 msgid "Invoiced separately"
 msgstr "Выставлен счет отдельно"
 
@@ -15573,6 +15605,9 @@ msgstr "Выставлен счет: {shipmentId}"
 
 msgid "Invoices"
 msgstr "Счета-фактуры"
+
+msgid "Invoices · Credits · Net sales"
+msgstr ""
 
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "Счета-фактуры и счета синхронизируются после активации Бухгалтерии"
@@ -15607,6 +15642,9 @@ msgstr "Счета-фактуры отправляются клиенту Stripe
 msgid "Invoices could not be loaded"
 msgstr "Не удалось загрузить счет-фактуры"
 
+msgid "Invoices less customer credits by posting date. Amounts are in company base currency."
+msgstr ""
+
 msgid "Invoices this memo has been applied to. Click a row to open the document."
 msgstr "Счета-фактуры, к которым применена эта справка. Нажмите строку, чтобы открыть документ."
 
@@ -15618,6 +15656,9 @@ msgstr "Выставление счетов"
 
 msgid "Invoicing Dashboard"
 msgstr "Панель выставления счетов"
+
+msgid "Invoicing view permission is required to see invoice sales and customer credits."
+msgstr ""
 
 msgid "is"
 msgstr "это"
@@ -16265,6 +16306,9 @@ msgstr "Больший"
 
 msgid "Largest child"
 msgstr "Наибольший дочерний элемент"
+
+msgid "Largest open orders"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "Последние 6 месяцев"
@@ -18221,6 +18265,9 @@ msgstr "Предложения MRP"
 msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
 msgstr "MRP предлагает переместить существующий заказ только если его дата отличается более чем на это количество дней. Меньшие разницы остаются без изменений, чтобы список работ оставался управляемым."
 
+msgid "MTD"
+msgstr ""
+
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "Несколько производственных заказов могут выполняться на этом процессе одновременно — например, лазерный станок, печь или ванна для гальваники"
 
@@ -18370,6 +18417,12 @@ msgstr "Чистые инвестиции в лизинг"
 msgid "Net Investment in Leases (default)"
 msgstr "Чистые инвестиции в лизинг (по умолчанию)"
 
+msgid "Net invoiced sales"
+msgstr ""
+
+msgid "Net Profit"
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "Чистый актив права использования"
 
@@ -18378,6 +18431,13 @@ msgstr "Чистый актив права использования:"
 
 msgid "Net ROU Asset"
 msgstr "Чистый актив ПИ"
+
+msgid "Net sales"
+msgstr ""
+
+#. placeholder {0}: currency.format(netSales)
+msgid "Net sales {0} from {periodLabel}"
+msgstr ""
 
 msgid "Net Unit Price"
 msgstr "Чистая цена за единицу"
@@ -20806,6 +20866,9 @@ msgstr "Открыть мое время"
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "Откройте один, чтобы изменить план в черновике, который рецензенты утверждают перед применением."
 
+msgid "Open order backlog"
+msgstr ""
+
 msgid "Open Orders"
 msgstr "Открытые заказы"
 
@@ -20827,23 +20890,14 @@ msgstr "Открытые заказы поставщикам"
 msgid "Open Purchase Orders"
 msgstr "Открытые Заказы поставщикам"
 
-msgid "Open Quotes"
-msgstr "Открытые предложения"
-
 msgid "Open Reactive"
 msgstr "Открытые реактивные"
 
 msgid "Open receivables by customer and age"
 msgstr "Открытая дебиторская задолженность по покупателям и срокам"
 
-msgid "Open RFQs"
-msgstr "Открытые РФП"
-
 msgid "Open sales orders"
 msgstr "Открытые заказы покупателей"
-
-msgid "Open Sales Orders"
-msgstr "Открытые Заказы покупателей"
 
 msgid "Open Scheduled"
 msgstr "Открытые запланированные"
@@ -21376,6 +21430,9 @@ msgstr "Право собственности переходит к вам к к
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "Владеет: {0}"
+
+msgid "P&L by Custom Dimension"
+msgstr ""
 
 msgid "Packing Slip"
 msgstr "Упаковочный лист"
@@ -22340,6 +22397,9 @@ msgstr "Опубликовано"
 
 msgid "Posted hours"
 msgstr "Проведенные часы"
+
+msgid "Posted invoices"
+msgstr ""
 
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "Проведенные операции с этими типами источников всегда синхронизируются. Ежедневное резюме группирует операции одного дня в одну запись поставщика по счету."
@@ -25271,6 +25331,9 @@ msgstr "Начало выручки"
 msgid "Revenue Type"
 msgstr "Тип выручки"
 
+msgid "Revenue, expenses, and profit by dimension value"
+msgstr ""
+
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
 #. placeholder {0}: run.runId
@@ -25713,9 +25776,6 @@ msgstr "Скидки на продажи"
 msgid "Sales Discounts (default)"
 msgstr "Скидки на продажи (по умолчанию)"
 
-msgid "Sales Funnel"
-msgstr "Воронка продаж"
-
 msgid "Sales invoice"
 msgstr "счет-фактура выданный"
 
@@ -25781,9 +25841,6 @@ msgstr "Возврат продажи"
 
 msgid "Sales return receipts"
 msgstr "Поступления возврата"
-
-msgid "Sales Revenue"
-msgstr "Выручка от продаж"
 
 msgid "Sales Rule"
 msgstr "Правило продажи"
@@ -26420,6 +26477,9 @@ msgstr "Выберите блок для настройки"
 
 msgid "Select a completed job"
 msgstr "Выберите завершённый производственный заказ"
+
+msgid "Select a date range of at most one year"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "Выберите утверждающего по умолчанию"
@@ -31753,6 +31813,9 @@ msgstr "Инструменты"
 msgid "Tools"
 msgstr "Инструменты"
 
+msgid "Top customers by net sales"
+msgstr ""
+
 msgid "Top level"
 msgstr "Верхний уровень"
 
@@ -31811,6 +31874,9 @@ msgstr "Итоговая ожидаемая себестоимость"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Общее ожидаемое количество единиц производства для амортизации по единицам продукции; себестоимость распределяется на единицу произведенной продукции."
 
+msgid "Total Expenses"
+msgstr ""
+
 msgid "Total hours"
 msgstr "Итого часов"
 
@@ -31858,6 +31924,9 @@ msgstr "Общее количество, требуемое для всех ак
 
 msgid "Total records"
 msgstr "Всего записей"
+
+msgid "Total Revenue"
+msgstr ""
 
 msgid "Total scrap quantity"
 msgstr "Общее количество брака"
@@ -32259,6 +32328,9 @@ msgstr "неатрибутированные записи машинного в�
 msgid "Unattributed Time"
 msgstr "Неучтённое время"
 
+msgid "Unavailable value"
+msgstr ""
+
 msgid "Unbalanced"
 msgstr "Не сбалансировано"
 
@@ -32328,6 +32400,9 @@ msgstr "Сначала удалите {0}"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "Сначала удалите {conflictsWith}"
+
+msgid "Uninvoiced merchandise"
+msgstr ""
 
 msgid "Uninvoiced Shipments"
 msgstr "Неотфактурованные отгрузки"
@@ -33175,6 +33250,9 @@ msgstr "Просмотр стоимостей"
 msgid "View Count"
 msgstr "Просмотр подсчета"
 
+msgid "View Credit Memos"
+msgstr ""
+
 msgid "View Custom Fields"
 msgstr "Просмотр пользовательских полей"
 
@@ -33250,17 +33328,8 @@ msgstr "Просмотр открытых счетов-фактур"
 msgid "View Open Issues"
 msgstr "Просмотреть открытые проблемы"
 
-msgid "View Open Orders"
-msgstr "Просмотреть открытые заказы"
-
 msgid "View Open POs"
 msgstr "Просмотреть открытые ПО"
-
-msgid "View Open Quotes"
-msgstr "Просмотреть открытые предложения"
-
-msgid "View Open RFQs"
-msgstr "Просмотреть открытые РФП"
 
 msgid "View or open"
 msgstr "Просмотреть или открыть"
@@ -33309,6 +33378,12 @@ msgstr "Просмотр замещающего заказа покупател�
 
 msgid "View Run"
 msgstr "Просмотр запуска"
+
+msgid "View Sales Invoices"
+msgstr ""
+
+msgid "View Sales Orders"
+msgstr ""
 
 msgid "View schedule"
 msgstr "Просмотреть график"

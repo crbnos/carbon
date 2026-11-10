@@ -595,6 +595,11 @@ msgstr "{0} Vorgänge · {1} Stück"
 msgid "{0} orders"
 msgstr "{0} Bestellungen"
 
+#. placeholder {0}: formatCount(report.backlog.count)
+#. placeholder {1}: formatDate(report.asOfDate, undefined, locale)
+msgid "{0} orders as of {1} · merchandise only"
+msgstr ""
+
 #. placeholder {0}: data.partsUnmatched
 msgid "{0} part links had no matching BOM line on the operation"
 msgstr "{0} Teil-Links hatten keine übereinstimmende BOM-Position zum Arbeitsgang"
@@ -8589,6 +8594,9 @@ msgstr "Erstellen & Snapshot"
 msgid "Create a change notice for the new revision and open it"
 msgstr "Erstellen Sie eine Änderungsmitteilung für die neue Revision und öffnen Sie sie"
 
+msgid "Create a Custom dimension to view this report."
+msgstr ""
+
 msgid "Create a job"
 msgstr "Auftrag erstellen"
 
@@ -9074,6 +9082,12 @@ msgstr "Benutzerdefinierte Entwicklung über das Aufgelistete hinaus"
 msgid "Custom development, integrations, or self-hosting"
 msgstr "Benutzerdefinierte Entwicklung, Integrationen oder Self-Hosting"
 
+msgid "Custom dimension"
+msgstr ""
+
+msgid "Custom dimensions"
+msgstr ""
+
 msgid "Custom field"
 msgstr "Benutzerdefiniertes Feld"
 
@@ -9178,6 +9192,9 @@ msgstr "Kundenvertragsposition"
 
 msgid "Customer Country"
 msgstr "Kunde – Land"
+
+msgid "Customer credits"
+msgstr ""
 
 msgid "Customer deposit"
 msgstr "Kundenanzahlung"
@@ -12499,6 +12516,9 @@ msgstr "Ausgeschlossen ({excludedCount})"
 msgid "Excluded from Missing Time"
 msgstr "Ausgeschlossen aus Fehlende Zeit"
 
+msgid "Excludes tax and freight"
+msgstr ""
+
 msgid "Executive P&L"
 msgstr "Geschäftsführungs-Gewinn- und Verlustrechnung"
 
@@ -13774,6 +13794,9 @@ msgstr "Versandstandort"
 
 msgid "Full name"
 msgstr "Vollständiger Name"
+
+msgid "Full posted credits, including any tax or freight"
+msgstr ""
 
 msgid "Full setup and migrations"
 msgstr "Vollständiges Setup und Migrationen"
@@ -15459,6 +15482,9 @@ msgstr "Rechnung für {readableId} jetzt erstellen?"
 msgid "Invoice Address"
 msgstr "Rechnungsadresse"
 
+msgid "Invoice analytics"
+msgstr ""
+
 msgid "Invoice Contact"
 msgstr "Rechnungskontakt"
 
@@ -15556,6 +15582,12 @@ msgstr "Fakturiert"
 msgid "Invoiced Amount:"
 msgstr "Fakturierter Betrag:"
 
+msgid "Invoiced sales trend"
+msgstr ""
+
+msgid "Invoiced sales, credits, and net sales by period"
+msgstr ""
+
 msgid "Invoiced separately"
 msgstr "Separat fakturiert"
 
@@ -15573,6 +15605,9 @@ msgstr "Fakturiert: {shipmentId}"
 
 msgid "Invoices"
 msgstr "Rechnungen"
+
+msgid "Invoices · Credits · Net sales"
+msgstr ""
 
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "Rechnungen und Eingangsrechnungen werden synchronisiert, nachdem Sie die Buchhaltung aktiviert haben"
@@ -15607,6 +15642,9 @@ msgstr "Rechnungen werden an den Stripe-Kunden versendet, der bereits mit dem Ab
 msgid "Invoices could not be loaded"
 msgstr "Rechnungen konnten nicht geladen werden"
 
+msgid "Invoices less customer credits by posting date. Amounts are in company base currency."
+msgstr ""
+
 msgid "Invoices this memo has been applied to. Click a row to open the document."
 msgstr "Rechnungen, auf die dieses Memo angewendet wurde. Klicken Sie auf eine Zeile, um das Dokument zu öffnen."
 
@@ -15618,6 +15656,9 @@ msgstr "Fakturierung"
 
 msgid "Invoicing Dashboard"
 msgstr "Fakturierungs-Dashboard"
+
+msgid "Invoicing view permission is required to see invoice sales and customer credits."
+msgstr ""
 
 msgid "is"
 msgstr "ist"
@@ -16265,6 +16306,9 @@ msgstr "Größer"
 
 msgid "Largest child"
 msgstr "Größtes Kind"
+
+msgid "Largest open orders"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "Letzte 6 Monate"
@@ -18221,6 +18265,9 @@ msgstr "MRP-Vorschläge"
 msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
 msgstr "MRP schlägt das Umlagern einer bestehenden Bestellung nur vor, wenn ihr Datum um mehr als diese Anzahl von Tagen abweicht. Kleinere Abweichungen werden ignoriert, damit die Aufgabenliste ruhig bleibt."
 
+msgid "MTD"
+msgstr ""
+
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "Mehrere Fertigungsaufträge können auf diesem Verfahren gleichzeitig laufen — z. B. Lasertisch, Ofen oder Galvanikbad."
 
@@ -18370,6 +18417,12 @@ msgstr "Nettoinvestitionen in Leasingverhältnisse"
 msgid "Net Investment in Leases (default)"
 msgstr "Nettoinvestitionen in Leasingverhältnisse (Standard)"
 
+msgid "Net invoiced sales"
+msgstr ""
+
+msgid "Net Profit"
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "Netto-Nutzungsrecht"
 
@@ -18378,6 +18431,13 @@ msgstr "Netto-Nutzungsrecht:"
 
 msgid "Net ROU Asset"
 msgstr "Netto-ROU-Anlage"
+
+msgid "Net sales"
+msgstr ""
+
+#. placeholder {0}: currency.format(netSales)
+msgid "Net sales {0} from {periodLabel}"
+msgstr ""
 
 msgid "Net Unit Price"
 msgstr "Netto-Einzelpreis"
@@ -20806,6 +20866,9 @@ msgstr "Meine Zeit öffnen"
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "Öffnen Sie einen, um den Plan in einem Entwurf zu ändern, den Reviewer genehmigen, bevor er angewendet wird."
 
+msgid "Open order backlog"
+msgstr ""
+
 msgid "Open Orders"
 msgstr "Offene Bestellungen"
 
@@ -20827,22 +20890,13 @@ msgstr "Offene Bestellungen"
 msgid "Open Purchase Orders"
 msgstr "Offene Bestellungen"
 
-msgid "Open Quotes"
-msgstr "Offene Angebote"
-
 msgid "Open Reactive"
 msgstr "Offene reaktive Wartung"
 
 msgid "Open receivables by customer and age"
 msgstr "Offene Forderungen nach Kunde und Fälligkeitsdauer"
 
-msgid "Open RFQs"
-msgstr "Offene Anfragen"
-
 msgid "Open sales orders"
-msgstr "Offene Kundenaufträge"
-
-msgid "Open Sales Orders"
 msgstr "Offene Kundenaufträge"
 
 msgid "Open Scheduled"
@@ -21376,6 +21430,9 @@ msgstr "Eigentum wird bis zum Ende der Laufzeit auf Sie übertragen"
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "Verwaltet: {0}"
+
+msgid "P&L by Custom Dimension"
+msgstr ""
 
 msgid "Packing Slip"
 msgstr "Packzettel"
@@ -22340,6 +22397,9 @@ msgstr "Gepostet von"
 
 msgid "Posted hours"
 msgstr "Gebuchte Stunden"
+
+msgid "Posted invoices"
+msgstr ""
 
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "Gebuchte Buchungssätze mit diesen Quellentypen werden immer synchronisiert. Die tägliche Zusammenfassung gruppiert die Buchungssätze eines Tages in einen Provider-Eintrag pro Konto."
@@ -25271,6 +25331,9 @@ msgstr "Umsatzanfang"
 msgid "Revenue Type"
 msgstr "Umsatzerlöstyp"
 
+msgid "Revenue, expenses, and profit by dimension value"
+msgstr ""
+
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
 #. placeholder {0}: run.runId
@@ -25713,9 +25776,6 @@ msgstr "Vertriebsrabatte"
 msgid "Sales Discounts (default)"
 msgstr "Vertriebsrabatte (Standard)"
 
-msgid "Sales Funnel"
-msgstr "Vertriebstrichter"
-
 msgid "Sales invoice"
 msgstr "Ausgangsrechnung"
 
@@ -25781,9 +25841,6 @@ msgstr "Rücklieferung"
 
 msgid "Sales return receipts"
 msgstr "Verkaufsrücksendungen"
-
-msgid "Sales Revenue"
-msgstr "Umsatzerlöse"
 
 msgid "Sales Rule"
 msgstr "Verkaufsregel"
@@ -26420,6 +26477,9 @@ msgstr "Wählen Sie einen Block aus, um ihn zu konfigurieren"
 
 msgid "Select a completed job"
 msgstr "Wählen Sie einen fertiggestellten Fertigungsauftrag"
+
+msgid "Select a date range of at most one year"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "Wählen Sie einen Standard-Genehmiger"
@@ -31753,6 +31813,9 @@ msgstr "Werkzeuge"
 msgid "Tools"
 msgstr "Werkzeuge"
 
+msgid "Top customers by net sales"
+msgstr ""
+
 msgid "Top level"
 msgstr "Oberste Ebene"
 
@@ -31811,6 +31874,9 @@ msgstr "Geschätzte Gesamtkosten"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Gesamterwartete Produktionseinheiten für Produktionseinheiten-Abschreibung; Kosten werden pro hergestellter Einheit verteilt."
 
+msgid "Total Expenses"
+msgstr ""
+
 msgid "Total hours"
 msgstr "Gesamtstunden"
 
@@ -31858,6 +31924,9 @@ msgstr "Gesamtmenge erforderlich über alle aktiven Fertigungsaufträge und Kund
 
 msgid "Total records"
 msgstr "Datensätze gesamt"
+
+msgid "Total Revenue"
+msgstr ""
 
 msgid "Total scrap quantity"
 msgstr "Gesamtausschussmenge"
@@ -32259,6 +32328,9 @@ msgstr "nicht zugeordnete Maschinenzeit-Einträge"
 msgid "Unattributed Time"
 msgstr "Nicht zugeordnete Zeit"
 
+msgid "Unavailable value"
+msgstr ""
+
 msgid "Unbalanced"
 msgstr "Nicht ausgeglichen"
 
@@ -32328,6 +32400,9 @@ msgstr "Deinstallieren Sie {0} zuerst"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "Deinstallieren Sie {conflictsWith} zuerst"
+
+msgid "Uninvoiced merchandise"
+msgstr ""
 
 msgid "Uninvoiced Shipments"
 msgstr "Nicht fakturierte Lieferungen"
@@ -33175,6 +33250,9 @@ msgstr "Kosten anzeigen"
 msgid "View Count"
 msgstr "Anzahl anzeigen"
 
+msgid "View Credit Memos"
+msgstr ""
+
 msgid "View Custom Fields"
 msgstr "Benutzerdefinierte Felder anzeigen"
 
@@ -33250,17 +33328,8 @@ msgstr "Offene Rechnungen anzeigen"
 msgid "View Open Issues"
 msgstr "Offene Probleme anzeigen"
 
-msgid "View Open Orders"
-msgstr "Offene Bestellungen anzeigen"
-
 msgid "View Open POs"
 msgstr "Offene Bestellungen anzeigen"
-
-msgid "View Open Quotes"
-msgstr "Offene Angebote anzeigen"
-
-msgid "View Open RFQs"
-msgstr "Offene Anfragen anzeigen"
 
 msgid "View or open"
 msgstr "Anzeigen oder öffnen"
@@ -33309,6 +33378,12 @@ msgstr "Ersatz-Kundenauftrag anzeigen"
 
 msgid "View Run"
 msgstr "Durchlauf anzeigen"
+
+msgid "View Sales Invoices"
+msgstr ""
+
+msgid "View Sales Orders"
+msgstr ""
 
 msgid "View schedule"
 msgstr "Terminplan anzeigen"

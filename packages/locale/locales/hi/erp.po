@@ -595,6 +595,11 @@ msgstr "{0} ऑपरेशन · {1} टुकड़े"
 msgid "{0} orders"
 msgstr "{0} ऑर्डर"
 
+#. placeholder {0}: formatCount(report.backlog.count)
+#. placeholder {1}: formatDate(report.asOfDate, undefined, locale)
+msgid "{0} orders as of {1} · merchandise only"
+msgstr ""
+
 #. placeholder {0}: data.partsUnmatched
 msgid "{0} part links had no matching BOM line on the operation"
 msgstr "{0} पार्ट लिंक के पास ऑपरेशन पर कोई मेल खाने वाली BOM पंक्ति नहीं थी"
@@ -8589,6 +8594,9 @@ msgstr "बनाएं और स्नैपशॉट लें"
 msgid "Create a change notice for the new revision and open it"
 msgstr "नए रिवीजन के लिए एक परिवर्तन सूचना बनाएँ और इसे खोलें"
 
+msgid "Create a Custom dimension to view this report."
+msgstr ""
+
 msgid "Create a job"
 msgstr "एक नौकरी बनाएँ"
 
@@ -9074,6 +9082,12 @@ msgstr "सूचीबद्ध से परे कस्टम विका�
 msgid "Custom development, integrations, or self-hosting"
 msgstr "कस्टम विकास, एकीकरण, या स्व-होस्टिंग"
 
+msgid "Custom dimension"
+msgstr ""
+
+msgid "Custom dimensions"
+msgstr ""
+
 msgid "Custom field"
 msgstr "कस्टम फ़ील्ड"
 
@@ -9178,6 +9192,9 @@ msgstr "ग्राहक अनुबंध पंक्ति"
 
 msgid "Customer Country"
 msgstr "ग्राहक का देश"
+
+msgid "Customer credits"
+msgstr ""
 
 msgid "Customer deposit"
 msgstr "ग्राहक जमा"
@@ -12499,6 +12516,9 @@ msgstr "बाहर किया गया ({excludedCount})"
 msgid "Excluded from Missing Time"
 msgstr "लापता समय से बाहर किया गया"
 
+msgid "Excludes tax and freight"
+msgstr ""
+
 msgid "Executive P&L"
 msgstr "कार्यकारी P&L"
 
@@ -13774,6 +13794,9 @@ msgstr "पूर्ति स्थान"
 
 msgid "Full name"
 msgstr "पूरा नाम"
+
+msgid "Full posted credits, including any tax or freight"
+msgstr ""
 
 msgid "Full setup and migrations"
 msgstr "पूर्ण सेटअप और माइग्रेशन"
@@ -15459,6 +15482,9 @@ msgstr "{readableId} को अभी चालान करें?"
 msgid "Invoice Address"
 msgstr "चालान पता"
 
+msgid "Invoice analytics"
+msgstr ""
+
 msgid "Invoice Contact"
 msgstr "चालान संपर्क"
 
@@ -15556,6 +15582,12 @@ msgstr "चालान किया गया"
 msgid "Invoiced Amount:"
 msgstr "चालान की गई राशि:"
 
+msgid "Invoiced sales trend"
+msgstr ""
+
+msgid "Invoiced sales, credits, and net sales by period"
+msgstr ""
+
 msgid "Invoiced separately"
 msgstr "अलग से चालान किया गया"
 
@@ -15573,6 +15605,9 @@ msgstr "चालान किया गया: {shipmentId}"
 
 msgid "Invoices"
 msgstr "चालान"
+
+msgid "Invoices · Credits · Net sales"
+msgstr ""
 
 msgid "Invoices and bills sync after you activate accounting"
 msgstr "आप लेखांकन को सक्रिय करने के बाद चालान और बिल सिंक हो जाते हैं"
@@ -15607,6 +15642,9 @@ msgstr "चालान Stripe ग्राहक को भेजे जात�
 msgid "Invoices could not be loaded"
 msgstr "चालान लोड नहीं किए जा सके"
 
+msgid "Invoices less customer credits by posting date. Amounts are in company base currency."
+msgstr ""
+
 msgid "Invoices this memo has been applied to. Click a row to open the document."
 msgstr "इस मेमो को लागू किए गए चालान। दस्तावेज़ खोलने के लिए एक पंक्ति पर क्लिक करें।"
 
@@ -15618,6 +15656,9 @@ msgstr "बिलिंग"
 
 msgid "Invoicing Dashboard"
 msgstr "बिलिंग डैशबोर्ड"
+
+msgid "Invoicing view permission is required to see invoice sales and customer credits."
+msgstr ""
 
 msgid "is"
 msgstr "है"
@@ -16265,6 +16306,9 @@ msgstr "बड़ा"
 
 msgid "Largest child"
 msgstr "सबसे बड़ा चाइल्ड"
+
+msgid "Largest open orders"
+msgstr ""
 
 msgid "Last 6 Months"
 msgstr "पिछले 6 महीने"
@@ -18221,6 +18265,9 @@ msgstr "MRP सुझाव"
 msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
 msgstr "MRP एक मौजूदा आदेश को स्थानांतरित करने का सुझाव देता है केवल जब इसकी तारीख इतने दिनों से अधिक भिन्न हो। छोटे अंतराल को अकेला छोड़ा जाता है ताकि कार्यसूची शांत रहे।"
 
+msgid "MTD"
+msgstr ""
+
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "एक ही समय में इस प्रक्रिया पर कई जॉब चल सकती हैं — उदाहरण के लिए, एक लेजर टेबल, फर्नेस, या प्लेटिंग बाथ"
 
@@ -18370,6 +18417,12 @@ msgstr "पट्टों में शुद्ध निवेश"
 msgid "Net Investment in Leases (default)"
 msgstr "पट्टों में शुद्ध निवेश (डिफ़ॉल्ट)"
 
+msgid "Net invoiced sales"
+msgstr ""
+
+msgid "Net Profit"
+msgstr ""
+
 msgid "Net right-of-use asset"
 msgstr "शुद्ध उपयोग का अधिकार संपत्ति"
 
@@ -18378,6 +18431,13 @@ msgstr "शुद्ध उपयोग का अधिकार संपत�
 
 msgid "Net ROU Asset"
 msgstr "शुद्ध ROU संपत्ति"
+
+msgid "Net sales"
+msgstr ""
+
+#. placeholder {0}: currency.format(netSales)
+msgid "Net sales {0} from {periodLabel}"
+msgstr ""
 
 msgid "Net Unit Price"
 msgstr "शुद्ध इकाई मूल्य"
@@ -20806,6 +20866,9 @@ msgstr "मेरा समय खोलें"
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "योजना को बदलने के लिए एक खोलें एक ड्राफ्ट में जिसे समीक्षकों द्वारा लागू होने से पहले अनुमोदित किया जाता है।"
 
+msgid "Open order backlog"
+msgstr ""
+
 msgid "Open Orders"
 msgstr "खुले आदेश"
 
@@ -20827,22 +20890,13 @@ msgstr "खुले क्रय आदेश"
 msgid "Open Purchase Orders"
 msgstr "खुले क्रय आदेश"
 
-msgid "Open Quotes"
-msgstr "खुली उद्धरणें"
-
 msgid "Open Reactive"
 msgstr "खुली प्रतिक्रियाशील"
 
 msgid "Open receivables by customer and age"
 msgstr "ग्राहक और आयु के अनुसार खुली प्राप्य राशि"
 
-msgid "Open RFQs"
-msgstr "खुले RFQ"
-
 msgid "Open sales orders"
-msgstr "खुले विक्रय आदेश"
-
-msgid "Open Sales Orders"
 msgstr "खुले विक्रय आदेश"
 
 msgid "Open Scheduled"
@@ -21376,6 +21430,9 @@ msgstr "अवधि के अंत तक आपको स्वामित�
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "स्वामित्व: {0}"
+
+msgid "P&L by Custom Dimension"
+msgstr ""
 
 msgid "Packing Slip"
 msgstr "पैकिंग स्लिप"
@@ -22340,6 +22397,9 @@ msgstr "द्वारा पोस्ट किया गया"
 
 msgid "Posted hours"
 msgstr "पोस्ट किए गए घंटे"
+
+msgid "Posted invoices"
+msgstr ""
 
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "पोस्ट किए गए जर्नल इन स्रोत प्रकारों के साथ हमेशा सिंक करते हैं। दैनिक सारांश एक दिन के जर्नल को प्रति खाते में एक प्रदाता प्रविष्टि में समूहित करता है।"
@@ -25271,6 +25331,9 @@ msgstr "राजस्व प्रारंभ"
 msgid "Revenue Type"
 msgstr "राजस्व प्रकार"
 
+msgid "Revenue, expenses, and profit by dimension value"
+msgstr ""
+
 #. placeholder {0}: journalEntry.journalEntryId
 #. placeholder {0}: run.depreciationRunId
 #. placeholder {0}: run.runId
@@ -25713,9 +25776,6 @@ msgstr "बिक्रय छूट"
 msgid "Sales Discounts (default)"
 msgstr "बिक्रय छूट (डिफ़ॉल्ट)"
 
-msgid "Sales Funnel"
-msgstr "बिक्रय फनल"
-
 msgid "Sales invoice"
 msgstr "विक्रय चालान"
 
@@ -25781,9 +25841,6 @@ msgstr "विक्रय रिटर्न"
 
 msgid "Sales return receipts"
 msgstr "बिक्री रिटर्न प्राप्ति"
-
-msgid "Sales Revenue"
-msgstr "बिक्रय राजस्व"
 
 msgid "Sales Rule"
 msgstr "बिक्री नियम"
@@ -26420,6 +26477,9 @@ msgstr "कॉन्फ़िगर करने के लिए एक ब्�
 
 msgid "Select a completed job"
 msgstr "एक पूर्ण जॉब चुनें"
+
+msgid "Select a date range of at most one year"
+msgstr ""
 
 msgid "Select a default approver"
 msgstr "एक डिफ़ॉल्ट अनुमोदक चुनें"
@@ -31753,6 +31813,9 @@ msgstr "उपकरण"
 msgid "Tools"
 msgstr "उपकरण"
 
+msgid "Top customers by net sales"
+msgstr ""
+
 msgid "Top level"
 msgstr "शीर्ष स्तर"
 
@@ -31811,6 +31874,9 @@ msgstr "कुल अनुमानित लागत"
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "उत्पादन-इकाई मूल्यह्रास के लिए कुल अपेक्षित उत्पादन इकाइयां; लागत उत्पादित प्रति यूनिट फैली हुई है।"
 
+msgid "Total Expenses"
+msgstr ""
+
 msgid "Total hours"
 msgstr "कुल घंटे"
 
@@ -31858,6 +31924,9 @@ msgstr "इस स्थान पर सभी सक्रिय जॉब औ
 
 msgid "Total records"
 msgstr "कुल रिकॉर्ड"
+
+msgid "Total Revenue"
+msgstr ""
 
 msgid "Total scrap quantity"
 msgstr "कुल स्क्रैप मात्रा"
@@ -32259,6 +32328,9 @@ msgstr "अनिर्दिष्ट मशीन समय प्रविष
 msgid "Unattributed Time"
 msgstr "अनिर्दिष्ट समय"
 
+msgid "Unavailable value"
+msgstr ""
+
 msgid "Unbalanced"
 msgstr "असंतुलित"
 
@@ -32328,6 +32400,9 @@ msgstr "पहले {0} को अनइंस्टॉल करें"
 
 msgid "Uninstall {conflictsWith} first"
 msgstr "पहले {conflictsWith} को अनइंस्टॉल करें"
+
+msgid "Uninvoiced merchandise"
+msgstr ""
 
 msgid "Uninvoiced Shipments"
 msgstr "बिना चालान वाले शिपमेंट"
@@ -33175,6 +33250,9 @@ msgstr "लागत देखें"
 msgid "View Count"
 msgstr "गणना देखें"
 
+msgid "View Credit Memos"
+msgstr ""
+
 msgid "View Custom Fields"
 msgstr "कस्टम फील्ड्स देखें"
 
@@ -33250,17 +33328,8 @@ msgstr "खुली चालानें देखें"
 msgid "View Open Issues"
 msgstr "खुले मुद्दे देखें"
 
-msgid "View Open Orders"
-msgstr "खुले ऑर्डर देखें"
-
 msgid "View Open POs"
 msgstr "खुले POs देखें"
-
-msgid "View Open Quotes"
-msgstr "खुली उद्धरणें देखें"
-
-msgid "View Open RFQs"
-msgstr "खुले RFQ देखें"
 
 msgid "View or open"
 msgstr "देखें या खोलें"
@@ -33309,6 +33378,12 @@ msgstr "प्रतिस्थापन विक्रय आदेश दे
 
 msgid "View Run"
 msgstr "रन देखें"
+
+msgid "View Sales Invoices"
+msgstr ""
+
+msgid "View Sales Orders"
+msgstr ""
 
 msgid "View schedule"
 msgstr "शेड्यूल देखें"

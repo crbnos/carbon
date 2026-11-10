@@ -2202,6 +2202,7 @@ export const path = {
       generatePath(`${x}/production/planning/${itemId}`),
     productionSettings: `${x}/settings/production`,
     profile: `${x}/account/profile`,
+    profitAndLossByDimension: `${x}/reports/profit-and-loss-by-dimension`,
     project: (id: string) => generatePath(`${x}/project/${id}`),
     projectBaselineCompare: (id: string, from: string, to = "current") =>
       `${generatePath(`${x}/project/${id}/baselines/compare`)}?${new URLSearchParams({ from, to })}`,
@@ -2541,6 +2542,7 @@ export const path = {
     root: "/",
     routings: `${x}/items/routing`,
     sales: `${x}/sales`,
+    salesDimensionAssignments: `${x}/sales-dimension-assignments`,
     salesInvoice: (id: string) => generatePath(`${x}/sales-invoice/${id}`),
     salesInvoiceDetails: (id: string) =>
       generatePath(`${x}/sales-invoice/${id}/details`),
