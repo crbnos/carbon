@@ -51,9 +51,97 @@ Branch `claude/service-function-wrapping-13f04f`. main at `cca2a0beea` (2026-11-
       (from main) named-imports `@carbon/database/seed-data`, which `tsx` loads as CommonJS without
       named exports; it fails under Node 22 and Node 24. `packages/jobs/manifests/schema.json` is
       main's copy (the baseline the check compares against). It regenerates once the import is fixed.
-- [ ] `@carbon/checks` conformance: 11 `permission: {}` → `"employee"`. One sidebar module key fixed:
-      the customer Assets tab showed to everyone. The direct loader reads are being fixed or
-      baselined.
+- [x] `@carbon/checks` conformance (454 tests pass):
+  - 11 `permission: {}` → `"employee"`.
+  - One sidebar module key fixed: the customer Assets tab showed to every employee.
+  - Direct loader reads: 21 now go through `api.*`, and 50 are baselined. Their reasons are below.
+- [x] ERP and MES unit tests pass. Three of main's tests were ported to page gates:
+  `posting-permissions`, `service-fn-api-key-gates`, and the `mcp-tool-permissions` count.
+- [x] Committed as merge `aaa5a3f1ab`. main then moved by one UI commit (#2181), merged in
+      `5b77695e64`. Not pushed.
+
+## Handoff notes
+
+**Open decisions.** Each one changes who can do what, so each needs a product decision:
+
+- **Time and billing approvals.** `timesheetEntry` and `projectBillableItem` sit on
+  `projects.approvals`. Changing a colleague's time or a billable item needs Approvals at Edit.
+  main used one `projects_update` for both. A person still writes their own Draft time.
+- **Contracts.** `sales.projectContracts` is view-only. Every contract write needs
+  `sales.serviceContracts`, because one `customerContract` table serves both lists.
+- **Service assignments.** `serviceJobAssignment` sits on `service.schedule`.
+- **Cross-module actions.** These pages are a judgement call, made in `sales.server.ts` and
+  `projects.server.ts`:
+  - `replaceReturnedUnit` needs Returns Edit and Sales Orders Create.
+  - `changeReturnLineToService` needs Returns Edit and Service Jobs Edit.
+  - `postProjectIssue` needs Inventory → Quantities Edit and Projects Edit.
+- **Narrow reads.** Some service functions are narrower than the pages that read them:
+  - My Time (every employee) reads charge numbers, labor categories, pending reviews and revisions
+    through building blocks whose wrappers need Projects pages.
+  - Service → Schedule reads employees, absences and shifts. Their wrappers need Resource Planning
+    and Employees.
+  - Settings → Projects reads states and labels. Their wrappers need Projects View.
+  - `getContractBillableItems` needs Approvals and Service Contracts. A contracts-only user sees an
+    empty list on the contract billing tab.
+
+  Widen those wrappers, or add employee-scoped reads, and then remove the baseline entries.
+
+**Baselined `loader-reads-through-api` entries (50).** Each has a reason:
+
+- **Cursor paging.** main moved these to cursor paging, but their wrappers still take `offset`:
+  - job events, operations, quantities and steps;
+  - inventory quantities, stock transfers and inventory count lines;
+  - demand forecasts;
+  - production and purchasing planning.
+
+  Planning also reads with `bypassRls`.
+- **Service-role reads.** The project page (`x+/project+/$projectId.tsx`, 10 reads) reads with
+  `bypassRls`.
+- **No read wrapper.** These building blocks are only called inside write functions:
+  - create-po-line, build, place-in-service, missing-time;
+  - receipt put-away lines;
+  - `invalidateIntegrationHealthCache`.
+- **Wrapper drops a field.** The R&D reports' wrappers drop `currentTaxYear`. The project report
+  CSV needs raw rows. `getPurchaseOrderApproval` returns an object, but the page relies on null.
+  `getReceiptRelatedItems` lacks main's return-line ids.
+- **Public routes.** The `share+` quote PDF and supplier quote.
+- **Narrower wrapper.** See "Narrow reads" above. Also `fixed-assets` (wrapper needs Asset Classes),
+  `quality+/actions` (wrapper needs Action Types), `projects+/reports._index` (wrapper needs
+  Accounting → Reporting), and project borrows on the planning pages (wrapper needs Projects).
+
+**Known breakage from main.** None of these come from this merge:
+
+- `db:check:backups` cannot run, on main either. `derived-groups.ts` named-imports
+  `@carbon/database/seed-data`, and `tsx` loads that as CommonJS with no named exports. The merge
+  commits used `CARBON_SKIP_BACKUP_CHECK=1` for that check only. `packages/jobs/manifests/schema.json`
+  is main's copy; regenerate it once the import is fixed.
+- `integration-metadata-patch.test.sql` fails on main too: anon has EXECUTE on
+  `upsert_company_integration_patch` since `20260924192316`.
+
+**Leftovers from an earlier merge session.** These five untracked files were not created by this
+run and are not committed:
+
+- `packages/checks/src/zz-merge-scan.test.ts` (marked "TEMPORARY … delete before committing");
+- `.ai/runs/conformance-after-merge.txt`, `invariants-after-merge.txt`, `pages-reference.tsv`,
+  `registry-test-after-merge.txt`.
+
+Delete them once nobody needs them.
+
+**Verify:**
+
+```bash
+crbn reset && crbn up                    # fresh database: every migration applies in order
+pnpm exec turbo run typecheck --filter=erp --filter=mes --filter=academy --filter=starter
+pnpm exec turbo run test --filter=erp --filter=mes --filter=@carbon/database --filter=@carbon/auth \
+  --filter=@carbon/api --filter=@carbon/ee --filter=@carbon/jobs --filter=@carbon/checks
+pnpm --filter @carbon/database authz check   # the database matches manifest.ts
+pnpm db:check:datasets
+for f in packages/database/supabase/tests/*.test.sql; do
+  pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -q -v ON_ERROR_STOP=1 -f "$f"; done
+```
+
+A browser pass is still owed: a one-page role on each new page (Projects, Service, Indirect Rates,
+Indirect Pools, Payroll Totals, Settings → Projects, Time, Service), as the PR did for the first 159.
 
 ## Bugs found during the merge
 
@@ -63,4 +151,4 @@ Branch `claude/service-function-wrapping-13f04f`. main at `cca2a0beea` (2026-11-
 - **Bulk permission edit for all matching users.** It sent main's checkbox shape, while the form now
   sends grants, so every all-matching edit failed with "Failed to parse permissions". It now sends
   grants through `update-permissions`.
-- [ ] Commit the merge and push. Update the PR description. Hand off once asked.
+- [x] Commit the merge (not pushed). The PR description update and push wait for the go-ahead.
