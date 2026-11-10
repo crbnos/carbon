@@ -28,8 +28,7 @@
 #      database migrates, warm up Vite and allow any host. It seeds
 #      test@carbon.ms, which the login bypass accepts. `--no-regen` skips the
 #      type and swagger regeneration: a fresh volume applies every migration,
-#      so crbn's "only when a migration applied" guard never skips there, and
-#      the committed types already match the committed migrations (the
+#      and the committed types already match the committed migrations (the
 #      Database types workflow fails a pull request where they differ). It
 #      saves about 30 s per container.
 #   4. Points agent-browser at the preinstalled Chrome, and installs agent-browser
@@ -42,8 +41,8 @@
 #
 #   cd carbon && [ -f scripts/cloud-dev.sh ] && bash scripts/cloud-dev.sh --prepare || true
 #
-# It does steps 1 and 2, installs agent-browser, starts dockerd, and pulls the images the default stack
-# boots (the `mail` profile, the set `crbn up` pulls), in parallel, skipping
+# It does steps 1 and 2, installs agent-browser, starts dockerd, and pulls the images the default worktree
+# stack and crbn-shared boot (including the `mail` profile), in parallel, skipping
 # any that are present. The environment keeps the result, so a new session finds
 # the images and the stack boots without the ~50 s pull. No dev server starts.
 #
@@ -52,8 +51,8 @@
 # test@carbon.ms user and Vite has pre-bundled the ERP's dependencies (its cache
 # is apps/erp/node_modules/.vite, inside the node_modules the environment
 # keeps). It then stops everything and keeps the volumes and the cache. A new
-# session migrates only what its branch added, skips the RLS sync and the seed
-# (about 30 s on an empty volume) and skips the dependency pre-bundling (about
+# session migrates only what its branch added, skips the seed and
+# skips the dependency pre-bundling (about
 # 15 s). The first run takes a couple of minutes, so it belongs in a Setup
 # script, which runs once and is kept.
 #
@@ -134,8 +133,8 @@ if [ ! -d node_modules ]; then
 fi
 
 # --- Images (--prepare only) ---------------------------------------------------
-# The same set `crbn up` pulls by default: compose's default services plus the
-# `mail` profile (profileArgs in packages/dev/src/services/compose.ts). The
+# The set `crbn up` pulls by default: the worktree's default services plus the
+# `mail` profile, and the shared services. The
 # image tags are literals; DOMAIN and INNGEST_TLS_HOST only have to be
 # non-empty for compose to accept `extra_hosts`.
 pull_images() {
@@ -149,9 +148,11 @@ pull_images() {
       { echo "cloud-dev: the Docker daemon is not available; no images pulled"; return 0; }
   fi
   local refs missing=() ref
-  refs=$(DOMAIN=localhost INNGEST_TLS_HOST=localhost docker compose \
-    -f packages/dev/docker/docker-compose.dev.yml \
-    -f packages/dev/docker/docker-compose.isolated.yml --profile mail config --images 2>/dev/null | sort -u) || refs=""
+  refs=$({
+    DOMAIN=localhost INNGEST_TLS_HOST=localhost docker compose \
+      -f packages/dev/docker/docker-compose.dev.yml --profile mail config --images 2>/dev/null
+    docker compose -f packages/dev/docker/docker-compose.shared.yml config --images 2>/dev/null
+  } | sort -u) || refs=""
   if [ -z "$refs" ]; then
     echo "cloud-dev: could not list the stack's images; leaving the pull to crbn up"
     return 0

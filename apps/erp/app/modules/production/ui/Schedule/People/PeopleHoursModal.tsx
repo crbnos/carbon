@@ -88,6 +88,30 @@ export function PeopleHoursModal({
   trigger,
   open: controlledOpen,
   onOpenChange,
+  disabled,
+  ...props
+}: PeopleHoursModalProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+
+  const setOpen = (next: boolean) => {
+    if (controlledOpen === undefined) setInternalOpen(next);
+    onOpenChange?.(next);
+  };
+
+  if (disabled) return trigger ?? null;
+
+  return (
+    <Modal open={open} onOpenChange={setOpen}>
+      {trigger && <ModalTrigger asChild>{trigger}</ModalTrigger>}
+      <ModalContent size="small">
+        <PeopleHoursBody onClose={() => setOpen(false)} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function PeopleHoursBody({
   employeeId,
   employeeName,
   date,
@@ -103,8 +127,11 @@ export function PeopleHoursModal({
   dayEndTime,
   isAbsent,
   absenceId,
-  disabled
-}: PeopleHoursModalProps) {
+  onClose
+}: Omit<
+  PeopleHoursModalProps,
+  "trigger" | "open" | "onOpenChange" | "disabled"
+> & { onClose: () => void }) {
   const { t } = useLingui();
   const { locale } = useLocale();
   const submit = useSubmit();
@@ -116,8 +143,6 @@ export function PeopleHoursModal({
       wholeShift: row.hours === null
     }));
 
-  const [internalOpen, setInternalOpen] = useState(false);
-  const open = controlledOpen ?? internalOpen;
   const [offDay, setOffDay] = useState(isAbsent);
   const [draft, setDraft] = useState<DraftRow[]>(toDraft);
   const [noteDraft, setNoteDraft] = useState(note ?? "");
@@ -125,27 +150,10 @@ export function PeopleHoursModal({
   const [adding, setAdding] = useState(false);
   const [confirmingRemoval, setConfirmingRemoval] = useState(false);
 
-  const setOpen = (next: boolean) => {
-    if (controlledOpen === undefined) setInternalOpen(next);
-    onOpenChange?.(next);
-  };
-
   const workCenterName = useMemo(() => {
     const map = new Map(workCenters.map((wc) => [wc.id, wc.name]));
     return (id: string) => map.get(id) ?? id;
   }, [workCenters]);
-
-  const openEditor = (nextOpen: boolean) => {
-    setOpen(nextOpen);
-    if (nextOpen) {
-      setOffDay(isAbsent);
-      setAdding(false);
-      setConfirmingRemoval(false);
-      setNoteDraft(note ?? "");
-      setOvertimeDraft(overtimeHours);
-      setDraft(toDraft());
-    }
-  };
 
   const totalHours = draft.reduce((sum, row) => sum + row.hours, 0);
   const overCapacity = totalHours > baseHours + 0.01;
@@ -257,7 +265,7 @@ export function PeopleHoursModal({
         });
       }
     }
-    setOpen(false);
+    onClose();
   };
 
   const availableStations = workCenters.filter(
@@ -281,263 +289,250 @@ export function PeopleHoursModal({
   const removingLastRow =
     rows.length > 0 && draft.filter((row) => row.hours > 0).length === 0;
 
-  if (disabled) return trigger ?? null;
-
   return (
-    <Modal open={open} onOpenChange={openEditor}>
-      {trigger && <ModalTrigger asChild>{trigger}</ModalTrigger>}
-      <ModalContent size="small">
-        <ModalHeader className="mb-0 pb-4">
-          <div className="flex items-center gap-3">
-            <EmployeeAvatar
-              employeeId={employeeId}
-              withName={false}
-              size="sm"
-            />
-            <div className="min-w-0">
-              <ModalTitle className="text-[0.9375rem] font-medium truncate">
-                {employeeName}
-              </ModalTitle>
-              <p className="text-xs text-muted-foreground">{dayLabel}</p>
-            </div>
+    <>
+      <ModalHeader className="mb-0 pb-4">
+        <div className="flex items-center gap-3">
+          <EmployeeAvatar employeeId={employeeId} withName={false} size="sm" />
+          <div className="min-w-0">
+            <ModalTitle className="text-[0.9375rem] font-medium truncate">
+              {employeeName}
+            </ModalTitle>
+            <p className="text-xs text-muted-foreground">{dayLabel}</p>
           </div>
-        </ModalHeader>
-        <ModalBody className="px-0 mb-0">
-          <div className="divide-y divide-border/60 border-t border-border/60">
-            <section className="flex items-center justify-between px-6 py-3.5">
-              <span className="text-[0.8125rem] text-muted-foreground">
-                <Trans>Shift</Trans>
-              </span>
-              <span className="text-[0.9375rem] tabular-nums">
-                {shiftWindow ? `${shiftWindow} · ` : ""}
-                {formatHours(baseHours)}h
-              </span>
-            </section>
+        </div>
+      </ModalHeader>
+      <ModalBody className="px-0 mb-0">
+        <div className="divide-y divide-border/60 border-t border-border/60">
+          <section className="flex items-center justify-between px-6 py-3.5">
+            <span className="text-[0.8125rem] text-muted-foreground">
+              <Trans>Shift</Trans>
+            </span>
+            <span className="text-[0.9375rem] tabular-nums">
+              {shiftWindow ? `${shiftWindow} · ` : ""}
+              {formatHours(baseHours)}h
+            </span>
+          </section>
 
-            <section>
-              {/* The row is the switch's label: clicking anywhere toggles it
+          <section>
+            {/* The row is the switch's label: clicking anywhere toggles it
                   and names it, without a button around the switch. */}
-              <label className="flex min-h-[44px] w-full cursor-pointer items-center justify-between px-6 py-2 text-left">
-                <span className="text-[0.9375rem]">
-                  <Trans>Not working today</Trans>
-                </span>
-                <Switch checked={offDay} onCheckedChange={setOffDay} />
-              </label>
-            </section>
+            <label className="flex min-h-[44px] w-full cursor-pointer items-center justify-between px-6 py-2 text-left">
+              <span className="text-[0.9375rem]">
+                <Trans>Not working today</Trans>
+              </span>
+              <Switch checked={offDay} onCheckedChange={setOffDay} />
+            </label>
+          </section>
 
-            <section
-              className={cn(
-                "flex flex-col gap-2 px-6 py-3.5",
-                offDay && "pointer-events-none opacity-40"
-              )}
-            >
-              {draft.length > 0 && (
-                <div className="flex items-center gap-2 text-[0.8125rem] text-muted-foreground">
-                  <span className="flex-1">
-                    <Trans>Station</Trans>
-                  </span>
-                  <span className="w-20 text-center">
-                    <Trans>Hours</Trans>
-                  </span>
-                  <span className="w-9" />
-                </div>
-              )}
-              {draft.map((row, index) => (
-                <div key={row.workCenterId} className="flex items-center gap-2">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[0.9375rem]">
-                      {workCenterName(row.workCenterId)}
+          <section
+            className={cn(
+              "flex flex-col gap-2 px-6 py-3.5",
+              offDay && "pointer-events-none opacity-40"
+            )}
+          >
+            {draft.length > 0 && (
+              <div className="flex items-center gap-2 text-[0.8125rem] text-muted-foreground">
+                <span className="flex-1">
+                  <Trans>Station</Trans>
+                </span>
+                <span className="w-20 text-center">
+                  <Trans>Hours</Trans>
+                </span>
+                <span className="w-9" />
+              </div>
+            )}
+            {draft.map((row, index) => (
+              <div key={row.workCenterId} className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[0.9375rem]">
+                    {workCenterName(row.workCenterId)}
+                  </p>
+                  {timeEcho(index) && (
+                    <p className="text-xs tabular-nums text-muted-foreground">
+                      {timeEcho(index)}
                     </p>
-                    {timeEcho(index) && (
-                      <p className="text-xs tabular-nums text-muted-foreground">
-                        {timeEcho(index)}
-                      </p>
-                    )}
-                  </div>
-                  <Input
-                    type="number"
-                    min={0.5}
-                    max={24}
-                    step={0.5}
-                    aria-label={t`Hours`}
-                    value={row.hours}
-                    className="h-11 w-20 text-center tabular-nums"
-                    onChange={(event) =>
-                      updateRow(index, {
-                        hours: Number(event.target.value) || 0,
-                        wholeShift: false
-                      })
-                    }
-                  />
-                  <IconButton
-                    aria-label={t`Remove station`}
-                    variant="ghost"
-                    className="h-11 w-9 text-red-600 hover:text-red-700 dark:text-red-400"
-                    icon={<LuX />}
-                    onClick={() => {
-                      setConfirmingRemoval(false);
-                      setDraft((current) =>
-                        current.filter((_, i) => i !== index)
-                      );
-                    }}
-                  />
+                  )}
                 </div>
-              ))}
-
-              {draft.length === 0 && (
-                <p className="text-[0.8125rem] text-muted-foreground">
-                  <Trans>Nothing scheduled — add a station below.</Trans>
-                </p>
-              )}
-
-              {adding ? (
-                <Combobox
-                  asButton
-                  value=""
-                  placeholder={t`Select station`}
-                  options={availableStations.map((workCenter) => ({
-                    value: workCenter.id,
-                    label: workCenter.name
-                  }))}
-                  onChange={(value) => value && addStation(value)}
+                <Input
+                  type="number"
+                  min={0.5}
+                  max={24}
+                  step={0.5}
+                  aria-label={t`Hours`}
+                  value={row.hours}
+                  className="h-11 w-20 text-center tabular-nums"
+                  onChange={(event) =>
+                    updateRow(index, {
+                      hours: Number(event.target.value) || 0,
+                      wholeShift: false
+                    })
+                  }
                 />
-              ) : (
-                availableStations.length > 0 && (
-                  <button
-                    type="button"
-                    className="inline-flex min-h-[44px] items-center gap-1.5 self-start rounded-md text-[0.8125rem] font-medium text-muted-foreground transition-colors hover:text-foreground"
-                    onClick={() => setAdding(true)}
-                  >
-                    <LuPlus className="h-3.5 w-3.5" />
-                    <Trans>Add station</Trans>
-                  </button>
-                )
-              )}
-
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-[0.8125rem] text-muted-foreground">
-                  <Trans>Allocated</Trans>
-                </span>
-                {offDay ? (
-                  <span className="inline-flex items-center rounded-xl bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                    <Trans>Day off</Trans>
-                  </span>
-                ) : (
-                  <span
-                    className={cn(
-                      "inline-flex items-center rounded-xl px-2.5 py-1 text-xs font-medium tabular-nums",
-                      overCapacity &&
-                        "bg-red-500/15 text-red-700 dark:text-red-400",
-                      underCapacity &&
-                        "bg-amber-500/15 text-amber-700 dark:text-amber-400",
-                      !overCapacity &&
-                        !underCapacity &&
-                        "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                    )}
-                  >
-                    {formatHours(totalHours)}h{" "}
-                    <Trans>of {formatHours(baseHours)}h</Trans>
-                  </span>
-                )}
+                <IconButton
+                  aria-label={t`Remove station`}
+                  variant="ghost"
+                  className="h-11 w-9 text-red-600 hover:text-red-700 dark:text-red-400"
+                  icon={<LuX />}
+                  onClick={() => {
+                    setConfirmingRemoval(false);
+                    setDraft((current) =>
+                      current.filter((_, i) => i !== index)
+                    );
+                  }}
+                />
               </div>
-              {overCapacity && !offDay && (
-                <p className="text-xs text-red-600 dark:text-red-400">
-                  <Trans>More hours than the shift has.</Trans>
-                </p>
-              )}
-            </section>
+            ))}
 
-            {/* Overtime is per DAY, not per station — one control for the
-                whole day, hidden until it's actually needed */}
-            <section
-              className={cn(
-                "flex min-h-[52px] items-center justify-between gap-3 px-6 py-2.5",
-                offDay && "pointer-events-none opacity-40"
-              )}
-            >
-              <div className="min-w-0">
-                <p className="text-[0.9375rem]">
-                  <Trans>Overtime</Trans>
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  <Trans>Extra hours on the whole day</Trans>
-                </p>
-              </div>
-              {overtimeDraft > 0 ? (
-                <div className="flex flex-shrink-0 items-center gap-1">
-                  <IconButton
-                    aria-label={t`Less overtime`}
-                    variant="secondary"
-                    className="h-11 w-11"
-                    icon={<LuMinus />}
-                    onClick={() => adjustOvertime(-OVERTIME_STEP)}
-                  />
-                  <span className="inline-flex min-w-[52px] justify-center rounded-xl bg-amber-500/15 px-2 py-1 text-xs font-medium tabular-nums text-amber-700 dark:text-amber-400">
-                    +{formatHours(overtimeDraft)}h
-                  </span>
-                  <IconButton
-                    aria-label={t`More overtime`}
-                    variant="secondary"
-                    className="h-11 w-11"
-                    isDisabled={overtimeDraft >= OVERTIME_MAX}
-                    icon={<LuPlus />}
-                    onClick={() => adjustOvertime(OVERTIME_STEP)}
-                  />
-                </div>
-              ) : (
+            {draft.length === 0 && (
+              <p className="text-[0.8125rem] text-muted-foreground">
+                <Trans>Nothing scheduled — add a station below.</Trans>
+              </p>
+            )}
+
+            {adding ? (
+              <Combobox
+                asButton
+                value=""
+                placeholder={t`Select station`}
+                options={availableStations.map((workCenter) => ({
+                  value: workCenter.id,
+                  label: workCenter.name
+                }))}
+                onChange={(value) => value && addStation(value)}
+              />
+            ) : (
+              availableStations.length > 0 && (
                 <button
                   type="button"
-                  className="inline-flex min-h-[44px] flex-shrink-0 items-center gap-1.5 rounded-md px-2 text-[0.8125rem] font-medium text-muted-foreground transition-colors hover:text-foreground"
-                  onClick={() => adjustOvertime(1)}
+                  className="inline-flex min-h-[44px] items-center gap-1.5 self-start rounded-md text-[0.8125rem] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  onClick={() => setAdding(true)}
                 >
                   <LuPlus className="h-3.5 w-3.5" />
-                  <Trans>Add overtime</Trans>
+                  <Trans>Add station</Trans>
                 </button>
-              )}
-            </section>
+              )
+            )}
 
-            <section className="flex flex-col gap-1.5 px-6 py-3.5">
+            <div className="flex items-center justify-between pt-1">
               <span className="text-[0.8125rem] text-muted-foreground">
-                <Trans>Note</Trans>
+                <Trans>Allocated</Trans>
               </span>
-              <Textarea
-                aria-label={t`Note`}
-                value={noteDraft}
-                rows={2}
-                placeholder={t`Anything the people should know`}
-                onChange={(e) => setNoteDraft(e.target.value)}
-              />
-            </section>
+              {offDay ? (
+                <span className="inline-flex items-center rounded-xl bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                  <Trans>Day off</Trans>
+                </span>
+              ) : (
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-xl px-2.5 py-1 text-xs font-medium tabular-nums",
+                    overCapacity &&
+                      "bg-red-500/15 text-red-700 dark:text-red-400",
+                    underCapacity &&
+                      "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+                    !overCapacity &&
+                      !underCapacity &&
+                      "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                  )}
+                >
+                  {formatHours(totalHours)}h{" "}
+                  <Trans>of {formatHours(baseHours)}h</Trans>
+                </span>
+              )}
+            </div>
+            {overCapacity && !offDay && (
+              <p className="text-xs text-red-600 dark:text-red-400">
+                <Trans>More hours than the shift has.</Trans>
+              </p>
+            )}
+          </section>
 
-            {confirmingRemoval && (
-              <section className="px-6 py-3">
-                <p className="text-[0.8125rem] text-red-600 dark:text-red-400">
-                  <Trans>
-                    This takes {employeeName} off the board for the day. Save
-                    again to confirm.
-                  </Trans>
-                </p>
-              </section>
+          {/* Overtime is per DAY, not per station — one control for the
+                whole day, hidden until it's actually needed */}
+          <section
+            className={cn(
+              "flex min-h-[52px] items-center justify-between gap-3 px-6 py-2.5",
+              offDay && "pointer-events-none opacity-40"
             )}
-          </div>
-        </ModalBody>
-        <ModalFooter className="sm:justify-stretch">
-          <Button
-            variant="secondary"
-            className="h-11 flex-1"
-            onClick={() => setOpen(false)}
           >
-            <Trans>Cancel</Trans>
-          </Button>
-          <Button className="h-11 flex-1" onClick={save}>
-            {confirmingRemoval && removingLastRow && !offDay ? (
-              <Trans>Remove from board</Trans>
+            <div className="min-w-0">
+              <p className="text-[0.9375rem]">
+                <Trans>Overtime</Trans>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                <Trans>Extra hours on the whole day</Trans>
+              </p>
+            </div>
+            {overtimeDraft > 0 ? (
+              <div className="flex flex-shrink-0 items-center gap-1">
+                <IconButton
+                  aria-label={t`Less overtime`}
+                  variant="secondary"
+                  className="h-11 w-11"
+                  icon={<LuMinus />}
+                  onClick={() => adjustOvertime(-OVERTIME_STEP)}
+                />
+                <span className="inline-flex min-w-[52px] justify-center rounded-xl bg-amber-500/15 px-2 py-1 text-xs font-medium tabular-nums text-amber-700 dark:text-amber-400">
+                  +{formatHours(overtimeDraft)}h
+                </span>
+                <IconButton
+                  aria-label={t`More overtime`}
+                  variant="secondary"
+                  className="h-11 w-11"
+                  isDisabled={overtimeDraft >= OVERTIME_MAX}
+                  icon={<LuPlus />}
+                  onClick={() => adjustOvertime(OVERTIME_STEP)}
+                />
+              </div>
             ) : (
-              <Trans>Save</Trans>
+              <button
+                type="button"
+                className="inline-flex min-h-[44px] flex-shrink-0 items-center gap-1.5 rounded-md px-2 text-[0.8125rem] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                onClick={() => adjustOvertime(1)}
+              >
+                <LuPlus className="h-3.5 w-3.5" />
+                <Trans>Add overtime</Trans>
+              </button>
             )}
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+          </section>
+
+          <section className="flex flex-col gap-1.5 px-6 py-3.5">
+            <span className="text-[0.8125rem] text-muted-foreground">
+              <Trans>Note</Trans>
+            </span>
+            <Textarea
+              aria-label={t`Note`}
+              value={noteDraft}
+              rows={2}
+              placeholder={t`Anything the people should know`}
+              onChange={(e) => setNoteDraft(e.target.value)}
+            />
+          </section>
+
+          {confirmingRemoval && (
+            <section className="px-6 py-3">
+              <p className="text-[0.8125rem] text-red-600 dark:text-red-400">
+                <Trans>
+                  This takes {employeeName} off the board for the day. Save
+                  again to confirm.
+                </Trans>
+              </p>
+            </section>
+          )}
+        </div>
+      </ModalBody>
+      <ModalFooter className="sm:justify-stretch">
+        <Button variant="secondary" className="h-11 flex-1" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button className="h-11 flex-1" onClick={save}>
+          {confirmingRemoval && removingLastRow && !offDay ? (
+            <Trans>Remove from board</Trans>
+          ) : (
+            <Trans>Save</Trans>
+          )}
+        </Button>
+      </ModalFooter>
+    </>
   );
 }

@@ -36,6 +36,7 @@ import { UpgradeOverlaySection } from "~/components/UpgradeOverlay";
 import {
   useCurrencyDecimals,
   useCurrencyFormatter,
+  useDrawerItem,
   usePercentFormatter,
   useUser
 } from "~/hooks";
@@ -118,7 +119,12 @@ function RateCeilingsCard({
   const save = useCellSave();
   const [drafts, setDrafts] = useState<CeilingRow[]>([]);
   const draftCount = useRef(0);
-  const [deleting, setDeleting] = useState<CeilingRow | null>(null);
+  const {
+    item: deleting,
+    isOpen: isDeleting,
+    open: openDelete,
+    close: closeDelete
+  } = useDrawerItem<CeilingRow>();
 
   const poolById = useMemo(
     () => new Map(pools.map((pool) => [pool.id, pool])),
@@ -272,14 +278,14 @@ function RateCeilingsCard({
         onClick={() =>
           row.id === null
             ? setDrafts((previous) => previous.filter((d) => d.key !== row.key))
-            : setDeleting(row)
+            : openDelete(row)
         }
       >
         <MenuIcon icon={<LuTrash />} />
         <Trans>Delete Ceiling</Trans>
       </MenuItem>
     ),
-    [isDisabled]
+    [isDisabled, openDelete]
   );
   const gridColumns = useMemo(
     () => [...columns, rowMenuColumn(renderMenu, t`Actions`)],
@@ -360,12 +366,12 @@ function RateCeilingsCard({
       {deleting && deleting.id && (
         <ConfirmDelete
           action={action}
-          isOpen
+          isOpen={isDeleting}
           name={poolById.get(deleting.indirectPoolId)?.name ?? t`Ceiling`}
           text={t`Are you sure you want to delete this rate ceiling?`}
           fields={{ intent: "ceiling-delete", id: deleting.id }}
-          onCancel={() => setDeleting(null)}
-          onSubmit={() => setDeleting(null)}
+          onCancel={closeDelete}
+          onSubmit={closeDelete}
         />
       )}
     </>

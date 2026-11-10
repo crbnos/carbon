@@ -33,7 +33,7 @@ import type {
   ColumnPinningState
 } from "@tanstack/react-table";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import {
   LuCheck,
@@ -48,7 +48,7 @@ import { zfd } from "zod-form-data";
 import { SearchFilter } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { CollapsibleSidebarTrigger } from "~/components/Layout/Navigation";
-import { useUrlParams } from "~/hooks";
+import { useDrawerItem, useUrlParams } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { fieldMappings } from "~/modules/shared/imports.models";
 import type { action as savedViewAction } from "~/routes/x+/shared+/views";
@@ -94,6 +94,8 @@ type HeaderProps<T> = {
   // The selection's size: the matching count when every matching row is
   // selected, else `selectedRows.length`.
   selectedCount?: number;
+  hasRememberedChanges: boolean;
+  onResetRememberedState: () => void;
   setColumnOrder: (newOrder: ColumnOrderState) => void;
   setEditMode: (editMode: boolean) => void;
   table?: string;
@@ -137,6 +139,8 @@ const TableHeader = <T extends object>({
   headerActions,
   selectedRows,
   selectedCount,
+  hasRememberedChanges,
+  onResetRememberedState,
   renderActions,
   setColumnOrder,
   setEditMode,
@@ -159,9 +163,7 @@ const TableHeader = <T extends object>({
   const currentFilters = params.getAll("filter").filter(Boolean);
   const currentSorts = params.getAll("sort").filter(Boolean);
 
-  const [importCSVTable, setImportCSVTable] = useState<
-    keyof typeof fieldMappings | null
-  >(null);
+  const importCSVModal = useDrawerItem<keyof typeof fieldMappings>();
 
   const savedViewDisclosure = useDisclosure();
   const canSaveView = withSavedView && !!table;
@@ -318,7 +320,7 @@ const TableHeader = <T extends object>({
                       <DropdownMenuItem
                         key={table}
                         onClick={() => {
-                          setImportCSVTable(table);
+                          importCSVModal.open(table);
                         }}
                       >
                         <DropdownMenuIcon icon={<LuDownload />} />
@@ -332,7 +334,7 @@ const TableHeader = <T extends object>({
           </HStack>
         )
       )}
-      {!isEmpty && !hideToolbar && (
+      {(!isEmpty || hasRememberedChanges) && !hideToolbar && (
         <HStack
           className={cn(
             compact
@@ -367,6 +369,15 @@ const TableHeader = <T extends object>({
             {headerActions}
           </HStack>
           <HStack>
+            {hasRememberedChanges && table && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onResetRememberedState}
+              >
+                <Trans>Reset</Trans>
+              </Button>
+            )}
             {sort === undefined ? (
               <Sort sortKeyToLabel={sortKeyToLabel} />
             ) : (
@@ -383,27 +394,36 @@ const TableHeader = <T extends object>({
             )}
 
             {canSaveView && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <IconButton
-                    aria-label={hasView ? t`Edit View` : t`Save View`}
-                    variant={
-                      savedViewDisclosure.isOpen || hasView ? "active" : "ghost"
-                    }
-                    icon={<LuLayers />}
-                    onClick={savedViewDisclosure.onToggle}
-                  />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    {hasView ? (
-                      <Trans>Edit View</Trans>
-                    ) : (
-                      <Trans>Save View</Trans>
-                    )}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+              <>
+                {hasRememberedChanges && !hasView && (
+                  <span className="text-xs text-muted-foreground">
+                    <Trans>Save View</Trans>
+                  </span>
+                )}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <IconButton
+                      aria-label={hasView ? t`Edit View` : t`Save View`}
+                      variant={
+                        savedViewDisclosure.isOpen || hasView
+                          ? "active"
+                          : "ghost"
+                      }
+                      icon={<LuLayers />}
+                      onClick={savedViewDisclosure.onToggle}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      {hasView ? (
+                        <Trans>Edit View</Trans>
+                      ) : (
+                        <Trans>Save View</Trans>
+                      )}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </>
             )}
 
             {withCsvExport && (
@@ -460,10 +480,12 @@ const TableHeader = <T extends object>({
           <ActiveFilters filters={filters} />
         </HStack>
       )}
-      {importCSVTable && (
+      {importCSVModal.item && (
         <ImportCSVModal
-          table={importCSVTable}
-          onClose={() => setImportCSVTable(null)}
+          key={importCSVModal.key}
+          open={importCSVModal.isOpen}
+          table={importCSVModal.item}
+          onClose={importCSVModal.close}
         />
       )}
     </div>

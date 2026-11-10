@@ -20,7 +20,7 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  useCloseRoute,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -47,12 +47,12 @@ import { path } from "~/utils/path";
 // full-page overlay), so closing it returns to the accounts list — which stays
 // fully usable (inviting people is a Community feature).
 function PermissionsUpgradeModal() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   return (
     <Modal
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
-        if (!open) closeRoute();
+        if (!open) dialog.close();
       }}
     >
       <ModalOverlay />

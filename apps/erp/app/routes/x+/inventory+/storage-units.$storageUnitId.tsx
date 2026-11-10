@@ -7,7 +7,7 @@ import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { fetchAllFromTable } from "@carbon/database";
 import { validator } from "@carbon/form";
-import { RecordOutlet, useCloseRoute } from "@carbon/react";
+import { RecordOutlet, useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { storageUnitValidator } from "~/modules/inventory/inventory.models";
@@ -115,7 +115,7 @@ export async function action(args: ActionFunctionArgs) {
 export default function EditStorageUnitRoute() {
   const { storageUnit, inheritedWorkCenter, inheritedNonNettable } =
     useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   const initialValues = {
     id: storageUnit?.id ?? undefined,
@@ -137,7 +137,8 @@ export default function EditStorageUnitRoute() {
         locationId={initialValues.locationId}
         inheritedWorkCenter={inheritedWorkCenter}
         inheritedNonNettable={inheritedNonNettable}
-        onClose={() => closeRoute()}
+        open={dialog.open}
+        onClose={dialog.close}
       />
       <RecordOutlet />
     </>

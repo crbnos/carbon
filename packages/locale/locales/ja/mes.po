@@ -1460,6 +1460,9 @@ msgstr "ローカル"
 msgid "Location"
 msgstr "ロケーション"
 
+msgid "Locations"
+msgstr ""
+
 msgid "Log completed"
 msgstr "完了をログ記録"
 
@@ -1827,6 +1830,9 @@ msgstr "ブロックされた作業区はありません。"
 msgid "No work centers exist"
 msgstr "作業区が存在しません。"
 
+msgid "Non-nettable"
+msgstr "MRP対象外"
+
 msgid "None"
 msgstr "なし"
 
@@ -1835,6 +1841,9 @@ msgstr "スケジュール未設定"
 
 msgid "Not set"
 msgstr "未設定"
+
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "使用可能な在庫ではありません。MRPと計画には含まれず、ピッキングでも引き当てられません。"
 
 msgid "Notes"
 msgstr "メモ"

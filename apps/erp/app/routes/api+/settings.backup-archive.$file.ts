@@ -5,33 +5,10 @@
 import { createGzip } from "node:zlib";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { listBucketFilesRecursive } from "@carbon/jobs/backups";
 import type { LoaderFunctionArgs } from "react-router";
 import { pack as tarPack } from "tar-stream";
 import { canManageBackups } from "~/modules/settings/settings.service";
-
-/** List every object under a storage prefix, returning paths relative to it. */
-async function listRelative(
-  client: SupabaseClient,
-  bucket: string,
-  prefix: string,
-  base: string = prefix
-): Promise<string[]> {
-  const out: string[] = [];
-  const { data } = await client.storage
-    .from(bucket)
-    .list(prefix, { limit: 1000 });
-  if (!data) return out;
-  for (const entry of data) {
-    const full = `${prefix}/${entry.name}`;
-    if (entry.id === null) {
-      out.push(...(await listRelative(client, bucket, full, base)));
-    } else {
-      out.push(full.slice(base.length + 1));
-    }
-  }
-  return out;
-}
 
 /** How many objects to download concurrently while packing the tar in order.
  *  Bounds memory to ~this many buffered files (NOT the whole backup). */
@@ -60,7 +37,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Backup objects are service-role only; the checks above gate this route.
   const serviceRole = getCarbonServiceRole();
 
-  const relPaths = await listRelative(serviceRole, companyId, dir);
+  // Strict and paged: a listing cut short or failed would ship an archive
+  // that looks complete without the files it left out.
+  const relPaths = (
+    await listBucketFilesRecursive(serviceRole, companyId, dir, {
+      strict: true
+    })
+  ).map((f) => f.path.slice(dir.length + 1));
   if (relPaths.length === 0) {
     throw new Response("Backup not found", { status: 404 });
   }
@@ -73,22 +56,31 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     });
 
-  const downloadAt = (i: number): Promise<Buffer | null> =>
-    serviceRole.storage
+  // A file that can't be read fails the download: skipped, the archive
+  // would still carry its manifest and import as if complete.
+  const downloadAt = (i: number): Promise<Buffer> => {
+    const download = serviceRole.storage
       .from(companyId)
       .download(`${dir}/${relPaths[i]}`)
-      .then((f) =>
-        f.error || !f.data
-          ? null
-          : f.data.arrayBuffer().then((b) => Buffer.from(b))
-      )
-      .catch(() => null); // best-effort: a missing/failed object is skipped
+      .then((f) => {
+        if (f.error || !f.data) {
+          throw new Error(
+            `Failed to read ${relPaths[i]}: ${f.error?.message ?? "no data"}`
+          );
+        }
+        return f.data.arrayBuffer().then((b) => Buffer.from(b));
+      });
+    // Prefetched before it is awaited: mark it handled so an early failure
+    // isn't an unhandled rejection (fatal in Node). The await still throws.
+    download.catch(() => undefined);
+    return download;
+  };
 
   (async () => {
     try {
       // Sliding window: keep up to DOWNLOAD_CONCURRENCY downloads in flight, but
       // write entries to the tar strictly in index order.
-      const inflight = new Map<number, Promise<Buffer | null>>();
+      const inflight = new Map<number, Promise<Buffer>>();
       const prime = Math.min(DOWNLOAD_CONCURRENCY, relPaths.length);
       for (let i = 0; i < prime; i++) inflight.set(i, downloadAt(i));
 
@@ -97,7 +89,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         inflight.delete(i);
         const next = i + DOWNLOAD_CONCURRENCY;
         if (next < relPaths.length) inflight.set(next, downloadAt(next));
-        if (buf) await addEntry(relPaths[i], buf);
+        await addEntry(relPaths[i], buf);
       }
       archive.finalize();
     } catch (err) {

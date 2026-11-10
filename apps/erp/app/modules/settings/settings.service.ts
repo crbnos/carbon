@@ -61,17 +61,22 @@ import {
 } from "@carbon/database/strict-backflush";
 import type {
   DocumentBlock,
+  DocumentEdit,
+  DocumentEditType,
   DocumentSectionPlacement,
   DocumentSettings,
   DocumentTemplate,
   DocumentTemplateType,
   DocumentTheme,
-  ResolvedSection
+  ResolvedSection,
+  ValueEdits
 } from "@carbon/documents/template";
 import {
   CURRENT_TEMPLATE_FORMAT_VERSION,
   getBuiltInSection,
   isBuiltInSectionId,
+  isEmptyDocumentEdit,
+  rewriteValueEditRowKeys,
   toDocumentTemplate
 } from "@carbon/documents/template";
 import { withRevisionSuffix } from "@carbon/documents/utils";
@@ -243,6 +248,7 @@ import { z } from "zod";
 import { getPaymentTermsList } from "~/modules/accounting/accounting.service";
 import {
   getShippingMethodsList,
+  getShippingTermsList,
   getStockTransfer,
   getStockTransferLines
 } from "~/modules/inventory/inventory.service";
@@ -254,7 +260,6 @@ import {
 } from "~/modules/invoicing/invoicing.service";
 import { canEditChangeNoticeEngineering } from "~/modules/items/items.models";
 import {
-  cascadeItemTrackingType,
   createMakeMethodVersion,
   createRevision,
   deleteChangeNotice,
@@ -323,6 +328,9 @@ import type {
   subsidiaryValidator
 } from "./settings.models";
 import { companyValidator, type customFieldValidator } from "./settings.models";
+import { DOCUMENT_EDIT_RECORDS } from "./settings.utils";
+
+const jsonb = (value: unknown) => sql<Json>`${JSON.stringify(value)}::jsonb`;
 
 const PUBLIC_STORAGE_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/public/`;
 
@@ -972,7 +980,6 @@ export async function upsertDocumentTemplate(
 ) {
   const { companyId, userId } = documentTemplate;
   const now = datetime.timestamp();
-  const jsonb = (value: unknown) => sql<Json>`${JSON.stringify(value)}::jsonb`;
 
   await withTransaction(db, async (trx) => {
     if (header) {
@@ -1468,6 +1475,58 @@ export async function setLocationResponsibleEmployee(
 }
 
 /**
+ * Set a location's goods-in storage units (null clears one). The Kysely handle
+ * bypasses row-level security, so the caller checks `resources` update.
+ * Undefined when the location is not the company's; "sameUnit" when the two
+ * would be one unit.
+ */
+export async function setLocationGoodsInStorage(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    locationId: string;
+    inspectionStorageUnitId?: string | null;
+    rejectedStorageUnitId?: string | null;
+    userId: string;
+  }
+) {
+  return withTransaction(db, async (trx) => {
+    const stored = await trx
+      .selectFrom("location")
+      .select(["inspectionStorageUnitId", "rejectedStorageUnitId"])
+      .where("id", "=", args.locationId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!stored) return undefined;
+    const inspection =
+      args.inspectionStorageUnitId === undefined
+        ? stored.inspectionStorageUnitId
+        : args.inspectionStorageUnitId;
+    const rejected =
+      args.rejectedStorageUnitId === undefined
+        ? stored.rejectedStorageUnitId
+        : args.rejectedStorageUnitId;
+    if (inspection && inspection === rejected) return "sameUnit" as const;
+    return trx
+      .updateTable("location")
+      .set({
+        ...(args.inspectionStorageUnitId !== undefined
+          ? { inspectionStorageUnitId: args.inspectionStorageUnitId }
+          : {}),
+        ...(args.rejectedStorageUnitId !== undefined
+          ? { rejectedStorageUnitId: args.rejectedStorageUnitId }
+          : {}),
+        updatedBy: args.userId
+      })
+      .where("id", "=", args.locationId)
+      .where("companyId", "=", args.companyId)
+      .returning("id")
+      .executeTakeFirst();
+  });
+}
+
+/**
  * Upsert one (location, item group) ownership cell; clearing the employee
  * DELETES the row (unset → inherit up the tree, matching printers).
  */
@@ -1937,6 +1996,7 @@ export async function buildPreviewProps(
         terms,
         payment,
         shipping,
+        shippingTerms,
         ar
       ] = await Promise.all([
         getSalesInvoice(client, id),
@@ -1946,6 +2006,7 @@ export async function buildPreviewProps(
         getSalesTerms(client, companyId),
         getPaymentTermsList(client, companyId),
         getShippingMethodsList(client, companyId),
+        getShippingTermsList(client, companyId),
         getAccountsReceivableBillingAddress(client, companyId)
       ]);
       if (!invoice.data) return null;
@@ -1961,7 +2022,8 @@ export async function buildPreviewProps(
           : null,
         terms: (terms?.data?.salesTerms ?? {}) as JSONContent,
         paymentTerms: payment.data ?? [],
-        shippingMethods: shipping.data ?? []
+        shippingMethods: shipping.data ?? [],
+        shippingTerms: shippingTerms.data ?? []
       };
     }
     case "salesOrder": {
@@ -2031,7 +2093,8 @@ export async function buildPreviewProps(
         shipment,
         terms,
         paymentTerms,
-        shipping
+        shipping,
+        timeZone
       ] = await Promise.all([
         getQuote(client, id),
         getQuoteLines(client, id),
@@ -2041,7 +2104,8 @@ export async function buildPreviewProps(
         getQuoteShipment(client, id),
         getSalesTerms(client, companyId),
         getPaymentTermsList(client, companyId),
-        getShippingMethodsList(client, companyId)
+        getShippingMethodsList(client, companyId),
+        getCompanyTimeZone(client, companyId)
       ]);
       if (!quote.data) return null;
       // The document's own stamped rate — never a live lookup, so a reprint
@@ -2051,6 +2115,7 @@ export async function buildPreviewProps(
       return {
         ...base,
         exchangeRate,
+        printDate: datetime.today(timeZone).toString(),
         quote: quote.data,
         quoteLines: lines.data ?? [],
         quoteLinePrices: prices.data ?? [],
@@ -2092,6 +2157,10 @@ export {
 type CompanyLogoPaths = {
   logoLight: string | null;
   logoLightIcon: string | null;
+  /** The label's `company.*` variables, read in the same query. */
+  name: string;
+  city: string | null;
+  countryCode: string | null;
 };
 
 /**
@@ -2109,7 +2178,7 @@ export async function getCompanyLogoForLabel(
 ): Promise<CompanyLogoPaths | null> {
   const { data } = await client
     .from("company")
-    .select("logoLight, logoLightIcon")
+    .select("logoLight, logoLightIcon, name, city, countryCode")
     .eq("id", companyId)
     .maybeSingle();
 
@@ -2122,7 +2191,10 @@ export async function getCompanyLogoForLabel(
 
   return {
     logoLight: expand(data.logoLight),
-    logoLightIcon: expand(data.logoLightIcon)
+    logoLightIcon: expand(data.logoLightIcon),
+    name: data.name,
+    city: data.city,
+    countryCode: data.countryCode
   };
 }
 const logger = getLogger("erp", "oee-devices");
@@ -3469,6 +3541,27 @@ export async function saveCompanySettings(
       .select("id")
   );
   return error ? ctx.error("internal", failure, error) : null;
+}
+
+/**
+ * Writes the company's settings row on a Kysely handle, so an operation can
+ * write it in one transaction with another table. Bypasses row-level security:
+ * the operation's permission is the gate. False when the row was not written.
+ */
+export async function saveCompanySettingsIn(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  fields: CompanySettingsUpdate
+): Promise<boolean> {
+  const changes = sentFields(fields);
+  if (Object.keys(changes).length === 0) return true;
+  const row = await db
+    .updateTable("companySettings")
+    .set(changes)
+    .where("id", "=", companyId)
+    .returning("id")
+    .executeTakeFirst();
+  return row !== undefined;
 }
 
 const timekeepingLogger = getLogger("erp", "settings", "time");
@@ -5218,14 +5311,9 @@ const STANDARD_FIELD_WRITERS: Record<
       })
       .eq("id", ctx.itemId)
       .eq("companyId", ctx.companyId);
-    if (updated.error) return updated.error.message;
-    await cascadeItemTrackingType(ctx.db, {
-      itemIds: [ctx.itemId],
-      companyId: ctx.companyId,
-      newType: write.itemTrackingType,
-      userId: ctx.userId
-    });
-    return null;
+    // The database gives the new flags to the open documents in the same
+    // statement (`sync_item_tracking_type_change`), or refuses the change.
+    return updated.error ? updated.error.message : null;
   },
   itemColumn: async (ctx, write) => {
     const updated = await updateItemColumns(ctx.client, {
@@ -9385,4 +9473,170 @@ export async function getOpenJobsMissingStorageUnit(
   } catch (error) {
     return { data: null, error: error as Error };
   }
+}
+
+/**
+ * The record a document prints, for the "Edit document" modal: its readable
+ * number, whether it is locked, and the notes its Notes block prints. Read with
+ * the caller's client, so a record the caller cannot see is not found.
+ */
+export async function getDocumentEditRecord(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  documentType: DocumentEditType,
+  documentId: string
+) {
+  const record = DOCUMENT_EDIT_RECORDS[documentType];
+  const { data, error } = await client
+    .from(record.table as "purchaseOrder")
+    .select(
+      ["status", record.readableId, record.notesColumn]
+        .filter(Boolean)
+        .join(", ")
+    )
+    .eq("id", documentId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (error || !data) return { data: null, error };
+  const row = data as unknown as Record<string, unknown>;
+  return {
+    data: {
+      label: String(row[record.readableId] ?? documentId),
+      locked: record.isLocked(row.status as string | null),
+      notes: record.notesColumn
+        ? ((row[record.notesColumn] as JSONContent | null) ?? null)
+        : null
+    },
+    error: null
+  };
+}
+
+/**
+ * Save one document's edits and, when given, its notes, together. An empty edit
+ * deletes the row, so the document follows the template again. Writes nothing and
+ * says why when the record is locked or gone.
+ */
+export async function saveDocumentEditRow(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    documentType: DocumentEditType;
+    documentId: string;
+    edit: DocumentEdit;
+    notes?: JSONContent | null;
+    userId: string;
+  }
+) {
+  const { companyId, documentType, documentId, edit, userId } = args;
+  const now = datetime.timestamp();
+  const record = DOCUMENT_EDIT_RECORDS[documentType];
+
+  return withTransaction(db, async (trx) => {
+    // Lock the record row while the edit is written: a finalize that runs at the
+    // same time waits for this save, or this save sees the record locked.
+    const current = await trx
+      .selectFrom(record.table as "purchaseOrder")
+      .select("status")
+      .where("id", "=", documentId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!current) return "notFound" as const;
+    if (record.isLocked(current.status)) return "locked" as const;
+
+    if (isEmptyDocumentEdit(edit)) {
+      await trx
+        .deleteFrom("documentEdit")
+        .where("companyId", "=", companyId)
+        .where("documentType", "=", documentType)
+        .where("documentId", "=", documentId)
+        .execute();
+    } else {
+      await trx
+        .insertInto("documentEdit")
+        .values({
+          companyId,
+          documentType,
+          documentId,
+          blocks: jsonb(edit.blocks),
+          settings: jsonb(edit.settings),
+          createdBy: userId
+        })
+        .onConflict((oc) =>
+          oc.columns(["companyId", "documentType", "documentId"]).doUpdateSet({
+            blocks: jsonb(edit.blocks),
+            settings: jsonb(edit.settings),
+            updatedBy: userId,
+            updatedAt: now
+          })
+        )
+        .execute();
+    }
+
+    if (args.notes !== undefined && record.notesColumn) {
+      // The record's own notes column: the same text its page edits.
+      await trx
+        .updateTable(record.table as "purchaseOrder")
+        .set({
+          [record.notesColumn]: jsonb(args.notes ?? {}),
+          updatedBy: userId,
+          updatedAt: now
+        } as never)
+        .where("id", "=", documentId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    return "saved" as const;
+  });
+}
+
+/**
+ * Give a new copy of a document the same edits (a quote revision prints like
+ * the quote it revises). Nothing happens when the source has none.
+ */
+export async function copyDocumentEdit(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    documentType: DocumentEditType;
+    fromId: string;
+    toId: string;
+    userId: string;
+    /** The copy's id for each of the record's row ids. */
+    rowIds: ReadonlyMap<string, string>;
+  }
+) {
+  const source = await db
+    .selectFrom("documentEdit")
+    .select(["blocks", "settings"])
+    .where("companyId", "=", args.companyId)
+    .where("documentType", "=", args.documentType)
+    .where("documentId", "=", args.fromId)
+    .executeTakeFirst();
+  if (!source) return;
+
+  const settings = (source.settings ?? {}) as { valueEdits?: ValueEdits };
+  await db
+    .insertInto("documentEdit")
+    .values({
+      companyId: args.companyId,
+      documentType: args.documentType,
+      documentId: args.toId,
+      blocks: jsonb(source.blocks),
+      settings: jsonb(
+        settings.valueEdits
+          ? {
+              ...settings,
+              valueEdits: rewriteValueEditRowKeys(settings.valueEdits, (id) =>
+                args.rowIds.get(id)
+              )
+            }
+          : settings
+      ),
+      createdBy: args.userId
+    })
+    .onConflict((oc) =>
+      oc.columns(["companyId", "documentType", "documentId"]).doNothing()
+    )
+    .execute();
 }

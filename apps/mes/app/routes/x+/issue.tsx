@@ -2,19 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { flash } from "@carbon/auth/session.server";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { erpPosting } from "~/services/erp";
 import { issueValidator } from "~/services/models";
 import { abilityBlockRefusal } from "~/services/operations.service";
-import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("mes", "issue");
 
@@ -58,10 +55,7 @@ export async function action({ request }: ActionFunctionArgs) {
       companyId,
       jobOperationId
     });
-    throw redirect(
-      requestReferrer(request) ?? path.to.operations,
-      await flash(request, error(null, "Job operation not found"))
-    );
+    return { success: false, message: "Job operation not found" };
   }
 
   const refusal = await abilityBlockRefusal(serviceRole, {
@@ -70,10 +64,12 @@ export async function action({ request }: ActionFunctionArgs) {
     companyId
   });
   if (refusal) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.operations,
-      await flash(request, error(null, refusal))
-    );
+    logger.info("Material issue refused by operation ability", {
+      companyId,
+      jobOperationId,
+      userId
+    });
+    return { success: false, message: refusal };
   }
 
   if (jobOpRow.workCenterId) {
@@ -128,11 +124,14 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 
   if (issued.error) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.operations,
-      await flash(request, error(issued.error, "Failed to issue material"))
-    );
+    const context = { companyId, jobOperationId, itemId, error: issued.error };
+    if (issued.error.status < 500) {
+      logger.warn("Material issue refused", context);
+      return { success: false, message: issued.error.message };
+    }
+    logger.error("Failed to issue material", context);
+    return { success: false, message: "Failed to issue material" };
   }
 
-  throw redirect(requestReferrer(request) ?? path.to.operations);
+  return { success: true };
 }

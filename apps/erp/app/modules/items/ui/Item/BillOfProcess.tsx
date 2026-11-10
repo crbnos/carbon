@@ -938,7 +938,7 @@ const BillOfProcess = ({
           renderItem={renderListItem}
         />
       </CardContent>
-      {configuratorDisclosure.isOpen && configuration && (
+      {configuration && (
         <ConfigurationEditor
           configuration={configuration}
           open={configuratorDisclosure.isOpen}
@@ -2931,20 +2931,18 @@ function AttributesListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteMethodOperationStep(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={name}
-          text={`Are you sure you want to delete the ${name} attribute from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteMethodOperationStep(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={name}
+        text={`Are you sure you want to delete the ${name} attribute from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }
@@ -3529,20 +3527,18 @@ function ParametersListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteMethodOperationParameter(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={key}
-          text={`Are you sure you want to delete the ${key} parameter from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteMethodOperationParameter(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={key}
+        text={`Are you sure you want to delete the ${key} parameter from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }
@@ -4115,20 +4111,18 @@ function ToolsListItem({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteMethodOperationTool(id)}
-          isOpen={deleteModalDisclosure.isOpen}
-          name={tool.readableIdWithRevision}
-          text={`Are you sure you want to delete ${tool.readableIdWithRevision} from this operation? This cannot be undone.`}
-          onCancel={() => {
-            deleteModalDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteModalDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteMethodOperationTool(id)}
+        isOpen={deleteModalDisclosure.isOpen}
+        name={tool.readableIdWithRevision}
+        text={`Are you sure you want to delete ${tool.readableIdWithRevision} from this operation? This cannot be undone.`}
+        onCancel={() => {
+          deleteModalDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteModalDisclosure.onClose();
+        }}
+      />
     </div>
   );
 }

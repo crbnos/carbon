@@ -753,6 +753,19 @@ export function isRfqLocked(status: string | null | undefined): boolean {
 
 // Purchase Order Locked Status Validation
 
+// Purchase orders a supplier prepayment can be taken against: anything not
+// terminal (Completed, Rejected, Closed). The purchasing mirror of
+// OPEN_SALES_ORDER_STATUSES.
+export const OPEN_PURCHASE_ORDER_STATUSES = [
+  "Draft",
+  "Planned",
+  "Needs Approval",
+  "To Review",
+  "To Receive",
+  "To Receive and Invoice",
+  "To Invoice"
+] as const;
+
 /**
  * Purchase Order statuses that indicate the PO has been finalized/approved
  * and is now "locked" - meaning only privileged users can make limited edits
@@ -1222,7 +1235,7 @@ export function purchaseOrderLineDateRefusal(
   switch (field) {
     case "requiredDate":
       return isPurchaseOrderEditLocked(line.status)
-        ? "Cannot change the requested date of a purchase order in approval or completed."
+        ? "Cannot change the required date of a purchase order in approval or completed."
         : null;
     case "promisedDate":
       return (

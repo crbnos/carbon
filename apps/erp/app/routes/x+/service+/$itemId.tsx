@@ -27,6 +27,7 @@ import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Await, useLoaderData, useParams } from "react-router";
 import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import {
   getItemFiles,
   getMakeMethodByIdOnce,
@@ -134,6 +135,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function ServiceRoute() {
   const { t } = useLingui();
+  const [explorerTab, setExplorerTab] = usePersistentPageTab(
+    "item-explorer",
+    ["manufacturing", "used-in"],
+    "manufacturing"
+  );
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
 
@@ -233,7 +239,8 @@ export default function ServiceRoute() {
               <div className="flex flex-col h-full">
                 {isManufactured ? (
                   <Tabs
-                    defaultValue="manufacturing"
+                    value={explorerTab}
+                    onValueChange={setExplorerTab}
                     className="flex flex-col h-full"
                   >
                     <div className="px-2 pt-2 flex-shrink-0">

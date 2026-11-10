@@ -169,11 +169,9 @@ const AssetClassesTable = memo(
             text={t`Are you sure you want to delete the asset class: ${selectedClass.name}? This cannot be undone.`}
             onCancel={() => {
               deleteModal.onClose();
-              setSelectedClass(null);
             }}
             onSubmit={() => {
               deleteModal.onClose();
-              setSelectedClass(null);
             }}
           />
         )}

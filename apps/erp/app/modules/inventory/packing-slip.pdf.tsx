@@ -6,10 +6,11 @@ import type { Database } from "@carbon/database";
 import { ensureFont, PackingSlipPDF } from "@carbon/documents/pdf";
 import {
   collectSectionIds,
-  resolveTemplate,
+  type DocumentEdit,
   templateShowsThumbnails,
-  toDocumentTemplate
+  type ValueCollector
 } from "@carbon/documents/template";
+import { getPrintedTemplate } from "@carbon/lib/document-edit.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
@@ -29,7 +30,6 @@ import {
 } from "~/modules/sales/sales.service";
 import {
   getCompany,
-  getDocumentTemplate,
   resolveSections
 } from "~/modules/settings/settings.service";
 import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
@@ -49,18 +49,36 @@ const logger = getLogger("erp", "shipment", "pdf");
  * `client` reads as the caller; the source document's customer, terms and
  * tracking are read with `serviceRole`, pinned to `companyId`.
  */
+function readAll(stream: NodeJS.ReadableStream): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const buffers: Uint8Array[] = [];
+    stream.on("data", (data) => {
+      buffers.push(data);
+    });
+    stream.on("end", () => {
+      resolve(Buffer.concat(buffers));
+    });
+    stream.on("error", reject);
+  });
+}
+
 export async function renderPackingSlip({
   client,
   serviceRole,
   companyId,
   shipmentId: id,
-  locale
+  locale,
+  edit,
+  valueCollector
 }: {
   client: SupabaseClient<Database>;
   serviceRole: SupabaseClient<Database>;
   companyId: string;
   shipmentId: string;
   locale: string;
+  /** Draft edits to preview; omitted, the saved ones are read. */
+  edit?: DocumentEdit | null;
+  valueCollector?: ValueCollector;
 }): Promise<Response> {
   const [company, shipment, shipmentLines] = await Promise.all([
     getCompany(client, companyId),
@@ -108,23 +126,18 @@ export async function renderPackingSlip({
     throw new Error("Failed to load sales order");
   }
 
-  const documentTemplate = await getDocumentTemplate(
+  const templateConfig = await getPrintedTemplate(
     client,
-    companyId,
-    "packingSlip"
+    { companyId, documentType: "packingSlip", documentId: id },
+    edit
   );
-  const templateConfig = toDocumentTemplate(
-    documentTemplate.data,
-    "packingSlip"
-  );
-  const resolvedTemplate = resolveTemplate("packingSlip", templateConfig);
   const showThumbnails = templateShowsThumbnails(templateConfig, "packingSlip");
   const templateSections = await resolveSections(
     client,
     companyId,
-    collectSectionIds(resolvedTemplate)
+    collectSectionIds(templateConfig)
   );
-  await ensureFont(resolvedTemplate.settings.fontFamily);
+  await ensureFont(templateConfig.settings.fontFamily);
 
   switch (shipment.data.sourceDocument) {
     case "Sales Order": {
@@ -202,6 +215,7 @@ export async function renderPackingSlip({
 
       const stream = await renderToStream(
         <PackingSlipPDF
+          valueCollector={valueCollector}
           company={company.data as any}
           customer={customer.data}
           locale={locale}
@@ -221,23 +235,13 @@ export async function renderPackingSlip({
           paymentTerm={paymentTerm.data ?? { id: "", name: "" }}
           shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
           trackedEntities={shipmentTracking.data ?? []}
-          title="Packing Slip"
           thumbnails={thumbnails}
           template={templateConfig}
           sections={templateSections}
         />
       );
 
-      const body: Buffer = await new Promise((resolve, reject) => {
-        const buffers: Uint8Array[] = [];
-        stream.on("data", (data) => {
-          buffers.push(data);
-        });
-        stream.on("end", () => {
-          resolve(Buffer.concat(buffers));
-        });
-        stream.on("error", reject);
-      });
+      const body = await readAll(stream);
 
       const headers = new Headers({
         "Content-Type": "application/pdf",
@@ -325,6 +329,7 @@ export async function renderPackingSlip({
 
       const stream = await renderToStream(
         <PackingSlipPDF
+          valueCollector={valueCollector}
           company={company.data as any}
           customer={customer.data}
           locale={locale}
@@ -344,23 +349,13 @@ export async function renderPackingSlip({
           paymentTerm={paymentTerm.data ?? { id: "", name: "" }}
           shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
           trackedEntities={shipmentTracking.data ?? []}
-          title="Packing Slip"
           thumbnails={thumbnails}
           template={templateConfig}
           sections={templateSections}
         />
       );
 
-      const body: Buffer = await new Promise((resolve, reject) => {
-        const buffers: Uint8Array[] = [];
-        stream.on("data", (data) => {
-          buffers.push(data);
-        });
-        stream.on("end", () => {
-          resolve(Buffer.concat(buffers));
-        });
-        stream.on("error", reject);
-      });
+      const body = await readAll(stream);
 
       const headers = new Headers({
         "Content-Type": "application/pdf",
@@ -441,6 +436,7 @@ export async function renderPackingSlip({
 
       const poStream = await renderToStream(
         <PackingSlipPDF
+          valueCollector={valueCollector}
           company={company.data as any}
           customer={supplier.data}
           locale={locale}
@@ -460,23 +456,13 @@ export async function renderPackingSlip({
           paymentTerm={poPaymentTerm.data ?? { id: "", name: "" }}
           shippingMethod={poShippingMethod.data ?? { id: "", name: "" }}
           trackedEntities={poShipmentTracking.data ?? []}
-          title="Packing Slip"
           thumbnails={poThumbnails}
           template={templateConfig}
           sections={templateSections}
         />
       );
 
-      const poBody: Buffer = await new Promise((resolve, reject) => {
-        const buffers: Uint8Array[] = [];
-        poStream.on("data", (data) => {
-          buffers.push(data);
-        });
-        poStream.on("end", () => {
-          resolve(Buffer.concat(buffers));
-        });
-        poStream.on("error", reject);
-      });
+      const poBody = await readAll(poStream);
 
       const poHeaders = new Headers({
         "Content-Type": "application/pdf",
@@ -555,6 +541,7 @@ export async function renderPackingSlip({
 
       const transferStream = await renderToStream(
         <PackingSlipPDF
+          valueCollector={valueCollector}
           company={company.data as any}
           customer={{ name: toLocation?.name ?? "" } as any}
           locale={locale}
@@ -573,23 +560,13 @@ export async function renderPackingSlip({
           paymentTerm={{ id: "", name: "" }}
           shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
           trackedEntities={shipmentTracking.data ?? []}
-          title="Packing Slip"
           thumbnails={transferThumbnails}
           template={templateConfig}
           sections={templateSections}
         />
       );
 
-      const transferBody: Buffer = await new Promise((resolve, reject) => {
-        const buffers: Uint8Array[] = [];
-        transferStream.on("data", (data) => {
-          buffers.push(data);
-        });
-        transferStream.on("end", () => {
-          resolve(Buffer.concat(buffers));
-        });
-        transferStream.on("error", reject);
-      });
+      const transferBody = await readAll(transferStream);
 
       const transferHeaders = new Headers({
         "Content-Type": "application/pdf",
@@ -666,6 +643,7 @@ export async function renderPackingSlip({
 
       const rentalStream = await renderToStream(
         <PackingSlipPDF
+          valueCollector={valueCollector}
           company={company.data as any}
           customer={customer.data}
           locale={locale}
@@ -685,23 +663,14 @@ export async function renderPackingSlip({
           shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
           trackedEntities={[]}
           rentalUnits={rentalUnits}
-          title="Delivery Ticket"
+          documentType="deliveryTicket"
           thumbnails={{}}
           template={templateConfig}
           sections={templateSections}
         />
       );
 
-      const rentalBody: Buffer = await new Promise((resolve, reject) => {
-        const buffers: Uint8Array[] = [];
-        rentalStream.on("data", (data) => {
-          buffers.push(data);
-        });
-        rentalStream.on("end", () => {
-          resolve(Buffer.concat(buffers));
-        });
-        rentalStream.on("error", reject);
-      });
+      const rentalBody = await readAll(rentalStream);
 
       const rentalHeaders = new Headers({
         "Content-Type": "application/pdf",
@@ -800,10 +769,10 @@ export async function renderPackingSlip({
 
       const contractStream = await renderToStream(
         <PackingSlipPDF
+          valueCollector={valueCollector}
           company={company.data as any}
           customer={customer.data}
           customerReference={contract.data.customerReference ?? undefined}
-          customerReferenceLabel="Contract No."
           locale={locale}
           meta={{
             author: "Carbon",
@@ -821,23 +790,14 @@ export async function renderPackingSlip({
           shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
           trackedEntities={[]}
           rentalUnits={deliveredLines}
-          title="Receiving Report"
+          documentType="receivingReport"
           thumbnails={{}}
           template={templateConfig}
           sections={templateSections}
         />
       );
 
-      const contractBody: Buffer = await new Promise((resolve, reject) => {
-        const buffers: Uint8Array[] = [];
-        contractStream.on("data", (data) => {
-          buffers.push(data);
-        });
-        contractStream.on("end", () => {
-          resolve(Buffer.concat(buffers));
-        });
-        contractStream.on("error", reject);
-      });
+      const contractBody = await readAll(contractStream);
 
       return new Response(new Uint8Array(contractBody), {
         status: 200,

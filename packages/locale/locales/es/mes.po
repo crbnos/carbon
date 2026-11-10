@@ -1460,6 +1460,9 @@ msgstr "Local"
 msgid "Location"
 msgstr "Ubicación"
 
+msgid "Locations"
+msgstr ""
+
 msgid "Log completed"
 msgstr "Completado registrado"
 
@@ -1827,6 +1830,9 @@ msgstr "No hay centros de trabajo bloqueados"
 msgid "No work centers exist"
 msgstr "No existen centros de trabajo"
 
+msgid "Non-nettable"
+msgstr "No neteable"
+
 msgid "None"
 msgstr "Ninguno"
 
@@ -1835,6 +1841,9 @@ msgstr "No programado"
 
 msgid "Not set"
 msgstr "No establecido"
+
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "Stock no utilizable. El MRP y la planificación no lo cuentan, y el picking no lo toma."
 
 msgid "Notes"
 msgstr "Notas"

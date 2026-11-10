@@ -127,7 +127,10 @@ const CompanySwitcher = () => {
         <DropdownMenuTrigger asChild>
           <NavRailSwitcher {...brand} trailing={<LuChevronsUpDown />} />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="min-w-[240px]">
+        <DropdownMenuContent
+          align="start"
+          className="min-w-[240px] max-w-[360px]"
+        >
           <ScrollArea className="max-h-[300px]">
             {companyGroups.map((group, index) => (
               <DropdownMenuGroup key={group.name}>
@@ -161,16 +164,16 @@ const CompanySwitcher = () => {
                           type="submit"
                           disabled={navigation.state === "submitting"}
                         >
-                          <HStack>
+                          <HStack className="min-w-0">
                             <Avatar
                               size="xs"
                               name={c.name ?? undefined}
                               src={companyLogo ?? undefined}
                               decorative
                             />
-                            <span>{c.name}</span>
+                            <span className="truncate">{c.name}</span>
                           </HStack>
-                          <Badge variant="secondary" className="ml-2">
+                          <Badge variant="secondary" className="ml-2 shrink-0">
                             {c.employeeType}
                           </Badge>
                         </button>

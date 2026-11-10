@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -23,7 +24,6 @@ import {
 import {
   checkDepositDocument,
   getAvailableCreditsForParty,
-  getAvailableOnAccountCreditSources,
   getDepositDocuments,
   getInvoiceSettlements,
   getOpenPurchaseInvoicesForSupplier,
@@ -83,7 +83,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         payment.data.currencyCode
       ),
       // The payment's own document stays listed even once it is closed.
-      getDepositDocuments(client, companyId, [payment.data.salesOrderId])
+      getDepositDocuments(
+        client,
+        companyId,
+        [payment.data.salesOrderId],
+        [payment.data.purchaseOrderId]
+      )
     ]);
     let openInvoices: NonNullable<
       Awaited<ReturnType<typeof getOpenSalesInvoicesForCustomer>>["data"]
@@ -127,7 +132,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         status: "Posted",
         rentalAgreementIds: [],
         salesOrderIds: [],
-        customerContractIds: []
+        customerContractIds: [],
+        purchaseOrderIds: []
       }));
     } else if (payment.data.status === "Draft") {
       const isAR = Boolean(payment.data.customerId);
@@ -138,7 +144,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         Boolean(payment.data.customerId) === Boolean(payment.data.supplierId)
       )
         throw new Error("Payment requires exactly one customer or supplier");
-      if (isRefund) {
+      if (isRefund && !fundingScopeOf(payment.data)) {
         const memos = await getAvailableCreditsForParty(
           client,
           companyId,
@@ -163,9 +169,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           status: "Posted",
           rentalAgreementIds: [],
           salesOrderIds: [],
-          customerContractIds: []
+          customerContractIds: [],
+          purchaseOrderIds: []
         }));
-      } else {
+      } else if (!isRefund) {
+        const api = await carbon(request);
         const [invoices, credit, credits, staged] = await Promise.all([
           isAR
             ? getOpenSalesInvoicesForCustomer(
@@ -180,14 +188,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
                 partyId,
                 payment.data.currencyCode
               ),
-          getAvailableOnAccountCreditSources(
-            client,
-            companyId,
-            isAR
+          api.invoicing.getAvailableOnAccountCreditSources({
+            party: isAR
               ? { paymentType: "Receipt", customerId: partyId }
               : { paymentType: "Disbursement", supplierId: partyId },
-            payment.data.currencyCode
-          ),
+            currencyCode: payment.data.currencyCode
+          }),
           getAvailableCreditsForParty(
             client,
             companyId,
@@ -347,10 +353,10 @@ export default function PaymentDetailRoute() {
   const isRefund =
     !isReimbursement &&
     (side === "sales") !== (payment.paymentType === "Receipt");
-  // A deposit receipt applies only to its own document's invoices; a deposit
-  // REFUND (a disbursement) targets memos and is not scoped.
-  const depositScope =
-    side === "sales" && !isRefund ? fundingScopeOf(payment) : null;
+  // Advances fund their document's invoices. Advance refunds consume the
+  // original payments; other refunds target memos without a document scope.
+  const isDepositRefund = isRefund && Boolean(fundingScopeOf(payment));
+  const depositScope = !isRefund ? fundingScopeOf(payment) : null;
   const paymentScope = depositScope && {
     ...depositScope,
     readableId:
@@ -375,6 +381,7 @@ export default function PaymentDetailRoute() {
     salesOrderId: payment.salesOrderId ?? "",
     rentalAgreementId: payment.rentalAgreementId ?? "",
     customerContractId: payment.customerContractId ?? "",
+    purchaseOrderId: payment.purchaseOrderId ?? "",
     status: payment.status ?? undefined
   };
 
@@ -403,10 +410,12 @@ export default function PaymentDetailRoute() {
         paymentCurrency={payment.currencyCode}
         baseCurrency={baseCurrencyCode}
         isRefund={isRefund}
+        isDepositRefund={isDepositRefund}
+        isDeposit={Boolean(depositScope)}
         isReimbursement={isReimbursement}
       />
 
-      {!locked && (
+      {!locked && !isDepositRefund && (
         <PaymentApplyTable
           key={`${payment.id}:${side}:${payment.customerId ?? payment.supplierId ?? payment.employeeId}:${payment.currencyCode}:${payment.paymentType}`}
           isRefund={isRefund}
@@ -433,7 +442,8 @@ export default function PaymentDetailRoute() {
             status: inv.status,
             rentalAgreementIds: inv.rentalAgreementIds,
             salesOrderIds: inv.salesOrderIds,
-            customerContractIds: inv.customerContractIds
+            customerContractIds: inv.customerContractIds,
+            purchaseOrderIds: inv.purchaseOrderIds
           }))}
           existingApplications={applications.map((a) => ({
             targetSalesInvoiceId: a.targetSalesInvoiceId,

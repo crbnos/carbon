@@ -113,7 +113,6 @@ const WorkCentersTable = memo(
     };
 
     const onCancel = () => {
-      setSelectedWorkCenter(null);
       deactivateModal.onClose();
       activateModal.onClose();
     };
@@ -433,6 +432,34 @@ function DeactivateWorkCenterModal({
   onCancel: () => void;
   onSubmit: () => void;
 }) {
+  return (
+    <Modal
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <DeactivateWorkCenterBody
+          workCenter={workCenter}
+          onCancel={onCancel}
+          onSubmit={onSubmit}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function DeactivateWorkCenterBody({
+  workCenter,
+  onCancel,
+  onSubmit
+}: {
+  workCenter: WorkCenter;
+  onCancel: () => void;
+  onSubmit: () => void;
+}) {
   const [hasNoActiveOperations, setHasNoActiveOperations] = useState(false);
   const [jobsWithActiveOperations, setJobsWithActiveOperations] = useState<
     {
@@ -488,79 +515,71 @@ function DeactivateWorkCenterModal({
   });
 
   return (
-    <Modal
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) onCancel();
-      }}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Deactivate {workCenter.name}</Trans>
-          </ModalTitle>
-        </ModalHeader>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Deactivate {workCenter.name}</Trans>
+        </ModalTitle>
+      </ModalHeader>
 
-        <ModalBody>
-          {uniqueJobsWithActiveOperations.length > 0 ? (
-            <Alert variant="destructive">
-              <LuTriangleAlert className="h-4 w-4" />
-              <AlertTitle>
-                <Trans>
-                  These jobs have operations assigned to this work center:
-                </Trans>
-              </AlertTitle>
-              <AlertDescription>
-                <ul className="list-disc pl-4 mt-2 space-y-1">
-                  {uniqueJobsWithActiveOperations.map((job, index) => (
-                    <li key={index} className="text-sm font-medium flex gap-2">
-                      <Hyperlink to={path.to.jobDetails(job.id)}>
-                        {job.jobId}
-                      </Hyperlink>
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-2">
-                  <Trans>
-                    Move these operations to another work center, or finish
-                    them, before you deactivate it.
-                  </Trans>
-                </p>
-              </AlertDescription>
-            </Alert>
-          ) : (
-            <p>
+      <ModalBody>
+        {uniqueJobsWithActiveOperations.length > 0 ? (
+          <Alert variant="destructive">
+            <LuTriangleAlert className="h-4 w-4" />
+            <AlertTitle>
               <Trans>
-                Are you sure you want to deactivate the {workCenter.name} work
-                center?
+                These jobs have operations assigned to this work center:
               </Trans>
-            </p>
-          )}
-        </ModalBody>
+            </AlertTitle>
+            <AlertDescription>
+              <ul className="list-disc pl-4 mt-2 space-y-1">
+                {uniqueJobsWithActiveOperations.map((job, index) => (
+                  <li key={index} className="text-sm font-medium flex gap-2">
+                    <Hyperlink to={path.to.jobDetails(job.id)}>
+                      {job.jobId}
+                    </Hyperlink>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2">
+                <Trans>
+                  Move these operations to another work center, or finish them,
+                  before you deactivate it.
+                </Trans>
+              </p>
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <p>
+            <Trans>
+              Are you sure you want to deactivate the {workCenter.name} work
+              center?
+            </Trans>
+          </p>
+        )}
+      </ModalBody>
 
-        <ModalFooter>
-          <Button variant="secondary" onClick={onCancel}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <fetcher.Form
-            method="post"
-            action={path.to.workCenterDeactivate(workCenter.id!)}
-            onSubmit={() => (submitted.current = true)}
+      <ModalFooter>
+        <Button variant="secondary" onClick={onCancel}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <fetcher.Form
+          method="post"
+          action={path.to.workCenterDeactivate(workCenter.id!)}
+          onSubmit={() => (submitted.current = true)}
+        >
+          <Button
+            variant="destructive"
+            isLoading={fetcher.state !== "idle"}
+            isDisabled={
+              fetcher.state !== "idle" || hasNoActiveOperations === false
+            }
+            type="submit"
           >
-            <Button
-              variant="destructive"
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={
-                fetcher.state !== "idle" || hasNoActiveOperations === false
-              }
-              type="submit"
-            >
-              <Trans>Deactivate</Trans>
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+            <Trans>Deactivate</Trans>
+          </Button>
+        </fetcher.Form>
+      </ModalFooter>
+    </>
   );
 }

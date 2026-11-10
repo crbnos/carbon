@@ -1562,7 +1562,7 @@ type AppShellRows = {
   defaults: Views["userDefaults"]["Row"] | null;
   modulePreferences: Pick<
     PublicTables["userModulePreference"]["Row"],
-    "module" | "position" | "hidden"
+    "module" | "position" | "hidden" | "hiddenSubmodules" | "submoduleOrder"
   >[];
   printerRoutes: PrinterRoute[];
   implementationHub: PublicTables["implementationHub"]["Row"] | null;
@@ -12332,6 +12332,46 @@ export async function createDocument(
       const isOutsideOperation =
         purchaseOrder.data.purchaseOrderType === "Outside Processing";
 
+      // A part with a Receipt inspection plan is received into the location's
+      // inspection storage unit, and the line keeps a snapshot of that.
+      const lineLocationIds = [
+        ...new Set(
+          [
+            locationId,
+            ...purchaseOrderLines.data.map((d) => d.locationId)
+          ].filter((id): id is string => !!id)
+        )
+      ];
+      const [inspectionAssignments, receiptLocations] = await Promise.all([
+        many(
+          db,
+          "itemInspectionDocumentAssignment",
+          { companyId, usage: "Receipt", itemId: receiptItemIds },
+          { columns: ["itemId"] }
+        ),
+        many(
+          db,
+          "location",
+          { companyId, id: lineLocationIds },
+          { columns: ["id", "inspectionStorageUnitId"] }
+        )
+      ]);
+      if (inspectionAssignments.error)
+        throw new Error(inspectionAssignments.error.message);
+      if (receiptLocations.error)
+        throw new Error(receiptLocations.error.message);
+      const inspectedItemIds = new Set(
+        isOutsideOperation
+          ? []
+          : (inspectionAssignments.data ?? []).map((row) => row.itemId)
+      );
+      const inspectionUnitByLocation = new Map(
+        (receiptLocations.data ?? []).map((row) => [
+          row.id,
+          row.inspectionStorageUnitId
+        ])
+      );
+
       const previouslyReceivedQuantitiesByLine = (
         purchaseOrderLines.data ?? []
       ).reduce<Record<string, number>>((acc, d) => {
@@ -12380,7 +12420,11 @@ export async function createDocument(
             unitPrice / (d.conversionFactor ?? 1) + shippingAndTaxUnitCost,
           unitOfMeasure: d.inventoryUnitOfMeasureCode ?? "EA",
           locationId: d.locationId ?? null,
+          requiresInspection: inspectedItemIds.has(d.itemId),
           storageUnitId:
+            (inspectedItemIds.has(d.itemId)
+              ? inspectionUnitByLocation.get(d.locationId ?? locationId ?? "")
+              : null) ??
             d.storageUnitId ??
             defaultStorageUnitByItemLocation.get(
               pickMethodKey(d.itemId!, d.locationId ?? null)
@@ -12733,6 +12777,20 @@ export async function createDocument(
         }
       }
 
+      // Returned goods land in the location's inspection storage unit when it
+      // has one; the RMA line disposition releases them.
+      const returnLocation = locationId
+        ? await maybeSingle(
+            db,
+            "location",
+            { id: locationId, companyId },
+            { columns: ["inspectionStorageUnitId"] }
+          )
+        : { data: null, error: null };
+      if (returnLocation.error) throw new Error(returnLocation.error.message);
+      const returnInspectionStorageUnitId =
+        returnLocation.data?.inspectionStorageUnitId ?? null;
+
       // A supplied id that is not this company's receipt is a 404, not a
       // silent create-new.
       if (existingReceiptId && !receipt.data)
@@ -12760,7 +12818,10 @@ export async function createDocument(
           lineId: d.id,
           itemId: d.itemId,
           locationId,
-          storageUnitId: defaultStorageUnitByItem.get(d.itemId) ?? null,
+          storageUnitId:
+            returnInspectionStorageUnitId ??
+            defaultStorageUnitByItem.get(d.itemId) ??
+            null,
           requiresSerialTracking: serializedItems.has(d.itemId),
           requiresBatchTracking: batchItems.has(d.itemId),
           receivedQuantity: startAtZero ? 0 : outstanding,

@@ -2596,6 +2596,19 @@ export const periodCloseTaskDefinitions = [
     severity: "Warning",
     active: true,
     isSystem: true
+  },
+  // A shipment posts cost of goods sold; the sales invoice posts the revenue.
+  // Warns while a shipment posted in the period has lines with no posted
+  // invoice by the period end, so the cost and its revenue land together.
+  {
+    name: "Invoice shipped sales orders",
+    taskType: "Auto",
+    autoCheckKey: "shipped-not-invoiced",
+    sortOrder: 10,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
   }
 ];
 

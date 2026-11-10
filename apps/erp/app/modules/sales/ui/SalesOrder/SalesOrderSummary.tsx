@@ -188,16 +188,15 @@ const SalesOrderSummary = ({
                 <Trans>Create Jobs</Trans>
               </Button>
             </CardFooter>
-            {salesOrderToJobsModal.isOpen && (
-              <Confirm
-                title={t`Convert Lines to Jobs`}
-                text={t`Are you sure you want to create jobs for this sales order? This will create jobs for all lines that don't already have jobs.`}
-                confirmText={t`Create Jobs`}
-                onCancel={salesOrderToJobsModal.onClose}
-                onSubmit={salesOrderToJobsModal.onClose}
-                action={path.to.salesOrderLinesToJobs(orderId)}
-              />
-            )}
+            <Confirm
+              isOpen={salesOrderToJobsModal.isOpen}
+              title={t`Convert Lines to Jobs`}
+              text={t`Are you sure you want to create jobs for this sales order? This will create jobs for all lines that don't already have jobs.`}
+              confirmText={t`Create Jobs`}
+              onCancel={salesOrderToJobsModal.onClose}
+              onSubmit={salesOrderToJobsModal.onClose}
+              action={path.to.salesOrderLinesToJobs(orderId)}
+            />
           </Card>
         )}
       <Card>

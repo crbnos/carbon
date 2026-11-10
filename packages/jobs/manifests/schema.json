@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261105230630",
+  "schemaVersion": "20261106214206",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-06T00:49:21.380Z",
+  "exportedAt": "2026-11-09T10:06:40.493Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -735,6 +735,22 @@
       ]
     },
     {
+      "name": "documentEdit",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "documentType",
+        "documentId",
+        "blocks",
+        "settings",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "documentExtraction",
       "rows": 0,
       "columns": [
@@ -1397,7 +1413,9 @@
         "tags",
         "code",
         "requiresStaffing",
-        "responsibleEmployee"
+        "responsibleEmployee",
+        "inspectionStorageUnitId",
+        "rejectedStorageUnitId"
       ]
     },
     {
@@ -5318,7 +5336,9 @@
         "sourceDocument",
         "sourceDocumentId",
         "sourceDocumentLineId",
-        "sourceDocumentReadableId"
+        "sourceDocumentReadableId",
+        "storageUnitId",
+        "acceptedQuantity"
       ]
     },
     {
@@ -5981,41 +6001,6 @@
         "updatedAt",
         "customFields",
         "tags"
-      ]
-    },
-    {
-      "name": "payment",
-      "rows": 0,
-      "columns": [
-        "id",
-        "paymentId",
-        "paymentType",
-        "status",
-        "customerId",
-        "supplierId",
-        "paymentDate",
-        "postingDate",
-        "currencyCode",
-        "exchangeRate",
-        "totalAmount",
-        "bankAccount",
-        "reference",
-        "memo",
-        "journalId",
-        "postedAt",
-        "postedBy",
-        "voidedAt",
-        "voidedBy",
-        "companyId",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "customFields",
-        "employeeId",
-        "salesOrderId",
-        "rentalAgreementId",
-        "customerContractId"
       ]
     },
     {
@@ -6986,7 +6971,8 @@
         "assignee",
         "customFields",
         "tags",
-        "kanbanId"
+        "kanbanId",
+        "receiptId"
       ]
     },
     {
@@ -7009,7 +6995,8 @@
         "createdAt",
         "createdBy",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "receiptLineId"
       ]
     },
     {
@@ -7771,7 +7758,8 @@
         "updatedBy",
         "conversionFactor",
         "requiresSerialTracking",
-        "requiresBatchTracking"
+        "requiresBatchTracking",
+        "requiresInspection"
       ]
     },
     {
@@ -8347,7 +8335,8 @@
         "tags",
         "internalNotes",
         "supplierInteractionId",
-        "postedBy"
+        "postedBy",
+        "inspectionStatus"
       ]
     },
     {
@@ -8535,6 +8524,42 @@
       ]
     },
     {
+      "name": "payment",
+      "rows": 0,
+      "columns": [
+        "id",
+        "paymentId",
+        "paymentType",
+        "status",
+        "customerId",
+        "supplierId",
+        "paymentDate",
+        "postingDate",
+        "currencyCode",
+        "exchangeRate",
+        "totalAmount",
+        "bankAccount",
+        "reference",
+        "memo",
+        "journalId",
+        "postedAt",
+        "postedBy",
+        "voidedAt",
+        "voidedBy",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields",
+        "employeeId",
+        "salesOrderId",
+        "rentalAgreementId",
+        "customerContractId",
+        "purchaseOrderId"
+      ]
+    },
+    {
       "name": "purchaseInvoiceLine",
       "rows": 0,
       "columns": [
@@ -8699,7 +8724,8 @@
         "updatedBy",
         "sourcePaymentId",
         "sourceAmount",
-        "targetReimbursementId"
+        "targetReimbursementId",
+        "targetPaymentId"
       ]
     },
     {

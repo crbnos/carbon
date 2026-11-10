@@ -4,8 +4,8 @@
 
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
-import { useNavigate } from "react-router";
 import {
   batchRuleInitialValues,
   processValidator
@@ -34,8 +34,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function NewProcessRoute() {
-  const navigate = useNavigate();
-  const onClose = () => navigate(path.to.processes);
+  const dialog = useRouteDialog(path.to.processes);
 
   const initialValues = {
     name: "",
@@ -49,5 +48,11 @@ export default function NewProcessRoute() {
     ...batchRuleInitialValues(null)
   };
 
-  return <ProcessForm initialValues={initialValues} onClose={onClose} />;
+  return (
+    <ProcessForm
+      initialValues={initialValues}
+      open={dialog.open}
+      onClose={dialog.close}
+    />
+  );
 }

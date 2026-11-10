@@ -587,7 +587,11 @@ export const paymentValidator = z
     rentalAgreementId: zfd.text(z.string().optional()),
     // A contract deposit: how a progress or performance-based payment is
     // received (contract financing).
-    customerContractId: zfd.text(z.string().optional())
+    customerContractId: zfd.text(z.string().optional()),
+    // A supplier prepayment names the purchase order it is held against;
+    // post-payment books its unapplied cash on the supplier prepayment
+    // account (an asset) instead of inside payables.
+    purchaseOrderId: zfd.text(z.string().optional())
   })
   .refine(
     (d) =>
@@ -600,12 +604,15 @@ export const paymentValidator = z
   )
   .refine(
     (d) =>
-      [d.salesOrderId, d.rentalAgreementId, d.customerContractId].filter(
-        Boolean
-      ).length <= 1,
+      [
+        d.salesOrderId,
+        d.rentalAgreementId,
+        d.customerContractId,
+        d.purchaseOrderId
+      ].filter(Boolean).length <= 1,
     {
       message:
-        "A deposit is held against one sales order, rental agreement or contract",
+        "A deposit is held against one sales order, rental agreement, contract or purchase order",
       path: ["rentalAgreementId"]
     }
   )
@@ -617,22 +624,29 @@ export const paymentValidator = z
       message: "Only a customer payment can be a deposit",
       path: ["rentalAgreementId"]
     }
-  );
+  )
+  .refine((d) => Boolean(d.supplierId) || !d.purchaseOrderId, {
+    message: "Only a supplier payment can be a prepayment",
+    path: ["purchaseOrderId"]
+  });
 
-// A sales order or rental agreement a customer payment can be a deposit for
-// (a Receipt) or a refund of (a Disbursement), as the payment form's "Deposit
-// for" picker lists them. Loaded company-wide with the customer on each row —
-// the form narrows to the selected customer, which can change before the
-// payment is saved. `open` is whether a NEW deposit may be taken against it
-// (an open order / a Draft or Active agreement); a refund can name any document
-// that already holds a deposit, closed or not.
+// A document a payment can be a deposit for or a refund of, as the payment
+// form's "Deposit for" / "Prepayment for" picker lists them: a sales order,
+// rental agreement or contract of a customer, or a purchase order of a
+// supplier. Loaded company-wide with the party on each row — the form narrows
+// to the selected party, which can change before the payment is saved. `open`
+// is whether a NEW deposit may be taken against it (an open order / a Draft or
+// Active agreement); a refund can name any document that already holds a
+// deposit, closed or not.
 export type DepositDocument = {
   id: string;
   readableId: string;
-  customerId: string;
-  kind: "salesOrder" | "rentalAgreement" | "customerContract";
+  /** The customer, or for a purchase order the supplier. */
+  partyId: string;
+  kind: "salesOrder" | "rentalAgreement" | "customerContract" | "purchaseOrder";
   status: string;
   open: boolean;
+  refundableCurrencyCodes?: string[];
 };
 
 // ----------------------------------------------------------------------

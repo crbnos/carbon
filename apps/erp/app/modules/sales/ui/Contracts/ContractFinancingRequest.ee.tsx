@@ -57,6 +57,7 @@ import {
   useCurrencyDecimals,
   useCurrencyFormatter,
   useDateFormatter,
+  useDrawerItem,
   usePermissions,
   useUser
 } from "~/hooks";
@@ -75,10 +76,12 @@ const PBP_VALUES = ["1a", "1b", "1c", "2"] as const;
 export default function ContractFinancingRequest({
   contractId,
   request,
+  open = true,
   onClose
 }: {
   contractId: string;
   request: FinancingRequestDetail;
+  open?: boolean;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -93,7 +96,8 @@ export default function ContractFinancingRequest({
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "sales");
   const fetcher = useFetcher();
-  const [editing, setEditing] = useState<Sf1443OverridableLine | null>(null);
+  const editor = useDrawerItem<Sf1443OverridableLine>();
+  const editing = editor.item;
   const [approving, setApproving] = useState(false);
   const action = path.to.contractFinancingRequest(contractId, request.id);
   const isPbp = request.financingMethod === "Performance-Based Payments";
@@ -129,7 +133,7 @@ export default function ContractFinancingRequest({
   );
 
   return (
-    <Drawer open onOpenChange={(open) => !open && onClose()}>
+    <Drawer open={open} onOpenChange={(open) => !open && onClose()}>
       <DrawerContent size="lg">
         <DrawerHeader>
           <DrawerTitle>
@@ -278,7 +282,7 @@ export default function ContractFinancingRequest({
                               variant="ghost"
                               size="sm"
                               onClick={() =>
-                                setEditing(line as Sf1443OverridableLine)
+                                editor.open(line as Sf1443OverridableLine)
                               }
                             />
                           )}
@@ -362,7 +366,10 @@ export default function ContractFinancingRequest({
       </DrawerContent>
 
       {editing && (
-        <Modal open onOpenChange={(open) => !open && setEditing(null)}>
+        <Modal
+          open={editor.isOpen}
+          onOpenChange={(open) => !open && editor.close()}
+        >
           <ModalContent>
             <ValidatedForm
               method="post"
@@ -373,7 +380,7 @@ export default function ContractFinancingRequest({
                 value: overrides[editing]?.value,
                 reason: overrides[editing]?.reason ?? ""
               }}
-              onSubmit={() => setEditing(null)}
+              onSubmit={() => editor.close()}
             >
               <ModalHeader>
                 <ModalTitle>
@@ -396,7 +403,7 @@ export default function ContractFinancingRequest({
                 </VStack>
               </ModalBody>
               <ModalFooter>
-                <Button variant="secondary" onClick={() => setEditing(null)}>
+                <Button variant="secondary" onClick={() => editor.close()}>
                   <Trans>Cancel</Trans>
                 </Button>
                 <Submit>
@@ -408,45 +415,46 @@ export default function ContractFinancingRequest({
         </Modal>
       )}
 
-      {approving && (
-        <Modal open onOpenChange={(open) => !open && setApproving(false)}>
-          <ModalContent>
-            <ValidatedForm
-              method="post"
-              action={action}
-              validator={financingApproveValidator}
-              defaultValues={{
-                approvedAmount: Number(request.requestedAmount)
-              }}
-              onSubmit={() => setApproving(false)}
-            >
-              <ModalHeader>
-                <ModalTitle>
-                  <Trans>Approve Request</Trans>
-                </ModalTitle>
-              </ModalHeader>
-              <ModalBody>
-                <Hidden name="intent" value="approve" />
-                <NumberField
-                  name="approvedAmount"
-                  label={t`Amount the contracting officer approved`}
-                  formatOptions={INPUT_FORMAT.money(currency, decimals)}
-                  step={INPUT_STEP.money(decimals)}
-                  minValue={0}
-                />
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="secondary" onClick={() => setApproving(false)}>
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Submit>
-                  <Trans>Approve</Trans>
-                </Submit>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={approving}
+        onOpenChange={(open) => !open && setApproving(false)}
+      >
+        <ModalContent>
+          <ValidatedForm
+            method="post"
+            action={action}
+            validator={financingApproveValidator}
+            defaultValues={{
+              approvedAmount: Number(request.requestedAmount)
+            }}
+            onSubmit={() => setApproving(false)}
+          >
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Approve Request</Trans>
+              </ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <Hidden name="intent" value="approve" />
+              <NumberField
+                name="approvedAmount"
+                label={t`Amount the contracting officer approved`}
+                formatOptions={INPUT_FORMAT.money(currency, decimals)}
+                step={INPUT_STEP.money(decimals)}
+                minValue={0}
+              />
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={() => setApproving(false)}>
+                <Trans>Cancel</Trans>
+              </Button>
+              <Submit>
+                <Trans>Approve</Trans>
+              </Submit>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
     </Drawer>
   );
 }

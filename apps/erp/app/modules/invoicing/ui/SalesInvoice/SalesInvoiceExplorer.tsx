@@ -103,7 +103,6 @@ export default function SalesInvoiceExplorer() {
   };
 
   const onDeleteCancel = () => {
-    setDeleteLine(null);
     deleteLineDisclosure.onClose();
   };
 
@@ -195,15 +194,21 @@ export default function SalesInvoiceExplorer() {
           )}
         </div>
       </VStack>
-      {newSalesInvoiceLineDisclosure.isOpen && (
+      {newSalesInvoiceLineDisclosure.openCount > 0 && (
         <SalesInvoiceLineForm
+          key={newSalesInvoiceLineDisclosure.openCount}
+          open={newSalesInvoiceLineDisclosure.isOpen}
           initialValues={salesInvoiceLineInitialValues}
           type="modal"
           onClose={newSalesInvoiceLineDisclosure.onClose}
         />
       )}
-      {deleteLineDisclosure.isOpen && (
-        <DeleteSalesInvoiceLine line={deleteLine!} onCancel={onDeleteCancel} />
+      {deleteLine && (
+        <DeleteSalesInvoiceLine
+          isOpen={deleteLineDisclosure.isOpen}
+          line={deleteLine}
+          onCancel={onDeleteCancel}
+        />
       )}
     </>
   );

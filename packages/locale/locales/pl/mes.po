@@ -1460,6 +1460,9 @@ msgstr "Lokalne"
 msgid "Location"
 msgstr "Lokalizacja"
 
+msgid "Locations"
+msgstr ""
+
 msgid "Log completed"
 msgstr "Zaraportuj zakończenie"
 
@@ -1827,6 +1830,9 @@ msgstr "Brak zablokowanych stanowisk roboczych"
 msgid "No work centers exist"
 msgstr "Brak stanowisk roboczych"
 
+msgid "Non-nettable"
+msgstr "Nieuwzględniany w MRP"
+
 msgid "None"
 msgstr "Brak"
 
@@ -1835,6 +1841,9 @@ msgstr "Niezaplanowane"
 
 msgid "Not set"
 msgstr "Nie ustawione"
+
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "Zapas niedostępny do użycia. MRP i planowanie go nie uwzględniają, a kompletacja z niego nie pobiera."
 
 msgid "Notes"
 msgstr "Notatki"

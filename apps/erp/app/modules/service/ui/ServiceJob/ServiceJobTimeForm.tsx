@@ -35,6 +35,7 @@ import { serviceJobTimeValidator } from "../../service.models";
 type ServiceJobTimeFormProps = {
   initialValues: z.infer<typeof serviceJobTimeValidator>;
   isLocked: boolean;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -46,6 +47,7 @@ type ServiceJobTimeFormProps = {
 const ServiceJobTimeForm = ({
   initialValues,
   isLocked,
+  open = true,
   onClose
 }: ServiceJobTimeFormProps) => {
   const { t } = useLingui();
@@ -64,7 +66,7 @@ const ServiceJobTimeForm = ({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

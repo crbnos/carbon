@@ -4,8 +4,8 @@
 
 import { carbon, respond } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
-import { useNavigate } from "react-router";
 import { useUser } from "~/hooks";
 import {
   withoutOperatingHours,
@@ -29,8 +29,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function NewWorkCenterRoute() {
-  const navigate = useNavigate();
-  const onClose = () => navigate(path.to.workCenters);
+  const dialog = useRouteDialog(path.to.workCenters);
   const { defaults } = useUser();
 
   const initialValues = {
@@ -49,5 +48,11 @@ export default function NewWorkCenterRoute() {
     minimumBatchQuantity: undefined as number | undefined
   };
 
-  return <WorkCenterForm onClose={onClose} initialValues={initialValues} />;
+  return (
+    <WorkCenterForm
+      open={dialog.open}
+      onClose={dialog.close}
+      initialValues={initialValues}
+    />
+  );
 }

@@ -39,6 +39,7 @@ import {
   TooltipTrigger,
   TrackedEntityPicker,
   toast,
+  useDisclosure,
   useViewport,
   VStack
 } from "@carbon/react";
@@ -268,16 +269,18 @@ function PickingListControls({
   const [acknowledgeLines, setAcknowledgeLines] = useState<
     UnresolvedPickingListLine[] | null
   >(null);
+  const [isAcknowledgeOpen, setIsAcknowledgeOpen] = useState(false);
 
   useEffect(() => {
     if (!fetcher.data) return;
     // 'warn' policy → server asks the operator to confirm the shortfall.
     if (fetcher.data.needsAcknowledgement && fetcher.data.unresolvedLines) {
       setAcknowledgeLines(fetcher.data.unresolvedLines);
+      setIsAcknowledgeOpen(true);
       return;
     }
     if (fetcher.data.success === true) {
-      setAcknowledgeLines(null);
+      setIsAcknowledgeOpen(false);
       return;
     }
     if (fetcher.data.success === false) {
@@ -335,9 +338,10 @@ function PickingListControls({
       </HStack>
       {acknowledgeLines && (
         <IncompletePickAcknowledgeModal
+          open={isAcknowledgeOpen}
           lines={acknowledgeLines}
           isSubmitting={isSubmitting}
-          onCancel={() => setAcknowledgeLines(null)}
+          onCancel={() => setIsAcknowledgeOpen(false)}
           onAcknowledge={() => setStatus("Completed", true)}
         />
       )}
@@ -349,11 +353,13 @@ function PickingListControls({
 // policy: lists the still-unpicked material and lets the operator acknowledge &
 // finish (which flags the list Partial) or back out and keep picking.
 function IncompletePickAcknowledgeModal({
+  open,
   lines,
   isSubmitting,
   onCancel,
   onAcknowledge
 }: {
+  open: boolean;
   lines: UnresolvedPickingListLine[];
   isSubmitting: boolean;
   onCancel: () => void;
@@ -361,7 +367,7 @@ function IncompletePickAcknowledgeModal({
 }) {
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onCancel();
       }}
@@ -519,8 +525,8 @@ function PickLineItem({
   const [items] = useItems();
   const fetcher = useFetcher<{ success: boolean; message?: string }>();
   const isSubmitting = fetcher.state !== "idle";
-  const [shortOpen, setShortOpen] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const shortModal = useDisclosure();
+  const picker = useDisclosure();
   const trackedFetcher = useFetcher<{
     entities: TrackedEntityOption[];
     trackingType: "Serial" | "Batch";
@@ -660,7 +666,7 @@ function PickLineItem({
   };
 
   const openPicker = () => {
-    setPickerOpen(true);
+    picker.onOpen();
     trackedFetcher.load(path.to.pickingTracked(pickingListId, line.id));
   };
 
@@ -681,7 +687,7 @@ function PickLineItem({
       method: "post",
       action: path.to.pickingTracked(pickingListId, line.id)
     });
-    setPickerOpen(false);
+    picker.onClose();
   };
 
   const unpickTracked = (trackedEntityId: string) => {
@@ -930,7 +936,7 @@ function PickLineItem({
             <Button
               size="lg"
               variant="secondary"
-              onClick={() => setShortOpen(true)}
+              onClick={shortModal.onOpen}
               isDisabled={isSubmitting}
               className="flex-1 sm:flex-none max-md:h-12"
               aria-label={t`Mark ${itemName} short`}
@@ -952,39 +958,31 @@ function PickLineItem({
         )}
       </div>
 
-      {shortOpen && (
-        <ShortPickModal
-          pickingListId={pickingListId}
-          lineId={line.id}
-          itemName={itemName}
-          quantityToPick={quantityToPick}
-          quantityPicked={quantityPicked}
-          unitOfMeasureCode={unitOfMeasureCode}
-          onClose={() => setShortOpen(false)}
-        />
-      )}
+      <ShortPickModal
+        open={shortModal.isOpen}
+        pickingListId={pickingListId}
+        lineId={line.id}
+        itemName={itemName}
+        quantityToPick={quantityToPick}
+        quantityPicked={quantityPicked}
+        unitOfMeasureCode={unitOfMeasureCode}
+        onClose={shortModal.onClose}
+      />
 
-      {pickerOpen && (
-        <TrackedEntityPicker
-          size="lg"
-          trackingType={
-            item?.itemTrackingType === "Serial" ? "Serial" : "Batch"
-          }
-          entities={trackedFetcher.data?.entities ?? []}
-          quantityRequired={Math.max(0, quantityToPick - quantityPicked)}
-          title={`Pick ${itemName}`}
-          description="Choose a lot to pick — expiring/oldest first."
-          nearExpiryWarningDays={
-            trackedFetcher.data?.nearExpiryWarningDays ?? 0
-          }
-          expiredEntityPolicy={
-            trackedFetcher.data?.expiredEntityPolicy ?? "Warn"
-          }
-          defaultOrder={trackedFetcher.data?.defaultOrder}
-          onSelect={pickTracked}
-          onClose={() => setPickerOpen(false)}
-        />
-      )}
+      <TrackedEntityPicker
+        open={picker.isOpen}
+        size="lg"
+        trackingType={item?.itemTrackingType === "Serial" ? "Serial" : "Batch"}
+        entities={trackedFetcher.data?.entities ?? []}
+        quantityRequired={Math.max(0, quantityToPick - quantityPicked)}
+        title={`Pick ${itemName}`}
+        description="Choose a lot to pick — expiring/oldest first."
+        nearExpiryWarningDays={trackedFetcher.data?.nearExpiryWarningDays ?? 0}
+        expiredEntityPolicy={trackedFetcher.data?.expiredEntityPolicy ?? "Warn"}
+        defaultOrder={trackedFetcher.data?.defaultOrder}
+        onSelect={pickTracked}
+        onClose={picker.onClose}
+      />
     </div>
   );
 }

@@ -98,13 +98,12 @@ export default function ChangeNoticeExplorer() {
         )}
       </div>
 
-      {disclosure.isOpen && (
-        <AffectedItemForm
-          changeOrderId={id}
-          blacklist={affectedItems.map((a) => a.affectedItem.itemId)}
-          onClose={disclosure.onClose}
-        />
-      )}
+      <AffectedItemForm
+        open={disclosure.isOpen}
+        changeOrderId={id}
+        blacklist={affectedItems.map((a) => a.affectedItem.itemId)}
+        onClose={disclosure.onClose}
+      />
     </>
   );
 }

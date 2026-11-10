@@ -260,6 +260,10 @@ export type FoundationData = {
   nonNettableStorageTypes: string[];
   /** Insertion order matters — a parent shelf must precede its children. */
   shelves: ShelfSpec[];
+  /** The plant's goods-in inspection storage unit (location.inspectionStorageUnitId). */
+  inspectionShelf: string;
+  /** The plant's rejected-goods storage unit (location.rejectedStorageUnitId). */
+  rejectedShelf: string;
   printerRoute: PrinterRouteSpec | null;
   holidays: HolidaySpec[];
   tags: TagSpec[];

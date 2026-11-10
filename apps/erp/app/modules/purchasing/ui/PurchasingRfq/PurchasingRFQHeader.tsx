@@ -28,6 +28,7 @@ import {
   LuCircleX,
   LuEye,
   LuFile,
+  LuFilePen,
   LuGitCompare,
   LuLoaderCircle,
   LuSend,
@@ -36,6 +37,7 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
+import { useDocumentEditModal } from "~/components/DocumentEditModal";
 import { usePanels } from "~/components/Layout";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
@@ -50,6 +52,7 @@ import PurchasingRFQStatus from "./PurchasingRFQStatus";
 const PurchasingRFQHeader = () => {
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("rfqId not found");
+  const documentEdit = useDocumentEditModal("purchasingRfq", rfqId);
 
   const { t } = useLingui();
   const finalizeModal = useDisclosure();
@@ -161,6 +164,17 @@ const PurchasingRFQHeader = () => {
                 </a>
               </Button>
             </RecordAction>
+            {documentEdit.canEdit && (
+              <RecordAction slot="overflow">
+                <Button
+                  leftIcon={<LuFilePen />}
+                  variant="secondary"
+                  onClick={documentEdit.openEditor}
+                >
+                  <Trans>Edit document</Trans>
+                </Button>
+              </RecordAction>
+            )}
 
             {/* Share Dropdown - for Requested status with external links */}
             {status === "Requested" && hasSuppliers && (
@@ -272,64 +286,65 @@ const PurchasingRFQHeader = () => {
           </>
         }
       />
-      {finalizeModal.isOpen && (
-        <FinalizeRFQModal
-          lines={routeData?.lines ?? []}
-          suppliers={routeData?.suppliers ?? []}
-          rfqId={rfqId}
-          onClose={finalizeModal.onClose}
-        />
-      )}
-      {requiresSuppliersAlert.isOpen && (
-        <RequiresSuppliersAlert onClose={requiresSuppliersAlert.onClose} />
-      )}
-      {cancelReasonModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.cancelPurchasingRfq(rfqId)}
-          isOpen={cancelReasonModal.isOpen}
-          name={routeData?.rfqSummary?.rfqId!}
-          text={t`Are you sure you want to cancel ${routeData?.rfqSummary
-            ?.rfqId!}? This will also cancel all related supplier quotes.`}
-          deleteText="Cancel"
-          onCancel={() => {
-            cancelReasonModal.onClose();
-          }}
-          onSubmit={() => {
-            cancelReasonModal.onClose();
-          }}
-        />
-      )}
-      {deleteRFQModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deletePurchasingRfq(rfqId)}
-          isOpen={deleteRFQModal.isOpen}
-          name={routeData?.rfqSummary?.rfqId!}
-          text={t`Are you sure you want to delete ${routeData?.rfqSummary
-            ?.rfqId!}? This cannot be undone.`}
-          onCancel={() => {
-            deleteRFQModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteRFQModal.onClose();
-          }}
-        />
-      )}
-      {compareQuotesModal.isOpen && (
-        <SupplierQuoteCompareDrawer
-          isOpen={compareQuotesModal.isOpen}
-          onClose={compareQuotesModal.onClose}
-          purchasingRfqId={rfqId}
-        />
-      )}
+      <FinalizeRFQModal
+        lines={routeData?.lines ?? []}
+        suppliers={routeData?.suppliers ?? []}
+        rfqId={rfqId}
+        open={finalizeModal.isOpen}
+        onClose={finalizeModal.onClose}
+      />
+      <RequiresSuppliersAlert
+        open={requiresSuppliersAlert.isOpen}
+        onClose={requiresSuppliersAlert.onClose}
+      />
+      <ConfirmDelete
+        action={path.to.cancelPurchasingRfq(rfqId)}
+        isOpen={cancelReasonModal.isOpen}
+        name={routeData?.rfqSummary?.rfqId!}
+        text={t`Are you sure you want to cancel ${routeData?.rfqSummary
+          ?.rfqId!}? This will also cancel all related supplier quotes.`}
+        deleteText="Cancel"
+        onCancel={() => {
+          cancelReasonModal.onClose();
+        }}
+        onSubmit={() => {
+          cancelReasonModal.onClose();
+        }}
+      />
+      <ConfirmDelete
+        action={path.to.deletePurchasingRfq(rfqId)}
+        isOpen={deleteRFQModal.isOpen}
+        name={routeData?.rfqSummary?.rfqId!}
+        text={t`Are you sure you want to delete ${routeData?.rfqSummary
+          ?.rfqId!}? This cannot be undone.`}
+        onCancel={() => {
+          deleteRFQModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteRFQModal.onClose();
+        }}
+      />
+      <SupplierQuoteCompareDrawer
+        isOpen={compareQuotesModal.isOpen}
+        onClose={compareQuotesModal.onClose}
+        purchasingRfqId={rfqId}
+      />
+      {documentEdit.modal}
     </>
   );
 };
 
 export default PurchasingRFQHeader;
 
-function RequiresSuppliersAlert({ onClose }: { onClose: () => void }) {
+function RequiresSuppliersAlert({
+  open,
+  onClose
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalContent>
         <ModalHeader>
           <ModalTitle>

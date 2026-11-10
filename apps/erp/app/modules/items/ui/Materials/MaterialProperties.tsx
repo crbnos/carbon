@@ -178,6 +178,16 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
       toastServiceError(data);
     }
   });
+  // A refused change leaves the tracking type select showing the refused
+  // value; a new key remounts it on the stored value. It has its own fetcher,
+  // so a refusal of another field never resets it.
+  const [trackingRefusals, setTrackingRefusals] = useState(0);
+  const trackingFetcher = useAction<typeof action>({
+    onError: (data) => {
+      toastServiceError(data);
+      setTrackingRefusals((count) => count + 1);
+    }
+  });
   const confirmDisclosure = useDisclosure();
   const [materialPropertyUpdate, setMaterialPropertyUpdate] = useState<{
     field:
@@ -221,10 +231,13 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
       formData.append("items", itemId);
       formData.append("field", field);
       formData.append("value", value?.toString() ?? "");
-      fetcher.submit(formData, {
-        method: "post",
-        action: path.to.bulkUpdateItems
-      });
+      (field === "itemTrackingType" ? trackingFetcher : fetcher).submit(
+        formData,
+        {
+          method: "post",
+          action: path.to.bulkUpdateItems
+        }
+      );
     },
 
     [itemId]
@@ -483,6 +496,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
         </ValidatedForm>
 
         <ValidatedForm
+          key={`itemTrackingType-${trackingRefusals}`}
           defaultValues={{
             itemTrackingType:
               routeData?.materialSummary?.itemTrackingType ?? undefined
@@ -878,24 +892,22 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
           </Suspense>
         </VStack>
       </VStack>
-      {confirmDisclosure.isOpen && (
-        <ConfirmMaterialIdChange
-          materialPropertyUpdate={materialPropertyUpdate}
-          onClose={() => {
-            // this is hacky but the value is already changed in the UI
-            window.location.reload();
-          }}
-          onConfirm={() => {
-            onUpdate(
-              // @ts-expect-error
-              materialPropertyUpdate?.field,
-              materialPropertyUpdate?.value
-            );
-            confirmDisclosure.onClose();
-            setMaterialPropertyUpdate(null);
-          }}
-        />
-      )}
+      <ConfirmMaterialIdChange
+        open={confirmDisclosure.isOpen}
+        materialPropertyUpdate={materialPropertyUpdate}
+        onClose={() => {
+          // this is hacky but the value is already changed in the UI
+          window.location.reload();
+        }}
+        onConfirm={() => {
+          onUpdate(
+            // @ts-expect-error
+            materialPropertyUpdate?.field,
+            materialPropertyUpdate?.value
+          );
+          confirmDisclosure.onClose();
+        }}
+      />
     </>
   );
 };
@@ -903,10 +915,12 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
 export default MaterialProperties;
 
 function ConfirmMaterialIdChange({
+  open = true,
   materialPropertyUpdate,
   onClose,
   onConfirm
 }: {
+  open?: boolean;
   materialPropertyUpdate: {
     field:
       | "materialFormId"
@@ -924,7 +938,7 @@ function ConfirmMaterialIdChange({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) {
           onClose();

@@ -33,6 +33,7 @@ import type { JobReleaseReadiness } from "../../production.service";
 // operation, manufacturing not blocked — any failure blocks the whole batch) and
 // the same purchase-order choice, made once per supplier across every job.
 export function BatchReleaseModal({
+  open = true,
   target,
   title,
   confirmLabel,
@@ -40,6 +41,7 @@ export function BatchReleaseModal({
   onConfirm,
   onClose
 }: {
+  open?: boolean;
   target: { batchId: string } | { jobIds: string[] };
   title: string;
   confirmLabel: string;
@@ -64,21 +66,27 @@ export function BatchReleaseModal({
     {}
   );
 
+  // Read only while open; the last answer stays on screen while it closes.
   const readinessQuery = useLoaderQuery<JobReleaseReadiness>(
-    path.to.api.batchReleaseReadiness(target),
+    open ? path.to.api.batchReleaseReadiness(target) : null,
     { staleTime: 0 }
   );
-  const readiness = readinessQuery.data ?? null;
+  const [lastReadiness, setLastReadiness] =
+    useState<JobReleaseReadiness | null>(null);
+  if (readinessQuery.data && readinessQuery.data !== lastReadiness) {
+    setLastReadiness(readinessQuery.data);
+  }
+  const readiness = open ? (readinessQuery.data ?? null) : lastReadiness;
   const loadError = readinessQuery.isError
     ? t`Failed to check the batch's jobs`
     : null;
 
   useEffect(() => {
-    if (!readiness) return;
+    if (!open || !readiness) return;
     setPurchaseOrders(
       Object.fromEntries(readiness.suppliers.map((s) => [s.supplierId, "new"]))
     );
-  }, [readiness]);
+  }, [open, readiness]);
 
   const blocked = (readiness?.jobs ?? []).filter(
     (job) =>
@@ -92,7 +100,7 @@ export function BatchReleaseModal({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

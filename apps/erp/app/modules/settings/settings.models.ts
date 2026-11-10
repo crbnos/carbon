@@ -976,6 +976,16 @@ export const documentTemplateValidator = zfd.formData({
   ).optional()
 });
 
+/** One document's draft as the editor holds it; the server keeps only what differs. */
+export const documentEditValidator = zfd.formData({
+  blocks: jsonField(z.array(blockSchema), "Invalid document blocks"),
+  settings: jsonField(documentSettingsSchema, "Invalid document settings"),
+  notes: jsonField(
+    z.record(z.string(), z.unknown()).nullable(),
+    "Invalid notes"
+  ).optional()
+});
+
 export const documentSectionValidator = zfd.formData({
   id: zfd.text(z.string().optional()),
   name: zfd.text(z.string().min(1)),

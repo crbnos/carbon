@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -145,14 +145,15 @@ export default function GaugeCalibrationRecordRoute() {
     ...getCustomFields(record.customFields)
   };
 
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
 
   return (
     <GaugeCalibrationRecordForm
       key={id}
       initialValues={initialValues}
       files={files}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

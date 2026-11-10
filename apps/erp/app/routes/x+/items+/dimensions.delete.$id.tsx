@@ -5,7 +5,7 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -76,19 +76,18 @@ export default function DeleteMaterialDimensionRoute() {
   if (!id) throw new Error("id not found");
 
   const { materialDimension } = useLoaderData<typeof loader>();
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const { t } = useLingui();
 
   if (!materialDimension) return null;
-
-  const onCancel = () => closeRoute();
 
   return (
     <ConfirmDelete
       action={path.to.deleteMaterialDimension(id)}
       name={materialDimension.name}
       text={t`Are you sure you want to delete the material dimension: ${materialDimension.name}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

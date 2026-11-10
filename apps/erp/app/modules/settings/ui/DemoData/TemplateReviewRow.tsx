@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
   HStack,
+  useDisclosure,
   VStack
 } from "@carbon/react";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
@@ -61,7 +62,7 @@ export function TemplateReviewRow({
   const scopeViolations =
     run.status === "failed" && run.reason === "scope-violations";
   const [confirmPurge, setConfirmPurge] = useState(false);
-  const [confirmKeep, setConfirmKeep] = useState(false);
+  const keepModal = useDisclosure();
   useEffect(() => {
     // Any status but `ready` means the server has taken over the story —
     // including `failed`, where the optimistic spinner must not hide the error.
@@ -185,7 +186,7 @@ export function TemplateReviewRow({
                   <Button
                     isLoading={submitting}
                     isDisabled={submitting}
-                    onClick={() => setConfirmKeep(true)}
+                    onClick={keepModal.onOpen}
                   >
                     <Trans>Keep</Trans>
                   </Button>
@@ -244,36 +245,33 @@ export function TemplateReviewRow({
             </HStack>
           </HStack>
 
-          {confirmKeep && (
-            <KeepDemoDataModal
-              onCancel={() => setConfirmKeep(false)}
-              onConfirm={() => {
-                setConfirmKeep(false);
-                submit("keep");
-              }}
-            />
-          )}
+          <KeepDemoDataModal
+            open={keepModal.isOpen}
+            onCancel={keepModal.onClose}
+            onConfirm={() => {
+              keepModal.onClose();
+              submit("keep");
+            }}
+          />
 
-          {confirmPurge && (
-            <PurgeCorruptedRowsModal
-              rowsByTable={run.violationRowsByTable}
-              description={
-                <Trans>
-                  These rows link to data outside this company, so a safety copy
-                  of your current data can't be made. Deleting them cannot be
-                  undone. If they turn out to be shared with other companies in
-                  this group, nothing is deleted and the demo data isn't
-                  applied.
-                </Trans>
-              }
-              confirmLabel={<Trans>Delete and apply</Trans>}
-              onCancel={() => setConfirmPurge(false)}
-              onConfirm={() => {
-                setConfirmPurge(false);
-                onPurgeAndApply();
-              }}
-            />
-          )}
+          <PurgeCorruptedRowsModal
+            open={confirmPurge}
+            rowsByTable={run.violationRowsByTable}
+            description={
+              <Trans>
+                These rows link to data outside this company, so a safety copy
+                of your current data can't be made. Deleting them cannot be
+                undone. If they turn out to be shared with other companies in
+                this group, nothing is deleted and the demo data isn't applied.
+              </Trans>
+            }
+            confirmLabel={<Trans>Delete and apply</Trans>}
+            onCancel={() => setConfirmPurge(false)}
+            onConfirm={() => {
+              setConfirmPurge(false);
+              onPurgeAndApply();
+            }}
+          />
 
           {stalled && (
             <span className="text-xs text-muted-foreground">

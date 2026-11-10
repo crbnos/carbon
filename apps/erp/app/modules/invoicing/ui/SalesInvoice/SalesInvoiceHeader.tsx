@@ -39,6 +39,10 @@ import { RiProgress8Line } from "react-icons/ri";
 import type { FetcherWithComponents } from "react-router";
 import { Link, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
+import {
+  EditDocumentMenuItem,
+  useDocumentEditModal
+} from "~/components/DocumentEditModal";
 import { usePanels } from "~/components/Layout/Panels";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
@@ -60,6 +64,7 @@ const SalesInvoiceHeader = () => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { invoiceId } = useParams();
+  const documentEdit = useDocumentEditModal("salesInvoice", invoiceId);
   const { company } = useUser();
   const postingModal = useDisclosure();
   const voidModal = useDisclosure();
@@ -467,6 +472,9 @@ const SalesInvoiceHeader = () => {
                       <Trans>PDF</Trans>
                     </a>
                   </DropdownMenuItem>
+                  {documentEdit.canEdit && (
+                    <EditDocumentMenuItem onSelect={documentEdit.openEditor} />
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </RecordAction>
@@ -503,38 +511,36 @@ const SalesInvoiceHeader = () => {
         }
       />
 
-      {postingModal.isOpen && (
-        <SalesInvoicePostModal
-          invoiceId={invoiceId}
-          customerId={salesInvoice.invoiceCustomerId}
-          customerContactId={salesInvoice.invoiceCustomerContactId}
-          dateDue={salesInvoice.dateDue}
-          isOpen={postingModal.isOpen}
-          onClose={postingModal.onClose}
-          linesToShip={linesNotAssociatedWithSO}
-          fetcher={postFetcher}
-          defaultCc={routeData?.defaultCc ?? []}
-        />
-      )}
+      <SalesInvoicePostModal
+        invoiceId={invoiceId}
+        customerId={salesInvoice.invoiceCustomerId}
+        customerContactId={salesInvoice.invoiceCustomerContactId}
+        dateDue={salesInvoice.dateDue}
+        isOpen={postingModal.isOpen}
+        onClose={postingModal.onClose}
+        linesToShip={linesNotAssociatedWithSO}
+        fetcher={postFetcher}
+        defaultCc={routeData?.defaultCc ?? []}
+      />
       <postRules.ViolationModal />
-      {voidModal.isOpen && (
-        <SalesInvoiceVoidModal onClose={voidModal.onClose} />
-      )}
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteSalesInvoice(invoiceId)}
-          isOpen={deleteModal.isOpen}
-          name={salesInvoice.invoiceId ?? "sales invoice"}
-          text={t`Are you sure you want to delete ${salesInvoice.invoiceId}? This cannot be undone.`}
-          onCancel={() => {
-            deleteModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteModal.onClose();
-          }}
-        />
-      )}
+      <SalesInvoiceVoidModal
+        open={voidModal.isOpen}
+        onClose={voidModal.onClose}
+      />
+      <ConfirmDelete
+        isOpen={deleteModal.isOpen}
+        action={path.to.deleteSalesInvoice(invoiceId)}
+        name={salesInvoice.invoiceId ?? "sales invoice"}
+        text={t`Are you sure you want to delete ${salesInvoice.invoiceId}? This cannot be undone.`}
+        onCancel={() => {
+          deleteModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteModal.onClose();
+        }}
+      />
       {auditLogDrawer}
+      {documentEdit.modal}
     </>
   );
 };

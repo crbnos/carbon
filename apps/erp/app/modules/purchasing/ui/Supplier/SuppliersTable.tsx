@@ -495,11 +495,9 @@ const SuppliersTable = memo(function SuppliersTable({
           text={`Are you sure you want to delete ${selectedSupplier.name!}? This cannot be undone.`}
           onCancel={() => {
             deleteModal.onClose();
-            setSelectedSupplier(null);
           }}
           onSubmit={() => {
             deleteModal.onClose();
-            setSelectedSupplier(null);
           }}
         />
       )}

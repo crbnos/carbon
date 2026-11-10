@@ -724,8 +724,10 @@ export const PurchasingPlanningOrderDrawer = memo(
                     >
                       <Trans>Add Supplier</Trans>
                     </Button>
-                    {supplierDisclosure.isOpen && (
+                    {supplierDisclosure.openCount > 0 && (
                       <SupplierPartForm
+                        key={`supplierDisclosure-${supplierDisclosure.openCount}`}
+                        open={supplierDisclosure.isOpen}
                         type="Part"
                         initialValues={{
                           itemId: selectedItem.id,
