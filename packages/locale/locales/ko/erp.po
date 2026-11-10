@@ -2473,6 +2473,10 @@ msgstr "정보 (알림)"
 msgid "About this field"
 msgstr "이 필드에 대해"
 
+#. placeholder {0}: result.step.maxValue
+msgid "Above {0}"
+msgstr ""
+
 msgid "Above the upper limit"
 msgstr "상한 초과"
 
@@ -2946,6 +2950,9 @@ msgstr "작업의 각 부분에 대해 라인을 추가하세요: 시간 및 자
 
 msgid "Add a line to the document"
 msgstr "문서에 라인 추가"
+
+msgid "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
+msgstr ""
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "자재 섹션을 추가하여 자재 명세서의 각 항목과 수량을 나열합니다."
@@ -3494,6 +3501,9 @@ msgstr "이후"
 
 msgid "After (calculation method)"
 msgstr "이후(계산 방법)"
+
+msgid "After the correction"
+msgstr ""
 
 msgid "Afternoon, {name}."
 msgstr "{name}님, 좋은 오후입니다."
@@ -5594,6 +5604,10 @@ msgstr "시작"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "단계적으로 폐기 중 — 후속 품목: <0>{0}</0>"
+
+#. placeholder {0}: result.step.minValue
+msgid "Below {0}"
+msgstr ""
 
 msgid "Below level"
 msgstr "레벨 이하"
@@ -7849,6 +7863,9 @@ msgstr "계속"
 msgid "Continue Setup"
 msgstr "계속 설정"
 
+msgid "Continue to the next operation"
+msgstr ""
+
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "사용권자산 상각 대체 계정"
 
@@ -9972,6 +9989,9 @@ msgstr "계약 삭제"
 msgid "Delete Contractor"
 msgstr "외주 인력 삭제"
 
+msgid "Delete correction"
+msgstr ""
+
 msgid "Delete Count"
 msgstr "재고조사 삭제"
 
@@ -10311,6 +10331,9 @@ msgstr "삭제됨"
 
 msgid "Deleted attribute value"
 msgstr "삭제된 속성 값"
+
+msgid "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
+msgstr ""
 
 msgid "Deliver"
 msgstr "배송"
@@ -11435,6 +11458,12 @@ msgstr "담당자 편집"
 
 msgid "Edit Contractor"
 msgstr "외주 인력 편집"
+
+msgid "Edit correction"
+msgstr ""
+
+msgid "Edit Correction"
+msgstr ""
 
 msgid "Edit cost"
 msgstr "원가 편집"
@@ -16623,6 +16652,9 @@ msgstr "다음 리비전을 자동으로 사용하려면 공백으로 두세요"
 msgid "Leave empty for exact match"
 msgstr "정확히 일치시키려면 비워두세요"
 
+msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
+msgstr ""
+
 msgid "Leave empty to use the account default"
 msgstr "계정 기본값을 사용하려면 비워두세요."
 
@@ -17795,6 +17827,13 @@ msgstr "매트릭스"
 msgid "Maturity Analysis"
 msgstr "만기 분석"
 
+#. placeholder {0}: correction.maxAttempts
+msgid "Max {0} per unit"
+msgstr ""
+
+msgid "Max attempts per unit"
+msgstr ""
+
 msgid "Max Lead Time"
 msgstr "최대 리드타임"
 
@@ -18594,6 +18633,9 @@ msgstr "새로운 계약"
 msgid "New Contractor"
 msgstr "신규 외주 인력"
 
+msgid "New Correction"
+msgstr ""
+
 msgid "New Cost Center"
 msgstr "신규 원가 센터"
 
@@ -19296,6 +19338,12 @@ msgstr "정산일에 제어 계정의 잔액이 없습니다."
 
 msgid "No conversion is required"
 msgstr "변환이 필요하지 않습니다"
+
+msgid "No correction"
+msgstr ""
+
+msgid "No corrections yet."
+msgstr ""
 
 msgid "No cost"
 msgstr "원가 없음"
@@ -23824,6 +23872,9 @@ msgstr "모델 다시 변환"
 msgid "Re-date to first open day"
 msgstr "첫 개설 날짜로 다시 설정"
 
+msgid "Re-inspect at the operation that found it"
+msgstr ""
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "견적, 현장, 재무 간 데이터 재입력"
 
@@ -23835,6 +23886,9 @@ msgstr "현재 단계 순서에서 모션을 다시 계획 — 완료되면 단�
 
 msgid "Re-send"
 msgstr "다시 보내기"
+
+msgid "Re-torque nut"
+msgstr ""
 
 msgid "Reactivate"
 msgstr "재활성화"
@@ -25218,6 +25272,9 @@ msgstr "구성원에게만 청구 제한"
 msgid "Result"
 msgstr "결과"
 
+msgid "Result mappings"
+msgstr ""
+
 msgid "Results"
 msgstr "결과"
 
@@ -25569,6 +25626,9 @@ msgstr "취소됨"
 
 msgid "Rework"
 msgstr "재작업"
+
+msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
+msgstr ""
 
 msgid "RFQ"
 msgstr "RFQ"
@@ -31083,6 +31143,12 @@ msgstr "다음으로 조정됨"
 
 msgid "Then by"
 msgstr "그 다음"
+
+msgid "Then continue"
+msgstr ""
+
+msgid "Then re-inspect"
+msgstr ""
 
 msgid "There are more received than ordered"
 msgstr "주문한 수량보다 수령한 수량이 더 많습니다."

@@ -2473,6 +2473,10 @@ msgstr "À propos (notification)"
 msgid "About this field"
 msgstr "À propos de ce champ"
 
+#. placeholder {0}: result.step.maxValue
+msgid "Above {0}"
+msgstr ""
+
 msgid "Above the upper limit"
 msgstr "Au-dessus de la limite supérieure"
 
@@ -2946,6 +2950,9 @@ msgstr "Ajouter une ligne pour chaque partie du travail : Temps & Matières, Co�
 
 msgid "Add a line to the document"
 msgstr "Ajouter une ligne au document"
+
+msgid "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
+msgstr ""
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Ajouter une section de matériaux qui liste chaque article de la nomenclature avec sa quantité."
@@ -3494,6 +3501,9 @@ msgstr "Après"
 
 msgid "After (calculation method)"
 msgstr "Après (méthode de calcul)"
+
+msgid "After the correction"
+msgstr ""
 
 msgid "Afternoon, {name}."
 msgstr "Bon après-midi, {name}."
@@ -5594,6 +5604,10 @@ msgstr "Début"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "En cours de suppression — successeur : <0>{0}</0>"
+
+#. placeholder {0}: result.step.minValue
+msgid "Below {0}"
+msgstr ""
 
 msgid "Below level"
 msgstr "Sous le niveau"
@@ -7849,6 +7863,9 @@ msgstr "Continuer"
 msgid "Continue Setup"
 msgstr "Continuer la configuration"
 
+msgid "Continue to the next operation"
+msgstr ""
+
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "Compte de contre-actif pour l'amortissement des droits d'utilisation"
 
@@ -9972,6 +9989,9 @@ msgstr "Supprimer le contrat"
 msgid "Delete Contractor"
 msgstr "Supprimer le prestataire"
 
+msgid "Delete correction"
+msgstr ""
+
 msgid "Delete Count"
 msgstr "Supprimer le décompte"
 
@@ -10311,6 +10331,9 @@ msgstr "Supprimé"
 
 msgid "Deleted attribute value"
 msgstr "Valeur d'Attribut supprimée"
+
+msgid "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
+msgstr ""
 
 msgid "Deliver"
 msgstr "Livrer"
@@ -11435,6 +11458,12 @@ msgstr "Modifier le contact"
 
 msgid "Edit Contractor"
 msgstr "Modifier le prestataire"
+
+msgid "Edit correction"
+msgstr ""
+
+msgid "Edit Correction"
+msgstr ""
 
 msgid "Edit cost"
 msgstr "Modifier le coût"
@@ -16623,6 +16652,9 @@ msgstr "Laisser vide pour utiliser automatiquement la prochaine révision"
 msgid "Leave empty for exact match"
 msgstr "Laisser vide pour une correspondance exacte"
 
+msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
+msgstr ""
+
 msgid "Leave empty to use the account default"
 msgstr "Laisser vide pour utiliser le compte par défaut"
 
@@ -17795,6 +17827,13 @@ msgstr "Matrice"
 msgid "Maturity Analysis"
 msgstr "Analyse d'échéance"
 
+#. placeholder {0}: correction.maxAttempts
+msgid "Max {0} per unit"
+msgstr ""
+
+msgid "Max attempts per unit"
+msgstr ""
+
 msgid "Max Lead Time"
 msgstr "Délai d'approvisionnement max."
 
@@ -18594,6 +18633,9 @@ msgstr "Nouveau contrat"
 msgid "New Contractor"
 msgstr "Nouveau prestataire"
 
+msgid "New Correction"
+msgstr ""
+
 msgid "New Cost Center"
 msgstr "Nouveau centre de coûts"
 
@@ -19296,6 +19338,12 @@ msgstr "Aucun compte de contrôle n'a de solde à la date limite."
 
 msgid "No conversion is required"
 msgstr "Aucune conversion n'est requise"
+
+msgid "No correction"
+msgstr ""
+
+msgid "No corrections yet."
+msgstr ""
 
 msgid "No cost"
 msgstr "Aucun coût"
@@ -23824,6 +23872,9 @@ msgstr "Reconvertir le modèle"
 msgid "Re-date to first open day"
 msgstr "Redater au premier jour ouvert"
 
+msgid "Re-inspect at the operation that found it"
+msgstr ""
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Ressaisie entre les devis, l'atelier et la finance"
 
@@ -23835,6 +23886,9 @@ msgstr "Replanification des mouvements dans l'ordre actuel des étapes — les �
 
 msgid "Re-send"
 msgstr "Renvoyer"
+
+msgid "Re-torque nut"
+msgstr ""
 
 msgid "Reactivate"
 msgstr "Réactiver"
@@ -25218,6 +25272,9 @@ msgstr "Limiter la facturation aux membres"
 msgid "Result"
 msgstr "Résultat"
 
+msgid "Result mappings"
+msgstr ""
+
 msgid "Results"
 msgstr "Résultats"
 
@@ -25569,6 +25626,9 @@ msgstr "Révoqué"
 
 msgid "Rework"
 msgstr "Retouche"
+
+msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
+msgstr ""
 
 msgid "RFQ"
 msgstr "RFQ"
@@ -31083,6 +31143,12 @@ msgstr "Ensuite ajusté pour"
 
 msgid "Then by"
 msgstr "Puis par"
+
+msgid "Then continue"
+msgstr ""
+
+msgid "Then re-inspect"
+msgstr ""
 
 msgid "There are more received than ordered"
 msgstr "Plus reçu que commandé"

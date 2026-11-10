@@ -2473,6 +2473,10 @@ msgstr "Hakkında (bildirim)"
 msgid "About this field"
 msgstr "Bu alan hakkında"
 
+#. placeholder {0}: result.step.maxValue
+msgid "Above {0}"
+msgstr ""
+
 msgid "Above the upper limit"
 msgstr "Üst sınırın üzerinde"
 
@@ -2946,6 +2950,9 @@ msgstr "İş bölümlerinin her biri için bir satır ekleyin: Zaman ve Malzeme,
 
 msgid "Add a line to the document"
 msgstr "Belgeye bir satır ekle"
+
+msgid "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
+msgstr ""
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Ürün ağacısındaki her stok kartını miktarı ile listeleyen bir bölüm ekleyin"
@@ -3494,6 +3501,9 @@ msgstr "Sonra"
 
 msgid "After (calculation method)"
 msgstr "Sonra (hesaplama yöntemi)"
+
+msgid "After the correction"
+msgstr ""
 
 msgid "Afternoon, {name}."
 msgstr "Öğleden sonra, {name}."
@@ -5594,6 +5604,10 @@ msgstr "Başlangıç"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Kademeli olarak kullanımdan kaldırılıyor — ardıl: <0>{0}</0>"
+
+#. placeholder {0}: result.step.minValue
+msgid "Below {0}"
+msgstr ""
 
 msgid "Below level"
 msgstr "Seviyenin altında"
@@ -7849,6 +7863,9 @@ msgstr "Devam Et"
 msgid "Continue Setup"
 msgstr "Kuruluma Devam Et"
 
+msgid "Continue to the next operation"
+msgstr ""
+
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "Kullanım hakkı varlıklarının amortismanı için kontra varlık hesabı"
 
@@ -9972,6 +9989,9 @@ msgstr "Sözleşmeyi Sil"
 msgid "Delete Contractor"
 msgstr "Taşeronu sil"
 
+msgid "Delete correction"
+msgstr ""
+
 msgid "Delete Count"
 msgstr "Sayımı Sil"
 
@@ -10311,6 +10331,9 @@ msgstr "Silindi"
 
 msgid "Deleted attribute value"
 msgstr "Öznitelik değeri silindi"
+
+msgid "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
+msgstr ""
 
 msgid "Deliver"
 msgstr "Teslim Et"
@@ -11435,6 +11458,12 @@ msgstr "İlgili Kişiyi Düzenle"
 
 msgid "Edit Contractor"
 msgstr "Taşeron Düzenle"
+
+msgid "Edit correction"
+msgstr ""
+
+msgid "Edit Correction"
+msgstr ""
 
 msgid "Edit cost"
 msgstr "Maliyeti Düzenle"
@@ -16623,6 +16652,9 @@ msgstr "Sonraki revizyonu otomatik olarak kullanmak için boş bırakın"
 msgid "Leave empty for exact match"
 msgstr "Tam eşleşme için boş bırakın"
 
+msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
+msgstr ""
+
 msgid "Leave empty to use the account default"
 msgstr "Hesap varsayılanını kullanmak için boş bırakın"
 
@@ -17795,6 +17827,13 @@ msgstr "Matris"
 msgid "Maturity Analysis"
 msgstr "Vadesilik Analizi"
 
+#. placeholder {0}: correction.maxAttempts
+msgid "Max {0} per unit"
+msgstr ""
+
+msgid "Max attempts per unit"
+msgstr ""
+
 msgid "Max Lead Time"
 msgstr "Maks. Tedarik Süresi"
 
@@ -18594,6 +18633,9 @@ msgstr "Yeni Sözleşme"
 msgid "New Contractor"
 msgstr "Yeni taşeron"
 
+msgid "New Correction"
+msgstr ""
+
 msgid "New Cost Center"
 msgstr "Yeni Maliyet Merkezi"
 
@@ -19296,6 +19338,12 @@ msgstr "Cutover'da hiçbir kontrol hesabının bakiyesi yoktur."
 
 msgid "No conversion is required"
 msgstr "Dönüşüm gerekmiyor"
+
+msgid "No correction"
+msgstr ""
+
+msgid "No corrections yet."
+msgstr ""
 
 msgid "No cost"
 msgstr "Maliyet yok"
@@ -23824,6 +23872,9 @@ msgstr "Modeli yeniden dönüştür"
 msgid "Re-date to first open day"
 msgstr "İlk açık güne yeniden tarihlendir"
 
+msgid "Re-inspect at the operation that found it"
+msgstr ""
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Tekliflendirme, üretim ve muhasebe arasında veri yeniden girişi"
 
@@ -23835,6 +23886,9 @@ msgstr "Mevcut adım sırasında hareket yeniden planlaması — adımlar tamaml
 
 msgid "Re-send"
 msgstr "Yeniden gönder"
+
+msgid "Re-torque nut"
+msgstr ""
 
 msgid "Reactivate"
 msgstr "Yeniden etkinleştir"
@@ -25218,6 +25272,9 @@ msgstr "Ücretlendirmeyi üyelere kısıtla"
 msgid "Result"
 msgstr "Sonuç"
 
+msgid "Result mappings"
+msgstr ""
+
 msgid "Results"
 msgstr "Sonuçlar"
 
@@ -25569,6 +25626,9 @@ msgstr "İptal edildi"
 
 msgid "Rework"
 msgstr "Yeniden İşleme"
+
+msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
+msgstr ""
 
 msgid "RFQ"
 msgstr "Teklif Talebi"
@@ -31083,6 +31143,12 @@ msgstr "Ardından ayarlandı"
 
 msgid "Then by"
 msgstr "Sonra"
+
+msgid "Then continue"
+msgstr ""
+
+msgid "Then re-inspect"
+msgstr ""
 
 msgid "There are more received than ordered"
 msgstr "Sipariş edilenden daha fazlası alındı"

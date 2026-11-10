@@ -2473,6 +2473,10 @@ msgstr "Über (Benachrichtigung)"
 msgid "About this field"
 msgstr "Über dieses Feld"
 
+#. placeholder {0}: result.step.maxValue
+msgid "Above {0}"
+msgstr ""
+
 msgid "Above the upper limit"
 msgstr "Über der oberen Grenze"
 
@@ -2946,6 +2950,9 @@ msgstr "Hinzufügen Sie eine Position für jeden Teil der Arbeit: Zeit und Mater
 
 msgid "Add a line to the document"
 msgstr "Eine Position zum Dokument hinzufügen"
+
+msgid "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
+msgstr ""
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Materialien-Abschnitt hinzufügen, der jeden Artikel auf der Stückliste mit seiner Menge auflistet."
@@ -3494,6 +3501,9 @@ msgstr "Nach"
 
 msgid "After (calculation method)"
 msgstr "Nach (Berechnungsmethode)"
+
+msgid "After the correction"
+msgstr ""
 
 msgid "Afternoon, {name}."
 msgstr "Nachmittag, {name}."
@@ -5594,6 +5604,10 @@ msgstr "Anfang"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Wird auslaufen — Nachfolger: <0>{0}</0>"
+
+#. placeholder {0}: result.step.minValue
+msgid "Below {0}"
+msgstr ""
 
 msgid "Below level"
 msgstr "Unterhalb des Sollbestands"
@@ -7849,6 +7863,9 @@ msgstr "Weiter"
 msgid "Continue Setup"
 msgstr "Setup fortsetzen"
 
+msgid "Continue to the next operation"
+msgstr ""
+
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "Gegenkonto der Anlage für die Abschreibung von Nutzungsrechten"
 
@@ -9972,6 +9989,9 @@ msgstr "Vertrag löschen"
 msgid "Delete Contractor"
 msgstr "Externen Mitarbeiter löschen"
 
+msgid "Delete correction"
+msgstr ""
+
 msgid "Delete Count"
 msgstr "Anzahl löschen"
 
@@ -10311,6 +10331,9 @@ msgstr "Gelöscht"
 
 msgid "Deleted attribute value"
 msgstr "Attributwert gelöscht"
+
+msgid "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
+msgstr ""
 
 msgid "Deliver"
 msgstr "Liefern"
@@ -11435,6 +11458,12 @@ msgstr "Kontakt bearbeiten"
 
 msgid "Edit Contractor"
 msgstr "Externer Mitarbeiter bearbeiten"
+
+msgid "Edit correction"
+msgstr ""
+
+msgid "Edit Correction"
+msgstr ""
 
 msgid "Edit cost"
 msgstr "Kosten bearbeiten"
@@ -16623,6 +16652,9 @@ msgstr "Lassen Sie das Feld leer, um die nächste Revision automatisch zu verwen
 msgid "Leave empty for exact match"
 msgstr "Leer lassen für exakte Übereinstimmung"
 
+msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
+msgstr ""
+
 msgid "Leave empty to use the account default"
 msgstr "Leer lassen, um die Kontostandards zu verwenden"
 
@@ -17795,6 +17827,13 @@ msgstr "Matrix"
 msgid "Maturity Analysis"
 msgstr "Fälligkeitsanalyse"
 
+#. placeholder {0}: correction.maxAttempts
+msgid "Max {0} per unit"
+msgstr ""
+
+msgid "Max attempts per unit"
+msgstr ""
+
 msgid "Max Lead Time"
 msgstr "Max. Beschaffungszeit"
 
@@ -18594,6 +18633,9 @@ msgstr "Neuer Vertrag"
 msgid "New Contractor"
 msgstr "Neuer Externer Mitarbeiter"
 
+msgid "New Correction"
+msgstr ""
+
 msgid "New Cost Center"
 msgstr "Neue Kostenstelle"
 
@@ -19296,6 +19338,12 @@ msgstr "Kein Kontrollkonto weist zum Übergangsdatum einen Saldo auf."
 
 msgid "No conversion is required"
 msgstr "Keine Umrechnung erforderlich"
+
+msgid "No correction"
+msgstr ""
+
+msgid "No corrections yet."
+msgstr ""
 
 msgid "No cost"
 msgstr "Keine Kosten"
@@ -23824,6 +23872,9 @@ msgstr "Modell neu konvertieren"
 msgid "Re-date to first open day"
 msgstr "Auf ersten offenen Tag umbuchen"
 
+msgid "Re-inspect at the operation that found it"
+msgstr ""
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Erneute Eingabe zwischen Angebotserstellung, Produktion und Finanzen"
 
@@ -23835,6 +23886,9 @@ msgstr "Neuplanung von Bewegungen in der aktuellen Schrittfolge – Schritte wer
 
 msgid "Re-send"
 msgstr "Erneut senden"
+
+msgid "Re-torque nut"
+msgstr ""
 
 msgid "Reactivate"
 msgstr "Reaktivieren"
@@ -25218,6 +25272,9 @@ msgstr "Abrechnung auf Mitglieder beschränken"
 msgid "Result"
 msgstr "Ergebnis"
 
+msgid "Result mappings"
+msgstr ""
+
 msgid "Results"
 msgstr "Ergebnisse"
 
@@ -25569,6 +25626,9 @@ msgstr "Widerrufen"
 
 msgid "Rework"
 msgstr "Nacharbeit"
+
+msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
+msgstr ""
 
 msgid "RFQ"
 msgstr "RFQ"
@@ -31083,6 +31143,12 @@ msgstr "Dann angepasst für"
 
 msgid "Then by"
 msgstr "Dann nach"
+
+msgid "Then continue"
+msgstr ""
+
+msgid "Then re-inspect"
+msgstr ""
 
 msgid "There are more received than ordered"
 msgstr "Es wurden mehr Stücke empfangen als bestellt"

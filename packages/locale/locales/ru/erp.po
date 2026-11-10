@@ -2473,6 +2473,10 @@ msgstr "О (уведомление)"
 msgid "About this field"
 msgstr "Об этом поле"
 
+#. placeholder {0}: result.step.maxValue
+msgid "Above {0}"
+msgstr ""
+
 msgid "Above the upper limit"
 msgstr "Выше верхнего предела"
 
@@ -2946,6 +2950,9 @@ msgstr "Добавить строку для каждой части работ�
 
 msgid "Add a line to the document"
 msgstr "Добавить строку в документ"
+
+msgid "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
+msgstr ""
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Добавить раздел материалов, в котором указывается каждый элемент спецификации материалов с его количеством."
@@ -3494,6 +3501,9 @@ msgstr "После"
 
 msgid "After (calculation method)"
 msgstr "После (способ расчета)"
+
+msgid "After the correction"
+msgstr ""
 
 msgid "Afternoon, {name}."
 msgstr "Добрый день, {name}."
@@ -5594,6 +5604,10 @@ msgstr "Начало"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Снимается с производства — преемник: <0>{0}</0>"
+
+#. placeholder {0}: result.step.minValue
+msgid "Below {0}"
+msgstr ""
 
 msgid "Below level"
 msgstr "Ниже уровня"
@@ -7849,6 +7863,9 @@ msgstr "Продолжить"
 msgid "Continue Setup"
 msgstr "Продолжить настройку"
 
+msgid "Continue to the next operation"
+msgstr ""
+
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "Контрсчет для амортизации активов права использования"
 
@@ -9972,6 +9989,9 @@ msgstr "Удалить контракт"
 msgid "Delete Contractor"
 msgstr "Удалить подрядчика"
 
+msgid "Delete correction"
+msgstr ""
+
 msgid "Delete Count"
 msgstr "Удалить подсчет"
 
@@ -10311,6 +10331,9 @@ msgstr "Удалено"
 
 msgid "Deleted attribute value"
 msgstr "Удаленное значение атрибута"
+
+msgid "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
+msgstr ""
 
 msgid "Deliver"
 msgstr "Доставить"
@@ -11435,6 +11458,12 @@ msgstr "Изменить контактное лицо"
 
 msgid "Edit Contractor"
 msgstr "Изменить подрядчика"
+
+msgid "Edit correction"
+msgstr ""
+
+msgid "Edit Correction"
+msgstr ""
 
 msgid "Edit cost"
 msgstr "Изменить себестоимость"
@@ -16623,6 +16652,9 @@ msgstr "Оставить пусто, чтобы использовать сле�
 msgid "Leave empty for exact match"
 msgstr "Оставьте пустым для точного совпадения"
 
+msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
+msgstr ""
+
 msgid "Leave empty to use the account default"
 msgstr "Оставьте пустым, чтобы использовать значение по умолчанию учетной записи"
 
@@ -17795,6 +17827,13 @@ msgstr "Матрица"
 msgid "Maturity Analysis"
 msgstr "Анализ сроков"
 
+#. placeholder {0}: correction.maxAttempts
+msgid "Max {0} per unit"
+msgstr ""
+
+msgid "Max attempts per unit"
+msgstr ""
+
 msgid "Max Lead Time"
 msgstr "Макс. срок поставки"
 
@@ -18594,6 +18633,9 @@ msgstr "Новый контракт"
 msgid "New Contractor"
 msgstr "Новый подрядчик"
 
+msgid "New Correction"
+msgstr ""
+
 msgid "New Cost Center"
 msgstr "Новый центр затрат"
 
@@ -19296,6 +19338,12 @@ msgstr "Ни один контрольный счет не имеет остат
 
 msgid "No conversion is required"
 msgstr "Преобразование не требуется"
+
+msgid "No correction"
+msgstr ""
+
+msgid "No corrections yet."
+msgstr ""
 
 msgid "No cost"
 msgstr "Нет себестоимости"
@@ -23824,6 +23872,9 @@ msgstr "Переконвертировать модель"
 msgid "Re-date to first open day"
 msgstr "Перенести дату на первый открытый день"
 
+msgid "Re-inspect at the operation that found it"
+msgstr ""
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Повторный ввод данных между расчётом, цехом и финансами"
 
@@ -23835,6 +23886,9 @@ msgstr "Переплан движений в текущем порядке ша�
 
 msgid "Re-send"
 msgstr "Отправить снова"
+
+msgid "Re-torque nut"
+msgstr ""
 
 msgid "Reactivate"
 msgstr "Переактивировать"
@@ -25218,6 +25272,9 @@ msgstr "Ограничить начисление членам"
 msgid "Result"
 msgstr "Результат"
 
+msgid "Result mappings"
+msgstr ""
+
 msgid "Results"
 msgstr "Результаты"
 
@@ -25569,6 +25626,9 @@ msgstr "Отозвано"
 
 msgid "Rework"
 msgstr "Доработка"
+
+msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
+msgstr ""
 
 msgid "RFQ"
 msgstr "РФП"
@@ -31083,6 +31143,12 @@ msgstr "Затем отрегулировано для"
 
 msgid "Then by"
 msgstr "Затем по"
+
+msgid "Then continue"
+msgstr ""
+
+msgid "Then re-inspect"
+msgstr ""
 
 msgid "There are more received than ordered"
 msgstr "Получено больше, чем было заказано"

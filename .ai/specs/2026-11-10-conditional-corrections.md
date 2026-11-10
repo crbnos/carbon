@@ -371,6 +371,17 @@ For the ERP editor the sibling is **operations on the Bill of Process**:
 ## Changelog
 
 - 2026-11-10: Created after resolving the open questions with Dane.
+- 2026-11-10: Phase 2b implemented (ERP editor). A **Corrections** card on the
+  part, tool and service make method pages (`MethodCorrections.tsx`): create,
+  edit and delete corrections (name, description, return rule, attempt
+  limit); each correction's operations and materials are edited with the
+  existing `BillOfProcess` / `BillOfMaterial` editors, which take an optional
+  `methodCorrectionId` (new rows are created in the correction) and `title`.
+  Result mappings are a table under the corrections (operation · step ·
+  result → correction) rather than controls inside the step form. Routes:
+  `x+/items+/methods+/correction.{new,$id,delete.$id,trigger}.tsx`; edits are
+  refused unless the make method is a draft and not release-locked. Not
+  rendered in a browser yet (no local stack).
 - 2026-11-10: Phase 2a implemented (data model, exclusions, version copy,
   services). Shipped names: enums `correctionReturnTo` ('Re-inspect',
   'Continue') and `correctionMeasurementCondition` ('Below Minimum',

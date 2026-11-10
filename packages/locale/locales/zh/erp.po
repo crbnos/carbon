@@ -2473,6 +2473,10 @@ msgstr "关于（通知）"
 msgid "About this field"
 msgstr "关于此字段"
 
+#. placeholder {0}: result.step.maxValue
+msgid "Above {0}"
+msgstr ""
+
 msgid "Above the upper limit"
 msgstr "高于上限"
 
@@ -2946,6 +2950,9 @@ msgstr "为工作的每个部分添加一行：时间和原材料、成本加价
 
 msgid "Add a line to the document"
 msgstr "在文件中添加一行"
+
+msgid "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
+msgstr ""
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "添加一个列出物料清单上每个物料及其数量的物料部分。"
@@ -3494,6 +3501,9 @@ msgstr "之后"
 
 msgid "After (calculation method)"
 msgstr "之后（计算方法）"
+
+msgid "After the correction"
+msgstr ""
 
 msgid "Afternoon, {name}."
 msgstr "下午，{name}。"
@@ -5594,6 +5604,10 @@ msgstr "开始"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "正在逐步淘汰—后继物料：<0>{0}</0>"
+
+#. placeholder {0}: result.step.minValue
+msgid "Below {0}"
+msgstr ""
 
 msgid "Below level"
 msgstr "低于水位线"
@@ -7849,6 +7863,9 @@ msgstr "继续"
 msgid "Continue Setup"
 msgstr "继续配置"
 
+msgid "Continue to the next operation"
+msgstr ""
+
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "使用权资产摊销的对资产账户"
 
@@ -9972,6 +9989,9 @@ msgstr "删除合约"
 msgid "Delete Contractor"
 msgstr "删除外协人员"
 
+msgid "Delete correction"
+msgstr ""
+
 msgid "Delete Count"
 msgstr "删除计数"
 
@@ -10311,6 +10331,9 @@ msgstr "已删除"
 
 msgid "Deleted attribute value"
 msgstr "已删除属性值"
+
+msgid "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
+msgstr ""
 
 msgid "Deliver"
 msgstr "交付"
@@ -11435,6 +11458,12 @@ msgstr "编辑联系人"
 
 msgid "Edit Contractor"
 msgstr "编辑外协人员"
+
+msgid "Edit correction"
+msgstr ""
+
+msgid "Edit Correction"
+msgstr ""
 
 msgid "Edit cost"
 msgstr "编辑成本"
@@ -16623,6 +16652,9 @@ msgstr "留空以自动使用下一个修订版"
 msgid "Leave empty for exact match"
 msgstr "留空以精确匹配"
 
+msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
+msgstr ""
+
 msgid "Leave empty to use the account default"
 msgstr "留空以使用帐户默认值"
 
@@ -17795,6 +17827,13 @@ msgstr "矩阵"
 msgid "Maturity Analysis"
 msgstr "到期日分析"
 
+#. placeholder {0}: correction.maxAttempts
+msgid "Max {0} per unit"
+msgstr ""
+
+msgid "Max attempts per unit"
+msgstr ""
+
 msgid "Max Lead Time"
 msgstr "最长提前期"
 
@@ -18594,6 +18633,9 @@ msgstr "新合约"
 msgid "New Contractor"
 msgstr "新建外协人员"
 
+msgid "New Correction"
+msgstr ""
+
 msgid "New Cost Center"
 msgstr "新建成本中心"
 
@@ -19296,6 +19338,12 @@ msgstr "截至结转日期，无控制帐户有余额"
 
 msgid "No conversion is required"
 msgstr "不需要转换"
+
+msgid "No correction"
+msgstr ""
+
+msgid "No corrections yet."
+msgstr ""
 
 msgid "No cost"
 msgstr "无成本"
@@ -23824,6 +23872,9 @@ msgstr "重新转换模型"
 msgid "Re-date to first open day"
 msgstr "重新日期至第一个开放日"
 
+msgid "Re-inspect at the operation that found it"
+msgstr ""
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "在报价、车间和财务之间重复输入数据"
 
@@ -23835,6 +23886,9 @@ msgstr "重新计划当前步骤顺序中的动作 — 步骤将在完成时更�
 
 msgid "Re-send"
 msgstr "重新发送"
+
+msgid "Re-torque nut"
+msgstr ""
 
 msgid "Reactivate"
 msgstr "重新激活"
@@ -25218,6 +25272,9 @@ msgstr "限制成员计费"
 msgid "Result"
 msgstr "结果"
 
+msgid "Result mappings"
+msgstr ""
+
 msgid "Results"
 msgstr "结果"
 
@@ -25569,6 +25626,9 @@ msgstr "已撤销"
 
 msgid "Rework"
 msgstr "返工"
+
+msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
+msgstr ""
 
 msgid "RFQ"
 msgstr "询价单"
@@ -31083,6 +31143,12 @@ msgstr "然后调整为"
 
 msgid "Then by"
 msgstr "然后按"
+
+msgid "Then continue"
+msgstr ""
+
+msgid "Then re-inspect"
+msgstr ""
 
 msgid "There are more received than ordered"
 msgstr "收到的数量多于订购的数量"

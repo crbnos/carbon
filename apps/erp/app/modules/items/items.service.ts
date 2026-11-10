@@ -1917,6 +1917,65 @@ export async function getMethodOperationsByMakeMethodId(
   );
 }
 
+/**
+ * Everything the Corrections editor shows for a make method: its corrections,
+ * their result mappings, operations and materials.
+ */
+export async function getMethodCorrectionsData(
+  client: SupabaseClient<Database>,
+  makeMethodId: string,
+  companyId: string
+) {
+  const [corrections, triggers, operations, materials] = await Promise.all([
+    getMethodCorrections(client, makeMethodId, companyId),
+    getMethodCorrectionTriggers(client, makeMethodId, companyId),
+    getMethodCorrectionOperations(client, makeMethodId),
+    getMethodCorrectionMaterials(client, makeMethodId)
+  ]);
+  const error =
+    corrections.error ?? triggers.error ?? operations.error ?? materials.error;
+  if (error) return { data: null, error };
+  return {
+    data: {
+      corrections: corrections.data ?? [],
+      triggers: triggers.data ?? [],
+      operations: operations.data ?? [],
+      materials: materials.data ?? []
+    },
+    error: null
+  };
+}
+
+/** The operations of a make method's corrections, with their children. */
+export async function getMethodCorrectionOperations(
+  client: SupabaseClient<Database>,
+  makeMethodId: string
+) {
+  return client
+    .from("methodOperation")
+    .select(
+      "*, methodOperationTool(*, methodOperationToolStep(methodOperationStepId)), methodOperationParameter(*), methodOperationStep(*, methodOperationStepSlide(*))"
+    )
+    .eq("makeMethodId", makeMethodId)
+    .not("methodCorrectionId", "is", null)
+    .order("order", { ascending: true });
+}
+
+/** The materials of a make method's corrections. */
+export async function getMethodCorrectionMaterials(
+  client: SupabaseClient<Database>,
+  makeMethodId: string
+) {
+  return client
+    .from("methodMaterial")
+    .select(
+      "*, item(name, itemTrackingType, replenishmentSystem, defaultMethodType, sourcingType), methodMaterialStep(methodOperationStepId, quantity)"
+    )
+    .eq("makeMethodId", makeMethodId)
+    .not("methodCorrectionId", "is", null)
+    .order("order", { ascending: true });
+}
+
 type Method = NonNullable<
   Awaited<ReturnType<typeof getMethodTreeArray>>["data"]
 >[number];
@@ -4790,6 +4849,34 @@ export async function upsertMethodCorrection(
     .eq("companyId", companyId)
     .select("id")
     .single();
+}
+
+/**
+ * Why a make method's corrections can't change now, or null when they can:
+ * like its operations, they change only while the method is a draft and
+ * not release-locked.
+ */
+export async function methodCorrectionEditRefusal(
+  client: SupabaseClient<Database>,
+  makeMethodId: string,
+  companyId: string
+): Promise<string | null> {
+  const makeMethod = await client
+    .from("makeMethod")
+    .select("status")
+    .eq("id", makeMethodId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (makeMethod.error || !makeMethod.data) return "Make method not found";
+  if (makeMethod.data.status !== "Draft") {
+    return "Corrections change only on a draft make method";
+  }
+  const lock = await checkRevisionLock(client, {
+    kind: "makeMethod",
+    id: makeMethodId,
+    companyId
+  });
+  return lock.ok ? null : lock.message;
 }
 
 /** Deletes a correction with its operations, materials and mappings. */

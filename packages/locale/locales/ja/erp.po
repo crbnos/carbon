@@ -2473,6 +2473,10 @@ msgstr "について（通知）"
 msgid "About this field"
 msgstr "このフィールドについて"
 
+#. placeholder {0}: result.step.maxValue
+msgid "Above {0}"
+msgstr ""
+
 msgid "Above the upper limit"
 msgstr "上限を超えています"
 
@@ -2946,6 +2950,9 @@ msgstr "作業の各部分について明細を追加してください：Time &
 
 msgid "Add a line to the document"
 msgstr "文書に明細を追加"
+
+msgid "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
+msgstr ""
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "部品表の各項目とその数量をリストアップした材料セクションを追加します。"
@@ -3494,6 +3501,9 @@ msgstr "後"
 
 msgid "After (calculation method)"
 msgstr "後（計算方法）"
+
+msgid "After the correction"
+msgstr ""
 
 msgid "Afternoon, {name}."
 msgstr "午後、{name}さん。"
@@ -5594,6 +5604,10 @@ msgstr "開始"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "段階的に廃止されます — 後継品目：<0>{0}</0>"
+
+#. placeholder {0}: result.step.minValue
+msgid "Below {0}"
+msgstr ""
 
 msgid "Below level"
 msgstr "レベル以下"
@@ -7849,6 +7863,9 @@ msgstr "続行"
 msgid "Continue Setup"
 msgstr "セットアップを続行"
 
+msgid "Continue to the next operation"
+msgstr ""
+
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "使用権資産償却累計額"
 
@@ -9972,6 +9989,9 @@ msgstr "契約を削除"
 msgid "Delete Contractor"
 msgstr "外部作業者を削除"
 
+msgid "Delete correction"
+msgstr ""
+
 msgid "Delete Count"
 msgstr "カウントを削除"
 
@@ -10311,6 +10331,9 @@ msgstr "削除済み"
 
 msgid "Deleted attribute value"
 msgstr "属性値を削除"
+
+msgid "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
+msgstr ""
 
 msgid "Deliver"
 msgstr "配送"
@@ -11435,6 +11458,12 @@ msgstr "担当者を編集"
 
 msgid "Edit Contractor"
 msgstr "外部作業者を編集"
+
+msgid "Edit correction"
+msgstr ""
+
+msgid "Edit Correction"
+msgstr ""
 
 msgid "Edit cost"
 msgstr "原価を編集"
@@ -16623,6 +16652,9 @@ msgstr "空白のままにして、次のリビジョンを自動的に使用し
 msgid "Leave empty for exact match"
 msgstr "正確な一致のために空のままにしてください"
 
+msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
+msgstr ""
+
 msgid "Leave empty to use the account default"
 msgstr "空白のままにしてアカウントデフォルトを使用します"
 
@@ -17795,6 +17827,13 @@ msgstr "マトリックス"
 msgid "Maturity Analysis"
 msgstr "満期分析"
 
+#. placeholder {0}: correction.maxAttempts
+msgid "Max {0} per unit"
+msgstr ""
+
+msgid "Max attempts per unit"
+msgstr ""
+
 msgid "Max Lead Time"
 msgstr "最大リードタイム"
 
@@ -18594,6 +18633,9 @@ msgstr "新規契約"
 msgid "New Contractor"
 msgstr "新規外部作業者"
 
+msgid "New Correction"
+msgstr ""
+
 msgid "New Cost Center"
 msgstr "新規原価センター"
 
@@ -19296,6 +19338,12 @@ msgstr "カットオーバー時に残高がある管理勘定がありません
 
 msgid "No conversion is required"
 msgstr "変換は不要です"
+
+msgid "No correction"
+msgstr ""
+
+msgid "No corrections yet."
+msgstr ""
 
 msgid "No cost"
 msgstr "原価なし"
@@ -23824,6 +23872,9 @@ msgstr "モデルを再変換"
 msgid "Re-date to first open day"
 msgstr "最初の営業日に再日付け"
 
+msgid "Re-inspect at the operation that found it"
+msgstr ""
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "見積、現場、財務間での再入力"
 
@@ -23835,6 +23886,9 @@ msgstr "現在のステップ順序でモーション再計画—完了時にス
 
 msgid "Re-send"
 msgstr "再送信"
+
+msgid "Re-torque nut"
+msgstr ""
 
 msgid "Reactivate"
 msgstr "再度有効化"
@@ -25218,6 +25272,9 @@ msgstr "請求を会員に制限する"
 msgid "Result"
 msgstr "結果"
 
+msgid "Result mappings"
+msgstr ""
+
 msgid "Results"
 msgstr "結果"
 
@@ -25569,6 +25626,9 @@ msgstr "取り消し済み"
 
 msgid "Rework"
 msgstr "手直し"
+
+msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
+msgstr ""
 
 msgid "RFQ"
 msgstr "RFQ"
@@ -31083,6 +31143,12 @@ msgstr "その後、以下のために調整されます"
 
 msgid "Then by"
 msgstr "次に"
+
+msgid "Then continue"
+msgstr ""
+
+msgid "Then re-inspect"
+msgstr ""
 
 msgid "There are more received than ordered"
 msgstr "受け取ったものが発注数より多い"

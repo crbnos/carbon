@@ -2473,6 +2473,10 @@ msgstr "About (notification)"
 msgid "About this field"
 msgstr "About this field"
 
+#. placeholder {0}: result.step.maxValue
+msgid "Above {0}"
+msgstr "Above {0}"
+
 msgid "Above the upper limit"
 msgstr "Above the upper limit"
 
@@ -2946,6 +2950,9 @@ msgstr "Add a line for each part of the work: Time & Materials, Cost Plus or Fix
 
 msgid "Add a line to the document"
 msgstr "Add a line to the document"
+
+msgid "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
+msgstr "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Add a materials section that lists each item on the bill of materials with its quantity."
@@ -3494,6 +3501,9 @@ msgstr "After"
 
 msgid "After (calculation method)"
 msgstr "After (calculation method)"
+
+msgid "After the correction"
+msgstr "After the correction"
 
 msgid "Afternoon, {name}."
 msgstr "Afternoon, {name}."
@@ -5594,6 +5604,10 @@ msgstr "Beginning"
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Being phased out — successor: <0>{0}</0>"
+
+#. placeholder {0}: result.step.minValue
+msgid "Below {0}"
+msgstr "Below {0}"
 
 msgid "Below level"
 msgstr "Below level"
@@ -7849,6 +7863,9 @@ msgstr "Continue"
 msgid "Continue Setup"
 msgstr "Continue Setup"
 
+msgid "Continue to the next operation"
+msgstr "Continue to the next operation"
+
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "Contra-asset account for the amortization of right-of-use assets"
 
@@ -9972,6 +9989,9 @@ msgstr "Delete Contract"
 msgid "Delete Contractor"
 msgstr "Delete Contractor"
 
+msgid "Delete correction"
+msgstr "Delete correction"
+
 msgid "Delete Count"
 msgstr "Delete Count"
 
@@ -10311,6 +10331,9 @@ msgstr "Deleted"
 
 msgid "Deleted attribute value"
 msgstr "Deleted attribute value"
+
+msgid "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
+msgstr "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
 
 msgid "Deliver"
 msgstr "Deliver"
@@ -11435,6 +11458,12 @@ msgstr "Edit Contact"
 
 msgid "Edit Contractor"
 msgstr "Edit Contractor"
+
+msgid "Edit correction"
+msgstr "Edit correction"
+
+msgid "Edit Correction"
+msgstr "Edit Correction"
 
 msgid "Edit cost"
 msgstr "Edit cost"
@@ -16623,6 +16652,9 @@ msgstr "Leave blank to use the next revision automatically"
 msgid "Leave empty for exact match"
 msgstr "Leave empty for exact match"
 
+msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
+msgstr "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
+
 msgid "Leave empty to use the account default"
 msgstr "Leave empty to use the account default"
 
@@ -17795,6 +17827,13 @@ msgstr "Matrix"
 msgid "Maturity Analysis"
 msgstr "Maturity Analysis"
 
+#. placeholder {0}: correction.maxAttempts
+msgid "Max {0} per unit"
+msgstr "Max {0} per unit"
+
+msgid "Max attempts per unit"
+msgstr "Max attempts per unit"
+
 msgid "Max Lead Time"
 msgstr "Max Lead Time"
 
@@ -18594,6 +18633,9 @@ msgstr "New Contract"
 msgid "New Contractor"
 msgstr "New Contractor"
 
+msgid "New Correction"
+msgstr "New Correction"
+
 msgid "New Cost Center"
 msgstr "New Cost Center"
 
@@ -19296,6 +19338,12 @@ msgstr "No control account has a balance at the cutover."
 
 msgid "No conversion is required"
 msgstr "No conversion is required"
+
+msgid "No correction"
+msgstr "No correction"
+
+msgid "No corrections yet."
+msgstr "No corrections yet."
 
 msgid "No cost"
 msgstr "No cost"
@@ -23824,6 +23872,9 @@ msgstr "Re-convert Model"
 msgid "Re-date to first open day"
 msgstr "Re-date to first open day"
 
+msgid "Re-inspect at the operation that found it"
+msgstr "Re-inspect at the operation that found it"
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Re-keying between quoting, the floor, and finance"
 
@@ -23835,6 +23886,9 @@ msgstr "Re-planning motions in the current step order — steps update when it f
 
 msgid "Re-send"
 msgstr "Re-send"
+
+msgid "Re-torque nut"
+msgstr "Re-torque nut"
 
 msgid "Reactivate"
 msgstr "Reactivate"
@@ -25218,6 +25272,9 @@ msgstr "Restrict charging to members"
 msgid "Result"
 msgstr "Result"
 
+msgid "Result mappings"
+msgstr "Result mappings"
+
 msgid "Results"
 msgstr "Results"
 
@@ -25569,6 +25626,9 @@ msgstr "Revoked"
 
 msgid "Rework"
 msgstr "Rework"
+
+msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
+msgstr "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
 
 msgid "RFQ"
 msgstr "RFQ"
@@ -31083,6 +31143,12 @@ msgstr "Then adjusted for"
 
 msgid "Then by"
 msgstr "Then by"
+
+msgid "Then continue"
+msgstr "Then continue"
+
+msgid "Then re-inspect"
+msgstr "Then re-inspect"
 
 msgid "There are more received than ordered"
 msgstr "There are more received than ordered"
