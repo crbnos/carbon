@@ -20,7 +20,11 @@ import { ActionPresentationBoundary } from "./ActionPresentation";
 import { ClientOnly } from "./ClientOnly";
 import { DialogDepthContext, ReportDialogExit } from "./RouteDialogScope";
 import { cn } from "./utils/cn";
-import { returnFocusOnClose, trackPageFocus } from "./utils/dialog";
+import {
+  keepOpenOnToast,
+  returnFocusOnClose,
+  trackPageFocus
+} from "./utils/dialog";
 import { usePhoneOpenAutoFocus, useViewport } from "./Viewport";
 
 // A dialog held open with no `onOpenChange` cannot be closed by the X, Escape
@@ -181,6 +185,7 @@ const ModalContent = forwardRef<
       withCloseButton = true,
       onOpenAutoFocus,
       onCloseAutoFocus,
+      onInteractOutside,
       ...props
     },
     ref
@@ -202,6 +207,7 @@ const ModalContent = forwardRef<
                   if (!event.defaultPrevented) focusPrimaryAction(event);
                 }}
                 {...props}
+                onInteractOutside={keepOpenOnToast(onInteractOutside)}
                 onCloseAutoFocus={returnFocusOnClose(onCloseAutoFocus)}
               >
                 {/* Phones: the same grabber as a drawer sheet. */}

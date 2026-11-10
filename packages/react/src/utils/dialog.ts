@@ -156,6 +156,23 @@ export function returnFocusOnClose(handler?: (event: Event) => void) {
   };
 }
 
+/**
+ * A dialog content's `onInteractOutside`: keeps the dialog open when the
+ * interaction is on a toast (closing one, or expanding the stack), then runs
+ * the caller's handler for anything else. Toasts sit outside every dialog,
+ * so without it closing a toast also closes the form under it.
+ */
+export function keepOpenOnToast<E extends Event>(handler?: (event: E) => void) {
+  return (event: E) => {
+    const target = event.target;
+    if (target instanceof Element && target.closest("[data-sonner-toaster]")) {
+      event.preventDefault();
+      return;
+    }
+    handler?.(event);
+  };
+}
+
 function whenDialogRemoved(dialog: Element, timeoutMs = 500): Promise<void> {
   return new Promise((resolve) => {
     if (!dialog.isConnected) {

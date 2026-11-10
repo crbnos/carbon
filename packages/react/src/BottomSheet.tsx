@@ -19,6 +19,7 @@ import { ActionPresentationBoundary } from "./ActionPresentation";
 import { ClientOnly } from "./ClientOnly";
 import { DialogRoot, useDialogDismissable } from "./Modal";
 import { cn } from "./utils/cn";
+import { keepOpenOnToast } from "./utils/dialog";
 import {
   addDragSample,
   type DragSample,
@@ -180,6 +181,7 @@ const BottomSheetContent = forwardRef<
             )}
             {...props}
             onOpenAutoFocus={onOpenAutoFocus}
+            onInteractOutside={keepOpenOnToast(props.onInteractOutside)}
           >
             <div
               aria-hidden

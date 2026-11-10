@@ -24,7 +24,11 @@ import {
 } from "./Modal";
 import { ReportDialogExit } from "./RouteDialogScope";
 import { cn } from "./utils/cn";
-import { returnFocusOnClose, trackPageFocus } from "./utils/dialog";
+import {
+  keepOpenOnToast,
+  returnFocusOnClose,
+  trackPageFocus
+} from "./utils/dialog";
 import { usePhoneOpenAutoFocus, useViewport } from "./Viewport";
 
 const Drawer = DialogRoot;
@@ -211,6 +215,7 @@ const DrawerContent = forwardRef<
       className,
       children,
       onCloseAutoFocus,
+      onInteractOutside,
       ...props
     },
     ref
@@ -229,6 +234,7 @@ const DrawerContent = forwardRef<
               className={cn(sheetVariants({ position, size }), className)}
               {...props}
               onOpenAutoFocus={onOpenAutoFocus}
+              onInteractOutside={keepOpenOnToast(onInteractOutside)}
               onCloseAutoFocus={returnFocusOnClose(onCloseAutoFocus)}
             >
               {isPhone && (
