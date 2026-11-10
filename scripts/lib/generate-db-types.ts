@@ -201,10 +201,18 @@ export function generateDatabaseTypes(databaseUrl: string | undefined): void {
         ],
         {
           stdio: ["ignore", out, "pipe"],
-          env:
-            process.env.CARBON_DEV_CLOUD === "1"
-              ? { SUPABASE_INTERNAL_IMAGE_REGISTRY: "docker.io", ...process.env }
-              : process.env
+          env: {
+            ...process.env,
+            // Supabase CLI 2.89 classifies 127.0.0.1:54322 as its own
+            // `supabase start` database and looks for a container we do not
+            // run. The explicit --db-url is Carbon's Compose database; give
+            // the CLI a different local default so it uses that URL directly.
+            SUPABASE_DB_PORT: "1",
+            ...(process.env.CARBON_DEV_CLOUD === "1" &&
+            !process.env.SUPABASE_INTERNAL_IMAGE_REGISTRY
+              ? { SUPABASE_INTERNAL_IMAGE_REGISTRY: "docker.io" }
+              : {})
+          }
         }
       );
       if (result.error || result.status !== 0) {
