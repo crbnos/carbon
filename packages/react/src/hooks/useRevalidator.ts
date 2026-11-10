@@ -24,15 +24,17 @@ let held = false;
  *   without the submission, so the page loads twice and anything that reads
  *   "this follows a save" from the navigation no longer sees it.
  *
- * A call made while a fetcher is submitting or a navigation is in flight is
- * held and runs once the router is idle. The promise of a held call resolves
+ * A call made while a fetcher is submitting, a navigation is in flight or a
+ * revalidation is still loading is held and runs once the router is idle. A
+ * new revalidation cancels the one in flight, so a poll faster than a slow
+ * loader would otherwise cancel every load and never show new data. The promise of a held call resolves
  * at once, before that reload: awaiting it does not wait for the data.
  */
 export function useRevalidator() {
   const revalidator = useRouterRevalidator();
   const navigating = useNavigation().state !== "idle";
   const submitting = useFetchers().some((f) => f.state === "submitting");
-  const busy = navigating || submitting;
+  const busy = navigating || submitting || revalidator.state === "loading";
   const busyRef = useRef(busy);
   busyRef.current = busy;
 
