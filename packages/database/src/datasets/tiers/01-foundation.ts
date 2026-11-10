@@ -233,6 +233,17 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       active: true
     });
   }
+  // Goods-in receipts of inspected items land in the inspection shelf; a
+  // rejected lot moves to the rejected shelf.
+  await ctx.client.query(
+    `UPDATE "location" SET "inspectionStorageUnitId" = $1, "rejectedStorageUnitId" = $2 WHERE id = $3 AND "companyId" = $4`,
+    [
+      need(ctx.refs.shelves, data.inspectionShelf, "shelf"),
+      need(ctx.refs.shelves, data.rejectedShelf, "shelf"),
+      plantId,
+      ctx.companyId
+    ]
+  );
 
   // ── Work centers (need dept + ability + location) ─────────────────────────
   ctx.log("work centers");

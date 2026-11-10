@@ -68,6 +68,7 @@ import {
   useCompanyToday,
   useCurrencyDecimals,
   useDateFormatter,
+  useDrawerItem,
   usePercentFormatter,
   usePermissions,
   useQuantityFormatter
@@ -144,6 +145,7 @@ type PreviewResponse = {
 type ContractAmendModalProps = Pick<ContractRouteData, "lines"> & {
   contract: Contract;
   action: string;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -197,11 +199,28 @@ const localSave = () =>
  *  runs and rolls back on the server — so the adjustments and the next
  *  invoices are seen before saving. */
 const ContractAmendModal = ({
+  open = true,
+  onClose,
+  ...props
+}: ContractAmendModalProps) => (
+  <Modal
+    open={open}
+    onOpenChange={(open) => {
+      if (!open) onClose();
+    }}
+  >
+    <ModalContent size="xxlarge">
+      <ContractAmendBody onClose={onClose} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+const ContractAmendBody = ({
   contract,
   lines,
   action,
   onClose
-}: ContractAmendModalProps) => {
+}: Omit<ContractAmendModalProps, "open">) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const today = useCompanyToday();
@@ -417,7 +436,13 @@ const ContractAmendModal = ({
         (row.billing.billingMethod === "Cost Plus" ||
           row.billing.revenueMethod === "Percent Complete")
     );
-  const [editingTerms, setEditingTerms] = useState<AmendRow | null>(null);
+  const {
+    item: editingTerms,
+    isOpen: isEditingTerms,
+    key: editingTermsKey,
+    open: openTerms,
+    close: closeTerms
+  } = useDrawerItem<AmendRow>();
   const billingLabels = useBillingMethodLabels(contract.billingBasis);
   const hasChanges = changes.length > 0;
   const changesJson = JSON.stringify(changes);
@@ -747,7 +772,7 @@ const ContractAmendModal = ({
     (row: AmendRow) =>
       row.isNew ? (
         <>
-          <MenuItem onClick={() => setEditingTerms(row)}>
+          <MenuItem onClick={() => openTerms(row)}>
             <MenuIcon icon={<LuReceipt />} />
             <Trans>Billing Terms</Trans>
           </MenuItem>
@@ -779,7 +804,7 @@ const ContractAmendModal = ({
           <Trans>End Line</Trans>
         </MenuItem>
       ),
-    [originals, updateRow]
+    [originals, updateRow, openTerms]
   );
 
   const gridColumns = useMemo(
@@ -791,216 +816,209 @@ const ContractAmendModal = ({
     `${formatDate(start)} – ${formatDate(end)}`;
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalContent size="xxlarge">
-        <ValidatedForm
-          validator={customerContractAmendmentValidator}
-          method="post"
-          action={action}
-          fetcher={fetcher}
-          defaultValues={{
-            customerContractId: id,
-            amendmentDate: today,
-            effect: "Change Date"
-          }}
-          onSubmit={onClose}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Amend {contract.customerContractId}</Trans>
-            </ModalTitle>
-            <ModalDescription>
-              <Trans>
-                Change, add or end lines from a date. Periods already invoiced
-                past it are adjusted on the next invoice.
-              </Trans>
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="intent" value="save" />
-            <Hidden name="customerContractId" value={id} />
-            <Hidden name="changes" value={changesJson} />
-            <VStack spacing={4}>
-              <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2">
-                <DatePicker
-                  name="amendmentDate"
-                  label={t`Change Date`}
-                  onChange={(date) => setAmendmentDate(date ?? "")}
-                />
-                <Select
-                  name="effect"
-                  label={t`Takes Effect`}
-                  options={contractAmendmentEffects.map((value) => ({
-                    value,
-                    label: effectLabels[value]
-                  }))}
-                  onChange={(option) => {
-                    const next = contractAmendmentEffects.find(
-                      (value) => value === option?.value
-                    );
-                    if (next) setEffect(next);
-                  }}
-                />
-              </div>
+    <>
+      <ValidatedForm
+        validator={customerContractAmendmentValidator}
+        method="post"
+        action={action}
+        fetcher={fetcher}
+        defaultValues={{
+          customerContractId: id,
+          amendmentDate: today,
+          effect: "Change Date"
+        }}
+        onSubmit={onClose}
+      >
+        <ModalHeader>
+          <ModalTitle>
+            <Trans>Amend {contract.customerContractId}</Trans>
+          </ModalTitle>
+          <ModalDescription>
+            <Trans>
+              Change, add or end lines from a date. Periods already invoiced
+              past it are adjusted on the next invoice.
+            </Trans>
+          </ModalDescription>
+        </ModalHeader>
+        <ModalBody>
+          <Hidden name="intent" value="save" />
+          <Hidden name="customerContractId" value={id} />
+          <Hidden name="changes" value={changesJson} />
+          <VStack spacing={4}>
+            <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2">
+              <DatePicker
+                name="amendmentDate"
+                label={t`Change Date`}
+                onChange={(date) => setAmendmentDate(date ?? "")}
+              />
+              <Select
+                name="effect"
+                label={t`Takes Effect`}
+                options={contractAmendmentEffects.map((value) => ({
+                  value,
+                  label: effectLabels[value]
+                }))}
+                onChange={(option) => {
+                  const next = contractAmendmentEffects.find(
+                    (value) => value === option?.value
+                  );
+                  if (next) setEffect(next);
+                }}
+              />
+            </div>
 
-              {rows.length === 0 ? (
-                <div className="flex w-full items-center justify-center rounded-lg border border-dashed border-border px-6 py-10 text-sm text-muted-foreground">
-                  {isProject ? (
-                    <Trans>No open lines. Add a line to amend.</Trans>
-                  ) : (
-                    <Trans>No open lines. Add a service to amend.</Trans>
-                  )}
-                </div>
-              ) : (
-                // Enter commits a cell; it must not submit the amendment.
-                // biome-ignore lint/a11y/noStaticElementInteractions: keydown-only wrapper that stops Enter in a grid cell from submitting the form; the grid's own cells are the controls
-                <div
-                  className="w-full overflow-hidden rounded-lg border border-border"
-                  style={{
-                    height: setupGridHeight(
-                      rows.length,
-                      rows.some(
-                        (row) => row.readableId && row.readableId !== row.name
-                      )
-                        ? 53
-                        : 49
+            {rows.length === 0 ? (
+              <div className="flex w-full items-center justify-center rounded-lg border border-dashed border-border px-6 py-10 text-sm text-muted-foreground">
+                {isProject ? (
+                  <Trans>No open lines. Add a line to amend.</Trans>
+                ) : (
+                  <Trans>No open lines. Add a service to amend.</Trans>
+                )}
+              </div>
+            ) : (
+              // Enter commits a cell; it must not submit the amendment.
+              // biome-ignore lint/a11y/noStaticElementInteractions: keydown-only wrapper that stops Enter in a grid cell from submitting the form; the grid's own cells are the controls
+              <div
+                className="w-full overflow-hidden rounded-lg border border-border"
+                style={{
+                  height: setupGridHeight(
+                    rows.length,
+                    rows.some(
+                      (row) => row.readableId && row.readableId !== row.name
                     )
-                  }}
-                  onKeyDown={(event) => {
-                    if (
-                      event.key === "Enter" &&
-                      !event.metaKey &&
-                      !event.ctrlKey &&
-                      event.target instanceof HTMLInputElement
-                    ) {
-                      event.preventDefault();
-                    }
-                  }}
-                >
-                  <Grid<AmendRow>
-                    compact
-                    columns={gridColumns}
-                    data={rows}
-                    count={rows.length}
-                    editableComponents={editableComponents}
-                    withInlineEditing
-                    forceEditMode
-                    withPagination={false}
-                    withSearch={false}
-                    withSimpleSorting={false}
-                    withSidebarTrigger={false}
-                    withColumnOrdering={false}
-                    withCsvExport={false}
-                    sort={null}
-                  />
-                </div>
-              )}
-              <div className="w-full">
-                <Button
-                  variant="secondary"
-                  leftIcon={<LuPlus />}
-                  onClick={addLines.onOpen}
-                >
-                  {isProject ? (
-                    <Trans>Add Lines</Trans>
-                  ) : (
-                    <Trans>Add Services</Trans>
-                  )}
-                </Button>
-              </div>
-
-              {previewKey && (
-                <VStack
-                  spacing={3}
-                  className={cn(
-                    "w-full border-t border-border pt-4",
-                    isPreviewing && "opacity-60"
-                  )}
-                >
-                  {isRefused ? (
-                    <Alert variant="destructive">
-                      <LuCircleAlert className="h-4 w-4" />
-                      <AlertTitle>
-                        <Trans>This amendment cannot be made</Trans>
-                      </AlertTitle>
-                      <AlertDescription>{previewError}</AlertDescription>
-                    </Alert>
-                  ) : preview ? (
-                    <AmendmentPreview
-                      preview={preview}
-                      currencyCode={currencyCode}
-                      nameOf={nameOf}
-                      period={period}
-                    />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      <Trans>Previewing the amendment…</Trans>
-                    </p>
-                  )}
-                </VStack>
-              )}
-
-              <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2 border-t border-border pt-4">
-                <SelectControlled
-                  name="contractType"
-                  label={t`Contract Type`}
-                  helperText={t`Suggested from the change in recurring value`}
-                  value={contractType}
-                  options={customerContractTypes.map((value) => ({
-                    value,
-                    label: labels.contractType[value]
-                  }))}
-                  onChange={(option) => {
-                    const next = customerContractTypes.find(
-                      (value) => value === option?.value
-                    );
-                    if (next) setChosenType(next);
-                  }}
+                      ? 53
+                      : 49
+                  )
+                }}
+                onKeyDown={(event) => {
+                  if (
+                    event.key === "Enter" &&
+                    !event.metaKey &&
+                    !event.ctrlKey &&
+                    event.target instanceof HTMLInputElement
+                  ) {
+                    event.preventDefault();
+                  }
+                }}
+              >
+                <Grid<AmendRow>
+                  compact
+                  columns={gridColumns}
+                  data={rows}
+                  count={rows.length}
+                  editableComponents={editableComponents}
+                  withInlineEditing
+                  forceEditMode
+                  withPagination={false}
+                  withSearch={false}
+                  withSimpleSorting={false}
+                  withSidebarTrigger={false}
+                  withColumnOrdering={false}
+                  withCsvExport={false}
+                  sort={null}
                 />
-                <TextArea name="reason" label={t`Reason`} />
-              </div>
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            {needsUpgrade && (
-              <div className="mr-auto">
-                <Trans>Cost Plus and Percent Complete need an upgrade.</Trans>
               </div>
             )}
-            <Submit
-              isDisabled={
-                !hasChanges ||
-                !isValid ||
-                isRefused ||
-                needsUpgrade ||
-                !permissions.can("update", "sales")
-              }
-            >
-              <Trans>Amend</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-      {addLines.isOpen && (
-        <AddServicesModal
-          withParts={isProject}
-          onAdd={addRows}
-          onClose={addLines.onClose}
-        />
-      )}
+            <div className="w-full">
+              <Button
+                variant="secondary"
+                leftIcon={<LuPlus />}
+                onClick={addLines.onOpen}
+              >
+                {isProject ? (
+                  <Trans>Add Lines</Trans>
+                ) : (
+                  <Trans>Add Services</Trans>
+                )}
+              </Button>
+            </div>
+
+            {previewKey && (
+              <VStack
+                spacing={3}
+                className={cn(
+                  "w-full border-t border-border pt-4",
+                  isPreviewing && "opacity-60"
+                )}
+              >
+                {isRefused ? (
+                  <Alert variant="destructive">
+                    <LuCircleAlert className="h-4 w-4" />
+                    <AlertTitle>
+                      <Trans>This amendment cannot be made</Trans>
+                    </AlertTitle>
+                    <AlertDescription>{previewError}</AlertDescription>
+                  </Alert>
+                ) : preview ? (
+                  <AmendmentPreview
+                    preview={preview}
+                    currencyCode={currencyCode}
+                    nameOf={nameOf}
+                    period={period}
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    <Trans>Previewing the amendment…</Trans>
+                  </p>
+                )}
+              </VStack>
+            )}
+
+            <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2 border-t border-border pt-4">
+              <SelectControlled
+                name="contractType"
+                label={t`Contract Type`}
+                helperText={t`Suggested from the change in recurring value`}
+                value={contractType}
+                options={customerContractTypes.map((value) => ({
+                  value,
+                  label: labels.contractType[value]
+                }))}
+                onChange={(option) => {
+                  const next = customerContractTypes.find(
+                    (value) => value === option?.value
+                  );
+                  if (next) setChosenType(next);
+                }}
+              />
+              <TextArea name="reason" label={t`Reason`} />
+            </div>
+          </VStack>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+          {needsUpgrade && (
+            <div className="mr-auto">
+              <Trans>Cost Plus and Percent Complete need an upgrade.</Trans>
+            </div>
+          )}
+          <Submit
+            isDisabled={
+              !hasChanges ||
+              !isValid ||
+              isRefused ||
+              needsUpgrade ||
+              !permissions.can("update", "sales")
+            }
+          >
+            <Trans>Amend</Trans>
+          </Submit>
+        </ModalFooter>
+      </ValidatedForm>
+      <AddServicesModal
+        open={addLines.isOpen}
+        withParts={isProject}
+        onAdd={addRows}
+        onClose={addLines.onClose}
+      />
       {/* Outside the amendment's form: a form inside another form's React
           tree would bubble its submit to the outer one. */}
       {editingTerms && (
         <BillingTermsModal
-          key={editingTerms.id}
+          key={editingTermsKey}
+          open={isEditingTerms}
           name={editingTerms.description || editingTerms.name}
           terms={editingTerms.billing}
           currencyCode={currencyCode}
@@ -1008,12 +1026,12 @@ const ContractAmendModal = ({
           isGated={projectRevenueGated}
           onSave={(billing) => {
             updateRow(editingTerms.id, { billing });
-            setEditingTerms(null);
+            closeTerms();
           }}
-          onClose={() => setEditingTerms(null)}
+          onClose={closeTerms}
         />
       )}
-    </Modal>
+    </>
   );
 };
 
@@ -1021,6 +1039,7 @@ const ContractAmendModal = ({
  *  or Cost Plus from a project's billing element. Saved into the amendment's
  *  local state; nothing posts until Amend. */
 const BillingTermsModal = ({
+  open = true,
   name,
   terms,
   currencyCode,
@@ -1029,6 +1048,7 @@ const BillingTermsModal = ({
   onSave,
   onClose
 }: {
+  open?: boolean;
   name: string;
   terms: BillingTerms;
   currencyCode: string;
@@ -1058,7 +1078,7 @@ const BillingTermsModal = ({
 
   return (
     <Modal
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -1181,19 +1201,39 @@ type AddableItem = Pick<
   "id" | "name" | "readableIdWithRevision" | "type"
 >;
 
+type AddServicesModalProps = {
+  open?: boolean;
+  withParts: boolean;
+  onAdd: (itemIds: string[], items: AddableItem[]) => void;
+  onClose: () => void;
+};
+
 /** Pick several services at once, as the setup wizard's Add Services does;
  *  each becomes a new recurring line in the grid, priced there. With
  *  `withParts` (a project contract) it offers parts too, each a One-time
  *  line. */
 const AddServicesModal = ({
+  open = true,
+  onClose,
+  ...props
+}: AddServicesModalProps) => (
+  <Modal
+    open={open}
+    onOpenChange={(open) => {
+      if (!open) onClose();
+    }}
+  >
+    <ModalContent>
+      <AddServicesBody onClose={onClose} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+const AddServicesBody = ({
   withParts,
   onAdd,
   onClose
-}: {
-  withParts: boolean;
-  onAdd: (itemIds: string[], items: AddableItem[]) => void;
-  onClose: () => void;
-}) => {
+}: Omit<AddServicesModalProps, "open">) => {
   const { t } = useLingui();
   const [items] = useItems();
   const [itemIds, setItemIds] = useState<string[]>([]);
@@ -1218,55 +1258,48 @@ const AddServicesModal = ({
   );
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            {withParts ? <Trans>Add Lines</Trans> : <Trans>Add Services</Trans>}
-          </ModalTitle>
-          <ModalDescription>
-            {withParts ? (
-              <Trans>
-                Each is added as a one-time line from the change date, to be
-                priced in the grid.
-              </Trans>
-            ) : (
-              <Trans>
-                Each is added as a recurring line from the change date, to be
-                priced in the grid.
-              </Trans>
-            )}
-          </ModalDescription>
-        </ModalHeader>
-        <ModalBody>
-          <MultiSelect
-            aria-label={withParts ? t`Items` : t`Services`}
-            value={itemIds}
-            options={options}
-            onChange={setItemIds}
-          />
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <Button
-            isDisabled={itemIds.length === 0}
-            onClick={() => {
-              onAdd(itemIds, active);
-              onClose();
-            }}
-          >
-            <Trans>Add</Trans>
-          </Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          {withParts ? <Trans>Add Lines</Trans> : <Trans>Add Services</Trans>}
+        </ModalTitle>
+        <ModalDescription>
+          {withParts ? (
+            <Trans>
+              Each is added as a one-time line from the change date, to be
+              priced in the grid.
+            </Trans>
+          ) : (
+            <Trans>
+              Each is added as a recurring line from the change date, to be
+              priced in the grid.
+            </Trans>
+          )}
+        </ModalDescription>
+      </ModalHeader>
+      <ModalBody>
+        <MultiSelect
+          aria-label={withParts ? t`Items` : t`Services`}
+          value={itemIds}
+          options={options}
+          onChange={setItemIds}
+        />
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Button
+          isDisabled={itemIds.length === 0}
+          onClick={() => {
+            onAdd(itemIds, active);
+            onClose();
+          }}
+        >
+          <Trans>Add</Trans>
+        </Button>
+      </ModalFooter>
+    </>
   );
 };
 

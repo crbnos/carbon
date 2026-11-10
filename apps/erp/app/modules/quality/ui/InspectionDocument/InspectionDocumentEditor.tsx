@@ -37,6 +37,7 @@ import {
   toastError,
   useDebounce,
   useDisclosure,
+  usePaneResize,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
@@ -84,6 +85,7 @@ import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
 import { VersionMenu } from "~/components/VersionMenu";
 import {
+  useDrawerItem,
   useImageUpload,
   useModelUpload,
   usePermissions,
@@ -792,9 +794,8 @@ export default function InspectionDocumentEditor({
     true
   );
   const onUploadImage = useImageUpload("inspection-documents");
-  const [samplingTarget, setSamplingTarget] = useState<
-    "document" | string | null
-  >(null);
+  const samplingModal = useDrawerItem<"document" | string>();
+  const { item: samplingTarget, open: openSamplingModal } = samplingModal;
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [replacePdfConfirmOpen, setReplacePdfConfirmOpen] = useState(false);
@@ -840,7 +841,6 @@ export default function InspectionDocumentEditor({
   /** Height of PDF block when table is expanded (px); drag the splitter to adjust. */
   const [pdfPaneHeightPx, setPdfPaneHeightPx] = useState(360);
   const [editorStackHeightPx, setEditorStackHeightPx] = useState(0);
-  const [isResizingPdfFeatures, setIsResizingPdfFeatures] = useState(false);
   const [pdfExporting, setPdfExporting] = useState(false);
   const [pdfPageRendered, setPdfPageRendered] = useState(false);
   const prevPdfViewPageRef = useRef(pdfViewPage);
@@ -870,9 +870,6 @@ export default function InspectionDocumentEditor({
       "x" | "y" | "width" | "height" | "pageNumber"
     >;
   } | null>(null);
-  const splitDragRef = useRef<{ startY: number; startPdfPx: number } | null>(
-    null
-  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfReplaceToastRef = useRef(false);
   /** A replaced drawing's page metrics still need saving once it renders. */
@@ -986,44 +983,13 @@ export default function InspectionDocumentEditor({
     return () => ro.disconnect();
   }, [featuresTableExpanded]);
 
-  useEffect(() => {
-    if (!isResizingPdfFeatures) return;
-    const onMove = (e: MouseEvent) => {
-      const start = splitDragRef.current;
-      if (!start) return;
-      const dy = e.clientY - start.startY;
-      setPdfPaneHeightPx(
-        clampPdfPaneHeight(
-          start.startPdfPx + dy,
-          editorStackHeightPx,
-          featuresTableExpanded
-        )
-      );
-    };
-    const onUp = () => {
-      setIsResizingPdfFeatures(false);
-      splitDragRef.current = null;
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, [isResizingPdfFeatures, editorStackHeightPx, featuresTableExpanded]);
-
-  const onSplitResizeMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (!featuresTableExpanded) return;
-      e.preventDefault();
-      splitDragRef.current = {
-        startY: e.clientY,
-        startPdfPx: pdfPaneHeightPx
-      };
-      setIsResizingPdfFeatures(true);
-    },
-    [featuresTableExpanded, pdfPaneHeightPx]
-  );
+  const splitResize = usePaneResize({
+    height: pdfPaneHeightPx,
+    clamp: (height) =>
+      clampPdfPaneHeight(height, editorStackHeightPx, featuresTableExpanded),
+    enabled: featuresTableExpanded && editorStackHeightPx > 0,
+    onCommit: setPdfPaneHeightPx
+  });
 
   // A plan with no drawing or model has no viewer: the characteristics fill
   // the page and the upload sits in a sidebar.
@@ -2950,7 +2916,7 @@ export default function InspectionDocumentEditor({
               className="text-left text-sm underline-offset-2 hover:underline"
               onClick={(e) => {
                 e.stopPropagation();
-                setSamplingTarget(row.original.featureId);
+                openSamplingModal(row.original.featureId);
               }}
             >
               {summary ?? (
@@ -3042,6 +3008,7 @@ export default function InspectionDocumentEditor({
       isOverlayReady,
       model,
       modelFeatureId,
+      openSamplingModal,
       uomCodeToName,
       gaugeTypeIdToName,
       samplingRuleSummary,
@@ -3333,39 +3300,38 @@ export default function InspectionDocumentEditor({
         </HStack>
       </div>
 
-      {isLeaving && saveFailed && (
-        <Modal open onOpenChange={(open) => !open && blocker.reset?.()}>
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>{t`Unsaved changes`}</ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <p className="text-sm text-muted-foreground">
-                {t`Your latest changes could not be saved. Are you sure you want to leave this page?`}
-              </p>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={() => blocker.reset?.()}>
-                {t`Stay on this page`}
-              </Button>
-              <Button onClick={() => blocker.proceed?.()}>
-                {t`Leave this page`}
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={isLeaving && saveFailed}
+        onOpenChange={(open) => !open && blocker.reset?.()}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>{t`Unsaved changes`}</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <p className="text-sm text-muted-foreground">
+              {t`Your latest changes could not be saved. Are you sure you want to leave this page?`}
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={() => blocker.reset?.()}>
+              {t`Stay on this page`}
+            </Button>
+            <Button onClick={() => blocker.proceed?.()}>
+              {t`Leave this page`}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
 
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteInspectionDocument(diagramId)}
-          isOpen
-          name={title || t`this inspection plan`}
-          text={t`Are you sure you want to delete this inspection plan? This cannot be undone.`}
-          onCancel={() => deleteDisclosure.onClose()}
-          onSubmit={() => deleteDisclosure.onClose()}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deleteInspectionDocument(diagramId)}
+        isOpen={deleteDisclosure.isOpen}
+        name={title || t`this inspection plan`}
+        text={t`Are you sure you want to delete this inspection plan? This cannot be undone.`}
+        onCancel={() => deleteDisclosure.onClose()}
+        onSubmit={() => deleteDisclosure.onClose()}
+      />
 
       {/* No document: two flush panels, the table and the drop zone. */}
       <div
@@ -3382,6 +3348,7 @@ export default function InspectionDocumentEditor({
           {/* PDF viewer — outer measures width, inner fills container */}
           {hasDocument && (
             <div
+              ref={splitResize.paneRef}
               className={cn(
                 "flex min-h-0 min-w-full flex-col overflow-hidden rounded-lg border bg-muted",
                 featuresTableExpanded ? "shrink-0" : "min-h-[220px] flex-1",
@@ -4122,10 +4089,10 @@ export default function InspectionDocumentEditor({
               aria-orientation="horizontal"
               aria-label={t`Drag to resize diagram and characteristics`}
               aria-valuenow={Math.round(pdfPaneHeightPx)}
-              className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 ${
-                isResizingPdfFeatures ? "bg-muted" : ""
+              className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 pointer-coarse:h-6 pointer-coarse:hit-area ${
+                splitResize.isResizing ? "bg-muted" : ""
               }`}
-              onMouseDown={onSplitResizeMouseDown}
+              {...splitResize.handleProps}
             >
               <span className="h-1 w-14 shrink-0 rounded-full bg-muted-foreground/40 group-hover:bg-muted-foreground/65" />
             </div>
@@ -4180,7 +4147,7 @@ export default function InspectionDocumentEditor({
                         variant="secondary"
                         leftIcon={<LuSlidersHorizontal className="h-4 w-4" />}
                         isDisabled={!canUpdate}
-                        onClick={() => setSamplingTarget("document")}
+                        onClick={() => openSamplingModal("document")}
                       >
                         {samplingRuleSummary(docSampling) ?? t`Inspect All`}
                       </Button>
@@ -4287,6 +4254,7 @@ export default function InspectionDocumentEditor({
 
       {samplingTarget !== null && (
         <SamplingRuleModal
+          open={samplingModal.isOpen}
           context={samplingTarget === "document" ? "document" : "feature"}
           featureLabel={
             samplingTarget === "document"
@@ -4320,7 +4288,7 @@ export default function InspectionDocumentEditor({
               updateFeatureSampling(samplingTarget, rule);
             }
           }}
-          onClose={() => setSamplingTarget(null)}
+          onClose={samplingModal.close}
         />
       )}
     </div>

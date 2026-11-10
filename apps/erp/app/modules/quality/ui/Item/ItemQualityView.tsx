@@ -161,12 +161,11 @@ const ItemQualityView = ({
         </CardContent>
       </Card>
 
-      {newDocumentDisclosure.isOpen && (
-        <InspectionDocumentForm
-          initialValues={{ name: "", partId: itemId }}
-          onClose={newDocumentDisclosure.onClose}
-        />
-      )}
+      <InspectionDocumentForm
+        open={newDocumentDisclosure.isOpen}
+        initialValues={{ name: "", partId: itemId }}
+        onClose={newDocumentDisclosure.onClose}
+      />
     </VStack>
   );
 };

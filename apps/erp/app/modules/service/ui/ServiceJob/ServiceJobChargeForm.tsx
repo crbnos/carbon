@@ -53,6 +53,7 @@ type ServiceJobChargeFormProps = {
   /** The account the job's cost goes to, when it is set. */
   coverageAccount: { id: string; name: string; number: string | null } | null;
   isLocked: boolean;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -72,6 +73,7 @@ const ServiceJobChargeForm = ({
   costLines,
   coverageAccount,
   isLocked,
+  open = true,
   onClose
 }: ServiceJobChargeFormProps) => {
   const { t } = useLingui();
@@ -142,7 +144,7 @@ const ServiceJobChargeForm = ({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

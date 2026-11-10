@@ -30,7 +30,11 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure,
+  usePaneResize,
   useViewport,
   VStack
 } from "@carbon/react";
@@ -89,12 +93,15 @@ import type {
   MeasurementSaveResult
 } from "./InspectionMeasurementGrid";
 import InspectionMeasurementGrid from "./InspectionMeasurementGrid";
+import { InspectionStatus } from "./InspectionStatus";
 import {
   canCancelInspection,
   canDeleteInspection,
   type ManualInspectionAction,
   ManualInspectionConfirm
 } from "./ManualInspectionConfirm";
+import OpenNcrModal from "./OpenNcrModal";
+import PartialLotModal from "./PartialLotModal";
 import type { FailedFeatureSummary } from "./RejectLotModal";
 import RejectLotModal from "./RejectLotModal";
 import ScanInspectionSample from "./ScanInspectionSample";
@@ -210,14 +217,16 @@ const InspectionView = ({
   // A manual lot's serials are its samples from the start; receipt lots scan
   // theirs in.
   const scansSamples = isSerial && inspection.sourceDocument !== "Manual";
+  const isBatch = itemTrackingType === "Batch";
+  const isTrackedLot = isSerial || isBatch;
   // Accept/Reject dispositions here carry no physical production posting, so they
   // are for Receipt and Manual lots only. Job Operation lots are verdict-only in
   // the ERP — their complete/scrap/rework outcome is orchestrated by the MES
   // disposition route (which closes the lot one-shot). Exposing Accept/Reject on
   // a job-op lot would hard-terminate it with no posting and wedge the operation.
+  const isReceiptSource = inspection.sourceDocument === "Receipt";
   const hasErpDisposition =
-    inspection.sourceDocument === "Receipt" ||
-    inspection.sourceDocument === "Manual";
+    isReceiptSource || inspection.sourceDocument === "Manual";
   const liveFeatures = useMemo(
     () => features.filter((f) => f.inspectionFeature != null),
     [features]
@@ -264,6 +273,8 @@ const InspectionView = ({
 
   const scannerDisclosure = useDisclosure();
   const rejectConfirmDisclosure = useDisclosure();
+  const partialDisclosure = useDisclosure();
+  const openNcrDisclosure = useDisclosure();
   const acceptConfirmDisclosure = useDisclosure();
   const [manualAction, setManualAction] =
     useState<ManualInspectionAction | null>(null);
@@ -275,10 +286,6 @@ const InspectionView = ({
   const [gridExpanded, setGridExpanded] = useState(true);
   const [pdfPaneHeightPx, setPdfPaneHeightPx] = useState(360);
   const [stackHeightPx, setStackHeightPx] = useState(0);
-  const [isResizingSplit, setIsResizingSplit] = useState(false);
-  const splitDragRef = useRef<{ startY: number; startPdfPx: number } | null>(
-    null
-  );
   // Until the user drags the splitter, the PDF takes ~45% of the measured
   // stack (capped by the grid's half-stack minimum) instead of a fixed pixel
   // default — portrait drawings get a usable slice on tall viewports.
@@ -304,41 +311,15 @@ const InspectionView = ({
     return () => ro.disconnect();
   }, [gridExpanded, showDrawing]);
 
-  useEffect(() => {
-    if (!isResizingSplit) return;
-    const onMove = (e: MouseEvent) => {
-      const start = splitDragRef.current;
-      if (!start) return;
-      const dy = e.clientY - start.startY;
-      setPdfPaneHeightPx(
-        clampPdfPaneHeight(start.startPdfPx + dy, stackHeightPx, gridExpanded)
-      );
-    };
-    const onUp = () => {
-      setIsResizingSplit(false);
-      splitDragRef.current = null;
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, [isResizingSplit, stackHeightPx, gridExpanded]);
-
-  const onSplitResizeMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (!gridExpanded) return;
-      e.preventDefault();
+  const splitResize = usePaneResize({
+    height: pdfPaneHeightPx,
+    clamp: (height) => clampPdfPaneHeight(height, stackHeightPx, gridExpanded),
+    enabled: gridExpanded && stackHeightPx > 0,
+    onStart: () => {
       hasUserResizedRef.current = true;
-      splitDragRef.current = {
-        startY: e.clientY,
-        startPdfPx: pdfPaneHeightPx
-      };
-      setIsResizingSplit(true);
     },
-    [gridExpanded, pdfPaneHeightPx]
-  );
+    onCommit: setPdfPaneHeightPx
+  });
 
   // Per-cell saves are quiet (no revalidation), so measurement + derived
   // sample statuses are mirrored locally from the save responses and merged
@@ -460,7 +441,9 @@ const InspectionView = ({
     receiptVoided ||
     inspection.status === "Cancelled" ||
     (inspection.dispositionedAt != null &&
-      (inspection.status === "Passed" || inspection.status === "Failed"));
+      (inspection.status === "Passed" ||
+        inspection.status === "Failed" ||
+        inspection.status === "Partial"));
 
   // Serial lots build their sample columns by scanning tracked entities. The
   // header "Add Sample" button stays primary until the plan's sample size is
@@ -526,6 +509,37 @@ const InspectionView = ({
     failedStatistically = fails > inspection.acceptanceNumber;
   }
   const canReject = hasErpDisposition && !lotClosed;
+  const sampledComplete = hasFeatures
+    ? liveFeatures.every(
+        (feature) =>
+          (featureCounts.get(feature.inspectionFeatureId)?.recorded ?? 0) >=
+          feature.sampleSize
+      )
+    : inspected >= inspection.sampleSize;
+  const hasFailedUnit = samples.some(
+    (sample) =>
+      !!sample.trackedEntityId &&
+      (sampleStatuses.get(sample.id) ?? sample.status) === "Failed"
+  );
+  // Partial is a receipt decision: a manual lot is accepted or rejected.
+  const canPartial =
+    isReceiptSource &&
+    canReject &&
+    !isBatch &&
+    itemTrackingType !== "Non-Inventory" &&
+    (!isSerial || (hasFailedUnit && passes > 0 && sampledComplete));
+  const ncrMissing =
+    isReceiptSource &&
+    !receiptVoided &&
+    inspection.status === "Partial" &&
+    issues.length === 0 &&
+    ((itemTrackingType === "Inventory" &&
+      inspection.acceptedQuantity !== null &&
+      Number(inspection.acceptedQuantity) < Number(inspection.lotSize)) ||
+      ((itemTrackingType === "Serial" || itemTrackingType === "Batch") &&
+        samples.some(
+          (sample) => sample.status === "Failed" && !!sample.trackedEntityId
+        )));
 
   const failedFeatureSummary = useMemo<FailedFeatureSummary[]>(() => {
     if (!hasFeatures) return [];
@@ -588,13 +602,6 @@ const InspectionView = ({
 
   const hasMeasurements = effectiveMeasurements.size > 0;
 
-  const statusBadgeVariant =
-    inspection.status === "Passed"
-      ? ("green" as const)
-      : inspection.status === "Failed"
-        ? ("red" as const)
-        : ("secondary" as const);
-
   const planSummary =
     inspection.samplingPlanType === "AQL"
       ? `AQL ${inspection.aql ?? ""} · Lvl ${inspection.inspectionLevel ?? ""} · ${inspection.severity ?? ""}`
@@ -610,9 +617,20 @@ const InspectionView = ({
     .filter(Boolean)
     .join("  ·  ");
 
+  const acceptedQuantity = Number(inspection.acceptedQuantity);
+  const lotSize = Number(inspection.lotSize);
+  const partialDecision =
+    isReceiptSource &&
+    inspection.status === "Partial" &&
+    inspection.acceptedQuantity !== null
+      ? itemTrackingType === "Inventory" && acceptedQuantity < lotSize
+        ? t`${acceptedQuantity} of ${lotSize} accepted. The rest stays held until its NCR is closed.`
+        : t`${acceptedQuantity} of ${lotSize} accepted.`
+      : null;
+
   const statusBadge = (
     <HStack spacing={1}>
-      <Badge variant={statusBadgeVariant}>{inspection.status}</Badge>
+      <InspectionStatus status={inspection.status} />
       {receiptVoided && (
         <Badge variant="red">
           <Trans>Receipt voided</Trans>
@@ -653,7 +671,12 @@ const InspectionView = ({
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      <RecordHero subtitle={metaLine} status={statusBadge} />
+      <RecordHero
+        subtitle={
+          partialDecision ? `${metaLine}  ·  ${partialDecision}` : metaLine
+        }
+        status={statusBadge}
+      />
       <RecordPhoneChrome />
       {/* Header bar — mirrors InspectionDocumentEditor's header */}
       <div className="flex min-h-[var(--header-height)] flex-shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 overflow-x-auto border-b border-border bg-card px-4 py-2 scrollbar-hide max-md:hidden">
@@ -691,6 +714,11 @@ const InspectionView = ({
             {statusBadge}
           </HStack>
           <p className="truncate text-xs text-muted-foreground">{metaLine}</p>
+          {partialDecision && (
+            <p className="truncate text-xs text-muted-foreground">
+              {partialDecision}
+            </p>
+          )}
         </div>
         <HStack spacing={2} className="flex-shrink-0 flex-wrap justify-end">
           {isPhone &&
@@ -765,6 +793,17 @@ const InspectionView = ({
               </Button>
             </RecordAction>
           )}
+          {ncrMissing && (
+            <RecordAction slot={isTrackedLot ? "secondary" : "primary"}>
+              <Button
+                variant={isTrackedLot ? "secondary" : "primary"}
+                onClick={openNcrDisclosure.onOpen}
+                isDisabled={!canUpdate}
+              >
+                <Trans>Open NCR</Trans>
+              </Button>
+            </RecordAction>
+          )}
           {hasErpDisposition && (
             <>
               <RecordAction slot="secondary">
@@ -776,6 +815,34 @@ const InspectionView = ({
                   <Trans>Reject Lot</Trans>
                 </Button>
               </RecordAction>
+              {isReceiptSource && (
+                <RecordAction slot="secondary">
+                  {isBatch && !lotClosed ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span tabIndex={0} className="inline-flex">
+                          <Button variant="secondary" isDisabled>
+                            <Trans>Partial</Trans>
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <Trans>
+                          A batch lot is accepted or rejected as a whole.
+                        </Trans>
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      onClick={partialDisclosure.onOpen}
+                      isDisabled={!canUpdate || !canPartial || gridBusy}
+                    >
+                      <Trans>Partial</Trans>
+                    </Button>
+                  )}
+                </RecordAction>
+              )}
               <RecordAction slot="primary">
                 <Button
                   onClick={acceptConfirmDisclosure.onOpen}
@@ -815,6 +882,7 @@ const InspectionView = ({
           >
             {/* PDF viewer — pinned height while the grid is expanded */}
             <div
+              ref={splitResize.paneRef}
               className={`flex min-h-0 min-w-full flex-col overflow-hidden rounded-lg border bg-muted ${
                 gridExpanded
                   ? "shrink-0 max-md:!h-[40dvh]"
@@ -869,10 +937,10 @@ const InspectionView = ({
                 aria-orientation="horizontal"
                 aria-label={t`Drag to resize drawing and characteristics`}
                 aria-valuenow={Math.round(pdfPaneHeightPx)}
-                className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 max-md:hidden ${
-                  isResizingSplit ? "bg-muted" : ""
+                className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 pointer-coarse:h-6 pointer-coarse:hit-area max-md:hidden ${
+                  splitResize.isResizing ? "bg-muted" : ""
                 }`}
-                onMouseDown={onSplitResizeMouseDown}
+                {...splitResize.handleProps}
               >
                 <span className="h-1 w-14 shrink-0 rounded-full bg-muted-foreground/40 group-hover:bg-muted-foreground/65" />
               </div>
@@ -1014,82 +1082,126 @@ const InspectionView = ({
           onClose={() => setManualAction(null)}
         />
       )}
-      {scannerDisclosure.isOpen && (
-        <ScanInspectionSample
-          inspectionId={inspection.id}
-          isSerial={isSerial}
-          remaining={remaining}
-          inspected={inspected}
-          sampleSize={inspection.sampleSize}
-          fails={fails}
-          acceptanceNumber={inspection.acceptanceNumber}
-          onClose={scannerDisclosure.onClose}
-        />
-      )}
+      <ScanInspectionSample
+        open={scannerDisclosure.isOpen}
+        inspectionId={inspection.id}
+        isSerial={isSerial}
+        remaining={remaining}
+        inspected={inspected}
+        sampleSize={inspection.sampleSize}
+        fails={fails}
+        acceptanceNumber={inspection.acceptanceNumber}
+        onClose={scannerDisclosure.onClose}
+      />
 
-      {acceptConfirmDisclosure.isOpen && (
-        <Confirm
-          action={path.to.inspectionAccept(inspection.id)}
-          title={t`Accept lot?`}
-          text={
-            isSerial
-              ? t`${lotEntities.length - inspected} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected.`
-              : t`The lot will be marked Passed. ${fails} sampled failure(s) are recorded for your records.`
-          }
-          confirmText={t`Accept Lot`}
-          onCancel={acceptConfirmDisclosure.onClose}
-          onSubmit={acceptConfirmDisclosure.onClose}
-        />
-      )}
+      <Confirm
+        isOpen={acceptConfirmDisclosure.isOpen}
+        action={path.to.inspectionAccept(inspection.id)}
+        title={t`Accept lot?`}
+        text={
+          isSerial
+            ? t`${lotEntities.length - inspected} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected.`
+            : t`The lot will be marked Passed. ${fails} sampled failure(s) are recorded for your records.`
+        }
+        confirmText={t`Accept Lot`}
+        onCancel={acceptConfirmDisclosure.onClose}
+        onSubmit={acceptConfirmDisclosure.onClose}
+      />
 
-      {rejectConfirmDisclosure.isOpen && (
-        <RejectLotModal
-          action={path.to.inspectionReject(inspection.id)}
-          issueTypes={issueTypes}
-          requiresReason={!failedStatistically}
-          summary={
-            failedStatistically
-              ? isSerial
-                ? t`Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All ${lotEntities.length} entities — ${passes} sampled pass(es), ${fails} failure(s), and ${Math.max(0, lotEntities.length - inspected)} un-inspected — will be marked Rejected.`
-                : t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s).`
-              : isSerial
-                ? t`No characteristic has failed, so say why the lot is rejected. All ${lotEntities.length} entities will be marked Rejected.`
-                : t`No characteristic has failed, so say why the lot is rejected. The entire lot of ${inspection.lotSize} will be rejected.`
-          }
-          failedFeatureSummary={failedFeatureSummary}
-          onCancel={rejectConfirmDisclosure.onClose}
-          onSubmit={rejectConfirmDisclosure.onClose}
-        />
-      )}
+      <RejectLotModal
+        open={rejectConfirmDisclosure.isOpen}
+        action={path.to.inspectionReject(inspection.id)}
+        issueTypes={issueTypes}
+        requiresReason={!failedStatistically}
+        summary={
+          failedStatistically
+            ? isSerial
+              ? t`Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All ${lotEntities.length} entities — ${passes} sampled pass(es), ${fails} failure(s), and ${Math.max(0, lotEntities.length - inspected)} un-inspected — will be marked Rejected.`
+              : t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s).`
+            : isSerial
+              ? t`No characteristic has failed, so say why the lot is rejected. All ${lotEntities.length} entities will be marked Rejected.`
+              : t`No characteristic has failed, so say why the lot is rejected. The entire lot of ${inspection.lotSize} will be rejected.`
+        }
+        failedFeatureSummary={failedFeatureSummary}
+        onCancel={rejectConfirmDisclosure.onClose}
+        onSubmit={rejectConfirmDisclosure.onClose}
+      />
 
-      {documentSwitchDisclosure.isOpen && (
-        <DocumentSwitchModal
-          inspectionId={inspection.id}
-          itemId={inspection.itemId}
-          currentDocumentId={inspection.inspectionDocumentId ?? null}
-          onClose={documentSwitchDisclosure.onClose}
-        />
-      )}
+      <PartialLotModal
+        open={partialDisclosure.isOpen}
+        action={path.to.inspectionPartial(inspection.id)}
+        issueTypes={issueTypes}
+        lotSize={inspection.lotSize}
+        isUntracked={itemTrackingType === "Inventory"}
+        onCancel={partialDisclosure.onClose}
+        onSubmit={partialDisclosure.onClose}
+      />
+
+      <OpenNcrModal
+        open={openNcrDisclosure.isOpen}
+        action={path.to.inspectionPartial(inspection.id)}
+        issueTypes={issueTypes}
+        isTrackedLot={isTrackedLot}
+        onCancel={openNcrDisclosure.onClose}
+        onSubmit={openNcrDisclosure.onClose}
+      />
+
+      <DocumentSwitchModal
+        open={documentSwitchDisclosure.isOpen}
+        inspectionId={inspection.id}
+        itemId={inspection.itemId}
+        currentDocumentId={inspection.inspectionDocumentId ?? null}
+        onClose={documentSwitchDisclosure.onClose}
+      />
     </div>
   );
+};
+
+type DocumentSwitchModalProps = {
+  inspectionId: string;
+  itemId: string;
+  currentDocumentId: string | null;
+  open: boolean;
+  onClose: () => void;
 };
 
 // Swap the assigned inspection document on an open, unmeasured lot. Options
 // are the item's documents (same source as the Form/InspectionDocument
 // combobox's api route).
 function DocumentSwitchModal({
+  open,
+  onClose,
+  ...props
+}: DocumentSwitchModalProps) {
+  // Not in the body: the modal closes on submit, and React Router drops the
+  // redirect this action answers with once its fetcher has unmounted.
+  const fetcher = useFetcher<{}>();
+
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <DocumentSwitchBody fetcher={fetcher} onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function DocumentSwitchBody({
   inspectionId,
   itemId,
   currentDocumentId,
+  fetcher,
   onClose
-}: {
-  inspectionId: string;
-  itemId: string;
-  currentDocumentId: string | null;
-  onClose: () => void;
+}: Omit<DocumentSwitchModalProps, "open"> & {
+  fetcher: ReturnType<typeof useFetcher<{}>>;
 }) {
   const { t } = useLingui();
-  const fetcher = useFetcher<{}>();
   const optionsFetcher = useLoaderQuery<{
     data:
       | {
@@ -1105,64 +1217,56 @@ function DocumentSwitchModal({
   const options = optionsFetcher.data?.data ?? [];
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Change Inspection Plan</Trans>
-          </ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <VStack spacing={2}>
-            <p className="text-sm text-muted-foreground">
-              <Trans>
-                The lot's per-characteristic sampling plan will be re-resolved
-                from the selected document.
-              </Trans>
-            </p>
-            <Select value={documentId} onValueChange={setDocumentId}>
-              <SelectTrigger aria-label={t`Inspection document`}>
-                <SelectValue placeholder={t`Select a document`} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">{t`None`}</SelectItem>
-                {options.map((option) => (
-                  <SelectItem key={option.id} value={option.id}>
-                    {(option.name ?? option.fileName ?? option.id) +
-                      ` v${option.version}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </VStack>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            <Trans>Cancel</Trans>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Change Inspection Plan</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={2}>
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              The lot's per-characteristic sampling plan will be re-resolved
+              from the selected document.
+            </Trans>
+          </p>
+          <Select value={documentId} onValueChange={setDocumentId}>
+            <SelectTrigger aria-label={t`Inspection document`}>
+              <SelectValue placeholder={t`Select a document`} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">{t`None`}</SelectItem>
+              {options.map((option) => (
+                <SelectItem key={option.id} value={option.id}>
+                  {(option.name ?? option.fileName ?? option.id) +
+                    ` v${option.version}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <fetcher.Form
+          method="post"
+          action={path.to.inspectionAssignedDocument(inspectionId)}
+          onSubmit={onClose}
+        >
+          <input
+            type="hidden"
+            name="inspectionDocumentId"
+            value={documentId === "none" ? "" : documentId}
+          />
+          <Button type="submit" isLoading={fetcher.state !== "idle"}>
+            <Trans>Save</Trans>
           </Button>
-          <fetcher.Form
-            method="post"
-            action={path.to.inspectionAssignedDocument(inspectionId)}
-            onSubmit={onClose}
-          >
-            <input
-              type="hidden"
-              name="inspectionDocumentId"
-              value={documentId === "none" ? "" : documentId}
-            />
-            <Button type="submit" isLoading={fetcher.state !== "idle"}>
-              <Trans>Save</Trans>
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+        </fetcher.Form>
+      </ModalFooter>
+    </>
   );
 }
 

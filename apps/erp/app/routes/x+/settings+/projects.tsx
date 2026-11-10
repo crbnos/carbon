@@ -414,61 +414,62 @@ export default function ProjectsSettingsRoute() {
         <ProjectLabelsGrid labels={labels} />
       </SettingsPage>
 
-      {isAskingForTexts && (
-        <Modal open onOpenChange={(open) => !open && setAskingForTexts(false)}>
-          <ModalOverlay />
-          <ModalContent>
-            <ValidatedForm
-              method="post"
-              validator={certificationTextsValidator}
-              defaultValues={{
-                certificationTextExempt:
-                  companySettings.certificationTextExempt ?? "",
-                certificationTextNonExempt:
-                  companySettings.certificationTextNonExempt ?? ""
-              }}
-              fetcher={textsFetcher}
-            >
-              <Hidden name="intent" value="governmentContracting" />
-              <Hidden name="enabled" value="true" />
-              <ModalHeader>
-                <ModalTitle>
-                  <Trans>Turn on government contracting</Trans>
-                </ModalTitle>
-                <ModalDescription>
-                  <Trans>
-                    Employees certify their week with this text when they submit
-                    a timesheet.
-                  </Trans>
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                <div className="flex flex-col gap-6">
-                  <TextArea
-                    name="certificationTextExempt"
-                    label={t`Certification text, exempt staff`}
-                  />
-                  <TextArea
-                    name="certificationTextNonExempt"
-                    label={t`Certification text, non-exempt staff`}
-                  />
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button
-                  variant="secondary"
-                  onClick={() => setAskingForTexts(false)}
-                >
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Submit isDisabled={textsFetcher.state !== "idle"}>
-                  <Trans>Turn On</Trans>
-                </Submit>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={isAskingForTexts}
+        onOpenChange={(open) => !open && setAskingForTexts(false)}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ValidatedForm
+            method="post"
+            validator={certificationTextsValidator}
+            defaultValues={{
+              certificationTextExempt:
+                companySettings.certificationTextExempt ?? "",
+              certificationTextNonExempt:
+                companySettings.certificationTextNonExempt ?? ""
+            }}
+            fetcher={textsFetcher}
+          >
+            <Hidden name="intent" value="governmentContracting" />
+            <Hidden name="enabled" value="true" />
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Turn on government contracting</Trans>
+              </ModalTitle>
+              <ModalDescription>
+                <Trans>
+                  Employees certify their week with this text when they submit a
+                  timesheet.
+                </Trans>
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <div className="flex flex-col gap-6">
+                <TextArea
+                  name="certificationTextExempt"
+                  label={t`Certification text, exempt staff`}
+                />
+                <TextArea
+                  name="certificationTextNonExempt"
+                  label={t`Certification text, non-exempt staff`}
+                />
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                variant="secondary"
+                onClick={() => setAskingForTexts(false)}
+              >
+                <Trans>Cancel</Trans>
+              </Button>
+              <Submit isDisabled={textsFetcher.state !== "idle"}>
+                <Trans>Turn On</Trans>
+              </Submit>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
     </ScrollArea>
   );
 }

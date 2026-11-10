@@ -17,7 +17,8 @@ type TrackedEntityStatus = Database["public"]["Enums"]["trackedEntityStatus"];
 
 /**
  * The tracked-entity statuses a shipment of this source may ship. A return to
- * a customer ships returned stock, On Hold until it leaves. A return to a
+ * a customer ships what came back on the return: returned stock, On Hold
+ * until it leaves, and a serviced unit, Available at the depot. A return to a
  * supplier ships good stock or the units an inspection or issue rejected —
  * sending rejects back is the point of the return. Everything else ships
  * Available stock only. `assignShipmentLineEntity`, `ShipmentLines` and
@@ -26,7 +27,7 @@ type TrackedEntityStatus = Database["public"]["Enums"]["trackedEntityStatus"];
 export function shippableEntityStatuses(
   sourceDocument: string | null | undefined
 ): TrackedEntityStatus[] {
-  if (sourceDocument === "Sales Return Order") return ["On Hold"];
+  if (sourceDocument === "Sales Return Order") return ["On Hold", "Available"];
   if (sourceDocument === "Purchase Return Order") {
     return ["Available", "Rejected"];
   }

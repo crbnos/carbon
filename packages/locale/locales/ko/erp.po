@@ -266,7 +266,7 @@ msgstr "{0, plural, one {품목 #개 이동} other {품목 #개 모두 이동}}"
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {회계 전환 전에 작성된 # 문서를 전기하거나 삭제하세요.} other {회계 전환 전에 작성된 # 문서를 전기하거나 삭제하세요.}}"
 
-#. placeholder {0}: pendingRemoval.count
+#. placeholder {0}: removal.count
 msgid "{0, plural, one {Removing this path will also disconnect # connection.} other {Removing this path will also disconnect # connections.}}"
 msgstr "{0, plural, one {이 경로를 제거하면 연결 #개도 함께 끊깁니다.} other {이 경로를 제거하면 연결 #개도 함께 끊깁니다.}}"
 
@@ -467,6 +467,10 @@ msgstr "{0}개 재고 있음, {1}개 조립품용; 나머지 {2}개는 {3}로 �
 msgid "{0} in stock; the remaining {1} will be picked as {2}"
 msgstr "{0}개 재고 있음; 나머지 {1}개는 {2}로 피킹할 예정"
 
+#. placeholder {0}: location.name
+msgid "{0} inspection storage unit"
+msgstr "{0} 검사 보관 단위"
+
 #. placeholder {0}: billedExternally.length
 msgid "{0} invoices were billed in your previous system and are not drafted again."
 msgstr "{0}개 송장이 이전 시스템에서 청구되었으며 다시 초안으로 작성되지 않습니다."
@@ -628,6 +632,10 @@ msgstr "{0} 입고 · {1} 크레딧 완료"
 msgid "{0} registered"
 msgstr "{0} 등록됨"
 
+#. placeholder {0}: location.name
+msgid "{0} rejected storage unit"
+msgstr "{0} 반려품 보관 단위"
+
 #. placeholder {0}: integration.name
 msgid "{0} reports the ledger is held by"
 msgstr "{0}은(는) 원장이 다음에 의해 보유되고 있다고 보고합니다"
@@ -774,6 +782,12 @@ msgstr "{0}h 필요"
 #. placeholder {0}: formatHours(staffedWeek)
 msgid "{0}h staffed"
 msgstr "{0}시간 인원배치"
+
+msgid "{acceptedQuantity} of {lotSize} accepted."
+msgstr "{lotSize}개 중 {acceptedQuantity}개 수락."
+
+msgid "{acceptedQuantity} of {lotSize} accepted. The rest stays held until its NCR is closed."
+msgstr "{lotSize}개 중 {acceptedQuantity}개 수락. 나머지는 NCR이 종료될 때까지 보류됩니다."
 
 msgid "{account} has posted history, so it cannot be removed."
 msgstr "{account}은(는) 전기된 이력이 있으므로 제거할 수 없습니다."
@@ -1101,6 +1115,12 @@ msgstr "{name}은 {end}에 끝남 (이전: {was})"
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name}은 {end}에 끝남 (이전: 제한 없음)"
 
+msgid "{name} is inactive. Choose an active storage unit."
+msgstr "{name}은(는) 비활성 상태입니다. 활성 보관 단위를 선택하세요."
+
+msgid "{name} is nettable now. Choose a non-nettable storage unit."
+msgstr "{name}은(는) 이제 MRP에 포함됩니다. MRP 제외 보관 단위를 선택하세요."
+
 msgid "{name} needs an account number."
 msgstr "{name}은 계정 번호가 필요합니다."
 
@@ -1207,6 +1227,9 @@ msgstr "{received} / {ordered}"
 
 msgid "{ref} not found"
 msgstr "{ref} 찾을 수 없음"
+
+msgid "{rejectedQuantity} will stay held as rejected."
+msgstr "{rejectedQuantity}개는 반려로 보류됩니다."
 
 msgid "{remaining, plural, one {{jobId} is complete. # unit is not delivered} other {{jobId} is complete. # units are not delivered}}"
 msgstr "{remaining, plural, one {{jobId}는 완료 처리되었습니다. # 개가 배송되지 않음} other {{jobId}는 완료 처리되었습니다. # 개가 배송되지 않음}}"
@@ -1597,6 +1620,9 @@ msgstr "작업자를 생성할 때 4자리 PIN이 생성됩니다."
 
 msgid "A 4\" x 2\" or 3\" x 2\" label prints one card per label, for a thermal printer such as a Zebra."
 msgstr "4\" x 2\" 또는 3\" x 2\" 라벨은 Zebra 같은 감열 프린터용으로 라벨당 카드 한 장을 인쇄합니다."
+
+msgid "A batch lot is accepted or rejected as a whole."
+msgstr "배치 로트는 전체로만 수락하거나 반려할 수 있습니다."
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "배치는 최소한 하나의 공정이 필요합니다. 전체 배치를 분할하려면 대신 Dissolve를 사용하세요."
@@ -2498,6 +2524,9 @@ msgstr "수락됨"
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
 msgstr "수락됨 {0}"
+
+msgid "Accepted quantity"
+msgstr "수락 수량"
 
 msgid "Account"
 msgstr "계정"
@@ -4441,8 +4470,8 @@ msgid "Are you sure you want to delete {0}?"
 msgstr "{0}을(를) 삭제하시겠습니까?"
 
 #. placeholder {0}: asset.fixedAssetId
-#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
+#. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "{0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
@@ -4455,12 +4484,12 @@ msgstr "{orderLabel}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 �
 msgid "Are you sure you want to delete {readableId}? This cannot be undone."
 msgstr "{readableId}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
 
-#. placeholder {0}: deleting.number
+#. placeholder {0}: deleting.item.number
 msgid "Are you sure you want to delete payment {0}?"
 msgstr "지불 {0}을(를) 삭제하시겠습니까?"
 
 #. placeholder {0}: activeView.name
-#. placeholder {0}: viewPendingDelete.name
+#. placeholder {0}: viewPendingDelete.item.name
 msgid "Are you sure you want to delete the \"{0}\" view? This cannot be undone."
 msgstr "정말로 \"{0}\" 보기를 삭제하시겠습니까? 이 작업은 실행 취소할 수 없습니다."
 
@@ -4792,7 +4821,7 @@ msgstr "이 공급업체를 거부하시겠습니까?"
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "이 작업 지시를 릴리스하시겠습니까? 현장에서 가용하게 되며 구매 및 생산을 드라이브합니다."
 
-#. placeholder {0}: deleting.description
+#. placeholder {0}: deleting.item.description
 msgid "Are you sure you want to remove {0} and its payment rows from this lease?"
 msgstr "정말 {0}과(와) 그 지불 라인을 이 리스에서 제거하시겠습니까?"
 
@@ -6823,6 +6852,12 @@ msgstr "고객 선택"
 msgid "Choose a labor category or an employee"
 msgstr "노무 범주 또는 직원 선택"
 
+msgid "Choose a non-nettable storage unit at this location for inspected parts."
+msgstr "검사 대상 부품에는 이 위치의 MRP 제외 보관 단위를 선택하세요."
+
+msgid "Choose a non-nettable storage unit at this location."
+msgstr "이 위치의 MRP 제외 보관 단위를 선택하세요."
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}가 대체하는 부품을 선택하세요. 규칙은 해당 부품에 저장되며 {itemReadableId}가 후속 품목으로 지정됩니다."
 
@@ -7521,6 +7556,9 @@ msgstr "설정"
 
 msgid "Configure {label}"
 msgstr "{label} 설정"
+
+msgid "Configure at least one Issue Type. The rejected part of the lot needs an NCR."
+msgstr "이슈 유형을 하나 이상 설정하세요. 로트의 반려 부분에는 NCR이 필요합니다."
 
 msgid "Configure Carbon"
 msgstr "Carbon 설정"
@@ -8460,6 +8498,9 @@ msgstr "공급자의 장치 목록을 가져올 수 없습니다. 매핑된 장�
 
 msgid "Could not load operations"
 msgstr "공정을 로드할 수 없습니다"
+
+msgid "Could not load the non-nettable storage units. Non-nettable markers may be missing."
+msgstr "MRP 제외 보관 단위를 불러오지 못했습니다. 일부 표시가 누락될 수 있습니다."
 
 msgid "Could not load what ran on {workCenterName}."
 msgstr "{workCenterName}에서 실행된 항목을 로드할 수 없습니다."
@@ -9859,7 +9900,7 @@ msgstr "삭제"
 msgid "Delete {0}"
 msgstr "{0} 삭제"
 
-#. placeholder {0}: deleting.readableId
+#. placeholder {0}: deleting.item.readableId
 #. placeholder {0}: element.readableId
 msgid "Delete {0} and every element below it? An element that has costs, time, a job or a purchase order line cannot be deleted."
 msgstr "{0} 및 그 아래의 모든 요소를 삭제하시겠습니까? 원가, 시간, 작업 지시 또는 발주서 라인이 있는 요소는 삭제할 수 없습니다."
@@ -12102,6 +12143,9 @@ msgstr "차변을 양수로, 대변을 음수로 입력하세요. CSV는 account
 msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 msgstr "차변을 양수로, 대변을 음수로 입력하세요. CSV는 accountNumber, debit, credit 열이 필요합니다. 가져오기는 전체 시산표를 바꿉니다."
 
+msgid "Enter how much of the lot of {lotSize} passed. The accepted quantity is ready for putaway. The rest stays held until its NCR is closed."
+msgstr "{lotSize}개 로트 중 통과한 수량을 입력하세요. 수락 수량은 적치할 수 있습니다. 나머지는 NCR이 종료될 때까지 보류됩니다."
+
 msgid "Enter number…"
 msgstr "숫자 입력…"
 
@@ -14225,6 +14269,12 @@ msgstr "{name}님, 좋은 저녁입니다."
 msgid "Good morning, {name}."
 msgstr "{name}님, 좋은 아침입니다."
 
+msgid "Goods-in storage"
+msgstr "입고 보관"
+
+msgid "Goods-in storage updated"
+msgstr "입고 보관이 업데이트되었습니다"
+
 msgid "Google Calendar"
 msgstr "Google Calendar"
 
@@ -15231,7 +15281,7 @@ msgid "Inspect Item"
 msgstr "품목 검사"
 
 msgid "Inspected by"
-msgstr ""
+msgstr "검사자"
 
 msgid "Inspecting an item you received shows a warning."
 msgstr "받은 품목을 검사하면 경고가 표시됩니다."
@@ -15247,9 +15297,8 @@ msgid "Inspection {0}"
 msgstr "검사 {0}"
 
 #. placeholder {0}: inspection.inspectionId
-#. placeholder {1}: inspection.status
-msgid "Inspection {0} · {1}"
-msgstr "검사 {0} · {1}"
+msgid "Inspection {0}: {statusLabel}"
+msgstr "검사 {0}: {statusLabel}"
 
 msgid "Inspection Date"
 msgstr "검사일"
@@ -15257,8 +15306,17 @@ msgstr "검사일"
 msgid "Inspection document"
 msgstr "검사 문서"
 
+msgid "Inspection failed"
+msgstr "검사 실패"
+
+msgid "Inspection Failed"
+msgstr "검사 실패"
+
 msgid "Inspection file"
 msgstr "검사 파일"
+
+msgid "Inspection In Progress"
+msgstr "검사 진행 중"
 
 msgid "Inspection Job"
 msgstr "검사 작업"
@@ -15269,6 +15327,9 @@ msgstr "검사 수준"
 msgid "Inspection Name"
 msgstr "검사 이름"
 
+msgid "Inspection Passed"
+msgstr "검사 통과"
+
 msgid "Inspection Plan"
 msgstr "검사 계획"
 
@@ -15278,11 +15339,23 @@ msgstr "검사 계획 배정"
 msgid "Inspection Plans"
 msgstr "검사 계획"
 
+msgid "Inspection required"
+msgstr "검사 필요"
+
+msgid "Inspection status"
+msgstr "검사 상태"
+
 msgid "Inspection Status"
+msgstr "검사 상태"
+
+msgid "Inspection Statuses"
 msgstr "검사 상태"
 
 msgid "Inspection Step"
 msgstr "검사 단계"
+
+msgid "Inspection storage unit"
+msgstr "검사 보관 단위"
 
 msgid "Inspections"
 msgstr "검사"
@@ -15955,7 +16028,7 @@ msgstr "이 기간 내의 항목에는 노란색 배지가 표시됩니다."
 msgid "Items: item master, BOMs, Bill of Process, engineering changes, CAD"
 msgstr "품목: 품목 정보, BOM, 공정 목록, 설계 변경, CAD"
 
-#. placeholder {0}: formatQuantity(rowTotal(removing))
+#. placeholder {0}: formatQuantity(rowTotal(removedRow))
 msgid "Its {0} h of draft time this week are deleted."
 msgstr "이번 주 초안 시간 {0} h가 삭제되었습니다."
 
@@ -17473,6 +17546,9 @@ msgstr "라이트 모드로 표시"
 
 msgid "Mark not done"
 msgstr "미완료로 표시"
+
+msgid "Mark Partial"
+msgstr "부분 수락"
 
 msgid "Mark reviewed"
 msgstr "검토로 표시"
@@ -19554,6 +19630,9 @@ msgstr "모듈이 없습니다"
 msgid "No new notifications"
 msgstr "새 알림이 없습니다"
 
+msgid "No non-nettable storage units at this location"
+msgstr "이 위치에 MRP 제외 보관 단위가 없습니다"
+
 msgid "No notes"
 msgstr "메모 없음"
 
@@ -20114,6 +20193,9 @@ msgstr "일정 및 용량 계산에 반영되는 비근무일"
 msgid "None"
 msgstr "없음"
 
+msgid "None available"
+msgstr "사용 가능한 항목 없음"
+
 msgid "Normal"
 msgstr "일반"
 
@@ -20160,7 +20242,7 @@ msgstr "작업 시간 아님"
 msgid "Not mapped"
 msgstr "매핑되지 않음"
 
-#. placeholder {0}: created.moveError
+#. placeholder {0}: created.moveError.replace(/\.$/, "")
 #. placeholder {1}: created.stockTransferId
 msgid "Not moved: {0}. Recorded on <0>{1}</0>"
 msgstr "이동되지 않음: {0}. <0>{1}</0>에 기록됨"
@@ -20215,6 +20297,9 @@ msgstr "시작되지 않음"
 
 msgid "Not synced"
 msgstr "동기화되지 않음"
+
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "사용 가능한 재고가 아닙니다. MRP와 계획에서 계산하지 않으며 피킹에서도 가져가지 않습니다."
 
 msgid "Not working today"
 msgstr "오늘 근무하지 않음"
@@ -20778,6 +20863,9 @@ msgstr "미결 조치"
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB 처분 결정을 위해 NCR 열기"
 
+msgid "Open an NCR for the failed units"
+msgstr "불합격 단위에 대한 NCR 열기"
+
 msgid "Open AP"
 msgstr "미결 매입채무"
 
@@ -20864,6 +20952,9 @@ msgstr "메뉴 열기"
 
 msgid "Open My Time"
 msgstr "내 시간 열기"
+
+msgid "Open NCR"
+msgstr "NCR 열기"
 
 msgid "Open one to change the plan in a draft that reviewers approve before it applies."
 msgstr "검토자가 승인한 초안에서 계획을 변경하기 위해 하나를 여세요."
@@ -21577,8 +21668,14 @@ msgstr "부품 공급업체 생성"
 msgid "Partial"
 msgstr "부분"
 
+msgid "Partial Lot"
+msgstr "부분 로트"
+
 msgid "Partially Delivered"
 msgstr "부분 배송"
+
+msgid "Partially Passed"
+msgstr "부분 통과"
 
 msgid "Partially Returned"
 msgstr "부분 반품"
@@ -21708,7 +21805,7 @@ msgstr "지불"
 msgid "Payment — {0}"
 msgstr "지불 — {0}"
 
-#. placeholder {0}: deleting.number
+#. placeholder {0}: deleting.item.number
 msgid "payment {0}"
 msgstr "지불 {0}"
 
@@ -21829,6 +21926,12 @@ msgstr "승인 대기 중"
 
 msgid "Pending Employee Review"
 msgstr "직원 검토 대기 중"
+
+msgid "Pending inspection"
+msgstr "검사 대기"
+
+msgid "Pending Inspection"
+msgstr "검사 대기"
 
 msgid "people"
 msgstr "인원"
@@ -23063,7 +23166,7 @@ msgid "Publish"
 msgstr "게시"
 
 msgid "Publish once your changes are saved."
-msgstr ""
+msgstr "변경 사항을 저장한 후 게시하세요."
 
 msgid "Publish Training"
 msgstr "교육 발행"
@@ -23312,11 +23415,18 @@ msgstr "푸시는 Onshape 필드 페이지에서 \"매번 푸시할 때 업데�
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "계약 프로젝트를 중단 명령에 따라 보류 상태로 전환하고 90일 종료 날짜를 설정한 후 명령이 종료되면 재개합니다."
 
+msgid "Put Away"
+msgstr "적치"
+
 msgid "Put on hold"
 msgstr "보류"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr "이 비용을 검토 후 전기할 별도의 송장에 보관합니다. 그렇지 않으면 계약의 다음 송장에 포함됩니다."
+
+#. placeholder {0}: transfer.stockTransferId
+msgid "Putaway {0}"
+msgstr "적치 {0}"
 
 msgid "Putting your data back"
 msgstr "데이터 복원 중"
@@ -23756,6 +23866,9 @@ msgstr "준비됨"
 msgid "Ready at"
 msgstr "준비됨 시간"
 
+msgid "Ready for putaway"
+msgstr "적치 준비 완료"
+
 msgid "Ready for Quote"
 msgstr "견적 준비 완료"
 
@@ -23915,6 +24028,9 @@ msgstr "입고일"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "이 공급업체로부터 반품할 수량이 남아 있는 수령된 라인"
+
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
+msgstr "검사가 필요한 입고 부품은 검사 보관 단위로 갑니다. 반려된 재고는 반려품 보관 단위로 이동합니다. 둘 다 MRP 제외여야 합니다."
 
 msgid "Received Qty"
 msgstr "입고 수량"
@@ -24252,6 +24368,9 @@ msgstr "반려자"
 msgid "Rejected Date"
 msgstr "반려일"
 
+msgid "Rejected storage unit"
+msgstr "반려품 보관 단위"
+
 msgid "Relabels the hub and frames the deal."
 msgstr "허브의 이름을 다시 지정하고 거래의 틀을 잡습니다."
 
@@ -24274,7 +24393,7 @@ msgid "Release Batch"
 msgstr "배치 릴리스"
 
 #. placeholder {0}: batch.readableId
-#. placeholder {0}: releaseTarget.readableId
+#. placeholder {0}: releaseTarget.item.readableId
 msgid "Release batch {0}"
 msgstr "배치 {0} 릴리스"
 
@@ -24374,7 +24493,7 @@ msgstr "최근 항목에서 {0} 제거"
 msgid "Remove {0} from recent searches"
 msgstr "최근 검색에서 {0} 제거"
 
-#. placeholder {0}: removing.jobReadableId ?? "this operation"
+#. placeholder {0}: removing.item.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "{0}을(를) 이 배치에서 제거하시겠습니까? 그 공정은 일정으로 돌아가 자체적으로 실행됩니다."
 
@@ -24387,7 +24506,7 @@ msgstr "{0}을(를) 이 단계에서 제거"
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "{1}에서 {memberCount}개 공정 중 {0}개를 제거하시겠습니까?"
 
-#. placeholder {0}: removing.readableId
+#. placeholder {0}: removedRow.readableId
 msgid "Remove {0}?"
 msgstr "{0}을(를) 제거하시겠습니까?"
 
@@ -24926,9 +25045,6 @@ msgstr "조치 필요"
 msgid "Requires Adjustment"
 msgstr "조정 필요"
 
-msgid "Requires inspection"
-msgstr "검사 필요"
-
 msgid "Requires inspection. A lot opens when the receipt posts."
 msgstr "검사가 필요합니다. 입고를 전기하면 로트가 생성됩니다."
 
@@ -25059,7 +25175,7 @@ msgstr "재입고 수수료"
 msgid "Restock Fee Percent"
 msgstr "재입고 수수료 비율"
 
-#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+#. placeholder {0}: percentFormatter.format(line.restockFeePercent)
 msgid "Restocking fee {0}"
 msgstr "재입고 수수료 {0}"
 
@@ -27930,10 +28046,10 @@ msgid "Sort latest first"
 msgstr "가장 최근 순서로 정렬"
 
 msgid "Sorted by activity date, newest first"
-msgstr ""
+msgstr "활동 날짜순 정렬, 최신순"
 
 msgid "Sorted by activity date, oldest first"
-msgstr ""
+msgstr "활동 날짜순 정렬, 오래된 순"
 
 msgid "Source"
 msgstr "소스"
@@ -29465,6 +29581,12 @@ msgstr "해당 필드는 여러 값을 가지고 있으므로 하나의 목록�
 
 msgid "That integration is not available"
 msgstr "해당 연동을 사용할 수 없습니다"
+
+msgid "That is the whole lot rejected. Use Reject Lot instead."
+msgstr "로트 전체를 반려하는 것입니다. 대신 로트 반려를 사용하세요."
+
+msgid "That is the whole lot. Use Accept Lot instead."
+msgstr "로트 전체입니다. 대신 로트 수락을 사용하세요."
 
 msgid "That list was empty."
 msgstr "목록이 비어 있었습니다."
@@ -31261,6 +31383,12 @@ msgstr "이 사업장은 인력 배치 보드에서 작업자가 할당된 작�
 msgid "This lot is expired and can't be picked."
 msgstr "이 로트는 만료됨이며 피킹할 수 없습니다."
 
+msgid "This lot is partly accepted, but its NCR did not open. The NCR decides the rejected part of the lot."
+msgstr "이 로트는 부분 수락되었지만 NCR이 열리지 않았습니다. 로트의 반려 부분은 NCR이 결정합니다."
+
+msgid "This lot is partly accepted. An NCR records the failed units and decides what happens to them."
+msgstr "이 로트는 부분 수락되었습니다. NCR은 불합격 단위를 기록하고 처리 방법을 결정합니다."
+
 msgid "This may take a moment. Hang tight."
 msgstr "잠시 시간이 걸릴 수 있습니다. 잠시만 기다려 주세요."
 
@@ -32491,6 +32619,9 @@ msgstr "측정 단위"
 
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "공정작업에서 사유와 함께 회복 불가로 보고된 수량으로, 재작업의 대안입니다."
+
+msgid "Units that failed a sample stay Rejected. Every other unit, including units never sampled, is ready for putaway."
+msgstr "샘플에서 불합격한 단위는 반려 상태로 유지됩니다. 샘플링되지 않은 단위를 포함한 나머지는 모두 적치할 수 있습니다."
 
 msgid "Units this customer owns show here once registered."
 msgstr "이 고객이 보유한 개(단위)는 등록되면 여기에 표시됩니다."

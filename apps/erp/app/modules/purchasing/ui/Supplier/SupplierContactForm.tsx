@@ -57,7 +57,7 @@ const SupplierContactForm = ({
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
   useEffect(() => {
-    if (type !== "modal") return;
+    if (type !== "modal" || !open) return;
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
@@ -67,7 +67,7 @@ const SupplierContactForm = ({
         `Failed to create supplier contact: ${fetcher.data.error.message}`
       );
     }
-  }, [fetcher.data, fetcher.state, onClose, type]);
+  }, [fetcher.data, fetcher.state, onClose, open, type]);
 
   const { t } = useLingui();
   const permissions = usePermissions();

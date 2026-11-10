@@ -21,9 +21,10 @@ import { EntitlementError } from "@carbon/ee/entitlements.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useNavigate, useParams } from "react-router";
+import { data, useLoaderData, useParams } from "react-router";
 import ContractFinancingRequest from "~/modules/sales/ui/Contracts/ContractFinancingRequest.ee";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
@@ -194,13 +195,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function ContractFinancingRequestRoute() {
   const { request } = useLoaderData<typeof loader>();
   const { id } = useParams();
-  const navigate = useNavigate();
   if (!id) throw new Error("Could not find id");
+  const dialog = useRouteDialog(path.to.contractFinancing(id));
   return (
     <ContractFinancingRequest
       contractId={id}
       request={request}
-      onClose={() => navigate(path.to.contractFinancing(id))}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

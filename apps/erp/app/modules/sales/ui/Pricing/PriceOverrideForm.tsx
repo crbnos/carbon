@@ -87,6 +87,7 @@ type PriceOverrideFormProps = {
   initialValues: z.infer<typeof priceOverrideValidator>;
   initialBreaks?: PriceOverrideBreak[];
   initialScope?: ScopeType;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -94,6 +95,7 @@ const PriceOverrideForm = ({
   initialValues,
   initialBreaks,
   initialScope,
+  open = true,
   onClose
 }: PriceOverrideFormProps) => {
   const { t } = useLingui();
@@ -134,7 +136,7 @@ const PriceOverrideForm = ({
   return (
     <ModalDrawerProvider type="drawer">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(open) => {
           if (!open) onClose();
         }}

@@ -203,7 +203,7 @@ databaseTest("a dispositioned manual lot cannot be dispositioned again", async (
 });
 
 databaseTest(
-  "re-dispositioning a receipt lot leaves a unit another open lot holds",
+  "a decided receipt lot leaves a unit another open lot holds",
   async () => {
     const { f, units } = await setup();
     const lotId = await receiptLot(f, units);
@@ -221,11 +221,14 @@ databaseTest(
       ).error
     ).toBeNull();
 
-    // The receipt lot's write-off retry path: a closed receipt lot is rejected.
-    expect((await disposition(f, lotId, "Reject", "Counterfeit")).error).toBeNull();
+    // An accepted receipt lot is decided: a later Reject is refused and moves
+    // nothing, so the unit the manual lot holds stays On Hold.
+    expect(
+      (await disposition(f, lotId, "Reject", "Counterfeit")).error
+    ).not.toBeNull();
     expect(await statuses(f, [held, other])).toEqual({
       [held]: "On Hold",
-      [other]: "Rejected"
+      [other]: "Available"
     });
   }
 );

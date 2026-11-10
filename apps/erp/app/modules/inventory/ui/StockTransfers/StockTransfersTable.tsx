@@ -327,11 +327,9 @@ const StockTransfersTable = memo(
             text={`Are you sure you want to delete ${selectedStockTransfer.stockTransferId!}? This cannot be undone.`}
             onCancel={() => {
               deleteStockTransferModal.onClose();
-              setSelectedStockTransfer(null);
             }}
             onSubmit={() => {
               deleteStockTransferModal.onClose();
-              setSelectedStockTransfer(null);
             }}
           />
         )}

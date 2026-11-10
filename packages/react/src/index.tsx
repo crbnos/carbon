@@ -283,6 +283,7 @@ import {
   pulseNavIcon
 } from "./NavRail";
 import { NavSheet } from "./NavSheet";
+import { NonNettableBadge } from "./NonNettableBadge";
 import type { NumberFieldProps } from "./Number";
 import {
   NumberDecrementStepper,
@@ -404,7 +405,11 @@ import {
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { TVColorBars } from "./TVColorBars";
 import { cn } from "./utils/cn";
-import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
+import {
+  afterDialogCloses,
+  hasOpenDialog,
+  isInsideTopmostDialog
+} from "./utils/dialog";
 import { copyToClipboard } from "./utils/dom";
 import { isBareKeyForAnotherControl, isEditableTarget } from "./utils/keyboard";
 import {
@@ -421,6 +426,7 @@ export * from "./hooks";
 export * from "./ImageZoomViewer";
 export * from "./InlineTrigger";
 export * from "./RecordOutlet";
+export { useReportUnsavedChanges } from "./RouteDialogScope";
 export type {
   ActionPresentation,
   AvatarProps,
@@ -476,6 +482,7 @@ export {
   AvatarGroup,
   AvatarGroupList,
   AvatarOverflowIndicator,
+  afterDialogCloses,
   Badge,
   BadgeCloseButton,
   BarProgress,
@@ -683,6 +690,7 @@ export {
   NavRailLink,
   NavRailSwitcher,
   NavSheet,
+  NonNettableBadge,
   NumberDecrementStepper,
   NumberField,
   NumberIncrementStepper,

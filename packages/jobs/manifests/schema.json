@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261109231722",
+  "schemaVersion": "20261106214206",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-10T05:54:24.886Z",
+  "exportedAt": "2026-11-09T10:06:40.493Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -1413,7 +1413,9 @@
         "tags",
         "code",
         "requiresStaffing",
-        "responsibleEmployee"
+        "responsibleEmployee",
+        "inspectionStorageUnitId",
+        "rejectedStorageUnitId"
       ]
     },
     {
@@ -3038,7 +3040,7 @@
         "id",
         "companyId",
         "partId",
-        "name",
+        "drawingNumber",
         "version",
         "storagePath",
         "fileName",
@@ -3056,26 +3058,7 @@
         "samplingAql",
         "samplingInspectionLevel",
         "samplingSeverity",
-        "modelUploadId",
-        "status",
-        "rootInspectionDocumentId",
-        "workInstruction"
-      ]
-    },
-    {
-      "name": "inspectionDocumentParameter",
-      "rows": 0,
-      "columns": [
-        "id",
-        "inspectionDocumentId",
-        "companyId",
-        "key",
-        "value",
-        "sortOrder",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt"
+        "modelUploadId"
       ]
     },
     {
@@ -5354,8 +5337,8 @@
         "sourceDocumentId",
         "sourceDocumentLineId",
         "sourceDocumentReadableId",
-        "workCenterId",
-        "assignee"
+        "storageUnitId",
+        "acceptedQuantity"
       ]
     },
     {
@@ -5414,21 +5397,6 @@
         "updatedAt",
         "gaugeId",
         "gaugeRecordedAt"
-      ]
-    },
-    {
-      "name": "inspectionTrackedEntity",
-      "rows": 0,
-      "columns": [
-        "id",
-        "inspectionId",
-        "trackedEntityId",
-        "companyId",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "previousStatus"
       ]
     },
     {
@@ -7003,7 +6971,8 @@
         "assignee",
         "customFields",
         "tags",
-        "kanbanId"
+        "kanbanId",
+        "receiptId"
       ]
     },
     {
@@ -7026,7 +6995,8 @@
         "createdAt",
         "createdBy",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "receiptLineId"
       ]
     },
     {
@@ -7788,7 +7758,8 @@
         "updatedBy",
         "conversionFactor",
         "requiresSerialTracking",
-        "requiresBatchTracking"
+        "requiresBatchTracking",
+        "requiresInspection"
       ]
     },
     {
@@ -8364,7 +8335,8 @@
         "tags",
         "internalNotes",
         "supplierInteractionId",
-        "postedBy"
+        "postedBy",
+        "inspectionStatus"
       ]
     },
     {

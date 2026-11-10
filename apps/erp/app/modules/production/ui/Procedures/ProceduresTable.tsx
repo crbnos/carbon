@@ -248,18 +248,12 @@ const ProceduresTable = memo((props: ProceduresTableProps) => {
         table="procedure"
         withSavedView
       />
-      {deleteDisclosure.isOpen && selectedProcedure && (
+      {selectedProcedure && (
         <ConfirmDelete
           action={path.to.deleteProcedure(selectedProcedure.id!)}
-          isOpen
-          onCancel={() => {
-            setSelectedProcedure(null);
-            deleteDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            setSelectedProcedure(null);
-            deleteDisclosure.onClose();
-          }}
+          isOpen={deleteDisclosure.isOpen}
+          onCancel={deleteDisclosure.onClose}
+          onSubmit={deleteDisclosure.onClose}
           name={selectedProcedure.name ?? "procedure"}
           text="Are you sure you want to delete this procedure?"
         />

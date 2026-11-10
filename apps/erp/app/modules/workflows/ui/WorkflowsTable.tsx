@@ -280,50 +280,37 @@ const WorkflowsTable = memo(
           table="workflow"
           withSavedView
         />
-        {newDisclosure.isOpen && (
-          <WorkflowForm
-            initialValues={{ name: "", description: "" }}
-            onClose={newDisclosure.onClose}
-          />
-        )}
-        {renameDisclosure.isOpen && selectedWorkflow && (
-          <WorkflowForm
-            initialValues={{
-              id: selectedWorkflow.id,
-              name: selectedWorkflow.name,
-              description: selectedWorkflow.description ?? ""
-            }}
-            onClose={() => {
-              setSelectedWorkflow(null);
-              renameDisclosure.onClose();
-            }}
-          />
-        )}
-        {unpublishDisclosure.isOpen && selectedWorkflow && (
-          <ConfirmUnpublishWorkflow
-            workflowId={selectedWorkflow.id}
-            name={selectedWorkflow.name}
-            onClose={() => {
-              setSelectedWorkflow(null);
-              unpublishDisclosure.onClose();
-            }}
-          />
-        )}
-        {deleteDisclosure.isOpen && selectedWorkflow && (
-          <ConfirmDelete
-            action={path.to.workflowDelete(selectedWorkflow.id)}
-            isOpen
-            onCancel={() => {
-              setSelectedWorkflow(null);
-              deleteDisclosure.onClose();
-            }}
-            onSubmit={() => {
-              setSelectedWorkflow(null);
-              deleteDisclosure.onClose();
-            }}
-            name={selectedWorkflow.name}
-            text={t`Are you sure you want to delete this workflow? Its versions and run history go with it.`}
-          />
+        <WorkflowForm
+          open={newDisclosure.isOpen}
+          initialValues={{ name: "", description: "" }}
+          onClose={newDisclosure.onClose}
+        />
+        {selectedWorkflow && (
+          <>
+            <WorkflowForm
+              open={renameDisclosure.isOpen}
+              initialValues={{
+                id: selectedWorkflow.id,
+                name: selectedWorkflow.name,
+                description: selectedWorkflow.description ?? ""
+              }}
+              onClose={renameDisclosure.onClose}
+            />
+            <ConfirmUnpublishWorkflow
+              open={unpublishDisclosure.isOpen}
+              workflowId={selectedWorkflow.id}
+              name={selectedWorkflow.name}
+              onClose={unpublishDisclosure.onClose}
+            />
+            <ConfirmDelete
+              action={path.to.workflowDelete(selectedWorkflow.id)}
+              isOpen={deleteDisclosure.isOpen}
+              onCancel={deleteDisclosure.onClose}
+              onSubmit={deleteDisclosure.onClose}
+              name={selectedWorkflow.name}
+              text={t`Are you sure you want to delete this workflow? Its versions and run history go with it.`}
+            />
+          </>
         )}
       </>
     );

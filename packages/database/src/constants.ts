@@ -914,6 +914,15 @@ export const Constants = {
         "Direct Support",
         "Not Qualified",
       ],
+      receiptInspectionStatus: [
+        "Not Required",
+        "Pending Inspection",
+        "Inspection In Progress",
+        "Inspection Passed",
+        "Inspection Failed",
+        "Partially Passed",
+        "Put Away",
+      ],
       receiptSourceDocument: [
         "Sales Order",
         "Sales Invoice",

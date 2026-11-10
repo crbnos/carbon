@@ -9,6 +9,7 @@ import { applyDataset, getDataset } from "@carbon/database/datasets";
 import { datetime } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
 import { applyTableRenames } from "../../../backups/renames";
+import { removeBucketPrefix } from "../../../backups/storage";
 import { getJobDatabaseClient } from "../../../db";
 import { planDemoCompany } from "../../../demo-planning";
 import { inngest } from "../../client";
@@ -19,7 +20,6 @@ import {
   getCompanyTableCatalog,
   type JobProgress,
   readBackup,
-  removeStoragePrefix,
   restoreAssetsFromBackup,
   type ScopeViolation,
   throttleProgress,
@@ -431,7 +431,7 @@ export const companyTemplateFinalizeFunction = inngest.createFunction(
 
       const snapshotPath = marker.metadata.snapshotPath;
       if (snapshotPath) {
-        await removeStoragePrefix(client, companyId, backupDir(snapshotPath));
+        await removeBucketPrefix(client, companyId, backupDir(snapshotPath));
       }
       await clearTemplateMarker(client, companyId);
 
@@ -532,7 +532,7 @@ export const companyTemplateRevertFunction = inngest.createFunction(
           idRewrite
         });
 
-        await removeStoragePrefix(client, companyId, backupDir(snapshotPath));
+        await removeBucketPrefix(client, companyId, backupDir(snapshotPath));
         await clearTemplateMarker(client, companyId);
 
         logger.info("Demo template reverted", {

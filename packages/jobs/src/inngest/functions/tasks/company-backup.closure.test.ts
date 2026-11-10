@@ -656,6 +656,45 @@ describe("buildIdMaps", () => {
       false
     );
   });
+
+  it("gives a derived group the new id of the row or company it mirrors", () => {
+    // The database derives these groups' ids (a customer's group IS the
+    // customer's id), so a membership or an approver group keeps reaching them.
+    const group = table("group", [col("id"), col("companyId")]);
+    const customer = table("customer", [col("id"), col("companyId")]);
+    const maps = buildIdMaps(
+      [group, customer],
+      {
+        customer: [{ id: "cust_1" }],
+        group: [
+          { id: "cust_1", isCustomerOrgGroup: true },
+          {
+            id: "00000000-0000-SMBH-QP55-H46bdEGV7acn",
+            isEmployeeTypeGroup: true
+          },
+          { id: "etype_1", isEmployeeTypeGroup: true, name: "Admin" },
+          { id: "etype_2", isEmployeeTypeGroup: true, name: "Contractor" },
+          { id: "grp_own" }
+        ]
+      },
+      {
+        source: "SMBHQP55H46bdEGV7acnir",
+        target: "JA3FVgHNVwTixe1jLMwPix",
+        employeeTypeIdsByName: new Map([["Admin", "etype_kept"]])
+      }
+    );
+    const groups = maps.get("group")!;
+    expect(groups.get("cust_1")).toBe(maps.get("customer")?.get("cust_1"));
+    expect(groups.get("00000000-0000-SMBH-QP55-H46bdEGV7acn")).toBe(
+      "00000000-0000-JA3F-VgHN-VwTixe1jLMwP"
+    );
+    // A restore keeps the company's own employee types: the backup's type
+    // group follows the same-named kept type, so approver groups still reach it.
+    expect(groups.get("etype_1")).toBe("etype_kept");
+    // No kept type of that name, and a group of the person's own: fresh ids.
+    expect(groups.get("etype_2")).not.toBe("etype_2");
+    expect(groups.get("grp_own")).not.toBe("grp_own");
+  });
 });
 
 describe("isUserScopedIdentityTable", () => {
@@ -690,6 +729,18 @@ describe("isUserScopedIdentityTable", () => {
     expect(isUserScopedIdentityTable(t)).toBe(true);
   });
 
+  it("false when only the tenant half of a composite FK is unique (payment shape)", () => {
+    // payment(employeeId, companyId) -> employee: companyId is in the PK, but it
+    // keys the row to a company, not to a user.
+    const t = table(
+      "payment",
+      [col("id"), col("companyId"), col("employeeId")],
+      [fk("employeeId", "employee"), fk("companyId", "employee")],
+      { pkColumns: ["id", "companyId"], uniqueColumns: ["id", "companyId"] }
+    );
+    expect(isUserScopedIdentityTable(t)).toBe(false);
+  });
+
   it("false when the user FK is in no uniqueness constraint (assignee column)", () => {
     const t = table(
       "salesOrder",
@@ -701,10 +752,9 @@ describe("isUserScopedIdentityTable", () => {
   });
 });
 
-describe("selectWipeableTables (identity tables vs foreign restore)", () => {
-  // customerAccount is identity (NOT-NULL customerId in its PK → user-keyed); on a
-  // foreign restore its parent `customer` is remapped, and CASCADE won't clear it
-  // under replica mode, so it must be WIPED (but never reloaded) to avoid dangling.
+describe("selectWipeableTables (identity tables)", () => {
+  // Identity tables are wiped on every restore: an own restore and a revert
+  // reload them from the backup, a foreign restore leaves them empty.
   const normal = table("customer", [col("id"), col("companyId")]);
   const identity = table(
     "customerAccount",
@@ -712,18 +762,14 @@ describe("selectWipeableTables (identity tables vs foreign restore)", () => {
     [fk("id", "user")],
     { pkColumns: ["id"], uniqueColumns: ["id"] }
   );
-  const cat = catalog([normal, identity]);
+  const kept = table("employee", [col("id"), col("companyId")]);
+  const cat = catalog([normal, identity, kept]);
 
-  it("own restore keeps identity tables OUT of the wipe set", () => {
-    const names = selectWipeableTables(cat).map((t) => t.name);
-    expect(names).toContain("customer");
-    expect(names).not.toContain("customerAccount");
-  });
-
-  it("foreign restore (remap) WIPES identity tables so they can't dangle", () => {
-    const names = selectWipeableTables(cat, { remap: true }).map((t) => t.name);
-    expect(names).toContain("customer");
-    expect(names).toContain("customerAccount");
+  it("wipes identity tables and keeps the access tables", () => {
+    expect(selectWipeableTables(cat).map((t) => t.name)).toEqual([
+      "customer",
+      "customerAccount"
+    ]);
   });
 });
 

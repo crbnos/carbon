@@ -57,6 +57,7 @@ import type {
   BopOperationSpec,
   Dataset,
   EnforcementRuleSpec,
+  FoundationData,
   InspectionFeatureSpec,
   InspectionPlanSpec,
   InstantSpec,
@@ -387,7 +388,10 @@ export const COVERAGE = {
   inspectionStatus: {
     values: enumValues("inspectionStatusType", {
       "In Progress": OPTIONAL,
-      Failed: NOT_AUTHORABLE
+      Failed: NOT_AUTHORABLE,
+      // A lot is Cancelled only when its receipt is voided, and the dataset
+      // voids no receipt that carries an inspection lot.
+      Cancelled: NOT_AUTHORABLE
     }),
     missing: matrix("quality status matrix", "inspection lot with status")
   },
@@ -1555,6 +1559,19 @@ export function foundation(ctx: ValidationCtx): void {
     }
     seenShelves.add(shelf.name);
   }
+  // Tier 01 writes these onto the plant's location. A goods-in hold must keep
+  // its stock out of MRP and picking, so each must be a non-nettable shelf.
+  const isNonNettableShelf = nonNettableShelfTest(f);
+  for (const [field, shelf] of [
+    ["inspectionShelf", f.inspectionShelf],
+    ["rejectedShelf", f.rejectedShelf]
+  ] as const) {
+    if (!seenShelves.has(shelf)) {
+      need("shelf", `foundation.${field}`, shelf);
+    } else if (!isNonNettableShelf(shelf)) {
+      fail(`foundation.${field}: shelf "${shelf}" is nettable`);
+    }
+  }
   const seenProcedureStatuses = new Set<string>();
   for (const proc of f.procedures) {
     need("process", `foundation.procedures "${proc.name}"`, proc.process);
@@ -1981,6 +1998,27 @@ export function openingStock(ctx: ValidationCtx): void {
 }
 
 /**
+ * A shelf is non-nettable when its own storage type or a parent shelf's is in
+ * nonNettableStorageTypes. An unknown name answers false.
+ */
+function nonNettableShelfTest(f: FoundationData): (name: string) => boolean {
+  const shelvesByName = new Map(f.shelves.map((shelf) => [shelf.name, shelf]));
+  const nonNettableTypes = new Set(f.nonNettableStorageTypes);
+  return (name) => {
+    const seen = new Set<string>();
+    for (
+      let shelf = shelvesByName.get(name);
+      shelf && !seen.has(shelf.name);
+      shelf = shelf.parent ? shelvesByName.get(shelf.parent) : undefined
+    ) {
+      seen.add(shelf.name);
+      if (nonNettableTypes.has(shelf.storageType)) return true;
+    }
+    return false;
+  };
+}
+
+/**
  * Project stock (Projects Phase 2a): the items and shelves resolve, the
  * items are untracked (the tier writes untracked rows), the quantities and
  * costs are positive, and the dates fall in an Open period.
@@ -2252,24 +2290,8 @@ export function trackedStockAndMovements(ctx: ValidationCtx): void {
 
   checkCoverage(fail, { trackedEntityStatus: trackedStatuses });
 
-  // A kanban may not name a non-nettable shelf, as createKanban refuses: its
-  // own storage type or a parent shelf's makes it non-nettable.
-  const shelvesByName = new Map(
-    dataset.foundation.shelves.map((shelf) => [shelf.name, shelf])
-  );
-  const nonNettableTypes = new Set(dataset.foundation.nonNettableStorageTypes);
-  const isNonNettableShelf = (name: string): boolean => {
-    const seen = new Set<string>();
-    for (
-      let shelf = shelvesByName.get(name);
-      shelf && !seen.has(shelf.name);
-      shelf = shelf.parent ? shelvesByName.get(shelf.parent) : undefined
-    ) {
-      seen.add(shelf.name);
-      if (nonNettableTypes.has(shelf.storageType)) return true;
-    }
-    return false;
-  };
+  // A kanban may not name a non-nettable shelf, as createKanban refuses.
+  const isNonNettableShelf = nonNettableShelfTest(dataset.foundation);
 
   for (const kanban of dataset.inventory.kanbanItems) {
     const where = `inventory.kanbanItems "${kanban.item}"`;

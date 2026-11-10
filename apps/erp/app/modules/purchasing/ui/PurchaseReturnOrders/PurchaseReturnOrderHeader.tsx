@@ -262,52 +262,47 @@ const PurchaseReturnOrderHeader = () => {
         }
       />
 
-      {confirmDisclosure.isOpen && (
-        <Confirm
-          action={path.to.purchaseReturnOrderConfirm(id)}
-          title={t`Confirm ${purchaseReturnOrder.purchaseReturnOrderId}`}
-          text={t`Are you sure you want to confirm this supplier return? Confirming authorizes the goods on the lines to be shipped back to the supplier.`}
-          confirmText={t`Confirm`}
-          onCancel={confirmDisclosure.onClose}
-          onSubmit={confirmDisclosure.onClose}
-        />
-      )}
+      <Confirm
+        action={path.to.purchaseReturnOrderConfirm(id)}
+        title={t`Confirm ${purchaseReturnOrder.purchaseReturnOrderId}`}
+        text={t`Are you sure you want to confirm this supplier return? Confirming authorizes the goods on the lines to be shipped back to the supplier.`}
+        confirmText={t`Confirm`}
+        isOpen={confirmDisclosure.isOpen}
+        onCancel={confirmDisclosure.onClose}
+        onSubmit={confirmDisclosure.onClose}
+      />
 
-      {cancelDisclosure.isOpen && (
-        <Confirm
-          action={path.to.purchaseReturnOrderStatus(id)}
-          title={t`Cancel ${purchaseReturnOrder.purchaseReturnOrderId}`}
-          text={t`Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents.`}
-          confirmText={t`Cancel Return`}
-          confirmVariant="destructive"
-          onCancel={cancelDisclosure.onClose}
-          onSubmit={cancelDisclosure.onClose}
-        >
-          <input type="hidden" name="status" value="Cancelled" />
-        </Confirm>
-      )}
+      <Confirm
+        action={path.to.purchaseReturnOrderStatus(id)}
+        title={t`Cancel ${purchaseReturnOrder.purchaseReturnOrderId}`}
+        text={t`Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents.`}
+        confirmText={t`Cancel Return`}
+        confirmVariant="destructive"
+        isOpen={cancelDisclosure.isOpen}
+        onCancel={cancelDisclosure.onClose}
+        onSubmit={cancelDisclosure.onClose}
+      >
+        <input type="hidden" name="status" value="Cancelled" />
+      </Confirm>
 
-      {deleteDisclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deletePurchaseReturnOrder(id)}
-          isOpen={deleteDisclosure.isOpen}
-          name={purchaseReturnOrder.purchaseReturnOrderId!}
-          text={t`Are you sure you want to delete ${purchaseReturnOrder.purchaseReturnOrderId!}? This cannot be undone.`}
-          onCancel={() => {
-            deleteDisclosure.onClose();
-          }}
-          onSubmit={() => {
-            deleteDisclosure.onClose();
-          }}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.deletePurchaseReturnOrder(id)}
+        isOpen={deleteDisclosure.isOpen}
+        name={purchaseReturnOrder.purchaseReturnOrderId!}
+        text={t`Are you sure you want to delete ${purchaseReturnOrder.purchaseReturnOrderId!}? This cannot be undone.`}
+        onCancel={() => {
+          deleteDisclosure.onClose();
+        }}
+        onSubmit={() => {
+          deleteDisclosure.onClose();
+        }}
+      />
 
-      {creditDisclosure.isOpen && (
-        <PurchaseReturnOrderCreditModal
-          currencyCode={purchaseReturnOrder.currencyCode}
-          onClose={creditDisclosure.onClose}
-        />
-      )}
+      <PurchaseReturnOrderCreditModal
+        currencyCode={purchaseReturnOrder.currencyCode}
+        open={creditDisclosure.isOpen}
+        onClose={creditDisclosure.onClose}
+      />
       {documentEdit.modal}
     </>
   );

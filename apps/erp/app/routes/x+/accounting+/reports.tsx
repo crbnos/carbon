@@ -48,6 +48,7 @@ import type {
 import { data, useFetcher, useLoaderData } from "react-router";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { PinnedCard, PinToggle } from "~/components/ReportPin";
+import { useDrawerItem } from "~/hooks";
 import { reportPinValidator } from "~/modules/accounting/accounting.models";
 import {
   getReportPins,
@@ -138,9 +139,7 @@ export default function ReportsIndexRoute() {
     useLoaderData<typeof loader>();
   const { t } = useLingui();
   const [search, setSearch] = useState("");
-  const [viewPendingDelete, setViewPendingDelete] = useState<SavedView | null>(
-    null
-  );
+  const viewPendingDelete = useDrawerItem<SavedView>();
   const pinFetcher = useFetcher<typeof action>();
 
   // The core financial statements default to pinned; users can pin/unpin from
@@ -520,7 +519,7 @@ export default function ReportsIndexRoute() {
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                setViewPendingDelete(view);
+                                viewPendingDelete.open(view);
                               }}
                             />
                           )}
@@ -540,13 +539,14 @@ export default function ReportsIndexRoute() {
           </p>
         )}
       </div>
-      {viewPendingDelete && (
+      {viewPendingDelete.item && (
         <ConfirmDelete
-          action={path.to.deleteReportView(viewPendingDelete.id)}
-          name={viewPendingDelete.name}
-          text={t`Are you sure you want to delete the "${viewPendingDelete.name}" view? This cannot be undone.`}
-          onCancel={() => setViewPendingDelete(null)}
-          onSubmit={() => setViewPendingDelete(null)}
+          isOpen={viewPendingDelete.isOpen}
+          action={path.to.deleteReportView(viewPendingDelete.item.id)}
+          name={viewPendingDelete.item.name}
+          text={t`Are you sure you want to delete the "${viewPendingDelete.item.name}" view? This cannot be undone.`}
+          onCancel={viewPendingDelete.close}
+          onSubmit={viewPendingDelete.close}
         />
       )}
     </div>
