@@ -5910,9 +5910,6 @@ msgstr "Оба теста проходят; рассмотрите Не фина
 msgid "Bottleneck"
 msgstr "Узкое место"
 
-msgid "Bottom of page"
-msgstr "Низ страницы"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "Создайте редактируемую копию этой версии, которую вы сможете изменить и опубликовать."
 
