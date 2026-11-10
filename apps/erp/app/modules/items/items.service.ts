@@ -25,6 +25,7 @@ import {
   type KyselyTx,
   withTransaction
 } from "@carbon/database/client";
+import { fetchAll } from "@carbon/database/fetch-all";
 import { toJson } from "@carbon/database/json";
 import { deleteUnusedPmiInspectionPlans } from "@carbon/database/quality";
 import { insertRows, many, maybeSingle, newIds } from "@carbon/database/rows";
@@ -1905,9 +1906,8 @@ export async function getMethodOperationsByMakeMethodId(
     .order("order", { ascending: true });
 }
 
-type Method = NonNullable<
-  Awaited<ReturnType<typeof getMethodTreeArray>>["data"]
->[number];
+type Method =
+  Database["public"]["Functions"]["get_method_tree"]["Returns"][number];
 type MethodTreeItem = {
   id: string;
   data: Method;
@@ -1929,13 +1929,23 @@ export async function getMethodTree(
   };
 }
 
+// Paged: one RPC call stops at PostgREST's max_rows (1000). The tie-breakers
+// make the pages a total order, so they neither overlap nor skip.
 export async function getMethodTreeArray(
   client: SupabaseClient<Database>,
   makeMethodId: string
 ) {
-  return client.rpc("get_method_tree", {
-    uid: makeMethodId
-  });
+  const result = await fetchAll<Method>(() =>
+    client
+      .rpc("get_method_tree", { uid: makeMethodId })
+      .order("order")
+      .order("methodMaterialId")
+      .order("parentMaterialId")
+      .order("isPickDescendant")
+  );
+  return result.error
+    ? { data: null, error: result.error }
+    : { data: result.data ?? [], error: null };
 }
 
 function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
@@ -1951,8 +1961,13 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
       lookup[itemId] = { id: itemId, children: [] };
     }
 
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-    lookup[itemId]["data"] = item;
+    // A line under a made and a pulled branch comes once per branch, as one
+    // node: it keeps the made copy, whatever order the rows came in.
+    const existing = lookup[itemId].data as Method | undefined;
+    if (!existing || existing.isPickDescendant) {
+      // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
+      lookup[itemId]["data"] = item;
+    }
 
     const treeItem = lookup[itemId];
 
