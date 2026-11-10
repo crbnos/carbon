@@ -7,13 +7,26 @@ import { arrayMove } from "@dnd-kit/sortable";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import { useAllModules } from "~/hooks";
+import { useUIStore } from "~/stores/ui";
 import type { Authenticated, NavItem } from "~/types";
+import { submoduleLayout } from "~/utils/submodule-visibility";
 
 export type DraftModule = Authenticated<NavItem> & {
   key: string;
   position: number;
   hidden: boolean;
+  hiddenSubmodules: string[];
+  submoduleOrder: string[];
 };
+
+function isSameList(a: string[], b: string[]) {
+  const other = new Set(b);
+  return a.length === b.length && a.every((value) => other.has(value));
+}
+
+function isSameOrder(a: string[], b: string[]) {
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
 
 export function useNavigationEditMode() {
   const allModules = useAllModules();
@@ -56,7 +69,12 @@ export function useNavigationEditMode() {
     return draft.some((d) => {
       const orig = originalRef.find((o) => o.key === d.key);
       if (!orig) return true;
-      return d.position !== orig.position || d.hidden !== orig.hidden;
+      return (
+        d.position !== orig.position ||
+        d.hidden !== orig.hidden ||
+        !isSameList(d.hiddenSubmodules, orig.hiddenSubmodules) ||
+        !isSameOrder(d.submoduleOrder, orig.submoduleOrder)
+      );
     });
   }, [draft, originalRef]);
 
@@ -95,13 +113,47 @@ export function useNavigationEditMode() {
     });
   }, []);
 
+  const setSubmodulesHidden = useCallback(
+    (moduleKey: string, keys: string[], hidden: boolean) => {
+      setDraft((prev) =>
+        prev.map((m) => {
+          if (m.key !== moduleKey) return m;
+          const others = m.hiddenSubmodules.filter((k) => !keys.includes(k));
+          return {
+            ...m,
+            hiddenSubmodules: hidden ? [...others, ...keys] : others
+          };
+        })
+      );
+    },
+    []
+  );
+
+  const setSubmoduleOrder = useCallback((moduleKey: string, keys: string[]) => {
+    setDraft((prev) =>
+      prev.map((m) =>
+        m.key === moduleKey ? { ...m, submoduleOrder: keys } : m
+      )
+    );
+  }, []);
+
+  // The module sidebar is outside the rail, and it previews the unsaved layout.
+  const setDraftSubmoduleLayout = useUIStore(
+    (state) => state.setDraftSubmoduleLayout
+  );
+  useEffect(() => {
+    setDraftSubmoduleLayout(isEditing ? submoduleLayout(draft) : null);
+  }, [isEditing, draft, setDraftSubmoduleLayout]);
+
   const save = useCallback(() => {
     fetcher.submit(
       {
         preferences: draft.map((m) => ({
           module: m.key,
           position: m.position,
-          hidden: m.hidden
+          hidden: m.hidden,
+          hiddenSubmodules: m.hiddenSubmodules,
+          submoduleOrder: m.submoduleOrder
         }))
       },
       {
@@ -141,6 +193,8 @@ export function useNavigationEditMode() {
     cancelEditMode,
     handleDragEnd,
     toggleHidden,
+    setSubmodulesHidden,
+    setSubmoduleOrder,
     save
   };
 }

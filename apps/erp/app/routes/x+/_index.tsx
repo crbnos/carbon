@@ -58,7 +58,6 @@ import CreateMenu from "~/components/Layout/Topbar/CreateMenu";
 import { ModuleCard } from "~/components/ModuleCard";
 import {
   useAllModules,
-  useModules,
   usePermissions,
   useRecentlyViewed,
   useUser
@@ -68,6 +67,7 @@ import {
   ImplementationData,
   type ImplementationHubData
 } from "~/hooks/useImplementationNavItem";
+import { useModuleLinks } from "~/hooks/useModuleSubmodules";
 import type { RecentDocument } from "~/hooks/useRecentlyViewed";
 import { useUIStore } from "~/stores/ui";
 import { path } from "~/utils/path";
@@ -154,7 +154,7 @@ function ImplementationSummary({ data }: { data: ImplementationHubData }) {
 // a wider screen.
 export default function AppIndexRoute() {
   const { greeting, agentDismissed } = useLoaderData<typeof loader>();
-  const modules = useModules();
+  const modules = useModuleLinks();
   const permissions = usePermissions();
   // A failed enrollment is toasted by `useAction`; success opens the hub.
   const enrollFetcher = useAction();

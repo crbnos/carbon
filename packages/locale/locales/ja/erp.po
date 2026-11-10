@@ -14431,6 +14431,7 @@ msgid "Hide"
 msgstr "非表示"
 
 #. placeholder {0}: module.name
+#. placeholder {0}: route.name
 msgid "Hide {0}"
 msgstr "{0} を非表示"
 
@@ -14442,6 +14443,10 @@ msgstr "口座番号を隠す"
 
 msgid "Hide Again"
 msgstr "もう一度非表示"
+
+#. placeholder {0}: group.name
+msgid "Hide all in {0}"
+msgstr ""
 
 msgid "Hide block"
 msgstr "ブロックを非表示"
@@ -16212,6 +16217,9 @@ msgstr ""
 
 msgid "Keep navigation open"
 msgstr "ナビゲーションを開いたままにする"
+
+msgid "Keep one, or hide {moduleName} itself"
+msgstr ""
 
 msgid "Keep only items where…"
 msgstr "以下の条件を満たすアイテムのみを保持…"
@@ -18190,6 +18198,7 @@ msgid "Move"
 msgstr "移動"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: route.name
 msgid "Move {0}"
 msgstr "移動 {0}"
 
@@ -27630,6 +27639,7 @@ msgid "Show"
 msgstr "表示"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: route.name
 msgid "Show {0}"
 msgstr "{0}を表示"
 
@@ -27657,6 +27667,10 @@ msgstr "すべて表示"
 
 msgid "Show all hidden on this step"
 msgstr "このステップで非表示になっているすべてを表示"
+
+#. placeholder {0}: group.name
+msgid "Show all in {0}"
+msgstr ""
 
 msgid "Show available batch numbers"
 msgstr "利用可能なバッチ番号を表示"
@@ -28634,6 +28648,10 @@ msgstr "部分組立パス"
 
 msgid "Sub-Departments"
 msgstr "サブ部門"
+
+#. placeholder {0}: module.name
+msgid "Sub-modules of {0}"
+msgstr ""
 
 msgid "Subassembly"
 msgstr "サブアセンブリ"

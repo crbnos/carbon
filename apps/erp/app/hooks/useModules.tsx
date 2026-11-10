@@ -9,6 +9,7 @@ import {
 } from "@carbon/database/access";
 import { useRouteData } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
+import { useMemo } from "react";
 import {
   LuBlocks,
   LuBox,
@@ -28,9 +29,14 @@ import {
   LuUsers,
   LuWorkflow
 } from "react-icons/lu";
+import { useUIStore } from "~/stores/ui";
 import type { Authenticated, NavItem } from "~/types";
 import { moduleLanding } from "~/utils/nav";
 import { path } from "~/utils/path";
+import {
+  type SubmoduleLayout,
+  submoduleLayout
+} from "~/utils/submodule-visibility";
 import { usePermissions } from "./usePermissions";
 import { useUser } from "./useUser";
 
@@ -126,7 +132,31 @@ type ModulePreference = {
   module: string;
   position: number;
   hidden: boolean;
+  hiddenSubmodules: string[];
+  submoduleOrder: string[];
 };
+
+const NO_PREFERENCES: ModulePreference[] = [];
+
+function useModulePreferences() {
+  const routeData = useRouteData<{
+    modulePreferences: ModulePreference[];
+  }>(path.to.authenticatedRoot);
+  return routeData?.modulePreferences ?? NO_PREFERENCES;
+}
+
+/**
+ * The sub-modules this user hides and the order they put them in. While
+ * Customize is open it is the unsaved layout, so the sidebar previews it.
+ */
+export function useSubmoduleLayout(): SubmoduleLayout {
+  const modulePreferences = useModulePreferences();
+  const draft = useUIStore((state) => state.draftSubmoduleLayout);
+  return useMemo(
+    () => draft ?? submoduleLayout(modulePreferences),
+    [draft, modulePreferences]
+  );
+}
 
 /** The modules the person can open (View on any of their pages), plus Shop Floor. */
 function usePermittedModules(): {
@@ -140,10 +170,10 @@ function usePermittedModules(): {
   const {
     company: { id: companyId }
   } = useUser();
-  const routeData = useRouteData<{
-    modulePreferences: ModulePreference[];
-    permissions: ExpandedClaims;
-  }>(path.to.authenticatedRoot);
+  const routeData = useRouteData<{ permissions: ExpandedClaims }>(
+    path.to.authenticatedRoot
+  );
+  const modulePreferences = useModulePreferences();
 
   const permitted = MODULES.filter(({ id }) =>
     permissions.hasAny(id, "View")
@@ -169,9 +199,7 @@ function usePermittedModules(): {
     modules: [...permitted.filter((m) => m.key !== "settings"), shopFloor].sort(
       (a, b) => a.name.localeCompare(b.name)
     ),
-    preferences: new Map(
-      (routeData?.modulePreferences ?? []).map((p) => [p.module, p])
-    )
+    preferences: new Map(modulePreferences.map((p) => [p.module, p]))
   };
 }
 
@@ -197,7 +225,9 @@ export function useAllModules() {
     .map((m, index) => ({
       ...m,
       position: preferences.get(m.key)?.position ?? index + 1,
-      hidden: preferences.get(m.key)?.hidden ?? false
+      hidden: preferences.get(m.key)?.hidden ?? false,
+      hiddenSubmodules: preferences.get(m.key)?.hiddenSubmodules ?? [],
+      submoduleOrder: preferences.get(m.key)?.submoduleOrder ?? []
     }))
     .sort((a, b) => a.position - b.position);
 }

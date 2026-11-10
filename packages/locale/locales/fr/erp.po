@@ -14431,6 +14431,7 @@ msgid "Hide"
 msgstr "Masquer"
 
 #. placeholder {0}: module.name
+#. placeholder {0}: route.name
 msgid "Hide {0}"
 msgstr "Masquer {0}"
 
@@ -14442,6 +14443,10 @@ msgstr "Masquer le numéro de compte"
 
 msgid "Hide Again"
 msgstr "Masquer à nouveau"
+
+#. placeholder {0}: group.name
+msgid "Hide all in {0}"
+msgstr ""
 
 msgid "Hide block"
 msgstr "Masquer le bloc"
@@ -16212,6 +16217,9 @@ msgstr ""
 
 msgid "Keep navigation open"
 msgstr "Garder la navigation ouverte"
+
+msgid "Keep one, or hide {moduleName} itself"
+msgstr ""
 
 msgid "Keep only items where…"
 msgstr "Garder uniquement les articles où…"
@@ -18190,6 +18198,7 @@ msgid "Move"
 msgstr "Déplacer"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: route.name
 msgid "Move {0}"
 msgstr "Déplacer {0}"
 
@@ -27630,6 +27639,7 @@ msgid "Show"
 msgstr "Afficher"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: route.name
 msgid "Show {0}"
 msgstr "Afficher {0}"
 
@@ -27657,6 +27667,10 @@ msgstr "Tout afficher"
 
 msgid "Show all hidden on this step"
 msgstr "Afficher tout ce qui est masqué sur cette étape"
+
+#. placeholder {0}: group.name
+msgid "Show all in {0}"
+msgstr ""
 
 msgid "Show available batch numbers"
 msgstr "Afficher les numéros de lot disponibles"
@@ -28634,6 +28648,10 @@ msgstr "Chemin du sous-ensemble"
 
 msgid "Sub-Departments"
 msgstr "Sous-départements"
+
+#. placeholder {0}: module.name
+msgid "Sub-modules of {0}"
+msgstr ""
 
 msgid "Subassembly"
 msgstr "Sous-ensemble"

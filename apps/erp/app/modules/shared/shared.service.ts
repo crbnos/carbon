@@ -1564,7 +1564,7 @@ type AppShellRows = {
   defaults: Views["userDefaults"]["Row"] | null;
   modulePreferences: Pick<
     PublicTables["userModulePreference"]["Row"],
-    "module" | "position" | "hidden"
+    "module" | "position" | "hidden" | "hiddenSubmodules" | "submoduleOrder"
   >[];
   printerRoutes: PrinterRoute[];
   implementationHub: PublicTables["implementationHub"]["Row"] | null;

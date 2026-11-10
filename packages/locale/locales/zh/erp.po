@@ -14431,6 +14431,7 @@ msgid "Hide"
 msgstr "隐藏"
 
 #. placeholder {0}: module.name
+#. placeholder {0}: route.name
 msgid "Hide {0}"
 msgstr "隐藏 {0}"
 
@@ -14442,6 +14443,10 @@ msgstr "隐藏账户号码"
 
 msgid "Hide Again"
 msgstr "再次隐藏"
+
+#. placeholder {0}: group.name
+msgid "Hide all in {0}"
+msgstr ""
 
 msgid "Hide block"
 msgstr "隐藏块"
@@ -16212,6 +16217,9 @@ msgstr ""
 
 msgid "Keep navigation open"
 msgstr "保持导航展开"
+
+msgid "Keep one, or hide {moduleName} itself"
+msgstr ""
 
 msgid "Keep only items where…"
 msgstr "仅保留满足以下条件的物料…"
@@ -18190,6 +18198,7 @@ msgid "Move"
 msgstr "移动"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: route.name
 msgid "Move {0}"
 msgstr "移动 {0}"
 
@@ -27630,6 +27639,7 @@ msgid "Show"
 msgstr "显示"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: route.name
 msgid "Show {0}"
 msgstr "显示 {0}"
 
@@ -27657,6 +27667,10 @@ msgstr "显示全部"
 
 msgid "Show all hidden on this step"
 msgstr "显示此步骤上隐藏的全部内容"
+
+#. placeholder {0}: group.name
+msgid "Show all in {0}"
+msgstr ""
 
 msgid "Show available batch numbers"
 msgstr "显示可用批次号"
@@ -28634,6 +28648,10 @@ msgstr "子装配体路径"
 
 msgid "Sub-Departments"
 msgstr "子部门"
+
+#. placeholder {0}: module.name
+msgid "Sub-modules of {0}"
+msgstr ""
 
 msgid "Subassembly"
 msgstr "子装配件"
