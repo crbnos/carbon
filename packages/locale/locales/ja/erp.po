@@ -5910,9 +5910,6 @@ msgstr "両方のテストが合格しました；資金なし (§41(d)(4)(H)) �
 msgid "Bottleneck"
 msgstr "ボトルネック"
 
-msgid "Bottom of page"
-msgstr "ページ下部"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "このバージョンの編集可能なコピーをブランチして、変更して公開できます。"
 

@@ -5910,9 +5910,6 @@ msgstr "Both tests pass; consider Not funded (§41(d)(4)(H))"
 msgid "Bottleneck"
 msgstr "Bottleneck"
 
-msgid "Bottom of page"
-msgstr "Bottom of page"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "Branch an editable copy of this version that you can change and publish."
 

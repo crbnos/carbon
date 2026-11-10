@@ -5910,9 +5910,6 @@ msgstr "두 테스트 모두 통과합니다. 미지원(§41(d)(4)(H)) 검토"
 msgid "Bottleneck"
 msgstr "병목"
 
-msgid "Bottom of page"
-msgstr "페이지 하단"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "이 버전의 편집 가능한 복사본을 분기하여 변경 및 게시할 수 있습니다."
 

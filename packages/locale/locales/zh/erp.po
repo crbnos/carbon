@@ -5910,9 +5910,6 @@ msgstr "两项测试都通过；考虑未资助 (§41(d)(4)(H))"
 msgid "Bottleneck"
 msgstr "瓶颈"
 
-msgid "Bottom of page"
-msgstr "页面底部"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "创建此版本的可编辑副本，您可以对其进行更改和发布。"
 

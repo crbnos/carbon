@@ -5910,9 +5910,6 @@ msgstr "दोनों परीक्षाएँ पास होती ह�
 msgid "Bottleneck"
 msgstr "अड़चन"
 
-msgid "Bottom of page"
-msgstr "पृष्ठ का निचला भाग"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "इस संस्करण की एक संपादन योग्य प्रति शाखा करें जिसे आप बदल सकते हैं और प्रकाशित कर सकते हैं।"
 

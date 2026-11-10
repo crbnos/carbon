@@ -5910,9 +5910,6 @@ msgstr "Oba testy przychodzą; rozważ Niezafinansowany (§41(d)(4)(H))"
 msgid "Bottleneck"
 msgstr "Wąskie gardło"
 
-msgid "Bottom of page"
-msgstr "Dół strony"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "Utwórz edytowalną kopię tej wersji, którą możesz zmienić i opublikować."
 
