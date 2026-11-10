@@ -1244,7 +1244,7 @@ export const path = {
         );
       },
       kanbanQrCode: (id: string, action: "order" | "start" | "complete") =>
-        generatePath(`${file}/kanban/${id}/${action}.png`),
+        generatePath(`${file}/kanban/${id}/${action}.svg`),
       nonConformance: (id: string) => generatePath(`${file}/issue/${id}.pdf`),
       operationLabelsPdf: (
         id: string,

@@ -857,6 +857,9 @@ msgstr "Açıklama"
 msgid "Details"
 msgstr "Detaylar"
 
+msgid "Discard"
+msgstr "Atıkla"
+
 msgid "Dismiss"
 msgstr "Kapat"
 

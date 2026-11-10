@@ -13,42 +13,30 @@ import type {
   HTMLAttributes,
   KeyboardEvent
 } from "react";
-import { createContext, forwardRef, useContext, useEffect } from "react";
+import { forwardRef, useEffect } from "react";
 
 import { LuX } from "react-icons/lu";
 import { ActionPresentationBoundary } from "./ActionPresentation";
+import {
+  BottomSheetContent,
+  sheetFooterClassName,
+  sheetHeaderClassName,
+  sheetTitleClassName
+} from "./BottomSheet";
 import { ClientOnly } from "./ClientOnly";
-import { DialogDepthContext, ReportDialogExit } from "./RouteDialogScope";
+import { DialogRoot, useDialogDismissable } from "./DialogRoot";
+import { ReportDialogExit } from "./RouteDialogScope";
 import { cn } from "./utils/cn";
-import { returnFocusOnClose, trackPageFocus } from "./utils/dialog";
-import { usePhoneOpenAutoFocus, useViewport } from "./Viewport";
+import {
+  keepOpenOnToast,
+  returnFocusOnClose,
+  trackPageFocus
+} from "./utils/dialog";
+import { useViewport } from "./Viewport";
 
-// A dialog held open with no `onOpenChange` cannot be closed by the X, Escape
-// or a click outside, so it does not offer the X. Leave `onOpenChange` off to
-// say "this cannot be dismissed" rather than passing a handler that does nothing.
-const DismissableContext = createContext(true);
-export const useDialogDismissable = () => useContext(DismissableContext);
-
-export const DialogRoot = ({
-  open,
-  onOpenChange,
-  ...props
-}: DialogPrimitive.DialogProps) => {
-  const depth = useContext(DialogDepthContext);
-  return (
-    <DialogDepthContext.Provider value={depth + 1}>
-      <DismissableContext.Provider
-        value={open === undefined || onOpenChange !== undefined}
-      >
-        <DialogPrimitive.Root
-          open={open}
-          onOpenChange={onOpenChange}
-          {...props}
-        />
-      </DismissableContext.Provider>
-    </DialogDepthContext.Provider>
-  );
-};
+// The root is shared with `Drawer` and `BottomSheet`, so it lives on its own:
+// on phones `ModalContent` renders a `BottomSheetContent`.
+export { DialogRoot, useDialogDismissable };
 
 const Modal = DialogRoot;
 
@@ -73,11 +61,12 @@ const ModalOverlay = forwardRef<
       // two durations must match.
       "data-[state=open]:duration-200 data-[state=closed]:duration-150 ease-out data-[state=closed]:!pointer-events-none",
       "z-50 fixed inset-0 grid place-items-center overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
-      // Phones: a bottom sheet over a dimmed screen.
-      "max-md:place-items-end max-md:overflow-hidden",
       // Content marked `data-instant` (opened by a keyboard shortcut) opens
       // and closes with no fade on desktop, and so does its backdrop.
       "md:[&:has(>[data-instant])]:!animate-none",
+      // Content marked `data-clear-backdrop` leaves the page behind it
+      // undimmed (a settings pane that previews the page's look).
+      "[&:has(>[data-clear-backdrop])]:bg-transparent [&:has(>[data-clear-backdrop])]:backdrop-blur-none",
 
       className
     )}
@@ -142,7 +131,6 @@ const ModalContentVariants = cva(
     "data-[state=open]:slide-in-from-left-[0%] data-[state=open]:slide-in-from-top-[0%]",
     "sm:rounded-2xl md:w-full",
     "bg-card focus-visible:outline-none focus-visible:ring-0",
-    "max-md:max-h-[88dvh] max-md:max-w-none max-md:rounded-t-[14px] max-md:rounded-b-none max-md:border-0 max-md:pt-5 max-md:pb-safe max-md:data-[state=open]:slide-in-from-bottom-4 max-md:data-[state=closed]:slide-out-to-bottom-4",
     "dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]"
   ),
   {
@@ -163,6 +151,34 @@ const ModalContentVariants = cva(
   }
 );
 
+/**
+ * A modal's or drawer's panel on a phone: a bottom sheet (its grabber that
+ * drags it down, its close button, its layer). The parts inside stay the
+ * modal's or drawer's own, which lay out for a phone. It undoes a desktop
+ * width or border from the caller, and lets a wrapping form shrink, so its
+ * body scrolls and its footer stays in view. Shared with `Drawer`.
+ */
+export const DialogSheetContent = forwardRef<
+  ElementRef<typeof BottomSheetContent>,
+  ComponentPropsWithoutRef<typeof BottomSheetContent>
+>(({ className, children, onCloseAutoFocus, ...props }, ref) => (
+  <BottomSheetContent
+    ref={ref}
+    className={cn(
+      // A caller's radius would round the corners at the screen's edge.
+      "max-md:rounded-b-none",
+      "max-md:w-full max-md:max-w-none max-md:border-0 max-md:[&>form]:flex max-md:[&>form]:min-h-0 max-md:[&>form]:flex-1 max-md:[&>form]:flex-col",
+      className
+    )}
+    onCloseAutoFocus={returnFocusOnClose(onCloseAutoFocus)}
+    {...props}
+  >
+    <ReportDialogExit />
+    {children}
+  </BottomSheetContent>
+));
+DialogSheetContent.displayName = "DialogSheetContent";
+
 const ModalContent = forwardRef<
   ElementRef<typeof DialogPrimitive.Content>,
   ComponentPropsWithoutRef<typeof DialogPrimitive.Content> &
@@ -178,6 +194,7 @@ const ModalContent = forwardRef<
       withCloseButton = true,
       onOpenAutoFocus,
       onCloseAutoFocus,
+      onInteractOutside,
       ...props
     },
     ref
@@ -185,7 +202,27 @@ const ModalContent = forwardRef<
     useEffect(trackPageFocus, []);
     const dismissable = useDialogDismissable();
     const { isPhone } = useViewport();
-    const phoneOpenAutoFocus = usePhoneOpenAutoFocus(onOpenAutoFocus);
+
+    // Phones: a bottom sheet, as `Drawer` is.
+    if (isPhone) {
+      return (
+        <DialogSheetContent
+          ref={ref}
+          withCloseButton={withCloseButton}
+          // As the modal did, the panel scrolls when its content is not in a
+          // `ModalBody`, unless the caller says otherwise (`overflow-hidden`).
+          className={cn("overflow-y-auto", className)}
+          onOpenAutoFocus={onOpenAutoFocus}
+          onCloseAutoFocus={onCloseAutoFocus}
+          onInteractOutside={onInteractOutside}
+          {...props}
+        >
+          {children}
+        </DialogSheetContent>
+      );
+    }
+
+    // Not on a phone (that is the sheet above), so nothing here styles one.
     return (
       <ClientOnly fallback={null}>
         {() => (
@@ -195,19 +232,13 @@ const ModalContent = forwardRef<
                 ref={ref}
                 className={cn(ModalContentVariants({ size }), className)}
                 onOpenAutoFocus={(event) => {
-                  phoneOpenAutoFocus(event);
+                  onOpenAutoFocus?.(event);
                   if (!event.defaultPrevented) focusPrimaryAction(event);
                 }}
                 {...props}
+                onInteractOutside={keepOpenOnToast(onInteractOutside)}
                 onCloseAutoFocus={returnFocusOnClose(onCloseAutoFocus)}
               >
-                {/* Phones: the same grabber as a drawer sheet. */}
-                {isPhone && (
-                  <div
-                    aria-hidden
-                    className="absolute left-1/2 top-1.5 h-[5px] w-9 -translate-x-1/2 rounded-full bg-muted-foreground/20"
-                  />
-                )}
                 <ReportDialogExit />
                 <ActionPresentationBoundary>
                   {children}
@@ -215,7 +246,7 @@ const ModalContent = forwardRef<
                 {withCloseButton && dismissable && (
                   <DialogPrimitive.Close
                     type="button"
-                    className="absolute right-4 top-4 rounded-full opacity-70 transition-opacity hover:opacity-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-foreground-muted p-3 hover:bg-accent/80 max-md:right-1 max-md:top-1 max-md:flex max-md:size-11 max-md:items-center max-md:justify-center max-md:p-0"
+                    className="absolute right-4 top-4 rounded-full opacity-70 transition-opacity hover:opacity-100 outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-foreground-muted p-3 hover:bg-accent/80"
                   >
                     <LuX className="h-4 w-4" />
                     <span className="sr-only">Close</span>
@@ -236,9 +267,12 @@ const ModalHeader = ({
   ...props
 }: HTMLAttributes<HTMLDivElement>) => (
   <div
+    data-bottom-sheet-header=""
     className={cn(
       "flex flex-col shrink-0 space-y-1.5 text-center sm:text-left mb-4 px-6",
-      "max-md:mb-3 max-md:px-4 max-md:pr-14 max-md:text-left",
+      // Phones: a sheet's header (a centred 44px row beside its close button).
+      sheetHeaderClassName,
+      "max-md:mb-1 max-md:space-y-0.5 max-md:text-center",
       className
     )}
     {...props}
@@ -286,7 +320,8 @@ const ModalFooter = ({
     className={cn(
       "flex flex-col-reverse shrink-0 sm:flex-row sm:justify-end gap-2 px-6 py-3 border-t border-border bg-muted/40 sm:rounded-b-2xl",
       compactFooterClassName,
-      "max-md:rounded-none max-md:bg-card max-md:pb-3",
+      "max-md:rounded-none",
+      sheetFooterClassName,
       className
     )}
     {...props}
@@ -302,6 +337,7 @@ const ModalTitle = forwardRef<
     ref={ref}
     className={cn(
       "text-base font-medium leading-none tracking-tight text-foreground text-balance",
+      sheetTitleClassName,
       className
     )}
     {...props}
@@ -315,7 +351,7 @@ const ModalDescription = forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={cn("text-sm text-muted-foreground max-md:text-xs", className)}
     {...props}
   />
 ));

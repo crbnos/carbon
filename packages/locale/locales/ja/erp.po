@@ -16140,6 +16140,9 @@ msgstr "かんばん出力"
 msgid "Kanban output setting updated"
 msgstr "かんばん出力設定が更新されました"
 
+msgid "Kanban QR code"
+msgstr "かんばんのQRコード"
+
 msgid "Kanbans"
 msgstr "かんばん"
 

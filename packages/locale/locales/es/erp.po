@@ -16140,6 +16140,9 @@ msgstr "Salida Kanban"
 msgid "Kanban output setting updated"
 msgstr "Configuración de salida de Kanban actualizada"
 
+msgid "Kanban QR code"
+msgstr "Código QR del kanban"
+
 msgid "Kanbans"
 msgstr "Kanbans"
 
