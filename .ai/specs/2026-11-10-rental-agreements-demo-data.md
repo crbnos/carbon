@@ -1,6 +1,6 @@
 # Rental agreements in the demo datasets
 
-> Status: in-progress
+> Status: Approved
 > Author: aashu
 > Date: 2026-11-10
 
