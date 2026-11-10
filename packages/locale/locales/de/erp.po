@@ -6354,6 +6354,9 @@ msgstr "Begrenzen Sie die indirekten Sätze, die eine Cost-Plus-Position abrechn
 msgid "Capacity"
 msgstr "Kapazität"
 
+msgid "Capacity — free stock, then the shop's schedule"
+msgstr ""
+
 msgid "Capacity reservation"
 msgstr "Kapazitätsreservierung"
 
@@ -6775,6 +6778,9 @@ msgstr "Kontenplan"
 msgid "Chat"
 msgstr "Chat"
 
+msgid "Check"
+msgstr ""
+
 msgid "Check operations on the left to build the batch."
 msgstr "Wählen Sie Arbeitsgänge auf der linken Seite, um das Los zu erstellen."
 
@@ -6795,6 +6801,9 @@ msgstr "Überprüfung von Stripe für diesen Kunden…"
 
 msgid "Checking the batch's jobs..."
 msgstr "Überprüfung der Aufträge des Loses..."
+
+msgid "Checking the delivery date…"
+msgstr ""
 
 msgid "Checking the Stripe customer link…"
 msgstr "Überprüfung der Stripe-Kundenverknüpfung…"
@@ -9490,6 +9499,18 @@ msgstr "Ausstellungsdatum"
 msgid "Date Issued"
 msgstr "Ausstellungsdatum"
 
+msgid "Date kept"
+msgstr ""
+
+msgid "Date kept. Earliest delivery date: {earliest}."
+msgstr ""
+
+msgid "Date not confirmed"
+msgstr ""
+
+msgid "Date not confirmed. Earliest delivery date: {earliest}."
+msgstr ""
+
 msgid "Date paid"
 msgstr "Zahlungsdatum"
 
@@ -10340,6 +10361,12 @@ msgstr "Lieferung – Land"
 
 msgid "Delivery Date"
 msgstr "Liefertermin"
+
+msgid "Delivery Date Check"
+msgstr ""
+
+msgid "Delivery date check updated"
+msgstr ""
 
 msgid "Delivery Location"
 msgstr "Lieferort"
@@ -16451,6 +16478,9 @@ msgstr "Beschaffungszeit"
 msgid "Lead Time"
 msgstr "Beschaffungszeit"
 
+msgid "Lead Time — the lead time through the BOM"
+msgstr ""
+
 msgid "Lead time (days)"
 msgstr "Beschaffungszeit (Tage)"
 
@@ -16574,6 +16604,9 @@ msgstr "Leer lassen für exakte Übereinstimmung"
 
 msgid "Leave empty to use the account default"
 msgstr "Leer lassen, um die Kontostandards zu verwenden"
+
+msgid "Leave empty to use the level in Settings → Sales."
+msgstr ""
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Leer lassen oder 0 eingeben, um alles anzuzeigen, das MRP plant."
@@ -20138,6 +20171,9 @@ msgstr "Arbeitsfreie Tage, die Planung und Kapazität berücksichtigen"
 msgid "None"
 msgstr "Keine"
 
+msgid "None — no check"
+msgstr ""
+
 msgid "None available"
 msgstr "Keine verfügbar"
 
@@ -20680,6 +20716,9 @@ msgstr "Hier nur {0} {unitOfMeasure}"
 msgid "Only {available} available"
 msgstr "Nur {available} verfügbar"
 
+msgid "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "Only {quantity} in batches there"
 msgstr "Dort nur {quantity} in Losen"
 
@@ -21143,6 +21182,9 @@ msgstr "Optionale feste Rate, die bei der Umrechnung von Eigenkapitalsalden nach
 
 msgid "Optional pages & sections"
 msgstr "Optionale Seiten & Abschnitte"
+
+msgid "Optional. Saving keeps the date and records who kept it."
+msgstr ""
 
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "Optional. Beendet neue Kaufvorschläge nach diesem Datum."
@@ -23842,6 +23884,9 @@ msgstr "Grund für Änderung"
 
 msgid "Reason for declining (Optional)"
 msgstr "Grund für Ablehnung (Optional)"
+
+msgid "Reason for keeping this date"
+msgstr ""
 
 msgid "Reason for late entry"
 msgstr "Grund für verspätete Eingabe"
@@ -28334,6 +28379,9 @@ msgstr "Noch geschuldet"
 msgid "Stock"
 msgstr "Bestand"
 
+msgid "Stock — free stock, then the lead time"
+msgstr ""
+
 msgid "Stock and planning"
 msgstr "Bestand und Planung"
 
@@ -30204,6 +30252,9 @@ msgstr "Der letzte Tag, um eine Verlängerungs- oder Kündigungsmitteilung einzu
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "Das späteste Datum, um diese Bestellung aufzugeben, damit sie bis zum Bedarfsdatum eintrifft, angesichts der Beschaffungszeit des Lieferanten."
 
+msgid "The lead time is {days} days. The earliest delivery date is {earliest}."
+msgstr ""
+
 #. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
 #. placeholder {1}: formatDate(asOf)
 msgid "The lease entries from {0} to {1} are not in the general ledger yet. These figures follow the lease schedules, so they will not tie to the ledger until a lease run posts them."
@@ -30710,6 +30761,9 @@ msgstr "Die Dienstleistungen, die dieser Vertrag abrechnet: Einmalige Gebühren 
 msgid "The shelves and bins where stock physically sits"
 msgstr "Die Regale und Lagerplätze, an denen Bestand physisch sitzt"
 
+msgid "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Die Werkstattbedarf und Verbrauchsmaterialien, die Sie bereithalten"
 
@@ -31173,6 +31227,9 @@ msgstr "Der Mietpreis dieses Kundentyps"
 
 msgid "This customer's rate"
 msgstr "Der Mietpreis dieses Kunden"
+
+msgid "This date cannot be met"
+msgstr ""
 
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "Diese Abteilung hat keine Arbeitsplätze bei {locationName}. Wählen Sie eine andere Abteilung oder einen anderen Standort."
@@ -32958,6 +33015,9 @@ msgstr "Verwenden Sie ..., um die nächste Teile-ID zu erhalten"
 msgid "Use ... to get the next tool ID"
 msgstr "Verwenden Sie ..., um die nächste Werkzeug-ID zu erhalten"
 
+msgid "Use {earliest}"
+msgstr ""
+
 msgid "Use a different account"
 msgstr "Verwenden Sie ein anderes Konto"
 
@@ -33947,6 +34007,9 @@ msgstr "Wenn Sie auf einen Nachrichtenstrang antworten, machen Sie die Nachricht
 
 msgid "When serial numbers are assigned"
 msgstr "Wann Seriennummern zugewiesen werden"
+
+msgid "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
+msgstr ""
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Wann Lieferantenreaktionen erwartet werden; Lieferanten sehen dieses Datum auf dem RFQ-Portal und Carbon akzeptiert keine späten Antworten danach (konfigurierbar)."

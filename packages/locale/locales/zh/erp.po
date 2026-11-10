@@ -6354,6 +6354,9 @@ msgstr "限制成本加成行计费的间接费率，并以暂定费率计费负
 msgid "Capacity"
 msgstr "产能"
 
+msgid "Capacity — free stock, then the shop's schedule"
+msgstr ""
+
 msgid "Capacity reservation"
 msgstr "产能预留"
 
@@ -6775,6 +6778,9 @@ msgstr "会计科目表"
 msgid "Chat"
 msgstr "聊天"
 
+msgid "Check"
+msgstr ""
+
 msgid "Check operations on the left to build the batch."
 msgstr "勾选左侧的操作以构建批次。"
 
@@ -6795,6 +6801,9 @@ msgstr "正在为此客户检查Stripe…"
 
 msgid "Checking the batch's jobs..."
 msgstr "正在检查生产批次的工单..."
+
+msgid "Checking the delivery date…"
+msgstr ""
 
 msgid "Checking the Stripe customer link…"
 msgstr "正在检查 Stripe 客户链接…"
@@ -9490,6 +9499,18 @@ msgstr "发行日期"
 msgid "Date Issued"
 msgstr "签发日期"
 
+msgid "Date kept"
+msgstr ""
+
+msgid "Date kept. Earliest delivery date: {earliest}."
+msgstr ""
+
+msgid "Date not confirmed"
+msgstr ""
+
+msgid "Date not confirmed. Earliest delivery date: {earliest}."
+msgstr ""
+
 msgid "Date paid"
 msgstr "支付日期"
 
@@ -10340,6 +10361,12 @@ msgstr "送货国家"
 
 msgid "Delivery Date"
 msgstr "交货日期"
+
+msgid "Delivery Date Check"
+msgstr ""
+
+msgid "Delivery date check updated"
+msgstr ""
 
 msgid "Delivery Location"
 msgstr "送货地点"
@@ -16451,6 +16478,9 @@ msgstr "提前期"
 msgid "Lead Time"
 msgstr "提前期"
 
+msgid "Lead Time — the lead time through the BOM"
+msgstr ""
+
 msgid "Lead time (days)"
 msgstr "提前期（天）"
 
@@ -16574,6 +16604,9 @@ msgstr "留空以精确匹配"
 
 msgid "Leave empty to use the account default"
 msgstr "留空以使用帐户默认值"
+
+msgid "Leave empty to use the level in Settings → Sales."
+msgstr ""
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "留空或输入 0 以显示 MRP 计划的所有内容。"
@@ -20138,6 +20171,9 @@ msgstr "不工作日，排班和产能规划会考虑这些日期"
 msgid "None"
 msgstr "无"
 
+msgid "None — no check"
+msgstr ""
+
 msgid "None available"
 msgstr "无可用项"
 
@@ -20680,6 +20716,9 @@ msgstr "此处仅有 {0} {unitOfMeasure}"
 msgid "Only {available} available"
 msgstr "仅{available}可用"
 
+msgid "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "Only {quantity} in batches there"
 msgstr "该处仅有 {quantity} 属于生产批次"
 
@@ -21143,6 +21182,9 @@ msgstr "在根据IAS 21转换所有者权益余额时使用的可选固定汇率
 
 msgid "Optional pages & sections"
 msgstr "可选页面和部分"
+
+msgid "Optional. Saving keeps the date and records who kept it."
+msgstr ""
 
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "可选。在此日期之后停止新采购建议。"
@@ -23842,6 +23884,9 @@ msgstr "变更原因"
 
 msgid "Reason for declining (Optional)"
 msgstr "拒绝原因（可选）"
+
+msgid "Reason for keeping this date"
+msgstr ""
 
 msgid "Reason for late entry"
 msgstr "迟交原因"
@@ -28334,6 +28379,9 @@ msgstr "仍欠"
 msgid "Stock"
 msgstr "库存"
 
+msgid "Stock — free stock, then the lead time"
+msgstr ""
+
 msgid "Stock and planning"
 msgstr "库存和计划"
 
@@ -30204,6 +30252,9 @@ msgstr "给出续约或终止通知的最后期限"
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "放置此采购订单的最迟日期，以便在给定供应商提前期的情况下按需要日期到达。"
 
+msgid "The lead time is {days} days. The earliest delivery date is {earliest}."
+msgstr ""
+
 #. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
 #. placeholder {1}: formatDate(asOf)
 msgid "The lease entries from {0} to {1} are not in the general ledger yet. These figures follow the lease schedules, so they will not tie to the ledger until a lease run posts them."
@@ -30710,6 +30761,9 @@ msgstr "此合同计费的服务：一次性费用和循环费用。单击单元
 msgid "The shelves and bins where stock physically sits"
 msgstr "库存实际存放的货架和料箱"
 
+msgid "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "你随时拥有的耗材和消耗品"
 
@@ -31173,6 +31227,9 @@ msgstr "此客户类型的费率"
 
 msgid "This customer's rate"
 msgstr "此客户的费率"
+
+msgid "This date cannot be met"
+msgstr ""
 
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "此部门在 {locationName} 没有工作中心。选择另一个部门或地点。"
@@ -32958,6 +33015,9 @@ msgstr "使用 ... 获取下一个零件 ID"
 msgid "Use ... to get the next tool ID"
 msgstr "使用 ... 获取下一个工具 ID"
 
+msgid "Use {earliest}"
+msgstr ""
+
 msgid "Use a different account"
 msgstr "使用不同的账户"
 
@@ -33947,6 +34007,9 @@ msgstr "回复线程时，还应使消息对频道中的所有人可见（仅在
 
 msgid "When serial numbers are assigned"
 msgstr "分配序列号时"
+
+msgid "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
+msgstr ""
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "何时预期供应商回复;供应商在RFQ门户上看到该日期,Carbon在之后停止接受迟到的回复(可配置)。"

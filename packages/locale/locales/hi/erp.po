@@ -6354,6 +6354,9 @@ msgstr "अप्रत्यक्ष दरों को कैप करे�
 msgid "Capacity"
 msgstr "क्षमता"
 
+msgid "Capacity — free stock, then the shop's schedule"
+msgstr ""
+
 msgid "Capacity reservation"
 msgstr "क्षमता आरक्षण"
 
@@ -6775,6 +6778,9 @@ msgstr "खातों का चार्ट"
 msgid "Chat"
 msgstr "चैट"
 
+msgid "Check"
+msgstr ""
+
 msgid "Check operations on the left to build the batch."
 msgstr "बैच बनाने के लिए बाईं ओर ऑपरेशन की जांच करें।"
 
@@ -6795,6 +6801,9 @@ msgstr "इस ग्राहक के लिए Stripe की जांच �
 
 msgid "Checking the batch's jobs..."
 msgstr "बैच की जॉब्स को जाँच रहे हैं..."
+
+msgid "Checking the delivery date…"
+msgstr ""
 
 msgid "Checking the Stripe customer link…"
 msgstr "Stripe ग्राहक लिंक की जांच जारी है…"
@@ -9490,6 +9499,18 @@ msgstr "जारी करने की तारीख"
 msgid "Date Issued"
 msgstr "जारी करने की तारीख"
 
+msgid "Date kept"
+msgstr ""
+
+msgid "Date kept. Earliest delivery date: {earliest}."
+msgstr ""
+
+msgid "Date not confirmed"
+msgstr ""
+
+msgid "Date not confirmed. Earliest delivery date: {earliest}."
+msgstr ""
+
 msgid "Date paid"
 msgstr "भुगतान की तारीख"
 
@@ -10340,6 +10361,12 @@ msgstr "डिलीवरी देश"
 
 msgid "Delivery Date"
 msgstr "डिलीवरी तिथि"
+
+msgid "Delivery Date Check"
+msgstr ""
+
+msgid "Delivery date check updated"
+msgstr ""
 
 msgid "Delivery Location"
 msgstr "डिलीवरी स्थान"
@@ -16451,6 +16478,9 @@ msgstr "लीड टाइम"
 msgid "Lead Time"
 msgstr "लीड टाइम"
 
+msgid "Lead Time — the lead time through the BOM"
+msgstr ""
+
 msgid "Lead time (days)"
 msgstr "लीड टाइम (दिन)"
 
@@ -16574,6 +16604,9 @@ msgstr "सटीक मिलान के लिए खाली छोड़�
 
 msgid "Leave empty to use the account default"
 msgstr "खाता डिफ़ॉल्ट का उपयोग करने के लिए खाली छोड़ें"
+
+msgid "Leave empty to use the level in Settings → Sales."
+msgstr ""
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "MRP द्वारा योजनाबद्ध सब कुछ दिखाने के लिए खाली छोड़ें, या 0 दर्ज करें।"
@@ -20138,6 +20171,9 @@ msgstr "गैर-कार्य दिन जिन्हें शेड्�
 msgid "None"
 msgstr "कोई नहीं"
 
+msgid "None — no check"
+msgstr ""
+
 msgid "None available"
 msgstr "कोई उपलब्ध नहीं"
 
@@ -20680,6 +20716,9 @@ msgstr "यहाँ केवल {0} {unitOfMeasure} है"
 msgid "Only {available} available"
 msgstr "केवल {available} उपलब्ध"
 
+msgid "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "Only {quantity} in batches there"
 msgstr "वहाँ बैचों में केवल {quantity}"
 
@@ -21143,6 +21182,9 @@ msgstr "IAS 21 के अनुसार इक्विटी शेष को 
 
 msgid "Optional pages & sections"
 msgstr "वैकल्पिक पृष्ठ और अनुभाग"
+
+msgid "Optional. Saving keeps the date and records who kept it."
+msgstr ""
 
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "वैकल्पिक। इस तारीख के बाद नई खरीद सुझाव बंद करता है।"
@@ -23842,6 +23884,9 @@ msgstr "परिवर्तन का कारण"
 
 msgid "Reason for declining (Optional)"
 msgstr "अस्वीकार करने का कारण (वैकल्पिक)"
+
+msgid "Reason for keeping this date"
+msgstr ""
 
 msgid "Reason for late entry"
 msgstr "देरी से प्रविष्टि का कारण"
@@ -28334,6 +28379,9 @@ msgstr "अभी भी बकाया"
 msgid "Stock"
 msgstr "स्टॉक"
 
+msgid "Stock — free stock, then the lead time"
+msgstr ""
+
 msgid "Stock and planning"
 msgstr "स्टॉक और योजना"
 
@@ -30204,6 +30252,9 @@ msgstr "नवीकरण या समाप्ति सूचना दे�
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "इस PO को रखने की सबसे हाल की तिथि ताकि यह प्राप्ति की आवश्यकता तिथि तक पहुँचे, आपूर्तिकर्ता की लीड टाइम दी गई।"
 
+msgid "The lead time is {days} days. The earliest delivery date is {earliest}."
+msgstr ""
+
 #. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
 #. placeholder {1}: formatDate(asOf)
 msgid "The lease entries from {0} to {1} are not in the general ledger yet. These figures follow the lease schedules, so they will not tie to the ledger until a lease run posts them."
@@ -30710,6 +30761,9 @@ msgstr "सेवाएँ जो यह अनुबंध बिल करत�
 msgid "The shelves and bins where stock physically sits"
 msgstr "वह शेल्फ और बिन जहां स्टॉक भौतिक रूप से रखा जाता है"
 
+msgid "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "दुकान की आपूर्ति और उपभोग्य सामग्री जो आप हाथ में रखते हैं"
 
@@ -31173,6 +31227,9 @@ msgstr "इस ग्राहक प्रकार की दर"
 
 msgid "This customer's rate"
 msgstr "इस ग्राहक की दर"
+
+msgid "This date cannot be met"
+msgstr ""
 
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "इस विभाग के पास {locationName} पर कोई वर्क सेंटर नहीं है। किसी अन्य विभाग या स्थान को चुनें।"
@@ -32958,6 +33015,9 @@ msgstr "अगला पार्ट आईडी प्राप्त कर�
 msgid "Use ... to get the next tool ID"
 msgstr "अगली टूल ID प्राप्त करने के लिए ... का उपयोग करें"
 
+msgid "Use {earliest}"
+msgstr ""
+
 msgid "Use a different account"
 msgstr "एक अलग खाता उपयोग करें"
 
@@ -33947,6 +34007,9 @@ msgstr "किसी थ्रेड का जवाब देते समय,
 
 msgid "When serial numbers are assigned"
 msgstr "सीरियल नंबर असाइन होने पर"
+
+msgid "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
+msgstr ""
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "जब आपूर्तिकर्ता प्रतिक्रिया की उम्मीद की जाती है; आपूर्तिकर्ता आरएफक्यू पोर्टल पर यह तारीख देखते हैं और कार्बन इसके बाद देर से प्रतिक्रिया स्वीकार नहीं करता है (कॉन्फ़िगर करने योग्य)।"

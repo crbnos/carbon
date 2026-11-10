@@ -21,6 +21,7 @@ import {
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { plmReleaseControl } from "~/modules/items/items.models";
+import { deliveryDateControlTypes } from "~/modules/shared/shared.models";
 import { DataType } from "~/modules/shared/types";
 
 export const modulesType = [
@@ -425,6 +426,10 @@ export const rescheduleToleranceValidator = z.object({
 });
 
 // Empty clears the default: items without their own horizon then have no fence.
+export const deliveryDateCheckSettingsValidator = z.object({
+  deliveryDateControl: z.enum(deliveryDateControlTypes)
+});
+
 export const planningHorizonValidator = z.object({
   days: zfd.numeric(z.number().int().min(0).max(3650).optional())
 });

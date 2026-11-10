@@ -6354,6 +6354,9 @@ msgstr "Limitar as alíquotas indiretas que uma linha de Custo Mais cobra, e cob
 msgid "Capacity"
 msgstr "Capacidade"
 
+msgid "Capacity — free stock, then the shop's schedule"
+msgstr ""
+
 msgid "Capacity reservation"
 msgstr "Reserva de capacidade"
 
@@ -6775,6 +6778,9 @@ msgstr "Plano de Contas"
 msgid "Chat"
 msgstr "Chat"
 
+msgid "Check"
+msgstr ""
+
 msgid "Check operations on the left to build the batch."
 msgstr "Verifique as operações à esquerda para construir o lote."
 
@@ -6795,6 +6801,9 @@ msgstr "Verificando Stripe para este cliente…"
 
 msgid "Checking the batch's jobs..."
 msgstr "Verificando as ordens de produção do lote de produção..."
+
+msgid "Checking the delivery date…"
+msgstr ""
 
 msgid "Checking the Stripe customer link…"
 msgstr "Verificando a conexão do cliente no Stripe…"
@@ -9490,6 +9499,18 @@ msgstr "Data de emissão"
 msgid "Date Issued"
 msgstr "Data de Emissão"
 
+msgid "Date kept"
+msgstr ""
+
+msgid "Date kept. Earliest delivery date: {earliest}."
+msgstr ""
+
+msgid "Date not confirmed"
+msgstr ""
+
+msgid "Date not confirmed. Earliest delivery date: {earliest}."
+msgstr ""
+
 msgid "Date paid"
 msgstr "Data de pagamento"
 
@@ -10340,6 +10361,12 @@ msgstr "País de Entrega"
 
 msgid "Delivery Date"
 msgstr "Data de Entrega"
+
+msgid "Delivery Date Check"
+msgstr ""
+
+msgid "Delivery date check updated"
+msgstr ""
 
 msgid "Delivery Location"
 msgstr "Local de Entrega"
@@ -16451,6 +16478,9 @@ msgstr "Lead time"
 msgid "Lead Time"
 msgstr "Lead Time"
 
+msgid "Lead Time — the lead time through the BOM"
+msgstr ""
+
 msgid "Lead time (days)"
 msgstr "Lead time (dias)"
 
@@ -16574,6 +16604,9 @@ msgstr "Deixe vazio para correspondência exata"
 
 msgid "Leave empty to use the account default"
 msgstr "Deixe vazio para usar o padrão da conta"
+
+msgid "Leave empty to use the level in Settings → Sales."
+msgstr ""
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Deixe vazio ou digite 0 para mostrar tudo que o MRP planeja."
@@ -20138,6 +20171,9 @@ msgstr "Dias não úteis que o agendamento e a capacidade respeitam"
 msgid "None"
 msgstr "Nenhum"
 
+msgid "None — no check"
+msgstr ""
+
 msgid "None available"
 msgstr "Nenhuma disponível"
 
@@ -20680,6 +20716,9 @@ msgstr "Somente {0} {unitOfMeasure} aqui"
 msgid "Only {available} available"
 msgstr "Apenas {available} disponível"
 
+msgid "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "Only {quantity} in batches there"
 msgstr "Apenas {quantity} em lotes de produção ali"
 
@@ -21143,6 +21182,9 @@ msgstr "Taxa fixa opcional usada ao traduzir saldos de patrimônio líquido de a
 
 msgid "Optional pages & sections"
 msgstr "Páginas e seções opcionais"
+
+msgid "Optional. Saving keeps the date and records who kept it."
+msgstr ""
 
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "Opcional. Interrompe novas sugestões de compra após esta data."
@@ -23842,6 +23884,9 @@ msgstr "Motivo da Mudança"
 
 msgid "Reason for declining (Optional)"
 msgstr "Motivo da recusa (Opcional)"
+
+msgid "Reason for keeping this date"
+msgstr ""
 
 msgid "Reason for late entry"
 msgstr "Motivo da entrada atrasada"
@@ -28334,6 +28379,9 @@ msgstr "Ainda devido"
 msgid "Stock"
 msgstr "Estoque"
 
+msgid "Stock — free stock, then the lead time"
+msgstr ""
+
 msgid "Stock and planning"
 msgstr "Estoque e planejamento"
 
@@ -30204,6 +30252,9 @@ msgstr "O último dia para dar aviso de renovação ou encerramento"
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "A data limite para colocar este pedido de compra para que chegue até a data necessária, considerando o lead time do fornecedor."
 
+msgid "The lead time is {days} days. The earliest delivery date is {earliest}."
+msgstr ""
+
 #. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
 #. placeholder {1}: formatDate(asOf)
 msgid "The lease entries from {0} to {1} are not in the general ledger yet. These figures follow the lease schedules, so they will not tie to the ledger until a lease run posts them."
@@ -30710,6 +30761,9 @@ msgstr "Os serviços que este contrato fatura: taxas únicas e cobranças recorr
 msgid "The shelves and bins where stock physically sits"
 msgstr "As prateleiras e compartimentos onde o estoque fica fisicamente"
 
+msgid "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Os suprimentos de loja e consumíveis que você mantém à mão"
 
@@ -31173,6 +31227,9 @@ msgstr "A taxa deste tipo de cliente"
 
 msgid "This customer's rate"
 msgstr "A taxa deste cliente"
+
+msgid "This date cannot be met"
+msgstr ""
 
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "Este departamento não tem centros de trabalho em {locationName}. Escolha outro departamento ou local."
@@ -32958,6 +33015,9 @@ msgstr "Use ... to get the next part ID"
 msgid "Use ... to get the next tool ID"
 msgstr "Use ... to get the next tool ID"
 
+msgid "Use {earliest}"
+msgstr ""
+
 msgid "Use a different account"
 msgstr "Use uma conta diferente"
 
@@ -33947,6 +34007,9 @@ msgstr "Ao responder a um tópico, também tornar a mensagem visível para todos
 
 msgid "When serial numbers are assigned"
 msgstr "Quando os números de série forem atribuídos"
+
+msgid "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
+msgstr ""
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Quando se espera que os fornecedores respondam; os fornecedores veem esta data no portal RFQ e a Carbon para de aceitar respostas tardias depois dela (configurável)."

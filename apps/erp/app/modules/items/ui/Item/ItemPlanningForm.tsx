@@ -35,14 +35,18 @@ import {
 import { ItemReorderPolicy } from "./ItemReorderPolicy";
 
 type ItemPlanningFormProps = {
-  // the DB row carries responsibleEmployee / planningHorizonDays as nullable;
-  // the validator treats them as optional — accept both
+  // the DB row carries responsibleEmployee / planningHorizonDays /
+  // deliveryDateControl as nullable; the validator treats them as optional —
+  // accept both
   initialValues: Omit<
     z.infer<typeof itemPlanningValidator>,
-    "responsibleEmployee" | "planningHorizonDays"
+    "responsibleEmployee" | "planningHorizonDays" | "deliveryDateControl"
   > & {
     responsibleEmployee?: string | null;
     planningHorizonDays?: number | null;
+    deliveryDateControl?:
+      | z.infer<typeof itemPlanningValidator>["deliveryDateControl"]
+      | null;
   };
   locations: ListItem[];
   type: "Part" | "Material" | "Tool" | "Consumable";
@@ -188,6 +192,19 @@ const ItemPlanningForm = ({
               label={t`Planning Horizon (Days)`}
               termId="item-planning-horizon"
               minValue={0}
+            />
+
+            <SelectForm
+              name="deliveryDateControl"
+              label={t`Delivery Date Check`}
+              placeholder={t`Company default`}
+              options={[
+                { value: "None", label: t`None` },
+                { value: "Lead Time", label: t`Lead Time` },
+                { value: "Stock", label: t`Stock` },
+                { value: "Capacity", label: t`Capacity` }
+              ]}
+              helperText={t`Leave empty to use the level in Settings → Sales.`}
             />
 
             <Employee

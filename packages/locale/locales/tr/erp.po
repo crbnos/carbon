@@ -6354,6 +6354,9 @@ msgstr "Bir Maliyet Artı satırının faturalandırdığı dolaylı oranları s
 msgid "Capacity"
 msgstr "Kapasite"
 
+msgid "Capacity — free stock, then the shop's schedule"
+msgstr ""
+
 msgid "Capacity reservation"
 msgstr "Kapasite Rezervasyonu"
 
@@ -6775,6 +6778,9 @@ msgstr "Hesap Planı"
 msgid "Chat"
 msgstr "Sohbet"
 
+msgid "Check"
+msgstr ""
+
 msgid "Check operations on the left to build the batch."
 msgstr "Toplu işi oluşturmak için sol tarafta operasyonları kontrol edin."
 
@@ -6795,6 +6801,9 @@ msgstr "Bu müşteri için Stripe kontrol ediliyor…"
 
 msgid "Checking the batch's jobs..."
 msgstr "Partinin iş emirleri kontrol ediliyor..."
+
+msgid "Checking the delivery date…"
+msgstr ""
 
 msgid "Checking the Stripe customer link…"
 msgstr "Stripe müşteri bağlantısı kontrol ediliyor…"
@@ -9490,6 +9499,18 @@ msgstr "Yayın tarihi"
 msgid "Date Issued"
 msgstr "Düzenleme Tarihi"
 
+msgid "Date kept"
+msgstr ""
+
+msgid "Date kept. Earliest delivery date: {earliest}."
+msgstr ""
+
+msgid "Date not confirmed"
+msgstr ""
+
+msgid "Date not confirmed. Earliest delivery date: {earliest}."
+msgstr ""
+
 msgid "Date paid"
 msgstr "Ödeme tarihi"
 
@@ -10340,6 +10361,12 @@ msgstr "Teslimat Ülkesi"
 
 msgid "Delivery Date"
 msgstr "Teslimat Tarihi"
+
+msgid "Delivery Date Check"
+msgstr ""
+
+msgid "Delivery date check updated"
+msgstr ""
 
 msgid "Delivery Location"
 msgstr "Teslimat Yeri"
@@ -16451,6 +16478,9 @@ msgstr "tedarik süresi"
 msgid "Lead Time"
 msgstr "Tedarik süresi"
 
+msgid "Lead Time — the lead time through the BOM"
+msgstr ""
+
 msgid "Lead time (days)"
 msgstr "tedarik süresi (gün)"
 
@@ -16574,6 +16604,9 @@ msgstr "Tam eşleşme için boş bırakın"
 
 msgid "Leave empty to use the account default"
 msgstr "Hesap varsayılanını kullanmak için boş bırakın"
+
+msgid "Leave empty to use the level in Settings → Sales."
+msgstr ""
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Tüm MRP planlarını görmek için boş bırakın veya 0 girin."
@@ -20138,6 +20171,9 @@ msgstr "Planlama ve kapasite tarafından dikkate alınan çalışılmayan günle
 msgid "None"
 msgstr "Yok"
 
+msgid "None — no check"
+msgstr ""
+
 msgid "None available"
 msgstr "Kullanılabilir yok"
 
@@ -20680,6 +20716,9 @@ msgstr "Burada yalnızca {0} {unitOfMeasure} var"
 msgid "Only {available} available"
 msgstr "Sadece {available} kullanılabilir"
 
+msgid "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "Only {quantity} in batches there"
 msgstr "Orada yalnızca partilerdeki {quantity} var"
 
@@ -21143,6 +21182,9 @@ msgstr "Özkaynak bakiyelerini IAS 21'e göre çevirirken kullanılan isteğe ba
 
 msgid "Optional pages & sections"
 msgstr "İsteğe bağlı sayfalar ve bölümler"
+
+msgid "Optional. Saving keeps the date and records who kept it."
+msgstr ""
 
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "İsteğe bağlı. Bu tarihten sonra yeni satın alma önerilerini durdurur."
@@ -23842,6 +23884,9 @@ msgstr "Değişiklik Nedeni"
 
 msgid "Reason for declining (Optional)"
 msgstr "Reddetme nedeni (İsteğe bağlı)"
+
+msgid "Reason for keeping this date"
+msgstr ""
 
 msgid "Reason for late entry"
 msgstr "Geç Giriş Nedeni"
@@ -28334,6 +28379,9 @@ msgstr "Henüz Ödenmemiş"
 msgid "Stock"
 msgstr "Stok"
 
+msgid "Stock — free stock, then the lead time"
+msgstr ""
+
 msgid "Stock and planning"
 msgstr "Stok ve Planlama"
 
@@ -30204,6 +30252,9 @@ msgstr "Yenileme veya sonlandırma bildirimi vermek için son gün"
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "Tedarikçinin teslim süresine göre bu Satın Alma Siparişini (PO) ihtiyaç tarihine kadar ulaşması için en geç tarih."
 
+msgid "The lead time is {days} days. The earliest delivery date is {earliest}."
+msgstr ""
+
 #. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
 #. placeholder {1}: formatDate(asOf)
 msgid "The lease entries from {0} to {1} are not in the general ledger yet. These figures follow the lease schedules, so they will not tie to the ledger until a lease run posts them."
@@ -30710,6 +30761,9 @@ msgstr "Bu sözleşmenin faturalandırdığı hizmetler: bir kerelik ücretler v
 msgid "The shelves and bins where stock physically sits"
 msgstr "Stoğun fiziksel olarak bulunduğu raflar ve gözler"
 
+msgid "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Elinizdeki tezgâh malzemeleri ve sarf malzemeleri"
 
@@ -31173,6 +31227,9 @@ msgstr "Bu müşteri türü'nün oranı"
 
 msgid "This customer's rate"
 msgstr "Bu müşteri'nin oranı"
+
+msgid "This date cannot be met"
+msgstr ""
 
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "Bu departmanın {locationName} konumunda iş merkezi yok. Başka bir departman veya lokasyon seçin."
@@ -32958,6 +33015,9 @@ msgstr "Bir sonraki parça kimliğini almak için ..."
 msgid "Use ... to get the next tool ID"
 msgstr "Sonraki araç kimliğini almak için ..."
 
+msgid "Use {earliest}"
+msgstr ""
+
 msgid "Use a different account"
 msgstr "Farklı bir hesap kullan"
 
@@ -33947,6 +34007,9 @@ msgstr "Bir iş akışına yanıt verirken, iletiyi kanalda herkese de görünü
 
 msgid "When serial numbers are assigned"
 msgstr "Seri numaraları atandığında"
+
+msgid "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
+msgstr ""
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Tedarikçi yanıtlarının ne zaman beklenmesi gerektiği; tedarikçiler RFQ portalında bu tarihi görür ve Carbon bundan sonra geç yanıtları kabul etmeyi durdurur (yapılandırılabilir)."

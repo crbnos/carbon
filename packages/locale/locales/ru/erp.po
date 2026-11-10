@@ -6354,6 +6354,9 @@ msgstr "Ограничить косвенные ставки, которые в�
 msgid "Capacity"
 msgstr "Емкость"
 
+msgid "Capacity — free stock, then the shop's schedule"
+msgstr ""
+
 msgid "Capacity reservation"
 msgstr "Резервирование мощности"
 
@@ -6775,6 +6778,9 @@ msgstr "План счетов"
 msgid "Chat"
 msgstr "Чат"
 
+msgid "Check"
+msgstr ""
+
 msgid "Check operations on the left to build the batch."
 msgstr "Отметьте операции слева, чтобы создать пакет."
 
@@ -6795,6 +6801,9 @@ msgstr "Проверка Stripe для этого покупателя…"
 
 msgid "Checking the batch's jobs..."
 msgstr "Проверка производственных заказов серии..."
+
+msgid "Checking the delivery date…"
+msgstr ""
 
 msgid "Checking the Stripe customer link…"
 msgstr "Проверка связи с клиентом Stripe…"
@@ -9490,6 +9499,18 @@ msgstr "Дата выдачи"
 msgid "Date Issued"
 msgstr "Дата выпуска"
 
+msgid "Date kept"
+msgstr ""
+
+msgid "Date kept. Earliest delivery date: {earliest}."
+msgstr ""
+
+msgid "Date not confirmed"
+msgstr ""
+
+msgid "Date not confirmed. Earliest delivery date: {earliest}."
+msgstr ""
+
 msgid "Date paid"
 msgstr "Дата оплаты"
 
@@ -10340,6 +10361,12 @@ msgstr "Страна поставки"
 
 msgid "Delivery Date"
 msgstr "Дата поставки"
+
+msgid "Delivery Date Check"
+msgstr ""
+
+msgid "Delivery date check updated"
+msgstr ""
 
 msgid "Delivery Location"
 msgstr "Место доставки"
@@ -16451,6 +16478,9 @@ msgstr "Срок поставки"
 msgid "Lead Time"
 msgstr "Срок поставки"
 
+msgid "Lead Time — the lead time through the BOM"
+msgstr ""
+
 msgid "Lead time (days)"
 msgstr "Срок поставки (дни)"
 
@@ -16574,6 +16604,9 @@ msgstr "Оставьте пустым для точного совпадения
 
 msgid "Leave empty to use the account default"
 msgstr "Оставьте пустым, чтобы использовать значение по умолчанию учетной записи"
+
+msgid "Leave empty to use the level in Settings → Sales."
+msgstr ""
 
 msgid "Leave empty, or enter 0, to show everything MRP plans."
 msgstr "Оставьте пусто или введите 0, чтобы показать все, что планирует MRP."
@@ -20138,6 +20171,9 @@ msgstr "Нерабочие дни, которые учитываются при 
 msgid "None"
 msgstr "Нет"
 
+msgid "None — no check"
+msgstr ""
+
 msgid "None available"
 msgstr "Нет доступных"
 
@@ -20680,6 +20716,9 @@ msgstr "Здесь только {0} {unitOfMeasure}"
 msgid "Only {available} available"
 msgstr "Доступно только {available}"
 
+msgid "Only {free} are free by {promised}. The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "Only {quantity} in batches there"
 msgstr "Там только {quantity} в сериях"
 
@@ -21143,6 +21182,9 @@ msgstr "Дополнительный фиксированный курс, исп
 
 msgid "Optional pages & sections"
 msgstr "Дополнительные страницы и разделы"
+
+msgid "Optional. Saving keeps the date and records who kept it."
+msgstr ""
 
 msgid "Optional. Stops new purchase suggestions after this date."
 msgstr "Опционально. Останавливает новые предложения по закупкам после этой даты."
@@ -23842,6 +23884,9 @@ msgstr "Причина изменения"
 
 msgid "Reason for declining (Optional)"
 msgstr "Причина отказа (Необязательно)"
+
+msgid "Reason for keeping this date"
+msgstr ""
 
 msgid "Reason for late entry"
 msgstr "Причина позднего ввода"
@@ -28334,6 +28379,9 @@ msgstr "Все еще задолжено"
 msgid "Stock"
 msgstr "Запас"
 
+msgid "Stock — free stock, then the lead time"
+msgstr ""
+
 msgid "Stock and planning"
 msgstr "Запас и планирование"
 
@@ -30204,6 +30252,9 @@ msgstr "Последний день для подачи уведомления �
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "Самая поздняя дата размещения этого заказа поставщику, чтобы он прибыл к нужной дате, с учетом срока поставки поставщика."
 
+msgid "The lead time is {days} days. The earliest delivery date is {earliest}."
+msgstr ""
+
 #. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
 #. placeholder {1}: formatDate(asOf)
 msgid "The lease entries from {0} to {1} are not in the general ledger yet. These figures follow the lease schedules, so they will not tie to the ledger until a lease run posts them."
@@ -30710,6 +30761,9 @@ msgstr "Услуги, которые выставляет этот контра�
 msgid "The shelves and bins where stock physically sits"
 msgstr "Полки и ячейки, где физически располагается запас."
 
+msgid "The shop cannot finish this by {promised}. The earliest delivery date is {earliest}."
+msgstr ""
+
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Расходные материалы и товары, которые вы держите под рукой"
 
@@ -31173,6 +31227,9 @@ msgstr "Ставка этого типа покупателя"
 
 msgid "This customer's rate"
 msgstr "Ставка этого покупателя"
+
+msgid "This date cannot be met"
+msgstr ""
 
 msgid "This department has no work centers at {locationName}. Pick another department or location."
 msgstr "Этот отдел не имеет рабочих центров на {locationName}. Выберите другой отдел или площадку."
@@ -32958,6 +33015,9 @@ msgstr "Используйте ... для получения следующег�
 msgid "Use ... to get the next tool ID"
 msgstr "Используйте ... для получения следующего ID инструмента"
 
+msgid "Use {earliest}"
+msgstr ""
+
 msgid "Use a different account"
 msgstr "Использовать другую учетную запись"
 
@@ -33947,6 +34007,9 @@ msgstr "При ответе в теме сделайте сообщение ви
 
 msgid "When serial numbers are assigned"
 msgstr "Когда назначаются серийные номера"
+
+msgid "When someone adds or changes a sales order line, check that the promised date can be met. The check runs only when the date is closer than the item's lead time through its BOM. It warns and shows the earliest date; it never stops the save. An item's Planning tab can set its own level."
+msgstr ""
 
 msgid "When supplier responses are expected back; suppliers see this date on the RFQ portal and Carbon stops accepting late responses after it (configurable)."
 msgstr "Когда ожидается ответ поставщиков; поставщики видят эту дату на портале RFQ, и Carbon перестает принимать поздние ответы после нее (настраивается)."

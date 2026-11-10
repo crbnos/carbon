@@ -1214,14 +1214,6 @@ export const quoteLeadTimeValidator = z.object({
     .nullable()
 });
 
-// Delivery date check levels (companySettings / itemPlanning.deliveryDateControl).
-export const deliveryDateControlTypes = [
-  "None",
-  "Lead Time",
-  "Stock",
-  "Capacity"
-] as const;
-
 // A sales order line's delivery date check — a JSON body (not FormData), so
 // plain zod. The fields are the line's as the form holds them before a save.
 export const deliveryDateCheckValidator = z.object({

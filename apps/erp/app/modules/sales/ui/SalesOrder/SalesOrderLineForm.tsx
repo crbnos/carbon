@@ -101,6 +101,7 @@ import type {
   SalesOrderLineType
 } from "../../types";
 import { PriceTraceModal } from "../Pricing/PriceTraceModal";
+import { DeliveryDateCheckAlert } from "./DeliveryDateCheckAlert";
 
 type SalesOrderLineFormProps = {
   initialValues: z.infer<typeof salesOrderLineValidator> & {
@@ -164,6 +165,10 @@ const SalesOrderLineForm = ({
   const [locationId, setLocationId] = useState(initialValues.locationId ?? "");
   const [saleQuantity, setSaleQuantity] = useState(
     initialValues.saleQuantity ?? 1
+  );
+  // Held so the delivery date check can offer its earliest date.
+  const [promisedDate, setPromisedDate] = useState<string | null>(
+    initialValues.promisedDate || null
   );
   const [isPriceResolving, setIsPriceResolving] = useState(false);
   const [itemData, setItemData] = useState<{
@@ -782,11 +787,19 @@ const SalesOrderLineForm = ({
                             {/* A service is promised for the day it starts, so
                                 the server copies the start date across. */}
                             {!isService && (
-                              <DatePicker
-                                name="promisedDate"
-                                label={t`Promised Date`}
-                                termId="sales-order-line-promised-date"
-                              />
+                              <>
+                                <DatePicker
+                                  name="requestedDate"
+                                  label={t`Requested Date`}
+                                />
+                                <DatePicker
+                                  name="promisedDate"
+                                  label={t`Promised Date`}
+                                  termId="sales-order-line-promised-date"
+                                  value={promisedDate ?? undefined}
+                                  onChange={setPromisedDate}
+                                />
+                              </>
                             )}
                             {isService && (
                               <>
@@ -850,6 +863,23 @@ const SalesOrderLineForm = ({
                         )}
                         <CustomFormFields table="salesOrderLine" />
                       </div>
+
+                      {!isService && (
+                        <DeliveryDateCheckAlert
+                          orderId={orderId}
+                          lineId={initialValues.id}
+                          lineType={lineType}
+                          itemId={itemData.itemId}
+                          methodType={itemData.methodType}
+                          quantity={saleQuantity}
+                          locationId={locationId}
+                          promisedDate={promisedDate}
+                          defaultReason={
+                            initialValues.deliveryDateOverrideReason
+                          }
+                          onUseEarliestDate={setPromisedDate}
+                        />
+                      )}
 
                       {lineType !== "Comment" && (
                         <div className="w-full">
