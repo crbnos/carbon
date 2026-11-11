@@ -171,7 +171,39 @@ Problems it removes:
 
 ## Progress
 - [x] 1 core — [x] 1 authz — [x] 2 auth/api — [x] 2 ee/editors — [x] 2 ERP (commit 4b36420e75) — [~] F10 (TS marker)
-- [ ] comments — [ ] re-survey — [ ] tests — [ ] verify
+- [x] comments — [x] re-survey — [x] tests (4b8b93489f) — [x] verify
+
+Re-surveys 1–10, items worth fixing per pass: 219 → 71 → 46 → 28 → 24 → 18 → 11 → 10 → 7 → 5 → 3, all
+fixed (rounds 2–13, last commit f447027bfd). Inputs and statuses: `.ai/scratch/resurvey*-*.md`.
+
+Bugs this branch caused, found by the re-surveys and the page pass, all fixed:
+- Topbar search returned nothing for anyone (claims looked up by module name) — round 8.
+- OAuth connector authorize worked only for the active company (claims are per company) — round 9.
+- Hiding a module's first sub-module fell back by URL segment, so some entries were never picked — round 7.
+- ITAR Certifications, Companies, Backups and Webhooks looped with `/x/settings` when their flag or plan
+  was off (Settings opens on the first viewable page) — rounds 12–13; lesson in `.ai/lessons.md`.
+- `job-guards.test.ts` held a module key, so its refusals passed whatever the gate was — tests phase.
+
+Tests phase: 11 removed, 50 rewritten, every security rewrite proven red→green
+(`.ai/scratch/tests-survey-*.md`).
+
+Final verification (2026-11-11): forced typecheck of 12 tasks, lint, all unit suites, `@carbon/checks`,
+`check:manifest`, `check:workflow-catalog`, `authz check`, datasets and backups pass. SQL tests 42/44
+(`inspection-hold`, `integration-metadata-patch` fail on main too). ERP database tests: the remaining
+failures fail on main or only under parallel runs (deadlock in make-method-version; main's unique unit
+codes break the project-posting fixture's `EA` insert). One-page-role pass, 173 pages: every page opens
+for its one-page role except, by design, Accounting → Bank Accounts (a tab inside supplier/customer
+records, which need their own page), Payroll Totals (DCAA timekeeping off) and Billing (owner only; the
+dev company group has no owner).
+
+## Open decisions for the user
+
+1. Audit-log IP: some access writes record none, and an API caller can pass any `ip` for its own grant
+   change. Fix = request origin on `ServiceContext` (changes `@carbon/api`'s contract).
+2. Bulk "Edit permissions": selected rows accept inactive employees; "all matching" skips them.
+3. OAuth consent page requires API Keys Edit in the active company (as on main).
+4. Inactive Admins: page access counts them; force delete (main's rule) does not.
+5. Billing for a company group with no owner: nobody can open it (owner-only on the server).
 
 ## User decisions (round 5)
 
