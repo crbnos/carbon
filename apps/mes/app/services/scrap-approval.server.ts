@@ -187,7 +187,7 @@ export async function postScrapWithApproval<T>(args: {
   const markPosted = () =>
     markScrapApprovalPosted(db, {
       companyId,
-      scrapRequestId: recorded.scrapRequestId,
+      scrapRequestIds: [recorded.scrapRequestId],
       userId
     }).catch((error) => {
       // The scrap posted and its approval is recorded; only the posted mark
@@ -213,7 +213,7 @@ export async function postScrapWithApproval<T>(args: {
     } else if (refusedScrap) {
       await discardScrapApproval(db, {
         companyId,
-        scrapRequestId: recorded.scrapRequestId
+        scrapRequestIds: [recorded.scrapRequestId]
       }).catch((error) => {
         logger.error("Failed to remove the approval of a refused scrap", {
           companyId,

@@ -85,9 +85,10 @@ as usual and the approval is recorded with it.
 - **Who may approve**: the approvers of the matched tier and every higher tier who have a console PIN. The person
   logging the scrap cannot approve it. Set a PIN from **Users → Employees → Set Console PIN**.
 - **Paths**: scrapping a unit on an operation, scrapping a component, completing a batch with scrap, and
-  scrapping units when rejecting or partly accepting an inspection lot. Scrap typed in on a job's **Quantities**
-  and a **Scrap** inventory adjustment can be recorded in the ERP only by an approver at that tier. An API key
-  is refused when a rule applies.
+  scrapping units when rejecting or partly accepting a job operation's inspection lot. Scrap typed in on a job's
+  **Quantities**, a **Scrap** inventory adjustment, and completing an issue whose **Scrap** rows write off stock
+  (a partly accepted receipt lot's held remainder included) can be done in the ERP only by an approver at that
+  tier. An API key is refused when a rule applies.
 - **Direct writes**: while a scrap rule is on, scrap written straight to a job's quantities or an operation's
   scrapped count through the database API is refused. Use the published operations.
 - **Records**: every approved scrap is listed under **Production → Scrap Approvals** with its value, who logged
