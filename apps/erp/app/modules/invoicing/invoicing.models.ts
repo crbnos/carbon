@@ -839,7 +839,7 @@ export function paymentJournalDifference<
       line.accountId,
       line.description,
       line.documentLineReference ?? "",
-      line.journalLineReference ?? "",
+      // journalLineReference is new on every build: not part of the key.
       line.accountDefaultRole ?? ""
     ].join("|");
   const net = new Map<string, { line: T; amount: number }>();

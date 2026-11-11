@@ -4093,10 +4093,17 @@ export const decideDocumentForceDelete = defineServiceFn({
           if (document.step === "void") {
             const voided = await service.voidForceDeleteDocument(ctx, document);
             if (voided.refusal !== null) {
-              if ("internal" in voided && voided.internal) {
-                await release();
-                return ctx.error("internal", voided.refusal, voided.internal);
-              }
+              // The postings report refusals as server errors too, so any
+              // void failure falls back to the reversal by journal; a real
+              // fault fails that step as well, and the claim is released.
+              logger.warn(
+                "Force delete: the void refused, reversing by journal",
+                {
+                  documentId: document.id,
+                  refusal: voided.refusal,
+                  error: "internal" in voided ? voided.internal : undefined
+                }
+              );
               byJournal = true;
             } else {
               adjustOut = voided.adjustOut;

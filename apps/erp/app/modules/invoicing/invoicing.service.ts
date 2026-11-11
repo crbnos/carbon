@@ -18863,13 +18863,6 @@ export async function voidForceDeleteDocument(
               postReceipt
             );
   if (!voided.error) return { refusal: null, adjustOut: false };
-  if (voided.error.status >= 500) {
-    return {
-      refusal: `Failed to void ${document.readableId}`,
-      adjustOut: false,
-      internal: voided.error
-    };
-  }
   if (
     document.documentType === "receipt" &&
     document.sourceDocument === "Purchase Order" &&
@@ -18877,6 +18870,13 @@ export async function voidForceDeleteDocument(
       voided.error.message === RECEIPT_VOID_STOCK_MOVED_ERROR)
   ) {
     return { refusal: null, adjustOut: true };
+  }
+  if (voided.error.status >= 500) {
+    return {
+      refusal: `${document.readableId} could not be voided: ${voided.error.message}`,
+      adjustOut: false,
+      internal: voided.error
+    };
   }
   return {
     refusal: `${document.readableId} could not be voided: ${voided.error.message}`,

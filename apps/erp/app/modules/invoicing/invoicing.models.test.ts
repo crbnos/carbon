@@ -249,6 +249,15 @@ describe("paymentJournalDifference", () => {
     ]);
   });
 
+  it("ignores the line references a rebuild draws again", () => {
+    expect(
+      paymentJournalDifference(
+        [{ ...line("bank", "Bank / Cash", 10), journalLineReference: "a" }],
+        [{ ...line("bank", "Bank / Cash", 10), journalLineReference: "b" }]
+      )
+    ).toEqual([]);
+  });
+
   it("is empty when nothing changed", () => {
     const lines = [line("bank", "Bank / Cash", 10)];
     expect(paymentJournalDifference(lines, lines)).toEqual([]);
