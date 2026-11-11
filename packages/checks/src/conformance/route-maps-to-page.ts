@@ -2,7 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { PAGES, pageOfUrl, routeUrl } from "@carbon/database/access";
+import {
+  PAGES,
+  routeUrl,
+  urlCoverage,
+  urlSegments
+} from "@carbon/database/access";
 import type { Violation } from "../check";
 
 export const ROUTE_MAPS_TO_PAGE = "route-maps-to-page";
@@ -15,7 +20,8 @@ const PAGES_DIR = "packages/database/src/access/pages";
 
 /**
  * Routes under `x+` that belong to no one page, with the reason. A key that
- * ends with `/` covers every route below it; any other key is one route.
+ * ends with `/` covers its own URL and every route below it; any other key is
+ * one route.
  */
 export const UNPAGED_ROUTES: Readonly<Record<string, string>> = {
   "/x": "The app shell and the home page.",
@@ -39,19 +45,15 @@ export const UNPAGED_ROUTES: Readonly<Record<string, string>> = {
       "The module's layout; its index redirects to the module's first page."
     ])
   ),
-  "/x/timesheet": "My Time: every employee's own timesheet.",
   "/x/timesheet/": "My Time: every employee's own timesheet.",
   "/x/accounting/projects": "Redirects to Projects.",
   "/x/settings/timekeeping": "Redirects to Time settings.",
   "/x/account/": "The signed-in person's own account.",
-  "/x/account": "The signed-in person's own account.",
   "/x/acknowledge": "The ITAR acknowledgment every person signs.",
   "/x/print": "The print endpoint every page posts to.",
   "/x/shared/":
     "Notes, saved views and imports, which every page uses for its own records.",
   "/x/settings/tags/": "The tag endpoint every list page posts to.",
-  "/x/settings/tags": "The tag endpoint every list page posts to.",
-  "/x/get-started": "The Implementation Hub has no sidebar entry.",
   "/x/get-started/": "The Implementation Hub has no sidebar entry.",
   "/x/items/$itemId/properties":
     "Shared by the five item pages; the item's type picks the page.",
@@ -71,11 +73,7 @@ export const UNPAGED_ROUTES: Readonly<Record<string, string>> = {
     "Batch properties of one item; the item's type picks the page.",
   "/x/credits/":
     "A memo's detail, shared by Supplier Credits and Credit Memos; the memo's party picks the page.",
-  "/x/credits":
-    "A memo's detail, shared by Supplier Credits and Credit Memos; the memo's party picks the page.",
   "/x/revenue-recognition-run/":
-    "A run's detail, shared by Leases and Revenue Recognition; the run's type picks the page.",
-  "/x/revenue-recognition-run":
     "A run's detail, shared by Leases and Revenue Recognition; the run's type picks the page.",
   "/x/priority": "The layout of Priorities and Resource Planning.",
   "/x/scheduling": "The layout of Forecast and Outbound.",
@@ -88,7 +86,6 @@ export const UNPAGED_ROUTES: Readonly<Record<string, string>> = {
   "/x/quality/inbound-inspections/$id": "Redirects to an inspection.",
   "/x/people/people": "Redirects to Employees.",
   "/x/items/change-orders/": "Redirects to Change Notices.",
-  "/x/items/change-orders": "Redirects to Change Notices.",
   "/x/items/change-order/": "Redirects to a change notice.",
   "/x/items/change-order-types/": "Redirects to Change Notice Types.",
   "/x/items/change-order-actions/": "Redirects to Change Notice Actions.",
@@ -98,13 +95,11 @@ export const UNPAGED_ROUTES: Readonly<Record<string, string>> = {
 /** The registry facts the check needs; `REGISTRY` is the real one. */
 export type RouteRegistry = {
   pages: readonly { id: string; paths: readonly string[] }[];
-  /** The page `pageOfUrl` names for the URL, which the app's gates and sidebar use. */
-  pageOfUrl(url: string): string | undefined;
 };
 
-export const REGISTRY: RouteRegistry = { pages: PAGES, pageOfUrl };
+export const REGISTRY: RouteRegistry = { pages: PAGES };
 
-/** A page path covers its own URL and every URL below it. */
+/** A key covers its own URL and every URL below it (plain text: no `$param`). */
 const covers = (prefix: string, url: string) => {
   const path = prefix.replace(/\/$/, "");
   return url === path || url.startsWith(`${path}/`);
@@ -114,14 +109,16 @@ const covers = (prefix: string, url: string) => {
 const unpaged = (key: string, url: string) =>
   key.endsWith("/") ? covers(key, url) : url === key;
 
-/** The pages whose longest path covers the URL, by plain prefix. */
+/** The pages whose longest path covers the URL, matched as `pageOfUrl`
+ * matches (`urlCoverage`: a `$param` takes any one segment). */
 function pagesFor(url: string, registry: RouteRegistry) {
+  const segments = urlSegments(url);
   let best = 0;
   let found: string[] = [];
   for (const page of registry.pages) {
     for (const path of page.paths) {
-      const length = path.replace(/\/$/, "").length;
-      if (!covers(path, url) || length < best) continue;
+      const length = urlCoverage(path, segments);
+      if (length === 0 || length < best) continue;
       if (length > best) found = [];
       best = length;
       if (!found.includes(page.id)) found.push(page.id);
@@ -138,8 +135,8 @@ function pagesFor(url: string, registry: RouteRegistry) {
  *
  * It fails:
  * - a route no page covers and `UNPAGED_ROUTES` does not list, one that two
- *   pages cover equally, and one that is both on a page and listed;
- * - a route `pageOfUrl` puts on another page than its longest path names;
+ *   pages cover equally (where `pageOfUrl` would pick by order), and one that
+ *   is both on a page and listed;
  * - an `UNPAGED_ROUTES` entry that matches no route;
  * - a page path that matches no route.
  */
@@ -171,9 +168,6 @@ export function findRoutePageGaps(
         url,
         `${url} is on no page: add it to a page's \`paths\`, or to UNPAGED_ROUTES with the reason`
       );
-    const page = registry.pageOfUrl(url);
-    if (pages.length === 1 && page !== pages[0])
-      push(file, url, `${url} is on ${pages[0]}, but pageOfUrl names ${page}`);
   }
 
   for (const key of Object.keys(unpagedRoutes))
@@ -182,7 +176,7 @@ export function findRoutePageGaps(
 
   for (const page of registry.pages)
     for (const path of page.paths)
-      if (!urls.some(({ url }) => covers(path, url)))
+      if (!urls.some(({ url }) => urlCoverage(path, urlSegments(url)) > 0))
         push(
           `${PAGES_DIR}/${page.id.split(".")[0]}.ts`,
           path,

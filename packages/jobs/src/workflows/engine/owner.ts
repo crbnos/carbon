@@ -60,24 +60,21 @@ export async function getOwnerClient(
 
 /**
  * The permissions a workflow may act with: the owner's, while the owner is an
- * employee of the company. A customer or supplier portal account, or claims
- * that could not be read (`null`), runs nothing.
+ * employee of the company. A customer or supplier portal account runs nothing.
  */
 export function ownerPermissionsOf(
-  claims: Claims | null,
+  claims: Claims,
   companyId: string
 ): ExpandedClaims | null {
-  if (claims === null) return null;
   if (!admits(userActor(claims), companyId, "employee")) return null;
   return claims.permissions;
 }
 
 /**
  * The one wording for a lost permission: the gate's page label, or its module's
- * label when the gate names several pages of one shared table. Exported because
- * the builder's test-run route refuses with it too, and two copies would drift.
+ * label when the gate names several pages of one shared table.
  */
-export function noAccess(gate: Gate): string {
+function noAccess(gate: Gate): string {
   const pages = gatePages(gate);
   const first: string = pages[0] ?? "";
   const page = pages.length === 1 ? pageById(first) : undefined;
@@ -89,7 +86,8 @@ export function noAccess(gate: Gate): string {
 }
 
 /** Why the owner may not pass `gate` in the company, or `null` when they may
- * (or when there is no gate). */
+ * (or when there is no gate). The engine and the builder's test-run route both
+ * refuse with it, so the check and its wording are written once. */
 export function ownerRefusal(
   gate: Gate | undefined,
   permissions: ExpandedClaims,

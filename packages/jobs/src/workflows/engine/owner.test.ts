@@ -51,10 +51,6 @@ describe("ownerPermissionsOf", () => {
     expect(ownerPermissionsOf(owner("customer", "View"), "c1")).toBeNull();
     expect(ownerPermissionsOf(owner("supplier", "View"), "c1")).toBeNull();
   });
-
-  it("runs nothing when the owner's claims cannot be read", () => {
-    expect(ownerPermissionsOf(null, "c1")).toBeNull();
-  });
 });
 
 describe("ownerRefusal", () => {

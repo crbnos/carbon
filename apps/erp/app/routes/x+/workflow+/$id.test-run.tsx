@@ -5,7 +5,6 @@
 import { assertIsPost } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { holdsGate } from "@carbon/database/access";
 import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import { requireFeature } from "@carbon/ee/plan.server";
 import {
@@ -19,7 +18,7 @@ import {
   workflowDefinitionSchema
 } from "@carbon/ee/workflows";
 import { validator } from "@carbon/form";
-import { executeManualWorkflowRun, noAccess } from "@carbon/jobs/inngest";
+import { executeManualWorkflowRun, ownerRefusal } from "@carbon/jobs/inngest";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -199,13 +198,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // The gate comes before the read, not only inside the walk: `buildTrigger` fetches
   // the record with service role, and an ordering that only happens to be safe is one
   // an edit can quietly break. The walk re-checks against live claims.
-  const eventPermission = event?.permission;
-  if (eventPermission !== undefined) {
-    const required = eventGate(eventPermission);
-    if (!holdsGate(gate.permissions, required, gate.companyId)) {
-      return refuse(noAccess(required), 403);
-    }
-  }
+  const refused = ownerRefusal(
+    event?.permission === undefined ? undefined : eventGate(event.permission),
+    gate.permissions,
+    gate.companyId
+  );
+  if (refused) return refuse(refused, 403);
 
   let input: unknown;
   try {

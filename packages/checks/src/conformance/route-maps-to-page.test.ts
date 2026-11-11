@@ -5,18 +5,11 @@
 import { describe, expect, it } from "vitest";
 import { findRoutePageGaps, type RouteRegistry } from "./route-maps-to-page";
 
-const PAGE_OF_URL: Record<string, string> = {
-  "/x/inventory/receipts": "inventory.receipts",
-  "/x/inventory/receipts/$id": "inventory.receipts",
-  "/x/inventory/shipments": "inventory.shipments"
-};
-
 const registry = (overrides: Partial<RouteRegistry> = {}): RouteRegistry => ({
   pages: [
     { id: "inventory.receipts", paths: ["/x/inventory/receipts"] },
     { id: "inventory.shipments", paths: ["/x/inventory/shipments"] }
   ],
-  pageOfUrl: (url) => PAGE_OF_URL[url],
   ...overrides
 });
 
@@ -85,20 +78,17 @@ describe("findRoutePageGaps", () => {
     ]);
   });
 
-  it("flags a route pageOfUrl puts on another page", () => {
-    expect(
-      gaps(ROUTES, {
-        pageOfUrl: (url) =>
-          url === "/x/inventory/shipments"
-            ? "inventory.receipts"
-            : PAGE_OF_URL[url]
-      })
-    ).toEqual([
-      [
-        "apps/erp/app/routes/x+/inventory+/shipments.tsx",
-        "/x/inventory/shipments"
+  it("matches a page path's $param to any one segment, as pageOfUrl does", () => {
+    const customers = {
+      pages: [
+        { id: "inventory.receipts", paths: ["/x/inventory/receipts"] },
+        { id: "inventory.shipments", paths: ["/x/inventory/shipments"] },
+        { id: "sales.customers", paths: ["/x/customer/$customerId"] }
       ]
-    ]);
+    };
+    expect(gaps([...ROUTES, "customer+/$id.details.tsx"], customers)).toEqual(
+      []
+    );
   });
 
   it("flags an UNPAGED_ROUTES entry that matches no route", () => {

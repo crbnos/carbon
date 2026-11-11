@@ -7,4 +7,4 @@ export { executeWorkflowRun, walkWorkflow } from "./execute";
 export { failCrashedRun } from "./log";
 export type { ManualRunResult } from "./manual";
 export { executeManualWorkflowRun } from "./manual";
-export { noAccess } from "./owner";
+export { ownerRefusal } from "./owner";

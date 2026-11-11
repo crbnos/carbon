@@ -159,8 +159,9 @@ describe("expandClaims", () => {
 
   it("gives every page of the module the module grant's actions, up to its maxLevel", () => {
     for (const page of pagesOf("inventory")) {
+      // Traceability is Inventory's one page capped below Edit.
       expect(holdsGate(expanded, at(page, "update"), "c1")).toBe(
-        clampLevel(page, "Edit") === "Edit"
+        page !== "inventory.traceability"
       );
       expect(holdsGate(expanded, at(page, "delete"), "c1")).toBe(false);
     }
