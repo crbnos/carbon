@@ -131,6 +131,35 @@ export function blankUnitNumberRefusal({
 }
 
 /**
+ * Whether the adjustment form asks for the batch or serial number. A new
+ * unit needs one when stock is added; an existing unit with none needs one
+ * when a positive adjustment or Set Quantity raises it. The adjustment
+ * posting refuses both without a number (`stockIncreaseRefusal`).
+ */
+export function adjustmentNeedsNumber({
+  adjustmentType,
+  unit,
+  quantity
+}: {
+  adjustmentType: string;
+  /** The unit adjusted, or null for a new one. */
+  unit: { quantity: number; readableId: string | null } | null;
+  /** The quantity entered: the target for Set Quantity. */
+  quantity: number;
+}): boolean {
+  if (!unit) {
+    return (
+      adjustmentType === "Positive Adjmt." || adjustmentType === "Set Quantity"
+    );
+  }
+  if (unit.readableId?.trim()) return false;
+  return (
+    adjustmentType === "Positive Adjmt." ||
+    (adjustmentType === "Set Quantity" && quantity > unit.quantity)
+  );
+}
+
+/**
  * Why a quantity-only material issue cannot post, or null. Batch and serial
  * stock leaves by unit, so a quantity-only issue of such an item would count
  * as issued and take nothing out of stock.

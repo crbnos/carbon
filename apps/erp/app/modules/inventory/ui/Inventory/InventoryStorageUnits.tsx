@@ -98,6 +98,7 @@ import {
   inventoryAdjustmentValidator,
   serialUnitRecostValidator
 } from "../../inventory.models";
+import { adjustmentNeedsNumber } from "../../inventory.utils";
 import { StockTransferMoveModal } from "../StockTransfers/StockTransferMoveModal";
 
 type InventoryStorageUnitsProps = {
@@ -286,6 +287,9 @@ const InventoryStorageUnits = ({
   const [selectedReadableId, setSelectedReadableId] = useState<string | null>(
     null
   );
+  // The quantity of the row opened, which a Set Quantity target is compared
+  // with.
+  const [selectedQuantity, setSelectedQuantity] = useState(0);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     null
   );
@@ -329,6 +333,7 @@ const InventoryStorageUnits = ({
     setSelectedProjectId(projectId ?? null);
     setSelectedTrackedEntityId(trackedEntityId || null);
     setSelectedReadableId(readableId || null);
+    setSelectedQuantity(currentQuantity ?? 0);
     setIsEditingRow(storageUnitId !== undefined);
     // A new serial adjustment has no "Set Quantity" option (see the options list
     // below), so default it to a valid choice instead of an unselectable one.
@@ -988,13 +993,16 @@ const InventoryStorageUnits = ({
                     <Input
                       name="readableId"
                       label={isSerial ? t`Serial Number` : t`Batch Number`}
-                      // A new unit needs its number; the adjustment posting
-                      // refuses one without.
-                      isRequired={
-                        !selectedTrackedEntityId &&
-                        (adjustmentType === "Positive Adjmt." ||
-                          adjustmentType === "Set Quantity")
-                      }
+                      isRequired={adjustmentNeedsNumber({
+                        adjustmentType,
+                        unit: selectedTrackedEntityId
+                          ? {
+                              quantity: selectedQuantity,
+                              readableId: selectedReadableId
+                            }
+                          : null,
+                        quantity
+                      })}
                       termId={
                         isSerial
                           ? "inventory-adjustment-serial-number"

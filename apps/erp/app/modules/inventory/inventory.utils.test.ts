@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  adjustmentNeedsNumber,
   batchPropertyColumnKey,
   batchPropertyColumns,
   batchPropertyFilter,
@@ -460,5 +461,65 @@ describe("blankUnitNumberRefusal", () => {
     expect(
       blankUnitNumberRefusal({ itemTrackingType: "Inventory", readableId: "" })
     ).toBeNull();
+  });
+});
+
+// The adjustment form marks the number required exactly when the posting
+// would refuse the adjustment without one.
+describe("adjustmentNeedsNumber", () => {
+  const unnumbered = { quantity: 3, readableId: null };
+
+  it.each(["Positive Adjmt.", "Set Quantity"])(
+    "asks a new unit for its number on %s",
+    (adjustmentType) => {
+      expect(
+        adjustmentNeedsNumber({ adjustmentType, unit: null, quantity: 1 })
+      ).toBe(true);
+    }
+  );
+
+  it("asks an unnumbered unit for a number when Set Quantity raises it", () => {
+    expect(
+      adjustmentNeedsNumber({
+        adjustmentType: "Set Quantity",
+        unit: unnumbered,
+        quantity: 4
+      })
+    ).toBe(true);
+  });
+
+  it.each([3, 2, 0])(
+    "leaves the number optional when Set Quantity takes an unnumbered unit to %d",
+    (quantity) => {
+      expect(
+        adjustmentNeedsNumber({
+          adjustmentType: "Set Quantity",
+          unit: unnumbered,
+          quantity
+        })
+      ).toBe(false);
+    }
+  );
+
+  it.each(["Negative Adjmt.", "Scrap"])(
+    "leaves the number optional on %s",
+    (adjustmentType) => {
+      expect(
+        adjustmentNeedsNumber({ adjustmentType, unit: null, quantity: 1 })
+      ).toBe(false);
+      expect(
+        adjustmentNeedsNumber({ adjustmentType, unit: unnumbered, quantity: 1 })
+      ).toBe(false);
+    }
+  );
+
+  it("never asks a numbered unit again", () => {
+    expect(
+      adjustmentNeedsNumber({
+        adjustmentType: "Set Quantity",
+        unit: { quantity: 3, readableId: "LOT-1" },
+        quantity: 9
+      })
+    ).toBe(false);
   });
 });
