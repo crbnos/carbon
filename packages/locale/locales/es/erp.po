@@ -1978,7 +1978,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "Una tarea de inconformidad que evita que el problema se repita en otra parte, distinta de la corrección y contención."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr "Un número o un signo junto a una cifra cambia lo que esta expresa. Coloque una palabra entre ambos."
+msgstr "Un número o un signo junto a una cifra cambia lo que dice. Escriba una palabra entre ellos."
 
 msgid "A part"
 msgstr "Una Pieza"

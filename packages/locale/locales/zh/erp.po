@@ -1978,7 +1978,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "一项不合格任务，用于防止问题在其他地方重复出现——不同于纠正修复和围堵。"
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr "紧挨数值的数字或符号会改变数值的含义。请在两者之间加一个词。"
+msgstr "数字或符号紧挨数值时会改变其含义。请在二者之间加入文字。"
 
 msgid "A part"
 msgstr "一个零件"
@@ -17094,7 +17094,7 @@ msgid "Linked Record"
 msgstr "关联记录"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr "已链接到共享章节。请在资料库中编辑该章节，以更新所有位置的内容。"
+msgstr "已关联到共享章节。在库中编辑即可在所有位置更新。"
 
 msgid "Links"
 msgstr "链接"
@@ -20233,7 +20233,7 @@ msgid "No values available"
 msgstr "没有可用的值"
 
 msgid "No values found"
-msgstr "未找到任何值"
+msgstr "未找到值"
 
 msgid "No variable matches {query}"
 msgstr "没有变量匹配{query}"
@@ -22552,7 +22552,7 @@ msgid "Playback"
 msgstr "回放"
 
 msgid "Please <0>change it</0>."
-msgstr "请<0>修改它</0>。"
+msgstr "请<0>更改</0>。"
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "请联系您的管理员以启用审计日志。"
@@ -28224,7 +28224,7 @@ msgid "Someone"
 msgstr "某人"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr "其他人刚刚保存了此模板。请刷新以加载其版本，或继续编辑，保存时将覆盖该版本。"
+msgstr "其他人刚刚保存了此模板。刷新以加载其版本，或继续编辑，保存时将覆盖该版本。"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "能够更新会计的人员必须先输入该资产的制造成本，才能将其资本化。"
@@ -30224,7 +30224,7 @@ msgid "The document could not be downloaded."
 msgstr "无法下载文档。"
 
 msgid "The document could not be opened."
-msgstr "无法打开该文件。"
+msgstr "无法打开文件。"
 
 msgid "The early hours, {name}."
 msgstr "早晨时刻，{name}。"
@@ -30797,7 +30797,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "应用于此问题的预设任务和审批要求捆绑；设置时覆盖问题类型的默认工作流。"
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr "无法生成预览，当前显示的是上一次成功生成的预览。"
+msgstr "无法绘制预览。当前显示的是上一次成功绘制的预览。"
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "时间和物料订单行上一小时的价格：员工的订单行费率，或劳动力分类的费率，或劳动力分类的默认账单费率，有效期为当天。"
@@ -31671,7 +31671,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "此PIN将不再显示。您需要它来在MES终端上退出控制台模式。"
 
 msgid "This preview is paused because a text changes a figure."
-msgstr "因有文字会改变数值，此预览已暂停。"
+msgstr "由于某段文字改变了数值，此预览已暂停。"
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "此价格手动输入，因此未应用定价规则。"
@@ -31737,7 +31737,7 @@ msgid "This serial"
 msgstr "此序列号"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr "该共享章节已不存在。请移除该区块，或重新创建该章节。"
+msgstr "此共享章节已不存在。请移除该区块或重新创建该章节。"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "此工作中心运行需要特定技能的工作 — 仅当具有资格的操作员值班时才运行；人员配置委员会上指定的操作员进一步形成可用的人工。"

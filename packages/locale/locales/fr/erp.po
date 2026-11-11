@@ -1978,7 +1978,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "Une tâche de non-conformité qui empêche le problème de se reproduire ailleurs — distincte de la correction corrective et du confinement."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr "Un chiffre ou un signe placé à côté d'une valeur modifie son sens. Insérez un mot entre les deux."
+msgstr "Un nombre ou un signe placé à côté d'un chiffre en modifie le sens. Insérez un mot entre les deux."
 
 msgid "A part"
 msgstr "Une pièce"
@@ -16343,7 +16343,7 @@ msgid "Keep matching items"
 msgstr "Conserver les articles correspondants"
 
 msgid "Keep mine"
-msgstr "Garder le mien"
+msgstr "Conserver le mien"
 
 msgid "Keep navigation open"
 msgstr "Garder la navigation ouverte"
@@ -28224,7 +28224,7 @@ msgid "Someone"
 msgstr "Quelqu'un"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr "Quelqu'un d'autre vient d'enregistrer ce modèle. Actualisez la page pour charger sa version, ou continuez à modifier pour l'écraser lors de l'enregistrement."
+msgstr "Quelqu'un d'autre vient d'enregistrer ce modèle. Actualisez la page pour charger sa version, ou continuez à modifier pour l'écraser lors de votre enregistrement."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "Quelqu'un qui peut mettre à jour la comptabilité doit entrer le coût de fabrication avant qu'il puisse être capitalisé."
@@ -30797,7 +30797,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "Le paquet prédéfini de tâches et d'exigences d'approbation appliqué à ce problème ; remplace le workflow par défaut du type de problème lorsqu'il est défini."
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr "L'aperçu n'a pas pu être généré. Il affiche le dernier aperçu généré."
+msgstr "L'aperçu n'a pas pu être généré. Il affiche le dernier aperçu valide."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "Le prix d'une heure sur une ligne Temps et Matériel : le taux de la ligne pour l'employé, sinon pour la catégorie de main-d'œuvre, sinon le taux de facturation par défaut de la catégorie de main-d'œuvre, en vigueur le jour."
@@ -31671,7 +31671,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Ce code PIN ne sera plus affiché. Vous en aurez besoin pour quitter le mode console sur les terminaux MES."
 
 msgid "This preview is paused because a text changes a figure."
-msgstr "Cet aperçu est suspendu, car un texte modifie un chiffre."
+msgstr "Cet aperçu est en pause car un texte modifie un chiffre."
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "Ce prix a été saisi manuellement, donc aucune règle de tarification n'a été appliquée."
