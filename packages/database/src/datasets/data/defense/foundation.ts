@@ -361,18 +361,21 @@ export const SUPPLIERS = [
   // through an authorized channel is the counterfeit-prevention control.
   {
     name: "Vanguard Electronics Supply",
+    stage: "Production" as const,
     type: "Electronics",
     phone: "+1-408-555-0500",
     website: "https://vanguard-elec.example.com"
   },
   {
     name: "MilSpec Fastener Supply",
+    stage: "Production" as const,
     type: "Hardware",
     phone: "+1-206-555-0600",
     website: "https://milspec-fasteners.example.com"
   },
   {
     name: "Ridgeline Composites",
+    stage: "Qualified" as const,
     type: "Materials",
     phone: "+1-714-555-0700",
     website: "https://ridgeline-composites.example.com"
@@ -380,6 +383,7 @@ export const SUPPLIERS = [
   // NDAA-compliant motors, propellers and folding arms.
   {
     name: "Sentry Propulsion Systems",
+    stage: "Production" as const,
     type: "UAS Components",
     phone: "+1-801-555-0800",
     website: "https://sentry-propulsion.example.com"
@@ -387,12 +391,14 @@ export const SUPPLIERS = [
   // Motor controllers and EO/IR gimbals.
   {
     name: "Meshline Tactical Systems",
+    stage: "Production" as const,
     type: "Electronics",
     phone: "+1-303-555-0900",
     website: "https://meshline-tactical.example.com"
   },
   {
     name: "Redstone Precision Machining",
+    stage: "Qualified" as const,
     type: "Contract Manufacturer",
     phone: "+1-256-555-1000",
     website: "https://redstone-precision.example.com"
@@ -409,6 +415,7 @@ export const SUPPLIERS = [
   // A second motor source, under qualification (first article + NDAA audit).
   {
     name: "Ironclad Motor Co",
+    stage: "Sampling" as const,
     type: "UAS Components",
     phone: "+1-425-555-1300",
     website: "https://ironclad-motor.example.com",
@@ -417,6 +424,7 @@ export const SUPPLIERS = [
   // Rejected: its supplier audit traced motor magnets to a covered country.
   {
     name: "LowBid UAV Components",
+    stage: "Prospect" as const,
     type: "Electronics",
     phone: "+1-702-555-1400",
     website: "https://lowbid-uav.example.com",
@@ -424,6 +432,7 @@ export const SUPPLIERS = [
   },
   {
     name: "Rheinland Precision Bearings GmbH",
+    stage: "Production" as const,
     type: "Hardware",
     phone: "+49-711-555-1500",
     website: "https://rheinland-bearings.example.de",

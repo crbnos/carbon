@@ -1316,7 +1316,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     defaultCc: { kind: "list", of: { kind: "primitive", of: "string" } },
     supplierStatus: { kind: "primitive", of: "string" },
     intercompanyCompanyId: { kind: "primitive", of: "string" },
-    readableId: { kind: "primitive", of: "string" }
+    readableId: { kind: "primitive", of: "string" },
+    supplierStageId: { kind: "primitive", of: "string" }
   },
   user: {
     id: { kind: "primitive", of: "string" },

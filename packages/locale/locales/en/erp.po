@@ -620,6 +620,10 @@ msgstr "{0} payments"
 msgid "{0} per hour"
 msgstr "{0} per hour"
 
+#. placeholder {0}: row.usedIn.length
+msgid "{0} places"
+msgstr "{0} places"
+
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
 msgstr "{0} problems — not published"
@@ -1104,6 +1108,9 @@ msgstr "{missingCount} journals missing in the provider"
 
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} missing journals and {mismatchCount} mismatched months"
+
+msgid "{missingSupplier, plural, one {# ticked part needs a supplier. Choose one or untick it.} other {# ticked parts need a supplier. Choose one or untick them.}}"
+msgstr "{missingSupplier, plural, one {# ticked part needs a supplier. Choose one or untick it.} other {# ticked parts need a supplier. Choose one or untick them.}}"
 
 msgid "{name} at {station}"
 msgstr "{name} at {station}"
@@ -2043,6 +2050,12 @@ msgstr "A project setting, None, Warn or Block, that checks a purchase order lin
 msgid "A project, or a project and one of its elements, that a job, a purchase order or invoice line, a timesheet entry or a material issue charges its cost to. Only Released projects and chargeable elements in an Unstarted or Started state can be picked."
 msgstr "A project, or a project and one of its elements, that a job, a purchase order or invoice line, a timesheet entry or a material issue charges its cost to. Only Released projects and chargeable elements in an Unstarted or Started state can be picked."
 
+msgid "A promised date is optional to finalize"
+msgstr "A promised date is optional to finalize"
+
+msgid "A promised date is required to finalize"
+msgstr "A promised date is required to finalize"
+
 msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
 msgstr "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
 
@@ -2054,6 +2067,9 @@ msgstr "A purchase invoice is drafted for each due date, with a line for each as
 
 msgid "A purchase invoice is posted"
 msgstr "A purchase invoice is posted"
+
+msgid "A purchase order cannot be finalized until it has a supplier promised date. A date on the order covers every line. Keep this off if suppliers give you a date after they receive the order."
+msgstr "A purchase order cannot be finalized until it has a supplier promised date. A date on the order covers every line. Keep this off if suppliers give you a date after they receive the order."
 
 msgid "A purchase order is created"
 msgstr "A purchase order is created"
@@ -2970,6 +2986,9 @@ msgstr "Add a parameter (procedures only)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Add a printer in the printing settings to print labels directly."
+
+msgid "Add a promised date before you finalize this purchase order."
+msgstr "Add a promised date before you finalize this purchase order."
 
 msgid "Add a requirement"
 msgstr "Add a requirement"
@@ -4721,6 +4740,10 @@ msgstr "Are you sure you want to delete the storage type: {0}? This cannot be un
 msgid "Are you sure you want to delete the storage unit: {0}? This cannot be undone."
 msgstr "Are you sure you want to delete the storage unit: {0}? This cannot be undone."
 
+#. placeholder {0}: supplierStage.name
+msgid "Are you sure you want to delete the supplier stage: {0}? This cannot be undone."
+msgstr "Are you sure you want to delete the supplier stage: {0}? This cannot be undone."
+
 #. placeholder {0}: supplierType.name
 msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
 msgstr "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
@@ -5883,6 +5906,9 @@ msgstr "Blocks Machine"
 msgid "Blocks save until resolved"
 msgstr "Blocks save until resolved"
 
+msgid "Blue"
+msgstr "Blue"
+
 msgid "Board"
 msgstr "Board"
 
@@ -5991,6 +6017,9 @@ msgstr "Bring in your parts, BOMs, Bill of Process, and costing — with Carbon'
 msgid "Broadcast reply to channel"
 msgstr "Broadcast reply to channel"
 
+msgid "Brown"
+msgstr "Brown"
+
 msgid "Browse library"
 msgstr "Browse library"
 
@@ -6059,6 +6088,9 @@ msgstr "Build role-based training materials"
 
 msgid "Build tailored, role-based training materials"
 msgstr "Build tailored, role-based training materials"
+
+msgid "Builds"
+msgstr "Builds"
 
 msgid "Built after this step"
 msgstr "Built after this step"
@@ -6947,6 +6979,9 @@ msgstr "Choose an option"
 msgid "Choose another file"
 msgstr "Choose another file"
 
+msgid "Choose at least one part and a supplier."
+msgstr "Choose at least one part and a supplier."
+
 msgid "Choose avatar"
 msgstr "Choose avatar"
 
@@ -6964,6 +6999,12 @@ msgstr "Choose Return To for {unitName}"
 
 msgid "Choose stock to move"
 msgstr "Choose stock to move"
+
+msgid "Choose supplier"
+msgstr "Choose supplier"
+
+msgid "Choose suppliers"
+msgstr "Choose suppliers"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "Choose the first day of the current period or of one of the 3 periods before it."
@@ -8696,6 +8737,9 @@ msgstr "Create {0} values"
 msgid "Create {name}"
 msgstr "Create {name}"
 
+msgid "Create {rfqCount} RFQs"
+msgstr "Create {rfqCount} RFQs"
+
 msgid "Create & Release"
 msgstr "Create & Release"
 
@@ -8830,6 +8874,9 @@ msgstr "Create Replacement"
 
 msgid "Create Revision"
 msgstr "Create Revision"
+
+msgid "Create RFQ"
+msgstr "Create RFQ"
 
 msgid "Create Rule"
 msgstr "Create Rule"
@@ -8996,6 +9043,9 @@ msgstr "Created stock transfer line"
 msgid "Created storage type"
 msgstr "Created storage type"
 
+msgid "Created supplier stage"
+msgstr "Created supplier stage"
+
 #. placeholder {0}: created.name
 msgid "Created supplier: {0}"
 msgstr "Created supplier: {0}"
@@ -9014,6 +9064,9 @@ msgstr "Created when the project is released"
 
 msgid "Created work center"
 msgstr "Created work center"
+
+msgid "Creates {rfqCount, plural, one {# draft RFQ} other {# draft RFQs}}. Nothing goes to a supplier until you finalize."
+msgstr "Creates {rfqCount, plural, one {# draft RFQ} other {# draft RFQs}}. Nothing goes to a supplier until you finalize."
 
 msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
 msgstr "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
@@ -10309,6 +10362,9 @@ msgstr "Delete Supplier Quote"
 
 msgid "Delete Supplier Return"
 msgstr "Delete Supplier Return"
+
+msgid "Delete Supplier Stage"
+msgstr "Delete Supplier Stage"
 
 msgid "Delete Supplier Type"
 msgstr "Delete Supplier Type"
@@ -11799,6 +11855,9 @@ msgstr "Edit Supplier Part"
 msgid "Edit supplier process"
 msgstr "Edit supplier process"
 
+msgid "Edit Supplier Stage"
+msgstr "Edit Supplier Stage"
+
 msgid "Edit Supplier Type"
 msgstr "Edit Supplier Type"
 
@@ -13069,6 +13128,10 @@ msgid "Failed to create service: {0}"
 msgstr "Failed to create service: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create supplier stage: {0}"
+msgstr "Failed to create supplier stage: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "Failed to create supplier: {0}"
 
@@ -13549,6 +13612,9 @@ msgstr "Financing"
 
 msgid "Financing Terms"
 msgstr "Financing Terms"
+
+msgid "Find a part"
+msgstr "Find a part"
 
 msgid "Find an element"
 msgstr "Find an element"
@@ -14422,6 +14488,12 @@ msgstr "Grant each user fine-grained, per-module permissions instead of giving e
 msgid "Grants Ability"
 msgstr "Grants Ability"
 
+msgid "Gray"
+msgstr "Gray"
+
+msgid "Green"
+msgstr "Green"
+
 msgid "Grid layout"
 msgstr "Grid layout"
 
@@ -15202,6 +15274,10 @@ msgstr "Inbound inspection"
 
 msgid "Inbox"
 msgstr "Inbox"
+
+#. placeholder {0}: row.itemReadableId
+msgid "Include {0}"
+msgstr "Include {0}"
 
 msgid "Include bought components"
 msgstr "Include bought components"
@@ -16740,6 +16816,9 @@ msgstr "Leave empty for exact match"
 msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
 msgstr "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
 
+msgid "Leave empty to pick a color from the name"
+msgstr "Leave empty to pick a color from the name"
+
 msgid "Leave empty to use the account default"
 msgstr "Leave empty to use the account default"
 
@@ -16869,6 +16948,9 @@ msgstr "LIFO"
 
 msgid "Light"
 msgstr "Light"
+
+msgid "Light Gray"
+msgstr "Light Gray"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "Light, dark, or follow your system setting."
@@ -21382,6 +21464,9 @@ msgstr "Or enter this secret manually:"
 msgid "Or focus the box or the handle and use the arrow keys (Shift for bigger steps)."
 msgstr "Or focus the box or the handle and use the arrow keys (Shift for bigger steps)."
 
+msgid "Orange"
+msgstr "Orange"
+
 msgid "Order"
 msgstr "Order"
 
@@ -22376,6 +22461,9 @@ msgstr "Pin WBS codes"
 msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
 msgstr "Pinch or scroll to zoom · drag to pan · double-tap to reset"
 
+msgid "Pink"
+msgstr "Pink"
+
 msgid "Pinned"
 msgstr "Pinned"
 
@@ -23259,6 +23347,12 @@ msgstr "Promised"
 msgid "Promised Date"
 msgstr "Promised Date"
 
+msgid "Promised date optional to finalize purchase orders"
+msgstr "Promised date optional to finalize purchase orders"
+
+msgid "Promised date required to finalize purchase orders"
+msgstr "Promised date required to finalize purchase orders"
+
 msgid "Properties"
 msgstr "Properties"
 
@@ -23554,6 +23648,9 @@ msgstr "Purchasing Invoices"
 msgid "Purchasing Unit of Measure"
 msgstr "Purchasing Unit of Measure"
 
+msgid "Purple"
+msgstr "Purple"
+
 msgid "Push"
 msgstr "Push"
 
@@ -23825,6 +23922,9 @@ msgstr "Quote Accepted By Email"
 
 msgid "Quote expired"
 msgstr "Quote expired"
+
+msgid "Quote for"
+msgstr "Quote for"
 
 msgid "Quote ID"
 msgstr "Quote ID"
@@ -24407,6 +24507,9 @@ msgstr "Recurring per week"
 
 msgid "Recurring per year"
 msgstr "Recurring per year"
+
+msgid "Red"
+msgstr "Red"
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "Red is short-staffed, green is covered, amber is more people than the work needs."
@@ -25103,6 +25206,9 @@ msgstr "Request date"
 msgid "Request Force Delete"
 msgstr "Request Force Delete"
 
+msgid "Request Quote"
+msgstr "Request Quote"
+
 msgid "Requested"
 msgstr "Requested"
 
@@ -25126,6 +25232,9 @@ msgstr "Require a 6-digit code from an authenticator app when signing in."
 
 msgid "Require a Customer Contact and Location"
 msgstr "Require a Customer Contact and Location"
+
+msgid "Require a Promised Date to Finalize Purchase Orders"
+msgstr "Require a Promised Date to Finalize Purchase Orders"
 
 msgid "Require a Signature to Approve Purchase Orders"
 msgstr "Require a Signature to Approve Purchase Orders"
@@ -26851,6 +26960,9 @@ msgstr "Select all"
 msgid "Select all jobs"
 msgstr "Select all jobs"
 
+msgid "Select all parts"
+msgstr "Select all parts"
+
 msgid "Select all rows"
 msgstr "Select all rows"
 
@@ -27008,6 +27120,9 @@ msgstr "Select Serial {0}"
 
 msgid "Select station"
 msgstr "Select station"
+
+msgid "Select Supplier Stage"
+msgstr "Select Supplier Stage"
 
 msgid "Select Supplier Status"
 msgstr "Select Supplier Status"
@@ -27692,6 +27807,9 @@ msgstr "Shipped {shippedOn}"
 msgid "Shipped <0/>"
 msgstr "Shipped <0/>"
 
+msgid "Shipped Date"
+msgstr "Shipped Date"
+
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "Shipped lines for this customer with quantity remaining to return"
 
@@ -28375,6 +28493,12 @@ msgstr "Staffing requirement disabled"
 
 msgid "Staffing requirement enabled"
 msgstr "Staffing requirement enabled"
+
+msgid "Stage"
+msgstr "Stage"
+
+msgid "Stages"
+msgstr "Stages"
 
 msgid "Stand up hosting"
 msgstr "Stand up hosting"
@@ -29103,6 +29227,10 @@ msgstr "Supplier email settings updated"
 msgid "Supplier EORI"
 msgstr "Supplier EORI"
 
+#. placeholder {0}: row.itemReadableId
+msgid "Supplier for {0}"
+msgstr "Supplier for {0}"
+
 msgid "Supplier ID"
 msgstr "Supplier ID"
 
@@ -29244,6 +29372,21 @@ msgstr "Supplier RMA #"
 
 msgid "Supplier RMA Number"
 msgstr "Supplier RMA Number"
+
+msgid "supplier stage"
+msgstr "supplier stage"
+
+msgid "Supplier stage"
+msgstr "Supplier stage"
+
+msgid "Supplier Stage"
+msgstr "Supplier Stage"
+
+msgid "supplier stages"
+msgstr "supplier stages"
+
+msgid "Supplier Stages"
+msgstr "Supplier Stages"
 
 msgid "Supplier State and Postal Code"
 msgstr "Supplier State and Postal Code"
@@ -31630,6 +31773,9 @@ msgstr "This part is obsolete (No Stock)."
 
 msgid "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
 msgstr "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
+
+msgid "This part only"
+msgstr "This part only"
 
 msgid "This path only decides what runs next"
 msgstr "This path only decides what runs next"
@@ -34327,6 +34473,9 @@ msgstr "When the rental starts, and whether it has an end."
 msgid "When the supplier committed to deliver; planning uses this date for the inbound-stock arrival projection."
 msgstr "When the supplier committed to deliver; planning uses this date for the inbound-stock arrival projection."
 
+msgid "When the supplier sent the goods. You can edit this on the Shipping card after the purchase order is finalized."
+msgstr "When the supplier sent the goods. You can edit this on the Shipping card after the purchase order is finalized."
+
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 
@@ -34365,6 +34514,9 @@ msgstr "When using kanbans, the complete barcode will complete all quantities of
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
+
+msgid "When you expect the goods to arrive, based on how they shipped. It is for your reference and does not change planning, which uses the promised date."
+msgstr "When you expect the goods to arrive, based on how they shipped. It is for your reference and does not change planning, which uses the promised date."
 
 msgid "When your fiscal and tax years start"
 msgstr "When your fiscal and tax years start"
@@ -34428,6 +34580,9 @@ msgstr "Where this line's goods land in stock on receipt; if blank, receipts use
 
 msgid "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
 msgstr "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
+
+msgid "Where this supplier is in your onboarding, such as Prospect or Qualified. Your company manages this list; it does not affect approvals or which suppliers you can use."
+msgstr "Where this supplier is in your onboarding, such as Prospect or Qualified. Your company manages this list; it does not affect approvals or which suppliers you can use."
 
 msgid "Where you are today"
 msgstr "Where you are today"
@@ -34807,6 +34962,9 @@ msgstr "Year-End Close"
 
 msgid "Yearly"
 msgstr "Yearly"
+
+msgid "Yellow"
+msgstr "Yellow"
 
 msgid "Yes"
 msgstr "Yes"

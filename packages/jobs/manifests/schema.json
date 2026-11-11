@@ -514,6 +514,7 @@
         "serviceLaborBillRate",
         "requireSupplierContactEmail",
         "requireCustomerContactEmail",
+        "requirePromisedDateToFinalizePurchaseOrder",
         "includeSupplierPartFiles"
       ]
     },
@@ -2186,6 +2187,19 @@
         "userId",
         "companyId",
         "createdAt"
+      ]
+    },
+    {
+      "name": "supplierStage",
+      "rows": 0,
+      "columns": [
+        "id",
+        "name",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy"
       ]
     },
     {
@@ -7288,7 +7302,9 @@
         "tags",
         "supplierShippingCost",
         "incoterm",
-        "incotermLocation"
+        "incotermLocation",
+        "shippedDate",
+        "expectedReceiptDate"
       ]
     },
     {
@@ -8308,7 +8324,8 @@
         "defaultCc",
         "supplierStatus",
         "intercompanyCompanyId",
-        "readableId"
+        "readableId",
+        "supplierStageId"
       ]
     },
     {

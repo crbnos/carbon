@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { rmSync } from "node:fs";
+import { stripVTControlCharacters } from "node:util";
 import { box, intro, log, outro } from "@clack/prompts";
 import { execa } from "execa";
 import pc from "picocolors";
@@ -617,9 +618,14 @@ function printSummary(ctx: Ctx, apps: AppId[], size: StackSize) {
     shared: ctx.mode === "shared"
   });
   const title = `Carbon dev — ${ctx.slug}`;
-  // A terminal narrower than the title (Conductor's run pane can report 0 or a
-  // few columns) makes clack's box compute a negative repeat count and throw.
-  if ((process.stdout.columns ?? 80) < title.length + 8) {
+  // clack's box throws (a negative repeat count) when the terminal is narrower
+  // than the title or a line it cannot wrap (a long URL), and Conductor's pane
+  // can report 0 or a few columns; 9 = guide, borders, padding + an odd column.
+  const widest = Math.max(
+    title.length,
+    ...summary.map((line) => stripVTControlCharacters(line).length)
+  );
+  if ((process.stdout.columns ?? 80) < widest + 9) {
     log.info(title);
     for (const line of summary) log.message(line);
   } else {
