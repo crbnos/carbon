@@ -24396,16 +24396,22 @@ export async function postInventoryAdjustment(
   await db.transaction().execute(async (trx) => {
     await assertPostingStatusUnchanged(trx, companyId, postingStatus);
 
-    // Re-read under a share lock: a tracking type change writes the item
-    // row, so it and this adjustment cannot cross, and the refusals and the
-    // valuation below see the type that is committed.
-    const tracking = await trx
+    // Re-read under a lock: a tracking type change writes the item row, so
+    // it and this adjustment cannot cross, and the refusals and the valuation
+    // below see the type that is committed. An untracked scrap takes the
+    // update lock assignBatchToUnnumberedStock takes, so a batch given to
+    // this stock meanwhile is not scrapped as unnumbered too. It takes it
+    // here, not after a share lock: two scraps that both held a share lock
+    // and then asked for the update lock would deadlock.
+    const trackingQuery = trx
       .selectFrom("item")
       .select("itemTrackingType")
       .where("id", "=", itemId)
-      .where("companyId", "=", companyId)
-      .forShare()
-      .executeTakeFirstOrThrow();
+      .where("companyId", "=", companyId);
+    const tracking = await (adjustmentType === "Scrap" && !trackedEntityId
+      ? trackingQuery.forUpdate()
+      : trackingQuery.forShare()
+    ).executeTakeFirstOrThrow();
     item.itemTrackingType = tracking.itemTrackingType;
 
     if (adjustmentType === "Scrap") {
@@ -24584,15 +24590,6 @@ export async function postInventoryAdjustment(
       if (quantity <= 0) {
         throw new InvalidInputError("Scrap quantity must be greater than zero");
       }
-      // Re-read under the item lock assignBatchToUnnumberedStock takes, so a
-      // batch given to this stock meanwhile is not scrapped as unnumbered too.
-      await trx
-        .selectFrom("item")
-        .select("id")
-        .where("id", "=", itemId)
-        .where("companyId", "=", companyId)
-        .forUpdate()
-        .executeTakeFirst();
       const untracked = await trx
         .selectFrom("itemLedger")
         .select((eb) => eb.fn.sum<number>("quantity").as("quantity"))
