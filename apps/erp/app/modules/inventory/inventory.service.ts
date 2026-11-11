@@ -300,6 +300,7 @@ import {
   batchPropertyColumns,
   batchPropertyFilter,
   batchPropertyValue,
+  blankUnitNumberRefusal,
   clampDepth,
   type InventoryCountCsvError,
   type InventoryCountCsvRow,
@@ -24850,6 +24851,17 @@ export async function postInventoryAdjustment(
       return;
     }
 
+    // Every path below writes a number sent for an existing unit: a move, a
+    // Set Quantity that leaves the quantity as it is, and an increase or a
+    // decrease.
+    if (trackedEntityId && currentQuantity) {
+      const blankNumber = blankUnitNumberRefusal({
+        itemTrackingType: item.itemTrackingType,
+        readableId
+      });
+      if (blankNumber) throw new InvalidInputError(blankNumber);
+    }
+
     if (isStorageUnitTransfer) {
       if (readableId !== undefined && readableId !== null) {
         await trx
@@ -25061,12 +25073,25 @@ export async function postInventoryAdjustment(
     const createsNothing =
       !!trackedEntityId && !currentQuantity && round(adjustmentQuantity) === 0;
     if (entryType === "Positive Adjmt." && !createsNothing) {
+      // The quantities were read before this transaction. An existing unit's
+      // number is read again under the row lock its quantity update takes,
+      // so the increase never lands on a unit whose number was cleared since.
+      const lockedUnit =
+        trackedEntityId && currentQuantity
+          ? await trx
+              .selectFrom("trackedEntity")
+              .select("readableId")
+              .where("id", "=", trackedEntityId)
+              .where("companyId", "=", companyId)
+              .forUpdate()
+              .executeTakeFirst()
+          : undefined;
       const refusal = stockIncreaseRefusal({
         itemTrackingType: item.itemTrackingType,
         trackedEntityId,
         createsUnit: !!trackedEntityId && !currentQuantity,
         readableId,
-        currentReadableId: currentQuantity?.readableId
+        currentReadableId: lockedUnit?.readableId
       });
       if (refusal) throw new InvalidInputError(refusal);
     }

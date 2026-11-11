@@ -114,6 +114,23 @@ export function stockIncreaseRefusal({
 }
 
 /**
+ * Why a number sent for an existing batch or serial unit cannot be written,
+ * or null. A unit keeps its number whatever the adjustment does to its
+ * quantity: a blank one is refused, and sending none keeps the one it has.
+ */
+export function blankUnitNumberRefusal({
+  itemTrackingType,
+  readableId
+}: {
+  itemTrackingType: ItemTrackingType | null | undefined;
+  readableId: string | null | undefined;
+}): string | null {
+  const wording = unitWording(itemTrackingType);
+  if (!wording || readableId === undefined || readableId === null) return null;
+  return readableId.trim() ? null : `${wording.number} is required`;
+}
+
+/**
  * Why a quantity-only material issue cannot post, or null. Batch and serial
  * stock leaves by unit, so a quantity-only issue of such an item would count
  * as issued and take nothing out of stock.

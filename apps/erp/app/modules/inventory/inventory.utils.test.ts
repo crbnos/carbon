@@ -8,6 +8,7 @@ import {
   batchPropertyColumns,
   batchPropertyFilter,
   batchPropertyValue,
+  blankUnitNumberRefusal,
   inventoryCountLineState,
   isShippableEntityStatus,
   type NonNettableUnit,
@@ -430,4 +431,34 @@ describe("untrackedUnscrapRefusal", () => {
       ).toBeNull();
     }
   );
+});
+
+// A unit keeps its number whatever an adjustment does to its quantity.
+describe("blankUnitNumberRefusal", () => {
+  it.each(["", "  "])(
+    "refuses blanking a unit's number with %j",
+    (readableId) => {
+      expect(
+        blankUnitNumberRefusal({ itemTrackingType: "Batch", readableId })
+      ).toEqual(expect.any(String));
+      expect(
+        blankUnitNumberRefusal({ itemTrackingType: "Serial", readableId })
+      ).toEqual(expect.any(String));
+    }
+  );
+
+  it.each([undefined, null, "LOT-2"])(
+    "lets the number sent as %j through",
+    (readableId) => {
+      expect(
+        blankUnitNumberRefusal({ itemTrackingType: "Batch", readableId })
+      ).toBeNull();
+    }
+  );
+
+  it("leaves an untracked item alone", () => {
+    expect(
+      blankUnitNumberRefusal({ itemTrackingType: "Inventory", readableId: "" })
+    ).toBeNull();
+  });
 });
