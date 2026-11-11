@@ -53,7 +53,8 @@ unit, and an issue never counts material as issued without moving stock.
 - 16(a) checks only a change to Batch or Serial; leaving Batch/Serial is
   unchanged. Re-setting an item's current type skips the check and re-runs the
   cascade, which repairs stale released lines.
-- Untracked Unscrap of a Batch or Serial item is left as it was.
+- Untracked Unscrap of a Batch or Serial item is refused (`untrackedUnscrapRefusal`):
+  that stock comes back by unit, or by a positive adjustment into a numbered unit.
 - No backfill migration for existing stale job lines.
 
 ## Rebase onto main (2026-11-11)
@@ -68,3 +69,14 @@ unit, and an issue never counts material as issued without moving stock.
   Draft, Planned, Completed, Cancelled or Closed.
 - The stock-movement refusals (adjustment, issue, backflush, unscrap) stay:
   they guard the movement, which the handler does not.
+
+## Browser test fixes (2026-11-11)
+
+- The untracked Scrap path asked for `FOR UPDATE` after the posting's `FOR SHARE`
+  on the item, so two concurrent untracked scraps deadlocked. It now takes
+  `FOR UPDATE` at the first read (`untracked-scrap-concurrency.test.ts`).
+- An untracked Unscrap of a Batch or Serial item named the API fix for an
+  increase (send a new id), which Unscrap then refused. It names the item and
+  the way back instead.
+- Scrap from the quantities page on stock with no number sent a new unit id
+  and was refused as an unknown unit. The form sends no unit for that Scrap.
