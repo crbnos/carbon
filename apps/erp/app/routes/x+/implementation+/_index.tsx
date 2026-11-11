@@ -186,8 +186,14 @@ export default function GetStartedRoute() {
     flagOn: boolean;
   }>(path.to.implementation);
   const [params, setParams] = useSearchParams();
-  // The page file being loaded; null while the load modal is closed.
-  const [loadText, setLoadText] = useState<string | null>(null);
+  // The load modal and the page file it opened with. The text stays after it
+  // closes, so the modal keeps its content while it animates out.
+  const loadModal = useDisclosure();
+  const [loadText, setLoadText] = useState("");
+  const openLoad = (text: string) => {
+    setLoadText(text);
+    loadModal.onOpen();
+  };
 
   const nameOf = useMemo(() => {
     const names = new Map(livePeople.map((person) => [person.id, person.name]));
@@ -361,7 +367,7 @@ export default function GetStartedRoute() {
             hasPage={member !== undefined}
             page={member?.page}
             onSelect={select}
-            onLoad={() => setLoadText("")}
+            onLoad={() => openLoad("")}
             boardView={boardView}
             onToggleBoard={toggleBoard}
           />
@@ -404,7 +410,7 @@ export default function GetStartedRoute() {
             onSetUp={
               selected.email
                 ? () =>
-                    setLoadText(
+                    openLoad(
                       JSON.stringify(
                         starterMemberPage(
                           selected.email ?? "",
@@ -426,17 +432,19 @@ export default function GetStartedRoute() {
         ) : (
           <MemberPageEmpty />
         )}
-        {loadText !== null ? (
+        {loadModal.openCount > 0 ? (
           <LoadPageModal
+            key={loadModal.openCount}
+            open={loadModal.isOpen}
             initialText={loadText}
             person={selected}
             people={everyone}
             mayHoldPriorityCard={
               prioritySetHolder(members, selected?.id) === null
             }
-            onClose={() => setLoadText(null)}
+            onClose={loadModal.onClose}
             onLoaded={(memberId) => {
-              setLoadText(null);
+              loadModal.onClose();
               select(memberId);
             }}
           />
@@ -881,8 +889,9 @@ function StaffBar({
           <Trans>Remove page</Trans>
         </Button>
       </div>
-      {removeDisclosure.isOpen && selectedId && hasPage ? (
+      {selectedId ? (
         <ConfirmDelete
+          isOpen={removeDisclosure.isOpen && hasPage}
           action={path.to.implementationState}
           name={selectedName}
           title={t`Remove ${selectedName}'s page`}
@@ -901,6 +910,7 @@ function StaffBar({
 // one. It is checked here first, so most problems show before anything is
 // sent; the server checks it again, with the person.
 function LoadPageModal({
+  open,
   initialText,
   person,
   people,
@@ -908,6 +918,7 @@ function LoadPageModal({
   onClose,
   onLoaded
 }: {
+  open: boolean;
   initialText: string;
   // The person on screen, and everyone the file could name.
   person: HubPagePerson | undefined;
@@ -1012,9 +1023,9 @@ function LoadPageModal({
 
   return (
     <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
       }}
     >
       <ModalContent size="large">

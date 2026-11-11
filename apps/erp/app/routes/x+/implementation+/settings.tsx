@@ -285,67 +285,62 @@ function VersionCard({
           )}
         </CardContent>
       ) : null}
-      {confirm.isOpen ? (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) confirm.onClose();
-          }}
-        >
-          <ModalContent>
-            <ModalHeader>
-              <ModalTitle>{title}</ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <div className="flex flex-col gap-2 text-sm text-muted-foreground text-pretty">
-                {next === "2.0" ? (
-                  <p>
-                    <Trans>
-                      The company's people will see the page loaded for them in
-                      Implementation Hub 2.0 instead of Implementation Hub 1.0.
-                      Ticks, answers and rows carry over.
-                    </Trans>
-                  </p>
-                ) : (
-                  <p>
-                    <Trans>
-                      The company's people will see Implementation Hub 1.0
-                      again. Their pages stay, so you can switch back.
-                    </Trans>
-                  </p>
-                )}
-                {next === "2.0" && withoutPage > 0 ? (
-                  <p className="text-foreground">
-                    <Plural
-                      value={withoutPage}
-                      one="# active person has no page yet and will see an empty page until you load one."
-                      other="# active people have no page yet and will see an empty page until you load one."
-                    />
-                  </p>
-                ) : null}
-              </div>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={confirm.onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <fetcher.Form
-                method="post"
-                action={path.to.implementationVersion}
+      <Modal
+        open={confirm.isOpen}
+        onOpenChange={(open) => {
+          if (!open) confirm.onClose();
+        }}
+      >
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>{title}</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <div className="flex flex-col gap-2 text-sm text-muted-foreground text-pretty">
+              {next === "2.0" ? (
+                <p>
+                  <Trans>
+                    The company's people will see the page loaded for them in
+                    Implementation Hub 2.0 instead of Implementation Hub 1.0.
+                    Ticks, answers and rows carry over.
+                  </Trans>
+                </p>
+              ) : (
+                <p>
+                  <Trans>
+                    The company's people will see Implementation Hub 1.0 again.
+                    Their pages stay, so you can switch back.
+                  </Trans>
+                </p>
+              )}
+              {next === "2.0" && withoutPage > 0 ? (
+                <p className="text-foreground">
+                  <Plural
+                    value={withoutPage}
+                    one="# active person has no page yet and will see an empty page until you load one."
+                    other="# active people have no page yet and will see an empty page until you load one."
+                  />
+                </p>
+              ) : null}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={confirm.onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <fetcher.Form method="post" action={path.to.implementationVersion}>
+              <input type="hidden" name="hubVersion" value={next} />
+              <Button
+                type="submit"
+                isLoading={fetcher.isPending}
+                isDisabled={fetcher.isPending}
               >
-                <input type="hidden" name="hubVersion" value={next} />
-                <Button
-                  type="submit"
-                  isLoading={fetcher.isPending}
-                  isDisabled={fetcher.isPending}
-                >
-                  <Trans>Switch</Trans>
-                </Button>
-              </fetcher.Form>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-      ) : null}
+                <Trans>Switch</Trans>
+              </Button>
+            </fetcher.Form>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Card>
   );
 }
