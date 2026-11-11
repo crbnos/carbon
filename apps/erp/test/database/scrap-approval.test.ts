@@ -48,7 +48,7 @@ const { adjustInventory } = await import(
 const { postReceipt } = await import(
   "../../app/modules/inventory/inventory.service"
 );
-const { completeIssue, partialInspection } = await import(
+const { completeIssue, partialInspection, rejectInspection } = await import(
   "../../app/modules/quality/quality.server"
 );
 const { invokePosting } = await import(
@@ -734,15 +734,17 @@ describeLocal("scrap approval", () => {
     ).rejects.toThrow();
   });
 
-  it("lets only an approver complete an issue that scraps a lot's held remainder", async () => {
-    await approverOnlyRules(0);
-    const heldUnit = `${f.prefix}-qc`;
-    await seed(f, async (trx) => {
+  // Receipt lots held for inspection in one goods-in unit, received through
+  // the real posting; set up once for the tests that use them.
+  const heldUnit = () => `${f.prefix}-qc`;
+  let heldUnitReady: Promise<void> | null = null;
+  const setUpHeldUnit = () => {
+    heldUnitReady ??= seed(f, async (trx) => {
       await trx
         .insertInto("storageUnit")
         .values({
-          id: heldUnit,
-          name: heldUnit,
+          id: heldUnit(),
+          name: heldUnit(),
           locationId: f.locationId,
           nettable: false,
           companyId: f.companyId,
@@ -753,16 +755,21 @@ describeLocal("scrap approval", () => {
       // it was received until its issue closes.
       await trx
         .updateTable("location")
-        .set({ inspectionStorageUnitId: heldUnit, rejectedStorageUnitId: null })
+        .set({
+          inspectionStorageUnitId: heldUnit(),
+          rejectedStorageUnitId: null
+        })
         .where("id", "=", f.locationId)
         .where("companyId", "=", f.companyId)
         .execute();
       await trx
         .insertInto("sequence")
-        .values([
-          { table: "inspection", name: "Inspection", prefix: "INS-" },
-          { table: "nonConformance", name: "Issue", prefix: "NCR" }
-        ].map((row) => ({ ...row, companyId: f.companyId })))
+        .values(
+          [
+            { table: "inspection", name: "Inspection", prefix: "INS-" },
+            { table: "nonConformance", name: "Issue", prefix: "NCR" }
+          ].map((row) => ({ ...row, companyId: f.companyId }))
+        )
         .onConflict((oc) => oc.doNothing())
         .execute();
       const document = await trx
@@ -782,25 +789,36 @@ describeLocal("scrap approval", () => {
         .execute();
       await trx
         .insertInto("nonConformanceType")
-        .values({ name: `${f.prefix} receiving`, companyId: f.companyId, createdBy: USER })
+        .values({
+          name: `${f.prefix} receiving`,
+          companyId: f.companyId,
+          createdBy: USER
+        })
         .execute();
     });
-    // The postings below run with the interceptors on, as in the app.
-    const withTriggers = async <T>(run: () => Promise<T>) => {
-      await sql`SELECT set_config('app.sync_in_progress', 'false', false)`.execute(f.db);
-      try {
-        return await run();
-      } finally {
-        await sql`SELECT set_config('app.sync_in_progress', 'true', false)`.execute(f.db);
-      }
-    };
-
-    // Ten received into the held unit, six accepted: four stay held for the NCR.
-    const receiptId = await draftReceiptFromPurchaseOrder(f, "held");
+    return heldUnitReady;
+  };
+  // The postings below run with the interceptors on, as in the app.
+  const withTriggers = async <T>(run: () => Promise<T>) => {
+    await sql`SELECT set_config('app.sync_in_progress', 'false', false)`.execute(
+      f.db
+    );
+    try {
+      return await run();
+    } finally {
+      await sql`SELECT set_config('app.sync_in_progress', 'true', false)`.execute(
+        f.db
+      );
+    }
+  };
+  /** Ten parts received into the held unit: their lot's id. */
+  const receiveHeldLot = async (key: string) => {
+    await setUpHeldUnit();
+    const receiptId = await draftReceiptFromPurchaseOrder(f, key);
     await seed(f, (trx) =>
       trx
         .updateTable("receiptLine")
-        .set({ storageUnitId: heldUnit })
+        .set({ storageUnitId: heldUnit() })
         .where("receiptId", "=", receiptId)
         .where("companyId", "=", f.companyId)
         .execute()
@@ -818,11 +836,31 @@ describeLocal("scrap approval", () => {
       .where("sourceDocumentId", "=", receiptId)
       .where("companyId", "=", f.companyId)
       .executeTakeFirstOrThrow();
+    return lot.id;
+  };
+  const inHeldUnit = async () =>
+    Number(
+      (
+        await f.db
+          .selectFrom("itemLedger")
+          .select(sql<number>`COALESCE(SUM("quantity"), 0)`.as("quantity"))
+          .where("companyId", "=", f.companyId)
+          .where("itemId", "=", f.partId)
+          .where("storageUnitId", "=", heldUnit())
+          .executeTakeFirstOrThrow()
+      ).quantity
+    );
+
+  it("lets only an approver complete an issue that scraps a lot's held remainder", async () => {
+    await approverOnlyRules(0);
+    // Ten received into the held unit, six accepted: four stay held for the NCR.
+    const lotId = await receiveHeldLot("held");
     const partial = await withTriggers(() =>
-      partialInspection(
-        contextFor({ type: "system", onBehalfOf: USER }),
-        { id: lot.id, acceptedQuantity: 6, createNcr: true }
-      )
+      partialInspection(contextFor({ type: "system", onBehalfOf: USER }), {
+        id: lotId,
+        acceptedQuantity: 6,
+        createNcr: true
+      })
     );
     expect(partial.error).toBeNull();
     const issueId = partial.data!.issueId!;
@@ -835,18 +873,6 @@ describeLocal("scrap approval", () => {
         .execute()
     );
     // The six accepted stay in the unit until put away.
-    const inUnit = async () =>
-      Number(
-        (
-          await f.db
-            .selectFrom("itemLedger")
-            .select(sql<number>`COALESCE(SUM("quantity"), 0)`.as("quantity"))
-            .where("companyId", "=", f.companyId)
-            .where("itemId", "=", f.partId)
-            .where("storageUnitId", "=", heldUnit)
-            .executeTakeFirstOrThrow()
-        ).quantity
-      );
     const status = async () =>
       (
         await f.db
@@ -855,7 +881,7 @@ describeLocal("scrap approval", () => {
           .where("id", "=", issueId)
           .executeTakeFirstOrThrow()
       ).status;
-    expect(await inUnit()).toBe(10);
+    expect(await inHeldUnit()).toBe(10);
 
     const operator = await withTriggers(() =>
       completeIssue(contextFor(userActor(people.operator)), { id: issueId })
@@ -865,7 +891,7 @@ describeLocal("scrap approval", () => {
       completeIssue(contextFor(apiKeyActor()), { id: issueId })
     );
     expect(apiKey.error?.category).toBe("forbidden");
-    expect(await inUnit()).toBe(10);
+    expect(await inHeldUnit()).toBe(10);
     expect(await status()).not.toBe("Closed");
 
     const approved = await withTriggers(() =>
@@ -873,7 +899,7 @@ describeLocal("scrap approval", () => {
     );
     expect(approved.error).toBeNull();
     expect(await status()).toBe("Closed");
-    expect(await inUnit()).toBe(6);
+    expect(await inHeldUnit()).toBe(6);
 
     const listed = await scrapApproval.getScrapApprovals(client!, f.companyId, {
       limit: 50,
@@ -887,6 +913,59 @@ describeLocal("scrap approval", () => {
       jobId: null,
       // Four parts at a unit cost of 10.
       estimatedValue: 40,
+      createdBy: people.approver,
+      approvedBy: people.approver,
+      approvalStatus: "Approved"
+    });
+    expect(records?.[0]?.postedAt).not.toBeNull();
+  }, 60_000);
+
+  it("lets only an approver reject an untracked lot, which writes its stock off", async () => {
+    await approverOnlyRules(0);
+    const lotId = await receiveHeldLot("rejected");
+    const before = await inHeldUnit();
+    const status = async () =>
+      (
+        await f.db
+          .selectFrom("inspection")
+          .select("status")
+          .where("id", "=", lotId)
+          .executeTakeFirstOrThrow()
+      ).status;
+    const reject = (actor: Actor) =>
+      withTriggers(() =>
+        rejectInspection(contextFor(actor), {
+          id: lotId,
+          reason: "Wrong part",
+          createNcr: false,
+          requireOpen: true
+        })
+      );
+
+    expect((await reject(userActor(people.operator))).error?.category).toBe(
+      "forbidden"
+    );
+    expect((await reject(apiKeyActor())).error?.category).toBe("forbidden");
+    expect(await status()).toBe("Pending");
+    expect(await inHeldUnit()).toBe(before);
+
+    const approved = await reject(userActor(people.approver));
+    expect(approved.error).toBeNull();
+    expect(await status()).toBe("Failed");
+    expect(await inHeldUnit()).toBe(before - 10);
+
+    const listed = await scrapApproval.getScrapApprovals(client!, f.companyId, {
+      limit: 50,
+      offset: 0
+    });
+    const records = listed.data?.filter(
+      (row) => row.itemId === f.partId && row.quantity === 10
+    );
+    expect(records).toHaveLength(1);
+    expect(records?.[0]).toMatchObject({
+      jobId: null,
+      // Ten parts at a unit cost of 10.
+      estimatedValue: 100,
       createdBy: people.approver,
       approvedBy: people.approver,
       approvalStatus: "Approved"

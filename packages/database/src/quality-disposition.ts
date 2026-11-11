@@ -141,6 +141,61 @@ async function rejectedMoves(
     .filter((row) => row.quantity > EPSILON);
 }
 
+/**
+ * What rejecting a receipt lot would write off, before it posts: the lot's
+ * untracked Inventory quantity, at most. The Reject takes what is there, so
+ * this errs high, as a scrap approval estimate may. Null when the Reject
+ * writes nothing off: a tracked or Non-Inventory item, a lot from another
+ * source, or a lot already written off.
+ */
+export async function rejectWriteOffEstimate(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string }
+): Promise<{ itemId: string; quantity: number; readableId: string } | null> {
+  const lot = await db
+    .selectFrom("inspection")
+    .innerJoin("item", (join) =>
+      join
+        .onRef("item.id", "=", "inspection.itemId")
+        .onRef("item.companyId", "=", "inspection.companyId")
+    )
+    .select([
+      "inspection.itemId",
+      "inspection.lotSize",
+      "inspection.inspectionId",
+      "inspection.sourceDocument",
+      "item.itemTrackingType",
+      (eb) =>
+        eb
+          .exists(
+            eb
+              .selectFrom("itemLedger")
+              .select("itemLedger.id")
+              .where("itemLedger.companyId", "=", args.companyId)
+              .where("itemLedger.documentType", "=", "Inbound Inspection")
+              .whereRef("itemLedger.documentId", "=", "inspection.id")
+          )
+          .as("writtenOff")
+    ])
+    .where("inspection.id", "=", args.id)
+    .where("inspection.companyId", "=", args.companyId)
+    .executeTakeFirst();
+  if (
+    !lot ||
+    lot.sourceDocument !== "Receipt" ||
+    lot.itemTrackingType !== "Inventory" ||
+    lot.writtenOff ||
+    !(Number(lot.lotSize) > EPSILON)
+  ) {
+    return null;
+  }
+  return {
+    itemId: lot.itemId,
+    quantity: Number(lot.lotSize),
+    readableId: lot.inspectionId
+  };
+}
+
 export async function dispositionInspection(
   db: Kysely<KyselyDatabase>,
   args: InspectionDispositionInput
