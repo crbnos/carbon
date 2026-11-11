@@ -40,9 +40,8 @@ const CONSOLE_PIN_MAX_AGE_MS = CONSOLE_PIN_MAX_AGE * 1000;
 
 // A controlled environment (ITAR/CUI, NIST 3.1.10) drops a shared-console operator
 // to re-PIN after the standard idle-lock window instead of 1h. pinnedAt is refreshed
-// on every shell navigation (see MES x+/_layout loader), so this is an inactivity
-// window.
-const consolePinMaxAgeMs = () =>
+// only on real user activity, so this is an inactivity window.
+export const consolePinIdleMs = () =>
   CONTROLLED_ENVIRONMENT ? SESSION_IDLE_LOCK_MS : CONSOLE_PIN_MAX_AGE_MS;
 
 export interface ConsolePinIn {
@@ -116,7 +115,7 @@ export async function readConsolePinInCookieUnverified(
   if (!isStoredConsolePinIn(parsed)) return null;
   if (parsed.companyId !== companyId) return null;
   if (parsed.sessionUserId !== sessionUserId) return null;
-  if (Date.now() - parsed.pinnedAt > consolePinMaxAgeMs()) return null;
+  if (Date.now() - parsed.pinnedAt > consolePinIdleMs()) return null;
 
   return {
     userId: parsed.userId,

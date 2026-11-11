@@ -67,6 +67,11 @@ export function useIdle({
   useEffect(() => {
     if (!enabled || typeof window === "undefined") return;
 
+    lastActivityRef.current = Date.now();
+    lastHeartbeatRef.current = 0;
+    isIdleRef.current = false;
+    setIsIdle(false);
+
     const channel =
       typeof BroadcastChannel !== "undefined"
         ? new BroadcastChannel(CHANNEL_NAME)
@@ -78,14 +83,23 @@ export function useIdle({
     // keep re-stamping the server's `lastActiveAt` every heartbeatMs and the
     // session would never idle-lock server-side, so /unlock's loader would find
     // the session "not locked" and bounce straight back with no re-auth.
+    const lock = () => {
+      isIdleRef.current = true;
+      setIsIdle(true);
+      channel?.postMessage({ type: "lock" } satisfies ChannelMessage);
+    };
     const sendHeartbeat = (now: number) => {
       lastHeartbeatRef.current = now;
       void fetch(heartbeatUrl, {
         method: "POST",
         credentials: "same-origin"
-      }).catch(() => {
-        // Best-effort; a missed heartbeat just brings the lock closer.
-      });
+      })
+        .then(async (response) => {
+          if (response.ok && (await response.json()).ok === false) lock();
+        })
+        .catch(() => {
+          // Best-effort; a missed heartbeat just brings the lock closer.
+        });
     };
 
     // Local real activity. Once locked, local activity does NOT clear the lock —
@@ -93,6 +107,10 @@ export function useIdle({
     const onActivity = () => {
       if (isIdleRef.current) return;
       const now = Date.now();
+      if (now - lastActivityRef.current > idleMs) {
+        lock();
+        return;
+      }
       lastActivityRef.current = now;
       // Keep the server's lastActiveAt fresh while genuinely active, throttled.
       if (now - lastHeartbeatRef.current >= heartbeatMs) {
@@ -130,9 +148,7 @@ export function useIdle({
 
       const idleFor = now - lastActivityRef.current;
       if (idleFor > idleMs) {
-        isIdleRef.current = true;
-        setIsIdle(true);
-        channel?.postMessage({ type: "lock" } satisfies ChannelMessage);
+        lock();
       }
     }, CHECK_INTERVAL_MS);
 
