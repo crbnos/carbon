@@ -182,7 +182,7 @@
     "lint": "biome lint --write ",
     "start": "NODE_ENV=production node ./server/node.ts",
     "test": "vitest run",
-    "typecheck": "react-router typegen && tsc --noEmit",
+    "typecheck": "react-router typegen && node ../../packages/dev/src/heavy-lock.ts tsc --noEmit",
     "typegen": "react-router typegen"
   },
   "sideEffects": [
