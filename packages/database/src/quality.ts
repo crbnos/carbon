@@ -1361,12 +1361,32 @@ async function loadFirstArticleContext(
   const itemIds = [...items.keys()];
   const makeMethodIds = makeMethods.map((makeMethod) => makeMethod.id);
 
+  // A first article inspects an Active plan version only: a Draft can still
+  // change under the lot, and every version of a plan is its own row, so
+  // counting all of them made a plan with a second version read as two.
   const firstArticleSlots = await db
     .selectFrom("itemInspectionDocumentAssignment")
-    .select(["itemId", "inspectionDocumentId"])
-    .where("usage", "=", "First Article")
-    .where("itemId", "in", itemIds)
-    .where("companyId", "=", args.companyId)
+    .innerJoin("inspectionDocument", (join) =>
+      join
+        .onRef(
+          "inspectionDocument.id",
+          "=",
+          "itemInspectionDocumentAssignment.inspectionDocumentId"
+        )
+        .onRef(
+          "inspectionDocument.companyId",
+          "=",
+          "itemInspectionDocumentAssignment.companyId"
+        )
+    )
+    .select([
+      "itemInspectionDocumentAssignment.itemId",
+      "itemInspectionDocumentAssignment.inspectionDocumentId"
+    ])
+    .where("itemInspectionDocumentAssignment.usage", "=", "First Article")
+    .where("itemInspectionDocumentAssignment.itemId", "in", itemIds)
+    .where("itemInspectionDocumentAssignment.companyId", "=", args.companyId)
+    .where("inspectionDocument.status", "=", "Active")
     .execute();
 
   const partPlans = await db
@@ -1374,6 +1394,7 @@ async function loadFirstArticleContext(
     .select(["id", "partId"])
     .where("partId", "in", itemIds)
     .where("companyId", "=", args.companyId)
+    .where("status", "=", "Active")
     .orderBy("id")
     .execute();
 

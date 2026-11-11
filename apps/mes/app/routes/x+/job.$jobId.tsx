@@ -136,8 +136,8 @@ export default function JobDagRoute() {
               </AlertTitle>
               <AlertDescription>
                 <Trans>
-                  Tell quality — this part needs a first article, but no
-                  inspection plan is assigned to it.
+                  Tell quality — this part needs a first article, but it has no
+                  active inspection plan.
                 </Trans>
               </AlertDescription>
             </Alert>

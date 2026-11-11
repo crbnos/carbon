@@ -3015,8 +3015,8 @@ msgstr "İş merkezini çevrimdışı alır"
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Bir gün seçerek {selectedLabel} için süre ekleyin. Bir çubuğun alt kenarını sürükleyerek saatlerini değiştirin."
 
-msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
-msgstr "Kaliteye bildir — bu parça bir ilk örneğe ihtiyaç duyuyor, ancak kontrol planı atanmamış."
+msgid "Tell quality — this part needs a first article, but it has no active inspection plan."
+msgstr "Kaliteye bildir — bu parça bir ilk örneğe ihtiyaç duyuyor, ancak aktif bir kontrol planı yok."
 
 msgid "Text color"
 msgstr "Metin rengi"

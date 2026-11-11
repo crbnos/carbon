@@ -268,7 +268,8 @@ import {
   buildConformityDetails,
   certificateLineRevision,
   invoiceShipToSalesOrderId,
-  salesOrderShipToLocationId
+  salesOrderShipToLocationId,
+  shippedEntityQuantities
 } from "./certificateOfConformance";
 import {
   hardenPegsForSupply,
@@ -2315,6 +2316,32 @@ type CertificateOfConformanceDataResult =
  * what the renderer resolves itself (company, template, certificate header),
  * plus the warnings the issue dialog shows. Reads only; one query per table.
  */
+/**
+ * The supplier certificates on a receipt's lines (id and number): what a
+ * receipt rebuild must account for.
+ */
+export async function getReceiptCertificates(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  receiptId: string
+) {
+  const lines = await client
+    .from("receiptLine")
+    .select("id")
+    .eq("receiptId", receiptId)
+    .eq("companyId", companyId);
+  if (lines.error) return { data: null, error: lines.error };
+  if (lines.data.length === 0) return { data: [], error: null };
+  return client
+    .from("certificate")
+    .select("id, certificateNumber")
+    .in(
+      "receiptLineId",
+      lines.data.map((line) => line.id)
+    )
+    .eq("companyId", companyId);
+}
+
 export async function getCertificateOfConformanceData(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2412,13 +2439,16 @@ export async function getCertificateOfConformanceData(
     shipment.data.sourceDocument === "Sales Invoice" &&
     shipment.data.sourceDocumentId
   ) {
-    // A sales invoice has no ship-to: its locationId is our warehouse and
-    // invoiceCustomerLocationId the bill-to. The address comes from the order
-    // its lines were invoiced from, when there is exactly one.
+    // A sales invoice's ship-to is its shipment's customer location (the
+    // invoice's Ship To): its locationId is our warehouse and
+    // invoiceCustomerLocationId the bill-to. With no Ship To the address comes
+    // from the order its lines were invoiced from, when there is exactly one.
     const [salesInvoice, invoiceLines] = await Promise.all([
       client
         .from("salesInvoice")
-        .select("customerId, customerReference")
+        .select(
+          "customerId, customerReference, salesInvoiceShipment(customerLocationId)"
+        )
         .eq("id", shipment.data.sourceDocumentId)
         .eq("companyId", companyId)
         .maybeSingle(),
@@ -2437,9 +2467,13 @@ export async function getCertificateOfConformanceData(
     if (salesInvoice.data) {
       customerId = salesInvoice.data.customerId ?? customerId;
       purchaseOrderNumber = salesInvoice.data.customerReference;
-      shipToSalesOrderId = invoiceShipToSalesOrderId(
-        (invoiceLines.data ?? []).map((line) => line.salesOrderId)
-      );
+      customerLocationId =
+        salesInvoice.data.salesInvoiceShipment?.customerLocationId ?? null;
+      if (!customerLocationId) {
+        shipToSalesOrderId = invoiceShipToSalesOrderId(
+          (invoiceLines.data ?? []).map((line) => line.salesOrderId)
+        );
+      }
     }
   }
 
@@ -2660,9 +2694,12 @@ export async function getCertificateOfConformanceData(
           orderLine?.customerPartRevision,
           line.item?.revision
         ),
-        traceability: (entitiesByLine.get(line.id) ?? []).map((entity) => ({
+        traceability: shippedEntityQuantities(
+          entitiesByLine.get(line.id) ?? [],
+          line.shippedQuantity
+        ).map((entity) => ({
           id: entity.readableId ?? entity.id,
-          quantity: formatQuantity(entity.quantity, locale)
+          quantity: formatQuantity(entity.shipped, locale)
         })),
         remarks: null
       };

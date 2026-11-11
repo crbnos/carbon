@@ -117,7 +117,12 @@ const PARENT_CHECK_TABLES = [
   "trainingAssignment",
   // projectCostRelief_source_check: a Cost Relief schedule row OR a project
   // close journal (journal is preserved, the schedule row is not)
-  "projectCostRelief"
+  "projectCostRelief",
+  // certificate_one_target: a receipt line OR a job operation (seeded on
+  // posted receipt lines)
+  "certificate",
+  // complianceStatementAssignment_one_target: a customer OR an item
+  "complianceStatementAssignment"
 ];
 
 type ForeignKey = {

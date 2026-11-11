@@ -19504,8 +19504,8 @@ msgstr "파일에 인증서 없음"
 msgid "No certificate on file for {name}"
 msgstr "파일에 {name}의 인증서 없음"
 
-msgid "No certificates on this line yet."
-msgstr "이 라인에 인증서가 아직 없습니다."
+msgid "No certificates on this line yet"
+msgstr "이 라인에 아직 인증서가 없습니다"
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "설정된 인증 텍스트가 없습니다. 설정 → 시간에서 설정하도록 관리자에게 요청하세요."
@@ -31602,8 +31602,8 @@ msgstr "이 주문들을 로드할 수 없습니다. 닫고 다시 열어보세�
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "이 부품들이 이 부품으로 대체됩니다. 각 규칙은 기존 부품에 설정되어 있으니 규칙을 변경하려면 해당 부품을 열어주세요."
 
-msgid "These parts need a first article inspection but have no inspection plan to inspect against. Assign a first article plan on each part before releasing."
-msgstr "이 부품들은 첫 번째 부품 검사가 필요하지만 검사할 검사 계획이 없습니다. 릴리스하기 전에 각 부품에 첫 번째 부품 계획을 할당하세요."
+msgid "These parts need a first article inspection but have no active inspection plan to inspect against. Publish the part's plan, or assign an active plan to its First Article slot, before releasing."
+msgstr "이 부품들은 첫 번째 부품 검사가 필요하지만 검사할 활성 검사 계획이 없습니다. 릴리스하기 전에 부품의 계획을 게시하거나 첫 번째 부품 슬롯에 활성 계획을 할당하세요."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
 msgstr "이 행들은 이 회사 외부의 데이터로 연결되어 있으므로 현재 데이터의 백업 복사본을 만들 수 없습니다. 이를 삭제하면 되돌릴 수 없습니다. 이것이 이 그룹의 다른 회사들과 공유되는 것으로 판명되면 아무것도 삭제되지 않으며 데모 데이터도 적용되지 않습니다."

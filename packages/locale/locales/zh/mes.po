@@ -3015,8 +3015,8 @@ msgstr "使工作中心离线"
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "点击一天以向 {selectedLabel} 添加时间。拖动条形的下边缘以更改其小时数。"
 
-msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
-msgstr "通知质量部门 — 该零件需要首件检验，但未为其指定检验计划"
+msgid "Tell quality — this part needs a first article, but it has no active inspection plan."
+msgstr "通知质量部门 — 该零件需要首件检验，但没有有效的检验计划。"
 
 msgid "Text color"
 msgstr "文本颜色"

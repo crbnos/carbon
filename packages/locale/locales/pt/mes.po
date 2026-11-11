@@ -3015,8 +3015,8 @@ msgstr "Coloca o centro de trabalho offline"
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Toque em um dia para adicionar tempo a {selectedLabel}. Arraste a borda inferior de uma barra para alterar suas horas."
 
-msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
-msgstr "Notifique a qualidade — esta peça precisa de uma primeira amostra, mas nenhum plano de inspeção está vinculado a ela."
+msgid "Tell quality — this part needs a first article, but it has no active inspection plan."
+msgstr "Notifique a qualidade — esta peça precisa de uma primeira amostra, mas não tem um plano de inspeção ativo."
 
 msgid "Text color"
 msgstr "Cor do texto"

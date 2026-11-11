@@ -1,7 +1,5 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`DOCUMENT_PDFS > prints every text of the certificateOfConformance catalog it reaches 1`] = `[]`;
-
 exports[`DOCUMENT_PDFS > prints every text of the issue catalog it reaches 1`] = `
 [
   "issueDetails:unknown",
@@ -121,7 +119,7 @@ CERTIFICATE OF CONFORMITY
 1 PAGE
 Page 1 of 1
 2 CERTIFICATE NUMBER
-COC000012-0
+COC000012
 3 DATE
 Jun 5, 2026
 4 ORGANIZATION NAME AND ADDRESS
@@ -161,7 +159,7 @@ service(s) detailed above has (have) been manufactured / maintained / reworked /
 to applicable specifications, drawings, and purchase order and contract requirements.
 Document electronically generated and validated.
 PREVIEW — NOT ISSUED
-Acme Manufacturing Co. is registered in United States COC000012-0 Page 1 of 1",
+Acme Manufacturing Co. is registered in United States COC000012 Page 1 of 1",
 ]
 `;
 

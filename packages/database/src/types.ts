@@ -8985,8 +8985,8 @@ export type Database = {
           receiptQuantitiesStartAtZero: boolean
           requireBackflushStorageUnit: boolean
           requireCustomerContactAndLocation: boolean
-          requireFirstArticle: boolean
           requireCustomerContactEmail: boolean
+          requireFirstArticle: boolean
           requireMfa: boolean
           requireProjectElement: boolean
           requirePurchaseOrderApprovalSignature: boolean
@@ -9081,8 +9081,8 @@ export type Database = {
           receiptQuantitiesStartAtZero?: boolean
           requireBackflushStorageUnit?: boolean
           requireCustomerContactAndLocation?: boolean
-          requireFirstArticle?: boolean
           requireCustomerContactEmail?: boolean
+          requireFirstArticle?: boolean
           requireMfa?: boolean
           requireProjectElement?: boolean
           requirePurchaseOrderApprovalSignature?: boolean
@@ -9177,8 +9177,8 @@ export type Database = {
           receiptQuantitiesStartAtZero?: boolean
           requireBackflushStorageUnit?: boolean
           requireCustomerContactAndLocation?: boolean
-          requireFirstArticle?: boolean
           requireCustomerContactEmail?: boolean
+          requireFirstArticle?: boolean
           requireMfa?: boolean
           requireProjectElement?: boolean
           requirePurchaseOrderApprovalSignature?: boolean
@@ -26864,8 +26864,8 @@ export type Database = {
             | null
           nominalValue: string | null
           pageNumber: number
-          referenceLocation: string | null
           pmiItemId: string | null
+          referenceLocation: string | null
           samplingAql: number | null
           samplingInspectionLevel:
             | Database["public"]["Enums"]["inspectionLevel"]
@@ -26904,8 +26904,8 @@ export type Database = {
             | null
           nominalValue?: string | null
           pageNumber: number
-          referenceLocation?: string | null
           pmiItemId?: string | null
+          referenceLocation?: string | null
           samplingAql?: number | null
           samplingInspectionLevel?:
             | Database["public"]["Enums"]["inspectionLevel"]
@@ -26944,8 +26944,8 @@ export type Database = {
             | null
           nominalValue?: string | null
           pageNumber?: number
-          referenceLocation?: string | null
           pmiItemId?: string | null
+          referenceLocation?: string | null
           samplingAql?: number | null
           samplingInspectionLevel?:
             | Database["public"]["Enums"]["inspectionLevel"]
@@ -91251,6 +91251,7 @@ export type Database = {
           createdBy: string | null
           defaultPageHeight: number | null
           defaultPageWidth: number | null
+          drawingRevision: string | null
           fileName: string | null
           id: string | null
           modelUploadId: string | null

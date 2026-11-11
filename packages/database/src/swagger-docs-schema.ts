@@ -7516,6 +7516,12 @@ export default {
             $ref: "#/parameters/rowFilter.customerShipping.incotermLocation"
           },
           {
+            $ref: "#/parameters/rowFilter.customerShipping.requiresCertificateOfConformance"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerShipping.requiresFirstArticle"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -7608,6 +7614,12 @@ export default {
             $ref: "#/parameters/rowFilter.customerShipping.incotermLocation"
           },
           {
+            $ref: "#/parameters/rowFilter.customerShipping.requiresCertificateOfConformance"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerShipping.requiresFirstArticle"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -7652,6 +7664,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerShipping.incotermLocation"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerShipping.requiresCertificateOfConformance"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerShipping.requiresFirstArticle"
           },
           {
             $ref: "#/parameters/body.customerShipping"
@@ -31110,6 +31128,186 @@ export default {
         tags: ["salesOrderPayment"]
       }
     },
+    "/complianceStatement": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.content"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.appliesToAllCustomers"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/complianceStatement"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["complianceStatement"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.complianceStatement"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["complianceStatement"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.content"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.appliesToAllCustomers"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["complianceStatement"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.content"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.appliesToAllCustomers"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatement.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.complianceStatement"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["complianceStatement"]
+      }
+    },
     "/customerContractLaborRate": {
       get: {
         parameters: [
@@ -47124,6 +47322,258 @@ export default {
         tags: ["maintenanceDispatchItemTrackedEntity"]
       }
     },
+    "/certificateOfConformance": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.certificateId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.revision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.shipmentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.reasonForUpdate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.signedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.signedByName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.signedByTitle"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.signedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.lastSentAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.lastSentTo"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/certificateOfConformance"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["certificateOfConformance"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.certificateOfConformance"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["certificateOfConformance"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.certificateId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.revision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.shipmentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.reasonForUpdate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.signedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.signedByName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.signedByTitle"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.signedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.lastSentAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.lastSentTo"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["certificateOfConformance"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.certificateId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.revision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.shipmentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.reasonForUpdate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.signedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.signedByName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.signedByTitle"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.signedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.lastSentAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.lastSentTo"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificateOfConformance.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.certificateOfConformance"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["certificateOfConformance"]
+      }
+    },
     "/period": {
       get: {
         parameters: [
@@ -59700,6 +60150,483 @@ export default {
         tags: ["trackedActivity"]
       }
     },
+    "/certificate": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.certificate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.certificateNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.specification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.receiptLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/certificate"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["certificate"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.certificate"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["certificate"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.certificate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.certificateNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.specification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.receiptLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["certificate"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.certificate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.certificateNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.specification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.receiptLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.certificate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.certificate"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["certificate"]
+      }
+    },
+    "/firstArticleInspectionProduct": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.firstArticleInspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.kind"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.specification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.code"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.supplier"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.customerApprovalVerification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.certificateNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.functionalTestProcedureNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.acceptanceReportNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.comments"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.certificateId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/firstArticleInspectionProduct"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["firstArticleInspectionProduct"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.firstArticleInspectionProduct"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["firstArticleInspectionProduct"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.firstArticleInspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.kind"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.specification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.code"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.supplier"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.customerApprovalVerification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.certificateNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.functionalTestProcedureNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.acceptanceReportNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.comments"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.certificateId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["firstArticleInspectionProduct"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.firstArticleInspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.kind"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.specification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.code"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.supplier"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.customerApprovalVerification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.certificateNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.functionalTestProcedureNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.acceptanceReportNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.comments"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.certificateId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspectionProduct.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.firstArticleInspectionProduct"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["firstArticleInspectionProduct"]
+      }
+    },
     "/searchIndexRegistry": {
       get: {
         parameters: [
@@ -70834,6 +71761,21 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionFeature.samplingSeverity"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionFeature.designator"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.referenceLocation"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.materialCondition"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.sizeFeatureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.featureOfSize"
+          },
+          {
             $ref: "#/parameters/rowFilter.inspectionFeature.gaugeTypeId"
           },
           {
@@ -70962,6 +71904,21 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionFeature.samplingSeverity"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionFeature.designator"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.referenceLocation"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.materialCondition"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.sizeFeatureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.featureOfSize"
+          },
+          {
             $ref: "#/parameters/rowFilter.inspectionFeature.gaugeTypeId"
           },
           {
@@ -71042,6 +71999,21 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inspectionFeature.samplingSeverity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.designator"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.referenceLocation"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.materialCondition"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.sizeFeatureId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.featureOfSize"
           },
           {
             $ref: "#/parameters/rowFilter.inspectionFeature.gaugeTypeId"
@@ -72562,6 +73534,9 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionDocument.samplingSeverity"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionDocument.drawingRevision"
+          },
+          {
             $ref: "#/parameters/rowFilter.inspectionDocument.modelUploadId"
           },
           {
@@ -72696,6 +73671,9 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionDocument.samplingSeverity"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionDocument.drawingRevision"
+          },
+          {
             $ref: "#/parameters/rowFilter.inspectionDocument.modelUploadId"
           },
           {
@@ -72782,6 +73760,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inspectionDocument.samplingSeverity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocument.drawingRevision"
           },
           {
             $ref: "#/parameters/rowFilter.inspectionDocument.modelUploadId"
@@ -91026,6 +92007,177 @@ export default {
         tags: ["shipmentLines"]
       }
     },
+    "/complianceStatementAssignment": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.complianceStatementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/complianceStatementAssignment"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["complianceStatementAssignment"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.complianceStatementAssignment"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["complianceStatementAssignment"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.complianceStatementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["complianceStatementAssignment"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.complianceStatementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.complianceStatementAssignment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.complianceStatementAssignment"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["complianceStatementAssignment"]
+      }
+    },
     "/employeeType": {
       get: {
         parameters: [
@@ -94390,6 +95542,12 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionMeasurement.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.bonus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.allowable"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -94491,6 +95649,12 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionMeasurement.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.bonus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.allowable"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -94544,6 +95708,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inspectionMeasurement.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.bonus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionMeasurement.allowable"
           },
           {
             $ref: "#/parameters/body.inspectionMeasurement"
@@ -106287,6 +107457,456 @@ export default {
         tags: ["purchaseOrders"]
       }
     },
+    "/firstArticleInspection": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.jobMakeMethodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.scope"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.baselineFirstArticleInspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.baselineReference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.partNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.partName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.partRevision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.drawingNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.drawingRevision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.additionalChanges"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.manufacturingProcessReference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.organizationName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.supplierCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.purchaseOrderNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.hasNonconformance"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.comments"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.verifiedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.verifiedByName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.verifiedByTitle"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.verifiedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.approvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.approvedByName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.approvedByTitle"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.approvedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.customerApprovalName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.customerApprovalDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/firstArticleInspection"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["firstArticleInspection"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.firstArticleInspection"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["firstArticleInspection"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.jobMakeMethodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.scope"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.baselineFirstArticleInspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.baselineReference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.partNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.partName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.partRevision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.drawingNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.drawingRevision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.additionalChanges"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.manufacturingProcessReference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.organizationName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.supplierCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.purchaseOrderNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.hasNonconformance"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.comments"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.verifiedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.verifiedByName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.verifiedByTitle"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.verifiedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.approvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.approvedByName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.approvedByTitle"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.approvedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.customerApprovalName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.customerApprovalDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["firstArticleInspection"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.inspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.jobId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.jobMakeMethodId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.scope"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.baselineFirstArticleInspectionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.baselineReference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.partNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.partName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.partRevision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.drawingNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.drawingRevision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.additionalChanges"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.manufacturingProcessReference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.organizationName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.supplierCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.purchaseOrderNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.hasNonconformance"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.comments"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.verifiedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.verifiedByName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.verifiedByTitle"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.verifiedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.approvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.approvedByName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.approvedByTitle"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.approvedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.customerApprovalName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.customerApprovalDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.firstArticleInspection.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.firstArticleInspection"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["firstArticleInspection"]
+      }
+    },
     "/openSalesOrderLines": {
       get: {
         parameters: [
@@ -108203,6 +109823,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inspectionDocuments.samplingSeverity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionDocuments.drawingRevision"
           },
           {
             $ref: "#/parameters/rowFilter.inspectionDocuments.modelUploadId"
@@ -117667,6 +119290,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requireFirstArticle"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.requireSupplierContactAndLocation"
           },
           {
@@ -118005,6 +119631,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requireFirstArticle"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.requireSupplierContactAndLocation"
           },
           {
@@ -118295,6 +119924,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireFirstArticle"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.requireSupplierContactAndLocation"
@@ -140805,7 +142437,12 @@ export default {
       type: "object"
     },
     customerShipping: {
-      required: ["customerId", "companyId"],
+      required: [
+        "customerId",
+        "companyId",
+        "requiresCertificateOfConformance",
+        "requiresFirstArticle"
+      ],
       properties: {
         customerId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
@@ -140876,6 +142513,16 @@ export default {
         incotermLocation: {
           format: "text",
           type: "string"
+        },
+        requiresCertificateOfConformance: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        requiresFirstArticle: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -148516,7 +150163,7 @@ export default {
         },
         usage: {
           description: "Note:\nThis is a Primary Key.<pk/>",
-          enum: ["Receipt"],
+          enum: ["Receipt", "First Article"],
           format: 'public."inspectionDocumentUsage"',
           type: "string"
         },
@@ -152069,6 +153716,72 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        }
+      },
+      type: "object"
+    },
+    complianceStatement: {
+      required: [
+        "id",
+        "companyId",
+        "name",
+        "content",
+        "appliesToAllCustomers",
+        "active",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('cst'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        content: {
+          format: "text",
+          type: "string"
+        },
+        appliesToAllCustomers: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        active: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -159632,6 +161345,117 @@ export default {
       },
       type: "object"
     },
+    certificateOfConformance: {
+      required: [
+        "id",
+        "companyId",
+        "certificateId",
+        "revision",
+        "shipmentId",
+        "signedBy",
+        "signedByName",
+        "signedAt",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('coc'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        certificateId: {
+          format: "text",
+          type: "string"
+        },
+        revision: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        shipmentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shipment.id`.<fk table='shipment' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customerId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        reasonForUpdate: {
+          format: "text",
+          type: "string"
+        },
+        documentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `document.id`.<fk table='document' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        signedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        signedByName: {
+          format: "text",
+          type: "string"
+        },
+        signedByTitle: {
+          format: "text",
+          type: "string"
+        },
+        signedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        lastSentAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        lastSentTo: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     period: {
       required: ["id", "startDate", "endDate", "periodType", "createdAt"],
       properties: {
@@ -165676,6 +167500,199 @@ export default {
       },
       type: "object"
     },
+    certificate: {
+      required: [
+        "id",
+        "companyId",
+        "type",
+        "certificateNumber",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('cert'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        type: {
+          default: "Material",
+          enum: ["Material", "Special Process", "Functional Test", "Other"],
+          format: 'public."certificateType"',
+          type: "string"
+        },
+        certificateNumber: {
+          format: "text",
+          type: "string"
+        },
+        specification: {
+          format: "text",
+          type: "string"
+        },
+        supplierId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        receiptLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `receiptLine.id`.<fk table='receiptLine' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        jobOperationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        documentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `document.id`.<fk table='document' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        notes: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    firstArticleInspectionProduct: {
+      required: [
+        "id",
+        "companyId",
+        "firstArticleInspectionId",
+        "sortOrder",
+        "kind",
+        "name",
+        "customerApprovalVerification",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('faid'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        firstArticleInspectionId: {
+          format: "text",
+          type: "string"
+        },
+        sortOrder: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        kind: {
+          enum: ["Material", "Special Process", "Functional Test", "Other"],
+          format: 'public."certificateType"',
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        specification: {
+          format: "text",
+          type: "string"
+        },
+        code: {
+          format: "text",
+          type: "string"
+        },
+        supplier: {
+          format: "text",
+          type: "string"
+        },
+        customerApprovalVerification: {
+          default: "N/A",
+          enum: ["Yes", "No", "N/A"],
+          format: 'public."customerApprovalVerification"',
+          type: "string"
+        },
+        certificateNumber: {
+          format: "text",
+          type: "string"
+        },
+        functionalTestProcedureNumber: {
+          format: "text",
+          type: "string"
+        },
+        acceptanceReportNumber: {
+          format: "text",
+          type: "string"
+        },
+        comments: {
+          format: "text",
+          type: "string"
+        },
+        certificateId: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     searchIndexRegistry: {
       required: ["companyId", "createdAt"],
       properties: {
@@ -170934,6 +172951,30 @@ export default {
           format: 'public."inspectionSeverity"',
           type: "string"
         },
+        designator: {
+          format: "text",
+          type: "string"
+        },
+        referenceLocation: {
+          format: "text",
+          type: "string"
+        },
+        materialCondition: {
+          enum: ["RFS", "MMC", "LMC"],
+          format: 'public."materialCondition"',
+          type: "string"
+        },
+        sizeFeatureId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspectionFeature.id`.<fk table='inspectionFeature' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        featureOfSize: {
+          enum: ["Internal", "External"],
+          format: 'public."featureOfSizeType"',
+          type: "string"
+        },
         gaugeTypeId: {
           description:
             "Note:\nThis is a Foreign Key to `gaugeType.id`.<fk table='gaugeType' column='id'/>",
@@ -171603,6 +173644,10 @@ export default {
         samplingSeverity: {
           enum: ["Normal", "Tightened", "Reduced"],
           format: 'public."inspectionSeverity"',
+          type: "string"
+        },
+        drawingRevision: {
+          format: "text",
           type: "string"
         },
         modelUploadId: {
@@ -180109,7 +182154,7 @@ export default {
           type: "string"
         },
         sourceDocument: {
-          enum: ["Receipt", "Job Operation", "Manual"],
+          enum: ["Receipt", "Job Operation", "First Article", "Manual"],
           format: 'public."inspectionSourceDocument"',
           type: "string"
         },
@@ -180362,6 +182407,67 @@ export default {
         },
         description: {
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    complianceStatementAssignment: {
+      required: [
+        "id",
+        "companyId",
+        "complianceStatementId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('csa'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        complianceStatementId: {
+          format: "text",
+          type: "string"
+        },
+        customerId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -181947,6 +184053,14 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        bonus: {
+          format: "numeric",
+          type: "number"
+        },
+        allowable: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -187653,6 +189767,231 @@ export default {
       },
       type: "object"
     },
+    firstArticleInspection: {
+      required: [
+        "id",
+        "companyId",
+        "inspectionId",
+        "status",
+        "itemId",
+        "type",
+        "scope",
+        "reason",
+        "partNumber",
+        "partName",
+        "manufacturingProcessReference",
+        "organizationName",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('fai'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        inspectionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `inspection.id`.<fk table='inspection' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        status: {
+          default: "Draft",
+          enum: ["Draft", "Verified", "Approved"],
+          format: 'public."firstArticleInspectionStatus"',
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        jobMakeMethodId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobMakeMethod.id`.<fk table='jobMakeMethod' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        type: {
+          default: "Detail",
+          enum: ["Detail", "Assembly"],
+          format: 'public."firstArticleInspectionType"',
+          type: "string"
+        },
+        scope: {
+          default: "Full",
+          enum: ["Full", "Partial"],
+          format: 'public."firstArticleInspectionScope"',
+          type: "string"
+        },
+        reason: {
+          default: "New Part",
+          enum: [
+            "New Part",
+            "Design Change",
+            "Manufacturing Source Change",
+            "Process Change",
+            "Inspection Method Change",
+            "Tooling Change",
+            "Material Change",
+            "Location Change",
+            "NC Program Change",
+            "Natural or Man-made Event",
+            "Production Lapse",
+            "Corrective Action",
+            "Other"
+          ],
+          format: 'public."firstArticleInspectionReason"',
+          type: "string"
+        },
+        baselineFirstArticleInspectionId: {
+          format: "text",
+          type: "string"
+        },
+        baselineReference: {
+          format: "text",
+          type: "string"
+        },
+        partNumber: {
+          format: "text",
+          type: "string"
+        },
+        partName: {
+          format: "text",
+          type: "string"
+        },
+        partRevision: {
+          format: "text",
+          type: "string"
+        },
+        drawingNumber: {
+          format: "text",
+          type: "string"
+        },
+        drawingRevision: {
+          format: "text",
+          type: "string"
+        },
+        additionalChanges: {
+          format: "text",
+          type: "string"
+        },
+        manufacturingProcessReference: {
+          format: "text",
+          type: "string"
+        },
+        organizationName: {
+          format: "text",
+          type: "string"
+        },
+        supplierCode: {
+          format: "text",
+          type: "string"
+        },
+        purchaseOrderNumber: {
+          format: "text",
+          type: "string"
+        },
+        hasNonconformance: {
+          format: "boolean",
+          type: "boolean"
+        },
+        comments: {
+          format: "text",
+          type: "string"
+        },
+        verifiedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        verifiedByName: {
+          format: "text",
+          type: "string"
+        },
+        verifiedByTitle: {
+          format: "text",
+          type: "string"
+        },
+        verifiedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        approvedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        approvedByName: {
+          format: "text",
+          type: "string"
+        },
+        approvedByTitle: {
+          format: "text",
+          type: "string"
+        },
+        approvedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customerApprovalName: {
+          format: "text",
+          type: "string"
+        },
+        customerApprovalDate: {
+          format: "date",
+          type: "string"
+        },
+        documentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `document.id`.<fk table='document' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     openSalesOrderLines: {
       properties: {
         id: {
@@ -188759,6 +191098,10 @@ export default {
         samplingSeverity: {
           enum: ["Normal", "Tightened", "Reduced"],
           format: 'public."inspectionSeverity"',
+          type: "string"
+        },
+        drawingRevision: {
+          format: "text",
           type: "string"
         },
         modelUploadId: {
@@ -193324,6 +195667,7 @@ export default {
         "requireMfa",
         "allowLowercaseItemIds",
         "includeOperationsOnTraveler",
+        "requireFirstArticle",
         "requireSupplierContactAndLocation",
         "requireCustomerContactAndLocation",
         "showBomExplorerReadableId",
@@ -193627,6 +195971,11 @@ export default {
         },
         includeOperationsOnTraveler: {
           default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        requireFirstArticle: {
+          default: false,
           format: "boolean",
           type: "boolean"
         },
@@ -198442,6 +200791,18 @@ export default {
     },
     "rowFilter.customerShipping.incotermLocation": {
       name: "incotermLocation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerShipping.requiresCertificateOfConformance": {
+      name: "requiresCertificateOfConformance",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerShipping.requiresFirstArticle": {
+      name: "requiresFirstArticle",
       required: false,
       in: "query",
       type: "string"
@@ -210957,6 +213318,75 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.complianceStatement": {
+      name: "complianceStatement",
+      description: "complianceStatement",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/complianceStatement"
+      }
+    },
+    "rowFilter.complianceStatement.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.complianceStatement.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.complianceStatement.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.complianceStatement.content": {
+      name: "content",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.complianceStatement.appliesToAllCustomers": {
+      name: "appliesToAllCustomers",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.complianceStatement.active": {
+      name: "active",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.complianceStatement.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.complianceStatement.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.complianceStatement.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.complianceStatement.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.customerContractLaborRate": {
       name: "customerContractLaborRate",
       description: "customerContractLaborRate",
@@ -219378,6 +221808,123 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.certificateOfConformance": {
+      name: "certificateOfConformance",
+      description: "certificateOfConformance",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/certificateOfConformance"
+      }
+    },
+    "rowFilter.certificateOfConformance.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificateOfConformance.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificateOfConformance.certificateId": {
+      name: "certificateId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificateOfConformance.revision": {
+      name: "revision",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificateOfConformance.shipmentId": {
+      name: "shipmentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificateOfConformance.customerId": {
+      name: "customerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificateOfConformance.reasonForUpdate": {
+      name: "reasonForUpdate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificateOfConformance.documentId": {
+      name: "documentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificateOfConformance.signedBy": {
+      name: "signedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificateOfConformance.signedByName": {
+      name: "signedByName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificateOfConformance.signedByTitle": {
+      name: "signedByTitle",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificateOfConformance.signedAt": {
+      name: "signedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificateOfConformance.lastSentAt": {
+      name: "lastSentAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificateOfConformance.lastSentTo": {
+      name: "lastSentTo",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificateOfConformance.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificateOfConformance.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificateOfConformance.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificateOfConformance.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.period": {
       name: "period",
       description: "period",
@@ -225951,6 +228498,222 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.certificate": {
+      name: "certificate",
+      description: "certificate",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/certificate"
+      }
+    },
+    "rowFilter.certificate.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificate.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificate.type": {
+      name: "type",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificate.certificateNumber": {
+      name: "certificateNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificate.specification": {
+      name: "specification",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificate.supplierId": {
+      name: "supplierId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificate.receiptLineId": {
+      name: "receiptLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificate.jobOperationId": {
+      name: "jobOperationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificate.documentId": {
+      name: "documentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificate.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificate.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificate.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificate.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.certificate.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.firstArticleInspectionProduct": {
+      name: "firstArticleInspectionProduct",
+      description: "firstArticleInspectionProduct",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/firstArticleInspectionProduct"
+      }
+    },
+    "rowFilter.firstArticleInspectionProduct.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspectionProduct.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspectionProduct.firstArticleInspectionId": {
+      name: "firstArticleInspectionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspectionProduct.sortOrder": {
+      name: "sortOrder",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspectionProduct.kind": {
+      name: "kind",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspectionProduct.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspectionProduct.specification": {
+      name: "specification",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspectionProduct.code": {
+      name: "code",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspectionProduct.supplier": {
+      name: "supplier",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspectionProduct.customerApprovalVerification": {
+      name: "customerApprovalVerification",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspectionProduct.certificateNumber": {
+      name: "certificateNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspectionProduct.functionalTestProcedureNumber": {
+      name: "functionalTestProcedureNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspectionProduct.acceptanceReportNumber": {
+      name: "acceptanceReportNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspectionProduct.comments": {
+      name: "comments",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspectionProduct.certificateId": {
+      name: "certificateId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspectionProduct.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspectionProduct.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspectionProduct.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspectionProduct.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.searchIndexRegistry": {
       name: "searchIndexRegistry",
       description: "searchIndexRegistry",
@@ -231945,6 +234708,36 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.inspectionFeature.designator": {
+      name: "designator",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionFeature.referenceLocation": {
+      name: "referenceLocation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionFeature.materialCondition": {
+      name: "materialCondition",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionFeature.sizeFeatureId": {
+      name: "sizeFeatureId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionFeature.featureOfSize": {
+      name: "featureOfSize",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.inspectionFeature.gaugeTypeId": {
       name: "gaugeTypeId",
       required: false,
@@ -232685,6 +235478,12 @@ export default {
     },
     "rowFilter.inspectionDocument.samplingSeverity": {
       name: "samplingSeverity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocument.drawingRevision": {
+      name: "drawingRevision",
       required: false,
       in: "query",
       type: "string"
@@ -242373,6 +245172,69 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.complianceStatementAssignment": {
+      name: "complianceStatementAssignment",
+      description: "complianceStatementAssignment",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/complianceStatementAssignment"
+      }
+    },
+    "rowFilter.complianceStatementAssignment.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.complianceStatementAssignment.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.complianceStatementAssignment.complianceStatementId": {
+      name: "complianceStatementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.complianceStatementAssignment.customerId": {
+      name: "customerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.complianceStatementAssignment.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.complianceStatementAssignment.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.complianceStatementAssignment.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.complianceStatementAssignment.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.complianceStatementAssignment.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.employeeType": {
       name: "employeeType",
       description: "employeeType",
@@ -244210,6 +247072,18 @@ export default {
     },
     "rowFilter.inspectionMeasurement.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionMeasurement.bonus": {
+      name: "bonus",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionMeasurement.allowable": {
+      name: "allowable",
       required: false,
       in: "query",
       type: "string"
@@ -250581,6 +253455,255 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.firstArticleInspection": {
+      name: "firstArticleInspection",
+      description: "firstArticleInspection",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/firstArticleInspection"
+      }
+    },
+    "rowFilter.firstArticleInspection.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.inspectionId": {
+      name: "inspectionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.jobMakeMethodId": {
+      name: "jobMakeMethodId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.type": {
+      name: "type",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.scope": {
+      name: "scope",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.reason": {
+      name: "reason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.baselineFirstArticleInspectionId": {
+      name: "baselineFirstArticleInspectionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.baselineReference": {
+      name: "baselineReference",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.partNumber": {
+      name: "partNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.partName": {
+      name: "partName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.partRevision": {
+      name: "partRevision",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.drawingNumber": {
+      name: "drawingNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.drawingRevision": {
+      name: "drawingRevision",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.additionalChanges": {
+      name: "additionalChanges",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.manufacturingProcessReference": {
+      name: "manufacturingProcessReference",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.organizationName": {
+      name: "organizationName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.supplierCode": {
+      name: "supplierCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.purchaseOrderNumber": {
+      name: "purchaseOrderNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.hasNonconformance": {
+      name: "hasNonconformance",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.comments": {
+      name: "comments",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.verifiedBy": {
+      name: "verifiedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.verifiedByName": {
+      name: "verifiedByName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.verifiedByTitle": {
+      name: "verifiedByTitle",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.verifiedAt": {
+      name: "verifiedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.approvedBy": {
+      name: "approvedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.approvedByName": {
+      name: "approvedByName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.approvedByTitle": {
+      name: "approvedByTitle",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.approvedAt": {
+      name: "approvedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.customerApprovalName": {
+      name: "customerApprovalName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.customerApprovalDate": {
+      name: "customerApprovalDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.documentId": {
+      name: "documentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.firstArticleInspection.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.openSalesOrderLines": {
       name: "openSalesOrderLines",
       description: "openSalesOrderLines",
@@ -251807,6 +254930,12 @@ export default {
     },
     "rowFilter.inspectionDocuments.samplingSeverity": {
       name: "samplingSeverity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionDocuments.drawingRevision": {
+      name: "drawingRevision",
       required: false,
       in: "query",
       type: "string"
@@ -257172,6 +260301,12 @@ export default {
     },
     "rowFilter.companySettings.includeOperationsOnTraveler": {
       name: "includeOperationsOnTraveler",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.requireFirstArticle": {
+      name: "requireFirstArticle",
       required: false,
       in: "query",
       type: "string"

@@ -19504,8 +19504,8 @@ msgstr "Dosyada sertifika yok"
 msgid "No certificate on file for {name}"
 msgstr "Dosyada {name} için sertifika yok"
 
-msgid "No certificates on this line yet."
-msgstr "Bu satırda henüz sertifika yok."
+msgid "No certificates on this line yet"
+msgstr "Bu satırda henüz sertifika yok"
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Sizin için sertifika metni ayarlanmadı. Bir yöneticiden Ayarlar → Zaman içinde ayarlamasını isteyin."
@@ -31602,8 +31602,8 @@ msgstr "Bu siparişler yüklenemedi. Kapatıp yeniden açarak tekrar deneyin."
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "Bu parçalar bu birim tarafından değiştiriliyor. Her kural eski parçaya ayarlanmış; kuralı değiştirmek için açın."
 
-msgid "These parts need a first article inspection but have no inspection plan to inspect against. Assign a first article plan on each part before releasing."
-msgstr "Bu parçalar ilk makale muayenesi gerektirir ancak karşı muayene yapılacak bir kontrol planı yoktur. Serbest bırakmadan önce her parça üzerine bir ilk makale planı atayın."
+msgid "These parts need a first article inspection but have no active inspection plan to inspect against. Publish the part's plan, or assign an active plan to its First Article slot, before releasing."
+msgstr "Bu parçalar ilk makale muayenesi gerektirir ancak karşı muayene yapılacak aktif bir kontrol planı yoktur. Serbest bırakmadan önce parçanın planını yayınlayın veya İlk Makale yuvasına aktif bir plan atayın."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
 msgstr "Bu satırlar bu şirketin dışındaki verilere bağlantılı, bu yüzden mevcut verilerinizin güvenlik kopyası oluşturulamaz. Onları silmek geri alınamaz. Eğer bu grup içindeki diğer şirketlerle paylaşıldığı ortaya çıkarsa, hiçbir şey silinmez ve demo verileri uygulanmaz."

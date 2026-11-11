@@ -19504,8 +19504,8 @@ msgstr "No certificate on file"
 msgid "No certificate on file for {name}"
 msgstr "No certificate on file for {name}"
 
-msgid "No certificates on this line yet."
-msgstr "No certificates on this line yet."
+msgid "No certificates on this line yet"
+msgstr "No certificates on this line yet"
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "No certification text is set for you. Ask an administrator to set it in Settings → Time."
@@ -31602,8 +31602,8 @@ msgstr "These orders could not be loaded. Close and reopen to try again."
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 
-msgid "These parts need a first article inspection but have no inspection plan to inspect against. Assign a first article plan on each part before releasing."
-msgstr "These parts need a first article inspection but have no inspection plan to inspect against. Assign a first article plan on each part before releasing."
+msgid "These parts need a first article inspection but have no active inspection plan to inspect against. Publish the part's plan, or assign an active plan to its First Article slot, before releasing."
+msgstr "These parts need a first article inspection but have no active inspection plan to inspect against. Publish the part's plan, or assign an active plan to its First Article slot, before releasing."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
 msgstr "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."

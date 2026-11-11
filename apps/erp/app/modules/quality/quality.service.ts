@@ -4729,6 +4729,12 @@ export async function copyInspectionDocumentAsVersion(
             ({ id, createdAt, updatedAt, updatedBy, createdBy, ...rest }) => ({
               ...rest,
               id: featureIdMap.get(id)!,
+              // An MMC/LMC characteristic names its size feature on the same
+              // plan: the copy must name the copy, or it keeps pointing at the
+              // version it came from and earns no bonus on this one.
+              sizeFeatureId: rest.sizeFeatureId
+                ? (featureIdMap.get(rest.sizeFeatureId) ?? null)
+                : null,
               inspectionDocumentId: planId!,
               companyId,
               createdBy: userId

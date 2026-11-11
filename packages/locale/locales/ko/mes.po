@@ -3015,8 +3015,8 @@ msgstr "작업장을 오프라인 상태로 변경"
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "날짜를 누르면 {selectedLabel}에 시간을 추가합니다. 막대의 아래쪽 모서리를 드래그하여 시간을 변경합니다."
 
-msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
-msgstr "품질에 알리세요 — 이 부품은 초도 검사가 필요하지만 검사 계획이 할당되지 않았습니다."
+msgid "Tell quality — this part needs a first article, but it has no active inspection plan."
+msgstr "품질에 알리세요 — 이 부품은 초도 검사가 필요하지만 활성 검사 계획이 없습니다."
 
 msgid "Text color"
 msgstr "텍스트 색상"

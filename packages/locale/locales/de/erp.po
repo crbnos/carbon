@@ -19504,8 +19504,8 @@ msgstr "Kein Zertifikat vorhanden"
 msgid "No certificate on file for {name}"
 msgstr "Kein Zertifikat vorhanden für {name}"
 
-msgid "No certificates on this line yet."
-msgstr "Noch keine Zertifikate auf dieser Position."
+msgid "No certificates on this line yet"
+msgstr "Noch keine Zertifikate für diese Position"
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Es ist kein Zertifizierungstext für Sie festgelegt. Bitten Sie einen Administrator, ihn unter Einstellungen → Zeit festzulegen."
@@ -31602,8 +31602,8 @@ msgstr "Diese Bestellungen konnten nicht geladen werden. Schließen und öffnen 
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "Diese Teile werden durch dieses Teil ersetzt. Jede Regel ist auf dem alten Teil konfiguriert; öffnen Sie es, um die Regel zu ändern."
 
-msgid "These parts need a first article inspection but have no inspection plan to inspect against. Assign a first article plan on each part before releasing."
-msgstr "Diese Teile benötigen eine Erstmusterprüfung, haben aber keinen Prüfplan zur Überprüfung. Weisen Sie jedem Teil einen Erstmuster-Prüfplan zu, bevor Sie freigeben."
+msgid "These parts need a first article inspection but have no active inspection plan to inspect against. Publish the part's plan, or assign an active plan to its First Article slot, before releasing."
+msgstr "Diese Teile benötigen eine Erstmusterprüfung, haben aber keinen aktiven Prüfplan zur Überprüfung. Veröffentlichen Sie den Prüfplan des Teils oder weisen Sie seinem Erstmuster-Platz einen aktiven Plan zu, bevor Sie freigeben."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
 msgstr "Diese Zeilen sind Links zu Daten außerhalb dieses Unternehmens, daher kann keine Sicherungskopie Ihrer aktuellen Daten erstellt werden. Das Löschen kann nicht rückgängig gemacht werden. Falls sie sich als gemeinsam mit anderen Unternehmen in dieser Gruppe herausstellen, wird nichts gelöscht und die Demo-Daten werden nicht angewendet."

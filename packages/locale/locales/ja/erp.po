@@ -19504,8 +19504,8 @@ msgstr "ファイルに証明書がありません"
 msgid "No certificate on file for {name}"
 msgstr "{name}のファイルに証明書がありません"
 
-msgid "No certificates on this line yet."
-msgstr "このラインにはまだ証明書がありません。"
+msgid "No certificates on this line yet"
+msgstr "この明細にはまだ証明書がありません"
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "認証テキストが設定されていません。管理者に設定 → 時間で設定するよう依頼してください。"
@@ -31602,8 +31602,8 @@ msgstr "これらの注文を読み込めませんでした。クローズして
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "これらの部品はこの部品で置き換わっています。各ルールは旧部品に設定されています；ルールを変更するには旧部品を開いてください。"
 
-msgid "These parts need a first article inspection but have no inspection plan to inspect against. Assign a first article plan on each part before releasing."
-msgstr "これらの部品は初回品検査が必要ですが、検査対象となる検査計画がありません。リリース前に各部品に初回品計画を割り当ててください。"
+msgid "These parts need a first article inspection but have no active inspection plan to inspect against. Publish the part's plan, or assign an active plan to its First Article slot, before releasing."
+msgstr "これらの部品は初回品検査が必要ですが、検査対象となる有効な検査計画がありません。リリース前に部品の計画を公開するか、初回品スロットに有効な計画を割り当ててください。"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
 msgstr "これらの行は、この会社の外部のデータにリンクしています。このため、現在のデータのセーフコピーを作成できません。これらの削除は取り消すことができません。これらがこのグループ内の他の会社と共有されている場合、何も削除されず、デモデータは適用されません。"

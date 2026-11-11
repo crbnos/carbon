@@ -19504,8 +19504,8 @@ msgstr "Aucun certificat en dossier"
 msgid "No certificate on file for {name}"
 msgstr "Aucun certificat en dossier pour {name}"
 
-msgid "No certificates on this line yet."
-msgstr "Pas encore de certificats sur cette ligne."
+msgid "No certificates on this line yet"
+msgstr "Aucun certificat sur cette ligne pour l'instant"
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "Aucun texte de certification n'est défini pour vous. Demandez à un administrateur de le définir dans Paramètres → Temps."
@@ -31602,8 +31602,8 @@ msgstr "Ces ordres n'ont pas pu être chargés. Fermer et rouvrir pour réessaye
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "Ces pièces sont remplacées par celle-ci. Chaque règle est définie sur l'ancienne pièce ; ouvrez-la pour modifier la règle."
 
-msgid "These parts need a first article inspection but have no inspection plan to inspect against. Assign a first article plan on each part before releasing."
-msgstr "Ces pièces nécessitent un contrôle de premier article mais n'ont aucun plan de contrôle pour l'inspection. Attribuez un plan de premier article à chaque pièce avant la libération."
+msgid "These parts need a first article inspection but have no active inspection plan to inspect against. Publish the part's plan, or assign an active plan to its First Article slot, before releasing."
+msgstr "Ces pièces nécessitent un contrôle de premier article mais n'ont aucun plan de contrôle actif pour l'inspection. Publiez le plan de la pièce, ou attribuez un plan actif à son emplacement Premier article, avant la libération."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
 msgstr "Ces lignes sont liées à des données en dehors de cette société, c'est pourquoi une copie de sécurité de vos données actuelles ne peut pas être créée. La suppression de ces lignes ne peut pas être annulée. S'il s'avère que ces lignes sont partagées avec d'autres sociétés de ce groupe, rien n'est supprimé et les données de démonstration ne sont pas appliquées."

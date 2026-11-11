@@ -217,16 +217,22 @@ const FirstArticleForm1 = ({ detail, baselines }: FirstArticleForm1Props) => {
               <Trans>Index of Parts and Sub-assemblies</Trans>
             </h3>
             {!detail.firstArticle.jobMakeMethodId ? (
-              <Empty className="py-4">
-                <Trans>
-                  The job's make method no longer exists, so the index cannot be
-                  derived.
-                </Trans>
-              </Empty>
+              <Empty
+                className="py-4"
+                title={
+                  <Trans>
+                    The job's make method no longer exists, so the index cannot
+                    be derived.
+                  </Trans>
+                }
+                description={null}
+              />
             ) : detail.index.length === 0 ? (
-              <Empty className="py-4">
-                <Trans>None — a detail part.</Trans>
-              </Empty>
+              <Empty
+                className="py-4"
+                title={<Trans>None — a detail part.</Trans>}
+                description={null}
+              />
             ) : (
               <Table>
                 <Thead>

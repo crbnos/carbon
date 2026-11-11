@@ -54,7 +54,12 @@ uploaded file) and exactly one target — CHECK `certificate_one_target`
   certificate whose source line is not on the rebuilt receipt (the receipt was
   re-sourced to another document) has no valid target under
   `certificate_one_target`; it is deleted with its old line and logged as a
-  warning with the certificate ids and numbers. The response carries no count.
+  warning with the certificate ids and numbers. `updateReceipt` reads the
+  receipt's certificates before the rebuild (`getReceiptCertificates`) and
+  after it, and returns the dropped ones as `warning` ("Certificate X was
+  removed: the new source has no line it belongs to. Its file is still on the
+  receipt."), which the details route appends to its "Updated receipt" toast.
+  The uploaded `document` row stays on the receipt.
 - **Job operation** — `x+/first-article+/$id.certificates.new.tsx` ("Attach
   certificate" on FAI Form 2; `quality` create+update, Draft FAI only). The
   operation id comes from the client, so the route re-checks it belongs to the
@@ -128,7 +133,9 @@ UNIQUE `(companyId, certificateId, revision)`. Printed number is
 `withRevisionSuffix(certificateId, revision)` — `COC000123`, then `COC000123-1`.
 
 Server code is `inventory/certificateOfConformance.pdf.tsx` (it renders, so it
-is a `.pdf.tsx`); data load is
+is a `.pdf.tsx`); field 11 spreads each line's shipped quantity over its lots
+(`shippedEntityQuantities`), because a Draft shipment's lot is still whole until
+the post splits it; data load is
 `getCertificateOfConformanceData` (inventory.service.ts); field 13 is the pure
 `buildConformityDetails` (`certificateOfConformance.ts`: shelf life, latest
 approved FAIR per item, material vs process certificates, `Use As Is`
@@ -140,7 +147,7 @@ nonconformances as concessions, statements, reason for update).
 | Issue / Reissue | `x+/shipment+/$shipmentId.certificate.tsx` → `issueCertificateOfConformance` | Posted shipments only. One Kysely txn: `FOR UPDATE` on the shipment (two clicks cannot mint two numbers), sequence (rev 0) or latest+1 (reissue — throws without a reason), render, upload, `document` row, `certificateOfConformance` row. An uploaded object is removed if anything after it fails |
 | Download | `file+/shipment+/$id.certificate.$revision[.]pdf.tsx` → `getIssuedCertificateOfConformancePdf` | The **stored** PDF, never re-rendered. The `document` row's read groups are the issuer's, so its path is read with the service role after the caller's client proved it can see the certificate |
 | Send | `$shipmentId.certificate.$certificateId.send.tsx` → `sendCertificateOfConformance` | Emails the stored PDF (signed URL attachment via `send-email`) to a contact of the certificate's customer, plus the sender; stamps `lastSentAt/To` |
-| Auto-issue | `autoIssueCertificatesOfConformance` (`certificateOfConformance.pdf.tsx`), from the `postShipment` and `postSalesInvoice` service functions (below) | After a post that stuck, when `customerShipping.requiresCertificateOfConformance`: issue revision 0, then email the customer's shipping contact when the email integration is active. Skips a shipment that already has revision 0, so it never reissues. **Never fails the post** — every failure becomes part of the flash |
+| Auto-issue | `autoIssueCertificatesOfConformance` (`certificateOfConformance.pdf.tsx`), from the `postShipment` and `postSalesInvoice` service functions (below) | After a post that stuck, when `customerShipping.requiresCertificateOfConformance`: issue revision 0, then email the customer's shipping contact when the email integration is active. Skips a shipment that already has revision 0, so it never reissues. **Never fails the post** — every failure becomes part of the flash, a failed read of the customer's requirement or of the existing certificate included (it never passes for "not required") |
 
 The PDF is template-driven: document type `certificateOfConformance`
 (`CertificateOfConformancePDF.tsx`, registry
@@ -164,11 +171,11 @@ and MCP posts issue certificates too:
   toasts on its own (an error when it failed) while still closing. The invoice
   email is independent.
   The certificate's customer and PO come from the Sales Invoice
-  (`getCertificateOfConformanceData`'s `Sales Invoice` branch). A sales
-  invoice has no ship-to (its `locationId` is our warehouse, its
-  `invoiceCustomerLocationId` the bill-to), so field 6 prints the ship-to of
-  the ONE sales order its lines were invoiced from (`invoiceShipToSalesOrderId`)
-  and is left blank for a standalone or mixed-order invoice — never the bill-to.
+  (`getCertificateOfConformanceData`'s `Sales Invoice` branch). Field 5's
+  address is the invoice's own Ship To (`salesInvoiceShipment.customerLocationId`;
+  its `locationId` is our warehouse and `invoiceCustomerLocationId` the bill-to),
+  else the ship-to of the ONE sales order its lines were invoiced from
+  (`invoiceShipToSalesOrderId`), else blank — never the bill-to.
   Both sources resolve the order's ship-to with `salesOrderShipToLocationId`
   (`certificateOfConformance.ts`): a drop shipment prints the order shipment's
   location, never the header's, the rule `resolveSalesOrderShipTo` applies.
@@ -218,7 +225,11 @@ Per job make method (root and made sub-assemblies alike):
   sub-assembly built inside parent jobs has a production history too.
 - **Plan**: the First Article slot, else the part's **only** plan
   (`inspectionDocument.partId = itemId`, exactly one). Two plans and no slot
-  resolves nothing.
+  resolves nothing. Both loaders read **Active** plan versions only: every
+  version of a plan is its own `inspectionDocument` row, so counting Drafts
+  and Archived rows made a plan with a second version read as two plans (and
+  blocked the release), and a Draft can still change under the lot. A slot
+  that points at a Draft or Archived version resolves nothing.
 - **Open elsewhere**: an open (Draft / Verified) FAI for the same item on
   ANOTHER job (`jobId` set and different) satisfies the need — the part's first
   article is already in progress. Input `hasOpenFirstArticleElsewhere`, loaded

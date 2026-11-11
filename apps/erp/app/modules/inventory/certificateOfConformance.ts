@@ -8,7 +8,27 @@
  * the inputs; this only turns them into the printed lines. No I/O.
  */
 import { firstArticleItemRevision } from "@carbon/database/first-article";
+import { round } from "@carbon/utils";
 import type { CertificationLineageRow } from "../quality/certificationLineage";
+
+/**
+ * Field 11: how much of the line each lot or serial ships. A Draft shipment's
+ * lot is still whole (the post splits off what ships), so its own quantity is
+ * the stock on hand, not the shipment; the line's shipped quantity is spread
+ * over its entities in order instead. Posted, each entity is already the
+ * shipped part and the spread changes nothing.
+ */
+export function shippedEntityQuantities<T extends { quantity: number }>(
+  entities: T[],
+  shippedQuantity: number
+): Array<T & { shipped: number }> {
+  let remaining = shippedQuantity;
+  return entities.map((entity) => {
+    const shipped = round(Math.max(Math.min(entity.quantity, remaining), 0));
+    remaining = round(remaining - shipped);
+    return { ...entity, shipped };
+  });
+}
 
 /**
  * Field 10: the customer's part revision when the order line maps one, else

@@ -1415,11 +1415,17 @@ const InspectionMeasurementGrid = ({
           data-sample-index={sampleIndex}
           className={cn(
             // h-11 is the smallest row height; the fill covers the whole cell.
-            "-mx-4 -my-2 flex h-11 min-w-[64px] items-center justify-center px-2 text-sm tabular-nums",
+            "relative -mx-4 -my-2 flex h-11 min-w-[64px] items-center justify-center px-2 text-sm tabular-nums",
             verdictCellFill(status),
             value == null && "text-muted-foreground/50"
           )}
         >
+          {/* In the corner, as in the MES matrix: beside the centred value it
+              sat where a click to enter a reading lands, so the click opened
+              the note instead of the cell. */}
+          <span className="absolute left-0.5 top-0.5">
+            {renderNote(characteristic, sampleIndex)}
+          </span>
           <span className="relative flex items-center gap-1">
             <span className="flex flex-col items-center">
               <span className="flex items-center gap-1">
@@ -1444,7 +1450,6 @@ const InspectionMeasurementGrid = ({
                 </span>
               ) : null}
             </span>
-            {renderNote(characteristic, sampleIndex)}
           </span>
         </span>
       );

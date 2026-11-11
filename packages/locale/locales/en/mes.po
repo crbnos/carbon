@@ -3015,8 +3015,8 @@ msgstr "Takes the work center offline"
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 
-msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
-msgstr "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
+msgid "Tell quality — this part needs a first article, but it has no active inspection plan."
+msgstr "Tell quality — this part needs a first article, but it has no active inspection plan."
 
 msgid "Text color"
 msgstr "Text color"

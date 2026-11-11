@@ -132,11 +132,15 @@ const FirstArticleProducts = ({ detail }: FirstArticleProductsProps) => {
       </HStack>
       <CardContent>
         {detail.products.length === 0 ? (
-          <Empty className="py-6">
-            <Trans>
-              No materials, special processes or functional tests yet.
-            </Trans>
-          </Empty>
+          <Empty
+            className="py-6"
+            title={
+              <Trans>
+                No materials, special processes or functional tests yet.
+              </Trans>
+            }
+            description={null}
+          />
         ) : (
           <Table>
             <Thead>

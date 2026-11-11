@@ -9,7 +9,8 @@ import {
   buildConformityDetails,
   certificateLineRevision,
   invoiceShipToSalesOrderId,
-  salesOrderShipToLocationId
+  salesOrderShipToLocationId,
+  shippedEntityQuantities
 } from "./certificateOfConformance";
 
 function lineage(
@@ -195,5 +196,43 @@ describe("invoiceShipToSalesOrderId", () => {
   it("names none for a standalone or mixed-order invoice", () => {
     expect(invoiceShipToSalesOrderId([null, null])).toBeNull();
     expect(invoiceShipToSalesOrderId(["so-1", "so-2"])).toBeNull();
+  });
+});
+
+describe("shippedEntityQuantities", () => {
+  const lot = (id: string, quantity: number) => ({ id, quantity });
+
+  it("prints what a Draft shipment takes from a whole lot, not the lot's stock", () => {
+    // 1 of a 2-unit lot ships; the post will split it.
+    expect(shippedEntityQuantities([lot("LOT-A", 2)], 1)).toEqual([
+      { id: "LOT-A", quantity: 2, shipped: 1 }
+    ]);
+  });
+
+  it("spreads the line over its lots in order", () => {
+    expect(
+      shippedEntityQuantities([lot("LOT-A", 3), lot("LOT-B", 4)], 5)
+    ).toEqual([
+      { id: "LOT-A", quantity: 3, shipped: 3 },
+      { id: "LOT-B", quantity: 4, shipped: 2 }
+    ]);
+  });
+
+  it("leaves a posted shipment's split lots and serials as they are", () => {
+    expect(
+      shippedEntityQuantities([lot("SN-1", 1), lot("SN-2", 1)], 2)
+    ).toEqual([
+      { id: "SN-1", quantity: 1, shipped: 1 },
+      { id: "SN-2", quantity: 1, shipped: 1 }
+    ]);
+  });
+
+  it("never prints a negative or float-noise quantity", () => {
+    expect(
+      shippedEntityQuantities([lot("LOT-A", 0.3), lot("LOT-B", 1)], 0.1 + 0.2)
+    ).toEqual([
+      { id: "LOT-A", quantity: 0.3, shipped: 0.3 },
+      { id: "LOT-B", quantity: 1, shipped: 0 }
+    ]);
   });
 });

@@ -3015,8 +3015,8 @@ msgstr "Переводит рабочий центр в режим offline"
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Коснитесь дня, чтобы добавить время к {selectedLabel}. Перетащите нижний край столбца, чтобы изменить его часы."
 
-msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
-msgstr "Сообщите отделу качества — для этой детали требуется первый образец, но план контроля ей не назначен."
+msgid "Tell quality — this part needs a first article, but it has no active inspection plan."
+msgstr "Сообщите отделу качества — для этой детали требуется первый образец, но у неё нет активного плана контроля."
 
 msgid "Text color"
 msgstr "Цвет текста"

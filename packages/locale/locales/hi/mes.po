@@ -3015,8 +3015,8 @@ msgstr "वर्क सेंटर को ऑफ़लाइन ले जा�
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "{selectedLabel} में समय जोड़ने के लिए किसी दिन को टैप करें। घंटे बदलने के लिए किसी बार के निचले किनारे को ड्रैग करें।"
 
-msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
-msgstr "गुणवत्ता को बताएं — इस पार्ट को प्रथम लेख की आवश्यकता है, लेकिन इसके लिए कोई निरीक्षण योजना असाइन नहीं की गई है।"
+msgid "Tell quality — this part needs a first article, but it has no active inspection plan."
+msgstr "गुणवत्ता को बताएं — इस पार्ट को प्रथम लेख की आवश्यकता है, लेकिन इसकी कोई सक्रिय निरीक्षण योजना नहीं है।"
 
 msgid "Text color"
 msgstr "टेक्स्ट रंग"

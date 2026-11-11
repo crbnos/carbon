@@ -788,12 +788,18 @@ async function autoIssueCertificateOfConformance(
       companyId,
       shipmentId
     );
+    // A read that fails must not pass for "not required": a customer who
+    // requires a certificate would get none, and nobody would be told.
     if (defaults.error) {
       logger.error("Failed to read certificate requirements", {
         shipmentId,
         error: defaults.error
       });
-      return null;
+      return {
+        ok: false,
+        message:
+          "Shipment posted, but its certificate requirement could not be read. If the customer requires a Certificate of Conformance, issue it from the Certificate menu."
+      };
     }
     if (!defaults.data.requiresCertificateOfConformance) return null;
 
@@ -809,7 +815,11 @@ async function autoIssueCertificateOfConformance(
         shipmentId,
         error: existing.error
       });
-      return null;
+      return {
+        ok: false,
+        message:
+          "Shipment posted, but the certificate could not be issued. Issue it from the Certificate menu."
+      };
     }
     if (existing.data.length > 0) return null;
 

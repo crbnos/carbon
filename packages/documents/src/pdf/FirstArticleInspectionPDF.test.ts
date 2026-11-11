@@ -41,10 +41,12 @@ const DRAFT_OPACITY = "/ca 0.08";
 
 describe("FirstArticleInspectionPDF", () => {
   it(
-    "renders 300 characteristics across landscape continuation pages",
+    "renders Form 3 continuation pages in landscape",
     async () => {
       const characteristics: FirstArticleInspectionPDFCharacteristic[] =
-        Array.from({ length: 300 }, (_, index) => ({
+        // 60 rows fill three Form 3 pages; render time grows faster than the
+        // row count, and a few hundred rows ran past the timeout on CI.
+        Array.from({ length: 60 }, (_, index) => ({
           characteristicNumber: String(index + 1),
           referenceLocation: "A1",
           designator: null,

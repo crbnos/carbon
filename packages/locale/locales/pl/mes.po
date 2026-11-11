@@ -3015,8 +3015,8 @@ msgstr "Wyłącza stanowisko robocze"
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "Kliknij dzień, aby dodać czas do {selectedLabel}. Przeciągnij dolną krawędź paska, aby zmienić liczbę godzin."
 
-msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
-msgstr "Powiadom dział jakości — ta część wymaga kontroli pierwszej sztuki, ale nie ma przypisanego planu kontroli."
+msgid "Tell quality — this part needs a first article, but it has no active inspection plan."
+msgstr "Powiadom dział jakości — ta część wymaga kontroli pierwszej sztuki, ale nie ma aktywnego planu kontroli."
 
 msgid "Text color"
 msgstr "Kolor tekstu"

@@ -81,9 +81,11 @@ const FirstArticleCharacteristics = ({
             </Alert>
           )}
           {detail.characteristics.length === 0 ? (
-            <Empty className="py-6">
-              <Trans>The inspection plan has no characteristics.</Trans>
-            </Empty>
+            <Empty
+              className="py-6"
+              title={<Trans>The inspection plan has no characteristics.</Trans>}
+              description={null}
+            />
           ) : (
             <Table>
               <Thead>

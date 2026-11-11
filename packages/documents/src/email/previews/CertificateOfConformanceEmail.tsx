@@ -16,7 +16,7 @@ export default function CertificateOfConformanceEmailPreview() {
     <CertificateOfConformanceEmail
       company={company}
       locale="en-US"
-      certificateNumber="COC000012-0"
+      certificateNumber="COC000012"
       shipmentId="SHP000087"
       customerPurchaseOrder="PO-88421"
       lines={[

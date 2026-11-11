@@ -3546,10 +3546,15 @@ async function getFirstArticlesWithoutPlan(
   // more than 1000 times would otherwise drop rows past PostgREST's cap.
   const [slots, partPlans, approvals, openFirstArticles, lots] =
     await Promise.all([
+      // An Active plan version only (see loadFirstArticleContext in
+      // @carbon/database/quality): each version is its own row.
       client
         .from("itemInspectionDocumentAssignment")
-        .select("itemId, inspectionDocumentId")
+        .select(
+          "itemId, inspectionDocumentId, inspectionDocument!inner(status)"
+        )
         .eq("usage", "First Article")
+        .eq("inspectionDocument.status", "Active")
         .in("itemId", itemIds)
         .eq("companyId", companyId),
       client
@@ -3557,6 +3562,7 @@ async function getFirstArticlesWithoutPlan(
         .select("id, partId")
         .in("partId", itemIds)
         .eq("companyId", companyId)
+        .eq("status", "Active")
         .order("id"),
       fetchAllFromTable<{ id: string; itemId: string; approvedAt: string }>(
         client,

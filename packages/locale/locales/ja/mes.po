@@ -3015,8 +3015,8 @@ msgstr "作業区をオフラインにする"
 msgid "Tap a day to add time to {selectedLabel}. Drag the lower edge of a bar to change its hours."
 msgstr "日をタップして{selectedLabel}に時間を追加してください。バーの下部をドラッグして時間を変更してください。"
 
-msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
-msgstr "品質部門に連絡してください — この部品は初期品検査が必要ですが、検査計画が割り当てられていません。"
+msgid "Tell quality — this part needs a first article, but it has no active inspection plan."
+msgstr "品質部門に連絡してください — この部品は初期品検査が必要ですが、有効な検査計画がありません。"
 
 msgid "Text color"
 msgstr "文字色"

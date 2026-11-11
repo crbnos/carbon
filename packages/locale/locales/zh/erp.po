@@ -19504,8 +19504,8 @@ msgstr "没有合格证"
 msgid "No certificate on file for {name}"
 msgstr "没有 {name} 的合格证"
 
-msgid "No certificates on this line yet."
-msgstr "此行还没有合格证。"
+msgid "No certificates on this line yet"
+msgstr "此行尚无证书"
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 msgstr "未为您设置认证文本。请要求管理员在设置 → 时间中设置。"
@@ -31602,8 +31602,8 @@ msgstr "这些订单无法加载。关闭并重新打开以重试。"
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "这些零件被此零件替代。每个规则都在旧零件上设置；打开它来更改规则。"
 
-msgid "These parts need a first article inspection but have no inspection plan to inspect against. Assign a first article plan on each part before releasing."
-msgstr "这些零件需要首件检验，但没有检验计划可用于检验。在发放前为每个零件分配首件计划。"
+msgid "These parts need a first article inspection but have no active inspection plan to inspect against. Publish the part's plan, or assign an active plan to its First Article slot, before releasing."
+msgstr "这些零件需要首件检验，但没有可用于检验的有效检验计划。在发放前发布该零件的计划，或为其首件槽位分配一个有效计划。"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
 msgstr "这些行链接到此公司外部的数据，因此无法为您当前的数据创建安全副本。删除它们无法撤销。如果它们与此集团中的其他公司共享，则不会删除任何内容，演示数据也不会应用。"

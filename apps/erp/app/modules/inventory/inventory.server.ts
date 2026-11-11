@@ -308,6 +308,22 @@ export const updateReceipt = defineServiceFn({
       if (refused) return refused;
     }
 
+    // The rebuild moves each supplier certificate to the new line for its
+    // source line; one whose source line is gone is deleted with its old line.
+    // Read them first, so the caller can be told which were dropped.
+    const certificatesBefore = await service.getReceiptCertificates(
+      ctx.asSystem.supabase,
+      ctx.company.id,
+      id
+    );
+    if (certificatesBefore.error) {
+      return ctx.error(
+        "internal",
+        "Failed to load the receipt's certificates",
+        certificatesBefore.error
+      );
+    }
+
     const created = await (() => {
       switch (receipt.sourceDocument) {
         case "Purchase Order":
@@ -344,7 +360,33 @@ export const updateReceipt = defineServiceFn({
         "Failed to create receipt"
       );
     }
-    return { id };
+
+    let warning: string | null = null;
+    if (certificatesBefore.data.length > 0) {
+      const certificatesAfter = await service.getReceiptCertificates(
+        ctx.asSystem.supabase,
+        ctx.company.id,
+        id
+      );
+      const kept = new Set(
+        (certificatesAfter.data ?? []).map((certificate) => certificate.id)
+      );
+      const dropped = certificatesAfter.error
+        ? []
+        : certificatesBefore.data.filter(
+            (certificate) => !kept.has(certificate.id)
+          );
+      if (dropped.length > 0) {
+        const numbers = dropped
+          .map((certificate) => certificate.certificateNumber)
+          .join(", ");
+        warning =
+          dropped.length === 1
+            ? `Certificate ${numbers} was removed: the new source has no line it belongs to. Its file is still on the receipt.`
+            : `Certificates ${numbers} were removed: the new source has no line they belong to. Their files are still on the receipt.`;
+      }
+    }
+    return { id, warning };
   }
 });
 

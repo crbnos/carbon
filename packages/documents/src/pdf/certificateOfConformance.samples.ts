@@ -18,7 +18,7 @@ export const SAMPLE_CERTIFICATE_OF_CONFORMANCE = {
   },
   locale: "en-US",
   certificate: {
-    number: "COC000012-0",
+    number: "COC000012",
     date: "2026-06-05",
     issued: false,
     reasonForUpdate: null,

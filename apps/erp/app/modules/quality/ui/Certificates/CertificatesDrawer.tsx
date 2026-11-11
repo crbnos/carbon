@@ -111,9 +111,11 @@ const CertificatesDrawerBody = ({
         <VStack spacing={8}>
           {certificates.length === 0 ? (
             isLoaded && (
-              <Empty className="py-6">
-                <Trans>No certificates on this line yet.</Trans>
-              </Empty>
+              <Empty
+                className="py-6"
+                title={<Trans>No certificates on this line yet</Trans>}
+                description={null}
+              />
             )
           ) : (
             <Table>

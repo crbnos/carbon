@@ -1308,8 +1308,9 @@ export function JobStartModal({
                     <AlertDescription>
                       <Trans>
                         These parts need a first article inspection but have no
-                        inspection plan to inspect against. Assign a first
-                        article plan on each part before releasing.
+                        active inspection plan to inspect against. Publish the
+                        part's plan, or assign an active plan to its First
+                        Article slot, before releasing.
                       </Trans>
                       <p className="mt-2">
                         <FirstArticlePlanLinks

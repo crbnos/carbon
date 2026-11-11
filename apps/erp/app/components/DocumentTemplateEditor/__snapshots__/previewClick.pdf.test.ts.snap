@@ -42,7 +42,7 @@ exports[`clicking a real PDF > opens the right text on the certificateOfConforma
     "CERTIFICATE NUMBER": "document:title (panel)",
   },
   {
-    "COC000012-0": "document:title (panel)",
+    "COC000012": "document:title (panel)",
   },
   {
     "3": "document:title (panel)",
@@ -282,7 +282,7 @@ exports[`clicking a real PDF > opens the right text on the certificateOfConforma
     "Acme Manufacturing Co. is registered in United States": "document:page (panel)",
   },
   {
-    "COC000012-0": "document:page (panel)",
+    "COC000012": "document:page (panel)",
   },
   {
     "Page 1 of 1": "document:page (panel)",
