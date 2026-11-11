@@ -3283,25 +3283,46 @@ export async function getJobReceiptSnapshot(
         "trackedEntityIds"
       ),
       // complete_job_to_inventory's rule for a Consumed unit it receives.
-      sql<string[]>`COALESCE((
-        SELECT array_agg(te.id ORDER BY te.id)
-        FROM "jobMakeMethod" jmm
-        JOIN "trackedEntity" te
-          ON te.attributes->>'Job Make Method' = jmm.id
-          AND te."companyId" = jmm."companyId"
-        WHERE jmm."jobId" = "job".id
-          AND jmm."companyId" = "job"."companyId"
-          AND jmm."parentMaterialId" IS NULL
-          AND te.status = 'Consumed'
-          AND te.quantity = 1
-          AND EXISTS (
-            SELECT 1
-            FROM "itemLedger" il
-            WHERE il."trackedEntityId" = te.id
-              AND il."companyId" = te."companyId"
-              AND il.quantity < 0
+      (eb) =>
+        eb.fn
+          .coalesce(
+            eb
+              .selectFrom("jobMakeMethod as jmm")
+              .innerJoin("trackedEntity as te", (join) =>
+                join
+                  .on((eb) =>
+                    eb(
+                      sql<string>`"te"."attributes"->>'Job Make Method'`,
+                      "=",
+                      eb.ref("jmm.id")
+                    )
+                  )
+                  .onRef("te.companyId", "=", "jmm.companyId")
+              )
+              .select((eb) =>
+                eb.fn
+                  .agg<string[]>("array_agg", ["te.id"])
+                  .orderBy("te.id")
+                  .as("ids")
+              )
+              .whereRef("jmm.jobId", "=", "job.id")
+              .whereRef("jmm.companyId", "=", "job.companyId")
+              .where("jmm.parentMaterialId", "is", null)
+              .where("te.status", "=", "Consumed")
+              .where("te.quantity", "=", 1)
+              .where((eb) =>
+                eb.exists(
+                  eb
+                    .selectFrom("itemLedger as il")
+                    .select(eb.lit(1).as("one"))
+                    .whereRef("il.trackedEntityId", "=", "te.id")
+                    .whereRef("il.companyId", "=", "te.companyId")
+                    .where("il.quantity", "<", 0)
+                )
+              ),
+            sql<string[]>`'{}'`
           )
-      ), '{}')`.as("issuedTrackedEntityIds")
+          .as("issuedTrackedEntityIds")
     ])
     .where("job.id", "=", jobId)
     .where("job.companyId", "=", companyId)
