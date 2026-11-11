@@ -146,9 +146,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, email } = await authorize(request, {
     "settings.backups": "Edit"
   });
-  // Business/Enterprise feature, plus an internal/local-dev escape hatch.
+  // Business/Enterprise feature, plus an internal/local-dev escape hatch. Home,
+  // not Settings: Settings may open on this page and loop.
   if (!(await canManageBackups(client, companyId, email))) {
-    throw redirect(path.to.settings);
+    throw redirect(path.to.authenticatedRoot);
   }
 
   const [backupsList, restoreRuns, exportRun] = await Promise.all([
@@ -172,7 +173,7 @@ export async function action({ request }: ActionFunctionArgs) {
     "settings.backups": "Edit"
   });
   if (!(await canManageBackups(client, companyId, email))) {
-    throw redirect(path.to.settings);
+    throw redirect(path.to.authenticatedRoot);
   }
 
   const formData = await request.formData();

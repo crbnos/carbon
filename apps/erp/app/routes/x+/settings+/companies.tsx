@@ -47,11 +47,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Multi-company management: Carbon staff, and the companies the
   // `multi-company-management` flag turns it on for.
+  // Home, not Settings: Settings opens on the first page the person can
+  // view, which may be this one, and would loop.
   if (
     !isInternalEmail(email) &&
     !(await flags.bool("multi-company-management", { companyId, email }))
   ) {
-    throw redirect(path.to.settings);
+    throw redirect(path.to.authenticatedRoot);
   }
 
   const companies = await getSubsidiaries(

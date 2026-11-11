@@ -27,7 +27,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     !isInternalEmail(email) &&
     !(await flags.bool("multi-company-management", { companyId, email }))
   ) {
-    throw redirect(path.to.settings);
+    throw redirect(path.to.authenticatedRoot);
   }
 
   const { id } = params;

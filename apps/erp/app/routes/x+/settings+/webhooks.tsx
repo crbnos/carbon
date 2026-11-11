@@ -31,7 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       const config = await api.settings.getConfig({});
       if (config.error || !config.data?.apiUrl) {
         throw redirect(
-          path.to.settings,
+          path.to.authenticatedRoot,
           await flash(
             request,
             error(

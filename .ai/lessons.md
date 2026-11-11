@@ -4937,3 +4937,20 @@ unrelated page.
 
 **Applies to:** Any action whose redirect target is a `$id._index.tsx` that
 redirects (purchase orders, and the other records with a `/details` index).
+
+## A page that is off for this company redirects home, not to its module
+
+**Context:** A Settings page gated by a flag, a plan or the environment (ITAR
+Certifications, Companies, Backups, Webhooks) redirected to `/x/settings` when
+that gate was off.
+
+**Problem:** A module root opens on the first page of the module the person can
+view (`moduleIndexLoader`, `landingOf`), and that choice knows nothing about
+flags or plans. For a person whose first Settings page is the gated one, the root
+sends them straight back to it: a redirect loop. The one-page-role pass found it.
+
+**Rule:** When a page is unavailable for this company, redirect to
+`path.to.authenticatedRoot`, never to its own module root.
+
+**Applies to:** Every flag-, plan- or environment-gated route under a module whose
+root is `moduleIndexLoader`.
