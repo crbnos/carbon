@@ -127,6 +127,21 @@ export function untrackedIssueRefusal(item: {
   return `${item.readableIdWithRevision ?? "This item"} is ${wording.tracked.toLowerCase()}: issue it by ${wording.number.toLowerCase()}`;
 }
 
+/**
+ * Why an Unscrap that names no unit cannot post, or null. Batch and serial
+ * stock comes back by unit: the scrapped unit itself is unscrapped, and
+ * stock scrapped with no number comes back with a positive adjustment into a
+ * numbered unit.
+ */
+export function untrackedUnscrapRefusal(item: {
+  itemTrackingType: ItemTrackingType | null | undefined;
+  readableIdWithRevision: string | null | undefined;
+}): string | null {
+  const wording = unitWording(item.itemTrackingType);
+  if (!wording) return null;
+  return `${item.readableIdWithRevision ?? "This item"} is ${wording.tracked.toLowerCase()}: unscrap the scrapped ${wording.unit}, or add the stock to a ${wording.unit} with a positive adjustment`;
+}
+
 export async function getReceiptTracking(
   client: SupabaseClient<Database>,
   receiptId: string,

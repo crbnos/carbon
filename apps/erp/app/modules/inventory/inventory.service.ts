@@ -307,6 +307,7 @@ import {
   spreadBatchCount,
   stockIncreaseRefusal,
   untrackedIssueRefusal,
+  untrackedUnscrapRefusal,
   writeOffRestoreQuantity
 } from "./inventory.utils";
 import { renderPackingSlip } from "./packing-slip.pdf";
@@ -24830,12 +24831,9 @@ export async function postInventoryAdjustment(
           "Location is required to unscrap untracked stock"
         );
       }
-      // Batch and serial stock comes back by unit, as it was scrapped.
-      const untrackedRefusal = stockIncreaseRefusal({
+      const untrackedRefusal = untrackedUnscrapRefusal({
         itemTrackingType: item.itemTrackingType,
-        trackedEntityId: null,
-        createsUnit: false,
-        readableId: undefined
+        readableIdWithRevision: itemResult.data.readableIdWithRevision
       });
       if (untrackedRefusal) throw new InvalidInputError(untrackedRefusal);
       const booked = await bookAdjustment(trx, {

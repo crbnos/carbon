@@ -15,6 +15,7 @@ import {
   shippableEntityStatuses,
   stockIncreaseRefusal,
   untrackedIssueRefusal,
+  untrackedUnscrapRefusal,
   writeOffRestoreQuantity
 } from "./inventory.utils";
 
@@ -394,6 +395,35 @@ describe("untrackedIssueRefusal", () => {
     (itemTrackingType) => {
       expect(
         untrackedIssueRefusal({
+          itemTrackingType,
+          readableIdWithRevision: "PART-7.A"
+        })
+      ).toBeNull();
+    }
+  );
+});
+
+// An Unscrap that names no unit books untracked stock, so a batch or serial
+// item refuses it. The refusal names the item, not an id the caller should
+// send: an Unscrap only restores a unit that is already scrapped.
+describe("untrackedUnscrapRefusal", () => {
+  it.each(["Batch", "Serial"] as const)(
+    "refuses an untracked Unscrap of a %s item, naming it",
+    (itemTrackingType) => {
+      expect(
+        untrackedUnscrapRefusal({
+          itemTrackingType,
+          readableIdWithRevision: "PART-7.A"
+        })
+      ).toContain("PART-7.A");
+    }
+  );
+
+  it.each(["Inventory", "Non-Inventory"] as const)(
+    "lets a %s item be unscrapped by quantity",
+    (itemTrackingType) => {
+      expect(
+        untrackedUnscrapRefusal({
           itemTrackingType,
           readableIdWithRevision: "PART-7.A"
         })
