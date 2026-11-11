@@ -39,7 +39,7 @@ vi.hoisted(() => {
 });
 
 const scrapApproval = await import("@carbon/ee/approvals/scrap.server");
-const { createProductionQuantity } = await import(
+const { createProductionQuantity, updateProductionQuantity } = await import(
   "../../app/modules/production/production.server"
 );
 const { adjustInventory } = await import(
@@ -67,7 +67,12 @@ let keyClient: SupabaseClient<Database>;
 function modulePermissions() {
   const all = [f.companyId];
   const access = { view: all, create: all, update: all, delete: all };
-  return { production: access, inventory: access, quality: access };
+  return {
+    production: access,
+    inventory: access,
+    quality: access,
+    accounting: access
+  };
 }
 
 function userActor(userId: string): Actor {
@@ -971,5 +976,164 @@ describeLocal("scrap approval", () => {
       approvalStatus: "Approved"
     });
     expect(records?.[0]?.postedAt).not.toBeNull();
+  }, 60_000);
+
+  it("asks no approval to reject again a decided lot that held its stock", async () => {
+    await approverOnlyRules(0);
+    const lotId = await receiveHeldLot("decided");
+    // A lot decided while its stock had left the unit: Reject again takes
+    // nothing from it, so there is nothing to approve.
+    await seed(f, (trx) =>
+      trx
+        .updateTable("inspection")
+        .set({ status: "Failed" })
+        .where("id", "=", lotId)
+        .execute()
+    );
+    const before = await inHeldUnit();
+    const again = await withTriggers(() =>
+      rejectInspection(contextFor(userActor(people.operator)), {
+        id: lotId,
+        reason: "Wrong part",
+        createNcr: false
+      })
+    );
+    expect(again.error).toBeNull();
+    expect(await inHeldUnit()).toBe(before);
+  }, 60_000);
+
+  it("refuses to value scrap of another company's tracked entity", async () => {
+    const foreign = `${f.prefix}-not-this-company`;
+    await expect(
+      scrapApproval.describeScrap(f.db, f.companyId, {
+        type: "operation",
+        jobOperationId: job.operationId,
+        quantity: 1,
+        trackedEntityId: foreign
+      })
+    ).rejects.toThrow("Tracked entity not found");
+    await expect(
+      scrapApproval.describeScrap(f.db, f.companyId, {
+        type: "item",
+        itemId: f.partId,
+        quantity: 1,
+        trackedEntityId: foreign
+      })
+    ).rejects.toThrow("Tracked entity not found");
+  });
+
+  it("refuses an approver when the tier lookup fails", async () => {
+    await scrapRules(0, 500);
+    // The operator approves only the lowest tier; scrap of 600 is above it.
+    await f.db
+      .updateTable("approvalRule")
+      .set({ approverGroupIds: [people.operator] })
+      .where("companyId", "=", f.companyId)
+      .where("documentType", "=", "scrap")
+      .where("lowerBoundAmount", "=", 0)
+      .execute();
+    // The service role with the tier lookup (the one single-row approval
+    // rule read) failing, as a dropped connection would.
+    const failingTierLookup = new Proxy(client!, {
+      get(target, prop, receiver) {
+        if (prop !== "from") return Reflect.get(target, prop, receiver);
+        return (table: string) => {
+          const wrap = (builder: object): object =>
+            new Proxy(builder, {
+              get(inner, key) {
+                if (key === "maybeSingle" && table === "approvalRule") {
+                  return () =>
+                    Promise.resolve({
+                      data: null,
+                      error: { message: "Tier lookup failed" }
+                    });
+                }
+                const value = Reflect.get(inner, key);
+                if (typeof value !== "function") return value;
+                return (...args: unknown[]) => {
+                  const result = value.apply(inner, args);
+                  return result && typeof result.eq === "function"
+                    ? wrap(result)
+                    : result;
+                };
+              }
+            });
+          return wrap(target.from(table as "approvalRule"));
+        };
+      }
+    });
+
+    const authority = await scrapApproval.authorizeScrapApprover(
+      failingTierLookup,
+      {
+        companyId: f.companyId,
+        approverId: people.operator,
+        recordedBy: people.approver,
+        estimatedValue: 600
+      }
+    );
+    expect(authority.error?.code).toBe("forbidden");
+  });
+
+  it("refuses a scrap correction when the quantity changed after it was read", async () => {
+    await approverOnlyRules(0);
+    const scrapReasonId = await newScrapReason("correction");
+    const created = await createProductionQuantity(
+      contextFor(userActor(people.approver)),
+      {
+        jobOperationId: job.operationId,
+        type: "Scrap",
+        scrapReasonId,
+        quantity: 1
+      }
+    );
+    expect(created.error).toBeNull();
+    const rowId = created.data!.id;
+    const quantityOf = async () =>
+      Number(
+        (
+          await f.db
+            .selectFrom("productionQuantity")
+            .select("quantity")
+            .where("id", "=", rowId)
+            .executeTakeFirstOrThrow()
+        ).quantity
+      );
+
+    // Another correction lands between the read and the write: here, while
+    // the approval is recorded.
+    const trigger = `${f.prefix.replaceAll("-", "_")}_concurrent_correction`;
+    await sql
+      .raw(
+        `CREATE FUNCTION "${trigger}"() RETURNS trigger LANGUAGE plpgsql AS $$
+         BEGIN
+           UPDATE "productionQuantity" SET "quantity" = 5 WHERE "id" = '${rowId}';
+           RETURN NEW;
+         END $$;
+         CREATE TRIGGER "${trigger}" AFTER INSERT ON "scrapRequest"
+           FOR EACH ROW WHEN (NEW."companyId" = '${f.companyId}')
+           EXECUTE FUNCTION "${trigger}"();`
+      )
+      .execute(f.db);
+    try {
+      const corrected = await updateProductionQuantity(
+        contextFor(userActor(people.approver)),
+        {
+          id: rowId,
+          jobOperationId: job.operationId,
+          type: "Scrap",
+          scrapReasonId,
+          quantity: 3
+        }
+      );
+      expect(corrected.error?.category).toBe("conflict");
+      expect(await quantityOf()).toBe(5);
+    } finally {
+      await sql
+        .raw(
+          `DROP TRIGGER "${trigger}" ON "scrapRequest"; DROP FUNCTION "${trigger}"();`
+        )
+        .execute(f.db);
+    }
   }, 60_000);
 });

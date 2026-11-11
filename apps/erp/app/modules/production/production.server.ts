@@ -5456,6 +5456,10 @@ export const updateProductionQuantity = defineServiceFn({
     // added quantity: raised, turned into scrap, or moved to an operation.
     let approval: { scrapRequestId: string | null } = { scrapRequestId: null };
     let writer = ctx.asCaller.supabase;
+    // What the row held when the added scrap was valued.
+    let expected:
+      | { type: string; quantity: number; jobOperationId: string }
+      | undefined;
     if (quantity.type === "Scrap") {
       // A Scrap row can be written as the system below, which RLS does not
       // check; the table's own write permission still applies.
@@ -5482,6 +5486,11 @@ export const updateProductionQuantity = defineServiceFn({
       if (!current.data) {
         return ctx.error("notFound", "Production quantity not found");
       }
+      expected = {
+        type: current.data.type,
+        quantity: Number(current.data.quantity),
+        jobOperationId: current.data.jobOperationId
+      };
       // Scrap moved to another operation is new scrap there, at its value.
       const alreadyScrapped =
         current.data.type === "Scrap" &&
@@ -5502,23 +5511,34 @@ export const updateProductionQuantity = defineServiceFn({
       }
     }
 
-    const update = await service.upsertProductionQuantity(writer, {
-      ...quantity,
-      id,
-      scrapReasonId,
-      companyId: ctx.company.id,
-      updatedBy: ctx.auditUserId
-    });
+    const update = await service.upsertProductionQuantity(
+      writer,
+      {
+        ...quantity,
+        id,
+        scrapReasonId,
+        companyId: ctx.company.id,
+        updatedBy: ctx.auditUserId
+      },
+      expected
+    );
+    const changed = !update.error && !update.data;
     await service.settleErpScrapApproval(
       ctx,
       approval.scrapRequestId,
-      !update.error
+      !update.error && !changed
     );
     if (update.error) {
       return ctx.error(
         "internal",
         "Failed to update production quantity",
         update.error
+      );
+    }
+    if (changed) {
+      return ctx.error(
+        "conflict",
+        "This quantity changed while you were editing it. Reload it and save again."
       );
     }
     return { id };

@@ -995,6 +995,9 @@ msgstr "{fieldLabel} देश कोड"
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} हेक्स मान"
 
+msgid "{floor} and above"
+msgstr "{floor} और अधिक"
+
 msgid "{foundHere} found here"
 msgstr "{foundHere} यहाँ पाया गया"
 

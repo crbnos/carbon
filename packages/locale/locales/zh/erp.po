@@ -995,6 +995,9 @@ msgstr "{fieldLabel}的国家代码"
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} 十六进制值"
 
+msgid "{floor} and above"
+msgstr "{floor} 及以上"
+
 msgid "{foundHere} found here"
 msgstr "在此找到 {foundHere}"
 

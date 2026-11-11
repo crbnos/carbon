@@ -995,6 +995,9 @@ msgstr "Código do país de {fieldLabel}"
 msgid "{fieldLabel} hex value"
 msgstr "Valor hexadecimal de {fieldLabel}"
 
+msgid "{floor} and above"
+msgstr "{floor} ou mais"
+
 msgid "{foundHere} found here"
 msgstr "{foundHere} encontrado aqui"
 

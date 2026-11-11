@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  failedScrapPostingSettlement,
   materialUnitCost,
   operationScrapUnitValue,
   type ScrapValuationMaterial,
@@ -190,5 +191,22 @@ describe("scrapApproverRefusal", () => {
       allowSelf: false
     });
     expect(verdict.error).toBeNull();
+  });
+});
+
+describe("failedScrapPostingSettlement", () => {
+  it.each([
+    [{ refused: true, committed: false }, "discard"],
+    [{ refused: false, committed: false }, "keep"],
+    [{ refused: true, committed: true }, "mark posted"],
+    [{ refused: false, committed: true }, "mark posted"]
+  ] as const)("settles %o as %s", (args, expected) => {
+    expect(failedScrapPostingSettlement(args)).toBe(expected);
+  });
+
+  it("keeps the record of a refusal when whether it posted is unknown", () => {
+    expect(
+      failedScrapPostingSettlement({ refused: true, committed: "unknown" })
+    ).toBe("keep");
   });
 });

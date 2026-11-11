@@ -995,6 +995,9 @@ msgstr "{fieldLabel}の国コード"
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} の16進値"
 
+msgid "{floor} and above"
+msgstr "{floor} 以上"
+
 msgid "{foundHere} found here"
 msgstr "{foundHere} がここで見つかりました"
 

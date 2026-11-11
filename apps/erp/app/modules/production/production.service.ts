@@ -4127,12 +4127,18 @@ export async function upsertProductionQuantity(
         id: string;
         updatedBy: string;
         companyId: string;
-      })
+      }),
+  /**
+   * An update writes only while the row still holds these: a correction
+   * read before another one landed must not overwrite it. No row comes back
+   * when it changed.
+   */
+  expected?: { type: string; quantity: number; jobOperationId: string }
 ) {
   if ("updatedBy" in productionQuantity) {
     const { id, updatedBy, companyId, ...updateData } = productionQuantity;
 
-    return client
+    let update = client
       .from("productionQuantity")
       .update({
         ...sanitize(updateData),
@@ -4140,9 +4146,18 @@ export async function upsertProductionQuantity(
         updatedAt: new Date().toISOString()
       })
       .eq("id", id)
-      .eq("companyId", companyId)
-      .select()
-      .single();
+      .eq("companyId", companyId);
+    if (expected) {
+      update = update
+        .eq(
+          "type",
+          expected.type as Database["public"]["Enums"]["productionQuantityType"]
+        )
+        .eq("quantity", expected.quantity)
+        .eq("jobOperationId", expected.jobOperationId);
+      return update.select().maybeSingle();
+    }
+    return update.select().single();
   } else {
     return (
       client
@@ -4162,21 +4177,38 @@ export async function upsertProductionQuantity(
  * There is no tablet and no second person at a desk, so an approver at the
  * scrap's tier records it on their own authority and everyone else is
  * refused; an API key is refused, since no person stands behind it. Returns
- * the `scrapRequest` written for it (null when no rule applies). The caller
- * writes the quantity, then calls `settleErpScrapApproval`.
+ * the `scrapRequest` written for it and the quantity it was valued at (null
+ * when no rule applies). The caller writes that quantity, then calls
+ * `settleErpScrapApproval`.
  */
 export async function approveErpScrap(
   ctx: ServiceContext,
   scrap: Extract<ScrapSubject, { type: "operation" | "item" }>
-): Promise<{ scrapRequestId: string | null } | CarbonError> {
+): Promise<
+  { scrapRequestId: string | null; quantity: number | null } | CarbonError
+> {
+  const described: { scrap: ScrapDescription | null } = { scrap: null };
   const approved = await approveErpScraps(
     ctx,
-    async () => [await describeScrap(ctx.asSystem.pg, ctx.company.id, scrap)],
+    async () => {
+      described.scrap = await describeScrap(
+        ctx.asSystem.pg,
+        ctx.company.id,
+        scrap
+      );
+      return [described.scrap];
+    },
     // Operation scrap can go to the tablet; stock scrap has no tablet step.
     scrap.type === "operation"
   );
   if (approved instanceof CarbonError) return approved;
-  return { scrapRequestId: approved.scrapRequestIds[0] ?? null };
+  const scrapRequestId = approved.scrapRequestIds[0] ?? null;
+  // The quantity the approver signed: a whole tracked entity resolved once,
+  // so the posting cannot scrap more than was valued.
+  return {
+    scrapRequestId,
+    quantity: scrapRequestId ? (described.scrap?.quantity ?? null) : null
+  };
 }
 
 /**

@@ -995,6 +995,9 @@ msgstr "Код страны для поля {fieldLabel}"
 msgid "{fieldLabel} hex value"
 msgstr "Шестнадцатеричное значение: {fieldLabel}"
 
+msgid "{floor} and above"
+msgstr "{floor} и более"
+
 msgid "{foundHere} found here"
 msgstr "{foundHere} найдено здесь"
 

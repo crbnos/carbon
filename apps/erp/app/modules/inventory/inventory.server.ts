@@ -3792,13 +3792,17 @@ export const adjustInventory = defineServiceFn({
             scrapReasonId: adjustment.scrapReasonId,
             notes: adjustment.comment
           })
-        : { scrapRequestId: null };
+        : { scrapRequestId: null, quantity: null };
     if (approval instanceof CarbonError) return approval;
 
+    // An approved scrap posts the quantity it was valued at: a whole tracked
+    // entity (quantity 0) is resolved once, so it cannot grow in between.
     const posted = await invokePosting(
       ctx,
       "post-inventory-adjustment",
-      adjustment,
+      approval.quantity !== null
+        ? { ...adjustment, quantity: approval.quantity }
+        : adjustment,
       service.postInventoryAdjustment
     );
     await settleErpScrapApproval(ctx, approval.scrapRequestId, !posted.error);

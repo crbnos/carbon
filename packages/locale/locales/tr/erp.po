@@ -995,6 +995,9 @@ msgstr "{fieldLabel} ülke kodu"
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} onaltılık değeri"
 
+msgid "{floor} and above"
+msgstr "{floor} ve üzeri"
+
 msgid "{foundHere} found here"
 msgstr "{foundHere} burada bulundu"
 
