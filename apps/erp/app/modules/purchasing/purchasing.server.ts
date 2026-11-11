@@ -2576,6 +2576,15 @@ export const decidePurchaseOrderForceDelete = defineServiceFn({
       companyId,
       userId
     );
+    // A claim an approval left for ten minutes is given back first.
+    if (decision === "reject")
+      await service.releaseExpiredPurchaseOrderForceDeleteClaim(
+        ctx.asSystem.pg,
+        {
+          companyId,
+          requestId
+        }
+      );
     if (!isAdmin) return ctx.error("forbidden", NOT_ADMIN_FORCE_DELETE);
 
     // Step 1 (approve): void the receipts, each in its own posting. Checked
@@ -2907,6 +2916,11 @@ export const cancelPurchaseOrderForceDelete = defineServiceFn({
       companyId,
       userId
     );
+    // A claim an approval left for ten minutes is given back first.
+    await service.releaseExpiredPurchaseOrderForceDeleteClaim(ctx.asSystem.pg, {
+      companyId,
+      requestId
+    });
 
     const settled = await ctx.transaction(async (tx) => {
       const db = tx.asSystem.pg;

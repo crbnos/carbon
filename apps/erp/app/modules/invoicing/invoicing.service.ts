@@ -19103,6 +19103,24 @@ export async function claimForceDeleteRequest(
   return !!claimed;
 }
 
+/**
+ * Gives back a claim left for more than ten minutes (an approval that
+ * stopped), so the request can be cancelled, rejected or approved again.
+ */
+export async function releaseExpiredForceDeleteClaim(
+  db: Kysely<KyselyDatabase>,
+  { companyId, requestId }: { companyId: string; requestId: string }
+): Promise<void> {
+  await db
+    .updateTable("forceDeleteRequest")
+    .set({ status: "Pending", decidedBy: null, decidedAt: null })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Approving")
+    .where("decidedAt", "<", sql<string>`now() - interval '10 minutes'`)
+    .execute();
+}
+
 /** Gives a claim back (Pending) after the approval refused or failed. */
 export async function releaseForceDeleteClaim(
   db: Kysely<KyselyDatabase>,
@@ -19133,6 +19151,11 @@ export type DocumentForceDeleteRequest = {
   id: string;
   /** Pending, or Approving while an Admin's approval runs. */
   status: string;
+  /**
+   * An Approving claim older than ten minutes: its approval stopped, and
+   * any other Admin may approve again (`claimForceDeleteRequest`).
+   */
+  claimExpired: boolean;
   reason: string;
   requestedBy: string;
   requestedAt: string;
@@ -19159,7 +19182,10 @@ export async function getPendingForceDeleteRequest(
       "reason",
       "requestedBy",
       "requestedAt",
-      "documentStatus"
+      "documentStatus",
+      sql<boolean>`coalesce("decidedAt" < now() - interval '10 minutes', false)`.as(
+        "claimExpired"
+      )
     ])
     .where("companyId", "=", companyId)
     .where("documentType", "=", documentType)
@@ -19271,11 +19297,22 @@ export async function getDocumentForceDeleteData(
   isAdmin: boolean;
   forceDeleteRequest: DocumentForceDeleteRequest | null;
 }> {
-  const [isAdmin, forceDeleteRequest] = await Promise.all([
-    isCompanyAdmin(client, args.companyId, args.userId),
-    getPendingForceDeleteRequest(db, args)
-  ]);
-  return { isAdmin, forceDeleteRequest };
+  // The override is an extra on the page: a failed lookup leaves it off
+  // rather than failing the document's page.
+  try {
+    const [isAdmin, forceDeleteRequest] = await Promise.all([
+      isCompanyAdmin(client, args.companyId, args.userId),
+      getPendingForceDeleteRequest(db, args)
+    ]);
+    return { isAdmin, forceDeleteRequest };
+  } catch (error) {
+    logger.error("Failed to load the force delete override", {
+      documentType: args.documentType,
+      documentId: args.documentId,
+      error
+    });
+    return { isAdmin: false, forceDeleteRequest: null };
+  }
 }
 
 // ─── Force delete: reverse by journal (the void refused) ───
@@ -19287,6 +19324,23 @@ const FORCE_DELETE_SOURCE_TYPE = {
   receipt: "Purchase Receipt",
   payment: "Payment"
 } as const;
+
+/**
+ * The journal source types of a document's own postings. Whole journals are
+ * negated only when they are one of these: the Opening Balance journal also
+ * carries a pre-cutover document's open lines, beside every other document's,
+ * and only the document's own lines of it are taken back
+ * (`reverseBeforeCutover`).
+ */
+const FORCE_DELETE_OWN_SOURCE_TYPES: Record<
+  ForceDeleteDocumentType,
+  Database["public"]["Enums"]["journalEntrySourceType"][]
+> = {
+  purchaseInvoice: ["Purchase Invoice"],
+  salesInvoice: ["Sales Invoice"],
+  receipt: ["Purchase Receipt", "Sales Return Receipt"],
+  payment: ["Payment"]
+};
 
 /** The journal line document types a document's own postings carry. */
 const FORCE_DELETE_JOURNAL_DOCUMENT_TYPES: Record<
@@ -19367,31 +19421,45 @@ export async function reverseDocumentByJournal(
       return journalId;
     };
 
-    // 1. The document's postings, negated.
-    const originals = await tx
-      .selectFrom("journalLine")
-      .innerJoin("journal", (join) =>
-        join
-          .onRef("journal.id", "=", "journalLine.journalId")
-          .onRef("journal.companyId", "=", "journalLine.companyId")
-      )
-      .selectAll("journalLine")
-      .where("journalLine.companyId", "=", companyId)
-      .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
-      .where("journalLine.journalId", "in", (eb) =>
-        eb
-          .selectFrom("journalLine as own")
-          .select("own.journalId")
-          .where("own.companyId", "=", companyId)
-          .where("own.documentId", "=", document.id)
-          .where(
-            "own.documentType",
-            "in",
-            FORCE_DELETE_JOURNAL_DOCUMENT_TYPES[document.documentType]
-          )
-      )
-      .orderBy("journalLine.id")
-      .execute();
+    const beforeCutover =
+      !!document.postingDate &&
+      isBeforeCutover(document.postingDate, cutoverDate);
+
+    // 1. The document's postings, negated. A payment from before the cutover
+    // is negated from its posting built again (`reverseBeforeCutover`), which
+    // already reflects any unapply since, so its journals are not read.
+    const originals =
+      document.documentType === "payment" && beforeCutover
+        ? []
+        : await tx
+            .selectFrom("journalLine")
+            .innerJoin("journal", (join) =>
+              join
+                .onRef("journal.id", "=", "journalLine.journalId")
+                .onRef("journal.companyId", "=", "journalLine.companyId")
+            )
+            .selectAll("journalLine")
+            .where("journalLine.companyId", "=", companyId)
+            .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+            .where(
+              "journal.sourceType",
+              "in",
+              FORCE_DELETE_OWN_SOURCE_TYPES[document.documentType]
+            )
+            .where("journalLine.journalId", "in", (eb) =>
+              eb
+                .selectFrom("journalLine as own")
+                .select("own.journalId")
+                .where("own.companyId", "=", companyId)
+                .where("own.documentId", "=", document.id)
+                .where(
+                  "own.documentType",
+                  "in",
+                  FORCE_DELETE_JOURNAL_DOCUMENT_TYPES[document.documentType]
+                )
+            )
+            .orderBy("journalLine.id")
+            .execute();
 
     if (originals.length > 0) {
       const id = await getJournalId();
@@ -19424,15 +19492,15 @@ export async function reverseDocumentByJournal(
           reversingLineId: ids[index]!
         }))
       });
-    } else if (
-      document.postingDate &&
-      isBeforeCutover(document.postingDate, cutoverDate)
-    ) {
+    }
+    if (beforeCutover) {
       await reverseBeforeCutover(tx, {
         companyId,
         document,
         getJournalId,
-        postingStatus
+        postingStatus,
+        varianceAccount:
+          reversal.accounting.accountDefaults.inventoryAdjustmentVarianceAccount
       });
     }
 
@@ -19458,6 +19526,13 @@ export async function reverseDocumentByJournal(
         userId,
         receiptId: document.id,
         purchaseOrderId: document.sourceDocumentId
+      });
+    }
+    if (document.documentType === "salesInvoice") {
+      await restoreSalesOrderInvoiced(tx, {
+        companyId,
+        userId,
+        invoiceId: document.id
       });
     }
     if (document.documentType === "purchaseInvoice") {
@@ -19523,10 +19598,13 @@ async function accountTypes(
 }
 
 /**
- * A document from before the cutover has no posting to negate: the opening
- * balance carries what it left open. An invoice writes that open amount off
- * (its control account against the customer or supplier write-off account);
- * a payment negates its posting built again, as its void does.
+ * A document from before the cutover: its own journal is Superseded and the
+ * Opening Balance journal carries what it left open, among every other
+ * document's balances. Only its own lines of that journal are negated (its
+ * open receivable or payable, deferred revenue, GR/IR...), and the difference
+ * goes to the customer or supplier write-off account (inventory adjustment
+ * variance for a receipt), as the write-off of what it left open. A payment
+ * negates its posting built again instead, as its void does.
  */
 async function reverseBeforeCutover(
   tx: Kysely<KyselyDatabase> | KyselyTx,
@@ -19534,12 +19612,14 @@ async function reverseBeforeCutover(
     companyId,
     document,
     getJournalId,
-    postingStatus
+    postingStatus,
+    varianceAccount
   }: {
     companyId: string;
     document: ForceDeleteDocument;
     getJournalId: () => Promise<string>;
     postingStatus: AutomaticJournalStatus;
+    varianceAccount: string;
   }
 ): Promise<void> {
   if (document.documentType === "payment") {
@@ -19577,87 +19657,101 @@ async function reverseBeforeCutover(
       .execute();
     return;
   }
-  if (
-    document.documentType !== "purchaseInvoice" &&
-    document.documentType !== "salesInvoice"
-  ) {
-    return;
+
+  const opening = await tx
+    .selectFrom("journalLine")
+    .innerJoin("journal", (join) =>
+      join
+        .onRef("journal.id", "=", "journalLine.journalId")
+        .onRef("journal.companyId", "=", "journalLine.companyId")
+    )
+    .selectAll("journalLine")
+    .where("journalLine.companyId", "=", companyId)
+    .where("journalLine.documentId", "=", document.id)
+    .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+    .where("journal.sourceType", "=", "Opening Balance")
+    .orderBy("journalLine.id")
+    .execute();
+  if (opening.length === 0) return;
+
+  let offsetAccount = varianceAccount;
+  let offsetDescription = "Inventory Adjustment Variance Account";
+  if (document.documentType !== "receipt") {
+    const isSales = document.documentType === "salesInvoice";
+    const defaults = await tx
+      .selectFrom("accountDefault")
+      .select(["customerWriteOffAccount", "supplierWriteOffAccount"])
+      .where("companyId", "=", companyId)
+      .executeTakeFirstOrThrow();
+    const writeOff = isSales
+      ? defaults.customerWriteOffAccount
+      : defaults.supplierWriteOffAccount;
+    if (!writeOff) {
+      throw new InvalidInputError(
+        `Map the ${isSales ? "customer" : "supplier"} write-off account in the accounting defaults to force delete ${document.readableId}`
+      );
+    }
+    offsetAccount = writeOff;
+    offsetDescription = isSales
+      ? "Bad Debt Expense"
+      : "Vendor Write-Off Income";
   }
-  const isSales = document.documentType === "salesInvoice";
-  const invoice = isSales
-    ? await tx
-        .selectFrom("salesInvoices")
-        .select(["balance", "exchangeRate"])
-        .where("id", "=", document.id)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst()
-    : await tx
-        .selectFrom("purchaseInvoices")
-        .select(["balance", "exchangeRate"])
-        .where("id", "=", document.id)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst();
-  const open = toBaseAmount(
-    Number(invoice?.balance ?? 0),
-    Number(invoice?.exchangeRate ?? 1)
+
+  const accountOf = (line: (typeof opening)[number]) => {
+    if (!line.accountId) {
+      throw new Error(`Opening balance line ${line.id} has no account`);
+    }
+    return line.accountId;
+  };
+  const types = await accountTypes(tx, companyId, [
+    ...opening.map(accountOf),
+    offsetAccount
+  ]);
+  const typeOf = (accountId: string) => {
+    const type = types.get(accountId);
+    if (!type) throw new Error(`Account ${accountId} has no class`);
+    return type;
+  };
+  // Debit-signed total of the negated lines; the offset takes the rest.
+  const debitTotal = opening.reduce(
+    (sum, line) => sum + debit(typeOf(accountOf(line)), -Number(line.amount)),
+    0
   );
-  if (open === 0) return;
-  const defaults = await tx
-    .selectFrom("accountDefault")
-    .select([
-      "receivablesAccount",
-      "payablesAccount",
-      "customerWriteOffAccount",
-      "supplierWriteOffAccount"
-    ])
-    .where("companyId", "=", companyId)
-    .executeTakeFirstOrThrow();
-  const control = isSales
-    ? defaults.receivablesAccount
-    : defaults.payablesAccount;
-  const writeOff = isSales
-    ? defaults.customerWriteOffAccount
-    : defaults.supplierWriteOffAccount;
-  if (!control || !writeOff) {
-    throw new InvalidInputError(
-      `Map the ${isSales ? "receivables and customer" : "payables and supplier"} write-off accounts in the accounting defaults to force delete ${document.readableId}`
-    );
-  }
+  const offset = toBaseAmount(-debitTotal, 1);
   const id = await getJournalId();
   const journalLineReference = nanoid();
-  const magnitude = Math.abs(open);
-  // Sales: Cr receivables, Dr bad debt. Purchase: Dr payables, Cr write-off income.
-  const controlSide = open > 0 === isSales ? "credit" : "debit";
-  const types = await accountTypes(tx, companyId, [control, writeOff]);
-  const signed = (accountId: string, side: "debit" | "credit") => {
-    const type = types.get(accountId) ?? (isSales ? "asset" : "liability");
-    return side === "debit" ? debit(type, magnitude) : credit(type, magnitude);
-  };
   await tx
     .insertInto("journalLine")
     .values([
-      {
+      ...opening.map((line) => ({
         journalId: id,
-        accountId: control,
-        amount: signed(control, controlSide),
-        quantity: 1,
-        description: `FORCE DELETE: ${isSales ? "Accounts Receivable" : "Accounts Payable"} write-off`,
-        documentType: "Invoice" as const,
-        documentId: document.id,
+        accountId: line.accountId,
+        accountDefaultRole: line.accountDefaultRole,
+        amount: -Number(line.amount),
+        quantity: -Number(line.quantity ?? 0),
+        description: `FORCE DELETE: ${line.description ?? ""}`,
+        documentType: line.documentType,
+        documentId: line.documentId,
+        documentLineReference: line.documentLineReference,
         journalLineReference,
         companyId
-      },
-      {
-        journalId: id,
-        accountId: writeOff,
-        amount: signed(writeOff, controlSide === "credit" ? "debit" : "credit"),
-        quantity: 1,
-        description: `FORCE DELETE: ${isSales ? "Bad Debt Expense" : "Vendor Write-Off Income"}`,
-        documentType: "Invoice" as const,
-        documentId: document.id,
-        journalLineReference,
-        companyId
-      }
+      })),
+      ...(offset === 0
+        ? []
+        : [
+            {
+              journalId: id,
+              accountId: offsetAccount,
+              // `debit` turns a debit-signed value into the stored amount.
+              amount: debit(typeOf(offsetAccount), offset),
+              quantity: 1,
+              description: `FORCE DELETE: ${offsetDescription}`,
+              documentType: opening[0]!.documentType,
+              documentId: document.id,
+              journalLineReference,
+              companyId
+            }
+          ])
     ])
     .execute();
 }
@@ -20047,6 +20141,150 @@ async function restorePurchaseOrderInvoiced(
 }
 
 /**
+ * Gives back to the sales orders what a sales invoice invoiced, as its void
+ * does: each order line's `quantityInvoiced` drops by the invoice line's
+ * quantity, `invoicedComplete` follows, and the order's status is set again
+ * from its lines. The shipments the invoice created are Voided, and the
+ * order's shipments lose their invoiced flag while it is not fully invoiced.
+ */
+async function restoreSalesOrderInvoiced(
+  tx: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    invoiceId
+  }: { companyId: string; userId: string; invoiceId: string }
+): Promise<void> {
+  const now = datetime.timestamp();
+  const [invoice, invoiceLines] = await Promise.all([
+    tx
+      .selectFrom("salesInvoice")
+      .select("shipmentId")
+      .where("id", "=", invoiceId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst(),
+    tx
+      .selectFrom("salesInvoiceLine")
+      .select(["salesOrderLineId", "quantity"])
+      .where("companyId", "=", companyId)
+      .where("invoiceId", "=", invoiceId)
+      .where("salesOrderLineId", "is not", null)
+      .execute()
+  ]);
+
+  await tx
+    .updateTable("shipment")
+    .set({
+      status: "Voided",
+      invoiced: false,
+      updatedBy: userId,
+      updatedAt: now
+    })
+    .where("companyId", "=", companyId)
+    .where("sourceDocument", "=", "Sales Invoice")
+    .where("sourceDocumentId", "=", invoiceId)
+    .execute();
+  if (invoice?.shipmentId) {
+    await tx
+      .updateTable("shipment")
+      .set({ invoiced: false, updatedBy: userId, updatedAt: now })
+      .where("id", "=", invoice.shipmentId)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+  if (invoiceLines.length === 0) return;
+
+  const invoicedByLine = new Map<string, number>();
+  for (const line of invoiceLines) {
+    const id = line.salesOrderLineId as string;
+    invoicedByLine.set(
+      id,
+      (invoicedByLine.get(id) ?? 0) + Number(line.quantity ?? 0)
+    );
+  }
+  const orderLines = await tx
+    .selectFrom("salesOrderLine")
+    .selectAll()
+    .where("companyId", "=", companyId)
+    .where("salesOrderId", "in", (eb) =>
+      eb
+        .selectFrom("salesOrderLine as l")
+        .select("l.salesOrderId")
+        .where("l.companyId", "=", companyId)
+        .where("l.id", "in", [...invoicedByLine.keys()])
+    )
+    .forUpdate()
+    .execute();
+  const updated = orderLines.map((line) => {
+    const invoiced = invoicedByLine.get(line.id);
+    const saleQuantity = Number(line.saleQuantity ?? 0);
+    if (invoiced === undefined || saleQuantity <= 0) return line;
+    const quantityInvoiced = Math.max(
+      0,
+      Number(line.quantityInvoiced ?? 0) - invoiced
+    );
+    return {
+      ...line,
+      quantityInvoiced,
+      invoicedComplete: quantityInvoiced >= saleQuantity
+    };
+  });
+  const changes = updated.filter((line, index) => line !== orderLines[index]);
+  if (changes.length > 0) {
+    await updateRowsById(
+      tx as Kysely<KyselyDatabase>,
+      "salesOrderLine",
+      companyId,
+      changes.map((line) => ({
+        id: line.id,
+        data: {
+          quantityInvoiced: line.quantityInvoiced,
+          invoicedComplete: line.invoicedComplete,
+          updatedBy: userId,
+          updatedAt: now
+        }
+      }))
+    );
+  }
+  for (const salesOrderId of new Set(
+    changes.map((line) => line.salesOrderId)
+  )) {
+    const lines = updated.filter((line) => line.salesOrderId === salesOrderId);
+    const allInvoiced = lines.every(
+      (line) => line.salesOrderLineType === "Comment" || line.invoicedComplete
+    );
+    const allShipped = lines.every(
+      (line) =>
+        line.salesOrderLineType === "Comment" ||
+        line.salesOrderLineType === "Service" ||
+        line.sentComplete
+    );
+    const status: Database["public"]["Enums"]["salesOrderStatus"] =
+      allInvoiced && allShipped
+        ? "Completed"
+        : allInvoiced
+          ? "To Ship"
+          : allShipped
+            ? "To Invoice"
+            : "To Ship and Invoice";
+    if (!allInvoiced) {
+      await tx
+        .updateTable("shipment")
+        .set({ invoiced: false })
+        .where("sourceDocumentId", "=", salesOrderId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    await tx
+      .updateTable("salesOrder")
+      .set({ status, updatedBy: userId, updatedAt: now })
+      .where("id", "=", salesOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+}
+
+/**
  * A purchase invoice's cost on a fixed asset: its CIP rows go and the
  * asset's acquisition cost drops by them. For an asset capitalized since,
  * that value moved from the CIP account into the asset account, so it moves
@@ -20095,30 +20333,50 @@ async function reverseCapitalizedCip(
     .execute();
   if (cipRows.length === 0) return;
 
+  // A capitalized asset moved this cost from its CIP class's account into
+  // its asset class's account: the capitalization transfer names the CIP
+  // class it left (`fromClassId`). Both accounts are resolved before anything
+  // is written, and a cost with no account to move back refuses.
   const capitalized = cipRows.filter(
     (row) => row.status !== "Under Construction"
   );
   if (capitalized.length > 0) {
-    const sourceLines = await tx
-      .selectFrom("journalLine")
-      .select(["journalId", "documentLineReference", "accountId", "amount"])
-      .where("companyId", "=", companyId)
-      .where(
-        "journalId",
-        "in",
-        capitalized.flatMap((row) => row.journalId ?? [])
+    const transfers = await tx
+      .selectFrom("fixedAssetTransfer as t")
+      .innerJoin("fixedAssetClass as k", (join) =>
+        join
+          .onRef("k.id", "=", "t.fromClassId")
+          .onRef("k.companyId", "=", "t.companyId")
       )
+      .select(["t.fixedAssetId", "t.createdAt", "k.assetAccountId"])
+      .where("t.companyId", "=", companyId)
+      .where("t.type", "=", "Capitalization")
+      .where(
+        "t.fixedAssetId",
+        "in",
+        capitalized.map((row) => row.fixedAssetId)
+      )
+      .orderBy("t.createdAt", "desc")
       .execute();
+    const cipAccountByAsset = new Map<string, string>();
+    for (const transfer of transfers) {
+      if (
+        transfer.assetAccountId &&
+        !cipAccountByAsset.has(transfer.fixedAssetId)
+      ) {
+        cipAccountByAsset.set(transfer.fixedAssetId, transfer.assetAccountId);
+      }
+    }
     const lines = capitalized.flatMap((row) => {
-      const cipAccount = sourceLines.find(
-        (line) =>
-          line.journalId === row.journalId &&
-          line.documentLineReference === row.sourceDocumentLineId &&
-          Number(line.amount) > 0
-      )?.accountId;
+      const cipAccount = cipAccountByAsset.get(row.fixedAssetId);
       const assetAccount = row.assetAccountId;
+      if (!cipAccount || !assetAccount) {
+        throw new InvalidInputError(
+          "A fixed asset this invoice paid for was capitalized, and its construction-in-progress account could not be found. Reverse the capitalization first."
+        );
+      }
       const magnitude = Math.abs(Number(row.amount));
-      if (!cipAccount || !assetAccount || magnitude === 0) return [];
+      if (magnitude === 0) return [];
       return [
         {
           accountId: cipAccount,

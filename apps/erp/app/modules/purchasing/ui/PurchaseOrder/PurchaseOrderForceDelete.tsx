@@ -198,7 +198,9 @@ export function PurchaseOrderForceDeleteBanner() {
       isAdmin
     }) === null;
   // Another Admin's approval is running: nothing to decide until it ends.
-  const approving = request.status === "Approving";
+  // A claim older than ten minutes is an approval that stopped: approving
+  // again is allowed (the service decides).
+  const approving = request.status === "Approving" && !request.claimExpired;
   const busy = fetcher.state !== "idle" || approving;
 
   const submit = (intent: "reject" | "cancel") => {

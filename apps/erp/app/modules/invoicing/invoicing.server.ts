@@ -3988,6 +3988,12 @@ export const decideDocumentForceDelete = defineServiceFn({
       companyId,
       userId
     );
+    // A claim an approval left for ten minutes is given back first.
+    if (decision === "reject")
+      await service.releaseExpiredForceDeleteClaim(ctx.asSystem.pg, {
+        companyId,
+        requestId
+      });
     if (!isAdmin)
       return ctx.error("forbidden", NOT_ADMIN_DOCUMENT_FORCE_DELETE);
 
@@ -4305,6 +4311,11 @@ export const cancelDocumentForceDelete = defineServiceFn({
       companyId,
       userId
     );
+    // A claim an approval left for ten minutes is given back first.
+    await service.releaseExpiredForceDeleteClaim(ctx.asSystem.pg, {
+      companyId,
+      requestId
+    });
 
     const settled = await ctx.transaction(async (tx) => {
       const db = tx.asSystem.pg;

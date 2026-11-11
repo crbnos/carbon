@@ -9048,6 +9048,8 @@ export type PurchaseOrderForceDeleteRequest = {
   id: string;
   /** Pending, or Approving while an Admin's approval runs. */
   status: string;
+  /** An Approving claim older than ten minutes: it may be approved again. */
+  claimExpired: boolean;
   reason: string;
   requestedBy: string;
   requestedAt: string;
@@ -9097,6 +9099,21 @@ export async function claimPurchaseOrderForceDeleteRequest(
   return !!claimed;
 }
 
+/** Gives back a purchase order force delete claim left for ten minutes. */
+export async function releaseExpiredPurchaseOrderForceDeleteClaim(
+  db: Kysely<KyselyDatabase>,
+  { companyId, requestId }: { companyId: string; requestId: string }
+): Promise<void> {
+  await db
+    .updateTable("purchaseOrderForceDeleteRequest")
+    .set({ status: "Pending", decidedBy: null, decidedAt: null })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Approving")
+    .where("decidedAt", "<", sql<string>`now() - interval '10 minutes'`)
+    .execute();
+}
+
 /** Gives a purchase order force delete claim back (Pending). */
 export async function releasePurchaseOrderForceDeleteClaim(
   db: Kysely<KyselyDatabase>,
@@ -9134,7 +9151,10 @@ export async function getPendingPurchaseOrderForceDeleteRequest(
       "reason",
       "requestedBy",
       "requestedAt",
-      "purchaseOrderStatus"
+      "purchaseOrderStatus",
+      sql<boolean>`coalesce("decidedAt" < now() - interval '10 minutes', false)`.as(
+        "claimExpired"
+      )
     ])
     .where("companyId", "=", companyId)
     .where("purchaseOrderId", "=", purchaseOrderId)
