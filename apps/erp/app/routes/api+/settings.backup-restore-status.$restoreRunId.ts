@@ -13,7 +13,9 @@ import {
 // heartbeat yet; during a revert the revert finished (it deletes the marker). A
 // read error answers "unreadable" instead, so it is never taken for either.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requireBackupAccess(request);
+  const { client, companyId } = await requireBackupAccess(request, {
+    allowLapsed: true
+  });
   let runs: Awaited<ReturnType<typeof getCompanyRestoreRuns>>;
   try {
     runs = await getCompanyRestoreRuns(client, companyId, params.restoreRunId);

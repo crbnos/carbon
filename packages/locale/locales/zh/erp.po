@@ -5455,6 +5455,9 @@ msgstr "备份已上传，但 {assetErrors} 个文件上传失败。其数据可
 msgid "Backups"
 msgstr "备份"
 
+msgid "Backups aren't included in your plan. You can still keep, revert or dismiss a restore you started before."
+msgstr ""
+
 msgid "Balance"
 msgstr "余额"
 

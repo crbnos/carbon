@@ -163,7 +163,18 @@ const IN_USE_MESSAGE = {
 } as const;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requireBackupAccess(request);
+  const { client, companyId, entitled } = await requireBackupAccess(request, {
+    allowLapsed: true
+  });
+
+  if (!entitled) {
+    return {
+      entitled,
+      files: [] as CompanyBackupSummary[],
+      restoreRuns: await getCompanyRestoreRuns(client, companyId),
+      exportRun: null
+    };
+  }
 
   const [files, restoreRuns, exportRun] = await Promise.all([
     // Backup objects are service-role only; the gate above guards this route.
@@ -172,15 +183,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getCompanyExportRun(client, companyId)
   ]);
 
-  return { files, restoreRuns, exportRun };
+  return { entitled, files, restoreRuns, exportRun };
 }
+
+/** What a company whose backups feature lapsed may still do: finish a restore. */
+const LAPSED_INTENTS = new Set(["keep", "dismiss", "revert"]);
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requireBackupAccess(request);
+  const { client, companyId, userId, entitled } = await requireBackupAccess(
+    request,
+    { allowLapsed: true }
+  );
 
   const formData = await request.formData();
   const intent = formData.get("intent");
+  if (!entitled && !LAPSED_INTENTS.has(String(intent))) {
+    throw new Response("Not found", { status: 404 });
+  }
   const restoreRunId = String(formData.get("restoreRunId") ?? "");
   const failure = (err: unknown, fallback: string) => ({
     success: false as const,
@@ -415,7 +435,8 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function BackupsRoute() {
-  const { files, restoreRuns, exportRun } = useLoaderData<typeof loader>();
+  const { entitled, files, restoreRuns, exportRun } =
+    useLoaderData<typeof loader>();
   const { locale } = useLocale();
   const readyBackups = files.filter((f) => f.status === "ready");
   const fetcher = useFetcher<{
@@ -613,91 +634,105 @@ export default function BackupsRoute() {
           <Trans>Backups</Trans>
         </SettingsPageHeading>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
-          <Card className="flex flex-col">
-            <ValidatedForm
-              id={EXPORT_FORM_ID}
-              key={exportDefaults.key}
-              method="post"
-              validator={exportValidator}
-              defaultValues={{
-                label: exportDefaults.label,
-                includeStorage: exportDefaults.includeStorage
-              }}
-              fetcher={fetcher}
-              className="flex flex-1 flex-col"
-            >
-              <CardHeader>
-                <CardTitle className="flex items-center gap-1.5">
-                  Create a backup
-                  <BackupContentsInfo />
-                </CardTitle>
-                <CardDescription>
-                  Snapshot all of this company's non-sensitive data into a
-                  downloadable file.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1">
-                <Hidden name="intent" value="export" />
-                <div className="flex flex-col gap-6">
-                  <Input name="label" label="Label" />
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-sm">Include</span>
-                    <IncludeStorageChoice />
+        {entitled ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+            <Card className="flex flex-col">
+              <ValidatedForm
+                id={EXPORT_FORM_ID}
+                key={exportDefaults.key}
+                method="post"
+                validator={exportValidator}
+                defaultValues={{
+                  label: exportDefaults.label,
+                  includeStorage: exportDefaults.includeStorage
+                }}
+                fetcher={fetcher}
+                className="flex flex-1 flex-col"
+              >
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-1.5">
+                    Create a backup
+                    <BackupContentsInfo />
+                  </CardTitle>
+                  <CardDescription>
+                    Snapshot all of this company's non-sensitive data into a
+                    downloadable file.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <Hidden name="intent" value="export" />
+                  <div className="flex flex-col gap-6">
+                    <Input name="label" label="Label" />
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-sm">Include</span>
+                      <IncludeStorageChoice />
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Submit>Create backup</Submit>
-              </CardFooter>
-            </ValidatedForm>
-          </Card>
+                </CardContent>
+                <CardFooter>
+                  <Submit>Create backup</Submit>
+                </CardFooter>
+              </ValidatedForm>
+            </Card>
 
-          <Card className="flex flex-col">
-            <ValidatedForm
-              method="post"
-              validator={restoreValidator}
-              defaultValues={{ source: "", includeStorage: "all" }}
-              fetcher={fetcher}
-              className="flex flex-1 flex-col"
-            >
-              <CardHeader>
-                <CardTitle>Restore from a backup</CardTitle>
-                <CardDescription>
-                  Replace this company's data with any backup — snapshotted
-                  first, so you can revert.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1">
-                <Hidden name="intent" value="restore" />
-                <div className="flex flex-col gap-6">
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-sm">Source</span>
-                    <BackupSourcePicker backups={readyBackups} />
+            <Card className="flex flex-col">
+              <ValidatedForm
+                method="post"
+                validator={restoreValidator}
+                defaultValues={{ source: "", includeStorage: "all" }}
+                fetcher={fetcher}
+                className="flex flex-1 flex-col"
+              >
+                <CardHeader>
+                  <CardTitle>Restore from a backup</CardTitle>
+                  <CardDescription>
+                    Replace this company's data with any backup — snapshotted
+                    first, so you can revert.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <Hidden name="intent" value="restore" />
+                  <div className="flex flex-col gap-6">
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-sm">Source</span>
+                      <BackupSourcePicker backups={readyBackups} />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-sm">Include</span>
+                      <RestoreIncludeChoice />
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-sm">Include</span>
-                    <RestoreIncludeChoice />
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                {/* The disclosure screen is the only way this form submits — it
+                </CardContent>
+                <CardFooter>
+                  {/* The disclosure screen is the only way this form submits — it
                     submits through the fetcher rather than the form's own submit
                     button, because the modal is portaled outside the <form>. */}
-                <RestoreDisclosure
-                  backups={readyBackups}
-                  onConfirm={({ source, includeStorage, companyId }) =>
-                    fetcher.submit(
-                      { intent: "restore", source, includeStorage, companyId },
-                      { method: "post" }
-                    )
-                  }
-                />
-              </CardFooter>
-            </ValidatedForm>
-          </Card>
-        </div>
+                  <RestoreDisclosure
+                    backups={readyBackups}
+                    onConfirm={({ source, includeStorage, companyId }) =>
+                      fetcher.submit(
+                        {
+                          intent: "restore",
+                          source,
+                          includeStorage,
+                          companyId
+                        },
+                        { method: "post" }
+                      )
+                    }
+                  />
+                </CardFooter>
+              </ValidatedForm>
+            </Card>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              Backups aren't included in your plan. You can still keep, revert
+              or dismiss a restore you started before.
+            </Trans>
+          </p>
+        )}
 
         {visibleRestoreRuns.length > 0 && (
           <Card>
@@ -729,10 +764,14 @@ export default function BackupsRoute() {
                       );
                       resolveRun(run.restoreRunId);
                     }}
-                    onPurgeAndRestore={() => {
-                      setPurgeRun(run);
-                      setPurgeOpen(true);
-                    }}
+                    onPurgeAndRestore={
+                      entitled
+                        ? () => {
+                            setPurgeRun(run);
+                            setPurgeOpen(true);
+                          }
+                        : undefined
+                    }
                   />
                 ))}
               </VStack>
@@ -777,128 +816,132 @@ export default function BackupsRoute() {
           />
         )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Backups</CardTitle>
-            <CardDescription>
-              Past backups stored in this company's bucket.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {files.length === 0 && !runningExport && !exportFailed ? (
-              <p className="text-sm text-muted-foreground">No backups yet.</p>
-            ) : (
-              <VStack spacing={2}>
-                {exportFailed && !runningExport && (
-                  <HStack className="w-full justify-between rounded-lg border border-destructive/50 bg-destructive/5 p-3">
-                    <VStack spacing={0} className="min-w-0">
-                      <span className="text-sm font-medium">
-                        <Trans>Backup failed</Trans>
-                      </span>
-                      {/* Never "the system", and never "contact support" for
+        {entitled && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Backups</CardTitle>
+              <CardDescription>
+                Past backups stored in this company's bucket.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {files.length === 0 && !runningExport && !exportFailed ? (
+                <p className="text-sm text-muted-foreground">No backups yet.</p>
+              ) : (
+                <VStack spacing={2}>
+                  {exportFailed && !runningExport && (
+                    <HStack className="w-full justify-between rounded-lg border border-destructive/50 bg-destructive/5 p-3">
+                      <VStack spacing={0} className="min-w-0">
+                        <span className="text-sm font-medium">
+                          <Trans>Backup failed</Trans>
+                        </span>
+                        {/* Never "the system", and never "contact support" for
                           something the reason already explains. The one-line
                           copy names the cause in product words; the exact
                           tables and the raw error live in the "i" popover. */}
-                      <span className="break-words text-xs text-muted-foreground">
-                        {exportRun?.reason === "scope-violations" ? (
-                          <Plural
-                            value={totalScopeRows(
-                              exportRun.violationRowsByTable
-                            )}
-                            one="# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else."
-                            other="# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else."
+                        <span className="break-words text-xs text-muted-foreground">
+                          {exportRun?.reason === "scope-violations" ? (
+                            <Plural
+                              value={totalScopeRows(
+                                exportRun.violationRowsByTable
+                              )}
+                              one="# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else."
+                              other="# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else."
+                            />
+                          ) : (
+                            <Trans>This backup could not be completed.</Trans>
+                          )}{" "}
+                          <ExcludedRowsInfo
+                            excludedRows={exportRun?.violations ?? []}
+                            title={<Trans>Why this backup failed</Trans>}
+                            description={
+                              exportRun?.reason === "scope-violations" ? (
+                                <Trans>
+                                  Each line is a link from this company's data
+                                  to a row it doesn't own. A backup with these
+                                  rows could never be restored.
+                                </Trans>
+                              ) : (
+                                <Trans>
+                                  The backup job reported this error.
+                                </Trans>
+                              )
+                            }
+                            technical={exportRun?.error}
                           />
-                        ) : (
-                          <Trans>This backup could not be completed.</Trans>
-                        )}{" "}
-                        <ExcludedRowsInfo
-                          excludedRows={exportRun?.violations ?? []}
-                          title={<Trans>Why this backup failed</Trans>}
-                          description={
-                            exportRun?.reason === "scope-violations" ? (
-                              <Trans>
-                                Each line is a link from this company's data to
-                                a row it doesn't own. A backup with these rows
-                                could never be restored.
-                              </Trans>
-                            ) : (
-                              <Trans>The backup job reported this error.</Trans>
-                            )
-                          }
-                          technical={exportRun?.error}
-                        />
-                      </span>
-                    </VStack>
-                    <HStack spacing={2} className="shrink-0">
-                      {exportRun?.reason === "scope-violations" && (
+                        </span>
+                      </VStack>
+                      <HStack spacing={2} className="shrink-0">
+                        {exportRun?.reason === "scope-violations" && (
+                          <Button
+                            isLoading={
+                              fetcher.state !== "idle" &&
+                              fetcher.formData?.get("intent") ===
+                                "exportSkipCorrupted"
+                            }
+                            onClick={() =>
+                              fetcher.submit(
+                                {
+                                  intent: "exportSkipCorrupted",
+                                  label: exportChoices.label,
+                                  includeStorage: exportChoices.includeStorage
+                                },
+                                { method: "post" }
+                              )
+                            }
+                          >
+                            <Trans>Skip corrupted rows and retry</Trans>
+                          </Button>
+                        )}
                         <Button
-                          isLoading={
-                            fetcher.state !== "idle" &&
-                            fetcher.formData?.get("intent") ===
-                              "exportSkipCorrupted"
-                          }
+                          variant="secondary"
                           onClick={() =>
                             fetcher.submit(
-                              {
-                                intent: "exportSkipCorrupted",
-                                label: exportChoices.label,
-                                includeStorage: exportChoices.includeStorage
-                              },
+                              { intent: "dismissExportFailure" },
                               { method: "post" }
                             )
                           }
                         >
-                          <Trans>Skip corrupted rows and retry</Trans>
+                          <Trans>Dismiss</Trans>
                         </Button>
-                      )}
-                      <Button
-                        variant="secondary"
-                        onClick={() =>
-                          fetcher.submit(
-                            { intent: "dismissExportFailure" },
-                            { method: "post" }
-                          )
-                        }
-                      >
-                        <Trans>Dismiss</Trans>
-                      </Button>
+                      </HStack>
                     </HStack>
-                  </HStack>
-                )}
+                  )}
 
-                {/* The in-flight export — fully server-side; appears the instant
+                  {/* The in-flight export — fully server-side; appears the instant
                     "Create backup" is clicked. Click it to open the progress
                     dialog. Its partially-written folder (if any) is hidden below
                     to avoid a duplicate row. */}
-                {runningExport && !exportCompleted && (
-                  <button
-                    type="button"
-                    onClick={openExportProgress}
-                    className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 max-md:border-0 max-md:p-0 max-md:rounded-none"
-                  >
-                    <VStack spacing={0}>
-                      <span className="text-sm font-medium">
-                        Creating backup…
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {runningExportStartedAt
-                          ? `Started ${formatBackupDate(runningExportStartedAt, locale)}`
-                          : "Starting…"}
-                      </span>
-                    </VStack>
-                    <LuLoaderCircle className="h-4 w-4 shrink-0 animate-spin text-primary motion-reduce:animate-none" />
-                  </button>
-                )}
+                  {runningExport && !exportCompleted && (
+                    <button
+                      type="button"
+                      onClick={openExportProgress}
+                      className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 max-md:border-0 max-md:p-0 max-md:rounded-none"
+                    >
+                      <VStack spacing={0}>
+                        <span className="text-sm font-medium">
+                          Creating backup…
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {runningExportStartedAt
+                            ? `Started ${formatBackupDate(runningExportStartedAt, locale)}`
+                            : "Starting…"}
+                        </span>
+                      </VStack>
+                      <LuLoaderCircle className="h-4 w-4 shrink-0 animate-spin text-primary motion-reduce:animate-none" />
+                    </button>
+                  )}
 
-                {files
-                  .filter((f) => !(runningExport && f.status === "pending"))
-                  .map((file) => (
-                    <BackupRow key={file.name} file={file} />
-                  ))}
-              </VStack>
-            )}
-          </CardContent>
-        </Card>
+                  {files
+                    .filter((f) => !(runningExport && f.status === "pending"))
+                    .map((file) => (
+                      <BackupRow key={file.name} file={file} />
+                    ))}
+                </VStack>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </ScrollArea>
   );

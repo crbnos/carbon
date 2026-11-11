@@ -43,7 +43,10 @@ restore-status, summary, upload) — takes `requireBackupAccess(request)`
 (`settings.service.ts`): `requirePermissions({ update: "settings" })`, then
 `canManageBackups(client, companyId, email)` = `IS_LOCAL_DEV || isInternalEmail(email)
 || companyHasFeature(BACKUPS)`; deny is a 404. View permission is not enough: a backup
-holds the whole company. The nav (`useSettingsSubmodules.tsx`) mirrors it with
+holds the whole company. `{ allowLapsed: true }` (the backups page and
+restore-status) lets a company whose feature lapsed in with `entitled: false`: the
+page shows only its restore runs, the action takes only keep / dismiss / revert
+(anything else 404s), and no purge-and-retry button. The nav (`useSettingsSubmodules.tsx`) mirrors it with
 `usePlanGate({ feature: "BACKUPS" })` OR `isInternal` / `isLocalDev`. Internal =
 `@carbon.ms` / `@carbon.us.org`.
 

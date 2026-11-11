@@ -1626,13 +1626,23 @@ export async function canManageBackups(
 /**
  * The gate every backup route takes: settings update, and the backups feature.
  * A backup holds the whole company's data, so viewing settings is not enough.
+ * `allowLapsed` lets a company whose feature lapsed in with `entitled: false`,
+ * so it can still keep, revert or dismiss a restore it started before.
  */
-export async function requireBackupAccess(request: Request) {
+export async function requireBackupAccess(
+  request: Request,
+  { allowLapsed = false }: { allowLapsed?: boolean } = {}
+) {
   const auth = await requirePermissions(request, { update: "settings" });
-  if (!(await canManageBackups(auth.client, auth.companyId, auth.email))) {
+  const entitled = await canManageBackups(
+    auth.client,
+    auth.companyId,
+    auth.email
+  );
+  if (!entitled && !allowLapsed) {
     throw new Response("Not found", { status: 404 });
   }
-  return auth;
+  return { ...auth, entitled };
 }
 
 /** A name the user may restore, download or delete: one of their own backups,

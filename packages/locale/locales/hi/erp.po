@@ -5455,6 +5455,9 @@ msgstr "बैकअप अपलोड हो गया, लेकिन {asset
 msgid "Backups"
 msgstr "बैकअप"
 
+msgid "Backups aren't included in your plan. You can still keep, revert or dismiss a restore you started before."
+msgstr ""
+
 msgid "Balance"
 msgstr "शेष राशि"
 

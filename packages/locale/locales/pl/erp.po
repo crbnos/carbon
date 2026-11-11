@@ -5455,6 +5455,9 @@ msgstr "Kopia zapasowa przesłana, ale nie udało się przesłać plików ({asse
 msgid "Backups"
 msgstr "Kopie zapasowe"
 
+msgid "Backups aren't included in your plan. You can still keep, revert or dismiss a restore you started before."
+msgstr ""
+
 msgid "Balance"
 msgstr "Saldo"
 

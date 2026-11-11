@@ -22,8 +22,9 @@ export function RestoreReviewRow({
   onKeep: () => void;
   onRevert: () => void;
   onDismiss: () => void;
-  /** Failed for scope violations: delete those rows (confirmed by the caller) and restart. */
-  onPurgeAndRestore: () => void;
+  /** Failed for scope violations: delete those rows (confirmed by the caller)
+   *  and restart. Absent when a new restore can't start (the feature lapsed). */
+  onPurgeAndRestore?: () => void;
 }) {
   const busy = run.status === "running" || run.status === "reverting";
   // The backup's data loaded before the run failed: the snapshot is the only
@@ -110,7 +111,7 @@ export function RestoreReviewRow({
         )}
         {run.status === "failed" && !run.applied && (
           <>
-            {run.reason === "scope-violations" && (
+            {run.reason === "scope-violations" && onPurgeAndRestore && (
               <Button variant="destructive" onClick={onPurgeAndRestore}>
                 <Trans>Remove corrupted data and restore</Trans>
               </Button>

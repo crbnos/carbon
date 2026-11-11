@@ -5455,6 +5455,9 @@ msgstr "Copia de seguridad subida, pero {assetErrors} archivo(s) no se pudieron 
 msgid "Backups"
 msgstr "Copias de seguridad"
 
+msgid "Backups aren't included in your plan. You can still keep, revert or dismiss a restore you started before."
+msgstr ""
+
 msgid "Balance"
 msgstr "Saldo"
 
