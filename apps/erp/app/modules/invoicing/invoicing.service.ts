@@ -26,7 +26,12 @@ import {
   OPEN_ITEM_JOURNAL_STATUSES,
   PRE_CUTOVER_JOURNAL_STATUSES
 } from "@carbon/database/accounting-posting";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  type Kysely,
+  type KyselyDatabase,
+  type KyselyTx,
+  withTransaction
+} from "@carbon/database/client";
 import {
   addMovement,
   applyContractMovement,
@@ -52,8 +57,8 @@ import {
   readAccountingCutoverDate,
   resolveDefaultAccount
 } from "@carbon/database/journal-posting-status";
-import type { AccountClass } from "@carbon/database/ledger";
-import { accountTypeFromClass } from "@carbon/database/ledger";
+import type { AccountClass, AccountType } from "@carbon/database/ledger";
+import { accountTypeFromClass, isAccountClass } from "@carbon/database/ledger";
 import { readPaymentProcessorFees } from "@carbon/database/payment-processor-fee";
 import type { MemoJournalLine } from "@carbon/database/posting";
 import {
@@ -63,6 +68,7 @@ import {
   type PaymentJournalFeeInput,
   type PaymentJournalLine
 } from "@carbon/database/posting";
+import { withInspectionRelease } from "@carbon/database/quality";
 import type * as rows from "@carbon/database/rows";
 import {
   inOrder,
@@ -82,6 +88,8 @@ import type {
 import { getNextSequence } from "@carbon/database/sequence";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
 import { createMappingService } from "@carbon/ee/accounting";
+import { isCompanyAdmin } from "@carbon/ee/approvals.server";
+import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   dedupeViolations,
   evaluateSalesRuleLines,
@@ -94,6 +102,7 @@ import {
   renderSalesInvoicePdf
 } from "@carbon/lib/sales-invoice-document.server";
 import { getLogger } from "@carbon/logger";
+import { NotificationEvent } from "@carbon/notifications";
 import type { ConnectCustomerInput } from "@carbon/stripe/connect.server";
 import {
   expectedConnectInvoiceTotal,
@@ -187,6 +196,11 @@ import {
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
+  postReceipt,
+  RECEIPT_VOID_STOCK_MOVED_ERROR,
+  removeUnpickedPutAways
+} from "~/modules/inventory/inventory.service";
+import {
   buildProjectCipRow,
   reverseProjectCipRows,
   writeProjectCipRows
@@ -196,15 +210,26 @@ import {
   insertProjectLedgerRows,
   reverseProjectLedgerRows
 } from "~/modules/projects/project-posting";
-import { PURCHASE_ORDER_RELEASED_STATUSES } from "~/modules/purchasing/purchasing.models";
 import {
+  PURCHASE_ORDER_RELEASED_STATUSES,
+  purchaseOrderStatusAfterReversal
+} from "~/modules/purchasing/purchasing.models";
+import {
+  deletePurchaseInvoiceReleasingLeases,
+  type ForceDeleteReversalAccounting,
+  forceDeleteReceiptRefusal,
+  getCompanyAdminIds,
   getPurchaseOrderFundsRefusal,
   getSupplierPayment,
   getSupplierShipping,
   insertSupplierInteraction,
-  purchaseOrderFundsGate
+  type PurchaseOrderForceDeleteReceipt,
+  purchaseOrderFundsGate,
+  restorePurchaseOrderReceived,
+  reverseReceiptsByAdjustment
 } from "~/modules/purchasing/purchasing.service";
 import {
+  deleteSalesInvoiceReleasingRentals,
   getCustomer,
   getCustomerContact,
   getCustomerLocation,
@@ -214,11 +239,16 @@ import {
 } from "~/modules/sales/sales.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import {
+  type ForceDeleteDocumentType,
+  forceDeleteNotificationId
+} from "~/modules/shared/shared.models";
+import {
   type AverageCostChange,
   allocateJournalLineIds,
   applyAverageCostChanges,
   assertNoMigrationClearing,
   assertPostable,
+  bookAdjustment,
   calculateCOGS,
   copyJournalLineDimensions,
   documentJournalLines,
@@ -226,6 +256,7 @@ import {
   getCompanyTimeZone as getCachedCompanyTimeZone,
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
+  INVENTORY_VOID_BEFORE_CUTOVER_ERROR,
   type JournalLineDimensionValues,
   journalLineDimensionRows,
   loadContractPositions,
@@ -281,6 +312,7 @@ import {
   type DepositDocument,
   isPurchaseInvoiceLocked,
   isSalesInvoiceLocked,
+  paymentJournalDifference,
   type stripeCustomerActions
 } from "./invoicing.models";
 import {
@@ -13436,7 +13468,10 @@ export function postPaymentTransaction(
               .onRef("journal.companyId", "=", "journalLine.companyId")
           )
           .selectAll("journalLine")
-          .where("journalLine.journalId", "=", payment.journalId)
+          // Every journal line of the payment: its posting, and any unapply
+          // a force delete posted since (`unapplyForceDeleteSettlements`).
+          .where("journalLine.documentType", "=", "Payment")
+          .where("journalLine.documentId", "=", paymentId)
           .where("journalLine.companyId", "=", companyId)
           .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
           .orderBy("journalLine.id")
@@ -18400,4 +18435,2119 @@ export async function postPurchaseInvoice(
     }
     throw err;
   }
+}
+
+// ─── Admin force delete: invoices, receipts and payments ───
+//
+// The building blocks of `requestDocumentForceDelete` and
+// `decideDocumentForceDelete` (invoicing.server.ts). Approving voids a posted
+// document through its own void, then deletes it here, in the approval's
+// transaction.
+
+/** A document a force delete names, as it is now. */
+export type ForceDeleteDocument = {
+  documentType: ForceDeleteDocumentType;
+  id: string;
+  readableId: string;
+  status: string;
+  /**
+   * What approving does first: `void` it (it is posted), `delete` it straight
+   * away (Draft or Voided), or refuse while it is `busy` being posted.
+   */
+  step: "void" | "delete" | "busy";
+  /** When it was posted (null while Draft); decides the cutover side. */
+  postingDate: string | null;
+  /** Receipt only: where it came from, and whether a purchase invoice made it. */
+  sourceDocument?: string | null;
+  sourceDocumentId?: string | null;
+  invoiced?: boolean;
+};
+
+function forceDeleteStep(
+  status: string,
+  { busy = [] }: { busy?: string[] } = {}
+): ForceDeleteDocument["step"] {
+  if (status === "Draft" || status === "Voided") return "delete";
+  if (busy.includes(status)) return "busy";
+  return "void";
+}
+
+/**
+ * The document, or null when it is not the company's. `lock` takes it FOR
+ * UPDATE, so it cannot be posted or voided under the approval.
+ */
+export async function getForceDeleteDocument(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    documentType,
+    documentId,
+    lock = false
+  }: {
+    companyId: string;
+    documentType: ForceDeleteDocumentType;
+    documentId: string;
+    lock?: boolean;
+  }
+): Promise<ForceDeleteDocument | null> {
+  switch (documentType) {
+    case "purchaseInvoice": {
+      const query = db
+        .selectFrom("purchaseInvoice")
+        .select(["id", "invoiceId", "status", "postingDate"])
+        .where("id", "=", documentId)
+        .where("companyId", "=", companyId);
+      const row = await (lock ? query.forUpdate() : query).executeTakeFirst();
+      if (!row) return null;
+      return {
+        documentType,
+        id: row.id,
+        readableId: row.invoiceId ?? row.id,
+        status: row.status,
+        postingDate: row.postingDate ? String(row.postingDate) : null,
+        step: forceDeleteStep(row.status, { busy: ["Pending"] })
+      };
+    }
+    case "salesInvoice": {
+      const query = db
+        .selectFrom("salesInvoice")
+        .select(["id", "invoiceId", "status", "postingDate"])
+        .where("id", "=", documentId)
+        .where("companyId", "=", companyId);
+      const row = await (lock ? query.forUpdate() : query).executeTakeFirst();
+      if (!row) return null;
+      return {
+        documentType,
+        id: row.id,
+        readableId: row.invoiceId ?? row.id,
+        status: row.status,
+        postingDate: row.postingDate ? String(row.postingDate) : null,
+        step: forceDeleteStep(row.status, { busy: ["Pending"] })
+      };
+    }
+    case "receipt": {
+      const query = db
+        .selectFrom("receipt")
+        .select([
+          "id",
+          "receiptId",
+          "status",
+          "postingDate",
+          "sourceDocument",
+          "sourceDocumentId",
+          "invoiced"
+        ])
+        .where("id", "=", documentId)
+        .where("companyId", "=", companyId);
+      const row = await (lock ? query.forUpdate() : query).executeTakeFirst();
+      if (!row) return null;
+      return {
+        documentType,
+        id: row.id,
+        readableId: row.receiptId ?? row.id,
+        status: row.status,
+        postingDate: row.postingDate ? String(row.postingDate) : null,
+        step: forceDeleteStep(row.status, { busy: ["Pending"] }),
+        sourceDocument: row.sourceDocument ?? null,
+        sourceDocumentId: row.sourceDocumentId ?? null,
+        invoiced: !!row.invoiced
+      };
+    }
+    case "payment": {
+      const query = db
+        .selectFrom("payment")
+        .select(["id", "paymentId", "status", "postingDate"])
+        .where("id", "=", documentId)
+        .where("companyId", "=", companyId);
+      const row = await (lock ? query.forUpdate() : query).executeTakeFirst();
+      if (!row) return null;
+      return {
+        documentType,
+        id: row.id,
+        readableId: row.paymentId ?? row.id,
+        status: row.status,
+        postingDate: row.postingDate ? String(row.postingDate) : null,
+        step: forceDeleteStep(row.status)
+      };
+    }
+  }
+}
+
+/**
+ * Why the document cannot be force deleted right now, or null. Force delete
+ * is the emergency override: it unapplies what is applied to the document,
+ * voids it, and reverses it by journal when the void refuses, so the only
+ * refusal is a document still being posted.
+ */
+export async function getForceDeleteRefusal(
+  _db: Kysely<KyselyDatabase> | KyselyTx,
+  { document }: { companyId: string; document: ForceDeleteDocument }
+): Promise<string | null> {
+  if (document.step === "busy") {
+    return `${document.readableId} is being posted. Try again in a moment.`;
+  }
+  return null;
+}
+
+function forceDeleteReceipt(
+  document: ForceDeleteDocument
+): PurchaseOrderForceDeleteReceipt {
+  return {
+    id: document.id,
+    readableId: document.readableId,
+    status: document.status as PurchaseOrderForceDeleteReceipt["status"],
+    postingDate: document.postingDate
+  };
+}
+
+/** A payment or memo applied to (or drawing on) a force deleted document. */
+export type ForceDeleteSettlement = {
+  id: string;
+  paymentId: string | null;
+  memoId: string | null;
+  /** The payment's or memo's number. */
+  readableId: string;
+  status: string;
+};
+
+/**
+ * What a force delete unapplies before it voids the document:
+ * - an invoice: every payment and memo applied to it;
+ * - a payment: every other payment's application that draws on it (its
+ *   credit or deposit funds them, or it is a refund's target).
+ * The payments themselves stay as they are, Posted ones as unapplied credit.
+ */
+export async function getForceDeleteSettlements(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  { companyId, document }: { companyId: string; document: ForceDeleteDocument }
+): Promise<ForceDeleteSettlement[]> {
+  if (document.documentType === "receipt") return [];
+  const rows = await db
+    .selectFrom("invoiceSettlement as s")
+    .leftJoin("payment as p", (join) =>
+      join
+        .onRef("p.id", "=", "s.paymentId")
+        .onRef("p.companyId", "=", "s.companyId")
+    )
+    .leftJoin("memo as m", (join) =>
+      join
+        .onRef("m.id", "=", "s.memoId")
+        .onRef("m.companyId", "=", "s.companyId")
+    )
+    .select([
+      "s.id",
+      "s.paymentId",
+      "s.memoId",
+      "p.paymentId as paymentReadableId",
+      "p.status as paymentStatus",
+      "m.memoId as memoReadableId",
+      "m.status as memoStatus"
+    ])
+    .where("s.companyId", "=", companyId)
+    .where((eb) =>
+      document.documentType === "purchaseInvoice"
+        ? eb("s.targetPurchaseInvoiceId", "=", document.id)
+        : document.documentType === "salesInvoice"
+          ? eb("s.targetSalesInvoiceId", "=", document.id)
+          : eb.and([
+              eb.or([
+                eb("s.sourcePaymentId", "=", document.id),
+                eb("s.targetPaymentId", "=", document.id)
+              ]),
+              eb.or([
+                eb("s.paymentId", "is", null),
+                eb("s.paymentId", "<>", document.id)
+              ])
+            ])
+    )
+    .orderBy("s.id")
+    .execute();
+  return rows.map((row) => ({
+    id: row.id,
+    paymentId: row.paymentId,
+    memoId: row.memoId,
+    readableId:
+      (row.paymentId ? row.paymentReadableId : row.memoReadableId) ?? row.id,
+    status: (row.paymentId ? row.paymentStatus : row.memoStatus) ?? "Unknown"
+  }));
+}
+
+/**
+ * Unapplies the document's settlements (`getForceDeleteSettlements`), in
+ * its own transaction, before the force delete voids the document: a
+ * payment's void refuses while others draw on it, and an invoice's paid
+ * share must leave its payments first.
+ *
+ * A Posted payment's journal is a function of the payment and its
+ * settlements (`buildPaymentJournal`), so the unapply builds it again with
+ * the settlements and without them, and posts the difference today: the
+ * invoice's control, discount, write-off and FX lines come off and the cash
+ * goes back to the payment's unapplied (on-account or deposit) credit. A
+ * later void of the payment reverses every journal line of the payment,
+ * this one too. Memo applications book no journal, and a Draft or Voided
+ * payment's rows are only removed.
+ *
+ * Sets `app.force_delete` so the advance-application guard
+ * (`prevent_invalid_deposit_refund`) lets the rows go.
+ */
+export async function unapplyForceDeleteSettlements(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    document,
+    accounting
+  }: {
+    companyId: string;
+    userId: string;
+    document: ForceDeleteDocument;
+    accounting: ForceDeleteReversalAccounting;
+  }
+): Promise<ForceDeleteSettlement[]> {
+  return withTransaction(db, async (trx) => {
+    const settlements = await getForceDeleteSettlements(trx, {
+      companyId,
+      document
+    });
+    if (settlements.length === 0) return [];
+    await sql`SELECT set_config('app.force_delete', 'on', true)`.execute(trx);
+    const { postingStatus, accountingPeriodId } = accounting.accounting;
+    await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+
+    const paymentIds = [
+      ...new Set(settlements.flatMap((row) => row.paymentId ?? []))
+    ];
+    const payments =
+      paymentIds.length === 0
+        ? []
+        : await trx
+            .selectFrom("payment")
+            .selectAll()
+            .where("companyId", "=", companyId)
+            .where("id", "in", paymentIds)
+            .where("status", "=", "Posted")
+            .orderBy("id")
+            .forUpdate()
+            .execute();
+
+    for (const payment of payments) {
+      const ids = settlements
+        .filter((row) => row.paymentId === payment.id)
+        .map((row) => row.id);
+      const before = await rebuildPaymentJournal(
+        trx,
+        payment,
+        companyId,
+        postingStatus
+      );
+      await trx
+        .deleteFrom("invoiceSettlement")
+        .where("companyId", "=", companyId)
+        .where("id", "in", ids)
+        .execute();
+      const after = await rebuildPaymentJournal(
+        trx,
+        payment,
+        companyId,
+        postingStatus
+      );
+      const difference = paymentJournalDifference(before.lines, after.lines);
+      if (difference.length === 0) continue;
+
+      const journal = await trx
+        .insertInto("journal")
+        .values({
+          journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
+          accountingPeriodId,
+          description: `Unapply Payment ${payment.paymentId} (force delete of ${document.readableId})`,
+          postingDate: accounting.today,
+          companyId,
+          sourceType: "Payment",
+          status: postingStatus,
+          postedAt: datetime.timestamp(),
+          postedBy: userId,
+          createdBy: userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const lines = await trx
+        .insertInto("journalLine")
+        .values(
+          difference.map((line) => ({
+            journalId: journal.id,
+            accountId: line.accountId,
+            amount: line.amount,
+            quantity: 1,
+            description: line.description,
+            documentType: "Payment" as const,
+            documentId: payment.id,
+            documentLineReference: line.documentLineReference ?? null,
+            journalLineReference: line.journalLineReference,
+            accountDefaultRole: line.accountDefaultRole,
+            companyId
+          }))
+        )
+        .returning("id")
+        .execute();
+      const dimensions = after.dimensions.flatMap((dimension) =>
+        lines.map((line) => ({
+          journalLineId: line.id,
+          ...dimension,
+          companyId
+        }))
+      );
+      if (dimensions.length) {
+        await trx
+          .insertInto("journalLineDimension")
+          .values(dimensions)
+          .execute();
+      }
+    }
+
+    // Memo applications, and those of Draft or Voided payments: no journal.
+    await trx
+      .deleteFrom("invoiceSettlement")
+      .where("companyId", "=", companyId)
+      .where(
+        "id",
+        "in",
+        settlements.map((row) => row.id)
+      )
+      .execute();
+    return settlements;
+  });
+}
+
+/**
+ * Voids a posted document through its own void, in its own posting (each
+ * opens its own transaction, so this runs before the approval's). `refusal`
+ * is the void's refusal, in words for the person. `adjustOut` is a receipt
+ * from a purchase order whose void refused only because its stock was moved
+ * since, or because it predates the accounting cutover: the approval adjusts
+ * its stock out instead (`deleteForceDeleteDocument`), as a purchase order
+ * force delete does.
+ */
+export async function voidForceDeleteDocument(
+  ctx: ServiceContext,
+  document: ForceDeleteDocument
+): Promise<
+  | { refusal: null; adjustOut: boolean }
+  | { refusal: string; adjustOut: false; internal?: unknown }
+> {
+  const voided =
+    document.documentType === "purchaseInvoice"
+      ? await invokePosting(
+          ctx,
+          "post-purchase-invoice",
+          { type: "void" as const, invoiceId: document.id },
+          postPurchaseInvoice
+        )
+      : document.documentType === "salesInvoice"
+        ? await invokePosting(
+            ctx,
+            "post-sales-invoice",
+            { type: "void" as const, invoiceId: document.id },
+            postSalesInvoice
+          )
+        : document.documentType === "payment"
+          ? await invokePosting(
+              ctx,
+              "post-payment",
+              { type: "void" as const, paymentId: document.id },
+              postPayment
+            )
+          : await invokePosting(
+              ctx,
+              "post-receipt",
+              { type: "void" as const, receiptId: document.id },
+              postReceipt
+            );
+  if (!voided.error) return { refusal: null, adjustOut: false };
+  if (
+    document.documentType === "receipt" &&
+    document.sourceDocument === "Purchase Order" &&
+    (voided.error.message === INVENTORY_VOID_BEFORE_CUTOVER_ERROR ||
+      voided.error.message === RECEIPT_VOID_STOCK_MOVED_ERROR)
+  ) {
+    return { refusal: null, adjustOut: true };
+  }
+  if (voided.error.status >= 500) {
+    return {
+      refusal: `${document.readableId} could not be voided: ${voided.error.message}`,
+      adjustOut: false,
+      internal: voided.error
+    };
+  }
+  return {
+    refusal: `${document.readableId} could not be voided: ${voided.error.message}`,
+    adjustOut: false
+  };
+}
+
+/**
+ * Deletes the document inside the approval's transaction, which holds it
+ * locked. It must be Draft or Voided by now, except a purchase order
+ * receipt its void left for adjusting out (`reversal` set): that is reversed
+ * here first (`reverseReceiptsByAdjustment`), and what it received is given
+ * back to its order (`restorePurchaseOrderReceived`).
+ *
+ * Sets `app.force_delete` for the transaction, so the Draft-only delete
+ * guards of the invoices step aside. Removes what still names the document
+ * and counts for nothing: settlements of Voided payments and memos, and the
+ * receipts a voided purchase invoice created (marked Voided: its void
+ * reversed their stock).
+ *
+ * Throws `InvalidInputError` when the document is no longer in a state the
+ * delete can take.
+ */
+export async function deleteForceDeleteDocument(
+  trx: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    document,
+    reversal,
+    reversedByJournal = false
+  }: {
+    companyId: string;
+    userId: string;
+    document: ForceDeleteDocument;
+    /** A purchase order receipt the void left for adjusting out. */
+    reversal: ForceDeleteReversalAccounting | null;
+    /** `reverseDocumentByJournal` already took its postings back. */
+    reversedByJournal?: boolean;
+  }
+): Promise<void> {
+  const { documentType } = document;
+  const adjustOut =
+    documentType === "receipt" &&
+    document.status === "Posted" &&
+    reversal !== null &&
+    !reversedByJournal;
+  if (document.step !== "delete" && !adjustOut && !reversedByJournal) {
+    throw new InvalidInputError(
+      `${document.readableId} is ${document.status}: it was not voided`
+    );
+  }
+
+  await sql`SELECT set_config('app.force_delete', 'on', true)`.execute(trx);
+  const now = datetime.timestamp();
+
+  switch (documentType) {
+    case "purchaseInvoice": {
+      await trx
+        .deleteFrom("invoiceSettlement")
+        .where("companyId", "=", companyId)
+        .where("targetPurchaseInvoiceId", "=", document.id)
+        .execute();
+      await trx
+        .updateTable("receipt")
+        .set({ status: "Voided", updatedBy: userId, updatedAt: now })
+        .where("companyId", "=", companyId)
+        .where("sourceDocument", "=", "Purchase Invoice")
+        .where("sourceDocumentId", "=", document.id)
+        .where("status", "=", "Posted")
+        .execute();
+      await deletePurchaseInvoiceReleasingLeases(trx, {
+        companyId,
+        invoiceId: document.id,
+        userId,
+        voided: true
+      });
+      return;
+    }
+    case "salesInvoice": {
+      await trx
+        .deleteFrom("invoiceSettlement")
+        .where("companyId", "=", companyId)
+        .where("targetSalesInvoiceId", "=", document.id)
+        .execute();
+      await deleteSalesInvoiceReleasingRentals(trx, {
+        companyId,
+        invoiceId: document.id,
+        userId,
+        voided: true
+      });
+      return;
+    }
+    case "payment": {
+      // Its own settlements cascade; rows of other (Voided) payments that
+      // name it as their source or target are removed first.
+      await trx
+        .deleteFrom("invoiceSettlement")
+        .where("companyId", "=", companyId)
+        .where((eb) =>
+          eb.or([
+            eb("sourcePaymentId", "=", document.id),
+            eb("targetPaymentId", "=", document.id)
+          ])
+        )
+        .execute();
+      await trx
+        .deleteFrom("payment")
+        .where("id", "=", document.id)
+        .where("companyId", "=", companyId)
+        .execute();
+      return;
+    }
+    case "receipt": {
+      if (adjustOut && reversal) {
+        const purchaseOrderId = document.sourceDocumentId;
+        if (!purchaseOrderId) {
+          throw new InvalidInputError(
+            `${document.readableId} names no purchase order`
+          );
+        }
+        const order = await trx
+          .selectFrom("purchaseOrder")
+          .select("purchaseOrderId")
+          .where("id", "=", purchaseOrderId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        const receipt = forceDeleteReceipt(document);
+        const reversible = await forceDeleteReceiptRefusal(trx, {
+          companyId,
+          receipts: [receipt],
+          afterVoid: true
+        });
+        if (reversible.refusal !== null) {
+          // Its stock was used, or it issued to a project or received an
+          // asset: no plan finds the stock, so it is reversed by journal.
+          await reverseDocumentByJournal(trx, {
+            companyId,
+            userId,
+            document,
+            reversal
+          });
+          await trx
+            .deleteFrom("receipt")
+            .where("id", "=", document.id)
+            .where("companyId", "=", companyId)
+            .execute();
+          return;
+        }
+        await reverseReceiptsByAdjustment(trx, {
+          companyId,
+          userId,
+          purchaseOrderId,
+          purchaseOrderReadableId: order?.purchaseOrderId ?? purchaseOrderId,
+          receipts: [receipt],
+          removals: reversible.plan.removals,
+          reversal
+        });
+        await restorePurchaseOrderReceived(trx, {
+          companyId,
+          userId,
+          receiptId: document.id,
+          purchaseOrderId
+        });
+      }
+      await trx
+        .deleteFrom("receipt")
+        .where("id", "=", document.id)
+        .where("companyId", "=", companyId)
+        .execute();
+      return;
+    }
+  }
+}
+
+/**
+ * Claims a Pending request for `userId`'s approval (status Approving), so a
+ * cancel or reject cannot run while its void commits. A claim the same Admin
+ * left, or one older than ten minutes (a failed approval that never released
+ * it), is taken again. Returns false when the request is not claimable; the
+ * caller reads it again for the reason.
+ */
+export async function claimForceDeleteRequest(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    requestId,
+    documentType,
+    userId
+  }: {
+    companyId: string;
+    requestId: string;
+    documentType: ForceDeleteDocumentType;
+    userId: string;
+  }
+): Promise<boolean> {
+  const claimed = await db
+    .updateTable("forceDeleteRequest")
+    .set({
+      status: "Approving",
+      decidedBy: userId,
+      decidedAt: sql`now()`,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("documentType", "=", documentType)
+    .where("requestedBy", "<>", userId)
+    .where((eb) =>
+      eb.or([
+        eb("status", "=", "Pending"),
+        eb.and([
+          eb("status", "=", "Approving"),
+          eb.or([
+            eb("decidedBy", "=", userId),
+            eb("decidedAt", "<", sql<string>`now() - interval '10 minutes'`)
+          ])
+        ])
+      ])
+    )
+    .returning("id")
+    .executeTakeFirst();
+  return !!claimed;
+}
+
+/**
+ * Gives back a claim left for more than ten minutes (an approval that
+ * stopped), so the request can be cancelled, rejected or approved again.
+ */
+export async function releaseExpiredForceDeleteClaim(
+  db: Kysely<KyselyDatabase>,
+  { companyId, requestId }: { companyId: string; requestId: string }
+): Promise<void> {
+  await db
+    .updateTable("forceDeleteRequest")
+    .set({ status: "Pending", decidedBy: null, decidedAt: null })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Approving")
+    .where("decidedAt", "<", sql<string>`now() - interval '10 minutes'`)
+    .execute();
+}
+
+/** Gives a claim back (Pending) after the approval refused or failed. */
+export async function releaseForceDeleteClaim(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    requestId,
+    userId
+  }: { companyId: string; requestId: string; userId: string }
+): Promise<void> {
+  await db
+    .updateTable("forceDeleteRequest")
+    .set({
+      status: "Pending",
+      decidedBy: null,
+      decidedAt: null,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Approving")
+    .where("decidedBy", "=", userId)
+    .execute();
+}
+
+/** A document's open force delete request, for its page. */
+export type DocumentForceDeleteRequest = {
+  id: string;
+  /** Pending, or Approving while an Admin's approval runs. */
+  status: string;
+  /**
+   * An Approving claim older than ten minutes: its approval stopped, and
+   * any other Admin may approve again (`claimForceDeleteRequest`).
+   */
+  claimExpired: boolean;
+  reason: string;
+  requestedBy: string;
+  requestedAt: string;
+  documentStatus: string;
+};
+
+export async function getPendingForceDeleteRequest(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    documentType,
+    documentId
+  }: {
+    companyId: string;
+    documentType: ForceDeleteDocumentType;
+    documentId: string;
+  }
+): Promise<DocumentForceDeleteRequest | null> {
+  const request = await db
+    .selectFrom("forceDeleteRequest")
+    .select([
+      "id",
+      "status",
+      "reason",
+      "requestedBy",
+      "requestedAt",
+      "documentStatus",
+      sql<boolean>`coalesce("decidedAt" < now() - interval '10 minutes', false)`.as(
+        "claimExpired"
+      )
+    ])
+    .where("companyId", "=", companyId)
+    .where("documentType", "=", documentType)
+    .where("documentId", "=", documentId)
+    .where("status", "in", ["Pending", "Approving"])
+    .executeTakeFirst();
+  return request
+    ? { ...request, requestedAt: String(request.requestedAt) }
+    : null;
+}
+
+/**
+ * Tells about a document force delete: `Requested` goes to every Admin but
+ * the one who asked; `Approved` / `Rejected` go to the one who asked. Never
+ * throws.
+ */
+export async function notifyDocumentForceDelete(
+  ctx: ServiceContext,
+  {
+    event,
+    documentType,
+    documentId,
+    requestId,
+    requestedBy
+  }: {
+    event: "Requested" | "Approved" | "Rejected";
+    documentType: ForceDeleteDocumentType;
+    documentId: string;
+    requestId: string;
+    requestedBy: string;
+  }
+) {
+  const companyId = ctx.company.id;
+  try {
+    const userIds =
+      event === "Requested"
+        ? (await getCompanyAdminIds(ctx.asSystem.pg, companyId)).filter(
+            (id) => id !== requestedBy
+          )
+        : requestedBy === ctx.auditUserId
+          ? []
+          : [requestedBy];
+    if (userIds.length === 0) return;
+    await trigger("notify", {
+      event:
+        event === "Requested"
+          ? NotificationEvent.ApprovalRequested
+          : event === "Approved"
+            ? NotificationEvent.ApprovalApproved
+            : NotificationEvent.ApprovalRejected,
+      companyId,
+      documentId: forceDeleteNotificationId(
+        documentType,
+        documentId,
+        requestId
+      ),
+      documentType: "documentForceDelete",
+      recipient: { type: "users", userIds },
+      from: ctx.auditUserId
+    });
+  } catch (e) {
+    logger.error("Failed to notify about a force delete", { error: e });
+  }
+}
+
+/** Best-effort: a failed audit write never undoes the override. */
+export async function auditDocumentForceDelete(
+  ctx: ServiceContext,
+  entry: {
+    documentType: ForceDeleteDocumentType;
+    documentId: string;
+    requestId: string;
+    operation: "INSERT" | "UPDATE" | "DELETE";
+    diff: Record<string, { old: unknown; new: unknown }>;
+  }
+) {
+  try {
+    await insertAuditLogEntries(ctx.asSystem.supabase, ctx.company.id, [
+      {
+        tableName: "forceDeleteRequest",
+        entityType: entry.documentType,
+        entityId: entry.documentId,
+        recordId: entry.requestId,
+        operation: entry.operation,
+        actorId: ctx.auditUserId,
+        diff: entry.diff
+      }
+    ]);
+  } catch (err) {
+    logger.warn("audit write skipped for a force delete", { error: err });
+  }
+}
+
+/**
+ * What a document's page loads for the force delete override: whether the
+ * user is an Admin (who sees the menu item) and the open request (the
+ * banner).
+ */
+export async function getDocumentForceDeleteData(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    documentType: ForceDeleteDocumentType;
+    documentId: string;
+  }
+): Promise<{
+  isAdmin: boolean;
+  forceDeleteRequest: DocumentForceDeleteRequest | null;
+}> {
+  // The override is an extra on the page: a failed lookup leaves it off
+  // rather than failing the document's page.
+  try {
+    const [isAdmin, forceDeleteRequest] = await Promise.all([
+      isCompanyAdmin(client, args.companyId, args.userId),
+      getPendingForceDeleteRequest(db, args)
+    ]);
+    return { isAdmin, forceDeleteRequest };
+  } catch (error) {
+    logger.error("Failed to load the force delete override", {
+      documentType: args.documentType,
+      documentId: args.documentId,
+      error
+    });
+    return { isAdmin: false, forceDeleteRequest: null };
+  }
+}
+
+// ─── Force delete: reverse by journal (the void refused) ───
+
+/** The journal source type a document's force delete reversal posts under. */
+const FORCE_DELETE_SOURCE_TYPE = {
+  purchaseInvoice: "Purchase Invoice",
+  salesInvoice: "Sales Invoice",
+  receipt: "Purchase Receipt",
+  payment: "Payment"
+} as const;
+
+/**
+ * The journal source types of a document's own postings. Whole journals are
+ * negated only when they are one of these: the Opening Balance journal also
+ * carries a pre-cutover document's open lines, beside every other document's,
+ * and only the document's own lines of it are taken back
+ * (`reverseBeforeCutover`).
+ */
+const FORCE_DELETE_OWN_SOURCE_TYPES: Record<
+  ForceDeleteDocumentType,
+  Database["public"]["Enums"]["journalEntrySourceType"][]
+> = {
+  purchaseInvoice: ["Purchase Invoice"],
+  salesInvoice: ["Sales Invoice"],
+  receipt: ["Purchase Receipt", "Sales Return Receipt"],
+  payment: ["Payment"]
+};
+
+/** The journal line document types a document's own postings carry. */
+const FORCE_DELETE_JOURNAL_DOCUMENT_TYPES: Record<
+  ForceDeleteDocumentType,
+  Database["public"]["Enums"]["journalLineDocumentType"][]
+> = {
+  purchaseInvoice: ["Invoice", "Purchase Invoice"],
+  salesInvoice: ["Invoice"],
+  receipt: ["Receipt", "Purchase Receipt"],
+  payment: ["Payment"]
+};
+
+/**
+ * Takes a posted document's postings back when its own void refused (a
+ * partial inspection, a credit memo on its return, stock used since, a
+ * capitalized asset, the accounting cutover), inside the force delete's
+ * transaction, so the document can be deleted:
+ *
+ * 1. One journal, today, negates every line of every journal that carries
+ *    the document's lines (its posting, and for a payment any unapply).
+ *    Before the cutover there are none (the opening balance carries the
+ *    document): an invoice writes its open amount off to the customer or
+ *    supplier write-off account, a payment negates its posting built again.
+ * 2. Stock the document (and its inspections) moved is moved back by
+ *    adjustment, even below zero, into the same journal against inventory
+ *    adjustment variance. The negated journal already took the stock's
+ *    original value off inventory, so that value is added back per item
+ *    (the document's cost ledger), leaving inventory at the carrying value
+ *    actually relieved and the difference in variance. Its inspections are
+ *    cancelled, Put Aways removed and serials/batches drained, as a void
+ *    does.
+ * 3. What the document gave its source comes back: a purchase order's
+ *    received or invoiced quantities and status; a capitalized asset's
+ *    value from this invoice moves back out of the asset account
+ *    (acquisition cost lowered, its CIP rows removed).
+ * 4. The document is marked Voided, for the delete that follows.
+ */
+export async function reverseDocumentByJournal(
+  trx: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    document,
+    reversal
+  }: {
+    companyId: string;
+    userId: string;
+    document: ForceDeleteDocument;
+    reversal: ForceDeleteReversalAccounting;
+  }
+): Promise<void> {
+  await withTransaction(trx, async (tx) => {
+    const { today, cutoverDate } = reversal;
+    const { postingStatus, accountingPeriodId } = reversal.accounting;
+    await assertPostingStatusUnchanged(tx, companyId, postingStatus);
+    const description = `FORCE DELETE ${document.readableId}`;
+
+    let journalId: string | null = null;
+    const getJournalId = async () => {
+      if (journalId) return journalId;
+      const journal = await tx
+        .insertInto("journal")
+        .values({
+          journalEntryId: await getNextSequence(tx, "journalEntry", companyId),
+          accountingPeriodId,
+          description,
+          postingDate: today,
+          companyId,
+          sourceType: FORCE_DELETE_SOURCE_TYPE[document.documentType],
+          status: postingStatus,
+          postedAt: datetime.timestamp(),
+          postedBy: userId,
+          createdBy: userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      journalId = journal.id;
+      return journalId;
+    };
+
+    const beforeCutover =
+      !!document.postingDate &&
+      isBeforeCutover(document.postingDate, cutoverDate);
+
+    // 1. The document's postings, negated. A payment from before the cutover
+    // is negated from its posting built again (`reverseBeforeCutover`), which
+    // already reflects any unapply since, so its journals are not read.
+    const originals =
+      document.documentType === "payment" && beforeCutover
+        ? []
+        : await tx
+            .selectFrom("journalLine")
+            .innerJoin("journal", (join) =>
+              join
+                .onRef("journal.id", "=", "journalLine.journalId")
+                .onRef("journal.companyId", "=", "journalLine.companyId")
+            )
+            .selectAll("journalLine")
+            .where("journalLine.companyId", "=", companyId)
+            .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+            .where(
+              "journal.sourceType",
+              "in",
+              FORCE_DELETE_OWN_SOURCE_TYPES[document.documentType]
+            )
+            .where("journalLine.journalId", "in", (eb) =>
+              eb
+                .selectFrom("journalLine as own")
+                .select("own.journalId")
+                .where("own.companyId", "=", companyId)
+                .where("own.documentId", "=", document.id)
+                .where(
+                  "own.documentType",
+                  "in",
+                  FORCE_DELETE_JOURNAL_DOCUMENT_TYPES[document.documentType]
+                )
+            )
+            .orderBy("journalLine.id")
+            .execute();
+
+    if (originals.length > 0) {
+      const id = await getJournalId();
+      const ids = await allocateJournalLineIds(tx as Trx, originals.length);
+      await tx
+        .insertInto("journalLine")
+        .values(
+          originals.map((line, index) => ({
+            id: ids[index]!,
+            journalId: id,
+            accountId: line.accountId,
+            accountDefaultRole: line.accountDefaultRole,
+            accrual: line.accrual,
+            amount: -Number(line.amount),
+            quantity: -Number(line.quantity ?? 0),
+            description: `FORCE DELETE: ${line.description ?? ""}`,
+            documentType: line.documentType,
+            documentId: line.documentId,
+            externalDocumentId: line.externalDocumentId,
+            documentLineReference: line.documentLineReference,
+            journalLineReference: line.journalLineReference,
+            companyId
+          }))
+        )
+        .execute();
+      await copyJournalLineDimensions(tx as Trx, {
+        companyId,
+        reversals: originals.map((line, index) => ({
+          originalLineId: line.id,
+          reversingLineId: ids[index]!
+        }))
+      });
+    }
+    if (beforeCutover) {
+      await reverseBeforeCutover(tx, {
+        companyId,
+        document,
+        getJournalId,
+        postingStatus,
+        varianceAccount:
+          reversal.accounting.accountDefaults.inventoryAdjustmentVarianceAccount
+      });
+    }
+
+    // 2. Stock.
+    await reverseDocumentStock(tx, {
+      companyId,
+      userId,
+      document,
+      reversal,
+      description,
+      getJournalId,
+      addBackOriginalValue: originals.length > 0
+    });
+
+    // 3. Sources.
+    if (
+      document.documentType === "receipt" &&
+      document.sourceDocument === "Purchase Order" &&
+      document.sourceDocumentId
+    ) {
+      await restorePurchaseOrderReceived(tx, {
+        companyId,
+        userId,
+        receiptId: document.id,
+        purchaseOrderId: document.sourceDocumentId
+      });
+    }
+    if (document.documentType === "salesInvoice") {
+      await restoreSalesOrderInvoiced(tx, {
+        companyId,
+        userId,
+        invoiceId: document.id
+      });
+    }
+    if (document.documentType === "purchaseInvoice") {
+      await restorePurchaseOrderInvoiced(tx, {
+        companyId,
+        userId,
+        invoiceId: document.id
+      });
+      await reverseCapitalizedCip(tx, {
+        companyId,
+        userId,
+        invoiceId: document.id,
+        getJournalId
+      });
+    }
+
+    // 4. Voided, for the delete.
+    const table = {
+      purchaseInvoice: "purchaseInvoice",
+      salesInvoice: "salesInvoice",
+      receipt: "receipt",
+      payment: "payment"
+    } as const;
+    await tx
+      .updateTable(table[document.documentType])
+      .set({
+        status: "Voided",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", document.id)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+}
+
+/** A line of the force delete journal, signed by its account's type. */
+async function accountTypes(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  companyId: string,
+  accountIds: string[]
+): Promise<Map<string, AccountType>> {
+  const ids = [...new Set(accountIds)];
+  if (ids.length === 0) return new Map();
+  const company = await db
+    .selectFrom("company")
+    .select("companyGroupId")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const rows = await db
+    .selectFrom("account")
+    .select(["id", "class"])
+    .where("companyGroupId", "=", company.companyGroupId as string)
+    .where("id", "in", ids)
+    .execute();
+  return new Map(
+    rows.flatMap((row) =>
+      row.class && isAccountClass(row.class)
+        ? [[row.id, accountTypeFromClass(row.class as AccountClass)] as const]
+        : []
+    )
+  );
+}
+
+/**
+ * A document from before the cutover: its own journal is Superseded and the
+ * Opening Balance journal carries what it left open, among every other
+ * document's balances. Only its own lines of that journal are negated (its
+ * open receivable or payable, deferred revenue, GR/IR...), and the difference
+ * goes to the customer or supplier write-off account (inventory adjustment
+ * variance for a receipt), as the write-off of what it left open. A payment
+ * negates its posting built again instead, as its void does.
+ */
+async function reverseBeforeCutover(
+  tx: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    document,
+    getJournalId,
+    postingStatus,
+    varianceAccount
+  }: {
+    companyId: string;
+    document: ForceDeleteDocument;
+    getJournalId: () => Promise<string>;
+    postingStatus: AutomaticJournalStatus;
+    varianceAccount: string;
+  }
+): Promise<void> {
+  if (document.documentType === "payment") {
+    const payment = await tx
+      .selectFrom("payment")
+      .selectAll()
+      .where("id", "=", document.id)
+      .where("companyId", "=", companyId)
+      .executeTakeFirstOrThrow();
+    const rebuilt = await rebuildPaymentJournal(
+      tx as Trx,
+      payment,
+      companyId,
+      postingStatus
+    );
+    if (rebuilt.lines.length === 0) return;
+    const id = await getJournalId();
+    await tx
+      .insertInto("journalLine")
+      .values(
+        rebuilt.lines.map((line) => ({
+          journalId: id,
+          accountId: line.accountId,
+          amount: -line.amount,
+          quantity: line.quantity,
+          description: `FORCE DELETE: ${line.description}`,
+          documentType: "Payment" as const,
+          documentId: document.id,
+          documentLineReference: line.documentLineReference ?? null,
+          journalLineReference: line.journalLineReference,
+          accountDefaultRole: line.accountDefaultRole,
+          companyId
+        }))
+      )
+      .execute();
+    return;
+  }
+
+  const opening = await tx
+    .selectFrom("journalLine")
+    .innerJoin("journal", (join) =>
+      join
+        .onRef("journal.id", "=", "journalLine.journalId")
+        .onRef("journal.companyId", "=", "journalLine.companyId")
+    )
+    .selectAll("journalLine")
+    .where("journalLine.companyId", "=", companyId)
+    .where("journalLine.documentId", "=", document.id)
+    .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+    .where("journal.sourceType", "=", "Opening Balance")
+    .orderBy("journalLine.id")
+    .execute();
+  if (opening.length === 0) return;
+
+  let offsetAccount = varianceAccount;
+  let offsetDescription = "Inventory Adjustment Variance Account";
+  if (document.documentType !== "receipt") {
+    const isSales = document.documentType === "salesInvoice";
+    const defaults = await tx
+      .selectFrom("accountDefault")
+      .select(["customerWriteOffAccount", "supplierWriteOffAccount"])
+      .where("companyId", "=", companyId)
+      .executeTakeFirstOrThrow();
+    const writeOff = isSales
+      ? defaults.customerWriteOffAccount
+      : defaults.supplierWriteOffAccount;
+    if (!writeOff) {
+      throw new InvalidInputError(
+        `Map the ${isSales ? "customer" : "supplier"} write-off account in the accounting defaults to force delete ${document.readableId}`
+      );
+    }
+    offsetAccount = writeOff;
+    offsetDescription = isSales
+      ? "Bad Debt Expense"
+      : "Vendor Write-Off Income";
+  }
+
+  const accountOf = (line: (typeof opening)[number]) => {
+    if (!line.accountId) {
+      throw new Error(`Opening balance line ${line.id} has no account`);
+    }
+    return line.accountId;
+  };
+  const types = await accountTypes(tx, companyId, [
+    ...opening.map(accountOf),
+    offsetAccount
+  ]);
+  const typeOf = (accountId: string) => {
+    const type = types.get(accountId);
+    if (!type) throw new Error(`Account ${accountId} has no class`);
+    return type;
+  };
+  // Debit-signed total of the negated lines; the offset takes the rest.
+  const debitTotal = opening.reduce(
+    (sum, line) => sum + debit(typeOf(accountOf(line)), -Number(line.amount)),
+    0
+  );
+  const offset = toBaseAmount(-debitTotal, 1);
+  const id = await getJournalId();
+  const journalLineReference = nanoid();
+  await tx
+    .insertInto("journalLine")
+    .values([
+      ...opening.map((line) => ({
+        journalId: id,
+        accountId: line.accountId,
+        accountDefaultRole: line.accountDefaultRole,
+        amount: -Number(line.amount),
+        quantity: -Number(line.quantity ?? 0),
+        description: `FORCE DELETE: ${line.description ?? ""}`,
+        documentType: line.documentType,
+        documentId: line.documentId,
+        documentLineReference: line.documentLineReference,
+        journalLineReference,
+        companyId
+      })),
+      ...(offset === 0
+        ? []
+        : [
+            {
+              journalId: id,
+              accountId: offsetAccount,
+              // `debit` turns a debit-signed value into the stored amount.
+              amount: debit(typeOf(offsetAccount), offset),
+              quantity: 1,
+              description: `FORCE DELETE: ${offsetDescription}`,
+              documentType: opening[0]!.documentType,
+              documentId: document.id,
+              journalLineReference,
+              companyId
+            }
+          ])
+    ])
+    .execute();
+}
+
+/**
+ * Moves back the stock the document moved (its own item ledger rows and,
+ * for a receipt, its inspections' transfers and write-offs), netted per
+ * item, location, storage unit, serial/batch and project, by adjustment into
+ * the force delete journal against inventory adjustment variance. A serial
+ * or batch no longer on hand moves untracked. With `addBackOriginalValue`
+ * (the document's posting was negated, taking its stock value off
+ * inventory) that value goes back per item from the document's cost ledger.
+ */
+async function reverseDocumentStock(
+  tx: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    document,
+    reversal,
+    description,
+    getJournalId,
+    addBackOriginalValue
+  }: {
+    companyId: string;
+    userId: string;
+    document: ForceDeleteDocument;
+    reversal: ForceDeleteReversalAccounting;
+    description: string;
+    getJournalId: () => Promise<string>;
+    addBackOriginalValue: boolean;
+  }
+): Promise<void> {
+  if (document.documentType === "payment") return;
+  const inspections =
+    document.documentType === "receipt"
+      ? await tx
+          .selectFrom("inspection")
+          .select("id")
+          .where("companyId", "=", companyId)
+          .where("sourceDocument", "=", "Receipt")
+          .where("sourceDocumentId", "=", document.id)
+          .execute()
+      : [];
+  const ledgerDocumentIds = [document.id, ...inspections.map((row) => row.id)];
+  const rows = await tx
+    .selectFrom("itemLedger")
+    .select([
+      "itemId",
+      "locationId",
+      "storageUnitId",
+      "trackedEntityId",
+      "projectId",
+      "documentType",
+      "quantity"
+    ])
+    .where("companyId", "=", companyId)
+    .where("documentId", "in", ledgerDocumentIds)
+    .execute();
+
+  await withInspectionRelease(tx as Trx, async () => {
+    if (document.documentType === "receipt") {
+      await removeUnpickedPutAways(tx as Trx, companyId, document.id);
+      await tx
+        .updateTable("inspection")
+        .set({
+          status: "Cancelled",
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("companyId", "=", companyId)
+        .where("sourceDocument", "=", "Receipt")
+        .where("sourceDocumentId", "=", document.id)
+        .where("status", "<>", "Cancelled")
+        .execute();
+    }
+    if (rows.length === 0) return;
+
+    const net = new Map<
+      string,
+      {
+        itemId: string;
+        locationId: string | null;
+        storageUnitId: string | null;
+        trackedEntityId: string | null;
+        projectId: string | null;
+        documentType: (typeof rows)[number]["documentType"];
+        quantity: number;
+      }
+    >();
+    for (const row of rows) {
+      const key = [
+        row.itemId,
+        row.locationId,
+        row.storageUnitId,
+        row.trackedEntityId,
+        row.projectId
+      ].join("|");
+      const entry = net.get(key) ?? {
+        itemId: row.itemId,
+        locationId: row.locationId ?? null,
+        storageUnitId: row.storageUnitId ?? null,
+        trackedEntityId: row.trackedEntityId ?? null,
+        projectId: row.projectId ?? null,
+        documentType: row.documentType,
+        quantity: 0
+      };
+      entry.quantity += Number(row.quantity);
+      net.set(key, entry);
+    }
+    const positions = [...net.values()].filter(
+      (position) => Math.abs(position.quantity) > 1e-9
+    );
+    const itemIds = [...new Set(rows.map((row) => row.itemId))];
+    const trackedIds = [
+      ...new Set(rows.flatMap((row) => row.trackedEntityId ?? []))
+    ];
+    const [items, itemCosts, entities] = await Promise.all([
+      tx
+        .selectFrom("item")
+        .select(["id", "itemTrackingType", "replenishmentSystem"])
+        .where("companyId", "=", companyId)
+        .where("id", "in", itemIds)
+        .execute(),
+      tx
+        .selectFrom("itemCost")
+        .select([
+          "itemId",
+          "costingMethod",
+          "unitCost",
+          "standardCost",
+          "itemPostingGroupId"
+        ])
+        .where("companyId", "=", companyId)
+        .where("itemId", "in", itemIds)
+        .execute(),
+      trackedIds.length === 0
+        ? Promise.resolve([])
+        : tx
+            .selectFrom("trackedEntity")
+            .select(["id", "status"])
+            .where("companyId", "=", companyId)
+            .where("id", "in", trackedIds)
+            .execute()
+    ]);
+    const gone = new Set(
+      entities
+        .filter((entity) =>
+          ["Consumed", "Scrapped"].includes(String(entity.status))
+        )
+        .map((entity) => entity.id)
+    );
+
+    for (const position of positions) {
+      const item = items.find((row) => row.id === position.itemId);
+      const itemCost = itemCosts.find((row) => row.itemId === position.itemId);
+      if (!item || !itemCost) {
+        throw new Error(`Item ${position.itemId} has no item or cost record`);
+      }
+      const quantity = -position.quantity;
+      await bookAdjustment(tx as Trx, {
+        ledger: {
+          postingDate: reversal.today,
+          itemId: position.itemId,
+          quantity,
+          locationId: position.locationId,
+          storageUnitId: position.storageUnitId,
+          trackedEntityId:
+            position.trackedEntityId && !gone.has(position.trackedEntityId)
+              ? position.trackedEntityId
+              : null,
+          entryType: quantity < 0 ? "Negative Adjmt." : "Positive Adjmt.",
+          documentId: document.id,
+          comment: description,
+          projectId: position.projectId,
+          companyId,
+          createdBy: userId
+        },
+        item: {
+          itemTrackingType: item.itemTrackingType,
+          replenishmentSystem: item.replenishmentSystem,
+          itemPostingGroupId: itemCost.itemPostingGroupId
+        },
+        itemCost: {
+          costingMethod: itemCost.costingMethod,
+          unitCost:
+            itemCost.unitCost === null ? null : Number(itemCost.unitCost),
+          standardCost:
+            itemCost.standardCost === null
+              ? null
+              : Number(itemCost.standardCost)
+        },
+        accounting: {
+          ...reversal.accounting,
+          offsetAccount: null,
+          description,
+          getJournalId
+        }
+      });
+    }
+
+    if (trackedIds.length > 0) {
+      await tx
+        .updateTable("trackedEntity")
+        .set({ quantity: 0, status: "Consumed" })
+        .where("companyId", "=", companyId)
+        .where("id", "in", trackedIds)
+        .where("status", "not in", ["Scrapped", "Rejected"])
+        .execute();
+      await tx
+        .updateTable("trackedEntity")
+        .set({ quantity: 0 })
+        .where("companyId", "=", companyId)
+        .where("id", "in", trackedIds)
+        .where("status", "in", ["Scrapped", "Rejected"])
+        .execute();
+    }
+
+    // The negated posting took the stock's original value off inventory; the
+    // adjustments took its carrying value off again. Add the original back.
+    if (addBackOriginalValue) {
+      const costs = await tx
+        .selectFrom("costLedger")
+        .select(["itemId", (eb) => eb.fn.sum<number>("cost").as("cost")])
+        .where("companyId", "=", companyId)
+        .where("documentId", "=", document.id)
+        .where("itemLedgerType", "<>", "Negative Adjmt.")
+        .where("itemLedgerType", "<>", "Positive Adjmt.")
+        .groupBy("itemId")
+        .execute();
+      const lines = costs.flatMap((row) => {
+        const value = toBaseAmount(Number(row.cost ?? 0), 1);
+        if (value === 0) return [];
+        const item = items.find((candidate) => candidate.id === row.itemId);
+        const inventory = resolveInventoryAccount(
+          item?.replenishmentSystem ?? null,
+          reversal.accounting.accountDefaults
+        );
+        const magnitude = Math.abs(value);
+        const inventorySide = value > 0 ? "debit" : "credit";
+        return [
+          {
+            accountId: inventory.account,
+            amount:
+              inventorySide === "debit"
+                ? debit("asset", magnitude)
+                : credit("asset", magnitude),
+            description: `FORCE DELETE: ${inventory.description}`
+          },
+          {
+            accountId:
+              reversal.accounting.accountDefaults
+                .inventoryAdjustmentVarianceAccount,
+            amount:
+              inventorySide === "debit"
+                ? credit("expense", magnitude)
+                : debit("expense", magnitude),
+            description: "FORCE DELETE: Inventory Adjustment Variance Account"
+          }
+        ];
+      });
+      if (lines.length > 0) {
+        const id = await getJournalId();
+        await tx
+          .insertInto("journalLine")
+          .values(
+            lines.map((line) => ({
+              journalLineReference: nanoid(),
+              ...line,
+              journalId: id,
+              quantity: 1,
+              documentType:
+                FORCE_DELETE_JOURNAL_DOCUMENT_TYPES[document.documentType][0]!,
+              documentId: document.id,
+              companyId
+            }))
+          )
+          .execute();
+      }
+    }
+  });
+  if (document.documentType === "receipt") {
+    await sql`SELECT public.refresh_receipt_inspection_status(${document.id})`.execute(
+      tx
+    );
+  }
+}
+
+/**
+ * Gives back to the purchase orders what a purchase invoice invoiced, as its
+ * void does: each line's `quantityInvoiced` drops by the invoice line's
+ * quantity and `invoicedComplete` follows the billable quantity; the order's
+ * status is set again while it is released.
+ */
+async function restorePurchaseOrderInvoiced(
+  tx: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    invoiceId
+  }: { companyId: string; userId: string; invoiceId: string }
+): Promise<void> {
+  const invoiceLines = await tx
+    .selectFrom("purchaseInvoiceLine")
+    .select(["purchaseOrderLineId", "quantity"])
+    .where("companyId", "=", companyId)
+    .where("invoiceId", "=", invoiceId)
+    .where("purchaseOrderLineId", "is not", null)
+    .execute();
+  if (invoiceLines.length === 0) return;
+  const orderLines = await tx
+    .selectFrom("purchaseOrderLine")
+    .selectAll()
+    .where("companyId", "=", companyId)
+    .where("purchaseOrderId", "in", (eb) =>
+      eb
+        .selectFrom("purchaseOrderLine as l")
+        .select("l.purchaseOrderId")
+        .where("l.companyId", "=", companyId)
+        .where(
+          "l.id",
+          "in",
+          invoiceLines.map((line) => line.purchaseOrderLineId as string)
+        )
+    )
+    .forUpdate()
+    .execute();
+  const invoicedByLine = new Map<string, number>();
+  for (const line of invoiceLines) {
+    const id = line.purchaseOrderLineId as string;
+    invoicedByLine.set(
+      id,
+      (invoicedByLine.get(id) ?? 0) + Number(line.quantity ?? 0)
+    );
+  }
+  const now = datetime.timestamp();
+  const updated = orderLines.map((line) => {
+    const invoiced = invoicedByLine.get(line.id);
+    if (invoiced === undefined) return line;
+    const quantityInvoiced = getInvoicedPurchaseQuantityAfterVoid(
+      Number(line.quantityInvoiced ?? 0),
+      invoiced
+    );
+    return {
+      ...line,
+      quantityInvoiced,
+      invoicedComplete: quantityInvoiced >= getBillableQuantity(line as never)
+    };
+  });
+  const changes = updated.filter((line) => invoicedByLine.has(line.id));
+  if (changes.length > 0) {
+    await updateRowsById(
+      tx as Kysely<KyselyDatabase>,
+      "purchaseOrderLine",
+      companyId,
+      changes.map((line) => ({
+        id: line.id,
+        data: {
+          quantityInvoiced: line.quantityInvoiced,
+          invoicedComplete: line.invoicedComplete,
+          updatedBy: userId,
+          updatedAt: now
+        }
+      }))
+    );
+  }
+  const orderIds = [...new Set(updated.map((line) => line.purchaseOrderId))];
+  for (const purchaseOrderId of orderIds) {
+    const status = purchaseOrderStatusAfterReversal(
+      updated
+        .filter((line) => line.purchaseOrderId === purchaseOrderId)
+        .map((line) => ({
+          purchaseOrderLineType: line.purchaseOrderLineType,
+          purchaseQuantity: Number(line.purchaseQuantity ?? 0),
+          quantityReceived: Number(line.quantityReceived ?? 0),
+          quantityInvoiced: Number(line.quantityInvoiced ?? 0)
+        }))
+    );
+    await tx
+      .updateTable("purchaseOrder")
+      .set({ status, updatedBy: userId, updatedAt: now })
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .where("status", "in", [...PURCHASE_ORDER_RELEASED_STATUSES])
+      .execute();
+  }
+}
+
+/**
+ * Gives back to the sales orders what a sales invoice invoiced, as its void
+ * does: each order line's `quantityInvoiced` drops by the invoice line's
+ * quantity, `invoicedComplete` follows, and the order's status is set again
+ * from its lines. The shipments the invoice created are Voided, and the
+ * order's shipments lose their invoiced flag while it is not fully invoiced.
+ */
+async function restoreSalesOrderInvoiced(
+  tx: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    invoiceId
+  }: { companyId: string; userId: string; invoiceId: string }
+): Promise<void> {
+  const now = datetime.timestamp();
+  const [invoice, invoiceLines] = await Promise.all([
+    tx
+      .selectFrom("salesInvoice")
+      .select("shipmentId")
+      .where("id", "=", invoiceId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst(),
+    tx
+      .selectFrom("salesInvoiceLine")
+      .select(["salesOrderLineId", "quantity"])
+      .where("companyId", "=", companyId)
+      .where("invoiceId", "=", invoiceId)
+      .where("salesOrderLineId", "is not", null)
+      .execute()
+  ]);
+
+  await tx
+    .updateTable("shipment")
+    .set({
+      status: "Voided",
+      invoiced: false,
+      updatedBy: userId,
+      updatedAt: now
+    })
+    .where("companyId", "=", companyId)
+    .where("sourceDocument", "=", "Sales Invoice")
+    .where("sourceDocumentId", "=", invoiceId)
+    .execute();
+  if (invoice?.shipmentId) {
+    await tx
+      .updateTable("shipment")
+      .set({ invoiced: false, updatedBy: userId, updatedAt: now })
+      .where("id", "=", invoice.shipmentId)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+  if (invoiceLines.length === 0) return;
+
+  const invoicedByLine = new Map<string, number>();
+  for (const line of invoiceLines) {
+    const id = line.salesOrderLineId as string;
+    invoicedByLine.set(
+      id,
+      (invoicedByLine.get(id) ?? 0) + Number(line.quantity ?? 0)
+    );
+  }
+  const orderLines = await tx
+    .selectFrom("salesOrderLine")
+    .selectAll()
+    .where("companyId", "=", companyId)
+    .where("salesOrderId", "in", (eb) =>
+      eb
+        .selectFrom("salesOrderLine as l")
+        .select("l.salesOrderId")
+        .where("l.companyId", "=", companyId)
+        .where("l.id", "in", [...invoicedByLine.keys()])
+    )
+    .forUpdate()
+    .execute();
+  const updated = orderLines.map((line) => {
+    const invoiced = invoicedByLine.get(line.id);
+    const saleQuantity = Number(line.saleQuantity ?? 0);
+    if (invoiced === undefined || saleQuantity <= 0) return line;
+    const quantityInvoiced = Math.max(
+      0,
+      Number(line.quantityInvoiced ?? 0) - invoiced
+    );
+    return {
+      ...line,
+      quantityInvoiced,
+      invoicedComplete: quantityInvoiced >= saleQuantity
+    };
+  });
+  const changes = updated.filter((line, index) => line !== orderLines[index]);
+  if (changes.length > 0) {
+    await updateRowsById(
+      tx as Kysely<KyselyDatabase>,
+      "salesOrderLine",
+      companyId,
+      changes.map((line) => ({
+        id: line.id,
+        data: {
+          quantityInvoiced: line.quantityInvoiced,
+          invoicedComplete: line.invoicedComplete,
+          updatedBy: userId,
+          updatedAt: now
+        }
+      }))
+    );
+  }
+  for (const salesOrderId of new Set(
+    changes.map((line) => line.salesOrderId)
+  )) {
+    const lines = updated.filter((line) => line.salesOrderId === salesOrderId);
+    const allInvoiced = lines.every(
+      (line) => line.salesOrderLineType === "Comment" || line.invoicedComplete
+    );
+    const allShipped = lines.every(
+      (line) =>
+        line.salesOrderLineType === "Comment" ||
+        line.salesOrderLineType === "Service" ||
+        line.sentComplete
+    );
+    const status: Database["public"]["Enums"]["salesOrderStatus"] =
+      allInvoiced && allShipped
+        ? "Completed"
+        : allInvoiced
+          ? "To Ship"
+          : allShipped
+            ? "To Invoice"
+            : "To Ship and Invoice";
+    if (!allInvoiced) {
+      await tx
+        .updateTable("shipment")
+        .set({ invoiced: false })
+        .where("sourceDocumentId", "=", salesOrderId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    await tx
+      .updateTable("salesOrder")
+      .set({ status, updatedBy: userId, updatedAt: now })
+      .where("id", "=", salesOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+}
+
+/**
+ * A purchase invoice's cost on a fixed asset: its CIP rows go and the
+ * asset's acquisition cost drops by them. For an asset capitalized since,
+ * that value moved from the CIP account into the asset account, so it moves
+ * back (Dr the account the invoice line debited, Cr the asset class's asset
+ * account), and the negated invoice posting then takes it off CIP.
+ * Depreciation already posted on it stays.
+ */
+async function reverseCapitalizedCip(
+  tx: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    invoiceId,
+    getJournalId
+  }: {
+    companyId: string;
+    userId: string;
+    invoiceId: string;
+    getJournalId: () => Promise<string>;
+  }
+): Promise<void> {
+  const cipRows = await tx
+    .selectFrom("fixedAssetCipCost as c")
+    .innerJoin("fixedAsset as a", (join) =>
+      join
+        .onRef("a.id", "=", "c.fixedAssetId")
+        .onRef("a.companyId", "=", "c.companyId")
+    )
+    .leftJoin("fixedAssetClass as k", (join) =>
+      join
+        .onRef("k.id", "=", "a.fixedAssetClassId")
+        .onRef("k.companyId", "=", "a.companyId")
+    )
+    .select([
+      "c.id",
+      "c.fixedAssetId",
+      "c.amount",
+      "c.journalId",
+      "c.sourceDocumentLineId",
+      "a.status",
+      "a.acquisitionCost",
+      "k.assetAccountId"
+    ])
+    .where("c.companyId", "=", companyId)
+    .where("c.sourceDocumentId", "=", invoiceId)
+    .execute();
+  if (cipRows.length === 0) return;
+
+  // A capitalized asset moved this cost from its CIP class's account into
+  // its asset class's account: the capitalization transfer names the CIP
+  // class it left (`fromClassId`). Both accounts are resolved before anything
+  // is written, and a cost with no account to move back refuses.
+  const capitalized = cipRows.filter(
+    (row) => row.status !== "Under Construction"
+  );
+  if (capitalized.length > 0) {
+    const transfers = await tx
+      .selectFrom("fixedAssetTransfer as t")
+      .innerJoin("fixedAssetClass as k", (join) =>
+        join
+          .onRef("k.id", "=", "t.fromClassId")
+          .onRef("k.companyId", "=", "t.companyId")
+      )
+      .select(["t.fixedAssetId", "t.createdAt", "k.assetAccountId"])
+      .where("t.companyId", "=", companyId)
+      .where("t.type", "=", "Capitalization")
+      .where(
+        "t.fixedAssetId",
+        "in",
+        capitalized.map((row) => row.fixedAssetId)
+      )
+      .orderBy("t.createdAt", "desc")
+      .execute();
+    const cipAccountByAsset = new Map<string, string>();
+    for (const transfer of transfers) {
+      if (
+        transfer.assetAccountId &&
+        !cipAccountByAsset.has(transfer.fixedAssetId)
+      ) {
+        cipAccountByAsset.set(transfer.fixedAssetId, transfer.assetAccountId);
+      }
+    }
+    const lines = capitalized.flatMap((row) => {
+      const cipAccount = cipAccountByAsset.get(row.fixedAssetId);
+      const assetAccount = row.assetAccountId;
+      if (!cipAccount || !assetAccount) {
+        throw new InvalidInputError(
+          "A fixed asset this invoice paid for was capitalized, and its construction-in-progress account could not be found. Reverse the capitalization first."
+        );
+      }
+      const magnitude = Math.abs(Number(row.amount));
+      if (magnitude === 0) return [];
+      return [
+        {
+          accountId: cipAccount,
+          amount: debit("asset", magnitude),
+          description: "FORCE DELETE: Construction in Progress"
+        },
+        {
+          accountId: assetAccount,
+          amount: credit("asset", magnitude),
+          description: "FORCE DELETE: Fixed Asset"
+        }
+      ];
+    });
+    if (lines.length > 0) {
+      const id = await getJournalId();
+      await tx
+        .insertInto("journalLine")
+        .values(
+          lines.map((line) => ({
+            journalLineReference: nanoid(),
+            ...line,
+            journalId: id,
+            quantity: 1,
+            documentType: "Invoice" as const,
+            documentId: invoiceId,
+            companyId
+          }))
+        )
+        .execute();
+    }
+  }
+
+  const costByAsset = new Map<string, number>();
+  for (const row of cipRows) {
+    costByAsset.set(
+      row.fixedAssetId,
+      (costByAsset.get(row.fixedAssetId) ?? 0) + Number(row.amount)
+    );
+  }
+  const now = datetime.timestamp();
+  for (const [fixedAssetId, cost] of costByAsset) {
+    await tx
+      .updateTable("fixedAsset")
+      .set((eb) => ({
+        acquisitionCost: sql`GREATEST(0, ${eb.ref("acquisitionCost")} - ${cost})`,
+        updatedBy: userId,
+        updatedAt: now
+      }))
+      .where("id", "=", fixedAssetId)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+  await tx
+    .deleteFrom("fixedAssetCipCost")
+    .where("companyId", "=", companyId)
+    .where(
+      "id",
+      "in",
+      cipRows.map((row) => row.id)
+    )
+    .execute();
+}
+
+/**
+ * Takes a sales invoice's recognized revenue back before its void, which
+ * refuses while any of its schedule rows is Posted: one journal, today,
+ * reverses each Posted row (Dr the revenue account it credited, Cr the
+ * deferred account it debited), and the rows leave their runs. The runs stay
+ * Posted, smaller by this invoice; the void then removes the rest.
+ */
+export async function reverseRecognizedRevenue(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    document,
+    reversal
+  }: {
+    companyId: string;
+    userId: string;
+    document: ForceDeleteDocument;
+    reversal: ForceDeleteReversalAccounting;
+  }
+): Promise<number> {
+  if (document.documentType !== "salesInvoice") return 0;
+  return withTransaction(db, async (tx) => {
+    const schedules = await tx
+      .selectFrom("revenueRecognitionSchedule")
+      .select(["id", "amount", "debitAccountId", "creditAccountId"])
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Posted")
+      .where("salesInvoiceLineId", "in", (eb) =>
+        eb
+          .selectFrom("salesInvoiceLine")
+          .select("id")
+          .where("companyId", "=", companyId)
+          .where("invoiceId", "=", document.id)
+      )
+      .forUpdate()
+      .execute();
+    if (schedules.length === 0) return 0;
+    const { postingStatus, accountingPeriodId } = reversal.accounting;
+    await assertPostingStatusUnchanged(tx, companyId, postingStatus);
+    const types = await accountTypes(
+      tx,
+      companyId,
+      schedules.flatMap((row) => [row.debitAccountId, row.creditAccountId])
+    );
+    const journal = await tx
+      .insertInto("journal")
+      .values({
+        journalEntryId: await getNextSequence(tx, "journalEntry", companyId),
+        accountingPeriodId,
+        description: `FORCE DELETE ${document.readableId}: recognized revenue`,
+        postingDate: reversal.today,
+        companyId,
+        sourceType: "Sales Invoice",
+        status: postingStatus,
+        postedAt: datetime.timestamp(),
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    const lines = schedules.flatMap((row) => {
+      const magnitude = Math.abs(Number(row.amount));
+      if (magnitude === 0 || !row.debitAccountId || !row.creditAccountId) {
+        return [];
+      }
+      const revenueType = types.get(row.creditAccountId) ?? "revenue";
+      const deferredType = types.get(row.debitAccountId) ?? "liability";
+      return [
+        {
+          accountId: row.creditAccountId,
+          amount: debit(revenueType, magnitude),
+          description: "FORCE DELETE: Recognized Revenue"
+        },
+        {
+          accountId: row.debitAccountId,
+          amount: credit(deferredType, magnitude),
+          description: "FORCE DELETE: Deferred Revenue"
+        }
+      ];
+    });
+    if (lines.length > 0) {
+      await tx
+        .insertInto("journalLine")
+        .values(
+          lines.map((line) => ({
+            journalLineReference: nanoid(),
+            ...line,
+            journalId: journal.id,
+            quantity: 1,
+            documentType: "Invoice" as const,
+            documentId: document.id,
+            companyId
+          }))
+        )
+        .execute();
+    }
+    const ids = schedules.map((row) => row.id);
+    await tx
+      .deleteFrom("revenueRecognitionRunLine")
+      .where("companyId", "=", companyId)
+      .where("scheduleId", "in", ids)
+      .execute();
+    await tx
+      .deleteFrom("revenueRecognitionSchedule")
+      .where("companyId", "=", companyId)
+      .where("id", "in", ids)
+      .execute();
+    return schedules.length;
+  });
 }

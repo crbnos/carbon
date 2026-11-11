@@ -4344,10 +4344,16 @@ msgstr "승인 날짜"
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
 msgstr ""
 
+msgid "Approving deletes {readableId} now. This cannot be undone."
+msgstr ""
+
 msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
 msgstr ""
 
 msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
+msgstr ""
+
+msgid "Approving voids {readableId}, which reverses its postings, then deletes it. This cannot be undone."
 msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
@@ -5626,6 +5632,9 @@ msgstr "제출하기 전에"
 
 msgid "Beginning"
 msgstr "시작"
+
+msgid "Being approved now…"
+msgstr ""
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -13775,10 +13784,16 @@ msgstr "양식 6765 섹션 E용"
 msgid "Force delete"
 msgstr ""
 
+msgid "Force Delete"
+msgstr ""
+
 msgid "Force Delete (Admin)"
 msgstr ""
 
 msgid "Force delete {purchaseOrderReadableId}"
+msgstr ""
+
+msgid "Force delete {readableId}"
 msgstr ""
 
 msgid "Force delete waiting for another Admin's approval"
@@ -15977,6 +15992,9 @@ msgstr "라인의 가격 책정 방식을 결정합니다."
 msgid "It decides what the next step asks for."
 msgstr "다음 단계가 요청하는 것을 결정합니다."
 
+msgid "It is {status}: approving voids it first, which reverses its postings. If the void refuses, its postings are reversed by journal instead."
+msgstr ""
+
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "승인되었지만 적용할 수 없습니다. 다시 열어 이 행을 확인한 후 다시 제출하세요."
 
@@ -15987,6 +16005,9 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "「{table}」 레코드에서 아직 사용 중입니다. 먼저 제거하세요."
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgstr ""
+
+msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
 msgstr ""
 
 msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
@@ -16129,6 +16150,9 @@ msgstr "변경 통지가 발행되기 전에 설계가 변경될 수 있습니�
 
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "그 매출은 각 라인이 인식해야 할 남은 부분으로 돌아갑니다."
+
+msgid "Its stock is taken back out, even if it was used since (on-hand can go negative), and what it received is given back to its order."
+msgstr ""
 
 msgid "Job"
 msgstr "작업"
@@ -20486,6 +20510,9 @@ msgstr "아직 없음"
 msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
 
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
+msgstr ""
+
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr ""
 
@@ -21465,6 +21492,9 @@ msgstr "판매형 리스의 순투자에서 발생한 매월 이자에 대한 �
 msgid "Other Income GL account for the monthly interest earned on the net investment in sales-type leases."
 msgstr "판매형 리스의 순투자에서 발생한 매월 이자에 대한 영업외수익 계정과목."
 
+msgid "Other payments it funds or refunds are unapplied from it first; they stay posted."
+msgstr ""
+
 msgid "Other Type"
 msgstr "기타 유형"
 
@@ -21998,6 +22028,12 @@ msgstr "지불"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "이 송장에 적용된 지불 및 크레딧입니다. 적용된 금액과 외환 손익 금액은 회사 기본 통화로 표시됩니다. 원본 문서를 열려면 행을 클릭하세요."
+
+msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
+msgstr ""
+
+msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
+msgstr ""
 
 msgid "Payments due before this date were paid outside Carbon"
 msgstr "이 날짜 이전의 만기 지불은 Carbon 외부에서 지불되었습니다"
@@ -32568,6 +32604,9 @@ msgstr "확인하려면 {0}을(를) 입력하세요."
 msgid "Type {purchaseOrderReadableId} to confirm"
 msgstr ""
 
+msgid "Type {readableId} to confirm"
+msgstr ""
+
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "변수를 삽입하려면 {TRIGGER}를 입력하세요."
 
@@ -34146,6 +34185,9 @@ msgstr "이 시간 항목이 다음 중 무엇으로 계산되는지 — 노무 
 
 msgid "What to set up"
 msgstr "설정할 항목"
+
+msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
+msgstr ""
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
 msgstr ""

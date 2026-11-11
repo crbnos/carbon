@@ -57,6 +57,32 @@ export function notificationTarget(
             : path.to.purchaseOrders
         );
       }
+      if (documentType === "documentForceDelete") {
+        // "<documentType>:<documentId>:<requestId>". An approved force delete
+        // deleted the document, so its notice opens the document's list.
+        const [type, id] = documentId.split(":");
+        const deleted = event === NotificationEvent.ApprovalApproved || !id;
+        switch (type) {
+          case "purchaseInvoice":
+            return page(
+              deleted
+                ? path.to.invoicingPurchasing
+                : path.to.purchaseInvoiceDetails(id)
+            );
+          case "salesInvoice":
+            return page(
+              deleted ? path.to.invoicingSales : path.to.salesInvoiceDetails(id)
+            );
+          case "receipt":
+            return page(
+              deleted ? path.to.receipts : path.to.receiptDetails(id)
+            );
+          case "payment":
+            return page(deleted ? path.to.payments : path.to.payment(id));
+          default:
+            return null;
+        }
+      }
       if (documentType === "projectChangeRequest") {
         // "<projectId>:<changeRequestId>"
         const [projectId, changeRequestId] = documentId.split(":");

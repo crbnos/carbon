@@ -197,7 +197,11 @@ export function PurchaseOrderForceDeleteBanner() {
       userId: user.id,
       isAdmin
     }) === null;
-  const busy = fetcher.state !== "idle";
+  // Another Admin's approval is running: nothing to decide until it ends.
+  // A claim older than ten minutes is an approval that stopped: approving
+  // again is allowed (the service decides).
+  const approving = request.status === "Approving" && !request.claimExpired;
+  const busy = fetcher.state !== "idle" || approving;
 
   const submit = (intent: "reject" | "cancel") => {
     fetcher.submit(
@@ -221,6 +225,11 @@ export function PurchaseOrderForceDeleteBanner() {
             <EmployeeAvatar employeeId={request.requestedBy} />
           </HStack>
           <p className="text-sm whitespace-pre-wrap">{request.reason}</p>
+          {approving && (
+            <p className="text-sm font-medium">
+              <Trans>Being approved now…</Trans>
+            </p>
+          )}
           {isAdmin && (
             <HStack spacing={2}>
               {canApprove && (
