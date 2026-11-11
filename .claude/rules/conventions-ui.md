@@ -222,6 +222,15 @@ or counters to get the same effect.
    action redirects.** React Router does not follow a redirect for a fetcher
    that has unmounted (`DocumentSwitchModal`). Close from the fetcher's result
    instead when you can (`ConfigurationEditor`).
+7. **On phones every modal and drawer is a bottom sheet.** `ModalContent` and
+   `DrawerContent` render a `BottomSheetContent` there (drag down to close),
+   keeping the modal's or drawer's own header, body and footer, so a call site
+   writes a plain `Modal` / `Drawer` (account settings and search are plain
+   modals). Use `BottomSheet` directly only for UI that exists on phones alone
+   (the profile sheet, menus). A sheet drags down from its grabber or its
+   header; a control in the header does not start a drag. A dialog that keeps
+   itself open on a press outside (`onInteractOutside` calls `preventDefault`)
+   also stays open on a drag: the sheet springs back.
 
 ## Popovers inside Drawers / Dialogs
 
@@ -323,8 +332,7 @@ pseudo-element if the visual is smaller.
   | Tooltip, small popover | 150ms | same | `ease-out` |
   | Dropdown, select, popover, context menu, hover card | 150ms (the `animate-in` default) | same | `ease-out`, scaling from the trigger (`origin-(--radix-…-transform-origin)`) |
   | Modal (`Modal`, `ModalDrawer` as modal) | 200ms | 150ms | `ease-out`, `zoom-in-95` + fade; stays centred |
-  | Drawer / bottom sheet (`Drawer`, `BottomSheet`) | 300ms | 200ms | `ease-drawer`, slide in and out from the same edge |
-  | Modal on a phone (`Modal`) | 200ms | 150ms | `ease-out`, 1rem slide up and back down |
+  | Drawer / bottom sheet (`Drawer`, `BottomSheet`), and every modal and drawer on a phone | 300ms | 200ms | `ease-drawer`, slide in and out from the same edge; on a phone `ModalContent` / `DrawerContent` render `BottomSheetContent`, so they move as one sheet |
   | Moving something already on screen | 200–300ms | — | `ease-in-out` |
 
   Rules behind it: exit is faster than enter; never `ease-in` on UI; never

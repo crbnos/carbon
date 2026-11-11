@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261110084113",
+  "schemaVersion": "20261111044213",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-10T12:02:19.498Z",
+  "exportedAt": "2026-11-11T08:29:39.306Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -990,6 +990,29 @@
         "customFields",
         "gainOnDisposalAccountId",
         "isConstructionInProgress"
+      ]
+    },
+    {
+      "name": "forceDeleteRequest",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "documentType",
+        "documentId",
+        "documentReadableId",
+        "documentStatus",
+        "reason",
+        "status",
+        "requestedBy",
+        "requestedAt",
+        "decidedBy",
+        "decidedAt",
+        "decisionNotes",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -3229,7 +3252,7 @@
         "id",
         "companyId",
         "partId",
-        "drawingNumber",
+        "name",
         "version",
         "storagePath",
         "fileName",
@@ -3247,7 +3270,26 @@
         "samplingAql",
         "samplingInspectionLevel",
         "samplingSeverity",
-        "modelUploadId"
+        "modelUploadId",
+        "status",
+        "rootInspectionDocumentId",
+        "workInstruction"
+      ]
+    },
+    {
+      "name": "inspectionDocumentParameter",
+      "rows": 0,
+      "columns": [
+        "id",
+        "inspectionDocumentId",
+        "companyId",
+        "key",
+        "value",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -3495,6 +3537,24 @@
         "createdBy",
         "updatedAt",
         "updatedBy"
+      ]
+    },
+    {
+      "name": "methodCorrection",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "makeMethodId",
+        "name",
+        "description",
+        "returnTo",
+        "maxAttempts",
+        "order",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -5937,7 +5997,9 @@
         "sourceDocumentLineId",
         "sourceDocumentReadableId",
         "storageUnitId",
-        "acceptedQuantity"
+        "acceptedQuantity",
+        "workCenterId",
+        "assignee"
       ]
     },
     {
@@ -6018,6 +6080,21 @@
         "updatedAt",
         "gaugeId",
         "gaugeRecordedAt"
+      ]
+    },
+    {
+      "name": "inspectionTrackedEntity",
+      "rows": 0,
+      "columns": [
+        "id",
+        "inspectionId",
+        "trackedEntityId",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "previousStatus"
       ]
     },
     {
@@ -7159,6 +7236,28 @@
       "columns": ["purchaseOrderId", "userId"]
     },
     {
+      "name": "purchaseOrderForceDeleteRequest",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "purchaseOrderId",
+        "purchaseOrderReadableId",
+        "purchaseOrderStatus",
+        "reason",
+        "status",
+        "requestedBy",
+        "requestedAt",
+        "decidedBy",
+        "decidedAt",
+        "decisionNotes",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "purchaseOrderPayment",
       "rows": 0,
       "columns": [
@@ -7457,7 +7556,8 @@
         "operationLeadTime",
         "operationUnitCost",
         "assemblyInstructionId",
-        "inspectionDocumentId"
+        "inspectionDocumentId",
+        "methodCorrectionId"
       ]
     },
     {
@@ -7484,7 +7584,8 @@
         "tags",
         "kit",
         "storageUnitIds",
-        "sourcingType"
+        "sourcingType",
+        "methodCorrectionId"
       ]
     },
     {
@@ -7524,6 +7625,22 @@
         "updatedBy",
         "description",
         "assemblyInstructionStepId"
+      ]
+    },
+    {
+      "name": "methodCorrectionTrigger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "methodOperationStepId",
+        "methodCorrectionId",
+        "listValue",
+        "measurementCondition",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -7698,6 +7815,27 @@
         "companyId",
         "updatedAt",
         "updatedBy"
+      ]
+    },
+    {
+      "name": "jobCorrection",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobId",
+        "jobMakeMethodId",
+        "methodCorrectionId",
+        "name",
+        "description",
+        "returnTo",
+        "maxAttempts",
+        "order",
+        "definition",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -7914,6 +8052,22 @@
       ]
     },
     {
+      "name": "jobCorrectionTrigger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobOperationStepId",
+        "jobCorrectionId",
+        "listValue",
+        "measurementCondition",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "jobMaterialStep",
       "rows": 0,
       "columns": ["jobMaterialId", "jobOperationStepId", "quantity"]
@@ -7974,6 +8128,18 @@
       "name": "jobOperationToolStep",
       "rows": 0,
       "columns": ["jobOperationToolId", "jobOperationStepId"]
+    },
+    {
+      "name": "jobOperationTrackedEntity",
+      "rows": 0,
+      "columns": [
+        "jobOperationId",
+        "trackedEntityId",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "updatedBy"
+      ]
     },
     {
       "name": "nonConformanceJobOperation",
@@ -8425,7 +8591,8 @@
         "completedAt",
         "companyId",
         "createdAt",
-        "updatedAt"
+        "updatedAt",
+        "jobCorrectionId"
       ]
     },
     {

@@ -1465,9 +1465,9 @@ export const terms = {
   },
 
   // ── Quality: Inspection document (InspectionDocumentForm) ───────────────
-  "inspection-document-drawing-number": {
-    term: msg`Drawing Number`,
-    definition: msg`The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing.`
+  "inspection-document-name": {
+    term: msg`Inspection Name`,
+    definition: msg`What this inspection plan is called (e.g. R1234 Receipt); it is how the plan is picked for a part's receipt or an inspection operation.`
   },
 
   // ── Quality: Issue (IssueForm + IssueProperties) ────────────────────────

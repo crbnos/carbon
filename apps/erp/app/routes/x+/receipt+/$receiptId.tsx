@@ -13,6 +13,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
+import { DocumentForceDeleteBanner } from "~/components/ForceDelete/DocumentForceDelete";
 import {
   getBatchProperties,
   getReceipt,
@@ -30,6 +31,7 @@ import {
   ReceiptDocuments,
   ReceiptHeader
 } from "~/modules/inventory/ui/Receipts";
+import { getDocumentForceDeleteData } from "~/modules/invoicing/invoicing.service";
 import { getReceiptInspections } from "~/modules/quality/quality.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { getDatabaseClient } from "~/services/database.server";
@@ -55,7 +57,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.receipt?.receiptId, "Receipt");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     view: "inventory"
   });
 
@@ -64,13 +66,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { receiptId } = params;
   if (!receiptId) throw new Error("Could not find receiptId");
 
-  const [receipt, receiptLines, receiptLineTracking, receiptInspections] =
-    await Promise.all([
-      getReceipt(serviceRole, receiptId),
-      getReceiptLines(serviceRole, receiptId),
-      getReceiptTracking(serviceRole, receiptId, companyId),
-      getReceiptInspections(serviceRole, receiptId, companyId)
-    ]);
+  const [
+    receipt,
+    receiptLines,
+    receiptLineTracking,
+    receiptInspections,
+    forceDelete
+  ] = await Promise.all([
+    getReceipt(serviceRole, receiptId),
+    getReceiptLines(serviceRole, receiptId),
+    getReceiptTracking(serviceRole, receiptId, companyId),
+    getReceiptInspections(serviceRole, receiptId, companyId),
+    // The Admin force-delete override (`force-delete+`).
+    getDocumentForceDeleteData(serviceRole, getDatabaseClient(), {
+      companyId,
+      userId,
+      documentType: "receipt",
+      documentId: receiptId
+    })
+  ]);
 
   if (receipt.error) {
     throw redirect(
@@ -84,15 +98,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   let receiptLineIds: string[] = [];
-  let itemsWithBatchProperties: string[] = [];
   let trackedItemIds: string[] = [];
 
   if (receiptLines.data) {
     receiptLineIds = receiptLines.data.map((line) => line.id!).filter(Boolean);
-    itemsWithBatchProperties = receiptLines.data
-      .filter((line) => line && line.itemId && line.requiresBatchTracking)
-      .map((line) => line.itemId)
-      .filter((itemId) => itemId !== null);
     trackedItemIds = receiptLines.data
       .filter(
         (line) =>
@@ -277,8 +286,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     receiptFiles: getReceiptFiles(serviceRole, companyId, receiptLineIds) ?? [],
     receiptLineTracking: receiptLineTracking.data ?? [],
     batchProperties:
-      getBatchProperties(serviceRole, itemsWithBatchProperties, companyId) ??
-      [],
+      getBatchProperties(serviceRole, trackedItemIds, companyId) ?? [],
     companySettings: getCompanySettings(serviceRole, companyId),
     itemShelfLife: await getShelfLifeForItems(serviceRole, trackedItemIds),
     relatedItems: getReceiptRelatedItems(
@@ -293,12 +301,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             line.lineId ? [line.lineId] : []
           )
         : []
-    )
+    ),
+    ...forceDelete
   };
 }
 
 export default function ReceiptRoute() {
-  const { receipt } = useLoaderData<typeof loader>();
+  const data = useLoaderData<typeof loader>();
+  const { receipt } = data;
 
   return (
     <DocumentPage
@@ -314,6 +324,13 @@ export default function ReceiptRoute() {
         />
       }
     >
+      <DocumentForceDeleteBanner
+        documentType="receipt"
+        documentId={receipt.id}
+        readableId={receipt.receiptId ?? receipt.id}
+        status={receipt.status ?? "Draft"}
+        forceDelete={data}
+      />
       <RecordOutlet />
     </DocumentPage>
   );

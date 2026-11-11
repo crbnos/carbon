@@ -18,15 +18,22 @@ import type { AssemblyReview, PartReview, ReleaseReview } from "./review";
 import {
   applyCount,
   applyRequestBody,
+  assetCounts,
+  assetOffers,
+  canRepushRelease,
+  changedPartNumbers,
   clearFieldErrors,
   createReview,
   defaultSelectedPartIds,
   describeMethod,
+  drawingsSummary,
   editedItem,
   indexFieldErrors,
+  methodBomChanges,
   normalizeWarnings,
   patchPartStatuses,
-  replenishmentMismatches
+  replenishmentMismatches,
+  setAssetRows
 } from "./review";
 import type { PanelPartStatus } from "./status";
 
@@ -254,6 +261,81 @@ const releaseReview = (
     warnings
   }) as ReleaseReview;
 
+const settledMethod = (
+  over: Partial<AssemblyPlanMethod> = {}
+): AssemblyPlanMethod =>
+  method({
+    status: "draft",
+    parentItemId: "item-asm",
+    writes: [{ index: "1", partNumber: "HDW-010", name: "Screw", quantity: 8 }],
+    replaces: [{ readableId: "HDW-010", quantity: 8 }],
+    ...over
+  });
+
+/** An assembly already in Carbon: linked, files current, BOM as in Onshape. */
+const settledReview = ({ modelCurrent = true } = {}): AssemblyReview =>
+  assemblyReview(
+    assemblyPlan({
+      root: {
+        partNumber: "ASM-001",
+        name: "Base",
+        description: null,
+        revision: null,
+        action: "reuse",
+        itemId: "item-asm",
+        proposed: null,
+        modelCurrent: true,
+        assets: { model: null, drawings: [] }
+      },
+      items: [
+        {
+          partNumber: "HDW-010",
+          name: "Screw",
+          revision: null,
+          action: "reuse",
+          itemId: "item-hdw",
+          proposed: null,
+          current: {
+            replenishmentSystem: "Buy",
+            defaultMethodType: "Pull from Inventory",
+            itemTrackingType: "Inventory"
+          },
+          isAssembly: false,
+          assets: {
+            model: { partId: "part-1" } as never,
+            ...(modelCurrent ? { modelCurrent: true as const } : {}),
+            drawings: []
+          }
+        }
+      ],
+      methods: [settledMethod()]
+    })
+  );
+
+const reusedRelease = (
+  over: Partial<ReleasePlan["items"][number]> = {}
+): ReleasePlan =>
+  releasePlan({
+    items: [
+      {
+        partNumber: "P-1",
+        revision: "A",
+        elementType: 0,
+        elementId: "e1",
+        versionId: "v1",
+        action: "reuse",
+        baseItemId: null,
+        baseRevision: null,
+        existingItemId: "item-p1",
+        proposed: null,
+        methodStatus: null,
+        ...over
+      }
+    ],
+    children: [],
+    changeNotice: null
+  });
+
 describe("createReview", () => {
   it("opens a part review with the actionable rows selected and no edits", () => {
     const review = partReview([
@@ -405,7 +487,9 @@ describe("applyRequestBody", () => {
     expect(applyRequestBody(edited)).toEqual({
       planId: "plan-2",
       edits: { "ASM-001": { name: "Base plate" } },
-      excluded: ["PAD-005"]
+      excluded: ["PAD-005"],
+      modelRows: [],
+      drawingRows: []
     });
   });
 
@@ -424,7 +508,9 @@ describe("applyRequestBody", () => {
     expect(applyRequestBody(edited)).toEqual({
       planId: "plan-2",
       edits: { "PAD-005": { name: "Pad" } },
-      excluded: []
+      excluded: [],
+      modelRows: [],
+      drawingRows: []
     });
   });
 
@@ -487,14 +573,65 @@ describe("applyCount", () => {
     expect(applyCount(review)).toBe(1);
   });
 
-  it("counts the root plus included assembly items", () => {
+  it("counts the assembly rows a push writes to, not a reused item it only lists", () => {
     const review = assemblyReview();
-    expect(applyCount(review)).toBe(3);
-    expect(applyCount({ ...review, excluded: new Set(["PAD-005"]) })).toBe(2);
+    expect(applyCount(review)).toBe(2);
+    expect(applyCount({ ...review, excluded: new Set(["PAD-005"]) })).toBe(1);
   });
 
-  it("counts release model items, children and attached drawings", () => {
-    expect(applyCount(releaseReview())).toBe(5);
+  it("counts nothing when every file is current and the BOM is unchanged", () => {
+    expect(applyCount(settledReview())).toBe(0);
+  });
+
+  it("counts a row whose picked file is not current, and not one whose file is", () => {
+    const review = settledReview({ modelCurrent: false });
+    expect(applyCount(review)).toBe(0);
+    expect(applyCount({ ...review, modelRows: new Set(["HDW-010"]) })).toBe(1);
+    expect(
+      applyCount({ ...settledReview(), modelRows: new Set(["HDW-010"]) })
+    ).toBe(0);
+  });
+
+  it("counts the root when its own model would export", () => {
+    const plan = settledReview().plan;
+    const { modelCurrent: _current, ...root } = plan.root;
+    expect(applyCount(assemblyReview({ ...plan, root }))).toBe(1);
+  });
+
+  it("counts the parent of a BOM whose quantity changed", () => {
+    const plan = settledReview().plan;
+    expect(
+      applyCount(
+        assemblyReview({
+          ...plan,
+          methods: [
+            settledMethod({
+              replaces: [{ readableId: "HDW-010", quantity: 2 }]
+            })
+          ]
+        })
+      )
+    ).toBe(1);
+  });
+
+  it("counts a reviewer's edit only when it differs from the item", () => {
+    const review = settledReview();
+    expect(
+      applyCount({
+        ...review,
+        edits: { "HDW-010": { replenishmentSystem: "Buy" } }
+      })
+    ).toBe(0);
+    expect(
+      applyCount({
+        ...review,
+        edits: { "HDW-010": { replenishmentSystem: "Make" } }
+      })
+    ).toBe(1);
+  });
+
+  it("counts release model items, new children and attached drawings", () => {
+    expect(applyCount(releaseReview())).toBe(4);
   });
 
   it("leaves out a drawing with no model to attach to", () => {
@@ -504,7 +641,190 @@ describe("applyCount", () => {
         ? { ...item, action: "drawing-unmatched" as const }
         : item
     );
-    expect(applyCount(releaseReview({ ...plan, items }))).toBe(4);
+    expect(applyCount(releaseReview({ ...plan, items }))).toBe(3);
+  });
+
+  it("leaves out a reused revision with nothing to write, which can still be pushed again", () => {
+    const review = releaseReview(reusedRelease());
+    expect(applyCount(review)).toBe(0);
+    expect(canRepushRelease(review)).toBe(true);
+  });
+
+  it("leaves out a reused revision a change notice locks, which cannot be pushed again", () => {
+    const review = releaseReview(
+      reusedRelease({ locked: "change notice CN-1: locked" })
+    );
+    expect(applyCount(review)).toBe(0);
+    expect(canRepushRelease(review)).toBe(false);
+  });
+
+  it("counts a reused released assembly whose BOM the push rewrites", () => {
+    expect(
+      applyCount(
+        releaseReview(reusedRelease({ elementType: 1, methodStatus: "draft" }))
+      )
+    ).toBe(1);
+  });
+});
+
+describe("changedPartNumbers", () => {
+  it("is empty when the push has nothing to write or export", () => {
+    expect(changedPartNumbers(settledReview())).toEqual(new Set());
+  });
+
+  it("keeps a row with an unsaved edit that the push will write", () => {
+    expect(
+      changedPartNumbers({
+        ...settledReview(),
+        edits: { "HDW-010": { replenishmentSystem: "Make" } }
+      })
+    ).toEqual(new Set(["HDW-010"]));
+  });
+
+  it("keeps a row offering a file Carbon lacks, picked or not", () => {
+    expect(changedPartNumbers(settledReview({ modelCurrent: false }))).toEqual(
+      new Set(["HDW-010"])
+    );
+  });
+
+  it("keeps the parent of a BOM the push changes", () => {
+    const plan = settledReview().plan;
+    expect(
+      changedPartNumbers(
+        assemblyReview({
+          ...plan,
+          methods: [
+            settledMethod({
+              replaces: [
+                { readableId: "HDW-010", quantity: 8 },
+                { readableId: "OLD-1", quantity: 1 }
+              ]
+            })
+          ]
+        })
+      )
+    ).toEqual(new Set(["ASM-001"]));
+  });
+});
+
+describe("methodBomChanges", () => {
+  const lines = (...parts: Array<[string, number]>) =>
+    parts.map(([readableId, quantity]) => ({ readableId, quantity }));
+  const writes = (...parts: Array<[string, number]>) =>
+    parts.map(([partNumber, quantity], index) => ({
+      index: String(index + 1),
+      partNumber,
+      name: null,
+      quantity
+    }));
+
+  it("reports lines removed, added and with a new quantity", () => {
+    expect(
+      methodBomChanges(
+        method({
+          status: "draft",
+          writes: writes(["KEEP-1", 2], ["QTY-1", 3], ["NEW-1", 1]),
+          replaces: lines(["KEEP-1", 2], ["QTY-1", 1], ["GONE-1", 4])
+        }),
+        new Set()
+      )
+    ).toEqual({
+      added: [{ partNumber: "NEW-1", quantity: 1 }],
+      removed: [{ readableId: "GONE-1", quantity: 4 }],
+      quantities: [{ partNumber: "QTY-1", from: 1, to: 3 }],
+      reordered: false
+    });
+  });
+
+  it("reports a BOM whose lines only moved", () => {
+    expect(
+      methodBomChanges(
+        method({
+          status: "draft",
+          writes: writes(["B-1", 1], ["A-1", 1]),
+          replaces: lines(["A-1", 1], ["B-1", 1])
+        }),
+        new Set()
+      ).reordered
+    ).toBe(true);
+  });
+
+  it("removes the line of an excluded part", () => {
+    expect(
+      methodBomChanges(
+        method({
+          status: "draft",
+          writes: writes(["A-1", 1], ["B-1", 1]),
+          replaces: lines(["A-1", 1], ["B-1", 1])
+        }),
+        new Set(["B-1"])
+      ).removed
+    ).toEqual([{ readableId: "B-1", quantity: 1 }]);
+  });
+
+  it("does not report a manual line taken over as added", () => {
+    expect(
+      methodBomChanges(
+        method({
+          status: "draft",
+          writes: writes(["A-1", 1]),
+          takesOver: [{ readableId: "A-1", quantity: 2, onshapeQuantity: 1 }]
+        }),
+        new Set()
+      ).added
+    ).toEqual([]);
+  });
+
+  it.each([
+    [
+      "a method missing in Carbon",
+      { status: "missing" as const },
+      new Set<string>()
+    ],
+    ["an excluded parent", {}, new Set(["ASM-001"])]
+  ])("reports nothing for %s", (_name, over, excluded) => {
+    expect(methodBomChanges(method(over), excluded)).toEqual({
+      added: [],
+      removed: [],
+      quantities: [],
+      reordered: false
+    });
+  });
+});
+
+describe("drawingsSummary", () => {
+  const drawing = (state: "current" | "outOfDate" | "unchecked" | "new") => ({
+    elementId: state,
+    name: state,
+    ...(state === "current" ? { current: true as const } : {}),
+    ...(state === "outOfDate" ? { outOfDate: true as const } : {}),
+    ...(state === "unchecked" ? { unchecked: true as const } : {})
+  });
+
+  it.each([
+    [[], null],
+    [[drawing("new")], null],
+    [[drawing("current")], { state: "current", count: 1, total: 1 }],
+    [[drawing("outOfDate")], { state: "out-of-date", count: 1, total: 1 }],
+    [
+      [drawing("current"), drawing("outOfDate")],
+      { state: "out-of-date", count: 1, total: 2 }
+    ],
+    [
+      [drawing("current"), drawing("new")],
+      { state: "partly-current", count: 1, total: 2 }
+    ],
+    [[drawing("unchecked")], { state: "unchecked", count: 1, total: 1 }],
+    [
+      [drawing("current"), drawing("unchecked")],
+      { state: "unchecked", count: 1, total: 2 }
+    ],
+    [
+      [drawing("outOfDate"), drawing("unchecked")],
+      { state: "out-of-date", count: 1, total: 2 }
+    ]
+  ])("summarises %j", (drawings, expected) => {
+    expect(drawingsSummary(drawings)).toEqual(expected);
   });
 });
 
@@ -824,5 +1144,107 @@ describe("replenishmentMismatches", () => {
       "ASM-009 is one unit in Onshape (Show Assembly only), so no BOM is written for it, but Carbon makes it"
     ]);
     expect(replenishmentMismatches(plan, {}, new Set(["ASM-009"]))).toEqual([]);
+  });
+});
+
+describe("assembly file picks", () => {
+  const model = (partNumber: string) => ({
+    partNumber,
+    kind: "partstudio" as const,
+    documentId: "d",
+    wvm: "w" as const,
+    wvmId: "w1",
+    elementId: "ps",
+    partId: "JHD",
+    configuration: null
+  });
+  const drawings = (count: number) =>
+    Array.from({ length: count }, (_, index) => ({
+      elementId: `drw-${index}`,
+      name: `Drawing ${index}`
+    }));
+  const base = assemblyPlan();
+  const plan = assemblyPlan({
+    root: { ...base.root, assets: { model: null, drawings: drawings(1) } },
+    items: [
+      {
+        ...base.items[0]!,
+        assets: { model: model("PAD-005"), drawings: drawings(2) }
+      },
+      // No assets: standard content, released, or linked elsewhere.
+      base.items[1]!
+    ]
+  });
+
+  it("offers STEP models and drawings only on rows that have them", () => {
+    expect(assetOffers(plan)).toEqual({
+      model: ["PAD-005"],
+      drawing: ["ASM-001", "PAD-005"]
+    });
+  });
+
+  it("starts with nothing picked and sends empty lists", () => {
+    const review = assemblyReview(plan);
+    expect(assetCounts(review)).toEqual({ models: 0, drawings: 0, current: 0 });
+    expect(applyRequestBody(review)).toMatchObject({
+      modelRows: [],
+      drawingRows: []
+    });
+  });
+
+  it("picks All for a kind, ignoring rows that do not offer it", () => {
+    const review = setAssetRows(
+      assemblyReview(plan),
+      "drawing",
+      ["ASM-001", "PAD-005", "HDW-010"],
+      true
+    );
+    expect(assetCounts(review)).toEqual({ models: 0, drawings: 3, current: 0 });
+    expect(applyRequestBody(review)).toMatchObject({
+      modelRows: [],
+      drawingRows: ["ASM-001", "PAD-005"]
+    });
+  });
+
+  it("clears with None after All", () => {
+    const all = setAssetRows(assemblyReview(plan), "model", ["PAD-005"], true);
+    const none = setAssetRows(all, "model", ["PAD-005"], false);
+    expect(applyRequestBody(all)).toMatchObject({ modelRows: ["PAD-005"] });
+    expect(applyRequestBody(none)).toMatchObject({ modelRows: [] });
+  });
+
+  it("sends no pick for an excluded row", () => {
+    const review = {
+      ...setAssetRows(assemblyReview(plan), "model", ["PAD-005"], true),
+      excluded: new Set(["PAD-005"])
+    };
+    expect(applyRequestBody(review)).toMatchObject({ modelRows: [] });
+    expect(assetCounts(review)).toEqual({ models: 0, drawings: 0, current: 0 });
+  });
+
+  it("counts a picked file the item already has as current, not as an export", () => {
+    const marked = assemblyPlan({
+      ...plan,
+      items: [
+        {
+          ...plan.items[0]!,
+          assets: {
+            model: model("PAD-005"),
+            modelCurrent: true,
+            drawings: [
+              { elementId: "drw-0", name: "Drawing 0", current: true },
+              { elementId: "drw-1", name: "Drawing 1" }
+            ]
+          }
+        }
+      ]
+    });
+    const review = setAssetRows(
+      setAssetRows(assemblyReview(marked), "model", ["PAD-005"], true),
+      "drawing",
+      ["PAD-005"],
+      true
+    );
+    expect(assetCounts(review)).toEqual({ models: 0, drawings: 1, current: 2 });
   });
 });

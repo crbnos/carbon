@@ -686,6 +686,61 @@ export function themeStyle(theme: ThemeColors): ThemeStyle {
   };
 }
 
+// A button's fill must stand out from the page (WCAG 1.4.11, 3:1) and carry
+// its label at AA. Both are checked a little above: the fill is stored as an
+// HSL triplet and painted in whole bytes, which can round it below.
+const BUTTON_CONTRAST = 3;
+const PAINT_MARGIN = 0.05;
+// Like the color themes, a button takes white text unless its color is too
+// light to come near it (yellows, pastels), which keep dark text.
+const WHITE_LABEL_FROM = 2.5;
+
+/**
+ * The accent of a theme with colors: buttons and focus rings in its highlight,
+ * moved only as far as the button's label and the page need. Keyed like
+ * `Theme.cssVars`, which it overrides.
+ */
+export function themeAccent(theme: ThemeColors): Record<Mode, AccentVariables> {
+  const highlight = hexToRgb(theme.highlight);
+  const picked = hexToRgb(theme.base);
+  // The page's tint, as `themeStyle` makes it.
+  const tintBase = frameBase(picked, "dark", frameText(picked));
+  const label =
+    rgbContrast(LIGHT_TEXT, highlight) >= WHITE_LABEL_FROM
+      ? LIGHT_TEXT
+      : DARK_TEXT;
+  const forMode = (mode: Mode): AccentVariables => {
+    const surface = (name: string) =>
+      hslToRgb(...tinted(tintBase, PAGE_SURFACES[mode][name]!));
+    const page = [surface("background"), surface("card")];
+    // The fill moves away from whichever fails: the label or the page.
+    let fill = highlight;
+    for (let i = 0; i < CONTRAST_STEPS * 2; i++) {
+      const labelReads = rgbContrast(label, fill) >= AA + PAINT_MARGIN;
+      const standsOut = page.every(
+        (bg) => rgbContrast(fill, bg) >= BUTTON_CONTRAST + PAINT_MARGIN
+      );
+      if (labelReads && standsOut) break;
+      const darker = labelReads ? mode === "light" : label === LIGHT_TEXT;
+      fill = reshade(
+        fill,
+        lightnessOf(fill) + (darker ? -CONTRAST_STEP : CONTRAST_STEP)
+      );
+    }
+    return {
+      primary: hslTriplet(fill),
+      "primary-foreground": hslTriplet(label),
+      ring: hslTriplet(fill)
+    };
+  };
+  return { light: forMode("light"), dark: forMode("dark") };
+}
+
+type AccentVariables = Record<
+  "primary" | "primary-foreground" | "ring",
+  string
+>;
+
 /** The rail's variables over one mode's frame. */
 function railVariables({
   base,

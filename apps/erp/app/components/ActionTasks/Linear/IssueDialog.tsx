@@ -112,7 +112,7 @@ export const LinearIssueDialog = ({
           defaultValue="link"
           className="flex min-h-0 flex-col"
         >
-          <ModalHeader className="mb-1 flex-row justify-between py-3">
+          <ModalHeader className="mb-1 flex-row justify-between py-3 max-md:justify-between max-md:pl-4 max-md:text-left">
             <div className="space-y-1">
               <ModalTitle>
                 <Trans>Link Linear Issue</Trans>

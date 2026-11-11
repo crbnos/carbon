@@ -4844,3 +4844,93 @@ writer is a rule the other writers skip.
 **Applies to:** `sync_item_tracking_type_change`
 (`packages/database/src/event-system/handlers/`), and any flag copied from a master
 record onto open documents.
+
+## A React handler on a dialog also hears the dialogs opened from inside it
+
+**Context:** On phones every `Modal` and `Drawer` is a bottom sheet, and a sheet drags
+down from its header. The drag handlers sit on the sheet's panel (`BottomSheetContent`).
+Account settings is a sheet, and the signature dialog opens from one of its panes.
+
+**Problem:** React passes a synthetic event up through the React tree, not the DOM
+tree, so it crosses portals. The signature sheet is portaled to `<body>`, but it is
+rendered inside the account pane, so a press on its header also reached the account
+sheet's `onPointerDown`. Both sheets started a drag, and closing the signature also
+closed account settings.
+
+**Rule:** A handler on a dialog panel that acts on `event.target` checks that the
+target is in its own panel (`panel.contains(...)`), never only that it matches a
+selector. A dialog opened from inside it is a different panel that still delivers its
+events here.
+
+**Applies to:** `startsSheetDrag` (`packages/react/src/utils/dialog.ts`), and any
+`onPointer*`, `onKeyDown` or `onClick` placed on a `Modal`, `Drawer`, `BottomSheet` or
+popover content.
+
+## Pointer capture taken on press steals the tap's click
+
+**Context:** A bottom sheet drags down from its whole header, so its handlers sit on the
+panel and a press anywhere in the header that is not a control starts a drag.
+
+**Problem:** The drag called `setPointerCapture` on `pointerdown`. With the pointer
+captured, `pointerup` goes to the panel, and the browser sends the `click` to the
+panel too. A header chip with an `onClick` (not a `button`, so not excluded as a
+control) stopped responding to taps.
+
+**Rule:** A drag that starts on content which can also be tapped takes the pointer
+only once it has moved a few pixels (`DRAG_SLOP_PX`). Until then a tap is a tap.
+
+**Applies to:** `BottomSheetContent` (`packages/react/src/BottomSheet.tsx`), and any
+drag handle that wraps clickable content.
+
+## Porting a trigger body: start from its newest definition
+
+**Context:** The event-system port (`20260410031811_remaining-interceptors.sql`) turned `insert_company_related_records` into the interceptor `sync_insert_company_related_records` (found 2026-10-24).
+
+**Problem:** The interceptor inserts `companySettings` with only its id. The trigger it replaced also set `useMetric` from the company's country (`20250725212215_metric-default.sql`) and created the two billing address rows (`20260304112615_purchasing-info.sql`). For six months every new company started imperial, and nothing failed: the column has a default and the address reads use `maybeSingle`.
+
+**Rule:** Before porting a function, find its newest definition (`grep -l "FUNCTION <name>" migrations/*.sql | tail -1`) and carry every statement across, or drop one on purpose with a note. A behavior that only sets a default value has no test to fail when it is lost: pin it with one (`seed-company.test.ts` pins `useMetric` per country).
+
+**Applies to:** `packages/database/src/event-system/handlers/*.sql`, any migration that replaces a trigger function.
+
+## A correction's rows live in the routing and BOM tables
+
+**Context:** A make method's corrections store their operations and materials in
+`methodOperation` and `methodMaterial`, marked by `methodCorrectionId`. Their Op
+Nos start at 1, like the routing's.
+
+**Problem:** The CSV method import read the routing and BOM by `makeMethodId`
+alone. Op No 1 then matched two operations and the row failed; a step for an Op
+No only a correction had attached to the correction; and a BOM line was skipped
+as "already on the BOM" when only a correction used the item.
+
+**Rule:** A read of a make method's routing or bill of materials filters
+`methodCorrectionId IS NULL`. Read correction rows only through their
+`methodCorrectionId`. A write by row id or by item (a part merge, a method type
+change) needs no filter.
+
+**Applies to:** every query on `methodOperation` / `methodMaterial` by
+`makeMethodId`, in TypeScript and in SQL (`get_method_tree`).
+
+## A fetcher action that redirects to a record's index loses its toast
+
+**Context:** The purchase order force-delete modal posts through a fetcher, and the
+action redirected to `path.to.purchaseOrder(id)` with a flash.
+
+**Problem:** That index route redirects again, to `/details`, in its middleware. The
+second hop is a plain GET to the path the form was already on, so
+`rootShouldRevalidate` reads it as a search-param-only navigation and skips the
+root loader. The flash is never read: no toast, and it surfaces later on an
+unrelated page.
+
+**Rule:** Redirect an action straight to the page that renders the record
+(`path.to.purchaseOrderDetails(id)`), never to an index that redirects again.
+
+**Applies to:** Any action whose redirect target is a `$id._index.tsx` that
+redirects (purchase orders, and the other records with a `/details` index).
+
+## A force delete treats the void's refusal as a fallback, not a stop
+
+- **Context:** the Admin force delete of invoices, receipts and payments (`decideDocumentForceDelete`).
+- **Problem:** The first version refused whenever the document's own void refused, or when payments, memos or other documents still held it. Force delete exists for emergencies where a user error has broken that normal process, so those refusals left the Admin stuck.
+- **Rule:** In a force delete, a void's rule refusal is the trigger for `reverseDocumentByJournal`: negate its postings, adjust its stock back, restore its sources. Anything applied to the document is unapplied first (`unapplyForceDeleteSettlements`). To change a posted payment's journal, build it again with and without the change (`rebuildPaymentJournal`) and post the difference, rather than hand-building reversal lines.
+- **Applies to:** `invoicing.service.ts` force delete blocks, any future force delete type.

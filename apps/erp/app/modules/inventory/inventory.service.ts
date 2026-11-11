@@ -164,7 +164,11 @@ import {
   reverseProjectLedgerRows,
   splitReceiptChargedDrafts
 } from "~/modules/projects/project-posting";
-import { PURCHASE_ORDER_RELEASED_STATUSES } from "~/modules/purchasing/purchasing.models";
+import {
+  PURCHASE_ORDER_RELEASED_STATUSES,
+  purchaseOrderStatusAfterReversal,
+  receivedAfterReceiptReversal
+} from "~/modules/purchasing/purchasing.models";
 import {
   futureDeliveryError,
   futureReturnError,
@@ -290,6 +294,12 @@ import {
   shippingCarrierType
 } from "./inventory.models";
 import {
+  BATCH_PROPERTY_COLUMN_PREFIX,
+  type BatchPropertyColumn,
+  type BatchPropertyDataType,
+  batchPropertyColumns,
+  batchPropertyFilter,
+  batchPropertyValue,
   clampDepth,
   type InventoryCountCsvError,
   type InventoryCountCsvRow,
@@ -1181,6 +1191,30 @@ export type ReceiptSerialBoxResult =
   | { ok: false; reason: "notFound" | "locked" | "box" | "unit" };
 
 /**
+ * The item's batch properties out of `values` — the keys that are one of its
+ * `batchProperty` ids. Receipt, supplier and other attributes are dropped.
+ */
+async function itemBatchProperties(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  itemId: string,
+  values: Record<string, unknown>
+): Promise<{ ids: string[]; values: Record<string, unknown> }> {
+  const rows = await db
+    .selectFrom("batchProperty")
+    .select("id")
+    .where("itemId", "=", itemId)
+    .where("companyId", "=", companyId)
+    .execute();
+  const ids = rows.map((row) => row.id);
+  const picked: Record<string, unknown> = {};
+  for (const id of ids) {
+    if (id in values) picked[id] = values[id];
+  }
+  return { ids, values: picked };
+}
+
+/**
  * Saves one serial box of a receipt line (`planSerialBoxWrite`) in one
  * transaction: an empty serial clears it, a refused one empties it.
  */
@@ -1194,6 +1228,8 @@ export async function saveReceiptSerialBox(
     index: number;
     serialNumber: string;
     expiryDate?: string | null;
+    /** The line's batch properties; without them the box keeps its own. */
+    properties?: Record<string, unknown>;
   }
 ): Promise<ReceiptSerialBoxResult> {
   const { companyId, receiptId, receiptLineId, itemId, index, serialNumber } =
@@ -1265,6 +1301,20 @@ export async function saveReceiptSerialBox(
     });
 
     if (plan.kind === "write") {
+      // The function rewrites the unit's attributes, so the properties it
+      // carried (or the line's, when given) are put back after it.
+      const properties = await itemBatchProperties(
+        trx,
+        companyId,
+        itemId,
+        args.properties ??
+          (await lineSerialProperties(trx, {
+            companyId,
+            receiptLineId,
+            index
+          }))
+      );
+
       await sql`SELECT update_receipt_line_serial_tracking(
         p_receipt_line_id => ${receiptLineId},
         p_receipt_id => ${receiptId},
@@ -1287,6 +1337,22 @@ export async function saveReceiptSerialBox(
           .where("companyId", "=", companyId)
           .execute();
       }
+
+      if (Object.keys(properties.values).length > 0) {
+        await trx
+          .updateTable("trackedEntity")
+          .set({
+            attributes: sql`COALESCE(attributes, '{}'::jsonb) || ${JSON.stringify(properties.values)}::jsonb`
+          })
+          .where("companyId", "=", companyId)
+          .where(sql<string>`attributes->>'Receipt Line'`, "=", receiptLineId)
+          .where(
+            sql<string>`attributes->>'Receipt Line Index'`,
+            "=",
+            String(index)
+          )
+          .execute();
+      }
     }
 
     await releaseReceiptSerialEntities(trx, companyId, plan.releaseIds);
@@ -1294,6 +1360,99 @@ export async function saveReceiptSerialBox(
     return plan.kind === "taken"
       ? { ok: false, reason: plan.reason }
       : { ok: true };
+  });
+}
+
+/**
+ * The attributes a box's serial should carry over: the box's own unit first,
+ * else another unit on the line (the line's properties are shared).
+ */
+async function lineSerialProperties(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; receiptLineId: string; index: number }
+): Promise<Record<string, unknown>> {
+  const units = await db
+    .selectFrom("trackedEntity")
+    .select("attributes")
+    .where("companyId", "=", args.companyId)
+    .where(sql<string>`attributes->>'Receipt Line'`, "=", args.receiptLineId)
+    .execute();
+  const attributes = units.map(
+    (unit) => (unit.attributes ?? {}) as Record<string, unknown>
+  );
+  return (
+    attributes.find(
+      (a) => String(a["Receipt Line Index"]) === String(args.index)
+    ) ??
+    attributes[0] ??
+    {}
+  );
+}
+
+/**
+ * Sets the batch properties of every serial on a receipt line. Each unit's
+ * previous property values are replaced; its other attributes stay. The
+ * values live on the units, so a line with no serial yet is refused
+ * (`noUnits`), as is a line that is not serial-tracked (`notSerial`).
+ */
+export async function saveReceiptSerialProperties(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    receiptId: string;
+    receiptLineId: string;
+    itemId: string;
+    properties: Record<string, unknown>;
+  }
+): Promise<
+  | { ok: true }
+  | { ok: false; reason: "notFound" | "locked" | "notSerial" | "noUnits" }
+> {
+  const { companyId, receiptId, receiptLineId, itemId } = args;
+  return db.transaction().execute(async (trx) => {
+    await lockReceiptLine(trx, companyId, receiptLineId);
+    const receipt = await trx
+      .selectFrom("receipt")
+      .select("status")
+      .where("id", "=", receiptId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    const line = await trx
+      .selectFrom("receiptLine")
+      .select("requiresSerialTracking")
+      .where("id", "=", receiptLineId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!receipt || !line) return { ok: false, reason: "notFound" };
+    if (receipt.status !== "Draft") return { ok: false, reason: "locked" };
+    if (!line.requiresSerialTracking) return { ok: false, reason: "notSerial" };
+
+    const unit = await trx
+      .selectFrom("trackedEntity")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where(sql<string>`attributes->>'Receipt Line'`, "=", receiptLineId)
+      .limit(1)
+      .executeTakeFirst();
+    if (!unit) return { ok: false, reason: "noUnits" };
+
+    const properties = await itemBatchProperties(
+      trx,
+      companyId,
+      itemId,
+      args.properties
+    );
+    if (properties.ids.length === 0) return { ok: true };
+
+    await trx
+      .updateTable("trackedEntity")
+      .set({
+        attributes: sql`(COALESCE(attributes, '{}'::jsonb) - ${properties.ids}::text[]) || ${JSON.stringify(properties.values)}::jsonb`
+      })
+      .where("companyId", "=", companyId)
+      .where(sql<string>`attributes->>'Receipt Line'`, "=", receiptLineId)
+      .execute();
+    return { ok: true };
   });
 }
 
@@ -2141,8 +2300,111 @@ export async function getTrackedEntities(
     );
   }
 
-  query = setGenericQueryFilters(query, args, TRACKED_ENTITIES_PAGING);
+  // A batch property column (`property.<label>`) is no column of the table:
+  // it filters the property's value on every item that has the label.
+  const propertyFilters =
+    args.filters?.filter(
+      (filter) =>
+        filter.value && filter.column.startsWith(BATCH_PROPERTY_COLUMN_PREFIX)
+    ) ?? [];
+  if (propertyFilters.length > 0) {
+    const columns = await getBatchPropertyColumns(client, companyId);
+    if (columns.error) {
+      logger.error("Failed to load batch properties for a filter", {
+        companyId,
+        error: columns.error
+      });
+    }
+    // A label no item has (or properties that did not load) matches nothing.
+    const columnByKey = new Map((columns.data ?? []).map((c) => [c.key, c]));
+    for (const filter of propertyFilters) {
+      const column = columnByKey.get(filter.column);
+      query = column
+        ? query.or(
+            batchPropertyFilter(column, filter.operator, filter.value ?? "")
+          )
+        : query.in("id", []);
+    }
+  }
+
+  query = setGenericQueryFilters(
+    query,
+    {
+      ...args,
+      filters: args.filters?.filter(
+        (filter) => !filter.column.startsWith(BATCH_PROPERTY_COLUMN_PREFIX)
+      )
+    },
+    TRACKED_ENTITIES_PAGING
+  );
   return query;
+}
+
+/** The company's batch properties as tracked-entity list columns, by label. */
+export async function getBatchPropertyColumns(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<
+  | { data: BatchPropertyColumn[]; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  // Every item's properties, past PostgREST's 1,000-row cap.
+  const properties = await fetchAllFromTable<{
+    id: string;
+    itemId: string;
+    label: string;
+    dataType: BatchPropertyDataType;
+    listOptions: string[] | null;
+  }>(
+    client,
+    "batchProperty",
+    "id, itemId, label, dataType, listOptions",
+    (query) => query.eq("companyId", companyId).order("sortOrder").order("id")
+  );
+  if (properties.error) return { data: null, error: properties.error };
+  return { data: batchPropertyColumns(properties.data), error: null };
+}
+
+/**
+ * The values tracked entities hold for a property column, for its filter.
+ * Reads the most recent 1,000 entities that hold one.
+ */
+export async function getBatchPropertyValues(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  key: string
+) {
+  const columns = await getBatchPropertyColumns(client, companyId);
+  if (columns.error) return { data: [], error: columns.error };
+  const column = columns.data.find((c) => c.key === key);
+  if (!column) return { data: [], error: null };
+
+  const entities = await client
+    .from("trackedEntity")
+    .select("itemId, attributes")
+    .eq("companyId", companyId)
+    .or(
+      column.properties
+        .map(({ id }) => `attributes->>${id}.not.is.null`)
+        .join(",")
+    )
+    .order("createdAt", { ascending: false })
+    .limit(1000);
+  if (entities.error) return { data: [], error: entities.error };
+
+  const values = new Set<string>();
+  for (const entity of entities.data) {
+    const value = batchPropertyValue(column, entity);
+    if (value !== undefined && value !== null && value !== "") {
+      values.add(String(value));
+    }
+  }
+  return {
+    data: Array.from(values)
+      .sort((a, b) => a.localeCompare(b))
+      .map((value) => ({ id: value, name: value })),
+    error: null
+  };
 }
 
 export async function getTrackedEntitiesByMakeMethodId(
@@ -9686,6 +9948,64 @@ export async function enrichActivityBinNames(
     })
   };
 }
+/** The display names a lineage payload's stored attribute ids resolve to. */
+export async function enrichLineagePayload(
+  client: SupabaseClient<Database>,
+  payload: LineagePayload,
+  companyId: string
+): Promise<LineagePayload> {
+  return enrichEntityPropertyLabels(
+    client,
+    await enrichActivityBinNames(client, payload, companyId),
+    companyId
+  );
+}
+
+/**
+ * Rename the batch-property values tracked entities carry in their attributes
+ * — stored under the `batchProperty` id — to the property's label, so a
+ * batch's or serial's properties read as "Heat Number", not an id. A label
+ * that would overwrite another attribute keeps the id.
+ */
+export async function enrichEntityPropertyLabels(
+  client: SupabaseClient<Database>,
+  payload: LineagePayload,
+  companyId: string
+): Promise<LineagePayload> {
+  const itemIds = pluckUnique(
+    payload.entities.filter((entity) => entity.itemId),
+    (entity) => entity.itemId!
+  );
+  if (itemIds.length === 0) return payload;
+
+  const properties = await client
+    .from("batchProperty")
+    .select("id, label")
+    .in("itemId", itemIds)
+    .eq("companyId", companyId);
+  if (properties.error || !properties.data?.length) return payload;
+
+  const labelById = indexByMapped(
+    properties.data,
+    (row) => row.id,
+    (row) => row.label
+  );
+
+  return {
+    ...payload,
+    entities: payload.entities.map((entity) => {
+      const attrs = (entity.attributes ?? {}) as Record<string, unknown>;
+      if (!Object.keys(attrs).some((key) => labelById.has(key))) return entity;
+      const renamed: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(attrs)) {
+        const label = labelById.get(key);
+        renamed[label && !(label in attrs) ? label : key] = value;
+      }
+      return { ...entity, attributes: renamed as Json };
+    })
+  };
+}
+
 export const previewSerialUnitCostsInput = z.object({
   itemId: z.string().min(1),
   // Only the units on hand at this location; every location when absent.
@@ -13747,6 +14067,14 @@ export function findVoidShortfalls(
   });
 }
 
+/**
+ * The void's refusal when the received stock is no longer where it was
+ * received. A purchase order force delete reverses such a receipt by adjusting
+ * the stock out instead, so it matches this text.
+ */
+export const RECEIPT_VOID_STOCK_MOVED_ERROR =
+  "Cannot void: stock received on this receipt was moved, picked or shipped since it was received. Correct the remainder with an inventory adjustment instead.";
+
 /** Refuses the void when the received stock is no longer where it was received. */
 export async function assertReceivedStockOnHand(
   trx: VoidGuardDb,
@@ -13791,9 +14119,7 @@ export async function assertReceivedStockOnHand(
   }
 
   if (findVoidShortfalls(reversingRows, onHand).length > 0) {
-    throw new InvalidInputError(
-      "Cannot void: stock received on this receipt was moved, picked or shipped since it was received. Correct the remainder with an inventory adjustment instead."
-    );
+    throw new InvalidInputError(RECEIPT_VOID_STOCK_MOVED_ERROR);
   }
 }
 
@@ -14577,58 +14903,15 @@ export async function postReceipt(
         companyId
       }));
 
-      const receiptLinesByPurchaseOrderLineId = receiptLines.data.reduce<
-        Record<string, Database["public"]["Tables"]["receiptLine"]["Row"][]>
-      >((acc, receiptLine) => {
-        if (receiptLine.lineId) {
-          acc[receiptLine.lineId] = [
-            ...(acc[receiptLine.lineId] ?? []),
-            receiptLine
-          ];
-        }
-        return acc;
-      }, {});
-
-      const purchaseOrderLineUpdatesVoid = purchaseOrderLinesVoid.data.reduce<
-        Record<
-          string,
-          Database["public"]["Tables"]["purchaseOrderLine"]["Update"]
-        >
-      >((acc, purchaseOrderLine) => {
-        const receiptLinesForPoLine =
-          receiptLinesByPurchaseOrderLineId[purchaseOrderLine.id];
-        if (
-          receiptLinesForPoLine &&
-          receiptLinesForPoLine.length > 0 &&
-          purchaseOrderLine.purchaseQuantity &&
-          purchaseOrderLine.purchaseQuantity > 0
-        ) {
-          const receivedQuantityInPurchaseUnit =
-            receiptLinesForPoLine.reduce((sum, receiptLine) => {
-              const safe =
-                isNaN(receiptLine.receivedQuantity) ||
-                receiptLine.receivedQuantity == null
-                  ? 0
-                  : receiptLine.receivedQuantity;
-              return sum + safe;
-            }, 0) / (receiptLinesForPoLine[0]!.conversionFactor ?? 1);
-
-          const newQuantityReceived = Math.max(
-            0,
-            (purchaseOrderLine.quantityReceived ?? 0) -
-              receivedQuantityInPurchaseUnit
-          );
-
-          const receivedComplete =
-            newQuantityReceived >= purchaseOrderLine.purchaseQuantity;
-
-          acc[purchaseOrderLine.id] = {
-            quantityReceived: newQuantityReceived,
-            receivedComplete
-          };
-        }
-        return acc;
-      }, {});
+      // What each line received comes off its order line
+      // (`receivedAfterReceiptReversal`, shared with the force delete).
+      const purchaseOrderLineUpdatesVoid: Record<
+        string,
+        Database["public"]["Tables"]["purchaseOrderLine"]["Update"]
+      > = receivedAfterReceiptReversal(
+        purchaseOrderLinesVoid.data,
+        receiptLines.data
+      );
 
       // Reverse FA PO line received status on void
       const faPoLinesForVoid = purchaseOrderLinesVoid.data.filter(
@@ -14776,38 +15059,9 @@ export async function postReceipt(
         }
       );
 
-      const areAllLinesInvoicedProjected = projectedPurchaseOrderLines.every(
-        (line) => {
-          if (line.purchaseOrderLineType === "Comment") return true;
-          const target = line.purchaseQuantity ?? 0;
-          if (target <= 0) return true;
-          return (line.quantityInvoiced ?? 0) >= target;
-        }
+      const purchaseOrderStatusVoid = purchaseOrderStatusAfterReversal(
+        projectedPurchaseOrderLines
       );
-
-      const areAllLinesReceivedProjected = projectedPurchaseOrderLines.every(
-        (line) => {
-          if (
-            line.purchaseOrderLineType === "Comment" ||
-            line.purchaseOrderLineType === "G/L Account" ||
-            line.purchaseOrderLineType === "Service"
-          )
-            return true;
-          const target = line.purchaseQuantity ?? 0;
-          if (target <= 0) return true;
-          return (line.quantityReceived ?? 0) >= target;
-        }
-      );
-
-      let purchaseOrderStatusVoid: Database["public"]["Tables"]["purchaseOrder"]["Row"]["status"] =
-        "To Receive and Invoice";
-      if (areAllLinesInvoicedProjected && areAllLinesReceivedProjected) {
-        purchaseOrderStatusVoid = "Completed";
-      } else if (areAllLinesInvoicedProjected) {
-        purchaseOrderStatusVoid = "To Receive";
-      } else if (areAllLinesReceivedProjected) {
-        purchaseOrderStatusVoid = "To Invoice";
-      }
 
       // The receipt's serials and batches were never received, so the void
       // drains them to zero: they leave every on-hand list and no picker
@@ -29704,6 +29958,24 @@ export async function issueMaterial(
         );
       }
 
+      // A rework copy applies only to the units sent into it.
+      const operationScope = await db
+        .selectFrom("jobOperationTrackedEntity")
+        .select("trackedEntityId")
+        .where("jobOperationId", "=", row.jobOperationId)
+        .where("companyId", "=", companyId)
+        .execute();
+      if (
+        operationScope.length > 0 &&
+        !operationScope.some(
+          (scope) => scope.trackedEntityId === trackedEntityId
+        )
+      ) {
+        throw new InvalidInputError(
+          "This unit is not part of this rework operation"
+        );
+      }
+
       const relatedTrackedEntities = trackedEntities.data.filter(
         (trackedEntity) =>
           `Operation ${row.jobOperationId}` in
@@ -29874,6 +30146,42 @@ export async function issueMaterial(
             .executeTakeFirst();
 
           newEntityId = newTrackedEntityResult?.id;
+
+          // The seed's other units were sent into the same rework copies as
+          // the seed, so the unit that carries them takes the seed's scope on
+          // every copy still open. Without it the next completion on the copy
+          // is refused as out of scope.
+          if (newEntityId && seedUnitsLeft > 0) {
+            const seedScope = await trx
+              .selectFrom("jobOperationTrackedEntity")
+              .innerJoin(
+                "jobOperation",
+                "jobOperation.id",
+                "jobOperationTrackedEntity.jobOperationId"
+              )
+              .select("jobOperationTrackedEntity.jobOperationId")
+              .where(
+                "jobOperationTrackedEntity.trackedEntityId",
+                "=",
+                trackedEntityId
+              )
+              .where("jobOperationTrackedEntity.companyId", "=", companyId)
+              .where("jobOperation.status", "not in", ["Done", "Canceled"])
+              .execute();
+            if (seedScope.length > 0) {
+              await trx
+                .insertInto("jobOperationTrackedEntity")
+                .values(
+                  seedScope.map((scope) => ({
+                    jobOperationId: scope.jobOperationId,
+                    trackedEntityId: newEntityId!,
+                    companyId,
+                    createdBy: userId
+                  }))
+                )
+                .execute();
+            }
+          }
         }
 
         await issueJobOperationMaterials(trx, {
@@ -30038,6 +30346,24 @@ export async function issueMaterial(
         ) {
           throw new InvalidInputError(
             "The unit does not belong to this operation"
+          );
+        }
+        // A rework copy works only the units sent into it, so only those
+        // units can be scrapped against it.
+        const operationScope = await db
+          .selectFrom("jobOperationTrackedEntity")
+          .select("trackedEntityId")
+          .where("jobOperationId", "=", jobOperationId)
+          .where("companyId", "=", companyId)
+          .execute();
+        if (
+          operationScope.length > 0 &&
+          !operationScope.some(
+            (scope) => scope.trackedEntityId === scrapEntityId
+          )
+        ) {
+          throw new InvalidInputError(
+            "This unit is not part of this rework operation"
           );
         }
       }

@@ -4585,17 +4585,22 @@ async function writeGroup(
       }
       const addedBefore = totalMethodRows(added);
 
+      // The import appends to the routing and the bill of materials. A
+      // correction's operations and materials share these tables (with
+      // their own Op Nos from 1) and are not part of either.
       const existingMaterials = await trx
         .selectFrom("methodMaterial")
         .select(["itemId", "order"])
         .where("makeMethodId", "=", makeMethodId)
         .where("companyId", "=", companyId)
+        .where("methodCorrectionId", "is", null)
         .execute();
       const existingOperations = await trx
         .selectFrom("methodOperation")
         .select(["id", "order"])
         .where("makeMethodId", "=", makeMethodId)
         .where("companyId", "=", companyId)
+        .where("methodCorrectionId", "is", null)
         .execute();
 
       const opPlan = planOperationAppend({
@@ -16812,6 +16817,10 @@ export function buildAdjustmentJournalLines(args: {
     inventoryAdjustmentVarianceAccount: string;
   };
   offsetAccount?: string | null;
+  // The offset account's type, which signs its line. An expense (the variance
+  // or scrap account) unless the caller offsets elsewhere, such as Goods
+  // Received Not Invoiced (a liability) when a receipt is reversed.
+  offsetAccountType?: AccountType;
   offsetDescription?: string;
   companyId: string;
 }): [JournalLineInsert, JournalLineInsert] {
@@ -16845,7 +16854,9 @@ export function buildAdjustmentJournalLines(args: {
         args.accountDefaults.inventoryAdjustmentVarianceAccount,
       description: args.offsetDescription ?? "Inventory Adjustment",
       amount: round(
-        args.isGain ? credit("expense", args.cost) : debit("expense", args.cost)
+        args.isGain
+          ? credit(args.offsetAccountType ?? "expense", args.cost)
+          : debit(args.offsetAccountType ?? "expense", args.cost)
       )
     }
   ];
@@ -17247,6 +17258,8 @@ export interface BookAdjustmentArgs {
     // write-offs pass the company's scrapAccount so cost of quality is separable
     // on the P&L.
     offsetAccount?: string | null;
+    // The offset account's type (signs its line); expense by default.
+    offsetAccountType?: AccountType;
     offsetDescription?: string;
     // journal.sourceType for a header this call creates (default
     // 'Inventory Adjustment'). Ignored when getJournalId supplies a shared journal.
@@ -17664,6 +17677,7 @@ export async function valueMovement(
     replenishmentSystem: item.replenishmentSystem,
     accountDefaults: accounting.accountDefaults,
     offsetAccount: accounting.offsetAccount,
+    offsetAccountType: accounting.offsetAccountType,
     offsetDescription: accounting.offsetDescription,
     companyId
   });
