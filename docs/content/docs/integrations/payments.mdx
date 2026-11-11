@@ -1,0 +1,102 @@
+---
+title: Payments
+plan: Business
+description: Accept card and ACH payments on sales invoices through your own Stripe account, and record each payment in Carbon automatically.
+---
+
+## Stripe Connect
+
+Connect **Stripe** to send posted <Term id="invoice">sales invoices</Term> through your own Stripe account. Stripe emails the customer a link to pay by card or ACH. When the customer pays, Carbon records the <Term>payment</Term>, settles it against the invoice and books Stripe's fee.
+
+<Callout type="info" title="Your Stripe account, your fees">
+Stripe charges its processing fees to your Stripe account and covers negative balances. Carbon takes no fee. You sign in to the Stripe Dashboard with the Stripe login you create during onboarding.
+</Callout>
+
+### Connect your Stripe account
+
+You need permission to update settings. Set your company's country in **Company Settings** first: Stripe fixes an account's country when it creates the account, and Carbon refuses to connect without one.
+
+<Steps>
+<Step>
+Go to **Settings → Integrations** and open **Stripe Connect**.
+</Step>
+<Step>
+Click **"Connect Stripe Account"**. Carbon creates a Stripe account from your Company Settings details and opens Stripe's onboarding in a new tab.
+</Step>
+<Step>
+In Stripe, enter your business details, tax ID, representative and the bank account Stripe pays out to.
+</Step>
+<Step>
+Return to Carbon. **Connection status** shows **"Active"** once Stripe enables card payments and payouts.
+</Step>
+</Steps>
+
+<Screenshot label="Stripe Connect drawer under Settings → Integrations, Connection status Active, with the Accounting list of GL accounts" />
+
+| Connection status | What to do |
+| --- | --- |
+| **"Pending onboarding"** | Click **"Finish Onboarding"** to continue in Stripe. |
+| **"Needs attention"** | Read the issues Stripe lists, then click **"Fix on Stripe"**. |
+| **"Not available"** | Stripe is not set up on this Carbon deployment. Ask your administrator. |
+
+To see payouts and transactions, click **"Open Stripe Dashboard"** in the same drawer.
+
+### Send an invoice through Stripe
+
+When you post a sales invoice, set **"Send Via"** to **"Stripe"** and choose the customer contact. Stripe is the default once it is connected. The contact needs an email address, because Stripe emails the invoice.
+
+The first time you bill a customer through Stripe, Carbon checks Stripe for them. It uses the Stripe customer already linked, offers the Stripe customers with the same email, or creates a new one. When the invoice's due date is missing, today or earlier, or more than five years out, Carbon asks for a **"Stripe Due Date"**.
+
+After the post, the invoice shows **"Sent via Stripe"**, and the purple **"Stripe"** badge opens the invoice in Stripe. If the send fails, the invoice stays posted and shows **"Not sent"** with the reason. Click **"Send"** to try again: it sends through Stripe again, never by email.
+
+Recurring invoices can go out the same way. Set **"Invoicing"** on a [contract](/docs/reference/contracts) or [rental agreement](/docs/reference/rental-agreements), or the company default in **Settings → Invoicing**, to **"Post and send via Stripe"**.
+
+### How payments are recorded
+
+Stripe tells Carbon when an invoice is paid. Carbon also checks Stripe twice an hour for payments it missed.
+
+| In Stripe | In Carbon |
+| --- | --- |
+| The customer pays | A receipt posts against the invoice. The bank gets the amount after Stripe's fee, and the fee posts as an expense. |
+| The customer pays in installments | Each new amount becomes its own payment. |
+| The invoice is in a foreign currency | Carbon uses the rate Stripe converted at, if Stripe paid you out in your base currency. Otherwise it uses the invoice's rate. |
+| You mark the invoice paid outside Stripe | Nothing. Record that payment in Carbon yourself. |
+| A charge is refunded in full, or a dispute is lost | Carbon voids the payment that recorded the charge and reopens the invoice. Stripe keeps its fee, so the fee stays an expense. |
+| A charge is refunded in part | Nothing. Record the refund yourself. |
+
+The accounts come from **Accounting → Default Accounts**: **"Bank - Cash"** for the deposit and **"Service Charges"** for the fee. The Stripe Connect drawer lists them under **Accounting**, where the fee account is called **"Processing Fees"**.
+
+<Callout type="warn" title="Partial refunds and dispute fees need you">
+Carbon only reverses a whole payment. Record a partial refund, and the fee Stripe charges for a lost dispute, yourself.
+</Callout>
+
+<AgentContext>
+- Integration id `stripe-connect`, category "Payments", config `packages/ee/src/stripe-connect/config.tsx`. The card appears only when `STRIPE_SECRET_KEY` is set (`STRIPE_CONNECT_ENABLED`). Plan gate: `INTEGRATIONS` (Business on Cloud).
+- Accounts are created with Stripe's v2 API: full Stripe Dashboard, `fees_collector: stripe`, `losses_collector: stripe`, capabilities `card_payments` and `ach_debit_payments` (`packages/stripe/src/connect.constants.ts`). Accounts connected earlier keep the Express dashboard; for them "Open Stripe Dashboard" uses a single-use login link and the platform pays Stripe's fees.
+- Routes: `api+/integrations.stripe-connect.connect.ts` (start onboarding), `.callback.ts` (Stripe's return and expired-link refresh), `.dashboard.ts` (Open Stripe Dashboard), `api+/webhook.stripe-connect.ts` (events). The sweep `stripe-connect-pull-sweep` runs at :15 and :45 past each hour.
+- A refund or lost dispute voids only the payment that first recorded that charge (`refundedChargePayments`). When one payment recorded several charges at once, nothing is voided and the refund needs manual handling. Partial refunds are logged only.
+- The "Default to Online Payments" switch (`autoEnableInvoicing`) is stored but nothing reads it.
+- Errors and fixes:
+  - "Set your company's country in Company Settings before you connect Stripe." The company has no country.
+  - "Stripe onboarding is already starting for this company. Try again in a moment." Another connect is running for the company.
+  - "You must have Connect enabled on Accounts v2 to use this field." (from Stripe) The platform's Stripe account has not enabled Connect on Accounts v2 in that mode (test, sandbox or live). A platform setting, not a company one.
+  - "This Stripe account is no longer connected to Carbon." The seller disconnected the account in Stripe.
+  - "Stripe isn't configured on this platform yet." No Stripe secret key on the deployment.
+  - "Stripe is not connected" / "No Stripe customer is linked" (`sendError` on a recurring invoice): connect Stripe, or link the bill-to customer by posting one invoice through Stripe manually, then click Send.
+  - "the Stripe invoice totals … but the Carbon invoice totals … — refusing to send": Stripe's draft total differed from the invoice total, so the draft was deleted and nothing was sent.
+- Self-hosting: set `STRIPE_SECRET_KEY` and `STRIPE_CONNECT_WEBHOOK_SECRET`; register the Connect endpoint with `pnpm --filter @carbon/stripe register:stripe` (pins its API version and subscribes `invoice.paid`, `invoice.payment_succeeded`, `invoice.payment_failed`, `invoice.marked_uncollectible`, `invoice.voided`, `charge.refunded`, `charge.dispute.closed`, `account.updated`).
+</AgentContext>
+
+## Related
+
+<Cards>
+  <Card title="Invoices" href="/docs/reference/invoices">
+    Posting a sales invoice and what it books.
+  </Card>
+  <Card title="Payments" href="/docs/reference/payments">
+    How a receipt settles an invoice.
+  </Card>
+  <Card title="Contracts" href="/docs/reference/contracts">
+    Recurring invoices sent through Stripe.
+  </Card>
+</Cards>

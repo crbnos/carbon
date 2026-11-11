@@ -63,6 +63,8 @@ On a unit treated as a sale, rent and the purchase option credit net investment 
 
 <Term id="posting">Posting</Term> creates general-ledger entries: receivables against sales for a sales invoice, or payables against inventory or WIP for a purchase invoice. Before the company has [set up accounting](/docs/reference/accounting#setting-up-accounting), those entries are Provisional and count in no balance. Posting also updates invoiced quantities on order lines and records the posting date.
 
+To send a posted sales invoice with a link to pay by card or ACH, connect [Stripe Connect](/docs/integrations/payments#stripe-connect).
+
 <Callout type="warn">
 Posting never marks an invoice **Paid** — it lands on **Submitted** or **Open**. Settling it is a separate, deliberate step. A posted invoice can't be deleted either; to undo one you **void** it, which writes reversing entries rather than erasing history.
 </Callout>

@@ -85,9 +85,9 @@ The ERP keeps the address you set and only refreshes the event key in it, so a r
 <EnvVar name="SMTP_PASSWORD" type="string">SMTP password.</EnvVar>
 <EnvVar name="SMTP_FROM" type="string">From-address for outgoing email, e.g. `Carbon <no-reply@example.com>`.</EnvVar>
 <EnvVar name="RESEND_API_KEY" type="string">Optional. Resend marketing-contacts API; also a legacy SMTP fallback when `SMTP_*` is unset.</EnvVar>
-<EnvVar name="STRIPE_SECRET_KEY" type="string">Stripe secret key, Cloud / Enterprise billing.</EnvVar>
+<EnvVar name="STRIPE_SECRET_KEY" type="string">Stripe secret key. Runs Cloud billing and turns on the Stripe Connect integration. For Stripe Connect, the key's Stripe account must have Connect enabled on Accounts v2.</EnvVar>
 <EnvVar name="STRIPE_WEBHOOK_SECRET" type="string">Verifies inbound Stripe webhooks.</EnvVar>
-<EnvVar name="STRIPE_CONNECT_WEBHOOK_SECRET" type="string">Verifies inbound Stripe Connect webhooks (connected-account events, signed with a separate secret).</EnvVar>
+<EnvVar name="STRIPE_CONNECT_WEBHOOK_SECRET" type="string">Verifies inbound Stripe Connect webhooks (connected-account events, signed with a separate secret). The `register:stripe` script in `@carbon/stripe` prints it when it creates the Connect endpoint. Locally, the Stripe CLI prints one when it forwards Connect events.</EnvVar>
 </EnvVars>
 
 ## AI & analytics
