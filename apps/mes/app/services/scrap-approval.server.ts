@@ -9,6 +9,7 @@ import {
   authorizeScrapApprover,
   describeScrap,
   discardScrapApproval,
+  failedScrapPostingSettlement,
   getScrapApprovalRequirement,
   hasScrapApprovalRules,
   markScrapApprovalPosted,
@@ -205,12 +206,27 @@ export async function postScrapWithApproval<T>(args: {
       posted.error.status !== undefined &&
       posted.error.status >= 400 &&
       posted.error.status < 500;
-    const committed =
-      args.postedDespiteError &&
-      (await args.postedDespiteError().catch(() => false));
-    if (committed) {
+    // A failed read of whether it posted is not a "no": the record stays.
+    let committed: boolean | "unknown" = false;
+    if (args.postedDespiteError) {
+      try {
+        committed = await args.postedDespiteError();
+      } catch (error) {
+        logger.error("Could not read whether a failed scrap posted", {
+          companyId,
+          scrapRequestId: recorded.scrapRequestId,
+          error
+        });
+        committed = "unknown";
+      }
+    }
+    const settlement = failedScrapPostingSettlement({
+      refused: refusedScrap,
+      committed
+    });
+    if (settlement === "mark posted") {
       await markPosted();
-    } else if (refusedScrap) {
+    } else if (settlement === "discard") {
       await discardScrapApproval(db, {
         companyId,
         scrapRequestIds: [recorded.scrapRequestId]

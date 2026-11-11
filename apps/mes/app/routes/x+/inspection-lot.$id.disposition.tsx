@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { assertIsPost, error, hasPermission, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
@@ -41,10 +41,8 @@ import { path } from "~/utils/path";
 // only. The disposition is one-shot (requireOpen): postings can never re-run.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId, sessionUserId } = await requirePermissions(
-    request,
-    { update: "quality" }
-  );
+  const { client, companyId, userId, sessionUserId, permissions } =
+    await requirePermissions(request, { update: "quality" });
   const { id } = params;
   if (!id) throw new Error("id is required");
 
@@ -237,6 +235,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const postsScrap = scrapTotal > 0 && Boolean(scrapReasonId);
+  // The scrap row goes in as the system (a scrap rule refuses it from an API
+  // role), so the production permission the row's policy asked is checked
+  // here, before the lot closes.
+  if (
+    postsScrap &&
+    !hasPermission(permissions, "production", "create", companyId)
+  ) {
+    return fail(null, "You do not have permission to record scrap");
+  }
   // A 4xx means no scrap row exists and removes the approval record; any other
   // status may have committed, so the record stays unconfirmed.
   const refused = (cause: unknown, message: string, status = 422) => ({

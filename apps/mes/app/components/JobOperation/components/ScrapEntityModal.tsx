@@ -15,7 +15,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import { scrapTrackedEntityValidator } from "~/services/models";
 import { path } from "~/utils/path";
@@ -51,21 +51,32 @@ export function ScrapEntityModal({
   // modal stays open for the approver's PIN and the same form is sent again.
   const approval = useScrapApproval();
   const { settle } = approval;
+  // Why the last submit was refused; the modal stays open to show it.
+  const [failure, setFailure] = useState<string | null>(null);
 
   useEffect(() => {
     if (submitted.current && fetcher.state === "idle") {
       // Reset, or the next open would close itself: the modal stays mounted.
       submitted.current = false;
       if (settle(fetcher.data)) return;
+      if (fetcher.data?.success === false) {
+        setFailure(fetcher.data.message);
+        return;
+      }
       onClose();
     }
   }, [fetcher.state, fetcher.data, settle, onClose]);
+
+  const close = () => {
+    setFailure(null);
+    onClose();
+  };
 
   return (
     <Modal
       open={open}
       onOpenChange={(open) => {
-        if (!open) onClose();
+        if (!open) close();
       }}
     >
       <ModalContent>
@@ -81,6 +92,7 @@ export function ScrapEntityModal({
           fetcher={fetcher}
           onSubmit={() => {
             submitted.current = true;
+            setFailure(null);
           }}
         >
           <ModalHeader>
@@ -125,10 +137,13 @@ export function ScrapEntityModal({
                 approval={approval}
                 isSubmitting={fetcher.state !== "idle"}
               />
+              {failure && (
+                <p className="text-sm text-destructive w-full">{failure}</p>
+              )}
             </VStack>
           </ModalBody>
           <ModalFooter>
-            <Button variant="secondary" size="lg" onClick={onClose}>
+            <Button variant="secondary" size="lg" onClick={close}>
               <Trans>Cancel</Trans>
             </Button>
             <Button

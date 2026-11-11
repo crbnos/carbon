@@ -123,7 +123,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
         notes: `${writeOff.readableId} rejected`
       },
       approver: approver.error ? {} : approver.data,
-      post: reject
+      post: reject,
+      // The ERP decides the lot and writes it off in one transaction, then
+      // opens the NCR: a failed NCR leaves the write-off posted.
+      postedDespiteError: async () =>
+        Boolean(
+          await getDatabaseClient()
+            .selectFrom("itemLedger")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where("documentType", "=", "Inbound Inspection")
+            .where("documentId", "=", id)
+            .executeTakeFirst()
+        )
     });
     if (outcome.status === "approval-required") {
       return { scrapApproval: outcome.prompt };
