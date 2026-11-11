@@ -26,6 +26,9 @@ export function RestoreReviewRow({
   onPurgeAndRestore: () => void;
 }) {
   const busy = run.status === "running" || run.status === "reverting";
+  // The backup's data loaded before the run failed: the snapshot is the only
+  // way back, so the row offers keep or revert, never a dismiss that drops it.
+  const decidable = run.status === "ready" || run.applied;
   return (
     <HStack className="w-full justify-between border rounded-lg p-3">
       <VStack spacing={0} className="min-w-0">
@@ -46,6 +49,11 @@ export function RestoreReviewRow({
                 one="# row links to data outside this company, so a safety copy of your current data can't be made."
                 other="# rows link to data outside this company, so a safety copy of your current data can't be made."
               />
+            ) : run.applied ? (
+              <Trans>
+                The backup's data was loaded, but the restore stopped after
+                that. Keep it, or revert to put back what you had.
+              </Trans>
             ) : (
               <Trans>This restore could not be completed.</Trans>
             )}{" "}
@@ -79,7 +87,7 @@ export function RestoreReviewRow({
         )}
       </VStack>
       <HStack spacing={2} className="shrink-0">
-        {run.status === "ready" && (
+        {decidable && (
           <>
             <Button onClick={onKeep}>
               <Trans>Keep</Trans>
@@ -89,7 +97,7 @@ export function RestoreReviewRow({
             </Button>
           </>
         )}
-        {run.status === "failed" && (
+        {run.status === "failed" && !run.applied && (
           <>
             {run.reason === "scope-violations" && (
               <Button variant="destructive" onClick={onPurgeAndRestore}>

@@ -2,7 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { getCompanyPrivateBucket, isStorageNotFound } from "@carbon/files";
+import {
+  getCompanyPrivateBucket,
+  isStorageNotFound,
+  isUnsafeStoragePath
+} from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { async, chunkArray } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -313,15 +317,10 @@ export async function copyAssetsToBackup(
 }
 
 /**
- * Copy a backup's stored assets back into the target company's own private
- * bucket, rewriting each path for a foreign restore or an import (no-op for an
- * own restore). Server-side, best-effort. Every write is guarded to the target
- * company's own `{companyId}/` prefix so a malformed path can never land in
- * another tenant's space.
- */
-/**
- * Where a backup's included files land in the target company: the paths a
- * restore writes (those outside `{companyId}/` it then skips).
+ * Where a backup's included files land in the target company. The manifest is
+ * a file the user can edit, so a path that would land outside the target's
+ * `{companyId}/` folder, or resolve somewhere else (`isUnsafeStoragePath`), is
+ * left out: a restore never writes it, and a revert never deletes it.
  */
 export function assetTargets(args: {
   files: Array<{ path: string; included: boolean }>;
@@ -330,14 +329,34 @@ export function assetTargets(args: {
   idRewrite: Map<string, string>;
 }): Array<{ source: string; target: string }> {
   const { files, sourceCompanyId, companyId, idRewrite } = args;
-  return files
-    .filter((f) => f.included)
-    .map((f) => ({
-      source: f.path,
-      target: rewriteStoragePath(f.path, sourceCompanyId, companyId, idRewrite)
-    }));
+  return files.flatMap((f) => {
+    if (!f.included) return [];
+    const target = rewriteStoragePath(
+      f.path,
+      sourceCompanyId,
+      companyId,
+      idRewrite
+    );
+    if (
+      isUnsafeStoragePath(f.path) ||
+      isUnsafeStoragePath(target) ||
+      !target.startsWith(`${companyId}/`)
+    ) {
+      log.warning("Skipping backup asset outside the target company", {
+        path: f.path,
+        target
+      });
+      return [];
+    }
+    return [{ source: f.path, target }];
+  });
 }
 
+/**
+ * Copy a backup's stored assets back into the target company's own private
+ * bucket, rewriting each path for a foreign restore or an import (no-op for an
+ * own restore). Server-side, best-effort: a failed file warns and counts.
+ */
 export async function restoreAssetsFromBackup(
   client: SupabaseClient,
   args: {
@@ -360,14 +379,6 @@ export async function restoreAssetsFromBackup(
   await async.map(
     targets,
     async ({ source, target: targetPath }) => {
-      if (!targetPath.startsWith(`${companyId}/`)) {
-        log.warning("Skipping backup asset outside target company prefix", {
-          path: source,
-          targetPath
-        });
-        await onProgress?.(++done, total);
-        return;
-      }
       const { ok, error } = await copyStorageObject(client, {
         srcBucket: bucket,
         srcPath: `${backupAssetsDir(name)}/${source}`,

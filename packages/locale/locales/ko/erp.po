@@ -29690,6 +29690,9 @@ msgstr "백로그"
 msgid "The backup job reported this error."
 msgstr "백업 작업이 이 오류를 보고했습니다."
 
+msgid "The backup's data was loaded, but the restore stopped after that. Keep it, or revert to put back what you had."
+msgstr ""
+
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "공정이 작업 지시를 제때 완료하기 위해 마감일까지 완료되어야 하는 역계산된 날짜이며 공정의 마감일에 기록됩니다. 진행 상황을 측정하기 위한 안정적인 목표 — 배치에 대한 제약 조건이 아닙니다."
 

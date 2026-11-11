@@ -219,7 +219,11 @@ import {
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { resolveCapabilities } from "@carbon/ee/sync";
 import { flags } from "@carbon/env/flags.server";
-import { getCompanyPrivateBucket, TEMP_STAGING_BUCKET } from "@carbon/files";
+import {
+  getCompanyPrivateBucket,
+  isUnsafeStoragePath,
+  TEMP_STAGING_BUCKET
+} from "@carbon/files";
 import { type Events, trigger } from "@carbon/jobs";
 import {
   backupAssetsDir,
@@ -230,6 +234,7 @@ import {
   EXPORT_INTEGRATION,
   type ExportRunMeta,
   getCompanyTableCatalog,
+  holdsPendingChange,
   isSnapshotName,
   listBackups,
   listCompanyFiles,
@@ -1622,7 +1627,12 @@ export async function requireBackupAccess(request: Request) {
 /** A name the user may restore, download or delete: one of their own backups,
  *  never a path, never a restore's or template's snapshot. */
 export function isUserBackupName(name: string): boolean {
-  return name.length > 0 && !name.includes("/") && !isSnapshotName(name);
+  return (
+    name.length > 0 &&
+    !name.includes("/") &&
+    !isUnsafeStoragePath(name) &&
+    !isSnapshotName(name)
+  );
 }
 
 /** How many objects to download at once while packing the tar in order.
@@ -1820,8 +1830,9 @@ export async function unpackBackupArchive(
       stream.on("end", async () => {
         try {
           const rel = header.name;
-          // Reject path traversal; only land files inside this backup's folder.
-          if (rel.includes("..") || rel.startsWith("/")) {
+          // Only land files inside this backup's folder. storage-js puts the
+          // key into the URL unencoded, so `%2e%2e` resolves like `..`.
+          if (isUnsafeStoragePath(rel) || rel.startsWith("/")) {
             criticalErrors++;
             next();
             return;
@@ -1995,9 +2006,27 @@ export async function getCompanyRestoreRuns(
       status: meta.status ?? "running",
       rows: meta.rows ?? 0,
       filePath: meta.filePath ?? null,
-      includeStorage: meta.includeStorage ?? null
+      includeStorage: meta.includeStorage ?? null,
+      applied: meta.applied === true
     };
   });
+}
+
+/**
+ * The restore or demo-data run that still holds the company's way back, if
+ * any (`holdsPendingChange`): while one does, neither kind may start another.
+ */
+export async function getPendingChange(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<"restore" | "template" | null> {
+  const [restores, template] = await Promise.all([
+    getCompanyRestoreRuns(client, companyId),
+    getCompanyTemplateRun(client, companyId)
+  ]);
+  if (restores.some(holdsPendingChange)) return "restore";
+  if (template && holdsPendingChange(template)) return "template";
+  return null;
 }
 
 /**
@@ -2038,7 +2067,8 @@ export async function getCompanyTemplateRun(
     templateRunId: meta.templateRunId ?? "",
     status: meta.status ?? "running",
     datasetKey: meta.datasetKey ?? null,
-    hasSnapshot: Boolean(meta.snapshotPath)
+    hasSnapshot: Boolean(meta.snapshotPath),
+    applied: meta.applied === true
   };
 }
 

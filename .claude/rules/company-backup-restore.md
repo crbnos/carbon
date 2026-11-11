@@ -268,12 +268,24 @@ One lifecycle for every long backup job:
   `includeStorage: "all"` (snapshots carry their files), then records
   `snapshotPath`. A recorded snapshot is reused, never retaken: a retry after the load
   committed would capture the loaded data over the company's real copy.
+- **`applied`**: `RunMarker.markApplied` is an UPDATE run INSIDE the load's own
+  transaction (`wipeAndLoad({ markApplied })`, `applyDataset({ beforeCommit })`), so
+  the flag commits with the data or not at all. A `failed` run with `applied` still
+  holds the only way back: the review rows offer Keep / Revert, never Dismiss.
+- `holdsPendingChange` = not `failed`, or `failed` and `applied`. Only one restore or
+  demo-data run may hold it per company: `assertNoPendingChange` in both jobs (race-free
+  under `PER_COMPANY_CONCURRENCY`), `getPendingChange` in both ERP routes.
+- `failStuckRun`: the `onFailure` of export, restore, template and both reverts. A
+  timeout or out-of-memory kill skips the job's own catch; this marks a still
+  `running` / `reverting` run failed, so it doesn't lock the company out.
 - `keepRun`: only `ready` or `failed` (an in-flight run is refused); deletes the
   snapshot folder, then the marker.
 - `revertRun`: reads the snapshot through `readBackupForLoad`, `wipeAndLoad` with
   `remap: false` and the marker's `includeGroup`, restores its files, deletes the
   snapshot and the marker. No recorded snapshot → marks the run failed (not a quiet
-  no-op that keeps offering Revert). On failure the marker keeps the snapshot so the
+  no-op that keeps offering Revert). A run that covered group data is refused
+  (marked failed, snapshot kept) once another company has joined the group: its
+  rows point at that shared data. On failure the marker keeps the snapshot so the
   revert can be retried.
 - `PER_COMPANY_CONCURRENCY` (`'company-data-' + companyId`, scope `env`, limit 1) is
   taken by every export, restore, template and import function (and their
@@ -551,6 +563,11 @@ Forward flow, inside one `step.run`:
      re-stamps `companyId` / `companyGroupId`, mints ids, remaps FKs (nullable
      dangling FK → null, non-nullable → throw), and keeps the first of the rows a
      user collapse made identical on a user-keyed table.
+   - `assertLoadedInScope` (restore, revert and import): a backup is a file the user
+     can edit, so verbatim rows may name another company. It counts the rows THIS
+     transaction wrote (`xmin = pg_current_xact_id()::xid`) outside `buildScopeFilter`
+     and throws on any, rolling the load back. Covers `via` tables too (a child hung
+     off another company's parent).
    - `bulkLoad` (every load uses it) sets `session_replication_role = 'replica'`
      where `canSetReplicationRole` allows (else warns, relying on topological order),
      then, in the transaction, rebuilds derived groups, writes a null-row-id
@@ -558,8 +575,11 @@ Forward flow, inside one `step.run`:
      `REALTIME_TABLES` entry — without it, open tabs kept stale picker rows for an hour.
 7. `restoreAssetsFromBackup` (outside the transaction) when `includeStorage = "all"`.
    It runs **before** `ready` so the dialog reports complete only once data AND files
-   are in place, but never throws (per-file warnings), so a storage hiccup can't fail
-   a committed restore.
+   are in place. The company's files are listed BEFORE the load; after the commit
+   the whole file phase (recording `addedFiles`, the copy) is in a try/catch that
+   logs, so a storage error can't fail a committed restore.
+   `assetTargets` drops any manifest path that is unsafe (`isUnsafeStoragePath`) or
+   lands outside `{companyId}/`: never written, never in `addedFiles`.
 8. Marker → `ready` (`rows`), parked on keep or revert. Any throw → `failRun`.
 
 Keep and revert need no entitlement. Keep refuses an in-flight run; revert with no
@@ -577,8 +597,10 @@ decides whether it can wipe at all. See `billing-system.md`.
 ### Known caveats in the committed code (not yet hardened)
 
 - **Storage restore is best-effort** — copy failures warn only; the restore still
-  reports success (data is the source of truth). The cross-tenant write guard
-  (`targetPath.startsWith(\`${companyId}/\`)`) IS in `restoreAssetsFromBackup`.
+  reports success (data is the source of truth). The cross-tenant guard is
+  `assetTargets` (see step 7); archive uploads check each entry with
+  `isUnsafeStoragePath` (storage-js puts keys into the URL unencoded, so `%2e%2e`
+  resolves like `..`).
 - **Asset copy duplicates bytes** — a backup copies the company's assets into its
   `assets/` folder, so each backup costs roughly its asset size in storage.
   Snapshots are transient (keep/revert delete the folder); exports persist until

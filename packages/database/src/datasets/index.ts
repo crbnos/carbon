@@ -81,11 +81,16 @@ export type ApplyDatasetOptions = {
 
 export async function applyDataset(
   client: PoolClient,
-  opts: ApplyDatasetOptions
+  opts: ApplyDatasetOptions & {
+    /** Run on `client` after the tiers, inside the transaction: a write that
+     *  must commit with the dataset or not at all. */
+    beforeCommit?: (client: PoolClient) => Promise<void>;
+  }
 ): Promise<void> {
   await client.query("BEGIN");
   try {
     await applyDatasetTiers(client, opts);
+    await opts.beforeCommit?.(client);
     await client.query("COMMIT");
   } catch (err) {
     // A dropped connection is the likeliest cause of a mid-seed failure, and

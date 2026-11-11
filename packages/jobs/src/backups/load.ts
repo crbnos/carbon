@@ -10,7 +10,8 @@ import {
 } from "@carbon/database/realtime-tables";
 import { getLogger } from "@carbon/logger";
 import { chunkArray } from "@carbon/utils";
-import { type Kysely, sql } from "kysely";
+import { NonRetriableError } from "inngest";
+import { CompiledQuery, type Kysely, sql } from "kysely";
 import type { JobDatabase } from "../db";
 import type { Catalog, TableInfo } from "./catalog";
 import { groupConflictClause, rebuildDerivedGroups } from "./derived-groups";
@@ -166,6 +167,36 @@ export async function insertTables(
 }
 
 /**
+ * Refuse a load that wrote a row outside this company. A backup is a file the
+ * user can edit, so a row's `companyId`, `companyGroupId` or the parent it
+ * hangs off may name another company, and with FK checks off nothing else
+ * stops it. Counts the rows this transaction wrote (`xmin`) that fall outside
+ * the scope the wipe used; any such row throws, and the whole load rolls back.
+ */
+export async function assertLoadedInScope(
+  trx: Kysely<KyselyDatabase>,
+  tables: TableInfo[],
+  byName: Map<string, TableInfo>,
+  scope: { companyId: string; companyGroupId: string | null }
+): Promise<void> {
+  const escaped: string[] = [];
+  for (const table of tables) {
+    const { rows } = await sql<{ n: number }>`
+      SELECT count(*)::int AS n FROM ${sql.id(table.name)}
+      WHERE xmin = pg_current_xact_id()::xid
+        AND (${buildScopeFilter(table, byName, scope.companyId, scope.companyGroupId)}) IS NOT TRUE
+    `.execute(trx);
+    const n = rows[0]?.n ?? 0;
+    if (n > 0) escaped.push(`${table.name} (${n})`);
+  }
+  if (escaped.length > 0) {
+    throw new NonRetriableError(
+      `This backup can't be restored: it has rows that belong to another company, in ${escaped.join(", ")}.`
+    );
+  }
+}
+
+/**
  * Run a bulk load of one company's data in a single transaction, with triggers
  * and FK checks off where this connection may turn them off. Then do what the
  * triggers would have done: rebuild the derived groups, and tell open clients
@@ -268,6 +299,9 @@ export async function wipeAndLoad(
     } | null;
     /** Live phase progress (`wipe` then `load`). Throttled by the caller. */
     onProgress?: (p: JobProgress) => Promise<void>;
+    /** Run inside the load's transaction, after the data: the run's marker
+     *  records that its data change committed (`RunMarker.markApplied`). */
+    markApplied?: { sql: string; parameters: unknown[] };
   }
 ): Promise<{ rows: number; idRewrite: Map<string, string> }> {
   const { companyId, remap, includeGroup, targetGroupId, onProgress } = opts;
@@ -341,6 +375,10 @@ export async function wipeAndLoad(
         ? (done, total) => onProgress({ phase: "load", done, total })
         : undefined
     );
+    await assertLoadedInScope(trx, loadTables, byName, {
+      companyId,
+      companyGroupId: targetGroupId
+    });
 
     // Kept identity rows whose parent the wipe removed (replica mode skipped the
     // cascade) would fail every later export. A foreign restore already wiped them.
@@ -360,6 +398,11 @@ export async function wipeAndLoad(
           deleted: dangling
         });
       }
+    }
+    if (opts.markApplied) {
+      await trx.executeQuery(
+        CompiledQuery.raw(opts.markApplied.sql, opts.markApplied.parameters)
+      );
     }
     return counts;
   });

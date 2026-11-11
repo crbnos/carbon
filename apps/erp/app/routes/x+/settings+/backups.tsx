@@ -54,6 +54,7 @@ import {
   getCompanyBackups,
   getCompanyExportRun,
   getCompanyRestoreRuns,
+  getPendingChange,
   isUserBackupName,
   purgeAndRetry,
   requireBackupAccess,
@@ -147,8 +148,10 @@ async function clearStaleExportFailure(
   }
 }
 
-const PENDING_RESTORE =
-  "Finish your current restore — keep or revert it — first.";
+const PENDING_MESSAGE = {
+  restore: "Finish your current restore — keep or revert it — first.",
+  template: "Finish your current demo data change — keep or revert it — first."
+} as const;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requireBackupAccess(request);
@@ -213,9 +216,9 @@ export async function action({ request }: ActionFunctionArgs) {
         // One restore at a time. A second restore while one is still pending
         // review would snapshot the already-restored state and tangle the
         // revert chain.
-        const runs = await getCompanyRestoreRuns(client, companyId);
-        if (runs.some((r) => r.status !== "failed")) {
-          return { success: false, message: PENDING_RESTORE };
+        const pending = await getPendingChange(client, companyId);
+        if (pending) {
+          return { success: false, message: PENDING_MESSAGE[pending] };
         }
         const restoreRunId = await startCompanyRestore({
           companyId,
@@ -331,8 +334,9 @@ export async function action({ request }: ActionFunctionArgs) {
             message: "This restore can't be retried this way"
           };
         }
-        if (runs.some((r) => r.status !== "failed")) {
-          return { success: false, message: PENDING_RESTORE };
+        const pending = await getPendingChange(client, companyId);
+        if (pending) {
+          return { success: false, message: PENDING_MESSAGE[pending] };
         }
         retry = {
           filePath: run.filePath,

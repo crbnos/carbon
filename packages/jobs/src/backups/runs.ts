@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { isUnsafeStoragePath } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
@@ -10,7 +11,12 @@ import type { JobDatabase } from "../db";
 import { getCompanyTableCatalog } from "./catalog";
 import { writeCompanyBackup } from "./dump";
 import { backupDir, snapshotName } from "./format";
-import { getCompanyGroupId, readBackupForLoad, wipeAndLoad } from "./load";
+import {
+  getCompanyGroupId,
+  readBackupForLoad,
+  resolveRestoreScope,
+  wipeAndLoad
+} from "./load";
 import { ExportScopeViolationError, type ScopeViolation } from "./scope";
 import {
   deleteCompanyFiles,
@@ -81,7 +87,24 @@ type ReversibleRunMeta = RunMeta & {
   includeGroup?: boolean;
   /** Files the run wrote where none existed before: a revert deletes them. */
   addedFiles?: string[];
+  /** The run's data change committed. Set inside the load's own transaction
+   *  (`markApplied`), so it is true exactly when the company's data is no
+   *  longer what the snapshot holds — even when a later step failed. */
+  applied?: boolean;
 };
+
+/**
+ * Whether a restore or demo-data run still owns the company's way back: it is
+ * in flight, waiting on keep or revert, or failed after its data landed. Only
+ * one such run may exist per company, or a second snapshot would capture the
+ * first run's data and a revert would put the wrong data back.
+ */
+export function holdsPendingChange(meta: {
+  status: RunStatus;
+  applied?: boolean;
+}): boolean {
+  return meta.status !== "failed" || meta.applied === true;
+}
 
 export type RestoreRunMeta = ReversibleRunMeta & {
   restoreRunId: string;
@@ -111,6 +134,9 @@ type RunMarker<M extends RunMeta> = {
   /** Merge `patch` into the marker, creating it on the first write. */
   write(patch: Partial<M>): Promise<void>;
   clear(): Promise<void>;
+  /** The statement that sets `applied`, to run inside the load's transaction
+   *  so the flag commits with the data or not at all. */
+  markApplied: { sql: string; parameters: unknown[] };
 };
 
 /**
@@ -187,6 +213,12 @@ export function runMarker<M extends RunMeta>(
         .eq("companyId", companyId)
         .eq("entityId", entityId);
       if (error) throw new Error(`Failed to clear the run: ${error.message}`);
+    },
+    markApplied: {
+      sql: `UPDATE "externalIntegrationMapping"
+        SET "metadata" = coalesce("metadata", '{}'::jsonb) || '{"applied": true}'::jsonb
+        WHERE "integration" = $1 AND "companyId" = $2 AND "entityId" = $3`,
+      parameters: [integration, companyId, entityId]
     }
   };
 }
@@ -222,7 +254,7 @@ const PROGRESS_THROTTLE_MS = 250;
  * transaction.
  */
 export function progressWriter(
-  marker: RunMarker<RunMeta>
+  marker: Pick<RunMarker<RunMeta>, "write">
 ): (p: JobProgress) => Promise<void> {
   let lastAt = 0;
   let lastPhase = "";
@@ -278,6 +310,59 @@ export async function failRun(
     });
   }
   return scope ? new NonRetriableError(message, { cause: err }) : err;
+}
+
+/**
+ * A job's `onFailure`: mark its run failed when the job died without reaching
+ * its own catch (a timeout, an out-of-memory kill), so the run does not stay
+ * "running" and lock the company out of every later run. A run that already
+ * settled is left as it is.
+ */
+export async function failStuckRun(
+  marker: RunMarker<RunMeta>,
+  err: unknown,
+  prefix = ""
+): Promise<void> {
+  const meta = await marker.read();
+  if (meta?.status !== "running" && meta?.status !== "reverting") return;
+  await failRun(marker, err, prefix);
+}
+
+/**
+ * Refuse a restore or demo-data run while another one holds the company's way
+ * back (`holdsPendingChange`). `own` names the run asking, so its own marker,
+ * on a retry, never blocks it. Every such job holds `PER_COMPANY_CONCURRENCY`,
+ * so no other run can start between this read and the caller's snapshot.
+ */
+export async function assertNoPendingChange(
+  client: ServiceRole,
+  companyId: string,
+  own: { restoreRunId?: string; templateRunId?: string }
+): Promise<void> {
+  const { data, error } = await client
+    .from("externalIntegrationMapping")
+    .select("integration, metadata")
+    .eq("companyId", companyId)
+    .in("integration", [RESTORE_INTEGRATION, TEMPLATE_INTEGRATION]);
+  if (error) throw new Error(`Failed to read the runs: ${error.message}`);
+  const blocking = (data ?? []).find((m) => {
+    const meta = (m.metadata ?? {}) as Partial<
+      RestoreRunMeta & TemplateRunMeta
+    >;
+    if (!meta.status) return false;
+    const isOwn =
+      m.integration === RESTORE_INTEGRATION
+        ? meta.restoreRunId === own.restoreRunId
+        : meta.templateRunId === own.templateRunId;
+    return !isOwn && holdsPendingChange({ ...meta, status: meta.status });
+  });
+  if (blocking) {
+    throw new NonRetriableError(
+      blocking.integration === RESTORE_INTEGRATION
+        ? "A restore is waiting to be kept or reverted. Resolve it first."
+        : "A demo data change is waiting to be kept or reverted. Resolve it first."
+    );
+  }
 }
 
 /**
@@ -361,6 +446,24 @@ export async function revertRun(
     return { reverted: false };
   }
 
+  // Group-scoped data (chart of accounts, currencies, dimensions) is wiped and
+  // reloaded only while the company is the group's sole member. A company that
+  // joined since shares it now, and its rows point at it.
+  if (meta.includeGroup) {
+    const { includeGroup } = await resolveRestoreScope(client, companyId);
+    if (!includeGroup) {
+      await marker.write({
+        status: "failed",
+        progress: null,
+        error:
+          "Another company joined this company's group after this change. " +
+          "Reverting would replace the chart of accounts, currencies and " +
+          "dimensions it now shares, so this change can only be kept."
+      });
+      return { reverted: false };
+    }
+  }
+
   await marker.write({
     status: "reverting",
     startedAt: datetime.timestamp(),
@@ -396,13 +499,17 @@ export async function revertRun(
     );
     // The data is already back: a file or a snapshot left behind is only
     // logged, never reported as a failed revert.
-    await removeCompanyPaths(client, companyId, meta.addedFiles ?? []).catch(
-      (err) =>
-        log.error("Failed to delete files a reverted run added", {
-          companyId,
-          files: meta.addedFiles?.length,
-          error: err instanceof Error ? err.message : String(err)
-        })
+    // Recorded from a user-editable manifest by older runs: only keys inside
+    // this company's folder are ever deleted.
+    const addedFiles = (meta.addedFiles ?? []).filter(
+      (p) => p.startsWith(`${companyId}/`) && !isUnsafeStoragePath(p)
+    );
+    await removeCompanyPaths(client, companyId, addedFiles).catch((err) =>
+      log.error("Failed to delete files a reverted run added", {
+        companyId,
+        files: meta.addedFiles?.length,
+        error: err instanceof Error ? err.message : String(err)
+      })
     );
     await deleteCompanyFiles(client, companyId, backupDir(snapshotPath)).catch(
       (err) =>

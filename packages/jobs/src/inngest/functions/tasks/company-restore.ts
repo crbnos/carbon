@@ -17,7 +17,9 @@ import {
   scanBackup
 } from "../../../backups/remap";
 import {
+  assertNoPendingChange,
   failRun,
+  failStuckRun,
   keepRun,
   PER_COMPANY_CONCURRENCY,
   progressWriter,
@@ -57,7 +59,14 @@ export const companyRestoreFunction = inngest.createFunction(
   {
     id: "company-restore",
     retries: 1,
-    concurrency: PER_COMPANY_CONCURRENCY
+    concurrency: PER_COMPANY_CONCURRENCY,
+    onFailure: ({ event, error }) => {
+      const { companyId, restoreRunId } = event.data.event.data;
+      return failStuckRun(
+        restoreMarker(getCarbonServiceRole(), { companyId, restoreRunId }),
+        error
+      );
+    }
   },
   { event: "carbon/company-restore" },
   async ({ event, step, logger }) => {
@@ -90,6 +99,7 @@ export const companyRestoreFunction = inngest.createFunction(
 
       try {
         await requireBackupsEntitlement(companyId);
+        await assertNoPendingChange(client, companyId, { restoreRunId });
 
         const catalog = await getCompanyTableCatalog(db);
         const backup = await readBackupForLoad(
@@ -143,46 +153,62 @@ export const companyRestoreFunction = inngest.createFunction(
           onProgress: report
         });
 
+        // Listed before the load, so a storage error here fails a run that
+        // has changed nothing yet.
+        const present =
+          includeStorage === "all"
+            ? new Set(
+                (await listCompanyFiles(client, companyId, companyId)).map(
+                  (f) => f.path
+                )
+              )
+            : null;
+
         // Atomic: if this throws, the company's data is untouched. A retry
-        // re-runs the wipe before the load, so it lands the same result.
+        // re-runs the wipe before the load, so it lands the same result. The
+        // marker's `applied` commits with the data.
         const { rows, idRewrite } = await wipeAndLoad(db, catalog, backup, {
           companyId,
           remap: foreign ? { userId, substrateIds, scan } : null,
           includeGroup,
           targetGroupId,
-          onProgress: report
+          onProgress: report,
+          markApplied: marker.markApplied
         });
 
         // Files before `ready`, so the page reports complete only once the data
-        // and the files are in place. The copy never throws (per-file warnings),
-        // so a storage hiccup can't flip a committed restore to failed.
-        if (includeStorage === "all") {
-          const assets = {
-            files: backup.manifest.storage,
-            name,
-            sourceCompanyId: backup.manifest.sourceCompanyId,
-            companyId,
-            idRewrite
-          };
-          // Recorded before copying, so a revert can take back exactly the
-          // files this restore creates. A retry keeps an earlier attempt's.
-          const present = new Set(
-            (await listCompanyFiles(client, companyId, companyId)).map(
-              (f) => f.path
-            )
-          );
-          const addedFiles = [
-            ...new Set([
-              ...(existing?.addedFiles ?? []),
-              ...assetTargets(assets)
-                .map((t) => t.target)
-                .filter((p) => !present.has(p))
-            ])
-          ];
-          await marker.write({ addedFiles });
-          await restoreAssetsFromBackup(client, assets, (done, total) =>
-            report({ phase: "files", done, total })
-          );
+        // and the files are in place. The data is committed by now: a storage
+        // error is logged, never a failed run over a loaded backup.
+        if (present) {
+          try {
+            const assets = {
+              files: backup.manifest.storage,
+              name,
+              sourceCompanyId: backup.manifest.sourceCompanyId,
+              companyId,
+              idRewrite
+            };
+            // Recorded before copying, so a revert can take back exactly the
+            // files this restore creates. A retry keeps an earlier attempt's.
+            const addedFiles = [
+              ...new Set([
+                ...(existing?.addedFiles ?? []),
+                ...assetTargets(assets)
+                  .map((t) => t.target)
+                  .filter((p) => !present.has(p))
+              ])
+            ];
+            await marker.write({ addedFiles });
+            await restoreAssetsFromBackup(client, assets, (done, total) =>
+              report({ phase: "files", done, total })
+            );
+          } catch (err) {
+            logger.error("Restore loaded the data but not its files", {
+              companyId,
+              restoreRunId,
+              error: err instanceof Error ? err.message : String(err)
+            });
+          }
         }
 
         await marker.write({ status: "ready", progress: null, rows });
@@ -242,7 +268,15 @@ export const companyRestoreRevertFunction = inngest.createFunction(
   {
     id: "company-restore-revert",
     retries: 1,
-    concurrency: PER_COMPANY_CONCURRENCY
+    concurrency: PER_COMPANY_CONCURRENCY,
+    onFailure: ({ event, error }) => {
+      const { companyId, restoreRunId } = event.data.event.data;
+      return failStuckRun(
+        restoreMarker(getCarbonServiceRole(), { companyId, restoreRunId }),
+        error,
+        "Revert failed: "
+      );
+    }
   },
   { event: "carbon/company-restore-revert" },
   async ({ event, step, logger }) => {

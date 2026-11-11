@@ -29690,6 +29690,9 @@ msgstr "l'arriéré"
 msgid "The backup job reported this error."
 msgstr "Le travail de sauvegarde a signalé cette erreur."
 
+msgid "The backup's data was loaded, but the restore stopped after that. Keep it, or revert to put back what you had."
+msgstr ""
+
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "La date calculée rétroactivement à laquelle une opération doit être terminée pour que son ordre de fabrication soit à l'heure, écrite à la date d'échéance de l'opération. Une cible stable pour mesurer la progression — jamais une contrainte de placement."
 

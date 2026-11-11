@@ -22,6 +22,7 @@ export {
 export {
   EXPORT_INTEGRATION,
   type ExportRunMeta,
+  holdsPendingChange,
   type JobPhase,
   type JobProgress,
   RESTORE_INTEGRATION,

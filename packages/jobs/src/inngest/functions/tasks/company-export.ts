@@ -9,6 +9,7 @@ import {
   EXPORT_INTEGRATION,
   type ExportRunMeta,
   failRun,
+  failStuckRun,
   PER_COMPANY_CONCURRENCY,
   progressWriter,
   runMarker,
@@ -16,6 +17,20 @@ import {
 } from "../../../backups/runs";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+
+const exportMarker = (
+  client: ReturnType<typeof getCarbonServiceRole>,
+  companyId: string,
+  userId: string
+) =>
+  runMarker<ExportRunMeta>(client, {
+    integration: EXPORT_INTEGRATION,
+    entityType: "export",
+    entityId: companyId,
+    companyId,
+    userId,
+    identity: {}
+  });
 
 /**
  * Write a backup of the company. One marker per company: cleared when the run
@@ -26,7 +41,14 @@ export const companyExportFunction = inngest.createFunction(
   {
     id: "company-export",
     retries: 1,
-    concurrency: PER_COMPANY_CONCURRENCY
+    concurrency: PER_COMPANY_CONCURRENCY,
+    onFailure: ({ event, error }) => {
+      const { companyId, userId } = event.data.event.data;
+      return failStuckRun(
+        exportMarker(getCarbonServiceRole(), companyId, userId),
+        error
+      );
+    }
   },
   { event: "carbon/company-export" },
   async ({ event, step, logger }) => {
@@ -36,14 +58,7 @@ export const companyExportFunction = inngest.createFunction(
     return await step.run("export-company", async () => {
       const client = getCarbonServiceRole();
       const db = getJobDatabaseClient();
-      const marker = runMarker<ExportRunMeta>(client, {
-        integration: EXPORT_INTEGRATION,
-        entityType: "export",
-        entityId: companyId,
-        companyId,
-        userId,
-        identity: {}
-      });
+      const marker = exportMarker(client, companyId, userId);
 
       // A retry overwrites a failed marker back to running.
       await startRun(marker, { label: label ?? null, includeStorage });

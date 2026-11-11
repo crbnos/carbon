@@ -6,7 +6,9 @@ import { NonRetriableError } from "inngest";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { JobDatabase } from "../db";
 import {
+  assertNoPendingChange,
   failRun,
+  failStuckRun,
   keepRun,
   progressWriter,
   RESTORE_INTEGRATION,
@@ -34,13 +36,35 @@ type Row = {
  * table really has on (integration, externalId, entityType, companyId), plus a
  * storage bucket that is always empty.
  */
-function fakeClient(opts: { failWrites?: boolean } = {}) {
+function fakeClient(
+  opts: {
+    failWrites?: boolean;
+    companies?: Array<{ id: string; companyGroupId: string }>;
+  } = {}
+) {
   const rows: Row[] = [];
   let nextId = 0;
-  const matches = (filters: [string, unknown][]) => (r: Row) =>
-    filters.every(([k, v]) => r[k as keyof Row] === v);
-  const query = (op: "select" | "update" | "delete", patch?: object) => {
+  const matches = (filters: Array<(r: Row) => boolean>) => (r: Row) =>
+    filters.every((f) => f(r));
+  const companyQuery = () => {
     const filters: [string, unknown][] = [];
+    const hit = () =>
+      (opts.companies ?? []).filter((c) =>
+        filters.every(([k, v]) => c[k as keyof typeof c] === v)
+      );
+    const q = {
+      eq(k: string, v: unknown) {
+        filters.push([k, v]);
+        return q;
+      },
+      single: async () => ({ data: hit()[0] ?? null, error: null }),
+      then: (resolve: (v: unknown) => void) =>
+        resolve({ data: hit(), count: hit().length, error: null })
+    };
+    return q;
+  };
+  const query = (op: "select" | "update" | "delete", patch?: object) => {
+    const filters: Array<(r: Row) => boolean> = [];
     const run = () => {
       if (opts.failWrites && op !== "select") {
         return { data: null, error: { message: "write refused" } };
@@ -54,7 +78,11 @@ function fakeClient(opts: { failWrites?: boolean } = {}) {
     };
     const q = {
       eq(k: string, v: unknown) {
-        filters.push([k, v]);
+        filters.push((r) => r[k as keyof Row] === v);
+        return q;
+      },
+      in(k: string, vs: unknown[]) {
+        filters.push((r) => vs.includes(r[k as keyof Row]));
         return q;
       },
       maybeSingle: async () => {
@@ -66,8 +94,8 @@ function fakeClient(opts: { failWrites?: boolean } = {}) {
     return q;
   };
   const client = {
-    from: () => ({
-      select: () => query("select"),
+    from: (table: string) => ({
+      select: () => (table === "company" ? companyQuery() : query("select")),
       update: (patch: object) => query("update", patch),
       delete: () => query("delete"),
       insert: async (row: Omit<Row, "id">) => {
@@ -169,7 +197,7 @@ describe("progressWriter", () => {
   it("drops same-phase ticks in the window but never a phase change or the last tick", async () => {
     vi.useFakeTimers();
     const write = vi.fn(async (_patch: object) => undefined);
-    const report = progressWriter({ read: vi.fn(), write, clear: vi.fn() });
+    const report = progressWriter({ write });
     await report({ phase: "load", done: 1, total: 10 });
     await report({ phase: "load", done: 2, total: 10 });
     await report({ phase: "wipe", done: 1, total: 10 });
@@ -186,11 +214,9 @@ describe("progressWriter", () => {
 
   it("never fails the run over a lost progress write", async () => {
     const report = progressWriter({
-      read: vi.fn(),
       write: vi.fn(async () => {
         throw new Error("down");
-      }),
-      clear: vi.fn()
+      })
     });
     await expect(
       report({ phase: "load", done: 1, total: 2 })
@@ -269,5 +295,78 @@ describe("revertRun", () => {
     expect(await restore(client, "r1").read()).toMatchObject({
       status: "failed"
     });
+  });
+
+  it("refuses to revert group data once another company shares the group", async () => {
+    const { client } = fakeClient({
+      companies: [
+        { id: "co", companyGroupId: "g" },
+        { id: "co2", companyGroupId: "g" }
+      ]
+    });
+    await restore(client, "r1").write({
+      status: "ready",
+      snapshotPath: "_pre-restore-r1",
+      includeGroup: true
+    });
+    const result = await revertRun(
+      client,
+      {} as JobDatabase,
+      restore(client, "r1"),
+      "co"
+    );
+    expect(result).toEqual({ reverted: false });
+    const meta = await restore(client, "r1").read();
+    expect(meta?.status).toBe("failed");
+    expect(meta?.error).toContain("Another company joined");
+    expect(meta?.snapshotPath).toBe("_pre-restore-r1");
+  });
+});
+
+describe("failStuckRun", () => {
+  it("marks a run that died mid-flight failed", async () => {
+    const { client } = fakeClient();
+    await restore(client, "r1").write({ status: "running" });
+    await failStuckRun(restore(client, "r1"), new Error("timed out"));
+    expect(await restore(client, "r1").read()).toMatchObject({
+      status: "failed",
+      error: "timed out"
+    });
+  });
+
+  it("leaves a settled run, and never creates a marker", async () => {
+    const { client } = fakeClient();
+    await restore(client, "r1").write({ status: "ready" });
+    await failStuckRun(restore(client, "r1"), new Error("late"));
+    await failStuckRun(restore(client, "r2"), new Error("never ran"));
+    expect((await restore(client, "r1").read())?.status).toBe("ready");
+    expect(await restore(client, "r2").read()).toBeNull();
+  });
+});
+
+describe("assertNoPendingChange", () => {
+  it("refuses a restore while a demo data change waits on keep or revert", async () => {
+    const { client } = fakeClient();
+    await template(client, "t1").write({ status: "ready" });
+    await expect(
+      assertNoPendingChange(client, "co", { restoreRunId: "r1" })
+    ).rejects.toThrow("demo data change");
+  });
+
+  it("refuses demo data while a failed restore's data is still loaded", async () => {
+    const { client } = fakeClient();
+    await restore(client, "r1").write({ status: "failed", applied: true });
+    await expect(
+      assertNoPendingChange(client, "co", { templateRunId: "t1" })
+    ).rejects.toThrow("restore");
+  });
+
+  it("lets a run retry itself past a failed run that changed nothing", async () => {
+    const { client } = fakeClient();
+    await restore(client, "r0").write({ status: "failed" });
+    await restore(client, "r1").write({ status: "running" });
+    await expect(
+      assertNoPendingChange(client, "co", { restoreRunId: "r1" })
+    ).resolves.toBeUndefined();
   });
 });

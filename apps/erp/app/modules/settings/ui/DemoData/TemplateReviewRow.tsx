@@ -197,7 +197,7 @@ export function TemplateReviewRow({
               )}
             </VStack>
             <HStack spacing={2} className="shrink-0">
-              {run.status === "ready" && !busy && (
+              {(run.status === "ready" || run.applied) && !busy && (
                 <>
                   <Button
                     isLoading={submitting}
@@ -225,7 +225,7 @@ export function TemplateReviewRow({
                   <Trans>Remove corrupted data and apply</Trans>
                 </Button>
               )}
-              {run.status === "failed" && (
+              {run.status === "failed" && !run.applied && (
                 <Button
                   variant="secondary"
                   isLoading={submitting}

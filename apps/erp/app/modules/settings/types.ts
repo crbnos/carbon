@@ -136,6 +136,8 @@ export type CompanyRestoreRun = CompanyRunView & {
   /** What it restored, so a recovery action can restart the same restore. */
   filePath: string | null;
   includeStorage: "none" | "all" | null;
+  /** Its data change committed, so a failed run still offers keep or revert. */
+  applied: boolean;
 };
 
 export type CompanyExportRun = CompanyRunView & {
@@ -152,4 +154,6 @@ export type CompanyTemplateRun = CompanyRunView & {
   /** Whether a pre-apply snapshot exists, so the page offers a revert only
    *  when there is something to put back. */
   hasSnapshot: boolean;
+  /** Its data change committed, so a failed run still offers keep or revert. */
+  applied: boolean;
 };

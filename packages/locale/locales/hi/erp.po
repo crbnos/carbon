@@ -29690,6 +29690,9 @@ msgstr "बैकलॉग"
 msgid "The backup job reported this error."
 msgstr "बैकअप जॉब ने इस त्रुटि की रिपोर्ट की।"
 
+msgid "The backup's data was loaded, but the restore stopped after that. Keep it, or revert to put back what you had."
+msgstr ""
+
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "वह पिछड़ी हुई गणना की गई तारीख जिस तक एक ऑपरेशन को अपने जॉब को समय पर रखने के लिए समाप्त करना चाहिए, ऑपरेशन की नियत तिथि में लिखा गया है। प्रगति को मापने के लिए एक स्थिर लक्ष्य — कभी भी प्लेसमेंट पर बाधा नहीं।"
 

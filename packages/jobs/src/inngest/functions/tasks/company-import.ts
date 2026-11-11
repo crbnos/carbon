@@ -16,6 +16,7 @@ import {
   tableRows
 } from "../../../backups/format";
 import {
+  assertLoadedInScope,
   bulkLoad,
   getCompanyGroupId,
   insertTables,
@@ -203,8 +204,8 @@ export const companyImportFunction = inngest.createFunction(
         }
       };
 
-      const counts = await bulkLoad(db, companyId, (trx) =>
-        insertTables(trx, importTables, toInsert, {
+      const counts = await bulkLoad(db, companyId, async (trx) => {
+        const counts = await insertTables(trx, importTables, toInsert, {
           companyId,
           userId,
           targetGroupId,
@@ -216,8 +217,13 @@ export const companyImportFunction = inngest.createFunction(
           catalogTableNames,
           onUnresolvedRef: (desc) => unresolvedRefs.add(desc),
           scrubEmail: () => `import-${++scrubCounter}@example.test`
-        })
-      );
+        });
+        await assertLoadedInScope(trx, importTables, byName, {
+          companyId,
+          companyGroupId: targetGroupId
+        });
+        return counts;
+      });
 
       if (unresolvedRefs.size > 0) {
         logger.warn(

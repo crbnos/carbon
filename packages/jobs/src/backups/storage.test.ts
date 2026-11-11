@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import { backupAssetsDir } from "./format";
-import { restoreAssetsFromBackup } from "./storage";
+import { assetTargets, restoreAssetsFromBackup } from "./storage";
 
 /**
  * Storage as the API behaves: a copy onto an existing key is a 409 unless the
@@ -64,5 +64,24 @@ describe("restoreAssetsFromBackup", () => {
     expect(result).toEqual({ copied: 1, failed: 0 });
     expect(objects.get(path)).toBe("from backup");
     expect(removed).toEqual([]);
+  });
+});
+
+describe("assetTargets", () => {
+  it("drops a manifest path that would land outside the company's folder", () => {
+    const keep = "co/parts/item_1/drawing.pdf";
+    const targets = assetTargets({
+      files: [
+        { path: keep, included: true },
+        { path: "co/%2e%2e/%2e%2e/other-bucket/x.pdf", included: true },
+        { path: "co/../other/x.pdf", included: true },
+        { path: "exports/older-backup/manifest.json", included: true },
+        { path: "co/not-included.pdf", included: false }
+      ],
+      sourceCompanyId: "co",
+      companyId: "co",
+      idRewrite: new Map()
+    });
+    expect(targets).toEqual([{ source: keep, target: keep }]);
   });
 });

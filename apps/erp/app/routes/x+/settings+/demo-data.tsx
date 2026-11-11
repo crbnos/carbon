@@ -19,6 +19,7 @@ import { data, useFetcher, useLoaderData } from "react-router";
 import { SettingsPageHeading } from "~/components/SettingsPage";
 import {
   getCompanyTemplateRun,
+  getPendingChange,
   purgeAndRetry,
   startCompanyTemplate
 } from "~/modules/settings/settings.service";
@@ -52,8 +53,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { run, datasets };
 }
 
-const PENDING_CHANGE =
-  "Finish your current demo data change — keep or revert it — first.";
+const PENDING_MESSAGE = {
+  restore: "Finish your current restore — keep or revert it — first.",
+  template: "Finish your current demo data change — keep or revert it — first."
+} as const;
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -80,9 +83,9 @@ export async function action({ request }: ActionFunctionArgs) {
       try {
         // One change at a time. A second apply while one is still pending review
         // would overwrite the only snapshot of the user's real data.
-        const current = await getCompanyTemplateRun(client, companyId);
-        if (current && current.status !== "failed") {
-          return { success: false, message: PENDING_CHANGE };
+        const pending = await getPendingChange(client, companyId);
+        if (pending) {
+          return { success: false, message: PENDING_MESSAGE[pending] };
         }
         const startedRunId = await startCompanyTemplate({
           companyId,
@@ -147,6 +150,9 @@ export async function action({ request }: ActionFunctionArgs) {
     // and a snapshot-guard failure never recorded a snapshot.
     case "purgeAndApply": {
       try {
+        if ((await getPendingChange(client, companyId)) === "restore") {
+          return { success: false, message: PENDING_MESSAGE.restore };
+        }
         const failed = await getCompanyTemplateRun(client, companyId);
         if (
           !failed ||
@@ -216,6 +222,7 @@ export default function DemoDataRoute() {
           error: null,
           progress: null,
           hasSnapshot: false,
+          applied: false,
           reason: null,
           violations: [],
           violationRowsByTable: []
@@ -223,7 +230,8 @@ export default function DemoDataRoute() {
       : null;
 
   const active =
-    (run !== null && run.status !== "failed") || pendingApplyKey !== null;
+    (run !== null && (run.status !== "failed" || run.applied)) ||
+    pendingApplyKey !== null;
   const pending =
     (run !== null && !resolvedRunIds.includes(run.templateRunId)
       ? run

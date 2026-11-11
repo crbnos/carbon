@@ -9,7 +9,9 @@ import { applyDataset, getDataset } from "@carbon/database/datasets";
 import { NonRetriableError } from "inngest";
 import { resolveRestoreScope } from "../../../backups/load";
 import {
+  assertNoPendingChange,
   failRun,
+  failStuckRun,
   keepRun,
   PER_COMPANY_CONCURRENCY,
   progressWriter,
@@ -53,6 +55,15 @@ export const companyTemplateFunction = inngest.createFunction(
   {
     id: "company-template",
     retries: 1,
+    onFailure: async ({ event, error }) => {
+      const { companyId, templateRunId } = event.data.event.data;
+      const marker = await ownMarker(getCarbonServiceRole(), {
+        companyId,
+        templateRunId,
+        userId: ""
+      });
+      if (marker) await failStuckRun(marker, error);
+    },
     // The unkeyed limit stops N companies onboarding together from filling the
     // job process's pool: each run holds a connection for a whole transaction.
     concurrency: [{ limit: 2 }, PER_COMPANY_CONCURRENCY]
@@ -103,6 +114,7 @@ export const companyTemplateFunction = inngest.createFunction(
       const pool = getProcessPool();
       let pgClient: Parameters<typeof applyDataset>[0] | null = null;
       try {
+        await assertNoPendingChange(client, companyId, { templateRunId });
         const db = getJobDatabaseClient();
         const { includeGroup } = await resolveRestoreScope(client, companyId);
         await takeSnapshot(client, db, marker, {
@@ -126,7 +138,13 @@ export const companyTemplateFunction = inngest.createFunction(
           timeZone,
           wipeFirst: true,
           log: (message) => logger.info(message, { companyId, templateRunId }),
-          onProgress: (p) => report({ ...p, phase: "seed" })
+          onProgress: (p) => report({ ...p, phase: "seed" }),
+          beforeCommit: async (c) => {
+            await c.query(
+              marker.markApplied.sql,
+              marker.markApplied.parameters
+            );
+          }
         });
       } catch (err) {
         throw await failRun(marker, err);
@@ -218,6 +236,15 @@ export const companyTemplateRevertFunction = inngest.createFunction(
   {
     id: "company-template-revert",
     retries: 1,
+    onFailure: async ({ event, error }) => {
+      const { companyId, templateRunId } = event.data.event.data;
+      const marker = await ownMarker(getCarbonServiceRole(), {
+        companyId,
+        templateRunId,
+        userId: ""
+      });
+      if (marker) await failStuckRun(marker, error, "Revert failed: ");
+    },
     concurrency: PER_COMPANY_CONCURRENCY
   },
   { event: "carbon/company-template-revert" },
