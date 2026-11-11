@@ -1328,6 +1328,9 @@ export const manifest = {
     insert: owner("userId"),
     delete: owner("userId")
   }),
+  // The Admin force-delete override: written and read only by the service
+  // functions, which check that the caller is an Admin.
+  purchaseOrderForceDeleteRequest: serviceOnly(),
   purchaseOrderLine: company(),
   // The versions an approval request keeps: written by the amendment
   // re-submit and read by the rejection, both through Kysely.

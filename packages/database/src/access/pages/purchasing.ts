@@ -33,6 +33,7 @@ export const PAGES = [
       "purchaseOrder",
       "purchaseOrderLine",
       "purchaseOrderDelivery",
+      "purchaseOrderForceDeleteRequest",
       "purchaseOrderPayment",
       "purchaseOrderStatusHistory",
       "purchaseOrderTransaction",

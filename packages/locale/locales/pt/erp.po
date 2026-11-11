@@ -4337,6 +4337,12 @@ msgstr "Aprovar {displayName}"
 msgid "Approve all"
 msgstr "Aprovar tudo"
 
+msgid "Approve and delete"
+msgstr ""
+
+msgid "Approve and Delete"
+msgstr ""
+
 msgid "Approve Request"
 msgstr "Aprovar Solicitação"
 
@@ -4351,6 +4357,15 @@ msgstr "Aprovado Por"
 
 msgid "Approved On"
 msgstr "Aprovado em"
+
+msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
+msgstr ""
+
+msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
+msgstr ""
+
+msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
+msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "Aproximado — derivado das datas agendadas; nenhuma reserva de capacidade existe para esta linha."
@@ -6340,6 +6355,9 @@ msgstr "Cancelar Pedido de compra"
 
 msgid "Cancel purchase order {target}"
 msgstr "Cancelar pedido de compra {target}"
+
+msgid "Cancel Request"
+msgstr ""
 
 msgid "Cancel Return"
 msgstr "Cancelar Devolução"
@@ -13786,6 +13804,18 @@ msgstr "Por exemplo, Local ou Pedido por"
 msgid "For Form 6765 Section E"
 msgstr "Para o Formulário 6765 Seção E"
 
+msgid "Force delete"
+msgstr ""
+
+msgid "Force Delete (Admin)"
+msgstr ""
+
+msgid "Force delete {purchaseOrderReadableId}"
+msgstr ""
+
+msgid "Force delete waiting for another Admin's approval"
+msgstr ""
+
 msgid "Forecast"
 msgstr "Previsão"
 
@@ -15994,6 +16024,12 @@ msgstr "Ela estará disponível em breve. Entre em contato com a Carbon para con
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Ainda é usado por um registro «{table}»; remova esse primeiro."
+
+msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgstr ""
+
+msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
+msgstr ""
 
 msgid "It shows with no hours until you add some."
 msgstr "Aparece sem horas até você adicionar algumas."
@@ -20492,6 +20528,9 @@ msgstr "Nada aqui ainda"
 msgid "Nothing in the archive"
 msgstr "Nada no arquivo"
 
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
+msgstr ""
+
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "Nada vence. As faturas são criadas automaticamente quando um período vence."
 
@@ -23392,6 +23431,9 @@ msgstr "Aprovação de pedido de compra"
 msgid "Purchase order for {supplierName}"
 msgstr "Pedido de compra para {supplierName}"
 
+msgid "Purchase Order Force Delete"
+msgstr ""
+
 msgid "Purchase Order ID"
 msgstr "ID do pedido de compra"
 
@@ -25052,8 +25094,14 @@ msgstr "Solicitar Aprovação"
 msgid "Request date"
 msgstr "Data da solicitação"
 
+msgid "Request Force Delete"
+msgstr ""
+
 msgid "Requested"
 msgstr "Solicitado"
+
+msgid "Requested by"
+msgstr ""
 
 msgid "Requested By"
 msgstr "Solicitado por"
@@ -31486,6 +31534,9 @@ msgstr "Este é um item comprado — não tem BOM/BOP; apenas seus atributos e d
 msgid "This is a unique identifier for the webhook"
 msgstr "Este é um identificador único para o webhook"
 
+msgid "This is an Admin override"
+msgstr ""
+
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "Este é um ambiente controlado por ITAR. O acesso é restrito a Pessoas dos EUA."
 
@@ -32555,6 +32606,9 @@ msgstr "Digite '{' para uma variável"
 #. placeholder {0}: company.name
 msgid "Type {0} to confirm"
 msgstr "Digite {0} para confirmar"
+
+msgid "Type {purchaseOrderReadableId} to confirm"
+msgstr ""
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "Digite {TRIGGER} para inserir uma variável"
@@ -34132,6 +34186,9 @@ msgstr "O que esta entrada de tempo conta como — Mão de obra (tempo do operad
 msgid "What to set up"
 msgstr "O que configurar"
 
+msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
+msgstr ""
+
 msgid "What we're assuming"
 msgstr "O que estamos assumindo"
 
@@ -34957,6 +35014,9 @@ msgstr "Sua taxa"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Os seus dados reais foram carregados e você verificou uma amostra e aprovou."
+
+msgid "Your reason and the decision are kept in the audit log."
+msgstr ""
 
 msgid "Your session was locked after inactivity."
 msgstr "A sua sessão foi bloqueada após inatividade."

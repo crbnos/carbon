@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { respond } from "@carbon/api/carbon.server";
+import { dataOrThrow, respond } from "@carbon/api/carbon.server";
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -12,7 +12,8 @@ import { getPurchaseOrderDisplayId } from "@carbon/documents/utils";
 import {
   canApproveRequest,
   canCancelRequest,
-  getLatestApprovalRequestForDocument
+  getLatestApprovalRequestForDocument,
+  isCompanyAdmin
 } from "@carbon/ee/approvals.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -35,16 +36,19 @@ import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
 import { purchaseOrderApprovalValidator } from "~/modules/purchasing/purchasing.models";
 import {
   getDefaultAttachmentsForPO,
+  getPendingPurchaseOrderForceDeleteRequest,
   getPurchaseOrderApproval,
   getSupplierInteractionDocuments,
   withoutStoredPurchaseOrderPdfs
 } from "~/modules/purchasing/purchasing.service";
 import {
   PurchaseOrderExplorer,
+  PurchaseOrderForceDeleteBanner,
   PurchaseOrderHeader,
   PurchaseOrderProperties
 } from "~/modules/purchasing/ui/PurchaseOrder";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -157,13 +161,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
+  const db = getDatabaseClient();
   const [
     supplier,
     interaction,
     approvalRequest,
     companySettings,
     approval,
-    currency
+    currency,
+    isAdmin,
+    forceDeleteRequest,
+    forceDeleteReceipts
   ] = await Promise.all([
     purchaseOrder.data?.supplierId
       ? api.purchasing.getSupplier({
@@ -196,7 +204,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           companyGroupId,
           purchaseOrder.data.currencyCode
         )
-      : null
+      : null,
+    // The Admin force-delete override (`$orderId.force-delete.tsx`).
+    isCompanyAdmin(serviceRole, companyId, userId),
+    getPendingPurchaseOrderForceDeleteRequest(db, {
+      companyId,
+      purchaseOrderId: orderId
+    }),
+    // The receipts a force delete reverses, named in its modal and banner.
+    api.purchasing.getPurchaseOrderForceDeleteReceipts({
+      purchaseOrderId: orderId
+    })
   ]);
 
   const defaultCc = supplier?.data?.defaultCc?.length
@@ -323,6 +341,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     approvalNeedsSignature,
     canReopen,
     canDelete,
+    isAdmin,
+    forceDeleteRequest,
+    // A failed read must not show an Admin "no receipts to reverse".
+    forceDeleteReceipts: dataOrThrow(forceDeleteReceipts).map(
+      (receipt) => receipt.readableId
+    ),
     defaultCc,
     resolvedAttachments
   };
@@ -344,6 +368,7 @@ export default function PurchaseOrderRoute() {
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
+                    <PurchaseOrderForceDeleteBanner />
                     <RecordOutlet />
                   </VStack>
                 </div>

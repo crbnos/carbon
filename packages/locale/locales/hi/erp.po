@@ -4337,6 +4337,12 @@ msgstr "अनुमोदित करें {displayName}"
 msgid "Approve all"
 msgstr "सभी को अनुमोदित करें"
 
+msgid "Approve and delete"
+msgstr ""
+
+msgid "Approve and Delete"
+msgstr ""
+
 msgid "Approve Request"
 msgstr "अनुरोध अनुमोदित करें"
 
@@ -4351,6 +4357,15 @@ msgstr "द्वारा अनुमोदित"
 
 msgid "Approved On"
 msgstr "पर अनुमोदित"
+
+msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
+msgstr ""
+
+msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
+msgstr ""
+
+msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
+msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "अनुमानित — निर्धारित तारीखों से प्राप्त; इस पंक्ति के लिए कोई क्षमता आरक्षण मौजूद नहीं है।"
@@ -6340,6 +6355,9 @@ msgstr "क्रय आदेश रद्द करें"
 
 msgid "Cancel purchase order {target}"
 msgstr "क्रय आदेश {target} रद्द करें"
+
+msgid "Cancel Request"
+msgstr ""
 
 msgid "Cancel Return"
 msgstr "रिटर्न रद्द करें"
@@ -13786,6 +13804,18 @@ msgstr "उदाहरण के लिए साइट या ऑर्डर 
 msgid "For Form 6765 Section E"
 msgstr "फॉर्म 6765 खंड E के लिए"
 
+msgid "Force delete"
+msgstr ""
+
+msgid "Force Delete (Admin)"
+msgstr ""
+
+msgid "Force delete {purchaseOrderReadableId}"
+msgstr ""
+
+msgid "Force delete waiting for another Admin's approval"
+msgstr ""
+
 msgid "Forecast"
 msgstr "पूर्वानुमान"
 
@@ -15994,6 +16024,12 @@ msgstr "यह जल्द ही आ रहा है। इसे अपन�
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "इसका उपयोग अभी भी एक \"{table}\" रिकॉर्ड द्वारा किया जा रहा है; पहले उसे निकालें।"
+
+msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgstr ""
+
+msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
+msgstr ""
 
 msgid "It shows with no hours until you add some."
 msgstr "यह शून्य घंटे के साथ दिखाई देता है जब तक आप कुछ न जोड़ें।"
@@ -20492,6 +20528,9 @@ msgstr "अभी यहां कुछ नहीं है"
 msgid "Nothing in the archive"
 msgstr "आर्काइव में कुछ नहीं है"
 
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
+msgstr ""
+
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "कुछ भी देय नहीं है। जब अवधि आती है, तो चालान स्वचालित रूप से बनाए जाते हैं।"
 
@@ -23392,6 +23431,9 @@ msgstr "क्रय आदेश अनुमोदन"
 msgid "Purchase order for {supplierName}"
 msgstr "{supplierName} के लिए क्रय आदेश"
 
+msgid "Purchase Order Force Delete"
+msgstr ""
+
 msgid "Purchase Order ID"
 msgstr "क्रय आदेश ID"
 
@@ -25052,8 +25094,14 @@ msgstr "अनुमोदन का अनुरोध करें"
 msgid "Request date"
 msgstr "अनुरोध तारीख"
 
+msgid "Request Force Delete"
+msgstr ""
+
 msgid "Requested"
 msgstr "अनुरोधित"
+
+msgid "Requested by"
+msgstr ""
 
 msgid "Requested By"
 msgstr "द्वारा अनुरोधित"
@@ -31486,6 +31534,9 @@ msgstr "यह एक खरीदा गया आइटम है — इस�
 msgid "This is a unique identifier for the webhook"
 msgstr "यह वेबहुक के लिए एक अद्वितीय पहचानकर्ता है"
 
+msgid "This is an Admin override"
+msgstr ""
+
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "यह एक ITAR-नियंत्रित वातावरण है। पहुंच U.S. व्यक्तियों तक सीमित है।"
 
@@ -32555,6 +32606,9 @@ msgstr "एक variable के लिए '{' दर्ज करें"
 #. placeholder {0}: company.name
 msgid "Type {0} to confirm"
 msgstr "पुष्टि करने के लिए {0} टाइप करें"
+
+msgid "Type {purchaseOrderReadableId} to confirm"
+msgstr ""
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "एक variable insert करने के लिए {TRIGGER} दर्ज करें"
@@ -34132,6 +34186,9 @@ msgstr "यह समय प्रविष्टि कितनी गिन�
 msgid "What to set up"
 msgstr "सेटअप करने के लिए क्या"
 
+msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
+msgstr ""
+
 msgid "What we're assuming"
 msgstr "हम क्या मान रहे हैं"
 
@@ -34960,6 +35017,9 @@ msgstr "आपकी दर"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "आपका वास्तविक डेटा लोड हो गया है और आपने एक नमूना जांचा है और इसे मंजूरी दे दी है।"
+
+msgid "Your reason and the decision are kept in the audit log."
+msgstr ""
 
 msgid "Your session was locked after inactivity."
 msgstr "निष्क्रियता के बाद आपका सत्र लॉक कर दिया गया।"

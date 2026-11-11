@@ -37,6 +37,7 @@ import {
   LuGitBranchPlus,
   LuHandCoins,
   LuLoaderCircle,
+  LuShieldAlert,
   LuTrash,
   LuTruck,
   LuUndo2,
@@ -76,6 +77,7 @@ import type { PurchaseOrder, PurchaseOrderLine } from "../../types";
 import ApprovalSignatureModal from "./ApprovalSignatureModal";
 import PurchaseOrderApprovalModal from "./PurchaseOrderApprovalModal";
 import PurchaseOrderFinalizeModal from "./PurchaseOrderFinalizeModal";
+import { PurchaseOrderForceDeleteModal } from "./PurchaseOrderForceDelete";
 import PurchasingStatus from "./PurchasingStatus";
 import {
   usePurchaseOrder,
@@ -120,6 +122,8 @@ const PurchaseOrderHeader = () => {
     approvalNeedsSignature: boolean;
     canReopen: boolean;
     canDelete: boolean;
+    isAdmin: boolean;
+    forceDeleteRequest: { id: string } | null;
     defaultCc: string[];
     supplier: { status: string | null; name: string | null } | null;
     resolvedAttachments: Promise<ResolvedAttachmentItem[]>;
@@ -180,6 +184,7 @@ const PurchaseOrderHeader = () => {
 
   const finalizeDisclosure = useDisclosure();
   const deleteModal = useDisclosure();
+  const forceDeleteModal = useDisclosure();
   const cancelModal = useDisclosure();
   const createRevisionModal = useDisclosure();
   const approval = useDrawerItem<ApprovalDecision>();
@@ -305,6 +310,19 @@ const PurchaseOrderHeader = () => {
         <DropdownMenuIcon icon={<LuTrash />} />
         <Trans>Delete Purchase Order</Trans>
       </DropdownMenuItem>
+      {routeData?.isAdmin && (
+        <DropdownMenuItem
+          disabled={
+            !!routeData?.forceDeleteRequest ||
+            !permissions.has({ "purchasing.purchaseOrders": "Full" })
+          }
+          destructive
+          onClick={forceDeleteModal.onOpen}
+        >
+          <DropdownMenuIcon icon={<LuShieldAlert />} />
+          <Trans>Force Delete (Admin)</Trans>
+        </DropdownMenuItem>
+      )}
     </>
   );
   const statusBadges = (
@@ -722,6 +740,15 @@ const PurchaseOrderHeader = () => {
           deleteModal.onClose();
         }}
       />
+      {routeData?.isAdmin && (
+        <PurchaseOrderForceDeleteModal
+          purchaseOrderReadableId={
+            routeData?.purchaseOrder?.purchaseOrderId ?? orderLabel
+          }
+          open={forceDeleteModal.isOpen}
+          onClose={forceDeleteModal.onClose}
+        />
+      )}
       <Confirm
         action={path.to.purchaseOrderStatus(orderId)}
         title={t`Cancel Purchase Order`}

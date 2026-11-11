@@ -47,6 +47,16 @@ export function notificationTarget(
     case NotificationEvent.ApprovalRequested:
       // Approvals started with purchase orders, so a notification without a
       // document type is one.
+      if (documentType === "purchaseOrderForceDelete") {
+        // "<purchaseOrderId>:<requestId>". An approved force delete deleted
+        // the order, so its notice opens the order list.
+        const [purchaseOrderId] = documentId.split(":");
+        return page(
+          purchaseOrderId && event !== NotificationEvent.ApprovalApproved
+            ? path.to.purchaseOrderDetails(purchaseOrderId)
+            : path.to.purchaseOrders
+        );
+      }
       if (documentType === "projectChangeRequest") {
         // "<projectId>:<changeRequestId>"
         const [projectId, changeRequestId] = documentId.split(":");

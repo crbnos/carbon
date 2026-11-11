@@ -47,6 +47,7 @@ export const Constants = {
         "supplier",
         "changeOrder",
         "projectChangeRequest",
+        "purchaseOrderForceDelete",
       ],
       approvalStatus: ["Pending", "Approved", "Rejected", "Cancelled"],
       assemblyInstructionStatus: ["Draft", "Published", "Archived"],
@@ -861,6 +862,12 @@ export const Constants = {
         "Partially Paid",
         "Overdue",
         "Voided",
+      ],
+      purchaseOrderForceDeleteStatus: [
+        "Pending",
+        "Executed",
+        "Rejected",
+        "Cancelled",
       ],
       purchaseOrderLineType: [
         "Comment",

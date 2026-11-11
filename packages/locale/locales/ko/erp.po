@@ -4337,6 +4337,12 @@ msgstr "{displayName} 승인"
 msgid "Approve all"
 msgstr "모두 승인"
 
+msgid "Approve and delete"
+msgstr ""
+
+msgid "Approve and Delete"
+msgstr ""
+
 msgid "Approve Request"
 msgstr "요청 승인"
 
@@ -4351,6 +4357,15 @@ msgstr "승인자"
 
 msgid "Approved On"
 msgstr "승인 날짜"
+
+msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
+msgstr ""
+
+msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
+msgstr ""
+
+msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
+msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "대략적 — 예정된 날짜에서 파생됨, 이 행에 대한 용량 예약이 없습니다."
@@ -6340,6 +6355,9 @@ msgstr "발주서 취소"
 
 msgid "Cancel purchase order {target}"
 msgstr "발주서 {target} 취소"
+
+msgid "Cancel Request"
+msgstr ""
 
 msgid "Cancel Return"
 msgstr "반품 취소"
@@ -13786,6 +13804,18 @@ msgstr "예: 사이트 또는 주문자"
 msgid "For Form 6765 Section E"
 msgstr "양식 6765 섹션 E용"
 
+msgid "Force delete"
+msgstr ""
+
+msgid "Force Delete (Admin)"
+msgstr ""
+
+msgid "Force delete {purchaseOrderReadableId}"
+msgstr ""
+
+msgid "Force delete waiting for another Admin's approval"
+msgstr ""
+
 msgid "Forecast"
 msgstr "예측"
 
@@ -15994,6 +16024,12 @@ msgstr "곧 제공될 예정입니다. 회사에 설정하려면 Carbon에 문�
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "「{table}」 레코드에서 아직 사용 중입니다. 먼저 제거하세요."
+
+msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgstr ""
+
+msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
+msgstr ""
 
 msgid "It shows with no hours until you add some."
 msgstr "시간을 추가할 때까지 시간이 없이 표시됩니다."
@@ -20492,6 +20528,9 @@ msgstr "아직 없음"
 msgid "Nothing in the archive"
 msgstr "보관함이 비어 있습니다"
 
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
+msgstr ""
+
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "기한이 없습니다. 송장은 기간이 도래하면 자동으로 생성됩니다."
 
@@ -23392,6 +23431,9 @@ msgstr "발주서 승인"
 msgid "Purchase order for {supplierName}"
 msgstr "{supplierName} 발주서"
 
+msgid "Purchase Order Force Delete"
+msgstr ""
+
 msgid "Purchase Order ID"
 msgstr "발주서 ID"
 
@@ -25052,8 +25094,14 @@ msgstr "승인 요청"
 msgid "Request date"
 msgstr "요청 날짜"
 
+msgid "Request Force Delete"
+msgstr ""
+
 msgid "Requested"
 msgstr "요청됨"
+
+msgid "Requested by"
+msgstr ""
 
 msgid "Requested By"
 msgstr "요청한 사람"
@@ -31486,6 +31534,9 @@ msgstr "이것은 구매 항목입니다 — BoM/BoP가 없습니다. 해당 속
 msgid "This is a unique identifier for the webhook"
 msgstr "웹훅의 고유 식별자입니다"
 
+msgid "This is an Admin override"
+msgstr ""
+
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "이것은 ITAR 통제 환경입니다. 접근은 미국인에게만 제한됩니다."
 
@@ -32555,6 +32606,9 @@ msgstr "변수의 경우 '{'를 입력하세요."
 #. placeholder {0}: company.name
 msgid "Type {0} to confirm"
 msgstr "확인하려면 {0}을(를) 입력하세요."
+
+msgid "Type {purchaseOrderReadableId} to confirm"
+msgstr ""
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "변수를 삽입하려면 {TRIGGER}를 입력하세요."
@@ -34132,6 +34186,9 @@ msgstr "이 시간 항목이 다음 중 무엇으로 계산되는지 — 노무 
 msgid "What to set up"
 msgstr "설정할 항목"
 
+msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
+msgstr ""
+
 msgid "What we're assuming"
 msgstr "저희가 전제하는 사항"
 
@@ -34957,6 +35014,9 @@ msgstr "사용자 환율"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "실제 데이터가 로드되었고 샘플을 확인하여 승인했습니다."
+
+msgid "Your reason and the decision are kept in the audit log."
+msgstr ""
 
 msgid "Your session was locked after inactivity."
 msgstr "세션이 비활성으로 인해 잠겼습니다."

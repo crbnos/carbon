@@ -110763,6 +110763,240 @@ export default {
         tags: ["holiday"]
       }
     },
+    "/purchaseOrderForceDeleteRequest": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.purchaseOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.purchaseOrderReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.purchaseOrderStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.requestedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.requestedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.decidedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.decidedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.decisionNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/purchaseOrderForceDeleteRequest"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["purchaseOrderForceDeleteRequest"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.purchaseOrderForceDeleteRequest"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["purchaseOrderForceDeleteRequest"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.purchaseOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.purchaseOrderReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.purchaseOrderStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.requestedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.requestedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.decidedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.decidedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.decisionNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["purchaseOrderForceDeleteRequest"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.purchaseOrderId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.purchaseOrderReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.purchaseOrderStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.requestedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.requestedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.decidedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.decidedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.decisionNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderForceDeleteRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.purchaseOrderForceDeleteRequest"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["purchaseOrderForceDeleteRequest"]
+      }
+    },
     "/productionEvent": {
       get: {
         parameters: [
@@ -142476,7 +142710,8 @@ export default {
             "qualityDocument",
             "supplier",
             "changeOrder",
-            "projectChangeRequest"
+            "projectChangeRequest",
+            "purchaseOrderForceDelete"
           ],
           format: 'public."approvalDocumentType"',
           type: "string"
@@ -176118,7 +176353,8 @@ export default {
             "qualityDocument",
             "supplier",
             "changeOrder",
-            "projectChangeRequest"
+            "projectChangeRequest",
+            "purchaseOrderForceDelete"
           ],
           format: 'public."approvalDocumentType"',
           type: "string"
@@ -191350,6 +191586,117 @@ export default {
       },
       type: "object"
     },
+    purchaseOrderForceDeleteRequest: {
+      required: [
+        "id",
+        "companyId",
+        "purchaseOrderReadableId",
+        "purchaseOrderStatus",
+        "reason",
+        "status",
+        "requestedBy",
+        "requestedAt",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('pofd'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        purchaseOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `purchaseOrder.id`.<fk table='purchaseOrder' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        purchaseOrderReadableId: {
+          format: "text",
+          type: "string"
+        },
+        purchaseOrderStatus: {
+          enum: [
+            "Draft",
+            "To Review",
+            "Rejected",
+            "To Receive",
+            "To Receive and Invoice",
+            "To Invoice",
+            "Completed",
+            "Closed",
+            "Planned",
+            "Needs Approval"
+          ],
+          format: 'public."purchaseOrderStatus"',
+          type: "string"
+        },
+        reason: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          default: "Pending",
+          enum: ["Pending", "Executed", "Rejected", "Cancelled"],
+          format: 'public."purchaseOrderForceDeleteStatus"',
+          type: "string"
+        },
+        requestedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        requestedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        decidedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        decidedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        decisionNotes: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     productionEvent: {
       required: [
         "id",
@@ -195771,7 +196118,8 @@ export default {
             "qualityDocument",
             "supplier",
             "changeOrder",
-            "projectChangeRequest"
+            "projectChangeRequest",
+            "purchaseOrderForceDelete"
           ],
           format: 'public."approvalDocumentType"',
           type: "string"
@@ -255035,6 +255383,111 @@ export default {
     },
     "rowFilter.holiday.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.purchaseOrderForceDeleteRequest": {
+      name: "purchaseOrderForceDeleteRequest",
+      description: "purchaseOrderForceDeleteRequest",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/purchaseOrderForceDeleteRequest"
+      }
+    },
+    "rowFilter.purchaseOrderForceDeleteRequest.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderForceDeleteRequest.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderForceDeleteRequest.purchaseOrderId": {
+      name: "purchaseOrderId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderForceDeleteRequest.purchaseOrderReadableId": {
+      name: "purchaseOrderReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderForceDeleteRequest.purchaseOrderStatus": {
+      name: "purchaseOrderStatus",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderForceDeleteRequest.reason": {
+      name: "reason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderForceDeleteRequest.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderForceDeleteRequest.requestedBy": {
+      name: "requestedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderForceDeleteRequest.requestedAt": {
+      name: "requestedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderForceDeleteRequest.decidedBy": {
+      name: "decidedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderForceDeleteRequest.decidedAt": {
+      name: "decidedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderForceDeleteRequest.decisionNotes": {
+      name: "decisionNotes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderForceDeleteRequest.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderForceDeleteRequest.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderForceDeleteRequest.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderForceDeleteRequest.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
