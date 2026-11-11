@@ -15,14 +15,22 @@ let root: Root;
 let container: HTMLDivElement;
 let idle = false;
 
-function Harness() {
+const pauseEvents = { start: "pin-change-start", end: "pin-change-end" };
+
+function Harness({ startedAt }: { startedAt?: number }) {
   idle = useIdle({
     enabled: true,
     idleMs: HOUR,
+    startedAt,
     heartbeatMs: 60 * 1000,
-    heartbeatUrl: "/api/session/heartbeat"
+    heartbeatUrl: "/api/session/heartbeat",
+    pauseEvents
   }).isIdle;
   return null;
+}
+
+function mount(startedAt?: number) {
+  act(() => root.render(<Harness startedAt={startedAt} />));
 }
 
 beforeAll(() => {
@@ -41,7 +49,6 @@ beforeEach(() => {
   container = document.createElement("div");
   document.body.appendChild(container);
   root = createRoot(container);
-  act(() => root.render(<Harness />));
 });
 
 afterEach(() => {
@@ -52,6 +59,7 @@ afterEach(() => {
 });
 
 it("stays pinned through hours of activity on one screen, then locks after one idle hour", () => {
+  mount();
   for (let hour = 0; hour < 3; hour++) {
     act(() => vi.advanceTimersByTime(HOUR - 60 * 1000));
     act(() => window.dispatchEvent(new KeyboardEvent("keydown")));
@@ -64,6 +72,7 @@ it("stays pinned through hours of activity on one screen, then locks after one i
 });
 
 it("does not revive an expired pin-in when input precedes the interval check", () => {
+  mount();
   vi.setSystemTime(Date.now() + HOUR + 1000);
   act(() => window.dispatchEvent(new KeyboardEvent("keydown")));
   expect(idle).toBe(true);
@@ -71,6 +80,7 @@ it("does not revive an expired pin-in when input precedes the interval check", (
 });
 
 it("locks when the server says the operator pin-in has expired", async () => {
+  mount();
   vi.stubGlobal(
     "fetch",
     vi.fn(async () => new Response(JSON.stringify({ ok: false })))
@@ -79,4 +89,56 @@ it("locks when the server says the operator pin-in has expired", async () => {
     window.dispatchEvent(new KeyboardEvent("keydown"));
   });
   expect(idle).toBe(true);
+});
+
+it("starts the screen deadline from the server's pin timestamp", () => {
+  mount(Date.now() - HOUR + 60 * 1000);
+  act(() => vi.advanceTimersByTime(60 * 1000 + 1000));
+  expect(idle).toBe(true);
+});
+
+it("aborts and ignores a heartbeat from before a pin change", async () => {
+  mount();
+  let finishResponse!: (response: Response) => void;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      (_url: string, options: RequestInit) =>
+        new Promise<Response>((resolve) => {
+          finishResponse = resolve;
+          expect(options.signal?.aborted).toBe(false);
+        })
+    )
+  );
+
+  act(() => window.dispatchEvent(new KeyboardEvent("keydown")));
+  const signal = vi.mocked(fetch).mock.calls[0]?.[1]?.signal;
+  act(() => window.dispatchEvent(new Event(pauseEvents.start)));
+  expect(signal?.aborted).toBe(true);
+  act(() => window.dispatchEvent(new Event(pauseEvents.end)));
+  await act(async () => {
+    finishResponse(new Response(JSON.stringify({ ok: false })));
+  });
+  expect(idle).toBe(false);
+});
+
+it("ignores a failed heartbeat from an earlier watcher lifetime", async () => {
+  mount();
+  let finishResponse!: (response: Response) => void;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      () =>
+        new Promise<Response>((resolve) => {
+          finishResponse = resolve;
+        })
+    )
+  );
+  act(() => window.dispatchEvent(new KeyboardEvent("keydown")));
+  act(() => root.render(null));
+  mount();
+  await act(async () => {
+    finishResponse(new Response(JSON.stringify({ ok: false })));
+  });
+  expect(idle).toBe(false);
 });

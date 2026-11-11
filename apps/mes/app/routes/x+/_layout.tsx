@@ -101,6 +101,11 @@ import {
 } from "~/services/operations.service";
 import { getOpenClockEntry } from "~/services/people.service";
 import { getOpenServiceJobsCount } from "~/services/service.service";
+import {
+  CONSOLE_PIN_CHANNEL,
+  CONSOLE_PIN_PAUSE_EVENTS,
+  CONSOLE_PIN_SOURCE_ID
+} from "~/utils/console-pin-activity";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 const log = getLogger("mes", "auth");
@@ -393,9 +398,27 @@ export default function AuthenticatedRoute() {
   const { isIdle: consoleIsIdle } = useIdle({
     enabled: consoleMode && !!pinnedInUser,
     idleMs: sessionTimeout.consoleIdleMs,
+    startedAt: pinnedInUser?.pinnedAt,
     heartbeatMs: sessionTimeout.heartbeatMs,
-    heartbeatUrl: "/api/session/heartbeat"
+    heartbeatUrl: "/api/session/heartbeat",
+    pauseEvents: CONSOLE_PIN_PAUSE_EVENTS
   });
+  useEffect(() => {
+    if (!consoleMode || typeof BroadcastChannel === "undefined") return;
+    const channel = new BroadcastChannel(CONSOLE_PIN_CHANNEL);
+    channel.onmessage = (
+      event: MessageEvent<{ type: "start" | "end"; sourceId: string }>
+    ) => {
+      if (event.data.sourceId === CONSOLE_PIN_SOURCE_ID) return;
+      if (event.data.type === "start") {
+        window.dispatchEvent(new Event(CONSOLE_PIN_PAUSE_EVENTS.start));
+      } else if (event.data.type === "end") {
+        // Another tab changed the operator cookie; load its current identity.
+        window.location.reload();
+      }
+    };
+    return () => channel.close();
+  }, [consoleMode]);
   useEffect(() => {
     if (consoleIsIdle && typeof window !== "undefined") {
       window.location.reload();

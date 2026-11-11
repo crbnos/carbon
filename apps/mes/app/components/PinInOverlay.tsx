@@ -24,6 +24,7 @@ import {
 import { LuCheck, LuLoader, LuLogOut, LuSearch, LuX } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { usePeople } from "~/stores";
+import { beginConsolePinChange } from "~/utils/console-pin-activity";
 import { path } from "~/utils/path";
 
 const RECENT_KEY_PREFIX = "console-recent-";
@@ -110,15 +111,48 @@ export function PinInOverlay({
 
   const recentIds = useMemo(() => getRecentOperators(companyId), [companyId]);
   const isPinning = pinInFetcher.state !== "idle";
+  const changingPin = isPinning || pinOutFetcher.state !== "idle";
+  const finishPinInRef = useRef<(() => void) | null>(null);
+  const finishPinOutRef = useRef<(() => void) | null>(null);
+  const pinInWasBusyRef = useRef(false);
+  const pinOutWasBusyRef = useRef(false);
+
+  useEffect(() => {
+    if (pinInFetcher.state !== "idle") {
+      pinInWasBusyRef.current = true;
+    } else if (pinInWasBusyRef.current) {
+      finishPinInRef.current?.();
+      finishPinInRef.current = null;
+      pinInWasBusyRef.current = false;
+    }
+  }, [pinInFetcher.state]);
+
+  useEffect(() => {
+    if (pinOutFetcher.state !== "idle") {
+      pinOutWasBusyRef.current = true;
+    } else if (pinOutWasBusyRef.current) {
+      finishPinOutRef.current?.();
+      finishPinOutRef.current = null;
+      pinOutWasBusyRef.current = false;
+    }
+  }, [pinOutFetcher.state]);
+
+  useEffect(
+    () => () => {
+      finishPinInRef.current?.();
+      finishPinOutRef.current?.();
+    },
+    []
+  );
 
   useEffect(() => {
     if (!dismissable) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onDismiss?.();
+      if (e.key === "Escape" && !changingPin) onDismiss?.();
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [dismissable, onDismiss]);
+  }, [dismissable, changingPin, onDismiss]);
 
   const submitPinIn = useCallback(
     (person: Person, pinValue: string) => {
@@ -127,6 +161,7 @@ export function PinInOverlay({
       // The server looks up name and avatar itself; only the id is trusted.
       formData.append("userId", person.id);
       if (pinValue) formData.append("pin", pinValue);
+      finishPinInRef.current ??= beginConsolePinChange();
       pinInFetcher.submit(formData, {
         method: "POST",
         action: path.to.consolePinIn
@@ -215,8 +250,8 @@ export function PinInOverlay({
   );
 
   const handleBackdropClick = useCallback(() => {
-    if (dismissable) onDismiss?.();
-  }, [dismissable, onDismiss]);
+    if (dismissable && !changingPin) onDismiss?.();
+  }, [dismissable, changingPin, onDismiss]);
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: backdrop click-to-dismiss; Escape and the labelled close button do the same
@@ -241,6 +276,7 @@ export function PinInOverlay({
           <button
             type="button"
             onClick={onDismiss}
+            disabled={changingPin}
             aria-label={t`Close`}
             className="absolute top-2.5 right-2.5 z-10 rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
@@ -407,6 +443,7 @@ export function PinInOverlay({
               size="md"
               className="w-full text-destructive hover:text-destructive"
               onClick={() => {
+                finishPinOutRef.current ??= beginConsolePinChange();
                 pinOutFetcher.submit(null, {
                   method: "POST",
                   action: path.to.consolePinOut

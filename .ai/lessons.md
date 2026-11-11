@@ -6,6 +6,16 @@ Format: `Context → Problem → Rule → Applies to`
 
 ---
 
+## Operator heartbeat cookies must stop during PIN changes
+
+**Context:** MES renews a signed operator PIN cookie from genuine input while an operation screen stays open.
+
+**Problem:** A heartbeat started for operator A can finish after a PIN change and restore A's cookie. A newly mounted idle watcher can also grant a fresh idle window even though the server's `pinnedAt` is almost expired.
+
+**Rule:** Start the watcher from the server's activity timestamp. Abort outstanding heartbeat requests before changing the PIN, pause new ones until the action settles, and ignore results from an earlier watcher or PIN generation. Coordinate PIN changes across open tabs.
+
+**Applies to:** MES console PIN flows, `packages/react/src/hooks/useIdle.tsx`, and any cookie renewing activity heartbeat.
+
 ## Onshape individual release assets need the complete source identity
 
 **Context:** Syncing a released part from a multi-part Part Studio to an existing Carbon item.

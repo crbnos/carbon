@@ -30,17 +30,23 @@ type UseIdleOptions = {
   enabled: boolean;
   /** Idle window before locking (SESSION_IDLE_LOCK_MS). */
   idleMs: number;
+  /** Server-observed start of the current idle window, when available. */
+  startedAt?: number;
   /** Heartbeat throttle while active (SESSION_HEARTBEAT_MS). */
   heartbeatMs: number;
   /** POST target that re-stamps lastActiveAt server-side. */
   heartbeatUrl: string;
+  /** Events that pause heartbeats during an identity change. */
+  pauseEvents?: { start: string; end: string };
 };
 
 export function useIdle({
   enabled,
   idleMs,
+  startedAt,
   heartbeatMs,
-  heartbeatUrl
+  heartbeatUrl,
+  pauseEvents
 }: UseIdleOptions) {
   const [isIdle, setIsIdle] = useState(false);
 
@@ -48,7 +54,9 @@ export function useIdle({
   const lastHeartbeatRef = useRef(0);
   const lastBroadcastRef = useRef(0);
   const isIdleRef = useRef(false);
+  const pausedRef = useRef(false);
   const channelRef = useRef<BroadcastChannel | null>(null);
+  const wasEnabledRef = useRef(false);
 
   useEffect(() => {
     isIdleRef.current = isIdle;
@@ -65,12 +73,42 @@ export function useIdle({
   }, []);
 
   useEffect(() => {
-    if (!enabled || typeof window === "undefined") return;
+    if (!enabled || typeof window === "undefined") {
+      wasEnabledRef.current = false;
+      pausedRef.current = false;
+      return;
+    }
 
-    lastActivityRef.current = Date.now();
+    lastActivityRef.current = wasEnabledRef.current
+      ? Math.max(lastActivityRef.current, startedAt ?? 0)
+      : (startedAt ?? Date.now());
     lastHeartbeatRef.current = 0;
-    isIdleRef.current = false;
-    setIsIdle(false);
+    if (!wasEnabledRef.current) {
+      isIdleRef.current = false;
+      setIsIdle(false);
+    }
+    wasEnabledRef.current = true;
+
+    let active = true;
+    let generation = 0;
+    const pendingHeartbeats = new Set<AbortController>();
+    const abortPending = () => {
+      generation++;
+      for (const controller of pendingHeartbeats) controller.abort();
+      pendingHeartbeats.clear();
+    };
+    const pause = () => {
+      pausedRef.current = true;
+      abortPending();
+    };
+    const unpause = () => {
+      pausedRef.current = false;
+      lastHeartbeatRef.current = 0;
+    };
+    if (pauseEvents) {
+      window.addEventListener(pauseEvents.start, pause);
+      window.addEventListener(pauseEvents.end, unpause);
+    }
 
     const channel =
       typeof BroadcastChannel !== "undefined"
@@ -90,22 +128,38 @@ export function useIdle({
     };
     const sendHeartbeat = (now: number) => {
       lastHeartbeatRef.current = now;
+      abortPending();
+      const requestedInGeneration = generation;
+      const controller = new AbortController();
+      pendingHeartbeats.add(controller);
       void fetch(heartbeatUrl, {
         method: "POST",
-        credentials: "same-origin"
+        credentials: "same-origin",
+        signal: controller.signal
       })
         .then(async (response) => {
-          if (response.ok && (await response.json()).ok === false) lock();
+          if (
+            response.ok &&
+            (await response.json()).ok === false &&
+            active &&
+            !pausedRef.current &&
+            generation === requestedInGeneration
+          ) {
+            lock();
+          }
         })
         .catch(() => {
           // Best-effort; a missed heartbeat just brings the lock closer.
+        })
+        .finally(() => {
+          pendingHeartbeats.delete(controller);
         });
     };
 
     // Local real activity. Once locked, local activity does NOT clear the lock —
     // 3.1.10 requires re-authentication; only a successful unlock (resume) does.
     const onActivity = () => {
-      if (isIdleRef.current) return;
+      if (isIdleRef.current || pausedRef.current) return;
       const now = Date.now();
       if (now - lastActivityRef.current > idleMs) {
         lock();
@@ -144,7 +198,7 @@ export function useIdle({
 
     const interval = window.setInterval(() => {
       const now = Date.now();
-      if (isIdleRef.current) return;
+      if (isIdleRef.current || pausedRef.current) return;
 
       const idleFor = now - lastActivityRef.current;
       if (idleFor > idleMs) {
@@ -153,6 +207,12 @@ export function useIdle({
     }, CHECK_INTERVAL_MS);
 
     return () => {
+      active = false;
+      abortPending();
+      if (pauseEvents) {
+        window.removeEventListener(pauseEvents.start, pause);
+        window.removeEventListener(pauseEvents.end, unpause);
+      }
       for (const evt of ACTIVITY_EVENTS) {
         window.removeEventListener(evt, onActivity);
       }
@@ -160,7 +220,7 @@ export function useIdle({
       channel?.close();
       channelRef.current = null;
     };
-  }, [enabled, idleMs, heartbeatMs, heartbeatUrl]);
+  }, [enabled, idleMs, startedAt, heartbeatMs, heartbeatUrl, pauseEvents]);
 
   return { isIdle: enabled && isIdle, resume };
 }
