@@ -25022,8 +25022,17 @@ export async function postInventoryAdjustment(
     }
 
     if (entryType === "Positive Adjmt.") {
+      // Read under a share lock: setItemTrackingType takes the item row FOR
+      // UPDATE, so a tracking change and this increase cannot cross.
+      const tracking = await trx
+        .selectFrom("item")
+        .select("itemTrackingType")
+        .where("id", "=", itemId)
+        .where("companyId", "=", companyId)
+        .forShare()
+        .executeTakeFirstOrThrow();
       const refusal = stockIncreaseRefusal({
-        itemTrackingType: item.itemTrackingType,
+        itemTrackingType: tracking.itemTrackingType,
         trackedEntityId,
         // A zero-quantity new unit creates nothing (the no-op below).
         createsUnit:
@@ -30975,9 +30984,21 @@ export async function issueMaterial(
           )
         });
 
+        // A material line is issued as its own item, whatever item the request
+        // names.
+        const issuedItem =
+          materialOwner && materialOwner.itemId !== item?.id
+            ? await trx
+                .selectFrom("item")
+                .where("id", "=", materialOwner.itemId)
+                .where("companyId", "=", companyId)
+                .select(["id", "itemTrackingType", "readableIdWithRevision"])
+                .executeTakeFirst()
+            : item;
+
         // Read from the item, not the job line: a line copied before the item
         // became batch or serial tracked still says untracked.
-        const untracked = item ? untrackedIssueRefusal(item) : null;
+        const untracked = issuedItem ? untrackedIssueRefusal(issuedItem) : null;
         if (untracked) throw new InvalidInputError(untracked);
 
         if (materialId) {
@@ -31080,7 +31101,10 @@ export async function issueMaterial(
                 }
               }
             }
-            if (item?.itemTrackingType === "Inventory" && remaining !== 0) {
+            if (
+              issuedItem?.itemTrackingType === "Inventory" &&
+              remaining !== 0
+            ) {
               const strictSettings =
                 adjustmentType !== "Positive Adjmt." && remaining > 0
                   ? await getStrictBackflushSettings(
@@ -31162,7 +31186,7 @@ export async function issueMaterial(
                     : quantityToIssue)
               )
             })
-            .where("id", "=", materialId)
+            .where("id", "=", material.id)
             .where("companyId", "=", companyId)
             .execute();
 
@@ -32868,8 +32892,11 @@ export async function issueMaterial(
           .selectFrom("item")
           .where("id", "=", itemId)
           .where("companyId", "=", companyId)
-          .select(["id", "itemTrackingType"])
+          .select(["id", "itemTrackingType", "readableIdWithRevision"])
           .executeTakeFirstOrThrow();
+
+        const untracked = untrackedIssueRefusal(item);
+        if (untracked) throw new InvalidInputError(untracked);
 
         // Create the dispatch item
         const dispatchItem = await trx
