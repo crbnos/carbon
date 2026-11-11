@@ -116,7 +116,7 @@ The approver is on the floor, so the sign-off happens in the same request as the
 | Order of writes | Record, then post, then mark posted | Every posted scrap that needed approval has a record. A crash leaves a record with `postedAt` null, never an unrecorded scrap. |
 | Approver PIN | The console PIN (`employeePin`) | Reuses the bcrypt table. Set Console PIN on Users → Employees now also shows when a scrap rule is enabled, with console mode off. |
 | PIN guessing | The console pin-in budgets, shared | A guess at either surface counts at both: 5 per person and 30 per terminal in 15 minutes. |
-| Paths in scope | MES operation scrap, component scrap, batch completion with scrap and inspection disposition; ERP job quantities, Scrap inventory adjustments and issue completion | Issue completion writes off its Scrap rows, a Partial receipt lot's held remainder included, valued together. The sales return scrap belongs to sales. |
+| Paths in scope | MES operation scrap, component scrap, batch completion with scrap, inspection disposition and an untracked receipt lot's Reject; ERP job quantities, Scrap inventory adjustments, issue completion and Reject Lot | Issue completion writes off its Scrap rows, a Partial receipt lot's held remainder included, valued together. The sales return scrap belongs to sales. |
 | Entitlement | `APPROVAL_RULES` (Business and Partner plans) | `getApprovalRuleByAmount` reads no rule without it. |
 | What the approver signs | The value they were shown (`approvedValue`), checked again on the server | Without it an operator could raise the quantity after the PIN went in, and a top-tier approver's authority would cover any value. |
 | Ambiguous posting failures | Keep the record, unconfirmed | A timeout after the commit must not leave a posted scrap with no approval. The list shows the row as Not confirmed. |
@@ -227,8 +227,6 @@ CREATE TABLE "scrapRequest" (
 
 - Queue-based approval, for an approver who is not at the tablet.
 - The sales return scrap (`sales_scrapReturnedUnit`), a sales decision with its own owner.
-- The write-off an untracked receipt or manual lot's Reject posts (`rejectInspection`, also
-  sent by the MES verdict screen): it is valued at the lot and restored if the issue keeps it.
 - Holding the job while scrap waits.
 - Per-reason, per-item or percentage rules: the engine matches on one amount.
 - Demo dataset rows for scrap approvals (the dataset validator exempts `scrap`).
