@@ -3559,6 +3559,9 @@ msgstr "AI 无法自信地匹配任何账户"
 msgid "AI Tokens"
 msgstr "AI 代币"
 
+msgid "Air-gapped"
+msgstr ""
+
 msgid "Align on scope"
 msgstr "对齐范围"
 
@@ -6500,6 +6503,9 @@ msgstr "找不到 Carbon 客户端"
 msgid "Carbon column"
 msgstr "Carbon 列"
 
+msgid "Carbon Enterprise license"
+msgstr ""
+
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon已按照您的公司运营方式进行配置，您的数据已加载，您的团队对其使用有信心。当这一切都实现时，您就可以准备上线了。"
 
@@ -7155,6 +7161,9 @@ msgstr "CLIN"
 
 msgid "CLIN / SLIN"
 msgstr "CLIN / SLIN"
+
+msgid "Clock"
+msgstr ""
 
 msgid "Clock In"
 msgstr "开工"
@@ -7829,6 +7838,9 @@ msgstr "连接您的公司已在使用的外部工具"
 
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "通过粘贴身份提供商的元数据 URL 或原始元数据 XML(两者中恰好一个)来连接您的身份提供商。"
+
+msgid "Connected"
+msgstr ""
 
 msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
 msgstr "工作流连接之前需要额外权限。重新连接以授予权限——同时其他一切保持正常。"
@@ -14467,6 +14479,9 @@ msgstr "GR/IR清算"
 msgid "GR/IR Clearing (default)"
 msgstr "GR/IR清算（默认）"
 
+msgid "Grace period ends"
+msgstr ""
+
 msgid "grade"
 msgstr "等级"
 
@@ -16601,6 +16616,12 @@ msgstr "最后校准"
 msgid "Last Calibration Date"
 msgstr "上次校准日期"
 
+msgid "Last check-in"
+msgstr ""
+
+msgid "Last check-in error"
+msgstr ""
+
 msgid "Last day"
 msgstr "最后一天"
 
@@ -16933,6 +16954,12 @@ msgstr "当具有服务日期或租赁的发票行在收入实现前开票时所
 
 msgid "Liability GL account credited when an invoice line with service dates, or a rental line, is billed before the revenue is earned; a recognition run releases it to revenue."
 msgstr "当发票行具有服务日期或为租赁行在收入实现前开票时的应计负债总账科目；收益确认凭证将其实现为收入。"
+
+msgid "License"
+msgstr ""
+
+msgid "Licensee"
+msgstr ""
 
 msgid "Lifecycle"
 msgstr "生命周期"
@@ -18398,6 +18425,9 @@ msgstr "更多加班"
 msgid "More records are waiting. Push again to continue."
 msgstr "还有更多记录在等待。请再次推送以继续。"
 
+msgid "More users than your license allows. Contact Carbon to add seats."
+msgstr ""
+
 msgid "Morning, {name}."
 msgstr "早上，{name}。"
 
@@ -19776,6 +19806,9 @@ msgstr "尚未过账租赁运行"
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "未设置休假元素。在间接项目中，打开休假元素并启用\"休假\"功能。"
 
+msgid "No license"
+msgstr ""
+
 msgid "No lines"
 msgstr "无行项"
 
@@ -20295,6 +20328,9 @@ msgstr "没有日期在结转之前的未过账文档"
 
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "此位置此工序上没有未开始、未批处理的操作。"
+
+msgid "No valid Carbon Enterprise license."
+msgstr ""
 
 msgid "No value"
 msgstr "没有值"
@@ -21795,6 +21831,12 @@ msgstr "支付方"
 
 msgid "Paid Date"
 msgstr "支付日期"
+
+msgid "Paid features are off."
+msgstr ""
+
+msgid "Paid features will turn off once licenses are enforced."
+msgstr ""
 
 msgid "Paid outside Carbon"
 msgstr "在 Carbon 外已支付"
@@ -26827,6 +26869,9 @@ msgstr "搜索..."
 msgid "Search…"
 msgstr "搜索…"
 
+msgid "Seats licensed"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "完成秒数"
 
@@ -30641,6 +30686,9 @@ msgstr "承租人的资产用于使用权，在运营或融资租赁激活时按
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "销售型租赁中出租人的资产：租赁付款和无保障残值的现值，每月因租赁利息增加，因每笔租金和购买选择权发票而减少。"
 
+msgid "The license comes from the CARBON_LICENSE setting of this deployment. To change it, change that setting and restart."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "您跟踪客户所经历的生命周期阶段"
 
@@ -31108,6 +31156,9 @@ msgstr "用于您制造或资本化以出租而非销售的单位的预置资产
 
 msgid "the selected class"
 msgstr "选定的类别"
+
+msgid "The server clock moved back. Check its time."
+msgstr ""
 
 msgid "The service job opens when the receipt is posted."
 msgstr "收据过账后将创建服务工单。"
@@ -33023,6 +33074,9 @@ msgstr "未知零件"
 msgid "Unknown variable {variable}"
 msgstr "未知变量 {variable}"
 
+msgid "Unlimited"
+msgstr ""
+
 msgid "Unlimited functional support"
 msgstr "无限功能支持"
 
@@ -33803,6 +33857,9 @@ msgstr "查看物料主数据"
 
 msgid "View Journal Entry"
 msgstr "查看日记账分录"
+
+msgid "View license"
+msgstr ""
 
 msgid "View list"
 msgstr "查看列表"
@@ -35089,6 +35146,13 @@ msgstr "您的备份"
 msgid "Your books and how money flows."
 msgstr "您的账簿和资金流向。"
 
+msgid "Your Carbon Enterprise license has ended."
+msgstr ""
+
+#. placeholder {0}: formatDate(notice.until)
+msgid "Your Carbon Enterprise license has expired. The grace period ends {0}."
+msgstr ""
+
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "您的更改进入与此变更通知一起发布的新草稿版本。"
 
@@ -35145,6 +35209,9 @@ msgstr "您的最新更改未能保存。您确定要离开此页面吗？"
 
 msgid "Your legal name, addresses, branding, and document defaults"
 msgstr "你的法定名称、地址、品牌和文件默认值"
+
+msgid "Your license hasn't reached the Carbon console in over 3 days."
+msgstr ""
 
 msgid "Your main point of contact"
 msgstr "您的主要联系人"

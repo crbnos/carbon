@@ -61,6 +61,7 @@ export default $config({
         AUTH_PROVIDERS: process.env.AUTH_PROVIDERS,
         BOT_PROTECTION: process.env.BOT_PROTECTION,
         CARBON_EDITION: process.env.CARBON_EDITION,
+        CARBON_LICENSE: process.env.CARBON_LICENSE,
         CLOUDFLARE_TURNSTILE_SECRET_KEY:
           process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY,
         CLOUDFLARE_TURNSTILE_SITE_KEY:
@@ -183,6 +184,7 @@ export default $config({
         AUTH_PROVIDERS: process.env.AUTH_PROVIDERS,
         BOT_PROTECTION: process.env.BOT_PROTECTION,
         CARBON_EDITION: process.env.CARBON_EDITION,
+        CARBON_LICENSE: process.env.CARBON_LICENSE,
         CLOUDFLARE_TURNSTILE_SECRET_KEY:
           process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY,
         CLOUDFLARE_TURNSTILE_SITE_KEY:

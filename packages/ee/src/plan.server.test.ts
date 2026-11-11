@@ -18,8 +18,11 @@ vi.mock("@carbon/auth/company.server", () => ({
   isCarbonOwnedCompany
 }));
 vi.mock("@carbon/auth/session.server", () => ({ flash: vi.fn() }));
+// Import-safety only: the licence store opens Redis at import.
+vi.mock("@carbon/kv", () => ({ redis: {} }));
 
-import { companyHasFeature } from "./plan.server";
+import { FEATURE_PLANS, type Feature } from "./plan";
+import { companyHasFeature, getEntitledFeatures } from "./plan.server";
 
 // Stands in for the anon `carbon-key` API-key client the MCP/API paths carry:
 // `companyPlan`'s RLS SELECT policy requires an authenticated `auth.uid()`, so
@@ -69,5 +72,44 @@ describe("plan gate reads companyPlan through the shared service-role reader", (
     );
 
     expect(allowed).toBe(false);
+  });
+});
+
+describe("getEntitledFeatures on Cloud", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    isCarbonOwnedCompany.mockResolvedValue(false);
+  });
+
+  it.each([Plan.Starter, Plan.Business, null])(
+    "gives companyHasFeature's answer for every feature on plan %s, from one plan read",
+    async (plan) => {
+      getCompanyPlanId.mockResolvedValue(plan);
+      const client = rlsBlockedClient() as never;
+
+      const features = await getEntitledFeatures(client, "company-3");
+      expect(getCompanyPlanId).toHaveBeenCalledTimes(1);
+      expect(isCarbonOwnedCompany.mock.calls.length).toBeLessThanOrEqual(1);
+
+      for (const feature of Object.keys(FEATURE_PLANS) as Feature[]) {
+        expect([
+          feature,
+          await companyHasFeature(client, "company-3", { feature })
+        ]).toEqual([feature, features[feature]]);
+      }
+    }
+  );
+
+  it("grants every feature to a carbon-owned company with no plan", async () => {
+    getCompanyPlanId.mockResolvedValue(null);
+    isCarbonOwnedCompany.mockResolvedValue(true);
+
+    const features = await getEntitledFeatures(
+      rlsBlockedClient() as never,
+      "company-4"
+    );
+
+    expect(Object.values(features).every(Boolean)).toBe(true);
+    expect(isCarbonOwnedCompany).toHaveBeenCalledTimes(1);
   });
 });

@@ -62,14 +62,28 @@ grant which `Feature`; every helper reads it.
 | `companyHasFeature(client, companyId, { feature })` | `Promise<boolean>` | `plan.server` | RUNTIME paths that must DEGRADE (feature off = no-op), not throw |
 | `requireEntitlement(client, companyId, feature)` | throws `EntitlementError` | `entitlements.server` | **The LOCK.** Top of every commercial AUTHORING function, inside `packages/ee` |
 | `requireFeature({ request, client, companyId, redirectTo, feature })` | throws a `redirect` | `plan.server` | UX only, in the open route loader/action — a friendly upgrade redirect |
+| `companyEnforcesFeature(client, companyId, { feature })` | `Promise<boolean>` | `plan.server` | RUNTIME reads of an ACCESS-CONTROL rule (approval, sales and storage rules, console mode), where `false` would lift a restriction |
 
-- `companyHasFeature` semantics: **Community edition → false (blocked)**; Enterprise/Test
-  self-hosted → true; Cloud → plan-based; bypass/carbon-owned → true. It is the ONE place
-  the future license-key server plugs in (a signed, server-bound validity token) — so every
-  feature inherits it without a call-site change.
-- Do NOT use `companyHasPlan`/`requirePlan` for community-gated features — those no-op off
-  Cloud (a self-hosted feature toggle), so a self-hosted Community instance would pass.
-  They remain only for features that are Cloud-paywall-only.
+- The edition is a mode switch, not an unlock:
+
+  | Edition | `companyHasFeature` / `requireEntitlement` read |
+  |---|---|
+  | Community | nothing: always false |
+  | Enterprise | the verified licence, `CARBON_LICENSE` (`resolveLicence`, `@carbon/ee/license.server`) |
+  | Cloud | `companyPlan`; bypass and carbon-owned companies pass |
+  | Test | nothing: always true |
+
+- On Enterprise the licence status decides: active → entitled; expired
+  (grace) → runtime yes, authoring no; terminated or none → no. The decisions are the pure
+  functions in `packages/ee/src/license/entitlement.ts`. While `LICENCE_ENFORCED` is false
+  (one log-only release) the gates log what the licence would refuse and keep allowing.
+- `companyEnforcesFeature` answers true on Enterprise and Test for `ACCESS_CONTROL_FEATURES`
+  (`plan.ts`: PERMISSIONS, TWO_FACTOR, APPROVAL_RULES, SALES_RULES, STORAGE_RULES,
+  AUDIT_LOG) whatever the licence says, so a lapse never lifts a restriction. Everywhere
+  else it is `companyHasFeature`. Authoring those features still goes through
+  `requireEntitlement`.
+- `companyHasPlan`/`requirePlan` read the licence on Enterprise too, but stay a no-op on
+  Community and Test. Do NOT use them for community-gated features.
 
 ## The two layers (both, deliberately)
 

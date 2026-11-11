@@ -3559,6 +3559,9 @@ msgstr "एआई किसी भी खातों को आत्मवि�
 msgid "AI Tokens"
 msgstr "एआई टोकन"
 
+msgid "Air-gapped"
+msgstr ""
+
 msgid "Align on scope"
 msgstr "दायरे पर संरेखित करें"
 
@@ -6500,6 +6503,9 @@ msgstr "कार्बन क्लाइंट नहीं मिला"
 msgid "Carbon column"
 msgstr "कार्बन कॉलम"
 
+msgid "Carbon Enterprise license"
+msgstr ""
+
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon को आपकी कंपनी के तरीके से कॉन्फ़िगर किया गया है, आपका डेटा लोड किया गया है, और आपकी टीम इसे उपयोग करने में आत्मविश्वास रखती है। जब यह सच हो, तो आप लाइव जाने के लिए तैयार हैं।"
 
@@ -7155,6 +7161,9 @@ msgstr "CLIN"
 
 msgid "CLIN / SLIN"
 msgstr "CLIN / SLIN"
+
+msgid "Clock"
+msgstr ""
 
 msgid "Clock In"
 msgstr "कार्य प्रारंभ"
@@ -7829,6 +7838,9 @@ msgstr "उन बाहरी उपकरणों को कनेक्ट �
 
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "अपने आइडेंटिटी प्रदाता को जोड़ें इसके मेटाडेटा URL या इसके कच्चे मेटाडेटा XML को पेस्ट करके — इन दोनों में से केवल एक।"
+
+msgid "Connected"
+msgstr ""
 
 msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
 msgstr "वर्कफ़्लो से पहले जुड़ने के लिए अतिरिक्त अनुमतियों की आवश्यकता थी। उन्हें प्रदान करने के लिए फिर से जोड़ें — इस बीच सब कुछ काम करता रहेगा।"
@@ -14467,6 +14479,9 @@ msgstr "GR/IR समाशोधन"
 msgid "GR/IR Clearing (default)"
 msgstr "GR/IR समाशोधन (डिफ़ॉल्ट)"
 
+msgid "Grace period ends"
+msgstr ""
+
 msgid "grade"
 msgstr "ग्रेड"
 
@@ -16601,6 +16616,12 @@ msgstr "अंतिम अंशांकन"
 msgid "Last Calibration Date"
 msgstr "अंतिम अंशांकन तारीख"
 
+msgid "Last check-in"
+msgstr ""
+
+msgid "Last check-in error"
+msgstr ""
+
 msgid "Last day"
 msgstr "अंतिम दिन"
 
@@ -16933,6 +16954,12 @@ msgstr "देयता जमा की जाती है जब सेवा
 
 msgid "Liability GL account credited when an invoice line with service dates, or a rental line, is billed before the revenue is earned; a recognition run releases it to revenue."
 msgstr "देयता लेजर खाता जमा किया जाता है जब सेवा तारीखों वाली चालान पंक्ति, या किराये की पंक्ति, राजस्व अर्जित होने से पहले बिल किया जाता है; एक पहचान रन इसे राजस्व में जारी करता है।"
+
+msgid "License"
+msgstr ""
+
+msgid "Licensee"
+msgstr ""
 
 msgid "Lifecycle"
 msgstr "जीवनचक्र"
@@ -18398,6 +18425,9 @@ msgstr "अधिक ओवरटाइम"
 msgid "More records are waiting. Push again to continue."
 msgstr "अधिक रिकॉर्ड प्रतीक्षा कर रहे हैं। जारी रखने के लिए फिर से पुश करें।"
 
+msgid "More users than your license allows. Contact Carbon to add seats."
+msgstr ""
+
 msgid "Morning, {name}."
 msgstr "सुबह, {name}।"
 
@@ -19776,6 +19806,9 @@ msgstr "अभी तक कोई पट्टा रन पोस्ट नह
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "कोई छुट्टी तत्व सेट नहीं किया गया है। एक अप्रत्यक्ष प्रोजेक्ट पर, समय बंद करने के लिए तत्व खोलें और छुट्टी को चालू करें।"
 
+msgid "No license"
+msgstr ""
+
 msgid "No lines"
 msgstr "कोई पंक्तियाँ नहीं"
 
@@ -20295,6 +20328,9 @@ msgstr "कटऑवर से पहले की कोई गैर-पोस
 
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "इस स्थान पर इस प्रक्रिया पर कोई अप्रारंभ, अनबैच्ड ऑपरेशन नहीं।"
+
+msgid "No valid Carbon Enterprise license."
+msgstr ""
 
 msgid "No value"
 msgstr "कोई मान नहीं"
@@ -21795,6 +21831,12 @@ msgstr "द्वारा भुगतान किया गया"
 
 msgid "Paid Date"
 msgstr "भुगतान की गई तारीख"
+
+msgid "Paid features are off."
+msgstr ""
+
+msgid "Paid features will turn off once licenses are enforced."
+msgstr ""
 
 msgid "Paid outside Carbon"
 msgstr "Carbon के बाहर भुगतान किया गया"
@@ -26827,6 +26869,9 @@ msgstr "खोजें..."
 msgid "Search…"
 msgstr "खोजें…"
 
+msgid "Seats licensed"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "पूरा करने के सेकंड"
 
@@ -30641,6 +30686,9 @@ msgstr "किराएदार की उपयोग के अधिका�
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "बिक्री-प्रकार पट्टे पर पट्टेदार की संपत्ति: पट्टे के भुगतान और गारंटीयुक्त अवशेष का वर्तमान मूल्य, प्रत्येक महीने पट्टे के ब्याज से बढ़ाया जाता है और प्रत्येक किराए और खरीद विकल्प चालान से कम किया जाता है।"
 
+msgid "The license comes from the CARBON_LICENSE setting of this deployment. To change it, change that setting and restart."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "जीवनचक्र के चरण जिन्हें आप ग्राहकों के माध्यम से ट्रैक करते हैं"
 
@@ -31108,6 +31156,9 @@ msgstr "किराये पर देने के लिए निर्म�
 
 msgid "the selected class"
 msgstr "चयनित कक्षा"
+
+msgid "The server clock moved back. Check its time."
+msgstr ""
 
 msgid "The service job opens when the receipt is posted."
 msgstr "रसीद पोस्ट होने पर सेवा जॉब खुलता है।"
@@ -33023,6 +33074,9 @@ msgstr "अज्ञात भाग"
 msgid "Unknown variable {variable}"
 msgstr "अज्ञात वेरिएबल {variable}"
 
+msgid "Unlimited"
+msgstr ""
+
 msgid "Unlimited functional support"
 msgstr "असीमित कार्यात्मक समर्थन"
 
@@ -33803,6 +33857,9 @@ msgstr "आइटम मास्टर देखें"
 
 msgid "View Journal Entry"
 msgstr "जर्नल प्रविष्टि देखें"
+
+msgid "View license"
+msgstr ""
 
 msgid "View list"
 msgstr "सूची देखें"
@@ -35089,6 +35146,13 @@ msgstr "आपके बैकअप"
 msgid "Your books and how money flows."
 msgstr "आपकी किताबें और पैसा कैसे बहता है।"
 
+msgid "Your Carbon Enterprise license has ended."
+msgstr ""
+
+#. placeholder {0}: formatDate(notice.until)
+msgid "Your Carbon Enterprise license has expired. The grace period ends {0}."
+msgstr ""
+
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "आपके परिवर्तन इस परिवर्तन सूचना के साथ जारी किए गए एक नए ड्राफ्ट संस्करण में जाते हैं।"
 
@@ -35145,6 +35209,9 @@ msgstr "आपके नवीनतम परिवर्तन सहेजे
 
 msgid "Your legal name, addresses, branding, and document defaults"
 msgstr "आपका कानूनी नाम, पते, ब्रांडिंग, और दस्तावेज़ डिफ़ॉल्ट"
+
+msgid "Your license hasn't reached the Carbon console in over 3 days."
+msgstr ""
 
 msgid "Your main point of contact"
 msgstr "आपका मुख्य संपर्क बिंदु"

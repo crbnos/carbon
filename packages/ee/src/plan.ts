@@ -47,6 +47,20 @@ export const FEATURE_PLANS = {
 export type Feature = keyof typeof FEATURE_PLANS;
 
 /**
+ * Features that RESTRICT what users may do. On a self-hosted edition they keep
+ * enforcing when a licence lapses or is missing: a lapse must never lift
+ * a restriction. Authoring them still needs the licence.
+ */
+export const ACCESS_CONTROL_FEATURES = new Set<Feature>([
+  "PERMISSIONS",
+  "TWO_FACTOR",
+  "APPROVAL_RULES",
+  "SALES_RULES",
+  "STORAGE_RULES",
+  "AUDIT_LOG"
+]);
+
+/**
  * Integration ids that bypass the `INTEGRATIONS` plan gate. Add ids here for
  * integrations that should remain available on every plan.
  */

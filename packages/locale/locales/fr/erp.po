@@ -3559,6 +3559,9 @@ msgstr "L'IA n'a pas pu apparier avec confiance aucun compte"
 msgid "AI Tokens"
 msgstr "Jetons IA"
 
+msgid "Air-gapped"
+msgstr ""
+
 msgid "Align on scope"
 msgstr "Aligner sur la portée"
 
@@ -6500,6 +6503,9 @@ msgstr "Client Carbon introuvable"
 msgid "Carbon column"
 msgstr "Colonne Carbon"
 
+msgid "Carbon Enterprise license"
+msgstr ""
+
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon est configuré de la façon dont votre société fonctionne, vos données sont chargées, et votre groupe est confiant en l'utilisant. Quand c'est le cas, vous êtes prêt à vous lancer en production."
 
@@ -7155,6 +7161,9 @@ msgstr "CLIN"
 
 msgid "CLIN / SLIN"
 msgstr "CLIN / SLIN"
+
+msgid "Clock"
+msgstr ""
 
 msgid "Clock In"
 msgstr "Pointage début"
@@ -7829,6 +7838,9 @@ msgstr "Connectez les outils externes que votre société utilise déjà"
 
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "Connectez votre fournisseur d'identité en collant soit son URL de métadonnées, soit son XML de métadonnées brutes — exactement l'un des deux."
+
+msgid "Connected"
+msgstr ""
 
 msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
 msgstr "Connecté avant que les workflows n'aient besoin de permissions supplémentaires. Reconnectez-vous pour les accorder — tout le reste continue de fonctionner en attendant."
@@ -14467,6 +14479,9 @@ msgstr "Compensation GR/IR"
 msgid "GR/IR Clearing (default)"
 msgstr "Compensation GR/IR (par défaut)"
 
+msgid "Grace period ends"
+msgstr ""
+
 msgid "grade"
 msgstr "grade"
 
@@ -16601,6 +16616,12 @@ msgstr "Dernier étalonnage"
 msgid "Last Calibration Date"
 msgstr "Dernière date d'étalonnage"
 
+msgid "Last check-in"
+msgstr ""
+
+msgid "Last check-in error"
+msgstr ""
+
 msgid "Last day"
 msgstr "Dernier jour"
 
@@ -16933,6 +16954,12 @@ msgstr "Passif crédité lorsqu'une ligne de facture de prestation datée ou de 
 
 msgid "Liability GL account credited when an invoice line with service dates, or a rental line, is billed before the revenue is earned; a recognition run releases it to revenue."
 msgstr "Compte général de passif crédité lorsqu'une ligne de facture avec dates de prestation, ou une ligne de location, est facturée avant que le revenu ne soit gagné; un cycle de reconnaissance le libère vers le revenu."
+
+msgid "License"
+msgstr ""
+
+msgid "Licensee"
+msgstr ""
 
 msgid "Lifecycle"
 msgstr "Cycle de vie"
@@ -18398,6 +18425,9 @@ msgstr "Plus d'heures supplémentaires"
 msgid "More records are waiting. Push again to continue."
 msgstr "D'autres enregistrements attendent. Envoyez à nouveau pour continuer."
 
+msgid "More users than your license allows. Contact Carbon to add seats."
+msgstr ""
+
 msgid "Morning, {name}."
 msgstr "Bon matin, {name}."
 
@@ -19776,6 +19806,9 @@ msgstr "Aucune exécution de location n'a été comptabilisée pour l'instant"
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "Aucun élément de congé n'est configuré. Sur un projet Indirect, ouvrez l'élément pour les congés et activez Congé."
 
+msgid "No license"
+msgstr ""
+
 msgid "No lines"
 msgstr "Aucune ligne"
 
@@ -20295,6 +20328,9 @@ msgstr "Aucun document non comptabilisé daté avant la date limite"
 
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "Aucune opération non démarrée, non regroupée sur ce processus à cet endroit."
+
+msgid "No valid Carbon Enterprise license."
+msgstr ""
 
 msgid "No value"
 msgstr "Aucune valeur"
@@ -21795,6 +21831,12 @@ msgstr "Payé par"
 
 msgid "Paid Date"
 msgstr "Date de paiement"
+
+msgid "Paid features are off."
+msgstr ""
+
+msgid "Paid features will turn off once licenses are enforced."
+msgstr ""
 
 msgid "Paid outside Carbon"
 msgstr "Payé en dehors de Carbon"
@@ -26827,6 +26869,9 @@ msgstr "Rechercher..."
 msgid "Search…"
 msgstr "Rechercher…"
 
+msgid "Seats licensed"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "Secondes pour compléter"
 
@@ -30641,6 +30686,9 @@ msgstr "L'actif du preneur pour le droit d'utiliser un bien loué, enregistré �
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "L'actif du bailleur dans un contrat de location-financement : la valeur présente des paiements de location et du résidu non garanti, augmentée chaque mois par les intérêts de location et réduite par chaque paiement de loyer et facture d'option d'achat."
 
+msgid "The license comes from the CARBON_LICENSE setting of this deployment. To change it, change that setting and restart."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "Les étapes du cycle de vie que vous suivez pour vos clients"
 
@@ -31108,6 +31156,9 @@ msgstr "La Catégorie d'immobilisation pré-configurée pour les unités que vou
 
 msgid "the selected class"
 msgstr "la classe sélectionnée"
+
+msgid "The server clock moved back. Check its time."
+msgstr ""
 
 msgid "The service job opens when the receipt is posted."
 msgstr "L'ordre de prestation s'ouvre lorsque le reçu est comptabilisé."
@@ -33023,6 +33074,9 @@ msgstr "Pièce inconnue"
 msgid "Unknown variable {variable}"
 msgstr "Variable inconnue {variable}"
 
+msgid "Unlimited"
+msgstr ""
+
 msgid "Unlimited functional support"
 msgstr "Soutien fonctionnel illimité"
 
@@ -33803,6 +33857,9 @@ msgstr "Afficher la fiche article"
 
 msgid "View Journal Entry"
 msgstr "Afficher la ligne d'écriture"
+
+msgid "View license"
+msgstr ""
 
 msgid "View list"
 msgstr "Afficher la liste"
@@ -35086,6 +35143,13 @@ msgstr "Vos sauvegardes"
 msgid "Your books and how money flows."
 msgstr "Vos livres et la circulation de l'argent."
 
+msgid "Your Carbon Enterprise license has ended."
+msgstr ""
+
+#. placeholder {0}: formatDate(notice.until)
+msgid "Your Carbon Enterprise license has expired. The grace period ends {0}."
+msgstr ""
+
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "Vos modifications sont mises dans une nouvelle version brouillon publiée avec cet avis de modification."
 
@@ -35142,6 +35206,9 @@ msgstr "Vos dernières modifications n'ont pas pu être enregistrées. Êtes-vou
 
 msgid "Your legal name, addresses, branding, and document defaults"
 msgstr "Votre nom légal, adresses, marque et paramètres par défaut des documents"
+
+msgid "Your license hasn't reached the Carbon console in over 3 days."
+msgstr ""
 
 msgid "Your main point of contact"
 msgstr "Votre principal point de contact"

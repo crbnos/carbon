@@ -13,7 +13,8 @@ paths:
 # Billing System
 
 Stripe-backed subscription billing. **Only active on the Cloud edition.** Self-hosted
-(Enterprise/Community) and bypass-listed companies skip all billing/plan checks.
+installs and bypass-listed companies skip billing. Enterprise installs gate features by
+their licence (`CARBON_LICENSE`) instead of a plan row; see `.claude/rules/commercial-licensing.md`.
 
 ## Editions & Plans (`packages/utils/src/types.ts`)
 
@@ -139,9 +140,9 @@ hand, the `customer.subscription.deleted` webhook, a group owner change) shows u
   correct (a live Partner shown "Upgrade to Business", API keys hidden, while the API auth
   path — reading `companyPlan` directly — still accepted the keys).
 
-**All three short-circuit when `CarbonEdition !== Edition.Cloud` or the company is
-bypass-listed** — plan gating only bites on Cloud. This is a **self-hosted feature
-toggle**: Enterprise AND Community self-hosted both pass `companyHasPlan`.
+**On Enterprise all three read the verified licence** (`resolveLicence`); on Community and
+Test they short-circuit to pass, as they do for bypass-listed companies. Only Cloud reads
+`companyPlan`.
 
 ### `companyHasFeature` / `requireFeature` — Community is blocked, not toggled
 
@@ -150,7 +151,7 @@ Cloud) — RBAC authoring (`PERMISSIONS`), console/kiosk mode — use
 `companyHasFeature(client, companyId, spec)` / `requireFeature({...})` instead.
 They are identical to `companyHasPlan`/`requirePlan` EXCEPT they return
 `false`/throw when `CarbonEdition === Edition.Community`. So: Community → blocked,
-Enterprise/Test self-hosted → allowed (licensed), Cloud → plan-based,
+Enterprise → the licence, Test → allowed, Cloud → plan-based,
 bypass/carbon-owned → allowed. `requirePlan`'s off-Cloud no-op is wrong for these
 — it would let a self-hosted Community instance author roles.
 
@@ -272,4 +273,4 @@ whom it deleted.
 - `companyPlan.id == company.id` (not an `id('cplan')` value); query by `.eq("id", companyId)`.
 - Plan rows use the natural key as `id` (`'STARTER'`, `'PARTNER-300'`); always `normalizePlanId`
   before comparing against the `Plan` enum.
-- Gating is a no-op off Cloud — test plan logic with `CARBON_EDITION=cloud` and a non-bypassed company.
+- Plan gating reads `companyPlan` only on Cloud — test plan logic with `CARBON_EDITION=cloud` and a non-bypassed company. Enterprise gating reads the licence (`CARBON_LICENSE`).

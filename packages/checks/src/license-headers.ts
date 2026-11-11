@@ -111,6 +111,11 @@ export const PATH_EXCLUSIONS: readonly PathExclusion[] = [
       "generated: swagger-typescript-api output from Paperless Parts' OpenAPI spec, regenerated per its own header"
   },
   {
+    match: "packages/ee/src/license/verifier/wasm_exec.js",
+    reason:
+      "third-party: Go's wasm_exec.js, BSD licence, copied by sync-licence-verifier"
+  },
+  {
     match: "packages/database/supabase/edge-runtime/main/index.ts",
     reason: "third-party: derived from Supabase's self-hosting template"
   }

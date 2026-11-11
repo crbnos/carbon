@@ -116,6 +116,12 @@ export const schema = define({
     description: "community (default), cloud, enterprise or test",
     browser: true
   },
+  CARBON_LICENSE: {
+    group: "core",
+    description:
+      "Licence string (crbn.v1.…) issued by the Carbon console; read only when CARBON_EDITION is enterprise",
+    secret: true
+  },
   CONTROLLED_ENVIRONMENT: {
     group: "core",
     description: "true for an ITAR / controlled deployment",

@@ -3559,6 +3559,9 @@ msgstr "AIは確実にアカウントを照合できませんでした"
 msgid "AI Tokens"
 msgstr "AIトークン"
 
+msgid "Air-gapped"
+msgstr ""
+
 msgid "Align on scope"
 msgstr "スコープを調整"
 
@@ -6500,6 +6503,9 @@ msgstr "Carbonクライアントが見つかりません"
 msgid "Carbon column"
 msgstr "Carbonカラム"
 
+msgid "Carbon Enterprise license"
+msgstr ""
+
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbonが会社の運用方法に従って構成されており、データがロードされ、チームがそれを自信を持って使用できるようになります。その場合、本番環境へのリリースの準備ができています。"
 
@@ -7155,6 +7161,9 @@ msgstr "CLIN"
 
 msgid "CLIN / SLIN"
 msgstr "CLIN / SLIN"
+
+msgid "Clock"
+msgstr ""
 
 msgid "Clock In"
 msgstr "作業開始"
@@ -7829,6 +7838,9 @@ msgstr "会社がすでに実行している外部ツールに接続"
 
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "IDプロバイダーのメタデータURLまたは生のメタデータXMLを貼り付けて接続します。どちらか一つだけを入力してください。"
+
+msgid "Connected"
+msgstr ""
 
 msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
 msgstr "ワークフローが追加の権限を必要とする前に接続されました。これらを付与するために再接続してください。その間、他のすべては動作し続けます。"
@@ -14467,6 +14479,9 @@ msgstr "GR/IRクリアリング"
 msgid "GR/IR Clearing (default)"
 msgstr "GR/IRクリアリング（デフォルト）"
 
+msgid "Grace period ends"
+msgstr ""
+
 msgid "grade"
 msgstr "グレード"
 
@@ -16601,6 +16616,12 @@ msgstr "最終校正"
 msgid "Last Calibration Date"
 msgstr "最終校正日"
 
+msgid "Last check-in"
+msgstr ""
+
+msgid "Last check-in error"
+msgstr ""
+
 msgid "Last day"
 msgstr "最終日"
 
@@ -16933,6 +16954,12 @@ msgstr "サービス日付またはレンタル請求書明細が売上高計上
 
 msgid "Liability GL account credited when an invoice line with service dates, or a rental line, is billed before the revenue is earned; a recognition run releases it to revenue."
 msgstr "サービス日付を持つ請求書明細またはリース明細が売上高が稼得される前に請求書化されるときに計上される負債勘定科目。認識実行がそれを売上高にリリースします。"
+
+msgid "License"
+msgstr ""
+
+msgid "Licensee"
+msgstr ""
 
 msgid "Lifecycle"
 msgstr "ライフサイクル"
@@ -18398,6 +18425,9 @@ msgstr "残業を増やす"
 msgid "More records are waiting. Push again to continue."
 msgstr "さらに多くのレコードが待機中です。続行するにはもう一度プッシュしてください。"
 
+msgid "More users than your license allows. Contact Carbon to add seats."
+msgstr ""
+
 msgid "Morning, {name}."
 msgstr "朝、{name}さん。"
 
@@ -19776,6 +19806,9 @@ msgstr "リース実行はまだ転記済ではありません。"
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "休暇エレメントが設定されていません。間接プロジェクトで休暇時間のエレメントを開き、「休暇」をオンにしてください。"
 
+msgid "No license"
+msgstr ""
+
 msgid "No lines"
 msgstr "ラインなし"
 
@@ -20295,6 +20328,9 @@ msgstr "カットオーバーの前の日付の未転記文書がありません
 
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "この拠点のこの工法で未開始で未バッチの工程がありません"
+
+msgid "No valid Carbon Enterprise license."
+msgstr ""
 
 msgid "No value"
 msgstr "値がありません"
@@ -21795,6 +21831,12 @@ msgstr "支払者"
 
 msgid "Paid Date"
 msgstr "支払日"
+
+msgid "Paid features are off."
+msgstr ""
+
+msgid "Paid features will turn off once licenses are enforced."
+msgstr ""
 
 msgid "Paid outside Carbon"
 msgstr "Carbonの外で支払済み"
@@ -26827,6 +26869,9 @@ msgstr "検索..."
 msgid "Search…"
 msgstr "検索…"
 
+msgid "Seats licensed"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "完了までの秒数"
 
@@ -30641,6 +30686,9 @@ msgstr "借主がリース資産を使用する権利を持つ資産で、運用
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "売却型リースのリース会社資産：リース支払いおよび保証されていない残価の現在価値。毎月のリース利息により増加し、各賃料および購入オプション請求書により減少します。"
 
+msgid "The license comes from the CARBON_LICENSE setting of this deployment. To change it, change that setting and restart."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "得意先を追跡するライフサイクルステージ。"
 
@@ -31108,6 +31156,9 @@ msgstr "販売ではなくレンタルアウトするために構築または資
 
 msgid "the selected class"
 msgstr "選択されたクラス"
+
+msgid "The server clock moved back. Check its time."
+msgstr ""
 
 msgid "The service job opens when the receipt is posted."
 msgstr "サービス製造指図は領収書の転記時に作成されます。"
@@ -33023,6 +33074,9 @@ msgstr "不明な部品"
 msgid "Unknown variable {variable}"
 msgstr "不明な変数 {variable}"
 
+msgid "Unlimited"
+msgstr ""
+
 msgid "Unlimited functional support"
 msgstr "無制限の機能サポート"
 
@@ -33803,6 +33857,9 @@ msgstr "アイテムマスターを表示"
 
 msgid "View Journal Entry"
 msgstr "仕訳行を表示"
+
+msgid "View license"
+msgstr ""
 
 msgid "View list"
 msgstr "リストを表示"
@@ -35086,6 +35143,13 @@ msgstr "バックアップ"
 msgid "Your books and how money flows."
 msgstr "あなたの帳簿とお金の流れ。"
 
+msgid "Your Carbon Enterprise license has ended."
+msgstr ""
+
+#. placeholder {0}: formatDate(notice.until)
+msgid "Your Carbon Enterprise license has expired. The grace period ends {0}."
+msgstr ""
+
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "変更内容は、この変更通知とともにリリースされた新しい下書きバージョンに組み込まれます。"
 
@@ -35142,6 +35206,9 @@ msgstr "最新の変更は保存できませんでした。このページを離
 
 msgid "Your legal name, addresses, branding, and document defaults"
 msgstr "法人名、住所、ブランディング、文書デフォルト"
+
+msgid "Your license hasn't reached the Carbon console in over 3 days."
+msgstr ""
 
 msgid "Your main point of contact"
 msgstr "主な連絡先担当者"

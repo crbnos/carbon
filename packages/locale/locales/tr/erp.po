@@ -3559,6 +3559,9 @@ msgstr "Yapay Zeka herhangi bir hesapı emin bir şekilde eşleştiremedi"
 msgid "AI Tokens"
 msgstr "Yapay Zeka Jetonları"
 
+msgid "Air-gapped"
+msgstr ""
+
 msgid "Align on scope"
 msgstr "Kapsamda Hizala"
 
@@ -6500,6 +6503,9 @@ msgstr "Carbon istemcisi bulunamadı"
 msgid "Carbon column"
 msgstr "Carbon sütunu"
 
+msgid "Carbon Enterprise license"
+msgstr ""
+
 msgid "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
 msgstr "Carbon, şirketinizin çalışma şekline göre yapılandırılmış, verileriniz yüklenmiş ve ekibiniz bunu kullanmakta kendinden emin. Bu doğru olduğunda, canlı yayına geçmeye hazırsınız."
 
@@ -7155,6 +7161,9 @@ msgstr "CLIN"
 
 msgid "CLIN / SLIN"
 msgstr "CLIN / SLIN"
+
+msgid "Clock"
+msgstr ""
 
 msgid "Clock In"
 msgstr "İş başlangıcı"
@@ -7829,6 +7838,9 @@ msgstr "Şirketinizin zaten kullandığı dış araçları bağlayın"
 
 msgid "Connect your identity provider by pasting either its metadata URL or its raw metadata XML — exactly one of the two."
 msgstr "Kimlik sağlayıcınızı, meta veri URL'sini veya ham meta veri XML'sini yapıştırarak bağlayın — ikisinden tam olarak birini yapıştırın."
+
+msgid "Connected"
+msgstr ""
 
 msgid "Connected before workflows needed extra permissions. Reconnect to grant them — everything else keeps working meanwhile."
 msgstr "İş akışlarından önce bağlanan ek izinler gerekiyordu. Bunları vermek için yeniden bağlanın — diğer her şey arada çalışmaya devam eder."
@@ -14467,6 +14479,9 @@ msgstr "GR/IR Mahsubu"
 msgid "GR/IR Clearing (default)"
 msgstr "GR/IR Mahsubu (varsayılan)"
 
+msgid "Grace period ends"
+msgstr ""
+
 msgid "grade"
 msgstr "sınıf"
 
@@ -16601,6 +16616,12 @@ msgstr "Son Kalibrasyon"
 msgid "Last Calibration Date"
 msgstr "Son Kalibrasyon Tarihi"
 
+msgid "Last check-in"
+msgstr ""
+
+msgid "Last check-in error"
+msgstr ""
+
 msgid "Last day"
 msgstr "Son gün"
 
@@ -16933,6 +16954,12 @@ msgstr "Hizmet tarihli veya kiralama fatura satırı, hasılat kazanılmadan ön
 
 msgid "Liability GL account credited when an invoice line with service dates, or a rental line, is billed before the revenue is earned; a recognition run releases it to revenue."
 msgstr "Hizmet tarihleri olan fatura satırı veya kiralama satırı, hasılat kazanılmadan önce faturalandırıldığında kredi verilen muhasebe hesabı; muhasebe tanıma çalıştırması onu hasılata serbest bırakır."
+
+msgid "License"
+msgstr ""
+
+msgid "Licensee"
+msgstr ""
 
 msgid "Lifecycle"
 msgstr "Yaşam Döngüsü"
@@ -18398,6 +18425,9 @@ msgstr "Daha fazla fazla mesai"
 msgid "More records are waiting. Push again to continue."
 msgstr "Daha fazla kayıt bekleniyor. Devam etmek için yeniden gönderin."
 
+msgid "More users than your license allows. Contact Carbon to add seats."
+msgstr ""
+
 msgid "Morning, {name}."
 msgstr "Sabah, {name}."
 
@@ -19776,6 +19806,9 @@ msgstr "Henüz kiralama çalıştırması muhasebeleştirilmedi"
 msgid "No leave element is set up. On an Indirect project, open the element for time off and turn on Leave."
 msgstr "Hiçbir izin öğesi ayarlanmadı. Dolaylı bir projede, zaman kaydı öğesini açın ve İzni etkinleştirin."
 
+msgid "No license"
+msgstr ""
+
 msgid "No lines"
 msgstr "Satır yok"
 
@@ -20295,6 +20328,9 @@ msgstr "Cutover'dan ön tarihlenen muhasebeleştirilmemiş belgeler yok"
 
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "Bu konumdaki bu işlemde başlatılmamış, toplu işe eklenmemiş operasyon yok."
+
+msgid "No valid Carbon Enterprise license."
+msgstr ""
 
 msgid "No value"
 msgstr "Değer yok"
@@ -21795,6 +21831,12 @@ msgstr "Ödeme Yapan"
 
 msgid "Paid Date"
 msgstr "Ödeme Tarihi"
+
+msgid "Paid features are off."
+msgstr ""
+
+msgid "Paid features will turn off once licenses are enforced."
+msgstr ""
 
 msgid "Paid outside Carbon"
 msgstr "Carbon dışında ödendi"
@@ -26827,6 +26869,9 @@ msgstr "Ara..."
 msgid "Search…"
 msgstr "Ara…"
 
+msgid "Seats licensed"
+msgstr ""
+
 msgid "Seconds to complete"
 msgstr "Tamamlanmak için gereken saniye"
 
@@ -30641,6 +30686,9 @@ msgstr "Kiracının bir kiralanmış varlığı kullanma hakkına ilişkin varl�
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "Satış türü kiralama üzerinde kiraya verenin varlığı: kira ödemeleri ile garantisiz kalıntı tutarının bugünkü değeri; bu tutar her ay kiralama faizi ile artar ve her kira ve satın alma seçeneği faturası ile azalır."
 
+msgid "The license comes from the CARBON_LICENSE setting of this deployment. To change it, change that setting and restart."
+msgstr ""
+
 msgid "The lifecycle stages you track customers through"
 msgstr "Müşterileri takip ettiğiniz yaşam döngüsü aşamaları"
 
@@ -31108,6 +31156,9 @@ msgstr "Kiralamak için satış yerine inşa ettiğiniz veya aktifleştirdiğini
 
 msgid "the selected class"
 msgstr "seçilen sınıf"
+
+msgid "The server clock moved back. Check its time."
+msgstr ""
 
 msgid "The service job opens when the receipt is posted."
 msgstr "Hizmet iş emri, makbuz kaydedildiğinde açılır."
@@ -33023,6 +33074,9 @@ msgstr "Bilinmeyen parça"
 msgid "Unknown variable {variable}"
 msgstr "Bilinmeyen değişken {variable}"
 
+msgid "Unlimited"
+msgstr ""
+
 msgid "Unlimited functional support"
 msgstr "Sınırsız işlevsel destek"
 
@@ -33803,6 +33857,9 @@ msgstr "Ürün Ana Verisine Görüntüle"
 
 msgid "View Journal Entry"
 msgstr "Yevmiye kaydını görüntüle"
+
+msgid "View license"
+msgstr ""
 
 msgid "View list"
 msgstr "Listeyi Görüntüle"
@@ -35086,6 +35143,13 @@ msgstr "Sizin Yedeklemeleriniz"
 msgid "Your books and how money flows."
 msgstr "Muhasebe defterleriniz ve paranın akışı."
 
+msgid "Your Carbon Enterprise license has ended."
+msgstr ""
+
+#. placeholder {0}: formatDate(notice.until)
+msgid "Your Carbon Enterprise license has expired. The grace period ends {0}."
+msgstr ""
+
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "Değişiklikleriniz bu değişiklik bildirisi ile yayınlanan yeni taslak sürüme girer."
 
@@ -35142,6 +35206,9 @@ msgstr "Son değişiklikleriniz kaydedilemedi. Bu sayfadan çıkmak istediğiniz
 
 msgid "Your legal name, addresses, branding, and document defaults"
 msgstr "Yasal adınız, adresler, marka kimliği ve belge varsayılanları"
+
+msgid "Your license hasn't reached the Carbon console in over 3 days."
+msgstr ""
 
 msgid "Your main point of contact"
 msgstr "Ana ilgili kişiniz"

@@ -8,6 +8,7 @@ export {
   dispatchFunction,
   generateMaintenanceForScheduleFunction
 } from "./dispatch";
+export { licenseCheckInFunction } from "./license-check-in";
 export { mrpFunction } from "./mrp";
 export { nightlyReplanFunction } from "./nightly-replan";
 export { notificationDigestFunction } from "./notification-digest";
