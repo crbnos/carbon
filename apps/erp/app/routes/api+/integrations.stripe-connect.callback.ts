@@ -2,14 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { getConnectAccountStatus } from "@carbon/stripe/connect.server";
-import { redirect } from "@carbon/utils";
+import { getRequestOrigin, redirect, redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { upsertCompanyIntegration } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "stripe-connect", "callback");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -45,7 +49,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const onboardingComplete =
       !!accountStatus.detailsSubmitted && !!accountStatus.chargesEnabled;
 
-    await upsertCompanyIntegration(client, {
+    const update = await upsertCompanyIntegration(client, {
       id: "stripe-connect",
       companyId,
       active: true,
@@ -56,17 +60,38 @@ export async function loader({ request }: LoaderFunctionArgs) {
       updatedBy: userId
     });
 
-    if (statusParam === "refresh") {
+    if (update.error) {
+      logger.error("Failed to save the Stripe Connect account status", {
+        companyId,
+        stripeAccountId,
+        error: update.error
+      });
       throw redirect(
-        path.to.api.stripeConnectOnboard,
+        path.to.integration("stripe-connect"),
         await flash(
           request,
-          error(
-            null,
-            "Stripe Connect onboarding link expired. Please try again."
-          )
+          error(update.error, "Failed to save your Stripe account status")
         )
       );
+    }
+
+    if (statusParam === "refresh") {
+      // The onboarding link expired. Stripe sent the browser here from
+      // stripe.com, so the new link is made here: the connect route refuses a
+      // cross-site GET, because a GET there can create a Stripe account. This
+      // only ever continues the account the company already has.
+      const api = await carbon(request);
+      const origin = getRequestOrigin(request) ?? url.origin;
+      const restarted = await api.shared.startStripeConnectOnboarding({
+        origin
+      });
+      if (restarted.error) {
+        throw redirect(
+          path.to.integration("stripe-connect"),
+          await flash(request, error(restarted.error, restarted.error.message))
+        );
+      }
+      return redirectExternal(restarted.data.redirectUrl);
     }
 
     if (onboardingComplete) {
@@ -90,5 +115,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   }
 
-  throw redirect(path.to.integration("stripe-connect"));
+  // getConnectAccountStatus already logged the Stripe error.
+  logger.error("Could not read the Stripe Connect account status", {
+    companyId,
+    stripeAccountId
+  });
+  throw redirect(
+    path.to.integration("stripe-connect"),
+    await flash(
+      request,
+      error(null, "Could not read your Stripe account status. Try again.")
+    )
+  );
 }

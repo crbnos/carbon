@@ -32,6 +32,7 @@
  */
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { patchIntegrationState } from "@carbon/ee/integrations/secrets";
 import {
   getStripeInvoiceIdForCharge,
   recordStripeConnectPayment,
@@ -49,7 +50,6 @@ import {
 } from "@carbon/stripe/connect.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { upsertCompanyIntegration } from "~/modules/settings/settings.service";
 
 export const config = {
   runtime: "nodejs"
@@ -57,7 +57,7 @@ export const config = {
 
 const logger = getLogger("erp", "webhook", "stripe-connect");
 // Matches the SYSTEM_USER convention in payment.server.ts — this handler has
-// no real user, but upsertCompanyIntegration requires an updatedBy audit value.
+// no real user, but the integration write requires an updatedBy audit value.
 const SYSTEM_UPDATED_BY = "system";
 
 async function getCompanyForConnectAccount(stripeAccountId: string) {
@@ -254,7 +254,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
         const result = await voidStripeConnectPayment({
           companyId: company.companyId,
-          stripeInvoiceId
+          stripeInvoiceId,
+          chargeId: charge.id
         });
         logger.info("Stripe Connect payment voided for a full refund", {
           eventId: event.id,
@@ -300,7 +301,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
         const result = await voidStripeConnectPayment({
           companyId: company.companyId,
-          stripeInvoiceId
+          stripeInvoiceId,
+          chargeId
         });
         logger.info("Stripe Connect payment voided for a lost dispute", {
           eventId: event.id,
@@ -313,21 +315,30 @@ export async function action({ request }: ActionFunctionArgs) {
 
       case "account.updated": {
         const accountStatus = await getConnectAccountStatus(event.account);
-        if (accountStatus) {
-          await upsertCompanyIntegration(getCarbonServiceRole(), {
-            id: "stripe-connect",
-            companyId: company.companyId,
-            active: true,
-            metadata: { ...company.metadata, ...accountStatus },
-            updatedBy: SYSTEM_UPDATED_BY
-          });
-          logger.info("Refreshed Stripe Connect account status", {
-            eventId: event.id,
-            companyId: company.companyId,
-            chargesEnabled: accountStatus.chargesEnabled,
-            payoutsEnabled: accountStatus.payoutsEnabled
-          });
+        if (!accountStatus) {
+          // getConnectAccountStatus logs and returns null on any Stripe error;
+          // throw so the catch below answers 500 and Stripe retries.
+          throw new Error(
+            "Could not read the Stripe Connect account status to refresh it"
+          );
         }
+        // Patch only the status keys, atomically: a whole-metadata write from
+        // the snapshot read above would undo a settings save or a pull-sweep
+        // cursor written in between. `stripeAccountId` is the lookup key and
+        // is left alone.
+        const { stripeAccountId: _accountId, ...status } = accountStatus;
+        await patchIntegrationState(
+          getCarbonServiceRole(),
+          company.companyId,
+          "stripe-connect",
+          { metadata: status, updatedBy: SYSTEM_UPDATED_BY }
+        );
+        logger.info("Refreshed Stripe Connect account status", {
+          eventId: event.id,
+          companyId: company.companyId,
+          chargesEnabled: accountStatus.chargesEnabled,
+          payoutsEnabled: accountStatus.payoutsEnabled
+        });
         break;
       }
 

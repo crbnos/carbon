@@ -4927,3 +4927,44 @@ unrelated page.
 
 **Applies to:** Any action whose redirect target is a `$id._index.tsx` that
 redirects (purchase orders, and the other records with a `/details` index).
+
+## The Stripe SDK's types follow the SDK's own API version, not the `apiVersion` a client sends
+
+**Context:** `@carbon/stripe` built its shared v1 client with `apiVersion:
+"2025-06-30.basil"` behind a `@ts-expect-error`, while the installed SDK
+(`stripe` 22.4.0) is pinned to `2026-07-29.dahlia`.
+
+**Problem:** stripe-node types every response in the SDK's own version. A client
+that sends an older version gets responses in that version, typed as the newer
+one, so typecheck cannot see a field that differs between the two (`invoice.
+paid_out_of_band` is gone from dahlia's Invoice, so code written against it failed
+to compile, and nothing would have flagged the reverse case). Webhook payloads are
+a third version: an endpoint's `api_version` is fixed when it is created, and
+unset it follows the account's default.
+
+**Rule:** Run a client at the SDK's own version, so its types are the truth.
+Where a client must stay older, keep it to the code that has not been migrated,
+read that version's changelog for every object it uses, and say why next to the
+`@ts-expect-error`. Pin `api_version` when creating a webhook endpoint to the
+version its handler reads; to change it, recreate the endpoint.
+
+**Applies to:** `packages/stripe/src/stripe.server.ts`, `connect.server.ts`,
+`stripe.register.ts`, and any new Stripe client or webhook endpoint.
+
+## Stripe's `exchange_rate` is the inverse of Carbon's exchange rate
+
+**Context:** `recordStripeConnectPayment` stored
+`balance_transaction.exchange_rate` as `payment.exchangeRate` for a payment Stripe
+converted into the company's currency.
+
+**Problem:** Stripe's rate is settlement-currency units per charge-currency unit
+(charge amount × rate = settlement amount). Carbon's is foreign units per base
+unit (`toBaseAmount` divides by it). A EUR 1,000 invoice in a USD company was booked
+as USD 920 of cash instead of 1,087, with a false FX loss. The rate also means
+nothing for base currency when Stripe settled into some other currency.
+
+**Rule:** Convert an outside system's exchange rate into Carbon's direction at the
+boundary, and state the direction where it is stored. Use Stripe's rate only when
+it settled into the base currency (`carbonSettlementRate`), else the document's rate.
+
+**Applies to:** every rate read from Stripe, a bank feed, or an accounting provider.

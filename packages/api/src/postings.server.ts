@@ -132,6 +132,8 @@ export type PostingContract = {
       paymentId: string;
       /** A fee a payment processor withheld before the cash reached the bank. */
       fee?: { amount: number; accountId: string; description: string };
+      /** A void only: the processor kept that fee, so it stays an expense. */
+      retainFee?: boolean;
     };
     output: unknown;
   };

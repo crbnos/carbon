@@ -49,11 +49,17 @@ const events: Stripe.WebhookEndpointCreateParams.EnabledEvent[] = [
   "payment_intent.canceled",
 ];
 
+// Every event `api+/webhook.stripe-connect.ts` handles: without the last four,
+// a refund, a lost dispute or a voided invoice never reverses the payment.
 const connectEvents: Stripe.WebhookEndpointCreateParams.EnabledEvent[] = [
   "invoice.paid",
   "invoice.payment_succeeded",
   "invoice.payment_failed",
   "invoice.marked_uncollectible",
+  "invoice.voided",
+  "charge.refunded",
+  "charge.dispute.closed",
+  "account.updated",
 ];
 
 // const webhookUrl = `https://${VERCEL_URL}/api/webhook/stripe`;
@@ -67,11 +73,17 @@ async function registerWebhook({
   url,
   enabledEvents,
   connect,
+  apiVersion,
   secretEnvVar,
 }: {
   url: string;
   enabledEvents: Stripe.WebhookEndpointCreateParams.EnabledEvent[];
   connect: boolean;
+  // The version the handler's client reads (`connect.server.ts` for Connect,
+  // `stripe.server.ts` for billing). Unset, Stripe sends events in the
+  // account's default version, which can be neither. It can only be set when
+  // the endpoint is created: to change it, delete the endpoint and run this.
+  apiVersion: Stripe.WebhookEndpointCreateParams.ApiVersion;
   secretEnvVar: string;
 }) {
   console.log(`🔄 Registering Stripe webhook for ${url}...`);
@@ -93,6 +105,11 @@ async function registerWebhook({
     if (existingEndpoint) {
       console.log(`ℹ️ Webhook already exists for ${url}`);
       console.log(`ℹ️ Webhook ID: ${existingEndpoint.id}`);
+      if (existingEndpoint.api_version !== apiVersion) {
+        console.warn(
+          `⚠️ This webhook sends events in ${existingEndpoint.api_version ?? "the account's default version"}, not ${apiVersion}. Stripe cannot change it: delete the endpoint and run this again to recreate it (it gets a new signing secret).`
+        );
+      }
       console.log(
         `ℹ️ Updating webhook to ensure it has the correct event types...`
       );
@@ -116,6 +133,7 @@ async function registerWebhook({
       url,
       enabled_events: enabledEvents,
       connect,
+      api_version: apiVersion,
       description: `Webhook for ${VERCEL_URL}`,
     });
 
@@ -139,12 +157,14 @@ async function registerWebhooks() {
     url: webhookUrl,
     enabledEvents: events,
     connect: false,
+    apiVersion: "2025-06-30.basil",
     secretEnvVar: "STRIPE_WEBHOOK_SECRET",
   });
   await registerWebhook({
     url: connectWebhookUrl,
     enabledEvents: connectEvents,
     connect: true,
+    apiVersion: "2026-07-29.dahlia",
     secretEnvVar: "STRIPE_CONNECT_WEBHOOK_SECRET",
   });
 }

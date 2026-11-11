@@ -133,6 +133,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Changelog entries (authoring + the feed) | `.claude/rules/changelog-authoring.md` |
 | Writing/shipping a changelog entry (end to end) | `.claude/skills/changelog-entry/SKILL.md` |
 | Billing / Stripe | `.claude/rules/billing-system.md` + `packages/stripe/AGENTS.md` |
+| Stripe Connect (connected accounts, sending invoices through Stripe, recording Stripe payments) | `packages/ee/src/stripe-connect/AGENTS.md` + `packages/stripe/AGENTS.md` |
 | Deployment (SST) | `.claude/rules/sst-deployment-infrastructure.md` |
 | Audit log system | `.claude/rules/audit-log-system.md` |
 | Shipments / receipts UI | `.claude/rules/shipments-receipts-ui-patterns.md` |

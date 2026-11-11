@@ -5974,7 +5974,15 @@ export async function sendPostedSalesInvoice(
     if (!notification) return;
     const stamped = await serviceRole
       .from("salesInvoice")
-      .update({ sendError })
+      // A failed Stripe send also records its channel: with `sentAt` still
+      // null nothing shows it as sent, and the Send retry (`invoice-automate`,
+      // `resend`) reads it to send through Stripe again instead of emailing.
+      // Emailing would bill the customer twice when Stripe had already sent it.
+      .update(
+        notification === "Stripe"
+          ? { sendError, sentTo: "Stripe" }
+          : { sendError }
+      )
       .eq("id", invoiceId)
       .eq("companyId", companyId);
     if (stamped.error) {
@@ -6999,6 +7007,21 @@ export async function linkStripeCustomerForBilling({
         return {
           ok: false,
           message: "no Stripe customer was selected to link"
+        };
+      }
+      // Only a customer the dialog offered may be linked: one whose email
+      // matches the billing contact. Any other id on the same account (another
+      // customer's) would send this customer's invoices to that address.
+      if (
+        resolved.resolution.state !== "match-found" ||
+        !resolved.resolution.matches.some(
+          (match) => match.id === stripeCustomerId
+        )
+      ) {
+        return {
+          ok: false,
+          message:
+            "that Stripe customer is not one of the matches — reopen the dialog"
         };
       }
       // Confirm the id exists on THIS connected account before writing it into
@@ -13194,6 +13217,8 @@ export type PostPaymentArgs = {
   userId: string;
   today: string;
   fee?: PaymentJournalFeeInput;
+  /** A void only: the processor kept its fee (see `postPaymentInput`). */
+  retainFee?: boolean;
 };
 
 function settlementQuery(trx: Transaction<KyselyDatabase>, companyId: string) {
@@ -13235,7 +13260,7 @@ export function postPaymentTransaction(
   db: Kysely<KyselyDatabase>,
   args: PostPaymentArgs
 ): Promise<{ journalId: string | null }> {
-  const { companyId, paymentId, userId, today, fee, type } = args;
+  const { companyId, paymentId, userId, today, fee, type, retainFee } = args;
   return db.transaction().execute(async (trx) => {
     // Activation locks settings before rebuilding payments; use the same order.
     const cutoverDate = await readAccountingCutoverDate(trx, companyId);
@@ -13488,6 +13513,66 @@ export function postPaymentTransaction(
                   companyId
                 }))
               )
+              .execute();
+          }
+        }
+      }
+      // The processor kept its fee (Stripe keeps it on a refund and on a lost
+      // dispute). The reversal above takes the fee back out of expense with
+      // the rest of the payment; put it back, paid from the bank, so the books
+      // show the money that actually left: the whole receipt.
+      if (retainFee) {
+        if (payment.paymentType !== "Receipt" || !payment.bankAccount) {
+          throw new Error(
+            "Only a receipt into a bank account can keep its processing fee"
+          );
+        }
+        const { fees, mapped } = await readPaymentProcessorFees(
+          trx,
+          companyId,
+          [payment]
+        );
+        const kept =
+          fees.get(payment.id) ??
+          (mapped.has(payment.id)
+            ? undefined
+            : await postedProcessorFee(trx, payment, companyId));
+        if (kept) {
+          // In base currency at the payment's rate, as `buildPaymentJournal`
+          // booked it.
+          const feeBase = toBaseAmount(
+            kept.amount,
+            Number(payment.exchangeRate)
+          );
+          if (feeBase > 0) {
+            reversalId ??= await insertVoidJournal();
+            const journalLineReference = nanoid();
+            await trx
+              .insertInto("journalLine")
+              .values([
+                {
+                  journalId: reversalId,
+                  accountId: kept.accountId,
+                  amount: debit("expense", feeBase),
+                  quantity: 1,
+                  description: `${kept.description} (kept by the processor)`,
+                  documentType: "Payment" as const,
+                  documentId: paymentId,
+                  journalLineReference,
+                  companyId
+                },
+                {
+                  journalId: reversalId,
+                  accountId: payment.bankAccount,
+                  amount: credit("asset", feeBase),
+                  quantity: 1,
+                  description: "Bank / Cash (processing fee kept)",
+                  documentType: "Payment" as const,
+                  documentId: paymentId,
+                  journalLineReference,
+                  companyId
+                }
+              ])
               .execute();
           }
         }
@@ -14708,7 +14793,11 @@ export const postPaymentInput = z.object({
       accountId: z.string(),
       description: z.string().optional()
     })
-    .optional()
+    .optional(),
+  // A void only: the processor kept the fee it withheld (Stripe keeps it on a
+  // refund). The void reverses the payment and books the fee again, paid from
+  // the bank.
+  retainFee: z.boolean().optional()
 });
 
 export const postPaymentPermission = {
@@ -14720,7 +14809,7 @@ export async function postPayment(
   ctx: ServiceContext,
   raw: z.input<typeof postPaymentInput>
 ) {
-  const { type, paymentId, fee } = postPaymentInput.parse(raw);
+  const { type, paymentId, fee, retainFee } = postPaymentInput.parse(raw);
 
   const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
@@ -14735,7 +14824,8 @@ export async function postPayment(
     companyId,
     userId,
     today,
-    fee
+    fee,
+    retainFee
   });
   return { success: true, ...result };
 }

@@ -10,10 +10,12 @@ import { defineIntegration } from "../fns";
 import { pieceLogo } from "../integrations/piece-logo";
 import { StripeConnectSetupInstructions } from "./setup-instructions";
 
+// Only the settings a user may edit. The settings save merges the validated
+// form into `companyIntegration.metadata`, so a server-owned key here
+// (`stripeAccountId`, `chargesEnabled`, `payoutsEnabled`) would let a crafted
+// form attach another company's Stripe account. The connect, callback and
+// webhook routes write those keys.
 export const StripeConnectSettingsSchema = z.object({
-  stripeAccountId: z.string().optional(),
-  chargesEnabled: z.boolean().optional(),
-  payoutsEnabled: z.boolean().optional(),
   autoEnableInvoicing: z.boolean().optional().default(true)
 });
 
@@ -55,8 +57,9 @@ export const StripeConnect = defineIntegration({
   actions: [
     {
       id: "dashboard",
-      label: "Open Express Dashboard",
-      description: "View payouts, transactions, and account details in Stripe",
+      label: "Open Stripe Dashboard",
+      description:
+        "View payouts, transactions, and account details in Stripe. Stripe may ask you to sign in with your Stripe login.",
       endpoint: "/api/integrations/stripe-connect/dashboard"
     }
   ]
@@ -223,9 +226,9 @@ function StripeConnectStatus({
       ) : !stripeAccountId ? (
         <div className="flex flex-col gap-2">
           <p className="text-xs text-muted-foreground">
-            Connecting creates a Stripe Express account for this company from
-            your Company Settings details — no extra info needed here — then
-            sends you to Stripe to finish onboarding.
+            Connecting creates a Stripe account for this company from your
+            Company Settings details — no extra info needed here — then sends
+            you to Stripe to finish onboarding.
           </p>
           <div>
             <ConnectStripeAccountButton
@@ -258,8 +261,9 @@ function StripeConnectStatus({
       ) : (
         <div className="flex flex-col gap-1">
           <p className="text-xs text-muted-foreground">
-            Onboarding is complete. Use "Open Express Dashboard" below to view
-            payouts and transactions on Stripe.
+            Onboarding is complete. Use "Open Stripe Dashboard" below to view
+            payouts and transactions on Stripe. Sign in with the Stripe login
+            you created during onboarding.
           </p>
           {(displayName || email) && (
             <p className="text-xs text-muted-foreground">

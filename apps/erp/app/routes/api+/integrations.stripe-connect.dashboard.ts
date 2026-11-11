@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { createExpressDashboardLoginLink } from "@carbon/stripe/connect.server";
+import { getConnectDashboardUrl } from "@carbon/stripe/connect.server";
 import { redirect, redirectExternal } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { path } from "~/utils/path";
@@ -48,35 +48,36 @@ async function handle({ request }: { request: Request }) {
   }
 
   try {
-    const loginLinkUrl = await createExpressDashboardLoginLink(stripeAccountId);
+    const dashboardUrl = await getConnectDashboardUrl(stripeAccountId);
 
     if (
       request.headers.get("Accept")?.includes("application/json") ||
       request.method === "POST"
     ) {
-      return Response.json({ redirectUrl: loginLinkUrl });
+      return Response.json({ redirectUrl: dashboardUrl });
     }
 
-    return redirectExternal(loginLinkUrl);
+    return redirectExternal(dashboardUrl);
   } catch (err: any) {
-    logger.error("Failed to open Stripe Express Dashboard", { error: err });
+    logger.error("Failed to open the Stripe Dashboard", {
+      companyId,
+      stripeAccountId,
+      error: err
+    });
 
     if (
       request.headers.get("Accept")?.includes("application/json") ||
       request.method === "POST"
     ) {
       return Response.json(
-        { error: err.message || "Failed to open Stripe Express Dashboard" },
+        { error: err.message || "Failed to open the Stripe Dashboard" },
         { status: 400 }
       );
     }
 
     throw redirect(
       path.to.integrations,
-      await flash(
-        request,
-        error(err, "Failed to open Stripe Express Dashboard")
-      )
+      await flash(request, error(err, "Failed to open the Stripe Dashboard"))
     );
   }
 }

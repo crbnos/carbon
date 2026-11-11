@@ -430,7 +430,6 @@ export const path = {
           }`
         );
       },
-      stripeConnectOnboard: `${api}/integrations/stripe-connect/connect`,
       supplierContacts: (id: string) =>
         generatePath(`${api}/purchasing/supplier-contacts/${id}`),
       supplierFiles: (itemIds: string[]) =>

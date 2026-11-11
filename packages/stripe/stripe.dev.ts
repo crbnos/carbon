@@ -45,11 +45,17 @@ const events: Stripe.WebhookEndpointCreateParams.EnabledEvent[] = [
 // separate CLI stream (`--forward-connect-to`) with their OWN signing secret —
 // the one the CLI prints as the "connect" secret, which belongs in
 // STRIPE_CONNECT_WEBHOOK_SECRET, not STRIPE_WEBHOOK_SECRET.
+// Every event `api+/webhook.stripe-connect.ts` handles: without the last four,
+// a refund, a lost dispute or a voided invoice never reverses the payment.
 const connectEvents: Stripe.WebhookEndpointCreateParams.EnabledEvent[] = [
   "invoice.paid",
   "invoice.payment_succeeded",
   "invoice.payment_failed",
   "invoice.marked_uncollectible",
+  "invoice.voided",
+  "charge.refunded",
+  "charge.dispute.closed",
+  "account.updated",
 ];
 
 console.log("🔄 Setting up Stripe webhook endpoint...");

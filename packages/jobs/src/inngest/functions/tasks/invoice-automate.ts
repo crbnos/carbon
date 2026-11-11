@@ -7,7 +7,9 @@ import { getJobDatabaseClient } from "../../../db";
 import {
   attachPostedInvoicePdf,
   emailPostedInvoice,
+  getInvoiceSendChannel,
   postSalesInvoiceUnattended,
+  resendInvoiceMode,
   resolveInvoiceAutomation,
   sendPostedInvoiceViaStripe
 } from "../../../invoicing/automate-invoice";
@@ -38,12 +40,15 @@ export const invoiceAutomateFunction = inngest.createFunction(
         resolveInvoiceAutomation(client, companyId, invoiceId)
       ));
     // A resend is a person asking for the posted invoice to go out: through
-    // Stripe when that is how this invoice is sent, otherwise by email — also
-    // for a mode that never sends, or an invoice with no recurring source.
+    // Stripe when that is how this invoice is sent (`resendInvoiceMode`),
+    // otherwise by email.
     const mode = event.data.resend
-      ? configured === "Post and Send via Stripe"
-        ? configured
-        : "Post and Email"
+      ? resendInvoiceMode({
+          configured,
+          ...(await step.run("resolve-send-channel", () =>
+            getInvoiceSendChannel(client, companyId, invoiceId)
+          ))
+        })
       : configured;
     if (!mode || mode === "Draft Only") return { mode, outcome: "skipped" };
 
