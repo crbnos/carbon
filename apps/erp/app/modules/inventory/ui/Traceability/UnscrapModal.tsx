@@ -16,7 +16,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Hidden, Submit, TextArea } from "~/components/Form";
+import { Hidden, Input, Submit, TextArea } from "~/components/Form";
 import { inventoryAdjustmentValidator } from "~/modules/inventory/inventory.models";
 import { path } from "~/utils/path";
 
@@ -26,6 +26,8 @@ type UnscrapModalProps = {
   quantity: number;
   /** Optional readable label for the entity, shown in the modal header. */
   label?: string | null;
+  /** The unit has no batch or serial number, so it comes back with one. */
+  needsNumber?: boolean;
   open: boolean;
   onClose: () => void;
 };
@@ -51,6 +53,7 @@ function UnscrapBody({
   trackedEntityId,
   quantity,
   label,
+  needsNumber = false,
   onClose
 }: Omit<UnscrapModalProps, "open">) {
   const { t } = useLingui();
@@ -94,6 +97,14 @@ function UnscrapBody({
           <Hidden name="adjustmentType" />
           <Hidden name="quantity" />
           <VStack spacing={4}>
+            {needsNumber && (
+              <Input
+                name="readableId"
+                label={t`Batch or Serial Number`}
+                // The adjustment posting refuses a unit restored without one.
+                isRequired
+              />
+            )}
             <TextArea name="comment" label={t`Comment`} />
           </VStack>
         </ModalBody>
