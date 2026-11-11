@@ -4,6 +4,7 @@
 
 import {
   PAGES,
+  pagesOfUrl,
   routeUrl,
   urlCoverage,
   urlSegments
@@ -99,33 +100,12 @@ export type RouteRegistry = {
 
 export const REGISTRY: RouteRegistry = { pages: PAGES };
 
-/** A key covers its own URL and every URL below it (plain text: no `$param`). */
-const covers = (prefix: string, url: string) => {
-  const path = prefix.replace(/\/$/, "");
-  return url === path || url.startsWith(`${path}/`);
+/** Whether an `UNPAGED_ROUTES` key lists the URL (plain text: no `$param`). */
+const unpaged = (key: string, url: string) => {
+  if (!key.endsWith("/")) return url === key;
+  const path = key.slice(0, -1);
+  return url === path || url.startsWith(key);
 };
-
-/** An unpaged key ending in `/` covers what is below it; any other key, one URL. */
-const unpaged = (key: string, url: string) =>
-  key.endsWith("/") ? covers(key, url) : url === key;
-
-/** The pages whose longest path covers the URL, matched as `pageOfUrl`
- * matches (`urlCoverage`: a `$param` takes any one segment). */
-function pagesFor(url: string, registry: RouteRegistry) {
-  const segments = urlSegments(url);
-  let best = 0;
-  let found: string[] = [];
-  for (const page of registry.pages) {
-    for (const path of page.paths) {
-      const length = urlCoverage(path, segments);
-      if (length === 0 || length < best) continue;
-      if (length > best) found = [];
-      best = length;
-      if (!found.includes(page.id)) found.push(page.id);
-    }
-  }
-  return found;
-}
 
 /**
  * Every ERP route under `x+` belongs to one page of the access registry, so a
@@ -152,7 +132,7 @@ export function findRoutePageGaps(
 
   for (const { route, url } of urls) {
     const file = `${ERP_ROUTES_DIR}/${route}`;
-    const pages = pagesFor(url, registry);
+    const pages = pagesOfUrl(url, registry.pages);
     const listed = Object.keys(unpagedRoutes).some((key) => unpaged(key, url));
     if (pages.length > 1)
       push(file, url, `${url} is on more than one page: ${pages.join(", ")}`);

@@ -356,19 +356,36 @@ export function urlCoverage(path: string, url: readonly string[]): number {
 }
 
 /**
+ * Every page whose longest covering `paths` entry is the longest for the URL,
+ * in registry order: one page for a URL the registry places, several for a
+ * tie (which @carbon/checks' `route-maps-to-page` refuses), none for a URL no
+ * page covers.
+ */
+export function pagesOfUrl<P extends { id: string; paths: readonly string[] }>(
+  pathname: string,
+  pages: readonly P[]
+): P["id"][] {
+  const url = urlSegments(pathname);
+  let best = 0;
+  let found: P["id"][] = [];
+  for (const page of pages)
+    for (const path of page.paths) {
+      const length = urlCoverage(path, url);
+      if (length === 0 || length < best) continue;
+      if (length > best) found = [];
+      best = length;
+      if (!found.includes(page.id)) found.push(page.id);
+    }
+  return found;
+}
+
+/**
  * The page a URL belongs to: the page with the longest `paths` entry that
  * covers it. Undefined for a URL no page covers (the dashboard, a settings
  * index, a route listed in @carbon/checks' `UNPAGED_ROUTES`).
  */
 export function pageOfUrl(pathname: string): PageId | undefined {
-  const url = urlSegments(pathname);
-  let best: { page: PageId; length: number } | undefined;
-  for (const page of PAGES)
-    for (const path of page.paths) {
-      const length = urlCoverage(path, url);
-      if (length > (best?.length ?? 0)) best = { page: page.id, length };
-    }
-  return best?.page;
+  return pagesOfUrl(pathname, PAGES)[0];
 }
 
 /**

@@ -55,9 +55,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     "settings.itarCertifications": "View"
   });
 
-  // Controlled environments only.
+  // Controlled environments only. Home, not Settings: Settings opens on the
+  // first page the person can view, which may be this one, and loops.
   if (!CONTROLLED_ENVIRONMENT) {
-    throw redirect(path.to.settings);
+    throw redirect(path.to.authenticatedRoot);
   }
 
   const [report, entityCertification, lastLoginByUserId] = await Promise.all([
