@@ -8530,7 +8530,7 @@ export async function planPurchaseOrderReceiptReversal(
  * is refused too.
  */
 export async function forceDeleteReceiptRefusal(
-  db: Kysely<KyselyDatabase> | KyselyTx,
+  db: Parameters<typeof planPurchaseOrderReceiptReversal>[0],
   {
     companyId,
     receipts,
