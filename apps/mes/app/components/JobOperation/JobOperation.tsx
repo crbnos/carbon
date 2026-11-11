@@ -127,6 +127,7 @@ import {
 } from "~/components";
 import { AbilityWarning } from "~/components/AbilityWarning";
 import { MethodItemTypeIcon } from "~/components/Icons";
+import { ReworkBadge } from "~/components/ReworkBadge";
 import { useDateFormatter, useUrlParams, useUser } from "~/hooks";
 import type { productionEventType } from "~/services/models";
 import type {
@@ -241,6 +242,8 @@ type JobOperationProps = {
   }>;
   job: Job;
   thumbnailPath: string | null;
+  /** The correction this rework operation belongs to, if any. */
+  correctionName?: string | null;
   trackedEntities: TrackedEntity[];
   isFirstOperation: boolean;
   workCenter: Promise<
@@ -278,6 +281,7 @@ export const JobOperation = ({
   operation: originalOperation,
   procedure,
   thumbnailPath,
+  correctionName,
   trackedEntities,
   isFirstOperation,
   workCenter
@@ -352,6 +356,15 @@ export const JobOperation = ({
 
   const serialIndex =
     trackedEntities.findIndex((entity) => entity.id === trackedEntityId) ?? 0;
+  // `serialIndex` keys the step records, so it counts every unit of the job.
+  // The "N of M" heading counts only the units this operation works: a
+  // correction or rework operation works the units sent into it.
+  const unitPosition = Math.max(
+    trackedEntities
+      .filter((entity) => entity.inOperationScope !== false)
+      .findIndex((entity) => entity.id === trackedEntityId),
+    0
+  );
 
   const navigate = useNavigate();
   useEffect(() => {
@@ -1456,7 +1469,7 @@ export const JobOperation = ({
                           {operation.description}
                         </Heading>
                         {operation.reworkId && (
-                          <Badge variant="red">Rework</Badge>
+                          <ReworkBadge correctionName={correctionName} />
                         )}
                       </HStack>
                       <p className="text-muted-foreground line-clamp-1">
@@ -1895,7 +1908,7 @@ export const JobOperation = ({
                                                     className="font-sans"
                                                   >
                                                     <Trans>
-                                                      {serialIndex + 1} of{" "}
+                                                      {unitPosition + 1} of{" "}
                                                       {
                                                         operation.operationQuantity
                                                       }
@@ -2310,7 +2323,8 @@ export const JobOperation = ({
                                     key={`serial-${entity.id}`}
                                     className={cn(
                                       "[&>td]:py-3",
-                                      entity.status === "Scrapped" &&
+                                      (entity.status === "Scrapped" ||
+                                        entity.inOperationScope === false) &&
                                         "opacity-60"
                                     )}
                                   >
@@ -2349,6 +2363,14 @@ export const JobOperation = ({
                                           </Badge>
                                         )}
                                       </div>
+                                      {/* The list keeps every unit (step records
+                                          are keyed by position); a unit this
+                                          rework doesn't apply to can't be picked. */}
+                                      {entity.inOperationScope === false && (
+                                        <span className="text-sm text-muted-foreground">
+                                          <Trans>Not in this operation</Trans>
+                                        </span>
+                                      )}
                                     </Td>
 
                                     <Td className="text-right">
@@ -2374,7 +2396,8 @@ export const JobOperation = ({
                                           size="lg"
                                           isDisabled={
                                             entity.id === trackedEntityId ||
-                                            entity.status === "Scrapped"
+                                            entity.status === "Scrapped" ||
+                                            entity.inOperationScope === false
                                           }
                                           onClick={() => {
                                             const entityIndex =
@@ -3050,7 +3073,11 @@ export const JobOperation = ({
           jobId={job.id!}
           isOpen={reworkModal.isOpen}
           onClose={reworkModal.onClose}
-          trackedEntities={trackedEntities}
+          trackedEntities={trackedEntities.filter(
+            // A scoped (rework or correction) operation sends on only its
+            // own units.
+            (entity) => entity.inOperationScope !== false
+          )}
           parentIsSerial={parentIsSerial}
           parentIsBatch={parentIsBatch}
           returnFocusRef={actionsSheetOpenerRef}
@@ -3166,6 +3193,8 @@ export const JobOperation = ({
           activeStep={activeStep}
           attribute={selectedStep}
           onClose={onDeselectStep}
+          onScrap={isBatched ? undefined : scrapModal.onOpen}
+          onQualityIssue={qualityIssueModal.onOpen}
         />
       ) : null}
 

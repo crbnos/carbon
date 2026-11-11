@@ -47,6 +47,8 @@ export const Constants = {
         "supplier",
         "changeOrder",
         "projectChangeRequest",
+        "purchaseOrderForceDelete",
+        "documentForceDelete",
       ],
       approvalStatus: ["Pending", "Approved", "Rejected", "Cancelled"],
       assemblyInstructionStatus: ["Draft", "Published", "Archived"],
@@ -121,6 +123,8 @@ export const Constants = {
       ],
       contractRevenueStatus: ["Planned", "Recognized", "Recognized Externally"],
       contractRevenueType: ["One-time", "Recurring"],
+      correctionMeasurementCondition: ["Below Minimum", "Above Maximum"],
+      correctionReturnTo: ["Re-inspect", "Continue"],
       costLedgerType: [
         "Direct Cost",
         "Revaluation",
@@ -346,6 +350,12 @@ export const Constants = {
         "Cost Adjustment",
       ],
       flsaStatus: ["Exempt", "Non-Exempt"],
+      forceDeleteDocumentType: [
+        "purchaseInvoice",
+        "salesInvoice",
+        "receipt",
+        "payment",
+      ],
       fulfillmentType: ["Inventory", "Job"],
       gaugeCalibrationStatus: [
         "Pending",
@@ -890,6 +900,13 @@ export const Constants = {
         "Partially Paid",
         "Overdue",
         "Voided",
+      ],
+      purchaseOrderForceDeleteStatus: [
+        "Pending",
+        "Approving",
+        "Executed",
+        "Rejected",
+        "Cancelled",
       ],
       purchaseOrderLineType: [
         "Comment",

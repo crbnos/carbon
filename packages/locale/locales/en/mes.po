@@ -18,6 +18,10 @@ msgstr ", not running"
 msgid ", running"
 msgstr ", running"
 
+#. placeholder {0}: suggestion.reason
+msgid "\"{0}\" calls for a correction on this unit."
+msgstr "\"{0}\" calls for a correction on this unit."
+
 msgid "\"{column}\" is required."
 msgstr "\"{column}\" is required."
 
@@ -442,6 +446,9 @@ msgstr "Assignee"
 msgid "Attach file"
 msgstr "Attach file"
 
+msgid "Attempt limit reached"
+msgstr "Attempt limit reached"
+
 msgid "Authentication Error"
 msgstr "Authentication Error"
 
@@ -785,6 +792,13 @@ msgstr "Copy secret"
 
 msgid "Copy to clipboard"
 msgstr "Copy to clipboard"
+
+#. placeholder {0}: correction.name
+msgid "Correction: {0}"
+msgstr "Correction: {0}"
+
+msgid "Correction: {correctionName}"
+msgstr "Correction: {correctionName}"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -1224,6 +1238,9 @@ msgstr "General"
 
 msgid "Go back to operation"
 msgstr "Go back to operation"
+
+msgid "Go back to operation, or run a correction"
+msgstr "Go back to operation, or run a correction"
 
 msgid "Go to onboarding"
 msgstr "Go to onboarding"
@@ -1749,6 +1766,9 @@ msgstr "No certification text is set for you. Ask an administrator to set it in 
 msgid "No color"
 msgstr "No color"
 
+msgid "No correction"
+msgstr "No correction"
+
 msgid "No country found."
 msgstr "No country found."
 
@@ -1917,6 +1937,9 @@ msgstr "None"
 
 msgid "Normal"
 msgstr "Normal"
+
+msgid "Not in this operation"
+msgstr "Not in this operation"
 
 msgid "Not scheduled"
 msgstr "Not scheduled"
@@ -2335,6 +2358,9 @@ msgstr "Queue empty"
 msgid "Quotes"
 msgstr "Quotes"
 
+msgid "Raise quality issue"
+msgstr "Raise quality issue"
+
 msgid "Re"
 msgstr "Re"
 
@@ -2599,6 +2625,9 @@ msgstr "Scrap quantity"
 
 msgid "Scrap Reason"
 msgstr "Scrap Reason"
+
+msgid "Scrap unit"
+msgstr "Scrap unit"
 
 msgid "Scrapped"
 msgstr "Scrapped"
@@ -2906,8 +2935,14 @@ msgstr "Start {workType}"
 msgid "Start {workTypeLabel} timer"
 msgstr "Start {workTypeLabel} timer"
 
+msgid "Start a correction?"
+msgstr "Start a correction?"
+
 msgid "Start clock"
 msgstr "Start clock"
+
+msgid "Start correction"
+msgstr "Start correction"
 
 msgid "Start Job"
 msgstr "Start Job"
@@ -3093,6 +3128,12 @@ msgstr "Themes"
 msgid "then"
 msgstr "then"
 
+msgid "Then continues to the next operation"
+msgstr "Then continues to the next operation"
+
+msgid "Then re-inspects here"
+msgstr "Then re-inspects here"
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "There are no available or consumed tracked parts for this material."
 
@@ -3143,6 +3184,9 @@ msgstr "This sample was removed"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "This stops your clock and posts the job's time. The job can no longer change."
+
+msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
+msgstr "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "This unit will be permanently scrapped and a replacement unit will be created."
@@ -3371,6 +3415,11 @@ msgstr "Uploading {0}"
 
 msgid "Use a different account"
 msgstr "Use a different account"
+
+#. placeholder {0}: correction.uses
+#. placeholder {1}: correction.maxAttempts
+msgid "Used {0} of {1}"
+msgstr "Used {0} of {1}"
 
 msgid "Used automatically at completion"
 msgstr "Used automatically at completion"

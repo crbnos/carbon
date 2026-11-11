@@ -18,6 +18,10 @@ msgstr ", 未运行"
 msgid ", running"
 msgstr ", 运行中"
 
+#. placeholder {0}: suggestion.reason
+msgid "\"{0}\" calls for a correction on this unit."
+msgstr "“{0}”要求对该件进行纠正。"
+
 msgid "\"{column}\" is required."
 msgstr "\"{column}\" 是必需的。"
 
@@ -442,6 +446,9 @@ msgstr "经办人"
 msgid "Attach file"
 msgstr "附加文件"
 
+msgid "Attempt limit reached"
+msgstr "已达到尝试次数上限"
+
 msgid "Authentication Error"
 msgstr "认证错误"
 
@@ -785,6 +792,13 @@ msgstr "复制密钥"
 
 msgid "Copy to clipboard"
 msgstr "复制到剪贴板"
+
+#. placeholder {0}: correction.name
+msgid "Correction: {0}"
+msgstr "纠正：{0}"
+
+msgid "Correction: {correctionName}"
+msgstr "纠正：{correctionName}"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -1224,6 +1238,9 @@ msgstr "常规"
 
 msgid "Go back to operation"
 msgstr "返回操作"
+
+msgid "Go back to operation, or run a correction"
+msgstr "返回工序，或开始纠正"
 
 msgid "Go to onboarding"
 msgstr "前往入门"
@@ -1749,6 +1766,9 @@ msgstr "未为您设置认证文本。请要求管理员在设置 → 时间中�
 msgid "No color"
 msgstr "无颜色"
 
+msgid "No correction"
+msgstr "无需纠正"
+
 msgid "No country found."
 msgstr "未找到国家。"
 
@@ -1917,6 +1937,9 @@ msgstr "无"
 
 msgid "Normal"
 msgstr "正常检验"
+
+msgid "Not in this operation"
+msgstr "不在此工序中"
 
 msgid "Not scheduled"
 msgstr "未安排"
@@ -2335,6 +2358,9 @@ msgstr "队列为空"
 msgid "Quotes"
 msgstr "报价单"
 
+msgid "Raise quality issue"
+msgstr "发起质量问题"
+
 msgid "Re"
 msgstr "拒收数"
 
@@ -2599,6 +2625,9 @@ msgstr "报废数量"
 
 msgid "Scrap Reason"
 msgstr "报废原因"
+
+msgid "Scrap unit"
+msgstr "报废该件"
 
 msgid "Scrapped"
 msgstr "已报废"
@@ -2906,8 +2935,14 @@ msgstr "开始{workType}"
 msgid "Start {workTypeLabel} timer"
 msgstr "开始{workTypeLabel}计时器"
 
+msgid "Start a correction?"
+msgstr "开始纠正？"
+
 msgid "Start clock"
 msgstr "开始计时"
+
+msgid "Start correction"
+msgstr "开始纠正"
 
 msgid "Start Job"
 msgstr "开始工单"
@@ -3093,6 +3128,12 @@ msgstr "主题"
 msgid "then"
 msgstr "然后"
 
+msgid "Then continues to the next operation"
+msgstr "然后继续到下一道工序"
+
+msgid "Then re-inspects here"
+msgstr "然后在此重新检验"
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "此原材料没有可用或已消耗的受追踪零件。"
 
@@ -3143,6 +3184,9 @@ msgstr "此样本已被删除"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "这将停止您的时钟并过账工单的时间。工单不再能更改。"
+
+msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
+msgstr "该件已达到此纠正的次数上限。请改为报废该件或发起质量问题。"
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "此单元将被永久报废，并将创建替换单元。"
@@ -3371,6 +3415,11 @@ msgstr "正在上传 {0}"
 
 msgid "Use a different account"
 msgstr "使用不同的帐户"
+
+#. placeholder {0}: correction.uses
+#. placeholder {1}: correction.maxAttempts
+msgid "Used {0} of {1}"
+msgstr "已使用 {0} / {1}"
 
 msgid "Used automatically at completion"
 msgstr "在完成时自动使用"

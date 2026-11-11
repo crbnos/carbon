@@ -113,7 +113,11 @@ export type ContactSpec = {
   title: string;
 };
 
-export type CustomerContactSpec = ContactSpec & { customer: string };
+export type CustomerContactSpec = ContactSpec & {
+  customer: string;
+  /** A second contact at the same site: reuses the customer's "Billing" location. */
+  sharesLocation?: true;
+};
 
 export type SupplierContactSpec = ContactSpec & { supplier: string };
 
@@ -960,6 +964,41 @@ export type ContractSpec = {
   }[];
 };
 
+/** A rental agreement as activation writes it (ERP `sales.service.ts`); `Rental`
+ *  lines only, so no journal. Tier 09 seeds it after the fleet units. */
+export type RentalAgreementSpec = {
+  /** Registered in ctx.refs.documents as `ra:<key>`. */
+  key: string;
+  customer: string;
+  /** The lastName of the primary customer contact. */
+  primaryContact: string;
+  /** The other contacts, by lastName, in the order they were added. */
+  contacts?: { contact: string; role?: string }[];
+  status: "Draft" | "Active";
+  startOffset: DayOffset;
+  /** Omitted = open-ended. */
+  endOffset?: DayOffset;
+  billingCycle: "Calendar Month" | "Monthly" | "28 Days";
+  billingTiming: "Advance" | "Arrears";
+  lines: {
+    /** A `FixedAssetSpec.key` with `fleet` set. */
+    fixedAsset: string;
+    rateUnit: "Day" | "Week" | "Month";
+    rate: number;
+    fairValue: number;
+    economicLifeMonths: number;
+    /** Active only: a posted rental shipment delivered the unit on this day. */
+    deliveredOffset?: DayOffset;
+  }[];
+  /** Unbilled charges; `line` is the 1-based position in `lines`. */
+  charges?: {
+    line: number;
+    description: string;
+    amount: number;
+    dateOffset: DayOffset;
+  }[];
+};
+
 /**
  * A unit at a customer, registered the way `registerCustomerAsset` does it
  * (the datasets ship no serials to customers): a Consumed `trackedEntity`
@@ -1095,6 +1134,7 @@ export type SalesData = {
    */
   serviceLaborRates: { cost: number; bill: number };
   serviceJobs: ServiceJobSpec[];
+  rentalAgreements: RentalAgreementSpec[];
 };
 
 export type RfqLineSpec = {
@@ -1947,6 +1987,8 @@ export type FixedAssetSpec = {
   usageLogs?: { monthsBack: number; unitsProduced: number }[];
   /** Required iff "Disposed"; the tier derives NBV and gainLoss as post-sales-invoice does. */
   disposal?: { dateOffset: DayOffset; method: "Sale"; saleProceeds: number };
+  /** A rentable fleet unit: a Serial-tracked item and a new Consumed serial of it. */
+  fleet?: { item: string; serial: string };
 };
 
 export type AccountClass =

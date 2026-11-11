@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261110133830",
+  "schemaVersion": "20261111044213",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-10T14:09:41.085Z",
+  "exportedAt": "2026-11-11T07:42:37.958Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -472,6 +472,7 @@
         "requireMfa",
         "allowLowercaseItemIds",
         "includeOperationsOnTraveler",
+        "requireFirstArticle",
         "requireSupplierContactAndLocation",
         "requireCustomerContactAndLocation",
         "showBomExplorerReadableId",
@@ -528,6 +529,22 @@
         "nextResetDatetime",
         "companyId",
         "createdAt",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "complianceStatement",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "name",
+        "content",
+        "appliesToAllCustomers",
+        "active",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
         "updatedAt"
       ]
     },
@@ -990,6 +1007,29 @@
         "customFields",
         "gainOnDisposalAccountId",
         "isConstructionInProgress"
+      ]
+    },
+    {
+      "name": "forceDeleteRequest",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "documentType",
+        "documentId",
+        "documentReadableId",
+        "documentStatus",
+        "reason",
+        "status",
+        "requestedBy",
+        "requestedAt",
+        "decidedBy",
+        "decidedAt",
+        "decisionNotes",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -2875,6 +2915,7 @@
         "samplingAql",
         "samplingInspectionLevel",
         "samplingSeverity",
+        "drawingRevision",
         "modelUploadId",
         "status",
         "rootInspectionDocumentId",
@@ -2922,6 +2963,11 @@
         "samplingAql",
         "samplingInspectionLevel",
         "samplingSeverity",
+        "designator",
+        "referenceLocation",
+        "materialCondition",
+        "sizeFeatureId",
+        "featureOfSize",
         "gaugeTypeId",
         "pmiItemId"
       ]
@@ -3115,6 +3161,24 @@
       ]
     },
     {
+      "name": "methodCorrection",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "makeMethodId",
+        "name",
+        "description",
+        "returnTo",
+        "maxAttempts",
+        "order",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "riskRegister",
       "rows": 0,
       "columns": [
@@ -3215,6 +3279,21 @@
         "updatedBy",
         "updatedAt",
         "customFields"
+      ]
+    },
+    {
+      "name": "complianceStatementAssignment",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "complianceStatementId",
+        "customerId",
+        "itemId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -3432,7 +3511,9 @@
         "updatedAt",
         "updatedBy",
         "incoterm",
-        "incotermLocation"
+        "incotermLocation",
+        "requiresCertificateOfConformance",
+        "requiresFirstArticle"
       ]
     },
     {
@@ -3479,6 +3560,30 @@
         "purchaseOrderDocumentPath",
         "requestForQuoteDocumentPath",
         "customerId"
+      ]
+    },
+    {
+      "name": "certificateOfConformance",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "certificateId",
+        "revision",
+        "shipmentId",
+        "customerId",
+        "reasonForUpdate",
+        "documentId",
+        "signedBy",
+        "signedByName",
+        "signedByTitle",
+        "signedAt",
+        "lastSentAt",
+        "lastSentTo",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -3780,7 +3885,9 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "bonus",
+        "allowable"
       ]
     },
     {
@@ -4006,6 +4113,18 @@
       "name": "jobOperationToolStep",
       "rows": 0,
       "columns": ["jobOperationToolId", "jobOperationStepId"]
+    },
+    {
+      "name": "jobOperationTrackedEntity",
+      "rows": 0,
+      "columns": [
+        "jobOperationId",
+        "trackedEntityId",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "updatedBy"
+      ]
     },
     {
       "name": "location",
@@ -5749,6 +5868,22 @@
       ]
     },
     {
+      "name": "methodCorrectionTrigger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "methodOperationStepId",
+        "methodCorrectionId",
+        "listValue",
+        "measurementCondition",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "methodMaterial",
       "rows": 0,
       "columns": [
@@ -5772,7 +5907,8 @@
         "tags",
         "kit",
         "storageUnitIds",
-        "sourcingType"
+        "sourcingType",
+        "methodCorrectionId"
       ]
     },
     {
@@ -5812,7 +5948,8 @@
         "operationLeadTime",
         "operationUnitCost",
         "assemblyInstructionId",
-        "inspectionDocumentId"
+        "inspectionDocumentId",
+        "methodCorrectionId"
       ]
     },
     {
@@ -5953,6 +6090,22 @@
         "nonConformanceActionId",
         "nonConformanceInvestigationId",
         "assemblyInstructionStepId"
+      ]
+    },
+    {
+      "name": "jobCorrectionTrigger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobOperationStepId",
+        "jobCorrectionId",
+        "listValue",
+        "measurementCondition",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -6731,6 +6884,77 @@
       ]
     },
     {
+      "name": "firstArticleInspection",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "inspectionId",
+        "status",
+        "itemId",
+        "jobId",
+        "jobMakeMethodId",
+        "type",
+        "scope",
+        "reason",
+        "baselineFirstArticleInspectionId",
+        "baselineReference",
+        "partNumber",
+        "partName",
+        "partRevision",
+        "drawingNumber",
+        "drawingRevision",
+        "additionalChanges",
+        "manufacturingProcessReference",
+        "organizationName",
+        "supplierCode",
+        "purchaseOrderNumber",
+        "hasNonconformance",
+        "comments",
+        "verifiedBy",
+        "verifiedByName",
+        "verifiedByTitle",
+        "verifiedAt",
+        "approvedBy",
+        "approvedByName",
+        "approvedByTitle",
+        "approvedAt",
+        "customerApprovalName",
+        "customerApprovalDate",
+        "documentId",
+        "customFields",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "firstArticleInspectionProduct",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "firstArticleInspectionId",
+        "sortOrder",
+        "kind",
+        "name",
+        "specification",
+        "code",
+        "supplier",
+        "customerApprovalVerification",
+        "certificateNumber",
+        "functionalTestProcedureNumber",
+        "acceptanceReportNumber",
+        "comments",
+        "certificateId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "fulfillment",
       "rows": 0,
       "columns": [
@@ -6743,6 +6967,27 @@
         "createdAt",
         "createdBy",
         "updatedBy"
+      ]
+    },
+    {
+      "name": "jobCorrection",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobId",
+        "jobMakeMethodId",
+        "methodCorrectionId",
+        "name",
+        "description",
+        "returnTo",
+        "maxAttempts",
+        "order",
+        "definition",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -6924,7 +7169,8 @@
         "completedAt",
         "companyId",
         "createdAt",
-        "updatedAt"
+        "updatedAt",
+        "jobCorrectionId"
       ]
     },
     {
@@ -7295,6 +7541,28 @@
       "name": "purchaseOrderFavorite",
       "rows": 0,
       "columns": ["purchaseOrderId", "userId"]
+    },
+    {
+      "name": "purchaseOrderForceDeleteRequest",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "purchaseOrderId",
+        "purchaseOrderReadableId",
+        "purchaseOrderStatus",
+        "reason",
+        "status",
+        "requestedBy",
+        "requestedAt",
+        "decidedBy",
+        "decidedAt",
+        "decisionNotes",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
     },
     {
       "name": "purchaseOrderLine",
@@ -7752,6 +8020,26 @@
         "requiresSerialTracking",
         "requiresBatchTracking",
         "requiresInspection"
+      ]
+    },
+    {
+      "name": "certificate",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "type",
+        "certificateNumber",
+        "specification",
+        "supplierId",
+        "receiptLineId",
+        "jobOperationId",
+        "documentId",
+        "notes",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {

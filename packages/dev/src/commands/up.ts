@@ -256,11 +256,17 @@ export async function up(opts: UpOpts = {}) {
   if (shouldMigrate) {
     await tasks([
       {
-        title: "Seed smoke-test user (test@carbon.ms)",
-        task: async () =>
-          (await ensureSmokeTestUser(root, ctx.db, ctx.ports.PORT_API)).seeded
-            ? "user created"
-            : "already exists"
+        title: "Seed smoke-test users (test@carbon.ms, test+admin2@carbon.ms)",
+        task: async () => {
+          const { seeded } = await ensureSmokeTestUser(
+            root,
+            ctx.db,
+            ctx.ports.PORT_API
+          );
+          if (seeded === "company") return "users created";
+          if (seeded === "second admin") return "second Admin added";
+          return "already exist";
+        }
       }
     ]);
   }
@@ -610,13 +616,14 @@ function printSummary(ctx: Ctx, apps: AppId[], size: StackSize) {
     db: ctx.db,
     shared: ctx.mode === "shared"
   });
-  // Some non-interactive terminals (Conductor's run pane) report a width of
-  // 0, for which clack's box computes a negative repeat count and throws.
-  if (process.stdout.columns === 0) {
-    log.info(`Carbon dev — ${ctx.slug}`);
+  const title = `Carbon dev — ${ctx.slug}`;
+  // A terminal narrower than the title (Conductor's run pane can report 0 or a
+  // few columns) makes clack's box compute a negative repeat count and throw.
+  if ((process.stdout.columns ?? 80) < title.length + 8) {
+    log.info(title);
     for (const line of summary) log.message(line);
   } else {
-    box(summary.join("\n"), `Carbon dev — ${ctx.slug}`);
+    box(summary.join("\n"), title);
   }
 }
 

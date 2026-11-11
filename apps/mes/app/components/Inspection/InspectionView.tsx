@@ -60,6 +60,7 @@ import { QuantityModal } from "~/components/JobOperation/components/QuantityModa
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
+import { ReworkBadge } from "~/components/ReworkBadge";
 import type { AbilityShortfall } from "~/services/operations.service";
 import type {
   InspectionGauge,
@@ -98,6 +99,8 @@ type InspectionViewProps = {
   operationId: string | null;
   job: Job;
   operation: OperationWithDetails | null;
+  /** The correction this rework operation belongs to, if any. */
+  correctionName?: string | null;
   inspection: InspectionLot;
   samples: InspectionSample[];
   features: InspectionSamplingPlan[];
@@ -136,6 +139,7 @@ export function InspectionView({
   operationId,
   job,
   operation,
+  correctionName,
   inspection,
   samples,
   features,
@@ -420,6 +424,11 @@ export function InspectionView({
         lot={lot}
         itemLabel={inspection.itemReadableId ?? job?.itemReadableIdWithRevision}
         detail={operation?.description}
+        badge={
+          operation?.reworkId ? (
+            <ReworkBadge correctionName={correctionName} />
+          ) : null
+        }
       >
         {canAddSample && !isLocked ? (
           <button

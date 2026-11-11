@@ -345,6 +345,14 @@ export const CUSTOMER_CONTACTS = [
     lastName: "Haugland",
     email: "erik.haugland@ndma.example.no",
     title: "Procurement Officer"
+  },
+  {
+    customer: "State Emergency Response Agency",
+    firstName: "Dana",
+    lastName: "Ortiz",
+    email: "d.ortiz@sera.example.gov",
+    title: "Field Operations Lead",
+    sharesLocation: true as const
   }
 ];
 

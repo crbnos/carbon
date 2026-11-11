@@ -18,6 +18,10 @@ msgstr ", не запущен"
 msgid ", running"
 msgstr ", запущен"
 
+#. placeholder {0}: suggestion.reason
+msgid "\"{0}\" calls for a correction on this unit."
+msgstr "«{0}» требует доработки этой единицы."
+
 msgid "\"{column}\" is required."
 msgstr "«{column}» требуется."
 
@@ -442,6 +446,9 @@ msgstr "Исполнитель"
 msgid "Attach file"
 msgstr "Прикрепить файл"
 
+msgid "Attempt limit reached"
+msgstr "Достигнут лимит попыток"
+
 msgid "Authentication Error"
 msgstr "Ошибка аутентификации"
 
@@ -785,6 +792,13 @@ msgstr "Копировать секрет"
 
 msgid "Copy to clipboard"
 msgstr "Копировать в буфер обмена"
+
+#. placeholder {0}: correction.name
+msgid "Correction: {0}"
+msgstr "Доработка: {0}"
+
+msgid "Correction: {correctionName}"
+msgstr "Доработка: {correctionName}"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -1224,6 +1238,9 @@ msgstr "Общие"
 
 msgid "Go back to operation"
 msgstr "Вернуться к операции"
+
+msgid "Go back to operation, or run a correction"
+msgstr "Вернуться к операции или выполнить доработку"
 
 msgid "Go to onboarding"
 msgstr "Перейти к первоначальной настройке"
@@ -1749,6 +1766,9 @@ msgstr "Для вас не установлен текст сертификац�
 msgid "No color"
 msgstr "Без цвета"
 
+msgid "No correction"
+msgstr "Без доработки"
+
 msgid "No country found."
 msgstr "Страна не найдена."
 
@@ -1917,6 +1937,9 @@ msgstr "Нет"
 
 msgid "Normal"
 msgstr "Нормальный"
+
+msgid "Not in this operation"
+msgstr "Нет в этой операции"
 
 msgid "Not scheduled"
 msgstr "Не запланировано"
@@ -2335,6 +2358,9 @@ msgstr "Очередь пуста"
 msgid "Quotes"
 msgstr "Коммерческие предложения"
 
+msgid "Raise quality issue"
+msgstr "Создать несоответствие по качеству"
+
 msgid "Re"
 msgstr "Бр"
 
@@ -2599,6 +2625,9 @@ msgstr "Количество брака"
 
 msgid "Scrap Reason"
 msgstr "Причина брака"
+
+msgid "Scrap unit"
+msgstr "Отправить единицу в брак"
 
 msgid "Scrapped"
 msgstr "Списано в брак"
@@ -2906,8 +2935,14 @@ msgstr "Запустить {workType}"
 msgid "Start {workTypeLabel} timer"
 msgstr "Запустить таймер: {workTypeLabel}"
 
+msgid "Start a correction?"
+msgstr "Начать доработку?"
+
 msgid "Start clock"
 msgstr "Начать отсчет времени"
+
+msgid "Start correction"
+msgstr "Начать доработку"
 
 msgid "Start Job"
 msgstr "Начать производственный заказ"
@@ -3093,6 +3128,12 @@ msgstr "Темы"
 msgid "then"
 msgstr "затем"
 
+msgid "Then continues to the next operation"
+msgstr "Затем переход к следующей операции"
+
+msgid "Then re-inspects here"
+msgstr "Затем повторная проверка здесь"
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Для этого материала нет доступных или израсходованных отслеживаемых деталей."
 
@@ -3143,6 +3184,9 @@ msgstr "Этот образец был удалён"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Это останавливает ваш таймер и проводит рабочее время производственного заказа. Производственный заказ больше не может изменяться."
+
+msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
+msgstr "Эта единица уже использовала эту доработку максимально допустимое число раз. Отправьте её в брак или создайте несоответствие по качеству."
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Эта единица будет окончательно списана, и будет создана единица на замену."
@@ -3371,6 +3415,11 @@ msgstr "Загрузка {0}"
 
 msgid "Use a different account"
 msgstr "Использовать другой аккаунт"
+
+#. placeholder {0}: correction.uses
+#. placeholder {1}: correction.maxAttempts
+msgid "Used {0} of {1}"
+msgstr "Использовано {0} из {1}"
 
 msgid "Used automatically at completion"
 msgstr "Используется автоматически при завершении"

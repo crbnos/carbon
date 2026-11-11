@@ -26,8 +26,8 @@ import {
   periodCloseTaskDefinitions,
   returnReasons,
   scrapReasons,
-  sequences,
-  unitOfMeasures
+  seedUnitsOfMeasure,
+  sequences
 } from "../seed-data.ts";
 import type { Database } from "../types.ts";
 import type { Resolved } from "./types.ts";
@@ -51,41 +51,7 @@ export async function bootstrap(
   client: PoolClient,
   email: string
 ): Promise<Resolved> {
-  const supabaseAdmin = createClient<Database>(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { autoRefreshToken: false, persistSession: false } }
-  );
-
-  // Supabase Auth calls cannot participate in the pg transaction.
-  const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-  const existingUser = existingUsers?.users?.find((u) => u.email === email);
-
-  let userId: string;
-  if (existingUser) {
-    userId = existingUser.id;
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-      password: DEV_PASSWORD
-    });
-    if (error) {
-      console.warn(`   Warning: could not update password: ${error.message}`);
-    }
-  } else {
-    const { data: newUser, error } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password: DEV_PASSWORD,
-      email_confirm: true,
-      app_metadata: {
-        role: "employee",
-        provider: "email",
-        providers: ["email"]
-      }
-    });
-    if (error) throw new Error(`Failed to create user: ${error.message}`);
-    if (!newUser.user)
-      throw new Error("Failed to create user: no user returned");
-    userId = newUser.user.id;
-  }
+  const userId = await ensureAuthUser(email);
 
   const firstName = inferFirstNameFromEmail(email);
   await client.query(`UPDATE "user" SET "firstName" = $1 WHERE id = $2`, [
@@ -236,10 +202,17 @@ export async function seedCompanyReferenceData(
     );
   }
 
-  for (const uom of unitOfMeasures) {
+  // The same choice seedCompany makes: the company-insert interceptor sets
+  // useMetric from the company's country.
+  const measurement = await client.query<{ useMetric: boolean }>(
+    `SELECT "useMetric" FROM "companySettings" WHERE id = $1`,
+    [companyId]
+  );
+  const useMetric = measurement.rows[0]?.useMetric ?? false;
+  for (const uom of seedUnitsOfMeasure(useMetric)) {
     await client.query(
-      `INSERT INTO "unitOfMeasure" (name, code, "companyId", "createdBy") VALUES ($1, $2, $3, 'system')`,
-      [uom.name, uom.code, companyId]
+      `INSERT INTO "unitOfMeasure" (name, code, active, "companyId", "createdBy") VALUES ($1, $2, $3, $4, 'system')`,
+      [uom.name, uom.code, uom.active, companyId]
     );
   }
 
@@ -420,6 +393,128 @@ export async function seedCompanyReferenceData(
     [userId, companyId, locationId]
   );
 
+  await grantAllModulePermissions(client, userId, companyId);
+
+  return { companyId, companyGroupId, locationId };
+}
+
+function supabaseAdminClient() {
+  return createClient<Database>(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+}
+
+/**
+ * The auth user for `email`, created with the dev password when missing (its
+ * `user` and `userPermission` rows come from the auth trigger). Supabase Auth
+ * calls cannot join the pg transaction, so this runs before it.
+ */
+async function ensureAuthUser(email: string): Promise<string> {
+  const supabaseAdmin = supabaseAdminClient();
+  const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
+  const existingUser = existingUsers?.users?.find((u) => u.email === email);
+
+  if (existingUser) {
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(
+      existingUser.id,
+      { password: DEV_PASSWORD }
+    );
+    if (error) {
+      console.warn(`   Warning: could not update password: ${error.message}`);
+    }
+    return existingUser.id;
+  }
+
+  const { data: newUser, error } = await supabaseAdmin.auth.admin.createUser({
+    email,
+    password: DEV_PASSWORD,
+    email_confirm: true,
+    app_metadata: {
+      role: "employee",
+      provider: "email",
+      providers: ["email"]
+    }
+  });
+  if (error) throw new Error(`Failed to create user: ${error.message}`);
+  if (!newUser.user) throw new Error("Failed to create user: no user returned");
+  return newUser.user.id;
+}
+
+/**
+ * The second Admin of a dev company: `<local>+admin2@<domain>` for the seeded
+ * `<local>@<domain>`. An Admin-approved request (a purchase order force
+ * delete) needs an Admin other than the one who asked. The dev login's bypass
+ * accepts it as a plus-addressed alias of `DEV_BYPASS_EMAIL`.
+ */
+export function devSecondAdminEmail(email: string): string {
+  const at = email.lastIndexOf("@");
+  return `${email.slice(0, at)}+admin2${email.slice(at)}`;
+}
+
+/**
+ * Adds `email` to the company as an active Admin employee with every module
+ * permission, as the bootstrapped user is. Idempotent: a re-run leaves an
+ * existing employee as it is.
+ */
+export async function ensureDevAdmin(
+  client: PoolClient,
+  args: {
+    companyId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  }
+): Promise<{ userId: string }> {
+  const { companyId, email, firstName, lastName } = args;
+  const userId = await ensureAuthUser(email);
+
+  await client.query("BEGIN");
+  try {
+    await client.query(
+      `UPDATE "user" SET "firstName" = $1, "lastName" = $2 WHERE id = $3`,
+      [firstName, lastName, userId]
+    );
+    await client.query(
+      `INSERT INTO "userToCompany" ("userId", "companyId", "role")
+       VALUES ($1, $2, 'employee') ON CONFLICT DO NOTHING`,
+      [userId, companyId]
+    );
+    await client.query(
+      `INSERT INTO employee (id, "employeeTypeId", "companyId", active)
+       SELECT $1, id, $2, true FROM "employeeType"
+       WHERE "companyId" = $2 AND "systemType" = 'Admin'
+       ORDER BY "createdAt" LIMIT 1
+       ON CONFLICT DO NOTHING`,
+      [userId, companyId]
+    );
+    await client.query(
+      `INSERT INTO "employeeJob" (id, "companyId", "locationId")
+       SELECT $1, $2, id FROM location
+       WHERE "companyId" = $2
+       ORDER BY "createdAt" LIMIT 1
+       ON CONFLICT DO NOTHING`,
+      [userId, companyId]
+    );
+    await grantAllModulePermissions(client, userId, companyId);
+    await client.query("COMMIT");
+    return { userId };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  }
+}
+
+/** Gives the user every module's view, create, update and delete in the company. */
+async function grantAllModulePermissions(
+  client: PoolClient,
+  userId: string,
+  companyId: string
+) {
+  const modulesResult = await client.query(`SELECT name FROM modules`);
+  const modules = modulesResult.rows as { name: string }[];
+
   const newPermissions: Record<string, string[]> = {};
   for (const module of modules) {
     const moduleName = module.name?.toLowerCase();
@@ -459,6 +554,4 @@ export async function seedCompanyReferenceData(
     `UPDATE "userPermission" SET permissions = $1 WHERE id = $2`,
     [JSON.stringify(finalPermissions), userId]
   );
-
-  return { companyId, companyGroupId, locationId };
 }

@@ -242,6 +242,7 @@ export const path = {
     timeCardPage: `${x}/timecard`,
     timecard: `${api}/timecard`,
     timesheet: `${x}/timesheet`,
+    triggerCorrection: `${x}/trigger-correction`,
     triggerRework: `${x}/trigger-rework`,
     unconsume: `${x}/unconsume`,
     workCenter: (workCenter: string) =>

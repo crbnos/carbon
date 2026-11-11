@@ -307,6 +307,11 @@ msgstr "{0} (tipo)"
 msgid "{0} (unavailable)"
 msgstr "{0} (non disponibile)"
 
+#. placeholder {0}: formatter.format(material.quantity)
+#. placeholder {1}: material.unitOfMeasureCode
+msgid "{0} {1} per unit"
+msgstr "{0} {1} per unità"
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -2479,6 +2484,13 @@ msgstr "Informazioni (notifica)"
 msgid "About this field"
 msgstr "Informazioni su questo campo"
 
+#. placeholder {0}: result.step.maxValue
+msgid "Above {0}"
+msgstr "Sopra {0}"
+
+msgid "Above maximum"
+msgstr "Sopra il massimo"
+
 msgid "Above the upper limit"
 msgstr "Sopra il limite superiore"
 
@@ -2958,6 +2970,9 @@ msgstr "Aggiungi una riga per ogni parte del lavoro: Time & Materials, Cost Plus
 
 msgid "Add a line to the document"
 msgstr "Aggiungi una riga al documento"
+
+msgid "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
+msgstr "Aggiungi un passo di tipo Lista, Controllo o Misura (con un minimo o un massimo) a un'operazione per collegare i suoi risultati alle correzioni."
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Aggiungi una sezione materiali che elenca ogni articolo della distinta base con la sua quantità."
@@ -3524,6 +3539,9 @@ msgstr "Dopo"
 
 msgid "After (calculation method)"
 msgstr "Dopo (metodo di calcolo)"
+
+msgid "After the correction"
+msgstr "Dopo la correzione"
 
 msgid "Afternoon, {name}."
 msgstr "Pomeriggio, {name}."
@@ -4119,6 +4137,9 @@ msgstr "Qualsiasi"
 msgid "Any day in the month adds that month"
 msgstr "Qualsiasi giorno del mese aggiunge quel mese"
 
+msgid "any fields set to update on every push"
+msgstr "tutti i campi impostati per l'aggiornamento a ogni push"
+
 msgid "Any item group"
 msgstr "Qualsiasi gruppo articoli"
 
@@ -4335,6 +4356,12 @@ msgstr "Approva {displayName}"
 msgid "Approve all"
 msgstr "Approva tutti"
 
+msgid "Approve and delete"
+msgstr ""
+
+msgid "Approve and Delete"
+msgstr ""
+
 msgid "Approve first article?"
 msgstr "Approva il primo articolo?"
 
@@ -4355,6 +4382,21 @@ msgstr "Approvato da (Cliente)"
 
 msgid "Approved On"
 msgstr "Approvato il"
+
+msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
+msgstr ""
+
+msgid "Approving deletes {readableId} now. This cannot be undone."
+msgstr ""
+
+msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
+msgstr ""
+
+msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
+msgstr ""
+
+msgid "Approving voids {readableId}, which reverses its postings, then deletes it. This cannot be undone."
+msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "Approssimativo — derivato dalle date programmate; non esiste alcuna prenotazione di capacità per questa riga."
@@ -5650,12 +5692,22 @@ msgstr "Prima di inviare"
 msgid "Beginning"
 msgstr "Inizio"
 
+msgid "Being approved now…"
+msgstr ""
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "In fase di eliminazione — successore: <0>{0}</0>"
 
+#. placeholder {0}: result.step.minValue
+msgid "Below {0}"
+msgstr "Sotto {0}"
+
 msgid "Below level"
 msgstr "Sotto il livello"
+
+msgid "Below minimum"
+msgstr "Sotto il minimo"
 
 msgid "Below safety stock"
 msgstr "Sotto la scorta di sicurezza"
@@ -5922,6 +5974,9 @@ msgstr "Impostazione di Esplora distinta aggiornata"
 
 msgid "BOM synced successfully"
 msgstr "BOM sincronizzato con successo"
+
+msgid "BOM synced. Not written: {notWritten}"
+msgstr "BOM sincronizzato. Non scritto: {notWritten}"
 
 msgid "BOMs"
 msgstr "BOM"
@@ -6210,6 +6265,9 @@ msgstr "Per unità di stoccaggio"
 msgid "By you · edited <0/>"
 msgstr "Da te · modificato <0/>"
 
+msgid "CAD model"
+msgstr "modello CAD"
+
 msgid "CAD Model"
 msgstr "Modello CAD"
 
@@ -6336,6 +6394,9 @@ msgstr "Annulla ordine d'acquisto"
 
 msgid "Cancel purchase order {target}"
 msgstr "Annulla ordine di acquisto {target}"
+
+msgid "Cancel Request"
+msgstr ""
 
 msgid "Cancel Return"
 msgstr "Annulla Reso"
@@ -7943,6 +8004,9 @@ msgstr "Continua"
 
 msgid "Continue Setup"
 msgstr "Prosegui l'impostazione"
+
+msgid "Continue to the next operation"
+msgstr "Continua con l'operazione successiva"
 
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "Conto di contropartita per l'ammortamento dei diritti d'uso"
@@ -10088,6 +10152,9 @@ msgstr "Elimina contratto"
 msgid "Delete Contractor"
 msgstr "Elimina Collaboratore esterno"
 
+msgid "Delete correction"
+msgstr "Elimina correzione"
+
 msgid "Delete Count"
 msgstr "Elimina Conteggio"
 
@@ -10433,6 +10500,9 @@ msgstr "Eliminato"
 
 msgid "Deleted attribute value"
 msgstr "Valore attributo eliminato"
+
+msgid "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
+msgstr "Eliminando questa correzione si rimuovono le sue operazioni, i materiali e le associazioni dei risultati. Gli ordini di produzione già creati conservano la propria copia."
 
 msgid "Deliver"
 msgstr "Consegna"
@@ -11139,6 +11209,9 @@ msgstr "revisione del disegno"
 msgid "Drawing Revision"
 msgstr "Revisione del Disegno"
 
+msgid "drawings"
+msgstr "disegni"
+
 msgid "Drop a drawing or model"
 msgstr "Trascina un disegno o un modello"
 
@@ -11427,10 +11500,6 @@ msgstr "Ogni periodo è un mese, per la tariffa mensile."
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Ogni unità fisica ottiene la propria entità tracciata e numero univoco — un'entità, un'unità."
 
-#. placeholder {0}: replaced.join(", ")
-msgid "Each push replaces: {0}. Other edits stay."
-msgstr "Ogni push sostituisce: {0}. Le altre modifiche rimangono."
-
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Il venditore di ogni accordo di noleggio o contratto (o il suo creatore) riceve un riepilogo giornaliero delle sue fatture."
 
@@ -11588,6 +11657,12 @@ msgstr "Modifica Contatto"
 
 msgid "Edit Contractor"
 msgstr "Modifica Collaboratore esterno"
+
+msgid "Edit correction"
+msgstr "Modifica correzione"
+
+msgid "Edit Correction"
+msgstr "Modifica Correzione"
 
 msgid "Edit cost"
 msgstr "Modifica costo"
@@ -13054,6 +13129,9 @@ msgstr "Non riuscito"
 msgid "Failed characteristics"
 msgstr "Caratteristiche non riuscite"
 
+msgid "Failed inspection"
+msgstr "Controllo non superato"
+
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
 msgstr "Impossibile aggiungere la riga — aggiunte {addedCount} righe su {0}"
@@ -13911,6 +13989,24 @@ msgstr "Ad esempio Sito o Ordinato da"
 
 msgid "For Form 6765 Section E"
 msgstr "Per il modulo 6765 sezione E"
+
+msgid "Force delete"
+msgstr ""
+
+msgid "Force Delete"
+msgstr ""
+
+msgid "Force Delete (Admin)"
+msgstr ""
+
+msgid "Force delete {purchaseOrderReadableId}"
+msgstr ""
+
+msgid "Force delete {readableId}"
+msgstr ""
+
+msgid "Force delete waiting for another Admin's approval"
+msgstr ""
 
 msgid "Forecast"
 msgstr "Previsione"
@@ -15325,6 +15421,9 @@ msgstr "Le azioni inattive non appariranno negli elenchi di selezione"
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Le categorie inattive non possono essere selezionate per nuovo tempo"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "Controllo in accettazione"
 
@@ -16132,6 +16231,9 @@ msgstr "Decide come il prezzo della riga è impostato."
 msgid "It decides what the next step asks for."
 msgstr "Decide cosa il passo successivo chiede."
 
+msgid "It is {status}: approving voids it first, which reverses its postings. If the void refuses, its postings are reversed by journal instead."
+msgstr ""
+
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "È approvato ma non può essere applicato. Riaprilo, controlla queste righe, quindi invialo di nuovo."
 
@@ -16140,6 +16242,15 @@ msgstr "Sarà disponibile presto. Contatta Carbon per farla configurare per la t
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "È ancora utilizzato da un record \"{table}\"; rimuovi prima quello."
+
+msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgstr ""
+
+msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
+msgstr ""
+
+msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
+msgstr ""
 
 msgid "It shows with no hours until you add some."
 msgstr "Viene visualizzato senza ore fino a quando non ne aggiungi."
@@ -16278,6 +16389,9 @@ msgstr "Il suo design potrebbe cambiare prima che l'Avviso di modifica sia emess
 
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "I suoi ricavi tornano a quello che rimane da riconoscere di ogni riga."
+
+msgid "Its stock is taken back out, even if it was used since (on-hand can go negative), and what it received is given back to its order."
+msgstr ""
 
 msgid "Job"
 msgstr "Lavoro"
@@ -16684,8 +16798,8 @@ msgstr "Ultimo invio {when} non riuscito: {0}"
 msgid "Last push {when}:"
 msgstr "Ultimo push {when}:"
 
-msgid "Last pushed {lastPushed}."
-msgstr "Ultimo invio {lastPushed}."
+msgid "Last pushed {lastPushed}"
+msgstr "Ultimo invio {lastPushed}"
 
 msgid "Last Quarter"
 msgstr "Ultimo Trimestre"
@@ -16867,6 +16981,9 @@ msgstr "Lascia vuoto per usare la prossima revisione automaticamente"
 
 msgid "Leave empty for exact match"
 msgstr "Lascia vuoto per una corrispondenza esatta"
+
+msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
+msgstr "Lascia vuoto per nessun limite. Oltre questo valore, MES propone solo lo Scarto o un problema di qualità."
 
 msgid "Leave empty to use the account default"
 msgstr "Lascia vuoto per usare il valore predefinito dell'account"
@@ -18064,6 +18181,13 @@ msgstr "Matrice"
 msgid "Maturity Analysis"
 msgstr "Analisi di scadenza"
 
+#. placeholder {0}: correction.maxAttempts
+msgid "Max {0} per unit"
+msgstr "Max {0} per unità"
+
+msgid "Max attempts per unit"
+msgstr "Tentativi massimi per unità"
+
 msgid "Max Lead Time"
 msgstr "Lead Time Massimo"
 
@@ -18881,6 +19005,9 @@ msgstr "Nuovo Contratto"
 msgid "New Contractor"
 msgstr "Nuovo collaboratore esterno"
 
+msgid "New Correction"
+msgstr "Nuova Correzione"
+
 msgid "New Cost Center"
 msgstr "Nuovo Centro di Costo"
 
@@ -19599,6 +19726,12 @@ msgstr "Nessun conto di controllo ha un saldo al cambio."
 msgid "No conversion is required"
 msgstr "Nessuna conversione richiesta"
 
+msgid "No correction"
+msgstr "Nessuna correzione"
+
+msgid "No corrections yet."
+msgstr "Ancora nessuna correzione."
+
 msgid "No cost"
 msgstr "Nessun costo"
 
@@ -19992,6 +20125,9 @@ msgstr "Nessuna riga di ordine di vendita aperta"
 msgid "No open work has a target date."
 msgstr "Nessun lavoro aperto ha una data target."
 
+msgid "No operations"
+msgstr "Nessuna operazione"
+
 msgid "No operations found."
 msgstr "Nessuna operazione trovata."
 
@@ -20280,6 +20416,9 @@ msgstr "Nessun ordinamento applicato a questa visualizzazione"
 
 msgid "No statement for this period"
 msgstr "Nessuna dichiarazione per questo periodo"
+
+msgid "No step results suggest this correction."
+msgstr "Nessun risultato dei passi suggerisce questa correzione."
 
 msgid "No step selected"
 msgstr "Nessun passo selezionato"
@@ -20621,6 +20760,9 @@ msgstr "Non sincronizzato"
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "Scorta non utilizzabile. MRP e pianificazione non la conteggiano e il prelievo non la utilizza."
 
+msgid "Not used yet."
+msgstr "Non ancora utilizzato."
+
 msgid "Not working today"
 msgstr "Non lavora oggi"
 
@@ -20681,6 +20823,12 @@ msgstr "Niente qui ancora"
 
 msgid "Nothing in the archive"
 msgstr "Niente nell'archivio"
+
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
+msgstr ""
+
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
+msgstr ""
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "Nulla è dovuto. Le fatture vengono create automaticamente quando un periodo scade."
@@ -21664,6 +21812,9 @@ msgstr "Conto «Altri proventi» per gli interessi mensili guadagnati sull'inves
 msgid "Other Income GL account for the monthly interest earned on the net investment in sales-type leases."
 msgstr "Conto contabile «Altri proventi» per gli interessi mensili guadagnati sull'investimento netto nelle locazioni di tipo vendita."
 
+msgid "Other payments it funds or refunds are unapplied from it first; they stay posted."
+msgstr ""
+
 msgid "Other Type"
 msgstr "Altro Tipo"
 
@@ -22206,6 +22357,12 @@ msgstr "Pagamenti"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "Pagamenti e crediti applicati a questa fattura. Gli importi applicati e le differenze di cambio sono espressi nella valuta di base dell'azienda. Fai clic su una riga per aprire il documento di origine."
+
+msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
+msgstr ""
+
+msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
+msgstr ""
 
 msgid "Payments due before this date were paid outside Carbon"
 msgstr "I pagamenti scaduti prima di questa data sono stati pagati al di fuori di Carbon"
@@ -23615,6 +23772,9 @@ msgstr "Approvazione ordine di acquisto"
 msgid "Purchase order for {supplierName}"
 msgstr "Ordine di acquisto per {supplierName}"
 
+msgid "Purchase Order Force Delete"
+msgstr ""
+
 msgid "Purchase Order ID"
 msgstr "ID Ordine di Acquisto"
 
@@ -23753,14 +23913,14 @@ msgstr "Registra la prima nota senza la dimensione"
 msgid "Push to accounting"
 msgstr "Invia alla contabilità"
 
-msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr "I push non modificano i campi di questo articolo, quindi le modifiche apportate qui rimangono."
+msgid "Pushes from Onshape can update this item's {pushTargets}, but not its fields."
+msgstr "I push da Onshape possono aggiornare {pushTargets} di questo articolo, ma non i suoi campi."
 
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "I push da Onshape smettono di aggiornare questo articolo. Eseguendo nuovamente il push di questo componente da Onshape lo ricollega."
+msgid "Pushes from Onshape can update this item's {pushTargets}."
+msgstr "I push da Onshape possono aggiornare {pushTargets} di questo articolo."
 
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "I push sostituiscono solo i campi che la pagina Campi di Onshape imposta su Aggiorna a ogni push."
+msgid "Pushes stop updating this item, and its current data stays. Any later push that includes this part number links it again."
+msgstr "I push smettono di aggiornare questo articolo e i suoi dati attuali restano invariati. Qualsiasi push successivo che include questo codice parte lo ricollega."
 
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "Metti un progetto contrattuale in sospeso secondo un ordine di sospensione dei lavori, con la sua data di fine di 90 giorni, e riprendi quando l'ordine termina."
@@ -23802,6 +23962,10 @@ msgstr "Codice QR per avviare l'operazione successiva per questo kanban"
 
 msgid "Qty"
 msgstr "Qtà"
+
+#. placeholder {0}: formatter.format(use.quantity)
+msgid "Qty {0}"
+msgstr "Q.tà {0}"
 
 msgid "Qty {jobQuantity}"
 msgstr "Qtà {jobQuantity}"
@@ -24171,6 +24335,9 @@ msgstr "Ricconverti il modello"
 msgid "Re-date to first open day"
 msgstr "Ricalibrare al primo giorno aperto"
 
+msgid "Re-inspect at the operation that found it"
+msgstr "Ricontrolla nell'operazione che l'ha rilevato"
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Reinserimento dati tra preventivazione, produzione e finanza"
 
@@ -24182,6 +24349,9 @@ msgstr "Rip pianificazione dei movimenti nell'ordine dei passi corrente — i pa
 
 msgid "Re-send"
 msgstr "Rinvia"
+
+msgid "Re-torque nut"
+msgstr "Riserraggio dado"
 
 msgid "Reactivate"
 msgstr "Riattiva"
@@ -25310,8 +25480,14 @@ msgstr "Richiedi Approvazione"
 msgid "Request date"
 msgstr "Data della richiesta"
 
+msgid "Request Force Delete"
+msgstr ""
+
 msgid "Requested"
 msgstr "Richiesto"
+
+msgid "Requested by"
+msgstr ""
 
 msgid "Requested By"
 msgstr "Richiesto da"
@@ -25606,6 +25782,9 @@ msgstr "Limita l'addebito ai membri"
 
 msgid "Result"
 msgstr "Risultato"
+
+msgid "Result mappings"
+msgstr "Associazioni dei risultati"
 
 msgid "Results"
 msgstr "Risultati"
@@ -25964,6 +26143,12 @@ msgstr "Revocato"
 
 msgid "Rework"
 msgstr "Rilavorazione"
+
+msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
+msgstr "Operazioni solo di rilavorazione suggerite da un risultato di passo, come un riserraggio quando un controllo trova un dado troppo allentato. Le unità normali non le eseguono mai."
+
+msgid "Rework-only operations that a step result suggests. This job keeps its own copy from the make method."
+msgstr "Operazioni solo di rilavorazione suggerite da un risultato di passo. Questo ordine di produzione conserva una propria copia dal metodo di produzione."
 
 msgid "RFQ"
 msgstr "RFQ"
@@ -31533,6 +31718,12 @@ msgstr "Quindi adeguato per"
 msgid "Then by"
 msgstr "Quindi per"
 
+msgid "Then continue"
+msgstr "Poi continua"
+
+msgid "Then re-inspect"
+msgstr "Poi ricontrolla"
+
 msgid "There are more received than ordered"
 msgstr "Più ricevuto di quanto ordinato"
 
@@ -31788,6 +31979,9 @@ msgstr "Questo è un elemento acquistato — non ha BoM/BoP; solo i suoi attribu
 
 msgid "This is a unique identifier for the webhook"
 msgstr "Questo è un identificatore univoco per il webhook"
+
+msgid "This is an Admin override"
+msgstr ""
 
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "Questo è un ambiente controllato ITAR. L'accesso è limitato alle Persone Statunitensi."
@@ -32792,6 +32986,9 @@ msgstr "Riprova"
 msgid "Tuesday"
 msgstr "Martedì"
 
+msgid "Turn Off"
+msgstr ""
+
 msgid "Turn On"
 msgstr "Attiva"
 
@@ -32858,6 +33055,12 @@ msgstr "Digita '{' per una variabile"
 #. placeholder {0}: company.name
 msgid "Type {0} to confirm"
 msgstr "Digita {0} per confermare"
+
+msgid "Type {purchaseOrderReadableId} to confirm"
+msgstr ""
+
+msgid "Type {readableId} to confirm"
+msgstr ""
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "Digita {TRIGGER} per inserire una variabile"
@@ -33015,6 +33218,9 @@ msgstr "Spedizioni non fatturate"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Univoco, maiuscolo, senza spazi (max 10 caratteri)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "Unità"
@@ -33631,6 +33837,9 @@ msgstr "Utilizza {0}"
 #. placeholder {1}: subAssemblyName(headerId)
 msgid "Uses {0} · {1}"
 msgstr "Utilizza {0} · {1}"
+
+msgid "Uses on this job"
+msgstr "Utilizzi in questo ordine di produzione"
 
 #. placeholder {0}: use.number
 #. placeholder {1}: use.title
@@ -34441,6 +34650,12 @@ msgstr "Cosa conta questa registrazione di tempo — Manodopera (tempo operatore
 msgid "What to set up"
 msgstr "Cosa configurare"
 
+msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
+msgstr ""
+
+msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
+msgstr ""
+
 msgid "What we're assuming"
 msgstr "Cosa stiamo assumendo"
 
@@ -34865,6 +35080,9 @@ msgstr "WIP"
 msgid "with {0} contingency"
 msgstr "con contingenza {0}"
 
+msgid "With Previous"
+msgstr "Con il precedente"
+
 msgid "Withdraw"
 msgstr "Ritira"
 
@@ -35266,6 +35484,9 @@ msgstr "Il tuo tasso"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "I tuoi dati reali sono caricati e hai controllato un campione e lo hai approvato."
+
+msgid "Your reason and the decision are kept in the audit log."
+msgstr ""
 
 msgid "Your session was locked after inactivity."
 msgstr "La tua sessione è stata bloccata per inattività."

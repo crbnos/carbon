@@ -122,7 +122,9 @@ const PARENT_CHECK_TABLES = [
   // posted receipt lines)
   "certificate",
   // complianceStatementAssignment_one_target: a customer OR an item
-  "complianceStatementAssignment"
+  "complianceStatementAssignment",
+  // shipmentFixedAssetLine_source_check: a sales order line OR a rental line
+  "shipmentFixedAssetLine"
 ];
 
 type ForeignKey = {

@@ -18,6 +18,10 @@ msgstr ", nie działa"
 msgid ", running"
 msgstr ", działa"
 
+#. placeholder {0}: suggestion.reason
+msgid "\"{0}\" calls for a correction on this unit."
+msgstr "„{0}” wymaga korekty tej sztuki."
+
 msgid "\"{column}\" is required."
 msgstr "„{column}\" jest wymagane."
 
@@ -442,6 +446,9 @@ msgstr "Osoba przypisana"
 msgid "Attach file"
 msgstr "Dołącz plik"
 
+msgid "Attempt limit reached"
+msgstr "Osiągnięto limit prób"
+
 msgid "Authentication Error"
 msgstr "Błąd uwierzytelniania"
 
@@ -785,6 +792,13 @@ msgstr "Kopiuj sekret"
 
 msgid "Copy to clipboard"
 msgstr "Kopiuj do schowka"
+
+#. placeholder {0}: correction.name
+msgid "Correction: {0}"
+msgstr "Korekta: {0}"
+
+msgid "Correction: {correctionName}"
+msgstr "Korekta: {correctionName}"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -1224,6 +1238,9 @@ msgstr "Ogólne"
 
 msgid "Go back to operation"
 msgstr "Wróć do operacji"
+
+msgid "Go back to operation, or run a correction"
+msgstr "Wróć do operacji albo uruchom korektę"
 
 msgid "Go to onboarding"
 msgstr "Przejdź do wdrożenia"
@@ -1749,6 +1766,9 @@ msgstr "Brak tekstu certyfikacji. Poproś administratora, aby ustawił go w Usta
 msgid "No color"
 msgstr "Brak koloru"
 
+msgid "No correction"
+msgstr "Brak korekty"
+
 msgid "No country found."
 msgstr "Nie znaleziono kraju."
 
@@ -1917,6 +1937,9 @@ msgstr "Brak"
 
 msgid "Normal"
 msgstr "Normalna"
+
+msgid "Not in this operation"
+msgstr "Brak w tej operacji"
 
 msgid "Not scheduled"
 msgstr "Niezaplanowane"
@@ -2335,6 +2358,9 @@ msgstr "Kolejka pusta"
 msgid "Quotes"
 msgstr "Oferty"
 
+msgid "Raise quality issue"
+msgstr "Zgłoś problem jakościowy"
+
 msgid "Re"
 msgstr "Odr."
 
@@ -2599,6 +2625,9 @@ msgstr "Ilość braku"
 
 msgid "Scrap Reason"
 msgstr "Przyczyna braku"
+
+msgid "Scrap unit"
+msgstr "Przenieś sztukę na braki"
 
 msgid "Scrapped"
 msgstr "Odrzucone"
@@ -2906,8 +2935,14 @@ msgstr "Uruchom {workType}"
 msgid "Start {workTypeLabel} timer"
 msgstr "Uruchom licznik: {workTypeLabel}"
 
+msgid "Start a correction?"
+msgstr "Rozpocząć korektę?"
+
 msgid "Start clock"
 msgstr "Uruchom zegar"
+
+msgid "Start correction"
+msgstr "Rozpocznij korektę"
 
 msgid "Start Job"
 msgstr "Rozpocznij zlecenie"
@@ -3093,6 +3128,12 @@ msgstr "Motywy"
 msgid "then"
 msgstr "następnie"
 
+msgid "Then continues to the next operation"
+msgstr "Następnie przechodzi do następnej operacji"
+
+msgid "Then re-inspects here"
+msgstr "Następnie ponowna kontrola w tym miejscu"
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Brak dostępnych lub zużytych śledzonych części dla tego materiału."
 
@@ -3143,6 +3184,9 @@ msgstr "Ta próbka została usunięta"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "To zatrzymuje Twój zegar i zaksięguje czas zlecenia. Zlecenie nie może się już zmienić."
+
+msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
+msgstr "Ta sztuka wykorzystała już maksymalną liczbę prób tej korekty. Przenieś ją na braki albo zgłoś problem jakościowy."
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Ta jednostka zostanie bezpowrotnie złomowana i zostanie utworzona jednostka zastępcza."
@@ -3371,6 +3415,11 @@ msgstr "Przesyłanie {0}"
 
 msgid "Use a different account"
 msgstr "Użyj innego konta"
+
+#. placeholder {0}: correction.uses
+#. placeholder {1}: correction.maxAttempts
+msgid "Used {0} of {1}"
+msgstr "Użyto {0} z {1}"
 
 msgid "Used automatically at completion"
 msgstr "Używane automatycznie przy zakończeniu"

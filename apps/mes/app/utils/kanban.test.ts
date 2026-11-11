@@ -149,6 +149,19 @@ describe("soleUnitId", () => {
     expect(soleUnitId([{ id: "te_1" }], null)).toBe("te_1");
   });
 
+  it("names the one unit a correction or rework operation works", () => {
+    expect(
+      soleUnitId(
+        [
+          { id: "te_1", inOperationScope: false },
+          { id: "te_2", inOperationScope: true },
+          { id: "te_3", inOperationScope: false }
+        ],
+        1
+      )
+    ).toBe("te_2");
+  });
+
   it("names none when the job makes several units", () => {
     expect(soleUnitId([{ id: "te_1" }, { id: "te_2" }], 2)).toBeNull();
     // The entity list can run short of the units: a count of 3 is not one unit.

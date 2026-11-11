@@ -161,6 +161,7 @@ function useBomMaterialIds(itemId: string | null | undefined) {
         .select("itemId, methodType")
         .eq("makeMethodId", makeMethod.data.id)
         .eq("companyId", company.id)
+        .is("methodCorrectionId", null)
         .order("order", { ascending: true });
       if (cancelled) return;
       setItemIds([

@@ -38,6 +38,52 @@ export function panelSessionFromAuthSession(
 }
 
 /**
+ * The same sign-in in another company: `createdAt` and the MFA and SSO facts
+ * carry over, so switching never extends the absolute cap or re-opens a gate.
+ */
+export function panelSessionForCompany(
+  session: PanelSession,
+  target: { companyId: string; companyGroupId: string },
+  now: number
+): PanelSession {
+  return {
+    ...session,
+    companyId: target.companyId,
+    companyGroupId: target.companyGroupId,
+    lastActiveAt: now
+  };
+}
+
+export type PanelCompanyChoice = {
+  id: string;
+  name: string;
+  companyGroupId: string;
+};
+
+/**
+ * Employee companies with the panel connected, plus the current one even when
+ * it is not, so the selector can always name where the panel is.
+ */
+export function panelCompanyChoices(
+  memberships: Array<{
+    id: string | null;
+    name: string | null;
+    companyGroupId: string | null;
+    role: string | null;
+  }>,
+  connectedCompanyIds: ReadonlySet<string>,
+  currentCompanyId: string
+): PanelCompanyChoice[] {
+  return memberships.flatMap(({ id, name, companyGroupId, role }) =>
+    id &&
+    role === "employee" &&
+    (id === currentCompanyId || connectedCompanyIds.has(id))
+      ? [{ id, name: name ?? id, companyGroupId: companyGroupId ?? "" }]
+      : []
+  );
+}
+
+/**
  * The cookie session's policy: in a controlled environment the absolute cap
  * and idle lock; everywhere, a TOTP factor enrolled after minting.
  */

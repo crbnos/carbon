@@ -33,6 +33,7 @@ import type {
   SubmitTimesheetWeekResult,
   saveTimesheetEntryInput,
   submitTimesheetWeekInput,
+  triggerCorrectionInput,
   triggerReworkInput
 } from "./postings";
 
@@ -226,6 +227,14 @@ export type PostingContract = {
   recalculate: {
     input: z.input<typeof recalculateInput>;
     output: { success: boolean };
+  };
+  "trigger-correction": {
+    input: z.input<typeof triggerCorrectionInput>;
+    output: {
+      success: boolean;
+      reworkId: string;
+      operationIds: string[];
+    };
   };
   "trigger-rework": {
     input: z.input<typeof triggerReworkInput>;

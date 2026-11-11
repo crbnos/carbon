@@ -8,9 +8,16 @@ import type {
   PartPlan,
   PlanItemRow,
   PlanMappingContext,
-  PlanMappingRow
+  PlanMappingRow,
+  StandardSources
 } from "@carbon/ee";
-import { buildPartPlan, normalizeConfiguration } from "@carbon/ee";
+import {
+  buildPartPlan,
+  hasIdentityOverride,
+  mapsPartProperties,
+  normalizeConfiguration,
+  withIdentitySources
+} from "@carbon/ee";
 import type { OnshapeDocument } from "@carbon/ee/onshape";
 import {
   createPanelPlan,
@@ -18,6 +25,7 @@ import {
   loadPlanMapping,
   loadPlanOptions,
   loadReleasedRevisions,
+  loadStandardSources,
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
   onshapeFailure,
@@ -123,6 +131,37 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  let sources: StandardSources;
+  try {
+    sources = await loadStandardSources(serviceRole, companyId);
+  } catch (error) {
+    logger.error("Failed to read the Onshape property map", {
+      companyId,
+      error
+    });
+    return data(
+      { error: "Failed to read the Onshape property map" },
+      { status: 500 }
+    );
+  }
+  // An identity override reads the part metadata now; the map reuses it.
+  let identityProperties: Map<string, OnshapePropertyValue[]> | undefined;
+  if (hasIdentityOverride(sources)) {
+    try {
+      identityProperties = await readPartProperties(
+        onshape.client,
+        document,
+        elementId,
+        partIds,
+        configuration
+      );
+    } catch (error) {
+      const failure = onshapeFailure(error);
+      return data(failure.body, { status: failure.status });
+    }
+    parts = withIdentitySources(parts, identityProperties, sources);
+  }
+
   const requested = parts.filter((part) => partIds.includes(part.partId));
   const partNumbers = [
     ...new Set(
@@ -222,8 +261,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // No map means no extra Onshape read. Unchanged parts are read too: a
   // property mapped after the last push must reach Carbon.
-  let propertiesByPartId: Map<string, OnshapePropertyValue[]> | undefined;
-  if (mapping.map.length > 0 && requested.length > 0) {
+  let propertiesByPartId = identityProperties;
+  if (
+    !propertiesByPartId &&
+    mapsPartProperties(mapping.map) &&
+    requested.length > 0
+  ) {
     try {
       propertiesByPartId = await readPartProperties(
         onshape.client,

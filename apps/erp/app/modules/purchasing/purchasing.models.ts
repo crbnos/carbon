@@ -38,7 +38,11 @@ import {
   hasContactNameOrEmail
 } from "~/types/validators";
 import {
+  FORCE_DELETE_MIN_REASON_LENGTH,
+  forceDeleteApprovalRefusal,
+  forceDeleteWithdrawRefusal,
   incoterms,
+  isForceDeleteConfirmed,
   itemType,
   taxExemptionReasons
 } from "../shared/shared.models";
@@ -1550,6 +1554,221 @@ export function purchaseOrderDeleteRefusal({
   return null;
 }
 
+// ─── Purchase Order Force Delete (Admin override) ───
+
+export const PURCHASE_ORDER_FORCE_DELETE_MIN_REASON_LENGTH =
+  FORCE_DELETE_MIN_REASON_LENGTH;
+
+export const purchaseOrderForceDeleteRequestValidator = z.object({
+  intent: z.literal("request"),
+  reason: z
+    .string()
+    .trim()
+    .min(PURCHASE_ORDER_FORCE_DELETE_MIN_REASON_LENGTH, {
+      message: `Explain why, in at least ${PURCHASE_ORDER_FORCE_DELETE_MIN_REASON_LENGTH} characters`
+    }),
+  confirmation: z.string().trim().min(1, { message: "Type the order number" })
+});
+
+export const purchaseOrderForceDeleteDecisionValidator = z.object({
+  intent: z.enum(["approve", "reject", "cancel"]),
+  requestId: z.string().min(1, { message: "Request is required" }),
+  notes: zfd.text(z.string().optional())
+});
+
+/**
+ * What still names an order and keeps it from being force deleted. Its
+ * receipts are not here: approving the force delete reverses them.
+ */
+export type PurchaseOrderForceDeleteBlockers = {
+  /** Shipments (outside processing) not Voided. */
+  shipments: { readableId: string; status: string }[];
+  /** Purchase invoices with a line on the order, in any status. */
+  invoices: { readableId: string; status: string }[];
+  /** Prepayments to the supplier against the order, not Voided. */
+  payments: { readableId: string; status: string }[];
+};
+
+/**
+ * Why the order cannot be force deleted yet, or null. The override skips the
+ * status and approval rules of a normal delete and reverses the order's
+ * receipts, but a shipment, invoice or payment is the supplier's side of the
+ * books: it is voided first (or, before the accounting cutover, corrected
+ * with a debit memo). An invoice line holds the order line by a foreign key,
+ * so even a voided invoice keeps the order.
+ */
+export function purchaseOrderForceDeleteBlockerMessage(
+  blockers: PurchaseOrderForceDeleteBlockers
+): string | null {
+  const list = (docs: { readableId: string; status: string }[]) =>
+    docs.map((d) => `${d.readableId} (${d.status})`).join(", ");
+  const parts: string[] = [];
+  if (blockers.shipments.length > 0) {
+    parts.push(`void or delete its shipments: ${list(blockers.shipments)}`);
+  }
+  if (blockers.payments.length > 0) {
+    parts.push(`void or delete its prepayments: ${list(blockers.payments)}`);
+  }
+  if (blockers.invoices.length > 0) {
+    parts.push(
+      `remove its lines from these purchase invoices (a posted or voided invoice keeps the order): ${list(blockers.invoices)}`
+    );
+  }
+  if (parts.length === 0) return null;
+  return `This purchase order cannot be force deleted until you ${parts.join("; ")}.`;
+}
+
+/** A stock position: an item at a location, storage unit, unit and stripe. */
+export type ForceDeleteStockPosition = {
+  itemId: string;
+  locationId: string | null;
+  storageUnitId: string | null;
+  trackedEntityId: string | null;
+  /** The stock stripe: a project id, or null for common stock. */
+  projectId: string | null;
+};
+
+/** What a receipt put on hand (its Purchase Receipt item ledger rows). */
+export type ReceiptReceivedStock = ForceDeleteStockPosition & {
+  receiptId: string;
+  receiptReadableId: string;
+  quantity: number;
+};
+
+/** One removal a force delete books (a Negative Adjmt. of `quantity`). */
+export type ReceiptStockRemoval = ForceDeleteStockPosition & {
+  receiptId: string;
+  /** Positive: how much leaves this position. */
+  quantity: number;
+};
+
+/**
+ * Where to take back what the order's receipts put on hand, from the stock
+ * there is now. A receipt the void refuses (stock put away into another bin,
+ * or received before the accounting cutover) is reversed by adjusting this
+ * stock out instead.
+ *
+ * Stock is looked for at the receipt's location and stripe only. A serial or
+ * batch is taken wherever it now is; untracked stock from the storage unit it
+ * was received into first, then from the units with the most. Receipts share
+ * the stock, in order, so two receipts of one item cannot both count the same
+ * units. A receipt whose stock is no longer all there is `short`: it was used,
+ * and what was used cannot be un-received.
+ */
+export function planReceiptReversal(
+  received: ReceiptReceivedStock[],
+  onHand: (ForceDeleteStockPosition & { quantity: number })[]
+): { removals: ReceiptStockRemoval[]; short: string[] } {
+  const available = onHand
+    .filter((row) => row.quantity > EPSILON)
+    .map((row) => ({ ...row }));
+  const removals: ReceiptStockRemoval[] = [];
+  const short: string[] = [];
+  const shortReceiptIds = new Set<string>();
+
+  for (const row of received) {
+    let needed = row.quantity;
+    if (needed <= EPSILON) continue;
+    const candidates = available
+      .filter(
+        (stock) =>
+          stock.itemId === row.itemId &&
+          stock.locationId === row.locationId &&
+          stock.projectId === row.projectId &&
+          stock.trackedEntityId === row.trackedEntityId &&
+          stock.quantity > EPSILON
+      )
+      .sort((a, b) => {
+        const aHome = a.storageUnitId === row.storageUnitId ? 0 : 1;
+        const bHome = b.storageUnitId === row.storageUnitId ? 0 : 1;
+        if (aHome !== bHome) return aHome - bHome;
+        if (b.quantity !== a.quantity) return b.quantity - a.quantity;
+        return (a.storageUnitId ?? "").localeCompare(b.storageUnitId ?? "");
+      });
+    for (const stock of candidates) {
+      if (needed <= EPSILON) break;
+      const taken = Math.min(needed, stock.quantity);
+      stock.quantity -= taken;
+      needed -= taken;
+      removals.push({
+        receiptId: row.receiptId,
+        itemId: row.itemId,
+        locationId: stock.locationId,
+        storageUnitId: stock.storageUnitId,
+        trackedEntityId: stock.trackedEntityId,
+        projectId: stock.projectId,
+        quantity: taken
+      });
+    }
+    if (needed > EPSILON && !shortReceiptIds.has(row.receiptId)) {
+      shortReceiptIds.add(row.receiptId);
+      short.push(row.receiptReadableId);
+    }
+  }
+
+  return {
+    removals: removals.filter(
+      (removal) => !shortReceiptIds.has(removal.receiptId)
+    ),
+    short
+  };
+}
+
+/** The refusal for receipts still being posted: they are reversed once posted. */
+export function purchaseOrderForceDeletePendingReceiptMessage(
+  receiptReadableIds: string[]
+): string {
+  return `This purchase order cannot be force deleted while ${receiptReadableIds.join(", ")} is being posted. Try again when it has finished.`;
+}
+
+/**
+ * The refusal for receipts the void refused and an adjustment cannot stand
+ * in for: one that issued straight to a project, or received a fixed asset.
+ */
+export function purchaseOrderForceDeleteUnsupportedReceiptMessage(
+  receiptReadableIds: string[]
+): string {
+  return `This purchase order cannot be force deleted: ${receiptReadableIds.join(", ")} issued to a project or received a fixed asset, and its void was refused. Void it first.`;
+}
+
+/** The refusal for receipts whose stock was used since it was received. */
+export function purchaseOrderForceDeleteUsedStockMessage(
+  receiptReadableIds: string[]
+): string {
+  return `This purchase order cannot be force deleted: stock received on ${receiptReadableIds.join(", ")} was already used or moved to another location. Correct it with an inventory adjustment first.`;
+}
+
+/**
+ * Why `userId` cannot approve this force delete, or null. Only a Pending
+ * request, only an Admin, and never the Admin who asked: one other Admin's
+ * approval deletes the order.
+ */
+/** Why `userId` cannot approve this request, or null (`forceDeleteApprovalRefusal`). */
+export const purchaseOrderForceDeleteApprovalRefusal =
+  forceDeleteApprovalRefusal;
+
+/**
+ * The `documentId` of a force delete notification: the order and the
+ * request, so the link opens the order and the content reads the request
+ * after the order is gone (`notificationTarget`).
+ */
+export function purchaseOrderForceDeleteNotificationId(
+  purchaseOrderId: string,
+  requestId: string
+): string {
+  return `${purchaseOrderId}:${requestId}`;
+}
+
+/**
+ * Why `userId` cannot reject or cancel this request, or null
+ * (`forceDeleteWithdrawRefusal`).
+ */
+export const purchaseOrderForceDeleteWithdrawRefusal =
+  forceDeleteWithdrawRefusal;
+
+/** Whether the order's own number was typed to confirm (`isForceDeleteConfirmed`). */
+export const isPurchaseOrderForceDeleteConfirmed = isForceDeleteConfirmed;
+
 // ─── Purchase Return Orders (Supplier Returns) ───
 
 export const purchaseReturnOrderStatusType = [
@@ -2191,4 +2410,94 @@ export function splitRfqFileAttachments<T extends { size: number }>(
     }
   }
   return { attach, link };
+}
+
+// ─── Receipt reversal: what the order gets back ───
+//
+// Shared by the receipt void (`postReceipt`) and the force delete's
+// adjust-out reversal (`restorePurchaseOrderReceived`), so both give an
+// order back the same received quantities and status.
+
+/**
+ * Each order line's received quantity after the receipt's lines are
+ * reversed: what they received, in the purchase unit (the first line's
+ * conversion factor, as the void reads it), comes off, never below zero.
+ * Only lines the receipt received on, with a purchase quantity, are
+ * returned.
+ */
+export function receivedAfterReceiptReversal(
+  orderLines: {
+    id: string;
+    purchaseQuantity: number | null;
+    quantityReceived: number | null;
+  }[],
+  receiptLines: {
+    lineId: string | null;
+    receivedQuantity: number | null;
+    conversionFactor: number | null;
+  }[]
+): Record<string, { quantityReceived: number; receivedComplete: boolean }> {
+  const byLine = new Map<string, typeof receiptLines>();
+  for (const line of receiptLines) {
+    if (!line.lineId) continue;
+    byLine.set(line.lineId, [...(byLine.get(line.lineId) ?? []), line]);
+  }
+  const result: Record<
+    string,
+    { quantityReceived: number; receivedComplete: boolean }
+  > = {};
+  for (const line of orderLines) {
+    const received = byLine.get(line.id);
+    const purchaseQuantity = Number(line.purchaseQuantity ?? 0);
+    if (!received?.length || purchaseQuantity <= 0) continue;
+    const receivedInPurchaseUnit =
+      received.reduce((sum, r) => {
+        const quantity = Number(r.receivedQuantity);
+        return sum + (Number.isNaN(quantity) ? 0 : quantity);
+      }, 0) / Number(received[0]!.conversionFactor ?? 1);
+    const quantityReceived = Math.max(
+      0,
+      Number(line.quantityReceived ?? 0) - receivedInPurchaseUnit
+    );
+    result[line.id] = {
+      quantityReceived,
+      receivedComplete: quantityReceived >= purchaseQuantity
+    };
+  }
+  return result;
+}
+
+/**
+ * The order's status once its lines hold these quantities: Completed when
+ * every line is received and invoiced, else what is still to do. Comment
+ * lines count as done; G/L Account and Service lines are never received.
+ */
+export function purchaseOrderStatusAfterReversal(
+  lines: {
+    purchaseOrderLineType: string | null;
+    purchaseQuantity: number | null;
+    quantityReceived: number | null;
+    quantityInvoiced: number | null;
+  }[]
+): Database["public"]["Enums"]["purchaseOrderStatus"] {
+  const done = (target: number | null, have: number | null) => {
+    const goal = Number(target ?? 0);
+    return goal <= 0 || Number(have ?? 0) >= goal;
+  };
+  const allInvoiced = lines.every(
+    (line) =>
+      line.purchaseOrderLineType === "Comment" ||
+      done(line.purchaseQuantity, line.quantityInvoiced)
+  );
+  const allReceived = lines.every(
+    (line) =>
+      line.purchaseOrderLineType === "Comment" ||
+      line.purchaseOrderLineType === "G/L Account" ||
+      line.purchaseOrderLineType === "Service" ||
+      done(line.purchaseQuantity, line.quantityReceived)
+  );
+  if (allInvoiced && allReceived) return "Completed";
+  if (allInvoiced) return "To Receive";
+  if (allReceived) return "To Invoice";
+  return "To Receive and Invoice";
 }

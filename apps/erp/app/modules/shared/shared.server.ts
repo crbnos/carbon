@@ -6,6 +6,7 @@ import { NotFoundError } from "@carbon/api/errors";
 import type { RequiredPermissions } from "@carbon/api/permissions";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
+import { StripeConnect } from "@carbon/ee";
 import {
   type SyncedEntityType,
   syncedEntities,
@@ -545,13 +546,21 @@ export const createIssueFromSlack = defineServiceFn({
  * recorded on the company's `stripe-connect` integration, active and marked
  * as onboarding started; without that record the callback cannot finish.
  * Stripe sends the browser back to `origin`'s callback. A Stripe account
- * that is not set up as a Connect platform comes back as `unavailable`.
+ * that is not set up as a Connect platform comes back as `unavailable`, and so
+ * does every call while the Stripe Connect integration is switched off.
  */
 export const startStripeConnectOnboarding = defineServiceFn({
   input: z.object({ origin: z.url() }),
   permission: { update: "settings" },
 
   async run(ctx, { origin }) {
+    if (!StripeConnect.active) {
+      return ctx.error(
+        "unavailable",
+        "Stripe Connect isn't available on this platform."
+      );
+    }
+
     const client = ctx.asCaller.supabase;
     const companyId = ctx.company.id;
     const returnUrl = `${origin}/api/integrations/stripe-connect/callback?status=success`;

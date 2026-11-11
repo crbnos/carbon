@@ -10,6 +10,12 @@ DECLARE
   v_order_supplier text;
   v_has_legacy boolean;
 BEGIN
+  -- An approved force delete (`decideDocumentForceDelete`) unapplies posted
+  -- advance applications and removes posted advances inside its own
+  -- transaction; it books the reversing journals itself.
+  IF p_operation = 'DELETE' AND current_setting('app.force_delete', true) = 'on' THEN
+    RETURN;
+  END IF;
   IF p_table = 'invoiceSettlement'
     AND (EXISTS (SELECT 1 FROM "company" WHERE "id" = p_old->>'companyId')
       OR EXISTS (SELECT 1 FROM "company" WHERE "id" = p_new->>'companyId'))
