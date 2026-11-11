@@ -264,6 +264,7 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   supplierQuoteLinePrice: 17, // min 22
   supplierShipping: 11,
   supplierTax: 11,
+  supplierStage: 4,
   supplierType: 6,
   tag: 5,
   timeCardEntry: 6,

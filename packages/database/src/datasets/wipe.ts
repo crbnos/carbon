@@ -43,6 +43,7 @@ const PRESERVED_TABLES = new Set([
   "returnReason",
   "scrapReason",
   "sequence",
+  "supplierStage",
   "unitOfMeasure",
   "userToCompany",
   // Accounting records with trigger-enforced immutability (Posted journals

@@ -98,6 +98,8 @@ export type SupplierSpec = {
   website: string;
   /** Omitted = Active, written explicitly (the column has no default). */
   status?: "Active" | "Inactive" | "Pending" | "Rejected";
+  /** A stage bootstrap seeds. Omitted = no stage. */
+  stage?: "Prospect" | "Sampling" | "Qualified" | "Production";
   /** Must be a currency bootstrap seeds. Defaults to "USD". */
   currencyCode?: string;
   /** Defaults to Net 30. */
