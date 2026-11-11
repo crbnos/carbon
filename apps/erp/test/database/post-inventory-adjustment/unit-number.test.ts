@@ -95,45 +95,95 @@ databaseTest("a stocked batch unit keeps its number", () =>
   })
 );
 
+// Runs `adjustment` on its own connection while another transaction has
+// cleared the unit's number and not committed: the adjustment reads its
+// quantities while the unit still has a number. Commits once the adjustment
+// waits on the unit's lock.
+async function whileNumberIsCleared<R>(
+  f: Fixture,
+  unitId: string,
+  adjustment: (db: Kysely<KyselyDatabase>) => Promise<R>
+): Promise<R> {
+  const adjuster = await connectLocalTestDatabase();
+  const holder = await connectLocalTestDatabase();
+  let release = () => {};
+  let held: Promise<void> = Promise.resolve();
+  let adjusting: Promise<R> | undefined;
+  try {
+    await new Promise<void>((cleared, failed) => {
+      held = holder.transaction().execute(async (trx) => {
+        await trx
+          .updateTable("trackedEntity")
+          .set({ readableId: null })
+          .where("id", "=", unitId)
+          .where("companyId", "=", f.companyId)
+          .execute();
+        cleared();
+        await new Promise<void>((resolve) => {
+          release = resolve;
+        });
+      });
+      held.catch(failed);
+    });
+    const adjusterPid = await backendPid(adjuster);
+    adjusting = adjustment(adjuster);
+    await waitForLockWaits(f.db, [adjusterPid]);
+    release();
+    await held;
+    return await adjusting;
+  } finally {
+    // A failed wait still ends both transactions, so the connections close.
+    release();
+    await held.catch(() => {});
+    await adjusting?.catch(() => {});
+    await adjuster.destroy();
+    await holder.destroy();
+  }
+}
+
 databaseTest(
   "an increase reads the unit's number under its lock, not from the quantities read before it",
   () =>
     withFixture(async ({ f, unitId, adjust, unit }) => {
-      const adjuster = await connectLocalTestDatabase();
-      const holder = await connectLocalTestDatabase();
-      try {
-        // Another transaction has cleared the number and not yet committed,
-        // so the increase reads its quantities while the unit still has one.
-        let release = () => {};
-        let held: Promise<void> = Promise.resolve();
-        await new Promise<void>((cleared) => {
-          held = holder.transaction().execute(async (trx) => {
-            await trx
-              .updateTable("trackedEntity")
-              .set({ readableId: null })
-              .where("id", "=", unitId)
-              .where("companyId", "=", f.companyId)
-              .execute();
-            cleared();
-            await new Promise<void>((resolve) => {
-              release = resolve;
-            });
-          });
-        });
+      const increase = await whileNumberIsCleared(f, unitId, (db) =>
+        adjust({ adjustmentType: "Positive Adjmt.", quantity: 2 }, db)
+      );
+      expect(increase.error).not.toBeNull();
+      expect(await unit()).toEqual({ readableId: null, quantity: 5 });
+    })
+);
 
-        const increase = adjust(
-          { adjustmentType: "Positive Adjmt.", quantity: 2 },
-          adjuster
-        );
-        await waitForLockWaits(f.db, [await backendPid(adjuster)]);
-        release();
-        await held;
+databaseTest(
+  "an unscrap reads the unit's number under its lock",
+  () =>
+    withFixture(async ({ f, unitId, adjust }) => {
+      const scrapReason = await f.db
+        .insertInto("scrapReason")
+        .values({
+          name: "Damaged",
+          companyId: f.companyId,
+          createdBy: f.ctx.userId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const scrapped = await adjust({
+        adjustmentType: "Scrap",
+        quantity: 5,
+        scrapReasonId: scrapReason.id
+      });
+      expect(scrapped.error).toBeNull();
 
-        expect((await increase).error).not.toBeNull();
-        expect(await unit()).toEqual({ readableId: null, quantity: 5 });
-      } finally {
-        await adjuster.destroy();
-        await holder.destroy();
-      }
+      const unscrap = await whileNumberIsCleared(f, unitId, (db) =>
+        adjust({ adjustmentType: "Unscrap", quantity: 5 }, db)
+      );
+      expect(unscrap.error).not.toBeNull();
+      expect(
+        await f.db
+          .selectFrom("trackedEntity")
+          .select(["readableId", "status"])
+          .where("id", "=", unitId)
+          .where("companyId", "=", f.companyId)
+          .executeTakeFirstOrThrow()
+      ).toEqual({ readableId: null, status: "Scrapped" });
     })
 );

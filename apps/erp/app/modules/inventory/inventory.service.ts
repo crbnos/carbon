@@ -24639,11 +24639,14 @@ export async function postInventoryAdjustment(
       );
 
       if (trackedEntityId) {
+        // Locked, after the item, as every adjustment locks them: the status
+        // and number checks below hold until the unit is written.
         const entity = await trx
           .selectFrom("trackedEntity")
           .select(["id", "quantity", "status", "readableId", "itemId"])
           .where("id", "=", trackedEntityId)
           .where("companyId", "=", companyId)
+          .forUpdate()
           .executeTakeFirst();
         if (!entity) throw new InvalidInputError("Tracked entity not found");
         // The number rule and the ledger row read the request's item.
