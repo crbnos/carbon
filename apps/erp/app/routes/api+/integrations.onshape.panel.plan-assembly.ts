@@ -3,18 +3,27 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { PlanItemRow, PlanMappingContext } from "@carbon/ee";
+import type {
+  PlanItemRow,
+  PlanMappingContext,
+  StandardSources
+} from "@carbon/ee";
 import {
+  assemblyCurrentFileRows,
   buildAssemblyPlan,
   describeBomPayload,
   externalIdForAssembly,
   externalIdForBomLine,
   flattenNodes,
-  metadataProperty,
+  identityValue,
   missingBomColumnsMessage,
   normalizeConfiguration,
   parseBomTree,
   parseProperties,
+  rowDrawingKey,
+  sourceLabel,
+  withAssemblyDrawings,
+  withCurrentFiles,
   withoutProperties
 } from "@carbon/ee";
 import type { OnshapeDocument, StoredAssemblyPlan } from "@carbon/ee/onshape";
@@ -27,18 +36,26 @@ import {
   loadPlanOptions,
   loadReleasedRevisions,
   loadReusableDrafts,
+  loadStandardSources,
   ONSHAPE_V2_INTEGRATION_ID,
+  OnshapeElementType,
   OnshapeWVMType,
   onshapeFailure,
+  readAssemblyDrawings,
   selectInBatches,
   withRefusedMethods
 } from "@carbon/ee/onshape";
 import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
+import { drawingFileKey, readCurrentFiles } from "@carbon/jobs/onshape-assets";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import { loadMethodWriteRefusals } from "~/modules/settings/settings.service";
+import { getDatabaseClient } from "~/services/database.server";
+
+// The root's own part number and name as Onshape stores them, spaces kept.
+const ROOT_TEXT = { trim: false };
 
 export const config = {
   runtime: "nodejs"
@@ -59,8 +76,13 @@ const payloadSchema = z.object({
 // rollback, and a gateway can cut a large one off mid-BOM.
 const MAX_PLAN_PARTS = 1500;
 
+// No drawing or file read starts after this, so the review answers inside
+// the panel's 60 s wait; what they miss shows as a warning.
+const FILE_READS_BUDGET_MS = 45_000;
+
 /** Plan an assembly push without writing; the apply reuses the stored plan. */
 export async function action({ request }: ActionFunctionArgs) {
+  const fileReadsDeadline = Date.now() + FILE_READS_BUDGET_MS;
   const { client, companyId, userId } = await requireOnshapePanelPermissions(
     request,
     {
@@ -100,6 +122,20 @@ export async function action({ request }: ActionFunctionArgs) {
     wvmId: wvId
   };
 
+  let sources: StandardSources;
+  try {
+    sources = await loadStandardSources(serviceRole, companyId);
+  } catch (error) {
+    logger.error("Failed to read the Onshape property map", {
+      companyId,
+      error
+    });
+    return data(
+      { error: "Failed to read the Onshape property map" },
+      { status: 500 }
+    );
+  }
+
   let bom: unknown;
   try {
     bom = await onshape.client.getBillOfMaterialsIn(
@@ -113,7 +149,12 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // Element metadata names the assembly; the BOM's top row is the fallback.
-  const { root: bomRoot, lines, missingColumns } = parseBomTree(bom);
+  const {
+    root: bomRoot,
+    lines,
+    missingColumns,
+    blankColumns
+  } = parseBomTree(bom, sources);
   // An empty plan from an unreadable tree would drop every Onshape line.
   if (missingColumns.length > 0) {
     const diagnostics = {
@@ -127,7 +168,10 @@ export async function action({ request }: ActionFunctionArgs) {
       ...diagnostics
     });
     return data(
-      { error: missingBomColumnsMessage(missingColumns), diagnostics },
+      {
+        error: missingBomColumnsMessage(missingColumns, blankColumns),
+        diagnostics
+      },
       { status: 422 }
     );
   }
@@ -143,11 +187,15 @@ export async function action({ request }: ActionFunctionArgs) {
       elementId,
       configuration
     );
+    const properties = parseProperties(elementMetadata);
     rootPartNumber =
-      metadataProperty(elementMetadata, "Part number") ?? rootPartNumber;
-    rootName = metadataProperty(elementMetadata, "Name") ?? rootName;
+      identityValue(properties, "partNumber", sources, ROOT_TEXT) ??
+      rootPartNumber;
+    rootName =
+      identityValue(properties, "name", sources, ROOT_TEXT) ?? rootName;
     rootDescription =
-      metadataProperty(elementMetadata, "Description") ?? rootDescription;
+      identityValue(properties, "description", sources, ROOT_TEXT) ??
+      rootDescription;
   } catch (error) {
     metadataError = error;
   }
@@ -157,7 +205,11 @@ export async function action({ request }: ActionFunctionArgs) {
       return data(failure.body, { status: failure.status });
     }
     return data(
-      { error: "Set a part number on the assembly in Onshape first" },
+      {
+        error: sources.identity.partNumber
+          ? `Set ${sourceLabel("partNumber", sources)} on the assembly in Onshape first: it is the part number`
+          : "Set a part number on the assembly in Onshape first"
+      },
       { status: 422 }
     );
   }
@@ -367,6 +419,22 @@ export async function action({ request }: ActionFunctionArgs) {
     }))
   );
 
+  // A failed read only costs the note on sub-assemblies with no components.
+  let assemblyElementIds: Set<string> | undefined;
+  try {
+    const assemblies = await onshape.client.getElementsIn(
+      document,
+      OnshapeElementType.ASSEMBLY
+    );
+    assemblyElementIds = new Set(assemblies.map((element) => element.id));
+  } catch (error) {
+    logger.warn("Onshape assembly list failed", {
+      companyId,
+      documentId,
+      error
+    });
+  }
+
   const built = buildAssemblyPlan({
     documentId,
     wv,
@@ -392,9 +460,135 @@ export async function action({ request }: ActionFunctionArgs) {
     mapping,
     rootProperties:
       elementMetadata !== null ? parseProperties(elementMetadata) : null,
-    released
+    released,
+    assemblyElementIds
   });
-  const plan = withRefusedMethods(built, refusals);
+  const refused = withRefusedMethods(built, refusals);
+
+  // A failed drawing read leaves those rows without drawings and warns.
+  const drawings = await readAssemblyDrawings({
+    client: onshape.client,
+    companyId,
+    plan: refused,
+    nodes: lines,
+    deadline: fileReadsDeadline
+  });
+  const fileWarnings = [...drawings.warnings];
+  const placed = withAssemblyDrawings(refused, drawings.tied);
+
+  // Files the items already have from the current state, which the push
+  // skips; the root's model goes with every push, so it is checked too.
+  const itemIdByPartNumber = new Map<string, string | null>([
+    [refused.root.partNumber, refused.root.itemId],
+    ...refused.items.map((item) => [item.partNumber, item.itemId] as const)
+  ]);
+  const rows = assemblyCurrentFileRows({
+    plan: placed.plan,
+    ties: placed.ties,
+    itemIdFor: (partNumber) => itemIdByPartNumber.get(partNumber) ?? null
+  });
+  const rootItemId =
+    refused.root.itemId && !refused.root.released ? refused.root.itemId : null;
+  const rootModelRow = rootItemId
+    ? [
+        {
+          kind: "assembly" as const,
+          documentId,
+          wvm: wv,
+          wvmId: wvId,
+          elementId,
+          configuration,
+          itemId: rootItemId,
+          partNumber: refused.root.partNumber
+        }
+      ]
+    : [];
+  const none = new Set<string>();
+  let current = {
+    models: none,
+    drawings: none,
+    outOfDate: { models: none, drawings: none },
+    unchecked: { models: none, drawings: none },
+    rootModel: false
+  };
+  try {
+    const found = await readCurrentFiles({
+      client: onshape.client,
+      carbon: serviceRole,
+      db: getDatabaseClient(),
+      companyId,
+      rows: { ...rows, models: [...rows.models, ...rootModelRow] },
+      deadline: fileReadsDeadline,
+      read: async (label, read) => {
+        try {
+          return await read();
+        } catch (error) {
+          logger.warn("Onshape state read failed", { companyId, label, error });
+          return null;
+        }
+      }
+    });
+    const modelPartNumbers = (itemIds: string[]) => {
+      const held = new Set(itemIds);
+      return new Set(
+        rows.models
+          .filter((row) => held.has(row.itemId))
+          .map((row) => row.partNumber)
+      );
+    };
+    const drawingKeys = (fileKeys: string[]) => {
+      const held = new Set(fileKeys);
+      return new Set(
+        rows.drawings.flatMap((drawing) =>
+          drawing.targets
+            .filter((target) =>
+              held.has(
+                drawingFileKey({
+                  itemId: target.itemId,
+                  drawingElementId: drawing.drawingElementId
+                })
+              )
+            )
+            .map((target) =>
+              rowDrawingKey(target.partNumber, drawing.drawingElementId)
+            )
+        )
+      );
+    };
+    current = {
+      models: modelPartNumbers(found.models),
+      drawings: drawingKeys(found.drawings),
+      outOfDate: {
+        models: modelPartNumbers(found.outOfDate.models),
+        drawings: drawingKeys(found.outOfDate.drawings)
+      },
+      unchecked: {
+        models: modelPartNumbers(found.unchecked.models),
+        drawings: drawingKeys(found.unchecked.drawings)
+      },
+      rootModel: rootItemId !== null && found.models.includes(rootItemId)
+    };
+    if (found.unread > 0) {
+      fileWarnings.push(
+        found.unread === 1
+          ? "Carbon couldn't check whether the files from 1 source document are current, so they count as exports here. The export still skips any that are."
+          : `Carbon couldn't check whether the files from ${found.unread} source documents are current, so they count as exports here. The export still skips any that are.`
+      );
+    }
+  } catch (error) {
+    logger.warn("Current file check failed", { companyId, error });
+    fileWarnings.push(
+      "Carbon couldn't check which files the items already have, so every pick counts as an export."
+    );
+  }
+
+  const plan = withCurrentFiles(
+    {
+      ...placed.plan,
+      ...(fileWarnings.length > 0 ? { fileWarnings } : {})
+    },
+    current
+  );
 
   // The apply walks the stored BOM structure; the property cells are dropped.
   const stored: StoredAssemblyPlan = {

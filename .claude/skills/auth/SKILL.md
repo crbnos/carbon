@@ -66,6 +66,20 @@ the auth cookies. **Do not run `agent-browser close`** — leave the session ope
 for the caller. The idle timeout reaps it once nothing has used it for 10
 minutes.
 
+## Second Admin
+
+Some flows need a second Admin — one who did not make the request (a purchase
+order force delete, approved by an Admin other than the requester). The seed
+adds `test+admin2@carbon.ms` ("Second Admin") to the same company, and the
+bypass accepts any plus-addressed alias of `DEV_BYPASS_EMAIL`
+(`isDevBypassEmail`, `@carbon/auth`). Sign in as it in step 3.
+
+To keep both sessions at once, use two hosts: the session cookie is per host,
+so `http://localhost:<port>` and `http://127.0.0.1:<port>` hold separate
+sessions. A stack seeded before the second Admin existed gets it on the next
+`crbn up`, or now with
+`pnpm --filter @carbon/database db:seed:dev:admin -- --email test@carbon.ms`.
+
 ## MES
 
 The MES app is a separate URL: read `MES_URL` from `.env.local` and navigate

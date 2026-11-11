@@ -10,6 +10,7 @@ import type {
   ContractSpec,
   CustomerAssetSpec,
   PriceBreak,
+  RentalAgreementSpec,
   SalesData,
   SalesOpportunitySpec,
   SalesReturnSpec,
@@ -1233,6 +1234,65 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
   }
 ];
 
+// Rental agreements over the fleet units (accounting FIXED_ASSETS "fleet-*").
+// The Active one is open-ended, so every line classifies as a Rental.
+export const RENTAL_AGREEMENTS: RentalAgreementSpec[] = [
+  {
+    key: "active",
+    customer: "Apex Space Research",
+    primaryContact: "Okonkwo",
+    contacts: [{ contact: "Marsh", role: "Site contact" }],
+    status: "Active",
+    startOffset: -45,
+    billingCycle: "Calendar Month",
+    billingTiming: "Advance",
+    lines: [
+      {
+        fixedAsset: "fleet-1",
+        rateUnit: "Month",
+        rate: 650,
+        fairValue: 14500,
+        economicLifeMonths: 60,
+        deliveredOffset: -40
+      },
+      {
+        fixedAsset: "fleet-2",
+        rateUnit: "Month",
+        rate: 650,
+        fairValue: 14500,
+        economicLifeMonths: 60
+      }
+    ],
+    charges: [
+      {
+        line: 1,
+        description: "Delivery and on-site checkout",
+        amount: 1200,
+        dateOffset: -40
+      }
+    ]
+  },
+  {
+    key: "draft",
+    customer: "PolarView Earth",
+    primaryContact: "Lindqvist",
+    status: "Draft",
+    startOffset: 14,
+    endOffset: 379,
+    billingCycle: "Calendar Month",
+    billingTiming: "Advance",
+    lines: [
+      {
+        fixedAsset: "fleet-3",
+        rateUnit: "Month",
+        rate: 42000,
+        fairValue: 990000,
+        economicLifeMonths: 60
+      }
+    ]
+  }
+];
+
 export const satelliteSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
@@ -1286,5 +1346,6 @@ export const satelliteSales: SalesData = {
   ],
   customerAssets: CUSTOMER_ASSETS,
   serviceLaborRates: { cost: 95, bill: 225 },
-  serviceJobs: SERVICE_JOBS
+  serviceJobs: SERVICE_JOBS,
+  rentalAgreements: RENTAL_AGREEMENTS
 };

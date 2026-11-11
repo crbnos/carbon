@@ -307,6 +307,11 @@ msgstr "{0} (tür)"
 msgid "{0} (unavailable)"
 msgstr "{0} (kullanılamıyor)"
 
+#. placeholder {0}: formatter.format(material.quantity)
+#. placeholder {1}: material.unitOfMeasureCode
+msgid "{0} {1} per unit"
+msgstr "Adet başına {0} {1}"
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -2489,6 +2494,13 @@ msgstr "Hakkında (bildirim)"
 msgid "About this field"
 msgstr "Bu alan hakkında"
 
+#. placeholder {0}: result.step.maxValue
+msgid "Above {0}"
+msgstr "{0} üzeri"
+
+msgid "Above maximum"
+msgstr "Maksimumun üzeri"
+
 msgid "Above the upper limit"
 msgstr "Üst sınırın üzerinde"
 
@@ -2962,6 +2974,9 @@ msgstr "İş bölümlerinin her biri için bir satır ekleyin: Zaman ve Malzeme,
 
 msgid "Add a line to the document"
 msgstr "Belgeye bir satır ekle"
+
+msgid "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
+msgstr "Sonuçlarını düzeltmelere eşlemek için bir operasyona (minimum veya maksimum değerli) Liste, Muayene veya Ölçüm adımı ekleyin."
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Ürün ağacısındaki her stok kartını miktarı ile listeleyen bir bölüm ekleyin"
@@ -3513,6 +3528,9 @@ msgstr "Sonra"
 
 msgid "After (calculation method)"
 msgstr "Sonra (hesaplama yöntemi)"
+
+msgid "After the correction"
+msgstr "Düzeltmeden sonra"
 
 msgid "Afternoon, {name}."
 msgstr "Öğleden sonra, {name}."
@@ -4105,6 +4123,9 @@ msgstr "Herhangi bir"
 msgid "Any day in the month adds that month"
 msgstr "Aydaki herhangi bir gün o ayı ekler"
 
+msgid "any fields set to update on every push"
+msgstr "her gönderimde güncellenecek şekilde ayarlanan alanlar"
+
 msgid "Any item group"
 msgstr "Herhangi bir ürün grubu"
 
@@ -4318,6 +4339,12 @@ msgstr "Onayla {displayName}"
 msgid "Approve all"
 msgstr "Tümünü onayla"
 
+msgid "Approve and delete"
+msgstr ""
+
+msgid "Approve and Delete"
+msgstr ""
+
 msgid "Approve Request"
 msgstr "İsteği Onayla"
 
@@ -4332,6 +4359,21 @@ msgstr "Onaylayan"
 
 msgid "Approved On"
 msgstr "Onaylandı"
+
+msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
+msgstr ""
+
+msgid "Approving deletes {readableId} now. This cannot be undone."
+msgstr ""
+
+msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
+msgstr ""
+
+msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
+msgstr ""
+
+msgid "Approving voids {readableId}, which reverses its postings, then deletes it. This cannot be undone."
+msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "Yaklaşık — planlanan tarihlerden türetilmiştir; bu satır için kapasite rezervasyonu yok."
@@ -5614,12 +5656,22 @@ msgstr "Göndermeden önce"
 msgid "Beginning"
 msgstr "Başlangıç"
 
+msgid "Being approved now…"
+msgstr ""
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Kademeli olarak kullanımdan kaldırılıyor — ardıl: <0>{0}</0>"
 
+#. placeholder {0}: result.step.minValue
+msgid "Below {0}"
+msgstr "{0} altı"
+
 msgid "Below level"
 msgstr "Seviyenin altında"
+
+msgid "Below minimum"
+msgstr "Minimumun altı"
 
 msgid "Below safety stock"
 msgstr "Emniyet stokunun altında"
@@ -5889,6 +5941,9 @@ msgstr "BoM explorer ayarı güncellendi"
 
 msgid "BOM synced successfully"
 msgstr "BOM başarıyla senkronize edildi"
+
+msgid "BOM synced. Not written: {notWritten}"
+msgstr "BOM senkronize edildi. Yazılmayanlar: {notWritten}"
 
 msgid "BOMs"
 msgstr "BOM'lar"
@@ -6183,6 +6238,9 @@ msgstr "Depolama birimine göre"
 msgid "By you · edited <0/>"
 msgstr "Sizin tarafından · düzenlenmiş <0/>"
 
+msgid "CAD model"
+msgstr "CAD modeli"
+
 msgid "CAD Model"
 msgstr "CAD Modeli"
 
@@ -6309,6 +6367,9 @@ msgstr "Satın Alma Siparişini İptal Et"
 
 msgid "Cancel purchase order {target}"
 msgstr "{target} satın alma siparişini iptal et"
+
+msgid "Cancel Request"
+msgstr ""
 
 msgid "Cancel Return"
 msgstr "İadeyi İptal Et"
@@ -7889,6 +7950,9 @@ msgstr "Devam Et"
 
 msgid "Continue Setup"
 msgstr "Kuruluma Devam Et"
+
+msgid "Continue to the next operation"
+msgstr "Sonraki operasyona devam et"
 
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "Kullanım hakkı varlıklarının amortismanı için kontra varlık hesabı"
@@ -10025,6 +10089,9 @@ msgstr "Sözleşmeyi Sil"
 msgid "Delete Contractor"
 msgstr "Taşeronu sil"
 
+msgid "Delete correction"
+msgstr "Düzeltmeyi sil"
+
 msgid "Delete Count"
 msgstr "Sayımı Sil"
 
@@ -10367,6 +10434,9 @@ msgstr "Silindi"
 
 msgid "Deleted attribute value"
 msgstr "Öznitelik değeri silindi"
+
+msgid "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
+msgstr "Bu düzeltmeyi silmek, operasyonlarını, malzemelerini ve sonuç eşlemelerini kaldırır. Zaten oluşturulmuş iş emirleri kendi kopyasını korur."
 
 msgid "Deliver"
 msgstr "Teslim Et"
@@ -11052,6 +11122,9 @@ msgstr "Çekiliyor"
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "Çizim değiştirildi. Balon yerleştirmeleri kaldırıldı; özellik satırları değişmedi."
 
+msgid "drawings"
+msgstr "teknik resimler"
+
 msgid "Drop a drawing or model"
 msgstr "Çizim veya model bırakın"
 
@@ -11333,10 +11406,6 @@ msgstr "Her dönem bir aydır, aylık oran için."
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Her fiziksel birim kendi izlenen varlığını ve benzersiz numarasını alır — bir varlık, bir birim."
 
-#. placeholder {0}: replaced.join(", ")
-msgid "Each push replaces: {0}. Other edits stay."
-msgstr "Her gönderim şunları değiştirir: {0}. Diğer düzenlemeler kalır."
-
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Her kiralama anlaşmasının veya sözleşmenin satış temsilcisi (veya yaratıcısı) faturalarının günlük bir özetini alır."
 
@@ -11491,6 +11560,12 @@ msgstr "İlgili Kişiyi Düzenle"
 
 msgid "Edit Contractor"
 msgstr "Taşeron Düzenle"
+
+msgid "Edit correction"
+msgstr "Düzeltmeyi düzenle"
+
+msgid "Edit Correction"
+msgstr "Düzeltmeyi Düzenle"
 
 msgid "Edit cost"
 msgstr "Maliyeti Düzenle"
@@ -12930,6 +13005,9 @@ msgstr "Başarısız"
 msgid "Failed characteristics"
 msgstr "Başarısız özellikler"
 
+msgid "Failed inspection"
+msgstr "Muayene başarısız"
+
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
 msgstr "Satır eklenemedi — {0} satırdan {addedCount} tanesi eklendi"
@@ -13768,6 +13846,24 @@ msgstr "Örneğin Tesis veya Sıralama ölçütü"
 
 msgid "For Form 6765 Section E"
 msgstr "Form 6765 Bölüm E için"
+
+msgid "Force delete"
+msgstr ""
+
+msgid "Force Delete"
+msgstr ""
+
+msgid "Force Delete (Admin)"
+msgstr ""
+
+msgid "Force delete {purchaseOrderReadableId}"
+msgstr ""
+
+msgid "Force delete {readableId}"
+msgstr ""
+
+msgid "Force delete waiting for another Admin's approval"
+msgstr ""
 
 msgid "Forecast"
 msgstr "Tahmin"
@@ -15170,6 +15266,9 @@ msgstr "Pasif eylemler seçim listelerinde görünmeyecektir"
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Pasif kategoriler yeni zaman için seçilemez"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "Girdi kontrolü"
 
@@ -15969,6 +16068,9 @@ msgstr "Satırın nasıl fiyatlandırıldığını belirler."
 msgid "It decides what the next step asks for."
 msgstr "Sonraki adımın ne istediğini belirler."
 
+msgid "It is {status}: approving voids it first, which reverses its postings. If the void refuses, its postings are reversed by journal instead."
+msgstr ""
+
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "Onaylandı ama uygulanamıyor. Yeniden açın, bu satırları kontrol edin, ardından yeniden gönderin."
 
@@ -15977,6 +16079,15 @@ msgstr "Yakında kullanıma sunulacak. Şirketiniz için kurulması için Carbon
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Yine de bir «{table}» kaydı tarafından kullanılıyor; önce bunu kaldırın."
+
+msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgstr ""
+
+msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
+msgstr ""
+
+msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
+msgstr ""
 
 msgid "It shows with no hours until you add some."
 msgstr "Saat ekleyene kadar hiçbir saat göstermez."
@@ -16115,6 +16226,9 @@ msgstr "Tasarımı, değişiklik bildirisi yayınlanmadan önce değişebilir."
 
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "Hasılat, her satırın tanıması gereken kalanına geri döner."
+
+msgid "Its stock is taken back out, even if it was used since (on-hand can go negative), and what it received is given back to its order."
+msgstr ""
 
 msgid "Job"
 msgstr "İş"
@@ -16515,8 +16629,8 @@ msgstr "Son itme {when} başarısız oldu: {0}"
 msgid "Last push {when}:"
 msgstr "Son gönderim {when}:"
 
-msgid "Last pushed {lastPushed}."
-msgstr "Son gönderim: {lastPushed}."
+msgid "Last pushed {lastPushed}"
+msgstr "Son gönderim: {lastPushed}"
 
 msgid "Last Quarter"
 msgstr "Son Çeyrek"
@@ -16698,6 +16812,9 @@ msgstr "Sonraki revizyonu otomatik olarak kullanmak için boş bırakın"
 
 msgid "Leave empty for exact match"
 msgstr "Tam eşleşme için boş bırakın"
+
+msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
+msgstr "Sınır yoksa boş bırakın. Bu sınırı aşarsa MES yalnızca Fire veya bir kalite sorunu sunar."
 
 msgid "Leave empty to pick a color from the name"
 msgstr "Boş bırakırsanız renk addan seçilir"
@@ -17877,6 +17994,13 @@ msgstr "Matris"
 msgid "Maturity Analysis"
 msgstr "Vadesilik Analizi"
 
+#. placeholder {0}: correction.maxAttempts
+msgid "Max {0} per unit"
+msgstr "Adet başına en fazla {0}"
+
+msgid "Max attempts per unit"
+msgstr "Adet başına en fazla deneme"
+
 msgid "Max Lead Time"
 msgstr "Maks. Tedarik Süresi"
 
@@ -18676,6 +18800,9 @@ msgstr "Yeni Sözleşme"
 msgid "New Contractor"
 msgstr "Yeni taşeron"
 
+msgid "New Correction"
+msgstr "Yeni Düzeltme"
+
 msgid "New Cost Center"
 msgstr "Yeni Maliyet Merkezi"
 
@@ -19379,6 +19506,12 @@ msgstr "Cutover'da hiçbir kontrol hesabının bakiyesi yoktur."
 msgid "No conversion is required"
 msgstr "Dönüşüm gerekmiyor"
 
+msgid "No correction"
+msgstr "Düzeltme yok"
+
+msgid "No corrections yet."
+msgstr "Henüz düzeltme yok."
+
 msgid "No cost"
 msgstr "Maliyet yok"
 
@@ -19769,6 +19902,9 @@ msgstr "Açık satış sipariş satırı yok"
 msgid "No open work has a target date."
 msgstr "Hiçbir açık işin hedef tarihi yoktur."
 
+msgid "No operations"
+msgstr "Operasyonlar yok"
+
 msgid "No operations found."
 msgstr "Operasyon bulunamadı."
 
@@ -20057,6 +20193,9 @@ msgstr "Bu görünüme herhangi bir sıralama uygulanmadı"
 
 msgid "No statement for this period"
 msgstr "Bu dönem için ekstre yok"
+
+msgid "No step results suggest this correction."
+msgstr "Hiçbir adım sonucu bu düzeltmeyi önermiyor."
 
 msgid "No step selected"
 msgstr "Adım seçilmedi"
@@ -20389,6 +20528,9 @@ msgstr "Senkronize edilmedi"
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "Kullanılabilir stok değil. MRP ve planlama bunu saymaz, toplama da buradan almaz."
 
+msgid "Not used yet."
+msgstr "Henüz kullanılmadı."
+
 msgid "Not working today"
 msgstr "Bugün çalışmıyor"
 
@@ -20449,6 +20591,12 @@ msgstr "Henüz hiçbir şey yok"
 
 msgid "Nothing in the archive"
 msgstr "Arşivde hiçbir şey yok"
+
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
+msgstr ""
+
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
+msgstr ""
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "Ödenmesi gereken bir şey yok. Bir dönem ödeme süresine girdiğinde faturalar otomatik olarak oluşturulur."
@@ -21429,6 +21577,9 @@ msgstr "Satış türü kiralamalarda net kiralama yatırımından elde edilen ay
 msgid "Other Income GL account for the monthly interest earned on the net investment in sales-type leases."
 msgstr "Satış türü kiralamalarda net kiralama yatırımından elde edilen aylık faiz için Diğer gelirler muhasebe hesabı."
 
+msgid "Other payments it funds or refunds are unapplied from it first; they stay posted."
+msgstr ""
+
 msgid "Other Type"
 msgstr "Diğer Tür"
 
@@ -21962,6 +22113,12 @@ msgstr "Ödemeler"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "Bu faturaya uygulanan ödemeler ve alacaklar. Uygulanan tutarlar ve kur farkları şirketin temel para birimi cinsindendir. Kaynak belgeyi açmak için bir satıra tıklayın."
+
+msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
+msgstr ""
+
+msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
+msgstr ""
 
 msgid "Payments due before this date were paid outside Carbon"
 msgstr "Bu tarihten önce vadesi gelen ödemeler Carbon dışında ödendi"
@@ -23368,6 +23525,9 @@ msgstr "Satın Alma Siparişi Onayı"
 msgid "Purchase order for {supplierName}"
 msgstr "{supplierName} için satın alma siparişi"
 
+msgid "Purchase Order Force Delete"
+msgstr ""
+
 msgid "Purchase Order ID"
 msgstr "Satın Alma Siparişi Numarası"
 
@@ -23506,14 +23666,14 @@ msgstr "Muhasebe fişini boyut olmadan gönder"
 msgid "Push to accounting"
 msgstr "Muhasebede gönder"
 
-msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr "Gönderimleri bu stok kartının alanlarını değiştirmez, bu yüzden burada yapılan düzenlemeler kalır."
+msgid "Pushes from Onshape can update this item's {pushTargets}, but not its fields."
+msgstr "Onshape'ten gelen gönderimler bu stok kartında şunları güncelleyebilir: {pushTargets}, ancak alanlarını değil."
 
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "Onshape'ten gelen gönderimleri bu stok kartını artık güncellemeyecektir. Bu parçayı Onshape'ten yeniden göndermek onu yeniden bağlayacaktır."
+msgid "Pushes from Onshape can update this item's {pushTargets}."
+msgstr "Onshape'ten gelen gönderimler bu stok kartında şunları güncelleyebilir: {pushTargets}."
 
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "Gönderimleri yalnızca Onshape'nin Fields sayfasında her gönderimde Güncelle olarak ayarlanmış alanları değiştirir."
+msgid "Pushes stop updating this item, and its current data stays. Any later push that includes this part number links it again."
+msgstr "Gönderimler bu stok kartını artık güncellemez ve mevcut verileri korunur. Bu parça numarasını içeren sonraki herhangi bir gönderim onu yeniden bağlar."
 
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "Bir sözleşme projesini durdurma emri kapsamında askıya alın, 90 günlük bitiş tarihiyle ve emir sona erdiğinde devam ettirin."
@@ -23555,6 +23715,10 @@ msgstr "Bu kanban için bir sonraki işlemi başlatmak üzere QR kod"
 
 msgid "Qty"
 msgstr "Miktar"
+
+#. placeholder {0}: formatter.format(use.quantity)
+msgid "Qty {0}"
+msgstr "Miktar {0}"
 
 msgid "Qty {jobQuantity}"
 msgstr "Miktar {jobQuantity}"
@@ -23924,6 +24088,9 @@ msgstr "Modeli yeniden dönüştür"
 msgid "Re-date to first open day"
 msgstr "İlk açık güne yeniden tarihlendir"
 
+msgid "Re-inspect at the operation that found it"
+msgstr "Bulduğu operasyonda yeniden muayene et"
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Tekliflendirme, üretim ve muhasebe arasında veri yeniden girişi"
 
@@ -23935,6 +24102,9 @@ msgstr "Mevcut adım sırasında hareket yeniden planlaması — adımlar tamaml
 
 msgid "Re-send"
 msgstr "Yeniden gönder"
+
+msgid "Re-torque nut"
+msgstr "Somunu yeniden torkla"
 
 msgid "Reactivate"
 msgstr "Yeniden etkinleştir"
@@ -25033,11 +25203,17 @@ msgstr "Onay iste"
 msgid "Request date"
 msgstr "İstek tarihi"
 
+msgid "Request Force Delete"
+msgstr ""
+
 msgid "Request Quote"
 msgstr "Teklif iste"
 
 msgid "Requested"
 msgstr "Talep edildi"
+
+msgid "Requested by"
+msgstr ""
 
 msgid "Requested By"
 msgstr "Talep Eden"
@@ -25326,6 +25502,9 @@ msgstr "Ücretlendirmeyi üyelere kısıtla"
 
 msgid "Result"
 msgstr "Sonuç"
+
+msgid "Result mappings"
+msgstr "Sonuç eşlemeleri"
 
 msgid "Results"
 msgstr "Sonuçlar"
@@ -25678,6 +25857,12 @@ msgstr "İptal edildi"
 
 msgid "Rework"
 msgstr "Yeniden İşleme"
+
+msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
+msgstr "Bir adım sonucunun önerdiği, yalnızca yeniden işlem operasyonları; örneğin bir kontrol somunun gevşek olduğunu bulduğunda yeniden torklama. Normal adetler bunları asla çalıştırmaz."
+
+msgid "Rework-only operations that a step result suggests. This job keeps its own copy from the make method."
+msgstr "Bir adım sonucunun önerdiği yalnızca yeniden işlem operasyonları. Bu iş emri, üretim yönteminden kendi kopyasını korur."
 
 msgid "RFQ"
 msgstr "Teklif Talebi"
@@ -31227,6 +31412,12 @@ msgstr "Ardından ayarlandı"
 msgid "Then by"
 msgstr "Sonra"
 
+msgid "Then continue"
+msgstr "Sonra devam et"
+
+msgid "Then re-inspect"
+msgstr "Sonra yeniden muayene et"
+
 msgid "There are more received than ordered"
 msgstr "Sipariş edilenden daha fazlası alındı"
 
@@ -31479,6 +31670,9 @@ msgstr "Bu satın alınan bir üründür — BoM/BoP'si yoktur; yalnızca öznit
 
 msgid "This is a unique identifier for the webhook"
 msgstr "Bu, webhook için benzersiz bir tanımlayıcıdır"
+
+msgid "This is an Admin override"
+msgstr ""
 
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "Bu ITAR tarafından kontrol edilen bir ortamdır. Erişim yalnızca ABD vatandaşları ile sınırlıdır."
@@ -32483,6 +32677,9 @@ msgstr "Tekrar deneyin"
 msgid "Tuesday"
 msgstr "Salı"
 
+msgid "Turn Off"
+msgstr ""
+
 msgid "Turn On"
 msgstr "Aç"
 
@@ -32549,6 +32746,12 @@ msgstr "Bir değişken için '{' yazın"
 #. placeholder {0}: company.name
 msgid "Type {0} to confirm"
 msgstr "Onaylamak için {0} yazın"
+
+msgid "Type {purchaseOrderReadableId} to confirm"
+msgstr ""
+
+msgid "Type {readableId} to confirm"
+msgstr ""
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "Bir değişken eklemek için {TRIGGER} yazın"
@@ -32706,6 +32909,9 @@ msgstr "Faturalanmamış sevkiyatlar"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Benzersiz, büyük harf, boşluksuz (en fazla 10 karakter)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "Birim"
@@ -33319,6 +33525,9 @@ msgstr "Kullanan {0}"
 #. placeholder {1}: subAssemblyName(headerId)
 msgid "Uses {0} · {1}"
 msgstr "Kullanan {0} · {1}"
+
+msgid "Uses on this job"
+msgstr "Bu iş emrindeki kullanımlar"
 
 #. placeholder {0}: use.number
 #. placeholder {1}: use.title
@@ -34123,6 +34332,12 @@ msgstr "Bu zaman girişinin neyi temsil ettiği — İşçilik (operatör zaman�
 msgid "What to set up"
 msgstr "Kurulacak şey"
 
+msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
+msgstr ""
+
+msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
+msgstr ""
+
 msgid "What we're assuming"
 msgstr "Neyi varsaydığımız"
 
@@ -34556,6 +34771,9 @@ msgstr "Yarı Mamul"
 msgid "with {0} contingency"
 msgstr "ile {0} acil durum"
 
+msgid "With Previous"
+msgstr "Öncekiyle birlikte"
+
 msgid "Withdraw"
 msgstr "Geri Çek"
 
@@ -34957,6 +35175,9 @@ msgstr "Sizin kurunuz"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Gerçek verileriniz yüklendi ve bir örneği kontrol ederek onayladınız."
+
+msgid "Your reason and the decision are kept in the audit log."
+msgstr ""
 
 msgid "Your session was locked after inactivity."
 msgstr "Oturumunuz hareketsizlikten sonra kilitlendi."

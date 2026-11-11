@@ -28,6 +28,11 @@ import {
 import { Link, useNavigation, useParams } from "react-router";
 import { DateTime, EmployeeAvatar, PrintButton } from "~/components";
 import { DocumentPageHeader } from "~/components/DocumentPage";
+import {
+  type DocumentForceDeleteData,
+  DocumentForceDeleteMenuItem,
+  DocumentForceDeleteModal
+} from "~/components/ForceDelete/DocumentForceDelete";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData } from "~/hooks";
 import type {
@@ -46,22 +51,29 @@ const ReceiptHeader = () => {
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
 
-  const routeData = useRouteData<{
-    receipt: Receipt;
-    receiptLines: ReceiptLine[];
-    receiptLineTracking: ItemTracking[];
-    fixedAssetLines: { id: string; received: boolean }[];
-    rentalLines: { id: string; received: boolean }[];
-    inspectedLineIds: string[];
-    putAwayReadyCount: number;
-    putAwayTransfers: { id: string; stockTransferId: string; status: string }[];
-  }>(path.to.receipt(receiptId));
+  const routeData = useRouteData<
+    {
+      receipt: Receipt;
+      receiptLines: ReceiptLine[];
+      receiptLineTracking: ItemTracking[];
+      fixedAssetLines: { id: string; received: boolean }[];
+      rentalLines: { id: string; received: boolean }[];
+      inspectedLineIds: string[];
+      putAwayReadyCount: number;
+      putAwayTransfers: {
+        id: string;
+        stockTransferId: string;
+        status: string;
+      }[];
+    } & DocumentForceDeleteData
+  >(path.to.receipt(receiptId));
 
   const permissions = usePermissions();
   const navigation = useNavigation();
   const postModal = useDisclosure();
   const voidModal = useDisclosure();
   const deleteDisclosure = useDisclosure();
+  const forceDeleteModal = useDisclosure();
 
   const receipt = routeData?.receipt;
   if (!receipt) throw new Error("Could not find receipt in routeData");
@@ -194,6 +206,11 @@ const ReceiptHeader = () => {
               <DropdownMenuIcon icon={<LuTrash />} />
               <Trans>Delete Receipt</Trans>
             </DropdownMenuItem>
+            <DocumentForceDeleteMenuItem
+              forceDelete={routeData}
+              canDelete={permissions.can("delete", "inventory")}
+              onClick={forceDeleteModal.onOpen}
+            />
           </>
         }
         actions={
@@ -298,6 +315,16 @@ const ReceiptHeader = () => {
         onCancel={deleteDisclosure.onClose}
         onSubmit={deleteDisclosure.onClose}
       />
+      {routeData?.isAdmin && (
+        <DocumentForceDeleteModal
+          documentType="receipt"
+          documentId={receiptId}
+          readableId={receipt.receiptId ?? receiptId}
+          status={receipt.status ?? "Draft"}
+          open={forceDeleteModal.isOpen}
+          onClose={forceDeleteModal.onClose}
+        />
+      )}
     </>
   );
 };

@@ -11,6 +11,7 @@ Each purchase-order line tracks received and invoiced quantities independently. 
 
 <FieldTable>
   <Field name="Item" type="reference">What's being bought.</Field>
+  <Field name="Description" type="text">What the supplier reads on the PDF line. It can run over several lines, and the PDF prints all of them unless the purchase order template's **Item text** option is **Truncate to one line**.</Field>
   <Field name="Purchase quantity" type="number">Ordered quantity.</Field>
   <Field name="Quantity received" type="number">Received so far; `quantity to receive` is the remainder.</Field>
   <Field name="Quantity invoiced" type="number">Billed so far; `quantity to invoice` is the remainder.</Field>

@@ -164,7 +164,11 @@ import {
   reverseProjectLedgerRows,
   splitReceiptChargedDrafts
 } from "~/modules/projects/project-posting";
-import { PURCHASE_ORDER_RELEASED_STATUSES } from "~/modules/purchasing/purchasing.models";
+import {
+  PURCHASE_ORDER_RELEASED_STATUSES,
+  purchaseOrderStatusAfterReversal,
+  receivedAfterReceiptReversal
+} from "~/modules/purchasing/purchasing.models";
 import {
   futureDeliveryError,
   futureReturnError,
@@ -14063,6 +14067,14 @@ export function findVoidShortfalls(
   });
 }
 
+/**
+ * The void's refusal when the received stock is no longer where it was
+ * received. A purchase order force delete reverses such a receipt by adjusting
+ * the stock out instead, so it matches this text.
+ */
+export const RECEIPT_VOID_STOCK_MOVED_ERROR =
+  "Cannot void: stock received on this receipt was moved, picked or shipped since it was received. Correct the remainder with an inventory adjustment instead.";
+
 /** Refuses the void when the received stock is no longer where it was received. */
 export async function assertReceivedStockOnHand(
   trx: VoidGuardDb,
@@ -14107,9 +14119,7 @@ export async function assertReceivedStockOnHand(
   }
 
   if (findVoidShortfalls(reversingRows, onHand).length > 0) {
-    throw new InvalidInputError(
-      "Cannot void: stock received on this receipt was moved, picked or shipped since it was received. Correct the remainder with an inventory adjustment instead."
-    );
+    throw new InvalidInputError(RECEIPT_VOID_STOCK_MOVED_ERROR);
   }
 }
 
@@ -14893,58 +14903,15 @@ export async function postReceipt(
         companyId
       }));
 
-      const receiptLinesByPurchaseOrderLineId = receiptLines.data.reduce<
-        Record<string, Database["public"]["Tables"]["receiptLine"]["Row"][]>
-      >((acc, receiptLine) => {
-        if (receiptLine.lineId) {
-          acc[receiptLine.lineId] = [
-            ...(acc[receiptLine.lineId] ?? []),
-            receiptLine
-          ];
-        }
-        return acc;
-      }, {});
-
-      const purchaseOrderLineUpdatesVoid = purchaseOrderLinesVoid.data.reduce<
-        Record<
-          string,
-          Database["public"]["Tables"]["purchaseOrderLine"]["Update"]
-        >
-      >((acc, purchaseOrderLine) => {
-        const receiptLinesForPoLine =
-          receiptLinesByPurchaseOrderLineId[purchaseOrderLine.id];
-        if (
-          receiptLinesForPoLine &&
-          receiptLinesForPoLine.length > 0 &&
-          purchaseOrderLine.purchaseQuantity &&
-          purchaseOrderLine.purchaseQuantity > 0
-        ) {
-          const receivedQuantityInPurchaseUnit =
-            receiptLinesForPoLine.reduce((sum, receiptLine) => {
-              const safe =
-                isNaN(receiptLine.receivedQuantity) ||
-                receiptLine.receivedQuantity == null
-                  ? 0
-                  : receiptLine.receivedQuantity;
-              return sum + safe;
-            }, 0) / (receiptLinesForPoLine[0]!.conversionFactor ?? 1);
-
-          const newQuantityReceived = Math.max(
-            0,
-            (purchaseOrderLine.quantityReceived ?? 0) -
-              receivedQuantityInPurchaseUnit
-          );
-
-          const receivedComplete =
-            newQuantityReceived >= purchaseOrderLine.purchaseQuantity;
-
-          acc[purchaseOrderLine.id] = {
-            quantityReceived: newQuantityReceived,
-            receivedComplete
-          };
-        }
-        return acc;
-      }, {});
+      // What each line received comes off its order line
+      // (`receivedAfterReceiptReversal`, shared with the force delete).
+      const purchaseOrderLineUpdatesVoid: Record<
+        string,
+        Database["public"]["Tables"]["purchaseOrderLine"]["Update"]
+      > = receivedAfterReceiptReversal(
+        purchaseOrderLinesVoid.data,
+        receiptLines.data
+      );
 
       // Reverse FA PO line received status on void
       const faPoLinesForVoid = purchaseOrderLinesVoid.data.filter(
@@ -15092,38 +15059,9 @@ export async function postReceipt(
         }
       );
 
-      const areAllLinesInvoicedProjected = projectedPurchaseOrderLines.every(
-        (line) => {
-          if (line.purchaseOrderLineType === "Comment") return true;
-          const target = line.purchaseQuantity ?? 0;
-          if (target <= 0) return true;
-          return (line.quantityInvoiced ?? 0) >= target;
-        }
+      const purchaseOrderStatusVoid = purchaseOrderStatusAfterReversal(
+        projectedPurchaseOrderLines
       );
-
-      const areAllLinesReceivedProjected = projectedPurchaseOrderLines.every(
-        (line) => {
-          if (
-            line.purchaseOrderLineType === "Comment" ||
-            line.purchaseOrderLineType === "G/L Account" ||
-            line.purchaseOrderLineType === "Service"
-          )
-            return true;
-          const target = line.purchaseQuantity ?? 0;
-          if (target <= 0) return true;
-          return (line.quantityReceived ?? 0) >= target;
-        }
-      );
-
-      let purchaseOrderStatusVoid: Database["public"]["Tables"]["purchaseOrder"]["Row"]["status"] =
-        "To Receive and Invoice";
-      if (areAllLinesInvoicedProjected && areAllLinesReceivedProjected) {
-        purchaseOrderStatusVoid = "Completed";
-      } else if (areAllLinesInvoicedProjected) {
-        purchaseOrderStatusVoid = "To Receive";
-      } else if (areAllLinesReceivedProjected) {
-        purchaseOrderStatusVoid = "To Invoice";
-      }
 
       // The receipt's serials and batches were never received, so the void
       // drains them to zero: they leave every on-hand list and no picker
@@ -30020,6 +29958,24 @@ export async function issueMaterial(
         );
       }
 
+      // A rework copy applies only to the units sent into it.
+      const operationScope = await db
+        .selectFrom("jobOperationTrackedEntity")
+        .select("trackedEntityId")
+        .where("jobOperationId", "=", row.jobOperationId)
+        .where("companyId", "=", companyId)
+        .execute();
+      if (
+        operationScope.length > 0 &&
+        !operationScope.some(
+          (scope) => scope.trackedEntityId === trackedEntityId
+        )
+      ) {
+        throw new InvalidInputError(
+          "This unit is not part of this rework operation"
+        );
+      }
+
       const relatedTrackedEntities = trackedEntities.data.filter(
         (trackedEntity) =>
           `Operation ${row.jobOperationId}` in
@@ -30190,6 +30146,42 @@ export async function issueMaterial(
             .executeTakeFirst();
 
           newEntityId = newTrackedEntityResult?.id;
+
+          // The seed's other units were sent into the same rework copies as
+          // the seed, so the unit that carries them takes the seed's scope on
+          // every copy still open. Without it the next completion on the copy
+          // is refused as out of scope.
+          if (newEntityId && seedUnitsLeft > 0) {
+            const seedScope = await trx
+              .selectFrom("jobOperationTrackedEntity")
+              .innerJoin(
+                "jobOperation",
+                "jobOperation.id",
+                "jobOperationTrackedEntity.jobOperationId"
+              )
+              .select("jobOperationTrackedEntity.jobOperationId")
+              .where(
+                "jobOperationTrackedEntity.trackedEntityId",
+                "=",
+                trackedEntityId
+              )
+              .where("jobOperationTrackedEntity.companyId", "=", companyId)
+              .where("jobOperation.status", "not in", ["Done", "Canceled"])
+              .execute();
+            if (seedScope.length > 0) {
+              await trx
+                .insertInto("jobOperationTrackedEntity")
+                .values(
+                  seedScope.map((scope) => ({
+                    jobOperationId: scope.jobOperationId,
+                    trackedEntityId: newEntityId!,
+                    companyId,
+                    createdBy: userId
+                  }))
+                )
+                .execute();
+            }
+          }
         }
 
         await issueJobOperationMaterials(trx, {
@@ -30354,6 +30346,24 @@ export async function issueMaterial(
         ) {
           throw new InvalidInputError(
             "The unit does not belong to this operation"
+          );
+        }
+        // A rework copy works only the units sent into it, so only those
+        // units can be scrapped against it.
+        const operationScope = await db
+          .selectFrom("jobOperationTrackedEntity")
+          .select("trackedEntityId")
+          .where("jobOperationId", "=", jobOperationId)
+          .where("companyId", "=", companyId)
+          .execute();
+        if (
+          operationScope.length > 0 &&
+          !operationScope.some(
+            (scope) => scope.trackedEntityId === scrapEntityId
+          )
+        ) {
+          throw new InvalidInputError(
+            "This unit is not part of this rework operation"
           );
         }
       }

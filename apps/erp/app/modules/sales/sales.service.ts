@@ -13127,13 +13127,23 @@ export async function releaseServiceJobInvoiceStamps(
  * billed, so the next generation bills them again. `salesInvoiceLineId` on
  * those rows has no foreign key, so a plain delete would leave them stamped
  * as billed forever. Throws on a missing or non-Draft invoice.
+ *
+ * `voided` is the Admin force delete: it also deletes a Voided invoice (the
+ * release is a no-op for what the void already released), inside the
+ * caller's transaction, which has set `app.force_delete` so the database's
+ * Draft-only guard steps aside.
  */
 export async function deleteSalesInvoiceReleasingRentals(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; invoiceId: string; userId: string }
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: {
+    companyId: string;
+    invoiceId: string;
+    userId: string;
+    voided?: boolean;
+  }
 ): Promise<void> {
   const { companyId, invoiceId, userId } = args;
-  await db.transaction().execute(async (trx) => {
+  await withTransaction(db, async (trx) => {
     const invoice = await trx
       .selectFrom("salesInvoice")
       .select(["id", "status"])
@@ -13142,7 +13152,10 @@ export async function deleteSalesInvoiceReleasingRentals(
       .forUpdate()
       .executeTakeFirst();
     if (!invoice) throw new Error("Sales invoice not found");
-    if (invoice.status !== "Draft") {
+    if (
+      invoice.status !== "Draft" &&
+      !(args.voided && invoice.status === "Voided")
+    ) {
       throw new Error(
         `Cannot delete sales invoice with status "${invoice.status}". Only Draft invoices can be deleted.`
       );

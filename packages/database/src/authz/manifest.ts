@@ -719,6 +719,10 @@ export const manifest = {
   fixedAssetTransfer: company("accounting", { read: "accounting_view" }),
   fixedAssetUsageLog: company("accounting", { read: "accounting_view" }),
   fixture: serviceOnly(),
+  // The Admin force-delete override for invoices, receipts and payments:
+  // written and read only by the service functions, which check that the
+  // caller is an Admin.
+  forceDeleteRequest: serviceOnly(),
   fulfillment: company("sales", {
     read: anyOf("inventory_view", "sales_view"),
     create: anyOf("inventory_create", "sales_create")
@@ -914,6 +918,8 @@ export const manifest = {
     read: anyOf("parts_view", "sales_view")
   }),
   job: company("production"),
+  jobCorrection: company("production"),
+  jobCorrectionTrigger: company("production"),
   jobFavorite: policies({
     select: owner("userId"),
     insert: owner("userId"),
@@ -938,6 +944,10 @@ export const manifest = {
   jobOperationStepRecord: company("production", { create: "employee" }),
   jobOperationStepSlide: company("production"),
   jobOperationTool: company("production"),
+  // Written by the trigger-rework posting only (system connection).
+  jobOperationTrackedEntity: policies({
+    select: inCompany("companyId", "employee")
+  }),
   jobOperationToolStep: policies({
     select: exists("jobOperationTool", "jobOperationToolId", "employee"),
     insert: exists(
@@ -1129,6 +1139,8 @@ export const manifest = {
       inCompany("companyId", "invoicing_delete")
     )
   }),
+  methodCorrection: company("parts", { read: "parts_view" }),
+  methodCorrectionTrigger: company("parts", { read: "parts_view" }),
   methodMaterial: company("parts", { read: "parts_view" }),
   methodMaterialStep: policies({
     select: exists("methodMaterial", "methodMaterialId", "employee"),
@@ -1395,6 +1407,9 @@ export const manifest = {
     insert: owner("userId"),
     delete: owner("userId")
   }),
+  // The Admin force-delete override: written and read only by the service
+  // functions, which check that the caller is an Admin.
+  purchaseOrderForceDeleteRequest: serviceOnly(),
   purchaseOrderLine: company("purchasing", { read: "purchasing_view" }),
   // The versions an approval request keeps: written by the amendment
   // re-submit and read by the rejection, both through Kysely.

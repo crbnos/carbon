@@ -38,7 +38,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import ScrapReason from "~/components/JobOperation/components/ScrapReason";
-import { inspectionDispositionValidator } from "~/services/models";
+import {
+  CORRECTION_TARGET_PREFIX,
+  inspectionDispositionValidator
+} from "~/services/models";
 import type { IssueTypeListItem } from "~/services/types";
 import { OriginInput } from "~/utils/origin";
 import { path } from "~/utils/path";
@@ -141,7 +144,10 @@ const DispositionBody = ({
       }
     }
   });
-  const targetsFetcher = useFetcher<{ operations: UpstreamOperation[] }>();
+  const targetsFetcher = useFetcher<{
+    operations: UpstreamOperation[];
+    corrections?: { id: string; name: string; returnTo: string }[];
+  }>();
   const submitted = useRef(false);
   const loadedTargetsRef = useRef(false);
 
@@ -172,6 +178,7 @@ const DispositionBody = ({
   }, [operationId, targetsFetcher.load]);
 
   const targets = targetsFetcher.data?.operations ?? [];
+  const corrections = targetsFetcher.data?.corrections ?? [];
   const hasIssueTypes = issueTypes.length > 0;
 
   const scrapEntityIds = useMemo(
@@ -440,11 +447,23 @@ const DispositionBody = ({
             <>
               <Select
                 name="targetOperationId"
-                label={t`Go back to operation`}
-                options={targets.map((op) => ({
-                  value: op.id,
-                  label: op.description || op.processId
-                }))}
+                label={
+                  corrections.length > 0
+                    ? t`Go back to operation, or run a correction`
+                    : t`Go back to operation`
+                }
+                options={[
+                  ...targets.map((op) => ({
+                    value: op.id,
+                    label: op.description || op.processId
+                  })),
+                  // A correction runs its own operations, then re-inspects
+                  // or continues as it is set up.
+                  ...corrections.map((correction) => ({
+                    value: `${CORRECTION_TARGET_PREFIX}${correction.id}`,
+                    label: t`Correction: ${correction.name}`
+                  }))
+                ]}
               />
               <TextArea
                 name="reworkReason"

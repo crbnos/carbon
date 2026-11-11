@@ -257,11 +257,17 @@ export async function up(opts: UpOpts = {}) {
   if (shouldMigrate) {
     await tasks([
       {
-        title: "Seed smoke-test user (test@carbon.ms)",
-        task: async () =>
-          (await ensureSmokeTestUser(root, ctx.db, ctx.ports.PORT_API)).seeded
-            ? "user created"
-            : "already exists"
+        title: "Seed smoke-test users (test@carbon.ms, test+admin2@carbon.ms)",
+        task: async () => {
+          const { seeded } = await ensureSmokeTestUser(
+            root,
+            ctx.db,
+            ctx.ports.PORT_API
+          );
+          if (seeded === "company") return "users created";
+          if (seeded === "second admin") return "second Admin added";
+          return "already exist";
+        }
       }
     ]);
   }
@@ -612,12 +618,14 @@ function printSummary(ctx: Ctx, apps: AppId[], size: StackSize) {
     shared: ctx.mode === "shared"
   });
   const title = `Carbon dev — ${ctx.slug}`;
-  // clack's box throws on a narrow terminal (a long URL line cannot wrap) or a
-  // width of 0; 9 = its guide, borders and padding (8) + 1 lost on an odd width.
+  // clack's box throws (a negative repeat count) when the terminal is narrower
+  // than the title or a line it cannot wrap (a long URL), and Conductor's pane
+  // can report 0 or a few columns; 9 = guide, borders, padding + an odd column.
   const widest = Math.max(
+    title.length,
     ...summary.map((line) => stripVTControlCharacters(line).length)
   );
-  if ((process.stdout.columns ?? 0) < widest + 9) {
+  if ((process.stdout.columns ?? 80) < widest + 9) {
     log.info(title);
     for (const line of summary) log.message(line);
   } else {

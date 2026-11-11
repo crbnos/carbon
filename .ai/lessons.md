@@ -4881,3 +4881,56 @@ only once it has moved a few pixels (`DRAG_SLOP_PX`). Until then a tap is a tap.
 
 **Applies to:** `BottomSheetContent` (`packages/react/src/BottomSheet.tsx`), and any
 drag handle that wraps clickable content.
+
+## Porting a trigger body: start from its newest definition
+
+**Context:** The event-system port (`20260410031811_remaining-interceptors.sql`) turned `insert_company_related_records` into the interceptor `sync_insert_company_related_records` (found 2026-10-24).
+
+**Problem:** The interceptor inserts `companySettings` with only its id. The trigger it replaced also set `useMetric` from the company's country (`20250725212215_metric-default.sql`) and created the two billing address rows (`20260304112615_purchasing-info.sql`). For six months every new company started imperial, and nothing failed: the column has a default and the address reads use `maybeSingle`.
+
+**Rule:** Before porting a function, find its newest definition (`grep -l "FUNCTION <name>" migrations/*.sql | tail -1`) and carry every statement across, or drop one on purpose with a note. A behavior that only sets a default value has no test to fail when it is lost: pin it with one (`seed-company.test.ts` pins `useMetric` per country).
+
+**Applies to:** `packages/database/src/event-system/handlers/*.sql`, any migration that replaces a trigger function.
+
+## A correction's rows live in the routing and BOM tables
+
+**Context:** A make method's corrections store their operations and materials in
+`methodOperation` and `methodMaterial`, marked by `methodCorrectionId`. Their Op
+Nos start at 1, like the routing's.
+
+**Problem:** The CSV method import read the routing and BOM by `makeMethodId`
+alone. Op No 1 then matched two operations and the row failed; a step for an Op
+No only a correction had attached to the correction; and a BOM line was skipped
+as "already on the BOM" when only a correction used the item.
+
+**Rule:** A read of a make method's routing or bill of materials filters
+`methodCorrectionId IS NULL`. Read correction rows only through their
+`methodCorrectionId`. A write by row id or by item (a part merge, a method type
+change) needs no filter.
+
+**Applies to:** every query on `methodOperation` / `methodMaterial` by
+`makeMethodId`, in TypeScript and in SQL (`get_method_tree`).
+
+## A fetcher action that redirects to a record's index loses its toast
+
+**Context:** The purchase order force-delete modal posts through a fetcher, and the
+action redirected to `path.to.purchaseOrder(id)` with a flash.
+
+**Problem:** That index route redirects again, to `/details`, in its middleware. The
+second hop is a plain GET to the path the form was already on, so
+`rootShouldRevalidate` reads it as a search-param-only navigation and skips the
+root loader. The flash is never read: no toast, and it surfaces later on an
+unrelated page.
+
+**Rule:** Redirect an action straight to the page that renders the record
+(`path.to.purchaseOrderDetails(id)`), never to an index that redirects again.
+
+**Applies to:** Any action whose redirect target is a `$id._index.tsx` that
+redirects (purchase orders, and the other records with a `/details` index).
+
+## A force delete treats the void's refusal as a fallback, not a stop
+
+- **Context:** the Admin force delete of invoices, receipts and payments (`decideDocumentForceDelete`).
+- **Problem:** The first version refused whenever the document's own void refused, or when payments, memos or other documents still held it. Force delete exists for emergencies where a user error has broken that normal process, so those refusals left the Admin stuck.
+- **Rule:** In a force delete, a void's rule refusal is the trigger for `reverseDocumentByJournal`: negate its postings, adjust its stock back, restore its sources. Anything applied to the document is unapplied first (`unapplyForceDeleteSettlements`). To change a posted payment's journal, build it again with and without the change (`rebuildPaymentJournal`) and post the difference, rather than hand-building reversal lines.
+- **Applies to:** `invoicing.service.ts` force delete blocks, any future force delete type.

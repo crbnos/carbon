@@ -47,12 +47,15 @@ export function InspectionLotHeader({
   lot,
   itemLabel,
   detail,
+  badge,
   children
 }: {
   inspection: InspectionLot;
   lot: InspectionLotState;
   itemLabel: string | null | undefined;
   detail?: string | null;
+  /** Marks the operation itself, e.g. a rework or correction. */
+  badge?: ReactNode;
   children: ReactNode;
 }) {
   const { t } = useLingui();
@@ -98,6 +101,7 @@ export function InspectionLotHeader({
             </span>
           </>
         ) : null}
+        {badge}
       </div>
 
       <div className="flex-1" />
