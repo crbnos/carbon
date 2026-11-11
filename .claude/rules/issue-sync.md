@@ -69,7 +69,7 @@ drops the snapshot.
    (`hooks.server.ts`) converge it; the link routes and the inbound jobs converge it
    too, so an old install heals on first use.
 2. The queue sends `carbon/event-issue-sync`. `issueSyncFunction`
-   (`jobs/.../events/issue-sync.ts`) fans the batch out per company.
+   (`packages/jobs/src/inngest/functions/events/issue-sync.ts`) fans the batch out per company.
 3. `issueSyncPushFunction` (`carbon/issue-sync.push`) runs `pushRecords` for UPDATEs
    and `deleteLinks` for DELETEs.
 4. `pushRecords` skips links of a tracker that is not active, reads the CURRENT
@@ -142,9 +142,10 @@ issue.
 - Jira: a status push to the category the issue is already in sends no transition
   (Backlog → Unstarted, Completed → Cancelled). When Jira refuses a combined update (a
   field not on the edit screen), the push retries each field alone.
-- The Linear and Jira dialogs sit beside "Add line" in the element's Plan section
-  (`ElementPlanLines` `toolbarExtras`, from `ElementView.tsx`); a Parameter, which has
-  no Plan section, shows them in the header. The project element page reads the links with
+- The Linear and Jira dialogs sit in the element header, right of the readable id
+  (`issueButtons`, `ElementView.tsx`), for every element type. They show only while
+  `canUpdate` is true: the user can update the module and the project is not closed.
+  The project element page reads the links with
   `getRecordIssueLinks` (`shared.service.ts`).
 - Link Existing opens with the 10 most recently updated issues (`listRecentIssues`;
   Jira: `searchIssues` with no text) and searches as the user types. Create New starts

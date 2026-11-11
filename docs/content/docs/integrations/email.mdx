@@ -17,22 +17,22 @@ If a send fails through the provider you chose, the email is not sent another wa
   <Step>
   ### Choose a provider
 
-  Select **Server mail**, **Resend**, **SMTP** or **Gmail**. Server mail is offered only on a single-tenant deployment (`TENANT_TYPE=single`, a self-hosted Carbon) whose server has mail settings (`SMTP_HOST`), and is the default there. Carbon Cloud does not offer it: pick Resend, SMTP or Gmail. The configuration fields change for the selected provider.
+  Under **Delivery method**, select **Server mail**, **Resend**, **Custom SMTP** or **Gmail**. Server mail is offered only on a single-tenant deployment (`TENANT_TYPE=single`, a self-hosted Carbon) whose server has mail settings (`SMTP_HOST`), and is the default there. Carbon Cloud does not offer it: pick Resend, SMTP or Gmail. The configuration fields change for the selected provider.
   </Step>
   <Step>
   ### Fill in the provider fields
 
-  For **Resend**, enter the API key. For **SMTP**, enter the host, port, credentials, and TLS setting. For **Gmail**, pick the Google account to send as. Server mail needs no credentials. Configure the **from address** for every provider except Gmail, which always sends as the picked account. With server mail, documents are sent from the server's address under your company's name, and replies go to the address you enter; leave it empty to have replies go only to the person who sent the document.
+  For **Resend**, enter the API key. For **Custom SMTP**, enter the host, port, credentials, and TLS setting. For **Gmail**, pick the Google account to send as. Server mail needs no credentials. Configure the **From email** for every provider except Gmail, which always sends as the picked account. With server mail, documents are sent from the server's address under your company's name, and replies go to the address you enter; leave it empty to have replies go only to the person who sent the document.
   </Step>
 </Steps>
 
 <FieldTable>
-  <Field name="Provider">**Server mail** (this server's mail settings), **Resend** (your Resend account), **SMTP** (your own server) or **Gmail** (a Google account connected on the Gmail integration).</Field>
-  <Field name="From address">The address document emails are sent from. Optional with server mail, where documents are sent from the server's address under your company's name and replies go to this address.</Field>
+  <Field name="Delivery method">**Server mail** (this server's mail settings), **Resend** (your Resend account), **Custom SMTP** (your own server) or **Gmail** (a Google account connected on the Gmail integration).</Field>
+  <Field name="From email">The address document emails are sent from. Optional with server mail, where documents are sent from the server's address under your company's name and replies go to this address.</Field>
   <Field name="API key">*(Resend)* Your Resend API key.</Field>
   <Field name="Host / Port">*(SMTP)* Your mail server and port (default `587`).</Field>
   <Field name="Username / Password">*(SMTP)* Credentials for the SMTP server.</Field>
-  <Field name="Secure">*(SMTP)* Whether to connect over TLS.</Field>
+  <Field name="Use TLS">*(SMTP)* Whether to connect over TLS.</Field>
   <Field name="Gmail account">*(Gmail)* The connected Google account that sends your email. Only accounts that are connected and working are listed.</Field>
 </FieldTable>
 

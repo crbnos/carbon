@@ -1,0 +1,46 @@
+---
+title: Spend management
+plan: Business
+description: Keep purchase orders, bills and card spend in sync between Carbon and Ramp.
+---
+
+## Ramp
+
+Connect **Ramp** to keep <Term id="purchase-order">purchase orders</Term>, bills and card spend in sync between Ramp and Carbon. Ramp lets only one accounting system connect to it, so when you connect, you tell Carbon which system keeps your books. That choice decides what syncs.
+
+| | Carbon is my accounting system | Another system posts my ledger |
+| --- | --- | --- |
+| Sent to Ramp | Purchase orders, draft bills and their vendors. Your chart of accounts, <Term id="cost-center">cost centers</Term> and projects, so your team can code spend in Ramp. | Purchase orders, draft bills and their vendors. |
+| Brought into Carbon | Card charges and bills, which post to your books. Reimbursements, as drafts for you to review. Transfers and cashback too, once you map their accounts. | Which bills were paid. |
+| Who posts the spend | Carbon | Your other accounting system |
+
+Carbon syncs with Ramp every hour. Ramp also tells Carbon when something is ready, so most changes arrive sooner.
+
+Step-by-step: [Connect Ramp](/docs/integrations/setup/ramp).
+
+<Callout type="warn" title="You pick the mode once">
+The mode is fixed for the life of the connection. To change it, uninstall Ramp in Carbon and connect again.
+</Callout>
+
+<AgentContext>
+- Integration id `ramp`, category "Spend Management", config `packages/ee/src/ramp/config.tsx`. The card is active only when `RAMP_CLIENT_ID` is set.
+- Modes (`config.tsx` `modes`): `provider` = "Carbon is my accounting system", `push-only` = "Another system posts my ledger". The connect route stamps `metadata.syncMode` from the signed OAuth state.
+- In `provider` mode nothing syncs until **Card liability account** is set under **Accounts** (`planRampConvergence`, `packages/ee/src/ramp/lib/convergence.ts`).
+- In `push-only` mode the only inbound family is bill payments (`inboundCeiling`, `packages/ee/src/ramp/lib/modes.ts`), and the **Accounts** tab and the inbound **Sync** switches are hidden.
+- The hourly sync is the `ramp-sweep` cron (`packages/jobs/src/inngest/functions/integrations/ramp-sweep.ts`), which fires `ramp-sync` per company. Ramp webhooks fire the same `ramp-sync`.
+- Error messages and fixes are on the setup guide: `/docs/integrations/setup/ramp`.
+</AgentContext>
+
+## Related
+
+<Cards>
+  <Card title="Connect Ramp" href="/docs/integrations/setup/ramp">
+    Pick a mode, allow Carbon in Ramp, and map your accounts.
+  </Card>
+  <Card title="Purchase orders" href="/docs/reference/purchase-orders">
+    The orders Carbon sends to Ramp.
+  </Card>
+  <Card title="Accounting" href="/docs/reference/accounting">
+    Where Ramp charges and bills post when Carbon keeps the books.
+  </Card>
+</Cards>

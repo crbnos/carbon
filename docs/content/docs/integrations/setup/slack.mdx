@@ -4,7 +4,8 @@ plan: Business
 description: Add the Carbon Assistant to your Slack workspace in three steps.
 ---
 
-Connect Slack to use the Carbon Assistant in your Slack workspace.
+Connect Slack to use the Carbon Assistant in your Slack workspace. The same install
+gives your [workflows](/docs/integrations/workflow-apps) their Slack steps.
 
 **You need:** permission to change Settings in Carbon, and permission to add apps
 to your Slack workspace. Slack isn't available on controlled (ITAR) Carbon
@@ -34,8 +35,8 @@ deployments.
   <Step>
   ### You're connected
 
-  The Slack window turns into Carbon's Integrations page, where the Slack card says
-  **Installed**. Close that window and refresh your first Carbon tab.
+  The Slack window closes by itself, and the Slack card says **Installed**. The
+  card's **Accounts** tab lists the workspace you connected.
 
   Carbon also tries to post a welcome message in the channel you picked.
   </Step>
@@ -47,11 +48,15 @@ When you press Allow, Slack lets Carbon:
 
 - send messages as @Carbon Assistant
 - send messages to channels it isn't a member of
+- send messages with a custom name and icon
 - post messages to specific channels in Slack
+- start direct messages with people
+- create public and private channels, and manage the ones it has been added to
 - add shortcuts and slash commands that people can use
 - act as an app agent
 - view files shared in channels and conversations it has been added to
 - view messages and other content in direct messages it has been added to
+- view basic information about public channels, and private channels it has been added to
 - view the name, email domain and icon of your workspace
 - view people in your workspace, and their email addresses
 
@@ -62,11 +67,17 @@ When you press Allow, Slack lets Carbon:
 
 ```
 assistant:write
+channels:manage
+channels:read
 chat:write
+chat:write.customize
 chat:write.public
 commands
 files:read
+groups:read
+groups:write
 im:history
+im:write
 incoming-webhook
 team:read
 users:read
@@ -75,13 +86,19 @@ users:read.email
 
 </details>
 
+Connected Slack before workflows had Slack steps? Your workspace's row on the
+**Accounts** tab says **Reconnect needed**. Press **Reconnect** to grant the new
+permissions. The Assistant keeps working until you do.
+
 ## Something went wrong?
 
 | What you see | What to do |
 | --- | --- |
-| *Invalid company* or *Invalid user* | You switched Carbon company or account partway through. Start again from the company you want to connect. |
-| *Slack OAuth error* | Start again from Carbon. If it keeps happening, contact Carbon support. |
-| An error after more than 10 minutes in the Slack window | The sign-in expired. Start again from Carbon. |
+| *The connection was refused* | You pressed Cancel in Slack. Start again from Carbon. |
+| *The connection could not be verified* | More than an hour passed in the Slack window, or you switched Carbon company or account partway through. Start again from the company you want to connect. |
+| *That workspace is connected to another company* | A Slack workspace connects to one Carbon company only. Disconnect it there first, or connect a different workspace. |
+| *This integration isn't configured* | The Slack app isn't set up on this Carbon server. See the section below. |
+| *The authorization was rejected* or *Couldn't save the connection* | Start again from Carbon. If it keeps happening, contact Carbon support. |
 | Slack opened in the same tab, not a window | Your browser blocked the popup. That's fine: finish in Slack and you'll come back to Carbon. |
 
 ## Running Carbon on your own servers?
@@ -94,7 +111,8 @@ On your own servers, you create the Slack app once:
    you'll connect. An app made in another workspace needs Slack's distribution turned
    on before it can be installed elsewhere.
 2. Add every permission from the list above as a **bot** permission.
-3. Add this redirect URL: `https://<your Carbon address>/api/integrations/slack/oauth`.
+3. Add this redirect URL: `https://<your Carbon address>/api/integrations/connections/callback`.
+   An app already set up with `/api/integrations/slack/oauth` keeps working.
 4. Turn on interactivity, with this request URL:
    `https://<your Carbon address>/api/integrations/slack/interactive`.
    Add a global shortcut with the callback ID `create_ncr_modal`. It opens Carbon's
@@ -107,8 +125,9 @@ On your own servers, you create the Slack app once:
 | `SLACK_CLIENT_ID` | The app's client ID |
 | `SLACK_CLIENT_SECRET` | The app's client secret |
 | `SLACK_OAUTH_REDIRECT_URL` | The redirect URL from step 3, exactly |
-| `SLACK_SIGNING_SECRET` | The app's signing secret. Required: without it the install ends on an error, and Carbon rejects every shortcut. |
-| `SLACK_STATE_SECRET` | Any long random string. Required: without it the install can't start. |
+| `SLACK_SIGNING_SECRET` | The app's signing secret. Without it, Carbon rejects every shortcut. |
+
+Without any one of the first three, the install ends on *This integration isn't configured*.
 
 ## Related
 

@@ -49,11 +49,12 @@ Without a webhook, changes made in Jira don't come back to Carbon. Add one so th
   ### Create a webhook in Jira
 
   A Jira admin goes to **System → WebHooks** and creates a webhook with the URL shown
-  in Carbon's Jira setup instructions. Tick **Issue updated**, and type a secret
-  into the **Secret** field.
+  in Carbon's Jira setup instructions. Tick **Issue updated** and **Issue deleted**,
+  and type a secret into the **Secret** field. Deleting a Jira issue then removes its
+  link in Carbon.
 
   {/* Replace with /screens/setup-jira-webhook.png */}
-  <Screenshot label="Jira System → WebHooks, a new webhook with the Carbon URL, a secret, and Issue updated ticked" />
+  <Screenshot label="Jira System → WebHooks, a new webhook with the Carbon URL, a secret, and both issue events ticked" />
   </Step>
   <Step>
   ### Paste the same secret into Carbon

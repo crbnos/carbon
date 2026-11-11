@@ -41,7 +41,7 @@ providers, which own the data and mirror it out.
 >   (post-charge, pushChartOfAccounts, ramp-sync account verification) — fixed to
 >   `id`-only / `companyGroupId`.
 > - `getJobDatabaseClient(5)` was poisoned by the accounting sweeps' `pool.end()` on the
->   shared pool ("Cannot use a pool after calling end on the pool") — fixed in `jobs/db.ts`.
+>   shared pool ("Cannot use a pool after calling end on the pool") — fixed in `packages/jobs/src/db.ts`.
 > - **Foreign-currency charge** — FIXED + live-verified: Ramp line amounts are in the
 >   MERCHANT currency but the header is settlement `entity_amount`, so
 >   `buildTransactionLines` scales the lines to the settlement total via the shared
@@ -172,7 +172,8 @@ providers, which own the data and mirror it out.
 - **Server domains** — `lib/service.ts` is a stable compatibility facade, not an
   implementation monolith. `connection.ts` owns metadata reads, client construction, OAuth
   exchange and the accounting connection; `chart-of-accounts.ts` and `cost-centers.ts` own
-  coding-master convergence; `suppliers.ts` owns accounting/merchant/employee supplier
+  coding-master convergence; `convergence.ts` owns the install/settings-save converge plan;
+  `suppliers.ts` owns accounting/merchant/employee supplier
   resolution; `spend.ts` owns Ramp spend vendors, PO push and draft-bill push/archive;
   `sync-confirmation.ts` owns confirm payloads; `webhooks.ts` owns remote webhook lifecycle;
   and `state.ts` owns atomic metadata/Vault patches. `lib/index.ts` plus the facade preserve
@@ -227,7 +228,20 @@ and each of those families self-gates on it; coupling it here used to block card
 on an account card charges never touch). Once configured, it validates an optional `entityId`, pushes
 CoA/cost centers, and fires `trigger("ramp-sync", {companyId, reason})`. A reconnect whose
 atomic OAuth patch preserved valid mappings may therefore converge immediately. The trigger
-uses a lazy runtime `import("@carbon/jobs")` because `jobs → ee` is the dependency direction.
+is `trigger` from `@carbon/lib/trigger` (the same path the Slack service uses): `ee` cannot
+depend on `@carbon/jobs` (`jobs → ee`), and a runtime `import("@carbon/jobs")` fails in the
+built server. A failed enqueue does not fail the connect; the hourly `ramp-sweep` catches up.
+
+- **The converge plan** — `planRampConvergence(metadata)` (`lib/convergence.ts`) decides
+  each step of `convergeRamp` from the stored metadata, so the gating is pure and testable
+  (`lib/convergence.test.ts`). It returns `claimConnection` (= `rampOwnsCodingSurface`, i.e.
+  `ensureRampConnection`), `refreshConnectionOwner` (push-only: re-read
+  `accountingConnectionProvider`), `launchSync` (push-only always; provider mode only once
+  `cardLiabilityAccountId` is mapped), `validateEntityId` (the `entityId`, only when the
+  sync launches) and `pushCodingMasters` (CoA, cost centers, projects: provider mode and
+  ready). Subscriptions and the webhook always converge, so the plan omits them.
+  `extractEntityIds` (same file) reads Ramp's `{ data }` / `{ entities }` / bare-array
+  entity shapes.
 
 - `pushChartOfAccounts` pushes active, non-group accounts as Ramp coding options
   (`POST /accounting/accounts`, `id` = Carbon `account.id`, batched at
@@ -672,7 +686,7 @@ keyset helpers and its two metadata cursors are gone.
   Rules that are genuinely Ramp's stay here and say so — the draft bill is create-once
   BECAUSE a Ramp draft has no delete endpoint, so a platform that can retract one could
   update instead.
-- **`resolveSyncProvider`** (`jobs/.../integrations/sync-provider.ts`) is the ONE place
+- **`resolveSyncProvider`** (`packages/jobs/src/inngest/functions/integrations/sync-provider.ts`) is the ONE place
   that branches accounting vs spend. The event handler and drain call it instead of
   assuming every provider id is an accounting provider.
 - **Subscriptions**: `REQUIRED_SYNC_SUBSCRIPTIONS[ramp]` = `purchaseOrder` +

@@ -40,6 +40,7 @@ Deleting the issue removes the link; the Carbon record stays. Deleting the Carbo
 ## Linear
 
 Authenticate with a **Linear API key** (it begins with `lin_api`).
+Step-by-step: [Connect Linear](/docs/integrations/setup/linear).
 
 <Steps>
   <Step>
@@ -91,7 +92,7 @@ Step-by-step: [Connect Jira](/docs/integrations/setup/jira).
 
   Changes made in Jira come back to Carbon only through this webhook. To set it up, go to **System → WebHooks** in Jira and create a
   webhook with the URL shown in Carbon's setup instructions (`/api/webhook/jira/<your company id>`),
-  subscribed to **Issue updated**. Fill in the webhook's **Secret** field, and paste
+  subscribed to **Issue updated** and **Issue deleted**. Fill in the webhook's **Secret** field, and paste
   the same value into **Webhook Secret** in Carbon. With it saved, Carbon only accepts webhook requests
   Jira has signed.
   </Step>

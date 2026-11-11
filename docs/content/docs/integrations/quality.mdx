@@ -1,0 +1,108 @@
+---
+title: Quality
+plan: Business
+description: Push your customers, suppliers, and parts from Carbon to your Mount quality system.
+---
+
+**Mount** is a quality management system for non-conformances, corrective actions, audits, and risk. Carbon pushes your customers, suppliers, and parts to Mount, so a Mount record can name the part or company it is about. Carbon never reads a Mount value back and never deletes a Mount record.
+
+## Connect Mount
+
+You need the `settings` update permission in Carbon.
+
+<Steps>
+  <Step>
+  ### Create an API client in Mount
+
+  In Mount, go to **Settings → API → API Clients** and press **Create**.
+  </Step>
+  <Step>
+  ### Set the Member ID
+
+  Set **Member ID** to a member who can view and edit companies and objects. Every request from Carbon acts as that member. Leave **Allow direct key auth** off; Carbon does not use it.
+  </Step>
+  <Step>
+  ### Create a secret
+
+  Copy the **Client ID**. Under **Create secret**, press **Create secret** and copy the key at once. Mount shows it only once.
+  </Step>
+  <Step>
+  ### Find the part definition
+
+  Carbon writes parts as Mount objects under a definition. Go to **Settings → Definitions → Objects** and open the one for parts, or press **New**. The slug ends its address: `/settings/definitions/objects/parts` means `parts`.
+  </Step>
+  <Step>
+  ### Install in Carbon
+
+  Open **Settings → Integrations → Mount**, fill in the fields, and install.
+  </Step>
+</Steps>
+
+<FieldTable>
+  <Field name="Client ID" required>The ID of the API client in Mount.</Field>
+  <Field name="Client secret" required>The secret key. Stored as a secret.</Field>
+  <Field name="Tenant" required>The first part of your Mount address: `acme.mount.cloud` is `acme`.</Field>
+  <Field name="Domain">For a tenant split into domains: the domain's title or identifier.</Field>
+  <Field name="API URL">Empty means `https://api.mount.cloud`. Must be HTTPS.</Field>
+  <Field name="Part definition slug" required>The slug from step 4. The default is `parts`.</Field>
+  <Field name="Customer company type">Empty means Mount's **Customer** type.</Field>
+  <Field name="Supplier company type">Empty means Mount's **Supplier** type.</Field>
+</FieldTable>
+
+<Callout type="warn" title="Set the Member ID before you install">
+Mount refuses every request from a client with no Member ID. If the Mount card shows **Unhealthy**, hover the badge for the reason. Fix it in Mount, then press **Update** in Carbon to check again.
+</Callout>
+
+## Push records
+
+After install, the Mount drawer has three Push actions. Each sends the records Mount does not have, and the records you changed since the last push. Carbon also runs all three every day at 02:30 UTC.
+
+Carbon matches on the <Term id="readable-id">readable ID</Term>. If Mount already has a record with that identifier, Carbon updates and links it. If Mount has two or more, Carbon skips the record and lists it as needing attention.
+
+### Push customers and Push suppliers
+
+Each one becomes a Mount **Company** of the Customer or Supplier type, with its ID, name, tax ID, VAT number, and website.
+
+### Push parts
+
+Only parts go, not materials, tools, or other <Term id="item">item</Term> types. Mount gets one object per part number, with its ID and name. Of a part's revisions, Mount gets the released one before a draft. Inactive parts go too, so an old part stays selectable in Mount.
+
+### Read the outcome
+
+Each action shows its last push, the counts, and each record that needs attention, with the reason. One push sends at most 10,000 records. Push again for the rest. A push you start notifies you when it needs attention. The daily push notifies nobody.
+
+<Screenshot label="Mount drawer with the three Push actions and the last outcome under each" />
+
+## Related
+
+<Cards>
+  <Card title="Suppliers & customers" href="/docs/reference/suppliers-and-customers">
+    The customer and supplier records Carbon pushes.
+  </Card>
+  <Card title="Items" href="/docs/reference/items">
+    Parts and their revisions.
+  </Card>
+</Cards>
+
+<AgentContext>
+Mechanics: the integration id is `mount` (`packages/ee/src/mount/config.tsx`). A Push button POSTs `/api/integrations/mount/publish?entityType=customer|supplier|item`, which triggers the Inngest function `mount-publish`. The cron `mount-sweep` (02:30 UTC) triggers it for every active install with trigger "schedule". One run per company at a time. A run pushes batches of 200 and stops when no stale record remains, after 50 batches, when a batch publishes nothing, or when a setting blocks the whole run. The outcome of each entity type is stored at `companyIntegration.metadata.lastPublish.customer|supplier|item`. A record is stale when it has no `externalIntegrationMapping` row for `mount`, or when its `updatedAt` (or its tax row's `updatedAt`) is later than the mapping's `lastSyncedAt`. Records that failed are tried last on the next run. Parts come from the `parts` view, which picks one revision per part number (released before draft, then newest).
+
+Authentication: Carbon exchanges the client ID and secret for an access token at `/auth/v2/token` (client credentials, `X-Tenant` header). Requests send `Api-Version: 2026-06-01`. Carbon follows no redirects.
+
+Exact messages and what they mean:
+
+- "Part definition slug "X" isn't in Mount. Mount has: a, b." The parts push failed. Correct Part definition slug.
+- "Part definition slug isn't set. Set it in the integration settings."
+- "Customer company type "X" isn't in Mount. Mount has: ... Customers were sent without a type." A warning; the records were still sent. The same message exists for suppliers.
+- "Mount has no company type called "Customer". ... Set Customer company type in the integration settings to choose one."
+- "Mount domain "X" not found. Use its identifier or title, as listed in Mount." Every request fails until Domain is corrected or cleared.
+- "Mount has N records with this identifier. Delete or merge the extra ones in Mount, then push again."
+- "Customer has no readableId; Mount needs a stable identifier to match on" (also Supplier, Item).
+- "Mount API URL must use HTTPS", "Mount integration is missing a client secret", "Mount integration is missing a client ID".
+- Health check: "... Check the client ID, client secret and tenant, and that the secret has not expired in Mount." (token refused with 400 or 401); "... Mount accepted the client but refused the request: set a Member ID on the API client in Mount, and check that member can view and edit companies and objects." (403); "... Check the API URL." (Mount could not be reached).
+- Toasts: "The push to Mount did not start. Try again.", "The push to Mount failed", "The push to Mount finished. Some records need attention", "The push to Mount finished".
+- Notification titles: "Mount push failed", "Mount push needs attention". Only a manual push notifies, and only the user who pressed it.
+- Under a button: "More records are waiting. Push again to continue."
+
+Carbon never creates a part definition or a company type in Mount, never deletes Mount records, and does not map Carbon's active or inactive status to Mount.
+</AgentContext>

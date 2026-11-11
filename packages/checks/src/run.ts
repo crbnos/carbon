@@ -32,6 +32,10 @@ import {
   findDroppedFunctionChanges
 } from "./conformance/function-redefinition-keeps-changes";
 import { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
+import {
+  findIntegrationsWithoutRule,
+  INTEGRATION_HAS_RULE
+} from "./conformance/integration-has-rule";
 import { journalStatusFilter } from "./conformance/journal-status-filter";
 import { linguiMacroMisuse } from "./conformance/lingui-macro-misuse";
 import {
@@ -102,6 +106,7 @@ import {
   loadDeploymentEnvSources,
   loadEventFunctionSources,
   loadIntegrationConfigs,
+  loadIntegrationRuleSources,
   loadListSources,
   loadScheduledConstantSources
 } from "./sources/cross-file";
@@ -231,6 +236,9 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       noAuthzDdlInMigrations(loadManagedFunctions(root))
     ]),
     ...scanModules(loadModules(modulesDir(root))),
+    ...findIntegrationsWithoutRule(loadIntegrationRuleSources(root)).map(
+      (violation) => ({ checkId: INTEGRATION_HAS_RULE, violation })
+    ),
     ...scanAll(loadServerFiles(root), SERVER_CHECKS),
     // noMissingAuditColumn needs the real column list, so it is built from the
     // generated types here rather than sitting in TS_CHECKS — the same shape as

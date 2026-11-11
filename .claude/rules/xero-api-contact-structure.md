@@ -91,7 +91,10 @@ Carbon address item: `{ label, type, line1, line2, city, country, region, postal
 - **Fetch local** (`fetchCustomersByIds`/`fetchSuppliersByIds`): joins
   `customer`/`supplier` -> `*Tax` (`taxId`) -> `*Location` -> `address` ->
   `*Contact` junction -> `contact` (first linked contact's name/email/phones).
-  `workPhone` falls back to `customer.phone` if the contact has none.
+  Both queries `.orderBy(contactsWithEmailFirst)` (`core/utils.ts`), so the "first"
+  contact is one with a non-blank email when the party has one. A contact's email is
+  optional (#2110), so without the ordering a party could push no email while another of
+  its contacts has one. `workPhone` falls back to `customer.phone` if the contact has none.
 - **Upsert local** (`upsertLocal`): upserts the `customer`/`supplier` row +
   `*Tax` row, then upserts the linked `contact` person via the
   `customerContact`/`supplierContact` junction. `isVendor` is
@@ -138,3 +141,6 @@ Contact endpoints used:
 - `firstName`/`lastName` default to `""` (Xero company contacts often have neither);
   on local upsert, blank `firstName` falls back to the entity `Name`.
 - Sync writes go through `withTriggersDisabled` to avoid the sync->trigger->sync loop.
+- `EmailAddress` is optional on both sides. A Carbon party with no contact email pushes
+  no `EmailAddress`. A new party read joined to `contact` needs
+  `.orderBy(contactsWithEmailFirst)` too, or it can pick a contact with no email.

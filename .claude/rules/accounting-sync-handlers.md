@@ -4,6 +4,9 @@ paths:
   - "packages/jobs/src/inngest/functions/events/sync.ts"
   - "packages/jobs/src/inngest/functions/events/sync-tables.ts"
   - "packages/ee/src/accounting/**"
+  - "packages/ee/src/sync/**"
+  - "packages/ee/src/xero/**"
+  - "packages/ee/src/rillet/**"
 ---
 
 # Accounting Sync Handlers
@@ -229,8 +232,7 @@ into Carbon as `payment` + `invoiceSettlement` rows that close the
   sets `payment.journalId`, and derives document status. **Pulled payments DO post
   to Carbon's GL** — no double-count because `documents`-mode `Payment` journals are
   DOC_BACKED-excluded from outbound push (the payment journal never re-posts to the
-  provider). `getSettledInvoiceStatus` is retained for tests only (status is
-  view-derived). Provider-omitted rates remain `null` until authoritative company
+  provider). Document status is view-derived. Provider-omitted rates remain `null` until authoritative company
   and currency reads confirm identity; foreign payments require a valid snapshot.
   Inbound payment amounts/source principal stay in document currency, while
   target principal is base. Outbound prior-credit-funded payments are rejected
@@ -592,19 +594,17 @@ The explicit card set includes `ONE_TIME_CARD_DELIVERY`; only documented bank ra
 the AP bank-payment path. Unknown methods, vendor credits, manual payments, and other
 unmapped funding semantics fail visibly rather than becoming a statement-bank payment.
 `ramp-sync-reimbursement-family.ts` owns listing and confirmation and delegates an item to
-`syncRampReimbursement` in `ramp-sync-reimbursement.ts`. The staging helper uses an
-advisory lock scoped to the company and Ramp reimbursement id, then
-`stageOrResumeRampReimbursementInvoice` atomically creates the supplier interaction, Draft
-purchase invoice, delivery, lines, and mapping. It may adopt only one unposted system Draft
-whose expected Ramp reference, supplier, dates, currency, complete delivery/line structure,
-coding and amounts match, with valid preserved FX, zero tax/shipping, and no PO/item/asset
-provenance. Partial or mismatched reference-only invoices are rejected without rewriting.
-The family confirms Ramp only after the
-invoice, and the payment when Ramp-paid, are observably Posted. Do not split either staged
-write set into Supabase-client calls; those calls do not form a transaction.
-`REIMBURSED` and `REIMBURSED_VIA_PUSH` require that payment; the supported invoice-only
-states are `APPROVED`, `AWAITING_PAYMENT`, `AWAITING_PUSH_PAYMENT`, and
-`MANUALLY_REIMBURSED`. Other states fail before any financial write. Repayment funding is
+`syncRampReimbursement` in `ramp-sync-reimbursement.ts`. `createRampReimbursement` takes an
+advisory lock scoped to the company and Ramp reimbursement id, then atomically creates the
+Draft `reimbursement` (an employee party, reference `RAMP-REIMB-<id>`), its coding lines and
+the Ramp mapping. It creates and never re-writes: an already-mapped reimbursement returns
+its existing row, and only a missing payout intent may be added to the mapping metadata.
+Nothing auto-posts at import. The family confirms Ramp once the Draft and its mapping exist.
+Do not split the staged write set into Supabase-client calls; those calls do not form a
+transaction. `REIMBURSED` and `REIMBURSED_VIA_PUSH` also record a payout intent, which Post
+turns into the `payment` + `invoiceSettlement`; `APPROVED`, `AWAITING_PAYMENT`,
+`AWAITING_PUSH_PAYMENT` and `MANUALLY_REIMBURSED` import the document only (see
+`ramp-integration.md`). Other states fail before any financial write. Repayment funding is
 also explicit: only documented lowercase `ach` currently selects the bank offset; unknown
 or statement-credit funding cannot fall through to a bank account.
 
@@ -705,6 +705,11 @@ a dimension whose Field or value can't be provisioned is dropped from that line'
 refs. `createField` (`POST /fields`) is VERIFY-flagged — confirm the payload on
 the Rillet sandbox.
 
+Each value's readable label comes from `resolveDimensionValueLabels`
+(`core/dimension-mapping.ts`), which reads the source table and label column that
+`DIMENSION_LABEL_SOURCES` names for the dimension's `entityType` (`Item` →
+`readableIdWithRevision`; `ProjectElement` → `projectElement.readableId`, not its name).
+
 **Xero/QBO keep the slot system** (`dimensionSlots` + `maxJournalDimensionSlots`
 = 2 each; `validateDimensionSlots`, the Dimensions settings tab). For Rillet the
 slot config is now inert (the mapper no longer reads it) — the tab's slot editor
@@ -716,6 +721,10 @@ is dead config for Rillet only, left in place for the capped providers.
 - Rillet create POSTs carry a deterministic, **entity-scoped** `Idempotency-Key`: `buildRilletIdempotencyKey` (`providers/rillet/provider.ts`) = sha256 of `companyId:operation:localId`; Rillet replays the stored response for 24h. The payload is deliberately **NOT hashed** (v4 Pillar C): a crash between the remote create and the local mapping write retries with a possibly-drifted payload, and a payload-sensitive key would mint a fresh key and duplicate the remote document. Contract pinned by `providers/rillet/__tests__/provider.test.ts`.
 - The event-queue drainer (`events/queue.ts`) archives unknown-`handlerType` messages to pgmq's dead-letter table (`pgmq.a_event_system`) instead of crash-looping the whole drain (v4 F8) — a poison message can no longer wedge ALL event processing.
 - `ContactSyncer.getRemoteId` checks both `customer` and `vendor` mappings (one Xero Contact backs both).
+- A contact's email is optional (#2110). Every party read that joins `contact` (Xero
+  `ContactSyncer`, QBO customer/vendor/purchase-order, Rillet customer/vendor) orders by
+  `contactsWithEmailFirst` (`core/utils.ts`), so the syncer's "first contact" has an email
+  when the party has one. Add the same `.orderBy` to any new party read.
 - Transaction syncers (PO, invoice, bill) use `ensureDependencySynced(type, localId)` for JIT dependency syncing (e.g. push the customer before its invoice); `dependsOn` is declared in `ENTITY_DEFINITIONS`.
 - DELETE is entity-specific rather than generic: mapped documents/payments and native card
   charges implement provider-aware void/delete paths where supported; unsupported or
@@ -728,8 +737,11 @@ is dead config for Rillet only, left in place for the capped providers.
   disabled — enable it in the accounting sync settings to push these
   journals") unless the company's per-type config sets `enabled`. The
   default-off set (`POSTING_SYNC_DEFAULT_SOURCE_TYPES` excludes them) is the
-  three return types, `'Revenue Recognition'`, `'Asset Transfer'`, `'Lease'`
-  and `'Lease Run'`: a new journal type never starts pushing to a customer's
+  three return types, `'Revenue Recognition'`, `'Asset Transfer'`, `'Lease'`,
+  `'Lease Run'`, and the project and service journal types (`Timesheet`,
+  `'Project Issue'`, `'Project Expense'`, `'Project Transfer'`, `Burden`,
+  `'Project Close'`, `'Service Order'`, `'Service Job'`, all `individual`
+  granularity, added in #2003): a new journal type never starts pushing to a customer's
   external ledger unasked (plan decision 1 of
   `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I).
   **`'Lease'`** (migration `20261006220301_fleet-rental-lease-enums.sql`,

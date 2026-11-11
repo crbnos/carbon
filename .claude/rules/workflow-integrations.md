@@ -256,10 +256,12 @@ revoked.
 The vault RPCs are `service_role` only, so a user client cannot decrypt a token at all.
 `resolvePieceAuth(serviceRole, companyId, pieceName, connectionId)` (`integrations/piece-auth.ts`)
 is the ONE copy of "read the row, check it is this piece's, check its scopes, refresh it",
-shared by `runIntegrationAction` and the builder's property options (`workflows.service.ts`).
+shared by `runIntegrationAction`, the builder's property options (`workflows.service.ts`)
+and `sendViaGmail` (`packages/jobs/src/email/gmail.ts`), which sends a company's Email
+through its Gmail connection (`email-integrations.md`).
 It returns `{ ok: true, accessToken }` or a `reason` each caller words: `no-connection` (another
 company's or another piece's row), `missing-scopes`, `refreshing`, `reconnect`,
-`misconfigured` (the OAuth app, not the account) or `failed`. Both callers pass
+`misconfigured` (the OAuth app, not the account) or `failed`. Every caller passes
 `getCarbonServiceRole()` and a `companyId` from the run or the request.
 
 Do not move the row read to the owner's client. The row's RLS asks for `settings_view`,
@@ -509,7 +511,9 @@ scalar, so `list<list<T>>` has no representation.
 Every step also gets `count` (a list's length — `compare` has no "is empty" operator,
 so branching on "did anything come back?" needs it) and `result`, the raw JSON, kept
 so already-saved workflows keep working and so a field the schema missed stays
-reachable.
+reachable. A list keeps only its first `MAX_LIST_ITEMS` (100) items, but `count` is what the
+vendor returned; when they differ, `droppedItems` (`project.ts`) makes the step summary say
+"N came back; only the first 100 are used" (`runIntegrationAction`).
 
 **An action with no `outputSchema` fails the generator** (`UnmappableOutputError`),
 exactly as `UnmappablePropertyError` refuses an unmappable input. Coverage is
