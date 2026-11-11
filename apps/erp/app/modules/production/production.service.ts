@@ -201,7 +201,8 @@ import {
   TIME_ENTRY_BEFORE_CUTOVER_ERROR
 } from "~/modules/shared/shared.service";
 import type { StorageItem } from "~/types";
-import type { Cursor } from "~/utils/cursor";
+import { type Cursor, encodeCursor } from "~/utils/cursor";
+import { PAGE_SIZE } from "~/utils/pagination";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import {
   getGenericFilter,
@@ -1222,6 +1223,102 @@ export async function getDemandProjections(
     .eq("locationId", params.locationId)
     .eq("companyId", params.companyId)
     .in("periodId", params.periodIds);
+}
+
+/** Dated, location-scoped forecast rows for external reporting. */
+export async function getDemandForecastReport(
+  db: Kysely<KyselyDatabase>,
+  params: {
+    companyId: string;
+    locationId: string;
+    itemId?: string;
+    startDate?: string;
+    endDate?: string;
+    after?: { startDate: string; itemId: string; id: string };
+    cursorKeys: string[];
+  }
+) {
+  let query = db
+    .selectFrom("demandProjection as projection")
+    .innerJoin("item as item", (join) =>
+      join
+        .onRef("item.id", "=", "projection.itemId")
+        .on("item.companyId", "=", params.companyId)
+    )
+    .innerJoin("period as period", "period.id", "projection.periodId")
+    .select([
+      "projection.id",
+      "projection.itemId",
+      "projection.forecastQuantity",
+      "projection.consumedQuantity",
+      "item.readableIdWithRevision as item",
+      "item.name as itemName",
+      "item.unitOfMeasureCode",
+      sql<string>`${sql.ref("period.startDate")}::text`.as("startDate"),
+      sql<string>`${sql.ref("period.endDate")}::text`.as("endDate")
+    ])
+    .where("projection.companyId", "=", params.companyId)
+    .where("projection.locationId", "=", params.locationId);
+
+  if (params.itemId)
+    query = query.where("projection.itemId", "=", params.itemId);
+  if (params.startDate) {
+    query = query.where("period.startDate", ">=", params.startDate);
+  }
+  if (params.endDate) {
+    query = query.where("period.startDate", "<=", params.endDate);
+  }
+  if (params.after) {
+    const after = params.after;
+    query = query.where((eb) =>
+      eb.or([
+        eb("period.startDate", ">", after.startDate),
+        eb.and([
+          eb("period.startDate", "=", after.startDate),
+          eb("projection.itemId", ">", after.itemId)
+        ]),
+        eb.and([
+          eb("period.startDate", "=", after.startDate),
+          eb("projection.itemId", "=", after.itemId),
+          eb("projection.id", ">", after.id)
+        ])
+      ])
+    );
+  }
+
+  const rows = await query
+    .orderBy("period.startDate", "asc")
+    .orderBy("projection.itemId", "asc")
+    .orderBy("projection.id", "asc")
+    .limit(PAGE_SIZE + 1)
+    .execute();
+  const hasMore = rows.length > PAGE_SIZE;
+  const page = rows.slice(0, PAGE_SIZE);
+  const last = page.at(-1);
+  return {
+    results: page.map((row) => ({
+      itemId: row.itemId,
+      item: row.item,
+      itemName: row.itemName,
+      unitOfMeasureCode: row.unitOfMeasureCode,
+      startDate: row.startDate,
+      endDate: row.endDate,
+      forecastQuantity: row.forecastQuantity,
+      consumedQuantity: row.consumedQuantity,
+      remainingQuantity: Math.max(
+        0,
+        row.forecastQuantity - row.consumedQuantity
+      )
+    })),
+    nextCursor:
+      hasMore && last
+        ? encodeCursor({
+            values: [last.startDate, last.itemId],
+            id: last.id,
+            keys: params.cursorKeys
+          })
+        : null
+  };
 }
 
 export async function getJobDocuments(

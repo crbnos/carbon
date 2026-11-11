@@ -2,15 +2,149 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it } from "vitest";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { describe, expect, it, vi } from "vitest";
+import { decodeCursor } from "~/utils/cursor";
+import { PAGE_SIZE } from "~/utils/pagination";
 import {
   buildAssemblyToolStepLinks,
   computeStepTimings,
+  getDemandForecastReport,
   maxToolQuantityByItem,
   planAssemblyStepMarkerRemap,
   planAssemblyStepMarkerSync,
   planOrphanStepAdoption
 } from "./production.service";
+
+describe("getDemandForecastReport", () => {
+  it("scopes the dated report and returns a cursor after the last kept row", async () => {
+    const query = {
+      innerJoin: vi.fn(),
+      select: vi.fn(),
+      where: vi.fn(),
+      orderBy: vi.fn(),
+      limit: vi.fn(),
+      execute: vi.fn().mockResolvedValue(
+        Array.from({ length: PAGE_SIZE + 1 }, (_, index) => ({
+          id: `projection-${String(index).padStart(3, "0")}`,
+          itemId: `item-${String(index).padStart(3, "0")}`,
+          item: `PART-${index}`,
+          itemName: "Part",
+          unitOfMeasureCode: "EA",
+          startDate: "2026-11-09",
+          endDate: "2026-11-15",
+          forecastQuantity: 25,
+          consumedQuantity: 8
+        }))
+      )
+    };
+    for (const method of [
+      "innerJoin",
+      "select",
+      "where",
+      "orderBy",
+      "limit"
+    ] as const) {
+      query[method].mockReturnValue(query);
+    }
+    const db = {
+      selectFrom: vi.fn().mockReturnValue(query)
+    } as unknown as Kysely<KyselyDatabase>;
+    const cursorKeys = ["demandForecastReport:v1", "company-1", "location-1"];
+
+    const result = await getDemandForecastReport(db, {
+      companyId: "company-1",
+      locationId: "location-1",
+      itemId: "item-1",
+      startDate: "2026-11-09",
+      endDate: "2026-11-30",
+      cursorKeys
+    });
+
+    expect(db.selectFrom).toHaveBeenCalledWith(
+      "demandProjection as projection"
+    );
+    expect(query.where).toHaveBeenCalledWith(
+      "projection.companyId",
+      "=",
+      "company-1"
+    );
+    expect(query.where).toHaveBeenCalledWith(
+      "projection.locationId",
+      "=",
+      "location-1"
+    );
+    expect(query.where).toHaveBeenCalledWith(
+      "projection.itemId",
+      "=",
+      "item-1"
+    );
+    expect(query.where).toHaveBeenCalledWith(
+      "period.startDate",
+      ">=",
+      "2026-11-09"
+    );
+    expect(query.where).toHaveBeenCalledWith(
+      "period.startDate",
+      "<=",
+      "2026-11-30"
+    );
+    expect(query.limit).toHaveBeenCalledWith(PAGE_SIZE + 1);
+    expect(result.results).toHaveLength(PAGE_SIZE);
+    expect(result.results[0]?.remainingQuantity).toBe(17);
+    expect(decodeCursor(result.nextCursor)).toEqual({
+      values: ["2026-11-09", "item-099"],
+      id: "projection-099",
+      keys: cursorKeys
+    });
+
+    query.execute.mockResolvedValueOnce([]);
+    const next = await getDemandForecastReport(db, {
+      companyId: "company-1",
+      locationId: "location-1",
+      cursorKeys,
+      after: {
+        startDate: "2026-11-09",
+        itemId: "item-099",
+        id: "projection-099"
+      }
+    });
+    expect(query.where).toHaveBeenCalledWith(expect.any(Function));
+    const keyset = query.where.mock.calls.find(
+      ([condition]) => typeof condition === "function"
+    )?.[0];
+    const eb = Object.assign(
+      (column: string, operator: string, value: string) => [
+        column,
+        operator,
+        value
+      ],
+      {
+        and: (conditions: unknown[]) => ({ and: conditions }),
+        or: (conditions: unknown[]) => ({ or: conditions })
+      }
+    );
+    expect(keyset?.(eb)).toEqual({
+      or: [
+        ["period.startDate", ">", "2026-11-09"],
+        {
+          and: [
+            ["period.startDate", "=", "2026-11-09"],
+            ["projection.itemId", ">", "item-099"]
+          ]
+        },
+        {
+          and: [
+            ["period.startDate", "=", "2026-11-09"],
+            ["projection.itemId", "=", "item-099"],
+            ["projection.id", ">", "projection-099"]
+          ]
+        }
+      ]
+    });
+    expect(next).toEqual({ results: [], nextCursor: null });
+  });
+});
 
 describe("planAssemblyStepMarkerSync", () => {
   it("updates marked steps, leaves new sources to insert, and marks removed ones stale", () => {
