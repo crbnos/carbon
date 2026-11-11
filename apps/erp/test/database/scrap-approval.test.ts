@@ -1003,24 +1003,43 @@ describeLocal("scrap approval", () => {
   }, 60_000);
 
   it("refuses to value scrap of another company's tracked entity", async () => {
-    const foreign = `${f.prefix}-not-this-company`;
-    await expect(
-      scrapApproval.describeScrap(f.db, f.companyId, {
-        type: "operation",
-        jobOperationId: job.operationId,
+    // A real entity, stored in a second company.
+    const other = await alwaysPostFixture();
+    const stored = await other.db
+      .insertInto("trackedEntity")
+      .values({
+        companyId: other.companyId,
+        itemId: other.partId,
         quantity: 1,
-        trackedEntityId: foreign
+        status: "Available",
+        sourceDocument: "Item",
+        sourceDocumentId: other.partId,
+        createdBy: USER
       })
-    ).rejects.toThrow("Tracked entity not found");
-    await expect(
-      scrapApproval.describeScrap(f.db, f.companyId, {
-        type: "item",
-        itemId: f.partId,
-        quantity: 1,
-        trackedEntityId: foreign
-      })
-    ).rejects.toThrow("Tracked entity not found");
-  });
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    const foreign = stored.id;
+    try {
+      await expect(
+        scrapApproval.describeScrap(f.db, f.companyId, {
+          type: "operation",
+          jobOperationId: job.operationId,
+          quantity: 1,
+          trackedEntityId: foreign
+        })
+      ).rejects.toThrow("Tracked entity not found");
+      await expect(
+        scrapApproval.describeScrap(f.db, f.companyId, {
+          type: "item",
+          itemId: f.partId,
+          quantity: 1,
+          trackedEntityId: foreign
+        })
+      ).rejects.toThrow("Tracked entity not found");
+    } finally {
+      await other.cleanup();
+    }
+  }, 60_000);
 
   it("refuses an approver when the tier lookup fails", async () => {
     await scrapRules(0, 500);
