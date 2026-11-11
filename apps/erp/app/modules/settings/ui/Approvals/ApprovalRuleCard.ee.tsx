@@ -60,6 +60,8 @@ const ApprovalRuleCard = memo(
       scrap: t`Scrap`
     };
     const documentTypeLabel = documentTypeLabels[documentType];
+    // A tier's floor is inclusive: the rule applies at the floor and above.
+    const floor = currencyFormatter.format(rule.lowerBoundAmount ?? 0);
 
     const canEdit = permissions.can("update", "settings");
     // The delete route needs settings delete; offer it only to those who hold it.
@@ -100,7 +102,7 @@ const ApprovalRuleCard = memo(
                         (upperBound != null
                           ? ` ${currencyFormatter.format(rule.lowerBoundAmount ?? 0)} – ${currencyFormatter.format(upperBound)}`
                           : (rule.lowerBoundAmount ?? 0) > 0
-                            ? ` over ${currencyFormatter.format(rule.lowerBoundAmount ?? 0)}`
+                            ? ` ${t`${floor} and above`}`
                             : ` ${t`of any value`}`)}
                     </Heading>
                     <Status

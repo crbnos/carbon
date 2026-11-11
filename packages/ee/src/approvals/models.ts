@@ -57,6 +57,23 @@ export const approvalDocumentTypesWithAmounts: ApprovalDocumentType[] = [
   "scrap"
 ];
 
+/**
+ * Where each tier of an amount-tiered rule set ends: the next enabled tier's
+ * floor, null for the top tier. A disabled rule matches nothing, so it ends
+ * no tier.
+ */
+export function tierCeilings(
+  rules: { lowerBoundAmount: number | null; enabled: boolean | null }[]
+): (lowerBoundAmount: number) => number | null {
+  const floors = Array.from(
+    new Set(
+      rules.filter((rule) => rule.enabled).map((r) => r.lowerBoundAmount ?? 0)
+    )
+  ).sort((a, b) => a - b);
+  return (lowerBoundAmount) =>
+    floors.find((floor) => floor > lowerBoundAmount) ?? null;
+}
+
 export const approvalFiltersValidator = z.object({
   documentType: z.enum(approvalDocumentType, {
     error: "Document type is required"

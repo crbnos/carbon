@@ -4,7 +4,8 @@
 
 import {
   type ApprovalRule,
-  approvalDocumentTypesWithAmounts
+  approvalDocumentTypesWithAmounts,
+  tierCeilings
 } from "@carbon/ee/approvals";
 import {
   Button,
@@ -34,16 +35,6 @@ type ApprovalRulesProps = {
   changeRequestRules?: ApprovalRule[];
   scrapRules: ApprovalRule[];
 };
-
-// A tiered rule's ceiling is the next-higher tier's minimum (null for the top
-// tier).
-function tierCeilings(rules: ApprovalRule[]) {
-  const floors = Array.from(
-    new Set(rules.map((r) => r.lowerBoundAmount ?? 0))
-  ).sort((a, b) => a - b);
-  return (lowerBoundAmount: number): number | null =>
-    floors.find((f) => f > lowerBoundAmount) ?? null;
-}
 
 const ApprovalRules = memo(
   ({
