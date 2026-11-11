@@ -4711,14 +4711,16 @@ export async function closeIssue(
     /**
      * Meets the scrap approval rules. `approve` gets what the close writes
      * off as Scrap, before anything posts, and refuses the close by returning
-     * false; `settle` is told afterwards whether the close posted.
+     * false; `settle` is told afterwards what came of the close.
      */
     scrapApproval?: {
       approve: (
         scrap: IssueScrapWriteOff[],
         readableId: string
       ) => Promise<boolean>;
-      settle: (posted: boolean) => Promise<void>;
+      settle: (
+        outcome: "written" | "refused" | { error: unknown }
+      ) => Promise<void>;
     };
   }
 ): Promise<Result<{ id: string; warning?: string }>> {
@@ -5612,7 +5614,8 @@ export async function closeIssue(
 
     const { closedNow, ...closed } = result;
     settled = true;
-    await args.scrapApproval?.settle(closedNow);
+    // An issue someone else closed meanwhile posted nothing of this close.
+    await args.scrapApproval?.settle(closedNow ? "written" : "refused");
     if (closedNow) {
       const notes = [warning];
       if (writtenOffShort.size > 0) {
@@ -5634,7 +5637,7 @@ export async function closeIssue(
     return { data: { ...closed, warning }, error: null };
   } catch (err) {
     logger.error("closeIssue failed", { companyId, nonConformanceId, err });
-    if (!settled) await args.scrapApproval?.settle(false);
+    if (!settled) await args.scrapApproval?.settle({ error: err });
     return engine.engineErrResult(err, "Failed to close NCR");
   }
 }

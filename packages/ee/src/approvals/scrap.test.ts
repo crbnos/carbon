@@ -9,6 +9,7 @@ import {
   operationScrapUnitValue,
   type ScrapValuationMaterial,
   scrapApproverRefusal,
+  scrapWriteFailure,
   sumBatchScrap
 } from "./scrap";
 
@@ -208,5 +209,28 @@ describe("failedScrapPostingSettlement", () => {
     expect(
       failedScrapPostingSettlement({ refused: true, committed: "unknown" })
     ).toBe("keep");
+  });
+});
+
+describe("scrapWriteFailure", () => {
+  it.each([
+    [{ status: 409, code: "23505" }, "refused"],
+    [{ status: 422 }, "refused"],
+    [{ code: "P0001" }, "refused"],
+    [new Error("Disposition changed while closing; please retry."), "refused"]
+  ] as const)("knows %o did not write", (error, expected) => {
+    expect(scrapWriteFailure(error)).toBe(expected);
+  });
+
+  it.each([
+    [{ status: 0, code: "" }, "unknown"],
+    [{ status: 500 }, "unknown"],
+    [{ status: 504 }, "unknown"],
+    [{ code: "08006" }, "unknown"],
+    [{ code: "57P01" }, "unknown"],
+    [{ code: "ECONNRESET" }, "unknown"],
+    [null, "unknown"]
+  ] as const)("cannot tell whether %o wrote", (error, expected) => {
+    expect(scrapWriteFailure(error)).toBe(expected);
   });
 });

@@ -3805,7 +3805,11 @@ export const adjustInventory = defineServiceFn({
         : adjustment,
       service.postInventoryAdjustment
     );
-    await settleErpScrapApproval(ctx, approval.scrapRequestId, !posted.error);
+    await settleErpScrapApproval(
+      ctx,
+      approval.scrapRequestId,
+      posted.error ? { error: posted.error } : "written"
+    );
     if (posted.error) {
       return fromServerFn(
         ctx,

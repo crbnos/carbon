@@ -519,8 +519,8 @@ export const completeIssue = defineServiceFn({
             scrap.scrapRequestIds = approved.scrapRequestIds;
             return true;
           },
-          settle: (posted) =>
-            settleErpScrapApprovals(ctx, scrap.scrapRequestIds, posted)
+          settle: (outcome) =>
+            settleErpScrapApprovals(ctx, scrap.scrapRequestIds, outcome)
         }
       }
     );
@@ -1563,7 +1563,11 @@ export const rejectInspection = defineServiceFn({
     await settleErpScrapApprovals(
       ctx,
       approval.scrapRequestIds,
-      !rejected.error && Boolean(rejected.data?.writeOff)
+      rejected.error
+        ? { error: rejected.error }
+        : rejected.data?.writeOff
+          ? "written"
+          : "refused"
     );
     if (rejected.error) return rejected.error;
 

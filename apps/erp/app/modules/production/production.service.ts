@@ -111,7 +111,8 @@ import {
   hasEnabledScrapRule,
   hasScrapApprovalRules,
   markScrapApprovalPosted,
-  recordScrapApprovals
+  recordScrapApprovals,
+  scrapWriteFailure
 } from "@carbon/ee/approvals/scrap.server";
 import { planningGroupMrpDeps } from "@carbon/ee/pegging.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
@@ -4316,18 +4317,25 @@ export async function scrapQuantityClient(ctx: ServiceContext) {
 }
 
 /**
+ * What came of the write an approval was recorded for: written, refused (it
+ * did not happen), or failed with an error that may or may not have written.
+ */
+export type ScrapWriteOutcome = "written" | "refused" | { error: unknown };
+
+/**
  * Closes the approval `approveErpScrap` recorded: marks it posted once the
- * quantity is written, or removes it when the write failed.
+ * quantity is written, removes it when the write is known not to have
+ * happened, and otherwise keeps it, not confirmed.
  */
 export async function settleErpScrapApproval(
   ctx: ServiceContext,
   scrapRequestId: string | null,
-  written: boolean
+  outcome: ScrapWriteOutcome
 ): Promise<void> {
   await settleErpScrapApprovals(
     ctx,
     scrapRequestId ? [scrapRequestId] : [],
-    written
+    outcome
   );
 }
 
@@ -4335,23 +4343,29 @@ export async function settleErpScrapApproval(
 export async function settleErpScrapApprovals(
   ctx: ServiceContext,
   scrapRequestIds: string[],
-  written: boolean
+  outcome: ScrapWriteOutcome
 ): Promise<void> {
   if (scrapRequestIds.length === 0) return;
   const args = { companyId: ctx.company.id, scrapRequestIds };
+  const settlement =
+    typeof outcome === "string" ? outcome : scrapWriteFailure(outcome.error);
   try {
-    if (written) {
+    if (settlement === "written") {
       await markScrapApprovalPosted(ctx.asSystem.pg, {
         ...args,
         userId: ctx.auditUserId
       });
-    } else {
+    } else if (settlement === "refused") {
       await discardScrapApproval(ctx.asSystem.pg, args);
+    } else {
+      // The write may have committed before its answer was lost: the record
+      // stays with no `postedAt`, rather than posted scrap with no approval.
+      logger.warn("Scrap write failed without a refusal; approval kept", args);
     }
   } catch (error) {
     logger.error("Failed to settle a scrap approval", {
       ...args,
-      written,
+      settlement,
       error
     });
   }

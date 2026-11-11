@@ -5404,8 +5404,15 @@ export const createProductionQuantity = defineServiceFn({
       scrapReasonId,
       companyId
     });
-    const written = !insert.error && Boolean(insert.data?.id);
-    await service.settleErpScrapApproval(ctx, approval.scrapRequestId, written);
+    await service.settleErpScrapApproval(
+      ctx,
+      approval.scrapRequestId,
+      insert.error
+        ? { error: { status: insert.status, code: insert.error.code } }
+        : insert.data?.id
+          ? "written"
+          : { error: null }
+    );
     if (insert.error || !insert.data?.id) {
       return ctx.error(
         "internal",
@@ -5526,7 +5533,11 @@ export const updateProductionQuantity = defineServiceFn({
     await service.settleErpScrapApproval(
       ctx,
       approval.scrapRequestId,
-      !update.error && !changed
+      update.error
+        ? { error: { status: update.status, code: update.error.code } }
+        : changed
+          ? "refused"
+          : "written"
     );
     if (update.error) {
       return ctx.error(
