@@ -70,15 +70,18 @@ function fakeStorage() {
 }
 
 describe("unpackBackupArchive", () => {
-  it("accepts a ./-prefixed archive and uploads the manifest last", async () => {
+  it("accepts a re-packed archive (./ entries, macOS ._ files) and uploads the manifest last", async () => {
     const { client, uploads } = fakeStorage();
     const { name } = await unpackBackupArchive(
       client,
       "co",
       await archive([
         { name: "./", type: "directory" },
+        { name: "./._manifest.json", body: "mac metadata" },
         { name: "./manifest.json", body: JSON.stringify(manifest) },
-        { name: "./tables/item.ndjson.gz", body: "x" }
+        { name: "./tables/._item.ndjson.gz", body: "mac metadata" },
+        { name: "./tables/item.ndjson.gz", body: "x" },
+        { name: "./.DS_Store", body: "finder" }
       ])
     );
     expect(uploads).toEqual([

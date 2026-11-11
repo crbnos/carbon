@@ -1849,8 +1849,14 @@ export async function unpackBackupArchive(
 
     await new Promise<void>((resolve, reject) => {
       extract.on("entry", (header, stream, next) => {
-        // Directories, links and the like carry nothing to store.
-        if (header.type !== "file") {
+        // Directories, links and the like carry nothing to store, nor do the
+        // `._*` / `.DS_Store` files macOS tar adds when a user re-packs one.
+        const base = header.name.split("/").pop() ?? "";
+        if (
+          header.type !== "file" ||
+          base.startsWith("._") ||
+          base === ".DS_Store"
+        ) {
           stream.on("end", () => next());
           stream.resume();
           return;

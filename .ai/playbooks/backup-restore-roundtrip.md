@@ -65,6 +65,14 @@ Route: `/x/settings/backups` (internal-gated — needs an `@carbon.ms` / `@carbo
 - The search index is rebuilt by the load: entries per type equal the source tables' row counts (the old index carried stale entries from earlier restores).
 - Demo data apply → revert: same fingerprint before and after.
 
+## Round 4 (2026-11-11): every flow after the merge
+- Restore → Delete its source backup: refused ("A restore is using this backup…"), backup kept. Then Keep: marker and `_pre-restore-*` gone.
+- Download (`/api/settings/backup-archive/<name>` with the browser's cookies) → extract → change the label → `tar czf … .` on macOS → upload. macOS tar adds `._*` AppleDouble files; the unpack now skips them and `.DS_Store` (was 636 objects for a 314-file backup).
+- Export of a company the projectId repair migration fixed: Ready.
+- Foreign restore (Carbon Development's archive uploaded into Restore Target Co, Data + files): items, journal lines, documents, productionEvent (25), material grade/form refs, project rows all equal the source; 0 projectId mismatches; document paths and files under the target prefix. Revert: fingerprint equal to before, added files removed.
+- Onboarding import (new local user, magic link from inbucket): same counts as the source, 0 projectId mismatches, search index built, staging empty.
+- The dev stack's auth container can die with a Docker restart (login says "Authentication Error", log says "auth settings returned 502"): restart `crbn up`.
+
 ## Onboarding import (2026-11-10)
 - Needs a user with no company: create a passwordless local user with the admin API on `http://127.0.0.1:<PORT_API>/auth/v1/admin/users` (`email_confirm: true`, an `@carbon.ms` address — restore is internal-only), sign in by the magic link from the local mail catcher (`http://127.0.0.1:54324/api/v1/mailbox/<local-part>`). Sign out first through the user menu; `/logout` doesn't.
 - Steps: theme → user (first/last name, `requestSubmit`) → company (name, address combobox via `fill`, city, postal code) → industry: click the "Restore from a backup" label, Next, set the file on the input, click "Create company". The page uploads to staging, then posts `backupPath`.
