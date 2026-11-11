@@ -25181,6 +25181,10 @@ msgstr "Geri yükle…"
 msgid "Restoring files"
 msgstr "Dosyalar geri yükleniyor"
 
+#. placeholder {0}: company.name
+msgid "Restoring into <0>{0}</0>. Its data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
+msgstr ""
+
 msgid "Restoring your snapshot"
 msgstr "Anlık görüntünüz geri yükleniyor"
 
@@ -31219,9 +31223,6 @@ msgstr "Bu değişiklik bildirimi kapalı olduğundan, değişiklikleri salt oku
 
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "Bu değişiklik bildirimi onay beklemektedir. Değişiklikleri onaylanana veya reddedilene kadar kilitlidir."
-
-msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
-msgstr "Bu şirketin verileri bu yedeklemenin içeriği ile değiştirilir. Bugünün verileri önce kaydedilir, bu nedenle geri alabilirsiniz."
 
 msgid "This completes the Discovery step."
 msgstr "Bu, Keşif adımını tamamlar."

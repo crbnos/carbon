@@ -25181,6 +25181,10 @@ msgstr "Wiederherstellen…"
 msgid "Restoring files"
 msgstr "Dateien werden wiederhergestellt"
 
+#. placeholder {0}: company.name
+msgid "Restoring into <0>{0}</0>. Its data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
+msgstr ""
+
 msgid "Restoring your snapshot"
 msgstr "Ihr Snapshot wird wiederhergestellt"
 
@@ -31219,9 +31223,6 @@ msgstr "Diese Änderungsmitteilung ist geschlossen, daher sind ihre Änderungen 
 
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "Diese Änderungsmitteilung wartet auf Genehmigung. Ihre Änderungen sind gesperrt, bis sie genehmigt oder abgelehnt wird."
-
-msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
-msgstr "Die Daten dieses Unternehmens werden durch den Inhalt dieser Sicherung ersetzt. Die heutigen Daten werden zuerst gespeichert, damit Sie rückgängig machen können."
 
 msgid "This completes the Discovery step."
 msgstr "Dies schließt den Discovery-Schritt ab."

@@ -25181,6 +25181,10 @@ msgstr "복원…"
 msgid "Restoring files"
 msgstr "파일 복원 중"
 
+#. placeholder {0}: company.name
+msgid "Restoring into <0>{0}</0>. Its data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
+msgstr ""
+
 msgid "Restoring your snapshot"
 msgstr "스냅샷 복원 중"
 
@@ -31219,9 +31223,6 @@ msgstr "이 변경 통지는 마감되었으므로 변경 사항은 읽기 전�
 
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "이 변경 통지는 승인을 기다리고 있습니다. 승인 또는 거부될 때까지 변경 사항이 잠깁니다."
-
-msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
-msgstr "이 회사의 데이터는 이 백업의 내용으로 바뀝니다. 오늘의 데이터가 먼저 저장되므로 되돌릴 수 있습니다."
 
 msgid "This completes the Discovery step."
 msgstr "이것으로 발견(Discovery) 단계가 완료됩니다."

@@ -130,7 +130,9 @@ const exportSkipValidator = z.object({
 const restoreValidator = z.object({
   intent: z.literal("restore"),
   source: z.string().min(1, { message: "Choose a backup to restore" }),
-  includeStorage: z.enum(["none", "all"])
+  includeStorage: z.enum(["none", "all"]),
+  /** The company the confirm dialog named. Set by the dialog, not a field. */
+  companyId: z.string().optional()
 });
 
 /**
@@ -210,6 +212,16 @@ export async function action({ request }: ActionFunctionArgs) {
       const { source } = validation.data;
       if (!isUserBackupName(source)) {
         return { success: false, message: "Choose one of your backups" };
+      }
+      // The dialog named the company this tab shows. Another tab may have
+      // switched the session to a different one since: never restore into a
+      // company the person wasn't shown.
+      if (validation.data.companyId !== companyId) {
+        return {
+          success: false,
+          message:
+            "You switched company in another tab. Reload this page, check the company, and restore again."
+        };
       }
 
       try {
@@ -660,9 +672,9 @@ export default function BackupsRoute() {
                     button, because the modal is portaled outside the <form>. */}
                 <RestoreDisclosure
                   backups={readyBackups}
-                  onConfirm={({ source, includeStorage }) =>
+                  onConfirm={({ source, includeStorage, companyId }) =>
                     fetcher.submit(
-                      { intent: "restore", source, includeStorage },
+                      { intent: "restore", source, includeStorage, companyId },
                       { method: "post" }
                     )
                   }

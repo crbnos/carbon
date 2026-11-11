@@ -25181,6 +25181,10 @@ msgstr "恢复…"
 msgid "Restoring files"
 msgstr "正在恢复文件"
 
+#. placeholder {0}: company.name
+msgid "Restoring into <0>{0}</0>. Its data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
+msgstr ""
+
 msgid "Restoring your snapshot"
 msgstr "正在恢复您的快照"
 
@@ -31219,9 +31223,6 @@ msgstr "此变更通知已关闭，因此其更改为只读。"
 
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "此变更通知待审批。其变更已锁定，直到被审批或拒绝。"
-
-msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
-msgstr "此公司的数据将替换为此备份的内容。首先保存今天的数据，以便您可以恢复。"
 
 msgid "This completes the Discovery step."
 msgstr "这完成了发现步骤。"

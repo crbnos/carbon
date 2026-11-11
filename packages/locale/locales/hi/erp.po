@@ -25181,6 +25181,10 @@ msgstr "पुनः स्थापित करें…"
 msgid "Restoring files"
 msgstr "फ़ाइलें पुनः स्थापित कर रहे हैं"
 
+#. placeholder {0}: company.name
+msgid "Restoring into <0>{0}</0>. Its data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
+msgstr ""
+
 msgid "Restoring your snapshot"
 msgstr "आपका स्नैपशॉट पुनर्स्थापित किया जा रहा है"
 
@@ -31219,9 +31223,6 @@ msgstr "यह परिवर्तन सूचना बंद है, इस
 
 msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
 msgstr "यह परिवर्तन सूचना अनुमोदन की प्रतीक्षा कर रही है। इसके परिवर्तन लॉक हैं जब तक इसे अनुमोदित या अस्वीकार नहीं किया जाता।"
-
-msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
-msgstr "इस कंपनी का डेटा इस बैकअप की सामग्री के साथ प्रतिस्थापित किया जाता है। आज का डेटा पहले सहेजा जाता है, इसलिए आप पूर्ववत कर सकते हैं।"
 
 msgid "This completes the Discovery step."
 msgstr "यह Discovery चरण को पूरा करता है।"
