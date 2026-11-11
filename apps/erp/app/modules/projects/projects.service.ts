@@ -31,7 +31,6 @@ import {
 } from "@carbon/api/stock-stripes";
 import { error } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
-import { getUserClaims } from "@carbon/auth/users.server";
 import {
   type Database,
   getCompanyTimeZone,
@@ -14704,33 +14703,28 @@ export async function timesheetBudgetWarning(
 
 /**
  * The Transfer half of a planning Apply, shared by the purchasing and the
- * production planning routes. Creating a project stock transfer needs
+ * production planning operations. Creating a project stock transfer needs
  * Edit on Projects, the permission of the transfer pages, on top of the
- * route's own. Returns what the route reports: the applied action ids, the
- * transfers created, and one message per action it could not apply.
+ * operation's own: the caller passes `ctx.can({ "projects.projects": "Edit" })`
+ * as `canEditProjects`. Returns what the operation reports: the applied action
+ * ids, the transfers created, and one message per action it could not apply.
  */
 export async function applyTransferPlanningActions(args: {
   db: Kysely<KyselyDatabase>;
   companyId: string;
   userId: string;
   planningActionIds: string[];
+  canEditProjects: boolean;
 }): Promise<{
   applied: string[];
   transfers: { id: string; projectStockTransferId: string }[];
   errors: string[];
 }> {
-  const { db, companyId, userId, planningActionIds } = args;
+  const { db, companyId, userId, planningActionIds, canEditProjects } = args;
   if (planningActionIds.length === 0) {
     return { applied: [], transfers: [], errors: [] };
   }
-  const claims = await getUserClaims(userId, companyId);
-  if (
-    !holdsGate(
-      claims?.permissions ?? {},
-      { "projects.projects": "Edit" },
-      companyId
-    )
-  ) {
+  if (!canEditProjects) {
     return {
       applied: [],
       transfers: [],
@@ -15256,12 +15250,12 @@ export async function getTimesheetWeekView(
  * entries, for a user who may approve them (Edit on Approvals). Any other
  * user, or a failed read, gets 0, so the sidebar shows no count.
  */
-export async function getApprovalCountForUser(
+async function getApprovalCount(
   client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string }
+  args: { companyId: string; permissions: Parameters<typeof holdsGate>[0] }
 ): Promise<number> {
   const canApprove = holdsGate(
-    (await getUserClaims(args.userId, args.companyId))?.permissions ?? {},
+    args.permissions,
     { "projects.approvals": "Edit" },
     args.companyId
   );
@@ -15284,14 +15278,12 @@ export async function getApprovalCountForUser(
  * there are any, and adds them to its count. Any other user, or a failed
  * read, gets 0.
  */
-export async function getBillingReviewCountForUser(
+async function getBillingReviewCount(
   client: SupabaseClient<Database>,
-  args: { companyId: string; userId: string }
+  args: { companyId: string; permissions: Parameters<typeof holdsGate>[0] }
 ): Promise<number> {
-  const permissions =
-    (await getUserClaims(args.userId, args.companyId))?.permissions ?? {};
   const canReview = holdsGate(
-    permissions,
+    args.permissions,
     withContractRead({ "projects.approvals": "Edit" }),
     args.companyId
   );
@@ -15310,6 +15302,22 @@ export async function getBillingReviewCountForUser(
     return 0;
   }
   return result.count ?? 0;
+}
+
+/**
+ * The counts the Projects sidebar shows on Approvals, for both Projects
+ * layouts: submitted time and the contract billable items that wait for
+ * review.
+ */
+export async function projectsSidebarCounts(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; permissions: Parameters<typeof holdsGate>[0] }
+): Promise<{ approvalCount: number; billingReviewCount: number }> {
+  const [approvalCount, billingReviewCount] = await Promise.all([
+    getApprovalCount(client, args),
+    getBillingReviewCount(client, args)
+  ]);
+  return { approvalCount, billingReviewCount };
 }
 
 // --- Projects → Reports ---------------------------------------------------------

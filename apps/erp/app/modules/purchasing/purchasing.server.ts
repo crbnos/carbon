@@ -4588,7 +4588,8 @@ export const applyPlanningActions = defineServiceFn({
       db: ctx.asSystem.pg,
       companyId,
       userId: ctx.auditUserId,
-      planningActionIds: transferIds
+      planningActionIds: transferIds,
+      canEditProjects: ctx.can({ "projects.projects": "Edit" })
     });
     applied.push(...transferOutcome.applied);
     errors.push(...transferOutcome.errors);

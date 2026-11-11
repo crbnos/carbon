@@ -17,7 +17,7 @@ import { startBackgroundBulkAction } from "~/utils/table-jobs.server";
 export async function action(args: ActionFunctionArgs) {
   // Every matching user of the Employees list: the background job picks the
   // active users and queues their permission update. The job checks the
-  // PERMISSIONS feature (`canRunBulkAction`).
+  // person subject's feature (`canRunBulkAction`).
   const allMatching = (await args.request.clone().formData()).get(
     "allMatching"
   );

@@ -15,7 +15,12 @@ import {
   type SqlBool,
   sql
 } from "kysely";
-import { ACTIONS, type Action, permissionKey } from "../access/levels";
+import {
+  ACTIONS,
+  type Action,
+  type PortalKey,
+  permissionKey
+} from "../access/levels";
 import {
   type ModuleId,
   moduleOf,
@@ -40,8 +45,6 @@ type Column<T extends Table> = keyof Public["Tables"][T]["Row"] & string;
  * table in `alsoWrittenBy`.
  */
 export type Permission = Action | PermissionKey;
-/** A portal account's own key in `userPermission` (`sales_view`): another namespace than pages. */
-export type PortalKey = `${Lowercase<Public["Enums"]["module"]>}_${Action}`;
 
 /**
  * - `"employee"`: get_companies_with_employee_role() — any employee of the company, and

@@ -131,7 +131,7 @@ export async function verifyEmployeePin(
  * Commercial (Enterprise) console / kiosk mode. Enabling it provisions the
  * protected "Console Operator" employee type (MES-only permissions) and a PIN
  * for the enabling user — role provisioning, gated to the Business plan via the
- * `PERMISSIONS` feature: a company without it gets an `entitlement` error
+ * role-authoring feature (`SUBJECT_RULES.role.feature`): a company without it gets an `entitlement` error
  * (`subjectEntitlement`), returned, not thrown.
  *
  * `companySettings.consoleEnabled` is written over `db` (the server's direct

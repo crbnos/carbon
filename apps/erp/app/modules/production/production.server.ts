@@ -4918,7 +4918,7 @@ const CHANGE_ACTION_TYPES = [
  * is claimed right before its change, three jobs at a time, and a failed one
  * gives its claim back. With no `type`, an Open Transfer or Borrow creates a
  * Draft project stock transfer (`applyTransferPlanningActions`, which needs
- * `update: projects`). Returns what was `applied`, the `transfers` created,
+ * Edit on Projects). Returns what was `applied`, the `transfers` created,
  * what needs review, `warnings` (applied, with a follow-up step that failed)
  * and `errors`.
  *
@@ -4991,7 +4991,8 @@ export const applyPlanningActions = defineServiceFn({
       db: ctx.asSystem.pg,
       companyId,
       userId,
-      planningActionIds: transferIds
+      planningActionIds: transferIds,
+      canEditProjects: ctx.can({ "projects.projects": "Edit" })
     });
     applied.push(...transferOutcome.applied);
     errors.push(...transferOutcome.errors);

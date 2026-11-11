@@ -14,6 +14,10 @@ export type Level = (typeof LEVELS)[number];
 export const ACTIONS = ["view", "create", "update", "delete"] as const;
 export type Action = (typeof ACTIONS)[number];
 
+/** A portal account's own key in `userPermission` (`sales_view`): another namespace than pages. */
+export type PortalKey =
+  `${Lowercase<(typeof Constants)["public"]["Enums"]["module"][number]>}_${Action}`;
+
 /** A level a gate can ask for: `"None"` asks for nothing. */
 export type GateLevel = Exclude<Level, "None">;
 

@@ -44,7 +44,7 @@ import {
 } from "./permission-grants";
 
 /**
- * Gated to the Business plan via the `PERMISSIONS` feature (`@carbon/ee/plan`);
+ * Gated to the Business plan via each subject's feature (`SUBJECT_RULES`);
  * Community ships an "everyone is an admin" experience so none of this is
  * reachable there.
  *

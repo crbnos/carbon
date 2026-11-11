@@ -34,7 +34,8 @@ import {
   levelReaches,
   MODULES,
   type ModuleEnum,
-  PAGES
+  PAGES,
+  type PortalKey
 } from "@carbon/database/access";
 import {
   readCompanyGrants,
@@ -2212,33 +2213,28 @@ export function canReAddDeactivatedEmployee(
   );
 }
 
-function makeCustomerPermissions(companyId: string) {
-  // TODO: this should be more dynamic
-  const permissions: Record<string, string[]> = {
+function makeCustomerPermissions(
+  companyId: string
+): Partial<Record<PortalKey, string[]>> {
+  return {
     documents_view: [companyId],
     documents_create: [companyId],
-    documents_udpate: [companyId],
     documents_delete: [companyId],
-    jobs_view: [companyId],
     sales_view: [companyId],
     parts_view: [companyId]
   };
-
-  return permissions;
 }
 
-function makeSupplierPermissions(companyId: string) {
-  // TODO: this should be more dynamic
-  const permissions: Record<string, string[]> = {
+function makeSupplierPermissions(
+  companyId: string
+): Partial<Record<PortalKey, string[]>> {
+  return {
     documents_view: [companyId],
     documents_create: [companyId],
-    documents_udpate: [companyId],
     documents_delete: [companyId],
     purchasing_view: [companyId],
     parts_view: [companyId]
   };
-
-  return permissions;
 }
 
 export async function getInvite(

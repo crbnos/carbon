@@ -3,12 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
-import {
-  anyOf,
-  ITEM_PAGES,
-  moduleOf,
-  type PageId
-} from "@carbon/database/access";
+import { anyOf, ITEM_PAGES, type PageId } from "@carbon/database/access";
 import {
   Badge,
   Count,
@@ -567,9 +562,7 @@ export function UsedInItem({
                   <LevelLine isSelected={false} className="mr-2 shrink-0" />
                   {child.methodType === "Shipment" ? (
                     <LuTruck className="mr-2 shrink-0 text-indigo-600" />
-                  ) : node.pages.some(
-                      (page) => moduleOf(page) === "quality"
-                    ) ? (
+                  ) : node.key === "issues" || node.key === "inspections" ? (
                     <LuShieldX className="mr-2 shrink-0 text-red-600" />
                   ) : (
                     <MethodIcon
