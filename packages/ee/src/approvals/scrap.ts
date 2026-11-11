@@ -158,3 +158,19 @@ export function scrapApproverRefusal(args: {
   }
   return { error: null };
 }
+
+/**
+ * What becomes of a scrap's approval record when its posting failed.
+ * `committed` says whether the scrap posted anyway; "unknown" when that
+ * could not be read. Only a refusal known not to have posted removes the
+ * record: a record left with no `postedAt` shows as not confirmed, while a
+ * removed one would leave posted scrap with no approval.
+ */
+export function failedScrapPostingSettlement(args: {
+  refused: boolean;
+  committed: boolean | "unknown";
+}): "mark posted" | "discard" | "keep" {
+  if (args.committed === true) return "mark posted";
+  if (args.committed === false && args.refused) return "discard";
+  return "keep";
+}

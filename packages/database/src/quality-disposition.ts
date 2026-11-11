@@ -146,7 +146,8 @@ async function rejectedMoves(
  * untracked Inventory quantity, at most. The Reject takes what is there, so
  * this errs high, as a scrap approval estimate may. Null when the Reject
  * writes nothing off: a tracked or Non-Inventory item, a lot from another
- * source, or a lot already written off.
+ * source, a lot already written off, or a decided lot that held its stock
+ * (Reject again takes nothing from it).
  */
 export async function rejectWriteOffEstimate(
   db: Kysely<KyselyDatabase>,
@@ -164,6 +165,8 @@ export async function rejectWriteOffEstimate(
       "inspection.lotSize",
       "inspection.inspectionId",
       "inspection.sourceDocument",
+      "inspection.status",
+      "inspection.storageUnitId",
       "item.itemTrackingType",
       (eb) =>
         eb
@@ -185,6 +188,7 @@ export async function rejectWriteOffEstimate(
     lot.sourceDocument !== "Receipt" ||
     lot.itemTrackingType !== "Inventory" ||
     lot.writtenOff ||
+    (isInspectionClosed(lot.status) && lot.storageUnitId !== null) ||
     !(Number(lot.lotSize) > EPSILON)
   ) {
     return null;

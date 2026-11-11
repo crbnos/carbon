@@ -27,6 +27,8 @@ import type {
   ScrapSubject
 } from "./types";
 
+export { failedScrapPostingSettlement } from "./scrap";
+
 const logger = getLogger("ee", "scrap-approval");
 
 // Scrap on the shop floor posts at once (count, backflush, replacement serial,
@@ -241,6 +243,22 @@ async function operationUnitValues(
   );
 }
 
+/** Throws when a named tracked entity is not this company's. */
+async function requireCompanyEntity(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  trackedEntityId: string | null | undefined
+): Promise<void> {
+  if (!trackedEntityId) return;
+  const entity = await db
+    .selectFrom("trackedEntity")
+    .select("id")
+    .where("id", "=", trackedEntityId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (!entity) throw new Error("Tracked entity not found");
+}
+
 /**
  * What a scrap would write off, before it posts: the record a
  * `scrapRequest` holds, with the estimated value an approval rule is matched
@@ -252,8 +270,9 @@ export async function describeScrap(
   subject: ScrapSubject
 ): Promise<ScrapDescription> {
   if (subject.type === "operation") {
-    const values = await operationUnitValues(db, companyId, [
-      subject.jobOperationId
+    const [values] = await Promise.all([
+      operationUnitValues(db, companyId, [subject.jobOperationId]),
+      requireCompanyEntity(db, companyId, subject.trackedEntityId)
     ]);
     const operation = values.get(subject.jobOperationId);
     if (!operation) throw new Error("Job operation not found");
@@ -316,6 +335,9 @@ export async function describeScrap(
           .where("companyId", "=", companyId)
           .executeTakeFirst()
       : undefined;
+    if (subject.trackedEntityId && !entity) {
+      throw new Error("Tracked entity not found");
+    }
     // The posting values the item it is given and never compares the two, so
     // a cheap lot named with a costly item would be priced under its tier.
     if (entity?.itemId && entity.itemId !== subject.itemId) {
@@ -470,31 +492,30 @@ export async function getScrapApprovalRequirement(
     };
   }
 
+  // Over the server's connection: a group can hold every employee, more ids
+  // than a PostgREST URL carries. Active people of this company, as the
+  // `employees` view lists them.
   const [people, withPin] = await Promise.all([
-    serviceRole
-      .from("employees")
-      .select("id, name, avatarUrl")
-      .eq("companyId", args.companyId)
-      .eq("active", true)
-      .in("id", candidateIds),
+    db
+      .selectFrom("employee")
+      .innerJoin("user", "user.id", "employee.id")
+      .select(["employee.id", "user.fullName", "user.avatarUrl"])
+      .where("employee.companyId", "=", args.companyId)
+      .where("employee.active", "=", true)
+      .where("user.active", "=", true)
+      .where("employee.id", "in", candidateIds)
+      .execute(),
     employeesWithPin(db, {
       companyId: args.companyId,
       employeeIds: candidateIds
     })
   ]);
-  if (people.error) {
-    logger.error("Failed to read scrap approvers", {
-      companyId: args.companyId,
-      error: people.error
-    });
-    throw new Error("Failed to read scrap approvers");
-  }
 
-  const approvers = (people.data ?? [])
-    .filter((person) => person.id && withPin.has(person.id))
+  const approvers = people
+    .filter((person) => withPin.has(person.id))
     .map((person) => ({
-      id: person.id!,
-      name: person.name ?? "",
+      id: person.id,
+      name: person.fullName ?? "",
       avatarUrl: person.avatarUrl ?? null
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
@@ -761,5 +782,6 @@ export async function getScrapApprovals(
   if (args.jobId) query = query.eq("jobId", args.jobId);
   return query
     .order("createdAt", { ascending: false })
+    .order("id", { ascending: true })
     .range(args.offset, args.offset + args.limit - 1);
 }
