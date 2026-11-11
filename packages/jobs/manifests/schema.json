@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261110211543",
+  "schemaVersion": "20261111213150",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-10T21:23:53.403Z",
+  "exportedAt": "2026-11-11T16:16:36.950Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -514,8 +514,8 @@
         "serviceLaborBillRate",
         "requireSupplierContactEmail",
         "requireCustomerContactEmail",
-        "requirePromisedDateToFinalizePurchaseOrder",
-        "includeSupplierPartFiles"
+        "includeSupplierPartFiles",
+        "requirePromisedDateToFinalizePurchaseOrder"
       ]
     },
     {
@@ -632,7 +632,8 @@
         "updatedBy",
         "updatedAt",
         "customFields",
-        "tags"
+        "tags",
+        "color"
       ]
     },
     {
@@ -994,6 +995,29 @@
       ]
     },
     {
+      "name": "forceDeleteRequest",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "documentType",
+        "documentId",
+        "documentReadableId",
+        "documentStatus",
+        "reason",
+        "status",
+        "requestedBy",
+        "requestedAt",
+        "decidedBy",
+        "decidedAt",
+        "decisionNotes",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "gaugeType",
       "rows": 0,
       "columns": [
@@ -1041,6 +1065,20 @@
       ]
     },
     {
+      "name": "implementationAssignment",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "itemKey",
+        "assigneeId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "implementationCheckState",
       "rows": 0,
       "columns": [
@@ -1052,7 +1090,10 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "source",
+        "verifiedAt",
+        "verifiedBy"
       ]
     },
     {
@@ -1063,6 +1104,20 @@
         "companyId",
         "fieldKey",
         "value",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "implementationMember",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "userId",
+        "page",
         "createdBy",
         "createdAt",
         "updatedBy",
@@ -1081,7 +1136,9 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "source",
+        "sourceRef"
       ]
     },
     {
@@ -2199,7 +2256,8 @@
         "createdAt",
         "createdBy",
         "updatedAt",
-        "updatedBy"
+        "updatedBy",
+        "color"
       ]
     },
     {
@@ -3129,6 +3187,24 @@
       ]
     },
     {
+      "name": "methodCorrection",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "makeMethodId",
+        "name",
+        "description",
+        "returnTo",
+        "maxAttempts",
+        "order",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "riskRegister",
       "rows": 0,
       "columns": [
@@ -4020,6 +4096,18 @@
       "name": "jobOperationToolStep",
       "rows": 0,
       "columns": ["jobOperationToolId", "jobOperationStepId"]
+    },
+    {
+      "name": "jobOperationTrackedEntity",
+      "rows": 0,
+      "columns": [
+        "jobOperationId",
+        "trackedEntityId",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "updatedBy"
+      ]
     },
     {
       "name": "location",
@@ -5763,6 +5851,22 @@
       ]
     },
     {
+      "name": "methodCorrectionTrigger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "methodOperationStepId",
+        "methodCorrectionId",
+        "listValue",
+        "measurementCondition",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "methodMaterial",
       "rows": 0,
       "columns": [
@@ -5786,7 +5890,8 @@
         "tags",
         "kit",
         "storageUnitIds",
-        "sourcingType"
+        "sourcingType",
+        "methodCorrectionId"
       ]
     },
     {
@@ -5826,7 +5931,8 @@
         "operationLeadTime",
         "operationUnitCost",
         "assemblyInstructionId",
-        "inspectionDocumentId"
+        "inspectionDocumentId",
+        "methodCorrectionId"
       ]
     },
     {
@@ -5967,6 +6073,22 @@
         "nonConformanceActionId",
         "nonConformanceInvestigationId",
         "assemblyInstructionStepId"
+      ]
+    },
+    {
+      "name": "jobCorrectionTrigger",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobOperationStepId",
+        "jobCorrectionId",
+        "listValue",
+        "measurementCondition",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -6760,6 +6882,27 @@
       ]
     },
     {
+      "name": "jobCorrection",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "jobId",
+        "jobMakeMethodId",
+        "methodCorrectionId",
+        "name",
+        "description",
+        "returnTo",
+        "maxAttempts",
+        "order",
+        "definition",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "jobMakeMethod",
       "rows": 0,
       "columns": [
@@ -6938,7 +7081,8 @@
         "completedAt",
         "companyId",
         "createdAt",
-        "updatedAt"
+        "updatedAt",
+        "jobCorrectionId"
       ]
     },
     {
@@ -7311,6 +7455,28 @@
       "name": "purchaseOrderFavorite",
       "rows": 0,
       "columns": ["purchaseOrderId", "userId"]
+    },
+    {
+      "name": "purchaseOrderForceDeleteRequest",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "purchaseOrderId",
+        "purchaseOrderReadableId",
+        "purchaseOrderStatus",
+        "reason",
+        "status",
+        "requestedBy",
+        "requestedAt",
+        "decidedBy",
+        "decidedAt",
+        "decisionNotes",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
     },
     {
       "name": "purchaseOrderLine",

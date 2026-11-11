@@ -341,6 +341,14 @@ export const Constants = {
       glAccountClass: ["Asset", "Liability", "Equity", "Revenue", "Expense"],
       glConsolidatedRate: ["Average", "Current", "Historical"],
       glIncomeBalance: ["Balance Sheet", "Income Statement"],
+      implementationHubVersion: ["1.0", "2.0"],
+      implementationSource: [
+        "customer",
+        "staff",
+        "mcp",
+        "handover",
+        "interview",
+      ],
       implementationStateKind: [
         "gate",
         "task",
