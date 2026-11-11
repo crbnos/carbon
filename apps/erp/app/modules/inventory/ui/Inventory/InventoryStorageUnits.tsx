@@ -979,7 +979,12 @@ const InventoryStorageUnits = ({
                 )}
                 {(isBatch || isSerial) && (
                   <>
-                    <Hidden name="trackedEntityId" />
+                    {/* A scrap of stock with no number names no unit; the
+                        new id would be refused as an unknown unit. */}
+                    {(selectedTrackedEntityId ||
+                      adjustmentType !== "Scrap") && (
+                      <Hidden name="trackedEntityId" />
+                    )}
                     <Input
                       name="readableId"
                       label={isSerial ? t`Serial Number` : t`Batch Number`}
