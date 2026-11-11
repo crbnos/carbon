@@ -620,3 +620,162 @@ export const assignableTables = [
   "supplierQuote",
   "training"
 ] as const;
+
+// ─── Admin force delete ───
+//
+// One Admin asks to delete a document the normal delete refuses, with a
+// reason and its number typed; another Admin approves. Purchase orders
+// (`purchaseOrderForceDeleteRequest`, purchasing) and the documents below
+// (`forceDeleteRequest`, `requestDocumentForceDelete`) share these rules.
+
+export const FORCE_DELETE_MIN_REASON_LENGTH = 10;
+
+export const forceDeleteDocumentTypes = [
+  "purchaseInvoice",
+  "salesInvoice",
+  "receipt",
+  "payment"
+] as const;
+
+export type ForceDeleteDocumentType = (typeof forceDeleteDocumentTypes)[number];
+
+/** The document's name in messages: "purchase invoice PI000012". */
+export const forceDeleteDocumentLabel: Record<ForceDeleteDocumentType, string> =
+  {
+    purchaseInvoice: "purchase invoice",
+    salesInvoice: "sales invoice",
+    receipt: "receipt",
+    payment: "payment"
+  };
+
+export const forceDeleteRequestValidator = z.object({
+  intent: z.literal("request"),
+  reason: z
+    .string()
+    .trim()
+    .min(FORCE_DELETE_MIN_REASON_LENGTH, {
+      message: `Explain why, in at least ${FORCE_DELETE_MIN_REASON_LENGTH} characters`
+    }),
+  confirmation: z
+    .string()
+    .trim()
+    .min(1, { message: "Type the document number" })
+});
+
+export const forceDeleteDecisionValidator = z.object({
+  intent: z.enum(["approve", "reject", "cancel"]),
+  requestId: z.string().min(1, { message: "Request is required" }),
+  notes: zfd.text(z.string().optional())
+});
+
+/** Why `userId` cannot approve this request, or null. */
+export function forceDeleteApprovalRefusal({
+  status,
+  requestedBy,
+  userId,
+  isAdmin
+}: {
+  status: string;
+  requestedBy: string;
+  userId: string;
+  isAdmin: boolean;
+}): string | null {
+  if (status !== "Pending") {
+    return `This force delete request is ${status.toLowerCase()}`;
+  }
+  if (!isAdmin) return "Only an Admin can approve a force delete";
+  if (requestedBy === userId) {
+    return "You asked for this force delete: another Admin must approve it";
+  }
+  return null;
+}
+
+/**
+ * Why `userId` cannot reject or cancel this request, or null. Any Admin may
+ * reject it; only the Admin who asked may cancel it.
+ */
+export function forceDeleteWithdrawRefusal({
+  intent,
+  status,
+  requestedBy,
+  userId,
+  isAdmin
+}: {
+  intent: "reject" | "cancel";
+  status: string;
+  requestedBy: string;
+  userId: string;
+  isAdmin: boolean;
+}): string | null {
+  if (status !== "Pending") {
+    return `This force delete request is ${status.toLowerCase()}`;
+  }
+  if (!isAdmin) return "Only an Admin can decide a force delete";
+  if (intent === "cancel" && requestedBy !== userId) {
+    return "Only the Admin who asked can cancel this force delete; reject it instead";
+  }
+  return null;
+}
+
+/** Whether the document's own number was typed to confirm (case and spaces ignored). */
+export function isForceDeleteConfirmed(
+  confirmation: string,
+  readableId: string
+): boolean {
+  const norm = (s: string) => s.replace(/\s+/g, "").toUpperCase();
+  return norm(confirmation) !== "" && norm(confirmation) === norm(readableId);
+}
+
+/**
+ * The `documentId` of a document force delete notification:
+ * "<documentType>:<documentId>:<requestId>", so its link opens the document
+ * and its content reads the request after the document is gone.
+ */
+export function forceDeleteNotificationId(
+  documentType: ForceDeleteDocumentType,
+  documentId: string,
+  requestId: string
+): string {
+  return `${documentType}:${documentId}:${requestId}`;
+}
+
+/** A document that keeps another from being force deleted, by number. */
+export type ForceDeleteBlocker = { readableId: string; status: string };
+
+/**
+ * Why the document cannot be force deleted yet, or null. Each list names
+ * documents that hold it by a foreign key and that the force delete does not
+ * undo; the Admin voids (or force deletes) those first.
+ */
+export function forceDeleteBlockerMessage(
+  documentType: ForceDeleteDocumentType,
+  blockers: {
+    /** Payments and memos applied to the invoice, not Voided. */
+    settlements?: ForceDeleteBlocker[];
+    /** Payments this payment funds or refunds, not Voided. */
+    applications?: ForceDeleteBlocker[];
+    /** The purchase invoice that created this receipt. */
+    invoices?: ForceDeleteBlocker[];
+  }
+): string | null {
+  const list = (docs: ForceDeleteBlocker[]) =>
+    docs.map((d) => `${d.readableId} (${d.status})`).join(", ");
+  const parts: string[] = [];
+  if (blockers.settlements?.length) {
+    parts.push(
+      `void or force delete the payments and memos applied to it: ${list(blockers.settlements)}`
+    );
+  }
+  if (blockers.applications?.length) {
+    parts.push(
+      `void or force delete the payments it is applied to: ${list(blockers.applications)}`
+    );
+  }
+  if (blockers.invoices?.length) {
+    parts.push(
+      `force delete the purchase invoice that created it instead: ${list(blockers.invoices)}`
+    );
+  }
+  if (parts.length === 0) return null;
+  return `This ${forceDeleteDocumentLabel[documentType]} cannot be force deleted until you ${parts.join("; ")}.`;
+}

@@ -25,6 +25,18 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
 
 ## Key Domain Concepts
 
+- **Force delete (Admin override): invoices, receipts, payments.** This is the purchase order force delete (`purchasing/AGENTS.md`) for purchase invoices, sales invoices, receipts and payments, through one table, `forceDeleteRequest` (`documentType`, `documentId` with no FK, `documentReadableId`, `documentStatus`; `serviceOnly()`). Its `approvalRequest` type is `documentForceDelete`, in `adminApprovedDocumentTypes`.
+  - **Operations.** `requestDocumentForceDelete`, `decideDocumentForceDelete` and `cancelDocumentForceDelete` (`invoicing.server.ts`). The permission is keyed by `documentType`: `delete: invoicing`, and `delete: inventory` for a receipt. They are called from the route `force-delete+/$documentType.$documentId.tsx`.
+  - **UI.** `components/ForceDelete/DocumentForceDelete.tsx` holds the menu item, modal and banner. Each layout loader spreads `getDocumentForceDeleteData`.
+  - **Approving, step 1.** A posted document is voided through its own posting (`voidForceDeleteDocument`), and a refusal stops the approval with the void's message. A purchase order receipt whose void refused only on moved stock or the cutover is adjusted out in step 2 (`reverseReceiptsByAdjustment` + `restorePurchaseOrderReceived`).
+  - **Approving, step 2.** One transaction runs `getForceDeleteRefusal` again under lock, then `deleteForceDeleteDocument`. That sets `app.force_delete` (the `prevent_posted_*_invoice_deletion` guards return early on it), and removes settlements of Voided payments and memos and the receipts a voided purchase invoice created. It then deletes the document (`delete*Releasing*` with `voided: true` for invoices).
+  - **Refused (at request and approval)** while any of these still holds the document (`forceDeleteBlockerMessage`):
+    - a non-Voided payment or memo applied to an invoice;
+    - a non-Voided payment applied to a payment;
+    - the purchase invoice that created a receipt;
+    - a receipt's used stock;
+    - a purchase invoice whose own status says Paid or Partially Paid (the void refuses it).
+  - **Notifications.** The `documentId` is `<documentType>:<documentId>:<requestId>`.
 - **Invoice status** — `salesInvoiceStatusType` / `purchaseInvoiceStatusType`;
   `is{Sales,Purchase}InvoiceLocked` = not Draft. **`Partially Paid` and `Overdue` are DERIVED**
   in the `salesInvoices`/`purchaseInvoices` views from `invoiceSettlement`. There is no

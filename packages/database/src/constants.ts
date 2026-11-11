@@ -48,6 +48,7 @@ export const Constants = {
         "changeOrder",
         "projectChangeRequest",
         "purchaseOrderForceDelete",
+        "documentForceDelete",
       ],
       approvalStatus: ["Pending", "Approved", "Rejected", "Cancelled"],
       assemblyInstructionStatus: ["Draft", "Published", "Archived"],
@@ -323,6 +324,12 @@ export const Constants = {
         "Cost Adjustment",
       ],
       flsaStatus: ["Exempt", "Non-Exempt"],
+      forceDeleteDocumentType: [
+        "purchaseInvoice",
+        "salesInvoice",
+        "receipt",
+        "payment",
+      ],
       fulfillmentType: ["Inventory", "Job"],
       gaugeCalibrationStatus: [
         "Pending",

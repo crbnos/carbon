@@ -2148,6 +2148,9 @@ msgstr "Okunabilir bir Tedarikçi ID'si listeler, formlar ve açılır listelerd
 msgid "A readiness check fails. <0>Go to Readiness</0>"
 msgstr "Bir hazırlık kontrolü başarısız oldu. <0>Hazırlığa Git</0>"
 
+msgid "A receipt a purchase invoice created goes with that invoice: force delete the invoice instead. A receipt whose stock was used since is refused."
+msgstr ""
+
 msgid "A receipt is created"
 msgstr "Bir makbuz oluşturuldu"
 
@@ -4344,10 +4347,16 @@ msgstr "Onaylandı"
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
 msgstr ""
 
+msgid "Approving deletes {readableId} now. This cannot be undone."
+msgstr ""
+
 msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
 msgstr ""
 
 msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
+msgstr ""
+
+msgid "Approving voids {readableId}, which reverses its postings, then deletes it. This cannot be undone."
 msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
@@ -13775,10 +13784,16 @@ msgstr "Form 6765 Bölüm E için"
 msgid "Force delete"
 msgstr ""
 
+msgid "Force Delete"
+msgstr ""
+
 msgid "Force Delete (Admin)"
 msgstr ""
 
 msgid "Force delete {purchaseOrderReadableId}"
+msgstr ""
+
+msgid "Force delete {readableId}"
 msgstr ""
 
 msgid "Force delete waiting for another Admin's approval"
@@ -15977,6 +15992,9 @@ msgstr "Satırın nasıl fiyatlandırıldığını belirler."
 msgid "It decides what the next step asks for."
 msgstr "Sonraki adımın ne istediğini belirler."
 
+msgid "It is {status}: approving voids it first, which reverses its postings. If the void is refused, nothing is deleted."
+msgstr ""
+
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "Onaylandı ama uygulanamıyor. Yeniden açın, bu satırları kontrol edin, ardından yeniden gönderin."
 
@@ -15987,6 +16005,9 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Yine de bir «{table}» kaydı tarafından kullanılıyor; önce bunu kaldırın."
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgstr ""
+
+msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
 msgstr ""
 
 msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
@@ -20486,6 +20507,9 @@ msgstr "Henüz hiçbir şey yok"
 msgid "Nothing in the archive"
 msgstr "Arşivde hiçbir şey yok"
 
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
+msgstr ""
+
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr ""
 
@@ -21465,6 +21489,9 @@ msgstr "Satış türü kiralamalarda net kiralama yatırımından elde edilen ay
 msgid "Other Income GL account for the monthly interest earned on the net investment in sales-type leases."
 msgstr "Satış türü kiralamalarda net kiralama yatırımından elde edilen aylık faiz için Diğer gelirler muhasebe hesabı."
 
+msgid "Other payments it funds or refunds must be voided (or force deleted) first. The request is refused until they are."
+msgstr ""
+
 msgid "Other Type"
 msgstr "Diğer Tür"
 
@@ -21998,6 +22025,9 @@ msgstr "Ödemeler"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "Bu faturaya uygulanan ödemeler ve alacaklar. Uygulanan tutarlar ve kur farkları şirketin temel para birimi cinsindendir. Kaynak belgeyi açmak için bir satıra tıklayın."
+
+msgid "Payments and memos applied to it must be voided (or force deleted) first. The request is refused until they are."
+msgstr ""
 
 msgid "Payments due before this date were paid outside Carbon"
 msgstr "Bu tarihten önce vadesi gelen ödemeler Carbon dışında ödendi"
@@ -32568,6 +32598,9 @@ msgstr "Onaylamak için {0} yazın"
 msgid "Type {purchaseOrderReadableId} to confirm"
 msgstr ""
 
+msgid "Type {readableId} to confirm"
+msgstr ""
+
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "Bir değişken eklemek için {TRIGGER} yazın"
 
@@ -34146,6 +34179,9 @@ msgstr "Bu zaman girişinin neyi temsil ettiği — İşçilik (operatör zaman�
 
 msgid "What to set up"
 msgstr "Kurulacak şey"
+
+msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
+msgstr ""
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
 msgstr ""

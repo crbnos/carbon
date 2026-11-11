@@ -26,7 +26,7 @@ import {
   OPEN_ITEM_JOURNAL_STATUSES,
   PRE_CUTOVER_JOURNAL_STATUSES
 } from "@carbon/database/accounting-posting";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
   addMovement,
   applyContractMovement,
@@ -82,6 +82,8 @@ import type {
 import { getNextSequence } from "@carbon/database/sequence";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
 import { createMappingService } from "@carbon/ee/accounting";
+import { isCompanyAdmin } from "@carbon/ee/approvals.server";
+import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import {
   dedupeViolations,
   evaluateSalesRuleLines,
@@ -94,6 +96,7 @@ import {
   renderSalesInvoicePdf
 } from "@carbon/lib/sales-invoice-document.server";
 import { getLogger } from "@carbon/logger";
+import { NotificationEvent } from "@carbon/notifications";
 import type { ConnectCustomerInput } from "@carbon/stripe/connect.server";
 import {
   expectedConnectInvoiceTotal,
@@ -187,6 +190,10 @@ import {
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
+  postReceipt,
+  RECEIPT_VOID_STOCK_MOVED_ERROR
+} from "~/modules/inventory/inventory.service";
+import {
   buildProjectCipRow,
   reverseProjectCipRows,
   writeProjectCipRows
@@ -198,13 +205,21 @@ import {
 } from "~/modules/projects/project-posting";
 import { PURCHASE_ORDER_RELEASED_STATUSES } from "~/modules/purchasing/purchasing.models";
 import {
+  deletePurchaseInvoiceReleasingLeases,
+  type ForceDeleteReversalAccounting,
+  forceDeleteReceiptRefusal,
+  getCompanyAdminIds,
   getPurchaseOrderFundsRefusal,
   getSupplierPayment,
   getSupplierShipping,
   insertSupplierInteraction,
-  purchaseOrderFundsGate
+  type PurchaseOrderForceDeleteReceipt,
+  purchaseOrderFundsGate,
+  restorePurchaseOrderReceived,
+  reverseReceiptsByAdjustment
 } from "~/modules/purchasing/purchasing.service";
 import {
+  deleteSalesInvoiceReleasingRentals,
   getCustomer,
   getCustomerContact,
   getCustomerLocation,
@@ -213,6 +228,12 @@ import {
   updateCustomerContact
 } from "~/modules/sales/sales.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import {
+  type ForceDeleteBlocker,
+  type ForceDeleteDocumentType,
+  forceDeleteBlockerMessage,
+  forceDeleteNotificationId
+} from "~/modules/shared/shared.models";
 import {
   type AverageCostChange,
   allocateJournalLineIds,
@@ -226,6 +247,7 @@ import {
   getCompanyTimeZone as getCachedCompanyTimeZone,
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
+  INVENTORY_VOID_BEFORE_CUTOVER_ERROR,
   type JournalLineDimensionValues,
   journalLineDimensionRows,
   loadContractPositions,
@@ -18400,4 +18422,649 @@ export async function postPurchaseInvoice(
     }
     throw err;
   }
+}
+
+// ─── Admin force delete: invoices, receipts and payments ───
+//
+// The building blocks of `requestDocumentForceDelete` and
+// `decideDocumentForceDelete` (invoicing.server.ts). Approving voids a posted
+// document through its own void, then deletes it here, in the approval's
+// transaction.
+
+/** A document a force delete names, as it is now. */
+export type ForceDeleteDocument = {
+  documentType: ForceDeleteDocumentType;
+  id: string;
+  readableId: string;
+  status: string;
+  /**
+   * What approving does first: `void` it (it is posted), `delete` it straight
+   * away (Draft or Voided), or refuse while it is `busy` being posted.
+   */
+  step: "void" | "delete" | "busy";
+  /** Receipt only: where it came from, and whether a purchase invoice made it. */
+  sourceDocument?: string | null;
+  sourceDocumentId?: string | null;
+  invoiced?: boolean;
+};
+
+function forceDeleteStep(
+  status: string,
+  { busy = [] }: { busy?: string[] } = {}
+): ForceDeleteDocument["step"] {
+  if (status === "Draft" || status === "Voided") return "delete";
+  if (busy.includes(status)) return "busy";
+  return "void";
+}
+
+/**
+ * The document, or null when it is not the company's. `lock` takes it FOR
+ * UPDATE, so it cannot be posted or voided under the approval.
+ */
+export async function getForceDeleteDocument(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    documentType,
+    documentId,
+    lock = false
+  }: {
+    companyId: string;
+    documentType: ForceDeleteDocumentType;
+    documentId: string;
+    lock?: boolean;
+  }
+): Promise<ForceDeleteDocument | null> {
+  switch (documentType) {
+    case "purchaseInvoice": {
+      const query = db
+        .selectFrom("purchaseInvoice")
+        .select(["id", "invoiceId", "status"])
+        .where("id", "=", documentId)
+        .where("companyId", "=", companyId);
+      const row = await (lock ? query.forUpdate() : query).executeTakeFirst();
+      if (!row) return null;
+      return {
+        documentType,
+        id: row.id,
+        readableId: row.invoiceId ?? row.id,
+        status: row.status,
+        step: forceDeleteStep(row.status, { busy: ["Pending"] })
+      };
+    }
+    case "salesInvoice": {
+      const query = db
+        .selectFrom("salesInvoice")
+        .select(["id", "invoiceId", "status"])
+        .where("id", "=", documentId)
+        .where("companyId", "=", companyId);
+      const row = await (lock ? query.forUpdate() : query).executeTakeFirst();
+      if (!row) return null;
+      return {
+        documentType,
+        id: row.id,
+        readableId: row.invoiceId ?? row.id,
+        status: row.status,
+        step: forceDeleteStep(row.status, { busy: ["Pending"] })
+      };
+    }
+    case "receipt": {
+      const query = db
+        .selectFrom("receipt")
+        .select([
+          "id",
+          "receiptId",
+          "status",
+          "sourceDocument",
+          "sourceDocumentId",
+          "invoiced"
+        ])
+        .where("id", "=", documentId)
+        .where("companyId", "=", companyId);
+      const row = await (lock ? query.forUpdate() : query).executeTakeFirst();
+      if (!row) return null;
+      return {
+        documentType,
+        id: row.id,
+        readableId: row.receiptId ?? row.id,
+        status: row.status,
+        step: forceDeleteStep(row.status, { busy: ["Pending"] }),
+        sourceDocument: row.sourceDocument ?? null,
+        sourceDocumentId: row.sourceDocumentId ?? null,
+        invoiced: !!row.invoiced
+      };
+    }
+    case "payment": {
+      const query = db
+        .selectFrom("payment")
+        .select(["id", "paymentId", "status"])
+        .where("id", "=", documentId)
+        .where("companyId", "=", companyId);
+      const row = await (lock ? query.forUpdate() : query).executeTakeFirst();
+      if (!row) return null;
+      return {
+        documentType,
+        id: row.id,
+        readableId: row.paymentId ?? row.id,
+        status: row.status,
+        step: forceDeleteStep(row.status)
+      };
+    }
+  }
+}
+
+/**
+ * Why the document cannot be force deleted yet, or null
+ * (`forceDeleteBlockerMessage`). Read at the request, and again under the
+ * approval's lock:
+ *
+ * - an invoice: payments or memos applied to it that are not Voided. Their
+ *   settlement rows hold the invoice by a foreign key, and neither void
+ *   removes them; once their payment or memo is Voided they count for
+ *   nothing and the delete removes them.
+ * - a payment: other payments it funds or refunds that are not Voided.
+ * - a receipt: the purchase invoice that created it (reversed by that
+ *   invoice's void, never its own); a receipt still being posted; stock it
+ *   brought in that was since used (`forceDeleteReceiptRefusal`).
+ */
+export async function getForceDeleteRefusal(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  { companyId, document }: { companyId: string; document: ForceDeleteDocument }
+): Promise<string | null> {
+  const { documentType } = document;
+  if (document.step === "busy") {
+    return `${document.readableId} is being posted. Try again in a moment.`;
+  }
+
+  if (documentType === "purchaseInvoice" || documentType === "salesInvoice") {
+    const target =
+      documentType === "purchaseInvoice"
+        ? "targetPurchaseInvoiceId"
+        : "targetSalesInvoiceId";
+    const rows = await db
+      .selectFrom("invoiceSettlement as s")
+      .leftJoin("payment as p", (join) =>
+        join
+          .onRef("p.id", "=", "s.paymentId")
+          .onRef("p.companyId", "=", "s.companyId")
+      )
+      .leftJoin("memo as m", (join) =>
+        join
+          .onRef("m.id", "=", "s.memoId")
+          .onRef("m.companyId", "=", "s.companyId")
+      )
+      .select([
+        "p.paymentId as paymentReadableId",
+        "p.status as paymentStatus",
+        "m.memoId as memoReadableId",
+        "m.status as memoStatus"
+      ])
+      .where("s.companyId", "=", companyId)
+      .where(`s.${target}`, "=", document.id)
+      .execute();
+    const settlements = uniqueBlockers(
+      rows.flatMap((row) => [
+        ...(row.paymentStatus && row.paymentStatus !== "Voided"
+          ? [
+              {
+                readableId: row.paymentReadableId ?? "",
+                status: row.paymentStatus
+              }
+            ]
+          : []),
+        ...(row.memoStatus && row.memoStatus !== "Voided"
+          ? [{ readableId: row.memoReadableId ?? "", status: row.memoStatus }]
+          : [])
+      ])
+    );
+    const blocked = forceDeleteBlockerMessage(documentType, { settlements });
+    if (blocked) return blocked;
+    // The purchase invoice void refuses an invoice whose own status says it
+    // was paid, which a payment outside Carbon's (an import, or the
+    // accounting cutover) sets with no settlement to void.
+    if (
+      documentType === "purchaseInvoice" &&
+      document.step === "void" &&
+      (document.status === "Paid" || document.status === "Partially Paid")
+    ) {
+      return `${document.readableId} is marked ${document.status} by a payment recorded outside Carbon's payments (imported, or before the accounting cutover). Its void refuses a paid invoice, so it cannot be force deleted.`;
+    }
+    return null;
+  }
+
+  if (documentType === "payment") {
+    const rows = await db
+      .selectFrom("invoiceSettlement as s")
+      .innerJoin("payment as p", (join) =>
+        join
+          .onRef("p.id", "=", "s.paymentId")
+          .onRef("p.companyId", "=", "s.companyId")
+      )
+      .select(["p.paymentId as readableId", "p.status"])
+      .where("s.companyId", "=", companyId)
+      .where("s.paymentId", "<>", document.id)
+      .where((eb) =>
+        eb.or([
+          eb("s.sourcePaymentId", "=", document.id),
+          eb("s.targetPaymentId", "=", document.id)
+        ])
+      )
+      .where("p.status", "<>", "Voided")
+      .execute();
+    return forceDeleteBlockerMessage(documentType, {
+      applications: uniqueBlockers(
+        rows.map((row) => ({
+          readableId: row.readableId ?? "",
+          status: row.status
+        }))
+      )
+    });
+  }
+
+  // Receipt.
+  if (document.invoiced) {
+    const invoice = document.sourceDocumentId
+      ? await db
+          .selectFrom("purchaseInvoice")
+          .select(["invoiceId", "status"])
+          .where("id", "=", document.sourceDocumentId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      : undefined;
+    return forceDeleteBlockerMessage(documentType, {
+      invoices: [
+        {
+          readableId: invoice?.invoiceId ?? document.sourceDocumentId ?? "",
+          status: invoice?.status ?? "unknown"
+        }
+      ]
+    });
+  }
+  if (
+    document.step === "void" &&
+    document.sourceDocument === "Purchase Order"
+  ) {
+    const { refusal } = await forceDeleteReceiptRefusal(db, {
+      companyId,
+      receipts: [forceDeleteReceipt(document)]
+    });
+    return refusal;
+  }
+  return null;
+}
+
+function uniqueBlockers(blockers: ForceDeleteBlocker[]): ForceDeleteBlocker[] {
+  const seen = new Map<string, ForceDeleteBlocker>();
+  for (const blocker of blockers) seen.set(blocker.readableId, blocker);
+  return [...seen.values()].sort((a, b) =>
+    a.readableId.localeCompare(b.readableId)
+  );
+}
+
+function forceDeleteReceipt(
+  document: ForceDeleteDocument
+): PurchaseOrderForceDeleteReceipt {
+  return {
+    id: document.id,
+    readableId: document.readableId,
+    status: document.status as PurchaseOrderForceDeleteReceipt["status"],
+    postingDate: null
+  };
+}
+
+/**
+ * Voids a posted document through its own void, in its own posting (each
+ * opens its own transaction, so this runs before the approval's). `refusal`
+ * is the void's refusal, in words for the person. `adjustOut` is a receipt
+ * from a purchase order whose void refused only because its stock was moved
+ * since, or because it predates the accounting cutover: the approval adjusts
+ * its stock out instead (`deleteForceDeleteDocument`), as a purchase order
+ * force delete does.
+ */
+export async function voidForceDeleteDocument(
+  ctx: ServiceContext,
+  document: ForceDeleteDocument
+): Promise<
+  | { refusal: null; adjustOut: boolean }
+  | { refusal: string; adjustOut: false; internal?: unknown }
+> {
+  const voided =
+    document.documentType === "purchaseInvoice"
+      ? await invokePosting(
+          ctx,
+          "post-purchase-invoice",
+          { type: "void" as const, invoiceId: document.id },
+          postPurchaseInvoice
+        )
+      : document.documentType === "salesInvoice"
+        ? await invokePosting(
+            ctx,
+            "post-sales-invoice",
+            { type: "void" as const, invoiceId: document.id },
+            postSalesInvoice
+          )
+        : document.documentType === "payment"
+          ? await invokePosting(
+              ctx,
+              "post-payment",
+              { type: "void" as const, paymentId: document.id },
+              postPayment
+            )
+          : await invokePosting(
+              ctx,
+              "post-receipt",
+              { type: "void" as const, receiptId: document.id },
+              postReceipt
+            );
+  if (!voided.error) return { refusal: null, adjustOut: false };
+  if (voided.error.status >= 500) {
+    return {
+      refusal: `Failed to void ${document.readableId}`,
+      adjustOut: false,
+      internal: voided.error
+    };
+  }
+  if (
+    document.documentType === "receipt" &&
+    document.sourceDocument === "Purchase Order" &&
+    (voided.error.message === INVENTORY_VOID_BEFORE_CUTOVER_ERROR ||
+      voided.error.message === RECEIPT_VOID_STOCK_MOVED_ERROR)
+  ) {
+    return { refusal: null, adjustOut: true };
+  }
+  return {
+    refusal: `${document.readableId} could not be voided: ${voided.error.message}`,
+    adjustOut: false
+  };
+}
+
+/**
+ * Deletes the document inside the approval's transaction, which holds it
+ * locked. It must be Draft or Voided by now, except a purchase order
+ * receipt its void left for adjusting out (`reversal` set): that is reversed
+ * here first (`reverseReceiptsByAdjustment`), and what it received is given
+ * back to its order (`restorePurchaseOrderReceived`).
+ *
+ * Sets `app.force_delete` for the transaction, so the Draft-only delete
+ * guards of the invoices step aside. Removes what still names the document
+ * and counts for nothing: settlements of Voided payments and memos, and the
+ * receipts a voided purchase invoice created (marked Voided: its void
+ * reversed their stock).
+ *
+ * Throws `InvalidInputError` when the document is no longer in a state the
+ * delete can take.
+ */
+export async function deleteForceDeleteDocument(
+  trx: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    document,
+    reversal
+  }: {
+    companyId: string;
+    userId: string;
+    document: ForceDeleteDocument;
+    reversal: ForceDeleteReversalAccounting | null;
+  }
+): Promise<void> {
+  const { documentType } = document;
+  const adjustOut =
+    documentType === "receipt" &&
+    document.status === "Posted" &&
+    reversal !== null;
+  if (document.step !== "delete" && !adjustOut) {
+    throw new InvalidInputError(
+      `${document.readableId} is ${document.status}: it was not voided`
+    );
+  }
+
+  await sql`SELECT set_config('app.force_delete', 'on', true)`.execute(trx);
+  const now = datetime.timestamp();
+
+  switch (documentType) {
+    case "purchaseInvoice": {
+      await trx
+        .deleteFrom("invoiceSettlement")
+        .where("companyId", "=", companyId)
+        .where("targetPurchaseInvoiceId", "=", document.id)
+        .execute();
+      await trx
+        .updateTable("receipt")
+        .set({ status: "Voided", updatedBy: userId, updatedAt: now })
+        .where("companyId", "=", companyId)
+        .where("sourceDocument", "=", "Purchase Invoice")
+        .where("sourceDocumentId", "=", document.id)
+        .where("status", "=", "Posted")
+        .execute();
+      await deletePurchaseInvoiceReleasingLeases(trx, {
+        companyId,
+        invoiceId: document.id,
+        userId,
+        voided: true
+      });
+      return;
+    }
+    case "salesInvoice": {
+      await trx
+        .deleteFrom("invoiceSettlement")
+        .where("companyId", "=", companyId)
+        .where("targetSalesInvoiceId", "=", document.id)
+        .execute();
+      await deleteSalesInvoiceReleasingRentals(trx, {
+        companyId,
+        invoiceId: document.id,
+        userId,
+        voided: true
+      });
+      return;
+    }
+    case "payment": {
+      // Its own settlements cascade; rows of other (Voided) payments that
+      // name it as their source or target are removed first.
+      await trx
+        .deleteFrom("invoiceSettlement")
+        .where("companyId", "=", companyId)
+        .where((eb) =>
+          eb.or([
+            eb("sourcePaymentId", "=", document.id),
+            eb("targetPaymentId", "=", document.id)
+          ])
+        )
+        .execute();
+      await trx
+        .deleteFrom("payment")
+        .where("id", "=", document.id)
+        .where("companyId", "=", companyId)
+        .execute();
+      return;
+    }
+    case "receipt": {
+      if (adjustOut && reversal) {
+        const purchaseOrderId = document.sourceDocumentId;
+        if (!purchaseOrderId) {
+          throw new InvalidInputError(
+            `${document.readableId} names no purchase order`
+          );
+        }
+        const order = await trx
+          .selectFrom("purchaseOrder")
+          .select("purchaseOrderId")
+          .where("id", "=", purchaseOrderId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        const receipt = forceDeleteReceipt(document);
+        const reversible = await forceDeleteReceiptRefusal(trx, {
+          companyId,
+          receipts: [receipt],
+          afterVoid: true
+        });
+        if (reversible.refusal !== null) {
+          throw new InvalidInputError(reversible.refusal);
+        }
+        await reverseReceiptsByAdjustment(trx as never, {
+          companyId,
+          userId,
+          purchaseOrderId,
+          purchaseOrderReadableId: order?.purchaseOrderId ?? purchaseOrderId,
+          receipts: [receipt],
+          removals: reversible.plan.removals,
+          reversal
+        });
+        await restorePurchaseOrderReceived(trx, {
+          companyId,
+          userId,
+          receiptId: document.id,
+          purchaseOrderId
+        });
+      }
+      await trx
+        .deleteFrom("receipt")
+        .where("id", "=", document.id)
+        .where("companyId", "=", companyId)
+        .execute();
+      return;
+    }
+  }
+}
+
+/** A document's open force delete request, for its page. */
+export type DocumentForceDeleteRequest = {
+  id: string;
+  reason: string;
+  requestedBy: string;
+  requestedAt: string;
+  documentStatus: string;
+};
+
+export async function getPendingForceDeleteRequest(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    documentType,
+    documentId
+  }: {
+    companyId: string;
+    documentType: ForceDeleteDocumentType;
+    documentId: string;
+  }
+): Promise<DocumentForceDeleteRequest | null> {
+  const request = await db
+    .selectFrom("forceDeleteRequest")
+    .select(["id", "reason", "requestedBy", "requestedAt", "documentStatus"])
+    .where("companyId", "=", companyId)
+    .where("documentType", "=", documentType)
+    .where("documentId", "=", documentId)
+    .where("status", "=", "Pending")
+    .executeTakeFirst();
+  return request
+    ? { ...request, requestedAt: String(request.requestedAt) }
+    : null;
+}
+
+/**
+ * Tells about a document force delete: `Requested` goes to every Admin but
+ * the one who asked; `Approved` / `Rejected` go to the one who asked. Never
+ * throws.
+ */
+export async function notifyDocumentForceDelete(
+  ctx: ServiceContext,
+  {
+    event,
+    documentType,
+    documentId,
+    requestId,
+    requestedBy
+  }: {
+    event: "Requested" | "Approved" | "Rejected";
+    documentType: ForceDeleteDocumentType;
+    documentId: string;
+    requestId: string;
+    requestedBy: string;
+  }
+) {
+  const companyId = ctx.company.id;
+  try {
+    const userIds =
+      event === "Requested"
+        ? (await getCompanyAdminIds(ctx.asSystem.pg, companyId)).filter(
+            (id) => id !== requestedBy
+          )
+        : requestedBy === ctx.auditUserId
+          ? []
+          : [requestedBy];
+    if (userIds.length === 0) return;
+    await trigger("notify", {
+      event:
+        event === "Requested"
+          ? NotificationEvent.ApprovalRequested
+          : event === "Approved"
+            ? NotificationEvent.ApprovalApproved
+            : NotificationEvent.ApprovalRejected,
+      companyId,
+      documentId: forceDeleteNotificationId(
+        documentType,
+        documentId,
+        requestId
+      ),
+      documentType: "documentForceDelete",
+      recipient: { type: "users", userIds },
+      from: ctx.auditUserId
+    });
+  } catch (e) {
+    logger.error("Failed to notify about a force delete", { error: e });
+  }
+}
+
+/** Best-effort: a failed audit write never undoes the override. */
+export async function auditDocumentForceDelete(
+  ctx: ServiceContext,
+  entry: {
+    documentType: ForceDeleteDocumentType;
+    documentId: string;
+    requestId: string;
+    operation: "INSERT" | "UPDATE" | "DELETE";
+    diff: Record<string, { old: unknown; new: unknown }>;
+  }
+) {
+  try {
+    await insertAuditLogEntries(ctx.asSystem.supabase, ctx.company.id, [
+      {
+        tableName: "forceDeleteRequest",
+        entityType: entry.documentType,
+        entityId: entry.documentId,
+        recordId: entry.requestId,
+        operation: entry.operation,
+        actorId: ctx.auditUserId,
+        diff: entry.diff
+      }
+    ]);
+  } catch (err) {
+    logger.warn("audit write skipped for a force delete", { error: err });
+  }
+}
+
+/**
+ * What a document's page loads for the force delete override: whether the
+ * user is an Admin (who sees the menu item) and the open request (the
+ * banner).
+ */
+export async function getDocumentForceDeleteData(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    documentType: ForceDeleteDocumentType;
+    documentId: string;
+  }
+): Promise<{
+  isAdmin: boolean;
+  forceDeleteRequest: DocumentForceDeleteRequest | null;
+}> {
+  const [isAdmin, forceDeleteRequest] = await Promise.all([
+    isCompanyAdmin(client, args.companyId, args.userId),
+    getPendingForceDeleteRequest(db, args)
+  ]);
+  return { isAdmin, forceDeleteRequest };
 }

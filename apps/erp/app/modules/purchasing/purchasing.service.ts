@@ -231,6 +231,7 @@ import {
   PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS,
   PURCHASE_ORDER_LINE_VERSION_COLUMNS,
   PURCHASE_ORDER_LOCKED_STATUSES,
+  PURCHASE_ORDER_RELEASED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
   type PurchaseOrderDateField,
   type PurchaseOrderForceDeleteBlockers,
@@ -7398,13 +7399,23 @@ async function releaseLeasePayments(
  * lease payment rows it billed to Pending (see `releaseLeasePayments`).
  * Checked here under a row lock, because releasing a POSTED invoice's rows
  * would bill them twice. Throws on a missing or non-Draft invoice.
+ *
+ * `voided` is the Admin force delete: it also deletes a Voided invoice (the
+ * void already returned its lease rows), inside the caller's transaction,
+ * which has set `app.force_delete` so the database's Draft-only guard steps
+ * aside.
  */
 export async function deletePurchaseInvoiceReleasingLeases(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; invoiceId: string; userId: string }
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: {
+    companyId: string;
+    invoiceId: string;
+    userId: string;
+    voided?: boolean;
+  }
 ): Promise<void> {
   const { companyId, invoiceId, userId } = args;
-  await db.transaction().execute(async (trx) => {
+  await withTransaction(db, async (trx) => {
     const invoice = await trx
       .selectFrom("purchaseInvoice")
       .select(["id", "status"])
@@ -7413,7 +7424,10 @@ export async function deletePurchaseInvoiceReleasingLeases(
       .forUpdate()
       .executeTakeFirst();
     if (!invoice) throw new Error("Purchase invoice not found");
-    if (invoice.status !== "Draft") {
+    if (
+      invoice.status !== "Draft" &&
+      !(args.voided && invoice.status === "Voided")
+    ) {
       throw new Error(
         `Cannot delete purchase invoice with status "${invoice.status}". Only Draft invoices can be deleted.`
       );
@@ -8575,6 +8589,93 @@ export async function forceDeleteReceiptRefusal(
     };
   }
   return { refusal: null, plan };
+}
+
+/**
+ * Gives back to the order what a receipt reversed by adjustment had received,
+ * as the receipt's void does: each line's `quantityReceived` drops by what
+ * the receipt received (in the purchase unit, never below 0) and
+ * `receivedComplete` follows. The order's status is set again from its lines
+ * while it is released. For a receipt force deleted on its own; a purchase
+ * order force delete deletes the order instead.
+ */
+export async function restorePurchaseOrderReceived(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    receiptId,
+    purchaseOrderId
+  }: {
+    companyId: string;
+    userId: string;
+    receiptId: string;
+    purchaseOrderId: string;
+  }
+): Promise<void> {
+  await withTransaction(db, async (trx) => {
+    const receiptLines = await trx
+      .selectFrom("receiptLine")
+      .select(["lineId", "receivedQuantity", "conversionFactor"])
+      .where("companyId", "=", companyId)
+      .where("receiptId", "=", receiptId)
+      .execute();
+    const receivedByLine = new Map<string, number>();
+    for (const line of receiptLines) {
+      if (!line.lineId) continue;
+      const received =
+        Number(line.receivedQuantity ?? 0) / Number(line.conversionFactor || 1);
+      receivedByLine.set(
+        line.lineId,
+        (receivedByLine.get(line.lineId) ?? 0) + received
+      );
+    }
+    if (receivedByLine.size === 0) return;
+
+    const orderLines = await trx
+      .selectFrom("purchaseOrderLine")
+      .select(["id", "quantityReceived", "purchaseQuantity"])
+      .where("companyId", "=", companyId)
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("id", "in", [...receivedByLine.keys()])
+      .forUpdate()
+      .execute();
+    const now = datetime.timestamp();
+    for (const line of orderLines) {
+      const quantityReceived = Math.max(
+        0,
+        Number(line.quantityReceived ?? 0) - (receivedByLine.get(line.id) ?? 0)
+      );
+      await trx
+        .updateTable("purchaseOrderLine")
+        .set({
+          quantityReceived,
+          receivedComplete:
+            quantityReceived >= Number(line.purchaseQuantity ?? 0) &&
+            Number(line.purchaseQuantity ?? 0) > 0,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "=", line.id)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    const lines = await trx
+      .selectFrom("purchaseOrderLine")
+      .select(["purchaseOrderLineType", "invoicedComplete", "receivedComplete"])
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .execute();
+    const { status } = getPurchaseOrderStatus(lines);
+    await trx
+      .updateTable("purchaseOrder")
+      .set({ status, updatedBy: userId, updatedAt: now })
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .where("status", "in", [...PURCHASE_ORDER_RELEASED_STATUSES])
+      .execute();
+  });
 }
 
 /**

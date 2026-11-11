@@ -38,7 +38,11 @@ import {
   hasContactNameOrEmail
 } from "~/types/validators";
 import {
+  FORCE_DELETE_MIN_REASON_LENGTH,
+  forceDeleteApprovalRefusal,
+  forceDeleteWithdrawRefusal,
   incoterms,
+  isForceDeleteConfirmed,
   itemType,
   taxExemptionReasons
 } from "../shared/shared.models";
@@ -1552,7 +1556,8 @@ export function purchaseOrderDeleteRefusal({
 
 // ─── Purchase Order Force Delete (Admin override) ───
 
-export const PURCHASE_ORDER_FORCE_DELETE_MIN_REASON_LENGTH = 10;
+export const PURCHASE_ORDER_FORCE_DELETE_MIN_REASON_LENGTH =
+  FORCE_DELETE_MIN_REASON_LENGTH;
 
 export const purchaseOrderForceDeleteRequestValidator = z.object({
   intent: z.literal("request"),
@@ -1738,26 +1743,9 @@ export function purchaseOrderForceDeleteUsedStockMessage(
  * request, only an Admin, and never the Admin who asked: one other Admin's
  * approval deletes the order.
  */
-export function purchaseOrderForceDeleteApprovalRefusal({
-  status,
-  requestedBy,
-  userId,
-  isAdmin
-}: {
-  status: string;
-  requestedBy: string;
-  userId: string;
-  isAdmin: boolean;
-}): string | null {
-  if (status !== "Pending") {
-    return `This force delete request is ${status.toLowerCase()}`;
-  }
-  if (!isAdmin) return "Only an Admin can approve a force delete";
-  if (requestedBy === userId) {
-    return "You asked for this force delete: another Admin must approve it";
-  }
-  return null;
-}
+/** Why `userId` cannot approve this request, or null (`forceDeleteApprovalRefusal`). */
+export const purchaseOrderForceDeleteApprovalRefusal =
+  forceDeleteApprovalRefusal;
 
 /**
  * The `documentId` of a force delete notification: the order and the
@@ -1772,43 +1760,14 @@ export function purchaseOrderForceDeleteNotificationId(
 }
 
 /**
- * Why `userId` cannot reject or cancel this request, or null. Any Admin may
- * reject it; only the Admin who asked may cancel it.
+ * Why `userId` cannot reject or cancel this request, or null
+ * (`forceDeleteWithdrawRefusal`).
  */
-export function purchaseOrderForceDeleteWithdrawRefusal({
-  intent,
-  status,
-  requestedBy,
-  userId,
-  isAdmin
-}: {
-  intent: "reject" | "cancel";
-  status: string;
-  requestedBy: string;
-  userId: string;
-  isAdmin: boolean;
-}): string | null {
-  if (status !== "Pending") {
-    return `This force delete request is ${status.toLowerCase()}`;
-  }
-  if (!isAdmin) return "Only an Admin can decide a force delete";
-  if (intent === "cancel" && requestedBy !== userId) {
-    return "Only the Admin who asked can cancel this force delete; reject it instead";
-  }
-  return null;
-}
+export const purchaseOrderForceDeleteWithdrawRefusal =
+  forceDeleteWithdrawRefusal;
 
-/** Whether the order's own number was typed to confirm (case and spaces ignored). */
-export function isPurchaseOrderForceDeleteConfirmed(
-  confirmation: string,
-  purchaseOrderReadableId: string
-): boolean {
-  const norm = (s: string) => s.replace(/\s+/g, "").toUpperCase();
-  return (
-    norm(confirmation) !== "" &&
-    norm(confirmation) === norm(purchaseOrderReadableId)
-  );
-}
+/** Whether the order's own number was typed to confirm (`isForceDeleteConfirmed`). */
+export const isPurchaseOrderForceDeleteConfirmed = isForceDeleteConfirmed;
 
 // ─── Purchase Return Orders (Supplier Returns) ───
 

@@ -23,7 +23,8 @@ export const approvalDocumentType = [
   "supplier",
   "projectChangeRequest",
   "changeOrder",
-  "purchaseOrderForceDelete"
+  "purchaseOrderForceDelete",
+  "documentForceDelete"
 ] as const;
 
 export type ApprovalDocumentType =
@@ -35,7 +36,8 @@ export const approvalDocumentTypeLabel: Record<ApprovalDocumentType, string> = {
   supplier: "Supplier",
   projectChangeRequest: "Project change request",
   changeOrder: "Change Notice",
-  purchaseOrderForceDelete: "Purchase Order Force Delete"
+  purchaseOrderForceDelete: "Purchase Order Force Delete",
+  documentForceDelete: "Force Delete"
 };
 
 /**
@@ -43,7 +45,8 @@ export const approvalDocumentTypeLabel: Record<ApprovalDocumentType, string> = {
  * asked) instead of an approval rule's groups. No rule is configured for them.
  */
 export const adminApprovedDocumentTypes: ApprovalDocumentType[] = [
-  "purchaseOrderForceDelete"
+  "purchaseOrderForceDelete",
+  "documentForceDelete"
 ];
 
 export const approvalDocumentTypesWithAmounts: ApprovalDocumentType[] = [
