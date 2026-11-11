@@ -14103,8 +14103,8 @@ msgstr "Büyük defter ve dönem sonu kapanışı"
 msgid "Generate"
 msgstr "Oluştur"
 
-msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
-msgstr "Yeni bir 4 haneli PIN oluştur. Operatörün mevcut PIN'i hemen çalışmayı durdurur."
+msgid "Generate a new 4-digit PIN. Their current PIN stops working immediately."
+msgstr "Yeni bir 4 haneli PIN oluştur. Mevcut PIN'i hemen çalışmayı durdurur."
 
 msgid "Generate and send customer invoices"
 msgstr "Müşteri faturalarını oluştur ve gönder"
@@ -27566,8 +27566,8 @@ msgstr "Teklifi Paylaş"
 msgid "Share this PIN with {name} so they can pin in at MES terminals."
 msgstr "Bu PIN'i {name} ile paylaş, böylece MES terminal'lerine PIN ile giriş yapabilir."
 
-msgid "Share this PIN with the operator so they can pin in at MES terminals."
-msgstr "Bu PIN'i operatörle paylaş, böylece MES terminal'lerine PIN ile giriş yapabilir."
+msgid "Share this PIN with them. They enter it at the MES to pin in, or to approve scrap."
+msgstr "Bu PIN'i kişiyle paylaş. MES'te PIN ile giriş yapmak veya fireyi onaylamak için girer."
 
 msgid "Shared"
 msgstr "Paylaşılan"

@@ -14103,8 +14103,8 @@ msgstr "Главная книга и закрытие месяца"
 msgid "Generate"
 msgstr "Генерировать"
 
-msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
-msgstr "Создайте новый 4-значный PIN. Текущий PIN оператора перестанет работать немедленно."
+msgid "Generate a new 4-digit PIN. Their current PIN stops working immediately."
+msgstr "Создайте новый 4-значный PIN. Текущий PIN перестанет работать немедленно."
 
 msgid "Generate and send customer invoices"
 msgstr "Создавать и отправлять счета-фактуры покупателей"
@@ -27566,8 +27566,8 @@ msgstr "Поделиться предложением"
 msgid "Share this PIN with {name} so they can pin in at MES terminals."
 msgstr "Поделитесь этим PIN с {name}, чтобы они смогли войти на терминалы MES."
 
-msgid "Share this PIN with the operator so they can pin in at MES terminals."
-msgstr "Поделитесь этим PIN с оператором, чтобы он смог войти на терминалы MES."
+msgid "Share this PIN with them. They enter it at the MES to pin in, or to approve scrap."
+msgstr "Поделитесь этим PIN с сотрудником. Он вводит его в MES, чтобы войти или утвердить брак."
 
 msgid "Shared"
 msgstr "Общий доступ"

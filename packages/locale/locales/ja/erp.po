@@ -14103,8 +14103,8 @@ msgstr "総勘定元帳と月末決算"
 msgid "Generate"
 msgstr "生成"
 
-msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
-msgstr "新しい 4 桁の PIN を生成します。作業者の現在の PIN は直ちに使用できなくなります。"
+msgid "Generate a new 4-digit PIN. Their current PIN stops working immediately."
+msgstr "新しい 4 桁の PIN を生成します。現在の PIN は直ちに使用できなくなります。"
 
 msgid "Generate and send customer invoices"
 msgstr "得意先請求書を生成して送信する"
@@ -27566,8 +27566,8 @@ msgstr "見積もりを共有"
 msgid "Share this PIN with {name} so they can pin in at MES terminals."
 msgstr "このPINを {name} と共有してください。これにより MES 端末でサインインできます。"
 
-msgid "Share this PIN with the operator so they can pin in at MES terminals."
-msgstr "このPINを作業者と共有してください。これにより MES 端末でサインインできます。"
+msgid "Share this PIN with them. They enter it at the MES to pin in, or to approve scrap."
+msgstr "この PIN を本人と共有してください。MES でサインインするとき、またはスクラップを承認するときに入力します。"
 
 msgid "Shared"
 msgstr "共有"

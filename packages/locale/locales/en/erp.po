@@ -14103,8 +14103,8 @@ msgstr "General Ledger and month-end close"
 msgid "Generate"
 msgstr "Generate"
 
-msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
-msgstr "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
+msgid "Generate a new 4-digit PIN. Their current PIN stops working immediately."
+msgstr "Generate a new 4-digit PIN. Their current PIN stops working immediately."
 
 msgid "Generate and send customer invoices"
 msgstr "Generate and send customer invoices"
@@ -27566,8 +27566,8 @@ msgstr "Share Quote"
 msgid "Share this PIN with {name} so they can pin in at MES terminals."
 msgstr "Share this PIN with {name} so they can pin in at MES terminals."
 
-msgid "Share this PIN with the operator so they can pin in at MES terminals."
-msgstr "Share this PIN with the operator so they can pin in at MES terminals."
+msgid "Share this PIN with them. They enter it at the MES to pin in, or to approve scrap."
+msgstr "Share this PIN with them. They enter it at the MES to pin in, or to approve scrap."
 
 msgid "Shared"
 msgstr "Shared"

@@ -14103,8 +14103,8 @@ msgstr "सामान्य खाता बही और महीने क�
 msgid "Generate"
 msgstr "उत्पन्न करें"
 
-msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
-msgstr "एक नया 4-अंकीय PIN बनाएँ। ऑपरेटर का वर्तमान PIN तुरंत काम करना बंद कर देगा।"
+msgid "Generate a new 4-digit PIN. Their current PIN stops working immediately."
+msgstr "एक नया 4-अंकीय PIN बनाएँ। उनका वर्तमान PIN तुरंत काम करना बंद कर देगा।"
 
 msgid "Generate and send customer invoices"
 msgstr "ग्राहक चालान उत्पन्न करें और भेजें"
@@ -27566,8 +27566,8 @@ msgstr "उद्धरण साझा करें"
 msgid "Share this PIN with {name} so they can pin in at MES terminals."
 msgstr "{name} के साथ यह PIN साझा करें ताकि वे MES टर्मिनल पर पिन इन कर सकें।"
 
-msgid "Share this PIN with the operator so they can pin in at MES terminals."
-msgstr "इस PIN को ऑपरेटर के साथ साझा करें ताकि वे MES टर्मिनल पर पिन इन कर सकें।"
+msgid "Share this PIN with them. They enter it at the MES to pin in, or to approve scrap."
+msgstr "इस PIN को उनके साथ साझा करें। वे MES में पिन इन करने या स्क्रैप स्वीकृत करने के लिए इसे दर्ज करते हैं।"
 
 msgid "Shared"
 msgstr "साझा"

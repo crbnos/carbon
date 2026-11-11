@@ -14103,8 +14103,8 @@ msgstr "总账和月末结账"
 msgid "Generate"
 msgstr "生成"
 
-msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
-msgstr "生成新的4位数PIN。操作员的当前PIN将立即停止工作。"
+msgid "Generate a new 4-digit PIN. Their current PIN stops working immediately."
+msgstr "生成新的4位数PIN。当前PIN将立即停止工作。"
 
 msgid "Generate and send customer invoices"
 msgstr "生成并发送客户发票"
@@ -27566,8 +27566,8 @@ msgstr "分享报价"
 msgid "Share this PIN with {name} so they can pin in at MES terminals."
 msgstr "将此PIN与 {name} 分享，以便他们可以在MES终端登入。"
 
-msgid "Share this PIN with the operator so they can pin in at MES terminals."
-msgstr "将此PIN与操作员分享，以便他们可以在MES终端登入。"
+msgid "Share this PIN with them. They enter it at the MES to pin in, or to approve scrap."
+msgstr "将此PIN分享给对方。对方在MES中输入它以登入或批准报废。"
 
 msgid "Shared"
 msgstr "共享"

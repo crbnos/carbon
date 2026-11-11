@@ -14103,8 +14103,8 @@ msgstr "총계정원장 및 월마감"
 msgid "Generate"
 msgstr "생성"
 
-msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
-msgstr "새로운 4자리 PIN을 발급하세요. 작업자의 현재 PIN은 즉시 무효화됩니다."
+msgid "Generate a new 4-digit PIN. Their current PIN stops working immediately."
+msgstr "새로운 4자리 PIN을 발급하세요. 현재 PIN은 즉시 무효화됩니다."
 
 msgid "Generate and send customer invoices"
 msgstr "고객 송장 생성 및 발송"
@@ -27566,8 +27566,8 @@ msgstr "견적 공유"
 msgid "Share this PIN with {name} so they can pin in at MES terminals."
 msgstr "이 PIN을 {name}과 공유하면 MES 터미널에 로그인할 수 있습니다."
 
-msgid "Share this PIN with the operator so they can pin in at MES terminals."
-msgstr "이 PIN을 작업자와 공유하면 MES 터미널에 로그인할 수 있습니다."
+msgid "Share this PIN with them. They enter it at the MES to pin in, or to approve scrap."
+msgstr "이 PIN을 해당 사용자와 공유하세요. MES에서 로그인하거나 스크랩을 승인할 때 입력합니다."
 
 msgid "Shared"
 msgstr "공유됨"

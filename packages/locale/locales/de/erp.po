@@ -14103,8 +14103,8 @@ msgstr "Hauptbuch und Monatsabschluss"
 msgid "Generate"
 msgstr "Generieren"
 
-msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
-msgstr "Generieren Sie eine neue 4-stellige PIN. Die aktuelle PIN des Werkers funktioniert sofort nicht mehr."
+msgid "Generate a new 4-digit PIN. Their current PIN stops working immediately."
+msgstr "Generieren Sie eine neue 4-stellige PIN. Die aktuelle PIN funktioniert sofort nicht mehr."
 
 msgid "Generate and send customer invoices"
 msgstr "Kundenrechnungen generieren und versenden"
@@ -27566,8 +27566,8 @@ msgstr "Angebot teilen"
 msgid "Share this PIN with {name} so they can pin in at MES terminals."
 msgstr "Teilen Sie diese PIN mit {name}, damit sie sich bei MES-Terminals anmelden können."
 
-msgid "Share this PIN with the operator so they can pin in at MES terminals."
-msgstr "Teilen Sie diese PIN mit dem Werker, damit er sich bei MES-Terminals anmelden kann."
+msgid "Share this PIN with them. They enter it at the MES to pin in, or to approve scrap."
+msgstr "Teilen Sie diese PIN mit der Person. Sie gibt sie im MES ein, um sich anzumelden oder Ausschuss zu genehmigen."
 
 msgid "Shared"
 msgstr "Geteilt"

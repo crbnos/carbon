@@ -14103,8 +14103,8 @@ msgstr "Livro razão e encerramento do período"
 msgid "Generate"
 msgstr "Gerar"
 
-msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
-msgstr "Gerar um novo PIN de 4 dígitos. O PIN atual do operador deixa de funcionar imediatamente."
+msgid "Generate a new 4-digit PIN. Their current PIN stops working immediately."
+msgstr "Gerar um novo PIN de 4 dígitos. O PIN atual deixa de funcionar imediatamente."
 
 msgid "Generate and send customer invoices"
 msgstr "Gerar e enviar faturas de cliente"
@@ -27566,8 +27566,8 @@ msgstr "Compartilhar Cotação"
 msgid "Share this PIN with {name} so they can pin in at MES terminals."
 msgstr "Compartilhe este PIN com {name} para que ele possa fazer login em terminais MES."
 
-msgid "Share this PIN with the operator so they can pin in at MES terminals."
-msgstr "Compartilhe este PIN com o operador para que ele possa fazer login em terminais MES."
+msgid "Share this PIN with them. They enter it at the MES to pin in, or to approve scrap."
+msgstr "Compartilhe este PIN com a pessoa. Ela o digita no MES para fazer login ou para aprovar refugo."
 
 msgid "Shared"
 msgstr "Compartilhado"
