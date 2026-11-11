@@ -2336,6 +2336,8 @@ export const path = {
     purchaseOrderFavorite: `${x}/purchasing/orders/favorite`,
     purchaseOrderFinalize: (id: string) =>
       generatePath(`${x}/purchase-order/${id}/finalize`),
+    purchaseOrderForceDelete: (id: string) =>
+      generatePath(`${x}/purchase-order/${id}/force-delete`),
     purchaseOrderLine: (orderId: string, id: string) =>
       generatePath(`${x}/purchase-order/${orderId}/${id}/details`),
     purchaseOrderLineDate: (orderId: string, id: string) =>

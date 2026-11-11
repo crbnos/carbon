@@ -58708,6 +58708,92 @@ export type Database = {
           }
         ]
       }
+      purchaseOrderForceDeleteRequest: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          decidedAt: string | null
+          decidedBy: string | null
+          decisionNotes: string | null
+          id: string
+          purchaseOrderId: string | null
+          purchaseOrderReadableId: string
+          purchaseOrderStatus: Database["public"]["Enums"]["purchaseOrderStatus"]
+          reason: string
+          requestedAt: string
+          requestedBy: string
+          status: Database["public"]["Enums"]["purchaseOrderForceDeleteStatus"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          decidedAt?: string | null
+          decidedBy?: string | null
+          decisionNotes?: string | null
+          id?: string
+          purchaseOrderId?: string | null
+          purchaseOrderReadableId: string
+          purchaseOrderStatus: Database["public"]["Enums"]["purchaseOrderStatus"]
+          reason: string
+          requestedAt?: string
+          requestedBy: string
+          status?: Database["public"]["Enums"]["purchaseOrderForceDeleteStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          decidedAt?: string | null
+          decidedBy?: string | null
+          decisionNotes?: string | null
+          id?: string
+          purchaseOrderId?: string | null
+          purchaseOrderReadableId?: string
+          purchaseOrderStatus?: Database["public"]["Enums"]["purchaseOrderStatus"]
+          reason?: string
+          requestedAt?: string
+          requestedBy?: string
+          status?: Database["public"]["Enums"]["purchaseOrderForceDeleteStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchaseOrderForceDeleteRequest_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderForceDeleteRequest_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderForceDeleteRequest_requestedBy_fkey"
+            columns: ["requestedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderForceDeleteRequest_decidedBy_fkey"
+            columns: ["decidedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       purchaseOrderLine: {
         Row: {
           accountId: string | null
@@ -110230,6 +110316,7 @@ export type Database = {
         | "supplier"
         | "changeOrder"
         | "projectChangeRequest"
+        | "purchaseOrderForceDelete"
       approvalStatus: "Pending" | "Approved" | "Rejected" | "Cancelled"
       assemblyInstructionStatus: "Draft" | "Published" | "Archived"
       assemblyStepStatus: "Todo" | "Review" | "Done"
@@ -110977,6 +111064,11 @@ export type Database = {
         | "Partially Paid"
         | "Overdue"
         | "Voided"
+      purchaseOrderForceDeleteStatus:
+        | "Pending"
+        | "Executed"
+        | "Rejected"
+        | "Cancelled"
       purchaseOrderLineType:
         | "Comment"
         | "G/L Account"

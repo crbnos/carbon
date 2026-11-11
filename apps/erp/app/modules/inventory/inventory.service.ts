@@ -14063,6 +14063,14 @@ export function findVoidShortfalls(
   });
 }
 
+/**
+ * The void's refusal when the received stock is no longer where it was
+ * received. A purchase order force delete reverses such a receipt by adjusting
+ * the stock out instead, so it matches this text.
+ */
+export const RECEIPT_VOID_STOCK_MOVED_ERROR =
+  "Cannot void: stock received on this receipt was moved, picked or shipped since it was received. Correct the remainder with an inventory adjustment instead.";
+
 /** Refuses the void when the received stock is no longer where it was received. */
 export async function assertReceivedStockOnHand(
   trx: VoidGuardDb,
@@ -14107,9 +14115,7 @@ export async function assertReceivedStockOnHand(
   }
 
   if (findVoidShortfalls(reversingRows, onHand).length > 0) {
-    throw new InvalidInputError(
-      "Cannot void: stock received on this receipt was moved, picked or shipped since it was received. Correct the remainder with an inventory adjustment instead."
-    );
+    throw new InvalidInputError(RECEIPT_VOID_STOCK_MOVED_ERROR);
   }
 }
 

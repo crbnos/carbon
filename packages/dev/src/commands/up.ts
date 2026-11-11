@@ -256,11 +256,17 @@ export async function up(opts: UpOpts = {}) {
   if (shouldMigrate) {
     await tasks([
       {
-        title: "Seed smoke-test user (test@carbon.ms)",
-        task: async () =>
-          (await ensureSmokeTestUser(root, ctx.db, ctx.ports.PORT_API)).seeded
-            ? "user created"
-            : "already exists"
+        title: "Seed smoke-test users (test@carbon.ms, test+admin2@carbon.ms)",
+        task: async () => {
+          const { seeded } = await ensureSmokeTestUser(
+            root,
+            ctx.db,
+            ctx.ports.PORT_API
+          );
+          if (seeded === "company") return "users created";
+          if (seeded === "second admin") return "second Admin added";
+          return "already exist";
+        }
       }
     ]);
   }

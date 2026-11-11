@@ -4320,6 +4320,12 @@ msgstr "{displayName}を承認"
 msgid "Approve all"
 msgstr "すべて承認"
 
+msgid "Approve and delete"
+msgstr ""
+
+msgid "Approve and Delete"
+msgstr ""
+
 msgid "Approve Request"
 msgstr "リクエスト承認"
 
@@ -4334,6 +4340,15 @@ msgstr "承認者"
 
 msgid "Approved On"
 msgstr "承認日"
+
+msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
+msgstr ""
+
+msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
+msgstr ""
+
+msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
+msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "概算 — スケジュール日付から派生; このエントリに対する容量予約は存在しません。"
@@ -6311,6 +6326,9 @@ msgstr "発注書をキャンセル"
 
 msgid "Cancel purchase order {target}"
 msgstr "発注書{target}をキャンセル"
+
+msgid "Cancel Request"
+msgstr ""
 
 msgid "Cancel Return"
 msgstr "返品をキャンセル"
@@ -13754,6 +13772,18 @@ msgstr "例：拠点、発注者"
 msgid "For Form 6765 Section E"
 msgstr "フォーム6765セクションE用"
 
+msgid "Force delete"
+msgstr ""
+
+msgid "Force Delete (Admin)"
+msgstr ""
+
+msgid "Force delete {purchaseOrderReadableId}"
+msgstr ""
+
+msgid "Force delete waiting for another Admin's approval"
+msgstr ""
+
 msgid "Forecast"
 msgstr "予測"
 
@@ -15955,6 +15985,12 @@ msgstr "近日公開予定です。会社向けに設定するには Carbon に�
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "「{table}」レコードで引き続き使用されています。先にそれを除去。"
+
+msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgstr ""
+
+msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
+msgstr ""
 
 msgid "It shows with no hours until you add some."
 msgstr "時間が追加されるまで表示されません"
@@ -20450,6 +20486,9 @@ msgstr "ここにはまだ何もありません"
 msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
 
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
+msgstr ""
+
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "期限が来ていません。期間が到来すると請求書が自動作成されます。"
 
@@ -23356,6 +23395,9 @@ msgstr "発注書承認"
 msgid "Purchase order for {supplierName}"
 msgstr "{supplierName}向けの発注書"
 
+msgid "Purchase Order Force Delete"
+msgstr ""
+
 msgid "Purchase Order ID"
 msgstr "発注書ID"
 
@@ -25022,8 +25064,14 @@ msgstr "承認を依頼"
 msgid "Request date"
 msgstr "リクエスト日付"
 
+msgid "Request Force Delete"
+msgstr ""
+
 msgid "Requested"
 msgstr "依頼済み"
+
+msgid "Requested by"
+msgstr ""
 
 msgid "Requested By"
 msgstr "要求者"
@@ -31444,6 +31492,9 @@ msgstr "これは購買品目です。BOM/BoPはありません。属性とド�
 msgid "This is a unique identifier for the webhook"
 msgstr "これはWebhookの一意識別子です"
 
+msgid "This is an Admin override"
+msgstr ""
+
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "これはITAR管理環境です。アクセスは米国人に限定されています。"
 
@@ -32513,6 +32564,9 @@ msgstr "変数のために '{' を入力してください"
 #. placeholder {0}: company.name
 msgid "Type {0} to confirm"
 msgstr "{0}を入力して確認してください。"
+
+msgid "Type {purchaseOrderReadableId} to confirm"
+msgstr ""
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "変数を挿入するために {TRIGGER} を入力してください"
@@ -34093,6 +34147,9 @@ msgstr "このタイムエントリが計算される対象 — 労務（作業�
 msgid "What to set up"
 msgstr "セットアップする内容"
 
+msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
+msgstr ""
+
 msgid "What we're assuming"
 msgstr "私たちが想定していること"
 
@@ -34918,6 +34975,9 @@ msgstr "カスタムレート"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "あなたの実際のデータが読み込まれ、サンプルを確認して承認しました。"
+
+msgid "Your reason and the decision are kept in the audit log."
+msgstr ""
 
 msgid "Your session was locked after inactivity."
 msgstr "非アクティブのためセッションがロック中になりました。"

@@ -277,7 +277,9 @@ export const COVERAGE = {
       qualityDocument: "the seed requests approval for orders and suppliers",
       projectChangeRequest:
         "the demo datasets seed no project change request (Phase 1c)",
-      changeOrder: "the seed does not create change notice approval requests"
+      changeOrder: "the seed does not create change notice approval requests",
+      purchaseOrderForceDelete:
+        "the seed does not create purchase order force delete requests"
     }),
     missing: (type) => `purchasing.approvalRequests: no ${type} request`
   },

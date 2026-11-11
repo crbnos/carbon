@@ -4320,6 +4320,12 @@ msgstr "Onayla {displayName}"
 msgid "Approve all"
 msgstr "Tümünü onayla"
 
+msgid "Approve and delete"
+msgstr ""
+
+msgid "Approve and Delete"
+msgstr ""
+
 msgid "Approve Request"
 msgstr "İsteği Onayla"
 
@@ -4334,6 +4340,15 @@ msgstr "Onaylayan"
 
 msgid "Approved On"
 msgstr "Onaylandı"
+
+msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
+msgstr ""
+
+msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
+msgstr ""
+
+msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
+msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "Yaklaşık — planlanan tarihlerden türetilmiştir; bu satır için kapasite rezervasyonu yok."
@@ -6311,6 +6326,9 @@ msgstr "Satın Alma Siparişini İptal Et"
 
 msgid "Cancel purchase order {target}"
 msgstr "{target} satın alma siparişini iptal et"
+
+msgid "Cancel Request"
+msgstr ""
 
 msgid "Cancel Return"
 msgstr "İadeyi İptal Et"
@@ -13754,6 +13772,18 @@ msgstr "Örneğin Tesis veya Sıralama ölçütü"
 msgid "For Form 6765 Section E"
 msgstr "Form 6765 Bölüm E için"
 
+msgid "Force delete"
+msgstr ""
+
+msgid "Force Delete (Admin)"
+msgstr ""
+
+msgid "Force delete {purchaseOrderReadableId}"
+msgstr ""
+
+msgid "Force delete waiting for another Admin's approval"
+msgstr ""
+
 msgid "Forecast"
 msgstr "Tahmin"
 
@@ -15955,6 +15985,12 @@ msgstr "Yakında kullanıma sunulacak. Şirketiniz için kurulması için Carbon
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Yine de bir «{table}» kaydı tarafından kullanılıyor; önce bunu kaldırın."
+
+msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgstr ""
+
+msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
+msgstr ""
 
 msgid "It shows with no hours until you add some."
 msgstr "Saat ekleyene kadar hiçbir saat göstermez."
@@ -20450,6 +20486,9 @@ msgstr "Henüz hiçbir şey yok"
 msgid "Nothing in the archive"
 msgstr "Arşivde hiçbir şey yok"
 
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
+msgstr ""
+
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "Ödenmesi gereken bir şey yok. Bir dönem ödeme süresine girdiğinde faturalar otomatik olarak oluşturulur."
 
@@ -23356,6 +23395,9 @@ msgstr "Satın Alma Siparişi Onayı"
 msgid "Purchase order for {supplierName}"
 msgstr "{supplierName} için satın alma siparişi"
 
+msgid "Purchase Order Force Delete"
+msgstr ""
+
 msgid "Purchase Order ID"
 msgstr "Satın Alma Siparişi Numarası"
 
@@ -25022,8 +25064,14 @@ msgstr "Onay iste"
 msgid "Request date"
 msgstr "İstek tarihi"
 
+msgid "Request Force Delete"
+msgstr ""
+
 msgid "Requested"
 msgstr "Talep edildi"
+
+msgid "Requested by"
+msgstr ""
 
 msgid "Requested By"
 msgstr "Talep Eden"
@@ -31444,6 +31492,9 @@ msgstr "Bu satın alınan bir üründür — BoM/BoP'si yoktur; yalnızca öznit
 msgid "This is a unique identifier for the webhook"
 msgstr "Bu, webhook için benzersiz bir tanımlayıcıdır"
 
+msgid "This is an Admin override"
+msgstr ""
+
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "Bu ITAR tarafından kontrol edilen bir ortamdır. Erişim yalnızca ABD vatandaşları ile sınırlıdır."
 
@@ -32513,6 +32564,9 @@ msgstr "Bir değişken için '{' yazın"
 #. placeholder {0}: company.name
 msgid "Type {0} to confirm"
 msgstr "Onaylamak için {0} yazın"
+
+msgid "Type {purchaseOrderReadableId} to confirm"
+msgstr ""
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "Bir değişken eklemek için {TRIGGER} yazın"
@@ -34093,6 +34147,9 @@ msgstr "Bu zaman girişinin neyi temsil ettiği — İşçilik (operatör zaman�
 msgid "What to set up"
 msgstr "Kurulacak şey"
 
+msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
+msgstr ""
+
 msgid "What we're assuming"
 msgstr "Neyi varsaydığımız"
 
@@ -34918,6 +34975,9 @@ msgstr "Sizin kurunuz"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "Gerçek verileriniz yüklendi ve bir örneği kontrol ederek onayladınız."
+
+msgid "Your reason and the decision are kept in the audit log."
+msgstr ""
 
 msgid "Your session was locked after inactivity."
 msgstr "Oturumunuz hareketsizlikten sonra kilitlendi."
