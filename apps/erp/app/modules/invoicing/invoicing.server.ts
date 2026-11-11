@@ -3834,12 +3834,10 @@ const forceDeleteRule = {
  * Draft). The caller must be an Admin, give a reason and type the document's
  * number. Nothing is deleted here: the request and its `approvalRequest`
  * (type `documentForceDelete`) are opened and the other Admins notified.
- * Another Admin approves it with `decideDocumentForceDelete`, which voids the
- * document if it is posted, then deletes it. Refused while something the
- * force delete does not undo still holds it (`getForceDeleteRefusal`): an
- * invoice's applied payments and memos, a payment applied to another, the
- * purchase invoice that created a receipt, a receipt's used stock. One open
- * request per document.
+ * Another Admin approves it with `decideDocumentForceDelete`, which
+ * unapplies what is applied to the document, voids it (or reverses it by
+ * journal when the void refuses) and deletes it. Refused only while the
+ * document is being posted. One open request per document.
  *
  * @returns `requestId`, the new request.
  */
@@ -4014,8 +4012,6 @@ export const decideDocumentForceDelete = defineServiceFn({
     // Approving claims the request first (Approving), so a cancel or reject
     // cannot run while step 1's void commits on its own. Any refusal or
     // failure after the claim gives it back (Pending) for another try.
-    let reversal: purchasingPostings.ForceDeleteReversalAccounting | null =
-      null;
     if (decision === "approve") {
       const claimed = await service.claimForceDeleteRequest(system, {
         companyId,
@@ -4048,7 +4044,16 @@ export const decideDocumentForceDelete = defineServiceFn({
       });
     };
 
-    // Step 1 (approve): void the document in its own posting.
+    // Step 1 (approve), each part committing on its own (a void opens its
+    // own transaction), so approving again after a refusal resumes:
+    //   a. what is applied to the document is unapplied, and a sales
+    //      invoice's recognized revenue taken back;
+    //   b. a posted document is voided. When its void refuses, step 2
+    //      reverses it by journal instead.
+    let reversal: purchasingPostings.ForceDeleteReversalAccounting | null =
+      null;
+    let adjustOut = false;
+    let byJournal = false;
     if (decision === "approve") {
       try {
         const pending = await readRequest(system, false);
@@ -4068,25 +4073,43 @@ export const decideDocumentForceDelete = defineServiceFn({
             await release();
             return ctx.error("rule", blocked);
           }
+          reversal =
+            await purchasingPostings.resolveForceDeleteReversalAccounting(
+              system,
+              { companyId, userId }
+            );
+          await service.unapplyForceDeleteSettlements(system, {
+            companyId,
+            userId,
+            document,
+            accounting: reversal
+          });
+          await service.reverseRecognizedRevenue(system, {
+            companyId,
+            userId,
+            document,
+            reversal
+          });
           if (document.step === "void") {
             const voided = await service.voidForceDeleteDocument(ctx, document);
             if (voided.refusal !== null) {
-              await release();
-              return "internal" in voided && voided.internal
-                ? ctx.error("internal", voided.refusal, voided.internal)
-                : ctx.error("rule", voided.refusal);
-            }
-            if (voided.adjustOut) {
-              reversal =
-                await purchasingPostings.resolveForceDeleteReversalAccounting(
-                  system,
-                  { companyId, userId }
-                );
+              if ("internal" in voided && voided.internal) {
+                await release();
+                return ctx.error("internal", voided.refusal, voided.internal);
+              }
+              byJournal = true;
+            } else {
+              adjustOut = voided.adjustOut;
             }
           }
         }
       } catch (error) {
         await release();
+        const raised = raisedMessage(error);
+        if (raised) return ctx.error("rule", `Cannot force delete: ${raised}`);
+        if (error instanceof InvalidInputError) {
+          return ctx.error("rule", error.message);
+        }
         throw error;
       }
     }
@@ -4157,11 +4180,24 @@ export const decideDocumentForceDelete = defineServiceFn({
             );
           }
           try {
+            // Its void refused: its postings, stock and sources come back
+            // by journal (`reverseDocumentByJournal`), then it is deleted.
+            const reversedByJournal =
+              byJournal && document.step === "void" && reversal !== null;
+            if (reversedByJournal && reversal) {
+              await service.reverseDocumentByJournal(db, {
+                companyId,
+                userId,
+                document,
+                reversal
+              });
+            }
             await service.deleteForceDeleteDocument(db, {
               companyId,
               userId,
               document,
-              reversal
+              reversal: adjustOut ? reversal : null,
+              reversedByJournal
             });
           } catch (error) {
             // A rule raised by the database (held stock, a picked Put Away):

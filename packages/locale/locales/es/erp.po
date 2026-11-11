@@ -2148,9 +2148,6 @@ msgstr "Un ID de proveedor legible aparece en listas, formularios y menús despl
 msgid "A readiness check fails. <0>Go to Readiness</0>"
 msgstr "Una verificación de preparación falla. <0>Ir a Preparación</0>"
 
-msgid "A receipt a purchase invoice created goes with that invoice: force delete the invoice instead. A receipt whose stock was used since is refused."
-msgstr ""
-
 msgid "A receipt is created"
 msgstr "Se crea un recibo"
 
@@ -15995,7 +15992,7 @@ msgstr "Decide cómo se fija el precio de la línea."
 msgid "It decides what the next step asks for."
 msgstr "Decide lo que el siguiente paso pide."
 
-msgid "It is {status}: approving voids it first, which reverses its postings. If the void is refused, nothing is deleted."
+msgid "It is {status}: approving voids it first, which reverses its postings. If the void refuses, its postings are reversed by journal instead."
 msgstr ""
 
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
@@ -16153,6 +16150,9 @@ msgstr "Su diseño puede cambiar antes de que se libere el aviso de cambio."
 
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "Sus ingresos por ventas vuelven a lo que cada línea tiene pendiente de reconocer."
+
+msgid "Its stock is taken back out, even if it was used since (on-hand can go negative), and what it received is given back to its order."
+msgstr ""
 
 msgid "Job"
 msgstr "Trabajo"
@@ -21492,7 +21492,7 @@ msgstr "Cuenta de Otros ingresos para los intereses mensuales ganados en la inve
 msgid "Other Income GL account for the monthly interest earned on the net investment in sales-type leases."
 msgstr "Cuenta contable de Otros ingresos para los intereses mensuales ganados en la inversión neta en arrendamientos de tipo venta."
 
-msgid "Other payments it funds or refunds must be voided (or force deleted) first. The request is refused until they are."
+msgid "Other payments it funds or refunds are unapplied from it first; they stay posted."
 msgstr ""
 
 msgid "Other Type"
@@ -22029,7 +22029,10 @@ msgstr "Pagos"
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "Pagos y créditos aplicados a esta factura. Los importes aplicados y las diferencias de cambio están expresados en la moneda base de la empresa. Haga clic en una fila para abrir el documento de origen."
 
-msgid "Payments and memos applied to it must be voided (or force deleted) first. The request is refused until they are."
+msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
+msgstr ""
+
+msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
 msgstr ""
 
 msgid "Payments due before this date were paid outside Carbon"

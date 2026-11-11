@@ -8,7 +8,6 @@ import { z } from "zod";
 import {
   booleanField,
   forceDeleteApprovalRefusal,
-  forceDeleteBlockerMessage,
   forceDeleteNotificationId,
   forceDeleteWithdrawRefusal,
   isForceDeleteConfirmed,
@@ -405,24 +404,6 @@ describe("force delete", () => {
   it("names the document and request in its notification id", () => {
     expect(forceDeleteNotificationId("receipt", "r1", "fdr1")).toBe(
       "receipt:r1:fdr1"
-    );
-  });
-
-  it("names what holds the document", () => {
-    expect(forceDeleteBlockerMessage("payment", {})).toBeNull();
-    expect(
-      forceDeleteBlockerMessage("salesInvoice", {
-        settlements: [{ readableId: "PAY000003", status: "Posted" }]
-      })
-    ).toBe(
-      "This sales invoice cannot be force deleted until you void or force delete the payments and memos applied to it: PAY000003 (Posted)."
-    );
-    expect(
-      forceDeleteBlockerMessage("receipt", {
-        invoices: [{ readableId: "PI000004", status: "Open" }]
-      })
-    ).toBe(
-      "This receipt cannot be force deleted until you force delete the purchase invoice that created it instead: PI000004 (Open)."
     );
   });
 });

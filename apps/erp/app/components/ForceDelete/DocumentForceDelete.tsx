@@ -95,11 +95,11 @@ export function DocumentForceDeleteModal({
   const { t } = useLingui();
   const fetcher = useFetcher<{}>();
 
-  const holds: Record<ForceDeleteDocumentType, string> = {
-    purchaseInvoice: t`Payments and memos applied to it must be voided (or force deleted) first. The request is refused until they are.`,
-    salesInvoice: t`Payments and memos applied to it must be voided (or force deleted) first. The request is refused until they are.`,
-    payment: t`Other payments it funds or refunds must be voided (or force deleted) first. The request is refused until they are.`,
-    receipt: t`A receipt a purchase invoice created goes with that invoice: force delete the invoice instead. A receipt whose stock was used since is refused.`
+  const cleanup: Record<ForceDeleteDocumentType, string> = {
+    purchaseInvoice: t`Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays.`,
+    salesInvoice: t`Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed.`,
+    payment: t`Other payments it funds or refunds are unapplied from it first; they stay posted.`,
+    receipt: t`Its stock is taken back out, even if it was used since (on-hand can go negative), and what it received is given back to its order.`
   };
 
   return (
@@ -155,12 +155,12 @@ export function DocumentForceDeleteModal({
                       <li>
                         <Trans>
                           It is {status}: approving voids it first, which
-                          reverses its postings. If the void is refused, nothing
-                          is deleted.
+                          reverses its postings. If the void refuses, its
+                          postings are reversed by journal instead.
                         </Trans>
                       </li>
                     )}
-                    <li>{holds[documentType]}</li>
+                    <li>{cleanup[documentType]}</li>
                     <li>
                       <Trans>
                         Your reason and the decision are kept in the audit log.

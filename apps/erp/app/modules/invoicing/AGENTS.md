@@ -25,18 +25,24 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
 
 ## Key Domain Concepts
 
-- **Force delete (Admin override): invoices, receipts, payments.** This is the purchase order force delete (`purchasing/AGENTS.md`) for purchase invoices, sales invoices, receipts and payments, through one table, `forceDeleteRequest` (`documentType`, `documentId` with no FK, `documentReadableId`, `documentStatus`; `serviceOnly()`). Its `approvalRequest` type is `documentForceDelete`, in `adminApprovedDocumentTypes`.
-  - **Operations.** `requestDocumentForceDelete`, `decideDocumentForceDelete` and `cancelDocumentForceDelete` (`invoicing.server.ts`). The permission is keyed by `documentType`: `delete: invoicing`, and `delete: inventory` for a receipt. They are called from the route `force-delete+/$documentType.$documentId.tsx`.
-  - **UI.** `components/ForceDelete/DocumentForceDelete.tsx` holds the menu item, modal and banner. Each layout loader spreads `getDocumentForceDeleteData`.
-  - **Approving, step 1.** A posted document is voided through its own posting (`voidForceDeleteDocument`), and a refusal stops the approval with the void's message. A purchase order receipt whose void refused only on moved stock or the cutover is adjusted out in step 2 (`reverseReceiptsByAdjustment` + `restorePurchaseOrderReceived`).
-  - **Approving, step 2.** One transaction runs `getForceDeleteRefusal` again under lock, then `deleteForceDeleteDocument`. That sets `app.force_delete` (the `prevent_posted_*_invoice_deletion` guards return early on it), and removes settlements of Voided payments and memos and the receipts a voided purchase invoice created. It then deletes the document (`delete*Releasing*` with `voided: true` for invoices).
-  - **Refused (at request and approval)** while any of these still holds the document (`forceDeleteBlockerMessage`):
-    - a non-Voided payment or memo applied to an invoice;
-    - a non-Voided payment applied to a payment;
-    - the purchase invoice that created a receipt;
-    - a receipt's used stock;
-    - a purchase invoice whose own status says Paid or Partially Paid (the void refuses it).
-  - **Notifications.** The `documentId` is `<documentType>:<documentId>:<requestId>`.
+- **Force delete (Admin override): invoices, receipts, payments.** This is the purchase order force delete (`purchasing/AGENTS.md`) for purchase invoices, sales invoices, receipts and payments. It is an emergency override for when a user error has broken the normal process: it cleans up what holds the document instead of refusing.
+  - **Storage:** one table, `forceDeleteRequest` (`documentType`, `documentId` with no FK, `documentReadableId`, `documentStatus`; `serviceOnly()`). The `approvalRequest` type is `documentForceDelete`, in `adminApprovedDocumentTypes`.
+  - **Operations:** `requestDocumentForceDelete`, `decideDocumentForceDelete` and `cancelDocumentForceDelete` (`invoicing.server.ts`). Permission is keyed by `documentType`. The route is `force-delete+/$documentType.$documentId.tsx`; the UI is `components/ForceDelete/DocumentForceDelete.tsx`, and the loaders spread `getDocumentForceDeleteData`.
+  - **Claiming:** approving first claims the request (status `Approving`, `claimForceDeleteRequest`), so a cancel or reject cannot run while committed steps run. A refusal or failure releases the claim back to Pending; a claim left for ten minutes can be taken again.
+  - **Step 1, each part committing on its own:**
+    - `unapplyForceDeleteSettlements` unapplies what is applied to the document: an invoice's payments and memos, or the other payments a payment funds or refunds. A Posted payment's journal is built again (`rebuildPaymentJournal`) with and without the settlements; `paymentJournalDifference` is posted today, and the payment keeps the cash as unapplied credit.
+    - `reverseRecognizedRevenue` reverses a sales invoice's Posted revenue schedule rows.
+    - The document's own void runs (`voidForceDeleteDocument`).
+    - The payment void reverses every `journalLine` of the payment, unapply journals included.
+  - **Step 2, one transaction:** if the void refused, `reverseDocumentByJournal` runs:
+    1. It negates every journal carrying the document's lines. Before the cutover there are none to negate: an invoice writes its open amount off, and a payment negates its rebuilt posting.
+    2. It moves the stock back by adjustment, even negative, with its inspections cancelled under `withInspectionRelease`, and adds the original value back from its cost ledger.
+    3. It restores PO received and invoiced quantities, and moves a capitalized asset's CIP value back.
+    4. It marks the document Voided.
+
+    Then `deleteForceDeleteDocument` sets `app.force_delete` (the invoice delete guards and `prevent_invalid_deposit_refund` return early on it) and deletes the document.
+  - **Refused only** while the document is being posted.
+  - **Notifications:** the `documentId` is `<documentType>:<documentId>:<requestId>`.
 - **Invoice status** — `salesInvoiceStatusType` / `purchaseInvoiceStatusType`;
   `is{Sales,Purchase}InvoiceLocked` = not Draft. **`Partially Paid` and `Overdue` are DERIVED**
   in the `salesInvoices`/`purchaseInvoices` views from `invoiceSettlement`. There is no
