@@ -74,6 +74,8 @@ export const UNPAGED_ROUTES: Readonly<Record<string, string>> = {
     "Batch properties of one item; the item's type picks the page.",
   "/x/credits/":
     "A memo's detail, shared by Supplier Credits and Credit Memos; the memo's party picks the page.",
+  "/x/force-delete/":
+    "The Admin force delete of a purchase invoice, sales invoice, receipt or payment; the document's type picks the page.",
   "/x/revenue-recognition-run/":
     "A run's detail, shared by Leases and Revenue Recognition; the run's type picks the page.",
   "/x/priority": "The layout of Priorities and Resource Planning.",

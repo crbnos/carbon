@@ -111,6 +111,7 @@ import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
 import {
   getDefaultSerialCompleteQuantity,
+  getFinishedQuantity,
   getFinishedUnreceivedQuantity,
   getSerialCompleteChoice,
   type JobReceiptSnapshot,
@@ -1582,20 +1583,25 @@ function JobCompleteModal({
         .order("id", { ascending: true });
 
       if (trackedEntities.data?.length) {
-        const availableQuantity = trackedEntities.data.reduce((acc, curr) => {
-          if (curr.status === "Available") {
-            return acc + curr.quantity;
-          }
-          return acc;
-        }, 0);
-
         const receivedEntityIds = new Set(receipts?.trackedEntityIds ?? []);
+        // Only a serial completion to inventory receives issued units.
+        const issuedEntityIds = new Set(
+          makeMethod.data?.requiresSerialTracking && !completesToFixedAsset
+            ? (receipts?.issuedTrackedEntityIds ?? [])
+            : []
+        );
+        const availableQuantity = getFinishedQuantity(
+          trackedEntities.data,
+          issuedEntityIds
+        );
+
         // Only unlock the quantity when the receipts are known: without them
         // the dialog could offer a unit the job already received.
         const choice = makeMethod.data?.requiresSerialTracking
           ? getSerialCompleteChoice({
               trackedEntities: trackedEntities.data,
               receivedEntityIds: receipts ? receivedEntityIds : null,
+              issuedEntityIds,
               // complete_job_to_inventory numbers what the completion takes
               // whenever the item has a sequence. A failed read keeps the
               // quantity locked.
@@ -1618,7 +1624,8 @@ function JobCompleteModal({
             getDefaultSerialCompleteQuantity({
               finishedUnreceivedQuantity: getFinishedUnreceivedQuantity(
                 trackedEntities.data,
-                receivedEntityIds
+                receivedEntityIds,
+                issuedEntityIds
               ),
               jobQuantity: job?.quantity ?? 0,
               priorReceivedQuantity: currentReceivedQuantity,

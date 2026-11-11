@@ -4361,10 +4361,16 @@ msgstr "Zatwierdzono w dniu"
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
 msgstr ""
 
+msgid "Approving deletes {readableId} now. This cannot be undone."
+msgstr ""
+
 msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
 msgstr ""
 
 msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
+msgstr ""
+
+msgid "Approving voids {readableId}, which reverses its postings, then deletes it. This cannot be undone."
 msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
@@ -5643,6 +5649,9 @@ msgstr "Przed przesłaniem"
 
 msgid "Beginning"
 msgstr "Początek"
+
+msgid "Being approved now…"
+msgstr ""
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -13807,10 +13816,16 @@ msgstr "Na potrzeby formularza 6765 sekcja E"
 msgid "Force delete"
 msgstr ""
 
+msgid "Force Delete"
+msgstr ""
+
 msgid "Force Delete (Admin)"
 msgstr ""
 
 msgid "Force delete {purchaseOrderReadableId}"
+msgstr ""
+
+msgid "Force delete {readableId}"
 msgstr ""
 
 msgid "Force delete waiting for another Admin's approval"
@@ -16016,6 +16031,9 @@ msgstr "To decyduje, jak pozycja jest wyceniana."
 msgid "It decides what the next step asks for."
 msgstr "To decyduje, o co prosi następny krok."
 
+msgid "It is {status}: approving voids it first, which reverses its postings. If the void refuses, its postings are reversed by journal instead."
+msgstr ""
+
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "Jest zatwierdzone, ale nie może być zastosowane. Otwórz je ponownie, sprawdź te wiersze, a następnie prześlij je ponownie."
 
@@ -16026,6 +16044,9 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "Jest nadal używane przez rekord „{table}\"; usuń je najpierw."
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgstr ""
+
+msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
 msgstr ""
 
 msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
@@ -16168,6 +16189,9 @@ msgstr "Jego projekt może się zmienić przed wydaniem zawiadomienia o zmianie.
 
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "Przychody ze sprzedaży powracają do tego, co każda pozycja ma jeszcze do rozpoznania."
+
+msgid "Its stock is taken back out, even if it was used since (on-hand can go negative), and what it received is given back to its order."
+msgstr ""
 
 msgid "Job"
 msgstr "Zadanie"
@@ -20528,6 +20552,9 @@ msgstr "Nic tu jeszcze nie ma"
 msgid "Nothing in the archive"
 msgstr "Nic w archiwum"
 
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
+msgstr ""
+
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr ""
 
@@ -21510,6 +21537,9 @@ msgstr "Konto Pozostałych przychodów dla miesięcznych odsetek uzyskanych z ne
 msgid "Other Income GL account for the monthly interest earned on the net investment in sales-type leases."
 msgstr "Konto księgowe Pozostałych przychodów dla miesięcznych odsetek uzyskanych z netto inwestycji w leasingi finansowe."
 
+msgid "Other payments it funds or refunds are unapplied from it first; they stay posted."
+msgstr ""
+
 msgid "Other Type"
 msgstr "Inny typ"
 
@@ -22040,6 +22070,12 @@ msgstr "Płatności"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "Płatności i uznania rozliczone z tą fakturą. Kwoty rozliczeń i różnice kursowe są wyrażone w walucie bazowej firmy. Kliknij wiersz, aby otworzyć dokument źródłowy."
+
+msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
+msgstr ""
+
+msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
+msgstr ""
 
 msgid "Payments due before this date were paid outside Carbon"
 msgstr "Płatności należne przed tą datą zostały opłacone poza Carbon"
@@ -32610,6 +32646,9 @@ msgstr "Wpisz {0} aby potwierdzić"
 msgid "Type {purchaseOrderReadableId} to confirm"
 msgstr ""
 
+msgid "Type {readableId} to confirm"
+msgstr ""
+
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "Wpisz {TRIGGER} aby wstawić zmienną"
 
@@ -34185,6 +34224,9 @@ msgstr "Co ta wpis czasu reprezentuje — Robocizna (czas operatora), Maszyna (c
 
 msgid "What to set up"
 msgstr "Co skonfigurować"
+
+msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
+msgstr ""
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
 msgstr ""

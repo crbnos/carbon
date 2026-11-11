@@ -4361,10 +4361,16 @@ msgstr "पर अनुमोदित"
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
 msgstr ""
 
+msgid "Approving deletes {readableId} now. This cannot be undone."
+msgstr ""
+
 msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
 msgstr ""
 
 msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
+msgstr ""
+
+msgid "Approving voids {readableId}, which reverses its postings, then deletes it. This cannot be undone."
 msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
@@ -5643,6 +5649,9 @@ msgstr "सबमिट करने से पहले"
 
 msgid "Beginning"
 msgstr "आरंभ"
+
+msgid "Being approved now…"
+msgstr ""
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -13807,10 +13816,16 @@ msgstr "फॉर्म 6765 खंड E के लिए"
 msgid "Force delete"
 msgstr ""
 
+msgid "Force Delete"
+msgstr ""
+
 msgid "Force Delete (Admin)"
 msgstr ""
 
 msgid "Force delete {purchaseOrderReadableId}"
+msgstr ""
+
+msgid "Force delete {readableId}"
 msgstr ""
 
 msgid "Force delete waiting for another Admin's approval"
@@ -16016,6 +16031,9 @@ msgstr "यह निर्धारित करता है कि पंक�
 msgid "It decides what the next step asks for."
 msgstr "यह तय करता है कि अगला चरण क्या माँगता है।"
 
+msgid "It is {status}: approving voids it first, which reverses its postings. If the void refuses, its postings are reversed by journal instead."
+msgstr ""
+
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "यह अनुमोदित है लेकिन लागू नहीं किया जा सकता। इसे फिर से खोलें, इन पंक्तियों की जांच करें, फिर इसे फिर से सबमिट करें।"
 
@@ -16026,6 +16044,9 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "इसका उपयोग अभी भी एक \"{table}\" रिकॉर्ड द्वारा किया जा रहा है; पहले उसे निकालें।"
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgstr ""
+
+msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
 msgstr ""
 
 msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
@@ -16168,6 +16189,9 @@ msgstr "इसकी डिजाइन परिवर्तन सूचना
 
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "इसका राजस्व उस पर वापस जाता है जो प्रत्येक पंक्ति को मान्यता देने के लिए बाकी है।"
+
+msgid "Its stock is taken back out, even if it was used since (on-hand can go negative), and what it received is given back to its order."
+msgstr ""
 
 msgid "Job"
 msgstr "Job"
@@ -20528,6 +20552,9 @@ msgstr "अभी यहां कुछ नहीं है"
 msgid "Nothing in the archive"
 msgstr "आर्काइव में कुछ नहीं है"
 
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
+msgstr ""
+
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr ""
 
@@ -21510,6 +21537,9 @@ msgstr "बिक्रय-प्रकार पट्टों में श�
 msgid "Other Income GL account for the monthly interest earned on the net investment in sales-type leases."
 msgstr "बिक्रय-प्रकार पट्टों में शुद्ध निवेश पर अर्जित मासिक ब्याज के लिए अन्य आय लेजर खाता।"
 
+msgid "Other payments it funds or refunds are unapplied from it first; they stay posted."
+msgstr ""
+
 msgid "Other Type"
 msgstr "अन्य प्रकार"
 
@@ -22040,6 +22070,12 @@ msgstr "भुगतान"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "इस चालान के लिए आवंटित भुगतान और क्रेडिट। आवंटित राशियाँ और विनिमय अंतर की राशियाँ कंपनी की आधार मुद्रा में हैं। स्रोत दस्तावेज़ खोलने के लिए किसी पंक्ति पर क्लिक करें।"
+
+msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
+msgstr ""
+
+msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
+msgstr ""
 
 msgid "Payments due before this date were paid outside Carbon"
 msgstr "इस तारीख से पहले देय भुगतान Carbon के बाहर किए गए"
@@ -32610,6 +32646,9 @@ msgstr "पुष्टि करने के लिए {0} टाइप कर
 msgid "Type {purchaseOrderReadableId} to confirm"
 msgstr ""
 
+msgid "Type {readableId} to confirm"
+msgstr ""
+
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "एक variable insert करने के लिए {TRIGGER} दर्ज करें"
 
@@ -34185,6 +34224,9 @@ msgstr "यह समय प्रविष्टि कितनी गिन�
 
 msgid "What to set up"
 msgstr "सेटअप करने के लिए क्या"
+
+msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
+msgstr ""
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
 msgstr ""

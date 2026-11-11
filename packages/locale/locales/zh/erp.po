@@ -4361,10 +4361,16 @@ msgstr "批准日期"
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
 msgstr ""
 
+msgid "Approving deletes {readableId} now. This cannot be undone."
+msgstr ""
+
 msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
 msgstr ""
 
 msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
+msgstr ""
+
+msgid "Approving voids {readableId}, which reverses its postings, then deletes it. This cannot be undone."
 msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
@@ -5643,6 +5649,9 @@ msgstr "提交前"
 
 msgid "Beginning"
 msgstr "开始"
+
+msgid "Being approved now…"
+msgstr ""
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -13807,10 +13816,16 @@ msgstr "表格 6765 E 部分"
 msgid "Force delete"
 msgstr ""
 
+msgid "Force Delete"
+msgstr ""
+
 msgid "Force Delete (Admin)"
 msgstr ""
 
 msgid "Force delete {purchaseOrderReadableId}"
+msgstr ""
+
+msgid "Force delete {readableId}"
 msgstr ""
 
 msgid "Force delete waiting for another Admin's approval"
@@ -16016,6 +16031,9 @@ msgstr "它决定该行如何定价。"
 msgid "It decides what the next step asks for."
 msgstr "它决定下一步骤需要什么。"
 
+msgid "It is {status}: approving voids it first, which reverses its postings. If the void refuses, its postings are reversed by journal instead."
+msgstr ""
+
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "已审批但无法应用。重新打开它，检查这些行，然后再次提交。"
 
@@ -16026,6 +16044,9 @@ msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "它仍然被「{table}」记录使用；请先删除它。"
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgstr ""
+
+msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
 msgstr ""
 
 msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
@@ -16168,6 +16189,9 @@ msgstr "在变更通知下达前，其设计可能会改变。"
 
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "其收入返还到每一行剩余待确认的部分。"
+
+msgid "Its stock is taken back out, even if it was used since (on-hand can go negative), and what it received is given back to its order."
+msgstr ""
 
 msgid "Job"
 msgstr "工作"
@@ -20528,6 +20552,9 @@ msgstr "暂无内容"
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
 
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
+msgstr ""
+
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr ""
 
@@ -21510,6 +21537,9 @@ msgstr "营业外收入账户，用于记录销售型租赁净投资每月赚取
 msgid "Other Income GL account for the monthly interest earned on the net investment in sales-type leases."
 msgstr "营业外收入总账科目，用于记录销售型租赁净投资每月赚取的利息。"
 
+msgid "Other payments it funds or refunds are unapplied from it first; they stay posted."
+msgstr ""
+
 msgid "Other Type"
 msgstr "其他类型"
 
@@ -22040,6 +22070,12 @@ msgstr "付款"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "分配至此发票的付款和抵扣款。已分配金额和汇兑差额均以公司基本货币表示。点击某一行以打开源单据。"
+
+msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
+msgstr ""
+
+msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
+msgstr ""
 
 msgid "Payments due before this date were paid outside Carbon"
 msgstr "此日期前应支付的款项已在Carbon外支付"
@@ -32610,6 +32646,9 @@ msgstr "输入 {0} 以确认"
 msgid "Type {purchaseOrderReadableId} to confirm"
 msgstr ""
 
+msgid "Type {readableId} to confirm"
+msgstr ""
+
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "输入 {TRIGGER} 以插入变量"
 
@@ -34185,6 +34224,9 @@ msgstr "这个时间记录计为——人工(操作员时间)、机器(加工时
 
 msgid "What to set up"
 msgstr "要设置什么"
+
+msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
+msgstr ""
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
 msgstr ""

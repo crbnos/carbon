@@ -651,6 +651,10 @@ export const manifest = {
   fixedAssetTransfer: company(),
   fixedAssetUsageLog: company(),
   fixture: serviceOnly(),
+  // The Admin force-delete override for invoices, receipts and payments:
+  // written and read only by the service functions, which check that the
+  // caller is an Admin.
+  forceDeleteRequest: serviceOnly(),
   fulfillment: company({
     create: anyOf("create", "inventory.shipments_create")
   }),

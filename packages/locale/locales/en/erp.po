@@ -4361,11 +4361,17 @@ msgstr "Approved On"
 msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
 msgstr "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
 
+msgid "Approving deletes {readableId} now. This cannot be undone."
+msgstr "Approving deletes {readableId} now. This cannot be undone."
+
 msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
 msgstr "Approving deletes the purchase order and all of its lines now. This cannot be undone."
 
 msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
 msgstr "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
+
+msgid "Approving voids {readableId}, which reverses its postings, then deletes it. This cannot be undone."
+msgstr "Approving voids {readableId}, which reverses its postings, then deletes it. This cannot be undone."
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
@@ -5643,6 +5649,9 @@ msgstr "Before you submit"
 
 msgid "Beginning"
 msgstr "Beginning"
+
+msgid "Being approved now…"
+msgstr "Being approved now…"
 
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
@@ -13807,11 +13816,17 @@ msgstr "For Form 6765 Section E"
 msgid "Force delete"
 msgstr "Force delete"
 
+msgid "Force Delete"
+msgstr "Force Delete"
+
 msgid "Force Delete (Admin)"
 msgstr "Force Delete (Admin)"
 
 msgid "Force delete {purchaseOrderReadableId}"
 msgstr "Force delete {purchaseOrderReadableId}"
+
+msgid "Force delete {readableId}"
+msgstr "Force delete {readableId}"
 
 msgid "Force delete waiting for another Admin's approval"
 msgstr "Force delete waiting for another Admin's approval"
@@ -16016,6 +16031,9 @@ msgstr "It decides how the line is priced."
 msgid "It decides what the next step asks for."
 msgstr "It decides what the next step asks for."
 
+msgid "It is {status}: approving voids it first, which reverses its postings. If the void refuses, its postings are reversed by journal instead."
+msgstr "It is {status}: approving voids it first, which reverses its postings. If the void refuses, its postings are reversed by journal instead."
+
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 
@@ -16027,6 +16045,9 @@ msgstr "It is still used by a \"{table}\" record; remove that first."
 
 msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
 msgstr "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+
+msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
+msgstr "It permanently deletes {readableId}, whatever its status. It cannot be undone."
 
 msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
 msgstr "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
@@ -16168,6 +16189,9 @@ msgstr "Its design may change before the change notice is released."
 
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "Its revenue goes back to what each line has left to recognize."
+
+msgid "Its stock is taken back out, even if it was used since (on-hand can go negative), and what it received is given back to its order."
+msgstr "Its stock is taken back out, even if it was used since (on-hand can go negative), and what it received is given back to its order."
 
 msgid "Job"
 msgstr "Job"
@@ -20528,6 +20552,9 @@ msgstr "Nothing here yet"
 msgid "Nothing in the archive"
 msgstr "Nothing in the archive"
 
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
+msgstr "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
+
 msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 msgstr "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
 
@@ -21510,6 +21537,9 @@ msgstr "Other Income account for the monthly interest earned on the net investme
 msgid "Other Income GL account for the monthly interest earned on the net investment in sales-type leases."
 msgstr "Other Income GL account for the monthly interest earned on the net investment in sales-type leases."
 
+msgid "Other payments it funds or refunds are unapplied from it first; they stay posted."
+msgstr "Other payments it funds or refunds are unapplied from it first; they stay posted."
+
 msgid "Other Type"
 msgstr "Other Type"
 
@@ -22040,6 +22070,12 @@ msgstr "Payments"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+
+msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
+msgstr "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
+
+msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
+msgstr "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
 
 msgid "Payments due before this date were paid outside Carbon"
 msgstr "Payments due before this date were paid outside Carbon"
@@ -32610,6 +32646,9 @@ msgstr "Type {0} to confirm"
 msgid "Type {purchaseOrderReadableId} to confirm"
 msgstr "Type {purchaseOrderReadableId} to confirm"
 
+msgid "Type {readableId} to confirm"
+msgstr "Type {readableId} to confirm"
+
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "Type {TRIGGER} to insert a variable"
 
@@ -34185,6 +34224,9 @@ msgstr "What this time entry counts as — Labor (operator time), Machine (run t
 
 msgid "What to set up"
 msgstr "What to set up"
+
+msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
+msgstr "What was entered wrongly, and why it cannot be corrected or voided instead"
 
 msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
 msgstr "What was entered wrongly, and why the order cannot be corrected or closed instead"

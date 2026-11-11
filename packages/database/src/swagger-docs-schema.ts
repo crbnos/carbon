@@ -94551,6 +94551,249 @@ export default {
         tags: ["journalLineDimension"]
       }
     },
+    "/forceDeleteRequest": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.documentReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.documentStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.requestedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.requestedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.decidedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.decidedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.decisionNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/forceDeleteRequest"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["forceDeleteRequest"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.forceDeleteRequest"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["forceDeleteRequest"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.documentReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.documentStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.requestedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.requestedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.decidedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.decidedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.decisionNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["forceDeleteRequest"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.documentReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.documentStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.reason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.requestedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.requestedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.decidedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.decidedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.decisionNotes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.forceDeleteRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.forceDeleteRequest"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["forceDeleteRequest"]
+      }
+    },
     "/user": {
       get: {
         parameters: [
@@ -142711,7 +142954,8 @@ export default {
             "supplier",
             "changeOrder",
             "projectChangeRequest",
-            "purchaseOrderForceDelete"
+            "purchaseOrderForceDelete",
+            "documentForceDelete"
           ],
           format: 'public."approvalDocumentType"',
           type: "string"
@@ -176354,7 +176598,8 @@ export default {
             "supplier",
             "changeOrder",
             "projectChangeRequest",
-            "purchaseOrderForceDelete"
+            "purchaseOrderForceDelete",
+            "documentForceDelete"
           ],
           format: 'public."approvalDocumentType"',
           type: "string"
@@ -183472,6 +183717,110 @@ export default {
         },
         createdAt: {
           default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    forceDeleteRequest: {
+      required: [
+        "id",
+        "companyId",
+        "documentType",
+        "documentId",
+        "documentReadableId",
+        "documentStatus",
+        "reason",
+        "status",
+        "requestedBy",
+        "requestedAt",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('fdr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        documentType: {
+          enum: ["purchaseInvoice", "salesInvoice", "receipt", "payment"],
+          format: 'public."forceDeleteDocumentType"',
+          type: "string"
+        },
+        documentId: {
+          format: "text",
+          type: "string"
+        },
+        documentReadableId: {
+          format: "text",
+          type: "string"
+        },
+        documentStatus: {
+          format: "text",
+          type: "string"
+        },
+        reason: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          default: "Pending",
+          enum: ["Pending", "Approving", "Executed", "Rejected", "Cancelled"],
+          format: 'public."purchaseOrderForceDeleteStatus"',
+          type: "string"
+        },
+        requestedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        requestedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        decidedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        decidedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        decisionNotes: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
           format: "timestamp with time zone",
           type: "string"
         }
@@ -191644,7 +191993,7 @@ export default {
         },
         status: {
           default: "Pending",
-          enum: ["Pending", "Executed", "Rejected", "Cancelled"],
+          enum: ["Pending", "Approving", "Executed", "Rejected", "Cancelled"],
           format: 'public."purchaseOrderForceDeleteStatus"',
           type: "string"
         },
@@ -196119,7 +196468,8 @@ export default {
             "supplier",
             "changeOrder",
             "projectChangeRequest",
-            "purchaseOrderForceDelete"
+            "purchaseOrderForceDelete",
+            "documentForceDelete"
           ],
           format: 'public."approvalDocumentType"',
           type: "string"
@@ -246262,6 +246612,117 @@ export default {
     },
     "rowFilter.journalLineDimension.createdAt": {
       name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.forceDeleteRequest": {
+      name: "forceDeleteRequest",
+      description: "forceDeleteRequest",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/forceDeleteRequest"
+      }
+    },
+    "rowFilter.forceDeleteRequest.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.forceDeleteRequest.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.forceDeleteRequest.documentType": {
+      name: "documentType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.forceDeleteRequest.documentId": {
+      name: "documentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.forceDeleteRequest.documentReadableId": {
+      name: "documentReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.forceDeleteRequest.documentStatus": {
+      name: "documentStatus",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.forceDeleteRequest.reason": {
+      name: "reason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.forceDeleteRequest.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.forceDeleteRequest.requestedBy": {
+      name: "requestedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.forceDeleteRequest.requestedAt": {
+      name: "requestedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.forceDeleteRequest.decidedBy": {
+      name: "decidedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.forceDeleteRequest.decidedAt": {
+      name: "decidedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.forceDeleteRequest.decisionNotes": {
+      name: "decisionNotes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.forceDeleteRequest.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.forceDeleteRequest.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.forceDeleteRequest.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.forceDeleteRequest.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

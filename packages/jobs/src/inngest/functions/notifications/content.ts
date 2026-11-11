@@ -1275,6 +1275,54 @@ async function buildEventContent(
         };
       }
 
+      if (opts.documentType === "documentForceDelete") {
+        // The document id is "<documentType>:<documentId>:<requestId>": the
+        // request outlives the document, so it is read by its own id.
+        const requestId = documentId.split(":").pop() ?? documentId;
+        const request = await client
+          .from("forceDeleteRequest")
+          .select("documentType, documentReadableId, documentStatus, reason")
+          .eq("id", requestId)
+          .eq("companyId", opts.companyId)
+          .single();
+
+        const fallback =
+          outcome === "requested"
+            ? "A force delete requires your approval"
+            : `Your force delete was ${outcome}`;
+        if (request.error || !request.data) {
+          console.error(
+            "Failed to retrieve force delete request for approval notification",
+            request.error
+          );
+          return { description: fallback, details: [] };
+        }
+
+        const label = {
+          purchaseInvoice: "purchase invoice",
+          salesInvoice: "sales invoice",
+          receipt: "receipt",
+          payment: "payment"
+        }[request.data.documentType];
+        const readableId = request.data.documentReadableId;
+        return {
+          description:
+            outcome === "requested"
+              ? `Force delete of ${label} ${readableId} requires your approval`
+              : outcome === "approved"
+                ? `Force delete of ${label} ${readableId} was approved: it was deleted`
+                : `Force delete of ${label} ${readableId} was rejected`,
+          reference: readableId,
+          details: buildDetails([
+            { label: "Reason", value: request.data.reason },
+            {
+              label: "Status when requested",
+              value: request.data.documentStatus
+            }
+          ])
+        };
+      }
+
       if (opts.documentType === "purchaseOrderForceDelete") {
         // The document id is "<purchaseOrderId>:<requestId>": the request
         // outlives the order, so it is read by its own id.
