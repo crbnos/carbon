@@ -4934,3 +4934,10 @@ redirects (purchase orders, and the other records with a `/details` index).
 - **Problem:** The first version refused whenever the document's own void refused, or when payments, memos or other documents still held it. Force delete exists for emergencies where a user error has broken that normal process, so those refusals left the Admin stuck.
 - **Rule:** In a force delete, a void's rule refusal is the trigger for `reverseDocumentByJournal`: negate its postings, adjust its stock back, restore its sources. Anything applied to the document is unapplied first (`unapplyForceDeleteSettlements`). To change a posted payment's journal, build it again with and without the change (`rebuildPaymentJournal`) and post the difference, rather than hand-building reversal lines.
 - **Applies to:** `invoicing.service.ts` force delete blocks, any future force delete type.
+
+## Parallel subagents each running the heavy checks exhaust the machine
+
+- **Context:** A review fanned out to six subagents. Each ran the `erp` typecheck, `generate:mcp` or a raw `tsc` in `apps/erp` to verify its own part.
+- **Problem:** The `erp` typecheck peaks near 10 GB and `generate:mcp` near 5 GB. Five of them at once took about 28 GB.
+- **Rule:** Only the main agent runs the heavy checks, once, after its subagents finish. Never raise `--max-old-space-size` to make one fit. `packages/dev/bin/heavy-lock` queues them machine-wide, so an extra run waits instead of running in parallel. A waiting run prints `heavy-lock: waiting for …`: that is the queue working, not a hang. Do not kill it.
+- **Applies to:** Any skill or workflow that dispatches subagents (review, execute, fix, conductor).
