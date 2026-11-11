@@ -995,6 +995,9 @@ msgstr "{fieldLabel}的国家代码"
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} 十六进制值"
 
+msgid "{floor} and above"
+msgstr "{floor} 及以上"
+
 msgid "{foundHere} found here"
 msgstr "在此找到 {foundHere}"
 
@@ -4334,6 +4337,9 @@ msgstr "已审批"
 
 msgid "Approved <0/> by <1/>"
 msgstr "由<1/>审批的<0/>"
+
+msgid "Approved At"
+msgstr "已审批时间"
 
 msgid "Approved By"
 msgstr "批准人"
@@ -12441,6 +12447,9 @@ msgstr "应用于批量生产批次中每个工单的估计报废数量。"
 msgid "Estimated time"
 msgstr "预计时间"
 
+msgid "Estimated Value"
+msgstr "预估价值"
+
 msgid "Estimated versus actual time by job"
 msgstr "按工单统计的预估与实际工时"
 
@@ -14097,8 +14106,8 @@ msgstr "总账和月末结账"
 msgid "Generate"
 msgstr "生成"
 
-msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
-msgstr "生成新的4位数PIN。操作员的当前PIN将立即停止工作。"
+msgid "Generate a new 4-digit PIN. Their current PIN stops working immediately."
+msgstr "生成新的4位数PIN。当前PIN将立即停止工作。"
 
 msgid "Generate and send customer invoices"
 msgstr "生成并发送客户发票"
@@ -18112,6 +18121,9 @@ msgstr "最小订单:"
 msgid "Minimum Reserve Quantity"
 msgstr "最小储备数量"
 
+msgid "Minimum Scrap Value"
+msgstr "最低报废价值"
+
 msgid "Minute"
 msgstr "分钟"
 
@@ -20363,6 +20375,9 @@ msgstr "未配置"
 msgid "Not Configured"
 msgstr "未配置"
 
+msgid "Not confirmed"
+msgstr "未确认"
+
 msgid "Not delivered"
 msgstr "未交付"
 
@@ -20650,6 +20665,9 @@ msgstr "共 {0}h"
 
 msgid "of {budgetText}"
 msgstr "共{budgetText}"
+
+msgid "of any value"
+msgstr "任意价值的"
 
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "在拨款成本中，从75%到85%"
@@ -25133,6 +25151,9 @@ msgstr "需要签名审批采购订单"
 msgid "Require a Supplier Contact and Location"
 msgstr "需要供应商联系人和地点"
 
+msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
+msgstr "在车间记录预估原材料价值以上的报废前，要求审批人输入PIN码"
+
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "排程前需要已分配的操作员才能在地点安排工作。启用时，无人工作中心不会分配工作，且无人工覆盖的工序显示为无法排程。熄灯（24×7）工作中心豁免。"
 
@@ -26478,6 +26499,9 @@ msgstr "报废 {0}"
 msgid "Scrap / Cost of Quality"
 msgstr "报废/质量成本"
 
+msgid "Scrap Approvals"
+msgstr "报废审批"
+
 msgid "Scrap Percent"
 msgstr "报废率"
 
@@ -26513,6 +26537,9 @@ msgstr "报废该件"
 
 msgid "Scrap Unit"
 msgstr "报废件"
+
+msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
+msgstr "预估原材料价值达到或超过此值、且未达到下一条规则最低值的报废，需要审批人在平板上输入PIN码。0 表示所有报废。"
 
 msgid "Scrapped"
 msgstr "已报废"
@@ -27542,8 +27569,8 @@ msgstr "分享报价"
 msgid "Share this PIN with {name} so they can pin in at MES terminals."
 msgstr "将此PIN与 {name} 分享，以便他们可以在MES终端登入。"
 
-msgid "Share this PIN with the operator so they can pin in at MES terminals."
-msgstr "将此PIN与操作员分享，以便他们可以在MES终端登入。"
+msgid "Share this PIN with them. They enter it at the MES to pin in, or to approve scrap."
+msgstr "将此PIN分享给对方。对方在MES中输入它以登入或批准报废。"
 
 msgid "Shared"
 msgstr "共享"

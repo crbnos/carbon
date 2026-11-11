@@ -383,8 +383,26 @@ msgstr "Apparence"
 msgid "Apply link"
 msgstr "Appliquer le lien"
 
+msgid "Approval needed"
+msgstr "Approbation requise"
+
 msgid "Approvals"
 msgstr "Approbations"
+
+msgid "Approve and Complete"
+msgstr "Approuver et terminer"
+
+msgid "Approve and Log Scrap"
+msgstr "Approuver et enregistrer le rebut"
+
+msgid "Approve and Record Partial"
+msgstr "Approuver et enregistrer une quantité partielle"
+
+msgid "Approve and Reject Lot"
+msgstr "Approuver et rejeter le lot"
+
+msgid "Approve and Scrap"
+msgstr "Approuver et mettre au rebut"
 
 msgid "AQL"
 msgstr "AQL"
@@ -1024,6 +1042,7 @@ msgstr "Arrêter les opérations"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Entrez la valeur de chaque ordre de fabrication, ou remplissez tous les ordres à la fois à partir de la première ligne. Les lignes vides sont ignorées."
 
+#. placeholder {0}: approver.name
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "Saisir le NIP pour {0}"
@@ -1708,6 +1727,9 @@ msgstr "Aucune opération active"
 msgid "No active work centers at this location."
 msgstr "Aucun poste de travail actif à ce site."
 
+msgid "No approver available"
+msgstr "Aucun approbateur disponible"
+
 msgid "No assigned operations"
 msgstr "Aucune opération assignée"
 
@@ -1786,6 +1808,9 @@ msgstr "Aucun matériau"
 
 msgid "No materials on this batch."
 msgstr "Aucune matière sur ce lot de production."
+
+msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
+msgstr "Aucune personne pouvant approuver ce rebut n'a de code PIN de console. Demandez à un administrateur d'en définir un pour un approbateur."
 
 msgid "No open inspections"
 msgstr "Aucun contrôle ouvert"
@@ -3129,6 +3154,9 @@ msgstr "Cela comptabilise le temps de l'ordre. L'ordre ne peut plus être modifi
 
 msgid "This sample was removed"
 msgstr "Cet échantillon a été supprimé"
+
+msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
+msgstr "Ce rebut représente environ <0>{value}</0> de matière. Un approbateur doit saisir son code PIN avant son enregistrement."
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Cela arrête votre chronomètre et comptabilise le temps de l'ordre. L'ordre ne peut plus être modifié."

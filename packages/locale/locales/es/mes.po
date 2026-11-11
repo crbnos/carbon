@@ -383,8 +383,26 @@ msgstr "Apariencia"
 msgid "Apply link"
 msgstr "Aplicar enlace"
 
+msgid "Approval needed"
+msgstr "Se requiere aprobación"
+
 msgid "Approvals"
 msgstr "Aprobaciones"
+
+msgid "Approve and Complete"
+msgstr "Aprobar y completar"
+
+msgid "Approve and Log Scrap"
+msgstr "Aprobar y registrar desperdicio"
+
+msgid "Approve and Record Partial"
+msgstr "Aprobar y registrar parcial"
+
+msgid "Approve and Reject Lot"
+msgstr "Aprobar y rechazar lote"
+
+msgid "Approve and Scrap"
+msgstr "Aprobar y desperdiciar"
 
 msgid "AQL"
 msgstr "AQL"
@@ -1024,6 +1042,7 @@ msgstr "Finalizar operaciones"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Ingresa el valor de cada orden de trabajo, o completa todas las órdenes de trabajo a la vez desde la primera fila. Las filas vacías se omiten."
 
+#. placeholder {0}: approver.name
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "Ingrese el PIN para {0}"
@@ -1708,6 +1727,9 @@ msgstr "No hay operaciones activas"
 msgid "No active work centers at this location."
 msgstr "Sin centros de trabajo activos en esta ubicación."
 
+msgid "No approver available"
+msgstr "No hay ningún aprobador disponible"
+
 msgid "No assigned operations"
 msgstr "No hay operaciones asignadas"
 
@@ -1786,6 +1808,9 @@ msgstr "Sin materiales"
 
 msgid "No materials on this batch."
 msgstr "Sin materiales en este lote de producción."
+
+msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
+msgstr "Ningún usuario que pueda aprobar este desperdicio tiene un PIN de consola. Pida a un administrador que asigne uno a un aprobador."
 
 msgid "No open inspections"
 msgstr "No hay inspecciones abiertas"
@@ -3129,6 +3154,9 @@ msgstr "Esto contabiliza el tiempo de la orden de trabajo. La orden de trabajo y
 
 msgid "This sample was removed"
 msgstr "Esta muestra se eliminó"
+
+msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
+msgstr "Este desperdicio equivale aproximadamente a <0>{value}</0> en material. Un aprobador debe introducir su PIN antes de que se registre."
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Esto detiene tu reloj y contabiliza el tiempo de la orden de trabajo. La orden de trabajo ya no puede cambiar."

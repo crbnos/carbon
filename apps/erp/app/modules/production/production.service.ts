@@ -17,9 +17,9 @@ import {
   triggerCorrectionInput,
   triggerReworkInput
 } from "@carbon/api/postings";
-import type {
+import {
   CarbonError,
-  ServiceContext
+  type ServiceContext
 } from "@carbon/api/service-fn.server";
 import {
   type Database,
@@ -101,6 +101,19 @@ import {
   settleConsumeFirstLine,
   withoutStockedConsumeFirst
 } from "@carbon/database/supersession-pick";
+import type { ScrapDescription, ScrapSubject } from "@carbon/ee/approvals";
+import {
+  authorizeScrapApprover,
+  describeScrap,
+  describeStockScraps,
+  discardScrapApproval,
+  getScrapApprovalRequirement,
+  hasEnabledScrapRule,
+  hasScrapApprovalRules,
+  markScrapApprovalPosted,
+  recordScrapApprovals,
+  scrapWriteFailure
+} from "@carbon/ee/approvals/scrap.server";
 import { planningGroupMrpDeps } from "@carbon/ee/pegging.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
@@ -4115,12 +4128,18 @@ export async function upsertProductionQuantity(
         id: string;
         updatedBy: string;
         companyId: string;
-      })
+      }),
+  /**
+   * An update writes only while the row still holds these: a correction
+   * read before another one landed must not overwrite it. No row comes back
+   * when it changed.
+   */
+  expected?: { type: string; quantity: number; jobOperationId: string }
 ) {
   if ("updatedBy" in productionQuantity) {
     const { id, updatedBy, companyId, ...updateData } = productionQuantity;
 
-    return client
+    let update = client
       .from("productionQuantity")
       .update({
         ...sanitize(updateData),
@@ -4128,9 +4147,18 @@ export async function upsertProductionQuantity(
         updatedAt: new Date().toISOString()
       })
       .eq("id", id)
-      .eq("companyId", companyId)
-      .select()
-      .single();
+      .eq("companyId", companyId);
+    if (expected) {
+      update = update
+        .eq(
+          "type",
+          expected.type as Database["public"]["Enums"]["productionQuantityType"]
+        )
+        .eq("quantity", expected.quantity)
+        .eq("jobOperationId", expected.jobOperationId);
+      return update.select().maybeSingle();
+    }
+    return update.select().single();
   } else {
     return (
       client
@@ -4140,6 +4168,206 @@ export async function upsertProductionQuantity(
         .select("id")
         .single()
     );
+  }
+}
+
+/**
+ * Scrap typed in on a job's quantities, met against the scrap approval rules.
+ *
+ * @remarks
+ * There is no tablet and no second person at a desk, so an approver at the
+ * scrap's tier records it on their own authority and everyone else is
+ * refused; an API key is refused, since no person stands behind it. Returns
+ * the `scrapRequest` written for it and the quantity it was valued at (null
+ * when no rule applies). The caller writes that quantity, then calls
+ * `settleErpScrapApproval`.
+ */
+export async function approveErpScrap(
+  ctx: ServiceContext,
+  scrap: Extract<ScrapSubject, { type: "operation" | "item" }>
+): Promise<
+  { scrapRequestId: string | null; quantity: number | null } | CarbonError
+> {
+  const described: { scrap: ScrapDescription | null } = { scrap: null };
+  const approved = await approveErpScraps(
+    ctx,
+    async () => {
+      described.scrap = await describeScrap(
+        ctx.asSystem.pg,
+        ctx.company.id,
+        scrap
+      );
+      return [described.scrap];
+    },
+    // Operation scrap can go to the tablet; stock scrap has no tablet step.
+    scrap.type === "operation"
+  );
+  if (approved instanceof CarbonError) return approved;
+  const scrapRequestId = approved.scrapRequestIds[0] ?? null;
+  // The quantity the approver signed: a whole tracked entity resolved once,
+  // so the posting cannot scrap more than was valued.
+  return {
+    scrapRequestId,
+    quantity: scrapRequestId ? (described.scrap?.quantity ?? null) : null
+  };
+}
+
+/**
+ * Untracked stock of several items written off at once in the ERP, as
+ * completing an issue writes off its Scrap rows, met against the scrap
+ * approval rules as `approveErpScrap` meets one scrap.
+ *
+ * @remarks
+ * The rules are met by the total value, so spreading a write-off over rows
+ * passes no tier. Each item is recorded as its own `scrapRequest`. The caller
+ * posts, then calls `settleErpScrapApprovals`.
+ */
+export async function approveErpStockScraps(
+  ctx: ServiceContext,
+  scraps: { itemId: string; quantity: number; notes?: string | null }[]
+): Promise<{ scrapRequestIds: string[] } | CarbonError> {
+  return approveErpScraps(
+    ctx,
+    () => describeStockScraps(ctx.asSystem.pg, ctx.company.id, scraps),
+    false
+  );
+}
+
+async function approveErpScraps(
+  ctx: ServiceContext,
+  describe: () => Promise<ScrapDescription[]>,
+  atTablet: boolean
+): Promise<{ scrapRequestIds: string[] } | CarbonError> {
+  const companyId = ctx.company.id;
+  const serviceRole = ctx.asSystem.supabase;
+  const db = ctx.asSystem.pg;
+  const none = { scrapRequestIds: [] };
+  // The platform itself (a seed, a posting) records scrap as the system.
+  if (ctx.actor.type === "system") return none;
+
+  let scraps: ScrapDescription[];
+  let estimatedValue: number;
+  try {
+    if (!(await hasScrapApprovalRules(serviceRole, companyId))) return none;
+    scraps = (await describe()).filter((scrap) => scrap.quantity > 0);
+    if (scraps.length === 0) return none;
+    const requirement = await getScrapApprovalRequirement(serviceRole, db, {
+      companyId,
+      recordedBy: ctx.auditUserId,
+      estimatedValue: round(
+        scraps.reduce((sum, scrap) => sum + scrap.estimatedValue, 0)
+      )
+    });
+    if (!requirement.required) return none;
+    estimatedValue = requirement.estimatedValue;
+  } catch (error) {
+    return ctx.error(
+      "internal",
+      "Could not check whether this scrap needs approval",
+      error
+    );
+  }
+
+  if (ctx.actor.type !== "user") {
+    return ctx.error(
+      "forbidden",
+      atTablet
+        ? "Scrap of this value needs an approver's sign-off, which an API key cannot give. Record it on the shop floor, where an approver enters their PIN."
+        : "Scrap of this value needs an approver's sign-off, which an API key cannot give. Ask an approver for this value to record it."
+    );
+  }
+  // An approver of a lower tier is refused too, so the message speaks of the value.
+  const needsApprover = atTablet
+    ? "You cannot approve scrap of this value. Record it on the shop floor, where an approver enters their PIN, or ask an approver for this value to record it."
+    : "You cannot approve scrap of this value. Ask an approver for this value to record it.";
+
+  const authority = await authorizeScrapApprover(serviceRole, {
+    companyId,
+    approverId: ctx.auditUserId,
+    recordedBy: ctx.auditUserId,
+    estimatedValue,
+    allowSelf: true
+  });
+  if (authority.error) return ctx.error("forbidden", needsApprover);
+
+  try {
+    const recorded = await recordScrapApprovals(db, {
+      companyId,
+      scraps,
+      recordedBy: ctx.auditUserId,
+      approvedBy: ctx.auditUserId,
+      decisionNotes: "Recorded in the ERP by an approver"
+    });
+    return { scrapRequestIds: recorded.map((row) => row.scrapRequestId) };
+  } catch (error) {
+    return ctx.error("internal", "Failed to record the scrap approval", error);
+  }
+}
+
+/**
+ * The client a Scrap row is written with. While a scrap rule is enabled the
+ * database refuses one from an API role, so it goes in as the system after
+ * `approveErpScrap`. With no rule the caller writes it like any other row,
+ * which keeps the row's workflow run tag.
+ */
+export async function scrapQuantityClient(ctx: ServiceContext) {
+  return (await hasEnabledScrapRule(ctx.asSystem.supabase, ctx.company.id))
+    ? ctx.asSystem.supabase
+    : ctx.asCaller.supabase;
+}
+
+/**
+ * What came of the write an approval was recorded for: written, refused (it
+ * did not happen), or failed with an error that may or may not have written.
+ */
+export type ScrapWriteOutcome = "written" | "refused" | { error: unknown };
+
+/**
+ * Closes the approval `approveErpScrap` recorded: marks it posted once the
+ * quantity is written, removes it when the write is known not to have
+ * happened, and otherwise keeps it, not confirmed.
+ */
+export async function settleErpScrapApproval(
+  ctx: ServiceContext,
+  scrapRequestId: string | null,
+  outcome: ScrapWriteOutcome
+): Promise<void> {
+  await settleErpScrapApprovals(
+    ctx,
+    scrapRequestId ? [scrapRequestId] : [],
+    outcome
+  );
+}
+
+/** `settleErpScrapApproval` for the approvals `approveErpStockScraps` recorded. */
+export async function settleErpScrapApprovals(
+  ctx: ServiceContext,
+  scrapRequestIds: string[],
+  outcome: ScrapWriteOutcome
+): Promise<void> {
+  if (scrapRequestIds.length === 0) return;
+  const args = { companyId: ctx.company.id, scrapRequestIds };
+  const settlement =
+    typeof outcome === "string" ? outcome : scrapWriteFailure(outcome.error);
+  try {
+    if (settlement === "written") {
+      await markScrapApprovalPosted(ctx.asSystem.pg, {
+        ...args,
+        userId: ctx.auditUserId
+      });
+    } else if (settlement === "refused") {
+      await discardScrapApproval(ctx.asSystem.pg, args);
+    } else {
+      // The write may have committed before its answer was lost: the record
+      // stays with no `postedAt`, rather than posted scrap with no approval.
+      logger.warn("Scrap write failed without a refusal; approval kept", args);
+    }
+  } catch (error) {
+    logger.error("Failed to settle a scrap approval", {
+      ...args,
+      settlement,
+      error
+    });
   }
 }
 

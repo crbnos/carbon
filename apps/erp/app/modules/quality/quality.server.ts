@@ -40,6 +40,10 @@ import {
   updateChangeNotice
 } from "~/modules/items/items.service";
 import {
+  approveErpStockScraps,
+  settleErpScrapApprovals
+} from "~/modules/production/production.service";
+import {
   deletePurchaseReturnOrder,
   insertPurchaseReturnOrder,
   setPurchaseReturnOrderLineTrackedEntities,
@@ -472,7 +476,11 @@ export const setIssueStatus = defineServiceFn({
  * is) posts through `post-nonconformance`, and the units change status; a
  * failure leaves the issue open. An NCR with a Partial receipt lot beside
  * another lot is refused, and so is a Partial untracked lot's NCR with no
- * disposition row for the lot's item. The company's integrations are told.
+ * disposition row for the lot's item. When a scrap approval rule applies to
+ * the estimated value of the stock its Scrap rows write off (a Partial lot's
+ * held remainder included), only a user who can approve at that tier
+ * completes it, and an API key is refused; the approval is recorded with the
+ * write-off. The company's integrations are told.
  *
  * @mcp
  */
@@ -483,15 +491,40 @@ export const completeIssue = defineServiceFn({
   async run(ctx, { id }) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
+    // Set by the scrap approval check inside the close.
+    const scrap: { refusal: CarbonError | null; scrapRequestIds: string[] } = {
+      refusal: null,
+      scrapRequestIds: []
+    };
     const result = await service.closeIssue(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
       {
         nonConformanceId: id,
         companyId,
-        userId
+        userId,
+        scrapApproval: {
+          approve: async (writeOffs, readableId) => {
+            const approved = await approveErpStockScraps(
+              ctx,
+              writeOffs.map((writeOff) => ({
+                ...writeOff,
+                notes: `NC ${readableId} scrap`
+              }))
+            );
+            if (approved instanceof CarbonError) {
+              scrap.refusal = approved;
+              return false;
+            }
+            scrap.scrapRequestIds = approved.scrapRequestIds;
+            return true;
+          },
+          settle: (outcome) =>
+            settleErpScrapApprovals(ctx, scrap.scrapRequestIds, outcome)
+        }
       }
     );
+    if (scrap.refusal) return scrap.refusal;
     if (result.error) {
       return ctx.error(
         "rule",
@@ -1431,6 +1464,10 @@ export const cancelManualInspection = defineServiceFn({
  * the `reason` go in its description. A failure after the issue was inserted
  * deletes it again; the lot stays rejected. A repeated Reject on a Failed lot
  * posts nothing new and keeps the lot's NCR; it can still open a missing one.
+ * When a scrap approval rule applies to the estimated value of the write-off
+ * (the lot's quantity at the item's cost), only a user who can approve at
+ * that tier rejects the lot, and an API key is refused; the approval is
+ * recorded with the write-off. The shop floor asks an approver's PIN first.
  *
  * @param reason - Why the lot is rejected. Required when no characteristic
  * reached its rejection number and no sample failed (a suspected counterfeit,
@@ -1448,6 +1485,33 @@ export const rejectInspection = defineServiceFn({
   async run(ctx, { id, nonConformanceTypeId, createNcr, reason, requireOpen }) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
+
+    // An untracked lot's write-off meets the scrap approval rules before the
+    // lot is decided: a refusal leaves it open. The shop floor, which posts
+    // as the system, asked an approver's PIN already.
+    let writeOff: Awaited<ReturnType<typeof engine.rejectWriteOffEstimate>>;
+    try {
+      writeOff = await engine.rejectWriteOffEstimate(ctx.asSystem.pg, {
+        id,
+        companyId
+      });
+    } catch (error) {
+      return ctx.error(
+        "internal",
+        "Could not check whether this scrap needs approval",
+        error
+      );
+    }
+    const approval = writeOff
+      ? await approveErpStockScraps(ctx, [
+          {
+            itemId: writeOff.itemId,
+            quantity: writeOff.quantity,
+            notes: `${writeOff.readableId} rejected`
+          }
+        ])
+      : { scrapRequestIds: [] };
+    if (approval instanceof CarbonError) return approval;
 
     const rejected = await ctx.transaction(async (tx) => {
       const decided = await engine.dispositionInspection(tx.asSystem.pg, {
@@ -1496,6 +1560,15 @@ export const rejectInspection = defineServiceFn({
       }
       return decided.data;
     });
+    await settleErpScrapApprovals(
+      ctx,
+      approval.scrapRequestIds,
+      rejected.error
+        ? { error: rejected.error }
+        : rejected.data?.writeOff
+          ? "written"
+          : "refused"
+    );
     if (rejected.error) return rejected.error;
 
     if (!createNcr) return { id, issueId: null };

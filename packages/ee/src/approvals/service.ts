@@ -331,9 +331,13 @@ export async function canApproveRequest(
     approvalRequest.companyId,
     approvalRequest.amount ?? undefined
   );
+  // Fail closed: an unknown tier would read as the lowest, so a low-tier
+  // approver could approve any amount.
+  if (matched.error) return false;
   const tierFloor = matched.data?.lowerBoundAmount ?? 0;
 
   const userGroups = await client.rpc("groups_for_user", { uid: userId });
+  if (userGroups.error) return false;
   const userGroupIds = userGroups.data || [];
 
   return rules.data

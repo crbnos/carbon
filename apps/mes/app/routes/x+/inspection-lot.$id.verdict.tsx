@@ -2,13 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { ServerFnError } from "@carbon/api/errors";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   dispositionInspection,
-  isInspectionClosed
+  isInspectionClosed,
+  rejectWriteOffEstimate
 } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -16,7 +18,11 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { erpPosting } from "~/services/erp";
-import { inspectionVerdictValidator } from "~/services/models";
+import {
+  inspectionVerdictValidator,
+  scrapApproverValidator
+} from "~/services/models";
+import { postScrapWithApproval } from "~/services/scrap-approval.server";
 import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
@@ -29,9 +35,10 @@ const logger = getLogger("mes", "inspection-verdict");
 // ERP code. Neither carries a production posting.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "quality"
-  });
+  const { client, companyId, userId, sessionUserId } = await requirePermissions(
+    request,
+    { update: "quality" }
+  );
   const { id } = params;
   if (!id) throw new Error("id is required");
 
@@ -87,12 +94,65 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const rejected = await erpPosting(
-    "reject-inspection",
-    { companyId, userId, client },
-    // One-shot, as Accept: a second Reject must not open a second NCR.
-    { id, reason: reason || null, createNcr, requireOpen: true }
-  );
+  const reject = () =>
+    erpPosting(
+      "reject-inspection",
+      { companyId, userId, client },
+      // One-shot, as Accept: a second Reject must not open a second NCR.
+      { id, reason: reason || null, createNcr, requireOpen: true }
+    );
+
+  // An untracked lot's Reject writes its stock off: a scrap approval rule
+  // puts an approver's PIN in front of it, as in a disposition.
+  const writeOff = await rejectWriteOffEstimate(getDatabaseClient(), {
+    id,
+    companyId
+  });
+  let rejected: Awaited<ReturnType<typeof reject>>;
+  if (writeOff) {
+    const approver = await validator(scrapApproverValidator).validate(formData);
+    const outcome = await postScrapWithApproval({
+      request,
+      companyId,
+      userId,
+      sessionUserId,
+      subject: {
+        type: "item",
+        itemId: writeOff.itemId,
+        quantity: writeOff.quantity,
+        notes: `${writeOff.readableId} rejected`
+      },
+      approver: approver.error ? {} : approver.data,
+      post: reject,
+      // The ERP decides the lot and writes it off in one transaction, then
+      // opens the NCR: a failed NCR leaves the write-off posted.
+      postedDespiteError: async () =>
+        Boolean(
+          await getDatabaseClient()
+            .selectFrom("itemLedger")
+            .select("id")
+            .where("companyId", "=", companyId)
+            .where("documentType", "=", "Inbound Inspection")
+            .where("documentId", "=", id)
+            .executeTakeFirst()
+        )
+    });
+    if (outcome.status === "approval-required") {
+      return { scrapApproval: outcome.prompt };
+    }
+    if (
+      outcome.status === "refused" &&
+      !(outcome.error instanceof ServerFnError)
+    ) {
+      throw redirect(back, await flash(request, error(null, outcome.message)));
+    }
+    rejected =
+      outcome.status === "posted"
+        ? { data: outcome.data!, error: null }
+        : { data: null, error: outcome.error as ServerFnError };
+  } else {
+    rejected = await reject();
+  }
   if (rejected.error) {
     logger.error("Failed to reject inspection", {
       companyId,

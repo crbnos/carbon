@@ -37,6 +37,10 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import {
+  ScrapApprovalStep,
+  useScrapApproval
+} from "~/components/JobOperation/components/ScrapApproval";
 import ScrapReason from "~/components/JobOperation/components/ScrapReason";
 import {
   CORRECTION_TARGET_PREFIX,
@@ -136,8 +140,15 @@ const DispositionBody = ({
   onSubmit
 }: Omit<DispositionModalProps, "open">) => {
   const { t } = useLingui();
+  // A scrap approval rule answers the first submit with the approvers; the
+  // modal stays open for the approver's PIN and the same form is sent again.
+  const approval = useScrapApproval();
   const fetcher = useAction<{}>({
-    onSettled: () => {
+    onSettled: (data) => {
+      if (approval.settle(data)) {
+        submitted.current = false;
+        return;
+      }
       if (submitted.current) {
         onSubmit();
         submitted.current = false;
@@ -201,6 +212,7 @@ const DispositionBody = ({
   const overAllocated = !isSerial && scrapCount + reworkCount > maxAllocatable;
 
   const setAll = (outcome: UnitOutcome) => {
+    approval.reset();
     setUnitOutcomes(
       new Map(units.map((unit) => [unit.trackedEntityId, outcome]))
     );
@@ -375,13 +387,14 @@ const DispositionBody = ({
                             <button
                               key={value}
                               type="button"
-                              onClick={() =>
+                              onClick={() => {
+                                approval.reset();
                                 setUnitOutcomes((prev) => {
                                   const next = new Map(prev);
                                   next.set(unit.trackedEntityId, value);
                                   return next;
-                                })
-                              }
+                                });
+                              }}
                               className={cn(
                                 "px-2 py-1 text-xs font-medium transition-colors",
                                 outcome === value
@@ -409,7 +422,10 @@ const DispositionBody = ({
                 name="scrapQuantity"
                 label={t`Scrap quantity`}
                 value={scrapQuantity}
-                onChange={setScrapQuantity}
+                onChange={(value) => {
+                  approval.reset();
+                  setScrapQuantity(value);
+                }}
                 minValue={0}
                 maxValue={maxAllocatable}
               />
@@ -518,6 +534,11 @@ const DispositionBody = ({
                 </AlertDescription>
               </Alert>
             ))}
+
+          <ScrapApprovalStep
+            approval={approval}
+            isSubmitting={fetcher.state !== "idle"}
+          />
         </VStack>
       </ModalBody>
       <ModalFooter>
@@ -532,11 +553,18 @@ const DispositionBody = ({
             isDisabled={
               fetcher.state !== "idle" ||
               overAllocated ||
+              approval.isIncomplete ||
               (createNcr && hasIssueTypes && !issueTypeId)
             }
           >
             {decision === "Reject" ? (
-              <Trans>Reject Lot</Trans>
+              approval.prompt ? (
+                <Trans>Approve and Reject Lot</Trans>
+              ) : (
+                <Trans>Reject Lot</Trans>
+              )
+            ) : approval.prompt ? (
+              <Trans>Approve and Record Partial</Trans>
             ) : (
               <Trans>Record Partial</Trans>
             )}

@@ -54,6 +54,7 @@ export default function ApprovalRulesUpgradeOverlay() {
           qdRules={[]}
           supplierRules={[]}
           changeOrderRules={[]}
+          scrapRules={[]}
         />
       }
       title={<Trans>Approval Rules</Trans>}

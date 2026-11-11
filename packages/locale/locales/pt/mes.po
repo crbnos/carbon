@@ -383,8 +383,26 @@ msgstr "Aparência"
 msgid "Apply link"
 msgstr "Aplicar link"
 
+msgid "Approval needed"
+msgstr "Aprovação necessária"
+
 msgid "Approvals"
 msgstr "Aprovações"
+
+msgid "Approve and Complete"
+msgstr "Aprovar e concluir"
+
+msgid "Approve and Log Scrap"
+msgstr "Aprovar e registrar refugo"
+
+msgid "Approve and Record Partial"
+msgstr "Aprovar e registrar parcial"
+
+msgid "Approve and Reject Lot"
+msgstr "Aprovar e rejeitar lote"
+
+msgid "Approve and Scrap"
+msgstr "Aprovar e refugar"
 
 msgid "AQL"
 msgstr "AQL"
@@ -1024,6 +1042,7 @@ msgstr "Encerrar Operações"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Insira o valor de cada ordem de produção ou preencha todas as ordens de produção de uma vez a partir da primeira linha. Linhas vazias são ignoradas."
 
+#. placeholder {0}: approver.name
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "Insira o PIN de {0}"
@@ -1708,6 +1727,9 @@ msgstr "Nenhuma operação ativa"
 msgid "No active work centers at this location."
 msgstr "Nenhum centro de trabalho ativo neste local."
 
+msgid "No approver available"
+msgstr "Nenhum aprovador disponível"
+
 msgid "No assigned operations"
 msgstr "Nenhuma operação atribuída"
 
@@ -1786,6 +1808,9 @@ msgstr "Nenhum material"
 
 msgid "No materials on this batch."
 msgstr "Nenhum material neste lote de produção."
+
+msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
+msgstr "Ninguém que possa aprovar este refugo tem um PIN de console. Peça a um administrador que defina um para um aprovador."
 
 msgid "No open inspections"
 msgstr "Nenhuma inspeção aberta"
@@ -3129,6 +3154,9 @@ msgstr "Isto contabiliza o tempo da ordem de produção. A ordem de produção n
 
 msgid "This sample was removed"
 msgstr "Esta amostra foi removida"
+
+msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
+msgstr "Este refugo vale cerca de <0>{value}</0> em material. Um aprovador deve informar o seu PIN antes de o refugo ser registrado."
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Isto interrompe seu relógio e contabiliza o tempo da ordem de produção. A ordem de produção não pode mais mudar."

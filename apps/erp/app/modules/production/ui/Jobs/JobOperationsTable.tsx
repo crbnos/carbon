@@ -168,10 +168,11 @@ const JobOperationsTable = memo((props: JobOperationsTableProps) => {
     [carbon, userId]
   );
 
+  // Qty. Scrapped is not editable here: scrap can need an approver, so it is
+  // recorded on the job's Quantities, which keep the reason and the sign-off.
   const editableComponents = useMemo(() => {
     return {
       operationQuantity: EditableNumber(onCellEdit),
-      quantityScrapped: EditableNumber(onCellEdit),
       quantityComplete: EditableNumber(onCellEdit),
       quantityReworked: EditableNumber(onCellEdit)
     };

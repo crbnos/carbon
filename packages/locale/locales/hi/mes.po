@@ -383,8 +383,26 @@ msgstr "दिखावट"
 msgid "Apply link"
 msgstr "लिंक लागू करें"
 
+msgid "Approval needed"
+msgstr "अनुमोदन आवश्यक है"
+
 msgid "Approvals"
 msgstr "अनुमोदन"
+
+msgid "Approve and Complete"
+msgstr "अनुमोदित करें और पूर्ण करें"
+
+msgid "Approve and Log Scrap"
+msgstr "अनुमोदित करें और स्क्रैप दर्ज करें"
+
+msgid "Approve and Record Partial"
+msgstr "अनुमोदित करें और आंशिक दर्ज करें"
+
+msgid "Approve and Reject Lot"
+msgstr "अनुमोदित करें और लॉट अस्वीकार करें"
+
+msgid "Approve and Scrap"
+msgstr "अनुमोदित करें और स्क्रैप करें"
 
 msgid "AQL"
 msgstr "AQL"
@@ -1024,6 +1042,7 @@ msgstr "ऑपरेशन समाप्त करें"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "प्रत्येक जॉब का मान दर्ज करें, या पहली पंक्ति से सभी जॉब्स को एक बार में भरें। खाली पंक्तियां छोड़ दी जाती हैं।"
 
+#. placeholder {0}: approver.name
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "{0} के लिए PIN दर्ज करें"
@@ -1708,6 +1727,9 @@ msgstr "कोई चल रहा ऑपरेशन नहीं है"
 msgid "No active work centers at this location."
 msgstr "इस स्थान पर कोई कार्यशील वर्क सेंटर नहीं हैं।"
 
+msgid "No approver available"
+msgstr "कोई अनुमोदक उपलब्ध नहीं है"
+
 msgid "No assigned operations"
 msgstr "कोई नियुक्त ऑपरेशन नहीं"
 
@@ -1786,6 +1808,9 @@ msgstr "कोई सामग्री नहीं"
 
 msgid "No materials on this batch."
 msgstr "इस बैच पर कोई सामग्री नहीं है।"
+
+msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
+msgstr "इस स्क्रैप को अनुमोदित कर सकने वाले किसी भी व्यक्ति के पास कंसोल PIN नहीं है। किसी अनुमोदक के लिए PIN सेट करने हेतु व्यवस्थापक से कहें।"
 
 msgid "No open inspections"
 msgstr "कोई खुला निरीक्षण नहीं"
@@ -3129,6 +3154,9 @@ msgstr "यह जॉब के समय को पोस्ट करता �
 
 msgid "This sample was removed"
 msgstr "यह नमूना हटा दिया गया था"
+
+msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
+msgstr "इस स्क्रैप की सामग्री का मूल्य लगभग <0>{value}</0> है। दर्ज होने से पहले किसी अनुमोदक को अपना PIN दर्ज करना होगा।"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "यह आपकी घड़ी को रोकता है और जॉब के समय को पोस्ट करता है। जॉब अब बदल नहीं सकता।"

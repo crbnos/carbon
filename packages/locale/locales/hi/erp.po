@@ -995,6 +995,9 @@ msgstr "{fieldLabel} देश कोड"
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} हेक्स मान"
 
+msgid "{floor} and above"
+msgstr "{floor} और अधिक"
+
 msgid "{foundHere} found here"
 msgstr "{foundHere} यहाँ पाया गया"
 
@@ -4334,6 +4337,9 @@ msgstr "अनुमोदित"
 
 msgid "Approved <0/> by <1/>"
 msgstr "अनुमोदित <0/> द्वारा <1/>"
+
+msgid "Approved At"
+msgstr "अनुमोदित तिथि"
 
 msgid "Approved By"
 msgstr "द्वारा अनुमोदित"
@@ -12441,6 +12447,9 @@ msgstr "बल्क बैच में प्रत्येक नौकर�
 msgid "Estimated time"
 msgstr "अनुमानित समय"
 
+msgid "Estimated Value"
+msgstr "अनुमानित मूल्य"
+
 msgid "Estimated versus actual time by job"
 msgstr "जॉब के अनुसार अनुमानित बनाम वास्तविक समय"
 
@@ -14097,8 +14106,8 @@ msgstr "सामान्य खाता बही और महीने क�
 msgid "Generate"
 msgstr "उत्पन्न करें"
 
-msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
-msgstr "एक नया 4-अंकीय PIN बनाएँ। ऑपरेटर का वर्तमान PIN तुरंत काम करना बंद कर देगा।"
+msgid "Generate a new 4-digit PIN. Their current PIN stops working immediately."
+msgstr "एक नया 4-अंकीय PIN बनाएँ। उनका वर्तमान PIN तुरंत काम करना बंद कर देगा।"
 
 msgid "Generate and send customer invoices"
 msgstr "ग्राहक चालान उत्पन्न करें और भेजें"
@@ -18112,6 +18121,9 @@ msgstr "न्यूनतम ऑर्डर:"
 msgid "Minimum Reserve Quantity"
 msgstr "न्यूनतम आरक्षित मात्रा"
 
+msgid "Minimum Scrap Value"
+msgstr "न्यूनतम स्क्रैप मूल्य"
+
 msgid "Minute"
 msgstr "मिनट"
 
@@ -20363,6 +20375,9 @@ msgstr "कॉन्फ़िगर नहीं किया गया"
 msgid "Not Configured"
 msgstr "कॉन्फ़िगर नहीं किया गया"
 
+msgid "Not confirmed"
+msgstr "पुष्टि नहीं की गई"
+
 msgid "Not delivered"
 msgstr "डिलीवर नहीं किया गया"
 
@@ -20650,6 +20665,9 @@ msgstr "का {0}h"
 
 msgid "of {budgetText}"
 msgstr "{budgetText} का"
+
+msgid "of any value"
+msgstr "किसी भी मान का"
 
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "फंडेड लागत का, 75% से 85% तक"
@@ -25133,6 +25151,9 @@ msgstr "क्रय आदेशों को अनुमोदित कर�
 msgid "Require a Supplier Contact and Location"
 msgstr "आपूर्तिकर्ता संपर्क और स्थान की आवश्यकता है"
 
+msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
+msgstr "अनुमानित सामग्री मूल्य से अधिक का स्क्रैप दर्ज करने से पहले शॉप फ्लोर पर अनुमोदक का PIN अनिवार्य करें"
+
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "शेड्यूलर किसी स्थान पर काम रखने से पहले एक असाइन किया गया ऑपरेटर आवश्यक करें। जब सक्षम हो, तो अनस्टाफ्ड वर्क सेंटर को कोई काम नहीं मिलते और कोई मानव कवरेज के बिना एक ऑपरेशन गैर-शेड्यूल करने योग्य दिखाई देता है। लाइट-आउट (24×7) वर्क सेंटर छूट प्राप्त हैं।"
 
@@ -26478,6 +26499,9 @@ msgstr "स्क्रैप {0}"
 msgid "Scrap / Cost of Quality"
 msgstr "स्क्रैप / गुणवत्ता की लागत"
 
+msgid "Scrap Approvals"
+msgstr "स्क्रैप अनुमोदन"
+
 msgid "Scrap Percent"
 msgstr "स्क्रैप प्रतिशत"
 
@@ -26513,6 +26537,9 @@ msgstr "इकाई को स्क्रैप करें"
 
 msgid "Scrap Unit"
 msgstr "स्क्रैप इकाई"
+
+msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
+msgstr "जिस स्क्रैप का अनुमानित सामग्री मूल्य इससे अधिक या इसके बराबर हो, और अगले नियम की न्यूनतम सीमा से पहले तक हो, उसके लिए टैबलेट पर अनुमोदक का PIN चाहिए। 0 का अर्थ है हर स्क्रैप।"
 
 msgid "Scrapped"
 msgstr "स्क्रैप किया गया"
@@ -27542,8 +27569,8 @@ msgstr "उद्धरण साझा करें"
 msgid "Share this PIN with {name} so they can pin in at MES terminals."
 msgstr "{name} के साथ यह PIN साझा करें ताकि वे MES टर्मिनल पर पिन इन कर सकें।"
 
-msgid "Share this PIN with the operator so they can pin in at MES terminals."
-msgstr "इस PIN को ऑपरेटर के साथ साझा करें ताकि वे MES टर्मिनल पर पिन इन कर सकें।"
+msgid "Share this PIN with them. They enter it at the MES to pin in, or to approve scrap."
+msgstr "इस PIN को उनके साथ साझा करें। वे MES में पिन इन करने या स्क्रैप स्वीकृत करने के लिए इसे दर्ज करते हैं।"
 
 msgid "Shared"
 msgstr "साझा"

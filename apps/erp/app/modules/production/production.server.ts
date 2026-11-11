@@ -5346,8 +5346,10 @@ export const assignProductionPlanningActions = defineServiceFn({
  *
  * @remarks
  * Refused when the operation's job is locked (Completed, Closed or
- * Cancelled). A scrap reason is kept only on Scrap. A back-office entry: the
- * work event says it came from the ERP, not the shop floor.
+ * Cancelled). A scrap reason is kept only on Scrap. When a scrap approval
+ * rule applies to the scrap's estimated value, only an approver at that tier
+ * may record it, and the approval is recorded with it. A back-office entry:
+ * the work event says it came from the ERP, not the shop floor.
  *
  * @mcp
  */
@@ -5377,15 +5379,39 @@ export const createProductionQuantity = defineServiceFn({
 
     const scrapReasonId =
       quantity.type === "Scrap" ? quantity.scrapReasonId : undefined;
-    const insert = await service.upsertProductionQuantity(
-      ctx.asCaller.supabase,
-      {
-        ...quantity,
-        // The form names the employee who produced it; else the caller.
-        createdBy: quantity.createdBy || ctx.auditUserId,
-        scrapReasonId,
-        companyId
-      }
+    // Read first: a failed read must not leave an approval behind.
+    const writer =
+      quantity.type === "Scrap"
+        ? await service.scrapQuantityClient(ctx)
+        : ctx.asCaller.supabase;
+    // A scrap approval rule: only an approver at the scrap's tier records it.
+    const approval =
+      quantity.type === "Scrap"
+        ? await service.approveErpScrap(ctx, {
+            type: "operation",
+            jobOperationId: quantity.jobOperationId,
+            quantity: quantity.quantity,
+            scrapReasonId,
+            notes: quantity.notes
+          })
+        : { scrapRequestId: null };
+    if (approval instanceof CarbonError) return approval;
+
+    const insert = await service.upsertProductionQuantity(writer, {
+      ...quantity,
+      // The form names the employee who produced it; else the caller.
+      createdBy: quantity.createdBy || ctx.auditUserId,
+      scrapReasonId,
+      companyId
+    });
+    await service.settleErpScrapApproval(
+      ctx,
+      approval.scrapRequestId,
+      insert.error
+        ? { error: { status: insert.status, code: insert.error.code } }
+        : insert.data?.id
+          ? "written"
+          : { error: null }
     );
     if (insert.error || !insert.data?.id) {
       return ctx.error(
@@ -5422,30 +5448,108 @@ export const createProductionQuantity = defineServiceFn({
  *
  * @remarks
  * Needs accounting update, since the quantity feeds the job's costing. A
- * scrap reason is kept only on Scrap. Not published: a published operation
- * gates on its own module's permission.
+ * scrap reason is kept only on Scrap. Scrap the correction adds meets the
+ * scrap approval rules, as in `createProductionQuantity`. Not published: a
+ * published operation gates on its own module's permission.
  */
 export const updateProductionQuantity = defineServiceFn({
   input: productionQuantityValidator.safeExtend({ id: z.string() }),
   permission: { update: "accounting" },
 
   async run(ctx, { id, ...quantity }) {
+    const scrapReasonId =
+      quantity.type === "Scrap" ? quantity.scrapReasonId : undefined;
+    // Scrap added by a correction meets the scrap approval rules for the
+    // added quantity: raised, turned into scrap, or moved to an operation.
+    let approval: { scrapRequestId: string | null } = { scrapRequestId: null };
+    let writer = ctx.asCaller.supabase;
+    // What the row held when the added scrap was valued.
+    let expected:
+      | { type: string; quantity: number; jobOperationId: string }
+      | undefined;
+    if (quantity.type === "Scrap") {
+      // A Scrap row can be written as the system below, which RLS does not
+      // check; the table's own write permission still applies.
+      if (!ctx.can({ update: "production" })) {
+        return ctx.error(
+          "forbidden",
+          "You do not have permission to change production quantities"
+        );
+      }
+      writer = await service.scrapQuantityClient(ctx);
+      const current = await ctx.asCaller.supabase
+        .from("productionQuantity")
+        .select("type, quantity, jobOperationId")
+        .eq("id", id)
+        .eq("companyId", ctx.company.id)
+        .maybeSingle();
+      if (current.error) {
+        return ctx.error(
+          "internal",
+          "Failed to read the production quantity",
+          current.error
+        );
+      }
+      if (!current.data) {
+        return ctx.error("notFound", "Production quantity not found");
+      }
+      expected = {
+        type: current.data.type,
+        quantity: Number(current.data.quantity),
+        jobOperationId: current.data.jobOperationId
+      };
+      // Scrap moved to another operation is new scrap there, at its value.
+      const alreadyScrapped =
+        current.data.type === "Scrap" &&
+        current.data.jobOperationId === quantity.jobOperationId
+          ? Number(current.data.quantity)
+          : 0;
+      const added = quantity.quantity - alreadyScrapped;
+      if (added > 0) {
+        const approved = await service.approveErpScrap(ctx, {
+          type: "operation",
+          jobOperationId: quantity.jobOperationId,
+          quantity: added,
+          scrapReasonId,
+          notes: quantity.notes
+        });
+        if (approved instanceof CarbonError) return approved;
+        approval = approved;
+      }
+    }
+
     const update = await service.upsertProductionQuantity(
-      ctx.asCaller.supabase,
+      writer,
       {
         ...quantity,
         id,
-        scrapReasonId:
-          quantity.type === "Scrap" ? quantity.scrapReasonId : undefined,
+        scrapReasonId,
         companyId: ctx.company.id,
         updatedBy: ctx.auditUserId
-      }
+      },
+      expected
+    );
+    const changed = !update.error && !update.data;
+    await service.settleErpScrapApproval(
+      ctx,
+      approval.scrapRequestId,
+      update.error
+        ? { error: { status: update.status, code: update.error.code } }
+        : changed
+          ? "refused"
+          : "written"
     );
     if (update.error) {
       return ctx.error(
         "internal",
         "Failed to update production quantity",
         update.error
+      );
+    }
+    if (changed) {
+      return ctx.error(
+        "conflict",
+        "This quantity changed while you were editing it. Reload it and save again."
       );
     }
     return { id };

@@ -46,7 +46,7 @@ const ApprovalRuleCard = memo(
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const permissions = usePermissions();
-    const currencyFormatter = useCurrencyFormatter({ compact: true });
+    const currencyFormatter = useCurrencyFormatter();
     const deleteDisclosure = useDisclosure();
 
     const documentTypeLabels: Record<ApprovalDocumentType, string> = {
@@ -56,9 +56,12 @@ const ApprovalRuleCard = memo(
       changeOrder: t`Change Notice`,
       projectChangeRequest: t`Project Change Request`,
       purchaseOrderForceDelete: t`Purchase Order Force Delete`,
-      documentForceDelete: t`Force Delete`
+      documentForceDelete: t`Force Delete`,
+      scrap: t`Scrap`
     };
     const documentTypeLabel = documentTypeLabels[documentType];
+    // A tier's floor is inclusive: the rule applies at the floor and above.
+    const floor = currencyFormatter.format(rule.lowerBoundAmount ?? 0);
 
     const canEdit = permissions.can("update", "settings");
     // The delete route needs settings delete; offer it only to those who hold it.
@@ -98,7 +101,9 @@ const ApprovalRuleCard = memo(
                       ) &&
                         (upperBound != null
                           ? ` ${currencyFormatter.format(rule.lowerBoundAmount ?? 0)} – ${currencyFormatter.format(upperBound)}`
-                          : ` over ${currencyFormatter.format(rule.lowerBoundAmount ?? 0)}`)}
+                          : (rule.lowerBoundAmount ?? 0) > 0
+                            ? ` ${t`${floor} and above`}`
+                            : ` ${t`of any value`}`)}
                     </Heading>
                     <Status
                       color={rule.enabled ? "green" : "gray"}

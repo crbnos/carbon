@@ -193,7 +193,7 @@ export const attachments = {
     statement: ["broadcast_table_changes"]
   },
   jobOperation: {
-    before: ["sync_finish_job_operation"],
+    before: ["prevent_direct_scrap_write", "sync_finish_job_operation"],
     after: [
       "set_shelf_life_on_operation_done",
       "set_shelf_life_on_operation_started",
@@ -309,7 +309,10 @@ export const attachments = {
     statement: ["broadcast_table_changes"]
   },
   productionQuantity: {
-    before: ["sync_update_job_operation_quantities"],
+    before: [
+      "prevent_direct_scrap_write",
+      "sync_update_job_operation_quantities"
+    ],
     events: true,
     statement: ["broadcast_table_changes"]
   },

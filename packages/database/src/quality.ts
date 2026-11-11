@@ -48,7 +48,8 @@ export {
 export {
   dispositionInspection,
   type InspectionDispositionInput,
-  isRejectableWithoutReason
+  isRejectableWithoutReason,
+  rejectWriteOffEstimate
 } from "./quality-disposition.ts";
 export {
   drawHeldStripes,

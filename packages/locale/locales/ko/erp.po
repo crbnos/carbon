@@ -995,6 +995,9 @@ msgstr "{fieldLabel} 국가 코드"
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} 16진수 값"
 
+msgid "{floor} and above"
+msgstr "{floor} 이상"
+
 msgid "{foundHere} found here"
 msgstr "여기에서 {foundHere}를 찾았습니다"
 
@@ -4334,6 +4337,9 @@ msgstr "승인됨"
 
 msgid "Approved <0/> by <1/>"
 msgstr "<1/>에 의해 <0/> 승인됨"
+
+msgid "Approved At"
+msgstr "승인 일시"
 
 msgid "Approved By"
 msgstr "승인자"
@@ -12441,6 +12447,9 @@ msgstr "일괄 배치의 모든 작업에 적용되는 예상 스크랩 수량�
 msgid "Estimated time"
 msgstr "예상 시간"
 
+msgid "Estimated Value"
+msgstr "예상 가치"
+
 msgid "Estimated versus actual time by job"
 msgstr "작업 지시별 예상 시간 대 실제 시간"
 
@@ -14097,8 +14106,8 @@ msgstr "총계정원장 및 월마감"
 msgid "Generate"
 msgstr "생성"
 
-msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
-msgstr "새로운 4자리 PIN을 발급하세요. 작업자의 현재 PIN은 즉시 무효화됩니다."
+msgid "Generate a new 4-digit PIN. Their current PIN stops working immediately."
+msgstr "새로운 4자리 PIN을 발급하세요. 현재 PIN은 즉시 무효화됩니다."
 
 msgid "Generate and send customer invoices"
 msgstr "고객 송장 생성 및 발송"
@@ -18112,6 +18121,9 @@ msgstr "최소 주문:"
 msgid "Minimum Reserve Quantity"
 msgstr "최소 예비 수량"
 
+msgid "Minimum Scrap Value"
+msgstr "최소 스크랩 가치"
+
 msgid "Minute"
 msgstr "분"
 
@@ -20363,6 +20375,9 @@ msgstr "구성되지 않음"
 msgid "Not Configured"
 msgstr "미설정"
 
+msgid "Not confirmed"
+msgstr "확정되지 않음"
+
 msgid "Not delivered"
 msgstr "배송되지 않음"
 
@@ -20650,6 +20665,9 @@ msgstr "{0}h 중"
 
 msgid "of {budgetText}"
 msgstr "{budgetText}의"
+
+msgid "of any value"
+msgstr "모든 가치의"
 
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "자금 지원 비용의 75%에서 85%"
@@ -21237,7 +21255,7 @@ msgid "operation"
 msgstr "공정"
 
 msgid "Operation"
-msgstr "공정작업"
+msgstr "작업"
 
 msgctxt "workflow data step"
 msgid "Operation"
@@ -25133,6 +25151,9 @@ msgstr "발주서 승인을 위해 서명 필요"
 msgid "Require a Supplier Contact and Location"
 msgstr "공급업체 담당자 및 사업장 필수"
 
+msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
+msgstr "예상 자재 가치를 초과하는 스크랩을 기록하기 전에 현장에서 승인자 PIN을 요구합니다"
+
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "스케줄러가 사업장에 작업을 배치하기 전에 할당된 작업자를 요구하세요. 활성화되면 인력이 부족한 작업장은 작업을 받지 않으며 배치된 작업자가 없는 공정은 일정을 잡을 수 없는 것으로 표시됩니다. 조명 없는(24×7) 작업장은 제외됩니다."
 
@@ -26478,6 +26499,9 @@ msgstr "스크랩 {0}"
 msgid "Scrap / Cost of Quality"
 msgstr "스크랩 / 품질 원가"
 
+msgid "Scrap Approvals"
+msgstr "스크랩 승인"
+
 msgid "Scrap Percent"
 msgstr "스크랩 비율"
 
@@ -26513,6 +26537,9 @@ msgstr "부품을 스크랩하세요"
 
 msgid "Scrap Unit"
 msgstr "부품 스크랩"
+
+msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
+msgstr "예상 자재 가치가 이 값 이상이고 다음 규칙의 최소값 미만인 스크랩은 태블릿에서 승인자 PIN이 필요합니다. 0은 모든 스크랩을 의미합니다."
 
 msgid "Scrapped"
 msgstr "폐기됨"
@@ -27542,8 +27569,8 @@ msgstr "견적 공유"
 msgid "Share this PIN with {name} so they can pin in at MES terminals."
 msgstr "이 PIN을 {name}과 공유하면 MES 터미널에 로그인할 수 있습니다."
 
-msgid "Share this PIN with the operator so they can pin in at MES terminals."
-msgstr "이 PIN을 작업자와 공유하면 MES 터미널에 로그인할 수 있습니다."
+msgid "Share this PIN with them. They enter it at the MES to pin in, or to approve scrap."
+msgstr "이 PIN을 해당 사용자와 공유하세요. MES에서 로그인하거나 스크랩을 승인할 때 입력합니다."
 
 msgid "Shared"
 msgstr "공유됨"

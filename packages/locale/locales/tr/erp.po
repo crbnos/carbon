@@ -995,6 +995,9 @@ msgstr "{fieldLabel} ülke kodu"
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} onaltılık değeri"
 
+msgid "{floor} and above"
+msgstr "{floor} ve üzeri"
+
 msgid "{foundHere} found here"
 msgstr "{foundHere} burada bulundu"
 
@@ -4334,6 +4337,9 @@ msgstr "Onaylandı"
 
 msgid "Approved <0/> by <1/>"
 msgstr "Onaylandı <0/> tarafından <1/>"
+
+msgid "Approved At"
+msgstr "Onaylanma Tarihi"
 
 msgid "Approved By"
 msgstr "Onaylayan"
@@ -12441,6 +12447,9 @@ msgstr "Toplu parti içindeki her iş emrine uygulanan tahmini fire miktarı."
 msgid "Estimated time"
 msgstr "Tahmini zaman"
 
+msgid "Estimated Value"
+msgstr "Tahmini Değer"
+
 msgid "Estimated versus actual time by job"
 msgstr "İş emrine göre tahmini ve gerçek süre"
 
@@ -14097,8 +14106,8 @@ msgstr "Büyük defter ve dönem sonu kapanışı"
 msgid "Generate"
 msgstr "Oluştur"
 
-msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
-msgstr "Yeni bir 4 haneli PIN oluştur. Operatörün mevcut PIN'i hemen çalışmayı durdurur."
+msgid "Generate a new 4-digit PIN. Their current PIN stops working immediately."
+msgstr "Yeni bir 4 haneli PIN oluştur. Mevcut PIN'i hemen çalışmayı durdurur."
 
 msgid "Generate and send customer invoices"
 msgstr "Müşteri faturalarını oluştur ve gönder"
@@ -18112,6 +18121,9 @@ msgstr "Minimum Siparişi:"
 msgid "Minimum Reserve Quantity"
 msgstr "Minimum Rezerv Miktarı"
 
+msgid "Minimum Scrap Value"
+msgstr "Minimum Fire Değeri"
+
 msgid "Minute"
 msgstr "Dakika"
 
@@ -20363,6 +20375,9 @@ msgstr "Yapılandırılmadı"
 msgid "Not Configured"
 msgstr "Yapılandırılmadı"
 
+msgid "Not confirmed"
+msgstr "Teyit edilmedi"
+
 msgid "Not delivered"
 msgstr "Teslim Edilmedi"
 
@@ -20650,6 +20665,9 @@ msgstr "başında {0}s"
 
 msgid "of {budgetText}"
 msgstr "{budgetText} içinde"
+
+msgid "of any value"
+msgstr "herhangi bir değerde"
 
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "Finanse edilen maliyetin %75'inden %85'ine kadarı"
@@ -21237,7 +21255,7 @@ msgid "operation"
 msgstr "operasyon"
 
 msgid "Operation"
-msgstr "Operasyon"
+msgstr "İşlem"
 
 msgctxt "workflow data step"
 msgid "Operation"
@@ -25133,6 +25151,9 @@ msgstr "Satın alma siparişlerini onaylamak için İmza Gerekli"
 msgid "Require a Supplier Contact and Location"
 msgstr "Tedarikçi İlgili Kişisi ve Lokasyonu İste"
 
+msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
+msgstr "Atölyede, tahmini malzeme değerinin üzerindeki fire kaydedilmeden önce onaylayıcının PIN kodu istensin"
+
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Çizelgeleme sistemi bir lokasyon'da iş yerleştirmeden önce atanmış bir operatör gerekli kılın. Etkinleştirildiğinde, personel olmayan iş merkezleri iş almaz ve uygun personel olmayan bir operasyon zamanlanmaz olarak görünür. Tam otomasyonlu (24×7) iş merkezleri muaftır."
 
@@ -26478,6 +26499,9 @@ msgstr "Fire {0}"
 msgid "Scrap / Cost of Quality"
 msgstr "Fire / Kalite Maliyeti"
 
+msgid "Scrap Approvals"
+msgstr "Fire Onayları"
+
 msgid "Scrap Percent"
 msgstr "Fire Oranı"
 
@@ -26513,6 +26537,9 @@ msgstr "Adeti fire edin"
 
 msgid "Scrap Unit"
 msgstr "Fire Adet"
+
+msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
+msgstr "Tahmini malzeme değeri bu değere eşit veya bu değerden büyük olup bir sonraki kuralın minimum değerine kadar kalan fire, tablette onaylayıcının PIN kodunu gerektirir. 0 değeri her fire anlamına gelir."
 
 msgid "Scrapped"
 msgstr "Çıkartıldı"
@@ -27542,8 +27569,8 @@ msgstr "Teklifi Paylaş"
 msgid "Share this PIN with {name} so they can pin in at MES terminals."
 msgstr "Bu PIN'i {name} ile paylaş, böylece MES terminal'lerine PIN ile giriş yapabilir."
 
-msgid "Share this PIN with the operator so they can pin in at MES terminals."
-msgstr "Bu PIN'i operatörle paylaş, böylece MES terminal'lerine PIN ile giriş yapabilir."
+msgid "Share this PIN with them. They enter it at the MES to pin in, or to approve scrap."
+msgstr "Bu PIN'i kişiyle paylaş. MES'te PIN ile giriş yapmak veya fireyi onaylamak için girer."
 
 msgid "Shared"
 msgstr "Paylaşılan"

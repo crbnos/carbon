@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error, success } from "@carbon/auth";
+import { assertIsPost, error, hasPermission, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
@@ -14,7 +14,8 @@ import { getDatabaseClient } from "~/services/database.server";
 import { erpPosting } from "~/services/erp";
 import {
   CORRECTION_TARGET_PREFIX,
-  inspectionDispositionValidator
+  inspectionDispositionValidator,
+  scrapApproverValidator
 } from "~/services/models";
 import {
   abilityBlockRefusal,
@@ -29,6 +30,7 @@ import {
   postBulkCompletion,
   postSerialCompletions
 } from "~/services/quality.server";
+import { postScrapWithApproval } from "~/services/scrap-approval.server";
 import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
@@ -39,9 +41,8 @@ import { path } from "~/utils/path";
 // only. The disposition is one-shot (requireOpen): postings can never re-run.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "quality"
-  });
+  const { client, companyId, userId, sessionUserId, permissions } =
+    await requirePermissions(request, { update: "quality" });
   const { id } = params;
   if (!id) throw new Error("id is required");
 
@@ -52,6 +53,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (validation.error) {
     return validationError(validation.error);
   }
+  const approver = await validator(scrapApproverValidator).validate(formData);
   const {
     decision,
     operationId,
@@ -232,81 +234,139 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return fail(backflushCheck.error, backflushCheck.message!);
   }
 
-  // ---------------------------------------------------------------
-  // 2. Close the lot FIRST — the one-shot requireOpen update is the
-  //    serialization point; a concurrent second POST dies here before
-  //    any posting can re-run.
-  // ---------------------------------------------------------------
-  const dispositionResult = await dispositionInspection(getDatabaseClient(), {
-    id,
-    decision,
-    companyId,
-    dispositionedBy: userId,
-    requireOpen: true
+  const postsScrap = scrapTotal > 0 && Boolean(scrapReasonId);
+  // The scrap row goes in as the system (a scrap rule refuses it from an API
+  // role), so the production permission the row's policy asked is checked
+  // here, before the lot closes.
+  if (
+    postsScrap &&
+    !hasPermission(permissions, "production", "create", companyId)
+  ) {
+    return fail(null, "You do not have permission to record scrap");
+  }
+  // A 4xx means no scrap row exists and removes the approval record; any other
+  // status may have committed, so the record stays unconfirmed.
+  const refused = (cause: unknown, message: string, status = 422) => ({
+    data: null,
+    error: { message, status, cause }
   });
-  if (dispositionResult.error) {
-    return fail(dispositionResult.error, "Failed to disposition lot");
+
+  // The close and every posting up to the scrap row, which an approval rule
+  // puts an approver's PIN in front of: a closed lot cannot ask again.
+  const closeAndPost = async () => {
+    // -------------------------------------------------------------
+    // 2. Close the lot FIRST — the one-shot requireOpen update is the
+    //    serialization point; a concurrent second POST dies here before
+    //    any posting can re-run.
+    // -------------------------------------------------------------
+    const dispositionResult = await dispositionInspection(getDatabaseClient(), {
+      id,
+      decision,
+      companyId,
+      dispositionedBy: userId,
+      requireOpen: true
+    });
+    if (dispositionResult.error) {
+      return refused(dispositionResult.error, "Failed to disposition lot");
+    }
+
+    // -------------------------------------------------------------
+    // 3. Physical postings. Failures past this point leave the lot
+    //    closed with partial postings — surfaced loudly; the ERP's
+    //    productionQuantity records (and their links) self-heal the
+    //    arithmetic for whatever is re-posted manually.
+    // -------------------------------------------------------------
+    if (completionQuantity > 0) {
+      if (state.requiresSerialTracking) {
+        const completions = await postSerialCompletions(serviceRole, {
+          candidates: completionCandidates,
+          jobOperationId: state.jobOperationId,
+          jobMakeMethodId: state.operation.jobMakeMethodId,
+          workCenterId: state.operation.workCenterId,
+          inspectionId: id,
+          eventIds,
+          companyId,
+          userId
+        });
+        if (completions.error) {
+          return refused(
+            completions.error,
+            `Lot dispositioned, but completing units failed after ${completions.completed} of ${completionQuantity}`
+          );
+        }
+      } else {
+        const completion = await postBulkCompletion(
+          serviceRole,
+          client,
+          state,
+          {
+            quantity: completionQuantity,
+            eventIds,
+            companyId,
+            userId
+          }
+        );
+        if (completion.error) {
+          return refused(
+            completion.error,
+            `Lot dispositioned, but ${completion.message ?? "completing units failed"}`
+          );
+        }
+      }
+    }
+
+    if (postsScrap && scrapReasonId) {
+      // The service role: the database refuses a Scrap row from an API role
+      // while a scrap rule is on.
+      const scrapResult = await insertScrapQuantity(serviceRole, {
+        jobOperationId: state.jobOperationId,
+        quantity: scrapTotal,
+        scrapReasonId,
+        inspectionId: id,
+        ...eventIds,
+        companyId,
+        createdBy: userId
+      });
+      if (scrapResult.error) {
+        return refused(
+          scrapResult.error,
+          "Lot dispositioned, but recording scrap failed",
+          scrapResult.status
+        );
+      }
+    }
+    return { data: null, error: null };
+  };
+
+  if (postsScrap) {
+    const outcome = await postScrapWithApproval({
+      request,
+      companyId,
+      userId,
+      sessionUserId,
+      subject: {
+        type: "operation",
+        jobOperationId: state.jobOperationId,
+        quantity: scrapTotal,
+        scrapReasonId
+      },
+      approver: approver.error ? {} : approver.data,
+      post: closeAndPost
+    });
+    if (outcome.status === "approval-required") {
+      return { scrapApproval: outcome.prompt };
+    }
+    if (outcome.status === "refused") {
+      return fail(outcome.error ?? null, outcome.message);
+    }
+  } else {
+    const closed = await closeAndPost();
+    if (closed.error) return fail(closed.error, closed.error.message);
   }
 
-  // ---------------------------------------------------------------
-  // 3. Physical postings. Failures past this point leave the lot
-  //    closed with partial postings — surfaced loudly; the ERP's
-  //    productionQuantity records (and their links) self-heal the
-  //    arithmetic for whatever is re-posted manually.
-  // ---------------------------------------------------------------
   const warnings: string[] = [];
 
-  if (completionQuantity > 0) {
-    if (state.requiresSerialTracking) {
-      const completions = await postSerialCompletions(serviceRole, {
-        candidates: completionCandidates,
-        jobOperationId: state.jobOperationId,
-        jobMakeMethodId: state.operation.jobMakeMethodId,
-        workCenterId: state.operation.workCenterId,
-        inspectionId: id,
-        eventIds,
-        companyId,
-        userId
-      });
-      if (completions.error) {
-        return fail(
-          completions.error,
-          `Lot dispositioned, but completing units failed after ${completions.completed} of ${completionQuantity}`
-        );
-      }
-    } else {
-      const completion = await postBulkCompletion(serviceRole, client, state, {
-        quantity: completionQuantity,
-        eventIds,
-        companyId,
-        userId
-      });
-      if (completion.error) {
-        return fail(
-          completion.error,
-          `Lot dispositioned, but ${completion.message ?? "completing units failed"}`
-        );
-      }
-    }
-  }
-
-  if (scrapTotal > 0 && scrapReasonId) {
-    const scrapResult = await insertScrapQuantity(client, {
-      jobOperationId: state.jobOperationId,
-      quantity: scrapTotal,
-      scrapReasonId,
-      inspectionId: id,
-      ...eventIds,
-      companyId,
-      createdBy: userId
-    });
-    if (scrapResult.error) {
-      return fail(
-        scrapResult.error,
-        "Lot dispositioned, but recording scrap failed"
-      );
-    }
-
+  if (postsScrap) {
     // Scrapped WIP serials leave the flow for good: Rejected keeps them out
     // of inventory and out of complete_job_to_inventory's release at the
     // last operation. Reworked units are NOT flipped — they continue through

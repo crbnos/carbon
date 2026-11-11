@@ -383,8 +383,26 @@ msgstr "Внешний вид"
 msgid "Apply link"
 msgstr "Применить ссылку"
 
+msgid "Approval needed"
+msgstr "Требуется утверждение"
+
 msgid "Approvals"
 msgstr "Утверждения"
+
+msgid "Approve and Complete"
+msgstr "Утвердить и завершить"
+
+msgid "Approve and Log Scrap"
+msgstr "Утвердить и зафиксировать брак"
+
+msgid "Approve and Record Partial"
+msgstr "Утвердить и зафиксировать частичное выполнение"
+
+msgid "Approve and Reject Lot"
+msgstr "Утвердить и отклонить партию"
+
+msgid "Approve and Scrap"
+msgstr "Утвердить и списать в брак"
 
 msgid "AQL"
 msgstr "AQL"
@@ -1024,6 +1042,7 @@ msgstr "Завершить операции"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Введите значение для каждого производственного заказа или заполните все производственные заказы одновременно из первой строки. Пустые строки пропускаются."
 
+#. placeholder {0}: approver.name
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "Введите PIN для {0}"
@@ -1708,6 +1727,9 @@ msgstr "Нет активных операций"
 msgid "No active work centers at this location."
 msgstr "На этом месте нет активных рабочих центров."
 
+msgid "No approver available"
+msgstr "Нет доступного утверждающего"
+
 msgid "No assigned operations"
 msgstr "Нет назначенных операций"
 
@@ -1786,6 +1808,9 @@ msgstr "Нет материалов"
 
 msgid "No materials on this batch."
 msgstr "На этой серии нет материалов."
+
+msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
+msgstr "Никто из тех, кто может утвердить этот брак, не имеет PIN-кода для консоли. Попросите администратора задать PIN-код утверждающему."
 
 msgid "No open inspections"
 msgstr "Нет открытых контролей"
@@ -3129,6 +3154,9 @@ msgstr "Это проводит рабочее время производств
 
 msgid "This sample was removed"
 msgstr "Этот образец был удалён"
+
+msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
+msgstr "Стоимость материала в этом браке составляет около <0>{value}</0>. Утверждающий должен ввести свой PIN-код, прежде чем брак будет записан."
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Это останавливает ваш таймер и проводит рабочее время производственного заказа. Производственный заказ больше не может изменяться."

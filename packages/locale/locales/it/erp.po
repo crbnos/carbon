@@ -995,6 +995,9 @@ msgstr "Codice paese di {fieldLabel}"
 msgid "{fieldLabel} hex value"
 msgstr "Valore esadecimale di {fieldLabel}"
 
+msgid "{floor} and above"
+msgstr "{floor} e oltre"
+
 msgid "{foundHere} found here"
 msgstr "{foundHere} trovato qui"
 
@@ -4334,6 +4337,9 @@ msgstr "Approvato"
 
 msgid "Approved <0/> by <1/>"
 msgstr "Approvato <0/> da <1/>"
+
+msgid "Approved At"
+msgstr "Approvato il"
 
 msgid "Approved By"
 msgstr "Approvato da"
@@ -12441,6 +12447,9 @@ msgstr "Quantità di scarto stimata applicata a ogni lavoro nel lotto."
 msgid "Estimated time"
 msgstr "Tempo stimato"
 
+msgid "Estimated Value"
+msgstr "Valore stimato"
+
 msgid "Estimated versus actual time by job"
 msgstr "Tempo stimato rispetto a quello effettivo per ordine di produzione"
 
@@ -14097,8 +14106,8 @@ msgstr "Contabilità generale e chiusura di fine mese"
 msgid "Generate"
 msgstr "Genera"
 
-msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
-msgstr "Genera un nuovo PIN a 4 cifre. Il PIN corrente dell'operatore smette di funzionare immediatamente."
+msgid "Generate a new 4-digit PIN. Their current PIN stops working immediately."
+msgstr "Genera un nuovo PIN a 4 cifre. Il suo PIN corrente smette di funzionare immediatamente."
 
 msgid "Generate and send customer invoices"
 msgstr "Genera e invia fatture ai clienti"
@@ -18112,6 +18121,9 @@ msgstr "Ordine Minimo:"
 msgid "Minimum Reserve Quantity"
 msgstr "Quantità Minima di Riserva"
 
+msgid "Minimum Scrap Value"
+msgstr "Valore minimo di scarto"
+
 msgid "Minute"
 msgstr "Minuto"
 
@@ -20363,6 +20375,9 @@ msgstr "Non configurato"
 msgid "Not Configured"
 msgstr "Non Configurato"
 
+msgid "Not confirmed"
+msgstr "Non confermato"
+
 msgid "Not delivered"
 msgstr "Non consegnato"
 
@@ -20650,6 +20665,9 @@ msgstr "di {0}h"
 
 msgid "of {budgetText}"
 msgstr "di {budgetText}"
+
+msgid "of any value"
+msgstr "di qualsiasi valore"
 
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "Del costo finanziato, dal 75% all'85%"
@@ -25133,6 +25151,9 @@ msgstr "Richiedi una firma per approvare gli ordini di acquisto"
 msgid "Require a Supplier Contact and Location"
 msgstr "Richiedi un contatto fornitore e un'ubicazione"
 
+msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
+msgstr "Richiedi il PIN di un approvatore in officina prima di registrare uno scarto con valore stimato del materiale superiore a una soglia"
+
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Richiedi un operatore assegnato prima che lo scheduler assegni il lavoro a un'ubicazione. Quando attivato, i centri di lavoro non staffati non ricevono lavoro e un'operazione senza copertura di manodopera appare come non programmabile. I centri di lavoro lights-out (24×7) sono esentati."
 
@@ -26478,6 +26499,9 @@ msgstr "Scarto {0}"
 msgid "Scrap / Cost of Quality"
 msgstr "Scarto / Costo della Qualità"
 
+msgid "Scrap Approvals"
+msgstr "Approvazioni scarti"
+
 msgid "Scrap Percent"
 msgstr "Percentuale di Scarto"
 
@@ -26513,6 +26537,9 @@ msgstr "Scartare l'unità"
 
 msgid "Scrap Unit"
 msgstr "Unità da scartare"
+
+msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
+msgstr "Lo scarto il cui valore stimato di materiale è pari o superiore a questo valore, fino al minimo della regola successiva, richiede il PIN di un approvatore sul tablet. 0 indica tutti gli scarti."
 
 msgid "Scrapped"
 msgstr "Scartato"
@@ -27542,8 +27569,8 @@ msgstr "Condividi Preventivo"
 msgid "Share this PIN with {name} so they can pin in at MES terminals."
 msgstr "Condividi questo PIN con {name} affinché possano accedere ai terminali MES."
 
-msgid "Share this PIN with the operator so they can pin in at MES terminals."
-msgstr "Condividi questo PIN con l'operatore affinché possa accedere ai terminali MES."
+msgid "Share this PIN with them. They enter it at the MES to pin in, or to approve scrap."
+msgstr "Condividi questo PIN con la persona. Lo inserisce nel MES per accedere o per approvare gli scarti."
 
 msgid "Shared"
 msgstr "Condiviso"

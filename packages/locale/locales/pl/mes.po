@@ -383,8 +383,26 @@ msgstr "Wygląd"
 msgid "Apply link"
 msgstr "Zastosuj link"
 
+msgid "Approval needed"
+msgstr "Wymagane zatwierdzenie"
+
 msgid "Approvals"
 msgstr "Zatwierdzenia"
+
+msgid "Approve and Complete"
+msgstr "Zatwierdź i zakończ"
+
+msgid "Approve and Log Scrap"
+msgstr "Zatwierdź i zarejestruj braki"
+
+msgid "Approve and Record Partial"
+msgstr "Zatwierdź i zapisz częściowe wykonanie"
+
+msgid "Approve and Reject Lot"
+msgstr "Zatwierdź i odrzuć partię"
+
+msgid "Approve and Scrap"
+msgstr "Zatwierdź i oznacz jako braki"
 
 msgid "AQL"
 msgstr "AQL"
@@ -1024,6 +1042,7 @@ msgstr "Zakończ operacje"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Wpisz wartość każdego zlecenia produkcyjnego lub wypełnij wszystkie zlecenia jednocześnie z pierwszego wiersza. Puste wiersze są pomijane."
 
+#. placeholder {0}: approver.name
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "Wprowadź PIN dla {0}"
@@ -1708,6 +1727,9 @@ msgstr "Brak aktywnych operacji"
 msgid "No active work centers at this location."
 msgstr "Brak czynnych stanowisk roboczych w tej lokalizacji."
 
+msgid "No approver available"
+msgstr "Brak dostępnych osób zatwierdzających"
+
 msgid "No assigned operations"
 msgstr "Brak przypisanych operacji"
 
@@ -1786,6 +1808,9 @@ msgstr "Brak materiałów"
 
 msgid "No materials on this batch."
 msgstr "Brak materiałów w tej partii produkcyjnej."
+
+msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
+msgstr "Żadna osoba uprawniona do zatwierdzenia tych braków nie ma kodu PIN do konsoli. Poproś administratora o ustawienie kodu dla osoby zatwierdzającej."
 
 msgid "No open inspections"
 msgstr "Brak otwartych kontroli"
@@ -3129,6 +3154,9 @@ msgstr "To zaksięguje czas zlecenia. Zlecenie nie może się już zmienić."
 
 msgid "This sample was removed"
 msgstr "Ta próbka została usunięta"
+
+msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
+msgstr "Te braki są warte około <0>{value}</0> w materiale. Osoba zatwierdzająca musi wprowadzić swój kod PIN, zanim zostaną zapisane."
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "To zatrzymuje Twój zegar i zaksięguje czas zlecenia. Zlecenie nie może się już zmienić."

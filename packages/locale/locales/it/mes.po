@@ -383,8 +383,26 @@ msgstr "Aspetto"
 msgid "Apply link"
 msgstr "Applica collegamento"
 
+msgid "Approval needed"
+msgstr "Approvazione richiesta"
+
 msgid "Approvals"
 msgstr "Approvazioni"
+
+msgid "Approve and Complete"
+msgstr "Approva e completa"
+
+msgid "Approve and Log Scrap"
+msgstr "Approva e registra lo scarto"
+
+msgid "Approve and Record Partial"
+msgstr "Approva e registra parziale"
+
+msgid "Approve and Reject Lot"
+msgstr "Approva e rifiuta lotto"
+
+msgid "Approve and Scrap"
+msgstr "Approva e scarta"
 
 msgid "AQL"
 msgstr "AQL"
@@ -1024,6 +1042,7 @@ msgstr "Termina Operazioni"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Inserisci il valore di ogni ordine di produzione, o compila ogni ordine di produzione tutto insieme dalla prima riga. Le righe vuote vengono saltate."
 
+#. placeholder {0}: approver.name
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "Inserisci il PIN per {0}"
@@ -1708,6 +1727,9 @@ msgstr "Nessuna operazione attiva"
 msgid "No active work centers at this location."
 msgstr "Nessun centro di lavoro attivo in questa posizione."
 
+msgid "No approver available"
+msgstr "Nessun approvatore disponibile"
+
 msgid "No assigned operations"
 msgstr "Nessuna operazione assegnata"
 
@@ -1786,6 +1808,9 @@ msgstr "Nessun materiale"
 
 msgid "No materials on this batch."
 msgstr "Nessun materiale in questo Lotto di produzione."
+
+msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
+msgstr "Nessuno tra chi può approvare questo scarto ha un PIN console. Chiedi a un amministratore di impostarne uno per un approvatore."
 
 msgid "No open inspections"
 msgstr "Nessun controllo Aperto"
@@ -3129,6 +3154,9 @@ msgstr "Questo registra il tempo dell'ordine di produzione. L'ordine non può pi
 
 msgid "This sample was removed"
 msgstr "Questo campione è stato rimosso"
+
+msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
+msgstr "Questo scarto vale circa <0>{value}</0> di materiale. Un approvatore deve inserire il proprio PIN prima che lo scarto venga registrato."
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Questo ferma il tuo orologio e registra il tempo dell'ordine di produzione. L'ordine non può più cambiare."

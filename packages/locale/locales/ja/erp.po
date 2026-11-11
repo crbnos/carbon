@@ -995,6 +995,9 @@ msgstr "{fieldLabel}の国コード"
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} の16進値"
 
+msgid "{floor} and above"
+msgstr "{floor} 以上"
+
 msgid "{foundHere} found here"
 msgstr "{foundHere} がここで見つかりました"
 
@@ -4334,6 +4337,9 @@ msgstr "承認済"
 
 msgid "Approved <0/> by <1/>"
 msgstr "承認済 <0/> 〜 <1/>"
+
+msgid "Approved At"
+msgstr "承認日時"
 
 msgid "Approved By"
 msgstr "承認者"
@@ -12441,6 +12447,9 @@ msgstr "バルク一括処理の各ジョブに適用される推定スクラッ
 msgid "Estimated time"
 msgstr "推定時間"
 
+msgid "Estimated Value"
+msgstr "見積金額"
+
 msgid "Estimated versus actual time by job"
 msgstr "製造指図ごとの見積時間と実績時間"
 
@@ -14097,8 +14106,8 @@ msgstr "総勘定元帳と月末決算"
 msgid "Generate"
 msgstr "生成"
 
-msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
-msgstr "新しい 4 桁の PIN を生成します。作業者の現在の PIN は直ちに使用できなくなります。"
+msgid "Generate a new 4-digit PIN. Their current PIN stops working immediately."
+msgstr "新しい 4 桁の PIN を生成します。現在の PIN は直ちに使用できなくなります。"
 
 msgid "Generate and send customer invoices"
 msgstr "得意先請求書を生成して送信する"
@@ -18112,6 +18121,9 @@ msgstr "最小注文数:"
 msgid "Minimum Reserve Quantity"
 msgstr "最小予備数量"
 
+msgid "Minimum Scrap Value"
+msgstr "スクラップ最小金額"
+
 msgid "Minute"
 msgstr "分"
 
@@ -20363,6 +20375,9 @@ msgstr "未設定"
 msgid "Not Configured"
 msgstr "未設定"
 
+msgid "Not confirmed"
+msgstr "未確定"
+
 msgid "Not delivered"
 msgstr "未配送"
 
@@ -20650,6 +20665,9 @@ msgstr "{0}h中"
 
 msgid "of {budgetText}"
 msgstr "{budgetText}の"
+
+msgid "of any value"
+msgstr "値を問わず"
 
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "資金化されたコストの75％から85％"
@@ -21237,7 +21255,7 @@ msgid "operation"
 msgstr "工程"
 
 msgid "Operation"
-msgstr "操作"
+msgstr "処理"
 
 msgctxt "workflow data step"
 msgid "Operation"
@@ -25133,6 +25151,9 @@ msgstr "発注書を承認するには署名が必要です"
 msgid "Require a Supplier Contact and Location"
 msgstr "仕入先の担当者と拠点が必須"
 
+msgid "Require an approver's PIN on the shop floor before scrap above an estimated material value is recorded"
+msgstr "見積材料費を超えるスクラップを記録する前に、製造現場で承認者のPINを必須にする"
+
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "スケジューラがある拠点に作業を配置する前に、割当済の作業者を必要とします。オンの場合、スタッフなしの作業区は作業を取得せず、配置された人員がいない工程はスケジュール不可として表示されます。ライトアウト（24×7）作業区は除外されます。"
 
@@ -26478,6 +26499,9 @@ msgstr "スクラップ {0}"
 msgid "Scrap / Cost of Quality"
 msgstr "スクラップ/品質原価"
 
+msgid "Scrap Approvals"
+msgstr "スクラップ承認"
+
 msgid "Scrap Percent"
 msgstr "スクラップ率"
 
@@ -26513,6 +26537,9 @@ msgstr "ユニットをスクラップにする"
 
 msgid "Scrap Unit"
 msgstr "スクラップユニット"
+
+msgid "Scrap whose estimated material value is at or above this, up to the next rule's minimum, needs an approver's PIN at the tablet. 0 means every scrap."
+msgstr "見積材料費がこの金額以上で、次のルールの最小金額未満のスクラップには、タブレットで承認者のPINが必要です。0の場合はすべてのスクラップが対象です。"
 
 msgid "Scrapped"
 msgstr "スクラップ済み"
@@ -27542,8 +27569,8 @@ msgstr "見積もりを共有"
 msgid "Share this PIN with {name} so they can pin in at MES terminals."
 msgstr "このPINを {name} と共有してください。これにより MES 端末でサインインできます。"
 
-msgid "Share this PIN with the operator so they can pin in at MES terminals."
-msgstr "このPINを作業者と共有してください。これにより MES 端末でサインインできます。"
+msgid "Share this PIN with them. They enter it at the MES to pin in, or to approve scrap."
+msgstr "この PIN を本人と共有してください。MES でサインインするとき、またはスクラップを承認するときに入力します。"
 
 msgid "Shared"
 msgstr "共有"

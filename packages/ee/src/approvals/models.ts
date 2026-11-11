@@ -24,7 +24,8 @@ export const approvalDocumentType = [
   "projectChangeRequest",
   "changeOrder",
   "purchaseOrderForceDelete",
-  "documentForceDelete"
+  "documentForceDelete",
+  "scrap"
 ] as const;
 
 export type ApprovalDocumentType =
@@ -37,7 +38,8 @@ export const approvalDocumentTypeLabel: Record<ApprovalDocumentType, string> = {
   projectChangeRequest: "Project change request",
   changeOrder: "Change Notice",
   purchaseOrderForceDelete: "Purchase Order Force Delete",
-  documentForceDelete: "Force Delete"
+  documentForceDelete: "Force Delete",
+  scrap: "Scrap"
 };
 
 /**
@@ -49,9 +51,28 @@ export const adminApprovedDocumentTypes: ApprovalDocumentType[] = [
   "documentForceDelete"
 ];
 
+// Scrap is tiered by the estimated value of what is scrapped.
 export const approvalDocumentTypesWithAmounts: ApprovalDocumentType[] = [
-  "purchaseOrder"
+  "purchaseOrder",
+  "scrap"
 ];
+
+/**
+ * Where each tier of an amount-tiered rule set ends: the next enabled tier's
+ * floor, null for the top tier. A disabled rule matches nothing, so it ends
+ * no tier.
+ */
+export function tierCeilings(
+  rules: { lowerBoundAmount: number | null; enabled: boolean | null }[]
+): (lowerBoundAmount: number) => number | null {
+  const floors = Array.from(
+    new Set(
+      rules.filter((rule) => rule.enabled).map((r) => r.lowerBoundAmount ?? 0)
+    )
+  ).sort((a, b) => a - b);
+  return (lowerBoundAmount) =>
+    floors.find((floor) => floor > lowerBoundAmount) ?? null;
+}
 
 export const approvalFiltersValidator = z.object({
   documentType: z.enum(approvalDocumentType, {
@@ -82,7 +103,8 @@ export const approvalRuleValidator = z.object({
     z.string().min(1, { message: "Invalid selection" })
   ),
   defaultApproverId: zfd.text(z.string().optional()),
-  lowerBoundAmount: zfd.numeric(z.number().gt(0).default(0)).optional(),
+  // 0 is a real floor: every document of the type needs approval.
+  lowerBoundAmount: zfd.numeric(z.number().min(0).default(0)).optional(),
   enabled: zfd.checkbox()
 });
 

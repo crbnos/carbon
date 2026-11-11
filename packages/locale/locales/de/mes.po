@@ -383,8 +383,26 @@ msgstr "Darstellung"
 msgid "Apply link"
 msgstr "Link anwenden"
 
+msgid "Approval needed"
+msgstr "Genehmigung erforderlich"
+
 msgid "Approvals"
 msgstr "Genehmigungen"
+
+msgid "Approve and Complete"
+msgstr "Genehmigen und abschließen"
+
+msgid "Approve and Log Scrap"
+msgstr "Genehmigen und Ausschuss erfassen"
+
+msgid "Approve and Record Partial"
+msgstr "Genehmigen und teilweise erfassen"
+
+msgid "Approve and Reject Lot"
+msgstr "Genehmigen und Charge ablehnen"
+
+msgid "Approve and Scrap"
+msgstr "Genehmigen und als Ausschuss buchen"
 
 msgid "AQL"
 msgstr "AQL"
@@ -1024,6 +1042,7 @@ msgstr "Arbeitsgänge beenden"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Geben Sie den Wert jedes Fertigungsauftrags ein oder füllen Sie alle Fertigungsaufträge auf einmal aus der ersten Zeile. Leere Zeilen werden übersprungen."
 
+#. placeholder {0}: approver.name
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "PIN für {0} eingeben"
@@ -1708,6 +1727,9 @@ msgstr "Keine aktiven Arbeitsgänge"
 msgid "No active work centers at this location."
 msgstr "Keine aktiven Arbeitsplätze an diesem Standort."
 
+msgid "No approver available"
+msgstr "Kein Genehmiger verfügbar"
+
 msgid "No assigned operations"
 msgstr "Keine zugewiesenen Arbeitsgänge"
 
@@ -1786,6 +1808,9 @@ msgstr "Keine Materialien"
 
 msgid "No materials on this batch."
 msgstr "Keine Werkstoffe in diesem Los."
+
+msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
+msgstr "Niemand, der diesen Ausschuss genehmigen kann, hat eine Konsolen-PIN. Bitten Sie einen Administrator, für einen Genehmiger eine PIN festzulegen."
 
 msgid "No open inspections"
 msgstr "Keine offenen Prüfungen"
@@ -3129,6 +3154,9 @@ msgstr "Dies bucht die Zeit des Fertigungsauftrags. Der Fertigungsauftrag kann s
 
 msgid "This sample was removed"
 msgstr "Diese Probe wurde entfernt"
+
+msgid "This scrap is worth about <0>{value}</0> in material. An approver must enter their PIN before it is recorded."
+msgstr "Der Materialwert dieses Ausschusses liegt bei etwa <0>{value}</0. Ein Genehmiger muss seine PIN eingeben, bevor der Ausschuss erfasst wird."
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Dies stoppt Ihre Uhr und bucht die Zeit des Fertigungsauftrags. Der Fertigungsauftrag kann sich nicht mehr ändern."
