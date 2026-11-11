@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { Database } from "@carbon/database";
+import { isAdminType } from "@carbon/database/access";
 import {
   type Kysely,
   type KyselyDatabase,
@@ -46,33 +47,52 @@ const ADMIN_APPROVED_DECISION_ERROR =
   "This request is approved or rejected on its document, not here";
 
 /**
- * Whether the user is an active employee of the company whose employee type
- * is the company's Admin type (`employeeType.systemType = 'Admin'`). The
- * approvers of `adminApprovedDocumentTypes`.
+ * The approvers of `adminApprovedDocumentTypes`, as user ids (one user when
+ * `userId` is given): employees whose type is the company's Admin type, by the
+ * access system's own rule (`isAdminType`). Force delete adds one condition of
+ * its own that page access does not have: the employee must be active.
  */
+async function readCompanyAdminIds(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId?: string
+) {
+  let query = client
+    .from("employee")
+    .select(
+      "id, employeeType!employee_employeeTypeId_fkey(systemType, companyId)"
+    )
+    .eq("companyId", companyId)
+    .eq("active", true);
+  if (userId) query = query.eq("id", userId);
+  const employees = await query;
+  if (employees.error) return { ids: [], error: employees.error };
+  return {
+    ids: employees.data
+      .filter((e) => e.employeeType && isAdminType(e.employeeType, companyId))
+      .map((e) => e.id),
+    error: null
+  };
+}
+
+/** Whether the user approves `adminApprovedDocumentTypes` (`readCompanyAdminIds`). */
 export async function isCompanyAdmin(
   client: SupabaseClient<Database>,
   companyId: string,
   userId: string
 ): Promise<boolean> {
-  const adminTypes = await client
-    .from("employeeType")
-    .select("id")
-    .eq("companyId", companyId)
-    .eq("systemType", "Admin");
-  if (adminTypes.error || !adminTypes.data?.length) return false;
-  const employee = await client
-    .from("employee")
-    .select("id")
-    .eq("id", userId)
-    .eq("companyId", companyId)
-    .eq("active", true)
-    .in(
-      "employeeTypeId",
-      adminTypes.data.map((type) => type.id)
-    )
-    .maybeSingle();
-  return !employee.error && !!employee.data;
+  const { ids, error } = await readCompanyAdminIds(client, companyId, userId);
+  return !error && ids.length > 0;
+}
+
+/** Every approver of `adminApprovedDocumentTypes` in the company (`readCompanyAdminIds`). */
+export async function getCompanyAdminIds(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<string[]> {
+  const { ids, error } = await readCompanyAdminIds(client, companyId);
+  if (error) throw error;
+  return ids;
 }
 
 export async function approveRequest(

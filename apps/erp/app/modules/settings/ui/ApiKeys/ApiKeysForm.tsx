@@ -87,7 +87,7 @@ const ApiKeyForm = ({
 
   const [key, setKey] = useState<string | null>(null);
 
-  // The person's edits; the route remounts the form for another key.
+  // The grants being edited; the route remounts the form for another key.
   const [grants, setGrants] = useState(existingGrants);
 
   return (

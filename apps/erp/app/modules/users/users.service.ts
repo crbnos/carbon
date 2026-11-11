@@ -2555,14 +2555,13 @@ export async function writeEmployeeType(
     "employeeType" | "grants" | "ip"
   >
 ): Promise<{ id: string } | CarbonError> {
-  const write = saveEmployeeType(ctx.asCaller.supabase, ctx.asSystem.pg, {
-    ...input,
-    companyId: ctx.company.id,
-    actorId: ctx.auditUserId
-  });
-  const refused = await grantWriteRefusal(ctx, write);
-  if (refused) return refused;
-  return { id: (await write).id as string };
+  const written = await saveEmployeeType(
+    ctx.asCaller.supabase,
+    ctx.asSystem.pg,
+    { ...input, companyId: ctx.company.id, actorId: ctx.auditUserId }
+  );
+  if (written.error) return grantWriteRefusal(ctx, written.error);
+  return { id: written.id };
 }
 
 /**

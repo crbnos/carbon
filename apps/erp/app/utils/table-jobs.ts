@@ -251,7 +251,8 @@ export type BulkActionMeta = {
    *  the list when that gate is decided per row (the items lists: each asks
    *  for its own item type's page). */
   gate: BulkActionGate;
-  /** The plan feature the action route requires, checked again by the job. */
+  /** The plan feature the action needs: checked before the run
+   *  (`canRunBulkAction`); each write checks it again. */
   feature?: Feature;
   /** The most matching rows the action runs on (default 100,000). */
   maxRows?: number;

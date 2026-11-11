@@ -116,11 +116,6 @@ export async function seedCompanyReferenceData(
     [companyId, companyId]
   );
 
-  await client.query(
-    `INSERT INTO "userToCompany" ("userId", "companyId", "role") VALUES ($1, $2, 'employee')`,
-    [userId, companyId]
-  );
-
   for (const group of groups) {
     await client.query(
       `INSERT INTO "group" (id, name, "isCustomerTypeGroup", "isEmployeeTypeGroup", "isSupplierTypeGroup", "companyId")
@@ -136,16 +131,9 @@ export async function seedCompanyReferenceData(
     );
   }
 
-  const employeeTypeResult = await client.query(
-    `INSERT INTO "employeeType" (name, "companyId", protected, "systemType") VALUES ('Admin', $1, true, 'Admin') RETURNING id`,
-    [companyId]
-  );
-  const employeeTypeId = employeeTypeResult.rows[0].id;
-
-  // The Admin type resolves to Full on every page with no permission rows.
   await client.query(
-    `INSERT INTO employee (id, "employeeTypeId", "companyId", active) VALUES ($1, $2, $3, true)`,
-    [userId, employeeTypeId, companyId]
+    `INSERT INTO "employeeType" (name, "companyId", protected, "systemType") VALUES ('Admin', $1, true, 'Admin')`,
+    [companyId]
   );
 
   for (const name of customerStatuses) {
@@ -370,10 +358,8 @@ export async function seedCompanyReferenceData(
   );
   const locationId = locationResult.rows[0].id;
 
-  await client.query(
-    `INSERT INTO "employeeJob" (id, "companyId", "locationId") VALUES ($1, $2, $3)`,
-    [userId, companyId, locationId]
-  );
+  // Needs the Admin type and the location above.
+  await insertAdminMember(client, { userId, companyId });
 
   return { companyId, companyGroupId, locationId };
 }
@@ -434,10 +420,40 @@ export function devSecondAdminEmail(email: string): string {
 }
 
 /**
- * Adds `email` to the company as an active Admin employee, as the
- * bootstrapped user is: the Admin type is Full on every page with no
- * `permission` rows. Idempotent: a re-run leaves an existing employee as it is.
+ * Makes the user an active Admin member of the company: the `userToCompany`
+ * row, an `employee` on the company's Admin type and an `employeeJob` at its
+ * first location. The Admin type is Full on every page with no `permission`
+ * rows, so none are written. Idempotent: an existing row stays as it is.
+ * Owns no transaction — the caller does.
  */
+async function insertAdminMember(
+  client: PoolClient,
+  { userId, companyId }: { userId: string; companyId: string }
+) {
+  await client.query(
+    `INSERT INTO "userToCompany" ("userId", "companyId", "role")
+     VALUES ($1, $2, 'employee') ON CONFLICT DO NOTHING`,
+    [userId, companyId]
+  );
+  await client.query(
+    `INSERT INTO employee (id, "employeeTypeId", "companyId", active)
+     SELECT $1, id, $2, true FROM "employeeType"
+     WHERE "companyId" = $2 AND "systemType" = 'Admin'
+     ORDER BY "createdAt" LIMIT 1
+     ON CONFLICT DO NOTHING`,
+    [userId, companyId]
+  );
+  await client.query(
+    `INSERT INTO "employeeJob" (id, "companyId", "locationId")
+     SELECT $1, $2, id FROM location
+     WHERE "companyId" = $2
+     ORDER BY "createdAt" LIMIT 1
+     ON CONFLICT DO NOTHING`,
+    [userId, companyId]
+  );
+}
+
+/** Adds `email` to the company as an Admin member, as the bootstrapped user is. */
 export async function ensureDevAdmin(
   client: PoolClient,
   args: {
@@ -456,27 +472,7 @@ export async function ensureDevAdmin(
       `UPDATE "user" SET "firstName" = $1, "lastName" = $2 WHERE id = $3`,
       [firstName, lastName, userId]
     );
-    await client.query(
-      `INSERT INTO "userToCompany" ("userId", "companyId", "role")
-       VALUES ($1, $2, 'employee') ON CONFLICT DO NOTHING`,
-      [userId, companyId]
-    );
-    await client.query(
-      `INSERT INTO employee (id, "employeeTypeId", "companyId", active)
-       SELECT $1, id, $2, true FROM "employeeType"
-       WHERE "companyId" = $2 AND "systemType" = 'Admin'
-       ORDER BY "createdAt" LIMIT 1
-       ON CONFLICT DO NOTHING`,
-      [userId, companyId]
-    );
-    await client.query(
-      `INSERT INTO "employeeJob" (id, "companyId", "locationId")
-       SELECT $1, $2, id FROM location
-       WHERE "companyId" = $2
-       ORDER BY "createdAt" LIMIT 1
-       ON CONFLICT DO NOTHING`,
-      [userId, companyId]
-    );
+    await insertAdminMember(client, { userId, companyId });
     await client.query("COMMIT");
     return { userId };
   } catch (err) {

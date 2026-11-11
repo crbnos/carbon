@@ -99,8 +99,17 @@ export type AccessWriteError = {
 /**
  * A grant write's refusal as the service function's error, `cause` kept. The
  * one mapping every ERP caller of these writes uses: pass the write, or a
- * refusal already in hand (`subjectEntitlement`).
+ * refusal already in hand (`subjectEntitlement`, or a write's `error` once
+ * read) — a refusal in hand always maps to an error.
  */
+export function grantWriteRefusal(
+  ctx: Pick<ServiceContext, "error">,
+  write: AccessWriteError
+): Promise<CarbonError>;
+export function grantWriteRefusal(
+  ctx: Pick<ServiceContext, "error">,
+  write: Promise<{ error: AccessWriteError | null }> | AccessWriteError | null
+): Promise<CarbonError | null>;
 export async function grantWriteRefusal(
   ctx: Pick<ServiceContext, "error">,
   write: Promise<{ error: AccessWriteError | null }> | AccessWriteError | null
@@ -389,7 +398,9 @@ export async function saveEmployeeType(
     actorId: string;
     ip?: string;
   }
-): Promise<{ id: string | null; error: AccessWriteError | null }> {
+): Promise<
+  { id: string; error: null } | { id: null; error: AccessWriteError }
+> {
   const { name } = employeeType;
   const id = "id" in employeeType ? employeeType.id : crypto.randomUUID();
   const written = await writeAccessGrants(client, db, {

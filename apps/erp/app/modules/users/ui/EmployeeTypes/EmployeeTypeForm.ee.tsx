@@ -46,7 +46,7 @@ const EmployeeTypeForm = ({
   const dialog = useRouteDialog();
   const onClose = dialog.close;
 
-  // The person's edits; the route remounts the form for another type.
+  // The grants being edited; the route remounts the form for another type.
   const [grants, setGrants] = useState(initialValues.grants);
 
   const isEditing = initialValues.id !== undefined;

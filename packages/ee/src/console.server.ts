@@ -10,6 +10,7 @@ import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { CONSOLE_OPERATOR_GRANTS, consoleOperatorWork } from "./console-grants";
+import { SUBJECT_RULES } from "./permission-grants";
 import {
   type AccessWriteError,
   subjectEntitlement,
@@ -23,7 +24,8 @@ const logger = getLogger("ee", "console");
  * RUNTIME gate for console (kiosk) mode — the DEGRADE counterpart of the
  * entitlement lock (`subjectEntitlement`) in `updateConsoleSetting`. Console
  * mode is on for a company only when BOTH its `companySettings.consoleEnabled`
- * flag is set AND the company is entitled to the `PERMISSIONS` feature.
+ * flag is set AND the company is entitled to role authoring's feature
+ * (`SUBJECT_RULES.role.feature`, the one the lock reads).
  *
  * The flag alone is not enough: it outlives the entitlement (a plan downgrade
  * leaves it set), and it predates the trigger that now keeps API roles from
@@ -61,7 +63,9 @@ export async function isConsoleModeEnabledForCompany(
   }
 
   if (!consoleEnabled) return false;
-  return companyHasFeature(client, companyId, { feature: "PERMISSIONS" });
+  return companyHasFeature(client, companyId, {
+    feature: SUBJECT_RULES.role.feature
+  });
 }
 
 /**

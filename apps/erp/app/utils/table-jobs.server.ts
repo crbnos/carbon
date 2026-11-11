@@ -11,6 +11,7 @@ import {
   getUserScopedClient
 } from "@carbon/auth/client.server";
 import type { Gate } from "@carbon/database/access";
+import { SUBJECT_RULES } from "@carbon/ee/permission-grants";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { trigger } from "@carbon/jobs";
 import {
@@ -501,9 +502,8 @@ const BULK_ACTIONS = {
     label: "Edit permissions",
     lists: [employeeAccountsList.key],
     gate: gateOf(bulkUpdatePermissions),
-    // The route requires it with `requireFeature`; the job checks it again,
-    // in case the plan changed while the run waited.
-    feature: "PERMISSIONS",
+    // Checked before the run (`canRunBulkAction`); each write checks it again.
+    feature: SUBJECT_RULES.person.feature,
     params: z.object({
       grants: permissionsValidator.shape.grants,
       addOnly: z.boolean(),

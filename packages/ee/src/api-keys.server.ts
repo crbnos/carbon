@@ -48,7 +48,8 @@ function ownRateLimit(rateLimit: number | undefined) {
 /**
  * Create a key (`keyHash` and `keyPreview` given) or update one (`id` given),
  * and set its grants, in one transaction (`writeAccessGrants`). The key
- * itself never changes on an update. Returns the key's id.
+ * itself never changes on an update. Returns `writeAccessGrants`' `{ error }`:
+ * the caller already knows the id (it passed it, or returns the raw key).
  */
 export async function saveApiKey(
   client: SupabaseClient<Database>,
@@ -69,14 +70,14 @@ export async function saveApiKey(
     actorId: string;
     ip?: string;
   }
-): Promise<{ id: string | null; error: AccessWriteError | null }> {
+): Promise<{ error: AccessWriteError | null }> {
   const fields = {
     name: key.name,
     expiresAt: key.expiresAt || null,
     ...ownRateLimit(key.rateLimit)
   };
   const id = "id" in key ? key.id : (await newIds(db, "api", 1))[0]!;
-  const written = await writeAccessGrants(client, db, {
+  return writeAccessGrants(client, db, {
     companyId,
     subject: { apiKeyId: id },
     change: { set: grants },
@@ -102,9 +103,6 @@ export async function saveApiKey(
             })
             .execute()
   });
-  return written.error
-    ? { id: null, error: written.error }
-    : { id, error: null };
 }
 
 /**

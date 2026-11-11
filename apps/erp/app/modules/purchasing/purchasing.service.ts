@@ -63,6 +63,7 @@ import {
 import {
   getApprovalRuleByAmount,
   getApproverUserIdsForRule,
+  getCompanyAdminIds,
   getDocumentApproval,
   isApprovalRequired,
   rejectRequest
@@ -8245,26 +8246,6 @@ export async function cancelPendingApprovals(
     .execute();
 }
 
-/** The active Admins of the company (`isCompanyAdmin`, @carbon/ee), as user ids. */
-export async function getCompanyAdminIds(
-  db: Kysely<KyselyDatabase>,
-  companyId: string
-): Promise<string[]> {
-  const rows = await db
-    .selectFrom("employee")
-    .innerJoin("employeeType", (join) =>
-      join
-        .onRef("employeeType.id", "=", "employee.employeeTypeId")
-        .onRef("employeeType.companyId", "=", "employee.companyId")
-    )
-    .select("employee.id")
-    .where("employee.companyId", "=", companyId)
-    .where("employee.active", "=", true)
-    .where("employeeType.systemType", "=", "Admin")
-    .execute();
-  return rows.map((row) => row.id);
-}
-
 /**
  * The documents that still name the order and keep a force delete from
  * running (`purchaseOrderForceDeleteBlockerMessage`). Its receipts are not
@@ -8993,7 +8974,7 @@ export async function notifyForceDelete(
   try {
     const userIds =
       event === "Requested"
-        ? (await getCompanyAdminIds(ctx.asSystem.pg, companyId)).filter(
+        ? (await getCompanyAdminIds(ctx.asSystem.supabase, companyId)).filter(
             (id) => id !== requestedBy
           )
         : requestedBy === ctx.auditUserId

@@ -4,8 +4,7 @@
 
 // OAuth 2.0 authorization-server rules shared by `/register` and `/authorize`.
 
-import type { Permission } from "@carbon/auth";
-import { holdsGate } from "@carbon/database/access";
+import { type Claims, holdsGate } from "@carbon/database/access";
 
 // The only scope the MCP resource advertises (`/.well-known/oauth-protected-resource`).
 // A token carries no permissions of its own: every MCP call is gated on the
@@ -74,18 +73,28 @@ export function supportedScope(scope: string | null | undefined) {
 }
 
 /**
- * Whether a user may authorize a connector for `companyId`: an employee there
- * with API Keys at Edit in THAT company. The token acts in the company it
- * names, so the check cannot be the session's active company.
+ * The memberships a user may authorize a connector for: an employee there with
+ * API Keys at Edit in THAT company. The token acts in the company it names, so
+ * each company is checked with its own claims (`claimsOf`, `getUserClaims`
+ * bound to the user), never the session's active company's.
  */
-export function canAuthorizeForCompany(
-  membership: { companyId: string; role: string },
-  permissions: Record<string, Permission>
-): boolean {
-  return (
-    membership.role === "employee" &&
-    holdsGate(permissions, { "settings.apiKeys": "Edit" }, membership.companyId)
+export async function companiesToAuthorize<
+  M extends { companyId: string; role: string }
+>(
+  memberships: readonly M[],
+  claimsOf: (companyId: string) => Promise<Pick<Claims, "permissions">>
+): Promise<M[]> {
+  const employee = memberships.filter((m) => m.role === "employee");
+  const allowed = await Promise.all(
+    employee.map(async (m) =>
+      holdsGate(
+        (await claimsOf(m.companyId)).permissions,
+        { "settings.apiKeys": "Edit" },
+        m.companyId
+      )
+    )
   );
+  return employee.filter((_, i) => allowed[i]);
 }
 
 export const ACCESS_TOKEN_TTL_MS = 3600 * 1000;

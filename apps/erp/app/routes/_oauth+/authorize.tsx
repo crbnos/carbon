@@ -12,7 +12,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Form, useLoaderData } from "react-router";
 import { z } from "zod";
 import {
-  canAuthorizeForCompany,
+  companiesToAuthorize,
   isRegisteredRedirectUri,
   supportedScope
 } from "~/services/oauth.server";
@@ -22,21 +22,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
     "settings.apiKeys": "Edit"
   });
 
-  const [userCompanies, claims] = await Promise.all([
-    client
-      .from("userToCompany")
-      .select("companyId, role, company:companyId(name)")
-      .eq("userId", userId),
-    getUserClaims(userId, companyId)
-  ]);
+  const userCompanies = await client
+    .from("userToCompany")
+    .select("companyId, role, company:companyId(name)")
+    .eq("userId", userId);
 
-  // Only the companies the user may authorize a connector for.
-  const companies = (userCompanies.data ?? [])
-    .filter((uc) => canAuthorizeForCompany(uc, claims.permissions))
-    .map((uc) => ({
-      id: uc.companyId,
-      name: (uc.company as unknown as { name: string })?.name ?? uc.companyId
-    }));
+  // Claims are one company each; `getUserClaims` reads one field of the
+  // user's cached hash, so one read per membership is cheap and bounded.
+  const companies = (
+    await companiesToAuthorize(userCompanies.data ?? [], (id) =>
+      getUserClaims(userId, id)
+    )
+  ).map((uc) => ({
+    id: uc.companyId,
+    name: (uc.company as unknown as { name: string })?.name ?? uc.companyId
+  }));
 
   const url = new URL(request.url);
   const clientId = url.searchParams.get("client_id");
@@ -78,7 +78,7 @@ const formValidator = z.object({
 });
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await authorize(request, {
+  const { client, userId } = await authorize(request, {
     "settings.apiKeys": "Edit"
   });
 
@@ -121,20 +121,19 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // The token acts in the SELECTED company, so the user must be able to
   // act there — `authorize` above only checked the active one.
-  const [membership, claims] = await Promise.all([
-    client
-      .from("userToCompany")
-      .select("companyId, role")
-      .eq("userId", userId)
-      .eq("companyId", company_id)
-      .single(),
-    getUserClaims(userId, companyId)
-  ]);
+  const membership = await client
+    .from("userToCompany")
+    .select("companyId, role")
+    .eq("userId", userId)
+    .eq("companyId", company_id)
+    .single();
 
-  if (
-    !membership.data ||
-    !canAuthorizeForCompany(membership.data, claims.permissions)
-  ) {
+  const authorizable = await companiesToAuthorize(
+    membership.data ? [membership.data] : [],
+    (id) => getUserClaims(userId, id)
+  );
+
+  if (authorizable.length === 0) {
     return data({ error: "Invalid company" }, { status: 403 });
   }
 

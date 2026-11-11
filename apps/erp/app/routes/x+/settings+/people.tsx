@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { SUBJECT_RULES } from "@carbon/ee/permission-grants";
 import { validator } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -80,8 +81,11 @@ export async function action(args: ActionFunctionArgs) {
 export default function PeopleSettingsRoute() {
   const { companySettings } = useLoaderData<typeof loader>();
   const { t } = useLingui();
-  // Enterprise: console (kiosk) mode is gated to the Business plan.
-  const { isGated: consoleGated } = usePlanGate({ feature: "PERMISSIONS" });
+  // Enterprise: console (kiosk) mode needs role authoring's plan feature, the
+  // one `updateConsoleSetting` locks and `isConsoleModeEnabledForCompany` reads.
+  const { isGated: consoleGated } = usePlanGate({
+    feature: SUBJECT_RULES.role.feature
+  });
   const [showPinModal, setShowPinModal] = useState(false);
   const [generatedPin, setGeneratedPin] = useState<string | null>(null);
   const fetcher = useAction<typeof action>({

@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Kysely } from "kysely";
-import { type KyselyDatabase, type KyselyTx, withTransaction } from "../client";
+import type { KyselyDatabase, KyselyTx } from "../client";
 import type { Level } from "./levels";
 import { clampLevel, isPageModule, type ModuleEnum } from "./registry";
 import type { Grant } from "./resolve";
@@ -85,12 +85,13 @@ export async function readGrants(
 }
 
 /**
- * Replace every grant of one subject in one company, in one transaction. Each
- * level is clamped to its page's `maxLevel`. The new rows carry no
- * `convertedFrom`: a save clears the conversion report for the subject.
+ * Replace every grant of one subject in one company, in the caller's
+ * transaction (the delete and the insert must land together). Each level is
+ * clamped to its page's `maxLevel`. The new rows carry no `convertedFrom`: a
+ * save clears the conversion report for the subject.
  */
 export async function replaceGrants(
-  db: Kysely<KyselyDatabase> | KyselyTx,
+  tx: KyselyTx,
   {
     companyId,
     subject,
@@ -119,15 +120,12 @@ export async function replaceGrants(
       createdBy: userId
     }));
 
-  const write = async (tx: KyselyTx) => {
-    await tx
-      .deleteFrom("permission")
-      .where("companyId", "=", companyId)
-      .where(column, "=", id)
-      .execute();
-    if (rows.length) await tx.insertInto("permission").values(rows).execute();
-  };
-  return withTransaction(db, write);
+  await tx
+    .deleteFrom("permission")
+    .where("companyId", "=", companyId)
+    .where(column, "=", id)
+    .execute();
+  if (rows.length) await tx.insertInto("permission").values(rows).execute();
 }
 
 /**

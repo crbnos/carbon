@@ -312,10 +312,7 @@ const PurchaseOrderHeader = () => {
       </DropdownMenuItem>
       {routeData?.isAdmin && (
         <DropdownMenuItem
-          disabled={
-            !!routeData?.forceDeleteRequest ||
-            !permissions.has({ "purchasing.purchaseOrders": "Full" })
-          }
+          disabled={!!routeData?.forceDeleteRequest}
           destructive
           onClick={forceDeleteModal.onOpen}
         >
