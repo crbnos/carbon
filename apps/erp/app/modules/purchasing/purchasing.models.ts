@@ -2411,3 +2411,93 @@ export function splitRfqFileAttachments<T extends { size: number }>(
   }
   return { attach, link };
 }
+
+// ─── Receipt reversal: what the order gets back ───
+//
+// Shared by the receipt void (`postReceipt`) and the force delete's
+// adjust-out reversal (`restorePurchaseOrderReceived`), so both give an
+// order back the same received quantities and status.
+
+/**
+ * Each order line's received quantity after the receipt's lines are
+ * reversed: what they received, in the purchase unit (the first line's
+ * conversion factor, as the void reads it), comes off, never below zero.
+ * Only lines the receipt received on, with a purchase quantity, are
+ * returned.
+ */
+export function receivedAfterReceiptReversal(
+  orderLines: {
+    id: string;
+    purchaseQuantity: number | null;
+    quantityReceived: number | null;
+  }[],
+  receiptLines: {
+    lineId: string | null;
+    receivedQuantity: number | null;
+    conversionFactor: number | null;
+  }[]
+): Record<string, { quantityReceived: number; receivedComplete: boolean }> {
+  const byLine = new Map<string, typeof receiptLines>();
+  for (const line of receiptLines) {
+    if (!line.lineId) continue;
+    byLine.set(line.lineId, [...(byLine.get(line.lineId) ?? []), line]);
+  }
+  const result: Record<
+    string,
+    { quantityReceived: number; receivedComplete: boolean }
+  > = {};
+  for (const line of orderLines) {
+    const received = byLine.get(line.id);
+    const purchaseQuantity = Number(line.purchaseQuantity ?? 0);
+    if (!received?.length || purchaseQuantity <= 0) continue;
+    const receivedInPurchaseUnit =
+      received.reduce((sum, r) => {
+        const quantity = Number(r.receivedQuantity);
+        return sum + (Number.isNaN(quantity) ? 0 : quantity);
+      }, 0) / Number(received[0]!.conversionFactor ?? 1);
+    const quantityReceived = Math.max(
+      0,
+      Number(line.quantityReceived ?? 0) - receivedInPurchaseUnit
+    );
+    result[line.id] = {
+      quantityReceived,
+      receivedComplete: quantityReceived >= purchaseQuantity
+    };
+  }
+  return result;
+}
+
+/**
+ * The order's status once its lines hold these quantities: Completed when
+ * every line is received and invoiced, else what is still to do. Comment
+ * lines count as done; G/L Account and Service lines are never received.
+ */
+export function purchaseOrderStatusAfterReversal(
+  lines: {
+    purchaseOrderLineType: string | null;
+    purchaseQuantity: number | null;
+    quantityReceived: number | null;
+    quantityInvoiced: number | null;
+  }[]
+): Database["public"]["Enums"]["purchaseOrderStatus"] {
+  const done = (target: number | null, have: number | null) => {
+    const goal = Number(target ?? 0);
+    return goal <= 0 || Number(have ?? 0) >= goal;
+  };
+  const allInvoiced = lines.every(
+    (line) =>
+      line.purchaseOrderLineType === "Comment" ||
+      done(line.purchaseQuantity, line.quantityInvoiced)
+  );
+  const allReceived = lines.every(
+    (line) =>
+      line.purchaseOrderLineType === "Comment" ||
+      line.purchaseOrderLineType === "G/L Account" ||
+      line.purchaseOrderLineType === "Service" ||
+      done(line.purchaseQuantity, line.quantityReceived)
+  );
+  if (allInvoiced && allReceived) return "Completed";
+  if (allInvoiced) return "To Receive";
+  if (allReceived) return "To Invoice";
+  return "To Receive and Invoice";
+}

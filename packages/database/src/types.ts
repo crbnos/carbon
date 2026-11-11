@@ -111469,6 +111469,7 @@ export type Database = {
         | "Voided"
       purchaseOrderForceDeleteStatus:
         | "Pending"
+        | "Approving"
         | "Executed"
         | "Rejected"
         | "Cancelled"

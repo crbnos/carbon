@@ -5636,6 +5636,9 @@ msgstr "Göndermeden önce"
 msgid "Beginning"
 msgstr "Başlangıç"
 
+msgid "Being approved now…"
+msgstr ""
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Kademeli olarak kullanımdan kaldırılıyor — ardıl: <0>{0}</0>"

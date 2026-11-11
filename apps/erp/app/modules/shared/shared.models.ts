@@ -668,6 +668,13 @@ export const forceDeleteDecisionValidator = z.object({
   notes: zfd.text(z.string().optional())
 });
 
+/**
+ * A request is Approving while an Admin's approval runs: its void commits on
+ * its own, so nothing may cancel, reject or approve it again meanwhile.
+ */
+export const FORCE_DELETE_APPROVING_MESSAGE =
+  "Another Admin is approving this force delete right now";
+
 /** Why `userId` cannot approve this request, or null. */
 export function forceDeleteApprovalRefusal({
   status,
@@ -680,6 +687,7 @@ export function forceDeleteApprovalRefusal({
   userId: string;
   isAdmin: boolean;
 }): string | null {
+  if (status === "Approving") return FORCE_DELETE_APPROVING_MESSAGE;
   if (status !== "Pending") {
     return `This force delete request is ${status.toLowerCase()}`;
   }
@@ -707,6 +715,7 @@ export function forceDeleteWithdrawRefusal({
   userId: string;
   isAdmin: boolean;
 }): string | null {
+  if (status === "Approving") return FORCE_DELETE_APPROVING_MESSAGE;
   if (status !== "Pending") {
     return `This force delete request is ${status.toLowerCase()}`;
   }

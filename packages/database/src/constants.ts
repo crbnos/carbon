@@ -871,6 +871,7 @@ export const Constants = {
       ],
       purchaseOrderForceDeleteStatus: [
         "Pending",
+        "Approving",
         "Executed",
         "Rejected",
         "Cancelled",

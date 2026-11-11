@@ -5636,6 +5636,9 @@ msgstr "Przed przesłaniem"
 msgid "Beginning"
 msgstr "Początek"
 
+msgid "Being approved now…"
+msgstr ""
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Wycofywane — następca: <0>{0}</0>"

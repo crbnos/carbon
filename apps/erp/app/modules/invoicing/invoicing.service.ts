@@ -18442,6 +18442,8 @@ export type ForceDeleteDocument = {
    * away (Draft or Voided), or refuse while it is `busy` being posted.
    */
   step: "void" | "delete" | "busy";
+  /** When it was posted (null while Draft); decides the cutover side. */
+  postingDate: string | null;
   /** Receipt only: where it came from, and whether a purchase invoice made it. */
   sourceDocument?: string | null;
   sourceDocumentId?: string | null;
@@ -18479,7 +18481,7 @@ export async function getForceDeleteDocument(
     case "purchaseInvoice": {
       const query = db
         .selectFrom("purchaseInvoice")
-        .select(["id", "invoiceId", "status"])
+        .select(["id", "invoiceId", "status", "postingDate"])
         .where("id", "=", documentId)
         .where("companyId", "=", companyId);
       const row = await (lock ? query.forUpdate() : query).executeTakeFirst();
@@ -18489,13 +18491,14 @@ export async function getForceDeleteDocument(
         id: row.id,
         readableId: row.invoiceId ?? row.id,
         status: row.status,
+        postingDate: row.postingDate ? String(row.postingDate) : null,
         step: forceDeleteStep(row.status, { busy: ["Pending"] })
       };
     }
     case "salesInvoice": {
       const query = db
         .selectFrom("salesInvoice")
-        .select(["id", "invoiceId", "status"])
+        .select(["id", "invoiceId", "status", "postingDate"])
         .where("id", "=", documentId)
         .where("companyId", "=", companyId);
       const row = await (lock ? query.forUpdate() : query).executeTakeFirst();
@@ -18505,6 +18508,7 @@ export async function getForceDeleteDocument(
         id: row.id,
         readableId: row.invoiceId ?? row.id,
         status: row.status,
+        postingDate: row.postingDate ? String(row.postingDate) : null,
         step: forceDeleteStep(row.status, { busy: ["Pending"] })
       };
     }
@@ -18515,6 +18519,7 @@ export async function getForceDeleteDocument(
           "id",
           "receiptId",
           "status",
+          "postingDate",
           "sourceDocument",
           "sourceDocumentId",
           "invoiced"
@@ -18528,6 +18533,7 @@ export async function getForceDeleteDocument(
         id: row.id,
         readableId: row.receiptId ?? row.id,
         status: row.status,
+        postingDate: row.postingDate ? String(row.postingDate) : null,
         step: forceDeleteStep(row.status, { busy: ["Pending"] }),
         sourceDocument: row.sourceDocument ?? null,
         sourceDocumentId: row.sourceDocumentId ?? null,
@@ -18537,7 +18543,7 @@ export async function getForceDeleteDocument(
     case "payment": {
       const query = db
         .selectFrom("payment")
-        .select(["id", "paymentId", "status"])
+        .select(["id", "paymentId", "status", "postingDate"])
         .where("id", "=", documentId)
         .where("companyId", "=", companyId);
       const row = await (lock ? query.forUpdate() : query).executeTakeFirst();
@@ -18547,6 +18553,7 @@ export async function getForceDeleteDocument(
         id: row.id,
         readableId: row.paymentId ?? row.id,
         status: row.status,
+        postingDate: row.postingDate ? String(row.postingDate) : null,
         step: forceDeleteStep(row.status)
       };
     }
@@ -18708,7 +18715,7 @@ function forceDeleteReceipt(
     id: document.id,
     readableId: document.readableId,
     status: document.status as PurchaseOrderForceDeleteReceipt["status"],
-    postingDate: null
+    postingDate: document.postingDate
   };
 }
 
@@ -18902,7 +18909,7 @@ export async function deleteForceDeleteDocument(
         if (reversible.refusal !== null) {
           throw new InvalidInputError(reversible.refusal);
         }
-        await reverseReceiptsByAdjustment(trx as never, {
+        await reverseReceiptsByAdjustment(trx, {
           companyId,
           userId,
           purchaseOrderId,
@@ -18928,9 +18935,87 @@ export async function deleteForceDeleteDocument(
   }
 }
 
+/**
+ * Claims a Pending request for `userId`'s approval (status Approving), so a
+ * cancel or reject cannot run while its void commits. A claim the same Admin
+ * left, or one older than ten minutes (a failed approval that never released
+ * it), is taken again. Returns false when the request is not claimable; the
+ * caller reads it again for the reason.
+ */
+export async function claimForceDeleteRequest(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    requestId,
+    documentType,
+    userId
+  }: {
+    companyId: string;
+    requestId: string;
+    documentType: ForceDeleteDocumentType;
+    userId: string;
+  }
+): Promise<boolean> {
+  const claimed = await db
+    .updateTable("forceDeleteRequest")
+    .set({
+      status: "Approving",
+      decidedBy: userId,
+      decidedAt: sql`now()`,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("documentType", "=", documentType)
+    .where("requestedBy", "<>", userId)
+    .where((eb) =>
+      eb.or([
+        eb("status", "=", "Pending"),
+        eb.and([
+          eb("status", "=", "Approving"),
+          eb.or([
+            eb("decidedBy", "=", userId),
+            eb("decidedAt", "<", sql<string>`now() - interval '10 minutes'`)
+          ])
+        ])
+      ])
+    )
+    .returning("id")
+    .executeTakeFirst();
+  return !!claimed;
+}
+
+/** Gives a claim back (Pending) after the approval refused or failed. */
+export async function releaseForceDeleteClaim(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    requestId,
+    userId
+  }: { companyId: string; requestId: string; userId: string }
+): Promise<void> {
+  await db
+    .updateTable("forceDeleteRequest")
+    .set({
+      status: "Pending",
+      decidedBy: null,
+      decidedAt: null,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Approving")
+    .where("decidedBy", "=", userId)
+    .execute();
+}
+
 /** A document's open force delete request, for its page. */
 export type DocumentForceDeleteRequest = {
   id: string;
+  /** Pending, or Approving while an Admin's approval runs. */
+  status: string;
   reason: string;
   requestedBy: string;
   requestedAt: string;
@@ -18951,11 +19036,18 @@ export async function getPendingForceDeleteRequest(
 ): Promise<DocumentForceDeleteRequest | null> {
   const request = await db
     .selectFrom("forceDeleteRequest")
-    .select(["id", "reason", "requestedBy", "requestedAt", "documentStatus"])
+    .select([
+      "id",
+      "status",
+      "reason",
+      "requestedBy",
+      "requestedAt",
+      "documentStatus"
+    ])
     .where("companyId", "=", companyId)
     .where("documentType", "=", documentType)
     .where("documentId", "=", documentId)
-    .where("status", "=", "Pending")
+    .where("status", "in", ["Pending", "Approving"])
     .executeTakeFirst();
   return request
     ? { ...request, requestedAt: String(request.requestedAt) }

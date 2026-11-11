@@ -77,11 +77,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  const [salesInvoice, salesInvoiceLines, salesInvoiceShipment] =
+  const [salesInvoice, salesInvoiceLines, salesInvoiceShipment, forceDelete] =
     await Promise.all([
       getSalesInvoice(client, invoiceId),
       getSalesInvoiceLines(client, invoiceId),
-      getSalesInvoiceShipment(client, invoiceId)
+      getSalesInvoiceShipment(client, invoiceId),
+      // The Admin force-delete override (`force-delete+`).
+      getDocumentForceDeleteData(getCarbonServiceRole(), getDatabaseClient(), {
+        companyId,
+        userId,
+        documentType: "salesInvoice",
+        documentId: invoiceId
+      })
     ]);
 
   if (salesInvoice.error) {
@@ -175,13 +182,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     defaultCc,
     orgHasCredits,
     stripeInvoiceUrl,
-    // The Admin force-delete override (`force-delete+`).
-    ...(await getDocumentForceDeleteData(serviceRole, getDatabaseClient(), {
-      companyId,
-      userId,
-      documentType: "salesInvoice",
-      documentId: invoiceId
-    }))
+    ...forceDelete
   };
 }
 

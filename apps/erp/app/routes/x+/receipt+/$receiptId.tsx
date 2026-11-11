@@ -66,13 +66,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { receiptId } = params;
   if (!receiptId) throw new Error("Could not find receiptId");
 
-  const [receipt, receiptLines, receiptLineTracking, receiptInspections] =
-    await Promise.all([
-      getReceipt(serviceRole, receiptId),
-      getReceiptLines(serviceRole, receiptId),
-      getReceiptTracking(serviceRole, receiptId, companyId),
-      getReceiptInspections(serviceRole, receiptId, companyId)
-    ]);
+  const [
+    receipt,
+    receiptLines,
+    receiptLineTracking,
+    receiptInspections,
+    forceDelete
+  ] = await Promise.all([
+    getReceipt(serviceRole, receiptId),
+    getReceiptLines(serviceRole, receiptId),
+    getReceiptTracking(serviceRole, receiptId, companyId),
+    getReceiptInspections(serviceRole, receiptId, companyId),
+    // The Admin force-delete override (`force-delete+`).
+    getDocumentForceDeleteData(serviceRole, getDatabaseClient(), {
+      companyId,
+      userId,
+      documentType: "receipt",
+      documentId: receiptId
+    })
+  ]);
 
   if (receipt.error) {
     throw redirect(
@@ -290,13 +302,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           )
         : []
     ),
-    // The Admin force-delete override (`force-delete+`).
-    ...(await getDocumentForceDeleteData(serviceRole, getDatabaseClient(), {
-      companyId,
-      userId,
-      documentType: "receipt",
-      documentId: receiptId
-    }))
+    ...forceDelete
   };
 }
 

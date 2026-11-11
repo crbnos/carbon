@@ -5636,6 +5636,9 @@ msgstr "提出する前に"
 msgid "Beginning"
 msgstr "開始"
 
+msgid "Being approved now…"
+msgstr ""
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "段階的に廃止されます — 後継品目：<0>{0}</0>"

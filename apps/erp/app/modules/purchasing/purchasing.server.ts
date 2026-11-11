@@ -2582,8 +2582,23 @@ export const decidePurchaseOrderForceDelete = defineServiceFn({
     // first, so a caller who may not decide this request voids nothing; the
     // transaction below checks again under lock.
     let reversal: service.ForceDeleteReversalAccounting | null = null;
+    const system = ctx.asSystem.pg;
+    // Approving claims the request first (Approving), so a cancel or reject
+    // cannot run while the receipt voids commit; a refusal or failure after
+    // the claim gives it back (Pending).
+    const release = async () => {
+      if (decision !== "approve") return;
+      await service.releasePurchaseOrderForceDeleteClaim(system, {
+        companyId,
+        requestId,
+        userId
+      });
+    };
     if (decision === "approve") {
-      const system = ctx.asSystem.pg;
+      const claimed = await service.claimPurchaseOrderForceDeleteRequest(
+        system,
+        { companyId, requestId, userId }
+      );
       const pending = await system
         .selectFrom("purchaseOrderForceDeleteRequest")
         .select(["status", "requestedBy", "purchaseOrderId"])
@@ -2593,221 +2608,260 @@ export const decidePurchaseOrderForceDelete = defineServiceFn({
       if (!pending) {
         return ctx.error("notFound", "Force delete request not found");
       }
-      const refusal = purchaseOrderForceDeleteApprovalRefusal({
-        status: pending.status,
-        requestedBy: pending.requestedBy,
-        userId,
-        isAdmin
-      });
-      if (refusal) return ctx.error("rule", refusal);
-
-      if (pending.purchaseOrderId) {
-        const receipts = await service.getPurchaseOrderForceDeleteReceipts(
-          system,
-          { companyId, purchaseOrderId: pending.purchaseOrderId }
+      if (!claimed) {
+        return ctx.error(
+          "rule",
+          purchaseOrderForceDeleteApprovalRefusal({
+            status: pending.status,
+            requestedBy: pending.requestedBy,
+            userId,
+            isAdmin
+          }) ?? "This force delete request can no longer be approved"
         );
-        for (const receipt of receipts) {
-          if (receipt.status !== "Posted") continue;
-          const voided = await invokePosting(
-            ctx,
-            "post-receipt",
-            { type: "void" as const, receiptId: receipt.id },
-            postReceipt
-          );
-          if (!voided.error) continue;
-          // Reversed by adjusting the stock out, in step 2.
-          if (
-            voided.error.status < 500 &&
-            (voided.error.message === INVENTORY_VOID_BEFORE_CUTOVER_ERROR ||
-              voided.error.message === RECEIPT_VOID_STOCK_MOVED_ERROR)
-          ) {
-            continue;
-          }
-          return voided.error.status < 500
-            ? ctx.error(
-                "rule",
-                `${receipt.readableId} could not be reversed: ${voided.error.message}`
-              )
-            : ctx.error(
-                "internal",
-                `Failed to reverse ${receipt.readableId}`,
-                voided.error
-              );
-        }
       }
-      reversal = await service.resolveForceDeleteReversalAccounting(system, {
-        companyId,
-        userId
-      });
+
+      try {
+        if (pending.purchaseOrderId) {
+          const receipts = await service.getPurchaseOrderForceDeleteReceipts(
+            system,
+            { companyId, purchaseOrderId: pending.purchaseOrderId }
+          );
+          for (const receipt of receipts) {
+            if (receipt.status !== "Posted") continue;
+            const voided = await invokePosting(
+              ctx,
+              "post-receipt",
+              { type: "void" as const, receiptId: receipt.id },
+              postReceipt
+            );
+            if (!voided.error) continue;
+            // Reversed by adjusting the stock out, in step 2.
+            if (
+              voided.error.status < 500 &&
+              (voided.error.message === INVENTORY_VOID_BEFORE_CUTOVER_ERROR ||
+                voided.error.message === RECEIPT_VOID_STOCK_MOVED_ERROR)
+            ) {
+              continue;
+            }
+            await release();
+            return voided.error.status < 500
+              ? ctx.error(
+                  "rule",
+                  `${receipt.readableId} could not be reversed: ${voided.error.message}`
+                )
+              : ctx.error(
+                  "internal",
+                  `Failed to reverse ${receipt.readableId}`,
+                  voided.error
+                );
+          }
+        }
+        reversal = await service.resolveForceDeleteReversalAccounting(system, {
+          companyId,
+          userId
+        });
+      } catch (error) {
+        await release();
+        throw error;
+      }
     }
 
-    const settled = await ctx.transaction(async (tx) => {
-      const db = tx.asSystem.pg;
-      const request = await db
-        .selectFrom("purchaseOrderForceDeleteRequest")
-        .select([
-          "id",
-          "status",
-          "requestedBy",
-          "purchaseOrderId",
-          "purchaseOrderReadableId"
-        ])
-        .where("id", "=", requestId)
-        .where("companyId", "=", companyId)
-        .forUpdate()
-        .executeTakeFirst();
-      if (!request) {
-        return ctx.error("notFound", "Force delete request not found");
-      }
-      const refusal = purchaseOrderForceDeleteApprovalRefusal({
-        status: request.status,
-        requestedBy: request.requestedBy,
-        userId,
-        isAdmin
-      });
-      if (refusal) return ctx.error("rule", refusal);
-
-      const approval = await db
-        .selectFrom("approvalRequest")
-        .select("id")
-        .where("documentType", "=", "purchaseOrderForceDelete")
-        .where("documentId", "=", requestId)
-        .where("companyId", "=", companyId)
-        .where("status", "=", "Pending")
-        .forUpdate()
-        .executeTakeFirst();
-      if (!approval) {
-        return ctx.error(
-          "conflict",
-          "This force delete request is no longer waiting for approval"
-        );
-      }
-
-      const now = datetime.timestamp();
-      const decided = decision === "approve" ? "Approved" : "Rejected";
-      if (decision === "approve") {
-        const purchaseOrderId = request.purchaseOrderId;
-        const order = purchaseOrderId
-          ? await db
-              .selectFrom("purchaseOrder")
-              .select("id")
-              .where("id", "=", purchaseOrderId)
-              .where("companyId", "=", companyId)
-              .forUpdate()
-              .executeTakeFirst()
-          : undefined;
-        if (!purchaseOrderId || !order) {
-          return ctx.error("conflict", "This purchase order no longer exists");
+    const settled = await ctx
+      .transaction(async (tx) => {
+        const db = tx.asSystem.pg;
+        const request = await db
+          .selectFrom("purchaseOrderForceDeleteRequest")
+          .select([
+            "id",
+            "status",
+            "requestedBy",
+            "purchaseOrderId",
+            "purchaseOrderReadableId",
+            "decidedBy"
+          ])
+          .where("id", "=", requestId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        if (!request) {
+          return ctx.error("notFound", "Force delete request not found");
         }
-
-        // Step 2: reverse what the void left, and delete the drafts.
-        if (!reversal) throw new Error("Force delete accounting not resolved");
-        await assertPostingStatusUnchanged(
-          db,
-          companyId,
-          reversal.accounting.postingStatus
-        );
-        const receipts = await service.getPurchaseOrderForceDeleteReceipts(db, {
-          companyId,
-          purchaseOrderId,
-          lock: true
-        });
-        const reversible = await service.forceDeleteReceiptRefusal(db, {
-          companyId,
-          receipts,
-          afterVoid: true
-        });
-        if (reversible.refusal !== null) {
-          return ctx.error("rule", reversible.refusal);
-        }
-        const plan = reversible.plan;
-        try {
-          await service.reverseReceiptsByAdjustment(db, {
-            companyId,
+        if (decision === "approve") {
+          if (request.status !== "Approving" || request.decidedBy !== userId) {
+            return ctx.error(
+              "conflict",
+              "This force delete request is no longer being approved by you"
+            );
+          }
+        } else {
+          const refusal = purchaseOrderForceDeleteApprovalRefusal({
+            status: request.status,
+            requestedBy: request.requestedBy,
             userId,
-            purchaseOrderId,
-            purchaseOrderReadableId: request.purchaseOrderReadableId,
-            receipts: receipts.filter((receipt) => receipt.status === "Posted"),
-            removals: plan.removals,
-            reversal
+            isAdmin
           });
-        } catch (error) {
-          // A stock rule raised by the database (held stock, a picked Put
-          // Away): a refusal in words for the person, as the void gives it.
-          const raised = raisedMessage(error);
-          if (raised) {
-            return ctx.error("rule", `Cannot force delete: ${raised}`);
-          }
-          if (error instanceof InvalidInputError) {
-            return ctx.error("rule", error.message);
-          }
-          throw error;
-        }
-        const drafts = receipts.filter((receipt) => receipt.status === "Draft");
-        if (drafts.length > 0) {
-          await db
-            .deleteFrom("receipt")
-            .where("companyId", "=", companyId)
-            .where(
-              "id",
-              "in",
-              drafts.map((receipt) => receipt.id)
-            )
-            .where("status", "=", "Draft")
-            .execute();
+          if (refusal) return ctx.error("rule", refusal);
         }
 
-        const blocked = purchaseOrderForceDeleteBlockerMessage(
-          await service.getPurchaseOrderForceDeleteBlockers(db, {
+        const approval = await db
+          .selectFrom("approvalRequest")
+          .select("id")
+          .where("documentType", "=", "purchaseOrderForceDelete")
+          .where("documentId", "=", requestId)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "Pending")
+          .forUpdate()
+          .executeTakeFirst();
+        if (!approval) {
+          return ctx.error(
+            "conflict",
+            "This force delete request is no longer waiting for approval"
+          );
+        }
+
+        const now = datetime.timestamp();
+        const decided = decision === "approve" ? "Approved" : "Rejected";
+        if (decision === "approve") {
+          const purchaseOrderId = request.purchaseOrderId;
+          const order = purchaseOrderId
+            ? await db
+                .selectFrom("purchaseOrder")
+                .select("id")
+                .where("id", "=", purchaseOrderId)
+                .where("companyId", "=", companyId)
+                .forUpdate()
+                .executeTakeFirst()
+            : undefined;
+          if (!purchaseOrderId || !order) {
+            return ctx.error(
+              "conflict",
+              "This purchase order no longer exists"
+            );
+          }
+
+          // Step 2: reverse what the void left, and delete the drafts.
+          if (!reversal)
+            throw new Error("Force delete accounting not resolved");
+          await assertPostingStatusUnchanged(
+            db,
             companyId,
-            purchaseOrderId
-          })
-        );
-        if (blocked) return ctx.error("rule", blocked);
-      }
+            reversal.accounting.postingStatus
+          );
+          const receipts = await service.getPurchaseOrderForceDeleteReceipts(
+            db,
+            {
+              companyId,
+              purchaseOrderId,
+              lock: true
+            }
+          );
+          const reversible = await service.forceDeleteReceiptRefusal(db, {
+            companyId,
+            receipts,
+            afterVoid: true
+          });
+          if (reversible.refusal !== null) {
+            return ctx.error("rule", reversible.refusal);
+          }
+          const plan = reversible.plan;
+          try {
+            await service.reverseReceiptsByAdjustment(db, {
+              companyId,
+              userId,
+              purchaseOrderId,
+              purchaseOrderReadableId: request.purchaseOrderReadableId,
+              receipts: receipts.filter(
+                (receipt) => receipt.status === "Posted"
+              ),
+              removals: plan.removals,
+              reversal
+            });
+          } catch (error) {
+            // A stock rule raised by the database (held stock, a picked Put
+            // Away): a refusal in words for the person, as the void gives it.
+            const raised = raisedMessage(error);
+            if (raised) {
+              return ctx.error("rule", `Cannot force delete: ${raised}`);
+            }
+            if (error instanceof InvalidInputError) {
+              return ctx.error("rule", error.message);
+            }
+            throw error;
+          }
+          const drafts = receipts.filter(
+            (receipt) => receipt.status === "Draft"
+          );
+          if (drafts.length > 0) {
+            await db
+              .deleteFrom("receipt")
+              .where("companyId", "=", companyId)
+              .where(
+                "id",
+                "in",
+                drafts.map((receipt) => receipt.id)
+              )
+              .where("status", "=", "Draft")
+              .execute();
+          }
 
-      await db
-        .updateTable("approvalRequest")
-        .set({
-          status: decided,
-          decisionBy: userId,
-          decisionAt: now,
-          decisionNotes: notes || null,
-          updatedBy: userId,
-          updatedAt: now
-        })
-        .where("id", "=", approval.id)
-        .where("companyId", "=", companyId)
-        .execute();
-      await db
-        .updateTable("purchaseOrderForceDeleteRequest")
-        .set({
-          status: decision === "approve" ? "Executed" : "Rejected",
-          decidedBy: userId,
-          decidedAt: now,
-          decisionNotes: notes || null,
-          updatedBy: userId,
-          updatedAt: now
-        })
-        .where("id", "=", requestId)
-        .where("companyId", "=", companyId)
-        .execute();
+          const blocked = purchaseOrderForceDeleteBlockerMessage(
+            await service.getPurchaseOrderForceDeleteBlockers(db, {
+              companyId,
+              purchaseOrderId
+            })
+          );
+          if (blocked) return ctx.error("rule", blocked);
+        }
 
-      if (decision === "approve" && request.purchaseOrderId) {
-        await service.cancelPendingApprovals(db, {
-          companyId,
-          userId,
-          purchaseOrderIds: [request.purchaseOrderId]
-        });
         await db
-          .deleteFrom("purchaseOrder")
-          .where("id", "=", request.purchaseOrderId)
+          .updateTable("approvalRequest")
+          .set({
+            status: decided,
+            decisionBy: userId,
+            decisionAt: now,
+            decisionNotes: notes || null,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", approval.id)
           .where("companyId", "=", companyId)
           .execute();
-      }
-      return request;
-    });
-    if (settled.error) return settled.error;
+        await db
+          .updateTable("purchaseOrderForceDeleteRequest")
+          .set({
+            status: decision === "approve" ? "Executed" : "Rejected",
+            decidedBy: userId,
+            decidedAt: now,
+            decisionNotes: notes || null,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", requestId)
+          .where("companyId", "=", companyId)
+          .execute();
+
+        if (decision === "approve" && request.purchaseOrderId) {
+          await service.cancelPendingApprovals(db, {
+            companyId,
+            userId,
+            purchaseOrderIds: [request.purchaseOrderId]
+          });
+          await db
+            .deleteFrom("purchaseOrder")
+            .where("id", "=", request.purchaseOrderId)
+            .where("companyId", "=", companyId)
+            .execute();
+        }
+        return request;
+      })
+      .catch(async (error: unknown) => {
+        await release();
+        throw error;
+      });
+    if (settled.error) {
+      await release();
+      return settled.error;
+    }
     const request = settled.data;
     const status = decision === "approve" ? "Executed" : "Rejected";
     // Read before the delete, so it still names the order.

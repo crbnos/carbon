@@ -4002,7 +4002,8 @@ export const decideDocumentForceDelete = defineServiceFn({
           "requestedBy",
           "documentType",
           "documentId",
-          "documentReadableId"
+          "documentReadableId",
+          "decidedBy"
         ])
         .where("id", "=", requestId)
         .where("companyId", "=", companyId)
@@ -4010,159 +4011,209 @@ export const decideDocumentForceDelete = defineServiceFn({
       return (lock ? query.forUpdate() : query).executeTakeFirst();
     };
 
-    // Step 1 (approve): void the document in its own posting. Checked first,
-    // so a caller who may not decide this request voids nothing; the
-    // transaction below checks again under lock.
+    // Approving claims the request first (Approving), so a cancel or reject
+    // cannot run while step 1's void commits on its own. Any refusal or
+    // failure after the claim gives it back (Pending) for another try.
     let reversal: purchasingPostings.ForceDeleteReversalAccounting | null =
       null;
     if (decision === "approve") {
-      const pending = await readRequest(system, false);
-      if (!pending) {
-        return ctx.error("notFound", "Force delete request not found");
-      }
-      const refusal = forceDeleteApprovalRefusal({
-        status: pending.status,
-        requestedBy: pending.requestedBy,
-        userId,
-        isAdmin
-      });
-      if (refusal) return ctx.error("rule", refusal);
-
-      const document = await service.getForceDeleteDocument(system, {
+      const claimed = await service.claimForceDeleteRequest(system, {
         companyId,
+        requestId,
         documentType,
-        documentId: pending.documentId
+        userId
       });
-      if (document) {
-        const blocked = await service.getForceDeleteRefusal(system, {
-          companyId,
-          document
-        });
-        if (blocked) return ctx.error("rule", blocked);
-        if (document.step === "void") {
-          const voided = await service.voidForceDeleteDocument(ctx, document);
-          if (voided.refusal !== null) {
-            return "internal" in voided && voided.internal
-              ? ctx.error("internal", voided.refusal, voided.internal)
-              : ctx.error("rule", voided.refusal);
+      if (!claimed) {
+        const request = await readRequest(system, false);
+        if (!request) {
+          return ctx.error("notFound", "Force delete request not found");
+        }
+        return ctx.error(
+          "rule",
+          forceDeleteApprovalRefusal({
+            status: request.status,
+            requestedBy: request.requestedBy,
+            userId,
+            isAdmin
+          }) ?? "This force delete request can no longer be approved"
+        );
+      }
+    }
+    const release = async () => {
+      if (decision !== "approve") return;
+      await service.releaseForceDeleteClaim(system, {
+        companyId,
+        requestId,
+        userId
+      });
+    };
+
+    // Step 1 (approve): void the document in its own posting.
+    if (decision === "approve") {
+      try {
+        const pending = await readRequest(system, false);
+        const document = pending
+          ? await service.getForceDeleteDocument(system, {
+              companyId,
+              documentType,
+              documentId: pending.documentId
+            })
+          : null;
+        if (document) {
+          const blocked = await service.getForceDeleteRefusal(system, {
+            companyId,
+            document
+          });
+          if (blocked) {
+            await release();
+            return ctx.error("rule", blocked);
           }
-          if (voided.adjustOut) {
-            reversal =
-              await purchasingPostings.resolveForceDeleteReversalAccounting(
-                system,
-                { companyId, userId }
-              );
+          if (document.step === "void") {
+            const voided = await service.voidForceDeleteDocument(ctx, document);
+            if (voided.refusal !== null) {
+              await release();
+              return "internal" in voided && voided.internal
+                ? ctx.error("internal", voided.refusal, voided.internal)
+                : ctx.error("rule", voided.refusal);
+            }
+            if (voided.adjustOut) {
+              reversal =
+                await purchasingPostings.resolveForceDeleteReversalAccounting(
+                  system,
+                  { companyId, userId }
+                );
+            }
           }
         }
+      } catch (error) {
+        await release();
+        throw error;
       }
     }
 
-    const settled = await ctx.transaction(async (tx) => {
-      const db = tx.asSystem.pg;
-      const request = await readRequest(db, true);
-      if (!request) {
-        return ctx.error("notFound", "Force delete request not found");
-      }
-      const refusal = forceDeleteApprovalRefusal({
-        status: request.status,
-        requestedBy: request.requestedBy,
-        userId,
-        isAdmin
-      });
-      if (refusal) return ctx.error("rule", refusal);
+    const settled = await ctx
+      .transaction(async (tx) => {
+        const db = tx.asSystem.pg;
+        const request = await readRequest(db, true);
+        if (!request) {
+          return ctx.error("notFound", "Force delete request not found");
+        }
+        if (decision === "approve") {
+          if (request.status !== "Approving" || request.decidedBy !== userId) {
+            return ctx.error(
+              "conflict",
+              "This force delete request is no longer being approved by you"
+            );
+          }
+        } else {
+          const refusal = forceDeleteApprovalRefusal({
+            status: request.status,
+            requestedBy: request.requestedBy,
+            userId,
+            isAdmin
+          });
+          if (refusal) return ctx.error("rule", refusal);
+        }
 
-      const approval = await db
-        .selectFrom("approvalRequest")
-        .select("id")
-        .where("documentType", "=", "documentForceDelete")
-        .where("documentId", "=", requestId)
-        .where("companyId", "=", companyId)
-        .where("status", "=", "Pending")
-        .forUpdate()
-        .executeTakeFirst();
-      if (!approval) {
-        return ctx.error(
-          "conflict",
-          "This force delete request is no longer waiting for approval"
-        );
-      }
-
-      if (decision === "approve") {
-        const document = await service.getForceDeleteDocument(db, {
-          companyId,
-          documentType,
-          documentId: request.documentId,
-          lock: true
-        });
-        if (!document) {
+        const approval = await db
+          .selectFrom("approvalRequest")
+          .select("id")
+          .where("documentType", "=", "documentForceDelete")
+          .where("documentId", "=", requestId)
+          .where("companyId", "=", companyId)
+          .where("status", "=", "Pending")
+          .forUpdate()
+          .executeTakeFirst();
+        if (!approval) {
           return ctx.error(
             "conflict",
-            `${request.documentReadableId} no longer exists`
+            "This force delete request is no longer waiting for approval"
           );
         }
-        const blocked = await service.getForceDeleteRefusal(db, {
-          companyId,
-          document
-        });
-        if (blocked) return ctx.error("rule", blocked);
-        if (reversal) {
-          await assertPostingStatusUnchanged(
-            db,
-            companyId,
-            reversal.accounting.postingStatus
-          );
-        }
-        try {
-          await service.deleteForceDeleteDocument(db, {
-            companyId,
-            userId,
-            document,
-            reversal
-          });
-        } catch (error) {
-          // A rule raised by the database (held stock, a picked Put Away):
-          // a refusal in words for the person.
-          const raised = raisedMessage(error);
-          if (raised) {
-            return ctx.error("rule", `Cannot force delete: ${raised}`);
-          }
-          if (error instanceof InvalidInputError) {
-            return ctx.error("rule", error.message);
-          }
-          throw error;
-        }
-      }
 
-      const now = datetime.timestamp();
-      await db
-        .updateTable("approvalRequest")
-        .set({
-          status: decision === "approve" ? "Approved" : "Rejected",
-          decisionBy: userId,
-          decisionAt: now,
-          decisionNotes: notes || null,
-          updatedBy: userId,
-          updatedAt: now
-        })
-        .where("id", "=", approval.id)
-        .where("companyId", "=", companyId)
-        .execute();
-      await db
-        .updateTable("forceDeleteRequest")
-        .set({
-          status: decision === "approve" ? "Executed" : "Rejected",
-          decidedBy: userId,
-          decidedAt: now,
-          decisionNotes: notes || null,
-          updatedBy: userId,
-          updatedAt: now
-        })
-        .where("id", "=", requestId)
-        .where("companyId", "=", companyId)
-        .execute();
-      return request;
-    });
-    if (settled.error) return settled.error;
+        if (decision === "approve") {
+          const document = await service.getForceDeleteDocument(db, {
+            companyId,
+            documentType,
+            documentId: request.documentId,
+            lock: true
+          });
+          if (!document) {
+            return ctx.error(
+              "conflict",
+              `${request.documentReadableId} no longer exists`
+            );
+          }
+          const blocked = await service.getForceDeleteRefusal(db, {
+            companyId,
+            document
+          });
+          if (blocked) return ctx.error("rule", blocked);
+          if (reversal) {
+            await assertPostingStatusUnchanged(
+              db,
+              companyId,
+              reversal.accounting.postingStatus
+            );
+          }
+          try {
+            await service.deleteForceDeleteDocument(db, {
+              companyId,
+              userId,
+              document,
+              reversal
+            });
+          } catch (error) {
+            // A rule raised by the database (held stock, a picked Put Away):
+            // a refusal in words for the person.
+            const raised = raisedMessage(error);
+            if (raised) {
+              return ctx.error("rule", `Cannot force delete: ${raised}`);
+            }
+            if (error instanceof InvalidInputError) {
+              return ctx.error("rule", error.message);
+            }
+            throw error;
+          }
+        }
+
+        const now = datetime.timestamp();
+        await db
+          .updateTable("approvalRequest")
+          .set({
+            status: decision === "approve" ? "Approved" : "Rejected",
+            decisionBy: userId,
+            decisionAt: now,
+            decisionNotes: notes || null,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", approval.id)
+          .where("companyId", "=", companyId)
+          .execute();
+        await db
+          .updateTable("forceDeleteRequest")
+          .set({
+            status: decision === "approve" ? "Executed" : "Rejected",
+            decidedBy: userId,
+            decidedAt: now,
+            decisionNotes: notes || null,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", requestId)
+          .where("companyId", "=", companyId)
+          .execute();
+        return request;
+      })
+      .catch(async (error: unknown) => {
+        await release();
+        throw error;
+      });
+    if (settled.error) {
+      await release();
+      return settled.error;
+    }
     const request = settled.data;
     const status = decision === "approve" ? "Executed" : "Rejected";
 

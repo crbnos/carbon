@@ -3,7 +3,7 @@
 -- Admin asks, with a reason; another Admin approves, which voids the document
 -- if it is posted and then deletes it. The rules live in TypeScript
 -- (`requestDocumentForceDelete` / `decideDocumentForceDelete`,
--- shared.server.ts).
+-- invoicing.server.ts).
 --
 -- One table for the four types: the request names its document by type and
 -- id (no foreign key, as the document is deleted) and keeps its readable id

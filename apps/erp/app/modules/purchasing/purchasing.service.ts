@@ -255,8 +255,10 @@ import {
   purchaseOrderLineDateRefusal,
   purchaseOrderLineDeleteRefusal,
   purchaseOrderPromisedDateRefusal,
+  purchaseOrderStatusAfterReversal,
   type ReceiptReceivedStock,
   type ReceiptStockRemoval,
+  receivedAfterReceiptReversal,
   SUPPLIER_CONTACT_EMAIL_REQUIRED,
   shortClosePurchaseOrderLineRefusal,
   splitRfqFileAttachments,
@@ -8614,60 +8616,62 @@ export async function restorePurchaseOrderReceived(
   }
 ): Promise<void> {
   await withTransaction(db, async (trx) => {
-    const receiptLines = await trx
-      .selectFrom("receiptLine")
-      .select(["lineId", "receivedQuantity", "conversionFactor"])
-      .where("companyId", "=", companyId)
-      .where("receiptId", "=", receiptId)
-      .execute();
-    const receivedByLine = new Map<string, number>();
-    for (const line of receiptLines) {
-      if (!line.lineId) continue;
-      const received =
-        Number(line.receivedQuantity ?? 0) / Number(line.conversionFactor || 1);
-      receivedByLine.set(
-        line.lineId,
-        (receivedByLine.get(line.lineId) ?? 0) + received
-      );
-    }
-    if (receivedByLine.size === 0) return;
-
-    const orderLines = await trx
-      .selectFrom("purchaseOrderLine")
-      .select(["id", "quantityReceived", "purchaseQuantity"])
-      .where("companyId", "=", companyId)
-      .where("purchaseOrderId", "=", purchaseOrderId)
-      .where("id", "in", [...receivedByLine.keys()])
-      .forUpdate()
-      .execute();
-    const now = datetime.timestamp();
-    for (const line of orderLines) {
-      const quantityReceived = Math.max(
-        0,
-        Number(line.quantityReceived ?? 0) - (receivedByLine.get(line.id) ?? 0)
-      );
-      await trx
-        .updateTable("purchaseOrderLine")
-        .set({
-          quantityReceived,
-          receivedComplete:
-            quantityReceived >= Number(line.purchaseQuantity ?? 0) &&
-            Number(line.purchaseQuantity ?? 0) > 0,
-          updatedBy: userId,
-          updatedAt: now
-        })
-        .where("id", "=", line.id)
+    const [receiptLines, orderLines] = await Promise.all([
+      trx
+        .selectFrom("receiptLine")
+        .select(["lineId", "receivedQuantity", "conversionFactor"])
         .where("companyId", "=", companyId)
-        .execute();
-    }
+        .where("receiptId", "=", receiptId)
+        .execute(),
+      trx
+        .selectFrom("purchaseOrderLine")
+        .select([
+          "id",
+          "purchaseOrderLineType",
+          "purchaseQuantity",
+          "quantityReceived",
+          "quantityInvoiced"
+        ])
+        .where("companyId", "=", companyId)
+        .where("purchaseOrderId", "=", purchaseOrderId)
+        .forUpdate()
+        .execute()
+    ]);
+    const updates = receivedAfterReceiptReversal(
+      orderLines.map((line) => ({
+        ...line,
+        purchaseQuantity: Number(line.purchaseQuantity ?? 0),
+        quantityReceived: Number(line.quantityReceived ?? 0)
+      })),
+      receiptLines.map((line) => ({
+        ...line,
+        receivedQuantity: Number(line.receivedQuantity ?? 0),
+        conversionFactor: Number(line.conversionFactor ?? 1)
+      }))
+    );
+    const ids = Object.keys(updates);
+    if (ids.length === 0) return;
+    const now = datetime.timestamp();
+    await updateRowsById(
+      trx,
+      "purchaseOrderLine",
+      companyId,
+      ids.map((id) => ({
+        id,
+        data: { ...updates[id], updatedBy: userId, updatedAt: now }
+      }))
+    );
 
-    const lines = await trx
-      .selectFrom("purchaseOrderLine")
-      .select(["purchaseOrderLineType", "invoicedComplete", "receivedComplete"])
-      .where("purchaseOrderId", "=", purchaseOrderId)
-      .where("companyId", "=", companyId)
-      .execute();
-    const { status } = getPurchaseOrderStatus(lines);
+    const status = purchaseOrderStatusAfterReversal(
+      orderLines.map((line) => ({
+        purchaseOrderLineType: line.purchaseOrderLineType,
+        purchaseQuantity: Number(line.purchaseQuantity ?? 0),
+        quantityInvoiced: Number(line.quantityInvoiced ?? 0),
+        quantityReceived:
+          updates[line.id]?.quantityReceived ??
+          Number(line.quantityReceived ?? 0)
+      }))
+    );
     await trx
       .updateTable("purchaseOrder")
       .set({ status, updatedBy: userId, updatedAt: now })
@@ -8759,7 +8763,7 @@ export async function resolveForceDeleteReversalAccounting(
  * as its void sets them.
  */
 export async function reverseReceiptsByAdjustment(
-  db: Kysely<KyselyDatabase>,
+  db: Kysely<KyselyDatabase> | KyselyTx,
   args: {
     companyId: string;
     userId: string;
@@ -9042,6 +9046,8 @@ async function trueUpGoodsReceivedNotInvoiced(
 
 export type PurchaseOrderForceDeleteRequest = {
   id: string;
+  /** Pending, or Approving while an Admin's approval runs. */
+  status: string;
   reason: string;
   requestedBy: string;
   requestedAt: string;
@@ -9049,6 +9055,73 @@ export type PurchaseOrderForceDeleteRequest = {
 };
 
 /** The order's Pending force delete request, or null. */
+/**
+ * Claims a Pending purchase order force delete for `userId`'s approval
+ * (Approving), as `claimForceDeleteRequest` does for documents: its receipt
+ * voids commit on their own, so a cancel or reject cannot run meanwhile.
+ */
+export async function claimPurchaseOrderForceDeleteRequest(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    requestId,
+    userId
+  }: { companyId: string; requestId: string; userId: string }
+): Promise<boolean> {
+  const claimed = await db
+    .updateTable("purchaseOrderForceDeleteRequest")
+    .set({
+      status: "Approving",
+      decidedBy: userId,
+      decidedAt: sql`now()`,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("requestedBy", "<>", userId)
+    .where((eb) =>
+      eb.or([
+        eb("status", "=", "Pending"),
+        eb.and([
+          eb("status", "=", "Approving"),
+          eb.or([
+            eb("decidedBy", "=", userId),
+            eb("decidedAt", "<", sql<string>`now() - interval '10 minutes'`)
+          ])
+        ])
+      ])
+    )
+    .returning("id")
+    .executeTakeFirst();
+  return !!claimed;
+}
+
+/** Gives a purchase order force delete claim back (Pending). */
+export async function releasePurchaseOrderForceDeleteClaim(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    requestId,
+    userId
+  }: { companyId: string; requestId: string; userId: string }
+): Promise<void> {
+  await db
+    .updateTable("purchaseOrderForceDeleteRequest")
+    .set({
+      status: "Pending",
+      decidedBy: null,
+      decidedAt: null,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Approving")
+    .where("decidedBy", "=", userId)
+    .execute();
+}
+
 export async function getPendingPurchaseOrderForceDeleteRequest(
   db: Kysely<KyselyDatabase>,
   { companyId, purchaseOrderId }: { companyId: string; purchaseOrderId: string }
@@ -9057,6 +9130,7 @@ export async function getPendingPurchaseOrderForceDeleteRequest(
     .selectFrom("purchaseOrderForceDeleteRequest")
     .select([
       "id",
+      "status",
       "reason",
       "requestedBy",
       "requestedAt",
@@ -9064,7 +9138,7 @@ export async function getPendingPurchaseOrderForceDeleteRequest(
     ])
     .where("companyId", "=", companyId)
     .where("purchaseOrderId", "=", purchaseOrderId)
-    .where("status", "=", "Pending")
+    .where("status", "in", ["Pending", "Approving"])
     .executeTakeFirst();
   return request
     ? { ...request, requestedAt: String(request.requestedAt) }

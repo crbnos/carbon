@@ -69,9 +69,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
   const { paymentId } = params;
   if (!paymentId) throw notFound("Missing paymentId");
-  const [payment, applications] = await Promise.all([
+  const [payment, applications, forceDelete] = await Promise.all([
     getPayment(client, paymentId, companyId),
-    getInvoiceSettlements(client, companyId, paymentId)
+    getInvoiceSettlements(client, companyId, paymentId),
+    // The Admin force-delete override (`force-delete+`).
+    getDocumentForceDeleteData(getCarbonServiceRole(), getDatabaseClient(), {
+      companyId,
+      userId,
+      documentType: "payment",
+      documentId: paymentId
+    })
   ]);
   if (payment.error || !payment.data)
     throw redirect(
@@ -239,12 +246,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         appliedViaPaymentId: payment.data.id,
         appliedViaPaymentStaged: payment.data.status === "Draft"
       }),
-      // The Admin force-delete override (`force-delete+`).
-      ...(await getDocumentForceDeleteData(
-        getCarbonServiceRole(),
-        getDatabaseClient(),
-        { companyId, userId, documentType: "payment", documentId: paymentId }
-      ))
+      ...forceDelete
     };
   } catch (e) {
     throw redirect(

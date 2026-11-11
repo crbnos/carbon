@@ -5636,6 +5636,9 @@ msgstr "सबमिट करने से पहले"
 msgid "Beginning"
 msgstr "आरंभ"
 
+msgid "Being approved now…"
+msgstr ""
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "चरणबद्ध रूप से बंद किया जा रहा है — उत्तराधिकारी: <0>{0}</0>"

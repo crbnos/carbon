@@ -369,6 +369,17 @@ describe("force delete", () => {
     expect(
       forceDeleteApprovalRefusal({ ...base, status: "Executed", userId: "u2" })
     ).toBe("This force delete request is executed");
+    expect(
+      forceDeleteApprovalRefusal({ ...base, status: "Approving", userId: "u2" })
+    ).toBe("Another Admin is approving this force delete right now");
+    expect(
+      forceDeleteWithdrawRefusal({
+        ...base,
+        status: "Approving",
+        intent: "cancel",
+        userId: "u1"
+      })
+    ).toBe("Another Admin is approving this force delete right now");
   });
 
   it("lets only the requester cancel, any Admin reject", () => {
