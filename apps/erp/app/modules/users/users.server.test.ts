@@ -16,23 +16,60 @@ import { canReAddDeactivatedEmployee } from "./users.service";
 const COMPANY = "cmp_1";
 
 describe("canReAddDeactivatedEmployee", () => {
-  const grant = (users: string[], people: string[]) =>
-    pageClaims({
-      users: { view: [], create: [COMPANY], update: users, delete: [] },
-      people: { view: [], create: people, update: [], delete: [] }
-    });
+  const level = (actions: Partial<Record<"create" | "update", string[]>>) => ({
+    view: [],
+    create: [],
+    update: [],
+    delete: [],
+    ...actions
+  });
+  const accountsEdit = { "users.accounts": level({ update: [COMPANY] }) };
+  const employeesCreate = { "people.employees": level({ create: [COMPANY] }) };
 
   it("allows an inviter with Edit on Accounts and Create on Employees", () => {
     expect(
-      canReAddDeactivatedEmployee(grant([COMPANY], [COMPANY]), COMPANY)
+      canReAddDeactivatedEmployee(
+        { ...accountsEdit, ...employeesCreate },
+        COMPANY
+      )
     ).toBe(true);
   });
 
   it.each([
-    ["Accounts Create alone", grant([], [])],
-    ["no Employees Create", grant([COMPANY], [])],
-    ["no Accounts Edit", grant([], [COMPANY])],
-    ["both, for another company", grant(["cmp_2"], ["cmp_2"])],
+    ["Edit on Accounts alone", accountsEdit],
+    ["Create on Employees alone", employeesCreate],
+    [
+      "Create, not Edit, on Accounts",
+      { "users.accounts": level({ create: [COMPANY] }), ...employeesCreate }
+    ],
+    [
+      "both, for another company",
+      {
+        "users.accounts": level({ update: ["cmp_2"] }),
+        "people.employees": level({ create: ["cmp_2"] })
+      }
+    ],
+    [
+      "Edit on every other Users page",
+      {
+        "users.operators": level({ update: [COMPANY] }),
+        "users.groups": level({ update: [COMPANY] }),
+        "users.employeeTypes": level({ update: [COMPANY] }),
+        ...employeesCreate
+      }
+    ],
+    [
+      "Create on every other People page",
+      {
+        ...accountsEdit,
+        "people.timecards": level({ create: [COMPANY] }),
+        "people.attributes": level({ create: [COMPANY] }),
+        "people.departments": level({ create: [COMPANY] }),
+        "people.holidays": level({ create: [COMPANY] }),
+        "people.shifts": level({ create: [COMPANY] }),
+        "people.payrollTotals": level({ create: [COMPANY] })
+      }
+    ],
     ["unreadable claims", null]
   ])("refuses an inviter with %s", (_label, permissions) => {
     expect(canReAddDeactivatedEmployee(permissions, COMPANY)).toBe(false);

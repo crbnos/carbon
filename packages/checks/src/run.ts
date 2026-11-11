@@ -105,6 +105,10 @@ import {
   routeGateNamesPage
 } from "./conformance/route-gate-names-page";
 import {
+  findRoutePageGaps,
+  ROUTE_MAPS_TO_PAGE
+} from "./conformance/route-maps-to-page";
+import {
   findScheduledSqlDrift,
   SCHEDULED_SQL_CONSTANTS
 } from "./conformance/scheduled-sql-constants";
@@ -121,6 +125,7 @@ import {
 import { testMocksOwnModule } from "./conformance/test-mocks-own-module";
 import { testReadsSource } from "./conformance/test-reads-source";
 import {
+  loadErpRouteFiles,
   loadMovedTablesMigration,
   loadRegistryHelperFiles
 } from "./sources/authz-registry";
@@ -327,6 +332,10 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ).map((violation) => ({ checkId: REGISTRY_HELPERS_FRESH, violation })),
     ...findMovedTableGaps(loadMovedTablesMigration(root)).map((violation) => ({
       checkId: MOVED_TABLES_COVERED,
+      violation
+    })),
+    ...findRoutePageGaps(loadErpRouteFiles(root)).map((violation) => ({
+      checkId: ROUTE_MAPS_TO_PAGE,
       violation
     })),
     ...findDroppedFunctionChanges(migrations).map((violation) => ({

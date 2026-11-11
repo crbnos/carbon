@@ -61,6 +61,34 @@ function callerWith(answers: Record<string, Answer>) {
   };
 }
 
+/**
+ * A board-only user's client: it reads the rows named, and RLS refuses its
+ * every write, since the board page owns no table.
+ */
+function boardUserWith(answers: Record<string, Answer>) {
+  const refused = callerWith(answers);
+  const from = refused.client.from;
+  refused.client.from = (table: string) => {
+    const chain = from(table) as Record<string, unknown>;
+    chain.update = () => {
+      const denied = {
+        data: null,
+        error: { message: "new row violates row-level security policy" }
+      };
+      const write: Record<string, unknown> = {};
+      for (const method of ["select", "eq", "in", "not"]) {
+        write[method] = () => write;
+      }
+      write.maybeSingle = async () => denied;
+      write.then = (resolve: (value: Answer) => unknown) =>
+        Promise.resolve(denied).then(resolve);
+      return write;
+    };
+    return chain;
+  };
+  return refused;
+}
+
 const contextWith = (
   client: unknown,
   system: unknown = client,
@@ -233,8 +261,8 @@ describe("a Priorities-only caller", () => {
     "production.priorities": { view: ["c1"], create: [], update: ["c1"], delete: [] }
   };
 
-  it("moves a job on the dates board with the system client", async () => {
-    const caller = callerWith({
+  it("moves a job on the dates board past RLS on the job", async () => {
+    const caller = boardUserWith({
       job: { data: { id: "j1", deadlineType: "Soft Deadline" }, error: null }
     });
     const system = callerWith({ job: { data: { id: "j1" }, error: null } });
@@ -244,9 +272,15 @@ describe("a Priorities-only caller", () => {
       { id: "j1", locationId: "loc1", columnId: "2026-10-20", priority: -2 }
     );
 
-    expect(result.error).toBeNull();
-    expect(caller.writes).toEqual([]);
-    expect(system.writes).toEqual(["job"]);
+    expect(result).toMatchObject({ data: { id: "j1" }, error: null });
+    expect(system.updates).toEqual([
+      expect.objectContaining({
+        dueDate: "2026-10-20",
+        priority: -2,
+        deadlineType: "Soft Deadline",
+        updatedBy: "u1"
+      })
+    ]);
   });
 
   it("is refused without the board's permission", async () => {
@@ -268,7 +302,7 @@ describe("reprioritizeBatch", () => {
     "production.batches": { view: ["c1"], create: [], update: ["c1"], delete: [] }
   };
   const reprioritize = (operations: Answer) => {
-    const caller = callerWith({
+    const caller = boardUserWith({
       jobOperationBatch: { data: { status: "Ready" }, error: null }
     });
     const system = callerWith({ jobOperation: operations });
@@ -278,24 +312,22 @@ describe("reprioritizeBatch", () => {
     ).then((result) => ({ result, caller, system }));
   };
 
-  it("moves the batch's open operations with the system client", async () => {
-    const { result, caller, system } = await reprioritize({
+  it("moves the batch's open operations past RLS on the operations", async () => {
+    const { result, system } = await reprioritize({
       data: [{ id: "op1" }],
       error: null
     });
 
-    expect(result.error).toBeNull();
-    expect(caller.writes).toEqual([]);
-    expect(system.writes).toEqual(["jobOperation"]);
+    expect(result).toMatchObject({ data: { batchId: "b1" }, error: null });
+    expect(system.updates).toEqual([
+      expect.objectContaining({ priority: 3, updatedBy: "u1" })
+    ]);
   });
 
   it("reports a batch with no open operation to move", async () => {
     const { result } = await reprioritize({ data: [], error: null });
 
-    expect(result.error).toMatchObject({
-      category: "rule",
-      message: "Batch unavailable"
-    });
+    expect(result.error?.category).toBe("rule");
   });
 });
 

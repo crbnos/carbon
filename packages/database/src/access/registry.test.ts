@@ -2,8 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { readdirSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { manifest } from "../authz/manifest";
 import { type AnyRule, render } from "../authz/rules";
@@ -26,88 +24,6 @@ import {
   urlSegments,
   writersOf
 } from "./registry";
-
-/**
- * Routes under `x+` that belong to no one page, with the reason. A key that
- * ends with `/` covers every route below it; any other key is one route.
- */
-export const UNPAGED_ROUTES: Record<string, string> = {
-  "/x": "The app shell and the home page.",
-  // Documents, Workflows, Projects and Service have a page at their root.
-  ...Object.fromEntries(
-    [
-      "accounting",
-      "inventory",
-      "invoicing",
-      "items",
-      "people",
-      "production",
-      "purchasing",
-      "quality",
-      "resources",
-      "sales",
-      "settings",
-      "users"
-    ].map((module) => [
-      `/x/${module}`,
-      "The module's layout; its index redirects to the module's first page."
-    ])
-  ),
-  "/x/timesheet": "My Time: every employee's own timesheet.",
-  "/x/timesheet/": "My Time: every employee's own timesheet.",
-  "/x/accounting/projects": "Redirects to Projects.",
-  "/x/settings/timekeeping": "Redirects to Time settings.",
-  "/x/account/": "The signed-in person's own account.",
-  "/x/account": "The signed-in person's own account.",
-  "/x/acknowledge": "The ITAR acknowledgment every person signs.",
-  "/x/print": "The print endpoint every page posts to.",
-  "/x/shared/":
-    "Notes, saved views and imports, which every page uses for its own records.",
-  "/x/settings/tags/": "The tag endpoint every list page posts to.",
-  "/x/settings/tags": "The tag endpoint every list page posts to.",
-  "/x/get-started": "The Implementation Hub has no sidebar entry.",
-  "/x/get-started/": "The Implementation Hub has no sidebar entry.",
-  "/x/items/$itemId/properties":
-    "Shared by the five item pages; the item's type picks the page.",
-  "/x/items/cost/$itemId":
-    "Shared by the five item pages; the item's type picks the page.",
-  "/x/items/delete/$itemId":
-    "Shared by the five item pages; the item's type picks the page.",
-  "/x/items/update":
-    "Shared by the five item pages; the item's type picks the page.",
-  "/x/items/methods/":
-    "Shared by the item pages that have a method; the item's type picks the page.",
-  "/x/items/revisions/":
-    "Shared by the five item pages; the item's type picks the page.",
-  "/x/items/rules/":
-    "Shared by the five item pages; the item's type picks the page.",
-  "/x/inventory/batch-property/":
-    "Batch properties of one item; the item's type picks the page.",
-  "/x/credits/":
-    "A memo's detail, shared by Supplier Credits and Credit Memos; the memo's party picks the page.",
-  "/x/credits":
-    "A memo's detail, shared by Supplier Credits and Credit Memos; the memo's party picks the page.",
-  "/x/revenue-recognition-run/":
-    "A run's detail, shared by Leases and Revenue Recognition; the run's type picks the page.",
-  "/x/revenue-recognition-run":
-    "A run's detail, shared by Leases and Revenue Recognition; the run's type picks the page.",
-  "/x/priority": "The layout of Priorities and Resource Planning.",
-  "/x/scheduling": "The layout of Forecast and Outbound.",
-  "/x/invoicing/vendor-credits": "Redirects to Supplier Credits.",
-  "/x/purchasing/invoices": "Redirects to Purchase Invoices.",
-  "/x/sales/invoices": "Redirects to Sales Invoices.",
-  "/x/production/inspection": "Redirects to Inspection Plans.",
-  "/x/production/inspection/new": "Redirects to Inspection Plans.",
-  "/x/quality/inbound-inspections": "Redirects to Inspections.",
-  "/x/quality/inbound-inspections/$id": "Redirects to an inspection.",
-  "/x/people/people": "Redirects to Employees.",
-  "/x/items/change-orders/": "Redirects to Change Notices.",
-  "/x/items/change-orders": "Redirects to Change Notices.",
-  "/x/items/change-order/": "Redirects to a change notice.",
-  "/x/items/change-order-types/": "Redirects to Change Notice Types.",
-  "/x/items/change-order-actions/": "Redirects to Change Notice Actions.",
-  "/x/change-order/": "Redirects to a new change notice."
-};
 
 /** The rendered policies of a table, one per line. */
 const policiesOf = (table: string) =>
@@ -149,46 +65,6 @@ const namesPermission = (sql: string) =>
 const NAMED_TABLES = Object.keys(manifest).filter((table) =>
   policiesOf(table).some(namesPermission)
 );
-
-const ROUTES_DIR = fileURLToPath(
-  new URL("../../../../apps/erp/app/routes/x+/", import.meta.url)
-);
-
-// The files remix-flat-routes ignores (`apps/erp/app/routes.ts`).
-const ROUTE_FILES = (readdirSync(ROUTES_DIR, { recursive: true }) as string[])
-  .map((file) => file.split("\\").join("/"))
-  .filter(
-    (file) =>
-      /\.(tsx?|jsx?)$/.test(file) &&
-      !file.split("/").some((part) => part.startsWith(".")) &&
-      !/(^|\/)__|\.(server|client|test)\./.test(file)
-  );
-
-/** A page path covers its own URL and every URL below it. */
-const covers = (prefix: string, url: string) => {
-  const path = prefix.replace(/\/$/, "");
-  return url === path || url.startsWith(`${path}/`);
-};
-
-/** An unpaged key ending in `/` covers what is below it; any other key, one URL. */
-const unpaged = (key: string, url: string) =>
-  key.endsWith("/") ? covers(key, url) : url === key;
-
-/** The pages whose longest path covers the URL. */
-function pagesFor(url: string) {
-  let best = 0;
-  let found: string[] = [];
-  for (const page of PAGES) {
-    for (const path of page.paths) {
-      const length = path.replace(/\/$/, "").length;
-      if (!covers(path, url) || length < best) continue;
-      if (length > best) found = [];
-      best = length;
-      if (!found.includes(page.id)) found.push(page.id);
-    }
-  }
-  return found;
-}
 
 describe("PAGES", () => {
   it("gives every page a unique id", () => {
@@ -366,54 +242,6 @@ describe("PAGES", () => {
       }
     }
     expect(problems).toEqual([]);
-  });
-});
-
-describe("paths", () => {
-  const urls = ROUTE_FILES.map((file) => ({ file, url: routeUrl(file) }));
-
-  it("maps every x+ route to one page, or lists it in UNPAGED_ROUTES", () => {
-    const problems: string[] = [];
-    for (const { file, url } of urls) {
-      const pages = pagesFor(url);
-      const reason = Object.keys(UNPAGED_ROUTES).some((key) =>
-        unpaged(key, url)
-      );
-      if (pages.length > 1)
-        problems.push(`${file} (${url}): ${pages.join(", ")}`);
-      else if (pages.length === 1 && reason)
-        problems.push(`${file} (${url}): ${pages[0]} and UNPAGED_ROUTES`);
-      else if (!pages.length && !reason)
-        problems.push(`${file} (${url}): no page`);
-    }
-    expect(problems).toEqual([]);
-  });
-
-  it("keeps no UNPAGED_ROUTES entry that matches no route", () => {
-    const stale = Object.keys(UNPAGED_ROUTES).filter(
-      (key) => !urls.some(({ url }) => unpaged(key, url))
-    );
-    expect(stale).toEqual([]);
-  });
-
-  it("puts each route on the page pageOfUrl names", () => {
-    const problems = urls.flatMap(({ file, url }) => {
-      const pages = pagesFor(url);
-      const page = pageOfUrl(url);
-      return pages.length === 1 && page !== pages[0]
-        ? [`${file} (${url}): ${pages[0]}, pageOfUrl ${page}`]
-        : [];
-    });
-    expect(problems).toEqual([]);
-  });
-
-  it("gives every page path at least one route", () => {
-    const empty = PAGES.flatMap((page) =>
-      page.paths
-        .filter((path) => !urls.some(({ url }) => covers(path, url)))
-        .map((path) => `${page.id}: ${path}`)
-    );
-    expect(empty).toEqual([]);
   });
 });
 

@@ -186,10 +186,9 @@ describe("render: actions become page keys", () => {
     })`;
 
   test("a read names the owner's module, never its pages, plus the readers", () => {
-    const select = policy(render(company(), "purchaseOrder"), "SELECT");
-    expect(select).toContain(moduleView(["purchasing"]).slice(0, 60));
-    expect(select).toContain("'inventory.receipts_view'");
-    expect(select).not.toContain("'purchasing.purchaseOrders_view'");
+    expect(policy(render(company(), "purchaseOrder"), "SELECT")).toBe(
+      `CREATE POLICY "SELECT" ON "public"."purchaseOrder" FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_module_view(ARRAY['purchasing']::text[], ARRAY['inventory.receipts_view', 'invoicing.purchaseInvoices_view']::text[]))::text[]));`
+    );
     // Writes stay per page.
     expect(policy(render(company(), "purchaseOrder"), "UPDATE")).toBe(
       `CREATE POLICY "UPDATE" ON "public"."purchaseOrder" FOR UPDATE USING ("companyId" = ANY ((SELECT ${key("purchasing.purchaseOrders_update")})::text[]));`

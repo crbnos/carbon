@@ -2,14 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  type ExpandedClaims,
-  type Gate,
-  holdsGate,
-  MODULES,
-  moduleOf,
-  pageById
-} from "@carbon/database/access";
+import type { ExpandedClaims } from "@carbon/database/access";
 import {
   batchCandidates,
   buildCatalogOverlay,
@@ -18,7 +11,6 @@ import {
   eventGate,
   executorFor,
   FAILURE_HANDLE,
-  gatePages,
   itemKeyFor,
   listValue,
   type NodeResult,
@@ -49,7 +41,7 @@ import {
 } from "./ledger";
 import { createEntityLoader, type EntityCache, triggerOutputs } from "./loader";
 import { claimRun, finishRun, loadRunContext } from "./log";
-import { getOwnerClient, readOwnerPermissions } from "./owner";
+import { getOwnerClient, ownerRefusal, readOwnerPermissions } from "./owner";
 import {
   advance,
   alreadyExecuted,
@@ -89,22 +81,6 @@ const TOO_MANY_STEPS = "This workflow ran too many steps.";
 const NOTHING_TO_RUN = "That list was empty, so there was nothing to do.";
 
 const BATCH_CONCURRENCY = 5;
-
-/**
- * The one wording for a lost permission: the gate's page label, or its module's
- * label when the gate names several pages of one shared table. Exported because
- * the builder's test-run route refuses with it too, and two copies would drift.
- */
-export function noAccess(gate: Gate): string {
-  const pages = gatePages(gate);
-  const first: string = pages[0] ?? "";
-  const page = pages.length === 1 ? pageById(first) : undefined;
-  const area =
-    page?.label ??
-    MODULES.find((module) => module.id === moduleOf(first))?.label ??
-    first.charAt(0).toUpperCase() + first.slice(1);
-  return `The owner of this workflow no longer has access to ${area}.`;
-}
 
 /** The durable ledger: the two run-log tables, with the run's scope folded in. Lives
  * here rather than in `ledger.ts` so that module keeps exporting only free functions. */
@@ -193,13 +169,12 @@ async function runExecutor(args: NodeArgs): Promise<NodeResult> {
   const executor = executorFor(node);
   if (executor === undefined) return { status: "Failed", error: NOT_AVAILABLE };
 
-  const required = executor.permission(node, catalog);
-  if (
-    required !== undefined &&
-    !holdsGate(args.permissions, required, payload.companyId)
-  ) {
-    return { status: "Failed", error: noAccess(required) };
-  }
+  const refused = ownerRefusal(
+    executor.permission(node, catalog),
+    args.permissions,
+    payload.companyId
+  );
+  if (refused !== null) return { status: "Failed", error: refused };
 
   return executor.execute(node, await contextFor(args));
 }
@@ -550,13 +525,12 @@ export async function walkWorkflow(params: {
     // Checked explicitly as well as by RLS: RLS alone returns zero rows, which
     // reads as a silent skip rather than a lost permission.
     const pages = catalog.getEvent(payload.eventId)?.permission;
-    const gate = pages === undefined ? undefined : eventGate(pages);
-    if (
-      gate !== undefined &&
-      !holdsGate(permissions, gate, payload.companyId)
-    ) {
-      return refuse(noAccess(gate));
-    }
+    const refused = ownerRefusal(
+      pages === undefined ? undefined : eventGate(pages),
+      permissions,
+      payload.companyId
+    );
+    if (refused !== null) return refuse(refused);
 
     return { ok: true as const, permissions };
   });

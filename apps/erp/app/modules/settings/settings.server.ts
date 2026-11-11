@@ -810,7 +810,7 @@ export const updatePeopleSettings = defineServiceFn({
         companyId: ctx.company.id,
         consoleEnabled,
         actorId: ctx.auditUserId,
-        pinUserId: ctx.actor.type === "user" ? ctx.actor.userId : undefined
+        pinUserId: service.consolePinUserId(ctx.actor)
       }
     );
     const notSet = await grantWriteRefusal(ctx, update.error);

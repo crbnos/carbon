@@ -79,75 +79,9 @@ describe("refreshingClientFactory", () => {
   });
 });
 
-function claims(overrides: Partial<TableJobClaims> = {}): TableJobClaims {
-  return {
-    role: "employee",
-    permissions: {
-      "sales.salesOrders": {
-        view: ["co_1"],
-        create: [],
-        update: ["co_1"],
-        delete: []
-      },
-      "parts.parts": { view: ["co_2"], create: [], update: [], delete: [] }
-    },
-    ...overrides
-  };
-}
-
-describe("holdsListGate", () => {
-  it("accepts an employee with the list's page in the company", () => {
-    expect(
-      holdsListGate(claims(), { "sales.salesOrders": "View" }, "co_1")
-    ).toBe(true);
-  });
-
-  it("refuses a page granted in another company only", () => {
-    expect(holdsListGate(claims(), { "parts.parts": "View" }, "co_1")).toBe(
-      false
-    );
-  });
-
-  it("refuses a portal account even with the page", () => {
-    expect(
-      holdsListGate(
-        claims({ role: "customer" }),
-        { "sales.salesOrders": "View" },
-        "co_1"
-      )
-    ).toBe(false);
-  });
-
-  it("requires every page of a gate and any gate of a list", () => {
-    expect(
-      holdsListGate(claims(), { "sales.salesOrders": "Edit" }, "co_1")
-    ).toBe(true);
-    expect(
-      holdsListGate(
-        claims(),
-        { "sales.salesOrders": "View", "parts.parts": "View" },
-        "co_1"
-      )
-    ).toBe(false);
-    expect(
-      holdsListGate(
-        claims(),
-        [{ "parts.parts": "View" }, { "sales.salesOrders": "View" }],
-        "co_1"
-      )
-    ).toBe(true);
-    expect(
-      holdsListGate(claims(), { "sales.salesOrders": "Full" }, "co_1")
-    ).toBe(false);
-  });
-
-  it("accepts an empty gate for an employee", () => {
-    expect(holdsListGate(claims(), {}, "co_1")).toBe(true);
-  });
-});
-
 describe("itemsBulkUpdateGate", () => {
-  const toolsEditor = claims({
+  const toolsEditor: TableJobClaims = {
+    role: "employee",
     permissions: {
       "parts.tools": {
         view: ["co_1"],
@@ -157,7 +91,7 @@ describe("itemsBulkUpdateGate", () => {
       },
       "parts.parts": { view: ["co_1"], create: [], update: [], delete: [] }
     }
-  });
+  };
   const list = (key: string, page: string) => ({
     key,
     gate: { [page]: "View" as const }

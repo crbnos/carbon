@@ -201,23 +201,23 @@ BEGIN
     (company_a, key_id, 'Purchasing', 'View', 'system');
 
   PERFORM pg_temp.act_as(u);
-  IF NOT company_a = ANY (get_companies_with_employee_permission('inventory_update')) THEN
-    RAISE EXCEPTION 'a role grant of Edit must hold inventory_update';
+  IF NOT company_a = ANY (get_companies_with_employee_permission('inventory.receipts_update')) THEN
+    RAISE EXCEPTION 'a role grant of Edit must hold inventory.receipts_update';
   END IF;
-  IF company_a = ANY (get_companies_with_employee_permission('inventory_delete')) THEN
-    RAISE EXCEPTION 'a role grant of Edit must not hold inventory_delete';
+  IF company_a = ANY (get_companies_with_employee_permission('inventory.receipts_delete')) THEN
+    RAISE EXCEPTION 'a role grant of Edit must not hold inventory.receipts_delete';
   END IF;
-  IF company_a = ANY (get_companies_with_employee_permission('sales_view')) THEN
+  IF company_a = ANY (get_companies_with_employee_permission('sales.quotes_view')) THEN
     RAISE EXCEPTION 'a person None must remove the role''s Sales grant';
   END IF;
   IF cardinality(get_companies_with_employee_permission('inventory')) <> 0 THEN
     RAISE EXCEPTION 'a permission with no action must hold nothing';
   END IF;
   -- get_companies_with_any_employee_permission: one held key is enough.
-  IF NOT company_a = ANY (get_companies_with_any_employee_permission(ARRAY['sales_view', 'inventory_update'])) THEN
+  IF NOT company_a = ANY (get_companies_with_any_employee_permission(ARRAY['sales.quotes_view', 'inventory.receipts_update'])) THEN
     RAISE EXCEPTION 'any-of must hold when one key is held';
   END IF;
-  IF cardinality(get_companies_with_any_employee_permission(ARRAY['sales_view', 'inventory_delete', 'inventory'])) <> 0 THEN
+  IF cardinality(get_companies_with_any_employee_permission(ARRAY['sales.quotes_view', 'inventory.receipts_delete', 'inventory'])) <> 0 THEN
     RAISE EXCEPTION 'any-of must hold nothing when no key is held';
   END IF;
 
@@ -243,37 +243,37 @@ BEGIN
   DELETE FROM permission WHERE "companyId" = company_a AND page = 'inventory.traceability';
 
   PERFORM pg_temp.act_as(a);
-  IF NOT company_a = ANY (get_companies_with_employee_permission('accounting_delete')) THEN
+  IF NOT company_a = ANY (get_companies_with_employee_permission('accounting.journalEntries_delete')) THEN
     RAISE EXCEPTION 'the Admin type must hold every action';
   END IF;
-  IF NOT company_a = ANY (get_companies_with_any_employee_permission(ARRAY['accounting_delete', 'sales_delete'])) THEN
+  IF NOT company_a = ANY (get_companies_with_any_employee_permission(ARRAY['accounting.journalEntries_delete', 'sales.quotes_delete'])) THEN
     RAISE EXCEPTION 'the Admin type must hold every action, any-of';
   END IF;
 
   PERFORM pg_temp.act_as(c);
-  IF cardinality(get_companies_with_employee_permission('inventory_view')) <> 0 THEN
+  IF cardinality(get_companies_with_employee_permission('inventory.receipts_view')) <> 0 THEN
     RAISE EXCEPTION 'a portal account must hold no employee permission';
   END IF;
-  IF cardinality(get_companies_with_any_employee_permission(ARRAY['inventory_view', 'sales_view'])) <> 0 THEN
+  IF cardinality(get_companies_with_any_employee_permission(ARRAY['inventory.receipts_view', 'sales.quotes_view'])) <> 0 THEN
     RAISE EXCEPTION 'a portal account must hold no employee permission, any-of';
   END IF;
 
   PERFORM pg_temp.act_as(u, raw_key);
-  companies := get_companies_with_employee_permission('purchasing_view');
+  companies := get_companies_with_employee_permission('purchasing.suppliers_view');
   IF companies IS DISTINCT FROM ARRAY[company_a] THEN
-    RAISE EXCEPTION 'a key grant of View must hold purchasing_view, got %', companies;
+    RAISE EXCEPTION 'a key grant of View must hold purchasing.suppliers_view, got %', companies;
   END IF;
-  IF cardinality(get_companies_with_employee_permission('purchasing_create')) <> 0 THEN
-    RAISE EXCEPTION 'a key grant of View must not hold purchasing_create';
+  IF cardinality(get_companies_with_employee_permission('purchasing.suppliers_create')) <> 0 THEN
+    RAISE EXCEPTION 'a key grant of View must not hold purchasing.suppliers_create';
   END IF;
-  IF cardinality(get_companies_with_employee_permission('inventory_update')) <> 0 THEN
+  IF cardinality(get_companies_with_employee_permission('inventory.receipts_update')) <> 0 THEN
     RAISE EXCEPTION 'a key must not borrow the role grants of the user who sent it';
   END IF;
-  companies := get_companies_with_any_employee_permission(ARRAY['inventory_update', 'purchasing_view']);
+  companies := get_companies_with_any_employee_permission(ARRAY['inventory.receipts_update', 'purchasing.suppliers_view']);
   IF companies IS DISTINCT FROM ARRAY[company_a] THEN
-    RAISE EXCEPTION 'a key grant of View must hold purchasing_view, any-of, got %', companies;
+    RAISE EXCEPTION 'a key grant of View must hold purchasing.suppliers_view, any-of, got %', companies;
   END IF;
-  IF cardinality(get_companies_with_any_employee_permission(ARRAY['inventory_update', 'purchasing_create'])) <> 0 THEN
+  IF cardinality(get_companies_with_any_employee_permission(ARRAY['inventory.receipts_update', 'purchasing.suppliers_create'])) <> 0 THEN
     RAISE EXCEPTION 'a key must hold none of its ungranted keys, any-of';
   END IF;
   IF (get_api_key_scopes()->'grants'->0->>'level') IS DISTINCT FROM 'View' THEN

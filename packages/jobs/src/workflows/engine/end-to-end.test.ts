@@ -30,7 +30,15 @@ vi.mock("./ledger", () => ({
   settleStep: vi.fn(async () => {}),
   failInterruptedSteps: vi.fn(async () => 0)
 }));
-vi.mock("./owner", () => ({
+// @carbon/auth/client.server reads its configuration once, at import; ./owner imports it.
+vi.hoisted(() => {
+  vi.stubEnv("SUPABASE_URL", "http://supabase.test");
+  vi.stubEnv("SUPABASE_ANON_KEY", "anon-key");
+  vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-key");
+});
+// The owner's reads are faked; the permission rule itself (`ownerRefusal`) is real.
+vi.mock("./owner", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./owner")>()),
   // The engine reads the company custom fields through this client; a bare {} has no
   // `.from`, so the stub answers that one query with an empty list.
   getOwnerClient: vi.fn(async () => ({

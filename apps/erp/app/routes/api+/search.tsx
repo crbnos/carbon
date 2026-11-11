@@ -4,55 +4,11 @@
 
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  anyOf,
-  type ExpandedClaims,
-  holdsGate,
-  ownersOf,
-  widenReads
-} from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
+import { searchableTypes } from "./search.server";
 
 const logger = getLogger("erp", "search");
-
-/** The table behind each `searchIndex` entity type. */
-const ENTITY_TABLES = {
-  employee: "employee",
-  customer: "customer",
-  supplier: "supplier",
-  issue: "nonConformance",
-  gauge: "gauge",
-  item: "item",
-  job: "job",
-  purchaseOrder: "purchaseOrder",
-  salesInvoice: "salesInvoice",
-  purchaseInvoice: "purchaseInvoice",
-  quote: "quote",
-  salesRfq: "salesRfq",
-  salesOrder: "salesOrder",
-  supplierQuote: "supplierQuote"
-} as const;
-
-/**
- * The entity types the person may search: View on a page that owns the
- * type's table, widened as a data read is, so a type shows iff its records'
- * list could be read.
- */
-function searchableTypes(
-  permissions: ExpandedClaims | null | undefined,
-  companyId: string
-): string[] {
-  return Object.entries(ENTITY_TABLES)
-    .filter(([, table]) =>
-      holdsGate(
-        permissions,
-        widenReads(anyOf(ownersOf(table), "View")),
-        companyId
-      )
-    )
-    .map(([entityType]) => entityType);
-}
 
 export type SearchResult = {
   id: number;
@@ -80,10 +36,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return Response.json({ results: [] } satisfies SearchResponse);
   }
 
-  let allowedEntityTypes = searchableTypes(permissions, companyId);
-  if (typeFilter && typeFilter !== "all") {
-    allowedEntityTypes = allowedEntityTypes.filter((t) => t === typeFilter);
-  }
+  const allowedEntityTypes = searchableTypes(
+    permissions,
+    companyId,
+    typeFilter
+  );
 
   if (allowedEntityTypes.length === 0) {
     return Response.json({ results: [] } satisfies SearchResponse);

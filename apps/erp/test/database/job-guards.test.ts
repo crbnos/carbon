@@ -5,7 +5,7 @@
 // Runs against the local stack (SUPABASE_DB_URL and the PostgREST `crbn up`
 // started); skipped without one. A published production operation must refuse
 // what its route refused: an API or MCP caller reaches the function, not the
-// route.
+// route. Actors hold literal pages, so each refusal names the page it needs.
 
 import {
   type Actor,
@@ -13,7 +13,8 @@ import {
 } from "@carbon/api/service-fn.server";
 import type { Database } from "@carbon/database";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import type { ExpandedClaims } from "@carbon/database/access";
+import { afterAll, beforeAll, describe, expect } from "vitest";
 import { JOB_LOCKED_MESSAGE } from "../../app/modules/production/production.models";
 import * as production from "../../app/modules/production/production.server";
 import {
@@ -23,25 +24,31 @@ import {
   seed,
   USER
 } from "./fixtures/always-post";
-import { hasLocalDatabase } from "./fixtures/local-database";
+import { databaseTest, hasLocalDatabase } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
+import { pageClaims } from "../page-claims";
 
 const client = hasLocalDatabase ? localServiceRoleClient() : null;
-const describeLocal = describe.skipIf(!client);
 
 const SYSTEM: Actor = { type: "system", onBehalfOf: USER };
 
-/** A user holding every production permission in `companyId`, and nothing else. */
-function productionOnly(companyId: string): Actor {
-  const all = [companyId];
-  return {
-    type: "user",
-    role: "employee",
-    userId: USER,
-    permissions: {
-      production: { view: all, create: all, update: all, delete: all }
-    }
-  };
+const every = () => {
+  const all = [f.companyId];
+  return { view: all, create: all, update: all, delete: all };
+};
+
+/** An employee holding every action on exactly `pages` in the company. */
+function holding(...pages: string[]): Actor {
+  return employee(Object.fromEntries(pages.map((page) => [page, every()])));
+}
+
+/** An employee holding every page of `module`, and nothing else. */
+function holdingModule(module: string): Actor {
+  return employee(pageClaims({ [module]: every() }));
+}
+
+function employee(permissions: ExpandedClaims): Actor {
+  return { type: "user", role: "employee", userId: USER, permissions };
 }
 
 /** A caller whose every request fails: an operation must not read as it. */
@@ -187,69 +194,105 @@ const jobsOfItem = async (itemId: string) =>
       .execute()
   ).length;
 
-describeLocal("published production operations hold their routes' checks", () => {
-  it("runs MRP only for inventory update, with the service role", async () => {
-    const refused = await production.runMRP(
-      contextFor(productionOnly(f.companyId)),
-      { type: "company", id: f.companyId }
-    );
-    expect(refused.error?.category).toBe("forbidden");
+describe("published production operations hold their routes' checks", () => {
+  databaseTest(
+    "runs MRP only with Edit on Material Planning, with the service role",
+    async () => {
+      const mrp = { type: "company", id: f.companyId } as const;
+      const inventory = await production.runMRP(
+        contextFor(holdingModule("inventory")),
+        mrp
+      );
+      const planner = await production.runMRP(
+        contextFor(holding("production.materialPlanning"), unreachableCaller),
+        mrp
+      );
 
-    const planned = await production.runMRP(
-      contextFor(SYSTEM, unreachableCaller),
-      { type: "company", id: f.companyId }
-    );
-    expect(planned.error).toBeNull();
-  }, 60_000);
+      expect(inventory.error?.category).toBe("forbidden");
+      expect(planner.error).toBeNull();
+    }
+  );
 
-  it("reorders a method's steps only with parts update, on a Draft method", async () => {
-    const updates = [
-      { id: `${f.prefix}-step-1`, sortOrder: 2 },
-      { id: `${f.prefix}-step-2`, sortOrder: 1 }
-    ];
-    const forbidden = await production.updateMethodOperationStepOrder(
-      contextFor(productionOnly(f.companyId)),
-      { operationId, updates }
-    );
-    const released = await production.updateMethodOperationStepOrder(
-      contextFor(),
-      { operationId, updates }
-    );
+  databaseTest(
+    "reorders a method's steps only with Edit on the item's page, on a Draft method",
+    async () => {
+      const updates = [
+        { id: `${f.prefix}-step-1`, sortOrder: 2 },
+        { id: `${f.prefix}-step-2`, sortOrder: 1 }
+      ];
+      const productionOnly = await production.updateMethodOperationStepOrder(
+        contextFor(holdingModule("production")),
+        { operationId, updates }
+      );
+      // The assembly is a Part: Edit on Parts passes the gate, and the
+      // Active method is then refused by the Draft rule.
+      const partsEditor = await production.updateMethodOperationStepOrder(
+        contextFor(holding("parts.parts")),
+        { operationId, updates }
+      );
 
-    expect(forbidden.error?.category).toBe("forbidden");
-    expect(released.error?.category).toBe("rule");
-    expect(await stepOrders()).toEqual([1, 2]);
-  });
+      expect(productionOnly.error?.category).toBe("forbidden");
+      expect(partsEditor.error?.category).toBe("rule");
+      expect(await stepOrders()).toEqual([1, 2]);
+    }
+  );
 
-  it("reorders a quote operation's steps only with sales update", async () => {
-    const result = await production.updateQuoteOperationStepOrder(
-      contextFor(productionOnly(f.companyId)),
-      { operationId, updates: [{ id: `${f.prefix}-step-1`, sortOrder: 2 }] }
-    );
-    expect(result.error?.category).toBe("forbidden");
-  });
+  databaseTest(
+    "reorders a quote operation's steps only with Edit on Quotes and Jobs",
+    async () => {
+      const input = {
+        operationId,
+        updates: [{ id: `${f.prefix}-step-1`, sortOrder: 2 }]
+      };
+      const productionOnly = await production.updateQuoteOperationStepOrder(
+        contextFor(holdingModule("production")),
+        input
+      );
+      const quotesOnly = await production.updateQuoteOperationStepOrder(
+        contextFor(holding("sales.quotes")),
+        input
+      );
+      const both = await production.updateQuoteOperationStepOrder(
+        contextFor(holding("sales.quotes", "production.jobs")),
+        input
+      );
 
-  it("saves a job's method onto an item only with parts update, outside the revision lock", async () => {
-    const input = { sourceId: job.jobId, targetId: methodId };
-    const forbidden = await production.upsertMakeMethodFromJob(
-      contextFor(productionOnly(f.companyId)),
-      input
-    );
-    const released = await production.upsertMakeMethodFromJob(
-      contextFor(),
-      input
-    );
-    const subAssembly = await production.upsertMakeMethodFromJobMethod(
-      contextFor(),
-      input
-    );
+      expect(productionOnly.error?.category).toBe("forbidden");
+      expect(quotesOnly.error?.category).toBe("forbidden");
+      // Past the gate, the reorder refuses a step that is on no quote operation.
+      expect(both.error?.category).toBe("internal");
+    }
+  );
 
-    expect(forbidden.error?.category).toBe("forbidden");
-    expect(released.error?.category).toBe("rule");
-    expect(subAssembly.error?.category).toBe("rule");
-  });
+  databaseTest(
+    "saves a job's method onto an item only with Edit on the item's page and Jobs, outside the revision lock",
+    async () => {
+      const input = { sourceId: job.jobId, targetId: methodId };
+      const productionOnly = await production.upsertMakeMethodFromJob(
+        contextFor(holdingModule("production")),
+        input
+      );
+      const partsOnly = await production.upsertMakeMethodFromJob(
+        contextFor(holding("parts.parts")),
+        input
+      );
+      const released = await production.upsertMakeMethodFromJob(
+        contextFor(holding("parts.parts", "production.jobs")),
+        input
+      );
+      const subAssembly = await production.upsertMakeMethodFromJobMethod(
+        contextFor(),
+        input
+      );
 
-  it("creates a job only as Draft or Planned", async () => {
+      expect(productionOnly.error?.category).toBe("forbidden");
+      expect(partsOnly.error?.category).toBe("forbidden");
+      expect(released.error?.category).toBe("rule");
+      expect(subAssembly.error?.category).toBe("rule");
+    }
+  );
+
+  databaseTest("creates a job only as Draft or Planned", async () => {
     const result = await production.insertJob(contextFor(), {
       itemId: f.assemblyId,
       quantity: 1,
@@ -260,7 +303,7 @@ describeLocal("published production operations hold their routes' checks", () =>
     expect(await jobsOfItem(f.assemblyId)).toBe(1);
   });
 
-  it("makes no job for an item an unreleased change notice holds", async () => {
+  databaseTest("makes no job for an item an unreleased change notice holds", async () => {
     const ctx = contextFor();
     const single = await production.insertJob(ctx, {
       itemId: heldItemId,
@@ -299,7 +342,7 @@ describeLocal("published production operations hold their routes' checks", () =>
     expect(await jobsOfItem(heldItemId)).toBe(0);
   });
 
-  it("converts no sales order line whose item an unreleased change notice holds", async () => {
+  databaseTest("converts no sales order line whose item an unreleased change notice holds", async () => {
     const salesOrderId = `${f.prefix}-so-held`;
     await seed(f, async (trx) => {
       await trx
@@ -342,7 +385,7 @@ describeLocal("published production operations hold their routes' checks", () =>
     expect(await jobsOfItem(heldItemId)).toBe(0);
   });
 
-  it("refuses a locked job's method writes", async () => {
+  databaseTest("refuses a locked job's method writes", async () => {
     await seed(f, (trx) =>
       trx
         .updateTable("job")

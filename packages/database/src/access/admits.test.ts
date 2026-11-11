@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import { type AccessActor, admits } from "./admits";
-import { type ExpandedClaims, widenReads } from "./resolve";
+import type { ExpandedClaims } from "./resolve";
 
 const receiptsEdit: ExpandedClaims = {
   "inventory.receipts": {
@@ -85,11 +85,5 @@ describe("admits", () => {
     expect(
       admits(key(receiptsEdit), "c1", { "inventory.receipts": "Edit" })
     ).toBe(true);
-  });
-
-  it("checks a gate exactly, and a widened read as widened", () => {
-    const gate = { "inventory.shipments": "View" } as const;
-    expect(admits(employee, "c1", gate)).toBe(false);
-    expect(admits(employee, "c1", widenReads(gate))).toBe(true);
   });
 });

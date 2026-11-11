@@ -544,10 +544,50 @@ describe("gates the row decides", () => {
   });
 
   it("widens a one-page read to its module and cross-module readers", () => {
-    expect(named("inventory_getReceipts")).toEqual(read("inventory.receipts"));
-    expect(named("users_getEmployeeTypes")).toEqual(read("users.employeeTypes"));
-    expect(read("users.employeeTypes").oneOf?.pages).toContain("users.accounts");
-    expect(named("purchasing_getSupplier")).toEqual(read("purchasing.suppliers"));
+    const view = (module: string | null, pages: string[]) => ({
+      module,
+      actions: module ? ["view"] : [],
+      oneOf: { pages, level: "View", by: [] }
+    });
+    expect(named("inventory_getReceipts")).toEqual(
+      view("inventory", [
+        "inventory.quantities",
+        "inventory.movements",
+        "inventory.inventoryCount",
+        "inventory.kanbans",
+        "inventory.receipts",
+        "inventory.shipments",
+        "inventory.pickingLists",
+        "inventory.stockTransfers",
+        "inventory.warehouseTransfers",
+        "inventory.trackedEntities",
+        "inventory.traceability",
+        "inventory.storageUnits",
+        "inventory.storageTypes",
+        "inventory.storageRules",
+        "inventory.shippingMethods"
+      ])
+    );
+    expect(named("users_getEmployeeTypes")).toEqual(
+      view("users", [
+        "users.accounts",
+        "users.operators",
+        "users.groups",
+        "users.employeeTypes"
+      ])
+    );
+    expect(named("purchasing_getSupplier")).toEqual(
+      view("purchasing", [
+        "purchasing.suppliers",
+        "purchasing.purchaseOrders",
+        "purchasing.returns",
+        "purchasing.leases",
+        "purchasing.materialPlanning",
+        "purchasing.rfqs",
+        "purchasing.supplierQuotes",
+        "purchasing.types"
+      ])
+    );
     // Writes stay per page.
     expect(named("inventory_createReceipt")).toEqual({
       module: "inventory",
@@ -557,9 +597,41 @@ describe("gates the row decides", () => {
   });
 
   it("widens each entry of a cross-module read list", () => {
-    const pages = named("sales_getOpportunityDocuments")?.oneOf?.pages ?? [];
-    for (const page of [...readPages("sales.quotes"), ...readPages("invoicing.salesInvoices")])
-      expect(pages, page).toContain(page);
+    expect(named("sales_getOpportunityDocuments")).toEqual({
+      module: null,
+      actions: [],
+      oneOf: {
+        pages: [
+          "invoicing.payables",
+          "invoicing.purchaseInvoices",
+          "invoicing.supplierCredits",
+          "invoicing.charges",
+          "invoicing.reimbursements",
+          "invoicing.receivables",
+          "invoicing.salesInvoices",
+          "invoicing.creditMemos",
+          "invoicing.payments",
+          "sales.customers",
+          "sales.portals",
+          "sales.rfqs",
+          "sales.quotes",
+          "sales.salesOrders",
+          "sales.returns",
+          "sales.serviceContracts",
+          "sales.projectContracts",
+          "sales.rentalAgreements",
+          "sales.priceLists",
+          "sales.pricingRules",
+          "sales.salesRules",
+          "sales.noQuoteReasons",
+          "sales.returnReasons",
+          "sales.statuses",
+          "sales.types"
+        ],
+        level: "View",
+        by: []
+      }
+    });
   });
 
   it("names the pages of one shared table, in one module", () => {
@@ -572,15 +644,13 @@ describe("gates the row decides", () => {
       const module = t.permission.module ?? "";
       expect(t.permission.oneOf?.pages, t.name).toEqual(tables[module]);
     }
-    const counts = Object.fromEntries(
-      Object.keys(tables).map((module) => [
-        module,
-        oneOf.filter(
-          (t) => t.permission.module === module && !isWidenedRead(t)
-        ).length
-      ])
-    );
-    expect(counts).toEqual({ parts: 110, invoicing: 7, accounting: 7 });
+    // Each module has such a tool, so the loop above is not vacuous.
+    for (const module of Object.keys(tables)) {
+      expect(
+        oneOf.some((t) => t.permission.module === module && !isWidenedRead(t)),
+        module
+      ).toBe(true);
+    }
   });
 
   it("lets Tools at Edit change a tool's bill of material: the method's item picks the page", () => {

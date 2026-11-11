@@ -24,8 +24,7 @@ vi.mock("./ledger", () => ({
   settleStep: vi.fn(async () => {}),
   failInterruptedSteps: vi.fn(async () => 0)
 }));
-// @carbon/auth builds its Supabase client at import time; ./owner imports it.
-vi.mock("@carbon/auth", () => ({}));
+// @carbon/auth/client.server builds its Supabase client at import time; ./owner imports it.
 vi.mock("@carbon/auth/client.server", () => ({}));
 // The owner's reads are faked; the permission rule itself is real.
 vi.mock("./owner", async (importOriginal) => ({
@@ -45,7 +44,7 @@ vi.mock("../actions", () => ({ createWorkflowServices: vi.fn() }));
 
 const { executeWorkflowRun } = await import("./execute");
 const { loadRunContext, claimRun, finishRun } = await import("./log");
-const { claimStep, settleStep } = await import("./ledger");
+const { claimStep } = await import("./ledger");
 const { readOwnerPermissions } = await import("./owner");
 
 /** The owner's grants on the Purchase Orders page in co1. */
@@ -163,35 +162,28 @@ beforeEach(() => {
   });
 });
 
+// What each gate refuses, and the wording, is pinned by value in owner.test.ts
+// (`ownerRefusal`). These pin what a refusal does to the run.
 describe("the owner's permissions", () => {
-  it("fails the action step by name when the owner has lost the page", async () => {
+  it("fails the run without running the action when the owner has lost the page", async () => {
     const { step } = harness();
     // The trigger's own view check still passes; only the action's update is gone.
     vi.mocked(readOwnerPermissions).mockResolvedValue(purchasing("view"));
 
     const result = await executeWorkflowRun({ payload, step, logger });
 
-    expect(vi.mocked(settleStep).mock.calls.at(-1)?.[1]).toMatchObject({
-      status: "Failed",
-      error:
-        "The owner of this workflow no longer has access to Purchase Orders."
-    });
-    expect(runAction).not.toHaveBeenCalled();
     expect(result.status).toBe("Failed");
+    expect(runAction).not.toHaveBeenCalled();
   });
 
-  it("refuses the whole run when the trigger's own page is gone", async () => {
-    const { ids, step } = harness();
+  it("refuses the whole run, running no step, when the trigger's own page is gone", async () => {
+    const { step } = harness();
     vi.mocked(readOwnerPermissions).mockResolvedValue(purchasing());
 
-    await executeWorkflowRun({ payload, step, logger });
+    const result = await executeWorkflowRun({ payload, step, logger });
 
-    expect(ids).toEqual(["load", "custom-fields", "permissions"]);
-    expect(vi.mocked(finishRun).mock.calls.at(-1)?.[1]).toMatchObject({
-      status: "Failed",
-      error:
-        "The owner of this workflow no longer has access to Purchase Orders."
-    });
+    expect(result).toEqual({ runId: "run1", status: "Failed", steps: 0 });
+    expect(runAction).not.toHaveBeenCalled();
   });
 });
 

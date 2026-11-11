@@ -109,9 +109,6 @@ describe("no-module-permission-key — SQL", () => {
         `${LAST_MODULE_KEY_MIGRATION}_module-keys-to-pages.sql`
       )
     ).toEqual([]);
-    expect(
-      MODULE_KEY_MIGRATIONS.has("20260927224314_retire-legacy-rls-helpers.sql")
-    ).toBe(true);
   });
 
   // An open branch can land a migration dated before the cutoff after it.

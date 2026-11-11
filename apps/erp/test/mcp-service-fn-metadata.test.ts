@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { moduleOf, PAGES } from "@carbon/database/access";
 import { Project } from "ts-morph";
 import { describe, expect, it } from "vitest";
 import { buildServiceFnTools } from "../../../scripts/lib/service-fn-metadata";
@@ -354,9 +353,24 @@ export const setCost = defineServiceFn({
       `{ anyOf: [{ "parts.tools": "View" }, { "parts.parts": "View" }] } as const`
     );
     // Item pages share one table, so a read on either is a read on Parts.
-    const parts = PAGES.filter((page) => moduleOf(page.id) === "parts").map(
-      (page) => page.id
-    );
+    const parts = [
+      "parts.parts",
+      "parts.materials",
+      "parts.tools",
+      "parts.consumables",
+      "parts.services",
+      "parts.changeNotices",
+      "parts.changeNoticeTypes",
+      "parts.changeNoticeActions",
+      "parts.dimensions",
+      "parts.finishes",
+      "parts.grades",
+      "parts.shapes",
+      "parts.substances",
+      "parts.types",
+      "parts.itemGroups",
+      "parts.units"
+    ];
     expect(list?.permission).toEqual({
       module: "parts",
       actions: ["view"],

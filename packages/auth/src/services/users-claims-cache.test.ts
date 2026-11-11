@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { REGISTRY_HASH } from "@carbon/database/access";
 import {
   afterAll,
   afterEach,
@@ -21,12 +22,12 @@ vi.hoisted(() => {
 });
 
 // An empty permission cache that records what is written to it.
-const cache = vi.hoisted(() => ({ writes: 0, deletes: [] as number[] }));
+const cache = vi.hoisted(() => ({ writes: 0, deleted: [] as string[] }));
 vi.mock("@carbon/kv", () => ({
   redis: {
     hget: async () => null,
     del: async (...keys: string[]) => {
-      cache.deletes.push(keys.length);
+      cache.deleted.push(...keys);
       return keys.length;
     },
     multi: () => {
@@ -47,7 +48,7 @@ const answer = vi.hoisted(() => ({ body: {} as unknown }));
 
 beforeEach(() => {
   cache.writes = 0;
-  cache.deletes = [];
+  cache.deleted = [];
   vi.stubGlobal(
     "fetch",
     async () =>
@@ -97,13 +98,16 @@ describe("getUserClaims", () => {
 });
 
 describe("clearClaims", () => {
-  it("deletes the cached claims 500 users at a time", async () => {
-    await clearClaims(Array.from({ length: 1201 }, (_, i) => `user-${i}`));
-    expect(cache.deletes).toEqual([500, 500, 201]);
+  it("deletes every user's cached claims", async () => {
+    const users = Array.from({ length: 1201 }, (_, i) => `user-${i}`);
+    await clearClaims(users);
+    expect(new Set(cache.deleted)).toEqual(
+      new Set(users.map((id) => `permissions:${REGISTRY_HASH}:${id}`))
+    );
   });
 
   it("sends nothing for no users", async () => {
     await clearClaims([]);
-    expect(cache.deletes).toEqual([]);
+    expect(cache.deleted).toEqual([]);
   });
 });

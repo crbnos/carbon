@@ -3,7 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 export type { EngineLogger, EngineStep } from "./execute";
-export { executeWorkflowRun, noAccess, walkWorkflow } from "./execute";
+export { executeWorkflowRun, walkWorkflow } from "./execute";
 export { failCrashedRun } from "./log";
 export type { ManualRunResult } from "./manual";
 export { executeManualWorkflowRun } from "./manual";
+export { noAccess } from "./owner";

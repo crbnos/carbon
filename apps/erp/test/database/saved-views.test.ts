@@ -7,9 +7,10 @@
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { sql } from "kysely";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect } from "vitest";
 import {
   connectLocalTestDatabase,
+  databaseTest,
   hasLocalDatabase
 } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
@@ -19,7 +20,6 @@ import {
 } from "../../app/modules/shared/shared.server";
 
 const client = hasLocalDatabase ? localServiceRoleClient() : null;
-const describeLocal = describe.skipIf(!client);
 
 const prefix = `viewtest-${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
 const ids = {
@@ -37,14 +37,12 @@ let db: Db;
 
 const as = (userId: string) =>
   createServiceContext({
-    // A member of the company: saved views need no module permission.
+    // A member of the company holding no page: saved views need none.
     actor: {
       type: "user",
       role: "employee",
       userId,
-      permissions: {
-        parts: { view: [ids.company], create: [], update: [], delete: [] }
-      }
+      permissions: {}
     },
     company: { id: ids.company, groupId: ids.group },
     caller: client!,
@@ -129,8 +127,8 @@ afterAll(async () => {
   await db.destroy();
 });
 
-describeLocal("a saved view", () => {
-  it("keeps its creator when someone else's call updates it", async () => {
+describe("a saved view", () => {
+  databaseTest("keeps its creator when someone else's call updates it", async () => {
     const result = await upsertSavedView(as(ids.other), {
       id: ids.first,
       name: "Renamed",
@@ -143,7 +141,7 @@ describeLocal("a saved view", () => {
     expect(first).toMatchObject({ createdBy: ids.owner, updatedBy: ids.other });
   });
 
-  it("is reordered with the caller's other views in one go", async () => {
+  databaseTest("is reordered with the caller's other views in one go", async () => {
     const result = await updateSavedViewOrder(as(ids.owner), {
       updates: [
         { id: ids.first, sortOrder: 2 },
@@ -159,7 +157,7 @@ describeLocal("a saved view", () => {
     ]);
   });
 
-  it("is not reordered when the reorder names another user's view", async () => {
+  databaseTest("is not reordered when the reorder names another user's view", async () => {
     const before = await views();
 
     const result = await updateSavedViewOrder(as(ids.owner), {

@@ -5,25 +5,35 @@
 // Runs against the local stack (SUPABASE_DB_URL and the PostgREST `crbn up`
 // started); skipped without one. The settings operations read and write
 // through the service role here, so their own company filters are the only
-// thing that keeps another company's rows out.
+// thing that keeps another company's rows out. A module's settings page
+// writes rows Settings → Company owns, so a caller holding that one page
+// saves them through the system handle, not through RLS.
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { sql } from "kysely";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect } from "vitest";
 import {
   connectLocalTestDatabase,
+  databaseTest,
   hasLocalDatabase
 } from "./fixtures/local-database";
-import { localServiceRoleClient } from "./fixtures/local-supabase";
+import {
+  localAnonClient,
+  localServiceRoleClient
+} from "./fixtures/local-supabase";
 import { pageClaims } from "../page-claims";
 import {
   createSubsidiary,
+  updateInventorySettings,
   updatePlanningSettings,
-  updateProductionSettings
+  updateProductionSettings,
+  updatePurchasingSettings,
+  updateResourcesSettings
 } from "../../app/modules/settings/settings.server";
 
 const client = hasLocalDatabase ? localServiceRoleClient() : null;
-const describeLocal = describe.skipIf(!client);
+/** A caller RLS refuses everything: a write that lands came as the system. */
+const anon = hasLocalDatabase ? localAnonClient() : null;
 
 const prefix = `settest-${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
 const ids = {
@@ -33,6 +43,7 @@ const ids = {
   theirs: `${prefix}-theirs`,
   theirGroup: `${prefix}-their-group`,
   theirLocation: `${prefix}-their-location`,
+  ourLocation: `${prefix}-our-location`,
   theirEmployeeType: `${prefix}-their-type`
 };
 
@@ -65,12 +76,38 @@ const ctx = () =>
     }
   });
 
-const theirLocation = () =>
+/** A caller in our company holding every action on `page`, and nothing else. */
+const pageOnly = (page: string) =>
+  createServiceContext({
+    actor: {
+      type: "user",
+      role: "employee",
+      userId: ids.user,
+      permissions: {
+        [page]: {
+          view: [ids.ours],
+          create: [ids.ours],
+          update: [ids.ours],
+          delete: [ids.ours]
+        }
+      }
+    },
+    company: { id: ids.ours, groupId: ids.ourGroup },
+    caller: anon!,
+    system: () => client!,
+    pg: () => db,
+    kv: () => {
+      throw new Error("No operation here reads the cache");
+    }
+  });
+
+const locationOf = (id: string) =>
   db
     .selectFrom("location")
     .select(["requiresStaffing", "responsibleEmployee"])
-    .where("id", "=", ids.theirLocation)
+    .where("id", "=", id)
     .executeTakeFirstOrThrow();
+const theirLocation = () => locationOf(ids.theirLocation);
 
 beforeAll(async () => {
   if (!client) return;
@@ -111,16 +148,28 @@ beforeAll(async () => {
       .execute();
     await trx
       .insertInto("location")
-      .values({
-        id: ids.theirLocation,
-        name: "Their plant",
-        addressLine1: "1 Test Way",
-        city: "Testville",
-        postalCode: "00000",
-        timezone: "America/New_York",
-        companyId: ids.theirs,
-        createdBy: ids.user
-      })
+      .values(
+        [
+          [ids.theirLocation, ids.theirs],
+          [ids.ourLocation, ids.ours]
+        ].map(([id, companyId]) => ({
+          id: id!,
+          name: id!,
+          addressLine1: "1 Test Way",
+          city: "Testville",
+          postalCode: "00000",
+          timezone: "America/New_York",
+          // An owner, so a refused change of it shows.
+          responsibleEmployee: ids.user,
+          companyId: companyId!,
+          createdBy: ids.user
+        }))
+      )
+      .execute();
+    await trx.insertInto("companySettings").values({ id: ids.ours }).execute();
+    await trx
+      .insertInto("companyAccountsPayableBillingAddress")
+      .values({ id: ids.ours })
       .execute();
     await trx
       .insertInto("employeeType")
@@ -174,8 +223,8 @@ afterAll(async () => {
   await db.destroy();
 });
 
-describeLocal("a settings operation", () => {
-  it("refuses another company's location for staffing", async () => {
+describe("a settings operation", () => {
+  databaseTest("refuses another company's location for staffing", async () => {
     const result = await updateProductionSettings(ctx(), {
       locationStaffing: {
         locationId: ids.theirLocation,
@@ -187,7 +236,7 @@ describeLocal("a settings operation", () => {
     expect((await theirLocation()).requiresStaffing).toBe(false);
   });
 
-  it("refuses an employee of another company as a responsible employee", async () => {
+  databaseTest("refuses an employee of another company as a responsible employee", async () => {
     const result = await updatePlanningSettings(ctx(), {
       defaultResponsibleEmployee: ids.user
     });
@@ -198,7 +247,7 @@ describeLocal("a settings operation", () => {
     });
   });
 
-  it("refuses another company's location for its owner", async () => {
+  databaseTest("refuses another company's location for its owner", async () => {
     const result = await updatePlanningSettings(ctx(), {
       locationResponsibleEmployee: {
         locationId: ids.theirLocation,
@@ -207,13 +256,11 @@ describeLocal("a settings operation", () => {
     });
 
     // Written as the system, for this company's locations only.
-    expect(result.error).toMatchObject({
-      category: "notFound",
-      message: "Location not found"
-    });
+    expect(result.error?.category).toBe("notFound");
+    expect((await theirLocation()).responsibleEmployee).toBe(ids.user);
   });
 
-  it("refuses a parent company from another company group", async () => {
+  databaseTest("refuses a parent company from another company group", async () => {
     const result = await createSubsidiary(ctx(), {
       name: `${prefix}-subsidiary`,
       addressLine1: "1 Main St",
@@ -229,5 +276,67 @@ describeLocal("a settings operation", () => {
       category: "notFound",
       message: "Parent company not found"
     });
+  });
+});
+
+describe("a caller with one settings page only", () => {
+  databaseTest("saves Settings → Inventory", async () => {
+    const result = await updateInventorySettings(
+      pageOnly("settings.inventory"),
+      { kanbanOutput: "label" }
+    );
+
+    expect(result.error).toBeNull();
+    const row = await db
+      .selectFrom("companySettings")
+      .select("kanbanOutput")
+      .where("id", "=", ids.ours)
+      .executeTakeFirstOrThrow();
+    expect(row.kanbanOutput).toBe("label");
+  });
+
+  databaseTest("saves the payables billing address", async () => {
+    const result = await updatePurchasingSettings(
+      pageOnly("settings.purchasing"),
+      { accountsPayableBillingAddress: { name: "Acme" } }
+    );
+
+    expect(result.error).toBeNull();
+    const row = await db
+      .selectFrom("companyAccountsPayableBillingAddress")
+      .select(["name", "updatedBy"])
+      .where("id", "=", ids.ours)
+      .executeTakeFirstOrThrow();
+    expect(row).toEqual({ name: "Acme", updatedBy: ids.user });
+  });
+
+  databaseTest("moves the suggestion group on the company row", async () => {
+    const result = await updateResourcesSettings(
+      pageOnly("settings.resources"),
+      { suggestionNotificationGroup: [ids.user] }
+    );
+
+    expect(result.error).toBeNull();
+    const row = await db
+      .selectFrom("company")
+      .select("suggestionNotificationGroup")
+      .where("id", "=", ids.ours)
+      .executeTakeFirstOrThrow();
+    expect(row.suggestionNotificationGroup).toEqual([ids.user]);
+  });
+
+  databaseTest("clears a location's planning owner", async () => {
+    const result = await updatePlanningSettings(
+      pageOnly("settings.planning"),
+      {
+        locationResponsibleEmployee: {
+          locationId: ids.ourLocation,
+          responsibleEmployee: null
+        }
+      }
+    );
+
+    expect(result.error).toBeNull();
+    expect((await locationOf(ids.ourLocation)).responsibleEmployee).toBeNull();
   });
 });

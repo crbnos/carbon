@@ -2,14 +2,21 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { readClaimsFresh } from "@carbon/auth";
 import { getUserScopedClient } from "@carbon/auth/client.server";
+import { readClaimsFresh } from "@carbon/auth/users";
 import type { Database } from "@carbon/database";
 import {
   admits,
+  type Claims,
   type ExpandedClaims,
+  type Gate,
+  holdsGate,
+  MODULES,
+  moduleOf,
+  pageById,
   userActor
 } from "@carbon/database/access";
+import { gatePages } from "@carbon/ee/workflows";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -51,6 +58,49 @@ export async function getOwnerClient(
   return client;
 }
 
+/**
+ * The permissions a workflow may act with: the owner's, while the owner is an
+ * employee of the company. A customer or supplier portal account, or claims
+ * that could not be read (`null`), runs nothing.
+ */
+export function ownerPermissionsOf(
+  claims: Claims | null,
+  companyId: string
+): ExpandedClaims | null {
+  if (claims === null) return null;
+  if (!admits(userActor(claims), companyId, "employee")) return null;
+  return claims.permissions;
+}
+
+/**
+ * The one wording for a lost permission: the gate's page label, or its module's
+ * label when the gate names several pages of one shared table. Exported because
+ * the builder's test-run route refuses with it too, and two copies would drift.
+ */
+export function noAccess(gate: Gate): string {
+  const pages = gatePages(gate);
+  const first: string = pages[0] ?? "";
+  const page = pages.length === 1 ? pageById(first) : undefined;
+  const area =
+    page?.label ??
+    MODULES.find((module) => module.id === moduleOf(first))?.label ??
+    first.charAt(0).toUpperCase() + first.slice(1);
+  return `The owner of this workflow no longer has access to ${area}.`;
+}
+
+/** Why the owner may not pass `gate` in the company, or `null` when they may
+ * (or when there is no gate). */
+export function ownerRefusal(
+  gate: Gate | undefined,
+  permissions: ExpandedClaims,
+  companyId: string
+): string | null {
+  if (gate === undefined || holdsGate(permissions, gate, companyId)) {
+    return null;
+  }
+  return noAccess(gate);
+}
+
 /** Not `getUserClaims`: that reads privileged, through a cache that a failed
  * clear leaves stale for up to an hour. This asks as the owner, uncached. */
 export async function readOwnerPermissions(
@@ -58,7 +108,7 @@ export async function readOwnerPermissions(
   ownerId: string,
   companyId: string
 ): Promise<ExpandedClaims | null> {
-  let claims: Awaited<ReturnType<typeof readClaimsFresh>>;
+  let claims: Claims;
   try {
     claims = await readClaimsFresh(client, ownerId, companyId);
   } catch (error) {
@@ -70,15 +120,13 @@ export async function readOwnerPermissions(
     return null;
   }
 
-  // A workflow acts as its owner only while the owner is an employee: a
-  // customer or supplier portal account runs nothing.
-  if (!admits(userActor(claims), companyId, "employee")) {
+  const permissions = ownerPermissionsOf(claims, companyId);
+  if (permissions === null) {
     log.warn("Workflow owner is not an employee of the company", {
       ownerId,
       companyId,
       role: claims.role
     });
-    return null;
   }
-  return claims.permissions;
+  return permissions;
 }

@@ -213,24 +213,6 @@ describe("readGate", () => {
     }
   });
 
-  it("lets View on any page of the module pass a read on one page", () => {
-    const gate = readGate({ "inventory.receipts": "View" } as const);
-    expect(
-      holdsGate(claimsFor("inventory.shipments", "view"), gate as never, "c1")
-    ).toBe(true);
-    expect(
-      holdsGate(claimsFor("sales.quotes", "view"), gate as never, "c1")
-    ).toBe(false);
-  });
-
-  it("leaves a write on one page as written", () => {
-    const gate = readGate({ "inventory.receipts": "Edit" } as const);
-    expect(gate).toEqual({ "inventory.receipts": "Edit" });
-    expect(
-      holdsGate(claimsFor("inventory.shipments", "update"), gate, "c1")
-    ).toBe(false);
-  });
-
   it("widens each value of a keyed rule, and each page of a list", () => {
     const keyed = readGate({
       by: "side",

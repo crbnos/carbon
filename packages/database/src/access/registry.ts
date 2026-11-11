@@ -358,7 +358,7 @@ export function urlCoverage(path: string, url: readonly string[]): number {
 /**
  * The page a URL belongs to: the page with the longest `paths` entry that
  * covers it. Undefined for a URL no page covers (the dashboard, a settings
- * index, a route listed in the registry test's `UNPAGED_ROUTES`).
+ * index, a route listed in @carbon/checks' `UNPAGED_ROUTES`).
  */
 export function pageOfUrl(pathname: string): PageId | undefined {
   const url = urlSegments(pathname);

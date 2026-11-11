@@ -9,16 +9,16 @@
 
 import { createServiceContext } from "@carbon/api/service-fn.server";
 import { sql } from "kysely";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect } from "vitest";
 import {
   connectLocalTestDatabase,
+  databaseTest,
   hasLocalDatabase
 } from "./fixtures/local-database";
 import { localServiceRoleClient } from "./fixtures/local-supabase";
 import { transferCompanyOwnership } from "../../app/modules/settings/settings.server";
 
 const client = hasLocalDatabase ? localServiceRoleClient() : null;
-const describeLocal = describe.skipIf(!client);
 
 const prefix = `owntest-${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
 const ids = {
@@ -182,8 +182,18 @@ afterAll(async () => {
   await db.destroy();
 });
 
-describeLocal("transferCompanyOwnership", () => {
-  it("refuses a caller who holds Billing at Edit but is not the owner", async () => {
+// Each test starts from the seeded owner, whatever ran before it.
+beforeEach(async () => {
+  if (!client) return;
+  await db
+    .updateTable("companyGroup")
+    .set({ ownerId: ids.owner })
+    .where("id", "=", ids.ourGroup)
+    .execute();
+});
+
+describe("transferCompanyOwnership", () => {
+  databaseTest("refuses a caller who holds Billing at Edit but is not the owner", async () => {
     const result = await transferCompanyOwnership(as(ids.admin), {
       newOwnerId: ids.admin
     });
@@ -192,7 +202,7 @@ describeLocal("transferCompanyOwnership", () => {
     expect(await ownerOfOurGroup()).toBe(ids.owner);
   });
 
-  it("refuses a new owner who is not an employee in the group", async () => {
+  databaseTest("refuses a new owner who is not an employee in the group", async () => {
     const result = await transferCompanyOwnership(as(ids.owner), {
       newOwnerId: ids.outsider
     });
@@ -201,7 +211,7 @@ describeLocal("transferCompanyOwnership", () => {
     expect(await ownerOfOurGroup()).toBe(ids.owner);
   });
 
-  it("hands the owner's group to an employee of it", async () => {
+  databaseTest("hands the owner's group to an employee of it", async () => {
     const result = await transferCompanyOwnership(as(ids.owner), {
       newOwnerId: ids.next
     });
@@ -216,11 +226,15 @@ describeLocal("transferCompanyOwnership", () => {
     expect(theirs.ownerId).toBe(ids.outsider);
   });
 
-  it("refuses the former owner afterwards", async () => {
+  databaseTest("refuses the former owner afterwards", async () => {
+    const handed = await transferCompanyOwnership(as(ids.owner), {
+      newOwnerId: ids.next
+    });
     const result = await transferCompanyOwnership(as(ids.owner), {
       newOwnerId: ids.owner
     });
 
+    expect(handed.error).toBeNull();
     expect(result.error?.category).toBe("forbidden");
     expect(await ownerOfOurGroup()).toBe(ids.next);
   });

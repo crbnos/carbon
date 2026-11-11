@@ -7,6 +7,7 @@ import { createGunzip } from "node:zlib";
 import { NotFoundError } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
 import type {
+  Actor,
   CarbonError,
   ServiceContext
 } from "@carbon/api/service-fn.server";
@@ -3584,6 +3585,14 @@ export async function getProviderDimensionTargets(
 
 type CompanySettingsUpdate =
   Database["public"]["Tables"]["companySettings"]["Update"];
+
+/**
+ * Whose console PIN turning console mode on generates: a person's own. An
+ * API key gets none, since whoever holds the key may not be its creator.
+ */
+export function consolePinUserId(actor: Actor): string | undefined {
+  return actor.type === "user" ? actor.userId : undefined;
+}
 
 /** The fields the caller sent: an absent (undefined) one is left out. */
 export function sentFields<T extends object>(fields: T): Partial<T> {

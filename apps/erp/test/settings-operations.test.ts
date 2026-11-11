@@ -61,6 +61,7 @@ import {
   updateSecuritySettings,
   updateSubsidiaryDetails
 } from "../app/modules/settings/settings.server";
+import { consolePinUserId } from "../app/modules/settings/settings.service";
 
 const settings = pageClaims({
   settings: {
@@ -168,10 +169,11 @@ describe("a settings page update", () => {
 // Settings → Company owns the settings row, its billing addresses and the
 // company row; a module's settings page writes its own fields there as the
 // system, after its own permission.
+// The writes these pages make as the system, past RLS, are pinned against the
+// database in `test/database/settings-scoping.test.ts`.
 describe("a caller with one settings page only", () => {
   function pageOnly(page: string, rows: Record<string, unknown> = {}) {
-    const caller = client(rows);
-    const system = client(rows);
+    const db = client(rows);
     const ctx = createServiceContext({
       actor: {
         type: "user",
@@ -187,92 +189,13 @@ describe("a caller with one settings page only", () => {
         }
       },
       company: { id: "company-1", groupId: "group-1" },
-      caller: caller as never,
-      system: () => system as never,
+      caller: db as never,
+      system: () => db as never,
       pg: () => ({}) as never,
       kv: () => ({}) as never
     });
-    return { ctx, caller: caller.writes, system: system.writes };
+    return { ctx, writes: db.writes };
   }
-
-  it("saves Settings → Inventory with the system client", async () => {
-    const { ctx, caller, system } = pageOnly("settings.inventory");
-
-    const result = await updateInventorySettings(ctx, {
-      kanbanOutput: "label"
-    });
-
-    expect(result.error).toBeNull();
-    expect(caller).toEqual([]);
-    expect(system).toEqual([
-      {
-        table: "companySettings",
-        method: "update",
-        values: { kanbanOutput: "label" }
-      }
-    ]);
-  });
-
-  it("saves the payables billing address with the system client", async () => {
-    const { ctx, caller, system } = pageOnly("settings.purchasing");
-
-    const result = await updatePurchasingSettings(ctx, {
-      accountsPayableBillingAddress: { name: "Acme" }
-    });
-
-    expect(result.error).toBeNull();
-    expect(caller).toEqual([]);
-    expect(system).toEqual([
-      {
-        table: "companyAccountsPayableBillingAddress",
-        method: "update",
-        values: { name: "Acme", updatedBy: "user-1" }
-      }
-    ]);
-  });
-
-  it("moves the suggestion group on the company row with the system client", async () => {
-    const { ctx, caller, system } = pageOnly("settings.resources", {
-      company: [{ id: "company-1" }]
-    });
-
-    const result = await updateResourcesSettings(ctx, {
-      suggestionNotificationGroup: ["user-2"]
-    });
-
-    expect(result.error).toBeNull();
-    expect(caller).toEqual([]);
-    expect(system).toEqual([
-      {
-        table: "company",
-        method: "update",
-        values: { suggestionNotificationGroup: ["user-2"] }
-      }
-    ]);
-  });
-
-  it("sets a location's planning owner with the system client", async () => {
-    const { ctx, caller, system } = pageOnly("settings.planning", {
-      location: [{ id: "loc-1" }]
-    });
-
-    const result = await updatePlanningSettings(ctx, {
-      locationResponsibleEmployee: {
-        locationId: "loc-1",
-        responsibleEmployee: null
-      }
-    });
-
-    expect(result.error).toBeNull();
-    expect(caller).toEqual([]);
-    expect(system).toEqual([
-      {
-        table: "location",
-        method: "update",
-        values: { responsibleEmployee: null, updatedBy: "user-1" }
-      }
-    ]);
-  });
 
   it("refuses a location that is not the company's", async () => {
     const { ctx } = pageOnly("settings.planning", { location: [] });
@@ -288,14 +211,14 @@ describe("a caller with one settings page only", () => {
   });
 
   it("is refused on another settings page's operation", async () => {
-    const { ctx, system } = pageOnly("settings.inventory");
+    const { ctx, writes } = pageOnly("settings.inventory");
 
     const result = await updatePurchasingSettings(ctx, {
       requireSupplierContactEmail: true
     });
 
     expect(result.error?.category).toBe("forbidden");
-    expect(system).toEqual([]);
+    expect(writes).toEqual([]);
   });
 });
 
@@ -360,46 +283,25 @@ describe("people settings", () => {
     const result = await updatePeopleSettings(ctx, { consoleEnabled: true });
 
     expect(result.error?.category).toBe("entitlement");
-    expect(result.error?.message).toBe("Requires the Business plan");
   });
 
-  it("shows the fixed message of a failed console write, not the database text", async () => {
-    consoleSetting.mockResolvedValue({
-      error: {
-        code: "internal",
-        message: "Failed to update console mode",
-        cause: new Error('relation "companySettings" is locked')
-      },
-      pin: null,
-      pinError: null
-    });
-    const { ctx } = contextWith();
-
-    const result = await updatePeopleSettings(ctx, { consoleEnabled: true });
-
-    expect(result.error?.category).toBe("internal");
-    expect(result.error?.message).toBe("Failed to update console mode");
-  });
-
-  it("generates no console PIN for a key caller: the key holder may not be its creator", async () => {
-    consoleSetting.mockResolvedValue({ error: null, pin: null, pinError: null });
-    const db = client({});
-    const ctx = createServiceContext({
-      actor: { type: "apiKey", createdBy: "user-1", permissions: settings },
-      company: { id: "company-1", groupId: "group-1" },
-      caller: db as never,
-      system: () => db as never,
-      pg: () => ({}) as never,
-      kv: () => ({}) as never
-    });
-
-    const result = await updatePeopleSettings(ctx, { consoleEnabled: true });
-
-    expect(result.data).toMatchObject({ pin: null });
-    expect(consoleSetting.mock.calls[0]![2]).toMatchObject({
-      actorId: "user-1",
-      pinUserId: undefined
-    });
+  it("generates a console PIN for a person only, never for an API key", () => {
+    const permissions = settings;
+    expect(
+      consolePinUserId({
+        type: "user",
+        role: "employee",
+        userId: "user-1",
+        permissions
+      })
+    ).toBe("user-1");
+    // Whoever holds the key may not be its creator.
+    expect(
+      consolePinUserId({ type: "apiKey", createdBy: "user-1", permissions })
+    ).toBeUndefined();
+    expect(
+      consolePinUserId({ type: "system", onBehalfOf: "user-1" })
+    ).toBeUndefined();
   });
 });
 

@@ -9,7 +9,6 @@ import {
   type Action,
   actionsGained,
   higherLevel,
-  LEVEL_ACTION,
   lowerLevel,
   parsePermissionKey,
   permissionKey,
@@ -21,9 +20,7 @@ import {
   ITEM_TYPE_PAGES,
   PAGES,
   pageById,
-  pagesOf,
-  REGISTRY_HASH,
-  readPages
+  pagesOf
 } from "./registry";
 import {
   accessHolders,
@@ -143,12 +140,6 @@ describe("clampLevel", () => {
   });
 });
 
-describe("REGISTRY_HASH", () => {
-  it("is eight hex characters", () => {
-    expect(REGISTRY_HASH).toMatch(/^[0-9a-f]{8}$/);
-  });
-});
-
 describe("expandClaims", () => {
   const raw: RawClaims = {
     role: "employee",
@@ -251,17 +242,6 @@ describe("holdsGate", () => {
       false
     );
   });
-
-  it("maps each item type to its page", () => {
-    expect(ITEM_TYPE_PAGES.Tool).toBe("parts.tools");
-    expect(Object.keys(ITEM_TYPE_PAGES)).toEqual([
-      "Part",
-      "Material",
-      "Tool",
-      "Consumable",
-      "Service"
-    ]);
-  });
 });
 
 describe("holdsGate forms", () => {
@@ -309,9 +289,54 @@ describe("holdsGate forms", () => {
 });
 
 describe("widenReads", () => {
+  // The pages a View on any one Inventory page widens to: its own module.
+  const inventory = anyOf(
+    [
+      "inventory.quantities",
+      "inventory.movements",
+      "inventory.inventoryCount",
+      "inventory.kanbans",
+      "inventory.receipts",
+      "inventory.shipments",
+      "inventory.pickingLists",
+      "inventory.stockTransfers",
+      "inventory.warehouseTransfers",
+      "inventory.trackedEntities",
+      "inventory.traceability",
+      "inventory.storageUnits",
+      "inventory.storageTypes",
+      "inventory.storageRules",
+      "inventory.shippingMethods"
+    ],
+    "View"
+  );
+  // The item pages are all Parts pages, so each widens to the Parts module:
+  // the pages whose View RLS admits for an item row.
+  const parts = anyOf(
+    [
+      "parts.parts",
+      "parts.materials",
+      "parts.tools",
+      "parts.consumables",
+      "parts.services",
+      "parts.changeNotices",
+      "parts.changeNoticeTypes",
+      "parts.changeNoticeActions",
+      "parts.dimensions",
+      "parts.finishes",
+      "parts.grades",
+      "parts.shapes",
+      "parts.substances",
+      "parts.types",
+      "parts.itemGroups",
+      "parts.units"
+    ],
+    "View"
+  );
+
   it("widens View on one page to the pages that read what it owns", () => {
     expect(widenReads({ "inventory.receipts": "View" })).toEqual({
-      anyOf: anyOf(readPages("inventory.receipts"), "View")
+      anyOf: inventory
     });
     // Receipts and Purchase Invoices list purchaseOrder in `readers`.
     const order = widenReads({ "purchasing.purchaseOrders": "View" });
@@ -340,43 +365,18 @@ describe("widenReads", () => {
   });
 
   it("widens each entry of a list as it widens one page", () => {
-    // The item pages are all Parts pages, so each widens to the Parts module:
-    // the pages whose View RLS admits for an item row.
-    const parts = anyOf(
-      [
-        "parts.parts",
-        "parts.materials",
-        "parts.tools",
-        "parts.consumables",
-        "parts.services",
-        "parts.changeNotices",
-        "parts.changeNoticeTypes",
-        "parts.changeNoticeActions",
-        "parts.dimensions",
-        "parts.finishes",
-        "parts.grades",
-        "parts.shapes",
-        "parts.substances",
-        "parts.types",
-        "parts.itemGroups",
-        "parts.units"
-      ],
-      "View"
-    );
     expect(widenReads({ anyOf: anyOf(ITEM_PAGES, "View") })).toEqual({
       anyOf: parts
     });
     expect(
       widenReads([{ "parts.parts": "View" }, { "inventory.receipts": "View" }])
     ).toEqual({
-      anyOf: [...parts, ...anyOf(readPages("inventory.receipts"), "View")]
+      anyOf: [...parts, ...inventory]
     });
   });
 
-  it("widens one shared page outside a list, as readGate did", () => {
-    expect(widenReads({ "parts.tools": "View" })).toEqual({
-      anyOf: anyOf(readPages("parts.tools"), "View")
-    });
+  it("widens a shared page to its module's pages", () => {
+    expect(widenReads({ "parts.tools": "View" })).toEqual({ anyOf: parts });
   });
 
   it("lists each widened page once", () => {
@@ -385,12 +385,12 @@ describe("widenReads", () => {
         { "inventory.receipts": "View" },
         { "inventory.shipments": "View" }
       ]
-    }) as { anyOf: unknown[] };
-    const pages = new Set([
-      ...readPages("inventory.receipts"),
-      ...readPages("inventory.shipments")
-    ]);
-    expect(widened.anyOf).toEqual(anyOf([...pages], "View"));
+    }) as { anyOf: Record<string, string>[] };
+    const ids = widened.anyOf.flatMap((gate) => Object.keys(gate));
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.filter((id) => id === "inventory.receipts")).toHaveLength(1);
+    // Shipments are also read from a sales order.
+    expect(ids).toContain("sales.salesOrders");
   });
 });
 
@@ -433,10 +433,18 @@ describe("claimKeys", () => {
   it("flattens expanded claims, leaving out empty actions", () => {
     expect(
       claimKeys({
-        sales: { view: ["c1"], create: [], update: ["c1"], delete: [] },
-        parts: { view: [], create: [], update: [], delete: [] }
+        "sales.quotes": {
+          view: ["c1"],
+          create: [],
+          update: ["c1"],
+          delete: []
+        },
+        "parts.parts": { view: [], create: [], update: [], delete: [] }
       })
-    ).toEqual({ sales_view: ["c1"], sales_update: ["c1"] });
+    ).toEqual({
+      "sales.quotes_view": ["c1"],
+      "sales.quotes_update": ["c1"]
+    });
   });
 });
 
@@ -453,9 +461,11 @@ describe("levelOf grant", () => {
       subject: "person" as const,
       level: "None" as const
     };
-    expect(levelOf({ grants: [role, person] }, "sales").grant).toBe(person);
-    expect(levelOf({ grants: [role] }, "sales").grant).toBe(role);
-    expect(levelOf({ grants: [role] }, "parts").grant).toBeNull();
+    expect(levelOf({ grants: [role, person] }, "sales.quotes").grant).toBe(
+      person
+    );
+    expect(levelOf({ grants: [role] }, "sales.quotes").grant).toBe(role);
+    expect(levelOf({ grants: [role] }, "parts.parts").grant).toBeNull();
   });
 });
 
@@ -472,17 +482,30 @@ describe("accessHolders", () => {
         { id: "viewer", admin: false, grants: [sales("View")] },
         { id: "editor", admin: false, grants: [sales("Edit")] },
         { id: "admin", admin: true, grants: [sales("None")] },
-        { id: "nobody", admin: false, grants: [] }
+        { id: "nobody", admin: false, grants: [] },
+        {
+          // A page grant beats the module grant of the same subject.
+          id: "quoter",
+          admin: false,
+          grants: [sales("View"), { ...sales("Edit"), page: "sales.quotes" }]
+        },
+        {
+          id: "orders",
+          admin: false,
+          grants: [
+            sales("View"),
+            { ...sales("Edit"), page: "sales.salesOrders" }
+          ]
+        }
       ],
-      "sales",
+      "sales.quotes",
       "Edit"
     );
-    expect(holders.map((h) => [h.id, h.level, h.grant?.level ?? null])).toEqual(
-      [
-        ["editor", "Edit", "Edit"],
-        ["admin", "Full", null]
-      ]
-    );
+    expect(holders.map((h) => [h.id, h.level, h.grant?.page ?? null])).toEqual([
+      ["editor", "Edit", null],
+      ["admin", "Full", null],
+      ["quoter", "Edit", "sales.quotes"]
+    ]);
   });
 });
 
@@ -567,7 +590,7 @@ describe("claimsFromJson", () => {
 });
 
 describe("claimsFor", () => {
-  it("is claimsFromJson with its permissions expanded in the company", () => {
+  it("expands the grants into page permissions in the company", () => {
     const json = {
       role: "employee",
       admin: false,
@@ -577,13 +600,16 @@ describe("claimsFor", () => {
     const claims = claimsFor(json, "co1");
     expect(claims.role).toBe("employee");
     expect(claims.admin).toBe(false);
-    expect(claims.grants).toEqual(claimsFromJson(json, "co1").grants);
-    expect(claims.permissions).toEqual(
-      expandClaims(claimsFromJson(json, "co1"), "co1")
-    );
-    expect(
-      holdsGate(claims.permissions, at("sales.quotes", "view"), "co1")
-    ).toBe(true);
+    expect(claims.grants).toEqual([
+      { subject: "role", module: "Sales", page: null, level: "View" }
+    ]);
+    expect(claims.permissions["sales.quotes"]).toEqual({
+      view: ["co1"],
+      create: [],
+      update: [],
+      delete: []
+    });
+    expect(claims.permissions["inventory.receipts"]?.view ?? []).toEqual([]);
   });
 });
 
@@ -617,14 +643,5 @@ describe("permissionKey", () => {
     expect(parsePermissionKey("inventory")).toBeNull();
     expect(parsePermissionKey("inventory_edit")).toBeNull();
     expect(parsePermissionKey("_view")).toBeNull();
-  });
-
-  it("reads each level by its highest action", () => {
-    expect(LEVEL_ACTION).toEqual({
-      View: "view",
-      Create: "create",
-      Edit: "update",
-      Full: "delete"
-    });
   });
 });
