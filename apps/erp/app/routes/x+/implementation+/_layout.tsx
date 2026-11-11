@@ -4,12 +4,14 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
+  checkStatesForCustomer,
   EMPTY_EXCLUSIONS,
   type HubContacts,
   type HubExclusions,
   hasPriorityCard,
   hubAccess,
   type ImplementationRowData,
+  rowsForCustomer,
   UNENROLLED_HUB
 } from "@carbon/implementation-hub";
 import {
@@ -256,9 +258,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
           contacts: hub.data.contacts as unknown
         }
       : UNENROLLED_HUB,
-    checkStates: checkStates.data ?? [],
+    // The company's own people get no staff-only detail: hiding it on screen
+    // alone would leave it in the page data.
+    checkStates: isStaff
+      ? (checkStates.data ?? [])
+      : checkStatesForCustomer(checkStates.data ?? []),
     fieldValues: fieldValues.data ?? [],
-    rows: rows.data ?? [],
+    rows: isStaff ? (rows.data ?? []) : rowsForCustomer(rows.data ?? []),
     signals,
     counts,
     assignments: assignments.data ?? [],
