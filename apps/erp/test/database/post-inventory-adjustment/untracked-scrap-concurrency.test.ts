@@ -3,23 +3,18 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { KyselyDatabase } from "@carbon/database/client";
-import { type Kysely, sql } from "kysely";
+import type { Kysely } from "kysely";
 import { expect } from "vitest";
 import { postInventoryAdjustment as postInventoryAdjustmentBody } from "../../../app/modules/inventory/inventory.service";
 import { invokePosting } from "../../../app/modules/shared/shared.service";
 import { handlesOf } from "../fixtures/handles";
 import {
+  backendPid,
   connectLocalTestDatabase,
-  databaseTest
+  databaseTest,
+  waitForLockWaits
 } from "../fixtures/local-database";
 import { projectPostingFixture } from "../fixtures/project-posting";
-
-const backendPid = async (db: Kysely<KyselyDatabase>) =>
-  (
-    await sql<{
-      pid: number;
-    }>`SELECT pg_backend_pid() AS pid`.execute(db)
-  ).rows[0]!.pid;
 
 databaseTest("two untracked scraps of one item at once both post", async () => {
   const f = await projectPostingFixture();
@@ -75,14 +70,7 @@ databaseTest("two untracked scraps of one item at once both post", async () => {
 
     const scrapPids = [await backendPid(left), await backendPid(right)];
     const scraps = Promise.all([scrap(left), scrap(right)]);
-    for (let waiting = 0; waiting < 2; ) {
-      const result = await sql<{ waiting: number }>`
-        SELECT count(*)::int AS waiting FROM pg_stat_activity
-        WHERE pid IN (${sql.join(scrapPids)}) AND wait_event_type = 'Lock'`.execute(
-        f.db
-      );
-      waiting = result.rows[0]!.waiting;
-    }
+    await waitForLockWaits(f.db, scrapPids);
     release();
     await held;
 

@@ -8,7 +8,7 @@ import {
   getPostgresClient,
   type KyselyDatabase
 } from "@carbon/database/client";
-import { PostgresDriver, sql } from "kysely";
+import { type Kysely, PostgresDriver, sql } from "kysely";
 import { Pool } from "pg";
 import { it } from "vitest";
 
@@ -53,4 +53,30 @@ export async function connectLocalTestDatabase() {
     db
   );
   return db;
+}
+
+/** The backend process id of a one-connection handle. */
+export async function backendPid(db: Kysely<KyselyDatabase>) {
+  const { rows } = await sql<{
+    pid: number;
+  }>`SELECT pg_backend_pid() AS pid`.execute(db);
+  return rows[0]!.pid;
+}
+
+/** Resolves once every one of `pids` waits on a lock; throws after 15 s. */
+export async function waitForLockWaits(
+  db: Kysely<KyselyDatabase>,
+  pids: number[]
+) {
+  const deadline = performance.now() + 15_000;
+  while (performance.now() < deadline) {
+    const { rows } = await sql<{ waiting: number }>`
+      SELECT count(*)::int AS waiting FROM pg_stat_activity
+      WHERE pid IN (${sql.join(pids)}) AND wait_event_type = 'Lock'`.execute(
+      db
+    );
+    if (rows[0]!.waiting === pids.length) return;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  throw new Error(`Connections ${pids.join(", ")} never waited on a lock`);
 }
