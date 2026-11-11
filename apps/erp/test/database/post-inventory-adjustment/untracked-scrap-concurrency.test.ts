@@ -21,6 +21,9 @@ databaseTest("two untracked scraps of one item at once both post", async () => {
   const left = await connectLocalTestDatabase();
   const right = await connectLocalTestDatabase();
   const holder = await connectLocalTestDatabase();
+  let release = () => {};
+  let held: Promise<void> = Promise.resolve();
+  let scraps: Promise<unknown> | undefined;
   try {
     const { itemId, locationId } = await f.addStockedItem("scrapped", {
       quantity: 10,
@@ -51,9 +54,7 @@ databaseTest("two untracked scraps of one item at once both post", async () => {
 
     // Another adjustment of the item holds a share lock on it, so both scraps
     // reach the item lock before either can take it.
-    let release = () => {};
-    let held: Promise<void> = Promise.resolve();
-    await new Promise<void>((locked) => {
+    await new Promise<void>((locked, failed) => {
       held = holder.transaction().execute(async (trx) => {
         await trx
           .selectFrom("item")
@@ -66,15 +67,17 @@ databaseTest("two untracked scraps of one item at once both post", async () => {
           release = resolve;
         });
       });
+      held.catch(failed);
     });
 
     const scrapPids = [await backendPid(left), await backendPid(right)];
-    const scraps = Promise.all([scrap(left), scrap(right)]);
+    const posting = Promise.all([scrap(left), scrap(right)]);
+    scraps = posting;
     await waitForLockWaits(f.db, scrapPids);
     release();
     await held;
 
-    const results = await scraps;
+    const results = await posting;
     expect(results.map((result) => result.error)).toEqual([null, null]);
     const onHand = await f.db
       .selectFrom("itemLedger")
@@ -84,6 +87,10 @@ databaseTest("two untracked scraps of one item at once both post", async () => {
       .executeTakeFirstOrThrow();
     expect(Number(onHand.quantity)).toEqual(8);
   } finally {
+    // A failed wait still ends every transaction, so the connections close.
+    release();
+    await held.catch(() => {});
+    await scraps?.catch(() => {});
     await left.destroy();
     await right.destroy();
     await holder.destroy();
