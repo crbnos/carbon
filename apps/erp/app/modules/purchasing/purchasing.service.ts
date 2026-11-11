@@ -245,6 +245,9 @@ import {
   planReceiptReversal,
   purchaseOrderEditRefusal,
   purchaseOrderForceDeleteNotificationId,
+  purchaseOrderForceDeletePendingReceiptMessage,
+  purchaseOrderForceDeleteUnsupportedReceiptMessage,
+  purchaseOrderForceDeleteUsedStockMessage,
   purchaseOrderFundsRefusal,
   purchaseOrderLineAmendRefusal,
   purchaseOrderLineDateOfOrderDate,
@@ -8516,6 +8519,62 @@ export async function planPurchaseOrderReceiptReversal(
       .filter((receipt) => unsupportedIds.has(receipt.id))
       .map((receipt) => receipt.readableId)
   };
+}
+
+/**
+ * Why the order's receipts keep a force delete from going ahead (`refusal`),
+ * else the plan that reverses them. Refused for one
+ * still being posted, or one whose stock was since used or moved to another
+ * location (`planPurchaseOrderReceiptReversal`). After step 1's voids
+ * (`afterVoid`), a posted receipt left that an adjustment cannot stand in for
+ * is refused too.
+ */
+export async function forceDeleteReceiptRefusal(
+  db: Parameters<typeof planPurchaseOrderReceiptReversal>[0],
+  {
+    companyId,
+    receipts,
+    afterVoid = false
+  }: {
+    companyId: string;
+    receipts: PurchaseOrderForceDeleteReceipt[];
+    afterVoid?: boolean;
+  }
+): Promise<
+  | { refusal: string; plan: null }
+  | {
+      refusal: null;
+      plan: Awaited<ReturnType<typeof planPurchaseOrderReceiptReversal>>;
+    }
+> {
+  const pending = receipts.filter((receipt) => receipt.status === "Pending");
+  if (pending.length > 0) {
+    return {
+      refusal: purchaseOrderForceDeletePendingReceiptMessage(
+        pending.map((receipt) => receipt.readableId)
+      ),
+      plan: null
+    };
+  }
+  const plan = await planPurchaseOrderReceiptReversal(db, {
+    companyId,
+    receipts
+  });
+  if (plan.short.length > 0) {
+    return {
+      refusal: purchaseOrderForceDeleteUsedStockMessage(plan.short),
+      plan: null
+    };
+  }
+  if (afterVoid && plan.unsupported.length > 0) {
+    return {
+      refusal: purchaseOrderForceDeleteUnsupportedReceiptMessage(
+        plan.unsupported
+      ),
+      plan: null
+    };
+  }
+  return { refusal: null, plan };
 }
 
 /**

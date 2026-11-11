@@ -114,9 +114,6 @@ import {
   purchaseOrderEditRefusal,
   purchaseOrderForceDeleteApprovalRefusal,
   purchaseOrderForceDeleteBlockerMessage,
-  purchaseOrderForceDeletePendingReceiptMessage,
-  purchaseOrderForceDeleteUnsupportedReceiptMessage,
-  purchaseOrderForceDeleteUsedStockMessage,
   purchaseOrderForceDeleteWithdrawRefusal,
   purchaseOrderLineDateFields,
   purchaseOrderLineDateRefusal,
@@ -2401,64 +2398,6 @@ const NOT_ADMIN_FORCE_DELETE =
   "Only an Admin can force delete a purchase order";
 
 /**
- * Why the order's receipts keep a force delete from going ahead (`refusal`),
- * else the plan that reverses them. Refused for one
- * still being posted, or one whose stock was since used or moved to another
- * location (`planPurchaseOrderReceiptReversal`). After step 1's voids
- * (`afterVoid`), a posted receipt left that an adjustment cannot stand in for
- * is refused too.
- */
-async function forceDeleteReceiptRefusal(
-  db: Parameters<typeof service.planPurchaseOrderReceiptReversal>[0],
-  {
-    companyId,
-    receipts,
-    afterVoid = false
-  }: {
-    companyId: string;
-    receipts: service.PurchaseOrderForceDeleteReceipt[];
-    afterVoid?: boolean;
-  }
-): Promise<
-  | { refusal: string; plan: null }
-  | {
-      refusal: null;
-      plan: Awaited<
-        ReturnType<typeof service.planPurchaseOrderReceiptReversal>
-      >;
-    }
-> {
-  const pending = receipts.filter((receipt) => receipt.status === "Pending");
-  if (pending.length > 0) {
-    return {
-      refusal: purchaseOrderForceDeletePendingReceiptMessage(
-        pending.map((receipt) => receipt.readableId)
-      ),
-      plan: null
-    };
-  }
-  const plan = await service.planPurchaseOrderReceiptReversal(db, {
-    companyId,
-    receipts
-  });
-  if (plan.short.length > 0) {
-    return {
-      refusal: purchaseOrderForceDeleteUsedStockMessage(plan.short),
-      plan: null
-    };
-  }
-  if (afterVoid && plan.unsupported.length > 0) {
-    return {
-      refusal: purchaseOrderForceDeleteUnsupportedReceiptMessage(
-        plan.unsupported
-      ),
-      plan: null
-    };
-  }
-  return { refusal: null, plan };
-}
-
-/**
  * Ask to force delete a purchase order.
  *
  * @remarks
@@ -2525,10 +2464,13 @@ export const requestPurchaseOrderForceDelete = defineServiceFn({
       companyId,
       purchaseOrderId
     });
-    const { refusal: receiptRefusal } = await forceDeleteReceiptRefusal(db, {
-      companyId,
-      receipts
-    });
+    const { refusal: receiptRefusal } = await service.forceDeleteReceiptRefusal(
+      db,
+      {
+        companyId,
+        receipts
+      }
+    );
     if (receiptRefusal) return ctx.error("rule", receiptRefusal);
 
     let requestId: string;
@@ -2770,7 +2712,7 @@ export const decidePurchaseOrderForceDelete = defineServiceFn({
           purchaseOrderId,
           lock: true
         });
-        const reversible = await forceDeleteReceiptRefusal(db, {
+        const reversible = await service.forceDeleteReceiptRefusal(db, {
           companyId,
           receipts,
           afterVoid: true
