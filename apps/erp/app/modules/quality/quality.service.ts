@@ -5218,9 +5218,20 @@ export async function closeIssue(
   }
 
   let settled = false;
+  // An error thrown inside the transaction's callback rolled it back: nothing
+  // posted. Any other (the commit itself) may have committed.
+  let rolledBack = false;
   try {
     let warning: string | undefined;
     const result = await db.transaction().execute(async (trx) => {
+      try {
+        return await closeInTransaction(trx);
+      } catch (error) {
+        rolledBack = true;
+        throw error;
+      }
+    });
+    async function closeInTransaction(trx: KyselyTx) {
       const { status } = await lockIssueDispositions(trx, {
         nonConformanceId,
         companyId
@@ -5646,7 +5657,7 @@ export async function closeIssue(
       }
 
       return { id: updated.id, closedNow: true };
-    });
+    }
 
     const { closedNow, ...closed } = result;
     settled = true;
@@ -5677,7 +5688,9 @@ export async function closeIssue(
       nonConformanceId,
       error: err
     });
-    if (!settled) await args.scrapApproval?.settle({ error: err });
+    if (!settled) {
+      await args.scrapApproval?.settle(rolledBack ? "refused" : { error: err });
+    }
     return engine.engineErrResult(err, "Failed to close NCR");
   }
 }
