@@ -27,6 +27,7 @@ import { verify } from "./verifier.server";
 const logger = getLogger("ee", "licence");
 
 export { LICENCE_ENFORCED } from "./entitlement";
+export { loadVerifier } from "./verifier.server";
 
 const CACHE_MS = 60_000;
 

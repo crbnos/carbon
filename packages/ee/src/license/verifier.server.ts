@@ -18,9 +18,10 @@ declare global {
 let loaded: Promise<void> | null = null;
 
 /**
- * Starts the verifier once per process: about 12 ms to decompress. Imported
- * on first use, so a process that never verifies (Cloud, Community) never
- * loads the 1.4 MB module or the globals wasm_exec.js sets (fs, path).
+ * Starts the verifier once per process: about 12 ms to decompress. The ERP
+ * server calls it at boot on Enterprise only, so Cloud and Community never
+ * load the 1.4 MB module or the globals wasm_exec.js sets (fs, path). A
+ * failed load is retried on the next call.
  */
 export function loadVerifier(): Promise<void> {
   loaded ??= (async () => {
@@ -43,7 +44,10 @@ export function loadVerifier(): Promise<void> {
     if (!globalThis.crbnClp) {
       throw new Error("licence: the verifier did not register crbnClp");
     }
-  })();
+  })().catch((error) => {
+    loaded = null;
+    throw error;
+  });
   return loaded;
 }
 
