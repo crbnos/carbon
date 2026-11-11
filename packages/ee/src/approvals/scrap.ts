@@ -174,3 +174,26 @@ export function failedScrapPostingSettlement(args: {
   if (args.committed === false && args.refused) return "discard";
   return "keep";
 }
+
+/**
+ * Whether a failed scrap write is known not to have happened. A refusal is:
+ * a 4xx answer, or an error raised inside the write's transaction, which
+ * rolled it back. A lost answer is not (no status or a 5xx, a dropped
+ * connection): the write may have committed, so its approval stays, not
+ * confirmed.
+ */
+export function scrapWriteFailure(error: unknown): "refused" | "unknown" {
+  if (!error || typeof error !== "object") return "unknown";
+  const { status, code } = error as { status?: unknown; code?: unknown };
+  if (typeof status === "number") {
+    return status >= 400 && status < 500 ? "refused" : "unknown";
+  }
+  if (typeof code === "string" && code !== "") {
+    // SQLSTATE classes of a lost connection or a failing server, and the
+    // driver's own socket errors.
+    return /^(08|53|57|58)/.test(code) || /^E[A-Z]/.test(code)
+      ? "unknown"
+      : "refused";
+  }
+  return error instanceof Error ? "refused" : "unknown";
+}

@@ -27,7 +27,7 @@ import type {
   ScrapSubject
 } from "./types";
 
-export { failedScrapPostingSettlement } from "./scrap";
+export { failedScrapPostingSettlement, scrapWriteFailure } from "./scrap";
 
 const logger = getLogger("ee", "scrap-approval");
 
