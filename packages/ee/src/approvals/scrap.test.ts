@@ -216,8 +216,7 @@ describe("scrapWriteFailure", () => {
   it.each([
     [{ status: 409, code: "23505" }, "refused"],
     [{ status: 422 }, "refused"],
-    [{ code: "P0001" }, "refused"],
-    [new Error("Disposition changed while closing; please retry."), "refused"]
+    [{ code: "P0001" }, "refused"]
   ] as const)("knows %o did not write", (error, expected) => {
     expect(scrapWriteFailure(error)).toBe(expected);
   });
@@ -229,6 +228,7 @@ describe("scrapWriteFailure", () => {
     [{ code: "08006" }, "unknown"],
     [{ code: "57P01" }, "unknown"],
     [{ code: "ECONNRESET" }, "unknown"],
+    [new Error("Connection terminated unexpectedly"), "unknown"],
     [null, "unknown"]
   ] as const)("cannot tell whether %o wrote", (error, expected) => {
     expect(scrapWriteFailure(error)).toBe(expected);

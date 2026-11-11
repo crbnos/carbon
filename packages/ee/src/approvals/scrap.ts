@@ -177,8 +177,7 @@ export function failedScrapPostingSettlement(args: {
 
 /**
  * Whether a failed scrap write is known not to have happened. A refusal is:
- * a 4xx answer, or an error raised inside the write's transaction, which
- * rolled it back. A lost answer is not (no status or a 5xx, a dropped
+ * a 4xx answer, or a database error (a SQLSTATE), which aborts the write. A lost answer is not (no status or a 5xx, a dropped
  * connection): the write may have committed, so its approval stays, not
  * confirmed.
  */
@@ -195,5 +194,8 @@ export function scrapWriteFailure(error: unknown): "refused" | "unknown" {
       ? "unknown"
       : "refused";
   }
-  return error instanceof Error ? "refused" : "unknown";
+  // An untyped error (a dropped socket, a timeout, a failed commit) says
+  // nothing of the outcome; a caller that knows its transaction rolled back
+  // says "refused" itself.
+  return "unknown";
 }
