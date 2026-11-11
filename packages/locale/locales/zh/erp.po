@@ -28234,6 +28234,9 @@ msgstr "解决方案工程师"
 msgid "Some balances have no Carbon account"
 msgstr "某些余额没有 Carbon 账户"
 
+msgid "some files may be missing"
+msgstr ""
+
 msgid "Some inputs have another unit and are left out"
 msgstr "某些输入具有另一个单位并被排除"
 
@@ -35076,6 +35079,9 @@ msgstr "您的零件编号"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "您的零件编号和背后的物料主数据"
+
+msgid "Your previous data is back, but some files couldn't be restored. Revert again to retry them."
+msgstr ""
 
 msgid "Your previous data is back, exactly as it was before the restore."
 msgstr "您之前的数据已恢复，与恢复前完全一致。"

@@ -66,6 +66,13 @@ export type TableInfo = {
    * would collide (`isUserScopedIdentityTable`); PK alone misses unique-index keys.
    */
   uniqueColumns: string[];
+  /**
+   * Columns of PARTIAL unique indexes (`… WHERE "endTime" IS NULL`). Kept apart
+   * from `uniqueColumns`: they constrain only some rows (an open clock), so
+   * they don't make a table per-user identity, but a foreign load that
+   * collapses a user column in one can still collide (`collidesOnCollapse`).
+   */
+  partialUniqueColumns?: string[];
   /** true when the primary key is exactly the single column "id" */
   hasId: boolean;
   foreignKeys: ForeignKey[];
@@ -194,6 +201,56 @@ function stronglyConnectedComponents(
 }
 
 /**
+ * Give a column that reaches an `id` only through a composite FK onto another
+ * table's NON-id column its id edge. `projectElementCost (projectElementId,
+ * projectId, companyId) -> projectElement (id, projectId, companyId)` names no
+ * FK to `project.id`, yet `projectElement.projectId` is one — so
+ * `projectElementCost.projectId -> project.id` is added. Without it the remap,
+ * the closure check and the load's FK check never see the column, and a
+ * foreign load kept the source company's project id. Mutates `fksByTable`;
+ * every table's FKs must be in it, since the ref table may be outside the
+ * catalog.
+ */
+export function addDerivedIdForeignKeys(
+  fksByTable: Map<string, ForeignKey[]>
+): void {
+  for (const fks of fksByTable.values()) {
+    const columns = new Set(fks.map((f) => f.column));
+    for (const column of columns) {
+      const own = fks.filter((f) => f.column === column);
+      if (own.some((f) => f.refColumn === "id")) continue;
+      for (const f of own) {
+        const through = fksByTable
+          .get(f.refTable)
+          ?.find((r) => r.column === f.refColumn && r.refColumn === "id");
+        if (through) {
+          fks.push({ column, refTable: through.refTable, refColumn: "id" });
+          break;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * The FK a column's value follows: its `id` edge when it has one. A column in
+ * a composite FK also carries an entry for the ref table's non-id column
+ * (`job.projectId -> projectElement.projectId`), which must not win.
+ */
+export function idForeignKeyByColumn(
+  table: Pick<TableInfo, "foreignKeys">
+): Map<string, ForeignKey> {
+  const byColumn = new Map<string, ForeignKey>();
+  for (const fk of table.foreignKeys) {
+    const current = byColumn.get(fk.column);
+    if (!current || (current.refColumn !== "id" && fk.refColumn === "id")) {
+      byColumn.set(fk.column, fk);
+    }
+  }
+  return byColumn;
+}
+
+/**
  * Build the catalog of tenant-scoped tables (public base tables with a
  * "companyId" or "companyGroupId" column), their columns, FK edges and a
  * topological order. A table that has both columns is companyId-scoped.
@@ -254,8 +311,13 @@ export async function getCompanyTableCatalog(
 
   // Columns in ANY unique index (covers PKs, unique constraints, and bare
   // CREATE UNIQUE INDEX). `attnum = ANY(indkey)` skips expression-index entries.
-  const uniqueColumns = await sql<{ table_name: string; column_name: string }>`
-    SELECT t.relname AS table_name, a.attname AS column_name
+  const uniqueColumns = await sql<{
+    table_name: string;
+    column_name: string;
+    partial: boolean;
+  }>`
+    SELECT t.relname AS table_name, a.attname AS column_name,
+           ix.indpred IS NOT NULL AS partial
     FROM pg_index ix
     JOIN pg_class t ON t.oid = ix.indrelid
     JOIN pg_namespace nsp ON nsp.oid = t.relnamespace
@@ -282,6 +344,7 @@ export async function getCompanyTableCatalog(
     JOIN pg_attribute tatt
       ON tatt.attrelid = tgt.oid AND tatt.attnum = u.fattnum
     WHERE con.contype = 'f' AND nsp.nspname = 'public'
+    ORDER BY src.relname, con.conname, u.ord
   `.execute(db);
 
   const allFksByTable = new Map<string, ForeignKey[]>();
@@ -294,6 +357,7 @@ export async function getCompanyTableCatalog(
     });
     allFksByTable.set(f.table_name, list);
   }
+  addDerivedIdForeignKeys(allFksByTable);
 
   const scope = new Map<string, Scope>();
   const scopeRoot = new Map<string, "companyId" | "companyGroupId">();
@@ -362,22 +426,12 @@ export async function getCompanyTableCatalog(
   }
 
   const uniqueColumnsByTable = new Map<string, Set<string>>();
+  const partialUniqueByTable = new Map<string, Set<string>>();
   for (const u of uniqueColumns.rows) {
-    const set = uniqueColumnsByTable.get(u.table_name) ?? new Set<string>();
+    const byTable = u.partial ? partialUniqueByTable : uniqueColumnsByTable;
+    const set = byTable.get(u.table_name) ?? new Set<string>();
     set.add(u.column_name);
-    uniqueColumnsByTable.set(u.table_name, set);
-  }
-
-  const fksByTable = new Map<string, ForeignKey[]>();
-  for (const f of foreignKeys.rows) {
-    if (!tableSet.has(f.table_name)) continue;
-    const list = fksByTable.get(f.table_name) ?? [];
-    list.push({
-      column: f.column_name,
-      refTable: f.ref_table,
-      refColumn: f.ref_column
-    });
-    fksByTable.set(f.table_name, list);
+    byTable.set(u.table_name, set);
   }
 
   const tables: TableInfo[] = [...tableSet].sort().map((name) => {
@@ -389,8 +443,9 @@ export async function getCompanyTableCatalog(
       scopeColumn: scopeRoot.get(name)!,
       pkColumns,
       uniqueColumns: [...(uniqueColumnsByTable.get(name) ?? [])],
+      partialUniqueColumns: [...(partialUniqueByTable.get(name) ?? [])],
       hasId: pkColumns.length === 1 && pkColumns[0] === "id",
-      foreignKeys: fksByTable.get(name) ?? []
+      foreignKeys: allFksByTable.get(name) ?? []
     };
   });
 

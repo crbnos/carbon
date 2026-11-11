@@ -17,7 +17,8 @@ export {
   backupManifestPath,
   isSnapshotName,
   type Manifest,
-  newBackupName
+  newBackupName,
+  parseManifest
 } from "./format";
 export {
   EXPORT_INTEGRATION,

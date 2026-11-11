@@ -138,6 +138,8 @@ export type CompanyRestoreRun = CompanyRunView & {
   includeStorage: "none" | "all" | null;
   /** Its data change committed, so a failed run still offers keep or revert. */
   applied: boolean;
+  /** A revert reloaded the data but not every file. */
+  reverted: boolean;
 };
 
 export type CompanyExportRun = CompanyRunView & {

@@ -28234,6 +28234,9 @@ msgstr "Engenheiro de Soluções"
 msgid "Some balances have no Carbon account"
 msgstr "Alguns saldos não têm conta Carbon"
 
+msgid "some files may be missing"
+msgstr ""
+
 msgid "Some inputs have another unit and are left out"
 msgstr "Algumas entradas têm outra unidade e são deixadas de fora"
 
@@ -35073,6 +35076,9 @@ msgstr "Os seus números de peça"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "Seus números de peça e o mestre de itens por trás deles"
+
+msgid "Your previous data is back, but some files couldn't be restored. Revert again to retry them."
+msgstr ""
 
 msgid "Your previous data is back, exactly as it was before the restore."
 msgstr "Seus dados anteriores foram recuperados, exatamente como estavam antes da restauração."

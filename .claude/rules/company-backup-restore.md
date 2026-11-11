@@ -84,18 +84,18 @@ and nothing here imports a task file. App code imports the public surface,
 
 | File | Holds |
 |---|---|
-| `catalog.ts` | `getCompanyTableCatalog`, `TableInfo`, `selectExportableTables`, `exportableColumns` |
-| `policy.ts` | every per-table decision: secret / structural / transient / singleton lists, `KEPT_TABLES` + `isLeftAlone`, `isUserScopedIdentityTable`, `READABLE_ID_TABLES`, `selectWipeableTables`, `assertWipeSafe` |
+| `catalog.ts` | `getCompanyTableCatalog`, `TableInfo`, `selectExportableTables`, `exportableColumns`, `addDerivedIdForeignKeys`, `idForeignKeyByColumn` |
+| `policy.ts` | every per-table decision: secret / structural / transient / singleton lists, `KEPT_TABLES` + `isLeftAlone`, `isUserScopedIdentityTable`, `collidesOnCollapse`, `READABLE_ID_TABLES`, the intercompany lists, `selectWipeableTables`, `assertWipeSafe` |
 | `compatibility.ts` | `reportBackupCompatibility`, `compatibilityStatus`, the throwing gate `assertBackupImportable` |
-| `format.ts` | pure: `Manifest`, `BACKUP_VERSION`, folder paths, `newBackupName`, `snapshotName` / `isSnapshotName`, `CompanyBackup` (`manifest` + `rows(table)`), `tableWriter` / `readTableRows` (batched gzip NDJSON), `tableRows`, `backupFromRows`, value encode/bind |
-| `storage.ts` | all bucket I/O: `readBackup`, `listBackups`, `writeBackupTable` / `writeBackupManifest`, asset copies, `removeBucketPrefix`, `listBucketFilesRecursive` |
+| `format.ts` | pure: the zod `Manifest` + `parseManifest`, `BACKUP_VERSION`, folder paths, `newBackupName`, `snapshotName` / `isSnapshotName`, `CompanyBackup` (`manifest` + `rows(table)`), `tableWriter` / `readTableRows` (batched gzip NDJSON), `tableRows`, `backupFromRows`, `exportColumn`, value encode/bind |
+| `storage.ts` | all bucket I/O: `readBackup`, `listBackups`, `writeBackupTable` / `writeBackupManifest`, asset copies, `listCompanyFiles`, `deleteCompanyFiles`, `removeCompanyPaths` |
 | `dump.ts` | `writeCompanyBackup` — the export and both snapshots |
-| `load.ts` | `readBackupForLoad`, `wipeScopedData`, `insertTables`, `bulkLoad`, `wipeAndLoad`, `resolveRestoreScope`, `canSetReplicationRole` |
-| `remap.ts` | `buildIdMaps`, `buildRowTransforms`, closure preflight, `rewriteStoragePath` |
+| `load.ts` | `readBackupForLoad`, `wipeScopedData`, `insertTables`, `assertLoadedInScope`, `rebuildSearchIndex`, `bulkLoad`, `wipeAndLoad`, `resolveRestoreScope`, `canSetReplicationRole` |
+| `remap.ts` | `buildIdMaps`, `buildRowTransforms`, closure preflight, `rewriteStoragePath` / `rewriteEmbeddedPaths` |
 | `reseed.ts` | the import's additive-load helpers |
-| `scope.ts` | scope filter, violations, exclusions, purge, dangling-row cleanup |
+| `scope.ts` | scope filter, violations, `referenceEdges`, `anyOf`, exclusions, purge, dangling-row cleanup |
 | `derived-groups.ts`, `renames.ts`, `id-refs.ts` | see below |
-| `runs.ts` | the run lifecycle — markers, progress, failure, snapshot, keep/revert, `PER_COMPANY_CONCURRENCY` |
+| `runs.ts` | the run lifecycle — markers, progress, failure, `resumeRun`, snapshot, keep/revert, `PER_COMPANY_CONCURRENCY` |
 
 Storage I/O resolves the bucket with `getCompanyPrivateBucket(companyId)`.
 
@@ -104,6 +104,14 @@ Storage I/O resolves the bucket with `getCompanyPrivateBucket(companyId)`.
   `TableInfo` (columns, FK edges, `scopeColumn`, `hasId`/id type), and topologically
   sorts (referenced-first). **`companyId` wins** when a table has both columns. It is
   **schema-introspected**, not a hand-maintained list.
+- FK edges: `addDerivedIdForeignKeys` gives a column that reaches an `id` only
+  through a composite FK its own id edge (`projectElementCost.projectId` →
+  `project.id`, via `projectElement.projectId`). Without it, a foreign load kept the
+  source company's project id. A column can carry several FK entries; the remap
+  follows `idForeignKeyByColumn` (the `id` edge wins).
+- Unique indexes: `uniqueColumns` holds full unique indexes only. Columns of a
+  PARTIAL unique index (`… WHERE "endTime" IS NULL`) go to `partialUniqueColumns`,
+  so they never make a table per-user identity.
 - `scopeColumn: "companyId" | "companyGroupId"`. `companyId` = the company's own
   data; `companyGroupId` = config shared across a company group (chart of
   accounts, currencies, dimensions).
@@ -117,8 +125,10 @@ Storage I/O resolves the bucket with `getCompanyPrivateBucket(companyId)`.
   so a restored row reads Active with no token behind it.
 - `STRUCTURAL_TABLES` (`company`) and `TRANSIENT_TABLES` (`demandForecastSource`,
   `demandActual`, `supplyForecast`, `supplyActual` — MRP output regenerated every run)
-  union into `CATALOG_EXCLUDED_TABLES`: never exported, wiped or loaded, and the
-  next MRP run rebuilds them. `demandForecastSource`'s discriminator CHECK
+  union into `CATALOG_EXCLUDED_TABLES`: never exported or loaded, and the next MRP
+  run rebuilds them. `wipeScopedData` still deletes the transient tables' rows by
+  `companyId` first: they name items and locations, and replica mode skips their
+  ON DELETE CASCADE. `demandForecastSource`'s discriminator CHECK
   (`sourceType` ↔ which of `jobId`/`salesOrderLineId`/`demandProjectionId` is
   non-null) made a remapped restore crash — the FK-nulling dangling-ref policy in
   `buildRowTransforms` nulls a set FK and violates the CHECK. `demandForecast` is
@@ -144,16 +154,35 @@ Storage I/O resolves the bucket with `getCompanyPrivateBucket(companyId)`.
   doesn't count: it once marked `payment` and `reimbursement` as identity, and a
   foreign restore dropped them. After an own load, `deleteDanglingRows` removes kept
   identity rows whose parent the wipe removed (replica mode skipped the cascade).
-- Format: a backup is a **FOLDER** — `exports/<name>/` holding `manifest.json`, one
-  `tables/<table>.ndjson.gz` per NON-EMPTY table, and `assets/<path>` files. Paths
-  come from `backupDir` / `backupManifestPath` / `backupTablePath` / `backupAssetsDir`;
-  each table is written and read a line at a time, so a huge table never
-  materializes as one `>512MB` string (V8's max). Tables are dumped and read in
-  parallel (`async.map` from `@carbon/utils`, `TABLE_CONCURRENCY = 6` in
-  `concurrency.ts`). The folder bundles into one `.carbon.tar.gz` only for
-  cross-environment download and upload. There is **no single-file format** — the
-  retired one-file `{ manifest, data }` JSON broke at ~512MB of row data, and its
-  last bridges were removed.
+- `collidesOnCollapse`: a user FK in a PARTIAL unique index (`productionEvent`,
+  `serviceJobTime`, `trainingCompletion`). A foreign load still loads these tables,
+  with `ON CONFLICT DO NOTHING`, so the first of the collapsed rows wins. Skipping
+  them lost every closed labor, machine and service record.
+- Intercompany (`policy.ts`): `GROUP_ROWS_BY_COMPANY` scopes `intercompanyTransaction`
+  (group-scoped) to rows whose `sourceCompanyId` or `targetCompanyId` is this
+  company, in `buildScopeFilter` (export, wipe, load). `CROSS_TENANT_EDGES` are FKs
+  into the counterparty's books by design: never a closure gap or a load violation.
+  `OWN_LOAD_ONLY_TABLES` (`intercompanyTransaction`, `intercompanyEliminationLine`)
+  load only from the company's own backup.
+- Format: a backup is a **FOLDER** — `exports/<name>/` holding `manifest.json`,
+  `tables/<table>.ndjson.gz` per NON-EMPTY table, and `assets/<path>` files. The
+  bucket refuses an object over 50 MB, so the export splits a table at about 40 MB
+  compressed (`TABLE_PART_BYTES`): part 0 is `<table>.ndjson.gz`, part n is
+  `<table>.<n>.ndjson.gz`, and the manifest entry records `parts` (absent = 1).
+  Paths come from `backupDir` / `backupManifestPath` / `backupTablePath(name,
+  table, part)` / `backupAssetsDir`. Each table is written and read a line at a
+  time, so a huge table never materializes as one `>512MB` string (V8's max).
+  `readTableRows` refuses a line over 64M characters and a file that decompresses
+  past 4 GiB (a damaged file or a gzip bomb). Tables are dumped and read in parallel
+  (`async.map` from `@carbon/utils`, `TABLE_CONCURRENCY = 6` in `concurrency.ts`).
+  The folder bundles into one `.carbon.tar.gz` only for cross-environment download
+  and upload. There is **no single-file format**.
+- Values: `exportColumn` selects a column whose node-pg parse does not write back
+  exactly (numeric, timestamps, intervals, other arrays) as `::text` /
+  `::text[]`; the insert casts it back. Text, uuid, bool, int2/4, float, json(b),
+  bytea and text/uuid arrays stay parsed. Before this, NUMERIC came back as a float
+  and timestamps lost their microseconds. The import's colliding-row lookup selects
+  through `exportColumn` too, so its keys compare equal to the backup's.
 - Names: `newBackupName(takenAt, label)` = timestamp + label slug. Snapshots are
   `snapshotName(run, runId)` = `_pre-restore-<id>` / `_pre-template-<id>`, same
   layout; `isSnapshotName` (`_pre-` prefix) keeps them out of `listBackups` and out
@@ -162,7 +191,13 @@ Storage I/O resolves the bucket with `getCompanyPrivateBucket(companyId)`.
   after every table file and asset. Its presence IS the "backup is complete" marker:
   `listBackups` returns `manifest: null` for a manifest-less folder (listed as
   `Incomplete`), and `readBackup` refuses one. A manifest download error other than
-  not-found throws, so a good backup never lists as unfinished.
+  not-found throws, so a good backup never lists as unfinished. A manifest is
+  user-supplied (an uploaded archive), so nothing reads it unchecked:
+  `parseManifest` (zod) returns null for an invalid one. `listBackups` then shows
+  `manifest: null`, and `readBackup` throws a `NonRetriableError`.
+  `deleteCompanyFiles` removes every backup manifest under the prefix FIRST, so a
+  delete cut short leaves a folder that lists as incomplete, not one that offers a
+  restore.
 - Versioning: `BACKUP_VERSION` (currently **1**, single format, no legacy branch);
   `assertBackupImportable` rejects a backup whose version no longer matches or that
   lacks a now-required column.
@@ -208,7 +243,12 @@ Storage I/O resolves the bucket with `getCompanyPrivateBucket(companyId)`.
   certificates, `supplierQuote.sharedFilePaths`, the `modelUpload` artifacts). A name
   list missed most of them and left a cross-company restore pointing at the SOURCE
   company. The files are copied with the same rewrite (`assetTargets`), so a path
-  and its file stay together.
+  and its file stay together. `rewriteEmbeddedPaths` also rewrites a path embedded
+  in a URL inside text (`/file/preview/private/{sourceCompanyId}/…` in rich text).
+- JSON columns on a remap load: any object key or string leaf equal to a remapped
+  id is replaced (`methodMaterial.storageUnitIds` keys a location id), and other
+  strings go through `rewriteEmbeddedPaths`. A minted id is a random token, so an
+  equal string is that row.
 - File copies overwrite in place (`x-upsert` on `copy`), never remove-then-copy:
   deleting a storage object fires `delete_orphaned_documents`, which drops the
   `document` row for that path — the row a restore just loaded.
@@ -232,13 +272,14 @@ Storage I/O resolves the bucket with `getCompanyPrivateBucket(companyId)`.
   the bucket's `{companyId}/…` files into the backup's `assets/`) and
   `restoreAssetsFromBackup` (copy them back, rewriting paths, every write guarded to
   the target `{companyId}/` prefix). **No asset bytes pass through the job process**,
-  so memory stays flat regardless of asset size. `removeBucketPrefix` is the one
-  prefix delete (batches of 200; `strict` throws on a list/remove error), used by the
-  ERP's backup delete (strict), keep/revert (the snapshot) and the company purge.
-  `listBucketFilesRecursive` pages past storage's 1000 entries per `list` call: a
-  larger folder was cut short and the backup left files out. The archive download
-  lists strictly and fails when a file can't be read, rather than shipping an archive
-  that imports as complete.
+  so memory stays flat regardless of asset size. `deleteCompanyFiles` is the one
+  prefix delete (via `removeCompanyPaths`, batches of 200; throws on a list or
+  remove error), used by the ERP's backup delete, keep/revert (the snapshot), a
+  failed unpack and the company purge. `listCompanyFiles` pages past storage's 1000
+  entries per `list` call: a larger folder was cut short and the backup left files
+  out. The archive download lists strictly and fails when a file can't be read,
+  rather than shipping an archive that imports as complete. It pauses the gzip
+  stream when the client reads slowly, so the archive never piles up in memory.
 
 Buckets: the **per-company private bucket** (`getCompanyPrivateBucket(companyId)`)
 holds the uploads under `{companyId}/`, every backup folder (`exports/<name>/`, assets
@@ -265,28 +306,49 @@ One lifecycle for every long backup job:
   `ExportScopeViolationError` becomes `reason: "scope-violations"` plus a
   **`NonRetriableError`** (see Export). A failed marker write never hides the error.
 - `takeSnapshot`: `writeCompanyBackup` to `_pre-<run>-<runId>` with
-  `includeStorage: "all"` (snapshots carry their files), then records
-  `snapshotPath`. A recorded snapshot is reused, never retaken: a retry after the load
-  committed would capture the loaded data over the company's real copy.
-- **`applied`**: `RunMarker.markApplied` is an UPDATE run INSIDE the load's own
-  transaction (`wipeAndLoad({ markApplied })`, `applyDataset({ beforeCommit })`), so
-  the flag commits with the data or not at all. A `failed` run with `applied` still
-  holds the only way back: the review rows offer Keep / Revert, never Dismiss.
+  `includeStorage: "all"` and `snapshot: true` (every file, no size cap, and a file
+  that fails to copy fails the snapshot), then records `snapshotPath`. On failure it
+  deletes the partial `_pre-*` folder: nothing recorded it, so nothing else would. A
+  recorded snapshot is reused, never retaken: a retry after the load committed would
+  capture the loaded data over the company's real copy.
+- **`applied` / `reverted`**: `RunMarker.markApplied` and `markReverted` are one
+  parameterised UPDATE that sets the flag, run INSIDE the load's own transaction
+  (`wipeAndLoad({ markApplied })`, `applyDataset({ beforeCommit })`; a revert passes
+  `markReverted`). The flag commits with the data or not at all. A `failed` run with
+  `applied` still holds the only way back: the review rows offer Keep / Revert,
+  never Dismiss.
+- Restore, template apply and export each start with their own `claim-*` step that
+  writes this run's marker (template: after its pending guard). The work step then
+  runs `resumeRun(meta)` → `start | finish | skip`:
+  - no marker → `skip`: the claim wrote it, so the run was kept, dismissed or
+    reverted during a retry backoff (Inngest frees the concurrency slot then).
+  - `ready`, `reverting` or `reverted` → `skip`.
+  - `applied` → `finish`: do the post-commit work only. Loading again would wipe what
+    the first attempt loaded.
+  - otherwise → `start`.
 - `holdsPendingChange` = not `failed`, or `failed` and `applied`. Only one restore or
   demo-data run may hold it per company: `assertNoPendingChange` in both jobs (race-free
   under `PER_COMPANY_CONCURRENCY`), `getPendingChange` in both ERP routes.
-- `failStuckRun`: the `onFailure` of export, restore, template and both reverts. A
-  timeout or out-of-memory kill skips the job's own catch; this marks a still
-  `running` / `reverting` run failed, so it doesn't lock the company out.
-- `keepRun`: only `ready` or `failed` (an in-flight run is refused); deletes the
-  snapshot folder, then the marker.
-- `revertRun`: reads the snapshot through `readBackupForLoad`, `wipeAndLoad` with
-  `remap: false` and the marker's `includeGroup`, restores its files, deletes the
-  snapshot and the marker. No recorded snapshot → marks the run failed (not a quiet
-  no-op that keeps offering Revert). A run that covered group data is refused
-  (marked failed, snapshot kept) once another company has joined the group: its
-  rows point at that shared data. On failure the marker keeps the snapshot so the
-  revert can be retried.
+- `failStuckRun(marker, err, stuck, owns?)`: the `onFailure` of export, restore,
+  template and both reverts. A timeout or out-of-memory kill skips the job's own
+  catch. It fails the marker only when it is in the state this job leaves (`stuck`:
+  `running` or `reverting`) and `owns` it, so an apply's handler never fails the
+  user's revert. The export and template pass `owns` (the marker's `exportRunId` /
+  `templateRunId`): their one marker per company serves later runs too.
+- `keepRun`: only `ready` or `failed` (an in-flight run is refused). Clears the
+  marker FIRST, then deletes the snapshot best-effort: a crash in between leaks
+  files, never a marker naming a deleted snapshot.
+- `revertRun`: refuses (no-op) unless the run is pending — `ready`, `reverting` (a
+  retry) or `failed` with `applied`. A failed run whose data never landed holds a
+  snapshot that is the way back to nothing. It reads the snapshot through
+  `readBackupForLoad`, then runs `wipeAndLoad` with `remap: null`, the marker's
+  `includeGroup` and `markReverted`, then restores the files. No recorded snapshot →
+  marks the run failed (not a quiet no-op that keeps offering Revert). A run that
+  covered group data is refused (marked failed, snapshot kept) once another company
+  has joined the group. On success it clears the marker BEFORE it deletes the
+  snapshot. If files fail to copy back, the run goes `failed` with `applied` and the
+  snapshot kept, and the row says "Revert again". On any other failure the marker
+  keeps the snapshot so the revert can be retried.
 - `PER_COMPANY_CONCURRENCY` (`'company-data-' + companyId`, scope `env`, limit 1) is
   taken by every export, restore, template and import function (and their
   finalize/revert). Three different keys used to let a template wipe under a
@@ -295,11 +357,19 @@ One lifecycle for every long backup job:
 ## Export — `company-export.ts` → `writeCompanyBackup` (`dump.ts`)
 
 Dumps each exportable table (secrets out), scoped by `buildScopeFilter`, into its own
-**data-only** `tables/<table>.ndjson.gz`. **Empty tables are skipped** — a backup of a
+**data-only** `tables/<table>.ndjson.gz` (plus parts for a big table). **Empty tables are skipped** — a backup of a
 company with no GL postings simply has no `journalLine`/`costLedger` file; that is
 data-absence, not a coverage gap. With `includeStorage: "all"` it lists the bucket
 under `{companyId}/`, records each file in `manifest.storage`, and copies the included
 ones server-side into `assets/`. Then the manifest.
+- **One consistent snapshot.** A holder transaction (REPEATABLE READ) calls
+  `pg_export_snapshot()`, runs the scope check, and stays open until the last table
+  is read. Each table's reader runs `SET TRANSACTION SNAPSHOT` with that id, so a row
+  written mid-export can't land in a child table without its parent. The holder
+  takes one pool connection, so readers run at `TABLE_CONCURRENCY - 1`. Every
+  reader settles before a failure is thrown, so none reads after the holder ends or
+  uploads into a folder being deleted. Export, restore and template apply share
+  `DUMP_CONCURRENCY` (env-wide, limit 2): two dumps fit the process pool of 16.
 - **Out-of-scope rows are FATAL, deliberately.** `findExportScopeViolations`
   (`scope.ts`) counts rows whose NOT-NULL FK points outside the company's scope, and
   a non-zero count throws `ExportScopeViolationError` before any table file is
@@ -344,13 +414,16 @@ ones server-side into `assets/`. Then the manifest.
   signal), and **left `failed` on error** — a cleared marker made a broken export
   indistinguishable from one that never ran. Dismissed via the `dismissExportFailure`
   intent → `dismissCompanyExportFailure` (service role — the table has no DELETE
-  policy); the next export's first write overwrites it back to `running`.
+  policy); the next export's first write overwrites it back to `running`. The
+  marker carries the Inngest `exportRunId`. A retry whose marker is gone or names a
+  later export skips, and `onFailure` touches only its own run's marker.
 - **Asset cap** (`dump.ts`): no per-file cap (the bucket already bounds uploads —
   120MB CAD, 50MB docs; the dev global is `50MiB` in `config.toml`), only
-  `MAX_STORAGE_TOTAL_BYTES = 1GiB` on the whole backup. Files are included greedily
+  `MAX_STORAGE_TOTAL_BYTES = 1GiB` on an export. Files are included greedily
   until the budget is hit; each is recorded with `included: true|false`. The cap is
   storage-cost only (the copy is memory-flat) — each backup duplicates the bundled
-  bytes. The old `25MiB`-per-file / `200MiB`-total caps silently dropped legit media.
+  bytes. A snapshot (`snapshot: true`) has no cap, and a failed file copy throws
+  before the manifest is written: the snapshot is the only way back.
 
 ## The drift check — `pnpm db:check:backups`
 
@@ -518,19 +591,24 @@ The parent spec's D7 wanted scheduled creation; that is dropped, not deferred �
 **not as a setting either**. See `.ai/specs/2026-08-25-backup-durability.md`.
 
 Pre-restore and pre-template snapshots (`_pre-*`) were never touched by that job
-and still are not: `keepRun` / `revertRun` (`runs.ts`) drop them. A stalled run can
-still strand one — pre-existing, and nothing here changed it.
+and still are not: `keepRun` / `revertRun` (`runs.ts`) drop them. A snapshot that
+fails deletes its own partial folder, but a job killed mid-snapshot can still strand
+one.
 
 ## Restore — `company-restore.ts`
 
 Three Inngest fns over `runs.ts`: `companyRestoreFunction`,
 `companyRestoreFinalizeFunction` (`keepRun`), `companyRestoreRevertFunction`
 (`revertRun`). All take `PER_COMPANY_CONCURRENCY`. The marker is keyed by
-`restoreRunId`; a retry that finds it `ready` returns without wiping again.
+`restoreRunId`. The run first asks `resumeRun`: `skip` returns, `finish` (the load
+committed on an earlier attempt) does only the file phase and marks `ready`. An own
+restore re-runs the file phase exactly (ids load verbatim). A foreign restore's ids
+were minted at random by the attempt that committed, so it marks `ready` with an
+`error` note ("Some files may be missing") instead.
 
 Forward flow, inside one `step.run`:
-1. Marker → `running` (with `filePath`, `label`, `includeStorage`, so a recovery can
-   restart the same restore), then `requireBackupsEntitlement`.
+1. Marker → `running` (with `filePath`, `includeStorage`, so a recovery can restart
+   the same restore), then `requireBackupsEntitlement` and `assertNoPendingChange`.
 2. `readBackupForLoad` (`readBackup` + `applyTableRenames`): `manifest.json` only.
    Each `tables/<table>.ndjson.gz` is downloaded as a stream when a caller iterates
    `backup.rows(table)`, and again on the next call. Then `assertBackupImportable`
@@ -538,9 +616,10 @@ Forward flow, inside one `step.run`:
 3. `resolveRestoreScope` → `targetGroupId`, and `includeGroup` = this company is its
    group's sole member. A **foreign** backup (`manifest.sourceCompanyId !==
    companyId`) onto a shared group (`!includeGroup`) **throws** rather than rewrite
-   the shared chart of accounts.
+   the shared chart of accounts. `wipeAndLoad` refuses the same case itself.
 4. Closure preflight, BEFORE the snapshot and the wipe: `loadSubstrateIds` probes the
-   target for global (`companyId IS NULL`) rows the backup omits, then
+   target for global (`companyId IS NULL`) rows the backup omits — for nullable FKs
+   too, or a foreign load would clear `material.gradeId` and its siblings — then
    `assertReferentiallyClosed` → `findDanglingReferences` refuses a backup whose
    NOT-NULL FK points at a row it doesn't include, listing every gap. It tracks a
    parent's ids for **any table with an `id` column**, not only `hasId` — gating on
@@ -548,11 +627,18 @@ Forward flow, inside one `step.run`:
    tables (`stockTransfer`, `supplierPart`, …). It skips `SECRET_TABLES` on both
    sides: an OLDER backup that predates a table joining the list still carries its
    rows (e.g. `apiKeyRateLimit` → the stripped `apiKey`); they're ignored on load,
-   so the preflight ignores them too.
+   so the preflight ignores them too. When `includeGroup` is false (an own restore
+   into a shared group), the group tables are not loaded, so the backup's chart of
+   accounts proves nothing. `loadSubstrateIds({ liveGroup })` probes the live
+   group's rows instead, and `assertReferentiallyClosed({ groupLoaded: false })`
+   resolves refs into group tables only against them.
 5. `takeSnapshot` (records `foreign`, `includeGroup`, `snapshotPath`).
 6. `wipeAndLoad` (`load.ts`), one transaction via `bulkLoad`:
    - `assertWipeSafe(catalog)` first: a KEPT table must hold no NOT-NULL FK into a
      WIPED table.
+   - With `includeGroup`, `assertSoleGroupMember` locks the `companyGroup` row
+     (`FOR UPDATE`) and recounts members inside the transaction. A company that
+     joined since step 3 stops the load (`NonRetriableError`).
    - `selectWipeableTables(catalog, { includeGroup })` → company-scoped tables minus
      `isLeftAlone`; group-scoped tables **only** when `includeGroup`. The full set is
      wiped (a table empty in the backup ends up empty); only tables with rows load.
@@ -562,28 +648,47 @@ Forward flow, inside one `step.run`:
    - `insertTables`: verbatim on an own restore; on a foreign one `buildRowTransforms`
      re-stamps `companyId` / `companyGroupId`, mints ids, remaps FKs (nullable
      dangling FK → null, non-nullable → throw), and keeps the first of the rows a
-     user collapse made identical on a user-keyed table.
+     user collapse made identical on a user-keyed table. It passes
+     `catalogTableNames`, so a ref into a tenant table with no id map (empty in the
+     backup) is nulled, or refused when NOT NULL. A foreign load skips
+     `OWN_LOAD_ONLY_TABLES`, adds `ON CONFLICT DO NOTHING` where
+     `collidesOnCollapse`, and leaves a serial integer `id` to its sequence (the
+     source company's rows still hold those values).
    - `assertLoadedInScope` (restore, revert and import): a backup is a file the user
-     can edit, so verbatim rows may name another company. It counts the rows THIS
-     transaction wrote (`xmin = pg_current_xact_id()::xid`) outside `buildScopeFilter`
-     and throws on any, rolling the load back. Covers `via` tables too (a child hung
-     off another company's parent).
+     can edit, so verbatim rows may name another company. In one scan per table of
+     the rows THIS transaction wrote (`xmin = pg_current_xact_id()::xid`), it counts
+     rows outside `buildScopeFilter`, and, per `referenceEdges` (every `id` FK,
+     minus retained and cross-tenant edges), refs whose target is not in scope
+     (`violationTerm`, a correlated `NOT EXISTS`). A nullable ref that escapes is
+     set to NULL (logged): live data can hold one, and a revert must still load it.
+     A NOT-NULL one, or a row outside scope, throws a `NonRetriableError` naming
+     `table.column → refTable` and rolls the load back; the export guard refuses
+     those before any snapshot. Covers `via` tables too. `byName` must hold the
+     whole catalog.
    - `bulkLoad` (every load uses it) sets `session_replication_role = 'replica'`
      where `canSetReplicationRole` allows (else warns, relying on topological order),
-     then, in the transaction, rebuilds derived groups, writes a null-row-id
-     `tableChange` per `CHANGE_LOGGED_TABLES` entry and `realtime.send`s per
-     `REALTIME_TABLES` entry — without it, open tabs kept stale picker rows for an hour.
+     then, in the transaction, rebuilds derived groups, rebuilds the company's
+     search index (`rebuildSearchIndex`: triggers are off, and
+     `populate_company_search_index` covers only people, customers and suppliers),
+     writes a null-row-id `tableChange` per `CHANGE_LOGGED_TABLES` entry and
+     `realtime.send`s per `REALTIME_TABLES` entry — without it, open tabs kept stale
+     picker rows for an hour.
+   - Big id lists bind as one array (`anyOf` → `= ANY($1::type[])`), never a per-id
+     `IN (…)`, which fails past Postgres's 65,535 parameters.
 7. `restoreAssetsFromBackup` (outside the transaction) when `includeStorage = "all"`.
    It runs **before** `ready` so the dialog reports complete only once data AND files
    are in place. The company's files are listed BEFORE the load; after the commit
-   the whole file phase (recording `addedFiles`, the copy) is in a try/catch that
-   logs, so a storage error can't fail a committed restore.
-   `assetTargets` drops any manifest path that is unsafe (`isUnsafeStoragePath`) or
-   lands outside `{companyId}/`: never written, never in `addedFiles`.
-8. Marker → `ready` (`rows`), parked on keep or revert. Any throw → `failRun`.
+   the whole file phase (recording `addedFiles`, the copy) is in a try/catch, so a
+   storage error can't fail a committed restore. A failed copy returns a note
+   instead. `assetTargets` drops any manifest path that is unsafe
+   (`isUnsafeStoragePath`) or lands outside `{companyId}/`: never written, never in
+   `addedFiles`.
+8. Marker → `ready` (`rows`, and `error` = the file note or null), parked on keep or
+   revert. `RestoreReviewRow` shows a ready run with an `error` as "some files may be
+   missing". Any throw → `failRun`.
 
-Keep and revert need no entitlement. Keep refuses an in-flight run; revert with no
-snapshot marks the run failed.
+Keep and revert need no entitlement. Keep refuses an in-flight run; revert refuses a
+run that is not pending, and marks one with no snapshot failed.
 
 **Other callers of the load path.** `company-template.ts` snapshots and reverts
 through `runs.ts` (`takeSnapshot` / `keepRun` / `revertRun`), so a template revert is
@@ -594,29 +699,24 @@ included, because nothing is reloaded after it. It then deletes the `company` ro
 triggers back on, so tables outside the catalog cascade. `canSetReplicationRole`
 decides whether it can wipe at all. See `billing-system.md`.
 
-### Known caveats in the committed code (not yet hardened)
+### Known caveats
 
-- **Storage restore is best-effort** — copy failures warn only; the restore still
-  reports success (data is the source of truth). The cross-tenant guard is
-  `assetTargets` (see step 7); archive uploads check each entry with
-  `isUnsafeStoragePath` (storage-js puts keys into the URL unencoded, so `%2e%2e`
-  resolves like `..`).
 - **Asset copy duplicates bytes** — a backup copies the company's assets into its
   `assets/` folder, so each backup costs roughly its asset size in storage.
   Snapshots are transient (keep/revert delete the folder); exports persist until
-  deleted (`deleteCompanyBackup`, strict `removeBucketPrefix`).
-- Sequences: the only pg-native serials on backed-up tables are `entryNumber` on
-  `itemLedger`/`costLedger`/`supplierLedger` (not PKs, not unique; PKs are all
-  text). They are **global/shared across tenants** — never `setval` them scoped to
-  one company; in-place restore needs no reset (other tenants hold the high-water
-  mark).
+  deleted (`deleteCompanyBackup` → `deleteCompanyFiles`).
+- Sequences are **global, shared across tenants** — never `setval` one scoped to a
+  company. An own load writes serial values verbatim (other tenants hold the
+  high-water mark); a foreign load lets the sequence assign a serial `id`.
 
 ## Import — `company-import.ts` (onboarding from a backup)
 
 Populates a freshly created company from a backup: an additive reseed, every id
-remapped. No preserve mode, no revert ledger, no idempotency check: a retry after the
-load committed fails on the "already set up" guard (an `accountDefault` row exists).
-Flow: `readBackupForLoad` + `assertBackupImportable`; candidate tables = not
+remapped. No preserve mode, no revert ledger. The "already set up" guard (an
+`accountDefault` row exists) is a `NonRetriableError` on the first attempt, so a
+retry that finds the company seeded is finding its own committed load. It finishes
+without loading again and WITHOUT the files: the id map that places them was minted
+at random and is not persisted (a known trade-off, logged as an error). Flow: `readBackupForLoad` + `assertBackupImportable`; candidate tables = not
 `isLeftAlone`, not user-scoped identity, with rows; `filterUnpopulated` drops tables
 the target already populated (onboarding's own inserts); `buildIdMaps`; one
 `bulkLoad` + `insertTables`; then `restoreAssetsFromBackup`. Group-scoped data with no
@@ -632,14 +732,15 @@ populated in the target by definition and unique constraints stay enforced under
 replica mode, so backup rows that collide on a real unique key are NOT inserted:
 `mapCollidingRows` + `matchableUniqueGroups` (+ `getUniqueColumnGroups` over
 `pg_index`) map the source id onto the existing target row's id instead, so every FK
-into the skipped row lands on the target's own row.
+into the skipped row lands on the target's own row. The target's key columns are read
+through `exportColumn`, and numeric ones compare by value (older backups hold a JSON
+number, newer ones text).
 
 ## ERP layer
 
 - **`settings.service.ts`, Backups section** (no `backups.service.ts`: the
   `module-shape` check allows one service file per module): the gate,
-  `isUserBackupName` (refuses paths and `_pre-*` snapshots), `unpackBackupArchive`
-  (`.carbon.tar.gz` → a fresh `exports/<name>/`), and the staged upload both
+  `isUserBackupName`, `unpackBackupArchive`, `getBackupInUse`, and the staged upload both
   uploads share: `signBackupStaging` (a signed slot in `TEMP_STAGING_BUCKET`; the
   browser PUTs the archive there, since Vercel caps a request body at 4.5 MB),
   `isStagedBackupPath` and `unpackStagedBackupArchive` (streams it back, unpacks,
@@ -650,6 +751,23 @@ into the skipped row lands on the target's own row.
   restore and template). Keep/revert are plain `trigger(...)` calls in the routes.
   Layout, marker keys and run shapes come from `@carbon/jobs/backups`; UI-facing
   types are in `settings/types.ts`.
+- `isUserBackupName` is an allowlist, `/^[A-Za-z0-9_-]{1,120}$/` (what
+  `newBackupName` makes), and refuses `_pre-*` snapshots. Storage decodes
+  percent-escapes in a key (`%5Fpre-` reaches a snapshot, `%2F` a nested key), and
+  the name goes into a Content-Disposition header.
+- `unpackBackupArchive` (`.carbon.tar.gz` → a fresh `exports/<name>/`):
+  - It skips non-file entries and strips a leading `./`. An entry that fails
+    `isUnsafeStoragePath` is a critical error (storage-js puts keys into the URL
+    unencoded, so `%2e%2e` resolves like `..`).
+  - It caps an entry at the bucket's 50 MB, the archive at 100k entries and 10 GB
+    unpacked.
+  - It holds `manifest.json` back. The manifest goes up LAST, after it passes
+    `parseManifest` and every listed table (all `parts`) has landed.
+  - On any failure it deletes the folder (after the upload in flight settles).
+- Delete is refused while `getBackupInUse` says so: a pending restore
+  (`holdsPendingChange`) names the backup, or an export is running and the folder
+  has no manifest yet. `purgeAndRetry` refuses while an export runs: the purge
+  deletes live rows the export may be reading.
 - `getCompanyBackups` is the loader's list: `listBackups` (engine), then the live
   catalog ONCE per load, `reportBackupCompatibility` per manifest, `{ status,
   findings }` per row, manifest stripped. A catalog read failure costs the badges,
@@ -696,7 +814,9 @@ into the skipped row lands on the target's own row.
   good until then, which nothing can make.
 - UI: `modules/settings/ui/Backups/` — `BackupChoices` (Data only / Data + files),
   `BackupSourcePicker`, `BackupProgressModal` (`JobProgressModal`), `RestoreReviewRow`
-  (Keep/Revert), `RestoreDisclosure` (the pre-restore screen — the ONLY path to a
+  (Keep/Revert, offered only when not `running`/`reverting` and the run is `ready`
+  or `applied`; a `reverted` run says the data is back but some files are not),
+  `RestoreDisclosure` (the pre-restore screen — the ONLY path to a
   restore), `BackupContentsInfo` (lazy popover), `ExcludedRowsInfo`,
   `PurgeCorruptedRowsModal`, `format.ts`. `JobProgressModal` tracks real completion,
   not a timer: restore/revert poll the status marker; export completes once the new
@@ -767,15 +887,24 @@ onboarding, and Settings → Demo Data. `industry.id` → dataset is a code map
 feature context: `onboarding-company-templates.md`.
 
 `company-template.ts`: one marker per company (`entityId` = company id), concurrency
-`[{ limit: 2 }, PER_COMPANY_CONCURRENCY]` (the unkeyed limit keeps N onboardings from
-outnumbering the pool). The apply step refuses while another run's marker is pending
-keep/revert (it owns the only snapshot of the real data), writes `running`, then
-`takeSnapshot` (always — the old `snapshot` flag is gone), then
-`applyDataset({ wipeFirst: true })` on its own `getProcessPool()` connection (the
-shared size-1 pool behind `getJobDatabaseClient` runs the event drainer). A
-non-fatal `plan-template` step runs MRP and scheduling and records `planningError`.
-Keep and revert act only on a marker naming their `templateRunId`: one sent for an
-earlier run must not resolve a later one.
+`[DUMP_CONCURRENCY, PER_COMPANY_CONCURRENCY]` (the shared dump limit keeps N
+onboardings from outnumbering the pool). The `claim-template` step first: another
+run's marker that holds a pending change is refused (it owns the only snapshot of
+the real data); one that failed without `applied` is discarded with `keepRun` (its
+stale snapshot must never become this run's way back); then it writes this run's
+marker. The apply step, in order:
+1. `resumeRun` on the marker only when it names this `templateRunId`; `skip` returns.
+2. Unknown dataset key → failed, `NonRetriableError`. This runs after the pending
+   guard, so it never overwrites a pending run's marker.
+3. `finish` → marker `ready`, no second apply.
+4. Write `running`, `takeSnapshot` (always), then `applyDataset({ wipeFirst: true })`
+   on its own `getProcessPool()` connection (the shared size-1 pool behind
+   `getJobDatabaseClient` runs the event drainer).
+
+A non-fatal `plan-template` step runs MRP and scheduling and records
+`planningError`. It runs only while this run's marker is `ready`: a keep or revert
+can land between the steps. Keep and revert act only on a marker naming their
+`templateRunId`: one sent for an earlier run must not resolve a later one.
 
 
 ## Memory and scale

@@ -5,6 +5,8 @@
 import { Readable } from "node:stream";
 import { StringDecoder } from "node:string_decoder";
 import { createGunzip, createGzip } from "node:zlib";
+import { type RawBuilder, sql } from "kysely";
+import { z } from "zod";
 import type { ColumnInfo } from "./catalog";
 
 /**
@@ -19,40 +21,72 @@ export const BACKUP_KIND = "carbon-company-backup";
 
 export const BACKUP_VERSION = 1;
 
-export type Manifest = {
-  kind: typeof BACKUP_KIND;
-  version: typeof BACKUP_VERSION;
-  schemaVersion: string;
-  sourceCompanyId: string;
-  sourceCompanyGroupId: string | null;
-  sourceCompanyName: string | null;
-  exportedAt: string;
-  exportedBy: string;
-  label: string | null;
-  includeStorage: "none" | "all";
-  tables: Array<{ name: string; rows: number; columns: string[] }>;
-  storage: Array<{ path: string; size: number; included: boolean }>;
-  excludedTables: string[];
+const manifestSchema = z.object({
+  kind: z.literal(BACKUP_KIND),
+  // Any generation parses: `reportBackupCompatibility` names an unsupported one.
+  version: z.number().int(),
+  schemaVersion: z.string(),
+  sourceCompanyId: z.string(),
+  sourceCompanyGroupId: z.string().nullable(),
+  sourceCompanyName: z.string().nullable(),
+  exportedAt: z.string(),
+  exportedBy: z.string(),
+  label: z.string().nullable(),
+  includeStorage: z.enum(["none", "all"]),
+  tables: z.array(
+    z.object({
+      name: z.string(),
+      rows: z.number().int().nonnegative(),
+      columns: z.array(z.string()),
+      /** Files the table is split across (`backupTablePath`). Absent = 1. */
+      parts: z.number().int().positive().optional()
+    })
+  ),
+  storage: z.array(
+    z.object({ path: z.string(), size: z.number(), included: z.boolean() })
+  ),
+  excludedTables: z.array(z.string()),
   /**
    * Rows deliberately left out because a NOT-NULL FK escaped company scope
    * ("violation") or pointed at such a row ("cascade"). Absent/empty = full
    * export. Written only when the export ran with `skipCorrupted`.
    */
-  excludedRows?: Array<{
-    table: string;
-    column: string;
-    refTable: string;
-    rows: number;
-    cause: "violation" | "cascade";
-  }>;
+  excludedRows: z
+    .array(
+      z.object({
+        table: z.string(),
+        column: z.string(),
+        refTable: z.string(),
+        rows: z.number(),
+        cause: z.enum(["violation", "cascade"])
+      })
+    )
+    .optional(),
   /**
    * DISTINCT rows excluded, per table. `excludedRows` is per FK EDGE and
    * double-counts a row that violated several of its foreign keys, so this is
    * the only field a total may be summed from. Absent on backups taken before
    * it existed — treat as "unknown", not zero.
    */
-  excludedRowsByTable?: Array<{ table: string; rows: number }>;
-};
+  excludedRowsByTable: z
+    .array(z.object({ table: z.string(), rows: z.number() }))
+    .optional()
+});
+
+export type Manifest = z.infer<typeof manifestSchema>;
+
+/**
+ * A `manifest.json`'s text as a manifest, or null when it is not one. An
+ * uploaded archive's manifest is user-supplied, so nothing reads it unchecked.
+ */
+export function parseManifest(text: string): Manifest | null {
+  try {
+    const parsed = manifestSchema.safeParse(JSON.parse(text));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
 
 export const EXPORTS_PREFIX = "exports";
 
@@ -112,8 +146,10 @@ export function backupManifestPath(name: string): string {
   return `${EXPORTS_PREFIX}/${name}/manifest.json`;
 }
 
-export function backupTablePath(name: string, table: string): string {
-  return `${EXPORTS_PREFIX}/${name}/tables/${table}.ndjson.gz`;
+/** Part 0 keeps the one-file layout; a table split past it adds `.<part>`. */
+export function backupTablePath(name: string, table: string, part = 0): string {
+  const suffix = part === 0 ? "" : `.${part}`;
+  return `${EXPORTS_PREFIX}/${name}/tables/${table}${suffix}.ndjson.gz`;
 }
 
 export function backupAssetsDir(name: string): string {
@@ -148,12 +184,20 @@ export function isSnapshotName(name: string): boolean {
 export function tableWriter() {
   const gzip = createGzip();
   const chunks: Buffer[] = [];
-  gzip.on("data", (c: Buffer) => chunks.push(c));
+  let bytes = 0;
+  gzip.on("data", (c: Buffer) => {
+    chunks.push(c);
+    bytes += c.length;
+  });
   const finished = new Promise<void>((resolve, reject) => {
     gzip.on("end", resolve);
     gzip.on("error", reject);
   });
   return {
+    /** Compressed bytes so far, short of what zlib still buffers (a few KB). */
+    get bytes() {
+      return bytes;
+    },
     async write(rows: Row[]) {
       let text = "";
       for (const row of rows) {
@@ -176,7 +220,22 @@ export function tableWriter() {
 }
 
 /**
- * Parse a gzipped NDJSON table in batches, as the bytes arrive.
+ * The longest row a table file may hold. A real row is kilobytes; this is far
+ * past any of them and far below V8's ~512M-char string limit.
+ */
+const MAX_LINE_CHARS = 64 * 1024 * 1024;
+
+/**
+ * The most one table file may decompress to. A file is at most 50MB (the
+ * bucket's object cap; the export splits a table at ~40MB), and NDJSON rows
+ * compress 5-20x, so 4GiB is a ratio no real table reaches. Past it the file
+ * is a decompression bomb, not a table.
+ */
+const MAX_TABLE_FILE_BYTES = 4 * 1024 * 1024 * 1024;
+
+/**
+ * Parse a gzipped NDJSON table in batches, as the bytes arrive. Memory stays
+ * at one batch plus one line, whatever the file holds.
  *
  * Splits on "\n" only, the one separator `tableWriter` writes. Not readline:
  * from Node 24 it also ends a line at U+2028/U+2029, which JSON.stringify
@@ -184,7 +243,8 @@ export function tableWriter() {
  */
 export async function* readTableRows(
   source: AsyncIterable<Uint8Array> | Iterable<Uint8Array>,
-  batchSize = ROW_BATCH
+  batchSize = ROW_BATCH,
+  limits = { lineChars: MAX_LINE_CHARS, bytes: MAX_TABLE_FILE_BYTES }
 ): AsyncGenerator<Row[]> {
   const input = Readable.from(source);
   const gunzip = createGunzip();
@@ -192,12 +252,42 @@ export async function* readTableRows(
   input.pipe(gunzip);
   const decoder = new StringDecoder("utf8");
   let batch: Row[] = [];
-  let rest = "";
+  // The line still being read, in pieces: joining it to each new chunk
+  // re-copied it every time a long line spanned many chunks.
+  let pending: string[] = [];
+  let pendingChars = 0;
+  let bytes = 0;
+  const tooLong = () =>
+    new Error(
+      `A backup table file holds a line over ${limits.lineChars} characters — the file is damaged or not a backup table.`
+    );
   try {
     for await (const chunk of gunzip) {
-      const lines = (rest + decoder.write(chunk as Buffer)).split("\n");
-      rest = lines.pop() ?? "";
-      for (const line of lines) {
+      bytes += (chunk as Buffer).length;
+      if (bytes > limits.bytes) {
+        throw new Error(
+          `A backup table file decompresses to over ${limits.bytes} bytes — the file is damaged or not a backup table.`
+        );
+      }
+      const text = decoder.write(chunk as Buffer);
+      let start = 0;
+      for (
+        let nl = text.indexOf("\n");
+        nl !== -1;
+        nl = text.indexOf("\n", start)
+      ) {
+        let line = text.slice(start, nl);
+        start = nl + 1;
+        if (pending.length > 0) {
+          pendingChars += line.length;
+          if (pendingChars > limits.lineChars) throw tooLong();
+          pending.push(line);
+          line = pending.join("");
+          pending = [];
+          pendingChars = 0;
+        } else if (line.length > limits.lineChars) {
+          throw tooLong();
+        }
         if (!line) continue;
         batch.push(JSON.parse(line));
         if (batch.length >= batchSize) {
@@ -205,14 +295,55 @@ export async function* readTableRows(
           batch = [];
         }
       }
+      if (start < text.length) {
+        pending.push(text.slice(start));
+        pendingChars += text.length - start;
+        if (pendingChars > limits.lineChars) throw tooLong();
+      }
     }
-    rest += decoder.end();
-    if (rest) batch.push(JSON.parse(rest));
+    pending.push(decoder.end());
+    const last = pending.join("");
+    if (last) batch.push(JSON.parse(last));
     if (batch.length > 0) yield batch;
   } finally {
     input.destroy();
     gunzip.destroy();
   }
+}
+
+/**
+ * Element types node-pg parses into a value that writes back exactly. Every
+ * other column is read as text: the process-global parsers turn NUMERIC into
+ * a float, timestamps into a millisecond `Date` (and a timestamp without zone
+ * through the process's time zone), and an interval into an object no insert
+ * can bind. Text, bound untyped, is cast back by the column on insert.
+ */
+const PARSED_EXACTLY = new Set([
+  "text",
+  "varchar",
+  "uuid",
+  "bool",
+  "int2",
+  "int4",
+  "float4",
+  "float8",
+  "json",
+  "jsonb",
+  "bytea"
+]);
+
+/** Arrays kept as parsed: the remap rewrites ids inside text and uuid arrays. */
+const ARRAYS_PARSED_EXACTLY = new Set(["_text", "_varchar", "_uuid"]);
+
+/** A column as the export selects it, under its own name. */
+export function exportColumn(col: ColumnInfo): RawBuilder<unknown> {
+  const id = sql.id(col.name);
+  if (col.udtName.startsWith("_")) {
+    return ARRAYS_PARSED_EXACTLY.has(col.udtName)
+      ? id
+      : sql`${id}::text[] AS ${id}`;
+  }
+  return PARSED_EXACTLY.has(col.udtName) ? id : sql`${id}::text AS ${id}`;
 }
 
 /** Convert a pg-returned value into a JSON-safe backup value. */
@@ -221,7 +352,6 @@ export function encodeValue(value: unknown, col: ColumnInfo): unknown {
   if (col.udtName === "bytea" && Buffer.isBuffer(value)) {
     return value.toString("base64");
   }
-  if (value instanceof Date) return value.toISOString();
   return value;
 }
 

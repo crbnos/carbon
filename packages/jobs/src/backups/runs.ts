@@ -49,6 +49,18 @@ export const PER_COMPANY_CONCURRENCY = {
   limit: 1
 } as const;
 
+/**
+ * Jobs that dump a company (export, and the snapshot a restore or demo-data
+ * apply takes first) share this key. A dump holds a snapshot connection plus
+ * `TABLE_CONCURRENCY - 1` readers from the process's pool of 16, so two at a
+ * time fit; a third would wait on connections until its readers time out.
+ */
+export const DUMP_CONCURRENCY = {
+  key: "'company-dump'",
+  scope: "env",
+  limit: 2
+} as const;
+
 /** The stable keys a job reports its progress under; the page maps each to a
  *  label per job, so the job never bakes in display copy. */
 export type JobPhase =
@@ -91,6 +103,9 @@ type ReversibleRunMeta = RunMeta & {
    *  (`markApplied`), so it is true exactly when the company's data is no
    *  longer what the snapshot holds — even when a later step failed. */
   applied?: boolean;
+  /** A revert's reload committed: the data is the snapshot's again. Set inside
+   *  the revert's transaction, so a retried apply never finishes over it. */
+  reverted?: boolean;
 };
 
 /**
@@ -124,6 +139,9 @@ export type TemplateRunMeta = ReversibleRunMeta & {
 
 export type ExportRunMeta = RunMeta & {
   status: "running" | "failed";
+  /** The Inngest run that owns the marker: one marker serves every export of
+   *  the company, so an earlier run's failure handler must not touch a later's. */
+  exportRunId?: string;
   /** What a failed run asked for, so a recovery retry can reuse it. */
   label?: string | null;
   includeStorage?: "none" | "all";
@@ -137,6 +155,8 @@ type RunMarker<M extends RunMeta> = {
   /** The statement that sets `applied`, to run inside the load's transaction
    *  so the flag commits with the data or not at all. */
   markApplied: { sql: string; parameters: unknown[] };
+  /** The same, setting `reverted`, for a revert's reload. */
+  markReverted: { sql: string; parameters: unknown[] };
 };
 
 /**
@@ -168,6 +188,12 @@ export function runMarker<M extends RunMeta>(
       .eq("companyId", companyId)
       .eq("entityId", entityId)
       .maybeSingle();
+  const stamp = (flag: "applied" | "reverted") => ({
+    sql: `UPDATE "externalIntegrationMapping"
+        SET "metadata" = coalesce("metadata", '{}'::jsonb) || jsonb_build_object($4::text, true)
+        WHERE "integration" = $1 AND "companyId" = $2 AND "entityId" = $3`,
+    parameters: [integration, companyId, entityId, flag]
+  });
 
   return {
     async read() {
@@ -214,12 +240,8 @@ export function runMarker<M extends RunMeta>(
         .eq("entityId", entityId);
       if (error) throw new Error(`Failed to clear the run: ${error.message}`);
     },
-    markApplied: {
-      sql: `UPDATE "externalIntegrationMapping"
-        SET "metadata" = coalesce("metadata", '{}'::jsonb) || '{"applied": true}'::jsonb
-        WHERE "integration" = $1 AND "companyId" = $2 AND "entityId" = $3`,
-      parameters: [integration, companyId, entityId]
-    }
+    markApplied: stamp("applied"),
+    markReverted: stamp("reverted")
   };
 }
 
@@ -315,17 +337,37 @@ export async function failRun(
 /**
  * A job's `onFailure`: mark its run failed when the job died without reaching
  * its own catch (a timeout, an out-of-memory kill), so the run does not stay
- * "running" and lock the company out of every later run. A run that already
- * settled is left as it is.
+ * "running" and lock the company out of every later run. Only the state THIS
+ * job leaves (`stuck`) on a marker it `owns` is failed: an apply's handler must
+ * not fail the user's revert, nor an export's a later export on the same row.
  */
-export async function failStuckRun(
-  marker: RunMarker<RunMeta>,
+export async function failStuckRun<M extends RunMeta>(
+  marker: RunMarker<M>,
   err: unknown,
-  prefix = ""
+  stuck: "running" | "reverting",
+  owns: (meta: M) => boolean = () => true
 ): Promise<void> {
   const meta = await marker.read();
-  if (meta?.status !== "running" && meta?.status !== "reverting") return;
-  await failRun(marker, err, prefix);
+  if (meta?.status !== stuck || !owns(meta)) return;
+  await failRun(marker, err, stuck === "reverting" ? "Revert failed: " : "");
+}
+
+/**
+ * What a restore or demo-data apply's work step does with its own marker:
+ * `skip` when it has nothing left to do, `finish` the post-commit work when
+ * its data already committed (loading again would wipe what an earlier attempt
+ * loaded), or `start` from the top. The job's first step (`claimRun`) wrote
+ * the marker, so a missing one was kept, dismissed or reverted during a retry
+ * backoff: starting over would bring back what the user just removed.
+ */
+export function resumeRun(
+  meta: Pick<ReversibleRunMeta, "status" | "applied" | "reverted"> | null
+): "start" | "finish" | "skip" {
+  if (!meta) return "skip";
+  if (meta.status === "ready" || meta.status === "reverting" || meta.reverted) {
+    return "skip";
+  }
+  return meta.applied ? "finish" : "start";
 }
 
 /**
@@ -386,22 +428,39 @@ export async function takeSnapshot<M extends ReversibleRunMeta>(
   const existing = (await marker.read())?.snapshotPath;
   if (existing) return existing;
   const name = snapshotName(args.run, args.runId);
-  await writeCompanyBackup(client, db, {
-    companyId: args.companyId,
-    userId: args.userId,
-    label: `Pre-${args.run} ${args.runId}`,
-    includeStorage: "all",
-    name,
-    onProgress: (p) => args.onProgress({ ...p, phase: "snapshot" })
-  });
+  try {
+    await writeCompanyBackup(client, db, {
+      companyId: args.companyId,
+      userId: args.userId,
+      label: `Pre-${args.run} ${args.runId}`,
+      includeStorage: "all",
+      snapshot: true,
+      name,
+      onProgress: (p) => args.onProgress({ ...p, phase: "snapshot" })
+    });
+  } catch (err) {
+    // Never recorded, so nothing else would ever delete it.
+    await deleteCompanyFiles(client, args.companyId, backupDir(name)).catch(
+      (cleanupErr) =>
+        log.error("Failed to delete a partial snapshot", {
+          companyId: args.companyId,
+          name,
+          error:
+            cleanupErr instanceof Error
+              ? cleanupErr.message
+              : String(cleanupErr)
+        })
+    );
+    throw err;
+  }
   await marker.write({ ...args.record, snapshotPath: name });
   return name;
 }
 
 /**
- * Keep a settled run: delete its snapshot, then its marker. Also dismisses a
- * failed one, which may still hold a snapshot. A run still in flight is refused,
- * or the marker would go out from under it.
+ * Keep a settled run: clear its marker, then delete its snapshot. Also
+ * dismisses a failed one, which may still hold a snapshot. A run still in
+ * flight is refused, or the marker would go out from under it.
  */
 export async function keepRun(
   client: ServiceRole,
@@ -413,18 +472,36 @@ export async function keepRun(
   if (meta.status !== "ready" && meta.status !== "failed") {
     throw new NonRetriableError(`Cannot keep a run that is ${meta.status}`);
   }
-  if (meta.snapshotPath) {
-    await deleteCompanyFiles(client, companyId, backupDir(meta.snapshotPath));
-  }
   await marker.clear();
+  if (meta.snapshotPath)
+    await deleteSnapshot(client, companyId, meta.snapshotPath);
   return true;
+}
+
+/** Best-effort, after the marker naming it is gone: a crash in between leaks
+ *  files, never leaves a marker pointing at a deleted snapshot. */
+async function deleteSnapshot(
+  client: ServiceRole,
+  companyId: string,
+  snapshotPath: string
+): Promise<void> {
+  await deleteCompanyFiles(client, companyId, backupDir(snapshotPath)).catch(
+    (err) =>
+      log.error("Failed to delete a run's snapshot", {
+        companyId,
+        snapshotPath,
+        error: err instanceof Error ? err.message : String(err)
+      })
+  );
 }
 
 /**
  * Undo a run: wipe the company again and load its snapshot back, the same scope
- * the run covered, then delete the snapshot and the marker. The snapshot is this
- * company's own data, so it loads verbatim. On failure the marker keeps the
- * snapshot, so the revert can be retried.
+ * the run covered, then clear the marker and delete the snapshot. The snapshot
+ * is this company's own data, so it loads verbatim. On failure, or when files
+ * could not be put back, the marker keeps the snapshot so the revert can be
+ * retried. Only a run whose change is pending is reverted: a failed run whose
+ * data never landed holds a snapshot that is not the way back to anything.
  */
 export async function revertRun(
   client: ServiceRole,
@@ -433,7 +510,10 @@ export async function revertRun(
   companyId: string
 ): Promise<{ reverted: boolean; rows?: number }> {
   const meta = await marker.read();
-  if (!meta) return { reverted: false };
+  // Running: an apply still in flight. Reverting: a retry of this revert.
+  if (!meta || meta.status === "running" || !holdsPendingChange(meta)) {
+    return { reverted: false };
+  }
   const snapshotPath = meta.snapshotPath;
   if (!snapshotPath) {
     // Failed, not a quiet no-op: a marker left as it was would keep offering a
@@ -484,9 +564,10 @@ export async function revertRun(
       remap: null,
       includeGroup: meta.includeGroup ?? false,
       targetGroupId: await getCompanyGroupId(client, companyId),
-      onProgress: report
+      onProgress: report,
+      markApplied: marker.markReverted
     });
-    await restoreAssetsFromBackup(
+    const files = await restoreAssetsFromBackup(
       client,
       {
         files: snapshot.manifest.storage,
@@ -497,8 +578,7 @@ export async function revertRun(
       },
       (done, total) => report({ phase: "files", done, total })
     );
-    // The data is already back: a file or a snapshot left behind is only
-    // logged, never reported as a failed revert.
+    // The data is already back: a file left behind is only logged.
     // Recorded from a user-editable manifest by older runs: only keys inside
     // this company's folder are ever deleted.
     const addedFiles = (meta.addedFiles ?? []).filter(
@@ -511,15 +591,19 @@ export async function revertRun(
         error: err instanceof Error ? err.message : String(err)
       })
     );
-    await deleteCompanyFiles(client, companyId, backupDir(snapshotPath)).catch(
-      (err) =>
-        log.error("Failed to delete a reverted run's snapshot", {
-          companyId,
-          snapshotPath,
-          error: err instanceof Error ? err.message : String(err)
-        })
-    );
+    if (files.failed > 0) {
+      // `applied` stays: Keep and Revert stay offered, and the snapshot with them.
+      await marker.write({
+        status: "failed",
+        progress: null,
+        error:
+          `The data was reverted, but ${files.failed} file(s) could not be ` +
+          "restored. Revert again to retry them."
+      });
+      return { reverted: false, rows };
+    }
     await marker.clear();
+    await deleteSnapshot(client, companyId, snapshotPath);
     return { reverted: true, rows };
   } catch (err) {
     throw await failRun(marker, err, "Revert failed: ");

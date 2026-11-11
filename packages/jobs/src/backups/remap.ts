@@ -15,16 +15,23 @@ import {
 import { async } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
 import { customAlphabet } from "nanoid";
-import type { Catalog, ColumnInfo, TableInfo } from "./catalog";
+import {
+  type Catalog,
+  type ColumnInfo,
+  idForeignKeyByColumn,
+  type TableInfo
+} from "./catalog";
 import { TABLE_CONCURRENCY } from "./concurrency";
 import { type CompanyBackup, type Row, tableRows } from "./format";
 import { ID_REF_COLUMNS, ROW_ID_REF_COLUMNS } from "./id-refs";
 import {
+  isCrossTenantEdge,
   isSecretTable,
   READABLE_ID_TABLES,
   RETAINED_REF_TABLES,
   USER_REF_TABLES
 } from "./policy";
+import { anyOf, parentExistence } from "./scope";
 
 /**
  * Re-stamping a backup's rows onto another company: fresh ids, FKs and FK-less
@@ -141,26 +148,39 @@ export function scanRows(
  * (`companyId IS NULL` global rows the backup deliberately omits — e.g. the
  * seeded `material*` reference rows). A ref resolving to one of those is NOT a
  * gap. The restore passes these from a live probe of the target; tests omit them.
+ *
+ * `groupLoaded: false` (an own restore into a group shared with other
+ * companies): the group's tables are not loaded, so the backup's chart of
+ * accounts proves nothing — a ref into it resolves only against the live
+ * group's rows, which `loadSubstrateIds` with `liveGroup` puts in
+ * `knownSubstrateIds`.
  */
 export function findDanglingReferences(
   catalog: Catalog,
   scan: BackupScan,
-  knownSubstrateIds?: Map<string, Set<unknown>>
+  knownSubstrateIds?: Map<string, Set<unknown>>,
+  opts: { groupLoaded?: boolean } = {}
 ): DanglingRef[] {
-  const catalogNames = new Set(catalog.tables.map((t) => t.name));
+  const byName = new Map(catalog.tables.map((t) => [t.name, t]));
+  const notLoaded = (name: string) =>
+    opts.groupLoaded === false &&
+    byName.get(name)?.scopeColumn === "companyGroupId";
   const found = new Map<string, DanglingRef>();
   for (const t of catalog.tables) {
-    if (!scan.tables.has(t.name)) continue;
+    if (!scan.tables.has(t.name) || notLoaded(t.name)) continue;
     const colByName = new Map(t.columns.map((c) => [c.name, c]));
     for (const fk of t.foreignKeys) {
       if (fk.refColumn !== "id") continue;
       if (isSecretTable(fk.refTable)) continue; // parent never present in any backup
       if (RETAINED_REF_TABLES.has(fk.refTable)) continue;
-      if (!catalogNames.has(fk.refTable)) continue; // non-scoped global → stable ids
+      if (!byName.has(fk.refTable)) continue; // non-scoped global → stable ids
+      if (isCrossTenantEdge(t.name, fk.column)) continue;
       const col = colByName.get(fk.column);
       const values = scan.refs.get(`${t.name}.${fk.column}`);
       if (!col || !values) continue;
-      const refIds = scan.ids.get(fk.refTable) ?? new Set();
+      const refIds = notLoaded(fk.refTable)
+        ? new Set()
+        : (scan.ids.get(fk.refTable) ?? new Set());
       const substrateIds = knownSubstrateIds?.get(fk.refTable);
       for (const [v, count] of values) {
         if (refIds.has(v)) continue;
@@ -194,11 +214,15 @@ export function findDanglingReferences(
 export function assertReferentiallyClosed(
   catalog: Catalog,
   scan: BackupScan,
-  knownSubstrateIds?: Map<string, Set<unknown>>
+  knownSubstrateIds?: Map<string, Set<unknown>>,
+  opts: { groupLoaded?: boolean } = {}
 ): { ok: true } | { ok: false; reason: string } {
-  const fatal = findDanglingReferences(catalog, scan, knownSubstrateIds).filter(
-    (d) => d.fatal
-  );
+  const fatal = findDanglingReferences(
+    catalog,
+    scan,
+    knownSubstrateIds,
+    opts
+  ).filter((d) => d.fatal);
   if (fatal.length === 0) return { ok: true };
   const lines = fatal
     .map(
@@ -220,9 +244,10 @@ export function assertReferentiallyClosed(
  * Load the TARGET's substrate ids — the `companyId IS NULL` (global) rows that a
  * company backup deliberately omits because they're seeded into every
  * environment (e.g. the global `material*` reference rows). Returns a per-table
- * `id` set for every catalog table that (a) is the target of a NOT-NULL FK from
- * data the backup carries and (b) has a direct scope column that could hold a
- * global row. A company row's FK into one of these resolves against the target's
+ * `id` set for every catalog table that (a) is the target of an FK from data the
+ * backup carries — nullable too, or a foreign load would clear a valid optional
+ * ref like `material.gradeId` — and (b) has a direct scope column that could
+ * hold a global row. A company row's FK into one of these resolves against the target's
  * own seed, not the backup — so feeding this to {@link assertReferentiallyClosed}
  * stops it flagging that legitimate cross-boundary ref, while still catching a
  * ref to a row that exists in neither the backup nor the target.
@@ -230,35 +255,46 @@ export function assertReferentiallyClosed(
  * List-free and data-driven: it probes the actual target, so it can't drift from
  * a hand-maintained set of "reference tables". Tables with no global rows simply
  * return an empty set. One query per referenced table.
+ *
+ * `liveGroup`: the group's tables are NOT loaded (an own restore into a group
+ * other companies share), so a ref into one resolves against the live group's
+ * rows, nullable or not — those ids are returned as present too.
  */
 export async function loadSubstrateIds(
   db: Kysely<KyselyDatabase>,
   catalog: Catalog,
-  scan: BackupScan
+  scan: BackupScan,
+  opts: {
+    liveGroup?: { companyId: string; companyGroupId: string | null };
+  } = {}
 ): Promise<Map<string, Set<unknown>>> {
   const byName = new Map(catalog.tables.map((t) => [t.name, t]));
-  const wanted = new Map<string, { scopeColumn: string; ids: Set<unknown> }>();
+  const { liveGroup } = opts;
+  const isLive = (table: TableInfo) =>
+    liveGroup !== undefined && table.scopeColumn === "companyGroupId";
+  const wanted = new Map<string, Set<unknown>>();
   for (const t of catalog.tables) {
-    if (!scan.tables.has(t.name)) continue;
+    if (!scan.tables.has(t.name) || isLive(t)) continue;
     const colByName = new Map(t.columns.map((c) => [c.name, c]));
     for (const fk of t.foreignKeys) {
       if (fk.refColumn !== "id") continue;
       const ref = byName.get(fk.refTable);
-      if (!ref || ref.scope.kind !== "direct") continue; // only directly-scoped tables hold global rows
-      // A NOT-NULL scope column can't contain a `companyId IS NULL` row, so the
-      // probe would always be empty.
-      const refScopeCol = ref.columns.find((c) => c.name === ref.scope.column);
-      if (!refScopeCol?.isNullable) continue;
       const col = colByName.get(fk.column);
-      if (!col || col.isNullable) continue; // nullable → restore nulls a missing ref
-      const entry = wanted.get(fk.refTable) ?? {
-        scopeColumn: ref.scope.column,
-        ids: new Set<unknown>()
-      };
-      for (const v of scan.refs.get(`${t.name}.${fk.column}`)?.keys() ?? []) {
-        entry.ids.add(v);
+      if (!ref || !col) continue;
+      if (!isLive(ref)) {
+        if (ref.scope.kind !== "direct") continue; // only directly-scoped tables hold global rows
+        // A NOT-NULL scope column can't contain a `companyId IS NULL` row, so the
+        // probe would always be empty.
+        const refScopeCol = ref.columns.find(
+          (c) => c.name === ref.scope.column
+        );
+        if (!refScopeCol?.isNullable) continue;
       }
-      wanted.set(fk.refTable, entry);
+      const ids = wanted.get(fk.refTable) ?? new Set<unknown>();
+      for (const v of scan.refs.get(`${t.name}.${fk.column}`)?.keys() ?? []) {
+        ids.add(v);
+      }
+      wanted.set(fk.refTable, ids);
     }
   }
 
@@ -266,14 +302,27 @@ export async function loadSubstrateIds(
   await async.map(
     [...wanted.keys()],
     async (refTable) => {
-      const { scopeColumn, ids } = wanted.get(refTable)!;
-      const idList = [...ids];
+      const ref = byName.get(refTable)!;
+      const idList = [...wanted.get(refTable)!];
       if (idList.length === 0) return;
+      const where =
+        liveGroup && isLive(ref)
+          ? parentExistence(
+              ref,
+              byName,
+              liveGroup.companyId,
+              liveGroup.companyGroupId
+            )
+          : sql`${sql.id(ref.scope.column)} IS NULL`;
       const present = await sql<{ id: unknown }>`
       SELECT ${sql.id("id")} AS id
       FROM ${sql.id(refTable)}
-      WHERE ${sql.id(scopeColumn)} IS NULL
-        AND ${sql.id("id")} IN (${sql.join(idList.map((v) => sql`${v}`))})
+      WHERE (${where})
+        AND ${anyOf(
+          "id",
+          idList,
+          ref.columns.find((c) => c.name === "id")?.udtName
+        )}
     `.execute(db);
       result.set(refTable, new Set(present.rows.map((r) => r.id)));
     },
@@ -464,7 +513,7 @@ export function buildRowTransforms(
   }
 ): RowTransform[] {
   const identity: RowTransform = (v) => v;
-  const fkByColumn = new Map(table.foreignKeys.map((fk) => [fk.column, fk]));
+  const fkByColumn = idForeignKeyByColumn(table);
   // A company-singleton (one row per company) keys itself by `id -> company`, so
   // its `id` IS the company id. On remap it must follow the company, not mint a
   // fresh id (which would orphan the row and dangle the id->company FK).
@@ -549,16 +598,38 @@ export function buildRowTransforms(
     }
     // A storage path is any text value under the source company's folder,
     // whatever the column is called (`document.path`, `supplier.logo`,
-    // `supplierQuote.sharedFilePaths`, …). The files are copied with the same
-    // rewrite, so path and file stay together.
+    // `supplierQuote.sharedFilePaths`, …), or a link to one inside rich text.
+    // The files are copied with the same rewrite, so path and file stay together.
+    const paths = (v: string) =>
+      rewriteEmbeddedPaths(
+        v,
+        ctx.sourceCompanyId,
+        ctx.companyId,
+        ctx.idRewrite
+      );
     if (col.udtName === "text" || col.udtName === "_text") {
-      const { sourceCompanyId, companyId, idRewrite } = ctx;
-      const prefix = `${sourceCompanyId}/`;
-      const rewrite = (v: unknown) =>
-        typeof v === "string" && v.startsWith(prefix)
-          ? rewriteStoragePath(v, sourceCompanyId, companyId, idRewrite)
-          : v;
+      const rewrite = (v: unknown) => (typeof v === "string" ? paths(v) : v);
       return (v) => (Array.isArray(v) ? v.map(rewrite) : rewrite(v));
+    }
+    // JSON holds ids no FK can see (`methodMaterial.storageUnitIds` maps a
+    // location id to a storage unit id; a baseline snapshot names elements) and
+    // rich text linking stored files. A remapped id is a random token, so any
+    // key or string equal to one is that row.
+    if (col.udtName === "jsonb" || col.udtName === "json") {
+      const { idRewrite } = ctx;
+      const rewrite = (v: unknown): unknown => {
+        if (typeof v === "string") return idRewrite.get(v) ?? paths(v);
+        if (Array.isArray(v)) return v.map(rewrite);
+        if (v && typeof v === "object") {
+          const out: Record<string, unknown> = {};
+          for (const [key, value] of Object.entries(v)) {
+            out[idRewrite.get(key) ?? key] = rewrite(value);
+          }
+          return out;
+        }
+        return v;
+      };
+      return rewrite;
     }
     return identity;
   };
@@ -647,6 +718,37 @@ export function rewriteStoragePath(
       return mapped ? mapped + rest : seg;
     })
     .join("/");
+}
+
+/**
+ * Rewrite every storage path under the source company's folder inside a text
+ * value: the whole value when it IS a path (a file name may hold spaces), else
+ * each one embedded in a URL, such as `/file/preview/private/{company}/…` in
+ * rich text, up to the next character a URL can't hold unescaped.
+ */
+export function rewriteEmbeddedPaths(
+  value: string,
+  sourceCompanyId: string,
+  targetCompanyId: string,
+  idRewrite: Map<string, string>
+): string {
+  const prefix = `${sourceCompanyId}/`;
+  if (value.startsWith(prefix)) {
+    return rewriteStoragePath(
+      value,
+      sourceCompanyId,
+      targetCompanyId,
+      idRewrite
+    );
+  }
+  if (!value.includes(prefix)) return value;
+  const embedded = new RegExp(
+    `(?<=/)${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[^\\s"'<>()\\[\\]{}?#,;]*`,
+    "g"
+  );
+  return value.replace(embedded, (path) =>
+    rewriteStoragePath(path, sourceCompanyId, targetCompanyId, idRewrite)
+  );
 }
 
 /** Base58, as the SQL `id()` default writes ids (`projects.service.ts` copies do the same). */

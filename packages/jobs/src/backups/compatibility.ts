@@ -5,7 +5,12 @@
 import type { Catalog } from "./catalog";
 import { BACKUP_VERSION, type CompanyBackup, type Manifest } from "./format";
 import { CATALOG_EXCLUDED_TABLES } from "./policy";
-import { renameColumns, renameLiveColumns, TABLE_RENAMES } from "./renames";
+import {
+  ownEntry,
+  renameColumns,
+  renameLiveColumns,
+  TABLE_RENAMES
+} from "./renames";
 
 /**
  * Whether a backup still loads into today's schema: the per-finding report the
@@ -74,7 +79,7 @@ export function reportBackupCompatibility(
     // an UNMAPPED name blocks — see renames.ts for why guessing is unacceptable.
     let live = liveByName.get(backupTable.name);
     if (!live) {
-      const renamedTo = TABLE_RENAMES[backupTable.name];
+      const renamedTo = ownEntry(TABLE_RENAMES, backupTable.name);
       if (renamedTo === undefined) {
         findings.push({
           kind: "blocked",

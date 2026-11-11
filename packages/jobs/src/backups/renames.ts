@@ -72,11 +72,23 @@ export const LIVE_COLUMN_RENAMES: Record<string, Record<string, string>> = {
   inspectionDocument: { drawingNumber: "name" }
 };
 
+/**
+ * `map[name]` for a name read from a backup, own keys only: a backup is a file
+ * the user can edit, and a table or column named `constructor` would otherwise
+ * resolve to `Object.prototype.constructor`.
+ */
+export function ownEntry<T>(
+  map: Record<string, T>,
+  name: string
+): T | undefined {
+  return Object.hasOwn(map, name) ? map[name] : undefined;
+}
+
 /** A live table's column list under its CURRENT column names. */
 export function renameLiveColumns(table: string, columns: string[]): string[] {
   const map = liveColumnMap(table, columns);
   if (!map) return columns;
-  return columns.map((column) => map[column] ?? column);
+  return columns.map((column) => ownEntry(map, column) ?? column);
 }
 
 /** The renames that apply to this backup's copy of the table, if any. */
@@ -84,7 +96,7 @@ function liveColumnMap(
   table: string,
   columns: string[]
 ): Record<string, string> | null {
-  const map = LIVE_COLUMN_RENAMES[table];
+  const map = ownEntry(LIVE_COLUMN_RENAMES, table);
   if (!map) return null;
   const present = new Set(columns);
   const applicable = Object.fromEntries(
@@ -97,16 +109,16 @@ function liveColumnMap(
 
 /** A renamed table's column list under its CURRENT column names. */
 export function renameColumns(oldTable: string, columns: string[]): string[] {
-  const map = COLUMN_RENAMES[oldTable];
+  const map = ownEntry(COLUMN_RENAMES, oldTable);
   if (!map) return columns;
-  return columns.map((column) => map[column] ?? column);
+  return columns.map((column) => ownEntry(map, column) ?? column);
 }
 
 function renameRows(map: Record<string, string>, rows: Row[]): Row[] {
   return rows.map((row) => {
     const renamed: Row = {};
     for (const [column, value] of Object.entries(row)) {
-      renamed[map[column] ?? column] = value;
+      renamed[ownEntry(map, column) ?? column] = value;
     }
     return renamed;
   });
@@ -128,7 +140,7 @@ export function applyTableRenames(
   // rename cycle (A→B→A) safe: the stale `A: "B"` entry is never read.
   const resolve = (name: string): string | null => {
     if (live.has(name)) return name;
-    const mapped = TABLE_RENAMES[name];
+    const mapped = ownEntry(TABLE_RENAMES, name);
     if (mapped === null) return null;
     // Can't resolve confidently — leave it for the gate to refuse by name.
     if (mapped === undefined || !live.has(mapped) || stored.has(mapped)) {
@@ -155,7 +167,10 @@ export function applyTableRenames(
       continue;
     }
     tables.push({ ...t, name: to, columns: renameColumns(t.name, t.columns) });
-    sources.set(to, { from: t.name, columns: COLUMN_RENAMES[t.name] ?? null });
+    sources.set(to, {
+      from: t.name,
+      columns: ownEntry(COLUMN_RENAMES, t.name) ?? null
+    });
   }
 
   return {

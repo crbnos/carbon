@@ -10,8 +10,8 @@ import {
 import { getLogger } from "@carbon/logger";
 import { async, chunkArray } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { NonRetriableError } from "inngest";
 import {
-  BACKUP_KIND,
   backupAssetsDir,
   backupManifestPath,
   backupTablePath,
@@ -19,6 +19,7 @@ import {
   EXPORTS_PREFIX,
   isSnapshotName,
   type Manifest,
+  parseManifest,
   readTableRows
 } from "./format";
 import { rewriteStoragePath } from "./remap";
@@ -96,28 +97,32 @@ export async function readBackup(
       }`
     );
   }
-  const manifest = JSON.parse(await mf.data.text()) as Manifest;
-  if (manifest.kind !== BACKUP_KIND) {
-    throw new Error("Not a Carbon company backup");
+  const manifest = parseManifest(await mf.data.text());
+  if (!manifest) {
+    throw new NonRetriableError(
+      `Backup ${name} has no valid manifest — it is not a Carbon company backup, or it is damaged.`
+    );
   }
-  const stored = new Set(manifest.tables.map((t) => t.name));
+  const parts = new Map(manifest.tables.map((t) => [t.name, t.parts ?? 1]));
 
   return {
     manifest,
     async *rows(table) {
-      if (!stored.has(table)) return;
-      const f = await client.storage
-        .from(bucket)
-        .download(backupTablePath(name, table))
-        .asStream();
-      if (f.error || !f.data) {
-        throw new Error(
-          `Failed to download table ${table} for ${name}: ${
-            f.error?.message || JSON.stringify(f.error) || "not found"
-          }`
-        );
+      const count = parts.get(table) ?? 0;
+      for (let part = 0; part < count; part++) {
+        const f = await client.storage
+          .from(bucket)
+          .download(backupTablePath(name, table, part))
+          .asStream();
+        if (f.error || !f.data) {
+          throw new Error(
+            `Failed to download table ${table} for ${name}: ${
+              f.error?.message || JSON.stringify(f.error) || "not found"
+            }`
+          );
+        }
+        yield* readTableRows(f.data as unknown as AsyncIterable<Uint8Array>);
       }
-      yield* readTableRows(f.data as unknown as AsyncIterable<Uint8Array>);
     }
   };
 }
@@ -157,27 +162,24 @@ export async function listBackups(
         if (await isStorageNotFound(mf.error)) return { name, manifest: null };
         throw mf.error;
       }
-      try {
-        return { name, manifest: JSON.parse(await mf.data.text()) as Manifest };
-      } catch {
-        return { name, manifest: null };
-      }
+      return { name, manifest: parseManifest(await mf.data.text()) };
     },
     { concurrency: ASSET_COPY_CONCURRENCY }
   );
 }
 
-/** Upload one table file of a backup being written. */
+/** Upload one table file (or one part of a split table) of a backup being written. */
 export async function writeBackupTable(
   client: SupabaseClient,
   companyId: string,
   name: string,
   table: string,
-  file: Buffer
+  file: Buffer,
+  part = 0
 ): Promise<void> {
   const up = await client.storage
     .from(getCompanyPrivateBucket(companyId))
-    .upload(backupTablePath(name, table), file, {
+    .upload(backupTablePath(name, table, part), file, {
       contentType: "application/gzip",
       upsert: true
     });
@@ -205,25 +207,31 @@ export async function writeBackupManifest(
   if (up.error) throw new Error(`manifest: ${up.error.message}`);
 }
 
+/** A backup folder's own `manifest.json`, not a file of that name among its assets. */
+const BACKUP_MANIFEST = new RegExp(`^${EXPORTS_PREFIX}/[^/]+/manifest\\.json$`);
+
 /**
  * Delete every file under `prefix` of the company's bucket ("" for all of it).
  * Lists the whole folder first, then removes in batches: removing while paging
- * would shift the pages. Throws on any error, so a caller knows the files are gone.
+ * would shift the pages. Each backup's manifest goes first: it marks the backup
+ * complete, so a delete cut short leaves a folder that lists as incomplete, not
+ * one that still offers a restore. Throws on any error, so a caller knows the
+ * files are gone.
  */
 export async function deleteCompanyFiles(
   client: SupabaseClient,
   companyId: string,
   prefix: string
 ): Promise<void> {
-  const files = await listFolder(
-    client,
-    getCompanyPrivateBucket(companyId),
-    prefix
-  );
+  const paths = (
+    await listFolder(client, getCompanyPrivateBucket(companyId), prefix)
+  ).map((f) => f.path);
+  const manifests = paths.filter((p) => BACKUP_MANIFEST.test(p));
+  await removeCompanyPaths(client, companyId, manifests);
   await removeCompanyPaths(
     client,
     companyId,
-    files.map((f) => f.path)
+    paths.filter((p) => !BACKUP_MANIFEST.test(p))
   );
 }
 

@@ -60,6 +60,11 @@ Route: `/x/settings/backups` (internal-gated — needs an `@carbon.ms` / `@carbo
 - Revert deletes the files its restore added (`addedFiles` on the marker); check B's file count returns to its pre-restore value.
 - Picker options read `<label><date>` with no space: select by `textContent.startsWith(label)` via eval, since a long list puts options outside the viewport.
 
+## Round 3 (2026-11-11): after the review fixes
+- Own "Data + files" restore → revert of a fresh backup: item-id md5, journalLine and document counts identical before, after restore and after revert; marker and `_pre-restore-*` folder gone after revert.
+- The search index is rebuilt by the load: entries per type equal the source tables' row counts (the old index carried stale entries from earlier restores).
+- Demo data apply → revert: same fingerprint before and after.
+
 ## Onboarding import (2026-11-10)
 - Needs a user with no company: create a passwordless local user with the admin API on `http://127.0.0.1:<PORT_API>/auth/v1/admin/users` (`email_confirm: true`, an `@carbon.ms` address — restore is internal-only), sign in by the magic link from the local mail catcher (`http://127.0.0.1:54324/api/v1/mailbox/<local-part>`). Sign out first through the user menu; `/logout` doesn't.
 - Steps: theme → user (first/last name, `requestSubmit`) → company (name, address combobox via `fill`, city, postal code) → industry: click the "Restore from a backup" label, Next, set the file on the input, click "Create company". The page uploads to staging, then posts `backupPath`.

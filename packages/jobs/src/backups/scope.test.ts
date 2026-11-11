@@ -14,9 +14,12 @@ import { describe, expect, it } from "vitest";
 import type { JobDatabase } from "../db";
 import type { ColumnInfo, ForeignKey, TableInfo } from "./catalog";
 import {
+  anyOf,
   buildDanglingPredicate,
   buildExclusionPredicate,
+  buildScopeFilter,
   formatScopeViolations,
+  referenceEdges,
   scopeEdges
 } from "./scope";
 
@@ -150,7 +153,7 @@ describe("buildExclusionPredicate", () => {
     expect(built?.terms.map((t) => t.cause)).toEqual(["violation"]);
     const text = compile(built!.predicate);
     expect(text).toContain(
-      `"itemId" IS NOT NULL AND "itemId" NOT IN (SELECT "id" FROM "item" WHERE "companyId" = $1 OR "companyId" IS NULL)`
+      `"pickMethod"."itemId" IS NOT NULL AND NOT EXISTS (SELECT 1 FROM "item" AS __parent WHERE __parent."id" = "pickMethod"."itemId" AND ("companyId" = $1 OR "companyId" IS NULL))`
     );
   });
 
@@ -183,8 +186,8 @@ describe("buildExclusionPredicate", () => {
       "jobId:violation"
     ]);
     const text = compile(withParent!.predicate);
-    expect(text).toContain(`"operationId" IN (`);
-    expect(text).toContain(`"dependsOnId" IN (`);
+    expect(text).toContain(`"operationId" = ANY(`);
+    expect(text).toContain(`"dependsOnId" = ANY(`);
     expect(text).toContain(" OR ");
   });
 
@@ -201,7 +204,7 @@ describe("buildExclusionPredicate", () => {
     );
     expect(built).not.toBeNull();
     expect(compile(built!.predicate)).toContain(
-      `"jobId" NOT IN (SELECT "id" FROM "job"`
+      `NOT EXISTS (SELECT 1 FROM "job" AS __parent WHERE __parent."id" = "jobOperationDependency"."jobId"`
     );
   });
 });
@@ -251,5 +254,71 @@ describe("buildDanglingPredicate", () => {
       [fk("abilityId", "ability")]
     );
     expect(buildDanglingPredicate(optional, names)).toBeNull();
+  });
+});
+
+describe("intercompany transactions", () => {
+  const journalLine = table("journalLine", [col("id"), col("companyId")]);
+  const ict = {
+    ...table(
+      "intercompanyTransaction",
+      [
+        col("id"),
+        col("companyGroupId"),
+        col("sourceCompanyId"),
+        col("targetCompanyId"),
+        col("sourceJournalLineId")
+      ],
+      [fk("sourceJournalLineId", "journalLine")]
+    ),
+    scope: { kind: "direct", column: "companyGroupId" },
+    scopeColumn: "companyGroupId"
+  } as TableInfo;
+  const names = new Map([journalLine, ict].map((t) => [t.name, t]));
+
+  it("scopes a company to the transactions it is a party to", () => {
+    const { sql: text, parameters } = sql`SELECT 1 WHERE ${buildScopeFilter(
+      ict,
+      names,
+      "C",
+      "G"
+    )}`.compile(db);
+    expect(text).toContain(
+      `"companyGroupId" = $1 AND $2 IN ("sourceCompanyId", "targetCompanyId")`
+    );
+    expect(parameters).toEqual(["G", "C"]);
+  });
+
+  it("never treats the counterparty's journal line as escaping scope", () => {
+    expect(scopeEdges(ict, new Set(names.keys()), names)).toEqual([]);
+    expect(referenceEdges(ict, names)).toEqual([]);
+  });
+});
+
+describe("referenceEdges", () => {
+  it("checks nullable refs too, and never retained or global ones", () => {
+    const edges = referenceEdges(pickMethod, byName);
+    // defaultStorageUnitId targets a table outside this catalog (global).
+    expect(edges.map((e) => `${e.column}→${e.parent.name}`)).toEqual([
+      "itemId→item"
+    ]);
+    const withStorage = new Map(byName).set(
+      "storageUnit",
+      table("storageUnit", [col("id"), col("companyId")])
+    );
+    expect(
+      referenceEdges(pickMethod, withStorage).map((e) => e.column)
+    ).toEqual(["itemId", "defaultStorageUnitId"]);
+  });
+});
+
+describe("anyOf", () => {
+  it("binds one array, cast to the id column's type", () => {
+    const ids = Array.from({ length: 70_000 }, (_, i) => `id${i}`);
+    const compiled = sql`SELECT 1 WHERE ${anyOf("id", ids, "uuid")}`.compile(
+      db
+    );
+    expect(compiled.sql).toBe(`SELECT 1 WHERE "id" = ANY($1::uuid[])`);
+    expect(compiled.parameters).toHaveLength(1);
   });
 });

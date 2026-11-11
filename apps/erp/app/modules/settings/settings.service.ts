@@ -225,13 +225,13 @@ import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { resolveCapabilities } from "@carbon/ee/sync";
 import { flags } from "@carbon/env/flags.server";
 import {
+  COMPANY_BUCKET_FILE_SIZE_LIMIT,
   getCompanyPrivateBucket,
   isUnsafeStoragePath,
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
 import { type Events, trigger } from "@carbon/jobs";
 import {
-  backupAssetsDir,
   backupDir,
   backupManifestPath,
   compatibilityStatus,
@@ -244,6 +244,7 @@ import {
   listBackups,
   listCompanyFiles,
   newBackupName,
+  parseManifest,
   purgeScopeViolations,
   RESTORE_INTEGRATION,
   type RestoreRunMeta,
@@ -1634,14 +1635,12 @@ export async function requireBackupAccess(request: Request) {
 }
 
 /** A name the user may restore, download or delete: one of their own backups,
- *  never a path, never a restore's or template's snapshot. */
+ *  never a path, never a restore's or template's snapshot. An allowlist of what
+ *  `newBackupName` produces: storage decodes percent-escapes in the key (so
+ *  `%5Fpre-` reaches a snapshot, `%2F` a nested key), and the name also goes
+ *  into a Content-Disposition header, where a quote or non-Latin-1 char 500s. */
 export function isUserBackupName(name: string): boolean {
-  return (
-    name.length > 0 &&
-    !name.includes("/") &&
-    !isUnsafeStoragePath(name) &&
-    !isSnapshotName(name)
-  );
+  return /^[A-Za-z0-9_-]{1,120}$/.test(name) && !isSnapshotName(name);
 }
 
 /** How many objects to download at once while packing the tar in order.
@@ -1726,11 +1725,17 @@ export async function packBackupArchive(
   archive.pipe(gzip);
   const stream = new ReadableStream({
     start(controller) {
-      gzip.on("data", (chunk: Buffer) =>
-        controller.enqueue(new Uint8Array(chunk))
-      );
+      gzip.on("data", (chunk: Buffer) => {
+        controller.enqueue(new Uint8Array(chunk));
+        // A slow client must not make the whole backup pile up in memory:
+        // stop reading until `pull` asks for more.
+        if ((controller.desiredSize ?? 1) <= 0) gzip.pause();
+      });
       gzip.on("end", () => controller.close());
       gzip.on("error", (err) => controller.error(err));
+    },
+    pull() {
+      gzip.resume();
     },
     cancel() {
       gzip.destroy();
@@ -1741,15 +1746,6 @@ export async function packBackupArchive(
   return stream;
 }
 
-/**
- * Unpack a `.carbon.tar.gz` (a whole backup folder) into a fresh backup folder
- * so restore/import can read it. Streams entry-by-entry — every file is small
- * and under the bucket size cap — so a multi-GB prod backup is never uploaded
- * as one (over-cap) object. Returns the folder name.
- *
- * Shared by the Settings upload route and the onboarding "restore from a
- * backup" flow.
- */
 /**
  * A signed upload slot for a `.carbon.tar.gz` under `prefix` in the staging
  * bucket. The browser PUTs the archive there, so a real backup never passes
@@ -1812,6 +1808,15 @@ export async function unpackStagedBackupArchive(
   }
 }
 
+/**
+ * Unpack a `.carbon.tar.gz` (a whole backup folder) into a fresh backup folder
+ * so restore/import can read it. Streams entry-by-entry — every file is small
+ * and under the bucket size cap — so a multi-GB prod backup is never uploaded
+ * as one (over-cap) object. Returns the folder name.
+ *
+ * Shared by the Settings upload route and the onboarding "restore from a
+ * backup" flow.
+ */
 export async function unpackBackupArchive(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1819,67 +1824,162 @@ export async function unpackBackupArchive(
 ): Promise<{ name: string; assetErrors: number }> {
   const name = newBackupName(datetime.timestamp(), "uploaded");
   const dir = backupDir(name);
-  let manifestSeen = false;
-  // Split critical (manifest + table) failures from asset failures: a missing
-  // table breaks the load, but assets are best-effort downstream (the restore
-  // only warns on a failed asset copy), so a hiccuped asset must not block it.
+  const bucket = client.storage.from(getCompanyPrivateBucket(companyId));
+  // Held back and uploaded LAST: its presence is what lists the folder as a
+  // ready backup, so it lands only once every table it names has.
+  let manifestBytes = null as Buffer | null;
+  const landed = new Set<string>();
+  // Split critical (table) failures from asset failures: a missing table breaks
+  // the load, but assets are best-effort downstream (the restore only warns on
+  // a failed asset copy), so a hiccuped asset must not block it.
   let criticalErrors = 0;
   let assetErrors = 0;
+  let entries = 0;
+  let totalBytes = 0;
+  // The upload in flight when the stream fails, awaited before the cleanup so
+  // it can't land a file after the folder was removed.
+  let uploading: Promise<unknown> = Promise.resolve();
 
-  const extract = tarExtract();
-  const gunzip = createGunzip();
-  source.on("error", (err) => extract.destroy(err));
-  gunzip.on("error", (err) => extract.destroy(err));
+  try {
+    const extract = tarExtract();
+    const gunzip = createGunzip();
+    source.on("error", (err) => extract.destroy(err));
+    gunzip.on("error", (err) => extract.destroy(err));
 
-  await new Promise<void>((resolve, reject) => {
-    extract.on("entry", (header, stream, next) => {
-      const chunks: Buffer[] = [];
-      stream.on("data", (c: Buffer) => chunks.push(c));
-      stream.on("error", next);
-      stream.on("end", async () => {
-        try {
-          const rel = header.name;
-          // Only land files inside this backup's folder. storage-js puts the
-          // key into the URL unencoded, so `%2e%2e` resolves like `..`.
-          if (isUnsafeStoragePath(rel) || rel.startsWith("/")) {
-            criticalErrors++;
-            next();
-            return;
-          }
-          const objectPath = `${dir}/${rel}`;
-          const up = await client.storage
-            .from(getCompanyPrivateBucket(companyId))
-            .upload(objectPath, Buffer.concat(chunks), { upsert: true });
-          if (up.error) {
-            if (objectPath.startsWith(`${backupAssetsDir(name)}/`)) {
-              assetErrors++;
-            } else criticalErrors++;
-          } else if (objectPath === backupManifestPath(name)) {
-            // Only mark the manifest seen once it's actually landed — an
-            // interrupted/failed upload must not pass the completeness check
-            // below and yield a phantom folder a restore would fire against.
-            manifestSeen = true;
-          }
-          next();
-        } catch (err) {
-          next(err as Error);
+    await new Promise<void>((resolve, reject) => {
+      extract.on("entry", (header, stream, next) => {
+        // Directories, links and the like carry nothing to store.
+        if (header.type !== "file") {
+          stream.on("end", () => next());
+          stream.resume();
+          return;
         }
+        if (++entries > MAX_ARCHIVE_ENTRIES) {
+          extract.destroy(new Error("The archive has too many files"));
+          return;
+        }
+        const chunks: Buffer[] = [];
+        let size = 0;
+        stream.on("data", (c: Buffer) => {
+          size += c.length;
+          totalBytes += c.length;
+          if (size > COMPANY_BUCKET_FILE_SIZE_LIMIT) {
+            extract.destroy(
+              new Error(`${header.name} is larger than a backup file can be`)
+            );
+          } else if (totalBytes > MAX_ARCHIVE_BYTES) {
+            extract.destroy(new Error("The archive is too large to unpack"));
+          } else chunks.push(c);
+        });
+        stream.on("error", next);
+        stream.on("end", async () => {
+          try {
+            // `tar czf b.tar.gz .` prefixes every entry with "./".
+            const rel = header.name.replace(/^(\.\/)+/, "");
+            // Only land files inside this backup's folder. storage-js puts the
+            // key into the URL unencoded, so `%2e%2e` resolves like `..`.
+            if (!rel || isUnsafeStoragePath(rel) || rel.startsWith("/")) {
+              criticalErrors++;
+              next();
+              return;
+            }
+            if (rel === "manifest.json") {
+              manifestBytes = Buffer.concat(chunks);
+              next();
+              return;
+            }
+            const upload = bucket.upload(
+              `${dir}/${rel}`,
+              Buffer.concat(chunks),
+              {
+                upsert: true
+              }
+            );
+            uploading = upload;
+            const up = await upload;
+            if (!up.error) landed.add(rel);
+            else if (rel.startsWith("assets/")) assetErrors++;
+            else criticalErrors++;
+            next();
+          } catch (err) {
+            next(err as Error);
+          }
+        });
       });
+      extract.on("finish", resolve);
+      extract.on("error", reject);
+      source.pipe(gunzip).pipe(extract);
     });
-    extract.on("finish", resolve);
-    extract.on("error", reject);
-    source.pipe(gunzip).pipe(extract);
-  });
 
-  if (!manifestSeen) {
-    throw new Error("Archive is missing manifest.json");
-  }
-  if (criticalErrors > 0) {
-    throw new Error(
-      `${criticalErrors} critical file(s) failed to upload — the backup is incomplete. Retry the upload.`
+    if (criticalErrors > 0) {
+      throw new Error(
+        `${criticalErrors} critical file(s) failed to upload — the backup is incomplete. Retry the upload.`
+      );
+    }
+    if (!manifestBytes) throw new Error("Archive is missing manifest.json");
+    const manifest = parseManifest(manifestBytes.toString("utf8"));
+    if (!manifest) throw new Error("Archive has an unreadable manifest.json");
+
+    const missing = manifest.tables.filter(
+      (t) => tablePartsLanded(landed, t.name) < tableParts(t)
     );
+    if (missing.length > 0) {
+      throw new Error(
+        `The archive is missing table data for ${missing
+          .slice(0, 5)
+          .map((t) => t.name)
+          .join(
+            ", "
+          )}${missing.length > 5 ? "…" : ""} — the backup is incomplete.`
+      );
+    }
+
+    const up = await bucket.upload(backupManifestPath(name), manifestBytes, {
+      contentType: "application/json",
+      upsert: true
+    });
+    if (up.error) throw new Error(`manifest.json: ${up.error.message}`);
+  } catch (err) {
+    await uploading.catch(() => undefined);
+    await deleteCompanyFiles(client, companyId, dir).catch((cleanupErr) =>
+      log.error("Failed to remove a half-unpacked backup", {
+        companyId,
+        name,
+        error: cleanupErr
+      })
+    );
+    throw err;
   }
   return { name, assetErrors };
+}
+
+/** Per entry, the company bucket's object limit applies anyway; these bound the
+ *  whole archive. Staging caps the upload at 2.5 GB and the outer gzip barely
+ *  shrinks already-compressed entries, so 10 GB unpacked is generous for a real
+ *  backup and stops a gzip bomb. Each entry is one upload, so 100k files is
+ *  already far past what one request can unpack in time. */
+const MAX_ARCHIVE_BYTES = 10 * 1024 ** 3;
+const MAX_ARCHIVE_ENTRIES = 100_000;
+
+/** How many files a manifest table is stored as; absent = one. */
+function tableParts(table: { parts?: unknown }): number {
+  return typeof table.parts === "number" ? table.parts : 1;
+}
+
+/** Files that landed for `table`: `tables/<t>.ndjson.gz` and `tables/<t>.<n>.ndjson.gz`. */
+function tablePartsLanded(landed: Set<string>, table: string): number {
+  const base = `tables/${table}`;
+  let count = 0;
+  for (const rel of landed) {
+    if (
+      rel === `${base}.ndjson.gz` ||
+      (rel.startsWith(`${base}.`) &&
+        /^\d+\.ndjson\.gz$/.test(rel.slice(base.length + 1)))
+    ) {
+      count++;
+    }
+  }
+  return count;
 }
 
 /**
@@ -1946,6 +2046,31 @@ export async function getCompanyBackups(
       };
     })
     .sort((a, b) => (b.exportedAt ?? "").localeCompare(a.exportedAt ?? ""));
+}
+
+/**
+ * Why `name` can't be deleted right now, if it can't: a restore that may still
+ * read it or be retried from it, or the folder the running export is writing.
+ * The export marker doesn't name its folder, so while one runs every folder
+ * without a manifest yet is treated as its.
+ */
+export async function getBackupInUse(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  name: string
+): Promise<"restore" | "export" | null> {
+  const [restores, exportRun] = await Promise.all([
+    getCompanyRestoreRuns(client, companyId),
+    getCompanyExportRun(client, companyId)
+  ]);
+  if (restores.some((r) => r.filePath === name && holdsPendingChange(r))) {
+    return "restore";
+  }
+  if (exportRun?.status === "running") {
+    const backups = await listBackups(client, companyId);
+    if (!backups.find((b) => b.name === name)?.manifest) return "export";
+  }
+  return null;
 }
 
 /** Delete one of the user's backups: the whole folder (data, manifest, assets). */
@@ -2016,7 +2141,8 @@ export async function getCompanyRestoreRuns(
       rows: meta.rows ?? 0,
       filePath: meta.filePath ?? null,
       includeStorage: meta.includeStorage ?? null,
-      applied: meta.applied === true
+      applied: meta.applied === true,
+      reverted: meta.reverted === true
     };
   });
 }
@@ -2206,6 +2332,17 @@ export async function purgeAndRetry(
 > {
   let deleted: Array<{ table: string; rows: number }>;
   try {
+    // The purge deletes live rows an export may be reading mid-dump.
+    const exportRun = await getCompanyExportRun(
+      getCarbonServiceRole(),
+      companyId
+    );
+    if (exportRun?.status === "running") {
+      return {
+        success: false,
+        message: "Wait for the backup being created to finish first."
+      };
+    }
     ({ deleted } = await purgeCorruptedRows(db, companyId));
   } catch (err) {
     return {

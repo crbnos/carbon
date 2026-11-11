@@ -28234,6 +28234,9 @@ msgstr "समाधान इंजीनियर"
 msgid "Some balances have no Carbon account"
 msgstr "कुछ शेष राशियों के लिए कोई Carbon खाता नहीं है"
 
+msgid "some files may be missing"
+msgstr ""
+
 msgid "Some inputs have another unit and are left out"
 msgstr "कुछ इनपुट के पास एक अन्य इकाई है और उन्हें छोड़ा गया है"
 
@@ -35076,6 +35079,9 @@ msgstr "आपकी पार्ट संख्याएं"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "आपकी भाग संख्याएं और उनके पीछे की आइटम मास्टर"
+
+msgid "Your previous data is back, but some files couldn't be restored. Revert again to retry them."
+msgstr ""
 
 msgid "Your previous data is back, exactly as it was before the restore."
 msgstr "आपका पिछला डेटा वापस आ गया है, ठीक वैसा ही जैसा पुनर्स्थापना से पहले था।"

@@ -13,6 +13,7 @@ import {
 import {
   applyTableRenames,
   LIVE_COLUMN_RENAMES,
+  ownEntry,
   TABLE_RENAMES
 } from "./renames";
 
@@ -208,5 +209,14 @@ describe("applyTableRenames", () => {
     applyTableRenames(catalog("quotationLine"), input);
     expect(input.manifest.tables[0]!.name).toBe("quoteLine");
     expect(await collectRows(input, "quoteLine")).toHaveLength(1);
+  });
+});
+
+describe("ownEntry", () => {
+  it("never resolves a backup's name through Object.prototype", () => {
+    const map: Record<string, string> = { oldName: "newName" };
+    expect(ownEntry(map, "constructor")).toBeUndefined();
+    expect(ownEntry(map, "toString")).toBeUndefined();
+    expect(ownEntry(map, "oldName")).toBe("newName");
   });
 });

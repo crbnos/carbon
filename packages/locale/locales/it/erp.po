@@ -28234,6 +28234,9 @@ msgstr "Solutions Engineer"
 msgid "Some balances have no Carbon account"
 msgstr "Alcuni saldi non hanno un account Carbon"
 
+msgid "some files may be missing"
+msgstr ""
+
 msgid "Some inputs have another unit and are left out"
 msgstr "Alcuni input hanno un'altra unità e vengono omessi"
 
@@ -35073,6 +35076,9 @@ msgstr "I tuoi numeri di parte"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "I tuoi numeri di parte e il master articoli dietro di essi"
+
+msgid "Your previous data is back, but some files couldn't be restored. Revert again to retry them."
+msgstr ""
 
 msgid "Your previous data is back, exactly as it was before the restore."
 msgstr "I dati precedenti sono di nuovo disponibili, esattamente come prima del ripristino."

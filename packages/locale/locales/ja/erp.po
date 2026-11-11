@@ -28234,6 +28234,9 @@ msgstr "ソリューションズエンジニア"
 msgid "Some balances have no Carbon account"
 msgstr "いくつかの残高にはCarbonアカウントがありません"
 
+msgid "some files may be missing"
+msgstr ""
+
 msgid "Some inputs have another unit and are left out"
 msgstr "一部の入力は別の単位を持っており、除外されています"
 
@@ -35073,6 +35076,9 @@ msgstr "あなたの部品番号"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "あなたの部品番号とそれらの背後にあるアイテムマスター"
+
+msgid "Your previous data is back, but some files couldn't be restored. Revert again to retry them."
+msgstr ""
 
 msgid "Your previous data is back, exactly as it was before the restore."
 msgstr "復元前のデータが、そのまま元に戻りました。"

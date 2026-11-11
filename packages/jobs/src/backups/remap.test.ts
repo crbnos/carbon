@@ -4,9 +4,16 @@
 
 import { Constants } from "@carbon/database";
 import { describe, expect, it } from "vitest";
-import type { Catalog, ColumnInfo, ForeignKey, TableInfo } from "./catalog";
+import {
+  addDerivedIdForeignKeys,
+  type Catalog,
+  type ColumnInfo,
+  type ForeignKey,
+  type TableInfo
+} from "./catalog";
 import type { Row } from "./format";
 import {
+  collidesOnCollapse,
   isUserScopedIdentityTable,
   READABLE_ID_TABLES,
   selectWipeableTables
@@ -275,6 +282,61 @@ describe("findDanglingReferences", () => {
   });
 });
 
+describe("findDanglingReferences (group not loaded, cross-tenant edges)", () => {
+  const ACCOUNT = {
+    ...table("account", [col("id"), col("companyGroupId")]),
+    scope: { kind: "direct", column: "companyGroupId" },
+    scopeColumn: "companyGroupId"
+  } as TableInfo;
+  const LINE = table(
+    "journalLine",
+    [col("id"), col("accountId"), col("companyId")],
+    [fk("accountId", "account")]
+  );
+  const data = {
+    account: [{ id: "acc_deleted_since", companyGroupId: "g" }],
+    journalLine: [{ id: "jl", accountId: "acc_deleted_since", companyId: "c" }]
+  };
+
+  it("counts the backup's accounts when the group is loaded", () => {
+    expect(findDanglingReferences(catalog([ACCOUNT, LINE]), data)).toEqual([]);
+  });
+
+  it("resolves against the live group, not the backup, when it isn't loaded", () => {
+    const scan = scanRows([ACCOUNT, LINE], data);
+    const gaps = findDanglingInScan(catalog([ACCOUNT, LINE]), scan, new Map(), {
+      groupLoaded: false
+    });
+    expect(gaps.map((g) => `${g.table}.${g.column}`)).toEqual([
+      "journalLine.accountId"
+    ]);
+    expect(
+      findDanglingInScan(
+        catalog([ACCOUNT, LINE]),
+        scan,
+        new Map([["account", new Set(["acc_deleted_since"])]]),
+        { groupLoaded: false }
+      )
+    ).toEqual([]);
+  });
+
+  it("never reports an intercompany transaction's counterparty journal line", () => {
+    const ICT = table(
+      "intercompanyTransaction",
+      [col("id"), col("sourceJournalLineId"), col("companyGroupId")],
+      [fk("sourceJournalLineId", "journalLine")]
+    );
+    const JL = table("journalLine", [col("id"), col("companyId")]);
+    expect(
+      findDanglingReferences(catalog([JL, ICT]), {
+        intercompanyTransaction: [
+          { id: "t", sourceJournalLineId: "siblings_line", companyGroupId: "g" }
+        ]
+      })
+    ).toEqual([]);
+  });
+});
+
 describe("assertReferentiallyClosed", () => {
   const backup = (data: Record<string, Row[]>) => data;
 
@@ -377,6 +439,138 @@ describe("buildRowTransforms", () => {
     expect(out.description).toBe("see src-co/notes, not a path at the start");
   });
 
+  it("rewrites a stored file's URL inside rich text, in text and in JSON", () => {
+    const t = table("procedure", [
+      col("id"),
+      col("html"),
+      { ...col("content"), dataType: "jsonb", udtName: "jsonb" }
+    ]);
+    const idRewrite = new Map([["item_old", "item_new"]]);
+    const url = "/file/preview/private/src-co/parts/item_old/a.png";
+    const out = apply(
+      t,
+      {
+        id: "p1",
+        html: `<img src="${url}"> and src-co/notes`,
+        content: {
+          type: "doc",
+          content: [{ type: "image", attrs: { src: url } }]
+        }
+      },
+      ctx({ idRewrite })
+    );
+    expect(out.html).toBe(
+      '<img src="/file/preview/private/target-co/parts/item_new/a.png"> and src-co/notes'
+    );
+    expect(out.content).toEqual({
+      type: "doc",
+      content: [
+        {
+          type: "image",
+          attrs: {
+            src: "/file/preview/private/target-co/parts/item_new/a.png"
+          }
+        }
+      ]
+    });
+  });
+
+  it("remaps ids held as JSON keys and values (methodMaterial.storageUnitIds)", () => {
+    const t = table("methodMaterial", [
+      col("id"),
+      { ...col("storageUnitIds"), dataType: "jsonb", udtName: "jsonb" }
+    ]);
+    const idRewrite = new Map([
+      ["loc_old", "loc_new"],
+      ["su_old", "su_new"]
+    ]);
+    const out = apply(
+      t,
+      { id: "m1", storageUnitIds: { loc_old: "su_old", loc_kept: "Bin 4" } },
+      ctx({ idRewrite })
+    );
+    expect(out.storageUnitIds).toEqual({
+      loc_new: "su_new",
+      loc_kept: "Bin 4"
+    });
+  });
+
+  it("follows a composite FK's id edge, whatever order the FKs come in", () => {
+    // job (projectElementId, projectId) -> projectElement (id, projectId) also
+    // lists projectId -> projectElement.projectId; the last entry used to win.
+    const idMaps = new Map([["project", new Map([["P_SRC", "P_NEW"]])]]);
+    const idEdge = fk("projectId", "project");
+    const elementEdge: ForeignKey = {
+      column: "projectId",
+      refTable: "projectElement",
+      refColumn: "projectId"
+    };
+    for (const fks of [
+      [idEdge, elementEdge],
+      [elementEdge, idEdge]
+    ]) {
+      const t = table("job", [col("id"), col("projectId")], fks);
+      expect(
+        apply(t, { id: "j", projectId: "P_SRC" }, ctx({ idMaps }))
+      ).toEqual({ id: "j", projectId: "P_NEW" });
+    }
+  });
+
+  it("remaps a column whose only FK is composite onto a non-id column", () => {
+    // projectElementCost.projectId -> projectElement.projectId alone: the
+    // catalog derives its edge to project.id through projectElement's own FK.
+    const fks = new Map<string, ForeignKey[]>([
+      [
+        "projectElementCost",
+        [
+          fk("projectElementId", "projectElement"),
+          {
+            column: "projectId",
+            refTable: "projectElement",
+            refColumn: "projectId"
+          }
+        ]
+      ],
+      ["projectElement", [fk("projectId", "project")]]
+    ]);
+    addDerivedIdForeignKeys(fks);
+    expect(fks.get("projectElementCost")).toContainEqual(
+      fk("projectId", "project")
+    );
+    const t = table(
+      "projectElementCost",
+      [col("id"), col("projectElementId"), col("projectId")],
+      fks.get("projectElementCost")
+    );
+    const idMaps = new Map([
+      ["project", new Map([["P_SRC", "P_NEW"]])],
+      ["projectElement", new Map([["E_SRC", "E_NEW"]])]
+    ]);
+    expect(
+      apply(
+        t,
+        { id: "c", projectElementId: "E_SRC", projectId: "P_SRC" },
+        ctx({ idMaps })
+      )
+    ).toEqual({ id: "c", projectElementId: "E_NEW", projectId: "P_NEW" });
+  });
+
+  it("nulls a nullable ref into a tenant table with no id map", () => {
+    // A restore passes every catalog table: a ref into one empty in the backup
+    // has no row in the target, so it must not keep the source id.
+    const t = table(
+      "salesRfq",
+      [col("id"), col("customerId", { nullable: true })],
+      [fk("customerId", "customer")]
+    );
+    const out = apply(
+      t,
+      { id: "r", customerId: "cust_src" },
+      ctx({ catalogTableNames: new Set(["salesRfq", "customer"]) })
+    );
+    expect(out.customerId).toBeNull();
+  });
+
   it("collapses a user/employee FK to the importing user", () => {
     const t = table(
       "salesOrder",
@@ -447,6 +641,27 @@ describe("buildRowTransforms", () => {
       ctx({ idMaps, substrateIds })
     );
     expect(out.materialFormId).toBe("angle");
+  });
+
+  it("keeps a nullable FK to a target substrate id when the table has no id map", () => {
+    // material.gradeId → a globally-seeded grade; the source has no grades of
+    // its own, so no id map, and the restore passes the whole catalog.
+    const t = table(
+      "material",
+      [col("id"), col("companyId"), col("gradeId", { nullable: true })],
+      [fk("gradeId", "materialGrade")]
+    );
+    const out = apply(
+      t,
+      { id: "m1", companyId: "src-co", gradeId: "g-global" },
+      ctx({
+        catalogTableNames: new Set(["material", "materialGrade"]),
+        substrateIds: new Map([
+          ["materialGrade", new Set<unknown>(["g-global"])]
+        ])
+      })
+    );
+    expect(out.gradeId).toBe("g-global");
   });
 
   it("remaps a company-singleton's id to the target company (its id IS the company)", () => {
@@ -728,7 +943,7 @@ describe("isUserScopedIdentityTable", () => {
     expect(isUserScopedIdentityTable(t)).toBe(true);
   });
 
-  it("true when a user FK is in a UNIQUE INDEX but not the PK (trainingCompletion shape)", () => {
+  it("true when a user FK is in a full UNIQUE INDEX but not the PK", () => {
     const t = table(
       "trainingCompletion",
       [
@@ -766,6 +981,32 @@ describe("isUserScopedIdentityTable", () => {
       { pkColumns: ["id"], uniqueColumns: ["id"] }
     );
     expect(isUserScopedIdentityTable(t)).toBe(false);
+  });
+});
+
+describe("collidesOnCollapse (partial unique indexes)", () => {
+  // productionEvent: one OPEN event per operator; the catalog keeps those
+  // columns out of uniqueColumns, so closed labor still loads.
+  const productionEvent = {
+    ...table(
+      "productionEvent",
+      [col("id"), col("jobOperationId"), col("employeeId"), col("companyId")],
+      [fk("employeeId", "user"), fk("jobOperationId", "jobOperation")]
+    ),
+    partialUniqueColumns: ["jobOperationId", "type", "employeeId"]
+  };
+
+  it("is not identity, but collides when users collapse", () => {
+    expect(isUserScopedIdentityTable(productionEvent)).toBe(false);
+    expect(collidesOnCollapse(productionEvent)).toBe(true);
+  });
+
+  it("is false when no user column is in a partial unique index", () => {
+    const project = {
+      ...table("project", [col("id"), col("identifier"), col("companyId")]),
+      partialUniqueColumns: ["companyId", "identifier"]
+    };
+    expect(collidesOnCollapse(project)).toBe(false);
   });
 });
 
@@ -880,6 +1121,23 @@ describe("mapCollidingRows", () => {
     expect([...skippedSourceIds]).toEqual(["src-hq"]);
     expect(overrides.get("src-hq")).toBe("tgt-hq");
     expect(overrides.has("src-plant")).toBe(false);
+  });
+
+  it("matches a numeric key column by value, number or text", () => {
+    const { overrides } = mapCollidingRows(
+      [["name", "version"]],
+      [
+        { id: "old", name: "Weld", version: 1 },
+        { id: "new", name: "Cut", version: "2.0" }
+      ],
+      [
+        { id: "tgt-weld", name: "Weld", version: "1" },
+        { id: "tgt-cut", name: "Cut", version: "2" }
+      ],
+      new Set(["version"])
+    );
+    expect(overrides.get("old")).toBe("tgt-weld");
+    expect(overrides.get("new")).toBe("tgt-cut");
   });
 
   it("never matches on NULL (Postgres unique treats NULLs as distinct)", () => {

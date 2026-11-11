@@ -28234,6 +28234,9 @@ msgstr "Çözüm Mühendisi"
 msgid "Some balances have no Carbon account"
 msgstr "Bazı bakiyeler Carbon hesabına sahip değil"
 
+msgid "some files may be missing"
+msgstr ""
+
 msgid "Some inputs have another unit and are left out"
 msgstr "Bazı girdiler başka bir birime sahip ve dışarıda bırakılmıştır"
 
@@ -35073,6 +35076,9 @@ msgstr "Parça numaralarınız"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "Parça numaralarınız ve bunların arkasındaki madde ana kaydı"
+
+msgid "Your previous data is back, but some files couldn't be restored. Revert again to retry them."
+msgstr ""
 
 msgid "Your previous data is back, exactly as it was before the restore."
 msgstr "Önceki verileriniz geri döndü; geri yüklemeden önce olduğu gibi."

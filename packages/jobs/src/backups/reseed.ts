@@ -90,12 +90,14 @@ type CollisionResolution = {
  * that), and the backup's must MAP onto the target's, not fight it.
  *
  * NULL never matches (Postgres unique treats NULLs as distinct); the first
- * matching group wins.
+ * matching group wins. `numericColumns` compare by value: a backup holds a
+ * numeric as a JSON number (older backups) or as text (`1.0`).
  */
 export function mapCollidingRows(
   groups: string[][],
   backupRows: Array<{ [col: string]: unknown }>,
-  targetRows: Array<{ [col: string]: unknown }>
+  targetRows: Array<{ [col: string]: unknown }>,
+  numericColumns: ReadonlySet<string> = new Set()
 ): CollisionResolution {
   const skippedSourceIds = new Set<string>();
   const overrides = new Map<string, string>();
@@ -108,7 +110,7 @@ export function mapCollidingRows(
     for (const col of cols) {
       const v = row[col];
       if (v == null) return null;
-      values.push(v);
+      values.push(numericColumns.has(col) ? Number(v) : v);
     }
     return JSON.stringify(values);
   };

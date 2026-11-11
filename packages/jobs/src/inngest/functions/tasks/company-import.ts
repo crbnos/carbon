@@ -4,6 +4,7 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
+import { NonRetriableError } from "inngest";
 import { sql } from "kysely";
 import {
   getCompanyTableCatalog,
@@ -13,6 +14,7 @@ import { assertBackupImportable } from "../../../backups/compatibility";
 import {
   type CompanyBackup,
   collectRows,
+  exportColumn,
   tableRows
 } from "../../../backups/format";
 import {
@@ -40,6 +42,16 @@ import {
   referencedDroppedTables
 } from "../../../backups/reseed";
 import { PER_COMPANY_CONCURRENCY } from "../../../backups/runs";
+
+const NUMERIC_UDTS = new Set([
+  "numeric",
+  "float4",
+  "float8",
+  "int2",
+  "int4",
+  "int8"
+]);
+
 import { restoreAssetsFromBackup } from "../../../backups/storage";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
@@ -55,7 +67,7 @@ export const companyImportFunction = inngest.createFunction(
     concurrency: PER_COMPANY_CONCURRENCY
   },
   { event: "carbon/company-import" },
-  async ({ event, step, logger }) => {
+  async ({ event, step, logger, attempt }) => {
     const { companyId, userId, filePath: name } = event.data;
 
     return await step.run("import-company", async () => {
@@ -67,15 +79,27 @@ export const companyImportFunction = inngest.createFunction(
       const backup = await readBackupForLoad(client, companyId, name, catalog);
       assertBackupImportable(catalog, backup);
 
-      // Refuse a target that's already been set up (a retry after the load
-      // committed, or a direct trigger). accountDefault is the seed marker.
+      // accountDefault is the seed marker. The first attempt refuses a target
+      // that's already set up, without a retry, so a retry finding it seeded
+      // is finding its own committed load.
       const seeded = await client
         .from("accountDefault")
         .select("companyId", { count: "exact", head: true })
         .eq("companyId", companyId);
       if (seeded.error) throw new Error(seeded.error.message);
       if ((seeded.count ?? 0) > 0) {
-        throw new Error(
+        if (attempt > 0) {
+          // The id map that places the files was minted at random by the
+          // attempt that committed, and is gone: loading again would duplicate
+          // the data, so finish without the files.
+          logger.error(
+            "Company import: an earlier attempt loaded the data but died " +
+              "before restoring its files. The files were NOT restored.",
+            { companyId, name, files: backup.manifest.storage.length }
+          );
+          return { tables: 0, rows: 0, storageUploaded: 0, resumed: true };
+        }
+        throw new NonRetriableError(
           `Reseed target ${companyId} is already set up — reseed requires a ` +
             "freshly created company"
         );
@@ -143,15 +167,26 @@ export const companyImportFunction = inngest.createFunction(
         );
         if (groups.length === 0) continue;
         const cols = [...new Set(groups.flat())];
+        // Read as the export wrote them, so keys compare equal to the backup's.
+        const colInfo = new Map(table.columns.map((c) => [c.name, c]));
         const existing = await sql<{ [col: string]: unknown }>`
-          SELECT ${sql.join([sql.id("id"), ...cols.map((c) => sql.id(c))])}
+          SELECT ${sql.join([
+            sql.id("id"),
+            ...cols.map((c) => {
+              const info = colInfo.get(c);
+              return info ? exportColumn(info) : sql.id(c);
+            })
+          ])}
           FROM ${sql.id(table.name)}
           WHERE ${sql.id(table.scope.column)} = ${scopeValue}
         `.execute(db);
         const { skippedSourceIds, overrides } = mapCollidingRows(
           groups,
           await collectRows(backup, table.name),
-          existing.rows
+          existing.rows,
+          new Set(
+            cols.filter((c) => NUMERIC_UDTS.has(colInfo.get(c)?.udtName ?? ""))
+          )
         );
         for (const [sourceId, targetId] of overrides) {
           idMap.set(sourceId, targetId);

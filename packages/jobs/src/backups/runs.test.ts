@@ -13,10 +13,12 @@ import {
   progressWriter,
   RESTORE_INTEGRATION,
   type RestoreRunMeta,
+  resumeRun,
   revertRun,
   runMarker,
   TEMPLATE_INTEGRATION,
-  type TemplateRunMeta
+  type TemplateRunMeta,
+  takeSnapshot
 } from "./runs";
 import { ExportScopeViolationError } from "./scope";
 
@@ -34,15 +36,40 @@ type Row = {
 /**
  * `externalIntegrationMapping` in memory, with the partial unique index the
  * table really has on (integration, externalId, entityType, companyId), plus a
- * storage bucket that is always empty.
+ * storage bucket holding `files` (full paths).
  */
 function fakeClient(
   opts: {
     failWrites?: boolean;
+    failStorageRemove?: boolean;
     companies?: Array<{ id: string; companyGroupId: string }>;
+    files?: string[];
   } = {}
 ) {
   const rows: Row[] = [];
+  const files = new Set(opts.files ?? []);
+  const list = async (prefix: string, o?: { offset?: number }) => {
+    if ((o?.offset ?? 0) > 0) return { data: [], error: null };
+    const children = new Map<string, boolean>();
+    for (const f of files) {
+      if (!f.startsWith(`${prefix}/`)) continue;
+      const [head, ...rest] = f.slice(prefix.length + 1).split("/");
+      children.set(head!, rest.length === 0);
+    }
+    const data = [...children].map(([name, isFile]) => ({
+      name,
+      id: isFile ? name : null,
+      metadata: { size: 1 }
+    }));
+    return { data, error: null };
+  };
+  const remove = async (paths: string[]) => {
+    if (opts.failStorageRemove) {
+      return { data: null, error: { message: "storage down" } };
+    }
+    for (const p of paths) files.delete(p);
+    return { data: [], error: null };
+  };
   let nextId = 0;
   const matches = (filters: Array<(r: Row) => boolean>) => (r: Row) =>
     filters.every((f) => f(r));
@@ -112,14 +139,9 @@ function fakeClient(
         return { error: null };
       }
     }),
-    storage: {
-      from: () => ({
-        list: async () => ({ data: [], error: null }),
-        remove: async () => ({ data: [], error: null })
-      })
-    }
+    storage: { from: () => ({ list, remove }) }
   };
-  return { client: client as never, rows };
+  return { client: client as never, rows, files };
 }
 
 const restore = (client: never, restoreRunId: string) =>
@@ -270,6 +292,22 @@ describe("keepRun", () => {
     expect(await restore(client, "r1").read()).not.toBeNull();
   });
 
+  it("retires the marker even when its snapshot can't be deleted", async () => {
+    // Snapshot first, marker second left a marker naming a half-deleted
+    // snapshot, which a revert would then load.
+    const { client, files } = fakeClient({
+      files: ["exports/_pre-restore-r1/manifest.json"],
+      failStorageRemove: true
+    });
+    await restore(client, "r1").write({
+      status: "ready",
+      snapshotPath: "_pre-restore-r1"
+    });
+    expect(await keepRun(client, restore(client, "r1"), "co")).toBe(true);
+    expect(await restore(client, "r1").read()).toBeNull();
+    expect(files.size).toBe(1);
+  });
+
   it("clears a ready run", async () => {
     const { client } = fakeClient();
     await restore(client, "r1").write({
@@ -282,6 +320,29 @@ describe("keepRun", () => {
 });
 
 describe("revertRun", () => {
+  it("never loads the snapshot of a failed run whose data didn't land", async () => {
+    // That snapshot is older than the company's data: loading it would wipe
+    // whatever the user did since. The fake database throws if touched.
+    const { client } = fakeClient();
+    await restore(client, "r1").write({
+      status: "failed",
+      error: "boom",
+      snapshotPath: "_pre-restore-r1"
+    });
+    const result = await revertRun(
+      client,
+      {} as JobDatabase,
+      restore(client, "r1"),
+      "co"
+    );
+    expect(result).toEqual({ reverted: false });
+    expect(await restore(client, "r1").read()).toMatchObject({
+      status: "failed",
+      error: "boom",
+      snapshotPath: "_pre-restore-r1"
+    });
+  });
+
   it("marks a run with no snapshot failed instead of leaving a dead Revert", async () => {
     const { client } = fakeClient();
     await restore(client, "r1").write({ status: "ready" });
@@ -327,7 +388,11 @@ describe("failStuckRun", () => {
   it("marks a run that died mid-flight failed", async () => {
     const { client } = fakeClient();
     await restore(client, "r1").write({ status: "running" });
-    await failStuckRun(restore(client, "r1"), new Error("timed out"));
+    await failStuckRun(
+      restore(client, "r1"),
+      new Error("timed out"),
+      "running"
+    );
     expect(await restore(client, "r1").read()).toMatchObject({
       status: "failed",
       error: "timed out"
@@ -337,10 +402,90 @@ describe("failStuckRun", () => {
   it("leaves a settled run, and never creates a marker", async () => {
     const { client } = fakeClient();
     await restore(client, "r1").write({ status: "ready" });
-    await failStuckRun(restore(client, "r1"), new Error("late"));
-    await failStuckRun(restore(client, "r2"), new Error("never ran"));
+    await failStuckRun(restore(client, "r1"), new Error("late"), "running");
+    await failStuckRun(
+      restore(client, "r2"),
+      new Error("never ran"),
+      "running"
+    );
     expect((await restore(client, "r1").read())?.status).toBe("ready");
     expect(await restore(client, "r2").read()).toBeNull();
+  });
+
+  it("leaves the user's revert alone when the apply's handler fires", async () => {
+    const { client } = fakeClient();
+    await restore(client, "r1").write({ status: "reverting", applied: true });
+    await failStuckRun(restore(client, "r1"), new Error("apply"), "running");
+    expect((await restore(client, "r1").read())?.status).toBe("reverting");
+    await failStuckRun(restore(client, "r1"), new Error("oom"), "reverting");
+    expect((await restore(client, "r1").read())?.error).toBe(
+      "Revert failed: oom"
+    );
+  });
+
+  it("leaves a later run on the same marker alone", async () => {
+    const { client } = fakeClient();
+    await template(client, "t2").write({ status: "running" });
+    await failStuckRun(
+      template(client, "t1"),
+      new Error("t1 died"),
+      "running",
+      (meta) => meta.templateRunId === "t1"
+    );
+    expect(await template(client, "t2").read()).toMatchObject({
+      templateRunId: "t2",
+      status: "running"
+    });
+  });
+});
+
+describe("resumeRun", () => {
+  it("starts a run that changed nothing yet", () => {
+    expect(resumeRun({ status: "running" })).toBe("start");
+    expect(resumeRun({ status: "failed" })).toBe("start");
+  });
+
+  it("skips a run whose marker the user removed during a retry backoff", () => {
+    expect(resumeRun(null)).toBe("skip");
+  });
+
+  it("finishes, never reloads, a retry whose data already committed", () => {
+    expect(resumeRun({ status: "failed", applied: true })).toBe("finish");
+    expect(resumeRun({ status: "running", applied: true })).toBe("finish");
+  });
+
+  it("skips a run that is settled, being reverted, or was reverted", () => {
+    expect(resumeRun({ status: "ready", applied: true })).toBe("skip");
+    expect(resumeRun({ status: "reverting", applied: true })).toBe("skip");
+    expect(resumeRun({ status: "failed", applied: true, reverted: true })).toBe(
+      "skip"
+    );
+  });
+});
+
+describe("takeSnapshot", () => {
+  it("deletes a snapshot that failed partway, and records nothing", async () => {
+    // The fake has no company group, so the dump throws: the folder was never
+    // recorded, and nothing else would ever delete it.
+    const { client, files } = fakeClient({
+      files: [
+        "exports/_pre-restore-r1/tables/item.ndjson.gz",
+        "exports/kept/manifest.json"
+      ]
+    });
+    await restore(client, "r1").write({ status: "running" });
+    await expect(
+      takeSnapshot(client, {} as JobDatabase, restore(client, "r1"), {
+        run: "restore",
+        runId: "r1",
+        companyId: "co",
+        userId: "u",
+        record: {},
+        onProgress: async () => undefined
+      })
+    ).rejects.toThrow("companyGroup");
+    expect([...files]).toEqual(["exports/kept/manifest.json"]);
+    expect((await restore(client, "r1").read())?.snapshotPath).toBeUndefined();
   });
 });
 

@@ -51,6 +51,7 @@ import {
   deleteCompanyBackup,
   dismissCompanyExportFailure,
   exportCompanyBackup,
+  getBackupInUse,
   getCompanyBackups,
   getCompanyExportRun,
   getCompanyRestoreRuns,
@@ -153,6 +154,12 @@ async function clearStaleExportFailure(
 const PENDING_MESSAGE = {
   restore: "Finish your current restore — keep or revert it — first.",
   template: "Finish your current demo data change — keep or revert it — first."
+} as const;
+
+const IN_USE_MESSAGE = {
+  restore:
+    "A restore is using this backup. Keep, revert or dismiss it, then delete the backup.",
+  export: "This backup is still being created."
 } as const;
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -384,7 +391,15 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!isUserBackupName(name))
         return data({}, await flash(request, error(null, "Invalid backup")));
       try {
-        await deleteCompanyBackup(getCarbonServiceRole(), companyId, name);
+        const serviceRole = getCarbonServiceRole();
+        const inUse = await getBackupInUse(serviceRole, companyId, name);
+        if (inUse) {
+          return data(
+            {},
+            await flash(request, error(null, IN_USE_MESSAGE[inUse]))
+          );
+        }
+        await deleteCompanyBackup(serviceRole, companyId, name);
       } catch (err) {
         return data(
           {},

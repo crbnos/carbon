@@ -28,7 +28,7 @@ export function RestoreReviewRow({
   const busy = run.status === "running" || run.status === "reverting";
   // The backup's data loaded before the run failed: the snapshot is the only
   // way back, so the row offers keep or revert, never a dismiss that drops it.
-  const decidable = run.status === "ready" || run.applied;
+  const decidable = !busy && (run.status === "ready" || run.applied);
   return (
     <HStack className="w-full justify-between border rounded-lg p-3">
       <VStack spacing={0} className="min-w-0">
@@ -49,6 +49,11 @@ export function RestoreReviewRow({
                 one="# row links to data outside this company, so a safety copy of your current data can't be made."
                 other="# rows link to data outside this company, so a safety copy of your current data can't be made."
               />
+            ) : run.reverted ? (
+              <Trans>
+                Your previous data is back, but some files couldn't be restored.
+                Revert again to retry them.
+              </Trans>
             ) : run.applied ? (
               <Trans>
                 The backup's data was loaded, but the restore stopped after
@@ -83,6 +88,12 @@ export function RestoreReviewRow({
             ) : (
               <Trans>{run.rows.toLocaleString()} rows</Trans>
             )}
+            {run.status === "ready" && run.error ? (
+              <>
+                {" · "}
+                <Trans>some files may be missing</Trans>
+              </>
+            ) : null}
           </span>
         )}
       </VStack>

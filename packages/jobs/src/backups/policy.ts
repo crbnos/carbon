@@ -165,6 +165,62 @@ export function isUserScopedIdentityTable(table: TableInfo): boolean {
 }
 
 /**
+ * A foreign load collapses every user FK onto the importing user, so rows
+ * that differed only by user collide on a partial unique index holding one
+ * (`productionEvent`: one OPEN event per operator and operation;
+ * `serviceJobTime`: one open clock per employee; `trainingCompletion`: one
+ * completion per assignment, employee and period). Such a table still loads —
+ * dropping it lost every closed labor, machine and service record — and the
+ * insert keeps the first of the colliding rows, as a user-keyed PK does.
+ */
+export function collidesOnCollapse(table: TableInfo): boolean {
+  const partial = new Set(table.partialUniqueColumns ?? []);
+  return table.foreignKeys.some(
+    (fk) =>
+      fk.column !== "companyId" &&
+      partial.has(fk.column) &&
+      USER_REF_TABLES.has(fk.refTable)
+  );
+}
+
+/**
+ * Group-scoped tables whose rows each belong to the companies named in these
+ * columns, not to the whole group: an intercompany transaction is the source's
+ * and the target's. A company's backup, wipe and load cover only its own.
+ */
+export const GROUP_ROWS_BY_COMPANY: Partial<Record<string, readonly string[]>> =
+  {
+    intercompanyTransaction: ["sourceCompanyId", "targetCompanyId"]
+  };
+
+/**
+ * FK edges that cross into another company's books by design: an intercompany
+ * transaction names the counterparty's journal line, and an elimination line
+ * may eliminate a transaction between two siblings. Never a closure gap or a
+ * load violation.
+ */
+export const CROSS_TENANT_EDGES = new Set([
+  "intercompanyTransaction.sourceJournalLineId",
+  "intercompanyTransaction.targetJournalLineId",
+  "intercompanyTransaction.eliminationJournalId",
+  "intercompanyEliminationLine.intercompanyTransactionId"
+]);
+
+export function isCrossTenantEdge(table: string, column: string): boolean {
+  return CROSS_TENANT_EDGES.has(`${table}.${column}`);
+}
+
+/**
+ * Loaded only from the company's own backup. These rows pair the company with
+ * another company of its group; another company's backup brings a counterparty
+ * that isn't in the target's group, and journal lines it doesn't carry.
+ */
+export const OWN_LOAD_ONLY_TABLES = new Set([
+  "intercompanyTransaction",
+  "intercompanyEliminationLine"
+]);
+
+/**
  * The tables an in-place restore wipes, in catalog (topological) order: the
  * companyId-scoped ones minus the kept and secret tables (`isLeftAlone`), plus
  * the companyGroupId-scoped ones (chart of accounts, currencies) only with

@@ -10,11 +10,14 @@ import { NonRetriableError } from "inngest";
 import { resolveRestoreScope } from "../../../backups/load";
 import {
   assertNoPendingChange,
+  DUMP_CONCURRENCY,
   failRun,
   failStuckRun,
+  holdsPendingChange,
   keepRun,
   PER_COMPANY_CONCURRENCY,
   progressWriter,
+  resumeRun,
   revertRun,
   runMarker,
   startRun,
@@ -55,22 +58,52 @@ export const companyTemplateFunction = inngest.createFunction(
   {
     id: "company-template",
     retries: 1,
-    onFailure: async ({ event, error }) => {
+    onFailure: ({ event, error }) => {
       const { companyId, templateRunId } = event.data.event.data;
-      const marker = await ownMarker(getCarbonServiceRole(), {
-        companyId,
-        templateRunId,
-        userId: ""
-      });
-      if (marker) await failStuckRun(marker, error);
+      return failStuckRun(
+        templateMarker(getCarbonServiceRole(), {
+          companyId,
+          templateRunId,
+          userId: ""
+        }),
+        error,
+        "running",
+        (meta) => meta.templateRunId === templateRunId
+      );
     },
     // The unkeyed limit stops N companies onboarding together from filling the
     // job process's pool: each run holds a connection for a whole transaction.
-    concurrency: [{ limit: 2 }, PER_COMPANY_CONCURRENCY]
+    concurrency: [DUMP_CONCURRENCY, PER_COMPANY_CONCURRENCY]
   },
   { event: "carbon/company-template" },
   async ({ event, step, logger }) => {
     const { companyId, userId, datasetKey, templateRunId } = event.data;
+
+    // Its own step, so the work step below can tell a marker the user removed
+    // (kept, dismissed, reverted during a retry backoff) from one never written.
+    // The company has one marker; one naming THIS run is a retry of it.
+    await step.run("claim-template", async () => {
+      const client = getCarbonServiceRole();
+      const marker = templateMarker(client, {
+        companyId,
+        templateRunId,
+        userId
+      });
+      const existing = await marker.read();
+      if (existing?.templateRunId === templateRunId) return;
+      if (existing) {
+        // A pending keep/revert owns the only snapshot of the user's real data.
+        if (holdsPendingChange(existing)) {
+          throw new NonRetriableError(
+            "A demo data change is already pending — keep or revert it first."
+          );
+        }
+        // A failed run that changed nothing: its snapshot predates whatever
+        // the user did since, so it must never become this run's way back.
+        await keepRun(client, marker, companyId);
+      }
+      await startRun(marker, { datasetKey, planningError: null });
+    });
 
     const applied = await step.run("apply-template", async () => {
       const client = getCarbonServiceRole();
@@ -80,6 +113,18 @@ export const companyTemplateFunction = inngest.createFunction(
         userId
       });
 
+      const existing = await marker.read();
+      const own = existing?.templateRunId === templateRunId ? existing : null;
+      const resume = resumeRun(own);
+      if (resume === "skip") {
+        logger.info("Demo template already settled or resolved, skipping", {
+          companyId,
+          templateRunId,
+          status: own?.status ?? null
+        });
+        return { templateRunId, datasetKey, skipped: true };
+      }
+
       const dataset = getDataset(datasetKey);
       if (!dataset) {
         const error = `Unknown dataset "${datasetKey}"`;
@@ -88,20 +133,11 @@ export const companyTemplateFunction = inngest.createFunction(
         throw new NonRetriableError(error);
       }
 
-      // A pending keep/revert owns the only snapshot of the user's real data,
-      // and so does a failed run that still holds one: applying again would
-      // reuse that old snapshot, and a revert would then drop everything done
-      // since. Refuse until it is resolved. A marker naming THIS run is a retry
-      // of it, not a second apply.
-      const existing = await marker.read();
-      if (
-        existing &&
-        existing.templateRunId !== templateRunId &&
-        (existing.status !== "failed" || existing.snapshotPath)
-      ) {
-        throw new NonRetriableError(
-          "A demo data change is already pending — keep or revert it first."
-        );
+      if (resume === "finish") {
+        // The dataset committed on an earlier attempt: applying again would
+        // wipe it and seed a second time.
+        await marker.write({ status: "ready", progress: null });
+        return { templateRunId, datasetKey };
       }
 
       await startRun(marker, { datasetKey, planningError: null });
@@ -159,6 +195,25 @@ export const companyTemplateFunction = inngest.createFunction(
 
     // Non-fatal: the data is committed, and the MRP cron heals a missed run.
     await step.run("plan-template", async () => {
+      // A keep or revert can land between the apply step and this one, and
+      // MRP must not plan the user's reverted real data.
+      const meta = await templateMarker(getCarbonServiceRole(), {
+        companyId,
+        templateRunId,
+        userId
+      }).read();
+      if (
+        !meta ||
+        meta.templateRunId !== templateRunId ||
+        meta.status !== "ready"
+      ) {
+        logger.info("Demo template no longer applied, skipping planning", {
+          companyId,
+          templateRunId,
+          status: meta?.status ?? null
+        });
+        return { skipped: true };
+      }
       const planning = await planDemoCompany({ companyId, userId });
       const failures = [
         ...(planning.mrp === "ok" ? [] : [`MRP: ${planning.mrp}`]),
@@ -236,14 +291,18 @@ export const companyTemplateRevertFunction = inngest.createFunction(
   {
     id: "company-template-revert",
     retries: 1,
-    onFailure: async ({ event, error }) => {
+    onFailure: ({ event, error }) => {
       const { companyId, templateRunId } = event.data.event.data;
-      const marker = await ownMarker(getCarbonServiceRole(), {
-        companyId,
-        templateRunId,
-        userId: ""
-      });
-      if (marker) await failStuckRun(marker, error, "Revert failed: ");
+      return failStuckRun(
+        templateMarker(getCarbonServiceRole(), {
+          companyId,
+          templateRunId,
+          userId: ""
+        }),
+        error,
+        "reverting",
+        (meta) => meta.templateRunId === templateRunId
+      );
     },
     concurrency: PER_COMPANY_CONCURRENCY
   },
