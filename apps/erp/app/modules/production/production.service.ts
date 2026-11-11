@@ -3266,6 +3266,9 @@ export async function getTrackedEntitiesByJobId(
  * same snapshot and a receipt committing mid-read cannot pair a new quantity
  * with old units. Kysely because itemLedger is readable only with inventory or
  * accounting view, and production users need the answer; the route authorizes.
+ *
+ * `issuedTrackedEntityIds` are the job's Consumed units booked out of stock
+ * (issued or shipped), which complete_job_to_inventory still receives.
  */
 export async function getJobReceiptSnapshot(
   db: Kysely<KyselyDatabase>,
@@ -3286,7 +3289,48 @@ export async function getJobReceiptSnapshot(
         string[]
       >`COALESCE(array_agg("itemLedger"."trackedEntityId") FILTER (WHERE "itemLedger"."trackedEntityId" IS NOT NULL), '{}')`.as(
         "trackedEntityIds"
-      )
+      ),
+      // complete_job_to_inventory's rule for a Consumed unit it receives.
+      (eb) =>
+        eb.fn
+          .coalesce(
+            eb
+              .selectFrom("jobMakeMethod as jmm")
+              .innerJoin("trackedEntity as te", (join) =>
+                join
+                  .on((eb) =>
+                    eb(
+                      sql<string>`"te"."attributes"->>'Job Make Method'`,
+                      "=",
+                      eb.ref("jmm.id")
+                    )
+                  )
+                  .onRef("te.companyId", "=", "jmm.companyId")
+              )
+              .select((eb) =>
+                eb.fn
+                  .agg<string[]>("array_agg", ["te.id"])
+                  .orderBy("te.id")
+                  .as("ids")
+              )
+              .whereRef("jmm.jobId", "=", "job.id")
+              .whereRef("jmm.companyId", "=", "job.companyId")
+              .where("jmm.parentMaterialId", "is", null)
+              .where("te.status", "=", "Consumed")
+              .where("te.quantity", "=", 1)
+              .where((eb) =>
+                eb.exists(
+                  eb
+                    .selectFrom("itemLedger as il")
+                    .select(eb.lit(1).as("one"))
+                    .whereRef("il.trackedEntityId", "=", "te.id")
+                    .whereRef("il.companyId", "=", "te.companyId")
+                    .where("il.quantity", "<", 0)
+                )
+              ),
+            sql<string[]>`'{}'`
+          )
+          .as("issuedTrackedEntityIds")
     ])
     .where("job.id", "=", jobId)
     .where("job.companyId", "=", companyId)

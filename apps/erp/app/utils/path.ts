@@ -1171,6 +1171,8 @@ export const path = {
     dissolveOperationBatches: `${x}/production/batches/dissolve`,
     document: (id: string) => generatePath(`${x}/documents/search/${id}`),
     documentFavorite: `${x}/documents/favorite`,
+    documentForceDelete: (documentType: string, id: string) =>
+      generatePath(`${x}/force-delete/${documentType}/${id}`),
     documentRestore: (id: string) =>
       generatePath(`${x}/documents/${id}/restore`),
     documentSections: `${x}/templates/shared`,

@@ -4968,3 +4968,10 @@ boundary, and state the direction where it is stored. Use Stripe's rate only whe
 it settled into the base currency (`carbonSettlementRate`), else the document's rate.
 
 **Applies to:** every rate read from Stripe, a bank feed, or an accounting provider.
+
+## A force delete treats the void's refusal as a fallback, not a stop
+
+- **Context:** the Admin force delete of invoices, receipts and payments (`decideDocumentForceDelete`).
+- **Problem:** The first version refused whenever the document's own void refused, or when payments, memos or other documents still held it. Force delete exists for emergencies where a user error has broken that normal process, so those refusals left the Admin stuck.
+- **Rule:** In a force delete, a void's rule refusal is the trigger for `reverseDocumentByJournal`: negate its postings, adjust its stock back, restore its sources. Anything applied to the document is unapplied first (`unapplyForceDeleteSettlements`). To change a posted payment's journal, build it again with and without the change (`rebuildPaymentJournal`) and post the difference, rather than hand-building reversal lines.
+- **Applies to:** `invoicing.service.ts` force delete blocks, any future force delete type.

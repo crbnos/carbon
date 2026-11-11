@@ -164,7 +164,11 @@ import {
   reverseProjectLedgerRows,
   splitReceiptChargedDrafts
 } from "~/modules/projects/project-posting";
-import { PURCHASE_ORDER_RELEASED_STATUSES } from "~/modules/purchasing/purchasing.models";
+import {
+  PURCHASE_ORDER_RELEASED_STATUSES,
+  purchaseOrderStatusAfterReversal,
+  receivedAfterReceiptReversal
+} from "~/modules/purchasing/purchasing.models";
 import {
   futureDeliveryError,
   futureReturnError,
@@ -14899,58 +14903,15 @@ export async function postReceipt(
         companyId
       }));
 
-      const receiptLinesByPurchaseOrderLineId = receiptLines.data.reduce<
-        Record<string, Database["public"]["Tables"]["receiptLine"]["Row"][]>
-      >((acc, receiptLine) => {
-        if (receiptLine.lineId) {
-          acc[receiptLine.lineId] = [
-            ...(acc[receiptLine.lineId] ?? []),
-            receiptLine
-          ];
-        }
-        return acc;
-      }, {});
-
-      const purchaseOrderLineUpdatesVoid = purchaseOrderLinesVoid.data.reduce<
-        Record<
-          string,
-          Database["public"]["Tables"]["purchaseOrderLine"]["Update"]
-        >
-      >((acc, purchaseOrderLine) => {
-        const receiptLinesForPoLine =
-          receiptLinesByPurchaseOrderLineId[purchaseOrderLine.id];
-        if (
-          receiptLinesForPoLine &&
-          receiptLinesForPoLine.length > 0 &&
-          purchaseOrderLine.purchaseQuantity &&
-          purchaseOrderLine.purchaseQuantity > 0
-        ) {
-          const receivedQuantityInPurchaseUnit =
-            receiptLinesForPoLine.reduce((sum, receiptLine) => {
-              const safe =
-                isNaN(receiptLine.receivedQuantity) ||
-                receiptLine.receivedQuantity == null
-                  ? 0
-                  : receiptLine.receivedQuantity;
-              return sum + safe;
-            }, 0) / (receiptLinesForPoLine[0]!.conversionFactor ?? 1);
-
-          const newQuantityReceived = Math.max(
-            0,
-            (purchaseOrderLine.quantityReceived ?? 0) -
-              receivedQuantityInPurchaseUnit
-          );
-
-          const receivedComplete =
-            newQuantityReceived >= purchaseOrderLine.purchaseQuantity;
-
-          acc[purchaseOrderLine.id] = {
-            quantityReceived: newQuantityReceived,
-            receivedComplete
-          };
-        }
-        return acc;
-      }, {});
+      // What each line received comes off its order line
+      // (`receivedAfterReceiptReversal`, shared with the force delete).
+      const purchaseOrderLineUpdatesVoid: Record<
+        string,
+        Database["public"]["Tables"]["purchaseOrderLine"]["Update"]
+      > = receivedAfterReceiptReversal(
+        purchaseOrderLinesVoid.data,
+        receiptLines.data
+      );
 
       // Reverse FA PO line received status on void
       const faPoLinesForVoid = purchaseOrderLinesVoid.data.filter(
@@ -15098,38 +15059,9 @@ export async function postReceipt(
         }
       );
 
-      const areAllLinesInvoicedProjected = projectedPurchaseOrderLines.every(
-        (line) => {
-          if (line.purchaseOrderLineType === "Comment") return true;
-          const target = line.purchaseQuantity ?? 0;
-          if (target <= 0) return true;
-          return (line.quantityInvoiced ?? 0) >= target;
-        }
+      const purchaseOrderStatusVoid = purchaseOrderStatusAfterReversal(
+        projectedPurchaseOrderLines
       );
-
-      const areAllLinesReceivedProjected = projectedPurchaseOrderLines.every(
-        (line) => {
-          if (
-            line.purchaseOrderLineType === "Comment" ||
-            line.purchaseOrderLineType === "G/L Account" ||
-            line.purchaseOrderLineType === "Service"
-          )
-            return true;
-          const target = line.purchaseQuantity ?? 0;
-          if (target <= 0) return true;
-          return (line.quantityReceived ?? 0) >= target;
-        }
-      );
-
-      let purchaseOrderStatusVoid: Database["public"]["Tables"]["purchaseOrder"]["Row"]["status"] =
-        "To Receive and Invoice";
-      if (areAllLinesInvoicedProjected && areAllLinesReceivedProjected) {
-        purchaseOrderStatusVoid = "Completed";
-      } else if (areAllLinesInvoicedProjected) {
-        purchaseOrderStatusVoid = "To Receive";
-      } else if (areAllLinesReceivedProjected) {
-        purchaseOrderStatusVoid = "To Invoice";
-      }
 
       // The receipt's serials and batches were never received, so the void
       // drains them to zero: they leave every on-hand list and no picker

@@ -279,7 +279,9 @@ export const COVERAGE = {
         "the demo datasets seed no project change request (Phase 1c)",
       changeOrder: "the seed does not create change notice approval requests",
       purchaseOrderForceDelete:
-        "the seed does not create purchase order force delete requests"
+        "the seed does not create purchase order force delete requests",
+      documentForceDelete:
+        "the seed does not create document force delete requests"
     }),
     missing: (type) => `purchasing.approvalRequests: no ${type} request`
   },

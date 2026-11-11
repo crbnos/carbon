@@ -231,6 +231,7 @@ import {
   PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS,
   PURCHASE_ORDER_LINE_VERSION_COLUMNS,
   PURCHASE_ORDER_LOCKED_STATUSES,
+  PURCHASE_ORDER_RELEASED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
   type PurchaseOrderDateField,
   type PurchaseOrderForceDeleteBlockers,
@@ -245,14 +246,19 @@ import {
   planReceiptReversal,
   purchaseOrderEditRefusal,
   purchaseOrderForceDeleteNotificationId,
+  purchaseOrderForceDeletePendingReceiptMessage,
+  purchaseOrderForceDeleteUnsupportedReceiptMessage,
+  purchaseOrderForceDeleteUsedStockMessage,
   purchaseOrderFundsRefusal,
   purchaseOrderLineAmendRefusal,
   purchaseOrderLineDateOfOrderDate,
   purchaseOrderLineDateRefusal,
   purchaseOrderLineDeleteRefusal,
   purchaseOrderPromisedDateRefusal,
+  purchaseOrderStatusAfterReversal,
   type ReceiptReceivedStock,
   type ReceiptStockRemoval,
+  receivedAfterReceiptReversal,
   SUPPLIER_CONTACT_EMAIL_REQUIRED,
   shortClosePurchaseOrderLineRefusal,
   splitRfqFileAttachments,
@@ -7395,13 +7401,23 @@ async function releaseLeasePayments(
  * lease payment rows it billed to Pending (see `releaseLeasePayments`).
  * Checked here under a row lock, because releasing a POSTED invoice's rows
  * would bill them twice. Throws on a missing or non-Draft invoice.
+ *
+ * `voided` is the Admin force delete: it also deletes a Voided invoice (the
+ * void already returned its lease rows), inside the caller's transaction,
+ * which has set `app.force_delete` so the database's Draft-only guard steps
+ * aside.
  */
 export async function deletePurchaseInvoiceReleasingLeases(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; invoiceId: string; userId: string }
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: {
+    companyId: string;
+    invoiceId: string;
+    userId: string;
+    voided?: boolean;
+  }
 ): Promise<void> {
   const { companyId, invoiceId, userId } = args;
-  await db.transaction().execute(async (trx) => {
+  await withTransaction(db, async (trx) => {
     const invoice = await trx
       .selectFrom("purchaseInvoice")
       .select(["id", "status"])
@@ -7410,7 +7426,10 @@ export async function deletePurchaseInvoiceReleasingLeases(
       .forUpdate()
       .executeTakeFirst();
     if (!invoice) throw new Error("Purchase invoice not found");
-    if (invoice.status !== "Draft") {
+    if (
+      invoice.status !== "Draft" &&
+      !(args.voided && invoice.status === "Voided")
+    ) {
       throw new Error(
         `Cannot delete purchase invoice with status "${invoice.status}". Only Draft invoices can be deleted.`
       );
@@ -8519,6 +8538,151 @@ export async function planPurchaseOrderReceiptReversal(
 }
 
 /**
+ * Why the order's receipts keep a force delete from going ahead (`refusal`),
+ * else the plan that reverses them. Refused for one
+ * still being posted, or one whose stock was since used or moved to another
+ * location (`planPurchaseOrderReceiptReversal`). After step 1's voids
+ * (`afterVoid`), a posted receipt left that an adjustment cannot stand in for
+ * is refused too.
+ */
+export async function forceDeleteReceiptRefusal(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    receipts,
+    afterVoid = false
+  }: {
+    companyId: string;
+    receipts: PurchaseOrderForceDeleteReceipt[];
+    afterVoid?: boolean;
+  }
+): Promise<
+  | { refusal: string; plan: null }
+  | {
+      refusal: null;
+      plan: Awaited<ReturnType<typeof planPurchaseOrderReceiptReversal>>;
+    }
+> {
+  const pending = receipts.filter((receipt) => receipt.status === "Pending");
+  if (pending.length > 0) {
+    return {
+      refusal: purchaseOrderForceDeletePendingReceiptMessage(
+        pending.map((receipt) => receipt.readableId)
+      ),
+      plan: null
+    };
+  }
+  const plan = await planPurchaseOrderReceiptReversal(db, {
+    companyId,
+    receipts
+  });
+  if (plan.short.length > 0) {
+    return {
+      refusal: purchaseOrderForceDeleteUsedStockMessage(plan.short),
+      plan: null
+    };
+  }
+  if (afterVoid && plan.unsupported.length > 0) {
+    return {
+      refusal: purchaseOrderForceDeleteUnsupportedReceiptMessage(
+        plan.unsupported
+      ),
+      plan: null
+    };
+  }
+  return { refusal: null, plan };
+}
+
+/**
+ * Gives back to the order what a receipt reversed by adjustment had received,
+ * as the receipt's void does: each line's `quantityReceived` drops by what
+ * the receipt received (in the purchase unit, never below 0) and
+ * `receivedComplete` follows. The order's status is set again from its lines
+ * while it is released. For a receipt force deleted on its own; a purchase
+ * order force delete deletes the order instead.
+ */
+export async function restorePurchaseOrderReceived(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    receiptId,
+    purchaseOrderId
+  }: {
+    companyId: string;
+    userId: string;
+    receiptId: string;
+    purchaseOrderId: string;
+  }
+): Promise<void> {
+  await withTransaction(db, async (trx) => {
+    const [receiptLines, orderLines] = await Promise.all([
+      trx
+        .selectFrom("receiptLine")
+        .select(["lineId", "receivedQuantity", "conversionFactor"])
+        .where("companyId", "=", companyId)
+        .where("receiptId", "=", receiptId)
+        .execute(),
+      trx
+        .selectFrom("purchaseOrderLine")
+        .select([
+          "id",
+          "purchaseOrderLineType",
+          "purchaseQuantity",
+          "quantityReceived",
+          "quantityInvoiced"
+        ])
+        .where("companyId", "=", companyId)
+        .where("purchaseOrderId", "=", purchaseOrderId)
+        .forUpdate()
+        .execute()
+    ]);
+    const updates = receivedAfterReceiptReversal(
+      orderLines.map((line) => ({
+        ...line,
+        purchaseQuantity: Number(line.purchaseQuantity ?? 0),
+        quantityReceived: Number(line.quantityReceived ?? 0)
+      })),
+      receiptLines.map((line) => ({
+        ...line,
+        receivedQuantity: Number(line.receivedQuantity ?? 0),
+        conversionFactor: Number(line.conversionFactor ?? 1)
+      }))
+    );
+    const ids = Object.keys(updates);
+    if (ids.length === 0) return;
+    const now = datetime.timestamp();
+    await updateRowsById(
+      trx,
+      "purchaseOrderLine",
+      companyId,
+      ids.map((id) => ({
+        id,
+        data: { ...updates[id], updatedBy: userId, updatedAt: now }
+      }))
+    );
+
+    const status = purchaseOrderStatusAfterReversal(
+      orderLines.map((line) => ({
+        purchaseOrderLineType: line.purchaseOrderLineType,
+        purchaseQuantity: Number(line.purchaseQuantity ?? 0),
+        quantityInvoiced: Number(line.quantityInvoiced ?? 0),
+        quantityReceived:
+          updates[line.id]?.quantityReceived ??
+          Number(line.quantityReceived ?? 0)
+      }))
+    );
+    await trx
+      .updateTable("purchaseOrder")
+      .set({ status, updatedBy: userId, updatedAt: now })
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .where("status", "in", [...PURCHASE_ORDER_RELEASED_STATUSES])
+      .execute();
+  });
+}
+
+/**
  * The accounting an adjust-out reversal posts with, resolved before the
  * transaction opens (`getCurrentAccountingPeriod` commits its own short
  * transaction), as `postInventoryAdjustment` does.
@@ -8599,7 +8763,7 @@ export async function resolveForceDeleteReversalAccounting(
  * as its void sets them.
  */
 export async function reverseReceiptsByAdjustment(
-  db: Kysely<KyselyDatabase>,
+  db: Kysely<KyselyDatabase> | KyselyTx,
   args: {
     companyId: string;
     userId: string;
@@ -8882,6 +9046,10 @@ async function trueUpGoodsReceivedNotInvoiced(
 
 export type PurchaseOrderForceDeleteRequest = {
   id: string;
+  /** Pending, or Approving while an Admin's approval runs. */
+  status: string;
+  /** An Approving claim older than ten minutes: it may be approved again. */
+  claimExpired: boolean;
   reason: string;
   requestedBy: string;
   requestedAt: string;
@@ -8889,6 +9057,88 @@ export type PurchaseOrderForceDeleteRequest = {
 };
 
 /** The order's Pending force delete request, or null. */
+/**
+ * Claims a Pending purchase order force delete for `userId`'s approval
+ * (Approving), as `claimForceDeleteRequest` does for documents: its receipt
+ * voids commit on their own, so a cancel or reject cannot run meanwhile.
+ */
+export async function claimPurchaseOrderForceDeleteRequest(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    requestId,
+    userId
+  }: { companyId: string; requestId: string; userId: string }
+): Promise<boolean> {
+  const claimed = await db
+    .updateTable("purchaseOrderForceDeleteRequest")
+    .set({
+      status: "Approving",
+      decidedBy: userId,
+      decidedAt: sql`now()`,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("requestedBy", "<>", userId)
+    .where((eb) =>
+      eb.or([
+        eb("status", "=", "Pending"),
+        eb.and([
+          eb("status", "=", "Approving"),
+          eb.or([
+            eb("decidedBy", "=", userId),
+            eb("decidedAt", "<", sql<string>`now() - interval '10 minutes'`)
+          ])
+        ])
+      ])
+    )
+    .returning("id")
+    .executeTakeFirst();
+  return !!claimed;
+}
+
+/** Gives back a purchase order force delete claim left for ten minutes. */
+export async function releaseExpiredPurchaseOrderForceDeleteClaim(
+  db: Kysely<KyselyDatabase>,
+  { companyId, requestId }: { companyId: string; requestId: string }
+): Promise<void> {
+  await db
+    .updateTable("purchaseOrderForceDeleteRequest")
+    .set({ status: "Pending", decidedBy: null, decidedAt: null })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Approving")
+    .where("decidedAt", "<", sql<string>`now() - interval '10 minutes'`)
+    .execute();
+}
+
+/** Gives a purchase order force delete claim back (Pending). */
+export async function releasePurchaseOrderForceDeleteClaim(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    requestId,
+    userId
+  }: { companyId: string; requestId: string; userId: string }
+): Promise<void> {
+  await db
+    .updateTable("purchaseOrderForceDeleteRequest")
+    .set({
+      status: "Pending",
+      decidedBy: null,
+      decidedAt: null,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Approving")
+    .where("decidedBy", "=", userId)
+    .execute();
+}
+
 export async function getPendingPurchaseOrderForceDeleteRequest(
   db: Kysely<KyselyDatabase>,
   { companyId, purchaseOrderId }: { companyId: string; purchaseOrderId: string }
@@ -8897,14 +9147,18 @@ export async function getPendingPurchaseOrderForceDeleteRequest(
     .selectFrom("purchaseOrderForceDeleteRequest")
     .select([
       "id",
+      "status",
       "reason",
       "requestedBy",
       "requestedAt",
-      "purchaseOrderStatus"
+      "purchaseOrderStatus",
+      sql<boolean>`coalesce("decidedAt" < now() - interval '10 minutes', false)`.as(
+        "claimExpired"
+      )
     ])
     .where("companyId", "=", companyId)
     .where("purchaseOrderId", "=", purchaseOrderId)
-    .where("status", "=", "Pending")
+    .where("status", "in", ["Pending", "Approving"])
     .executeTakeFirst();
   return request
     ? { ...request, requestedAt: String(request.requestedAt) }

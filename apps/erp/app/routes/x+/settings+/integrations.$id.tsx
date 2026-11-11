@@ -1268,6 +1268,20 @@ async function installIntegration({ request, params }: ActionFunctionArgs) {
   // Fetch existing metadata so we merge form settings without
   // overwriting credentials and syncConfig
   const existing = await getIntegration(client, integrationId, companyId);
+
+  // A switched-off integration (`active: false` on its config) shows a
+  // disabled Install button; this refuses the same install posted directly. A
+  // company that already has it installed can still save and uninstall.
+  if (!integration.active && existing.data?.active !== true) {
+    throw redirect(
+      path.to.integrations,
+      await flash(
+        request,
+        error(null, `${integration.name} isn't available on this platform`)
+      )
+    );
+  }
+
   const existingMetadata =
     (existing.data?.metadata as Record<string, unknown>) ?? {};
 

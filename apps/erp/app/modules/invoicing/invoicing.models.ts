@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { toBaseAmount } from "@carbon/database/accounting-currency";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -817,4 +818,42 @@ export function isInvoicePayable(
     Number.isFinite(Number(balance)) &&
     Number(balance ?? 0) > 0
   );
+}
+
+/**
+ * The lines that take a payment's journal from `before` to `after`: per
+ * account, description, target and role, what changed. Pure.
+ */
+export function paymentJournalDifference<
+  T extends {
+    accountId: string;
+    description: string;
+    amount: number;
+    documentLineReference?: string | null;
+    journalLineReference?: string | null;
+    accountDefaultRole?: string | null;
+  }
+>(before: T[], after: T[]): T[] {
+  const key = (line: T) =>
+    [
+      line.accountId,
+      line.description,
+      line.documentLineReference ?? "",
+      // journalLineReference is new on every build: not part of the key.
+      line.accountDefaultRole ?? ""
+    ].join("|");
+  const net = new Map<string, { line: T; amount: number }>();
+  for (const [lines, sign] of [
+    [after, 1],
+    [before, -1]
+  ] as const) {
+    for (const line of lines) {
+      const entry = net.get(key(line)) ?? { line, amount: 0 };
+      entry.amount = toBaseAmount(entry.amount + sign * Number(line.amount), 1);
+      net.set(key(line), entry);
+    }
+  }
+  return [...net.values()]
+    .filter((entry) => entry.amount !== 0)
+    .map((entry) => ({ ...entry.line, amount: entry.amount }));
 }
