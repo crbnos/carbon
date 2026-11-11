@@ -32,7 +32,7 @@ On hand can go **negative**. Shipping, issuing to a job, and picking all post th
 
 ## Movements
 
-A **warehouse transfer** moves stock between locations by posting a <Term id="shipment">shipment</Term> from one and a receipt into the other. A **stock transfer** moves stock between storage units in one location. A manual **adjustment** posts a positive or negative ledger entry; *Set Quantity* calculates the entry needed to reach a target. Serial and batch stock always belongs to a numbered unit: an adjustment that adds stock to a serial- or batch-tracked item names the unit, and a new unit needs its serial or batch number. A decrease can still name no unit, which lets you adjust out stock held without a number.
+A **warehouse transfer** moves stock between locations by posting a <Term id="shipment">shipment</Term> from one and a receipt into the other. A **stock transfer** moves stock between storage units in one location. A manual **adjustment** posts a positive or negative ledger entry; *Set Quantity* calculates the entry needed to reach a target. Serial and batch stock always belongs to a numbered unit: an adjustment that adds stock to a serial- or batch-tracked item names the unit, and a new unit needs its serial or batch number. A *Negative Adjustment* can still name no unit, which removes stock held without a number.
 
 Adjustments also post a <Term id="journal">journal</Term>, Provisional until the company has [set up accounting](/docs/reference/accounting#setting-up-accounting). A loss debits inventory adjustment and credits inventory; a gain posts the reverse, valued at current item cost. Inventory count variances use the same accounts. Storage-unit transfers create no journal because value remains at the location. [Scrap](/docs/reference/scrap) uses a negative adjustment offset to the scrap account.
 
@@ -78,6 +78,9 @@ The adjustment adds a new batch or serial unit but gives it no number. Enter the
 
 ### "Batch-tracked stock must go into a batch…" / "Serial-tracked stock must go into a serial unit…"
 An increase of a batch- or serial-tracked item named no unit, typically from the API or MCP. Send the unit's `trackedEntityId`, or a new id with its number as `readableId` to create the unit.
+
+### Stock with no batch or serial number stays after *Set Quantity* 0
+A batch- or serial-tracked item can hold stock with no number from before the item was tracked. In the adjustment form, *Set Quantity* with the number blank starts a new, empty unit, so a target of 0 changes nothing. Use *Negative Adjustment* with the number blank to remove that stock.
 
 ### "Serial number not found"
 The serial or batch number entered for a negative adjustment doesn't exist in the selected storage unit. Verify the number and the storage unit — the stock may sit in a different bin.
