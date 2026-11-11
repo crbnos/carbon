@@ -52,3 +52,51 @@ export function changesImplementationHub1(
 ): boolean {
   return !HUB_2_ONLY_INTENTS.has(intent);
 }
+
+// A customization's tracking: its type of work, its estimate and the
+// requirement it serves. Carbon's own planning, for Carbon staff only.
+const CUSTOMIZATION_TRACKING: ReadonlySet<string> = new Set([
+  "kind",
+  "estimateDays",
+  "requirementRowId"
+]);
+
+const withoutTracking = (payload: unknown) =>
+  payload !== null && typeof payload === "object" && !Array.isArray(payload)
+    ? Object.fromEntries(
+        Object.entries(payload).filter(
+          ([key]) => !CUSTOMIZATION_TRACKING.has(key)
+        )
+      )
+    : payload;
+
+// The company's rows as the company's own people receive them. Where a row
+// came from and a customization's tracking show to Carbon staff only, and page
+// data can be read in the browser, so they are dropped on the server rather
+// than only hidden on screen.
+export function rowsForCustomer<
+  R extends {
+    collection: string;
+    payload: unknown;
+    source?: string | null;
+    sourceRef?: string | null;
+  }
+>(rows: R[]): R[] {
+  return rows.map((row) => ({
+    ...row,
+    source: null,
+    sourceRef: null,
+    payload:
+      row.collection === "customization"
+        ? withoutTracking(row.payload)
+        : row.payload
+  }));
+}
+
+// The ticks as the company's own people receive them: who ticked an item
+// (customer, staff or an AI assistant) is provenance, for Carbon staff only.
+export function checkStatesForCustomer<S extends { source?: string | null }>(
+  states: S[]
+): S[] {
+  return states.map((state) => ({ ...state, source: null }));
+}
