@@ -46,7 +46,7 @@ const ApprovalRuleCard = memo(
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const permissions = usePermissions();
-    const currencyFormatter = useCurrencyFormatter({ compact: true });
+    const currencyFormatter = useCurrencyFormatter();
     const deleteDisclosure = useDisclosure();
 
     const documentTypeLabels: Record<ApprovalDocumentType, string> = {
