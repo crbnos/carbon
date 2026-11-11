@@ -30026,6 +30026,24 @@ export async function issueMaterial(
         );
       }
 
+      // A rework copy applies only to the units sent into it.
+      const operationScope = await db
+        .selectFrom("jobOperationTrackedEntity")
+        .select("trackedEntityId")
+        .where("jobOperationId", "=", row.jobOperationId)
+        .where("companyId", "=", companyId)
+        .execute();
+      if (
+        operationScope.length > 0 &&
+        !operationScope.some(
+          (scope) => scope.trackedEntityId === trackedEntityId
+        )
+      ) {
+        throw new InvalidInputError(
+          "This unit is not part of this rework operation"
+        );
+      }
+
       const relatedTrackedEntities = trackedEntities.data.filter(
         (trackedEntity) =>
           `Operation ${row.jobOperationId}` in
@@ -30196,6 +30214,42 @@ export async function issueMaterial(
             .executeTakeFirst();
 
           newEntityId = newTrackedEntityResult?.id;
+
+          // The seed's other units were sent into the same rework copies as
+          // the seed, so the unit that carries them takes the seed's scope on
+          // every copy still open. Without it the next completion on the copy
+          // is refused as out of scope.
+          if (newEntityId && seedUnitsLeft > 0) {
+            const seedScope = await trx
+              .selectFrom("jobOperationTrackedEntity")
+              .innerJoin(
+                "jobOperation",
+                "jobOperation.id",
+                "jobOperationTrackedEntity.jobOperationId"
+              )
+              .select("jobOperationTrackedEntity.jobOperationId")
+              .where(
+                "jobOperationTrackedEntity.trackedEntityId",
+                "=",
+                trackedEntityId
+              )
+              .where("jobOperationTrackedEntity.companyId", "=", companyId)
+              .where("jobOperation.status", "not in", ["Done", "Canceled"])
+              .execute();
+            if (seedScope.length > 0) {
+              await trx
+                .insertInto("jobOperationTrackedEntity")
+                .values(
+                  seedScope.map((scope) => ({
+                    jobOperationId: scope.jobOperationId,
+                    trackedEntityId: newEntityId!,
+                    companyId,
+                    createdBy: userId
+                  }))
+                )
+                .execute();
+            }
+          }
         }
 
         await issueJobOperationMaterials(trx, {
@@ -30360,6 +30414,24 @@ export async function issueMaterial(
         ) {
           throw new InvalidInputError(
             "The unit does not belong to this operation"
+          );
+        }
+        // A rework copy works only the units sent into it, so only those
+        // units can be scrapped against it.
+        const operationScope = await db
+          .selectFrom("jobOperationTrackedEntity")
+          .select("trackedEntityId")
+          .where("jobOperationId", "=", jobOperationId)
+          .where("companyId", "=", companyId)
+          .execute();
+        if (
+          operationScope.length > 0 &&
+          !operationScope.some(
+            (scope) => scope.trackedEntityId === scrapEntityId
+          )
+        ) {
+          throw new InvalidInputError(
+            "This unit is not part of this rework operation"
           );
         }
       }

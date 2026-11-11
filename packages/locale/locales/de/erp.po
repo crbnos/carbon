@@ -307,6 +307,11 @@ msgstr "{0} (Typ)"
 msgid "{0} (unavailable)"
 msgstr "{0} (nicht verfügbar)"
 
+#. placeholder {0}: formatter.format(material.quantity)
+#. placeholder {1}: material.unitOfMeasureCode
+msgid "{0} {1} per unit"
+msgstr "{0} {1} pro Einheit"
+
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
 msgid "{0} / {1} picked"
@@ -2473,6 +2478,13 @@ msgstr "Über (Benachrichtigung)"
 msgid "About this field"
 msgstr "Über dieses Feld"
 
+#. placeholder {0}: result.step.maxValue
+msgid "Above {0}"
+msgstr "Über {0}"
+
+msgid "Above maximum"
+msgstr "Über dem Maximum"
+
 msgid "Above the upper limit"
 msgstr "Über der oberen Grenze"
 
@@ -2946,6 +2958,9 @@ msgstr "Hinzufügen Sie eine Position für jeden Teil der Arbeit: Zeit und Mater
 
 msgid "Add a line to the document"
 msgstr "Eine Position zum Dokument hinzufügen"
+
+msgid "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
+msgstr "Fügen Sie einem Arbeitsgang einen Schritt vom Typ Liste, Prüfung oder Messung (mit Min- oder Maximalwert) hinzu, um dessen Ergebnisse Korrekturen zuzuordnen."
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Materialien-Abschnitt hinzufügen, der jeden Artikel auf der Stückliste mit seiner Menge auflistet."
@@ -3494,6 +3509,9 @@ msgstr "Nach"
 
 msgid "After (calculation method)"
 msgstr "Nach (Berechnungsmethode)"
+
+msgid "After the correction"
+msgstr "Nach der Korrektur"
 
 msgid "Afternoon, {name}."
 msgstr "Nachmittag, {name}."
@@ -4085,6 +4103,9 @@ msgstr "Alle"
 
 msgid "Any day in the month adds that month"
 msgstr "Jeder Tag im Monat fügt diesen Monat hinzu"
+
+msgid "any fields set to update on every push"
+msgstr "alle Felder, die bei jedem Push aktualisiert werden"
 
 msgid "Any item group"
 msgstr "Beliebige Artikelgruppe"
@@ -5610,8 +5631,15 @@ msgstr "Anfang"
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "Wird auslaufen — Nachfolger: <0>{0}</0>"
 
+#. placeholder {0}: result.step.minValue
+msgid "Below {0}"
+msgstr "Unter {0}"
+
 msgid "Below level"
 msgstr "Unterhalb des Sollbestands"
+
+msgid "Below minimum"
+msgstr "Unter dem Minimum"
 
 msgid "Below safety stock"
 msgstr "Unter Sicherheitsbestand"
@@ -5878,6 +5906,9 @@ msgstr "BoM-Explorer-Einstellung aktualisiert"
 
 msgid "BOM synced successfully"
 msgstr "BOM erfolgreich synchronisiert"
+
+msgid "BOM synced. Not written: {notWritten}"
+msgstr "BOM synchronisiert. Nicht geschrieben: {notWritten}"
 
 msgid "BOMs"
 msgstr "BOMs"
@@ -6165,6 +6196,9 @@ msgstr "Nach Lagereinheit"
 
 msgid "By you · edited <0/>"
 msgstr "Von dir · bearbeitet <0/>"
+
+msgid "CAD model"
+msgstr "CAD-Modell"
 
 msgid "CAD Model"
 msgstr "CAD-Modell"
@@ -7866,6 +7900,9 @@ msgstr "Weiter"
 
 msgid "Continue Setup"
 msgstr "Setup fortsetzen"
+
+msgid "Continue to the next operation"
+msgstr "Mit dem nächsten Arbeitsgang fortfahren"
 
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "Gegenkonto der Anlage für die Abschreibung von Nutzungsrechten"
@@ -9990,6 +10027,9 @@ msgstr "Vertrag löschen"
 msgid "Delete Contractor"
 msgstr "Externen Mitarbeiter löschen"
 
+msgid "Delete correction"
+msgstr "Korrektur löschen"
+
 msgid "Delete Count"
 msgstr "Anzahl löschen"
 
@@ -10329,6 +10369,9 @@ msgstr "Gelöscht"
 
 msgid "Deleted attribute value"
 msgstr "Attributwert gelöscht"
+
+msgid "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
+msgstr "Beim Löschen dieser Korrektur werden ihre Arbeitsgänge, Materialien und Ergebniszuordnungen entfernt. Bereits angelegte Fertigungsaufträge behalten ihre eigene Kopie."
 
 msgid "Deliver"
 msgstr "Liefern"
@@ -11014,6 +11057,9 @@ msgstr "Abheben"
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "Zeichnung ersetzt. Anmerkungsplatzierungen wurden entfernt. Merkmalzeilen bleiben unverändert."
 
+msgid "drawings"
+msgstr "Zeichnungen"
+
 msgid "Drop a drawing or model"
 msgstr "Zeichnung oder Modell hier ablegen"
 
@@ -11295,10 +11341,6 @@ msgstr "Jeder Zeitraum ist ein Monat zum Monatssatz."
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Jede physische Einheit erhält ihre eigene verfolgte Einheit und eine eindeutige Nummer – eine verfolgte Einheit, ein Stück."
 
-#. placeholder {0}: replaced.join(", ")
-msgid "Each push replaces: {0}. Other edits stay."
-msgstr "Jeder Push ersetzt: {0}. Andere Änderungen bleiben bestehen."
-
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "Der Verkäufer (oder Ersteller) jeder Mietvereinbarung oder eines Vertrags erhält eine tägliche Zusammenfassung seiner Rechnungen."
 
@@ -11453,6 +11495,12 @@ msgstr "Kontakt bearbeiten"
 
 msgid "Edit Contractor"
 msgstr "Externer Mitarbeiter bearbeiten"
+
+msgid "Edit correction"
+msgstr "Korrektur bearbeiten"
+
+msgid "Edit Correction"
+msgstr "Korrektur bearbeiten"
 
 msgid "Edit cost"
 msgstr "Kosten bearbeiten"
@@ -12888,6 +12936,9 @@ msgstr "Fehlgeschlagen"
 
 msgid "Failed characteristics"
 msgstr "Fehlgeschlagene Merkmale"
+
+msgid "Failed inspection"
+msgstr "Prüfung fehlgeschlagen"
 
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
@@ -15128,6 +15179,9 @@ msgstr "Inaktive Aktionen werden nicht in Auswahlisten angezeigt"
 msgid "Inactive categories cannot be picked for new time"
 msgstr "Inaktive Kategorien können nicht für neue Zeit ausgewählt werden"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "Wareneingangsprüfung"
 
@@ -16475,8 +16529,8 @@ msgstr "Letzter Push {when} fehlgeschlagen: {0}"
 msgid "Last push {when}:"
 msgstr "Letzte Übertragung {when}:"
 
-msgid "Last pushed {lastPushed}."
-msgstr "Zuletzt übertragen: {lastPushed}."
+msgid "Last pushed {lastPushed}"
+msgstr "Zuletzt übertragen: {lastPushed}"
 
 msgid "Last Quarter"
 msgstr "Letztes Quartal"
@@ -16658,6 +16712,9 @@ msgstr "Lassen Sie das Feld leer, um die nächste Revision automatisch zu verwen
 
 msgid "Leave empty for exact match"
 msgstr "Leer lassen für exakte Übereinstimmung"
+
+msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
+msgstr "Leer lassen für kein Limit. Darüber hinaus bietet MES nur Ausschuss oder eine Qualitätsmeldung an."
 
 msgid "Leave empty to use the account default"
 msgstr "Leer lassen, um die Kontostandards zu verwenden"
@@ -17831,6 +17888,13 @@ msgstr "Matrix"
 msgid "Maturity Analysis"
 msgstr "Fälligkeitsanalyse"
 
+#. placeholder {0}: correction.maxAttempts
+msgid "Max {0} per unit"
+msgstr "Max. {0} pro Einheit"
+
+msgid "Max attempts per unit"
+msgstr "Max. Versuche pro Einheit"
+
 msgid "Max Lead Time"
 msgstr "Max. Beschaffungszeit"
 
@@ -18630,6 +18694,9 @@ msgstr "Neuer Vertrag"
 msgid "New Contractor"
 msgstr "Neuer Externer Mitarbeiter"
 
+msgid "New Correction"
+msgstr "Neue Korrektur"
+
 msgid "New Cost Center"
 msgstr "Neue Kostenstelle"
 
@@ -19333,6 +19400,12 @@ msgstr "Kein Kontrollkonto weist zum Übergangsdatum einen Saldo auf."
 msgid "No conversion is required"
 msgstr "Keine Umrechnung erforderlich"
 
+msgid "No correction"
+msgstr "Keine Korrektur"
+
+msgid "No corrections yet."
+msgstr "Noch keine Korrekturen."
+
 msgid "No cost"
 msgstr "Keine Kosten"
 
@@ -19723,6 +19796,9 @@ msgstr "Keine offenen Kundenauftragsposition"
 msgid "No open work has a target date."
 msgstr "Keine offene Arbeit hat ein Zieldatum."
 
+msgid "No operations"
+msgstr "Keine Arbeitsgänge"
+
 msgid "No operations found."
 msgstr "Keine Arbeitsgänge gefunden."
 
@@ -20011,6 +20087,9 @@ msgstr "Keine Sortierungen auf diese Ansicht angewendet"
 
 msgid "No statement for this period"
 msgstr "Keine Abrechnung für diesen Zeitraum"
+
+msgid "No step results suggest this correction."
+msgstr "Keine Schrittergebnisse schlagen diese Korrektur vor."
 
 msgid "No step selected"
 msgstr "Kein Schritt ausgewählt"
@@ -20342,6 +20421,9 @@ msgstr "Nicht synchronisiert"
 
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "Kein verwendbarer Bestand. MRP und Planung zählen ihn nicht, und die Kommissionierung entnimmt nichts daraus."
+
+msgid "Not used yet."
+msgstr "Noch nicht verwendet."
 
 msgid "Not working today"
 msgstr "Arbeitet heute nicht"
@@ -23451,14 +23533,14 @@ msgstr "Den Buchungssatz ohne die Dimension verbuchen"
 msgid "Push to accounting"
 msgstr "Zur Buchhaltung senden"
 
-msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr "Pushes ändern nicht die Felder dieses Artikels. Daher bleiben hier vorgenommene Änderungen bestehen."
+msgid "Pushes from Onshape can update this item's {pushTargets}, but not its fields."
+msgstr "Pushes von Onshape können bei diesem Artikel {pushTargets} aktualisieren, aber nicht seine Felder."
 
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "Pushes von Onshape stoppen die Aktualisierung dieses Artikels. Das erneute Pushen dieses Teils von Onshape stellt die Verknüpfung wieder her."
+msgid "Pushes from Onshape can update this item's {pushTargets}."
+msgstr "Pushes von Onshape können bei diesem Artikel {pushTargets} aktualisieren."
 
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "Pushes ersetzen nur die Felder, die auf der Seite „Felder\" von Onshape auf „Bei jedem Push aktualisieren\" eingestellt sind."
+msgid "Pushes stop updating this item, and its current data stays. Any later push that includes this part number links it again."
+msgstr "Pushes aktualisieren diesen Artikel nicht mehr, und seine aktuellen Daten bleiben erhalten. Jeder spätere Push, der diese Teilenummer enthält, verknüpft ihn wieder."
 
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "Setzen Sie ein Vertragsprojekt unter einen Arbeitsstoppauftrag mit seinem 90-Tage-Enddatum Angehalten, und nehmen Sie es wieder auf, wenn der Auftrag endet."
@@ -23500,6 +23582,10 @@ msgstr "QR-Code zum Starten des nächsten Vorgangs für diesen Kanban"
 
 msgid "Qty"
 msgstr "Menge"
+
+#. placeholder {0}: formatter.format(use.quantity)
+msgid "Qty {0}"
+msgstr "Menge {0}"
 
 msgid "Qty {jobQuantity}"
 msgstr "Menge {jobQuantity}"
@@ -23866,6 +23952,9 @@ msgstr "Modell neu konvertieren"
 msgid "Re-date to first open day"
 msgstr "Auf ersten offenen Tag umbuchen"
 
+msgid "Re-inspect at the operation that found it"
+msgstr "Am Arbeitsgang erneut prüfen, der den Fehler gefunden hat"
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "Erneute Eingabe zwischen Angebotserstellung, Produktion und Finanzen"
 
@@ -23877,6 +23966,9 @@ msgstr "Neuplanung von Bewegungen in der aktuellen Schrittfolge – Schritte wer
 
 msgid "Re-send"
 msgstr "Erneut senden"
+
+msgid "Re-torque nut"
+msgstr "Mutter nachziehen"
 
 msgid "Reactivate"
 msgstr "Reaktivieren"
@@ -25266,6 +25358,9 @@ msgstr "Abrechnung auf Mitglieder beschränken"
 msgid "Result"
 msgstr "Ergebnis"
 
+msgid "Result mappings"
+msgstr "Ergebniszuordnungen"
+
 msgid "Results"
 msgstr "Ergebnisse"
 
@@ -25617,6 +25712,12 @@ msgstr "Widerrufen"
 
 msgid "Rework"
 msgstr "Nacharbeit"
+
+msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
+msgstr "Nur für Nacharbeit gedachte Arbeitsgänge, die ein Schrittergebnis vorschlägt, z. B. ein Nachziehen, wenn eine Prüfung eine Mutter zu locker findet. Reguläre Einheiten durchlaufen sie nie."
+
+msgid "Rework-only operations that a step result suggests. This job keeps its own copy from the make method."
+msgstr "Nur für Nacharbeit gedachte Arbeitsgänge, die ein Schrittergebnis vorschlägt. Dieser Fertigungsauftrag behält seine eigene Kopie aus der Fertigungsmethode."
 
 msgid "RFQ"
 msgstr "RFQ"
@@ -31132,6 +31233,12 @@ msgstr "Dann angepasst für"
 msgid "Then by"
 msgstr "Dann nach"
 
+msgid "Then continue"
+msgstr "Dann fortfahren"
+
+msgid "Then re-inspect"
+msgstr "Dann erneut prüfen"
+
 msgid "There are more received than ordered"
 msgstr "Es wurden mehr Stücke empfangen als bestellt"
 
@@ -32388,6 +32495,9 @@ msgstr "Versuchen Sie es erneut"
 msgid "Tuesday"
 msgstr "Dienstag"
 
+msgid "Turn Off"
+msgstr ""
+
 msgid "Turn On"
 msgstr "Aktivieren"
 
@@ -32614,6 +32724,9 @@ msgstr "Nicht fakturierte Lieferungen"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Eindeutig, Großbuchstaben, ohne Leerzeichen (max. 10 Zeichen)"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "Einheit"
@@ -33227,6 +33340,9 @@ msgstr "Verwendet {0}"
 #. placeholder {1}: subAssemblyName(headerId)
 msgid "Uses {0} · {1}"
 msgstr "Verwendet {0} · {1}"
+
+msgid "Uses on this job"
+msgstr "Verwendungen in diesem Fertigungsauftrag"
 
 #. placeholder {0}: use.number
 #. placeholder {1}: use.title
@@ -34457,6 +34573,9 @@ msgstr "WIP"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "mit {0} Rückstellung"
+
+msgid "With Previous"
+msgstr "Mit Vorgänger"
 
 msgid "Withdraw"
 msgstr "Zurückziehen"

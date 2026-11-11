@@ -1800,6 +1800,11 @@ export const path = {
     memoNew: `${x}/credits/new`,
     memoPost: (id: string) => generatePath(`${x}/credits/${id}/post`),
     memoVoid: (id: string) => generatePath(`${x}/credits/${id}/void`),
+    methodCorrection: (id: string) =>
+      generatePath(`${x}/items/methods/correction/${id}`),
+    methodCorrectionDelete: (id: string) =>
+      generatePath(`${x}/items/methods/correction/delete/${id}`),
+    methodCorrectionTrigger: `${x}/items/methods/correction/trigger`,
     methodMaterial: (id: string) =>
       generatePath(`${x}/items/methods/material/${id}`),
     methodMaterials: `${x}/items/methods/materials`,
@@ -1951,6 +1956,7 @@ export const path = {
     newMaterialSupplier: (id: string) =>
       generatePath(`${x}/material/${id}/purchasing/new`),
     newMaterialType: `${x}/items/types/new`,
+    newMethodCorrection: `${x}/items/methods/correction/new`,
     newMethodMaterial: `${x}/items/methods/material/new`,
     newMethodOperation: `${x}/items/methods/operation/new`,
     newMethodOperationParameter: `${x}/items/methods/operation/parameter/new`,
@@ -2900,6 +2906,7 @@ export const path = {
       generatePath(`${x}/production/machine-time/${id}`),
     unattributedMachineTimes: `${x}/production/machine-time`,
     uom: (id: string) => generatePath(`${x}/items/uom/${id}`),
+    uomActive: `${x}/items/uom/active`,
     uoms: `${x}/items/uom`,
     updateAssemblyUnit: (id: string, unitId: string) =>
       generatePath(`${x}/assembly/${id}/units/${unitId}`),

@@ -18,6 +18,10 @@ msgstr ", çalışmıyor"
 msgid ", running"
 msgstr ", çalışıyor"
 
+#. placeholder {0}: suggestion.reason
+msgid "\"{0}\" calls for a correction on this unit."
+msgstr "Bu adet için “{0}” düzeltme gerektiriyor."
+
 msgid "\"{column}\" is required."
 msgstr "\"{column}\" gereklidir."
 
@@ -430,6 +434,9 @@ msgstr "Atanan"
 msgid "Attach file"
 msgstr "Dosya ekle"
 
+msgid "Attempt limit reached"
+msgstr "Deneme sınırına ulaşıldı"
+
 msgid "Authentication Error"
 msgstr "Kimlik Doğrulama Hatası"
 
@@ -773,6 +780,13 @@ msgstr "Gizli anahtarı kopyala"
 
 msgid "Copy to clipboard"
 msgstr "Panoya kopyala"
+
+#. placeholder {0}: correction.name
+msgid "Correction: {0}"
+msgstr "Düzeltme: {0}"
+
+msgid "Correction: {correctionName}"
+msgstr "Düzeltme: {correctionName}"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -1193,6 +1207,9 @@ msgstr "Genel"
 
 msgid "Go back to operation"
 msgstr "İşleme geri dön"
+
+msgid "Go back to operation, or run a correction"
+msgstr "Operasyona geri dön ya da bir düzeltme çalıştır"
 
 msgid "Go to onboarding"
 msgstr "Başlangıç adımına git"
@@ -1712,6 +1729,9 @@ msgstr "Sizin için sertifika metni ayarlanmadı. Bir yöneticiden Ayarlar → Z
 msgid "No color"
 msgstr "Renk yok"
 
+msgid "No correction"
+msgstr "Düzeltme yok"
+
 msgid "No country found."
 msgstr "Ülke bulunamadı."
 
@@ -1880,6 +1900,9 @@ msgstr "Hiçbiri"
 
 msgid "Normal"
 msgstr "Normal"
+
+msgid "Not in this operation"
+msgstr "Bu operasyonda yok"
 
 msgid "Not scheduled"
 msgstr "Planlanmamış"
@@ -2295,6 +2318,9 @@ msgstr "Kuyruk boş"
 msgid "Quotes"
 msgstr "Teklifler"
 
+msgid "Raise quality issue"
+msgstr "Kalite sorunu bildir"
+
 msgid "Re"
 msgstr "Rd"
 
@@ -2556,6 +2582,9 @@ msgstr "Fire miktarı"
 
 msgid "Scrap Reason"
 msgstr "Fire nedeni"
+
+msgid "Scrap unit"
+msgstr "Adedi fireye ayır"
 
 msgid "Scrapped"
 msgstr "Hurdaya Ayrılan"
@@ -2863,8 +2892,14 @@ msgstr "{workType} başlat"
 msgid "Start {workTypeLabel} timer"
 msgstr "{workTypeLabel} zamanlayıcısını başlat"
 
+msgid "Start a correction?"
+msgstr "Düzeltme başlatılsın mı?"
+
 msgid "Start clock"
 msgstr "Saati Başlat"
+
+msgid "Start correction"
+msgstr "Düzeltmeyi başlat"
 
 msgid "Start Job"
 msgstr "İş emrini Başlat"
@@ -3041,6 +3076,12 @@ msgstr "Temalar"
 msgid "then"
 msgstr "sonra"
 
+msgid "Then continues to the next operation"
+msgstr "Ardından sonraki operasyona geçilir"
+
+msgid "Then re-inspects here"
+msgstr "Ardından burada yeniden kontrol edilir"
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Bu malzeme için hiçbir kullanılabilir veya tüketilmiş izlenmiş parça yoktur."
 
@@ -3091,6 +3132,9 @@ msgstr "Bu numune kaldırıldı"
 
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Bu, saatini durdurur ve iş emrinin süresini muhasebeleştirir. İş emri artık değiştirilemez."
+
+msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
+msgstr "Bu adet bu düzeltmeyi sınır sayısı kadar kullandı. Bunun yerine adedi fireye ayırın ya da bir kalite sorunu bildirin."
 
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir birim oluşturulacaktır."
@@ -3319,6 +3363,11 @@ msgstr "Yükleniyor {0}"
 
 msgid "Use a different account"
 msgstr "Farklı bir hesap kullan"
+
+#. placeholder {0}: correction.uses
+#. placeholder {1}: correction.maxAttempts
+msgid "Used {0} of {1}"
+msgstr "{1} içinden {0} kullanıldı"
 
 msgid "Used automatically at completion"
 msgstr "Tamamlama sırasında otomatik olarak kullanılır"

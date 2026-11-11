@@ -27,17 +27,22 @@ export function isKanbanCompleteScan(
 }
 
 /**
- * The job's one unit, when it makes exactly one: a single entity and a unit
- * count of 1. The count is checked too because the entity list can run short
- * of the units the operation makes.
+ * The operation's one unit, when it works exactly one: a single entity in the
+ * operation's scope and a unit count of 1. The count is checked too because
+ * the entity list can run short of the units the operation makes.
  */
 export function soleUnitId(
-  entities: { id: string }[],
+  entities: { id: string; inOperationScope?: boolean }[],
   unitCount: number | null | undefined
 ): string | null {
-  if (entities.length !== 1) return null;
+  // A correction or rework operation lists every unit of the job but works
+  // only the ones sent into it.
+  const inScope = entities.filter(
+    (entity) => entity.inOperationScope !== false
+  );
+  if (inScope.length !== 1) return null;
   if ((unitCount ?? 1) !== 1) return null;
-  return entities[0].id;
+  return inScope[0]!.id;
 }
 
 /**

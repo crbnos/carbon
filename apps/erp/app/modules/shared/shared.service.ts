@@ -4585,17 +4585,22 @@ async function writeGroup(
       }
       const addedBefore = totalMethodRows(added);
 
+      // The import appends to the routing and the bill of materials. A
+      // correction's operations and materials share these tables (with
+      // their own Op Nos from 1) and are not part of either.
       const existingMaterials = await trx
         .selectFrom("methodMaterial")
         .select(["itemId", "order"])
         .where("makeMethodId", "=", makeMethodId)
         .where("companyId", "=", companyId)
+        .where("methodCorrectionId", "is", null)
         .execute();
       const existingOperations = await trx
         .selectFrom("methodOperation")
         .select(["id", "order"])
         .where("makeMethodId", "=", makeMethodId)
         .where("companyId", "=", companyId)
+        .where("methodCorrectionId", "is", null)
         .execute();
 
       const opPlan = planOperationAppend({

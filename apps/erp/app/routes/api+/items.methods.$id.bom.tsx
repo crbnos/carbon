@@ -52,7 +52,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           "*, ...process(processName:name), ...workCenter(workCenterName:name, laborRate, machineRate, overheadRate)"
         )
         .in("makeMethodId", makeMethodIds)
-        .eq("companyId", companyId),
+        .eq("companyId", companyId)
+        .is("methodCorrectionId", null),
       client
         .from("workCenters")
         .select("id, active, laborRate, machineRate, overheadRate, processes")

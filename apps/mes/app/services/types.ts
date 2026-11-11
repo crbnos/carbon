@@ -100,7 +100,10 @@ export type StorageItem = FileObject & {
 
 export type TrackedEntity = NonNullable<
   Awaited<ReturnType<typeof getTrackedEntitiesByMakeMethodId>>["data"]
->[number];
+>[number] & {
+  /** Set by `getTrackedEntitiesForOperation`; false = the operation applies to other units. */
+  inOperationScope?: boolean;
+};
 
 export type TrackedInput = NonNullable<
   Awaited<ReturnType<typeof getTrackedInputs>>["data"]
