@@ -6,6 +6,7 @@
 // and types, so MES can type its calls without importing the ERP; the ERP
 // validates with the same schemas.
 
+import type { PageGate } from "@carbon/database/access";
 import {
   type RdActivityRole,
   round,
@@ -472,6 +473,14 @@ export const triggerReworkInput = z.object({
 });
 
 /**
+ * Who may trigger rework. Here beside the input, so MES checks the same rule
+ * the ERP posting declares.
+ */
+export const triggerReworkPermission = {
+  "production.jobs": "Edit"
+} as const satisfies PageGate;
+
+/**
  * Sends units through one of the job's corrections: the correction's
  * operations (and materials) are added after the triggering operation, scoped
  * to the units, then the unit re-inspects there or continues.
@@ -485,6 +494,14 @@ export const triggerCorrectionInput = z.object({
   trackedEntityIds: z.array(z.string()).optional(),
   inspectionId: z.string().optional()
 });
+
+/**
+ * Who may trigger a correction. Here beside the input, so MES checks the same
+ * rule the ERP posting declares.
+ */
+export const triggerCorrectionPermission = {
+  "production.jobs": "Edit"
+} as const satisfies PageGate;
 
 /**
  * Reject a receipt or manual inspection lot as the ERP's Reject Lot does: the

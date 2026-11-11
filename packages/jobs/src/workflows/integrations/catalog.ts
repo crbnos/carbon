@@ -118,7 +118,7 @@ export async function buildPieceActionDeclarations(): Promise<
         // The display name is vendor prose, spliced into a `msg` template like
         // every other piece string, so it is made safe the same way.
         label: `${entry.label}: ${vendorText(action.displayName)}`,
-        permission: { page: "workflows.workflows", action: "update" },
+        permission: { "workflows.workflows": "Edit" },
         inputs,
         ...(Object.keys(advancedInputs).length === 0 ? {} : { advancedInputs }),
         outputs: {

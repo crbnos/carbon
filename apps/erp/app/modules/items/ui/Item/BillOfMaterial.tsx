@@ -5,7 +5,6 @@
 "use client";
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
-import { ITEM_TYPE_PAGES } from "@carbon/database/access";
 import {
   missingPullFromLocations,
   needsPullFrom
@@ -38,7 +37,7 @@ import {
   useThrottle,
   useViewport
 } from "@carbon/react";
-import { getItemById, getItemReadableId } from "@carbon/utils";
+import { getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { motion } from "motion/react";
 import { nanoid } from "nanoid";
@@ -88,7 +87,7 @@ import {
   SortableListItemToggle
 } from "~/components/SortableList";
 import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
-import { usePermissions, useUrlParams, useUser } from "~/hooks";
+import { useUrlParams, useUser } from "~/hooks";
 import { usePullFromLocationIds } from "~/hooks/usePullFromLocationIds";
 import { methodType, sourcingType } from "~/modules/shared/shared.models";
 import type {
@@ -112,6 +111,7 @@ import type {
 import { MaterialRowDetails, MaterialRowTitle } from "./MethodRow";
 import type { ReleaseLockProps } from "./ReleaseLockAlert";
 import ReleaseLockAlert, { getReleaseLockFlags } from "./ReleaseLockAlert";
+import { useMethodEditable } from "./useMethodEditable";
 
 type Material = z.infer<typeof methodMaterialValidator> & {
   description: string;
@@ -196,7 +196,6 @@ const BillOfMaterial = ({
   methodCorrectionId,
   title
 }: BillOfMaterialProps) => {
-  const permissions = usePermissions();
   const { t } = useLingui();
   const { isProductionRevision, isReleaseLocked } = getReleaseLockFlags({
     revisionStatus,
@@ -204,15 +203,9 @@ const BillOfMaterial = ({
   });
   const { isPhone } = useViewport();
   const [items] = useItems();
-  const methodItem = getItemById(items, makeMethod.itemId);
+  const { methodItem, isEditable } = useMethodEditable(makeMethod);
   const itemName = methodItem?.name;
-  // The method's item decides the page: Tools for a tool's bill of material.
-  const isReadOnly =
-    !methodItem ||
-    permissions.has({ [ITEM_TYPE_PAGES[methodItem.type]]: "Edit" }) === false ||
-    makeMethod.status !== "Draft" ||
-    isReleaseLocked ||
-    isDisabled;
+  const isReadOnly = !isEditable || isReleaseLocked || isDisabled;
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
 

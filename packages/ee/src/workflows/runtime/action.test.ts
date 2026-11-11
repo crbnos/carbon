@@ -93,8 +93,7 @@ describe("actionExecutor", () => {
 
   it("reports the action's declared permission", () => {
     expect(actionExecutor.permission(node(), catalog)).toEqual({
-      page: "quality.issues",
-      action: "create"
+      "quality.issues": "Create"
     });
     expect(actionExecutor.permission(node("banish"), catalog)).toBeUndefined();
   });

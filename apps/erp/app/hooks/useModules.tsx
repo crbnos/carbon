@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  anyOf,
   MODULES,
   type ModuleId,
   pageOfUrl,
@@ -173,7 +174,7 @@ function usePermittedModules(): {
   const modulePreferences = useModulePreferences();
 
   const permitted = MODULES.filter(({ id }) =>
-    permissions.hasAny(id, "View")
+    permissions.has(anyOf(pagesOf(id), "View"))
   ).map(({ id }): ModuleLink => {
     const { indexPicksPage, ...link } = links[id];
     const landing =

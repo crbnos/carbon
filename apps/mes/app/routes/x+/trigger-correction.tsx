@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { triggerCorrectionPermission } from "@carbon/api/postings";
 import { assertIsPost, error, success } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -17,11 +18,11 @@ export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId, caller, permissions } = await authorize(request);
   // The posting runs as the system, so it checks nothing about the caller.
-  // An operator on the floor may start a correction; an API key needs Edit on
-  // Jobs, the posting's own rule (`triggerCorrectionPermission`).
+  // An operator on the floor may start a correction; an API key needs the
+  // posting's own rule.
   if (
     caller === "apiKey" &&
-    !holdsGate(permissions, { "production.jobs": "Edit" }, companyId)
+    !holdsGate(permissions, triggerCorrectionPermission, companyId)
   ) {
     return data(
       { success: false },

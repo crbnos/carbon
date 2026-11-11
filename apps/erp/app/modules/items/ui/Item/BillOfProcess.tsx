@@ -4,7 +4,6 @@
 
 "use client";
 import { useCarbon } from "@carbon/auth";
-import { ITEM_TYPE_PAGES } from "@carbon/database/access";
 import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
@@ -50,7 +49,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { getItemById, INPUT_FORMAT } from "@carbon/utils";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "motion/react";
@@ -130,12 +129,7 @@ import {
 } from "~/components/SortableList";
 import { StepLinkEditor } from "~/components/StepLinkEditor";
 import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
-import {
-  useCurrencyDecimals,
-  useImageUpload,
-  usePermissions,
-  useUser
-} from "~/hooks";
+import { useCurrencyDecimals, useImageUpload, useUser } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
 import type {
   SlideAnnotation,
@@ -172,6 +166,7 @@ import type {
 import { OperationRowDetails, OperationRowTitle } from "./MethodRow";
 import type { ReleaseLockProps } from "./ReleaseLockAlert";
 import ReleaseLockAlert, { getReleaseLockFlags } from "./ReleaseLockAlert";
+import { useMethodEditable } from "./useMethodEditable";
 
 type Operation = z.infer<typeof methodOperationValidator> & {
   workInstruction: JSONContent | null;
@@ -274,7 +269,6 @@ const BillOfProcess = ({
   methodCorrectionId,
   title
 }: BillOfProcessProps) => {
-  const permissions = usePermissions();
   const { t } = useLingui();
   const { isProductionRevision, isReleaseLocked } = getReleaseLockFlags({
     revisionStatus,
@@ -282,15 +276,9 @@ const BillOfProcess = ({
   });
   const { isPhone } = useViewport();
   const [allItems] = useItems();
-  const methodItem = getItemById(allItems, makeMethod.itemId);
+  const { methodItem, isEditable } = useMethodEditable(makeMethod);
   const itemName = methodItem?.name;
-  // The method's item decides the page: Tools for a tool's bill of process.
-  const isReadOnly =
-    !methodItem ||
-    permissions.has({ [ITEM_TYPE_PAGES[methodItem.type]]: "Edit" }) === false ||
-    makeMethod.status !== "Draft" ||
-    isReleaseLocked ||
-    isDisabled;
+  const isReadOnly = !isEditable || isReleaseLocked || isDisabled;
 
   const makeMethodId = makeMethod.id;
 

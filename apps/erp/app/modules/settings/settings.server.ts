@@ -813,16 +813,8 @@ export const updatePeopleSettings = defineServiceFn({
         pinUserId: ctx.actor.type === "user" ? ctx.actor.userId : undefined
       }
     );
-    if (update.error?.code === "entitlement") {
-      return ctx.error("entitlement", update.error.message);
-    }
-    if (update.error) {
-      return ctx.error(
-        "internal",
-        "Failed to update console mode",
-        update.error
-      );
-    }
+    const notSet = await grantWriteRefusal(ctx, update.error);
+    if (notSet) return notSet;
     return { ...input, pin: update.pin, pinError: update.pinError };
   }
 });

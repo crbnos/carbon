@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { ITEM_TYPE_PAGES } from "@carbon/database/access";
 import { ValidatedForm } from "@carbon/form";
 import {
   Badge,
@@ -29,7 +28,6 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { getItemById } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ComponentProps } from "react";
 import { useEffect, useMemo, useState } from "react";
@@ -43,8 +41,6 @@ import {
   Submit
 } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions } from "~/hooks";
-import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import {
   correctionReturnTo,
@@ -53,6 +49,7 @@ import {
 } from "../../items.models";
 import BillOfMaterial from "./BillOfMaterial";
 import BillOfProcess from "./BillOfProcess";
+import { useMethodEditable } from "./useMethodEditable";
 
 type Correction = Database["public"]["Tables"]["methodCorrection"]["Row"];
 type CorrectionTrigger =
@@ -139,14 +136,7 @@ export default function MethodCorrections({
   releaseControl
 }: MethodCorrectionsProps) {
   const { t } = useLingui();
-  const permissions = usePermissions();
-  const [allItems] = useItems();
-  const methodItem = getItemById(allItems, makeMethod.itemId);
-  // The method's item decides the page: Tools for a tool's corrections.
-  const isReadOnly =
-    !methodItem ||
-    permissions.has({ [ITEM_TYPE_PAGES[methodItem.type]]: "Edit" }) === false ||
-    makeMethod.status !== "Draft";
+  const isReadOnly = !useMethodEditable(makeMethod).isEditable;
 
   const formModal = useDisclosure();
   const [editing, setEditing] = useState<Correction | null>(null);

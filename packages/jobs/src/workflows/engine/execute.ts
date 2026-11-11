@@ -3,13 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  ACTION_LEVEL,
-  anyOf,
   type ExpandedClaims,
+  type Gate,
   holdsGate,
   MODULES,
   moduleOf,
-  type PageId,
   pageById
 } from "@carbon/database/access";
 import {
@@ -17,8 +15,10 @@ import {
   buildCatalogOverlay,
   type CustomFieldDef,
   createWorkflowCatalog,
+  eventGate,
   executorFor,
   FAILURE_HANDLE,
+  gatePages,
   itemKeyFor,
   listValue,
   type NodeResult,
@@ -90,12 +90,15 @@ const NOTHING_TO_RUN = "That list was empty, so there was nothing to do.";
 
 const BATCH_CONCURRENCY = 5;
 
-/** The one wording for a lost permission. Exported because the builder's test-run
- * route gates on the same permission before the walk, and two copies would drift. */
-/** A page's label, or a module's for a module or a list of pages of one shared table. */
-export function noAccess(key: string | readonly string[]): string {
-  const first = (typeof key === "string" ? key : key[0]) ?? "";
-  const page = typeof key === "string" ? pageById(key) : undefined;
+/**
+ * The one wording for a lost permission: the gate's page label, or its module's
+ * label when the gate names several pages of one shared table. Exported because
+ * the builder's test-run route refuses with it too, and two copies would drift.
+ */
+export function noAccess(gate: Gate): string {
+  const pages = gatePages(gate);
+  const first: string = pages[0] ?? "";
+  const page = pages.length === 1 ? pageById(first) : undefined;
   const area =
     page?.label ??
     MODULES.find((module) => module.id === moduleOf(first))?.label ??
@@ -190,17 +193,12 @@ async function runExecutor(args: NodeArgs): Promise<NodeResult> {
   const executor = executorFor(node);
   if (executor === undefined) return { status: "Failed", error: NOT_AVAILABLE };
 
-  // The page of what the node acts on; of a shared table, any one of its pages.
   const required = executor.permission(node, catalog);
   if (
     required !== undefined &&
-    !holdsGate(
-      args.permissions,
-      anyOf([required.page].flat() as PageId[], ACTION_LEVEL[required.action]),
-      payload.companyId
-    )
+    !holdsGate(args.permissions, required, payload.companyId)
   ) {
-    return { status: "Failed", error: noAccess(required.page) };
+    return { status: "Failed", error: noAccess(required) };
   }
 
   return executor.execute(node, await contextFor(args));
@@ -551,17 +549,13 @@ export async function walkWorkflow(params: {
 
     // Checked explicitly as well as by RLS: RLS alone returns zero rows, which
     // reads as a silent skip rather than a lost permission.
-    // The page of the event's table; of a shared table, any one of its pages.
     const pages = catalog.getEvent(payload.eventId)?.permission;
+    const gate = pages === undefined ? undefined : eventGate(pages);
     if (
-      pages !== undefined &&
-      !holdsGate(
-        permissions,
-        anyOf([pages].flat() as PageId[], "View"),
-        payload.companyId
-      )
+      gate !== undefined &&
+      !holdsGate(permissions, gate, payload.companyId)
     ) {
-      return refuse(noAccess(pages));
+      return refuse(noAccess(gate));
     }
 
     return { ok: true as const, permissions };

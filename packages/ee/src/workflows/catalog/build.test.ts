@@ -495,7 +495,7 @@ describe("validateCatalogInputs", () => {
       {
         notify: {
           label: "Notify",
-          permission: { page: "users.accounts", action: "view" },
+          permission: { "users.accounts": "View" },
           call: "notify",
           inputs: {
             payload: { type: recordType, required: true, label: "Payload" }
@@ -509,7 +509,7 @@ describe("validateCatalogInputs", () => {
       {
         "integration.x.y": {
           label: "X: Y",
-          permission: { page: "workflows.workflows", action: "update" },
+          permission: { "workflows.workflows": "Edit" },
           // A LIST of objects is refused for the same reason a single one is.
           inputs: {
             rows: {
@@ -625,7 +625,7 @@ describe("validateCatalogInputs", () => {
       {
         "order.archive": {
           label: "Archive an order",
-          permission: { page: "purchasing.purchaseOrders", action: "update" },
+          permission: { "purchasing.purchaseOrders": "Edit" },
           call: "purchasing_archiveOrder",
           inputs: {
             score: {
@@ -654,7 +654,7 @@ describe("validateCatalogInputs", () => {
       {
         "order.archive": {
           label: "Archive an order",
-          permission: { page: "purchasing.purchaseOrders", action: "update" },
+          permission: { "purchasing.purchaseOrders": "Edit" },
           call: "purchasing_archiveOrder",
           inputs: {
             channels: input as unknown as ActionInputLike
@@ -736,7 +736,7 @@ describe("validateCatalogInputs", () => {
       {
         "order.archive": {
           label: "Archive an order",
-          permission: { page: "purchasing.purchaseOrders", action: "update" },
+          permission: { "purchasing.purchaseOrders": "Edit" },
           call: "purchasing_archiveOrder",
           inputs: {
             method: {
@@ -894,10 +894,7 @@ describe("buildCatalog — actions and operations", () => {
       of: "person"
     });
     expect(action.update).toEqual({ entity: "order" });
-    expect(action.permission).toEqual({
-      page: "purchasing.purchaseOrders",
-      action: "update"
-    });
+    expect(action.permission).toEqual({ "purchasing.purchaseOrders": "Edit" });
     expect(built.labels["order.update"]).toBe("Update an order");
   });
 
@@ -913,7 +910,7 @@ describe("buildCatalog — actions and operations", () => {
       {
         "order.archive": {
           label: "Archive an order",
-          permission: { page: "purchasing.purchaseOrders", action: "update" },
+          permission: { "purchasing.purchaseOrders": "Edit" },
           call: "purchasing_archiveOrder",
           inputs: {
             method: {
@@ -960,7 +957,7 @@ describe("buildCatalog — actions and operations", () => {
         {
           "order.update": {
             label: "Update an order by hand",
-            permission: { page: "purchasing.purchaseOrders", action: "update" },
+            permission: { "purchasing.purchaseOrders": "Edit" },
             inputs: {},
             outputs: {},
             batchable: false,
@@ -981,7 +978,7 @@ describe("buildCatalog — actions and operations", () => {
       {
         "order.archive": {
           label: "Archive an order",
-          permission: { page: "purchasing.purchaseOrders", action: "update" },
+          permission: { "purchasing.purchaseOrders": "Edit" },
           inputs: {},
           outputs: {},
           batchable: false

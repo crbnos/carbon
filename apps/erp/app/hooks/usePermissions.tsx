@@ -4,15 +4,12 @@
 
 import {
   ACTIONS,
-  anyOf,
   type ExpandedClaims,
   type Gate,
-  type GateLevel,
   holdsGate,
   landingOf,
   type ModuleId,
-  ownsCompany,
-  pagesOf
+  ownsCompany
 } from "@carbon/database/access";
 import { useRouteData } from "@carbon/react";
 import { useCallback } from "react";
@@ -42,17 +39,6 @@ export function usePermissions() {
     [companyId, data?.permissions]
   );
 
-  /** Whether any page of the module holds the level (navigation, dashboards). */
-  const hasAny = useCallback(
-    (module: string, level: GateLevel) =>
-      holdsGate(
-        data?.permissions ?? {},
-        anyOf(pagesOf(module), level),
-        companyId
-      ),
-    [companyId, data?.permissions]
-  );
-
   const is = useCallback(
     (role: Role) => {
       return data?.role === role;
@@ -72,7 +58,6 @@ export function usePermissions() {
 
   return {
     has,
-    hasAny,
     is,
     isOwner,
     landing

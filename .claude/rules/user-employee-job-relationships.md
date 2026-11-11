@@ -35,9 +35,10 @@ is the separate `job` table from `20240909194622_jobs.sql`).
   added later. (`workCellId` existed briefly, then dropped in `20240819115702_work-centers.sql`.)
 - **`employeeType`** — per-company role definition. PK `id`. `name`, `companyId → company.id`,
   `protected BOOLEAN`.
-- **`employeeTypePermission`** — permissions granted by an employee type. PK `(employeeTypeId, module)`.
-  `module "module"` (enum), and `view/create/update/delete TEXT[]` (each is an array of company IDs;
-  `"0"` = all companies). `employeeTypeId → employeeType.id`.
+- **`employeeTypePermission`** — LEGACY: an employee type's old permissions (PK
+  `(employeeTypeId, module)`, `view/create/update/delete TEXT[]` of company IDs). Converted to
+  `permission` grants by `20261110050003`; no permission check reads it, and it is dropped by transition item 3
+  (`packages/database/AGENTS.md`). A role's live permissions are its `permission` rows.
 - **`userPermission`** — the effective, flattened per-user permission set. PK `id` (`id → user.id`).
   `permissions JSONB DEFAULT '{}'` keyed like `<module>_<action>` → array of company IDs.
 
@@ -48,7 +49,7 @@ is the separate `job` table from `20240909194622_jobs.sql`).
    (`userId`) or an API key's (`apiKeyId`) — with a `module`, an optional `page` (NULL covers the
    module) and a `level` (`None`/`View`/`Create`/`Edit`/`Full`). The Admin employee type
    (`systemType = 'Admin'`) resolves to Full with no rows. Precedence: person page, person module,
-   role page, role module (a key has only its own). `util.access_level` (SQL) and `resolveLevel`
+   role page, role module (a key has only its own). `util.access_level` (SQL) and `levelOf`
    (`@carbon/database/access`) are the two copies, pinned to `access/cases.json`.
 3. `employeeTypePermission` and `userPermission` were converted to grants
    (`20261110050003_convert-permissions-to-grants.sql`); `userPermission` is still read for

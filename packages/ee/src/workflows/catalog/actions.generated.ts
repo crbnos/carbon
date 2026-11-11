@@ -19,7 +19,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     },
     outputs: { record: { kind: "entity", of: "customer" } },
     batchable: true,
-    permission: { page: "sales.customers", action: "update" },
+    permission: { "sales.customers": "Edit" },
     update: { entity: "customer" }
   },
   "item.update": {
@@ -34,16 +34,13 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     },
     outputs: { record: { kind: "entity", of: "item" } },
     batchable: true,
-    permission: {
-      page: [
-        "parts.parts",
-        "parts.materials",
-        "parts.tools",
-        "parts.consumables",
-        "parts.services"
-      ],
-      action: "update"
-    },
+    permission: [
+      { "parts.parts": "Edit" },
+      { "parts.materials": "Edit" },
+      { "parts.tools": "Edit" },
+      { "parts.consumables": "Edit" },
+      { "parts.services": "Edit" }
+    ],
     update: { entity: "item" }
   },
   "job.create": {
@@ -58,7 +55,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     },
     outputs: { record: { kind: "entity", of: "job" } },
     batchable: true,
-    permission: { page: "production.jobs", action: "create" },
+    permission: { "production.jobs": "Create" },
     call: "production_insertJob"
   },
   "job.update": {
@@ -81,7 +78,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     },
     outputs: { record: { kind: "entity", of: "job" } },
     batchable: true,
-    permission: { page: "production.jobs", action: "update" },
+    permission: { "production.jobs": "Edit" },
     update: { entity: "job" }
   },
   "nonConformance.create": {
@@ -110,7 +107,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     },
     outputs: { record: { kind: "entity", of: "nonConformance" } },
     batchable: true,
-    permission: { page: "quality.issues", action: "create" },
+    permission: { "quality.issues": "Create" },
     call: "quality_insertIssue"
   },
   "nonConformance.update": {
@@ -134,7 +131,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     },
     outputs: { record: { kind: "entity", of: "nonConformance" } },
     batchable: true,
-    permission: { page: "quality.issues", action: "update" },
+    permission: { "quality.issues": "Edit" },
     update: { entity: "nonConformance" }
   },
   notify: {
@@ -163,7 +160,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     },
     outputs: {},
     batchable: true,
-    permission: { page: ["users.accounts", "users.groups"], action: "view" },
+    permission: [{ "users.accounts": "View" }, { "users.groups": "View" }],
     requireOneOf: [["user", "role"]]
   },
   "purchaseOrder.create": {
@@ -177,7 +174,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     },
     outputs: { record: { kind: "entity", of: "purchaseOrder" } },
     batchable: true,
-    permission: { page: "purchasing.purchaseOrders", action: "create" },
+    permission: { "purchasing.purchaseOrders": "Create" },
     call: "purchasing_insertPurchaseOrder"
   },
   "purchaseOrder.update": {
@@ -195,7 +192,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     },
     outputs: { record: { kind: "entity", of: "purchaseOrder" } },
     batchable: true,
-    permission: { page: "purchasing.purchaseOrders", action: "update" },
+    permission: { "purchasing.purchaseOrders": "Edit" },
     update: { entity: "purchaseOrder" }
   },
   "quote.update": {
@@ -216,7 +213,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     },
     outputs: { record: { kind: "entity", of: "quote" } },
     batchable: true,
-    permission: { page: "sales.quotes", action: "update" },
+    permission: { "sales.quotes": "Edit" },
     update: { entity: "quote" }
   },
   "receipt.update": {
@@ -226,7 +223,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     },
     outputs: { record: { kind: "entity", of: "receipt" } },
     batchable: true,
-    permission: { page: "inventory.receipts", action: "update" },
+    permission: { "inventory.receipts": "Edit" },
     update: { entity: "receipt" }
   },
   "salesOrder.create": {
@@ -240,7 +237,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     },
     outputs: { record: { kind: "entity", of: "salesOrder" } },
     batchable: true,
-    permission: { page: "sales.salesOrders", action: "create" },
+    permission: { "sales.salesOrders": "Create" },
     call: "sales_insertSalesOrder"
   },
   "salesOrder.update": {
@@ -259,7 +256,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     },
     outputs: { record: { kind: "entity", of: "salesOrder" } },
     batchable: true,
-    permission: { page: "sales.salesOrders", action: "update" },
+    permission: { "sales.salesOrders": "Edit" },
     update: { entity: "salesOrder" }
   },
   "shipment.update": {
@@ -278,7 +275,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     },
     outputs: { record: { kind: "entity", of: "shipment" } },
     batchable: true,
-    permission: { page: "inventory.shipments", action: "update" },
+    permission: { "inventory.shipments": "Edit" },
     update: { entity: "shipment" }
   },
   "supplier.update": {
@@ -297,7 +294,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     },
     outputs: { record: { kind: "entity", of: "supplier" } },
     batchable: true,
-    permission: { page: "purchasing.suppliers", action: "update" },
+    permission: { "purchasing.suppliers": "Edit" },
     update: { entity: "supplier" }
   },
   webhook: {
@@ -323,7 +320,7 @@ export const WORKFLOW_ACTION_CATALOG: Record<string, BuiltAction> = {
     },
     outputs: { status: { kind: "primitive", of: "number" } },
     batchable: true,
-    permission: { page: "workflows.workflows", action: "update" }
+    permission: { "workflows.workflows": "Edit" }
   }
 };
 
@@ -400,7 +397,7 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
       result: { kind: "primitive", of: "string" }
     },
     batchable: false,
-    permission: { page: "workflows.workflows", action: "update" },
+    permission: { "workflows.workflows": "Edit" },
     piece: { name: "gmail", action: "gmail_send_email" }
   },
   "integration.google-calendar.create_google_calendar_event": {
@@ -529,7 +526,7 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
       result: { kind: "primitive", of: "string" }
     },
     batchable: false,
-    permission: { page: "workflows.workflows", action: "update" },
+    permission: { "workflows.workflows": "Edit" },
     piece: { name: "google-calendar", action: "create_google_calendar_event" }
   },
   "integration.google-calendar.google_calendar_get_events": {
@@ -613,7 +610,7 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
       result: { kind: "primitive", of: "string" }
     },
     batchable: false,
-    permission: { page: "workflows.workflows", action: "update" },
+    permission: { "workflows.workflows": "Edit" },
     piece: { name: "google-calendar", action: "google_calendar_get_events" }
   },
   "integration.slack.send_channel_message": {
@@ -725,7 +722,7 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
       result: { kind: "primitive", of: "string" }
     },
     batchable: false,
-    permission: { page: "workflows.workflows", action: "update" },
+    permission: { "workflows.workflows": "Edit" },
     piece: { name: "slack", action: "send_channel_message" }
   },
   "integration.slack.send_direct_message": {
@@ -820,7 +817,7 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
       result: { kind: "primitive", of: "string" }
     },
     batchable: false,
-    permission: { page: "workflows.workflows", action: "update" },
+    permission: { "workflows.workflows": "Edit" },
     piece: { name: "slack", action: "send_direct_message" }
   },
   "integration.slack.slack-create-channel": {
@@ -882,7 +879,7 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
       result: { kind: "primitive", of: "string" }
     },
     batchable: false,
-    permission: { page: "workflows.workflows", action: "update" },
+    permission: { "workflows.workflows": "Edit" },
     piece: { name: "slack", action: "slack-create-channel" }
   },
   "integration.slack.slack-find-user-by-email": {
@@ -931,7 +928,7 @@ export const WORKFLOW_INTEGRATION_CATALOG: Record<string, BuiltIntegration> = {
       result: { kind: "primitive", of: "string" }
     },
     batchable: false,
-    permission: { page: "workflows.workflows", action: "update" },
+    permission: { "workflows.workflows": "Edit" },
     piece: { name: "slack", action: "slack-find-user-by-email" }
   }
 };
@@ -941,52 +938,49 @@ export const WORKFLOW_OPERATION_CATALOG: Record<string, BuiltOperation> = {
     entity: "item",
     inputs: { item: { type: { kind: "entity", of: "item" }, required: true } },
     output: { kind: "primitive", of: "number" },
-    permission: {
-      page: [
-        "parts.parts",
-        "parts.materials",
-        "parts.tools",
-        "parts.consumables",
-        "parts.services"
-      ],
-      action: "view"
-    }
+    permission: [
+      { "parts.parts": "View" },
+      { "parts.materials": "View" },
+      { "parts.tools": "View" },
+      { "parts.consumables": "View" },
+      { "parts.services": "View" }
+    ]
   },
   "job.earliestOperationStart": {
     entity: "job",
     inputs: { job: { type: { kind: "entity", of: "job" }, required: true } },
     output: { kind: "primitive", of: "date" },
-    permission: { page: "production.jobs", action: "view" }
+    permission: { "production.jobs": "View" }
   },
   "job.latestOperationEnd": {
     entity: "job",
     inputs: { job: { type: { kind: "entity", of: "job" }, required: true } },
     output: { kind: "primitive", of: "date" },
-    permission: { page: "production.jobs", action: "view" }
+    permission: { "production.jobs": "View" }
   },
   "job.openOperationCount": {
     entity: "job",
     inputs: { job: { type: { kind: "entity", of: "job" }, required: true } },
     output: { kind: "primitive", of: "number" },
-    permission: { page: "production.jobs", action: "view" }
+    permission: { "production.jobs": "View" }
   },
   "job.operationCount": {
     entity: "job",
     inputs: { job: { type: { kind: "entity", of: "job" }, required: true } },
     output: { kind: "primitive", of: "number" },
-    permission: { page: "production.jobs", action: "view" }
+    permission: { "production.jobs": "View" }
   },
   "job.scrapPercentage": {
     entity: "job",
     inputs: { job: { type: { kind: "entity", of: "job" }, required: true } },
     output: { kind: "primitive", of: "number" },
-    permission: { page: "production.jobs", action: "view" }
+    permission: { "production.jobs": "View" }
   },
   "job.totalScrapQuantity": {
     entity: "job",
     inputs: { job: { type: { kind: "entity", of: "job" }, required: true } },
     output: { kind: "primitive", of: "number" },
-    permission: { page: "production.jobs", action: "view" }
+    permission: { "production.jobs": "View" }
   },
   "nonConformance.openTaskCount": {
     entity: "nonConformance",
@@ -997,7 +991,7 @@ export const WORKFLOW_OPERATION_CATALOG: Record<string, BuiltOperation> = {
       }
     },
     output: { kind: "primitive", of: "number" },
-    permission: { page: "quality.issues", action: "view" }
+    permission: { "quality.issues": "View" }
   },
   "purchaseOrder.lineCount": {
     entity: "purchaseOrder",
@@ -1008,7 +1002,7 @@ export const WORKFLOW_OPERATION_CATALOG: Record<string, BuiltOperation> = {
       }
     },
     output: { kind: "primitive", of: "number" },
-    permission: { page: "purchasing.purchaseOrders", action: "view" }
+    permission: { "purchasing.purchaseOrders": "View" }
   },
   "purchaseOrder.total": {
     entity: "purchaseOrder",
@@ -1019,7 +1013,7 @@ export const WORKFLOW_OPERATION_CATALOG: Record<string, BuiltOperation> = {
       }
     },
     output: { kind: "primitive", of: "number" },
-    permission: { page: "purchasing.purchaseOrders", action: "view" }
+    permission: { "purchasing.purchaseOrders": "View" }
   },
   "quote.total": {
     entity: "quote",
@@ -1027,7 +1021,7 @@ export const WORKFLOW_OPERATION_CATALOG: Record<string, BuiltOperation> = {
       quote: { type: { kind: "entity", of: "quote" }, required: true }
     },
     output: { kind: "primitive", of: "number" },
-    permission: { page: "sales.quotes", action: "view" }
+    permission: { "sales.quotes": "View" }
   },
   "receipt.lineCount": {
     entity: "receipt",
@@ -1035,7 +1029,7 @@ export const WORKFLOW_OPERATION_CATALOG: Record<string, BuiltOperation> = {
       receipt: { type: { kind: "entity", of: "receipt" }, required: true }
     },
     output: { kind: "primitive", of: "number" },
-    permission: { page: "inventory.receipts", action: "view" }
+    permission: { "inventory.receipts": "View" }
   },
   "salesOrder.lineCount": {
     entity: "salesOrder",
@@ -1043,7 +1037,7 @@ export const WORKFLOW_OPERATION_CATALOG: Record<string, BuiltOperation> = {
       salesOrder: { type: { kind: "entity", of: "salesOrder" }, required: true }
     },
     output: { kind: "primitive", of: "number" },
-    permission: { page: "sales.salesOrders", action: "view" }
+    permission: { "sales.salesOrders": "View" }
   },
   "salesOrder.total": {
     entity: "salesOrder",
@@ -1051,7 +1045,7 @@ export const WORKFLOW_OPERATION_CATALOG: Record<string, BuiltOperation> = {
       salesOrder: { type: { kind: "entity", of: "salesOrder" }, required: true }
     },
     output: { kind: "primitive", of: "number" },
-    permission: { page: "sales.salesOrders", action: "view" }
+    permission: { "sales.salesOrders": "View" }
   },
   "shipment.lineCount": {
     entity: "shipment",
@@ -1059,6 +1053,6 @@ export const WORKFLOW_OPERATION_CATALOG: Record<string, BuiltOperation> = {
       shipment: { type: { kind: "entity", of: "shipment" }, required: true }
     },
     output: { kind: "primitive", of: "number" },
-    permission: { page: "inventory.shipments", action: "view" }
+    permission: { "inventory.shipments": "View" }
   }
 };

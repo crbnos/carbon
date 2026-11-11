@@ -60,11 +60,13 @@ Specs: `.ai/specs/implemented/2026-07-30-workflows-foundation.md` (schema, valid
 - Add an entity, a moment, an action or an operation by editing **one hand-written file** in
   `src/catalog/` — `entities.ts`, `moments.ts`, `actions.ts`, `operations.ts` — then run
   `pnpm run generate:workflow-catalog`. Nothing else in `src/catalog/` is authored by hand.
-- Declare a `permission: { page, action }` on every hand-written action: the page of the record
-  it creates or acts on (`{ page: "production.jobs", action: "create" }`), never a module. The
-  generator gives each `<entity>.update` action, each operation and each entity lookup the page
-  of the entity's table through the access registry (`tablePages`; an `item` lists its five pages,
-  any one passes). The permission is **required** on `CatalogAction` and `CatalogOperation`
+- Declare a `permission` on every hand-written action: a `Gate` (`@carbon/database/access`) on
+  the page of the record it creates or acts on (`{ "production.jobs": "Create" }`; several pages,
+  any one enough: `anyOf(pages, level)`), never a module. The generator gives each
+  `<entity>.update` action (Edit), each operation and each entity lookup (View) a gate on the page
+  of the entity's table through the access registry (`tablePages` + `gateOn`; an `item` gates on
+  any one of its five pages). An event's `permission` stays its page(s); `eventGate` makes it the
+  View gate the engine and the test-run route both check. The permission is **required** on `CatalogAction` and `CatalogOperation`
   (optional on `CatalogEntity`), and it is what the engine checks before the node runs —
   `NodeExecutor.permission` returns it, so the gate and the work come from the same catalog entry
   and cannot drift.
@@ -107,7 +109,7 @@ src/definition/
 ├── batch.ts      # batchCandidates + batchPlan — whether an action repeats, read off the wiring
 ├── nodes.ts      # NODE_KINDS — what each node type declares about itself
 ├── normalize.ts  # readWorkflowVersion + the migrateDefinition seam
-├── catalog.ts    # WorkflowCatalog + RequiredPermission + walkPath + createFixtureCatalog
+├── catalog.ts    # WorkflowCatalog + gateOn/eventGate/gatePages + walkPath + createFixtureCatalog
 └── validate.ts   # validateDefinition -> WorkflowIssue[]
 
 src/catalog/

@@ -2,10 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { migrationsDir, repoRoot } from "../sources/migrations";
+import { GENERATED_AUTHZ_MIGRATION } from "./no-authz-ddl-in-migrations";
 import {
   LAST_MODULE_KEY_MIGRATION,
   MODULE_KEY_MIGRATIONS,
@@ -13,17 +14,6 @@ import {
 } from "./no-module-permission-key";
 
 const ROUTE = "apps/erp/app/routes/x+/inventory+/receipts.tsx";
-// The generated migration that re-ships every table's policies with page keys.
-const PAGE_PERMISSIONS_MIGRATION = readdirSync(
-  join(
-    dirname(fileURLToPath(import.meta.url)),
-    "../../../database/supabase/migrations"
-  )
-)
-  .filter((name) => name.endsWith("_page-permissions.sql"))
-  .sort()
-  .at(-1)
-  ?.slice(0, 14);
 
 const scan = (contents: string, file = ROUTE) =>
   noModulePermissionKey.scan(file, contents).map((v) => v.snippet);
@@ -69,7 +59,6 @@ describe("no-module-permission-key — TypeScript", () => {
         [
           `await authorize(request, { "inventory.receipts": "Edit" });`,
           `permissions.has({ "sales.quotes": "Edit" });`,
-          `permissions.hasAny("inventory", "View");`,
           `await authorize(request, anyOf(pagesOf("sales"), "View"));`,
           `holds(claims, "inventory.receipts_update", companyId);`,
           `permission: { page: "production.jobs", action: "create" },`,
@@ -135,18 +124,18 @@ describe("no-module-permission-key — SQL", () => {
     ).toEqual(["settings_update"]);
   });
 
-  it("lists only migrations the page-permissions migration re-ships", () => {
-    // At or before the cutoff, or merged from main later and sorting before
-    // the generated page-permissions migration, which re-ships their tables.
-    expect(PAGE_PERMISSIONS_MIGRATION).toBeDefined();
-    const dates = [...MODULE_KEY_MIGRATIONS].map((name) => name.slice(0, 14));
-    expect(
-      dates.every(
-        (date) =>
-          date <= LAST_MODULE_KEY_MIGRATION ||
-          date < PAGE_PERMISSIONS_MIGRATION!
-      )
-    ).toBe(true);
+  // A migration listed after the cutoff was merged from main. It must be a
+  // generated authz migration: @carbon/database's migration.test.ts (`unshipped`)
+  // then fails unless a later generated migration re-ships its tables.
+  it("lists, after the cutoff, only generated authz migrations", () => {
+    const dir = migrationsDir(repoRoot());
+    const late = [...MODULE_KEY_MIGRATIONS].filter(
+      (name) => name.slice(0, 14) > LAST_MODULE_KEY_MIGRATION
+    );
+    for (const name of late) {
+      const firstLine = readFileSync(join(dir, name), "utf8").split("\n")[0];
+      expect(firstLine, name).toBe(GENERATED_AUTHZ_MIGRATION);
+    }
     expect(
       MODULE_KEY_MIGRATIONS.has(
         `${LAST_MODULE_KEY_MIGRATION}_module-keys-to-pages.sql`

@@ -5,12 +5,13 @@
 import { assertIsPost } from "@carbon/auth";
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getUserClaims } from "@carbon/auth/users.server";
+import { holdsGate } from "@carbon/database/access";
 import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import { requireFeature } from "@carbon/ee/plan.server";
 import {
   CURRENT_DEFINITION_FORMAT_VERSION,
   createWorkflowCatalog,
+  eventGate,
   REGISTRY_ENTRIES,
   type RunTrigger,
   validateDefinition,
@@ -46,10 +47,8 @@ function refuse(error: string, status = 400, issues: WorkflowIssue[] = []) {
 /** The run acts as the owner, so anyone else firing it would be borrowing the owner's
  * permissions. This is the authorization boundary, not a UI nicety. */
 async function requireOwnedWorkflow(request: Request, id: string | undefined) {
-  const { client, companyId, companyGroupId, userId } = await authorize(
-    request,
-    { "workflows.workflows": "Edit" }
-  );
+  const { client, companyId, companyGroupId, userId, permissions } =
+    await authorize(request, { "workflows.workflows": "Edit" });
   await requireFeature({
     request,
     client,
@@ -72,7 +71,14 @@ async function requireOwnedWorkflow(request: Request, id: string | undefined) {
     };
   }
 
-  return { client, companyId, companyGroupId, userId, workflow: workflow.data };
+  return {
+    client,
+    companyId,
+    companyGroupId,
+    userId,
+    permissions,
+    workflow: workflow.data
+  };
 }
 
 /** Options for the test-run record picker. Reads through the request's own client, so
@@ -193,15 +199,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // The gate comes before the read, not only inside the walk: `buildTrigger` fetches
   // the record with service role, and an ordering that only happens to be safe is one
   // an edit can quietly break. The walk re-checks against live claims.
-  // The page of the event's table; of a shared table, any one of its pages.
-  const pages = event?.permission;
-  if (pages !== undefined) {
-    const claims = await getUserClaims(gate.userId, gate.companyId);
-    const granted = [pages]
-      .flat()
-      .some((page) => claims.permissions[page]?.view?.includes(gate.companyId));
-    if (!granted) {
-      return refuse(noAccess(pages), 403);
+  const eventPermission = event?.permission;
+  if (eventPermission !== undefined) {
+    const required = eventGate(eventPermission);
+    if (!holdsGate(gate.permissions, required, gate.companyId)) {
+      return refuse(noAccess(required), 403);
     }
   }
 

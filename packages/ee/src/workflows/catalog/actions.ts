@@ -3,11 +3,8 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { TermId } from "@carbon/content/glossary";
-import type {
-  LinksDeclaration,
-  OptionsSource,
-  RequiredPermission
-} from "../definition/catalog";
+import { anyOf, type Gate } from "@carbon/database/access";
+import type { LinksDeclaration, OptionsSource } from "../definition/catalog";
 import { t, type ValueType } from "../definition/types";
 
 export interface ActionInputLike {
@@ -46,7 +43,7 @@ export interface ActionInputLike {
 
 export interface ActionDeclarationLike {
   label: string;
-  permission: RequiredPermission;
+  permission: Gate;
   inputs: Record<string, ActionInputLike>;
   outputs: Record<string, ValueType>;
   batchable: boolean;
@@ -82,7 +79,7 @@ const action = (entry: ActionDeclarationLike) => entry;
 export const WORKFLOW_ACTIONS = {
   "job.create": action({
     label: "Create a job",
-    permission: { page: "production.jobs", action: "create" },
+    permission: { "production.jobs": "Create" },
     inputs: {
       itemId: {
         type: t.entity("item"),
@@ -110,7 +107,7 @@ export const WORKFLOW_ACTIONS = {
   }),
   "nonConformance.create": action({
     label: "Create an issue",
-    permission: { page: "quality.issues", action: "create" },
+    permission: { "quality.issues": "Create" },
     // `locationId`, `nonConformanceTypeId` and `source` are NOT NULL on the table with no
     // default, so they are required here however optional they look on the issue form.
     inputs: {
@@ -138,7 +135,7 @@ export const WORKFLOW_ACTIONS = {
   }),
   "purchaseOrder.create": action({
     label: "Create a purchase order",
-    permission: { page: "purchasing.purchaseOrders", action: "create" },
+    permission: { "purchasing.purchaseOrders": "Create" },
     inputs: {
       supplierId: {
         type: t.entity("supplier"),
@@ -159,7 +156,7 @@ export const WORKFLOW_ACTIONS = {
   }),
   "salesOrder.create": action({
     label: "Create a sales order",
-    permission: { page: "sales.salesOrders", action: "create" },
+    permission: { "sales.salesOrders": "Create" },
     inputs: {
       customerId: {
         type: t.entity("customer"),
@@ -181,7 +178,7 @@ export const WORKFLOW_ACTIONS = {
   notify: action({
     label: "Notify someone",
     // The person or the group it notifies.
-    permission: { page: ["users.accounts", "users.groups"], action: "view" },
+    permission: anyOf(["users.accounts", "users.groups"], "View"),
     inputs: {
       user: { type: t.entity("user"), required: false, label: "person" },
       // The stored key stays `role`; renaming it would need a v4 format migration for a
@@ -235,7 +232,7 @@ export const WORKFLOW_ACTIONS = {
   }),
   webhook: action({
     label: "Call an outside URL",
-    permission: { page: "workflows.workflows", action: "update" },
+    permission: { "workflows.workflows": "Edit" },
     inputs: {
       url: {
         type: t.string,

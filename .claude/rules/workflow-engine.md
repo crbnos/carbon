@@ -70,10 +70,10 @@ A workflow must never be able to do something its owner could not do by hand.
   to tag the write. An untagged write looks like a person's, so the origin filter
   and both loop guards go blind. See `workflow-matcher.md`.
 - The declared permission is checked **explicitly** as well as by RLS — View on
-  the trigger event's page at run start, and each node's `{ page, action }` before
-  it executes (a list of pages passes on any one). RLS alone returns zero rows,
+  the trigger event's page at run start (`eventGate`), and each node's `Gate` before
+  it executes (`holdsGate`; an `anyOf` gate passes on any one page). RLS alone returns zero rows,
   which reads as "no data"; a customer needs `"The owner of this workflow no
-  longer has access to Purchase Orders."` The action is part of the gate: an
+  longer has access to Purchase Orders."` The level is part of the gate: an
   owner who may view Purchase Orders but not edit them fails at the update node,
   not at the trigger.
 - **The only privileged access is the two run-log tables.** `getJobDatabaseClient`

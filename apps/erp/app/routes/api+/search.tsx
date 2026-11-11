@@ -4,29 +4,55 @@
 
 import { authorize } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getUserClaims } from "@carbon/auth/users.server";
+import {
+  anyOf,
+  type ExpandedClaims,
+  holdsGate,
+  ownersOf,
+  widenReads
+} from "@carbon/database/access";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 
 const logger = getLogger("erp", "search");
 
-// Map entity types to the permission module required to view them
-const entityPermissionMap: Record<string, string> = {
-  employee: "resources",
-  customer: "sales",
-  supplier: "purchasing",
-  issue: "quality",
-  gauge: "quality",
-  item: "parts",
-  job: "production",
-  purchaseOrder: "purchasing",
-  salesInvoice: "invoicing",
-  purchaseInvoice: "invoicing",
-  quote: "sales",
-  salesRfq: "sales",
-  salesOrder: "sales",
-  supplierQuote: "purchasing"
-};
+/** The table behind each `searchIndex` entity type. */
+const ENTITY_TABLES = {
+  employee: "employee",
+  customer: "customer",
+  supplier: "supplier",
+  issue: "nonConformance",
+  gauge: "gauge",
+  item: "item",
+  job: "job",
+  purchaseOrder: "purchaseOrder",
+  salesInvoice: "salesInvoice",
+  purchaseInvoice: "purchaseInvoice",
+  quote: "quote",
+  salesRfq: "salesRfq",
+  salesOrder: "salesOrder",
+  supplierQuote: "supplierQuote"
+} as const;
+
+/**
+ * The entity types the person may search: View on a page that owns the
+ * type's table, widened as a data read is, so a type shows iff its records'
+ * list could be read.
+ */
+function searchableTypes(
+  permissions: ExpandedClaims | null | undefined,
+  companyId: string
+): string[] {
+  return Object.entries(ENTITY_TABLES)
+    .filter(([, table]) =>
+      holdsGate(
+        permissions,
+        widenReads(anyOf(ownersOf(table), "View")),
+        companyId
+      )
+    )
+    .map(([entityType]) => entityType);
+}
 
 export type SearchResult = {
   id: number;
@@ -44,7 +70,7 @@ export type SearchResponse = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId, userId } = await authorize(request);
+  const { companyId, permissions } = await authorize(request);
 
   const url = new URL(request.url);
   const query = url.searchParams.get("q")?.trim();
@@ -54,20 +80,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return Response.json({ results: [] } satisfies SearchResponse);
   }
 
-  // Get user's permissions to filter which entity types they can see
-  const claims = await getUserClaims(userId, companyId);
-
-  // Determine which entity types the user has permission to view
-  let allowedEntityTypes = Object.entries(entityPermissionMap)
-    .filter(([_, permissionModule]) => {
-      const permission = claims.permissions[permissionModule];
-      if (!permission) return false;
-      // Check if user has view permission for this company
-      return permission.view.includes(companyId);
-    })
-    .map(([entityType]) => entityType);
-
-  // Apply type filter if provided
+  let allowedEntityTypes = searchableTypes(permissions, companyId);
   if (typeFilter && typeFilter !== "all") {
     allowedEntityTypes = allowedEntityTypes.filter((t) => t === typeFilter);
   }
@@ -76,7 +89,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return Response.json({ results: [] } satisfies SearchResponse);
   }
 
-  // Use service role to call the search function
   const serviceRole = getCarbonServiceRole();
 
   try {

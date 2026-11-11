@@ -2,13 +2,14 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import type {
-  CatalogAction,
-  CatalogEntity,
-  CatalogEvent,
-  CatalogIntegration,
-  CatalogOperation,
-  WorkflowCatalog
+import {
+  type CatalogAction,
+  type CatalogEntity,
+  type CatalogEvent,
+  type CatalogIntegration,
+  type CatalogOperation,
+  gateOn,
+  type WorkflowCatalog
 } from "../definition/catalog";
 import {
   WORKFLOW_ACTION_CATALOG,
@@ -38,7 +39,7 @@ const ENTITIES: Map<string, CatalogEntity> = new Map(
     const entry = REGISTRY_ENTRIES[name];
     const base: CatalogEntity = { name, properties };
     const page = WORKFLOW_ENTITY_PAGES[name];
-    if (page !== undefined) base.permission = { page, action: "view" };
+    if (page !== undefined) base.permission = gateOn(page, "View");
     if (entry?.describe !== undefined) base.descriptions = entry.describe;
     if (entry?.display !== undefined) base.display = entry.display;
     return [name, base];

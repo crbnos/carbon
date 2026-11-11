@@ -78,8 +78,7 @@ const EmployeeTypesTable = memo((props: EmployeeTypesTableProps) => {
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={
-              row.protected ||
-              !permissions.has({ "users.employeeTypes": "Full" })
+              row.protected || !permissions.has(subjectGates("Full").role)
             }
             onClick={() => {
               navigate(

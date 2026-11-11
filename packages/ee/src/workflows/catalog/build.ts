@@ -3,15 +3,15 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { TermId } from "@carbon/content/glossary";
-import { ownersOf } from "@carbon/database/access";
+import { type Gate, ownersOf } from "@carbon/database/access";
 import {
   type EventMatch,
   type EventPermission,
+  gateOn,
   integrationAppLabelKey,
   isMultiSelect,
   type LinksDeclaration,
-  type OptionsSource,
-  type RequiredPermission
+  type OptionsSource
 } from "../definition/catalog";
 import { t, type ValueType } from "../definition/types";
 import type {
@@ -134,7 +134,7 @@ export interface BuiltAction {
   inputs: Record<string, BuiltActionInput>;
   outputs: Record<string, ValueType>;
   batchable: boolean;
-  permission: RequiredPermission;
+  permission: Gate;
   requireOneOf?: string[][];
   call?: string;
   update?: { entity: string };
@@ -160,7 +160,7 @@ export interface BuiltOperation {
   entity: string;
   inputs: Record<string, BuiltActionInput>;
   output: ValueType;
-  permission: RequiredPermission;
+  permission: Gate;
 }
 
 export interface BuiltCatalog {
@@ -786,7 +786,7 @@ export function buildCatalog(
         inputs,
         outputs: { record: t.entity(name) },
         batchable: true,
-        permission: { page: pagesOf(entry.table), action: "update" },
+        permission: gateOn(pagesOf(entry.table), "Edit"),
         update: { entity: name }
       };
       labels[id] =
@@ -920,10 +920,10 @@ export function buildCatalog(
       entity: declaration.entity,
       inputs,
       output: declaration.output,
-      permission: {
-        page: pagesOf(registry[declaration.entity]?.table ?? ""),
-        action: "view"
-      }
+      permission: gateOn(
+        pagesOf(registry[declaration.entity]?.table ?? ""),
+        "View"
+      )
     };
     labels[id] = declaration.label;
     for (const [input, spec] of Object.entries(declaration.inputs)) {

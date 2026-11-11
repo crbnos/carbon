@@ -26849,9 +26849,7 @@ async function cloneReworkOperations(
   };
 }
 
-export const triggerReworkPermission = {
-  "production.jobs": "Edit"
-} satisfies PermissionRule<z.output<typeof triggerReworkInput>>;
+export { triggerReworkPermission } from "@carbon/api/postings";
 
 /**
  * Sends a job back to an earlier operation: clones the operations from the
@@ -27002,9 +27000,7 @@ async function assertUnitsOfMakeMethod(
   }
 }
 
-export const triggerCorrectionPermission = {
-  "production.jobs": "Edit"
-} satisfies PermissionRule<z.output<typeof triggerCorrectionInput>>;
+export { triggerCorrectionPermission } from "@carbon/api/postings";
 
 /**
  * Sends units through one of the job's corrections: inserts the correction's

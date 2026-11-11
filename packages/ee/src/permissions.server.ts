@@ -98,13 +98,14 @@ export type AccessWriteError = {
 
 /**
  * A grant write's refusal as the service function's error, `cause` kept. The
- * one mapping every ERP caller of these writes uses.
+ * one mapping every ERP caller of these writes uses: pass the write, or a
+ * refusal already in hand (`subjectEntitlement`).
  */
 export async function grantWriteRefusal(
   ctx: Pick<ServiceContext, "error">,
-  write: Promise<{ error: AccessWriteError | null }>
+  write: Promise<{ error: AccessWriteError | null }> | AccessWriteError | null
 ): Promise<CarbonError | null> {
-  const { error } = await write;
+  const error = write instanceof Promise ? (await write).error : write;
   return error ? ctx.error(error.code, error.message, error.cause) : null;
 }
 
@@ -262,9 +263,12 @@ export async function writeAccessGrants(
     written = await db.transaction().execute(writeInTransaction);
   } catch (err) {
     if (err instanceof Refusal) return { error: err.refusal };
-    error(err, "Failed to update permissions");
     return {
-      error: { code: "internal", message: "Failed to update permissions" }
+      error: {
+        code: "internal",
+        message: "Failed to update permissions",
+        cause: err
+      }
     };
   }
   const { owned, before, moveTo } = written;
@@ -494,6 +498,6 @@ export async function updatePermissions(
     reason: addOnly ? "bulk-add" : "bulk-edit"
   });
   return written.error
-    ? error(null, written.error.message)
+    ? error(written.error.cause ?? null, written.error.message)
     : success("Permissions updated");
 }

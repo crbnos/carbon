@@ -128,16 +128,11 @@ export async function verifyEmployeePin(
  * protected "Console Operator" employee type (MES-only permissions) and a PIN
  * for the enabling user — role provisioning, gated to the Business plan via the
  * `PERMISSIONS` feature: a company without it gets an `entitlement` error
- * (`subjectEntitlement`), returned, not thrown. The `.server` file is
- * server-only and the `@carbon/ee`
- * package boundary carries the commercial license (see root LICENSE).
+ * (`subjectEntitlement`), returned, not thrown.
  *
  * `companySettings.consoleEnabled` is written over `db` (the server's direct
  * connection): a DB trigger refuses changes to it from the API roles, so the
  * flag can only move through this function and its entitlement lock.
- *
- * Enabling first provisions the type (`provisionConsoleOperator`); when that
- * fails, console mode stays off and the error is returned.
  *
  * `actorId` writes and audits the Console Operator grants. `pinUserId` is the
  * signed-in user who gets a PIN; a key caller passes none. Returns the PIN it
@@ -175,10 +170,6 @@ export async function updateConsoleSetting(
       actorId
     );
     if (provisioned.error) {
-      logger.error("Failed to provision the Console Operator type", {
-        companyId,
-        error: provisioned.error
-      });
       return { error: provisioned.error, pin: null, pinError: null };
     }
   }
@@ -193,8 +184,8 @@ export async function updateConsoleSetting(
     return {
       error: {
         code: "internal",
-        message:
-          err instanceof Error ? err.message : "Failed to update console mode"
+        message: "Failed to update console mode",
+        cause: err
       },
       pin: null,
       pinError: null
@@ -220,8 +211,6 @@ export async function updateConsoleSetting(
       });
       generatedPin = pin;
     } catch (err) {
-      // Console mode is on either way; the enabling user just has no PIN
-      // yet (e.g. no employee row in this company) and needs one reset.
       logger.error("Failed to generate a console PIN for the enabling user", {
         companyId,
         userId,
@@ -264,10 +253,8 @@ async function provisionConsoleOperator(
     return {
       error: {
         code: "internal",
-        message:
-          err instanceof Error
-            ? err.message
-            : "Failed to read the Console Operator type"
+        message: "Failed to read the Console Operator type",
+        cause: err
       }
     };
   }

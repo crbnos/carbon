@@ -363,6 +363,24 @@ describe("people settings", () => {
     expect(result.error?.message).toBe("Requires the Business plan");
   });
 
+  it("shows the fixed message of a failed console write, not the database text", async () => {
+    consoleSetting.mockResolvedValue({
+      error: {
+        code: "internal",
+        message: "Failed to update console mode",
+        cause: new Error('relation "companySettings" is locked')
+      },
+      pin: null,
+      pinError: null
+    });
+    const { ctx } = contextWith();
+
+    const result = await updatePeopleSettings(ctx, { consoleEnabled: true });
+
+    expect(result.error?.category).toBe("internal");
+    expect(result.error?.message).toBe("Failed to update console mode");
+  });
+
   it("generates no console PIN for a key caller: the key holder may not be its creator", async () => {
     consoleSetting.mockResolvedValue({ error: null, pin: null, pinError: null });
     const db = client({});

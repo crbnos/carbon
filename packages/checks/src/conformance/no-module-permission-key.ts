@@ -24,18 +24,17 @@ import { blankComments, blankSqlComments } from "../sources/comments";
  *   whose permissions are `{ page, action }`). That covers `{ inventory:
  *   "Edit" }`, the old `{ view: "inventory" }` and `{ module: "inventory" }`.
  * In SQL (comments blanked), it fails a `<module>_<action>` token in a managed
- * function file and in every migration not in `module-key-migrations.json`:
- * the frozen list of migrations that existed when the cutoff
- * (`LAST_MODULE_KEY_MIGRATION`) was set. A list, not a date: a branch opened
- * earlier can land a migration dated before the cutoff, and it is checked.
+ * function file and in every migration not in `MODULE_KEY_MIGRATIONS` (see
+ * its doc). A list, not a date: a branch opened earlier can land a migration
+ * dated before the cutoff, and it is checked.
  *
  * It skips:
  * - portal keys: `get_customer_ids_with_customer_permission('parts_view')` and
  *   its supplier twin read a portal account's own keys in `userPermission`,
  *   which keep their names (the generated authz migrations carry them); the
  *   manifest writes them as `portal.customer(column, "parts_view")`.
- * - `hasAny` and `pagesOf("<module>")`, which name every page of
- *   a module on purpose (navigation, a module's dashboard).
+ * - `pagesOf("<module>")`, which names every page of a module on purpose
+ *   (navigation, a module's dashboard).
  * - `documents`: it is a module with one page whose id is the module's, so
  *   `documents_view` is a page key.
  * The module list is the registry's (`MODULES`), so a new module is checked.

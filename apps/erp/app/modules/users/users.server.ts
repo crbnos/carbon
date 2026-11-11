@@ -520,12 +520,11 @@ export const bulkUpdatePermissions = defineServiceFn({
   }),
   permission: subjectGates("Edit").person,
   async run(ctx, { editType, userIds, grants, ip }) {
-    const unentitled = await subjectEntitlement(
-      ctx.asCaller.supabase,
-      ctx.company.id,
-      "person"
+    const unentitled = await grantWriteRefusal(
+      ctx,
+      await subjectEntitlement(ctx.asCaller.supabase, ctx.company.id, "person")
     );
-    if (unentitled) return ctx.error(unentitled.code, unentitled.message);
+    if (unentitled) return unentitled;
 
     const companyId = ctx.company.id;
     // The job writes these users' grants as the service role: every id must
