@@ -40,6 +40,10 @@ import {
   updateChangeNotice
 } from "~/modules/items/items.service";
 import {
+  approveErpStockScraps,
+  settleErpScrapApprovals
+} from "~/modules/production/production.service";
+import {
   deletePurchaseReturnOrder,
   insertPurchaseReturnOrder,
   setPurchaseReturnOrderLineTrackedEntities,
@@ -472,7 +476,11 @@ export const setIssueStatus = defineServiceFn({
  * is) posts through `post-nonconformance`, and the units change status; a
  * failure leaves the issue open. An NCR with a Partial receipt lot beside
  * another lot is refused, and so is a Partial untracked lot's NCR with no
- * disposition row for the lot's item. The company's integrations are told.
+ * disposition row for the lot's item. When a scrap approval rule applies to
+ * the estimated value of the stock its Scrap rows write off (a Partial lot's
+ * held remainder included), only a user who can approve at that tier
+ * completes it, and an API key is refused; the approval is recorded with the
+ * write-off. The company's integrations are told.
  *
  * @mcp
  */
@@ -483,15 +491,40 @@ export const completeIssue = defineServiceFn({
   async run(ctx, { id }) {
     const companyId = ctx.company.id;
     const userId = ctx.auditUserId;
+    // Set by the scrap approval check inside the close.
+    const scrap: { refusal: CarbonError | null; scrapRequestIds: string[] } = {
+      refusal: null,
+      scrapRequestIds: []
+    };
     const result = await service.closeIssue(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
       {
         nonConformanceId: id,
         companyId,
-        userId
+        userId,
+        scrapApproval: {
+          approve: async (writeOffs, readableId) => {
+            const approved = await approveErpStockScraps(
+              ctx,
+              writeOffs.map((writeOff) => ({
+                ...writeOff,
+                notes: `NC ${readableId} scrap`
+              }))
+            );
+            if (approved instanceof CarbonError) {
+              scrap.refusal = approved;
+              return false;
+            }
+            scrap.scrapRequestIds = approved.scrapRequestIds;
+            return true;
+          },
+          settle: (posted) =>
+            settleErpScrapApprovals(ctx, scrap.scrapRequestIds, posted)
+        }
       }
     );
+    if (scrap.refusal) return scrap.refusal;
     if (result.error) {
       return ctx.error(
         "rule",

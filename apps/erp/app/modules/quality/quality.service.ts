@@ -4698,10 +4698,29 @@ type DispositionRow = {
 
 type IssueClosureBlocker = { nonConformanceItemId: string; reason: string };
 
+/** Untracked or tracked stock of one item that closing an issue writes off as Scrap. */
+export type IssueScrapWriteOff = { itemId: string; quantity: number };
+
 export async function closeIssue(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  args: { nonConformanceId: string; companyId: string; userId: string }
+  args: {
+    nonConformanceId: string;
+    companyId: string;
+    userId: string;
+    /**
+     * Meets the scrap approval rules. `approve` gets what the close writes
+     * off as Scrap, before anything posts, and refuses the close by returning
+     * false; `settle` is told afterwards whether the close posted.
+     */
+    scrapApproval?: {
+      approve: (
+        scrap: IssueScrapWriteOff[],
+        readableId: string
+      ) => Promise<boolean>;
+      settle: (posted: boolean) => Promise<void>;
+    };
+  }
 ): Promise<Result<{ id: string; warning?: string }>> {
   const { nonConformanceId, companyId, userId } = args;
 
@@ -5056,6 +5075,15 @@ export async function closeIssue(
   }[] = [];
   // Mutable copy: shipped-via-return coverage consumed as it offsets rows.
   const remainingCoverageByItem = new Map(shippedCoverageByItem);
+  // What the Scrap rows write off, by item: what a scrap approval rule values.
+  const scrapByItem = new Map<string, number>();
+  const addScrap = (row: DispositionRow, quantity: number) => {
+    if (row.disposition !== "Scrap") return;
+    scrapByItem.set(
+      row.itemId,
+      round((scrapByItem.get(row.itemId) ?? 0) + quantity)
+    );
+  };
   for (const row of plan) {
     const isScrap =
       row.disposition === "Scrap" || row.disposition === "Return to Supplier";
@@ -5063,6 +5091,7 @@ export async function closeIssue(
       row.disposition === "Use As Is" || row.disposition === "Rework";
     if (row.links.length > 0) {
       if (isScrap) {
+        addScrap(row, row.quantity);
         const suffix =
           row.disposition === "Scrap" ? "scrap" : "return to supplier";
         for (const link of row.links) {
@@ -5118,6 +5147,7 @@ export async function closeIssue(
         }
       }
       if (writeOff <= EPSILON) continue;
+      addScrap(row, writeOff);
       const held = heldPartial?.itemId === row.itemId ? heldPartial : null;
       if (held) {
         held.requested = round(held.requested + writeOff);
@@ -5168,6 +5198,21 @@ export async function closeIssue(
     }
   }
 
+  // A scrap approval rule is met before anything posts: a refusal leaves the
+  // issue open. An estimate: a short unit or a capped remainder writes off less.
+  const scrap = [...scrapByItem].map(([itemId, quantity]) => ({
+    itemId,
+    quantity
+  }));
+  if (
+    args.scrapApproval &&
+    scrap.length > 0 &&
+    !(await args.scrapApproval.approve(scrap, readableNc))
+  ) {
+    return errResult("This scrap needs an approver");
+  }
+
+  let settled = false;
   try {
     let warning: string | undefined;
     const result = await db.transaction().execute(async (trx) => {
@@ -5566,6 +5611,8 @@ export async function closeIssue(
     });
 
     const { closedNow, ...closed } = result;
+    settled = true;
+    await args.scrapApproval?.settle(closedNow);
     if (closedNow) {
       const notes = [warning];
       if (writtenOffShort.size > 0) {
@@ -5587,6 +5634,7 @@ export async function closeIssue(
     return { data: { ...closed, warning }, error: null };
   } catch (err) {
     logger.error("closeIssue failed", { companyId, nonConformanceId, err });
+    if (!settled) await args.scrapApproval?.settle(false);
     return engine.engineErrResult(err, "Failed to close NCR");
   }
 }

@@ -18,11 +18,14 @@ import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   alwaysPostFixture,
+  draftReceiptFromPurchaseOrder,
   type Fixture,
   jobFixture,
+  seed,
   stockPart,
   USER
 } from "./fixtures/always-post";
+import { handlesOf } from "./fixtures/handles";
 import { hasLocalDatabase } from "./fixtures/local-database";
 import {
   localApiKeyClient,
@@ -42,6 +45,15 @@ const { createProductionQuantity } = await import(
 const { adjustInventory } = await import(
   "../../app/modules/inventory/inventory.server"
 );
+const { postReceipt } = await import(
+  "../../app/modules/inventory/inventory.service"
+);
+const { completeIssue, partialInspection } = await import(
+  "../../app/modules/quality/quality.server"
+);
+const { invokePosting } = await import(
+  "../../app/modules/shared/shared.service"
+);
 
 const client = hasLocalDatabase ? localServiceRoleClient() : null;
 const describeLocal = describe.skipIf(!client);
@@ -55,7 +67,7 @@ let keyClient: SupabaseClient<Database>;
 function modulePermissions() {
   const all = [f.companyId];
   const access = { view: all, create: all, update: all, delete: all };
-  return { production: access, inventory: access };
+  return { production: access, inventory: access, quality: access };
 }
 
 function userActor(userId: string): Actor {
@@ -361,7 +373,7 @@ describeLocal("scrap approval", () => {
 
     await scrapApproval.markScrapApprovalPosted(f.db, {
       companyId: f.companyId,
-      scrapRequestId: recorded.scrapRequestId,
+      scrapRequestIds: [recorded.scrapRequestId],
       userId: people.operator
     });
     const after = await scrapApproval.getScrapApprovals(client!, f.companyId, {
@@ -391,7 +403,7 @@ describeLocal("scrap approval", () => {
     });
     await scrapApproval.discardScrapApproval(f.db, {
       companyId: f.companyId,
-      scrapRequestId: recorded.scrapRequestId
+      scrapRequestIds: [recorded.scrapRequestId]
     });
     const left = await f.db
       .selectFrom("approvalRequest")
@@ -721,4 +733,164 @@ describeLocal("scrap approval", () => {
       })
     ).rejects.toThrow();
   });
+
+  it("lets only an approver complete an issue that scraps a lot's held remainder", async () => {
+    await approverOnlyRules(0);
+    const heldUnit = `${f.prefix}-qc`;
+    await seed(f, async (trx) => {
+      await trx
+        .insertInto("storageUnit")
+        .values({
+          id: heldUnit,
+          name: heldUnit,
+          locationId: f.locationId,
+          nettable: false,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+      // No rejected storage unit: a Partial lot's remainder stays held where
+      // it was received until its issue closes.
+      await trx
+        .updateTable("location")
+        .set({ inspectionStorageUnitId: heldUnit, rejectedStorageUnitId: null })
+        .where("id", "=", f.locationId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      await trx
+        .insertInto("sequence")
+        .values([
+          { table: "inspection", name: "Inspection", prefix: "INS-" },
+          { table: "nonConformance", name: "Issue", prefix: "NCR" }
+        ].map((row) => ({ ...row, companyId: f.companyId })))
+        .onConflict((oc) => oc.doNothing())
+        .execute();
+      const document = await trx
+        .insertInto("inspectionDocument")
+        .values({ partId: f.partId, companyId: f.companyId, createdBy: USER })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      await trx
+        .insertInto("itemInspectionDocumentAssignment")
+        .values({
+          itemId: f.partId,
+          usage: "Receipt",
+          inspectionDocumentId: document.id,
+          companyId: f.companyId,
+          createdBy: USER
+        })
+        .execute();
+      await trx
+        .insertInto("nonConformanceType")
+        .values({ name: `${f.prefix} receiving`, companyId: f.companyId, createdBy: USER })
+        .execute();
+    });
+    // The postings below run with the interceptors on, as in the app.
+    const withTriggers = async <T>(run: () => Promise<T>) => {
+      await sql`SELECT set_config('app.sync_in_progress', 'false', false)`.execute(f.db);
+      try {
+        return await run();
+      } finally {
+        await sql`SELECT set_config('app.sync_in_progress', 'true', false)`.execute(f.db);
+      }
+    };
+
+    // Ten received into the held unit, six accepted: four stay held for the NCR.
+    const receiptId = await draftReceiptFromPurchaseOrder(f, "held");
+    await seed(f, (trx) =>
+      trx
+        .updateTable("receiptLine")
+        .set({ storageUnitId: heldUnit })
+        .where("receiptId", "=", receiptId)
+        .where("companyId", "=", f.companyId)
+        .execute()
+    );
+    const received = await invokePosting(
+      handlesOf(f.ctx),
+      "post-receipt",
+      { type: "post", receiptId },
+      postReceipt
+    );
+    expect(received.error).toBeNull();
+    const lot = await f.db
+      .selectFrom("inspection")
+      .select("id")
+      .where("sourceDocumentId", "=", receiptId)
+      .where("companyId", "=", f.companyId)
+      .executeTakeFirstOrThrow();
+    const partial = await withTriggers(() =>
+      partialInspection(
+        contextFor({ type: "system", onBehalfOf: USER }),
+        { id: lot.id, acceptedQuantity: 6, createNcr: true }
+      )
+    );
+    expect(partial.error).toBeNull();
+    const issueId = partial.data!.issueId!;
+    await seed(f, (trx) =>
+      trx
+        .updateTable("nonConformanceItem")
+        .set({ disposition: "Scrap" })
+        .where("nonConformanceId", "=", issueId)
+        .where("companyId", "=", f.companyId)
+        .execute()
+    );
+    // The six accepted stay in the unit until put away.
+    const inUnit = async () =>
+      Number(
+        (
+          await f.db
+            .selectFrom("itemLedger")
+            .select(sql<number>`COALESCE(SUM("quantity"), 0)`.as("quantity"))
+            .where("companyId", "=", f.companyId)
+            .where("itemId", "=", f.partId)
+            .where("storageUnitId", "=", heldUnit)
+            .executeTakeFirstOrThrow()
+        ).quantity
+      );
+    const status = async () =>
+      (
+        await f.db
+          .selectFrom("nonConformance")
+          .select("status")
+          .where("id", "=", issueId)
+          .executeTakeFirstOrThrow()
+      ).status;
+    expect(await inUnit()).toBe(10);
+
+    const operator = await withTriggers(() =>
+      completeIssue(contextFor(userActor(people.operator)), { id: issueId })
+    );
+    expect(operator.error?.category).toBe("forbidden");
+    const apiKey = await withTriggers(() =>
+      completeIssue(contextFor(apiKeyActor()), { id: issueId })
+    );
+    expect(apiKey.error?.category).toBe("forbidden");
+    expect(await inUnit()).toBe(10);
+    expect(await status()).not.toBe("Closed");
+
+    const approved = await withTriggers(() =>
+      completeIssue(contextFor(userActor(people.approver)), { id: issueId })
+    );
+    expect(approved.error).toBeNull();
+    expect(await status()).toBe("Closed");
+    expect(await inUnit()).toBe(6);
+
+    const listed = await scrapApproval.getScrapApprovals(client!, f.companyId, {
+      limit: 50,
+      offset: 0
+    });
+    const records = listed.data?.filter(
+      (row) => row.itemId === f.partId && row.quantity === 4
+    );
+    expect(records).toHaveLength(1);
+    expect(records?.[0]).toMatchObject({
+      jobId: null,
+      // Four parts at a unit cost of 10.
+      estimatedValue: 40,
+      createdBy: people.approver,
+      approvedBy: people.approver,
+      approvalStatus: "Approved"
+    });
+    expect(records?.[0]?.postedAt).not.toBeNull();
+  }, 60_000);
 });

@@ -389,11 +389,6 @@ msgstr "Genehmigung erforderlich"
 msgid "Approvals"
 msgstr "Genehmigungen"
 
-msgid "AQL"
-msgstr "AQL"
-
-msgid "AQL {aql} · Lvl {level} · {severity}"
-msgstr "AQL {aql} · Stufe {level} · {severity}"
 msgid "Approve and Complete"
 msgstr "Genehmigen und abschließen"
 
@@ -408,6 +403,12 @@ msgstr "Genehmigen und Charge ablehnen"
 
 msgid "Approve and Scrap"
 msgstr "Genehmigen und als Ausschuss buchen"
+
+msgid "AQL"
+msgstr "AQL"
+
+msgid "AQL {aql} · Lvl {level} · {severity}"
+msgstr "AQL {aql} · Stufe {level} · {severity}"
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Sind Sie sicher, dass Sie diesen Passkey löschen möchten? Sie können sich damit nicht mehr anmelden."
@@ -1808,10 +1809,11 @@ msgstr "Keine Materialien"
 msgid "No materials on this batch."
 msgstr "Keine Werkstoffe in diesem Los."
 
-msgid "No open inspections"
-msgstr "Keine offenen Prüfungen"
 msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
 msgstr "Niemand, der diesen Ausschuss genehmigen kann, hat eine Konsolen-PIN. Bitten Sie einen Administrator, für einen Genehmiger eine PIN festzulegen."
+
+msgid "No open inspections"
+msgstr "Keine offenen Prüfungen"
 
 msgid "No open jobs"
 msgstr "Keine offenen Fertigungsaufträge"

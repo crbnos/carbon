@@ -1978,7 +1978,6 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "Un'attività di non conformità che impedisce il ripetersi del problema altrove — distinta dalla correzione corrective e dal contenimento."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr "Un numero o un segno accanto a un valore ne cambia il significato. Inserisci una parola tra i due."
 msgstr "Un numero o un segno accanto a una cifra ne altera il significato. Separali con una parola."
 
 msgid "A part"
@@ -16344,7 +16343,6 @@ msgid "Keep matching items"
 msgstr "Mantieni articoli corrispondenti"
 
 msgid "Keep mine"
-msgstr "Mantieni le mie"
 msgstr "Mantieni la mia"
 
 msgid "Keep navigation open"
@@ -17096,7 +17094,6 @@ msgid "Linked Record"
 msgstr "Record Collegato"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr "Collegata a una sezione condivisa. Modificala nella libreria per aggiornarla ovunque."
 msgstr "Collegato a una sezione condivisa. Modificala nella libreria per aggiornarla ovunque."
 
 msgid "Links"
@@ -22555,7 +22552,6 @@ msgid "Playback"
 msgstr "Riproduzione"
 
 msgid "Please <0>change it</0>."
-msgstr "Per favore <0>modificalo</0>."
 msgstr "Per favore <0>cambialo</0>."
 
 msgid "Please contact your administrator to enable audit logging."
@@ -28228,7 +28224,6 @@ msgid "Someone"
 msgstr "Qualcuno"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr "Un altro utente ha appena salvato questo modello. Ricarica la pagina per caricare la sua versione, oppure continua a modificare per sovrascriverla quando salvi."
 msgstr "Un altro utente ha appena salvato questo modello. Ricarica per caricare la sua versione, oppure continua a modificare per sovrascriverla quando salvi."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
@@ -30802,7 +30797,6 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "Il pacchetto predefinito di attività e requisiti di approvazione applicato a questo problema; sostituisce il flusso di lavoro predefinito del tipo di problema quando impostato."
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr "Impossibile generare l'anteprima. Viene mostrata l'ultima generata con successo."
 msgstr "Impossibile generare l'anteprima. Viene mostrata l'ultima disponibile."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
@@ -31677,7 +31671,6 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Questo PIN non verrà più visualizzato. Ne avrai bisogno per uscire dalla modalità console sui terminali MES."
 
 msgid "This preview is paused because a text changes a figure."
-msgstr "Questa anteprima è in pausa perché un testo modifica un valore."
 msgstr "L'anteprima è in pausa perché un testo altera una cifra."
 
 msgid "This price was entered manually, so no pricing rules were applied."

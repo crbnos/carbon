@@ -1978,7 +1978,6 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "Eine Nichtkonformitätsaufgabe, die verhindert, dass das Problem anderswo erneut auftritt — unterschiedlich von der korrigierenden Maßnahme und dem Containment."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr "Eine Zahl oder ein Zeichen direkt neben einem Wert verändert dessen Aussage. Setzen Sie ein Wort dazwischen."
 msgstr "Eine Zahl oder ein Zeichen direkt neben einem Wert verändert dessen Aussage. Fügen Sie ein Wort dazwischen ein."
 
 msgid "A part"
@@ -28225,7 +28224,6 @@ msgid "Someone"
 msgstr "Jemand"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr "Jemand anderes hat diese Vorlage gerade gespeichert. Laden Sie die Seite neu, um die andere Version zu laden, oder bearbeiten Sie weiter und überschreiben Sie sie beim Speichern."
 msgstr "Jemand anderes hat diese Vorlage gerade gespeichert. Laden Sie die Seite neu, um dessen Version zu sehen, oder arbeiten Sie weiter und überschreiben Sie sie beim Speichern."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."

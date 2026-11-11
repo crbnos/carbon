@@ -324,20 +324,7 @@ export async function describeScrap(
     const quantity =
       subject.quantity > 0 ? subject.quantity : Number(entity?.quantity) || 0;
     const costs = await unitCosts(db, companyId, [subject.itemId]);
-    const unitCost = costs.get(subject.itemId);
-    if (unitCost === undefined) throw new Error("Item not found");
-    return {
-      jobId: null,
-      jobOperationId: null,
-      jobOperationBatchId: null,
-      jobMaterialId: null,
-      trackedEntityId: subject.trackedEntityId ?? null,
-      itemId: subject.itemId,
-      scrapReasonId: subject.scrapReasonId ?? null,
-      notes: subject.notes ?? null,
-      quantity,
-      estimatedValue: round(unitCost * quantity)
-    };
+    return stockScrap(costs, { ...subject, quantity });
   }
 
   const scrapped = subject.members.filter((member) => member.scrapQuantity > 0);
@@ -362,6 +349,54 @@ export async function describeScrap(
     quantity: total.quantity,
     estimatedValue: round(total.value)
   };
+}
+
+type StockScrap = {
+  itemId: string;
+  quantity: number;
+  trackedEntityId?: string | null;
+  scrapReasonId?: string | null;
+  notes?: string | null;
+};
+
+/** Stock scrapped with no job: the item's cost times the quantity. */
+function stockScrap(
+  costs: Map<string, number>,
+  scrap: StockScrap
+): ScrapDescription {
+  const unitCost = costs.get(scrap.itemId);
+  if (unitCost === undefined) throw new Error("Item not found");
+  return {
+    jobId: null,
+    jobOperationId: null,
+    jobOperationBatchId: null,
+    jobMaterialId: null,
+    trackedEntityId: scrap.trackedEntityId ?? null,
+    itemId: scrap.itemId,
+    scrapReasonId: scrap.scrapReasonId ?? null,
+    notes: scrap.notes ?? null,
+    quantity: scrap.quantity,
+    estimatedValue: round(unitCost * scrap.quantity)
+  };
+}
+
+/**
+ * Untracked stock of several items written off together, as completing an
+ * issue writes off its Scrap rows: one description per item, at the item's
+ * cost, read in one query. Throws when an item is not this company's.
+ */
+export async function describeStockScraps(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  scraps: Pick<StockScrap, "itemId" | "quantity" | "notes">[]
+): Promise<ScrapDescription[]> {
+  const scrapped = scraps.filter((scrap) => scrap.quantity > 0);
+  const costs = await unitCosts(
+    db,
+    companyId,
+    scrapped.map((scrap) => scrap.itemId)
+  );
+  return scrapped.map((scrap) => stockScrap(costs, scrap));
 }
 
 export type ScrapApprovalRequirement =
@@ -561,61 +596,92 @@ export async function recordScrapApproval(
     decisionNotes?: string;
   }
 ): Promise<{ scrapRequestId: string; approvalRequestId: string }> {
+  const { scrap, ...rest } = args;
+  const [recorded] = await recordScrapApprovals(db, {
+    ...rest,
+    scraps: [scrap]
+  });
+  if (!recorded) throw new Error("The scrap approval was not recorded");
+  return recorded;
+}
+
+/**
+ * `recordScrapApproval` for several scraps one approver signed together: a
+ * `scrapRequest` and an Approved `approvalRequest` each, in one transaction.
+ */
+export async function recordScrapApprovals(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    scraps: ScrapDescription[];
+    recordedBy: string;
+    approvedBy: string;
+    decisionNotes?: string;
+  }
+): Promise<{ scrapRequestId: string; approvalRequestId: string }[]> {
+  if (args.scraps.length === 0) return [];
   const now = datetime.timestamp();
   return db.transaction().execute(async (trx) => {
-    const scrapRequest = await trx
+    const scrapRequests = await trx
       .insertInto("scrapRequest")
-      .values({
-        companyId: args.companyId,
-        jobId: args.scrap.jobId,
-        jobOperationId: args.scrap.jobOperationId,
-        jobOperationBatchId: args.scrap.jobOperationBatchId,
-        jobMaterialId: args.scrap.jobMaterialId,
-        trackedEntityId: args.scrap.trackedEntityId,
-        itemId: args.scrap.itemId,
-        scrapReasonId: args.scrap.scrapReasonId,
-        quantity: args.scrap.quantity,
-        estimatedValue: args.scrap.estimatedValue,
-        notes: args.scrap.notes,
-        createdBy: args.recordedBy
-      })
-      .returning(["id"])
-      .executeTakeFirstOrThrow();
+      .values(
+        args.scraps.map((scrap) => ({
+          companyId: args.companyId,
+          jobId: scrap.jobId,
+          jobOperationId: scrap.jobOperationId,
+          jobOperationBatchId: scrap.jobOperationBatchId,
+          jobMaterialId: scrap.jobMaterialId,
+          trackedEntityId: scrap.trackedEntityId,
+          itemId: scrap.itemId,
+          scrapReasonId: scrap.scrapReasonId,
+          quantity: scrap.quantity,
+          estimatedValue: scrap.estimatedValue,
+          notes: scrap.notes,
+          createdBy: args.recordedBy
+        }))
+      )
+      .returning(["id", "estimatedValue"])
+      .execute();
 
-    const approvalRequest = await trx
+    // Each request's amount comes from its own returned row, so the order
+    // Postgres returns them in does not matter.
+    const approvalRequests = await trx
       .insertInto("approvalRequest")
-      .values({
-        documentType: "scrap",
-        documentId: scrapRequest.id,
-        companyId: args.companyId,
-        status: "Approved",
-        amount: args.scrap.estimatedValue,
-        requestedBy: args.recordedBy,
-        requestedAt: now,
-        decisionBy: args.approvedBy,
-        decisionAt: now,
-        decisionNotes: args.decisionNotes ?? null,
-        createdBy: args.recordedBy
-      })
-      .returning(["id"])
-      .executeTakeFirstOrThrow();
+      .values(
+        scrapRequests.map((scrapRequest) => ({
+          documentType: "scrap" as const,
+          documentId: scrapRequest.id,
+          companyId: args.companyId,
+          status: "Approved" as const,
+          amount: scrapRequest.estimatedValue,
+          requestedBy: args.recordedBy,
+          requestedAt: now,
+          decisionBy: args.approvedBy,
+          decisionAt: now,
+          decisionNotes: args.decisionNotes ?? null,
+          createdBy: args.recordedBy
+        }))
+      )
+      .returning(["id", "documentId"])
+      .execute();
 
-    return {
-      scrapRequestId: scrapRequest.id,
+    return approvalRequests.map((approvalRequest) => ({
+      scrapRequestId: approvalRequest.documentId,
       approvalRequestId: approvalRequest.id
-    };
+    }));
   });
 }
 
 export async function markScrapApprovalPosted(
   db: Kysely<KyselyDatabase>,
-  args: { companyId: string; scrapRequestId: string; userId: string }
+  args: { companyId: string; scrapRequestIds: string[]; userId: string }
 ): Promise<void> {
+  if (args.scrapRequestIds.length === 0) return;
   const now = datetime.timestamp();
   await db
     .updateTable("scrapRequest")
     .set({ postedAt: now, updatedBy: args.userId, updatedAt: now })
-    .where("id", "=", args.scrapRequestId)
+    .where("id", "in", args.scrapRequestIds)
     .where("companyId", "=", args.companyId)
     .execute();
 }
@@ -623,18 +689,19 @@ export async function markScrapApprovalPosted(
 /** Removes the record of a scrap whose posting refused it: nothing was scrapped. */
 export async function discardScrapApproval(
   db: Kysely<KyselyDatabase>,
-  args: { companyId: string; scrapRequestId: string }
+  args: { companyId: string; scrapRequestIds: string[] }
 ): Promise<void> {
+  if (args.scrapRequestIds.length === 0) return;
   await db.transaction().execute(async (trx) => {
     await trx
       .deleteFrom("approvalRequest")
       .where("documentType", "=", "scrap")
-      .where("documentId", "=", args.scrapRequestId)
+      .where("documentId", "in", args.scrapRequestIds)
       .where("companyId", "=", args.companyId)
       .execute();
     await trx
       .deleteFrom("scrapRequest")
-      .where("id", "=", args.scrapRequestId)
+      .where("id", "in", args.scrapRequestIds)
       .where("companyId", "=", args.companyId)
       .where("postedAt", "is", null)
       .execute();

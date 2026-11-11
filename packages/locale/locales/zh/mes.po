@@ -389,11 +389,6 @@ msgstr "需要审批"
 msgid "Approvals"
 msgstr "审批"
 
-msgid "AQL"
-msgstr "AQL"
-
-msgid "AQL {aql} · Lvl {level} · {severity}"
-msgstr "AQL {aql} · 检验水平 {level} · {severity}"
 msgid "Approve and Complete"
 msgstr "审批并完成"
 
@@ -408,6 +403,12 @@ msgstr "审批并拒绝批次"
 
 msgid "Approve and Scrap"
 msgstr "审批并报废"
+
+msgid "AQL"
+msgstr "AQL"
+
+msgid "AQL {aql} · Lvl {level} · {severity}"
+msgstr "AQL {aql} · 检验水平 {level} · {severity}"
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "您确定要删除此通行密钥吗?删除后您将无法使用它登录。"
@@ -1808,10 +1809,11 @@ msgstr "没有原材料"
 msgid "No materials on this batch."
 msgstr "此生产批次上没有物料。"
 
-msgid "No open inspections"
-msgstr "没有未结的检验"
 msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
 msgstr "没有可以审批此报废的人员设置了控制台 PIN。请让管理员为审批人设置一个。"
+
+msgid "No open inspections"
+msgstr "没有未结的检验"
 
 msgid "No open jobs"
 msgstr "没有未结的工单"

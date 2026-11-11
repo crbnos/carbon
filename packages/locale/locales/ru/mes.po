@@ -389,11 +389,6 @@ msgstr "Требуется утверждение"
 msgid "Approvals"
 msgstr "Утверждения"
 
-msgid "AQL"
-msgstr "AQL"
-
-msgid "AQL {aql} · Lvl {level} · {severity}"
-msgstr "AQL {aql} · Ур. {level} · {severity}"
 msgid "Approve and Complete"
 msgstr "Утвердить и завершить"
 
@@ -408,6 +403,12 @@ msgstr "Утвердить и отклонить партию"
 
 msgid "Approve and Scrap"
 msgstr "Утвердить и списать в брак"
+
+msgid "AQL"
+msgstr "AQL"
+
+msgid "AQL {aql} · Lvl {level} · {severity}"
+msgstr "AQL {aql} · Ур. {level} · {severity}"
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Вы уверены, что хотите удалить этот ключ доступа? Вы больше не сможете использовать его для входа."
@@ -1808,10 +1809,11 @@ msgstr "Нет материалов"
 msgid "No materials on this batch."
 msgstr "На этой серии нет материалов."
 
-msgid "No open inspections"
-msgstr "Нет открытых контролей"
 msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
 msgstr "Никто из тех, кто может утвердить этот брак, не имеет PIN-кода для консоли. Попросите администратора задать PIN-код утверждающему."
+
+msgid "No open inspections"
+msgstr "Нет открытых контролей"
 
 msgid "No open jobs"
 msgstr "Нет открытых производственных заказов"

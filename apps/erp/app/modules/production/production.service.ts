@@ -17,9 +17,9 @@ import {
   triggerCorrectionInput,
   triggerReworkInput
 } from "@carbon/api/postings";
-import type {
+import {
   CarbonError,
-  ServiceContext
+  type ServiceContext
 } from "@carbon/api/service-fn.server";
 import {
   type Database,
@@ -101,16 +101,17 @@ import {
   settleConsumeFirstLine,
   withoutStockedConsumeFirst
 } from "@carbon/database/supersession-pick";
-import type { ScrapSubject } from "@carbon/ee/approvals";
+import type { ScrapDescription, ScrapSubject } from "@carbon/ee/approvals";
 import {
   authorizeScrapApprover,
   describeScrap,
+  describeStockScraps,
   discardScrapApproval,
   getScrapApprovalRequirement,
   hasEnabledScrapRule,
   hasScrapApprovalRules,
   markScrapApprovalPosted,
-  recordScrapApproval
+  recordScrapApprovals
 } from "@carbon/ee/approvals/scrap.server";
 import { planningGroupMrpDeps } from "@carbon/ee/pegging.server";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
@@ -4168,26 +4169,63 @@ export async function approveErpScrap(
   ctx: ServiceContext,
   scrap: Extract<ScrapSubject, { type: "operation" | "item" }>
 ): Promise<{ scrapRequestId: string | null } | CarbonError> {
+  const approved = await approveErpScraps(
+    ctx,
+    async () => [await describeScrap(ctx.asSystem.pg, ctx.company.id, scrap)],
+    // Operation scrap can go to the tablet; stock scrap has no tablet step.
+    scrap.type === "operation"
+  );
+  if (approved instanceof CarbonError) return approved;
+  return { scrapRequestId: approved.scrapRequestIds[0] ?? null };
+}
+
+/**
+ * Untracked stock of several items written off at once in the ERP, as
+ * completing an issue writes off its Scrap rows, met against the scrap
+ * approval rules as `approveErpScrap` meets one scrap.
+ *
+ * @remarks
+ * The rules are met by the total value, so spreading a write-off over rows
+ * passes no tier. Each item is recorded as its own `scrapRequest`. The caller
+ * posts, then calls `settleErpScrapApprovals`.
+ */
+export async function approveErpStockScraps(
+  ctx: ServiceContext,
+  scraps: { itemId: string; quantity: number; notes?: string | null }[]
+): Promise<{ scrapRequestIds: string[] } | CarbonError> {
+  return approveErpScraps(
+    ctx,
+    () => describeStockScraps(ctx.asSystem.pg, ctx.company.id, scraps),
+    false
+  );
+}
+
+async function approveErpScraps(
+  ctx: ServiceContext,
+  describe: () => Promise<ScrapDescription[]>,
+  atTablet: boolean
+): Promise<{ scrapRequestIds: string[] } | CarbonError> {
   const companyId = ctx.company.id;
   const serviceRole = ctx.asSystem.supabase;
   const db = ctx.asSystem.pg;
+  const none = { scrapRequestIds: [] };
   // The platform itself (a seed, a posting) records scrap as the system.
-  if (ctx.actor.type === "system") return { scrapRequestId: null };
+  if (ctx.actor.type === "system") return none;
 
-  let description: Awaited<ReturnType<typeof describeScrap>>;
+  let scraps: ScrapDescription[];
   let estimatedValue: number;
   try {
-    if (!(await hasScrapApprovalRules(serviceRole, companyId))) {
-      return { scrapRequestId: null };
-    }
-    description = await describeScrap(db, companyId, scrap);
-    if (description.quantity <= 0) return { scrapRequestId: null };
+    if (!(await hasScrapApprovalRules(serviceRole, companyId))) return none;
+    scraps = (await describe()).filter((scrap) => scrap.quantity > 0);
+    if (scraps.length === 0) return none;
     const requirement = await getScrapApprovalRequirement(serviceRole, db, {
       companyId,
       recordedBy: ctx.auditUserId,
-      estimatedValue: description.estimatedValue
+      estimatedValue: round(
+        scraps.reduce((sum, scrap) => sum + scrap.estimatedValue, 0)
+      )
     });
-    if (!requirement.required) return { scrapRequestId: null };
+    if (!requirement.required) return none;
     estimatedValue = requirement.estimatedValue;
   } catch (error) {
     return ctx.error(
@@ -4197,8 +4235,6 @@ export async function approveErpScrap(
     );
   }
 
-  // Operation scrap can go to the tablet; stock scrap has no tablet step.
-  const atTablet = scrap.type === "operation";
   if (ctx.actor.type !== "user") {
     return ctx.error(
       "forbidden",
@@ -4222,14 +4258,14 @@ export async function approveErpScrap(
   if (authority.error) return ctx.error("forbidden", needsApprover);
 
   try {
-    const recorded = await recordScrapApproval(db, {
+    const recorded = await recordScrapApprovals(db, {
       companyId,
-      scrap: description,
+      scraps,
       recordedBy: ctx.auditUserId,
       approvedBy: ctx.auditUserId,
       decisionNotes: "Recorded in the ERP by an approver"
     });
-    return { scrapRequestId: recorded.scrapRequestId };
+    return { scrapRequestIds: recorded.map((row) => row.scrapRequestId) };
   } catch (error) {
     return ctx.error("internal", "Failed to record the scrap approval", error);
   }
@@ -4256,8 +4292,21 @@ export async function settleErpScrapApproval(
   scrapRequestId: string | null,
   written: boolean
 ): Promise<void> {
-  if (!scrapRequestId) return;
-  const args = { companyId: ctx.company.id, scrapRequestId };
+  await settleErpScrapApprovals(
+    ctx,
+    scrapRequestId ? [scrapRequestId] : [],
+    written
+  );
+}
+
+/** `settleErpScrapApproval` for the approvals `approveErpStockScraps` recorded. */
+export async function settleErpScrapApprovals(
+  ctx: ServiceContext,
+  scrapRequestIds: string[],
+  written: boolean
+): Promise<void> {
+  if (scrapRequestIds.length === 0) return;
+  const args = { companyId: ctx.company.id, scrapRequestIds };
   try {
     if (written) {
       await markScrapApprovalPosted(ctx.asSystem.pg, {

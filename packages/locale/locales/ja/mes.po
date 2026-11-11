@@ -389,11 +389,6 @@ msgstr "承認が必要"
 msgid "Approvals"
 msgstr "承認"
 
-msgid "AQL"
-msgstr "AQL"
-
-msgid "AQL {aql} · Lvl {level} · {severity}"
-msgstr "AQL {aql} · 検査水準 {level} · {severity}"
 msgid "Approve and Complete"
 msgstr "承認して完了する"
 
@@ -408,6 +403,12 @@ msgstr "承認してロットを却下"
 
 msgid "Approve and Scrap"
 msgstr "承認してスクラップする"
+
+msgid "AQL"
+msgstr "AQL"
+
+msgid "AQL {aql} · Lvl {level} · {severity}"
+msgstr "AQL {aql} · 検査水準 {level} · {severity}"
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "このパスキーを削除してもよろしいですか？削除後、このパスキーを使ってサインインできなくなります。"
@@ -1808,10 +1809,11 @@ msgstr "材料なし"
 msgid "No materials on this batch."
 msgstr "このバッチに材料がありません。"
 
-msgid "No open inspections"
-msgstr "オープン中の検査はありません"
 msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
 msgstr "このスクラップを承認できる人は、コンソールPINを設定していません。管理者に承認者のPINを設定するよう依頼してください。"
+
+msgid "No open inspections"
+msgstr "オープン中の検査はありません"
 
 msgid "No open jobs"
 msgstr "オープンな製造指図はありません。"

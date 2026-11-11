@@ -389,11 +389,6 @@ msgstr "Wymagane zatwierdzenie"
 msgid "Approvals"
 msgstr "Zatwierdzenia"
 
-msgid "AQL"
-msgstr "AQL"
-
-msgid "AQL {aql} · Lvl {level} · {severity}"
-msgstr "AQL {aql} · Poz. {level} · {severity}"
 msgid "Approve and Complete"
 msgstr "Zatwierdź i zakończ"
 
@@ -408,6 +403,12 @@ msgstr "Zatwierdź i odrzuć partię"
 
 msgid "Approve and Scrap"
 msgstr "Zatwierdź i oznacz jako braki"
+
+msgid "AQL"
+msgstr "AQL"
+
+msgid "AQL {aql} · Lvl {level} · {severity}"
+msgstr "AQL {aql} · Poz. {level} · {severity}"
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Czy na pewno chcesz usunąć ten klucz dostępu? Nie będziesz już mógł go używać do logowania."
@@ -1808,10 +1809,11 @@ msgstr "Brak materiałów"
 msgid "No materials on this batch."
 msgstr "Brak materiałów w tej partii produkcyjnej."
 
-msgid "No open inspections"
-msgstr "Brak otwartych kontroli"
 msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
 msgstr "Żadna osoba uprawniona do zatwierdzenia tych braków nie ma kodu PIN do konsoli. Poproś administratora o ustawienie kodu dla osoby zatwierdzającej."
+
+msgid "No open inspections"
+msgstr "Brak otwartych kontroli"
 
 msgid "No open jobs"
 msgstr "Brak otwartych zleceń produkcyjnych"

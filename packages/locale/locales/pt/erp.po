@@ -1978,7 +1978,6 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "Uma tarefa de não conformidade que impede que o problema se repita em outro lugar — distinta da correção corretiva e contenção."
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr "Um número ou sinal ao lado de um valor muda o que ele diz. Coloque uma palavra entre os dois."
 msgstr "Um número ou sinal ao lado de um valor muda o seu sentido. Coloque uma palavra entre os dois."
 
 msgid "A part"
@@ -28225,7 +28224,6 @@ msgid "Someone"
 msgstr "Alguém"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr "Outra pessoa acabou de salvar este modelo. Recarregue a página para carregar a versão dela, ou continue editando para sobrescrever o modelo ao salvar."
 msgstr "Outra pessoa acabou de salvar este modelo. Recarregue a página para carregar a versão dela, ou continue editando para sobrescrevê-la ao salvar."
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
@@ -30799,7 +30797,6 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "O pacote predefinido de tarefas e requisitos de aprovação aplicados a este problema; sobrescreve o fluxo de trabalho padrão do tipo de problema quando definido."
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr "A pré-visualização não pôde ser gerada. Exibindo a última que foi gerada."
 msgstr "Não foi possível gerar a pré-visualização. Exibe a última que foi gerada."
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
@@ -31674,7 +31671,6 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "Este PIN não será exibido novamente. Você precisará dele para sair do modo de console em terminais MES."
 
 msgid "This preview is paused because a text changes a figure."
-msgstr "A pré-visualização está pausada porque um texto altera um valor."
 msgstr "Esta pré-visualização está pausada porque um texto altera um valor."
 
 msgid "This price was entered manually, so no pricing rules were applied."

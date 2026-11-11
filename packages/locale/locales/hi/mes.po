@@ -389,11 +389,6 @@ msgstr "अनुमोदन आवश्यक है"
 msgid "Approvals"
 msgstr "अनुमोदन"
 
-msgid "AQL"
-msgstr "AQL"
-
-msgid "AQL {aql} · Lvl {level} · {severity}"
-msgstr "AQL {aql} · स्तर {level} · {severity}"
 msgid "Approve and Complete"
 msgstr "अनुमोदित करें और पूर्ण करें"
 
@@ -408,6 +403,12 @@ msgstr "अनुमोदित करें और लॉट अस्वी�
 
 msgid "Approve and Scrap"
 msgstr "अनुमोदित करें और स्क्रैप करें"
+
+msgid "AQL"
+msgstr "AQL"
+
+msgid "AQL {aql} · Lvl {level} · {severity}"
+msgstr "AQL {aql} · स्तर {level} · {severity}"
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "क्या आप निश्चित हैं कि आप इस पासकी को हटाना चाहते हैं? आप इसे साइन इन करने के लिए उपयोग नहीं कर पाएंगे।"
@@ -1808,10 +1809,11 @@ msgstr "कोई सामग्री नहीं"
 msgid "No materials on this batch."
 msgstr "इस बैच पर कोई सामग्री नहीं है।"
 
-msgid "No open inspections"
-msgstr "कोई खुला निरीक्षण नहीं"
 msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
 msgstr "इस स्क्रैप को अनुमोदित कर सकने वाले किसी भी व्यक्ति के पास कंसोल PIN नहीं है। किसी अनुमोदक के लिए PIN सेट करने हेतु व्यवस्थापक से कहें।"
+
+msgid "No open inspections"
+msgstr "कोई खुला निरीक्षण नहीं"
 
 msgid "No open jobs"
 msgstr "कोई खुली जॉब नहीं"

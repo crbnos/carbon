@@ -389,11 +389,6 @@ msgstr "Approbation requise"
 msgid "Approvals"
 msgstr "Approbations"
 
-msgid "AQL"
-msgstr "AQL"
-
-msgid "AQL {aql} · Lvl {level} · {severity}"
-msgstr "AQL {aql} · Niv. {level} · {severity}"
 msgid "Approve and Complete"
 msgstr "Approuver et terminer"
 
@@ -408,6 +403,12 @@ msgstr "Approuver et rejeter le lot"
 
 msgid "Approve and Scrap"
 msgstr "Approuver et mettre au rebut"
+
+msgid "AQL"
+msgstr "AQL"
+
+msgid "AQL {aql} · Lvl {level} · {severity}"
+msgstr "AQL {aql} · Niv. {level} · {severity}"
 
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Êtes-vous sûr de vouloir supprimer cette clé d'accès ? Vous ne pourrez plus l'utiliser pour vous connecter."
@@ -1808,10 +1809,11 @@ msgstr "Aucun matériau"
 msgid "No materials on this batch."
 msgstr "Aucune matière sur ce lot de production."
 
-msgid "No open inspections"
-msgstr "Aucun contrôle ouvert"
 msgid "No one who can approve this scrap has a console PIN. Ask an admin to set one for an approver."
 msgstr "Aucune personne pouvant approuver ce rebut n'a de code PIN de console. Demandez à un administrateur d'en définir un pour un approbateur."
+
+msgid "No open inspections"
+msgstr "Aucun contrôle ouvert"
 
 msgid "No open jobs"
 msgstr "Aucun ordre de fabrication ouvert"
