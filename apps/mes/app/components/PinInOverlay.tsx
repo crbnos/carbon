@@ -22,9 +22,8 @@ import {
   useState
 } from "react";
 import { LuCheck, LuLoader, LuLogOut, LuSearch, LuX } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { useConsolePinAction } from "~/hooks/useConsolePinAction";
 import { usePeople } from "~/stores";
-import { beginConsolePinChange } from "~/utils/console-pin-activity";
 import { path } from "~/utils/path";
 
 const RECENT_KEY_PREFIX = "console-recent-";
@@ -102,48 +101,25 @@ export function PinInOverlay({
   const [pinError, setPinError] = useState<string | null>(null);
   const pinLabelId = useId();
   const pinErrorId = useId();
-  const searchRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   useInertOutside(overlayRef);
 
-  const pinInFetcher = useFetcher<{ error?: string }>();
-  const pinOutFetcher = useFetcher();
+  const { action: pinInFetcher, submit: submitPinInAction } =
+    useConsolePinAction({
+      onSuccess: (result) => {
+        if (result.success) onDismiss?.();
+      },
+      onError: (result) => {
+        if (result.error) setPinError(result.error);
+        setPin("");
+      }
+    });
+  const { action: pinOutFetcher, submit: submitPinOutAction } =
+    useConsolePinAction();
 
   const recentIds = useMemo(() => getRecentOperators(companyId), [companyId]);
   const isPinning = pinInFetcher.state !== "idle";
   const changingPin = isPinning || pinOutFetcher.state !== "idle";
-  const finishPinInRef = useRef<(() => void) | null>(null);
-  const finishPinOutRef = useRef<(() => void) | null>(null);
-  const pinInWasBusyRef = useRef(false);
-  const pinOutWasBusyRef = useRef(false);
-
-  useEffect(() => {
-    if (pinInFetcher.state !== "idle") {
-      pinInWasBusyRef.current = true;
-    } else if (pinInWasBusyRef.current) {
-      finishPinInRef.current?.();
-      finishPinInRef.current = null;
-      pinInWasBusyRef.current = false;
-    }
-  }, [pinInFetcher.state]);
-
-  useEffect(() => {
-    if (pinOutFetcher.state !== "idle") {
-      pinOutWasBusyRef.current = true;
-    } else if (pinOutWasBusyRef.current) {
-      finishPinOutRef.current?.();
-      finishPinOutRef.current = null;
-      pinOutWasBusyRef.current = false;
-    }
-  }, [pinOutFetcher.state]);
-
-  useEffect(
-    () => () => {
-      finishPinInRef.current?.();
-      finishPinOutRef.current?.();
-    },
-    []
-  );
 
   useEffect(() => {
     if (!dismissable) return;
@@ -161,26 +137,10 @@ export function PinInOverlay({
       // The server looks up name and avatar itself; only the id is trusted.
       formData.append("userId", person.id);
       if (pinValue) formData.append("pin", pinValue);
-      finishPinInRef.current ??= beginConsolePinChange();
-      pinInFetcher.submit(formData, {
-        method: "POST",
-        action: path.to.consolePinIn
-      });
+      submitPinInAction(formData, path.to.consolePinIn);
     },
-    [companyId, pinInFetcher]
+    [companyId, submitPinInAction]
   );
-
-  useEffect(() => {
-    if (pinInFetcher.state === "idle" && pinInFetcher.data?.error) {
-      setPinError(pinInFetcher.data.error);
-      setPin("");
-    }
-  }, [pinInFetcher.state, pinInFetcher.data]);
-
-  // Focus search on mount
-  useEffect(() => {
-    searchRef.current?.focus();
-  }, []);
 
   const stationUser = useMemo(
     () => (sessionUserId ? people.find((p) => p.id === sessionUserId) : null),
@@ -216,28 +176,6 @@ export function PinInOverlay({
     const others = sorted.filter((p) => !recentIds.includes(p.id));
     return { recent, others, all: sorted };
   }, [people, search, recentIds, locationEmployeeIds, sessionUserId]);
-
-  // Track if we've submitted a pin-in attempt
-  const hasSubmittedPinIn = useRef(false);
-
-  // Watch for successful pin-in completion
-  useEffect(() => {
-    if (
-      pinInFetcher.state === "submitting" ||
-      pinInFetcher.state === "loading"
-    ) {
-      hasSubmittedPinIn.current = true;
-    }
-    if (
-      hasSubmittedPinIn.current &&
-      pinInFetcher.state === "idle" &&
-      !pinInFetcher.data?.error
-    ) {
-      // Fetcher completed without error — cookie is set, dismiss overlay
-      hasSubmittedPinIn.current = false;
-      onDismiss?.();
-    }
-  }, [pinInFetcher.state, pinInFetcher.data, onDismiss]);
 
   const handlePinComplete = useCallback(
     (value: string) => {
@@ -288,8 +226,8 @@ export function PinInOverlay({
         <div className="flex items-center gap-3 border-b px-4 py-3">
           <LuSearch className="h-4 w-4 text-muted-foreground shrink-0" />
           <input
-            ref={searchRef}
             type="text"
+            autoFocus
             placeholder={t`Search operators...`}
             aria-label={t`Search operators`}
             value={search}
@@ -443,11 +381,7 @@ export function PinInOverlay({
               size="md"
               className="w-full text-destructive hover:text-destructive"
               onClick={() => {
-                finishPinOutRef.current ??= beginConsolePinChange();
-                pinOutFetcher.submit(null, {
-                  method: "POST",
-                  action: path.to.consolePinOut
-                });
+                submitPinOutAction(null, path.to.consolePinOut);
               }}
             >
               <LuLogOut className="mr-2 h-4 w-4" />

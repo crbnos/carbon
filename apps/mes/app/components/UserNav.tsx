@@ -43,10 +43,10 @@ import {
 } from "react-icons/lu";
 import { useFetcher, useNavigation, useSubmit } from "react-router";
 import { useUser } from "~/hooks";
+import { useConsolePinAction } from "~/hooks/useConsolePinAction";
 import type { action } from "~/root";
 import type { Location } from "~/services/types";
 import type { PinnedInUser } from "~/types";
-import { beginConsolePinChange } from "~/utils/console-pin-activity";
 import { path } from "~/utils/path";
 
 type UserNavProps = {
@@ -113,18 +113,7 @@ export function useUserNav({
   const modePreference = useModePreference();
 
   const fetcher = useFetcher<typeof action>();
-  const finishPinChangeRef = useRef<(() => void) | null>(null);
-  const pinChangeWasBusyRef = useRef(false);
-  useEffect(() => {
-    if (fetcher.state !== "idle" && finishPinChangeRef.current) {
-      pinChangeWasBusyRef.current = true;
-    } else if (fetcher.state === "idle" && pinChangeWasBusyRef.current) {
-      finishPinChangeRef.current?.();
-      finishPinChangeRef.current = null;
-      pinChangeWasBusyRef.current = false;
-    }
-  }, [fetcher.state]);
-  useEffect(() => () => finishPinChangeRef.current?.(), []);
+  const { submit: submitPinChange } = useConsolePinAction();
 
   const onModeChange = (value: string) => {
     const parsed = modeValidator.shape.mode.safeParse(value);
@@ -138,8 +127,7 @@ export function useUserNav({
   const switchCompany = useSwitchCompany();
 
   const switchOperator = () => {
-    finishPinChangeRef.current ??= beginConsolePinChange();
-    fetcher.submit(null, { method: "POST", action: path.to.consolePinOut });
+    submitPinChange(null, path.to.consolePinOut);
   };
 
   const toggleConsoleMode = () => {

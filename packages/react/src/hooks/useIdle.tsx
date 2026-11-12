@@ -58,10 +58,6 @@ export function useIdle({
   const channelRef = useRef<BroadcastChannel | null>(null);
   const wasEnabledRef = useRef(false);
 
-  useEffect(() => {
-    isIdleRef.current = isIdle;
-  }, [isIdle]);
-
   const resume = useCallback(() => {
     lastActivityRef.current = Date.now();
     isIdleRef.current = false;
