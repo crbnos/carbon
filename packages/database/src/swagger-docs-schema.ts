@@ -27877,6 +27877,9 @@ export default {
             $ref: "#/parameters/rowFilter.pickingList.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.pickingList.travelersPrintedAt"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -27975,6 +27978,9 @@ export default {
             $ref: "#/parameters/rowFilter.pickingList.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.pickingList.travelersPrintedAt"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -28025,6 +28031,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.pickingList.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pickingList.travelersPrintedAt"
           },
           {
             $ref: "#/parameters/body.pickingList"
@@ -152817,6 +152826,10 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        travelersPrintedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -212364,6 +212377,12 @@ export default {
     },
     "rowFilter.pickingList.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.pickingList.travelersPrintedAt": {
+      name: "travelersPrintedAt",
       required: false,
       in: "query",
       type: "string"

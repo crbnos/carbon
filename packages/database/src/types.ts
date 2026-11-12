@@ -49555,6 +49555,7 @@ export type Database = {
           notes: Json | null
           pickingListId: string
           status: Database["public"]["Enums"]["pickingListStatus"]
+          travelersPrintedAt: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -49570,6 +49571,7 @@ export type Database = {
           notes?: Json | null
           pickingListId: string
           status?: Database["public"]["Enums"]["pickingListStatus"]
+          travelersPrintedAt?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -49585,6 +49587,7 @@ export type Database = {
           notes?: Json | null
           pickingListId?: string
           status?: Database["public"]["Enums"]["pickingListStatus"]
+          travelersPrintedAt?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
