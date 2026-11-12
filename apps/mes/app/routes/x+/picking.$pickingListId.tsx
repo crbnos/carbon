@@ -178,7 +178,7 @@ export default function PickingExecutionRoute() {
   const completedCount = lines.filter((l) => isLineResolved(l)).length;
 
   return (
-    <div className="flex flex-col flex-1">
+    <div className="flex flex-col flex-1 min-h-0">
       <MesAppBar
         title={pickingList.pickingListId}
         subtitle={<Trans>Picking</Trans>}
