@@ -38,6 +38,8 @@ type UseIdleOptions = {
   heartbeatUrl: string;
   /** Events that pause heartbeats during an identity change. */
   pauseEvents?: { start: string; end: string };
+  /** Called once when this tab or a peer locks the session. */
+  onIdle?: () => void;
 };
 
 export function useIdle({
@@ -46,7 +48,8 @@ export function useIdle({
   startedAt,
   heartbeatMs,
   heartbeatUrl,
-  pauseEvents
+  pauseEvents,
+  onIdle
 }: UseIdleOptions) {
   const [isIdle, setIsIdle] = useState(false);
 
@@ -57,6 +60,8 @@ export function useIdle({
   const pausedRef = useRef(false);
   const channelRef = useRef<BroadcastChannel | null>(null);
   const wasEnabledRef = useRef(false);
+  const onIdleRef = useRef(onIdle);
+  onIdleRef.current = onIdle;
 
   const resume = useCallback(() => {
     lastActivityRef.current = Date.now();
@@ -117,10 +122,14 @@ export function useIdle({
     // keep re-stamping the server's `lastActiveAt` every heartbeatMs and the
     // session would never idle-lock server-side, so /unlock's loader would find
     // the session "not locked" and bounce straight back with no re-auth.
-    const lock = () => {
+    const lock = (broadcast = true) => {
+      if (isIdleRef.current) return;
       isIdleRef.current = true;
       setIsIdle(true);
-      channel?.postMessage({ type: "lock" } satisfies ChannelMessage);
+      if (broadcast) {
+        channel?.postMessage({ type: "lock" } satisfies ChannelMessage);
+      }
+      onIdleRef.current?.();
     };
     const sendHeartbeat = (now: number) => {
       lastHeartbeatRef.current = now;
@@ -185,9 +194,8 @@ export function useIdle({
           // A peer is active → the session isn't idle. Keep this tab from locking.
           if (!isIdleRef.current) lastActivityRef.current = Date.now();
         } else if (e.data?.type === "lock") {
-          // A peer locked → lock all tabs together.
-          isIdleRef.current = true;
-          setIsIdle(true);
+          // A peer locked → lock here too, without echoing the message.
+          lock(false);
         }
       };
     }

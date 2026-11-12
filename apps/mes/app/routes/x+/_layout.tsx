@@ -395,13 +395,14 @@ export default function AuthenticatedRoute() {
 
   // Console activity renews the operator pin-in on this screen. Once idle,
   // reload so the server's expired pin-in surfaces the PinInOverlay.
-  const { isIdle: consoleIsIdle } = useIdle({
+  useIdle({
     enabled: consoleMode && !!pinnedInUser,
     idleMs: sessionTimeout.consoleIdleMs,
     startedAt: pinnedInUser?.pinnedAt,
     heartbeatMs: sessionTimeout.heartbeatMs,
     heartbeatUrl: "/api/session/heartbeat",
-    pauseEvents: CONSOLE_PIN_PAUSE_EVENTS
+    pauseEvents: CONSOLE_PIN_PAUSE_EVENTS,
+    onIdle: () => window.location.reload()
   });
   useEffect(() => {
     if (!consoleMode || typeof BroadcastChannel === "undefined") return;
@@ -419,12 +420,6 @@ export default function AuthenticatedRoute() {
     };
     return () => channel.close();
   }, [consoleMode]);
-  useEffect(() => {
-    if (consoleIsIdle && typeof window !== "undefined") {
-      window.location.reload();
-    }
-  }, [consoleIsIdle]);
-
   useNProgress();
   const themeStyle = useThemeStyle();
   const mode = useMode();

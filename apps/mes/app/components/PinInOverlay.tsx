@@ -9,7 +9,8 @@ import {
   Button,
   InputOTP,
   InputOTPGroup,
-  InputOTPSlot
+  InputOTPSlot,
+  useShortcutKeys
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { RefObject } from "react";
@@ -23,6 +24,7 @@ import {
 } from "react";
 import { LuCheck, LuLoader, LuLogOut, LuSearch, LuX } from "react-icons/lu";
 import { useConsolePinAction } from "~/hooks/useConsolePinAction";
+import { DISMISS_PIN_OVERLAY_SHORTCUT } from "~/shortcuts";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -121,14 +123,11 @@ export function PinInOverlay({
   const isPinning = pinInFetcher.state !== "idle";
   const changingPin = isPinning || pinOutFetcher.state !== "idle";
 
-  useEffect(() => {
-    if (!dismissable) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !changingPin) onDismiss?.();
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [dismissable, changingPin, onDismiss]);
+  useShortcutKeys({
+    shortcut: DISMISS_PIN_OVERLAY_SHORTCUT,
+    action: () => onDismiss?.(),
+    disabled: !dismissable || changingPin
+  });
 
   const submitPinIn = useCallback(
     (person: Person, pinValue: string) => {

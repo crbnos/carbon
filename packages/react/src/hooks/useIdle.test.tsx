@@ -17,20 +17,27 @@ let idle = false;
 
 const pauseEvents = { start: "pin-change-start", end: "pin-change-end" };
 
-function Harness({ startedAt }: { startedAt?: number }) {
+function Harness({
+  startedAt,
+  onIdle
+}: {
+  startedAt?: number;
+  onIdle?: () => void;
+}) {
   idle = useIdle({
     enabled: true,
     idleMs: HOUR,
     startedAt,
     heartbeatMs: 60 * 1000,
     heartbeatUrl: "/api/session/heartbeat",
-    pauseEvents
+    pauseEvents,
+    onIdle
   }).isIdle;
   return null;
 }
 
-function mount(startedAt?: number) {
-  act(() => root.render(<Harness startedAt={startedAt} />));
+function mount(startedAt?: number, onIdle?: () => void) {
+  act(() => root.render(<Harness startedAt={startedAt} onIdle={onIdle} />));
 }
 
 beforeAll(() => {
@@ -69,6 +76,35 @@ it("stays pinned through hours of activity on one screen, then locks after one i
 
   act(() => vi.advanceTimersByTime(HOUR + 1000));
   expect(idle).toBe(true);
+});
+
+it("notifies once when the idle deadline locks the screen", () => {
+  const onIdle = vi.fn();
+  mount(undefined, onIdle);
+
+  act(() => vi.advanceTimersByTime(HOUR + 2000));
+  expect(idle).toBe(true);
+  expect(onIdle).toHaveBeenCalledTimes(1);
+});
+
+it("notifies on a peer lock without broadcasting the lock again", () => {
+  let channel!: Channel;
+  class Channel {
+    onmessage: ((event: MessageEvent<{ type: "lock" }>) => void) | null = null;
+    postMessage = vi.fn();
+    close = vi.fn();
+    constructor() {
+      channel = this;
+    }
+  }
+  vi.stubGlobal("BroadcastChannel", Channel);
+  const onIdle = vi.fn();
+  mount(undefined, onIdle);
+
+  act(() => channel.onmessage?.({ data: { type: "lock" } } as MessageEvent));
+  expect(idle).toBe(true);
+  expect(onIdle).toHaveBeenCalledTimes(1);
+  expect(channel.postMessage).not.toHaveBeenCalled();
 });
 
 it("does not revive an expired pin-in when input precedes the interval check", () => {
