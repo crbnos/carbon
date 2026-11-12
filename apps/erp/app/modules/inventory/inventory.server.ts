@@ -1784,7 +1784,9 @@ export const updateShipment = defineServiceFn({
  *      `warehouseTransfer` for an outbound transfer), and a sales order
  *      shipment runs its order's sales rules on the lines shipped. An
  *      untracked line whose storage unit holds less than it ships adds a
- *      warning that names the storage units holding the item. A
+ *      warning that names the storage units holding the item. A part going
+ *      to a customer whose first article is not approved (an open one, or
+ *      one a requirement covers that is due) adds a warning too. A
  *      blocking rule returns its `violations` and `ruleNames` and changes
  *      nothing (a blocked sales rule is recorded on the order); send
  *      `acknowledged: true` to post past warnings.
@@ -1830,7 +1832,7 @@ export const postShipment = defineServiceFn({
         .eq("companyId", companyId),
       serviceRole
         .from("shipment")
-        .select("sourceDocument, sourceDocumentId, locationId")
+        .select("sourceDocument, sourceDocumentId, locationId, customerId")
         .eq("id", shipmentId)
         .eq("companyId", companyId)
         .maybeSingle()
@@ -1906,6 +1908,28 @@ export const postShipment = defineServiceFn({
       });
       rules.violations.push(...stock.violations);
       Object.assign(rules.ruleNames, stock.ruleNames);
+    }
+
+    // Parts going to a customer whose first article is not approved.
+    if (
+      shipment.data.sourceDocument === "Sales Order" ||
+      shipment.data.sourceDocument === "Sales Invoice" ||
+      shipment.data.sourceDocument === "Customer Contract"
+    ) {
+      const firstArticles = await service.shipmentFirstArticleWarnings(
+        serviceRole,
+        {
+          companyId,
+          customerId: shipment.data.customerId,
+          lines: (lines.data ?? []).map((line) => ({
+            id: line.id,
+            itemId: line.itemId,
+            quantity: Number(line.shippedQuantity ?? 0)
+          }))
+        }
+      );
+      rules.violations.push(...firstArticles.violations);
+      Object.assign(rules.ruleNames, firstArticles.ruleNames);
     }
 
     // Evidence covers the SALES violations only, attributed to the order. A

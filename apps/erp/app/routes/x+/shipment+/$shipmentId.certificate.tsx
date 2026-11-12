@@ -75,6 +75,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     certificates: certificates.data ?? [],
+    // Whether the shipment header shows its Certificate menu: the customer
+    // requires a certificate, or one is already issued. Shown when either
+    // read failed, so an error never hides a required certificate.
+    showMenu:
+      !!certificates.error ||
+      (certificates.data ?? []).length > 0 ||
+      !defaults.data ||
+      defaults.data.requiresCertificateOfConformance,
     customerId: defaults.data?.customerId ?? null,
     defaultContactId: defaults.data?.defaultContactId ?? null,
     warnings: content?.data?.warnings ?? null

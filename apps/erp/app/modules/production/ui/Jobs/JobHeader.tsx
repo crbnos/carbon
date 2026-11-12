@@ -15,6 +15,7 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
@@ -96,7 +97,10 @@ import {
 } from "~/hooks";
 import { useCompanySettings } from "~/hooks/useCompanySettings";
 import { usePullFromLocationIds } from "~/hooks/usePullFromLocationIds";
-import type { JobFirstArticleInspection } from "~/modules/quality/types";
+import type {
+  JobFirstArticleInspection,
+  JobFirstArticleNeeds
+} from "~/modules/quality/types";
 import FirstArticleStatus from "~/modules/quality/ui/FirstArticles/FirstArticleStatus";
 import { useFirstArticleLabels } from "~/modules/quality/ui/FirstArticles/useFirstArticleLabels";
 import type { action as cancelAction } from "~/routes/x+/job+/$jobId.cancel";
@@ -180,11 +184,8 @@ const JobHeader = () => {
     projectCharge?: JobProjectCharge | null;
     unbatchedBatchableOperations?: number;
     firstArticles?: JobFirstArticleInspection[];
-    firstArticlesDue?: {
-      jobMakeMethodId: string;
-      description: string;
-      reason: "New Part" | "Production Lapse";
-    }[];
+    firstArticlesDue?: JobFirstArticleNeeds["due"];
+    firstArticlesCoveredElsewhere?: JobFirstArticleNeeds["coveredElsewhere"];
   }>(path.to.job(jobId));
   const projectCharge = routeData?.projectCharge;
 
@@ -216,6 +217,14 @@ const JobHeader = () => {
     routeData?.unbatchedBatchableOperations ?? 0;
   const firstArticles = routeData?.firstArticles ?? [];
   const firstArticlesDue = routeData?.firstArticlesDue ?? [];
+  const firstArticlesCoveredElsewhere =
+    routeData?.firstArticlesCoveredElsewhere ?? [];
+  // Only a job with first article work shows the menu. A first article for a
+  // reason the data can't see starts from Quality → First Articles → New.
+  const showFirstArticleMenu =
+    firstArticles.length > 0 ||
+    firstArticlesDue.length > 0 ||
+    firstArticlesCoveredElsewhere.length > 0;
   const openFirstArticles = firstArticles.filter(
     (firstArticle) => firstArticle.status !== "Approved"
   );
@@ -626,45 +635,95 @@ const JobHeader = () => {
               </SplitButton>
             </RecordAction>
 
-            <RecordAction slot="overflow">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    leftIcon={<LuClipboardList />}
-                    rightIcon={<LuChevronDown />}
-                    variant="secondary"
-                  >
-                    <Trans>First Article</Trans>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-72">
-                  {firstArticles.map((firstArticle) => (
-                    <DropdownMenuItem key={firstArticle.id} asChild>
-                      <Link to={path.to.firstArticle(firstArticle.id)}>
-                        <DropdownMenuIcon icon={<LuClipboardCheck />} />
-                        <span className="flex-1 truncate">
-                          {firstArticle.inspection?.inspectionId}{" "}
-                          {firstArticle.item?.readableIdWithRevision}
-                        </span>
-                        <FirstArticleStatus status={firstArticle.status} />
+            {showFirstArticleMenu && (
+              <RecordAction slot="overflow">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      leftIcon={<LuClipboardList />}
+                      rightIcon={<LuChevronDown />}
+                      variant="secondary"
+                    >
+                      <Trans>First Article</Trans>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-72">
+                    {firstArticles.length > 0 &&
+                      firstArticlesCoveredElsewhere.length > 0 && (
+                        <DropdownMenuLabel>
+                          <Trans>This job</Trans>
+                        </DropdownMenuLabel>
+                      )}
+                    {firstArticles.map((firstArticle) => (
+                      <DropdownMenuItem key={firstArticle.id} asChild>
+                        <Link to={path.to.firstArticle(firstArticle.id)}>
+                          <DropdownMenuIcon icon={<LuClipboardCheck />} />
+                          <span className="flex min-w-0 flex-1 flex-col">
+                            <span className="truncate">
+                              {firstArticle.item?.readableIdWithRevision}
+                            </span>
+                            <span className="truncate text-xs text-muted-foreground">
+                              {firstArticle.inspection?.inspectionId}
+                            </span>
+                          </span>
+                          <FirstArticleStatus status={firstArticle.status} />
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                    {firstArticles.length > 0 && <DropdownMenuSeparator />}
+                    {firstArticlesCoveredElsewhere.length > 0 && (
+                      <>
+                        <DropdownMenuLabel>
+                          <Trans>Covered by another job</Trans>
+                        </DropdownMenuLabel>
+                        {firstArticlesCoveredElsewhere.map(
+                          ({
+                            jobMakeMethodId,
+                            firstArticleInspectionId,
+                            description: part,
+                            inspectionReadableId: firstArticle,
+                            jobReadableId: otherJob,
+                            status
+                          }) => (
+                            <DropdownMenuItem
+                              key={`${jobMakeMethodId}:${firstArticleInspectionId}`}
+                              asChild
+                            >
+                              <Link
+                                to={path.to.firstArticle(
+                                  firstArticleInspectionId
+                                )}
+                              >
+                                <DropdownMenuIcon icon={<LuClipboardCheck />} />
+                                <span className="flex min-w-0 flex-1 flex-col">
+                                  <span className="truncate">{part}</span>
+                                  <span className="truncate text-xs text-muted-foreground">
+                                    {t`${firstArticle} on ${otherJob}`}
+                                  </span>
+                                </span>
+                                <FirstArticleStatus status={status} />
+                              </Link>
+                            </DropdownMenuItem>
+                          )
+                        )}
+                        <DropdownMenuSeparator />
+                      </>
+                    )}
+                    <DropdownMenuItem
+                      disabled={!permissions.can("create", "quality")}
+                      asChild
+                    >
+                      <Link
+                        to={`${path.to.newFirstArticle}?jobId=${encodeURIComponent(jobId)}`}
+                      >
+                        <DropdownMenuIcon icon={<LuPlus />} />
+                        <Trans>New First Article</Trans>
                       </Link>
                     </DropdownMenuItem>
-                  ))}
-                  {firstArticles.length > 0 && <DropdownMenuSeparator />}
-                  <DropdownMenuItem
-                    disabled={!permissions.can("create", "quality")}
-                    asChild
-                  >
-                    <Link
-                      to={`${path.to.newFirstArticle}?jobId=${encodeURIComponent(jobId)}`}
-                    >
-                      <DropdownMenuIcon icon={<LuPlus />} />
-                      <Trans>New First Article</Trans>
-                    </Link>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </RecordAction>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </RecordAction>
+            )}
 
             <RecordAction slot={isReleasable ? "overflow" : "primary"}>
               <Button

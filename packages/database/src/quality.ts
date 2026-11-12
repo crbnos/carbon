@@ -20,6 +20,7 @@ import {
   type FirstArticleNeedInput,
   firstArticleItemRevision,
   formatFirstArticlePartDescription,
+  OPEN_FIRST_ARTICLE_STATUSES,
   resolveFirstArticleNeeds
 } from "./first-article.ts";
 import {
@@ -1442,15 +1443,24 @@ async function loadFirstArticleContext(
 
   // An open (Draft / Verified) FAI for the part on another job is the part's
   // first article in progress: this job neither blocks on nor starts another.
-  // A report whose job was deleted (jobId null) does not count.
+  // A report whose job was deleted (jobId null) does not count, nor one whose
+  // lot was rejected: that attempt failed, so the part needs a new one.
   const openElsewhere = await db
     .selectFrom("firstArticleInspection")
-    .select(["itemId"])
+    .innerJoin("inspection", (join) =>
+      join
+        .onRef("inspection.id", "=", "firstArticleInspection.inspectionId")
+        .onRef("inspection.companyId", "=", "firstArticleInspection.companyId")
+    )
+    .select(["firstArticleInspection.itemId"])
     .distinct()
-    .where("status", "in", ["Draft", "Verified"])
-    .where("jobId", "<>", job.id)
-    .where("itemId", "in", itemIds)
-    .where("companyId", "=", args.companyId)
+    .where("firstArticleInspection.status", "in", [
+      ...OPEN_FIRST_ARTICLE_STATUSES
+    ])
+    .where("inspection.status", "<>", "Failed")
+    .where("firstArticleInspection.jobId", "<>", job.id)
+    .where("firstArticleInspection.itemId", "in", itemIds)
+    .where("firstArticleInspection.companyId", "=", args.companyId)
     .execute();
 
   const existingLots = await db

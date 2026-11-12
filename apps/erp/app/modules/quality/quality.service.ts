@@ -20,7 +20,9 @@ import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { withTransaction } from "@carbon/database/client";
 import {
   evaluateFirstArticleDue,
+  evaluateUnapprovedFirstArticle,
   type FirstArticleReason,
+  OPEN_FIRST_ARTICLE_STATUSES,
   resolveFirstArticleNeeds
 } from "@carbon/database/first-article";
 import {
@@ -1083,6 +1085,130 @@ export async function getFirstArticleDue(
   }
 
   return { data, error: null };
+}
+
+export type UnapprovedFirstArticle = {
+  itemId: string;
+  itemReadableId: string;
+  /** Set when a requirement covers the part and it is due. */
+  reason: FirstArticleReason | null;
+  /** The part's open (Draft / Verified) first articles, on any job. */
+  open: {
+    id: string;
+    inspectionReadableId: string;
+    status: Database["public"]["Enums"]["firstArticleInspectionStatus"];
+  }[];
+};
+
+/**
+ * The parts of a shipment whose first article is not approved: a part with an
+ * open first article, or a part a requirement covers that is due. A
+ * requirement is the part's First Article slot, or the company setting or the
+ * customer's flag for a part we make (a bought part has no first article of
+ * ours). The shipment post's warning and the certificate's issue dialog both
+ * read it, so the two cannot disagree.
+ */
+export async function getUnapprovedFirstArticles(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { customerId: string | null; itemIds: string[]; today: string }
+): Promise<
+  | { data: UnapprovedFirstArticle[]; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const itemIds = [...new Set(args.itemIds)];
+  if (itemIds.length === 0) return { data: [], error: null };
+
+  const [settings, customerShipping, slots, items, open] = await Promise.all([
+    client
+      .from("companySettings")
+      .select("requireFirstArticle")
+      .eq("id", companyId)
+      .maybeSingle(),
+    args.customerId
+      ? client
+          .from("customerShipping")
+          .select("requiresFirstArticle")
+          .eq("customerId", args.customerId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    client
+      .from("itemInspectionDocumentAssignment")
+      .select("itemId")
+      .eq("usage", "First Article")
+      .in("itemId", itemIds)
+      .eq("companyId", companyId),
+    client
+      .from("item")
+      .select("id, readableIdWithRevision, replenishmentSystem")
+      .in("id", itemIds)
+      .eq("companyId", companyId),
+    client
+      .from("firstArticleInspection")
+      .select("id, itemId, status, inspection!inner(inspectionId, status)")
+      .in("status", [...OPEN_FIRST_ARTICLE_STATUSES])
+      .neq("inspection.status", "Failed")
+      .in("itemId", itemIds)
+      .eq("companyId", companyId)
+      .order("createdAt")
+  ]);
+  const readError =
+    settings.error ??
+    customerShipping.error ??
+    slots.error ??
+    items.error ??
+    open.error;
+  if (readError) return { data: null, error: readError };
+
+  const requirementSwitchOn =
+    (settings.data?.requireFirstArticle ?? false) ||
+    (customerShipping.data?.requiresFirstArticle ?? false);
+  const slotted = new Set((slots.data ?? []).map((row) => row.itemId));
+  const itemById = new Map((items.data ?? []).map((item) => [item.id, item]));
+
+  const due = await getFirstArticleDue(client, companyId, {
+    itemIds,
+    today: args.today
+  });
+  if (due.error) return { data: null, error: due.error };
+
+  const openByItem = new Map<string, UnapprovedFirstArticle["open"]>();
+  for (const row of open.data ?? []) {
+    openByItem.set(row.itemId, [
+      ...(openByItem.get(row.itemId) ?? []),
+      {
+        id: row.id,
+        inspectionReadableId: row.inspection?.inspectionId ?? row.id,
+        status: row.status
+      }
+    ]);
+  }
+
+  return {
+    data: itemIds.flatMap((itemId) => {
+      const openOnes = openByItem.get(itemId) ?? [];
+      const { unapproved, reason } = evaluateUnapprovedFirstArticle({
+        requirementSwitchOn,
+        slotted: slotted.has(itemId),
+        bought: itemById.get(itemId)?.replenishmentSystem === "Buy",
+        due: due.data[itemId]?.due ?? false,
+        reason: due.data[itemId]?.reason ?? null,
+        hasOpen: openOnes.length > 0
+      });
+      if (!unapproved) return [];
+      return [
+        {
+          itemId,
+          itemReadableId:
+            itemById.get(itemId)?.readableIdWithRevision ?? itemId,
+          reason,
+          open: openOnes
+        }
+      ];
+    }),
+    error: null
+  };
 }
 
 export async function getGauge(
@@ -9007,37 +9133,109 @@ export async function afterJobsReleased(
 }
 
 /**
- * The job's parts whose first article is due and required (a switch applies)
- * but has no lot yet — on this job, or open on another — the job header's
- * "FAI due" badge. The same shared `resolveFirstArticleNeeds` the release
- * blocker and the generator use.
+ * The job header's first article state, from the same shared
+ * `resolveFirstArticleNeeds` the release blocker and the generator use:
+ * - `due` — required (a switch applies) and due, with no lot on this job and
+ *   none open on another job: the "FAI due" badge;
+ * - `coveredElsewhere` — required and due, but an open FAI for the part on
+ *   another job covers it, so this job gets none: the header names that FAI.
  * Informational: a failure is logged and reads as nothing due.
  */
 export async function getFirstArticlesDueForJob(
   db: Kysely<KyselyDatabase>,
   client: SupabaseClient<Database>,
   args: { jobId: string; companyId: string }
-): Promise<
-  { jobMakeMethodId: string; description: string; reason: FirstArticleReason }[]
-> {
+): Promise<{
+  due: {
+    jobMakeMethodId: string;
+    description: string;
+    reason: FirstArticleReason;
+  }[];
+  coveredElsewhere: {
+    jobMakeMethodId: string;
+    description: string;
+    firstArticleInspectionId: string;
+    status: Database["public"]["Enums"]["firstArticleInspectionStatus"];
+    inspectionReadableId: string;
+    jobReadableId: string;
+  }[];
+}> {
   try {
     const today = datetime
       .today(await getCompanyTimeZone(client, args.companyId))
       .toString();
     const input = await loadFirstArticleNeedInput(db, { ...args, today });
-    return resolveFirstArticleNeeds(input)
+    const needs = resolveFirstArticleNeeds(input);
+
+    const due = needs
       .filter((need) => need.pending && need.reason !== null)
       .map((need) => ({
         jobMakeMethodId: need.jobMakeMethodId,
         description: need.description,
         reason: need.reason as FirstArticleReason
       }));
+
+    const covered = needs.filter((need) => need.coveredElsewhere);
+    if (covered.length === 0) return { due, coveredElsewhere: [] };
+
+    // The same rows the loader's `hasOpenFirstArticleElsewhere` counts.
+    const openElsewhere = await db
+      .selectFrom("firstArticleInspection")
+      .innerJoin("inspection", (join) =>
+        join
+          .onRef("inspection.id", "=", "firstArticleInspection.inspectionId")
+          .onRef(
+            "inspection.companyId",
+            "=",
+            "firstArticleInspection.companyId"
+          )
+      )
+      .innerJoin("job", (join) =>
+        join
+          .onRef("job.id", "=", "firstArticleInspection.jobId")
+          .onRef("job.companyId", "=", "firstArticleInspection.companyId")
+      )
+      .select([
+        "firstArticleInspection.id",
+        "firstArticleInspection.itemId",
+        "firstArticleInspection.status",
+        "inspection.inspectionId as inspectionReadableId",
+        "job.jobId as jobReadableId"
+      ])
+      .where("firstArticleInspection.status", "in", [
+        ...OPEN_FIRST_ARTICLE_STATUSES
+      ])
+      .where("inspection.status", "<>", "Failed")
+      .where("firstArticleInspection.jobId", "<>", args.jobId)
+      .where(
+        "firstArticleInspection.itemId",
+        "in",
+        covered.map((need) => need.itemId)
+      )
+      .where("firstArticleInspection.companyId", "=", args.companyId)
+      .orderBy("inspection.inspectionId")
+      .execute();
+
+    const coveredElsewhere = covered.flatMap((need) =>
+      openElsewhere
+        .filter((open) => open.itemId === need.itemId)
+        .map((open) => ({
+          jobMakeMethodId: need.jobMakeMethodId,
+          description: need.description,
+          firstArticleInspectionId: open.id,
+          status: open.status,
+          inspectionReadableId: open.inspectionReadableId,
+          jobReadableId: open.jobReadableId
+        }))
+    );
+
+    return { due, coveredElsewhere };
   } catch (err) {
     firstArticleLogger.error("Failed to evaluate first articles due", {
       error: err,
       ...args
     });
-    return [];
+    return { due: [], coveredElsewhere: [] };
   }
 }
 
@@ -9520,6 +9718,29 @@ export async function reopenFirstArticleInspection(
  * record, so later plan or data edits cannot change what was approved. The
  * file is uploaded before the transaction and removed again if it fails.
  */
+export const REJECTED_FIRST_ARTICLE_APPROVAL =
+  "This first article's lot was rejected, so it cannot be approved. Correct the cause; the part's next job gets a new first article.";
+
+/** The status of a first article's inspection lot. */
+async function firstArticleLotStatus(
+  db: Kysely<KyselyDatabase>,
+  id: string,
+  companyId: string
+) {
+  const row = await db
+    .selectFrom("firstArticleInspection")
+    .innerJoin("inspection", (join) =>
+      join
+        .onRef("inspection.id", "=", "firstArticleInspection.inspectionId")
+        .onRef("inspection.companyId", "=", "firstArticleInspection.companyId")
+    )
+    .select("inspection.status")
+    .where("firstArticleInspection.id", "=", id)
+    .where("firstArticleInspection.companyId", "=", companyId)
+    .executeTakeFirst();
+  return row?.status ?? null;
+}
+
 export async function approveFirstArticleInspection(
   db: Kysely<KyselyDatabase>,
   client: SupabaseClient<Database>,
@@ -9530,6 +9751,10 @@ export async function approveFirstArticleInspection(
   const serviceRole = getCarbonServiceRole();
   let uploadedPath: string | null = null;
   try {
+    // Refused before the render: a rejected lot is never an approval.
+    if ((await firstArticleLotStatus(db, id, companyId)) === "Failed") {
+      throw new Error(REJECTED_FIRST_ARTICLE_APPROVAL);
+    }
     const approver = await signatory(db, userId, companyId);
     const approvedAt = datetime.timestamp();
 
@@ -9583,6 +9808,10 @@ export async function approveFirstArticleInspection(
       if (!locked) throw new Error("First article not found");
       if (locked.status !== "Verified") {
         throw new Error("Only a verified first article can be approved");
+      }
+      // Again under the lock: the lot can be rejected while the PDF renders.
+      if ((await firstArticleLotStatus(trx, id, companyId)) === "Failed") {
+        throw new Error(REJECTED_FIRST_ARTICLE_APPROVAL);
       }
 
       const document = await trx

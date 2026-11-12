@@ -49,6 +49,7 @@ import CertificateOfConformanceIssueModal from "./CertificateOfConformanceIssueM
 
 type CertificateLoaderData = {
   certificates: CertificateOfConformance[];
+  showMenu: boolean;
   customerId: string | null;
   defaultContactId: string | null;
 };
@@ -56,11 +57,17 @@ type CertificateLoaderData = {
 type CertificateOfConformanceMenuProps = {
   shipmentId: string;
   isPosted: boolean;
+  /**
+   * The shipment was voided: its certificates certify nothing. They stay
+   * downloadable as the record of what was sent, but are not sent again.
+   */
+  isVoided: boolean;
 };
 
 const CertificateOfConformanceMenu = ({
   shipmentId,
-  isPosted
+  isPosted,
+  isVoided
 }: CertificateOfConformanceMenuProps) => {
   const { t } = useLingui();
   const { locale } = useLocale();
@@ -84,6 +91,10 @@ const CertificateOfConformanceMenu = ({
   const canUpdate =
     permissions.can("update", "inventory") && permissions.is("employee");
   const canSend = canUpdate && integrations.has("email") && !!customerId;
+
+  // Hidden until the loader says whether the customer requires a certificate
+  // or one is issued, so it never shows and then disappears.
+  if (!fetcher.data?.showMenu) return null;
 
   return (
     <>
@@ -123,7 +134,11 @@ const CertificateOfConformanceMenu = ({
             <>
               <DropdownMenuSeparator />
               <DropdownMenuLabel>
-                <Trans>Issued</Trans>
+                {isVoided ? (
+                  <Trans>Voided with the shipment</Trans>
+                ) : (
+                  <Trans>Issued</Trans>
+                )}
               </DropdownMenuLabel>
               {certificates.map((certificate) => {
                 const number = withRevisionSuffix(
@@ -134,7 +149,15 @@ const CertificateOfConformanceMenu = ({
                   <DropdownMenuSub key={certificate.id}>
                     <DropdownMenuSubTrigger>
                       <VStack spacing={0}>
-                        <span>{number}</span>
+                        <span
+                          className={
+                            isVoided
+                              ? "line-through text-muted-foreground"
+                              : undefined
+                          }
+                        >
+                          {number}
+                        </span>
                         <span className="text-xs text-muted-foreground">
                           {t`Signed ${formatDate(
                             certificate.signedAt,
@@ -166,7 +189,7 @@ const CertificateOfConformanceMenu = ({
                         </a>
                       </DropdownMenuItem>
                       <DropdownMenuItem
-                        disabled={!canSend}
+                        disabled={!canSend || isVoided}
                         onClick={() => {
                           setSending(certificate);
                           sendModal.onOpen();

@@ -999,6 +999,9 @@ msgstr "{fieldLabel} ülke kodu"
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} onaltılık değeri"
 
+msgid "{firstArticle} on {otherJob}"
+msgstr "{otherJob} üzerinde {firstArticle}"
+
 msgid "{foundHere} found here"
 msgstr "{foundHere} burada bulundu"
 
@@ -8817,6 +8820,9 @@ msgstr "Vardiya katılımı"
 
 msgid "Coverage changed"
 msgstr "Kapsam değiştirildi"
+
+msgid "Covered by another job"
+msgstr "Başka bir iş kapsamında"
 
 msgid "CPI"
 msgstr "CPI"
@@ -31150,6 +31156,9 @@ msgstr "Yazdırılan ve e-postayla gönderilen belgelerinizde gösterilen logola
 msgid "The lot identifier for this stock; one row per batch, quantity is the on-hand for that lot."
 msgstr "Bu stok için lot tanımlayıcısı; lot başına bir satır, miktar o lot için eldedir."
 
+msgid "The lot was rejected, so this first article cannot be approved. The part's next job gets a new first article."
+msgstr "Parti reddedildi, bu nedenle bu ilk ürün onaylanamaz. Parçanın bir sonraki işi yeni bir ilk ürün alır."
+
 msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
 msgstr "Lot, Geçti olarak işaretlenecektir. {fails} örneklenen başarısızlık(lar) kayıtlarınız için kaydedilir."
 
@@ -32161,6 +32170,9 @@ msgstr "Bu Stok kartı, bir yapılandırıcı aracılığıyla oluşturulur ve b
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "Bu stok kartının ürün ağacında raf ömrü etkin olan girdiler yoktur, bu nedenle BOM'dan hiçbir son kullanma tarihi hesaplanmayacaktır."
+
+msgid "This job"
+msgstr "Bu iş"
 
 msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
 msgstr "Bu iş emrinin fatura oranı yoktur. Zaman faturalandırılmadan önce İş emri özelliklerinde fatura oranını ayarlayın."
@@ -34463,6 +34475,9 @@ msgstr "Hükümsüz <0/>"
 
 msgid "Voided <0/> by <1/>"
 msgstr "Hükümsüz <0/> (<1/> Tarafından)"
+
+msgid "Voided with the shipment"
+msgstr "Sevkiyatla birlikte iptal edildi"
 
 msgid "Voiding this purchase invoice will:"
 msgstr "Bu alış faturasını hükümsüz kılmak şunları yapacaktır:"

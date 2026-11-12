@@ -999,6 +999,9 @@ msgstr "Ländercode für {fieldLabel}"
 msgid "{fieldLabel} hex value"
 msgstr "Hexadezimalwert von {fieldLabel}"
 
+msgid "{firstArticle} on {otherJob}"
+msgstr "{firstArticle} in {otherJob}"
+
 msgid "{foundHere} found here"
 msgstr "{foundHere} hier gefunden"
 
@@ -8817,6 +8820,9 @@ msgstr "Besetzung"
 
 msgid "Coverage changed"
 msgstr "Abdeckung geändert"
+
+msgid "Covered by another job"
+msgstr "Durch einen anderen Job abgedeckt"
 
 msgid "CPI"
 msgstr "KPI"
@@ -31150,6 +31156,9 @@ msgstr "Die Logos, die auf Ihren gedruckten und per E-Mail versendeten Dokumente
 msgid "The lot identifier for this stock; one row per batch, quantity is the on-hand for that lot."
 msgstr "Der Los-Identifikation für diesen Bestand; eine Zeile pro Charge, die Menge ist die Hand für diesen Los."
 
+msgid "The lot was rejected, so this first article cannot be approved. The part's next job gets a new first article."
+msgstr "Das Los wurde abgelehnt, daher kann dieser Erstmusterprüfbericht nicht genehmigt werden. Der nächste Job für das Teil erhält einen neuen."
+
 msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
 msgstr "Das Los wird als Bestanden markiert. {fails} erfasste Fehler werden für Ihre Unterlagen aufgezeichnet."
 
@@ -32161,6 +32170,9 @@ msgstr "Dieser Artikel wird über einen Konfigurator gebaut und löst seine Komp
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "Die Stückliste dieses Artikels hat keine Eingaben mit aktivierter Haltbarkeit, daher wird kein Verfall aus der BOM berechnet."
+
+msgid "This job"
+msgstr "Dieser Job"
 
 msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
 msgstr "Dieser Fertigungsauftrag hat keinen Stundensatz. Legen Sie den Stundensatz in seinen Eigenschaften fest, bevor die Zeit abgerechnet werden kann."
@@ -34463,6 +34475,9 @@ msgstr "Storniert <0/>"
 
 msgid "Voided <0/> by <1/>"
 msgstr "Storniert <0/> von <1/>"
+
+msgid "Voided with the shipment"
+msgstr "Mit der Lieferung storniert"
 
 msgid "Voiding this purchase invoice will:"
 msgstr "Das Stornieren dieser Eingangsrechnung wird:"

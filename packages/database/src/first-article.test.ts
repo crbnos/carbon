@@ -5,6 +5,7 @@
 import { describe, expect, it } from "vitest";
 import {
   evaluateFirstArticleDue,
+  evaluateUnapprovedFirstArticle,
   type FirstArticleNeedInput,
   formatFirstArticlePartDescription,
   resolveFirstArticleNeeds
@@ -205,6 +206,24 @@ describe("resolveFirstArticleNeeds", () => {
     ).toMatchObject({ pending: false, create: false, blocked: false });
   });
 
+  it("is covered elsewhere only when another job's FAI is what stops it", () => {
+    expect(need({ hasOpenFirstArticleElsewhere: true })).toMatchObject({
+      coveredElsewhere: true
+    });
+    expect(need()).toMatchObject({ coveredElsewhere: false });
+    // This job's own lot is the reason, not the other job's FAI.
+    expect(
+      need({ hasOpenFirstArticleElsewhere: true, hasFirstArticleLot: true })
+    ).toMatchObject({ coveredElsewhere: false });
+    // Not due: an approved FAI and no lapse.
+    expect(
+      need({
+        hasOpenFirstArticleElsewhere: true,
+        latestApprovedAt: "2026-01-01T00:00:00.000Z"
+      })
+    ).toMatchObject({ due: false, coveredElsewhere: false });
+  });
+
   it("is pending when required and due with nothing started", () => {
     expect(need()).toMatchObject({ pending: true, create: true });
     expect(need({ partPlanIds: [] })).toMatchObject({
@@ -240,5 +259,66 @@ describe("formatFirstArticlePartDescription", () => {
     expect(formatFirstArticlePartDescription("P-1001", "0")).toBe("P-1001");
     expect(formatFirstArticlePartDescription("P-1001", "")).toBe("P-1001");
     expect(formatFirstArticlePartDescription("P-1001", null)).toBe("P-1001");
+  });
+});
+
+describe("evaluateUnapprovedFirstArticle", () => {
+  const part = (
+    overrides: Partial<
+      Parameters<typeof evaluateUnapprovedFirstArticle>[0]
+    > = {}
+  ) =>
+    evaluateUnapprovedFirstArticle({
+      requirementSwitchOn: false,
+      slotted: false,
+      bought: false,
+      due: true,
+      reason: "New Part",
+      hasOpen: false,
+      ...overrides
+    });
+
+  it("warns for a slotted part that is due, bought or not", () => {
+    expect(part({ slotted: true })).toEqual({
+      unapproved: true,
+      reason: "New Part"
+    });
+    expect(part({ slotted: true, bought: true })).toEqual({
+      unapproved: true,
+      reason: "New Part"
+    });
+  });
+
+  it("warns for a made part under a switch, never a bought one", () => {
+    expect(part({ requirementSwitchOn: true })).toEqual({
+      unapproved: true,
+      reason: "New Part"
+    });
+    expect(part({ requirementSwitchOn: true, bought: true })).toEqual({
+      unapproved: false,
+      reason: null
+    });
+  });
+
+  it("does not warn for a covered part that is not due", () => {
+    expect(part({ slotted: true, due: false, reason: null })).toEqual({
+      unapproved: false,
+      reason: null
+    });
+  });
+
+  it("does not warn for a due part no requirement covers", () => {
+    expect(part()).toEqual({ unapproved: false, reason: null });
+  });
+
+  it("warns for an open first article whether or not anything requires it", () => {
+    expect(part({ hasOpen: true, due: false, reason: null })).toEqual({
+      unapproved: true,
+      reason: null
+    });
+    expect(part({ hasOpen: true, slotted: true })).toEqual({
+      unapproved: true,
+      reason: "New Part"
+    });
   });
 });

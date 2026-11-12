@@ -154,12 +154,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     unbatchedBatchableOperations = count ?? 0;
   }
 
-  // First articles: the job's FAIs, and the parts whose FAI is due but not
-  // yet created (a finished job no longer needs one).
-  const [firstArticles, firstArticlesDue] = await Promise.all([
+  // First articles: the job's FAIs, the parts whose FAI is due but not yet
+  // created, and the parts another job's open FAI covers (a finished job no
+  // longer needs one).
+  const [firstArticles, firstArticleNeeds] = await Promise.all([
     getFirstArticleInspectionsByJob(client, jobId, companyId),
     ["Completed", "Cancelled"].includes(job.data.status ?? "")
-      ? Promise.resolve([])
+      ? Promise.resolve({ due: [], coveredElsewhere: [] })
       : getFirstArticlesDueForJob(getDatabaseClient(), client, {
           jobId,
           companyId
@@ -169,7 +170,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     job: job.data,
     firstArticles: firstArticles.data ?? [],
-    firstArticlesDue,
+    firstArticlesDue: firstArticleNeeds.due,
+    firstArticlesCoveredElsewhere: firstArticleNeeds.coveredElsewhere,
     projectCharge: projectCharge.data ?? null,
     unbatchedBatchableOperations,
     tags: tags.data ?? [],

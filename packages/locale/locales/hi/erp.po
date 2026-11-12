@@ -999,6 +999,9 @@ msgstr "{fieldLabel} देश कोड"
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} हेक्स मान"
 
+msgid "{firstArticle} on {otherJob}"
+msgstr "{otherJob} पर {firstArticle}"
+
 msgid "{foundHere} found here"
 msgstr "{foundHere} यहाँ पाया गया"
 
@@ -8817,6 +8820,9 @@ msgstr "कवरेज"
 
 msgid "Coverage changed"
 msgstr "कवरेज बदल गया"
+
+msgid "Covered by another job"
+msgstr "किसी अन्य Job द्वारा कवर किया गया"
 
 msgid "CPI"
 msgstr "CPI"
@@ -31150,6 +31156,9 @@ msgstr "आपके मुद्रित और ईमेल किए गए 
 msgid "The lot identifier for this stock; one row per batch, quantity is the on-hand for that lot."
 msgstr "इस स्टॉक के लिए लॉट पहचानकर्ता; प्रति बैच एक पंक्ति, मात्रा उस लॉट के लिए हाथ पर है।"
 
+msgid "The lot was rejected, so this first article cannot be approved. The part's next job gets a new first article."
+msgstr "लॉट अस्वीकार कर दिया गया, इसलिए इस फर्स्ट आर्टिकल को स्वीकृत नहीं किया जा सकता। पार्ट के अगले Job को नया फर्स्ट आर्टिकल मिलेगा।"
+
 msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
 msgstr "लॉट को उत्तीर्ण के रूप में चिह्नित किया जाएगा। {fails} नमूना की गई विफलता(एँ) आपके रिकॉर्ड के लिए दर्ज की गई हैं।"
 
@@ -32161,6 +32170,9 @@ msgstr "यह आइटम एक कॉन्फ़िगरेटर के �
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "इस आइटम की सामग्री सूची में शेल्फ-लाइफ सक्षम कोई इनपुट नहीं हैं, इसलिए BOM से कोई समाप्ति की गणना नहीं की जाएगी।"
+
+msgid "This job"
+msgstr "यह Job"
 
 msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
 msgstr "इस जॉब की कोई बिलिंग दर नहीं है। समय बिल किए जाने से पहले इसके गुणों में बिलिंग दर सेट करें।"
@@ -34463,6 +34475,9 @@ msgstr "अमान्य <0/>"
 
 msgid "Voided <0/> by <1/>"
 msgstr "अमान्य <0/> द्वारा <1/>"
+
+msgid "Voided with the shipment"
+msgstr "शिपमेंट के साथ रद्द"
 
 msgid "Voiding this purchase invoice will:"
 msgstr "इस क्रय चालान को रद्द करने से:"

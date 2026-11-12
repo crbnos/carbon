@@ -65,6 +65,7 @@ const FirstArticleHeader = ({
   const canUpdate = permissions.can("update", "quality");
   const busy = fetcher.state !== "idle";
   const dispositioned = DISPOSITIONED.includes(lot.status);
+  const rejected = lot.status === "Failed";
 
   const post = (action: string) =>
     fetcher.submit({}, { method: "post", action });
@@ -179,23 +180,42 @@ const FirstArticleHeader = ({
               </TooltipContent>
             )}
           </Tooltip>
-          <Button
-            leftIcon={<LuShieldCheck />}
-            variant={status === "Verified" ? "primary" : "secondary"}
-            isDisabled={status !== "Verified" || busy || !canUpdate}
-            isLoading={
-              busy && fetcher.formAction === path.to.firstArticleApprove(id)
-            }
-            onClick={() => {
-              if (firstArticle.verifiedBy === currentUserId) {
-                approveConfirm.onOpen();
-              } else {
-                post(path.to.firstArticleApprove(id));
-              }
-            }}
-          >
-            <Trans>Approve</Trans>
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Button
+                  leftIcon={<LuShieldCheck />}
+                  variant={
+                    status === "Verified" && !rejected ? "primary" : "secondary"
+                  }
+                  isDisabled={
+                    status !== "Verified" || rejected || busy || !canUpdate
+                  }
+                  isLoading={
+                    busy &&
+                    fetcher.formAction === path.to.firstArticleApprove(id)
+                  }
+                  onClick={() => {
+                    if (firstArticle.verifiedBy === currentUserId) {
+                      approveConfirm.onOpen();
+                    } else {
+                      post(path.to.firstArticleApprove(id));
+                    }
+                  }}
+                >
+                  <Trans>Approve</Trans>
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {status === "Verified" && rejected && (
+              <TooltipContent>
+                <Trans>
+                  The lot was rejected, so this first article cannot be
+                  approved. The part's next job gets a new first article.
+                </Trans>
+              </TooltipContent>
+            )}
+          </Tooltip>
         </HStack>
       </div>
 

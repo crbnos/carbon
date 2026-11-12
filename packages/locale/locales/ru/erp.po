@@ -999,6 +999,9 @@ msgstr "Код страны для поля {fieldLabel}"
 msgid "{fieldLabel} hex value"
 msgstr "Шестнадцатеричное значение: {fieldLabel}"
 
+msgid "{firstArticle} on {otherJob}"
+msgstr "{firstArticle} в {otherJob}"
+
 msgid "{foundHere} found here"
 msgstr "{foundHere} найдено здесь"
 
@@ -8817,6 +8820,9 @@ msgstr "Покрытие"
 
 msgid "Coverage changed"
 msgstr "Охват изменился"
+
+msgid "Covered by another job"
+msgstr "Покрыто другим заданием"
 
 msgid "CPI"
 msgstr "CPI"
@@ -31150,6 +31156,9 @@ msgstr "Логотипы, отображаемые в ваших печатны�
 msgid "The lot identifier for this stock; one row per batch, quantity is the on-hand for that lot."
 msgstr "Идентификатор партии для этого запаса; одна строка на партию, количество - это количество на руках для этой партии."
 
+msgid "The lot was rejected, so this first article cannot be approved. The part's next job gets a new first article."
+msgstr "Партия отклонена, поэтому этот первый образец нельзя утвердить. Следующее задание по детали получит новый первый образец."
+
 msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
 msgstr "Партия будет отмечена как пройдено. Зафиксировано {fails} ошибка(и) образца в ваших записях."
 
@@ -32161,6 +32170,9 @@ msgstr "Эта номенклатура собирается через конф
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "Спецификация этой номенклатуры не имеет входов с включенным сроком хранения, поэтому срок годности не будет рассчитан из BOM."
+
+msgid "This job"
+msgstr "Это задание"
 
 msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
 msgstr "У этого производственного заказа нет ставки расчетов. Установите ставку расчетов в его свойствах перед тем, как время сможет быть рассчитано."
@@ -34463,6 +34475,9 @@ msgstr "Аннулировано <0/>"
 
 msgid "Voided <0/> by <1/>"
 msgstr "Аннулировано <0/> пользователем <1/>"
+
+msgid "Voided with the shipment"
+msgstr "Аннулирован вместе с отгрузкой"
 
 msgid "Voiding this purchase invoice will:"
 msgstr "Аннулирование этой счет-фактуры полученной приведет к:"

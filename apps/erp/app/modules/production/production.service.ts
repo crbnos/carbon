@@ -43,6 +43,7 @@ import {
 import {
   type FirstArticleNeedInput,
   formatFirstArticlePartDescription,
+  OPEN_FIRST_ARTICLE_STATUSES,
   resolveFirstArticleNeeds
 } from "@carbon/database/first-article";
 import {
@@ -3629,14 +3630,16 @@ async function getFirstArticlesWithoutPlan(
             .order("approvedAt", { ascending: false })
             .order("id")
       ),
-      // An open FAI for the part on another job satisfies this job's need.
+      // An open FAI for the part on another job satisfies this job's need,
+      // unless its lot was rejected (`loadFirstArticleContext` agrees).
       fetchAllFromTable<{ id: string; itemId: string; jobId: string | null }>(
         client,
         "firstArticleInspection",
-        "id, itemId, jobId",
+        "id, itemId, jobId, inspection!inner(status)",
         (query) =>
           query
-            .in("status", ["Draft", "Verified"])
+            .in("status", [...OPEN_FIRST_ARTICLE_STATUSES])
+            .neq("inspection.status", "Failed")
             .not("jobId", "is", null)
             .in("itemId", itemIds)
             .eq("companyId", companyId)

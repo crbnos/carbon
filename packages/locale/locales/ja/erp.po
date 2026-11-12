@@ -999,6 +999,9 @@ msgstr "{fieldLabel}の国コード"
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} の16進値"
 
+msgid "{firstArticle} on {otherJob}"
+msgstr "{otherJob} の {firstArticle}"
+
 msgid "{foundHere} found here"
 msgstr "{foundHere} がここで見つかりました"
 
@@ -8817,6 +8820,9 @@ msgstr "配置"
 
 msgid "Coverage changed"
 msgstr "カバレッジが変更されました"
+
+msgid "Covered by another job"
+msgstr "別のジョブで対応済み"
 
 msgid "CPI"
 msgstr "CPI"
@@ -31150,6 +31156,9 @@ msgstr "印刷およびメール送信されたドキュメントに表示され
 msgid "The lot identifier for this stock; one row per batch, quantity is the on-hand for that lot."
 msgstr "このストックのロット識別子。ロットごとに1行、数量はそのロットのオンハンドです。"
 
+msgid "The lot was rejected, so this first article cannot be approved. The part's next job gets a new first article."
+msgstr "ロットが不合格になったため、この初品は承認できません。この部品の次のジョブで新しい初品検査が作成されます。"
+
 msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
 msgstr "ロットは合格とマークされます。{fails}件のサンプル不良が記録されます。"
 
@@ -32161,6 +32170,9 @@ msgstr "この品目はコンフィグレータを通じて構築され、その
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "この品目の部品表には棚寿命が有効な入力がないため、BOM から使用期限は計算されません。"
+
+msgid "This job"
+msgstr "このジョブ"
 
 msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
 msgstr "この製造指図には請求レートがありません。時間を請求する前に、プロパティで請求レートを設定してください。"
@@ -34463,6 +34475,9 @@ msgstr "取消済 <0/>"
 
 msgid "Voided <0/> by <1/>"
 msgstr "取消済 <0/>（<1/>による）"
+
+msgid "Voided with the shipment"
+msgstr "出荷とともに無効化"
 
 msgid "Voiding this purchase invoice will:"
 msgstr "この仕入先請求書を取消すると："

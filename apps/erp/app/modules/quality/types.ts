@@ -11,6 +11,7 @@ import type {
   getFirstArticleInspection,
   getFirstArticleInspections,
   getFirstArticleInspectionsByJob,
+  getFirstArticlesDueForJob,
   getGaugeCalibrationRecords,
   getGauges,
   getGaugeTypes,
@@ -67,6 +68,11 @@ export type FirstArticleInspectionProduct =
 export type JobFirstArticleInspection = NonNullable<
   Awaited<ReturnType<typeof getFirstArticleInspectionsByJob>>["data"]
 >[number];
+
+/** The job header's "FAI due" parts and the parts another job's FAI covers. */
+export type JobFirstArticleNeeds = Awaited<
+  ReturnType<typeof getFirstArticlesDueForJob>
+>;
 
 export type Gauge = NonNullable<
   Awaited<ReturnType<typeof getGauges>>["data"]

@@ -999,6 +999,9 @@ msgstr "{fieldLabel} 국가 코드"
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel} 16진수 값"
 
+msgid "{firstArticle} on {otherJob}"
+msgstr "{otherJob}의 {firstArticle}"
+
 msgid "{foundHere} found here"
 msgstr "여기에서 {foundHere}를 찾았습니다"
 
@@ -8817,6 +8820,9 @@ msgstr "배치"
 
 msgid "Coverage changed"
 msgstr "보장 범위 변경됨"
+
+msgid "Covered by another job"
+msgstr "다른 작업에서 처리 중"
 
 msgid "CPI"
 msgstr "CPI"
@@ -31150,6 +31156,9 @@ msgstr "인쇄물 및 이메일 문서에 표시되는 로고"
 msgid "The lot identifier for this stock; one row per batch, quantity is the on-hand for that lot."
 msgstr "이 재고의 로트 식별자입니다. 배치당 한 행이며, 수량은 해당 로트의 보유 수량입니다."
 
+msgid "The lot was rejected, so this first article cannot be approved. The part's next job gets a new first article."
+msgstr "로트가 불합격되어 이 초도품을 승인할 수 없습니다. 부품의 다음 작업에서 새 초도품이 생성됩니다."
+
 msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
 msgstr "로트는 통과로 표시됩니다. {fails}개의 샘플 불합격 항목이 기록을 위해 기록됩니다."
 
@@ -32161,6 +32170,9 @@ msgstr "이 품목은 컨피그레이터를 통해 구성되며 주문당 구성
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "이 품목의 자재 명세서에는 유통기한이 활성화된 입력이 없으므로 BOM에서 유통기한이 계산되지 않습니다."
+
+msgid "This job"
+msgstr "이 작업"
 
 msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
 msgstr "이 작업 지시에는 청구 요금이 없습니다. 시간을 청구하기 전에 해당 속성에서 청구 요금을 설정하십시오."
@@ -34463,6 +34475,9 @@ msgstr "무효 처리됨 <0/>"
 
 msgid "Voided <0/> by <1/>"
 msgstr "무효 처리됨 <0/> - <1/>"
+
+msgid "Voided with the shipment"
+msgstr "출하와 함께 무효화됨"
 
 msgid "Voiding this purchase invoice will:"
 msgstr "이 매입 송장을 무효 처리하면:"

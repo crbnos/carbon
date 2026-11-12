@@ -999,6 +999,9 @@ msgstr "Kod kraju dla pola {fieldLabel}"
 msgid "{fieldLabel} hex value"
 msgstr "{fieldLabel}: wartość szesnastkowa"
 
+msgid "{firstArticle} on {otherJob}"
+msgstr "{firstArticle} w {otherJob}"
+
 msgid "{foundHere} found here"
 msgstr "{foundHere} znalezione tutaj"
 
@@ -8817,6 +8820,9 @@ msgstr "Pokrycie"
 
 msgid "Coverage changed"
 msgstr "Zmieniono zasięg"
+
+msgid "Covered by another job"
+msgstr "Objęte innym zadaniem"
 
 msgid "CPI"
 msgstr "CPI"
@@ -31150,6 +31156,9 @@ msgstr "Logotypy wyświetlane na drukowanych i wysyłanych pocztą dokumentach"
 msgid "The lot identifier for this stock; one row per batch, quantity is the on-hand for that lot."
 msgstr "Identyfikator lotu dla tego magazynu; jeden wiersz na partię, ilość to wręcz dla tego lotu."
 
+msgid "The lot was rejected, so this first article cannot be approved. The part's next job gets a new first article."
+msgstr "Partia została odrzucona, więc tego pierwszego artykułu nie można zatwierdzić. Następne zadanie dla części otrzyma nowy pierwszy artykuł."
+
 msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
 msgstr "Partia będzie oznaczona jako Zaliczona. {fails} niepowodzenie(ń) próbkowych zostało(y) zarejestrowane dla Twoich akt."
 
@@ -32161,6 +32170,9 @@ msgstr "Ten artykuł jest budowany za pośrednictwem konfiguratora i rozwiązuje
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "Lista materiałowa tego artykułu nie ma wejść z włączonym terminem przydatności, więc żaden termin ważności nie będzie obliczany z BOM."
+
+msgid "This job"
+msgstr "To zadanie"
 
 msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
 msgstr "To zlecenie produkcyjne nie ma stawki rozliczeniowej. Ustaw stawkę rozliczeniową we właściwościach zanim czas będzie mógł zostać rozliczony."
@@ -34463,6 +34475,9 @@ msgstr "Unieważniono <0/>"
 
 msgid "Voided <0/> by <1/>"
 msgstr "Unieważniono <0/> przez <1/>"
+
+msgid "Voided with the shipment"
+msgstr "Unieważniony wraz z wysyłką"
 
 msgid "Voiding this purchase invoice will:"
 msgstr "Anulowanie tej faktury zakupu spowoduje:"

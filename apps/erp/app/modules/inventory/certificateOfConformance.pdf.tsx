@@ -249,7 +249,7 @@ export async function issueCertificateOfConformance(
 
   const shipment = await client
     .from("shipment")
-    .select("id, status, customerId")
+    .select("id, status, customerId, sourceDocument, shipmentLine(id)")
     .eq("id", shipmentId)
     .eq("companyId", companyId)
     .maybeSingle();
@@ -266,6 +266,12 @@ export async function issueCertificateOfConformance(
     return failure("Only posted shipments can be certified", {
       shipmentId,
       status: shipment.data.status
+    });
+  }
+  if (!certifiesShipment(shipment.data)) {
+    return failure(NOT_CERTIFIABLE, {
+      shipmentId,
+      sourceDocument: shipment.data.sourceDocument
     });
   }
 
@@ -771,6 +777,27 @@ export async function autoIssueInvoiceShipmentCertificates(
   });
 }
 
+/** The sources whose shipment sells parts to a customer. */
+const CERTIFIABLE_SOURCES = new Set(["Sales Order", "Sales Invoice"]);
+
+const NOT_CERTIFIABLE =
+  "Only a sales order or sales invoice shipment with parts gets a Certificate of Conformance";
+
+/**
+ * A certificate covers the parts a customer bought: a Sales Order or Sales
+ * Invoice shipment with at least one shipment line. A rental delivery (fixed
+ * asset lines only), a contract delivery and a return shipment get none.
+ */
+function certifiesShipment(shipment: {
+  sourceDocument: string | null;
+  shipmentLine: { id: string }[] | null;
+}) {
+  return (
+    CERTIFIABLE_SOURCES.has(shipment.sourceDocument ?? "") &&
+    (shipment.shipmentLine ?? []).length > 0
+  );
+}
+
 async function autoIssueCertificateOfConformance(
   db: Kysely<KyselyDatabase>,
   client: SupabaseClient<Database>,
@@ -802,6 +829,25 @@ async function autoIssueCertificateOfConformance(
       };
     }
     if (!defaults.data.requiresCertificateOfConformance) return null;
+
+    const shipment = await client
+      .from("shipment")
+      .select("sourceDocument, shipmentLine(id)")
+      .eq("id", shipmentId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (shipment.error) {
+      logger.error("Failed to read the shipment to certify", {
+        shipmentId,
+        error: shipment.error
+      });
+      return {
+        ok: false,
+        message:
+          "Shipment posted, but the certificate could not be issued. Issue it from the Certificate menu."
+      };
+    }
+    if (!shipment.data || !certifiesShipment(shipment.data)) return null;
 
     const existing = await client
       .from("certificateOfConformance")

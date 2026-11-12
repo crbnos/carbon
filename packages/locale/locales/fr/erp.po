@@ -999,6 +999,9 @@ msgstr "Code pays de {fieldLabel}"
 msgid "{fieldLabel} hex value"
 msgstr "Valeur hexadécimale de {fieldLabel}"
 
+msgid "{firstArticle} on {otherJob}"
+msgstr "{firstArticle} sur {otherJob}"
+
 msgid "{foundHere} found here"
 msgstr "{foundHere} trouvé ici"
 
@@ -8817,6 +8820,9 @@ msgstr "Couverture"
 
 msgid "Coverage changed"
 msgstr "Couverture modifiée"
+
+msgid "Covered by another job"
+msgstr "Couvert par une autre tâche"
 
 msgid "CPI"
 msgstr "IPC"
@@ -31150,6 +31156,9 @@ msgstr "Les logos affichés sur vos documents imprimés et envoyés par e-mail"
 msgid "The lot identifier for this stock; one row per batch, quantity is the on-hand for that lot."
 msgstr "L'identifiant de lot pour ce stock; une ligne par lot, la quantité est celle en main pour ce lot."
 
+msgid "The lot was rejected, so this first article cannot be approved. The part's next job gets a new first article."
+msgstr "Le lot a été rejeté, ce premier article ne peut donc pas être approuvé. La prochaine tâche de la pièce reçoit un nouveau premier article."
+
 msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
 msgstr "Le lot sera marqué Réussi. {fails} défaut(s) d'échantillonnage sont enregistrés pour vos dossiers."
 
@@ -32161,6 +32170,9 @@ msgstr "Cet article est construit via un configurateur et résout ses composants
 
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "La nomenclature de cet article n'a pas d'entrées avec durée de conservation activée, donc aucune péremption ne sera calculée à partir de la BOM."
+
+msgid "This job"
+msgstr "Cette tâche"
 
 msgid "This job has no bill rate. Set Bill Rate in its properties before its time can be billed."
 msgstr "Cet ordre de fabrication n'a pas de taux horaire. Définissez le taux horaire dans ses propriétés avant de pouvoir facturer ce travail."
@@ -34463,6 +34475,9 @@ msgstr "Invalidé <0/>"
 
 msgid "Voided <0/> by <1/>"
 msgstr "Invalidé <0/> par <1/>"
+
+msgid "Voided with the shipment"
+msgstr "Annulé avec l'expédition"
 
 msgid "Voiding this purchase invoice will:"
 msgstr "L'annulation de cette facture d'achat aura pour effet :"

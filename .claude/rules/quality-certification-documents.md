@@ -149,6 +149,33 @@ nonconformances as concessions, statements, reason for update).
 | Send | `$shipmentId.certificate.$certificateId.send.tsx` → `sendCertificateOfConformance` | Emails the stored PDF (signed URL attachment via `send-email`) to a contact of the certificate's customer, plus the sender; stamps `lastSentAt/To` |
 | Auto-issue | `autoIssueCertificatesOfConformance` (`certificateOfConformance.pdf.tsx`), from the `postShipment` and `postSalesInvoice` service functions (below) | After a post that stuck, when `customerShipping.requiresCertificateOfConformance`: issue revision 0, then email the customer's shipping contact when the email integration is active. Skips a shipment that already has revision 0, so it never reissues. **Never fails the post** — every failure becomes part of the flash, a failed read of the customer's requirement or of the existing certificate included (it never passes for "not required") |
 
+**Only a Sales Order or Sales Invoice shipment with at least one shipment
+line is certified** (`certifiesShipment`, `certificateOfConformance.pdf.tsx`):
+auto-issue skips any other shipment (a rental delivery, a contract delivery, a
+return), and Issue refuses it. The shipment header shows the menu for those
+two sources only.
+
+The shipment header's **Certificate** menu (`CertificateOfConformanceMenu`)
+carries Preview, Issue / Reissue, the issued revisions and Send. On a voided
+shipment the issued revisions show struck through under "Voided with the
+shipment": Download stays (the stored record), Send is off (the server refuses
+it too) and Reissue is off (only a posted shipment is certified). It shows only when the customer requires a certificate or
+the shipment already has one: `showMenu` from the
+`$shipmentId.certificate.tsx` loader, true when either read fails. A
+certificate for a customer without the flag is issued by turning the flag on.
+
+**Shipping a part whose first article is not approved warns.**
+`getUnapprovedFirstArticles` (`quality.service.ts`) lists the parts with an
+open (Draft / Verified) first article, or covered by a requirement and due;
+the decision is the pure `evaluateUnapprovedFirstArticle`
+(`@carbon/database/first-article`). `shipmentFirstArticleWarnings`
+(`inventory.service.ts`, rule `shipment-first-article`, "First article not
+approved") turns them into `warn` violations: `postShipment` adds them for a
+Sales Order, Sales Invoice or Customer Contract shipment, and
+`postSalesInvoice` for the lines it ships directly (kept out of the sales rule
+record). A failed read warns too. The certificate's issue dialog reads the
+same list, so its "First article due" warning and the post agree.
+
 The PDF is template-driven: document type `certificateOfConformance`
 (`CertificateOfConformancePDF.tsx`, registry
 `pdf/blocks/certificateOfConformance/`), see `document-template-customizer.md`.
@@ -236,12 +263,26 @@ Per job make method (root and made sub-assemblies alike):
   by both loaders (`loadFirstArticleContext` in Kysely,
   `getFirstArticlesWithoutPlan` over supabase-js — the latter pages approvals,
   open FAIs and completed jobs with `fetchAllFromTable`, so PostgREST's
-  1000-row cap cannot drop rows). An FAI whose job was deleted does not count.
+  1000-row cap cannot drop rows). An FAI whose job was deleted does not count,
+  nor one whose lot is Failed (rejected): that attempt failed, so the part
+  stays due and the next release creates a new FAI. Every reader of "open"
+  (both loaders, `getFirstArticlesDueForJob`, `getUnapprovedFirstArticles`)
+  uses `OPEN_FIRST_ARTICLE_STATUSES` and leaves out a Failed lot.
 - `pending` = required ∧ due ∧ no lot on this job ∧ none open elsewhere — the
   job header's "FAI due" chip.
   `blocked` = pending ∧ no plan → **release blocker**
   ("Assign a first article plan for P-1001 Rev B").
   `create` = pending ∧ a plan → the generator creates the lot.
+  `coveredElsewhere` = required ∧ due ∧ no lot on this job ∧ one open
+  elsewhere. The job header's First Article menu lists the covering FAIs
+  under "Covered by another job" (part, FAI id, other job, status; each links
+  to the FAI), so a job with no FAI says why. `getFirstArticlesDueForJob`
+  returns `{ due, coveredElsewhere }` and reads the covering FAIs only when a
+  part is covered. Open means `OPEN_FIRST_ARTICLE_STATUSES` (Draft, Verified),
+  the one list every loader filters on. Like the chip, the menu shows neither
+  list on a Completed or Cancelled job. The First Article button itself shows
+  only when the job has an FAI, a part is due or a part is covered elsewhere;
+  a manual FAI otherwise starts from Quality → First Articles → New.
 
 ### Generation at release — `afterJobsReleased`
 
@@ -322,7 +363,7 @@ may carry the user's edits.
 | (created) Draft | generator / manual | Header, Form 2 editable (`updateFirstArticleInspectionHeader`; `upsert/deleteFirstArticleInspectionProduct` in quality.service.ts lock the FAI row `FOR UPDATE` and re-check Draft in the same Kysely transaction as the write) |
 | Draft → Verified | `verifyFirstArticleInspection` | Lot must be dispositioned (Passed/Failed/Partial). Snapshots `hasNonconformance` = lot Failed/Partial, or an NCR linked to the lot or to an operation of the make method. Signs fields 19–21 |
 | Verified → Draft | `reopenFirstArticleInspection` | Clears verification. The lot stays closed; readings stay locked |
-| Verified → Approved | `approveFirstArticleInspection` | Renders the FAIR (landscape A4) with the approver's signature — the render reads the FAI under the caller's client and company, which is the access proof — then uploads it with the **service role** under `{companyId}/job/{jobId}/` (or `{companyId}/first-article/{id}/` when the job was deleted), then in one txn inserts a `document` (source `Job`, or none without a job) and locks the FAI. Upload removed (service role) on failure. When the approver is the verifier the UI asks for confirmation (`FirstArticleHeader`); the server does not refuse |
+| Verified → Approved | `approveFirstArticleInspection` | Renders the FAIR (landscape A4) with the approver's signature — the render reads the FAI under the caller's client and company, which is the access proof — then uploads it with the **service role** under `{companyId}/job/{jobId}/` (or `{companyId}/first-article/{id}/` when the job was deleted), then in one txn inserts a `document` (source `Job`, or none without a job) and locks the FAI. Upload removed (service role) on failure. When the approver is the verifier the UI asks for confirmation (`FirstArticleHeader`); the server does not refuse. **A FAI whose lot is Failed cannot be approved** (`REJECTED_FIRST_ARTICLE_APPROVAL`, checked before the render and again under the FAI lock; the header disables Approve with the reason): a rejected lot is never an approval |
 | Approved | `updateFirstArticleCustomerApproval` | The only edit an Approved FAI accepts: fields 24/25 |
 | Draft (no readings) → deleted | `deleteFirstArticleInspection` | Deletes the lot; extension, Form 2, plans, samples cascade |
 

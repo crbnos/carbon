@@ -19,6 +19,13 @@ const PRODUCTION_LAPSE_YEARS = 2;
 
 export type FirstArticleReason = "New Part" | "Production Lapse";
 
+/**
+ * An FAI in these statuses is still in progress. One open on another job
+ * covers the part (`hasOpenFirstArticleElsewhere`), so every loader reads it
+ * with this list.
+ */
+export const OPEN_FIRST_ARTICLE_STATUSES = ["Draft", "Verified"] as const;
+
 export type FirstArticleNeedInput = {
   companyRequiresFirstArticle: boolean;
   /** `customerShipping.requiresFirstArticle` of the job's customer. */
@@ -61,6 +68,11 @@ export type FirstArticleNeed = {
    * for the part on another job — what the "FAI due" badge shows.
    */
   pending: boolean;
+  /**
+   * Required and due, with no First Article lot on this job, but an open one
+   * for the part on another job covers it — the job header names that FAI.
+   */
+  coveredElsewhere: boolean;
   /** Pending, but no plan resolves — a release blocker. */
   blocked: boolean;
   /** Pending with a plan — the generator creates the lot. */
@@ -138,11 +150,8 @@ export function resolveFirstArticleNeeds(
       (makeMethod.partPlanIds.length === 1
         ? (makeMethod.partPlanIds[0] ?? null)
         : null);
-    const pending =
-      required &&
-      due &&
-      !makeMethod.hasFirstArticleLot &&
-      !makeMethod.hasOpenFirstArticleElsewhere;
+    const needsLot = required && due && !makeMethod.hasFirstArticleLot;
+    const pending = needsLot && !makeMethod.hasOpenFirstArticleElsewhere;
 
     return {
       jobMakeMethodId: makeMethod.jobMakeMethodId,
@@ -153,8 +162,29 @@ export function resolveFirstArticleNeeds(
       reason,
       planId,
       pending,
+      coveredElsewhere: needsLot && makeMethod.hasOpenFirstArticleElsewhere,
       blocked: pending && planId === null,
       create: pending && planId !== null
     };
   });
+}
+
+/**
+ * Whether a part about to ship has no approved first article, and why. It
+ * has one when an open first article exists, or when a requirement covers it
+ * and it is due. A requirement is the part's First Article slot, or the
+ * company setting or the customer's flag for a part we make: a bought part
+ * has no first article of ours.
+ */
+export function evaluateUnapprovedFirstArticle(a: {
+  requirementSwitchOn: boolean;
+  slotted: boolean;
+  bought: boolean;
+  due: boolean;
+  reason: FirstArticleReason | null;
+  hasOpen: boolean;
+}): { unapproved: boolean; reason: FirstArticleReason | null } {
+  const covered = a.slotted || (a.requirementSwitchOn && !a.bought);
+  const reason = covered && a.due ? a.reason : null;
+  return { unapproved: a.hasOpen || reason !== null, reason };
 }

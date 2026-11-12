@@ -31,10 +31,11 @@ import ShipmentStatus from "./ShipmentStatus";
 import ShipmentVoidModal from "./ShipmentVoidModal";
 
 // Certificates of Conformance go to customers only.
-const CUSTOMER_SHIPMENT_SOURCES = new Set<string>([
+// The shipments that sell parts to a customer: the only ones a Certificate
+// of Conformance covers (`certifiesShipment`).
+const CERTIFIABLE_SHIPMENT_SOURCES = new Set<string>([
   "Sales Order",
-  "Sales Invoice",
-  "Sales Return Order"
+  "Sales Invoice"
 ]);
 
 const ShipmentHeader = () => {
@@ -143,10 +144,13 @@ const ShipmentHeader = () => {
                 }}
               />
             )}
-            {CUSTOMER_SHIPMENT_SOURCES.has(shipment.sourceDocument ?? "") && (
+            {CERTIFIABLE_SHIPMENT_SOURCES.has(
+              shipment.sourceDocument ?? ""
+            ) && (
               <CertificateOfConformanceMenu
                 shipmentId={shipmentId}
                 isPosted={isPosted}
+                isVoided={isVoided}
               />
             )}
             {shipment.sourceDocument === "Sales Order" &&

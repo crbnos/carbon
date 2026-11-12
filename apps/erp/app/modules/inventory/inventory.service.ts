@@ -260,7 +260,7 @@ import { rescheduleJob } from "../production/production.service";
 import {
   getCertificationLineage,
   getComplianceStatementsForShipment,
-  getFirstArticleDue
+  getUnapprovedFirstArticles
 } from "../quality/quality.service";
 import { lockServiceJob } from "../service/service.service";
 import {
@@ -2531,15 +2531,12 @@ export async function getCertificateOfConformanceData(
   const [
     customer,
     customerLocation,
-    customerShipping,
     salesOrderLines,
     lineage,
     approvedFairs,
     ncrShipmentLines,
     ncrTrackedEntities,
     statements,
-    settings,
-    firstArticleSlots,
     timeZone
   ] = await Promise.all([
     customerId
@@ -2557,14 +2554,6 @@ export async function getCertificateOfConformanceData(
             "address(addressLine1, addressLine2, city, stateProvince, postalCode, countryCode)"
           )
           .eq("id", customerLocationId)
-          .eq("companyId", companyId)
-          .maybeSingle()
-      : Promise.resolve({ data: null, error: null }),
-    customerId
-      ? client
-          .from("customerShipping")
-          .select("requiresFirstArticle")
-          .eq("customerId", customerId)
           .eq("companyId", companyId)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
@@ -2610,34 +2599,18 @@ export async function getCertificateOfConformanceData(
       customerId,
       itemIds
     }),
-    client
-      .from("companySettings")
-      .select("requireFirstArticle")
-      .eq("id", companyId)
-      .maybeSingle(),
-    itemIds.length > 0
-      ? client
-          .from("itemInspectionDocumentAssignment")
-          .select("itemId")
-          .eq("companyId", companyId)
-          .eq("usage", "First Article")
-          .in("itemId", itemIds)
-      : Promise.resolve({ data: [], error: null }),
     getCompanyTimeZone(client, companyId)
   ]);
 
   const readError =
     customer.error ??
     customerLocation.error ??
-    customerShipping.error ??
     salesOrderLines.error ??
     lineage.error ??
     approvedFairs.error ??
     ncrShipmentLines.error ??
     ncrTrackedEntities.error ??
-    statements.error ??
-    settings.error ??
-    firstArticleSlots.error;
+    statements.error;
   if (readError) {
     return fail("Failed to load certificate of conformance data", readError);
   }
@@ -2738,46 +2711,25 @@ export async function getCertificateOfConformanceData(
     formatDate: (date) => formatDate(date, undefined, locale)
   });
 
-  // ── warnings: FAI due where a requirement switch applies ───────────────
-  // A company or customer switch covers every MADE shipped item (a bought
-  // part has no first article of ours); a First Article plan slot covers its
-  // item whatever the switches say.
-  const switchOn =
-    (settings.data?.requireFirstArticle ?? false) ||
-    (customerShipping.data?.requiresFirstArticle ?? false);
-  const slotted = new Set(
-    (firstArticleSlots.data ?? []).map((row) => row.itemId)
-  );
-  const faiScope = [
-    ...new Set(
-      lines
-        .filter(
-          (line) =>
-            slotted.has(line.itemId) ||
-            (switchOn && line.item?.replenishmentSystem !== "Buy")
-        )
-        .map((line) => line.itemId)
-    )
-  ];
-  const faiDue: { itemReadableId: string; reason: string }[] = [];
-  if (faiScope.length > 0) {
-    const due = await getFirstArticleDue(client, companyId, {
-      itemIds: faiScope,
-      today: datetime.today(timeZone).toString()
-    });
-    if (due.error) {
-      return fail("Failed to evaluate first article status", due.error);
-    }
-    for (const itemId of faiScope) {
-      const status = due.data[itemId];
-      if (status?.due) {
-        faiDue.push({
-          itemReadableId: itemReadableIds.get(itemId) ?? itemId,
-          reason: status.reason ?? ""
-        });
-      }
-    }
+  // ── warnings: first articles not approved ─────────────────────────────
+  // The same rule as the shipment post's warning (`getUnapprovedFirstArticles`).
+  const unapproved = await getUnapprovedFirstArticles(client, companyId, {
+    customerId,
+    itemIds: lines.map((line) => line.itemId),
+    today: datetime.today(timeZone).toString()
+  });
+  if (unapproved.error) {
+    return fail("Failed to evaluate first article status", unapproved.error);
   }
+  const faiDue = unapproved.data.map((part) => ({
+    itemReadableId: itemReadableIds.get(part.itemId) ?? part.itemReadableId,
+    reason:
+      part.open.length > 0
+        ? part.open
+            .map((open) => `${open.inspectionReadableId} ${open.status}`)
+            .join(", ")
+        : (part.reason ?? "")
+  }));
 
   const missingCertificates = [
     ...new Set(
@@ -8773,6 +8725,7 @@ export async function shipmentStockWarnings(
     violations: short.map(({ line, have, others }) => ({
       ruleId: SHIPMENT_BIN_STOCK_RULE_ID,
       severity: "warn" as const,
+      builtIn: true,
       lineId: line.id,
       message: [
         `${untracked.get(line.itemId)}: ${round(need.get(binKey(line)) ?? 0)} to ship from ${binName(line.storageUnitId)}, which holds ${round(Math.max(have, 0))}.`,
@@ -8788,6 +8741,77 @@ export async function shipmentStockWarnings(
     })),
     ruleNames: {
       [SHIPMENT_BIN_STOCK_RULE_ID]: "Not enough stock in the storage unit"
+    }
+  };
+}
+
+export const SHIPMENT_FIRST_ARTICLE_RULE_ID = "shipment-first-article";
+
+/**
+ * A `warn` for each shipped part whose first article is not approved
+ * (`getUnapprovedFirstArticles`), on the part's first line. Shared by the
+ * shipment post and the sales invoice post that ships directly.
+ */
+export async function shipmentFirstArticleWarnings(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    customerId: string | null;
+    lines: { id: string; itemId: string | null; quantity: number | null }[];
+  }
+): Promise<Blocked> {
+  const shipped = args.lines.filter(
+    (line): line is typeof line & { itemId: string } =>
+      !!line.itemId && Number(line.quantity ?? 0) > 0
+  );
+  if (shipped.length === 0) return { violations: [], ruleNames: {} };
+
+  const unapproved = await getUnapprovedFirstArticles(client, args.companyId, {
+    customerId: args.customerId,
+    itemIds: shipped.map((line) => line.itemId),
+    today: datetime
+      .today(await getCompanyTimeZone(client, args.companyId))
+      .toString()
+  });
+  if (unapproved.error) {
+    // Read as unapproved: a failed read must not let a part ship unwarned.
+    logger.error("Failed to read first articles for a shipment", {
+      companyId: args.companyId,
+      error: unapproved.error
+    });
+    return {
+      violations: [
+        {
+          ruleId: SHIPMENT_FIRST_ARTICLE_RULE_ID,
+          severity: "warn",
+          builtIn: true,
+          lineId: shipped[0]!.id,
+          message:
+            "Could not check the first articles of the shipped parts. Check them before you ship."
+        }
+      ],
+      ruleNames: {
+        [SHIPMENT_FIRST_ARTICLE_RULE_ID]: "First article not approved"
+      }
+    };
+  }
+  if (unapproved.data.length === 0) return { violations: [], ruleNames: {} };
+
+  return {
+    violations: unapproved.data.map((part) => ({
+      ruleId: SHIPMENT_FIRST_ARTICLE_RULE_ID,
+      severity: "warn" as const,
+      builtIn: true,
+      lineId: shipped.find((line) => line.itemId === part.itemId)!.id,
+      message:
+        part.open.length > 0
+          ? `${part.itemReadableId}: first article ${part.open
+              .map((open) => `${open.inspectionReadableId} is ${open.status}`)
+              .join(", ")}, not approved.`
+          : `${part.itemReadableId}: needs a first article (${part.reason}) and none is approved.`
+    })),
+    ruleNames: {
+      [SHIPMENT_FIRST_ARTICLE_RULE_ID]: "First article not approved"
     }
   };
 }
