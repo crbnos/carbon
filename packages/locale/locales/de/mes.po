@@ -63,6 +63,11 @@ msgstr "{0} h"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} hat keine Chargennummer. Stellen Sie sie für das Los oder den Fertigungsauftrag in Carbon ein und schließen Sie ab."
 
+#. placeholder {0}: result.unit.readableId
+#. placeholder {1}: result.unit.status
+msgid "{0} is {1}"
+msgstr ""
+
 #. placeholder {0}: selectedService.serviceJobId
 msgid "{0} is closed. Its time cannot change."
 msgstr "{0} ist abgeschlossen. Die Zeit kann nicht mehr geändert werden."
@@ -624,6 +629,13 @@ msgstr "Avatar auswählen"
 msgid "Choose how Carbon reaches you."
 msgstr "Wählen Sie, wie Carbon Sie erreicht."
 
+#. placeholder {0}: unit.readableId
+msgid "Choose the operation to issue {0} into"
+msgstr ""
+
+msgid "Choose the operation to open for this unit"
+msgstr ""
+
 msgid "Clear"
 msgstr "Löschen"
 
@@ -956,7 +968,7 @@ msgstr "Fällig"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Fällig {0}"
 
@@ -1356,6 +1368,10 @@ msgstr "Weiteres Material entnehmen"
 
 msgid "Issue Material"
 msgstr "Material ausgeben"
+
+#. placeholder {0}: selected.operation.jobReadableId
+msgid "Issue to {0}"
+msgstr ""
 
 msgid "Issue Type"
 msgstr "Problemtyp"
@@ -3115,6 +3131,9 @@ msgstr "Dies ist eine Gut/Schlecht-Prüfung. Drücken Sie P oder F."
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Dieser Fertigungsauftrag hat keinen Stundensatz. Bitten Sie das Büro, ihn festzulegen, bevor die Zeit abgerechnet wird."
 
+msgid "This label does not belong to a unit in this company"
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "Dieses Los ist abgelaufen und kann nicht entnommen werden."
 
@@ -3247,6 +3266,9 @@ msgstr "Sendungsnummer"
 
 msgid "Training"
 msgstr "Schulung"
+
+msgid "Traveler"
+msgstr ""
 
 msgid "Two-factor authentication"
 msgstr "Zwei-Faktor-Authentifizierung"
@@ -3397,6 +3419,9 @@ msgstr "Instandhaltungseinsatz anzeigen"
 
 msgid "View or open"
 msgstr "Anzeigen oder Öffnen"
+
+msgid "View Traceability"
+msgstr ""
 
 msgid "Warranty"
 msgstr "Garantie"

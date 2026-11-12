@@ -63,6 +63,11 @@ msgstr "{0} 小时"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0}没有批次号。在Carbon中的生产批次或工单上设置，然后完成。"
 
+#. placeholder {0}: result.unit.readableId
+#. placeholder {1}: result.unit.status
+msgid "{0} is {1}"
+msgstr ""
+
 #. placeholder {0}: selectedService.serviceJobId
 msgid "{0} is closed. Its time cannot change."
 msgstr "{0}已关闭。其时间无法更改。"
@@ -624,6 +629,13 @@ msgstr "选择头像"
 msgid "Choose how Carbon reaches you."
 msgstr "选择 Carbon 如何与您联系。"
 
+#. placeholder {0}: unit.readableId
+msgid "Choose the operation to issue {0} into"
+msgstr ""
+
+msgid "Choose the operation to open for this unit"
+msgstr ""
+
 msgid "Clear"
 msgstr "清除"
 
@@ -956,7 +968,7 @@ msgstr "应交期"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "截止 {0}"
 
@@ -1356,6 +1368,10 @@ msgstr "再领取一种物料"
 
 msgid "Issue Material"
 msgstr "领料"
+
+#. placeholder {0}: selected.operation.jobReadableId
+msgid "Issue to {0}"
+msgstr ""
 
 msgid "Issue Type"
 msgstr "问题类型"
@@ -3115,6 +3131,9 @@ msgstr "这是合格 / 不合格检查。请按 P 或 F。"
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "此工单没有账单费率。请要求办公室在时间被账单处理之前设置它。"
 
+msgid "This label does not belong to a unit in this company"
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "此批次已过期，无法拣货。"
 
@@ -3247,6 +3266,9 @@ msgstr "跟踪号"
 
 msgid "Training"
 msgstr "培训"
+
+msgid "Traveler"
+msgstr ""
 
 msgid "Two-factor authentication"
 msgstr "双因素认证"
@@ -3397,6 +3419,9 @@ msgstr "查看维护工单"
 
 msgid "View or open"
 msgstr "查看或打开"
+
+msgid "View Traceability"
+msgstr ""
 
 msgid "Warranty"
 msgstr "保修"

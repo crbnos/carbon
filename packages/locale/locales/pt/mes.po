@@ -63,6 +63,11 @@ msgstr "{0} h"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} não tem número de lote. Defina-o no lote de produção ou ordem de produção no Carbon, depois concluir."
 
+#. placeholder {0}: result.unit.readableId
+#. placeholder {1}: result.unit.status
+msgid "{0} is {1}"
+msgstr ""
+
 #. placeholder {0}: selectedService.serviceJobId
 msgid "{0} is closed. Its time cannot change."
 msgstr "{0} está fechada. Seu tempo não pode ser alterado."
@@ -624,6 +629,13 @@ msgstr "Escolher avatar"
 msgid "Choose how Carbon reaches you."
 msgstr "Escolha como o Carbon se comunica com você."
 
+#. placeholder {0}: unit.readableId
+msgid "Choose the operation to issue {0} into"
+msgstr ""
+
+msgid "Choose the operation to open for this unit"
+msgstr ""
+
 msgid "Clear"
 msgstr "Limpar"
 
@@ -956,7 +968,7 @@ msgstr "Prazo"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Vencimento {0}"
 
@@ -1356,6 +1368,10 @@ msgstr "Requisitar outro material"
 
 msgid "Issue Material"
 msgstr "Emitir Material"
+
+#. placeholder {0}: selected.operation.jobReadableId
+msgid "Issue to {0}"
+msgstr ""
 
 msgid "Issue Type"
 msgstr "Tipo de Problema"
@@ -3115,6 +3131,9 @@ msgstr "Esta é uma verificação de aprovado / reprovado. Pressione P ou F."
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "Esta ordem de produção não tem taxa de faturamento. Peça ao escritório que a defina antes que o tempo seja faturado."
 
+msgid "This label does not belong to a unit in this company"
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "Este lote está vencido e não pode ser separado."
 
@@ -3247,6 +3266,9 @@ msgstr "Número de rastreamento"
 
 msgid "Training"
 msgstr "Treinamento"
+
+msgid "Traveler"
+msgstr ""
 
 msgid "Two-factor authentication"
 msgstr "Autenticação de dois fatores"
@@ -3397,6 +3419,9 @@ msgstr "Visualizar ordem de manutenção"
 
 msgid "View or open"
 msgstr "Visualizar ou abrir"
+
+msgid "View Traceability"
+msgstr ""
 
 msgid "Warranty"
 msgstr "Garantia"

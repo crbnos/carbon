@@ -63,6 +63,11 @@ msgstr "{0} घंटे"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} के पास लॉट संख्या नहीं है। इसे Carbon में बैच या जॉब पर सेट करें, फिर पूर्ण करें।"
 
+#. placeholder {0}: result.unit.readableId
+#. placeholder {1}: result.unit.status
+msgid "{0} is {1}"
+msgstr ""
+
 #. placeholder {0}: selectedService.serviceJobId
 msgid "{0} is closed. Its time cannot change."
 msgstr "{0} बंद है। इसका समय परिवर्तित नहीं किया जा सकता।"
@@ -624,6 +629,13 @@ msgstr "अवतार चुनें"
 msgid "Choose how Carbon reaches you."
 msgstr "चुनें कि Carbon आपको कैसे पहुंचता है।"
 
+#. placeholder {0}: unit.readableId
+msgid "Choose the operation to issue {0} into"
+msgstr ""
+
+msgid "Choose the operation to open for this unit"
+msgstr ""
+
 msgid "Clear"
 msgstr "साफ़ करें"
 
@@ -956,7 +968,7 @@ msgstr "अंतिम तारीख"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Due {0} के लिए"
 
@@ -1356,6 +1368,10 @@ msgstr "एक और सामग्री निर्गत करें"
 
 msgid "Issue Material"
 msgstr "सामग्री जारी करें"
+
+#. placeholder {0}: selected.operation.jobReadableId
+msgid "Issue to {0}"
+msgstr ""
 
 msgid "Issue Type"
 msgstr "समस्या प्रकार"
@@ -3115,6 +3131,9 @@ msgstr "यह पास / फ़ेल जाँच है। P या F दब
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "इस जॉब की कोई बिलिंग दर नहीं है। समय बिल किए जाने से पहले कार्यालय से इसे सेट करने के लिए कहें।"
 
+msgid "This label does not belong to a unit in this company"
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "यह लॉट समाप्त हो गया है और इसे चुना नहीं जा सकता।"
 
@@ -3247,6 +3266,9 @@ msgstr "ट्रैकिंग नंबर"
 
 msgid "Training"
 msgstr "प्रशिक्षण"
+
+msgid "Traveler"
+msgstr ""
 
 msgid "Two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण"
@@ -3397,6 +3419,9 @@ msgstr "रखरखाव कार्य देखें"
 
 msgid "View or open"
 msgstr "देखें या खोलें"
+
+msgid "View Traceability"
+msgstr ""
 
 msgid "Warranty"
 msgstr "वारंटी"

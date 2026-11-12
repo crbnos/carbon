@@ -63,6 +63,11 @@ msgstr "{0} ч"
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} не имеет номера партии. Установите его в серии или производственном заказе в Carbon, затем завершите."
 
+#. placeholder {0}: result.unit.readableId
+#. placeholder {1}: result.unit.status
+msgid "{0} is {1}"
+msgstr ""
+
 #. placeholder {0}: selectedService.serviceJobId
 msgid "{0} is closed. Its time cannot change."
 msgstr "{0} закрыто. Его время не может быть изменено."
@@ -624,6 +629,13 @@ msgstr "Выбрать аватар"
 msgid "Choose how Carbon reaches you."
 msgstr "Выберите, как Carbon будет вас уведомлять."
 
+#. placeholder {0}: unit.readableId
+msgid "Choose the operation to issue {0} into"
+msgstr ""
+
+msgid "Choose the operation to open for this unit"
+msgstr ""
+
 msgid "Clear"
 msgstr "Очистить"
 
@@ -956,7 +968,7 @@ msgstr "Срок"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Срок {0}"
 
@@ -1356,6 +1368,10 @@ msgstr "Списать в производство другой материал
 
 msgid "Issue Material"
 msgstr "Выдать материал"
+
+#. placeholder {0}: selected.operation.jobReadableId
+msgid "Issue to {0}"
+msgstr ""
 
 msgid "Issue Type"
 msgstr "Тип проблемы"
@@ -3115,6 +3131,9 @@ msgstr "Это проверка «годен / не годен». Нажмите
 msgid "This job has no bill rate. Ask the office to set it before the time is billed."
 msgstr "У этого производственного заказа нет ставки расчетов. Попросите офис установить её перед тем, как время будет рассчитано."
 
+msgid "This label does not belong to a unit in this company"
+msgstr ""
+
 msgid "This lot is expired and can't be picked."
 msgstr "Срок этой партии истек, и она не может быть отобрана."
 
@@ -3247,6 +3266,9 @@ msgstr "Номер отслеживания"
 
 msgid "Training"
 msgstr "Обучение"
+
+msgid "Traveler"
+msgstr ""
 
 msgid "Two-factor authentication"
 msgstr "Двухфакторная аутентификация"
@@ -3397,6 +3419,9 @@ msgstr "Просмотреть заявку на техобслуживание"
 
 msgid "View or open"
 msgstr "Просмотр или открытие"
+
+msgid "View Traceability"
+msgstr ""
 
 msgid "Warranty"
 msgstr "Гарантия"
