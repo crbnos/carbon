@@ -79,9 +79,9 @@ Phase F — "Need material" and the line feeder screen
 - [x] Task 48: Add the MES line feeder screen
 
 Phase G — settings screens, docs and verification
-- [ ] Task 49: Add the "Line Flow" toggles to Settings → Production
-- [ ] Task 50: Add "Print label on completion" to the serial number form
-- [ ] Task 51: Bring the rules and AGENTS.md files up to date
+- [x] Task 49: Add the "Line Flow" toggles to Settings → Production
+- [x] Task 50: Add "Print label on completion" to the serial number form
+- [x] Task 51: Bring the rules and AGENTS.md files up to date
 - [ ] Task 52: Verify slice 1 in the browser
 
 ## Dependencies
