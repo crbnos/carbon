@@ -46,12 +46,12 @@ Phase C — test data (`motor-line`)
 - [x] Task 22: Write timing and print-on-completion on serial sequences in tier 10
 - [x] Task 23: Register the dev-only dataset `motor-line`
 - [ ] Task 23a: Let a dev-only dataset borrow an industry's bundled assets
-- [ ] Task 24: Add the AJ-3 work centers, processes, bins and settings
-- [ ] Task 25: Add the AJ-3 items, methods and supplier links
-- [ ] Task 26: Add the AJ-3 opening stock, bearing lots and Transfer kanbans
-- [ ] Task 27: Add the AJ-3 jobs and serial sequences
-- [ ] Task 28: Add `materialRequest` demo rows and a coverage floor
-- [ ] Task 29: Run the dataset checks and the scoped typecheck
+- [x] Task 24: Add the AJ-3 work centers, processes, bins and settings
+- [x] Task 25: Add the AJ-3 items, methods and supplier links
+- [x] Task 26: Add the AJ-3 opening stock, bearing lots and Transfer kanbans
+- [x] Task 27: Add the AJ-3 jobs and serial sequences
+- [x] Task 28: Add `materialRequest` demo rows and a coverage floor
+- [x] Task 29: Run the dataset checks and the scoped typecheck
 - [ ] Task 30: Seed `motor-line` and check the AJ-3 rows (ask the user first)
 
 Phase D — required scans
@@ -1442,6 +1442,8 @@ pnpm --filter @carbon/database exec vitest run src/datasets/validate-line-flow.t
 pnpm exec turbo run typecheck --filter=@carbon/database
 # Expected: 0 failed
 ```
+
+12. Added during execution: export `AJ3_BATCH_PROPERTIES` with a "Heat lot" text property for AJ3-BRG-F and AJ3-BRG-R, and concat it into `items.batchProperties` in `motor-line/index.ts`. The validator requires a batch property on every Batch-tracked item.
 
 **Out of scope:** new SVG art (items with "(omit)" fall back to the type icon), `operationType: "Inspection"` (it needs an `inspectionPlan`), and the motor methods.
 
