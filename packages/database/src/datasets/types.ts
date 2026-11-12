@@ -1579,6 +1579,19 @@ export type PickingListSpec = {
   lines: PickingListLineSpec[];
 };
 
+/**
+ * A "need material" call from the floor (MES). Written on the job operation at
+ * `operationOrder` (1-based root position), at that operation's work center and
+ * the job's location. A Resolved row is resolved by the applying user.
+ */
+export type MaterialRequestSpec = {
+  job: string;
+  operationOrder: number;
+  item?: string;
+  note?: string;
+  status: "Open" | "Resolved";
+};
+
 export type ProductionData = {
   jobs: JobSpec[];
   /** Production-event blocks, indexed by operation position — not shift rows. */
@@ -1603,6 +1616,7 @@ export type ProductionData = {
   };
   rework: ReworkSpec;
   pickingLists: PickingListSpec[];
+  materialRequests: MaterialRequestSpec[];
 };
 
 export type NonConformanceTaskStatus =

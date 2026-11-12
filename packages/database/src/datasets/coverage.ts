@@ -129,6 +129,7 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   materialFinish: 2,
   materialForm: 1,
   materialGrade: 3,
+  materialRequest: 2,
   materialSubstance: 2,
   materialType: 1,
   memo: 4,

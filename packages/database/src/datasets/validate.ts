@@ -336,6 +336,14 @@ export const COVERAGE = {
       "all three"
     )
   },
+  materialRequestStatus: {
+    values: enumValues("materialRequestStatus"),
+    missing: matrix(
+      "production status matrix",
+      "material request with status",
+      "both"
+    )
+  },
   pickingListStatus: {
     values: enumValues("pickingListStatus", {
       Draft: NOT_AUTHORABLE,
@@ -1351,6 +1359,7 @@ export function foundation(ctx: ValidationCtx): void {
     ["production.jobs", dataset.production.jobs],
     ["production.genealogyInputs", dataset.production.genealogyInputs],
     ["production.pickingLists", dataset.production.pickingLists],
+    ["production.materialRequests", dataset.production.materialRequests],
     ["quality.workflows", dataset.quality.workflows],
     ["quality.nonConformances", dataset.quality.nonConformances],
     ["quality.inspections", dataset.quality.inspections],
@@ -4531,6 +4540,41 @@ export function eventsJobAndPicking(ctx: ValidationCtx): void {
     }
   }
   checkCoverage(fail, { pickingListStatus: seenPickingStatuses });
+
+  // A floor call is raised on work the floor has: an open, released job.
+  const seenRequestStatuses = new Set<string>();
+  for (const [
+    index,
+    request
+  ] of dataset.production.materialRequests.entries()) {
+    const where = `production.materialRequests[${index}]`;
+    seenRequestStatuses.add(request.status);
+    const job = jobByKey.get(request.job);
+    if (!job) {
+      fail(`${where}: unknown job key "${request.job}"`);
+      continue;
+    }
+    if (!RELEASED_OPEN_JOB_STATUSES.has(job.status)) {
+      fail(
+        `${where}: job "${request.job}" is ${job.status}, not an open released job`
+      );
+    }
+    const opCount = rootOpCountOf(job.item);
+    if (
+      !Number.isInteger(request.operationOrder) ||
+      request.operationOrder < 1 ||
+      request.operationOrder > opCount
+    ) {
+      fail(
+        `${where}: operationOrder ${request.operationOrder} is not within the ${opCount} root operations of "${job.item}"`
+      );
+    }
+    if (request.item !== undefined) need("item", where, request.item);
+    if (request.note !== undefined && !request.note.trim()) {
+      fail(`${where}: empty note`);
+    }
+  }
+  checkCoverage(fail, { materialRequestStatus: seenRequestStatuses });
 }
 
 export function genealogy(ctx: ValidationCtx): void {

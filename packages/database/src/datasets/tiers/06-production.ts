@@ -166,6 +166,7 @@ export async function runTier6(ctx: Ctx): Promise<void> {
   await seedRework(ctx, data);
   await seedGenealogy(ctx, data);
   await seedPickingLists(ctx, data);
+  await seedMaterialRequests(ctx, data);
 }
 
 // The interceptor reserves ONE entity for the whole job quantity. A serial job
@@ -736,6 +737,47 @@ async function seedPickingList(ctx: Ctx, spec: PickingListSpec): Promise<void> {
         documentId: pickingListId
       });
     }
+  }
+}
+
+/**
+ * "Need material" calls from the floor. Each sits at its operation's work
+ * center and the job's location, as the MES writes them. A Resolved one was
+ * raised and answered yesterday, so resolvedAt is never before createdAt.
+ */
+async function seedMaterialRequests(
+  ctx: Ctx,
+  data: ProductionData
+): Promise<void> {
+  if (data.materialRequests.length === 0) return;
+  // Every job is at the plant (runTier6).
+  const plantId = ctx.refs.locations.Plant ?? ctx.locationId;
+  ctx.log(`material requests — ${data.materialRequests.length}`);
+
+  for (const spec of data.materialRequests) {
+    const jobId = need(ctx.refs.documents, `job:${spec.job}`);
+    const operation = rootOperationAt(
+      await rootOperations(ctx, jobId),
+      spec.operationOrder,
+      `material request on job "${spec.job}"`
+    );
+    const resolved = spec.status === "Resolved";
+    await insertRow(ctx, "materialRequest", {
+      locationId: plantId,
+      workCenterId: operation.workCenterId,
+      jobOperationId: operation.id,
+      itemId:
+        spec.item === undefined ? null : need(ctx.refs.items, spec.item).id,
+      note: spec.note ?? null,
+      status: spec.status,
+      ...(resolved
+        ? {
+            createdAt: resolveTimestamp(ctx.anchor, -1, "14:05:00"),
+            resolvedBy: ctx.userId,
+            resolvedAt: resolveTimestamp(ctx.anchor, -1, "14:40:00")
+          }
+        : {})
+    });
   }
 }
 
