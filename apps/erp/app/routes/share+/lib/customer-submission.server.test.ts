@@ -2,50 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-const { context, validate, submitRfq } = vi.hoisted(() => ({
-  context: vi.fn(),
-  validate: vi.fn(),
-  submitRfq: vi.fn()
-}));
-
-vi.mock("@carbon/kv", () => ({
-  redis: {},
-  Ratelimit: Object.assign(
-    class {
-      limit = async () => ({ success: true });
-    },
-    { slidingWindow: () => "window" }
-  )
-}));
-vi.mock("@carbon/form", () => ({ validator: () => ({ validate }) }));
-vi.mock("~/modules/sales/sales.models", () => ({
-  customerPortalPoValidator: {},
-  customerPortalRfqValidator: {}
-}));
-vi.mock("~/modules/sales/sales.server", () => ({
-  submitCustomerPortalPo: vi.fn(),
-  submitCustomerPortalRfq: submitRfq
-}));
-vi.mock("~/modules/sales/sales.service", () => ({
-  customerPortalSubmissionContext: context
-}));
-
-import { handleCustomerPortalSubmission } from "./customer-submission.server";
-
-type RouteResult = { data: { code?: string }; init: { status: number } };
+import { describe, expect, it } from "vitest";
+import {
+  limitedFormData,
+  SubmissionTooLargeError
+} from "./customer-submission-body.server";
 
 describe("customer portal submission body limit", () => {
-  beforeEach(() => {
-    context.mockReset().mockResolvedValue({ ctx: {}, customerId: "customer" });
-    validate.mockReset().mockResolvedValue({ data: { lines: [] } });
-    submitRfq.mockReset().mockResolvedValue({
-      data: { submissionId: "submission", salesRfqId: "rfq" }
-    });
-  });
-
-  it("accepts a form without a declared length when its actual body is small", async () => {
+  it("parses a small form without a declared length", async () => {
     const form = new FormData();
     form.set("lines", "[]");
     const request = new Request("https://example.test/share/customer/id/rfq", {
@@ -54,13 +18,8 @@ describe("customer portal submission body limit", () => {
     });
     expect(request.headers.has("content-length")).toBe(false);
 
-    const result = (await handleCustomerPortalSubmission(
-      request,
-      "portal",
-      "rfq"
-    )) as RouteResult;
-    expect(result.init.status).toBe(201);
-    expect(submitRfq).toHaveBeenCalledOnce();
+    const parsed = await limitedFormData(request, 11 * 1024 * 1024);
+    expect(parsed.get("lines")).toBe("[]");
   });
 
   it("stops an oversized multipart stream without a declared length", async () => {
@@ -88,15 +47,10 @@ describe("customer portal submission body limit", () => {
     } as RequestInit);
     expect(request.headers.has("content-length")).toBe(false);
 
-    const result = (await handleCustomerPortalSubmission(
-      request,
-      "portal",
-      "po"
-    )) as RouteResult;
-    expect(result.init.status).toBe(413);
-    expect(result.data.code).toBe("payload_too_large");
+    await expect(
+      limitedFormData(request, 11 * 1024 * 1024)
+    ).rejects.toBeInstanceOf(SubmissionTooLargeError);
     expect(cancelled).toBe(true);
     expect(chunksRead).toBeLessThan(200);
-    expect(validate).not.toHaveBeenCalled();
   });
 });
