@@ -354,6 +354,9 @@ msgstr "Eklendi"
 msgid "Adjustment Type"
 msgstr "Düzeltme türü"
 
+msgid "Age"
+msgstr ""
+
 msgid "All"
 msgstr "Tümü"
 
@@ -384,6 +387,9 @@ msgstr "Başarısız birimleri tahsis et"
 
 msgid "Allocate units"
 msgstr "Birimleri tahsis et"
+
+msgid "Any part"
+msgstr ""
 
 msgid "Appearance"
 msgstr "Görünüm"
@@ -1126,6 +1132,9 @@ msgstr "Ölçüm aleti kaydedilemedi"
 msgid "Failed to register passkey"
 msgstr "Geçiş anahtarı kaydedilemedi"
 
+msgid "Failed to resolve request"
+msgstr ""
+
 msgid "Failed to save measurement"
 msgstr "Ölçüm kaydedilemedi"
 
@@ -1493,6 +1502,9 @@ msgstr "Açık, koyu veya sistem ayarınızı takip edin."
 msgid "Line"
 msgstr "Satır"
 
+msgid "Line feed"
+msgstr ""
+
 msgid "lines"
 msgstr "satırlar"
 
@@ -1620,6 +1632,9 @@ msgstr "Eşleşme bulundu: {matchedId}"
 msgid "matches"
 msgstr "eşleşir"
 
+msgid "Material requested"
+msgstr ""
+
 msgid "Materials"
 msgstr "Malzemeler"
 
@@ -1687,6 +1702,9 @@ msgstr "Adı"
 
 msgid "Navigation"
 msgstr "Gezinti"
+
+msgid "Need material"
+msgstr ""
 
 msgid "New"
 msgstr "Yeni"
@@ -1887,6 +1905,9 @@ msgstr "Bu sayfada kullanılabilir kısayol yoktur."
 msgid "No spare parts added yet"
 msgstr "Henüz yedek parça eklenmedi"
 
+msgid "No station"
+msgstr ""
+
 msgid "No stock"
 msgstr "Stok yok"
 
@@ -1932,6 +1953,9 @@ msgstr "Ayarlanmamış"
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "Kullanılabilir stok değil. MRP ve planlama bunu saymaz, toplama da buradan almaz."
 
+msgid "Note"
+msgstr ""
+
 msgid "Notes"
 msgstr "Notlar"
 
@@ -1950,6 +1974,9 @@ msgstr "Hiçbir şey çalışmıyor"
 
 msgid "Nothing scheduled at this work center"
 msgstr "Bu iş merkezinde hiçbir şey planlanmadı"
+
+msgid "Nothing to feed"
+msgstr ""
 
 msgid "Nothing to scrap"
 msgstr "Fire edilecek birşey yok"
@@ -2261,6 +2288,9 @@ msgstr "Yazdır"
 msgid "Print batch list"
 msgstr "Yazdır parti listesini"
 
+msgid "Print travelers"
+msgstr ""
+
 msgid "Printed on the purchase orders you approve."
 msgstr "Onayladığınız satın alma siparişlerine yazdırılır."
 
@@ -2464,6 +2494,12 @@ msgstr "Alt montajı yeniden aç ve bir yedek birim oluştur"
 msgid "Repairable"
 msgstr "Onarılabilir"
 
+msgid "Request"
+msgstr ""
+
+msgid "Request material"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Oturum açarken bir kimlik doğrulayıcı uygulamadan 6 haneli bir kod iste."
 
@@ -2478,6 +2514,9 @@ msgstr "Gerekli: {quantityToPick}{unitSuffix}, toplanan: {quantityPicked}{unitSu
 
 msgid "Resolution"
 msgstr "Çözüm"
+
+msgid "Resolve"
+msgstr ""
 
 msgid "Result"
 msgstr "Sonuç"
@@ -2807,6 +2846,9 @@ msgstr "Azalt"
 msgid "Short pick {itemName}"
 msgstr "Kısmi toplama {itemName}"
 
+msgid "Shortage"
+msgstr ""
+
 msgid "Show description"
 msgstr "Açıklamayı göster"
 
@@ -2962,6 +3004,12 @@ msgstr "Adımlar"
 
 msgid "Steps are missing"
 msgstr "Adımlar eksik"
+
+msgid "Stock transfer"
+msgstr ""
+
+msgid "Storage unit"
+msgstr ""
 
 msgid "Storage Unit"
 msgstr "Depolama Birimi"
@@ -3273,6 +3321,9 @@ msgstr "İzleme numarası"
 msgid "Training"
 msgstr "Eğitim"
 
+msgid "Transfer"
+msgstr ""
+
 msgid "Traveler"
 msgstr ""
 
@@ -3434,6 +3485,9 @@ msgstr "Garanti"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "Size oturum açma bağlantısı ve 6 haneli bir kod gönderdik. Bağlantıyı takip edin veya kodu buraya girin."
+
+msgid "What do you need?"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} nedir?"

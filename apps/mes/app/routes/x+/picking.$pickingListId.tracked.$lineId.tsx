@@ -5,6 +5,7 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { shouldPrintTravelers } from "@carbon/database/travelers";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { userContext } from "~/context";
@@ -14,6 +15,7 @@ import {
   getPickOrder
 } from "~/services/inventory.service";
 import { setPickingListLineTrackedEntity } from "~/services/picking.service";
+import { autoPrintPickingListTravelers } from "~/services/printing.server";
 
 const logger = getLogger("mes", "picking-tracked-line");
 
@@ -94,8 +96,11 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
   const effectiveUserId = context.get(userContext)?.effectiveUserId ?? userId;
   const serviceRole = getCarbonServiceRole();
 
-  const { lineId } = params;
+  const { lineId, pickingListId } = params;
   if (!lineId) return { success: false, message: "Missing line" };
+  if (!pickingListId) {
+    return { success: false, message: "Missing pickingListId" };
+  }
 
   const formData = await request.formData();
   const trackedEntityId = formData.get("trackedEntityId") as string;
@@ -107,6 +112,15 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
   if (!trackedEntityId) {
     return { success: false, message: "Missing tracked entity" };
   }
+
+  // A first pick moves a Draft list to In Progress in the trigger, which
+  // prints the travelers the status change would have printed.
+  const before = await serviceRole
+    .from("pickingList")
+    .select("id, status, locationId")
+    .eq("id", pickingListId)
+    .eq("companyId", companyId)
+    .maybeSingle();
 
   const result = await setPickingListLineTrackedEntity(serviceRole, {
     pickingListLineId: lineId,
@@ -132,6 +146,25 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
           ? result.error
           : (result.error.message ?? "Failed to pick line")
     };
+  }
+
+  // After the pick, so a print failure never blocks it.
+  if (before.data?.status === "Draft") {
+    const after = await serviceRole
+      .from("pickingList")
+      .select("status")
+      .eq("id", pickingListId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (shouldPrintTravelers(before.data.status, after.data?.status)) {
+      await autoPrintPickingListTravelers({
+        serviceRole,
+        pickingListId,
+        locationId: before.data.locationId,
+        companyId,
+        userId: effectiveUserId
+      });
+    }
   }
 
   return { success: true, data: result.data };

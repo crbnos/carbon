@@ -354,6 +354,9 @@ msgstr "Agregado"
 msgid "Adjustment Type"
 msgstr "Tipo de ajuste"
 
+msgid "Age"
+msgstr ""
+
 msgid "All"
 msgstr "Todos"
 
@@ -384,6 +387,9 @@ msgstr "Asignar unidades fallidas"
 
 msgid "Allocate units"
 msgstr "Asignar unidades"
+
+msgid "Any part"
+msgstr ""
 
 msgid "Appearance"
 msgstr "Apariencia"
@@ -1126,6 +1132,9 @@ msgstr "Error al registrar el instrumento de medición"
 msgid "Failed to register passkey"
 msgstr "Error al registrar llave de acceso"
 
+msgid "Failed to resolve request"
+msgstr ""
+
 msgid "Failed to save measurement"
 msgstr "Error al guardar la medición"
 
@@ -1493,6 +1502,9 @@ msgstr "Claro, oscuro, o seguir la configuración del sistema."
 msgid "Line"
 msgstr "Línea"
 
+msgid "Line feed"
+msgstr ""
+
 msgid "lines"
 msgstr "líneas"
 
@@ -1620,6 +1632,9 @@ msgstr "Coincidencia encontrada: {matchedId}"
 msgid "matches"
 msgstr "coincide con"
 
+msgid "Material requested"
+msgstr ""
+
 msgid "Materials"
 msgstr "Materiales"
 
@@ -1687,6 +1702,9 @@ msgstr "Nombre"
 
 msgid "Navigation"
 msgstr "Navegación"
+
+msgid "Need material"
+msgstr ""
 
 msgid "New"
 msgstr "Nuevo"
@@ -1887,6 +1905,9 @@ msgstr "No hay atajos disponibles en esta página."
 msgid "No spare parts added yet"
 msgstr "Aún no se han agregado repuestos"
 
+msgid "No station"
+msgstr ""
+
 msgid "No stock"
 msgstr "Sin stock"
 
@@ -1932,6 +1953,9 @@ msgstr "No establecido"
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "Stock no utilizable. El MRP y la planificación no lo cuentan, y el picking no lo toma."
 
+msgid "Note"
+msgstr ""
+
 msgid "Notes"
 msgstr "Notas"
 
@@ -1950,6 +1974,9 @@ msgstr "Nada en ejecución"
 
 msgid "Nothing scheduled at this work center"
 msgstr "Nada programado en este centro de trabajo"
+
+msgid "Nothing to feed"
+msgstr ""
 
 msgid "Nothing to scrap"
 msgstr "Nada que enviar a desperdicio"
@@ -2261,6 +2288,9 @@ msgstr "Imprimir"
 msgid "Print batch list"
 msgstr "Imprimir lista de lotes de producción"
 
+msgid "Print travelers"
+msgstr ""
+
 msgid "Printed on the purchase orders you approve."
 msgstr "Se imprime en las órdenes de compra que aprueba."
 
@@ -2464,6 +2494,12 @@ msgstr "Reabrir el subensamble y crear una unidad de reemplazo"
 msgid "Repairable"
 msgstr "Reparable"
 
+msgid "Request"
+msgstr ""
+
+msgid "Request material"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Requiere un código de 6 dígitos de una aplicación autenticadora al iniciar sesión."
 
@@ -2478,6 +2514,9 @@ msgstr "Requerido: {quantityToPick}{unitSuffix}, preparado: {quantityPicked}{uni
 
 msgid "Resolution"
 msgstr "Resolución"
+
+msgid "Resolve"
+msgstr ""
 
 msgid "Result"
 msgstr "Resultado"
@@ -2807,6 +2846,9 @@ msgstr "Faltante"
 msgid "Short pick {itemName}"
 msgstr "Picking corto {itemName}"
 
+msgid "Shortage"
+msgstr ""
+
 msgid "Show description"
 msgstr "Mostrar descripción"
 
@@ -2962,6 +3004,12 @@ msgstr "Pasos"
 
 msgid "Steps are missing"
 msgstr "Faltan pasos"
+
+msgid "Stock transfer"
+msgstr ""
+
+msgid "Storage unit"
+msgstr ""
 
 msgid "Storage Unit"
 msgstr "Unidad de Almacenamiento"
@@ -3273,6 +3321,9 @@ msgstr "Número de seguimiento"
 msgid "Training"
 msgstr "Capacitación"
 
+msgid "Transfer"
+msgstr ""
+
 msgid "Traveler"
 msgstr ""
 
@@ -3434,6 +3485,9 @@ msgstr "Garantía"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "Le hemos enviado por correo electrónico un enlace de inicio de sesión y un código de 6 dígitos. Siga el enlace o ingrese el código aquí."
+
+msgid "What do you need?"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "¿Qué es {translatedTerm}?"

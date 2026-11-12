@@ -354,6 +354,9 @@ msgstr "追加完了"
 msgid "Adjustment Type"
 msgstr "調整タイプ"
 
+msgid "Age"
+msgstr ""
+
 msgid "All"
 msgstr "すべて"
 
@@ -384,6 +387,9 @@ msgstr "不合格ユニットを割り当てる"
 
 msgid "Allocate units"
 msgstr "ユニットを割り当てる"
+
+msgid "Any part"
+msgstr ""
 
 msgid "Appearance"
 msgstr "外観"
@@ -1126,6 +1132,9 @@ msgstr "測定器の記録に失敗しました"
 msgid "Failed to register passkey"
 msgstr "パスキーの登録に失敗しました"
 
+msgid "Failed to resolve request"
+msgstr ""
+
 msgid "Failed to save measurement"
 msgstr "測定の保存に失敗しました"
 
@@ -1493,6 +1502,9 @@ msgstr "ライト、ダーク、またはシステム設定に従う。"
 msgid "Line"
 msgstr "明細"
 
+msgid "Line feed"
+msgstr ""
+
 msgid "lines"
 msgstr "行"
 
@@ -1620,6 +1632,9 @@ msgstr "一致が見つかりました: {matchedId}"
 msgid "matches"
 msgstr "が一致"
 
+msgid "Material requested"
+msgstr ""
+
 msgid "Materials"
 msgstr "材料"
 
@@ -1687,6 +1702,9 @@ msgstr "名前"
 
 msgid "Navigation"
 msgstr "ナビゲーション"
+
+msgid "Need material"
+msgstr ""
 
 msgid "New"
 msgstr "新規"
@@ -1887,6 +1905,9 @@ msgstr "このページで利用可能なショートカットはありません
 msgid "No spare parts added yet"
 msgstr "予備品はまだ追加されていません。"
 
+msgid "No station"
+msgstr ""
+
 msgid "No stock"
 msgstr "在庫なし"
 
@@ -1932,6 +1953,9 @@ msgstr "未設定"
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "使用可能な在庫ではありません。MRPと計画には含まれず、ピッキングでも引き当てられません。"
 
+msgid "Note"
+msgstr ""
+
 msgid "Notes"
 msgstr "メモ"
 
@@ -1950,6 +1974,9 @@ msgstr "稼働中の作業はありません"
 
 msgid "Nothing scheduled at this work center"
 msgstr "この作業区には予定がありません。"
+
+msgid "Nothing to feed"
+msgstr ""
 
 msgid "Nothing to scrap"
 msgstr "スクラップするものがない"
@@ -2261,6 +2288,9 @@ msgstr "印刷"
 msgid "Print batch list"
 msgstr "バッチリストを印刷"
 
+msgid "Print travelers"
+msgstr ""
+
 msgid "Printed on the purchase orders you approve."
 msgstr "承認した発注書に印刷"
 
@@ -2464,6 +2494,12 @@ msgstr "サブアセンブリを再オープンし、代替品を作成"
 msgid "Repairable"
 msgstr "修理可能"
 
+msgid "Request"
+msgstr ""
+
+msgid "Request material"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリからの6桁コードが必要です。"
 
@@ -2478,6 +2514,9 @@ msgstr "必要数: {quantityToPick}{unitSuffix}, ピッキング済: {quantityPi
 
 msgid "Resolution"
 msgstr "解決策"
+
+msgid "Resolve"
+msgstr ""
 
 msgid "Result"
 msgstr "結果"
@@ -2807,6 +2846,9 @@ msgstr "不足"
 msgid "Short pick {itemName}"
 msgstr "短いピック {itemName}"
 
+msgid "Shortage"
+msgstr ""
+
 msgid "Show description"
 msgstr "説明を表示"
 
@@ -2962,6 +3004,12 @@ msgstr "ステップ"
 
 msgid "Steps are missing"
 msgstr "ステップが未記録です"
+
+msgid "Stock transfer"
+msgstr ""
+
+msgid "Storage unit"
+msgstr ""
 
 msgid "Storage Unit"
 msgstr "保管ユニット"
@@ -3273,6 +3321,9 @@ msgstr "追跡番号"
 msgid "Training"
 msgstr "教育訓練"
 
+msgid "Transfer"
+msgstr ""
+
 msgid "Traveler"
 msgstr ""
 
@@ -3434,6 +3485,9 @@ msgstr "保証"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "サインインリンクと6桁コードをメールで送信しました。リンクをクリックするか、ここにコードを入力してください。"
+
+msgid "What do you need?"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}とは何ですか?"

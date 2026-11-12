@@ -354,6 +354,9 @@ msgstr "जोड़ा गया"
 msgid "Adjustment Type"
 msgstr "समायोजन प्रकार"
 
+msgid "Age"
+msgstr ""
+
 msgid "All"
 msgstr "सभी"
 
@@ -384,6 +387,9 @@ msgstr "विफल इकाइयों को आवंटित करे�
 
 msgid "Allocate units"
 msgstr "इकाइयों को आवंटित करें"
+
+msgid "Any part"
+msgstr ""
 
 msgid "Appearance"
 msgstr "दिखावट"
@@ -1126,6 +1132,9 @@ msgstr "गेज रिकॉर्ड करने में विफल"
 msgid "Failed to register passkey"
 msgstr "पासकी पंजीकृत करने में विफल"
 
+msgid "Failed to resolve request"
+msgstr ""
+
 msgid "Failed to save measurement"
 msgstr "माप को सहेजने में विफल"
 
@@ -1493,6 +1502,9 @@ msgstr "हल्का, गहरा, या अपनी सिस्टम �
 msgid "Line"
 msgstr "पंक्ति"
 
+msgid "Line feed"
+msgstr ""
+
 msgid "lines"
 msgstr "लाइनें"
 
@@ -1620,6 +1632,9 @@ msgstr "मिलान मिला: {matchedId}"
 msgid "matches"
 msgstr "मेल खाता है"
 
+msgid "Material requested"
+msgstr ""
+
 msgid "Materials"
 msgstr "सामग्री"
 
@@ -1687,6 +1702,9 @@ msgstr "नाम"
 
 msgid "Navigation"
 msgstr "नेविगेशन"
+
+msgid "Need material"
+msgstr ""
 
 msgid "New"
 msgstr "नया"
@@ -1887,6 +1905,9 @@ msgstr "इस पृष्ठ पर कोई शॉर्टकट उपल�
 msgid "No spare parts added yet"
 msgstr "अभी तक कोई स्पेयर पार्ट्स नहीं जोड़े गए हैं"
 
+msgid "No station"
+msgstr ""
+
 msgid "No stock"
 msgstr "कोई स्टॉक नहीं"
 
@@ -1932,6 +1953,9 @@ msgstr "सेट नहीं"
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "उपयोग योग्य स्टॉक नहीं। MRP और योजना इसे नहीं गिनते, और पिकिंग इसमें से नहीं लेती।"
 
+msgid "Note"
+msgstr ""
+
 msgid "Notes"
 msgstr "नोट्स"
 
@@ -1950,6 +1974,9 @@ msgstr "कुछ नहीं चल रहा"
 
 msgid "Nothing scheduled at this work center"
 msgstr "इस वर्क सेंटर पर कुछ भी शेड्यूल नहीं है"
+
+msgid "Nothing to feed"
+msgstr ""
 
 msgid "Nothing to scrap"
 msgstr "स्क्रैप करने के लिए कुछ नहीं"
@@ -2261,6 +2288,9 @@ msgstr "प्रिंट करें"
 msgid "Print batch list"
 msgstr "बैच सूची प्रिंट करें"
 
+msgid "Print travelers"
+msgstr ""
+
 msgid "Printed on the purchase orders you approve."
 msgstr "आप जिन क्रय आदेशों को अनुमोदित करते हैं उन पर प्रिंट किया गया।"
 
@@ -2464,6 +2494,12 @@ msgstr "सब-असेंबली को फिर से खोलें औ
 msgid "Repairable"
 msgstr "मरम्मत योग्य"
 
+msgid "Request"
+msgstr ""
+
+msgid "Request material"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "साइन इन करते समय प्रमाणकर्ता ऐप्लिकेशन से 6-अंकीय कोड की आवश्यकता है।"
 
@@ -2478,6 +2514,9 @@ msgstr "आवश्यक: {quantityToPick}{unitSuffix}, पिक किया
 
 msgid "Resolution"
 msgstr "समाधान"
+
+msgid "Resolve"
+msgstr ""
 
 msgid "Result"
 msgstr "परिणाम"
@@ -2807,6 +2846,9 @@ msgstr "कम"
 msgid "Short pick {itemName}"
 msgstr "Short pick {itemName}"
 
+msgid "Shortage"
+msgstr ""
+
 msgid "Show description"
 msgstr "विवरण दिखाएं"
 
@@ -2962,6 +3004,12 @@ msgstr "चरण"
 
 msgid "Steps are missing"
 msgstr "चरण गायब हैं"
+
+msgid "Stock transfer"
+msgstr ""
+
+msgid "Storage unit"
+msgstr ""
 
 msgid "Storage Unit"
 msgstr "भंडारण इकाई"
@@ -3273,6 +3321,9 @@ msgstr "ट्रैकिंग नंबर"
 msgid "Training"
 msgstr "प्रशिक्षण"
 
+msgid "Transfer"
+msgstr ""
+
 msgid "Traveler"
 msgstr ""
 
@@ -3434,6 +3485,9 @@ msgstr "वारंटी"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "हमने आपको एक साइन-इन लिंक और एक 6-अंकीय कोड ईमेल किया है। लिंक का अनुसरण करें, या यहाँ कोड दर्ज करें।"
+
+msgid "What do you need?"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} क्या है?"

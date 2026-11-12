@@ -354,6 +354,9 @@ msgstr "Добавлено"
 msgid "Adjustment Type"
 msgstr "Тип корректировки"
 
+msgid "Age"
+msgstr ""
+
 msgid "All"
 msgstr "Все"
 
@@ -384,6 +387,9 @@ msgstr "Распределить неудачные единицы"
 
 msgid "Allocate units"
 msgstr "Распределить единицы"
+
+msgid "Any part"
+msgstr ""
 
 msgid "Appearance"
 msgstr "Внешний вид"
@@ -1126,6 +1132,9 @@ msgstr "Не удалось записать средство измерения
 msgid "Failed to register passkey"
 msgstr "Не удалось зарегистрировать ключ доступа"
 
+msgid "Failed to resolve request"
+msgstr ""
+
 msgid "Failed to save measurement"
 msgstr "Не удалось сохранить измерение"
 
@@ -1493,6 +1502,9 @@ msgstr "Светлая, тёмная или согласно параметра�
 msgid "Line"
 msgstr "Строка"
 
+msgid "Line feed"
+msgstr ""
+
 msgid "lines"
 msgstr "строки"
 
@@ -1620,6 +1632,9 @@ msgstr "Найдено совпадение: {matchedId}"
 msgid "matches"
 msgstr "соответствует"
 
+msgid "Material requested"
+msgstr ""
+
 msgid "Materials"
 msgstr "Материалы"
 
@@ -1687,6 +1702,9 @@ msgstr "Имя"
 
 msgid "Navigation"
 msgstr "Навигация"
+
+msgid "Need material"
+msgstr ""
 
 msgid "New"
 msgstr "Новое"
@@ -1887,6 +1905,9 @@ msgstr "На этой странице нет доступных сокраще�
 msgid "No spare parts added yet"
 msgstr "Запасные части ещё не добавлены"
 
+msgid "No station"
+msgstr ""
+
 msgid "No stock"
 msgstr "Нет запасов"
 
@@ -1932,6 +1953,9 @@ msgstr "Не установлено"
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "Непригодный к использованию запас. MRP и планирование его не учитывают, а комплектация из него не берёт."
 
+msgid "Note"
+msgstr ""
+
 msgid "Notes"
 msgstr "Примечания"
 
@@ -1950,6 +1974,9 @@ msgstr "Ничего не работает"
 
 msgid "Nothing scheduled at this work center"
 msgstr "Ничего не запланировано на этом рабочем центре"
+
+msgid "Nothing to feed"
+msgstr ""
 
 msgid "Nothing to scrap"
 msgstr "Нечего браковать"
@@ -2261,6 +2288,9 @@ msgstr "Печать"
 msgid "Print batch list"
 msgstr "Печать списка серий"
 
+msgid "Print travelers"
+msgstr ""
+
 msgid "Printed on the purchase orders you approve."
 msgstr "Напечатано на заказах поставщику, которые вы утверждаете."
 
@@ -2464,6 +2494,12 @@ msgstr "Открыть заново узел и создать единицу д
 msgid "Repairable"
 msgstr "Подлежит ремонту"
 
+msgid "Request"
+msgstr ""
+
+msgid "Request material"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Требуется 6-значный код из приложения аутентификации при входе."
 
@@ -2478,6 +2514,9 @@ msgstr "Требуется: {quantityToPick}{unitSuffix}, отобрано: {qua
 
 msgid "Resolution"
 msgstr "Решение"
+
+msgid "Resolve"
+msgstr ""
 
 msgid "Result"
 msgstr "Результат"
@@ -2807,6 +2846,9 @@ msgstr "Недостача"
 msgid "Short pick {itemName}"
 msgstr "Короткий отбор {itemName}"
 
+msgid "Shortage"
+msgstr ""
+
 msgid "Show description"
 msgstr "Показать описание"
 
@@ -2962,6 +3004,12 @@ msgstr "Шаги"
 
 msgid "Steps are missing"
 msgstr "Шаги не заполнены"
+
+msgid "Stock transfer"
+msgstr ""
+
+msgid "Storage unit"
+msgstr ""
 
 msgid "Storage Unit"
 msgstr "Единица хранения"
@@ -3273,6 +3321,9 @@ msgstr "Номер отслеживания"
 msgid "Training"
 msgstr "Обучение"
 
+msgid "Transfer"
+msgstr ""
+
 msgid "Traveler"
 msgstr ""
 
@@ -3434,6 +3485,9 @@ msgstr "Гарантия"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "Мы отправили вам по электронной почте ссылку для входа и 6-значный код. Перейдите по ссылке или введите код здесь."
+
+msgid "What do you need?"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "Что такое {translatedTerm}?"

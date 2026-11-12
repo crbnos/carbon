@@ -4164,6 +4164,15 @@ export const pickPickingListLineChecked = defineServiceFn({
     });
     if (owned) return owned;
 
+    // A first pick moves a Draft list to In Progress in the trigger, which
+    // prints the travelers the status change would have printed.
+    const before = await ctx.asSystem.supabase
+      .from("pickingList")
+      .select("id, status, locationId")
+      .eq("id", pickingListId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+
     const result = await service.pickPickingListLine(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
@@ -4176,6 +4185,31 @@ export const pickPickingListLineChecked = defineServiceFn({
       }
     );
     if (result.error) return service.pickRefusal(ctx, result.error);
+
+    // After the pick, so a print failure never blocks it.
+    if (before.data?.status === "Draft") {
+      const after = await ctx.asSystem.supabase
+        .from("pickingList")
+        .select("status")
+        .eq("id", pickingListId)
+        .eq("companyId", ctx.company.id)
+        .maybeSingle();
+      if (shouldPrintTravelers(before.data.status, after.data?.status)) {
+        const settings = await getCompanySettings(
+          ctx.asSystem.supabase,
+          ctx.company.id
+        );
+        if (settings.data?.travelerLabels === true) {
+          await service.autoPrint(ctx, {
+            sourceDocument: "PickingList",
+            sourceDocumentId: pickingListId,
+            locationId: before.data.locationId,
+            context: "inventory"
+          });
+        }
+      }
+    }
+
     return result.data;
   }
 });
@@ -4217,6 +4251,15 @@ export const pickPickingListLineEntity = defineServiceFn({
     });
     if (owned) return owned;
 
+    // A first pick moves a Draft list to In Progress in the trigger, which
+    // prints the travelers the status change would have printed.
+    const before = await ctx.asSystem.supabase
+      .from("pickingList")
+      .select("id, status, locationId")
+      .eq("id", pickingListId)
+      .eq("companyId", ctx.company.id)
+      .maybeSingle();
+
     const result = await service.setPickingListLineTrackedEntity(
       ctx.asSystem.supabase,
       ctx.asSystem.pg,
@@ -4231,6 +4274,31 @@ export const pickPickingListLineEntity = defineServiceFn({
       }
     );
     if (result.error) return service.pickRefusal(ctx, result.error);
+
+    // After the pick, so a print failure never blocks it.
+    if (before.data?.status === "Draft") {
+      const after = await ctx.asSystem.supabase
+        .from("pickingList")
+        .select("status")
+        .eq("id", pickingListId)
+        .eq("companyId", ctx.company.id)
+        .maybeSingle();
+      if (shouldPrintTravelers(before.data.status, after.data?.status)) {
+        const settings = await getCompanySettings(
+          ctx.asSystem.supabase,
+          ctx.company.id
+        );
+        if (settings.data?.travelerLabels === true) {
+          await service.autoPrint(ctx, {
+            sourceDocument: "PickingList",
+            sourceDocumentId: pickingListId,
+            locationId: before.data.locationId,
+            context: "inventory"
+          });
+        }
+      }
+    }
+
     return result.data;
   }
 });

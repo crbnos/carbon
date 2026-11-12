@@ -354,6 +354,9 @@ msgstr "추가됨"
 msgid "Adjustment Type"
 msgstr "조정 유형"
 
+msgid "Age"
+msgstr ""
+
 msgid "All"
 msgstr "전체"
 
@@ -384,6 +387,9 @@ msgstr "실패한 단위 할당"
 
 msgid "Allocate units"
 msgstr "단위 할당"
+
+msgid "Any part"
+msgstr ""
 
 msgid "Appearance"
 msgstr "모양"
@@ -1126,6 +1132,9 @@ msgstr "계측기 기록 실패"
 msgid "Failed to register passkey"
 msgstr "패스키 등록에 실패했습니다."
 
+msgid "Failed to resolve request"
+msgstr ""
+
 msgid "Failed to save measurement"
 msgstr "측정값 저장 실패"
 
@@ -1493,6 +1502,9 @@ msgstr "밝음, 어두움 또는 시스템 설정 따르기"
 msgid "Line"
 msgstr "라인"
 
+msgid "Line feed"
+msgstr ""
+
 msgid "lines"
 msgstr "라인"
 
@@ -1620,6 +1632,9 @@ msgstr "일치 항목 발견: {matchedId}"
 msgid "matches"
 msgstr "일치"
 
+msgid "Material requested"
+msgstr ""
+
 msgid "Materials"
 msgstr "자재"
 
@@ -1687,6 +1702,9 @@ msgstr "이름"
 
 msgid "Navigation"
 msgstr "탐색"
+
+msgid "Need material"
+msgstr ""
 
 msgid "New"
 msgstr "신규"
@@ -1887,6 +1905,9 @@ msgstr "이 페이지에서는 사용 가능한 바로가기가 없습니다."
 msgid "No spare parts added yet"
 msgstr "아직 추가된 예비 부품이 없습니다"
 
+msgid "No station"
+msgstr ""
+
 msgid "No stock"
 msgstr "재고 없음"
 
@@ -1932,6 +1953,9 @@ msgstr "설정되지 않음"
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "사용 가능한 재고가 아닙니다. MRP와 계획에서 계산하지 않으며 피킹에서도 가져가지 않습니다."
 
+msgid "Note"
+msgstr ""
+
 msgid "Notes"
 msgstr "메모"
 
@@ -1950,6 +1974,9 @@ msgstr "실행 중인 것 없음"
 
 msgid "Nothing scheduled at this work center"
 msgstr "이 작업장에 예정된 작업이 없습니다"
+
+msgid "Nothing to feed"
+msgstr ""
 
 msgid "Nothing to scrap"
 msgstr "스크랩할 것이 없습니다"
@@ -2261,6 +2288,9 @@ msgstr "인쇄"
 msgid "Print batch list"
 msgstr "배치 목록 인쇄"
 
+msgid "Print travelers"
+msgstr ""
+
 msgid "Printed on the purchase orders you approve."
 msgstr "승인하는 발주서에 인쇄됩니다."
 
@@ -2464,6 +2494,12 @@ msgstr "서브어셈블리를 다시 열고 대체 부품을 생성하세요"
 msgid "Repairable"
 msgstr "수리 가능"
 
+msgid "Request"
+msgstr ""
+
+msgid "Request material"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "로그인할 때 인증 앱에서 6자리 코드를 요구합니다."
 
@@ -2478,6 +2514,9 @@ msgstr "필요: {quantityToPick}{unitSuffix}, 피킹: {quantityPicked}{unitSuffi
 
 msgid "Resolution"
 msgstr "해결"
+
+msgid "Resolve"
+msgstr ""
 
 msgid "Result"
 msgstr "결과"
@@ -2807,6 +2846,9 @@ msgstr "짧게"
 msgid "Short pick {itemName}"
 msgstr "{itemName} 부족 피킹"
 
+msgid "Shortage"
+msgstr ""
+
 msgid "Show description"
 msgstr "설명 표시"
 
@@ -2962,6 +3004,12 @@ msgstr "단계"
 
 msgid "Steps are missing"
 msgstr "단계가 누락되었습니다"
+
+msgid "Stock transfer"
+msgstr ""
+
+msgid "Storage unit"
+msgstr ""
 
 msgid "Storage Unit"
 msgstr "보관 단위"
@@ -3273,6 +3321,9 @@ msgstr "추적 번호"
 msgid "Training"
 msgstr "교육"
 
+msgid "Transfer"
+msgstr ""
+
 msgid "Traveler"
 msgstr ""
 
@@ -3434,6 +3485,9 @@ msgstr "보증"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "로그인 링크와 6자리 코드를 이메일로 보냈습니다. 링크를 따르거나 여기에 코드를 입력하세요."
+
+msgid "What do you need?"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}란 무엇인가요?"

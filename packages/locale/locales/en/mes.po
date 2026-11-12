@@ -354,6 +354,9 @@ msgstr "Added"
 msgid "Adjustment Type"
 msgstr "Adjustment Type"
 
+msgid "Age"
+msgstr "Age"
+
 msgid "All"
 msgstr "All"
 
@@ -384,6 +387,9 @@ msgstr "Allocate failed units"
 
 msgid "Allocate units"
 msgstr "Allocate units"
+
+msgid "Any part"
+msgstr "Any part"
 
 msgid "Appearance"
 msgstr "Appearance"
@@ -1126,6 +1132,9 @@ msgstr "Failed to record gauge"
 msgid "Failed to register passkey"
 msgstr "Failed to register passkey"
 
+msgid "Failed to resolve request"
+msgstr "Failed to resolve request"
+
 msgid "Failed to save measurement"
 msgstr "Failed to save measurement"
 
@@ -1493,6 +1502,9 @@ msgstr "Light, dark, or follow your system setting."
 msgid "Line"
 msgstr "Line"
 
+msgid "Line feed"
+msgstr "Line feed"
+
 msgid "lines"
 msgstr "lines"
 
@@ -1620,6 +1632,9 @@ msgstr "Match found: {matchedId}"
 msgid "matches"
 msgstr "matches"
 
+msgid "Material requested"
+msgstr "Material requested"
+
 msgid "Materials"
 msgstr "Materials"
 
@@ -1687,6 +1702,9 @@ msgstr "Name"
 
 msgid "Navigation"
 msgstr "Navigation"
+
+msgid "Need material"
+msgstr "Need material"
 
 msgid "New"
 msgstr "New"
@@ -1887,6 +1905,9 @@ msgstr "No shortcuts available on this page."
 msgid "No spare parts added yet"
 msgstr "No spare parts added yet"
 
+msgid "No station"
+msgstr "No station"
+
 msgid "No stock"
 msgstr "No stock"
 
@@ -1932,6 +1953,9 @@ msgstr "Not set"
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 
+msgid "Note"
+msgstr "Note"
+
 msgid "Notes"
 msgstr "Notes"
 
@@ -1950,6 +1974,9 @@ msgstr "Nothing running"
 
 msgid "Nothing scheduled at this work center"
 msgstr "Nothing scheduled at this work center"
+
+msgid "Nothing to feed"
+msgstr "Nothing to feed"
 
 msgid "Nothing to scrap"
 msgstr "Nothing to scrap"
@@ -2261,6 +2288,9 @@ msgstr "Print"
 msgid "Print batch list"
 msgstr "Print batch list"
 
+msgid "Print travelers"
+msgstr "Print travelers"
+
 msgid "Printed on the purchase orders you approve."
 msgstr "Printed on the purchase orders you approve."
 
@@ -2464,6 +2494,12 @@ msgstr "Reopen the subassembly and create a replacement unit"
 msgid "Repairable"
 msgstr "Repairable"
 
+msgid "Request"
+msgstr "Request"
+
+msgid "Request material"
+msgstr "Request material"
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Require a 6-digit code from an authenticator app when signing in."
 
@@ -2478,6 +2514,9 @@ msgstr "Required: {quantityToPick}{unitSuffix}, picked: {quantityPicked}{unitSuf
 
 msgid "Resolution"
 msgstr "Resolution"
+
+msgid "Resolve"
+msgstr "Resolve"
 
 msgid "Result"
 msgstr "Result"
@@ -2807,6 +2846,9 @@ msgstr "Short"
 msgid "Short pick {itemName}"
 msgstr "Short pick {itemName}"
 
+msgid "Shortage"
+msgstr "Shortage"
+
 msgid "Show description"
 msgstr "Show description"
 
@@ -2962,6 +3004,12 @@ msgstr "Steps"
 
 msgid "Steps are missing"
 msgstr "Steps are missing"
+
+msgid "Stock transfer"
+msgstr "Stock transfer"
+
+msgid "Storage unit"
+msgstr "Storage unit"
 
 msgid "Storage Unit"
 msgstr "Storage Unit"
@@ -3273,6 +3321,9 @@ msgstr "Tracking number"
 msgid "Training"
 msgstr "Training"
 
+msgid "Transfer"
+msgstr "Transfer"
+
 msgid "Traveler"
 msgstr "Traveler"
 
@@ -3434,6 +3485,9 @@ msgstr "Warranty"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
+
+msgid "What do you need?"
+msgstr "What do you need?"
 
 msgid "What is {translatedTerm}?"
 msgstr "What is {translatedTerm}?"

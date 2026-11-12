@@ -354,6 +354,9 @@ msgstr "已添加"
 msgid "Adjustment Type"
 msgstr "调整类型"
 
+msgid "Age"
+msgstr ""
+
 msgid "All"
 msgstr "全部"
 
@@ -384,6 +387,9 @@ msgstr "分配不合格单位"
 
 msgid "Allocate units"
 msgstr "分配单位"
+
+msgid "Any part"
+msgstr ""
 
 msgid "Appearance"
 msgstr "外观"
@@ -1126,6 +1132,9 @@ msgstr "无法记录量具"
 msgid "Failed to register passkey"
 msgstr "注册通行密钥失败"
 
+msgid "Failed to resolve request"
+msgstr ""
+
 msgid "Failed to save measurement"
 msgstr "无法保存测量"
 
@@ -1493,6 +1502,9 @@ msgstr "浅色、深色或跟随系统设置。"
 msgid "Line"
 msgstr "行"
 
+msgid "Line feed"
+msgstr ""
+
 msgid "lines"
 msgstr "行"
 
@@ -1620,6 +1632,9 @@ msgstr "找到匹配项：{matchedId}"
 msgid "matches"
 msgstr "匹配"
 
+msgid "Material requested"
+msgstr ""
+
 msgid "Materials"
 msgstr "原材料"
 
@@ -1687,6 +1702,9 @@ msgstr "名称"
 
 msgid "Navigation"
 msgstr "导航"
+
+msgid "Need material"
+msgstr ""
 
 msgid "New"
 msgstr "新建"
@@ -1887,6 +1905,9 @@ msgstr "此页面上无可用的快捷键。"
 msgid "No spare parts added yet"
 msgstr "尚未添加备件"
 
+msgid "No station"
+msgstr ""
+
 msgid "No stock"
 msgstr "无库存"
 
@@ -1932,6 +1953,9 @@ msgstr "未设置"
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "不可用库存。MRP 和计划不计入此库存，拣货也不会从中取货。"
 
+msgid "Note"
+msgstr ""
+
 msgid "Notes"
 msgstr "备注"
 
@@ -1950,6 +1974,9 @@ msgstr "没有运行"
 
 msgid "Nothing scheduled at this work center"
 msgstr "该工作中心没有计划任务"
+
+msgid "Nothing to feed"
+msgstr ""
 
 msgid "Nothing to scrap"
 msgstr "没有需要报废的"
@@ -2261,6 +2288,9 @@ msgstr "打印"
 msgid "Print batch list"
 msgstr "打印生产批次列表"
 
+msgid "Print travelers"
+msgstr ""
+
 msgid "Printed on the purchase orders you approve."
 msgstr "打印在您审批的采购订单上。"
 
@@ -2464,6 +2494,12 @@ msgstr "重新打开子装配件并创建替代件"
 msgid "Repairable"
 msgstr "可修复"
 
+msgid "Request"
+msgstr ""
+
+msgid "Request material"
+msgstr ""
+
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "登录时需要输入身份验证应用中的6位数代码。"
 
@@ -2478,6 +2514,9 @@ msgstr "需要: {quantityToPick}{unitSuffix}, 已拣货: {quantityPicked}{unitSu
 
 msgid "Resolution"
 msgstr "解决方案"
+
+msgid "Resolve"
+msgstr ""
 
 msgid "Result"
 msgstr "结果"
@@ -2807,6 +2846,9 @@ msgstr "缺货"
 msgid "Short pick {itemName}"
 msgstr "短缺拣货 {itemName}"
 
+msgid "Shortage"
+msgstr ""
+
 msgid "Show description"
 msgstr "显示描述"
 
@@ -2962,6 +3004,12 @@ msgstr "步骤"
 
 msgid "Steps are missing"
 msgstr "缺少步骤"
+
+msgid "Stock transfer"
+msgstr ""
+
+msgid "Storage unit"
+msgstr ""
 
 msgid "Storage Unit"
 msgstr "存储单元"
@@ -3273,6 +3321,9 @@ msgstr "跟踪号"
 msgid "Training"
 msgstr "培训"
 
+msgid "Transfer"
+msgstr ""
+
 msgid "Traveler"
 msgstr ""
 
@@ -3434,6 +3485,9 @@ msgstr "保修"
 
 msgid "We've emailed you a sign-in link and a 6-digit code. Follow the link, or enter the code here."
 msgstr "我们已向您发送了登录链接和6位代码。点击该链接或在此处输入代码。"
+
+msgid "What do you need?"
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}是什么?"
