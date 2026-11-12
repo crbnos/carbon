@@ -103,6 +103,7 @@ import { QuantityModal } from "~/components/JobOperation/components/QuantityModa
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
 import { SerialSelectorModal } from "~/components/JobOperation/components/SerialSelectorModal";
 import { RecordModal } from "~/components/JobOperation/components/Step";
+import { useTravelerScan } from "~/components/JobOperation/hooks/useTravelerScan";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
 import { ReworkBadge } from "~/components/ReworkBadge";
@@ -291,6 +292,7 @@ type Operation = {
   duration?: number | null;
   jobDeadlineType?: string | null;
   reworkId?: string | null;
+  jobMakeMethodId?: string | null;
 };
 
 type Props = {
@@ -1928,6 +1930,17 @@ export function AssemblyView({
   // The process requires an ability this operator lacks and its policy is
   // Block: no production work here. The routes refuse it too.
   const abilityBlocked = abilityWarning?.policy === "Block";
+
+  // A traveler scan issues the unit into this operation, opens the unit it
+  // already sits in, or goes to its traveler.
+  useTravelerScan({
+    operationId,
+    jobMakeMethodId: operation?.jobMakeMethodId,
+    parentTrackedEntityId: currentEntity?.id ?? trackedEntities[0]?.id,
+    jobOperationStepId: step?.id,
+    unitNumber: activeIndex + 1,
+    active: !issueModal.isOpen && !abilityBlocked
+  });
 
   // The header's actions; the md+ header and the phone app bar share them.
   const headerActions = (

@@ -190,6 +190,7 @@ import {
 import { TableSkeleton } from "./components/TableSkeleton";
 import { useFiles } from "./hooks/useFiles";
 import { useOperation } from "./hooks/useOperation";
+import { useTravelerScan } from "./hooks/useTravelerScan";
 
 const DOCK_COLLAPSED_KEY = "mes:operation-dock-collapsed";
 
@@ -747,6 +748,15 @@ export const JobOperation = ({
     // The wedge completes this single op via endOperation — never for a batched
     // member; the batch completes as a whole.
     active: !!kanban?.id && !isBatched && !abilityBlocked
+  });
+
+  // A traveler scan issues the unit into this operation, opens the unit it
+  // already sits in, or goes to its traveler.
+  useTravelerScan({
+    operationId: operation.id,
+    jobMakeMethodId: operation.jobMakeMethodId,
+    parentTrackedEntityId: trackedEntityId,
+    active: !issueModal.isOpen && !isBatched && !abilityBlocked
   });
 
   const item = items.find((it) => it.id === operation.itemId);
