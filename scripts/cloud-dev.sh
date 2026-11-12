@@ -131,6 +131,15 @@ persist BOT_PROTECTION none
 # The container-only steps of crbn up (see the header).
 persist CARBON_DEV_CLOUD 1
 
+# agent-browser's Chrome (step 4), set whether or not the CLI is installed yet,
+# so a session that installs it later finds Chrome.
+for chrome in "${AGENT_BROWSER_EXECUTABLE_PATH:-}" "${CHROME_PATH:-}" /usr/bin/google-chrome /usr/bin/chromium /opt/pw-browsers/chromium/chrome; do
+  if [ -n "$chrome" ] && [ -x "$chrome" ]; then
+    persist AGENT_BROWSER_EXECUTABLE_PATH "$chrome"
+    break
+  fi
+done
+
 # --- 2. Dependencies -----------------------------------------------------------
 if [ ! -d node_modules ]; then
   echo "cloud-dev: installing dependencies"
@@ -178,10 +187,13 @@ warm_app() {
 export -f warm_app
 
 crbn_up_running() {
-  # This checkout's crbn up, not another worktree's: compare working directories.
+  # This checkout's crbn up, not another worktree's: compare working
+  # directories. Node only: a shell whose command line merely mentions it
+  # (a pgrep loop) is not one.
   local pid
   for pid in $(pgrep -f "packages/dev/src/main.ts up" 2>/dev/null); do
-    [ "$(readlink "/proc/$pid/cwd" 2>/dev/null)" = "$(pwd -P)" ] && return 0
+    [ "$(basename "$(readlink "/proc/$pid/exe" 2>/dev/null)")" = node ] &&
+      [ "$(readlink "/proc/$pid/cwd" 2>/dev/null)" = "$(pwd -P)" ] && return 0
   done
   return 1
 }
@@ -242,6 +254,8 @@ if [ "$prepare" = 1 ]; then
     echo "cloud-dev: environment prepared (dependencies, images, database and Vite cache); no dev server left running"
   else
     echo "cloud-dev: environment prepared (dependencies and images; no database or Vite cache)"
+    env_hint
+    exit 1
   fi
   env_hint
   exit 0
@@ -291,16 +305,6 @@ else
 fi
 
 # --- 4. agent-browser (the /auth, /test and /smoke-test skills) ----------------
-# The path is set whether or not the CLI is installed yet, so a session that
-# installs it later finds Chrome.
-if [ -z "${AGENT_BROWSER_EXECUTABLE_PATH:-}" ]; then
-  for chrome in "${CHROME_PATH:-}" /usr/bin/google-chrome /usr/bin/chromium /opt/pw-browsers/chromium/chrome; do
-    if [ -n "$chrome" ] && [ -x "$chrome" ]; then
-      persist AGENT_BROWSER_EXECUTABLE_PATH "$chrome"
-      break
-    fi
-  done
-fi
 if ! command -v agent-browser >/dev/null 2>&1; then
   # In the background: the stack takes minutes to come up, the install seconds.
   echo "cloud-dev: installing agent-browser $AGENT_BROWSER_VERSION in the background (log: $HOME/.carbon/logs/agent-browser-install.log)"

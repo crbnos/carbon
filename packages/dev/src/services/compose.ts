@@ -138,7 +138,16 @@ async function startDockerDaemon(): Promise<boolean> {
   const fd = openSync(DOCKERD_LOG, "a");
   let exited = false;
   try {
-    const child = spawn("dockerd", [], {
+    // Docker Hub allows 100 anonymous pulls an hour per IP, and a cloud
+    // container shares its IP with other sessions. Google's mirror of Docker
+    // Hub serves the same digests; dockerd falls back to Docker Hub on a miss.
+    // dockerd refuses the flag when daemon.json already sets mirrors.
+    const daemonJson = "/etc/docker/daemon.json";
+    const mirrorSet =
+      existsSync(daemonJson) &&
+      readFileSync(daemonJson, "utf8").includes("registry-mirrors");
+    const args = mirrorSet ? [] : ["--registry-mirror=https://mirror.gcr.io"];
+    const child = spawn("dockerd", args, {
       detached: true,
       stdio: ["ignore", fd, fd]
     });
@@ -436,40 +445,28 @@ async function missingImages(refs: string[]): Promise<string[]> {
   return refs.filter((_, i) => !present[i]);
 }
 
-/**
- * Pulls the images a default `crbn up` boots (the dev file with its default
- * profiles, and crbn-shared) that are not present yet. For an environment's
- * setup step (`cloud-dev.sh --prepare`), before this checkout has a stack.
- */
-export async function pullDefaultImages(root: string): Promise<void> {
-  const list = async (
-    file: string,
-    args: string[],
-    opts: { env: NodeJS.ProcessEnv; extendEnv?: boolean }
-  ) => {
-    const r = await execa(
-      "docker",
-      ["compose", "-f", file, ...args, "config", "--images"],
-      { cwd: root, reject: false, ...opts }
-    );
-    if (r.exitCode !== 0) throw new Error(`cannot list the images of ${file}`);
-    return r.stdout
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean);
-  };
-  // Only `extra_hosts` reads these two, and compose wants them non-empty.
-  const hosts = { DOMAIN: "localhost", INNGEST_TLS_HOST: "localhost" };
-  const refs = [
-    ...(await list(join(root, COMPOSE_DEV_FILE), profileArgs(), {
-      env: hosts
-    })),
-    ...(await list(
-      join(SHARED_SOURCE, "docker-compose.shared.yml"),
-      [],
-      sharedExec()
-    ))
-  ];
+// The images a compose file names, with the arguments and environment its
+// `up` gets.
+async function composeImages(
+  args: string[],
+  opts: { cwd: string; env: NodeJS.ProcessEnv; extendEnv?: boolean }
+): Promise<string[]> {
+  const r = await execa("docker", [...args, "config", "--images"], {
+    reject: false,
+    ...opts
+  });
+  if (r.exitCode !== 0) {
+    throw new Error(`cannot list the images: ${r.stderr.trim()}`);
+  }
+  return r.stdout
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+// `docker compose up` pulls a missing image once and fails on a throttled
+// registry; this retries each one.
+async function pullMissingImages(refs: string[]): Promise<void> {
   const missing = await missingImages([...new Set(refs)]);
   if (missing.length === 0) return;
   log.info(`pulling ${missing.length} images`);
@@ -487,6 +484,34 @@ export async function pullDefaultImages(root: string): Promise<void> {
       `${failed.length} of ${missing.length} images did not pull`
     );
   }
+}
+
+/**
+ * Pulls the images a default `crbn up` boots (the dev file with its default
+ * profiles, and crbn-shared) that are not present yet. For an environment's
+ * setup step (`cloud-dev.sh --prepare`), before this checkout has a stack.
+ */
+export async function pullDefaultImages(root: string): Promise<void> {
+  await pullMissingImages([
+    ...(await composeImages(
+      ["compose", "-f", join(root, COMPOSE_DEV_FILE), ...profileArgs()],
+      // Only `extra_hosts` reads these two, and compose wants them non-empty.
+      { cwd: root, env: { DOMAIN: "localhost", INNGEST_TLS_HOST: "localhost" } }
+    )),
+    ...(await composeImages(
+      ["compose", "-f", join(SHARED_SOURCE, "docker-compose.shared.yml")],
+      { cwd: root, ...sharedExec() }
+    ))
+  ]);
+}
+
+async function pullSharedImages(services: string[] = []): Promise<void> {
+  await pullMissingImages(
+    await composeImages([...sharedComposeArgs(), ...services], {
+      cwd: sharedDir(),
+      ...sharedExec()
+    })
+  );
 }
 
 // Compose first, then by label: compose can't stop a project whose files it
@@ -865,6 +890,7 @@ export async function bootSharedServices(
     SHARED_POSTGRES_VOLUME,
     `Drop it, and with it every worktree database, with \`docker compose -p ${SHARED_PROJECT} down -v\`, then \`crbn up\` again.`
   );
+  await pullSharedImages();
   await execStrict(
     "docker",
     [...sharedComposeArgs(), "up", "-d", "--wait", "--remove-orphans"],
@@ -901,6 +927,7 @@ export async function bootSharedForIsolated(
   jwt: JwtCreds
 ): Promise<string | null> {
   const { warning, dirs } = await prepareShared(jwt);
+  await pullSharedImages(ISOLATED_SHARED_SERVICES);
   await execStrict(
     "docker",
     [
