@@ -35,6 +35,13 @@ export const supplierStatuses = [
   "Rejected"
 ] as const;
 
+export const supplierStages = [
+  "Prospect",
+  "Sampling",
+  "Qualified",
+  "Production"
+] as const;
+
 export const customerStatuses = [
   "Active",
   "Inactive",

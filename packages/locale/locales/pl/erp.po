@@ -620,6 +620,10 @@ msgstr "{0} płatności"
 msgid "{0} per hour"
 msgstr "{0} na godzinę"
 
+#. placeholder {0}: row.usedIn.length
+msgid "{0} places"
+msgstr "Miejsc: {0}"
+
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
 msgstr "{0} problemów — nie opublikowano"
@@ -1104,6 +1108,9 @@ msgstr "Brakuje {missingCount} dowodów księgowych u dostawcy"
 
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} brakujących dowodów księgowych i {mismatchCount} niedopasowanych miesięcy"
+
+msgid "{missingSupplier, plural, one {# ticked part needs a supplier. Choose one or untick it.} other {# ticked parts need a supplier. Choose one or untick them.}}"
+msgstr "{missingSupplier, plural, one {# zaznaczona część wymaga dostawcy. Wybierz dostawcę albo odznacz ją.} few {# zaznaczone części wymagają dostawcy. Wybierz dostawcę albo odznacz je.} many {# zaznaczonych części wymaga dostawcy. Wybierz dostawcę albo odznacz je.} other {# zaznaczonych części wymaga dostawcy. Wybierz dostawcę albo odznacz je.}}"
 
 msgid "{name} at {station}"
 msgstr "{name} na {station}"
@@ -2049,6 +2056,12 @@ msgstr "Ustawienie projektu, Brak, Ostrzegaj lub Blokuj, które sprawdza linię 
 msgid "A project, or a project and one of its elements, that a job, a purchase order or invoice line, a timesheet entry or a material issue charges its cost to. Only Released projects and chargeable elements in an Unstarted or Started state can be picked."
 msgstr "Projekt lub projekt i jeden z jego elementów, do którego zlecenie produkcyjne, pozycja zamówienia zakupu lub faktury, wpis w arkuszu czasu lub wydanie materiału obciąża swój koszt. Mogą być wybrane tylko zwolnione projekty i rozliczalne elementy w stanie Nierozpoczęty lub Rozpoczęty."
 
+msgid "A promised date is optional to finalize"
+msgstr "Data potwierdzona jest opcjonalna przy finalizacji"
+
+msgid "A promised date is required to finalize"
+msgstr "Data potwierdzona jest wymagana przy finalizacji"
+
 msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
 msgstr "Wstępny dowód księgowy z datą przed datą zmiany; podczas konfigurowania księgowości zostaje zastąpiony dowodem otwarcia i nigdy nie może się zmienić."
 
@@ -2060,6 +2073,9 @@ msgstr "Dla każdego terminu opracowywana jest faktura zakupu z pozycją na każ
 
 msgid "A purchase invoice is posted"
 msgstr "Faktura zakupu zostaje zaksięgowana"
+
+msgid "A purchase order cannot be finalized until it has a supplier promised date. A date on the order covers every line. Keep this off if suppliers give you a date after they receive the order."
+msgstr "Zamówienia zakupu nie można sfinalizować, dopóki nie ma daty potwierdzonej przez dostawcę. Jedna data w zamówieniu obejmuje każdą pozycję. Pozostaw tę opcję wyłączoną, jeśli dostawcy podają datę po otrzymaniu zamówienia."
 
 msgid "A purchase order is created"
 msgstr "Zamówienie zakupu zostaje utworzone"
@@ -2985,6 +3001,9 @@ msgstr "Dodaj parametr (tylko procedury)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Dodaj drukarkę w ustawieniach drukowania, aby drukować etykiety bezpośrednio."
+
+msgid "Add a promised date before you finalize this purchase order."
+msgstr "Dodaj datę potwierdzoną przed sfinalizowaniem tego zamówienia zakupu."
 
 msgid "Add a requirement"
 msgstr "Dodaj wymaganie"
@@ -4771,6 +4790,10 @@ msgstr "Czy na pewno chcesz usunąć typ magazynu: {0}? Tej czynności nie możn
 msgid "Are you sure you want to delete the storage unit: {0}? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć jednostkę magazynową: {0}? Tej operacji nie można cofnąć."
 
+#. placeholder {0}: supplierStage.name
+msgid "Are you sure you want to delete the supplier stage: {0}? This cannot be undone."
+msgstr "Czy na pewno chcesz usunąć etap dostawcy: {0}? Tej operacji nie można cofnąć."
+
 #. placeholder {0}: supplierType.name
 msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć typ dostawcy: {0}? Tej czynności nie można cofnąć."
@@ -5942,6 +5965,9 @@ msgstr "Blokuje maszynę"
 msgid "Blocks save until resolved"
 msgstr "Blokuje zapis do czasu rozwiązania"
 
+msgid "Blue"
+msgstr "Niebieski"
+
 msgid "Board"
 msgstr "Tablica"
 
@@ -6050,6 +6076,9 @@ msgstr "Wprowadź swoje części, BOMy, Listy operacji i kalkulacje kosztów —
 msgid "Broadcast reply to channel"
 msgstr "Wyślij odpowiedź na kanał"
 
+msgid "Brown"
+msgstr "Brązowy"
+
 msgid "Browse library"
 msgstr "Przeglądaj bibliotekę"
 
@@ -6118,6 +6147,9 @@ msgstr "Twórz materiały szkoleniowe oparte na rolach"
 
 msgid "Build tailored, role-based training materials"
 msgstr "Twórz dostosowane materiały szkoleniowe oparte na rolach"
+
+msgid "Builds"
+msgstr "Zlecenia produkcyjne"
 
 msgid "Built after this step"
 msgstr "Zbudowane po tym kroku"
@@ -7030,6 +7062,9 @@ msgstr "Wybierz opcję"
 msgid "Choose another file"
 msgstr "Wybierz inny plik"
 
+msgid "Choose at least one part and a supplier."
+msgstr "Wybierz co najmniej jedną część i dostawcę."
+
 msgid "Choose avatar"
 msgstr "Wybierz awatar"
 
@@ -7050,6 +7085,12 @@ msgstr "Wybierz lokalizację zwrotu dla {unitName}"
 
 msgid "Choose stock to move"
 msgstr "Wybierz zapas do przeniesienia"
+
+msgid "Choose supplier"
+msgstr "Wybierz dostawcę"
+
+msgid "Choose suppliers"
+msgstr "Wybierz dostawców"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "Wybierz pierwszy dzień bieżącego okresu lub jeden z trzech okresów poprzedzających."
@@ -8797,6 +8838,9 @@ msgstr "Utwórz {0} wartości"
 msgid "Create {name}"
 msgstr "Utwórz {name}"
 
+msgid "Create {rfqCount} RFQs"
+msgstr "Utwórz {rfqCount} RFQ"
+
 msgid "Create & Release"
 msgstr "Utwórz i zwolnij"
 
@@ -8931,6 +8975,9 @@ msgstr "Utwórz zamiennik"
 
 msgid "Create Revision"
 msgstr "Utwórz rewizję"
+
+msgid "Create RFQ"
+msgstr "Utwórz RFQ"
 
 msgid "Create Rule"
 msgstr "Utwórz Regułę"
@@ -9097,6 +9144,9 @@ msgstr "Utworzono pozycję przesunięcia"
 msgid "Created storage type"
 msgstr "Utworzony typ magazynu"
 
+msgid "Created supplier stage"
+msgstr "Utworzono etap dostawcy"
+
 #. placeholder {0}: created.name
 msgid "Created supplier: {0}"
 msgstr "Utworzony dostawca: {0}"
@@ -9115,6 +9165,9 @@ msgstr "Utworzono po zwolnieniu projektu"
 
 msgid "Created work center"
 msgstr "Utworzono stanowisko robocze"
+
+msgid "Creates {rfqCount, plural, one {# draft RFQ} other {# draft RFQs}}. Nothing goes to a supplier until you finalize."
+msgstr "Utworzy {rfqCount, plural, one {# RFQ w wersji roboczej} other {# RFQ w wersji roboczej}}. Nic nie trafi do dostawcy, dopóki nie sfinalizujesz."
 
 msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
 msgstr "Tworzy Wersję roboczą Faktury korygującej dostawcy dla wysłanych ilości, które nie zostały jeszcze uwzględnione w rozliczeniu."
@@ -10431,6 +10484,9 @@ msgstr "Usuń Ofertę Dostawcy"
 
 msgid "Delete Supplier Return"
 msgstr "Usuń zwrot dostawcy"
+
+msgid "Delete Supplier Stage"
+msgstr "Usuń etap dostawcy"
 
 msgid "Delete Supplier Type"
 msgstr "Usuń typ dostawcy"
@@ -11964,6 +12020,9 @@ msgstr "Edytuj część dostawcy"
 msgid "Edit supplier process"
 msgstr "Edytuj proces dostawcy"
 
+msgid "Edit Supplier Stage"
+msgstr "Edytuj etap dostawcy"
+
 msgid "Edit Supplier Type"
 msgstr "Edytuj typ dostawcy"
 
@@ -12092,6 +12151,9 @@ msgstr "Wiadomości e-mail"
 
 msgid "Emails of the attendees (guests)"
 msgstr "Adresy e-mail uczestników (gości)"
+
+msgid "Emails the sales order to the customer when they accept this quote online."
+msgstr ""
 
 msgid "Emoji"
 msgstr "Emoji"
@@ -13252,6 +13314,10 @@ msgid "Failed to create service: {0}"
 msgstr "Nie udało się utworzyć usługi: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create supplier stage: {0}"
+msgstr "Nie udało się utworzyć etapu dostawcy: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "Nie udało się utworzyć dostawcy: {0}"
 
@@ -13742,6 +13808,9 @@ msgstr "Finansowanie"
 
 msgid "Financing Terms"
 msgstr "Warunki finansowania"
+
+msgid "Find a part"
+msgstr "Znajdź część"
 
 msgid "Find an element"
 msgstr "Znajdź element"
@@ -14649,6 +14718,12 @@ msgstr "Przydzielaj każdemu użytkownikowi szczegółowe uprawnienia dla każde
 msgid "Grants Ability"
 msgstr "Przyznaje Umiejętność"
 
+msgid "Gray"
+msgstr "Szary"
+
+msgid "Green"
+msgstr "Zielony"
+
 msgid "Grid layout"
 msgstr "Układ siatki"
 
@@ -15429,6 +15504,10 @@ msgstr "Kontrola dostaw"
 
 msgid "Inbox"
 msgstr "Skrzynka odbiorcza"
+
+#. placeholder {0}: row.itemReadableId
+msgid "Include {0}"
+msgstr "Uwzględnij {0}"
 
 msgid "Include bought components"
 msgstr "Uwzględnij zakupione komponenty"
@@ -16985,6 +17064,9 @@ msgstr "Pozostaw puste dla dokładnego dopasowania"
 msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
 msgstr "Pozostaw puste, aby nie ustalać limitu. Po jego przekroczeniu MES oferuje tylko Braki lub zgłoszenie problemu jakościowego."
 
+msgid "Leave empty to pick a color from the name"
+msgstr "Zostaw puste, aby wybrać kolor na podstawie nazwy"
+
 msgid "Leave empty to use the account default"
 msgstr "Pozostaw puste, aby użyć wartości domyślnej konta"
 
@@ -17114,6 +17196,9 @@ msgstr "LIFO"
 
 msgid "Light"
 msgstr "Jasne"
+
+msgid "Light Gray"
+msgstr "Jasnoszary"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "Jasny, ciemny lub zgodnie z ustawieniami systemu."
@@ -21696,6 +21781,9 @@ msgstr "Lub wpisz tę sekretną wartość ręcznie:"
 msgid "Or focus the box or the handle and use the arrow keys (Shift for bigger steps)."
 msgstr "Lub ustaw fokus na polu albo uchwycie i użyj klawiszy strzałek (Shift dla większych kroków)."
 
+msgid "Orange"
+msgstr "Pomarańczowy"
+
 msgid "Order"
 msgstr "Zamówienie"
 
@@ -22705,6 +22793,9 @@ msgstr "Przypnij kody WBS"
 msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
 msgstr "Zsuń palce lub przewiń, aby powiększyć · przeciągnij, aby przesunąć · stuknij dwukrotnie, aby zresetować"
 
+msgid "Pink"
+msgstr "Różowy"
+
 msgid "Pinned"
 msgstr "Przypięte"
 
@@ -23600,6 +23691,12 @@ msgstr "Obiecane"
 msgid "Promised Date"
 msgstr "Data potwierdzona"
 
+msgid "Promised date optional to finalize purchase orders"
+msgstr "Data potwierdzona opcjonalna przy finalizacji zamówień zakupu"
+
+msgid "Promised date required to finalize purchase orders"
+msgstr "Data potwierdzona wymagana przy finalizacji zamówień zakupu"
+
 msgid "Properties"
 msgstr "Właściwości"
 
@@ -23898,6 +23995,9 @@ msgstr "Faktury zakupu"
 msgid "Purchasing Unit of Measure"
 msgstr "Jednostka miary zakupu"
 
+msgid "Purple"
+msgstr "Fioletowy"
+
 msgid "Push"
 msgstr "Wyślij"
 
@@ -24169,6 +24269,9 @@ msgstr "Email zaakceptowanego oferty"
 
 msgid "Quote expired"
 msgstr "Oferta wygasła"
+
+msgid "Quote for"
+msgstr "Oferta dla"
 
 msgid "Quote ID"
 msgstr "ID Oferty"
@@ -24760,6 +24863,9 @@ msgstr "Powtarzające się co tydzień"
 
 msgid "Recurring per year"
 msgstr "Powtarzające się corocznie"
+
+msgid "Red"
+msgstr "Czerwony"
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "Czerwony oznacza niedobór personelu, zielony oznacza pokrycie, żółty oznacza więcej pracowników niż praca wymaga."
@@ -25483,6 +25589,9 @@ msgstr "Data żądania"
 msgid "Request Force Delete"
 msgstr ""
 
+msgid "Request Quote"
+msgstr "Zapytaj o ofertę"
+
 msgid "Requested"
 msgstr "Zgłoszone"
 
@@ -25506,6 +25615,9 @@ msgstr "Wymagaj 6-cyfrowego kodu z aplikacji Authenticator przy logowaniu."
 
 msgid "Require a Customer Contact and Location"
 msgstr "Wymagaj kontaktu klienta i lokalizacji"
+
+msgid "Require a Promised Date to Finalize Purchase Orders"
+msgstr "Wymagaj daty potwierdzonej do sfinalizowania zamówień zakupu"
 
 msgid "Require a Signature to Approve Purchase Orders"
 msgstr "Wymagaj podpisu do zatwierdzenia zamówień zakupu"
@@ -27246,6 +27358,9 @@ msgstr "Zaznacz wszystko"
 msgid "Select all jobs"
 msgstr "Wybierz wszystkie zlecenia produkcyjne"
 
+msgid "Select all parts"
+msgstr "Zaznacz wszystkie części"
+
 msgid "Select all rows"
 msgstr "Wybierz wszystkie wiersze"
 
@@ -27404,6 +27519,9 @@ msgstr "Wybierz numer seryjny {0}"
 msgid "Select station"
 msgstr "Wybierz stację"
 
+msgid "Select Supplier Stage"
+msgstr "Wybierz etap dostawcy"
+
 msgid "Select Supplier Status"
 msgstr "Wybierz Status Dostawcy"
 
@@ -27503,6 +27621,9 @@ msgstr "Wyślij zaproszenia"
 
 msgid "Send Notifications"
 msgstr "Wysyłaj powiadomienia"
+
+msgid "Send order confirmation"
+msgstr ""
 
 msgid "Send Reminder"
 msgstr "Wyślij przypomnienie"
@@ -28100,6 +28221,9 @@ msgstr "Wysłane {shippedOn}"
 
 msgid "Shipped <0/>"
 msgstr "Wysłane <0/>"
+
+msgid "Shipped Date"
+msgstr "Data wysyłki"
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "Wysłane linie dla tego klienta z pozostałą ilością do zwrotu"
@@ -28803,6 +28927,12 @@ msgstr "Wymaganie dotyczące obsady wyłączone"
 
 msgid "Staffing requirement enabled"
 msgstr "Wymaganie dotyczące personelu włączone"
+
+msgid "Stage"
+msgstr "Etap"
+
+msgid "Stages"
+msgstr "Etapy"
 
 msgid "Stand up hosting"
 msgstr "Skonfiguruj hosting"
@@ -29534,6 +29664,10 @@ msgstr "Ustawienia poczty e-mail dostawcy zaktualizowane"
 msgid "Supplier EORI"
 msgstr "EORI dostawcy"
 
+#. placeholder {0}: row.itemReadableId
+msgid "Supplier for {0}"
+msgstr "Dostawca dla {0}"
+
 msgid "Supplier ID"
 msgstr "ID dostawcy"
 
@@ -29675,6 +29809,21 @@ msgstr "Nr RMA dostawcy"
 
 msgid "Supplier RMA Number"
 msgstr "Numer RMA dostawcy"
+
+msgid "supplier stage"
+msgstr "etap dostawcy"
+
+msgid "Supplier stage"
+msgstr ""
+
+msgid "Supplier Stage"
+msgstr "Etap dostawcy"
+
+msgid "supplier stages"
+msgstr "etapy dostawcy"
+
+msgid "Supplier Stages"
+msgstr "Etapy dostawcy"
 
 msgid "Supplier State and Postal Code"
 msgstr "Stan i kod pocztowy dostawcy"
@@ -32082,6 +32231,9 @@ msgstr "Ta część jest przestarzała (Brak zapasu)."
 
 msgid "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
 msgstr "Ta część jest zastępowana i ustawiona na Tylko zapas — jest uzupełniana do poziomu rezerwy części zamiennych, niezależnie od zapotrzebowania."
+
+msgid "This part only"
+msgstr "Tylko ta część"
 
 msgid "This path only decides what runs next"
 msgstr "Ta ścieżka decyduje tylko o tym, co uruchomi się dalej"
@@ -34738,7 +34890,7 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "Kiedy oczekuje się odpowiedzi dostawców; dostawcy widzą tę datę w portalu RFQ, a Carbon przestaje akceptować spóźnione odpowiedzi po niej (konfigurowanej)."
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr "Kiedy kupiec zażądał towaru. Dostawca może potwierdzić inny termin w polu Data potwierdzona przyjęcia, a w polu Data dostawy wpisać jeszcze inny."
+msgstr "Kiedy kupiec zażądał towaru; dostawca może w polu Data potwierdzona przyjęcia podać coś innego, a w polu Data dostawy podać jeszcze inną datę."
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
 msgstr "Kiedy kupiec potrzebuje towaru z tej pozycji na rampie. Nowa pozycja domyślnie przyjmuje datę żądaną przyjęcia z zamówienia; planowanie wykorzystuje tę datę do sprawdzania dostępności zapasów i harmonogramowania obróbki zewnętrznej."
@@ -34791,6 +34943,9 @@ msgstr "Kiedy rozpoczyna się wynajęcie i czy ma koniec."
 msgid "When the supplier committed to deliver; planning uses this date for the inbound-stock arrival projection."
 msgstr "Kiedy dostawca zobowiązał się do dostawy; planowanie wykorzystuje tę datę do projekcji przybycia zapasów przychodzących."
 
+msgid "When the supplier sent the goods. You can edit this on the Shipping card after the purchase order is finalized."
+msgstr "Kiedy dostawca wysłał towar. Możesz to edytować w karcie Wysyłka po sfinalizowaniu zamówienia zakupu."
+
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "Gdy wycena dostawcy przestaje być honorowana; konwersja tej oferty do PO po tej dacie może wymagać ponownego ofertowania."
 
@@ -34829,6 +34984,9 @@ msgstr "W przypadku korzystania z kanban-ów pełny kod kreskowy ukończy wszyst
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "Kiedy zobowiązałeś się do dostawy; planowanie traktuje to jako datę wymagalności popytu do spełnienia."
+
+msgid "When you expect the goods to arrive, based on how they shipped. It is for your reference and does not change planning, which uses the promised date."
+msgstr "Kiedy spodziewasz się dostawy towaru, na podstawie sposobu wysyłki. Ma charakter informacyjny i nie zmienia planowania, które korzysta z daty potwierdzonej."
 
 msgid "When your fiscal and tax years start"
 msgstr "Kiedy rozpoczynają się Twoje lata obrachunkowe i podatkowe"
@@ -34892,6 +35050,9 @@ msgstr "Gdzie towary tej linii lądują w zapasach przy odbiorze; jeśli puste, 
 
 msgid "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
 msgstr "Gdzie pochodzi to żądanie utrzymania ruchu — zgłoszone przez operatora, zaplanowane, wyzwalacz monitorowania stanu, kontrola po zleceniu produkcyjnym; napędza podział źródeł w raportach utrzymania ruchu."
+
+msgid "Where this supplier is in your onboarding, such as Prospect or Qualified. Your company manages this list; it does not affect approvals or which suppliers you can use."
+msgstr "Na jakim etapie wdrażania znajduje się ten dostawca, np. Potencjalny lub Zakwalifikowany. Twoja firma zarządza tą listą; nie wpływa ona na zatwierdzenia ani na to, których dostawców możesz używać."
 
 msgid "Where you are today"
 msgstr "Gdzie jesteś dzisiaj"
@@ -35271,6 +35432,9 @@ msgstr "Zamknięcie roku"
 
 msgid "Yearly"
 msgstr "Rocznie"
+
+msgid "Yellow"
+msgstr "Żółty"
 
 msgid "Yes"
 msgstr "Tak"

@@ -11,6 +11,7 @@ import {
   MenuItem,
   useDisclosure
 } from "@carbon/react";
+import { asColor } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
@@ -105,14 +106,28 @@ const CustomersTable = memo(
         {
           accessorKey: "status",
           header: t`Status`,
-          cell: (item) => <Enumerable value={item.getValue<string>()} />,
+          cell: (item) => (
+            <Enumerable
+              value={item.getValue<string>()}
+              color={asColor(
+                customerStatuses?.find(
+                  (status) => status.name === item.getValue<string>()
+                )?.color
+              )}
+            />
+          ),
           meta: {
             mobile: "P2",
             filter: {
               type: "static",
               options: customerStatuses?.map((status) => ({
                 value: status.name,
-                label: <Enumerable value={status.name ?? ""} />
+                label: (
+                  <Enumerable
+                    value={status.name ?? ""}
+                    color={asColor(status.color)}
+                  />
+                )
               }))
             },
             pluralHeader: t`Statuses`,

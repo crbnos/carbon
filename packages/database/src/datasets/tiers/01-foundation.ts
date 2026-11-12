@@ -422,9 +422,13 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   ctx.log("suppliers");
   for (const s of data.suppliers) {
     const typeId = need(ctx.refs.misc, `stype:${s.type}`, "supplier type");
+    const stageId = s.stage
+      ? await bootstrapIdByName(ctx, "supplierStage", s.stage)
+      : null;
     const supId = await insertId(ctx, "supplier", {
       name: s.name,
       supplierTypeId: typeId,
+      supplierStageId: stageId,
       phone: s.phone,
       website: s.website,
       currencyCode: s.currencyCode ?? "USD",

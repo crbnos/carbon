@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261111044213",
+  "schemaVersion": "20261112030415",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-11T07:42:37.958Z",
+  "exportedAt": "2026-11-12T04:33:35.701Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -515,7 +515,8 @@
         "serviceLaborBillRate",
         "requireSupplierContactEmail",
         "requireCustomerContactEmail",
-        "includeSupplierPartFiles"
+        "includeSupplierPartFiles",
+        "requirePromisedDateToFinalizePurchaseOrder"
       ]
     },
     {
@@ -648,7 +649,8 @@
         "updatedBy",
         "updatedAt",
         "customFields",
-        "tags"
+        "tags",
+        "color"
       ]
     },
     {
@@ -2226,6 +2228,20 @@
         "userId",
         "companyId",
         "createdAt"
+      ]
+    },
+    {
+      "name": "supplierStage",
+      "rows": 0,
+      "columns": [
+        "id",
+        "name",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "color"
       ]
     },
     {
@@ -4409,7 +4425,8 @@
         "digitalQuoteRejectedByEmail",
         "opportunityId",
         "completedDate",
-        "customerEngineeringContactId"
+        "customerEngineeringContactId",
+        "emailOrderOnAcceptance"
       ]
     },
     {
@@ -7534,7 +7551,9 @@
         "tags",
         "supplierShippingCost",
         "incoterm",
-        "incotermLocation"
+        "incotermLocation",
+        "shippedDate",
+        "expectedReceiptDate"
       ]
     },
     {
@@ -8596,7 +8615,8 @@
         "defaultCc",
         "supplierStatus",
         "intercompanyCompanyId",
-        "readableId"
+        "readableId",
+        "supplierStageId"
       ]
     },
     {

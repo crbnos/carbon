@@ -1821,6 +1821,7 @@ export const manifest = {
     create: false,
     delete: false
   }),
+  supplierStage: company("purchasing"),
   supplierType: company("purchasing", { read: "member" }),
   supplyActual: policies({
     select: or(

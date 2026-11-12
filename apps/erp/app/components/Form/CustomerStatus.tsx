@@ -5,6 +5,7 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
+import { asColor } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo, useRef } from "react";
 import { Enumerable } from "~/components/Enumerable";
@@ -35,7 +36,7 @@ const CustomerStatus = (props: CustomerStatusSelectProps) => {
         options={
           options.map((o) => ({
             value: o.value,
-            label: <Enumerable value={o.label} />
+            label: <Enumerable value={o.label} color={o.color} />
           })) ?? []
         }
         emptyMessage={emptyMessage}
@@ -86,7 +87,8 @@ export const useCustomerStatuses = (enabled = true) => {
 
     return dataSource.map((c) => ({
       value: c.id,
-      label: c.name
+      label: c.name,
+      color: asColor(c.color)
     }));
   }, [
     customerStatusFetcher.data?.data,

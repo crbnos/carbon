@@ -59,6 +59,17 @@ Each date locks at a different point:
 
 <Screenshot label="Purchase order line page: the Dates section with Required Date disabled and Promised Date and Received Date editable on a To Receive order" caption="A confirmed order keeps the required date and lets the promise move." />
 
+## Shipping details
+
+The **Shipping** card records how the goods travel: **Shipping Method**, **Tracking Number**, <Term id="purchase-order-delivery-shipped-date">Shipped Date</Term> and <Term id="purchase-order-delivery-expected-receipt-date">Expected Receipt Date</Term>. A supplier often gives these after you finalize, so you can edit them on a released order. The card locks while the order waits for approval, and when it is **"Completed"** or **"Closed"**.
+
+You enter the Expected Receipt Date by hand. It does not change planning, which uses the Promised Date. To record air, rail or sea, add each one as a shipping method under **Inventory → Shipping Methods**.
+
+## Requiring a promised date
+
+A company can refuse to finalize a purchase order that has no promised date. Turn on **Require a Promised Date to Finalize Purchase Orders** under **Settings → Purchasing**. It is off by default. A date on the order covers every line, and Comment lines need no date. **Mark as Planned** still works without a date.
+
+
 ## Lines and search
 
 Each order with lines has an arrow at its left. Open it to see its lines: the part number and name, the part number the supplier uses, the description and the quantity. Every row starts closed.
@@ -108,6 +119,10 @@ A line's Required Date (`purchaseOrderLine.requiredDate`) locks at the same stat
 
 ### "Cannot change the promised date of a received line." / "…of a fully received purchase order." / "…of a closed purchase order."
 The line is received complete, the order is at "To Invoice" or "Completed", or the order was closed (a Closed order may still have lines with nothing received; reopen it to change the date). Line dates save one at a time through `updatePurchaseOrderLineDate`; the order's Receipt Promised Date through `updatePurchaseOrders`.
+
+### "Add a promised date before you finalize this purchase order."
+
+Your company requires a promised date to finalize. Set the **Promised Date** on the order, or on each line, then finalize again.
 
 ### "The supplier contact has no email address"
 **Send Via** is set to **Email**, and the chosen supplier contact has no email address. Add an email to the contact, pick another contact, or set **Send Via** to **None**.

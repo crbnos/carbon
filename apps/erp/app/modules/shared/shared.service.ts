@@ -1183,17 +1183,16 @@ export async function getCachedTimezoneNames(client: SupabaseClient<Database>) {
 }
 
 /**
- * Sends a sales order confirmation email with the PDF attached.
- *
- * This mirrors the email-sending logic originally in the confirm action
- * and can be reused by the quote-to-order conversion flow.
+ * Sends a sales order confirmation email with the PDF attached, to the
+ * recipient and the sender (`userId`).
  */
 export async function sendSalesOrderEmail(args: {
   salesOrderId: string;
   companyId: string;
   companyGroupId: string;
   userId: string;
-  customerContactId: string;
+  /** A customer contact, or someone who is not one (an online quote acceptor). */
+  recipient: { customerContactId: string } | { email: string; name: string };
   cc?: string[];
   documentFilePath: string;
   fileName: string;
@@ -1205,7 +1204,7 @@ export async function sendSalesOrderEmail(args: {
     companyId,
     companyGroupId,
     userId,
-    customerContactId,
+    recipient: recipientArg,
     cc: ccSelections,
     documentFilePath,
     fileName,
@@ -1225,7 +1224,13 @@ export async function sendSalesOrderEmail(args: {
     getCompany(serviceRole, companyId),
     // customerContactId comes from the form and the service role bypasses
     // RLS — scope it so another company's contact is never read or emailed.
-    getCustomerContact(serviceRole, customerContactId, companyId),
+    "customerContactId" in recipientArg
+      ? getCustomerContact(
+          serviceRole,
+          recipientArg.customerContactId,
+          companyId
+        )
+      : null,
     getSalesOrder(serviceRole, salesOrderId),
     getSalesOrderLines(serviceRole, salesOrderId),
     getSalesOrderCustomerDetails(serviceRole, salesOrderId),
@@ -1233,13 +1238,29 @@ export async function sendSalesOrderEmail(args: {
     getPaymentTermsList(serviceRole, companyId)
   ]);
 
-  if (!customer?.data?.contact) {
-    return { success: false, message: "Failed to get customer contact" };
-  }
-  if (!isEmailableContact(customer.data.contact)) {
-    return {
-      success: false,
-      message: "The customer contact has no email address"
+  let recipient: { email: string; firstName?: string; lastName?: string };
+  if ("customerContactId" in recipientArg) {
+    const contact = customer?.data?.contact;
+    if (!contact) {
+      return { success: false, message: "Failed to get customer contact" };
+    }
+    if (!isEmailableContact(contact)) {
+      return {
+        success: false,
+        message: "The customer contact has no email address"
+      };
+    }
+    recipient = {
+      email: contact.email!,
+      firstName: contact.firstName ?? undefined,
+      lastName: contact.lastName ?? undefined
+    };
+  } else {
+    const [firstName, ...rest] = recipientArg.name.trim().split(/\s+/);
+    recipient = {
+      email: recipientArg.email,
+      firstName: firstName || undefined,
+      lastName: rest.join(" ") || undefined
     };
   }
   if (!company.data) {
@@ -1275,11 +1296,7 @@ export async function sendSalesOrderEmail(args: {
     salesOrder: salesOrder.data,
     salesOrderLines: salesOrderLines.data ?? [],
     salesOrderLocations: salesOrderLocations.data,
-    recipient: {
-      email: customer.data.contact.email!,
-      firstName: customer.data.contact.firstName ?? undefined,
-      lastName: customer.data.contact.lastName ?? undefined
-    },
+    recipient,
     sender: {
       email: seller.data.email,
       firstName: seller.data.firstName,
@@ -1296,7 +1313,7 @@ export async function sendSalesOrderEmail(args: {
 
   await trigger("send-email", {
     document: true,
-    to: [seller.data.email, customer.data.contact.email!],
+    to: [seller.data.email, recipient.email],
     cc: ccSelections?.length ? ccSelections : undefined,
     from: seller.data.email,
     subject: `Order ${salesOrder.data.salesOrderId} from ${company.data.name}`,

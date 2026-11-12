@@ -58,6 +58,16 @@ export async function runTier5(ctx: Ctx): Promise<void> {
       id: poId,
       locationId: plantId,
       shippingMethodId,
+      // A released order the supplier has already sent.
+      ...(spec.status !== "Draft" && spec.orderDateOffset + 3 <= 0
+        ? {
+            shippedDate: resolveDate(ctx.anchor, spec.orderDateOffset + 3),
+            expectedReceiptDate: resolveDate(
+              ctx.anchor,
+              spec.orderDateOffset + 10
+            )
+          }
+        : {}),
       companyId
     });
     await insertRow(ctx, "purchaseOrderPayment", {

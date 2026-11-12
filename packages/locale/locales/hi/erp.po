@@ -620,6 +620,10 @@ msgstr "{0} भुगतान"
 msgid "{0} per hour"
 msgstr "{0} प्रति घंटा"
 
+#. placeholder {0}: row.usedIn.length
+msgid "{0} places"
+msgstr "{0} स्थानों पर"
+
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
 msgstr "{0} समस्याएं — प्रकाशित नहीं"
@@ -1104,6 +1108,9 @@ msgstr "प्रदाता में {missingCount} जर्नल गाय
 
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} गायब जर्नल और {mismatchCount} असमान महीने"
+
+msgid "{missingSupplier, plural, one {# ticked part needs a supplier. Choose one or untick it.} other {# ticked parts need a supplier. Choose one or untick them.}}"
+msgstr "{missingSupplier, plural, one {# चिह्नित पार्ट को आपूर्तिकर्ता चाहिए। एक चुनें या उसका चिह्न हटाएँ।} other {# चिह्नित पार्ट्स को आपूर्तिकर्ता चाहिए। उनमें से एक चुनें या उनके चिह्न हटाएँ।}}"
 
 msgid "{name} at {station}"
 msgstr "{name} {station} पर"
@@ -2049,6 +2056,12 @@ msgstr "एक परियोजना सेटिंग, कोई नही�
 msgid "A project, or a project and one of its elements, that a job, a purchase order or invoice line, a timesheet entry or a material issue charges its cost to. Only Released projects and chargeable elements in an Unstarted or Started state can be picked."
 msgstr "एक परियोजना, या एक परियोजना और इसके तत्वों में से एक, जिसके लिए एक जॉब, एक क्रय आदेश या चालान पंक्ति, एक टाइमशीट प्रविष्टि या एक सामग्री समस्या अपनी लागत का शुल्क लगाती है। केवल जारी की गई परियोजनाएँ और बिल योग्य तत्व अप्रारंभ या प्रारंभ की गई स्थिति में चुने जा सकते हैं।"
 
+msgid "A promised date is optional to finalize"
+msgstr "पक्का करने के लिए वादा की गई तिथि वैकल्पिक है"
+
+msgid "A promised date is required to finalize"
+msgstr "पक्का करने के लिए वादा की गई तिथि अनिवार्य है"
+
 msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
 msgstr "एक अनंतिम जर्नल जो संक्रमण तिथि से पहले दिनांकित है; लेखांकन सेटअप करते समय इसे प्रारंभिक जर्नल से बदल दिया जाता है, और इसे कभी भी बदला नहीं जा सकता।"
 
@@ -2060,6 +2073,9 @@ msgstr "प्रत्येक नियत तिथि के लिए ए�
 
 msgid "A purchase invoice is posted"
 msgstr "एक क्रय चालान पोस्ट किया गया है"
+
+msgid "A purchase order cannot be finalized until it has a supplier promised date. A date on the order covers every line. Keep this off if suppliers give you a date after they receive the order."
+msgstr "क्रय आदेश को तब तक पक्का नहीं किया जा सकता जब तक उस पर आपूर्तिकर्ता की वादा की गई तिथि न हो। आदेश पर दी गई एक तिथि हर पंक्ति पर लागू होती है। यदि आपूर्तिकर्ता आदेश मिलने के बाद तिथि बताते हैं, तो इसे बंद रखें।"
 
 msgid "A purchase order is created"
 msgstr "एक क्रय आदेश बनाया गया है"
@@ -2985,6 +3001,9 @@ msgstr "एक पैरामीटर जोड़ें (केवल का�
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "प्रिंटिंग सेटिंग्स में एक प्रिंटर जोड़ें ताकि लेबल सीधे प्रिंट कर सकें।"
+
+msgid "Add a promised date before you finalize this purchase order."
+msgstr "इस क्रय आदेश को पक्का करने से पहले वादा की गई तिथि जोड़ें।"
 
 msgid "Add a requirement"
 msgstr "एक आवश्यकता जोड़ें"
@@ -4771,6 +4790,10 @@ msgstr "क्या आप भंडारण प्रकार {0} को ह
 msgid "Are you sure you want to delete the storage unit: {0}? This cannot be undone."
 msgstr "क्या आप भंडारण इकाई {0} को हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता।"
 
+#. placeholder {0}: supplierStage.name
+msgid "Are you sure you want to delete the supplier stage: {0}? This cannot be undone."
+msgstr "क्या आप सच में आपूर्तिकर्ता चरण {0} हटाना चाहते हैं? इसे वापस नहीं किया जा सकता।"
+
 #. placeholder {0}: supplierType.name
 msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
 msgstr "क्या आप आपूर्तिकर्ता प्रकार {0} को हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता।"
@@ -5942,6 +5965,9 @@ msgstr "मशीन को ब्लॉक करता है"
 msgid "Blocks save until resolved"
 msgstr "सहेजने को तब तक ब्लॉक करता है जब तक समाधान न हो जाए"
 
+msgid "Blue"
+msgstr "नीला"
+
 msgid "Board"
 msgstr "बोर्ड"
 
@@ -6050,6 +6076,9 @@ msgstr "अपने पार्ट्स, BOM, प्रक्रिया स
 msgid "Broadcast reply to channel"
 msgstr "चैनल को प्रसारित प्रतिक्रिया"
 
+msgid "Brown"
+msgstr "भूरा"
+
 msgid "Browse library"
 msgstr "लाइब्रेरी ब्राउज़ करें"
 
@@ -6118,6 +6147,9 @@ msgstr "भूमिका-आधारित प्रशिक्षण सा
 
 msgid "Build tailored, role-based training materials"
 msgstr "अनुकूलित, भूमिका-आधारित प्रशिक्षण सामग्री बनाएं"
+
+msgid "Builds"
+msgstr "बिल्ड"
 
 msgid "Built after this step"
 msgstr "इस चरण के बाद निर्मित"
@@ -7030,6 +7062,9 @@ msgstr "एक विकल्प चुनें"
 msgid "Choose another file"
 msgstr "दूसरी फ़ाइल चुनें"
 
+msgid "Choose at least one part and a supplier."
+msgstr "कम से कम एक पार्ट और एक आपूर्तिकर्ता चुनें।"
+
 msgid "Choose avatar"
 msgstr "अवतार चुनें"
 
@@ -7050,6 +7085,12 @@ msgstr "{unitName} के लिए रिटर्न स्थान चुन
 
 msgid "Choose stock to move"
 msgstr "स्थानांतरित करने के लिए स्टॉक चुनें"
+
+msgid "Choose supplier"
+msgstr "आपूर्तिकर्ता चुनें"
+
+msgid "Choose suppliers"
+msgstr "आपूर्तिकर्ता चुनें"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "वर्तमान अवधि के पहले दिन या उससे पहले की 3 अवधियों में से किसी एक के पहले दिन को चुनें।"
@@ -8797,6 +8838,9 @@ msgstr "{0} मान बनाएं"
 msgid "Create {name}"
 msgstr "{name} बनाएँ"
 
+msgid "Create {rfqCount} RFQs"
+msgstr "{rfqCount} RFQ बनाएँ"
+
 msgid "Create & Release"
 msgstr "बनाएँ और जारी करें"
 
@@ -8931,6 +8975,9 @@ msgstr "प्रतिस्थापन बनाएं"
 
 msgid "Create Revision"
 msgstr "रिवीजन बनाएँ"
+
+msgid "Create RFQ"
+msgstr "RFQ बनाएँ"
 
 msgid "Create Rule"
 msgstr "नियम बनाएं"
@@ -9097,6 +9144,9 @@ msgstr "स्टॉक स्थानांतरण पंक्ति बन
 msgid "Created storage type"
 msgstr "भंडारण प्रकार बनाया गया"
 
+msgid "Created supplier stage"
+msgstr "आपूर्तिकर्ता चरण बनाया गया"
+
 #. placeholder {0}: created.name
 msgid "Created supplier: {0}"
 msgstr "आपूर्तिकर्ता बनाया गया: {0}"
@@ -9115,6 +9165,9 @@ msgstr "परियोजना जारी करने पर बनाय�
 
 msgid "Created work center"
 msgstr "वर्क सेंटर बनाया गया"
+
+msgid "Creates {rfqCount, plural, one {# draft RFQ} other {# draft RFQs}}. Nothing goes to a supplier until you finalize."
+msgstr "{rfqCount, plural, one {# ड्राफ्ट RFQ बनेगा} other {# ड्राफ्ट RFQ बनेंगे}}। पक्का करने तक कुछ भी आपूर्तिकर्ता के पास नहीं जाता।"
 
 msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
 msgstr "उन भेजी गई मात्रा के लिए ड्राफ्ट आपूर्तिकर्ता क्रेडिट नोट बनाता है जो अभी तक क्रेडिट नहीं किए गए हैं।"
@@ -10431,6 +10484,9 @@ msgstr "आपूर्तिकर्ता कोटेशन हटाएँ"
 
 msgid "Delete Supplier Return"
 msgstr "आपूर्तिकर्ता रिटर्न हटाएं"
+
+msgid "Delete Supplier Stage"
+msgstr "आपूर्तिकर्ता चरण हटाएँ"
 
 msgid "Delete Supplier Type"
 msgstr "आपूर्तिकर्ता प्रकार हटाएं"
@@ -11964,6 +12020,9 @@ msgstr "आपूर्तिकर्ता भाग संपादित क
 msgid "Edit supplier process"
 msgstr "आपूर्तिकर्ता प्रक्रिया संपादित करें"
 
+msgid "Edit Supplier Stage"
+msgstr "आपूर्तिकर्ता चरण संपादित करें"
+
 msgid "Edit Supplier Type"
 msgstr "आपूर्तिकर्ता प्रकार संपादित करें"
 
@@ -12092,6 +12151,9 @@ msgstr "ईमेल"
 
 msgid "Emails of the attendees (guests)"
 msgstr "प्रतिभागियों (मेहमानों) के ईमेल"
+
+msgid "Emails the sales order to the customer when they accept this quote online."
+msgstr ""
 
 msgid "Emoji"
 msgstr "इमोजी"
@@ -13252,6 +13314,10 @@ msgid "Failed to create service: {0}"
 msgstr "सेवा बनाने में विफल: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create supplier stage: {0}"
+msgstr "आपूर्तिकर्ता चरण बनाने में विफल: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
 msgstr "आपूर्तिकर्ता बनाने में विफल: {0}"
 
@@ -13742,6 +13808,9 @@ msgstr "वित्तपोषण"
 
 msgid "Financing Terms"
 msgstr "वित्तपोषण शर्तें"
+
+msgid "Find a part"
+msgstr "पार्ट खोजें"
 
 msgid "Find an element"
 msgstr "एक तत्व खोजें"
@@ -14649,6 +14718,12 @@ msgstr "सभी को पूर्ण पहुंच देने के ब
 msgid "Grants Ability"
 msgstr "कौशल प्रदान करता है"
 
+msgid "Gray"
+msgstr "ग्रे"
+
+msgid "Green"
+msgstr "हरा"
+
 msgid "Grid layout"
 msgstr "ग्रिड लेआउट"
 
@@ -15429,6 +15504,10 @@ msgstr "इनबाउंड निरीक्षण"
 
 msgid "Inbox"
 msgstr "इनबॉक्स"
+
+#. placeholder {0}: row.itemReadableId
+msgid "Include {0}"
+msgstr "{0} शामिल करें"
 
 msgid "Include bought components"
 msgstr "खरीदे गए घटकों को शामिल करें"
@@ -16985,6 +17064,9 @@ msgstr "सटीक मिलान के लिए खाली छोड़�
 msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
 msgstr "सीमा न हो तो खाली छोड़ें। इससे अधिक होने पर MES केवल स्क्रैप या गुणवत्ता समस्या का विकल्प देता है।"
 
+msgid "Leave empty to pick a color from the name"
+msgstr "नाम से रंग चुनने के लिए खाली छोड़ें"
+
 msgid "Leave empty to use the account default"
 msgstr "खाता डिफ़ॉल्ट का उपयोग करने के लिए खाली छोड़ें"
 
@@ -17114,6 +17196,9 @@ msgstr "LIFO"
 
 msgid "Light"
 msgstr "हल्का"
+
+msgid "Light Gray"
+msgstr "हल्का ग्रे"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "हल्का, गहरा, या अपनी सिस्टम सेटिंग का पालन करें।"
@@ -21696,6 +21781,9 @@ msgstr "या इस गुप्त को मैन्युअल रूप 
 msgid "Or focus the box or the handle and use the arrow keys (Shift for bigger steps)."
 msgstr "या बॉक्स या हैंडल पर फ़ोकस करके तीर कुंजियों का उपयोग करें (बड़े चरणों के लिए Shift)।"
 
+msgid "Orange"
+msgstr "नारंगी"
+
 msgid "Order"
 msgstr "आदेश"
 
@@ -22705,6 +22793,9 @@ msgstr "WBS कोड पिन करें"
 msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
 msgstr "ज़ूम करने के लिए पिंच या स्क्रॉल करें · खिसकाने के लिए खींचें · रीसेट करने के लिए दो बार टैप करें"
 
+msgid "Pink"
+msgstr "गुलाबी"
+
 msgid "Pinned"
 msgstr "पिन किया गया"
 
@@ -23600,6 +23691,12 @@ msgstr "प्रतिश्रुत"
 msgid "Promised Date"
 msgstr "वादा की गई तिथि"
 
+msgid "Promised date optional to finalize purchase orders"
+msgstr "क्रय आदेश पक्का करने के लिए वादा की गई तिथि वैकल्पिक"
+
+msgid "Promised date required to finalize purchase orders"
+msgstr "क्रय आदेश पक्का करने के लिए वादा की गई तिथि अनिवार्य"
+
 msgid "Properties"
 msgstr "गुण"
 
@@ -23898,6 +23995,9 @@ msgstr "क्रय चालान"
 msgid "Purchasing Unit of Measure"
 msgstr "क्रय माप की इकाई"
 
+msgid "Purple"
+msgstr "बैंगनी"
+
 msgid "Push"
 msgstr "धकेलें"
 
@@ -24169,6 +24269,9 @@ msgstr "उद्धरण स्वीकृत ईमेल द्वारा
 
 msgid "Quote expired"
 msgstr "उद्धरण समाप्त हो गया"
+
+msgid "Quote for"
+msgstr "कोटेशन के लिए"
 
 msgid "Quote ID"
 msgstr "उद्धरण ID"
@@ -24760,6 +24863,9 @@ msgstr "आवर्ती साप्ताहिक"
 
 msgid "Recurring per year"
 msgstr "आवर्ती वार्षिक"
+
+msgid "Red"
+msgstr "लाल"
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "लाल कम स्टाफ है, हरा कवर किया गया है, एम्बर काम की तुलना में अधिक लोग हैं।"
@@ -25483,6 +25589,9 @@ msgstr "अनुरोध तारीख"
 msgid "Request Force Delete"
 msgstr ""
 
+msgid "Request Quote"
+msgstr "कोटेशन का अनुरोध करें"
+
 msgid "Requested"
 msgstr "अनुरोधित"
 
@@ -25506,6 +25615,9 @@ msgstr "साइन इन करते समय ऑथेंटिकेट�
 
 msgid "Require a Customer Contact and Location"
 msgstr "ग्राहक संपर्क और स्थान की आवश्यकता है"
+
+msgid "Require a Promised Date to Finalize Purchase Orders"
+msgstr "क्रय आदेशों को अंतिम रूप देने के लिए वादा की गई तिथि आवश्यक करें"
 
 msgid "Require a Signature to Approve Purchase Orders"
 msgstr "क्रय आदेशों को अनुमोदित करने के लिए हस्ताक्षर की आवश्यकता है"
@@ -27246,6 +27358,9 @@ msgstr "सभी का चयन करें"
 msgid "Select all jobs"
 msgstr "सभी जॉब चुनें"
 
+msgid "Select all parts"
+msgstr "सभी पार्ट्स चुनें"
+
 msgid "Select all rows"
 msgstr "सभी पंक्तियाँ चुनें"
 
@@ -27404,6 +27519,9 @@ msgstr "सीरियल {0} चुनें"
 msgid "Select station"
 msgstr "स्टेशन चुनें"
 
+msgid "Select Supplier Stage"
+msgstr "आपूर्तिकर्ता चरण चुनें"
+
 msgid "Select Supplier Status"
 msgstr "आपूर्तिकर्ता स्थिति चुनें"
 
@@ -27503,6 +27621,9 @@ msgstr "आमंत्रण भेजें"
 
 msgid "Send Notifications"
 msgstr "सूचनाएं भेजें"
+
+msgid "Send order confirmation"
+msgstr ""
 
 msgid "Send Reminder"
 msgstr "अनुस्मारक भेजें"
@@ -28100,6 +28221,9 @@ msgstr "भेज दिया गया {shippedOn}"
 
 msgid "Shipped <0/>"
 msgstr "भेजा गया <0/>"
+
+msgid "Shipped Date"
+msgstr "भेजी गई तिथि"
 
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "इस ग्राहक के लिए भेजी गई लाइनें जिनमें वापसी के लिए मात्रा बाकी है"
@@ -28803,6 +28927,12 @@ msgstr "कर्मचारी आवश्यकता अक्षम की
 
 msgid "Staffing requirement enabled"
 msgstr "स्टाफिंग आवश्यकता सक्षम की गई"
+
+msgid "Stage"
+msgstr "चरण"
+
+msgid "Stages"
+msgstr "चरण"
 
 msgid "Stand up hosting"
 msgstr "होस्टिंग सेट अप करें"
@@ -29534,6 +29664,10 @@ msgstr "आपूर्तिकर्ता ईमेल सेटिंग्�
 msgid "Supplier EORI"
 msgstr "आपूर्तिकर्ता EORI"
 
+#. placeholder {0}: row.itemReadableId
+msgid "Supplier for {0}"
+msgstr "{0} के लिए आपूर्तिकर्ता"
+
 msgid "Supplier ID"
 msgstr "आपूर्तिकर्ता ID"
 
@@ -29675,6 +29809,21 @@ msgstr "आपूर्तिकर्ता RMA #"
 
 msgid "Supplier RMA Number"
 msgstr "आपूर्तिकर्ता RMA नंबर"
+
+msgid "supplier stage"
+msgstr "आपूर्तिकर्ता चरण"
+
+msgid "Supplier stage"
+msgstr ""
+
+msgid "Supplier Stage"
+msgstr "आपूर्तिकर्ता चरण"
+
+msgid "supplier stages"
+msgstr "आपूर्तिकर्ता चरण"
+
+msgid "Supplier Stages"
+msgstr "आपूर्तिकर्ता चरण"
 
 msgid "Supplier State and Postal Code"
 msgstr "आपूर्तिकर्ता का राज्य और पिन कोड"
@@ -32082,6 +32231,9 @@ msgstr "यह पार्ट अप्रचलित है (स्टॉक 
 
 msgid "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
 msgstr "यह पार्ट अप्रचलित है और Stock Only पर सेट है — इसे इसके स्पेयर रिजर्व फ्लोर तक भरा जाता है, मांग से स्वतंत्र।"
+
+msgid "This part only"
+msgstr "केवल यह पार्ट"
 
 msgid "This path only decides what runs next"
 msgstr "यह path केवल यह तय करता है कि आगे क्या चलेगा"
@@ -34738,7 +34890,7 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "जब आपूर्तिकर्ता प्रतिक्रिया की उम्मीद की जाती है; आपूर्तिकर्ता आरएफक्यू पोर्टल पर यह तारीख देखते हैं और कार्बन इसके बाद देर से प्रतिक्रिया स्वीकार नहीं करता है (कॉन्फ़िगर करने योग्य)।"
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr "क्रेता ने सामान कब माँगा था; आपूर्तिकर्ता प्राप्ति की वादा की गई तिथि पर कुछ और वादा कर सकता है, और डिलीवरी तिथि पर फिर कुछ और दर्ज कर सकता है।"
+msgstr "जब क्रेता ने माल माँगा था; आपूर्तिकर्ता प्राप्ति की वादा की गई तिथि पर कुछ और वादा कर सकता है, और डिलीवरी तिथि पर फिर कुछ और दर्ज कर सकता है।"
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
 msgstr "क्रेता को इस पंक्ति का सामान डॉक पर कब चाहिए। नई पंक्ति ऑर्डर की प्राप्ति की अनुरोधित तिथि से शुरू होती है; योजना इस तिथि का उपयोग स्टॉक उपलब्धता और बाहरी प्रोसेसिंग के शेड्यूल के लिए करती है।"
@@ -34791,6 +34943,9 @@ msgstr "जब किराया शुरू होता है, और क�
 msgid "When the supplier committed to deliver; planning uses this date for the inbound-stock arrival projection."
 msgstr "जब आपूर्तिकर्ता डिलीवरी के लिए प्रतिबद्ध हुआ; योजना आवक-स्टॉक आगमन प्रक्षेपण के लिए इस तारीख का उपयोग करती है।"
 
+msgid "When the supplier sent the goods. You can edit this on the Shipping card after the purchase order is finalized."
+msgstr "जब आपूर्तिकर्ता ने माल भेजा। क्रय आदेश अंतिम होने के बाद आप इसे शिपिंग कार्ड पर संपादित कर सकते हैं।"
+
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "जब आपूर्तिकर्ता की मूल्य निर्धारण सम्मानित नहीं रह जाती है; इस तारीख के बाद इस उद्धरण को एक पीओ में परिवर्तित करने के लिए पुनः-उद्धरण की आवश्यकता हो सकती है।"
 
@@ -34829,6 +34984,9 @@ msgstr "कानबान का उपयोग करते समय, पू
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "जब आप डिलीवरी के लिए प्रतिबद्ध हुए; योजना इसे पूरा करने के लिए मांग-देय-तारीख के रूप में मानती है।"
+
+msgid "When you expect the goods to arrive, based on how they shipped. It is for your reference and does not change planning, which uses the promised date."
+msgstr "आपको माल कब पहुँचने की उम्मीद है, यह इस पर आधारित है कि वह कैसे भेजा गया। यह केवल आपकी जानकारी के लिए है और योजना नहीं बदलता, जो वादा की गई तिथि का उपयोग करती है।"
 
 msgid "When your fiscal and tax years start"
 msgstr "जब आपका वित्तीय और कर वर्ष शुरू होता है"
@@ -34892,6 +35050,9 @@ msgstr "प्राप्ति पर इस पंक्ति के सा�
 
 msgid "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
 msgstr "यह रखरखाव अनुरोध कहाँ से आया — ऑपरेटर द्वारा रिपोर्ट किया गया, शेड्यूल किया गया, स्थिति-निगरानी ट्रिगर, पोस्ट-जॉब निरीक्षण; रखरखाव रिपोर्टों में स्रोत ब्रेकडाउन को चलाता है।"
+
+msgid "Where this supplier is in your onboarding, such as Prospect or Qualified. Your company manages this list; it does not affect approvals or which suppliers you can use."
+msgstr "यह आपूर्तिकर्ता आपकी ऑनबोर्डिंग में कहाँ है, जैसे Prospect या Qualified। यह सूची आपकी कंपनी प्रबंधित करती है; इससे अनुमोदन या आप किन आपूर्तिकर्ताओं का उपयोग कर सकते हैं, इस पर कोई असर नहीं पड़ता।"
 
 msgid "Where you are today"
 msgstr "आप आज कहाँ हैं"
@@ -35271,6 +35432,9 @@ msgstr "वर्षांत समापन"
 
 msgid "Yearly"
 msgstr "वार्षिक"
+
+msgid "Yellow"
+msgstr "पीला"
 
 msgid "Yes"
 msgstr "हाँ"
