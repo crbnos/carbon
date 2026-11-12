@@ -25,6 +25,11 @@ interface FileDropzoneProps {
   disabled?: boolean;
   /** Override the wrapper classes (e.g. drop the default top margin). */
   className?: string;
+  /**
+   * The phone Upload button's variant. Pass `primary` where the dropzone is
+   * the only way to fill an empty slot; keep `secondary` beside a list.
+   */
+  phoneButtonVariant?: "primary" | "secondary";
 }
 
 const FileDropzone: React.FC<FileDropzoneProps> = ({
@@ -32,7 +37,8 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
   accept,
   multiple = true,
   disabled = false,
-  className = "mt-4"
+  className = "mt-4",
+  phoneButtonVariant = "secondary"
 }) => {
   const { t } = useLingui();
   const { isPhone } = useViewport();
@@ -80,7 +86,7 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
       <div className={className}>
         <input {...getInputProps()} />
         <Button
-          variant="secondary"
+          variant={phoneButtonVariant}
           size="lg"
           leftIcon={<LuCloudUpload />}
           isDisabled={isDisabled}
