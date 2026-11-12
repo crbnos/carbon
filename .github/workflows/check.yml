@@ -124,7 +124,7 @@ jobs:
         run: touch .env
       - name: Run portal tests against a migrated local stack
         run: >-
-          packages/dev/bin/crbn up --no-portless --no-apps --minimal --volumes
+          packages/dev/bin/crbn up --no-portless --no-apps --minimal --no-regen --volumes
           --run 'test -n "$SUPABASE_DB_URL" && test -n "$PORT_API" &&
           test -f apps/erp/.env.local && pnpm --filter erp exec vitest run
           test/database/customer-portal.test.ts
