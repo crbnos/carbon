@@ -245,6 +245,20 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     ]
   );
 
+  // Written on every apply, so applying a dataset without lineFlow turns the
+  // line-flow settings off again.
+  const flow = data.lineFlow;
+  ctx.log("line flow settings");
+  await ctx.client.query(
+    `UPDATE "companySettings" SET "travelerLabels" = $1, "requireTrackedMaterialsIssued" = $2, "autoPickingListOnRelease" = $3 WHERE id = $4`,
+    [
+      flow?.travelerLabels ?? false,
+      flow?.requireTrackedMaterialsIssued ?? false,
+      flow?.autoPickingListOnRelease ?? false,
+      ctx.companyId
+    ]
+  );
+
   // ── Work centers (need dept + ability + location) ─────────────────────────
   ctx.log("work centers");
   for (const wc of data.workCenters) {
