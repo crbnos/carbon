@@ -38,12 +38,12 @@ Phase B — the traveler scan
 
 Phase C — test data (`motor-line`)
 - [x] Task 16: Add the optional dataset fields to `types.ts`
-- [ ] Task 17: Validate the new fields, with a unit test
-- [ ] Task 18: Write the line-flow settings in tier 01
-- [ ] Task 19: Link BOM lines to their operation in tier 02
-- [ ] Task 20: Write per-lot opening ledger rows and kanban levels in tier 03
-- [ ] Task 21: Split serial job units in tier 06
-- [ ] Task 22: Write timing and print-on-completion on serial sequences in tier 10
+- [x] Task 17: Validate the new fields, with a unit test
+- [x] Task 18: Write the line-flow settings in tier 01
+- [x] Task 19: Link BOM lines to their operation in tier 02
+- [x] Task 20: Write per-lot opening ledger rows and kanban levels in tier 03
+- [x] Task 21: Split serial job units in tier 06
+- [x] Task 22: Write timing and print-on-completion on serial sequences in tier 10
 - [x] Task 23: Register the dev-only dataset `motor-line`
 - [ ] Task 23a: Let a dev-only dataset borrow an industry's bundled assets
 - [ ] Task 24: Add the AJ-3 work centers, processes, bins and settings
