@@ -18,23 +18,23 @@
 ## Progress
 
 Phase A — database
-- [ ] Task 1: Write the slice 1 schema migration
-- [ ] Task 2: Write the `get_traveler_target` migration
-- [ ] Task 3: Write the `get_line_feed_shortages` migration
-- [ ] Task 4: Declare the `materialRequest` RLS rule and its realtime broadcast
-- [ ] Task 5: Apply migrations, regenerate types and ship the authz rules
-- [ ] Task 6: Prove `get_traveler_target` with a database test
+- [x] Task 1: Write the slice 1 schema migration
+- [x] Task 2: Write the `get_traveler_target` migration
+- [x] Task 3: Write the `get_line_feed_shortages` migration
+- [x] Task 4: Declare the `materialRequest` RLS rule and its realtime broadcast
+- [x] Task 5: Apply migrations, regenerate types and ship the authz rules
+- [x] Task 6: Prove `get_traveler_target` with a database test
 
 Phase B — the traveler scan
 - [x] Task 7: Encode the traveler link in the default label QR
 - [x] Task 8: Add the pure traveler helpers with tests
 - [x] Task 9: Keep a scan pending while `onUnrecognized` runs
-- [ ] Task 10: Add traveler paths and server reads
-- [ ] Task 11: Add the raw-ID resolve route and the layout wedge changes
-- [ ] Task 12: Add the traveler wrong-item check to `issue-tracked-entity`
-- [ ] Task 13: Build the traveler route and its chooser
-- [ ] Task 14: Issue a traveler scan on the operation screens
-- [ ] Task 15: Read traveler links in the Issue dialog Scan tab
+- [x] Task 10: Add traveler paths and server reads
+- [x] Task 11: Add the raw-ID resolve route and the layout wedge changes
+- [x] Task 12: Add the traveler wrong-item check to `issue-tracked-entity`
+- [x] Task 13: Build the traveler route and its chooser
+- [x] Task 14: Issue a traveler scan on the operation screens
+- [x] Task 15: Read traveler links in the Issue dialog Scan tab
 
 Phase C — test data (`motor-line`)
 - [ ] Task 16: Add the optional dataset fields to `types.ts`
