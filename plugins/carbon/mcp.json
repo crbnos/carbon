@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "carbon": {
+      "url": "https://app.carbon.ms/api/mcp"
+    }
+  }
+}
