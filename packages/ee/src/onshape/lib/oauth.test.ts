@@ -44,7 +44,10 @@ vi.mock("@carbon/env", () => ({
   }
 }));
 
+import type { Database } from "@carbon/database";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  getConflictingOnshapeConnection,
   hasOnshapeIntegration,
   isOnshapeCustomerAppIntegrationId,
   isOnshapeIntegrationId,
@@ -209,4 +212,49 @@ describe("integration identity", () => {
     expect(isOnshapeCustomerAppIntegrationId("onshape")).toBe(false);
     expect(isOnshapeCustomerAppIntegrationId("onshape-v2")).toBe(false);
   });
+});
+
+// Answers every companyIntegration read with `result`.
+function readingClient(result: {
+  data: { id: string } | null;
+  error: { message: string } | null;
+}) {
+  const query: Record<string, unknown> = {};
+  for (const method of ["from", "select", "in", "eq", "limit"]) {
+    query[method] = () => query;
+  }
+  query.maybeSingle = async () => result;
+  return query as unknown as SupabaseClient<Database>;
+}
+
+describe("getConflictingOnshapeConnection", () => {
+  it("names the other active connection of the same pair", async () => {
+    await expect(
+      getConflictingOnshapeConnection(
+        readingClient({ data: { id: "onshape-v2" }, error: null }),
+        "company",
+        "onshape-v2-government"
+      )
+    ).resolves.toBe("onshape-v2");
+    await expect(
+      getConflictingOnshapeConnection(
+        readingClient({ data: null, error: null }),
+        "company",
+        "onshape-government"
+      )
+    ).resolves.toBeNull();
+  });
+
+  it.each(["onshape-government", "onshape-v2-government"] as const)(
+    "refuses to read a failed lookup as no conflict (%s)",
+    async (integrationId) => {
+      await expect(
+        getConflictingOnshapeConnection(
+          readingClient({ data: null, error: { message: "timeout" } }),
+          "company",
+          integrationId
+        )
+      ).rejects.toThrow("timeout");
+    }
+  );
 });

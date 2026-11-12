@@ -4,11 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import type { StandardFieldId } from "@carbon/ee";
-import {
-  everyPushTargets,
-  normalizeOnshapeUrl,
-  ONSHAPE_DEFAULT_BASE_URL
-} from "@carbon/ee";
+import { everyPushTargets } from "@carbon/ee";
 import {
   ONSHAPE_PANEL_INTEGRATION_IDS,
   ONSHAPE_V2_INTEGRATION_ID
@@ -44,21 +40,16 @@ type ExternalSourceMapping = {
   } | null;
 };
 
-function onshapeOriginOf(metadata: unknown): string {
-  const baseUrl =
-    metadata && typeof metadata === "object" && "baseUrl" in metadata
-      ? (metadata as { baseUrl?: unknown }).baseUrl
-      : undefined;
-  return normalizeOnshapeUrl(baseUrl) ?? ONSHAPE_DEFAULT_BASE_URL;
-}
-
 /** Self-loading `onshape-v2` link card; renders nothing without a link. */
 export function ExternalSourceCard({
   itemId,
-  canDetach
+  canDetach,
+  onshapeOrigin
 }: {
   itemId: string;
   canDetach: boolean;
+  /** `getOnshapePanelOrigin`: a Government tenant has its own host. */
+  onshapeOrigin: string;
 }) {
   const { carbon } = useCarbon();
   const { company } = useUser();
@@ -70,8 +61,6 @@ export function ExternalSourceCard({
   const [reload, setReload] = useState(0);
   // Null until read, or when this user lacks settings view.
   const [replaced, setReplaced] = useState<string[] | null>(null);
-  // A Government tenant has its own host; cad.onshape.com until read.
-  const [onshapeOrigin, setOnshapeOrigin] = useState(ONSHAPE_DEFAULT_BASE_URL);
   const itemFieldLabel: Record<StandardFieldId, string> = {
     mpn: t`Manufacturer Part Number`,
     replenishmentSystem: t`Replenishment`,
@@ -121,7 +110,6 @@ export function ExternalSourceCard({
         setReplaced(null);
         return;
       }
-      setOnshapeOrigin(onshapeOriginOf(integration.data.metadata));
       const targets = everyPushTargets(integration.data.metadata);
       const fieldNames = new Map<string, string>();
       if (targets.customFieldIds.length > 0) {

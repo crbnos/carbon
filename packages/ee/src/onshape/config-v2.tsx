@@ -2,8 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { ONSHAPE_V2_CLIENT_ID } from "@carbon/auth";
-import { useEffect, useState } from "react";
+import { getAppUrl, ONSHAPE_V2_CLIENT_ID } from "@carbon/auth";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
 import { beginOAuthPopup } from "../oauth-popup";
@@ -89,10 +88,9 @@ const PANEL_ACTION_QUERY =
   "documentId={$documentId}&wv={$workspaceOrVersion}&wvId={$workspaceOrVersionId}&elementId={$elementId}&partNumber={$partNumber}&revision={$revision}&nodeId={$nodeId}&occurrencePath={$occurrencePath}&configuration={$configuration}";
 
 function GovernmentPanelSetupInstructions() {
-  // The callback and the panel are this Carbon instance's own address. Read
-  // after mount so the server render and the first client render agree.
-  const [origin, setOrigin] = useState("");
-  useEffect(() => setOrigin(window.location.origin), []);
+  // The address the OAuth redirect is built on, which an alias the admin
+  // browses through may not be.
+  const origin = getAppUrl();
   const callbackUrl = `${origin}${ONSHAPE_V2_GOVERNMENT_OAUTH_CALLBACK_PATH}`;
   const actionUrl = `${origin}/onshape/panel?${PANEL_ACTION_QUERY}`;
 
