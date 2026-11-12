@@ -68,6 +68,7 @@ function visibleDiffEntries(
 }
 
 const ExpandedRowContent = memo(({ entry }: { entry: AuditLogEntry }) => {
+  const { t } = useLingui();
   const visibleEntries = visibleDiffEntries(entry.diff);
   const hasDiff = visibleEntries.length > 0;
 
@@ -86,7 +87,11 @@ const ExpandedRowContent = memo(({ entry }: { entry: AuditLogEntry }) => {
         </div>
         <div>
           <span className="text-muted-foreground">Actor ID</span>
-          <div className="font-mono text-xs">{entry.actorId ?? "System"}</div>
+          <div className="font-mono text-xs">
+            {isPersonActor(entry)
+              ? entry.actorId
+              : (nonUserActorLabel(entry) ?? t`System`)}
+          </div>
         </div>
         <div>
           <span className="text-muted-foreground">Timestamp</span>
