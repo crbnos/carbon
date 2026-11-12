@@ -147,7 +147,10 @@ export async function runTier10(ctx: Ctx): Promise<void> {
       suffix: spec.suffix ?? null,
       size: spec.size,
       next: spec.next,
-      step: 1
+      step: 1,
+      // Optional — insertRow drops undefined, so the column defaults apply.
+      serialNumberTiming: spec.serialNumberTiming,
+      printLabelOnCompletion: spec.printLabelOnCompletion
     });
   }
 
