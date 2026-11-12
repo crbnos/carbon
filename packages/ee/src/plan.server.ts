@@ -77,7 +77,6 @@ export async function getLicenceNotice(): Promise<LicenceNotice | null> {
   });
 }
 
-/** Whether the Enterprise licence allows authoring `feature`. */
 export function licenceAllowsAuthoring(spec: GateSpec): Promise<boolean> {
   return enterpriseAllows(spec, "author");
 }

@@ -2,9 +2,6 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-// The licence decisions, as pure functions of a resolved licence. The gates
-// in plan.server.ts call them; the tests check them by value.
-
 import { Edition, Plan } from "@carbon/utils";
 import { parseAbsolute, type ZonedDateTime } from "@internationalized/date";
 import {
@@ -23,7 +20,6 @@ import type { LicenceStatus, LicenceView } from "./types";
  */
 export const LICENCE_ENFORCED = false;
 
-/** The parts of a resolved licence the decisions read. */
 export type ResolvedLicence = {
   kind: "licence" | "floor";
   status: LicenceStatus | "none";
@@ -75,7 +71,6 @@ export type LicenceNotice = {
   severity: "destructive" | "warning";
   /** The end of the grace period, for "expired". */
   until: string | null;
-  /** True while licences are not enforced. */
   preview: boolean;
 };
 

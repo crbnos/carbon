@@ -79,10 +79,6 @@ export function planIdFromCache(
   return cached || null;
 }
 
-/**
- * The plan id a read gives: the row's on success, else the last one this
- * process read for the company, else null.
- */
 export function planIdAfterRead(
   read: { planId: string | null } | { error: unknown },
   lastKnown: string | null | undefined

@@ -33,7 +33,6 @@ const ok = (status: string, v = view()): VerifyOutput =>
     state: EMPTY_STATE
   }) as VerifyOutput;
 
-/** A resolver over fakes. The fake verifier answers by the sealed body. */
 function setup(licence = "crbn.v1.KEY.config") {
   const outputs = new Map<string, VerifyOutput>();
   const calls: VerifyInput[] = [];

@@ -158,7 +158,6 @@ export class LicenceCheckIn {
     }
   }
 
-  /** Install-verifies a renewal and stores it. Returns an error code, or null. */
   private async install(
     envelope: string,
     inUse: NonNullable<ReturnType<LicenceResolver["licenceInUse"]>>,

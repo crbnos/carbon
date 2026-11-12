@@ -10,7 +10,6 @@ import { LuTriangleAlert } from "react-icons/lu";
 import { Link } from "react-router";
 import { path } from "~/utils/path";
 
-/** One licence notice above every page, for settings viewers on Enterprise. */
 export function LicenceBanner({ notice }: { notice: LicenceNotice | null }) {
   const { t } = useLingui();
   if (!notice) return null;

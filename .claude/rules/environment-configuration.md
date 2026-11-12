@@ -170,7 +170,7 @@ vars through `ci/src/deploy.ts` → `sst.config.ts` → the ERP service only.
 
 **Analytics / config** — `POSTHOG_API_HOST`, `POSTHOG_PROJECT_PUBLIC_KEY`
 (optional, public), `CARBON_EDITION` (`community|cloud|enterprise|test` →
-`CarbonEdition`; a mode switch: `enterprise` gates features by its licence), `CARBON_LICENSE` (server-only secret, the `crbn.v1.` licence string from the Carbon console, read only on `enterprise`; see `packages/ee/AGENTS.md` → Licensing), `CONTROLLED_ENVIRONMENT` (ITAR flag), `INTEGRATION_EARLY_ACCESS_USER_IDS` (server-only, comma-separated user ids that can install an `internalOnly` integration on Cloud; a fallback beside the `integration-early-access` flag until a flags source is live), `DEFAULT_LANGUAGE`
+`CarbonEdition`), `CONTROLLED_ENVIRONMENT` (ITAR flag), `INTEGRATION_EARLY_ACCESS_USER_IDS` (server-only, comma-separated user ids that can install an `internalOnly` integration on Cloud; a fallback beside the `integration-early-access` flag until a flags source is live), `DEFAULT_LANGUAGE`
 (default `en`), `GTM_URL`, `GTM_EVENTS_API_SECRET_KEY`.
 
 **Maintenance and status (both optional, server-only)** — `MAINTENANCE_MODE=true`

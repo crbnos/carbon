@@ -123,7 +123,6 @@ function toResolution(
   };
 }
 
-/** What the resolver reads and writes. Tests pass fakes. */
 export type ResolverDeps = {
   licence: () => string;
   verify: (input: VerifyInput) => Promise<VerifyOutput>;
@@ -346,7 +345,6 @@ export class LicenceResolver {
   }
 }
 
-/** The process's resolver. */
 export const licenceResolver = new LicenceResolver({
   licence: () => getEnv("CARBON_LICENSE") ?? "",
   verify,
