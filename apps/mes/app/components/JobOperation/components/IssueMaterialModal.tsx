@@ -75,6 +75,7 @@ import { issueValidator } from "~/services/models";
 import type { JobMaterial, TrackedInput } from "~/services/types";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
+import { parseTravelerCode } from "~/utils/traveler";
 import { ScrapEntityModal } from "./ScrapEntityModal";
 import type { ScrappableEntity } from "./ScrapTab";
 import { ScrapTab } from "./ScrapTab";
@@ -1520,7 +1521,9 @@ function IssueMaterialBody({
                                   aria-label={t`Serial number ${index + 1}`}
                                   value={sn.id}
                                   onChange={(e) => {
-                                    const newValue = e.target.value;
+                                    const newValue =
+                                      parseTravelerCode(e.target.value) ??
+                                      e.target.value;
                                     const newSerialNumbers = [
                                       ...selectedSerialNumbers
                                     ];
@@ -1790,7 +1793,8 @@ function IssueMaterialBody({
                                     // allocated lineside child (see
                                     // resolveScannedBatchId).
                                     const newValue = resolveScannedBatchId(
-                                      e.target.value
+                                      parseTravelerCode(e.target.value) ??
+                                        e.target.value
                                     );
                                     updateBatchNumber({
                                       ...batch,
