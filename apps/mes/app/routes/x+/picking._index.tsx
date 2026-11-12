@@ -34,7 +34,11 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   const { client, userId } = await requirePermissions(request, {});
   const effectiveUserId = context.get(userContext)?.effectiveUserId ?? userId;
 
-  const pickingLists = await getAssignedPickingLists(client, effectiveUserId);
+  const pickingLists = await getAssignedPickingLists(
+    client,
+    effectiveUserId,
+    context.get(userContext)?.locationId
+  );
 
   return {
     pickingLists: pickingLists.data ?? []
@@ -111,7 +115,7 @@ export default function PickingIndexRoute() {
         ) : (
           <MesEmptyState
             className="flex-1 w-full h-[calc(100%-var(--header-height))]"
-            title={<Trans>No picking lists assigned</Trans>}
+            title={<Trans>No picking lists</Trans>}
           />
         )}
       </div>
