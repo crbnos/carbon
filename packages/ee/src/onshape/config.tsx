@@ -108,6 +108,47 @@ const onshapeUrlSchema = z
     return url;
   });
 
+/** Settings for an Onshape integration on the customer's private OAuth app. */
+export const customerAppSettings = [
+  {
+    name: "baseUrl",
+    label: "Onshape URL",
+    description:
+      "The address your team signs in to Onshape Government at. Each Enterprise has its own.",
+    group: "Connection",
+    type: "text" as const,
+    required: true,
+    value: ""
+  },
+  {
+    name: "clientId",
+    label: "Client ID",
+    description: "Shown on the private OAuth application in Onshape.",
+    group: "Connection",
+    type: "text" as const,
+    required: true,
+    value: ""
+  },
+  {
+    name: "clientSecret",
+    label: "Client secret",
+    description:
+      "Onshape shows it once, when the application is created. Stored encrypted; leave empty to keep the saved one.",
+    group: "Connection",
+    type: "secret" as const,
+    required: true,
+    value: ""
+  }
+];
+
+export const customerAppSettingsSchema = z.object({
+  baseUrl: onshapeUrlSchema,
+  clientId: z.string().trim().min(1),
+  // Empty keeps the vaulted secret; the settings save requires one on a
+  // fresh install.
+  clientSecret: z.string()
+});
+
 /**
  * Onshape Government (ITAR / FedRAMP) has no public App Store, so Carbon's
  * public app cannot be installed there. The customer's Enterprise admin creates
@@ -140,44 +181,8 @@ export const OnshapeGovernment = defineIntegration({
         "Every API call counts toward your Enterprise's yearly Onshape API limit."
     }
   ],
-  settings: [
-    {
-      name: "baseUrl",
-      label: "Onshape URL",
-      description:
-        "The address your team signs in to Onshape Government at. Each Enterprise has its own.",
-      group: "Connection",
-      type: "text" as const,
-      required: true,
-      value: ""
-    },
-    {
-      name: "clientId",
-      label: "Client ID",
-      description: "Shown on the private OAuth application in Onshape.",
-      group: "Connection",
-      type: "text" as const,
-      required: true,
-      value: ""
-    },
-    {
-      name: "clientSecret",
-      label: "Client secret",
-      description:
-        "Onshape shows it once, when the application is created. Stored encrypted; leave empty to keep the saved one.",
-      group: "Connection",
-      type: "secret" as const,
-      required: true,
-      value: ""
-    },
-    { ...assetSyncSetting, group: "Sync" }
-  ],
-  schema: z.object({
-    baseUrl: onshapeUrlSchema,
-    clientId: z.string().trim().min(1),
-    // Empty keeps the vaulted secret; the settings save requires one on a
-    // fresh install.
-    clientSecret: z.string(),
+  settings: [...customerAppSettings, { ...assetSyncSetting, group: "Sync" }],
+  schema: customerAppSettingsSchema.extend({
     assetSyncEnabled: assetSyncEnabledSchema
   }),
   actions: [backfillAction]

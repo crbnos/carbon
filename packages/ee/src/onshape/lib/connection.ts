@@ -4,6 +4,14 @@
 
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  isOnshapePanelIntegrationId,
+  ONSHAPE_PANEL_INTEGRATION_IDS,
+  ONSHAPE_V2_GOVERNMENT_INTEGRATION_ID,
+  ONSHAPE_V2_GOVERNMENT_OAUTH_CALLBACK_PATH,
+  type OnshapeOAuthIntegrationId,
+  type OnshapePanelIntegrationId
+} from "./integration-id";
 
 /**
  * Onshape ships as two integrations that share one runtime:
@@ -36,6 +44,22 @@ export type OnshapeIntegrationId = (typeof ONSHAPE_INTEGRATION_IDS)[number];
 /** The callback a Government customer registers on their private OAuth app. */
 export const ONSHAPE_GOVERNMENT_OAUTH_CALLBACK_PATH =
   "/api/integrations/onshape-government/oauth";
+
+/** Customer-owned private apps, each with the callback its admin registers. */
+export const ONSHAPE_CUSTOMER_APP_CALLBACK_PATHS = {
+  [ONSHAPE_GOVERNMENT_INTEGRATION_ID]: ONSHAPE_GOVERNMENT_OAUTH_CALLBACK_PATH,
+  [ONSHAPE_V2_GOVERNMENT_INTEGRATION_ID]:
+    ONSHAPE_V2_GOVERNMENT_OAUTH_CALLBACK_PATH
+} as const;
+
+export type OnshapeCustomerAppIntegrationId =
+  keyof typeof ONSHAPE_CUSTOMER_APP_CALLBACK_PATHS;
+
+export function isOnshapeCustomerAppIntegrationId(
+  id: string | null | undefined
+): id is OnshapeCustomerAppIntegrationId {
+  return Object.hasOwn(ONSHAPE_CUSTOMER_APP_CALLBACK_PATHS, id ?? "");
+}
 
 export const ONSHAPE_DEFAULT_BASE_URL = "https://cad.onshape.com";
 export const ONSHAPE_DEFAULT_OAUTH_URL = "https://oauth.onshape.com";
@@ -113,6 +137,83 @@ export async function getConflictingOnshapeIntegration(
   return result.data && isOnshapeIntegrationId(result.data.id)
     ? result.data.id
     : null;
+}
+
+/**
+ * The company's panel connection: the active row, else the newest. Onshape
+ * reads pass `activeOnly`, since uninstalling clears `active` but keeps tokens.
+ */
+export async function getOnshapePanelIntegration(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  { activeOnly = false }: { activeOnly?: boolean } = {}
+): Promise<
+  | {
+      data: CompanyIntegrationRow & { id: OnshapePanelIntegrationId };
+      error: null;
+    }
+  | { data: null; error: string | null }
+> {
+  let query = client
+    .from("companyIntegration")
+    .select("*")
+    .in("id", [...ONSHAPE_PANEL_INTEGRATION_IDS])
+    .eq("companyId", companyId);
+  if (activeOnly) query = query.eq("active", true);
+  const result = await query
+    .order("active", { ascending: false })
+    .order("updatedAt", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (result.error) return { data: null, error: result.error.message };
+  if (
+    !result.data ||
+    !(ONSHAPE_PANEL_INTEGRATION_IDS as readonly string[]).includes(
+      result.data.id
+    )
+  ) {
+    return { data: null, error: null };
+  }
+  return {
+    data: result.data as CompanyIntegrationRow & {
+      id: OnshapePanelIntegrationId;
+    },
+    error: null
+  };
+}
+
+/** Two live panel grants would make the panel's Onshape tenant arbitrary. */
+export async function getConflictingOnshapePanelIntegration(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  integrationId: OnshapePanelIntegrationId
+): Promise<OnshapePanelIntegrationId | null> {
+  const others = ONSHAPE_PANEL_INTEGRATION_IDS.filter(
+    (id) => id !== integrationId
+  );
+  const result = await client
+    .from("companyIntegration")
+    .select("id")
+    .in("id", others)
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .limit(1)
+    .maybeSingle();
+  return result.data && (others as readonly string[]).includes(result.data.id)
+    ? (result.data.id as OnshapePanelIntegrationId)
+    : null;
+}
+
+/** A sync connection and a panel connection never conflict. */
+export function getConflictingOnshapeConnection(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  integrationId: OnshapeOAuthIntegrationId
+): Promise<OnshapeOAuthIntegrationId | null> {
+  return isOnshapePanelIntegrationId(integrationId)
+    ? getConflictingOnshapePanelIntegration(client, companyId, integrationId)
+    : getConflictingOnshapeIntegration(client, companyId, integrationId);
 }
 
 /**
