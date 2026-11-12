@@ -23,6 +23,10 @@ export const asleepFile = (dir) => path.join(dir, "asleep");
  *  holds the pid of the `crbn up` that is preparing it. */
 export const bootingFile = (dir) => path.join(dir, "booting");
 
+/** Exists while a `crbn up` supervises this stack; holds its pid, so
+ *  `crbn down` from another shell can stop it. */
+export const upFile = (dir) => path.join(dir, "up");
+
 /** How long a request waits for a wake. */
 export const WAKE_TIMEOUT_MS = 120_000;
 
@@ -35,31 +39,32 @@ export function isCloudDev() {
 }
 
 /** The stack is asleep and a live `crbn up` will wake it. */
-export const isAsleepIn = (dir) => liveMarker(asleepFile(dir));
+export const isAsleepIn = (dir) => livePid(asleepFile(dir)) !== null;
 
 /** A live `crbn up` is still preparing the database. */
-export const isBootingIn = (dir) => liveMarker(bootingFile(dir));
+export const isBootingIn = (dir) => livePid(bootingFile(dir)) !== null;
 
-// A marker whose `crbn up` was killed is removed: nobody would ever act on it.
-function liveMarker(marker) {
+/** The pid a marker holds, while that process lives. A marker whose
+ *  `crbn up` was killed is removed: nobody would ever act on it. */
+export function livePid(marker) {
   let pid;
   try {
     pid = Number(fs.readFileSync(marker, "utf8"));
   } catch {
-    return false;
+    return null;
   }
   // 0 or less would signal a process group, which always answers.
   if (!Number.isInteger(pid) || pid <= 0) {
     fs.rmSync(marker, { force: true });
-    return false;
+    return null;
   }
   try {
     process.kill(pid, 0);
-    return true;
+    return pid;
   } catch (err) {
     // EPERM: alive, owned by another user.
-    if (err.code === "EPERM") return true;
+    if (err.code === "EPERM") return pid;
     fs.rmSync(marker, { force: true });
-    return false;
+    return null;
   }
 }

@@ -7,7 +7,13 @@ import { stripVTControlCharacters } from "node:util";
 import { box, intro, log, outro } from "@clack/prompts";
 import { execa } from "execa";
 import pc from "picocolors";
-import { asleepFile, bootingFile, isCloudDev } from "../../stack-state.js";
+import {
+  asleepFile,
+  bootingFile,
+  isCloudDev,
+  livePid,
+  upFile
+} from "../../stack-state.js";
 import {
   APPS,
   type AppId,
@@ -249,6 +255,13 @@ export async function up(opts: UpOpts = {}) {
     includeAssembler: selectedApps.includes("assembler"),
     borrowSlug
   });
+  // `crbn down` in another shell stops this process through it (teardown).
+  const upMarker = upFile(ctx.stateDir);
+  mkdirSync(ctx.stateDir, { recursive: true });
+  writeFileSync(upMarker, String(process.pid));
+  process.once("exit", () => {
+    if (livePid(upMarker) === process.pid) rmSync(upMarker, { force: true });
+  });
   // In cloud containers, let Vite prepare its module graph while Docker and
   // the database boot. The marker keeps requests away from a partial schema.
   const earlyAppIds =
@@ -257,7 +270,6 @@ export async function up(opts: UpOpts = {}) {
       : [];
   if (earlyAppIds.length > 0) {
     const stateDir = ctx.stateDir;
-    mkdirSync(stateDir, { recursive: true });
     rmSync(asleepFile(stateDir), { force: true });
     bootMarker = bootingFile(stateDir);
     writeFileSync(bootMarker, String(process.pid));
@@ -279,6 +291,7 @@ export async function up(opts: UpOpts = {}) {
   }
 
   const boot = async () => {
+    await bootShared(ctx, borrowSlug);
     if (!borrowSlug) {
       await pullImages(ctx, { force: opts.pull === true, size });
       await bootDockerStack(ctx, size);
@@ -484,7 +497,16 @@ async function provision(opts: {
         await syncEnvSymlinks(root);
         return "env files synced";
       }
-    },
+    }
+  ]);
+  return ctx;
+}
+
+// The shared containers, and in shared mode this worktree's database in them.
+async function bootShared(ctx: Ctx, borrowSlug: string | undefined) {
+  const { mode } = ctx;
+  const { database } = ctx.db;
+  await tasks([
     {
       title:
         mode === "shared"
@@ -514,7 +536,6 @@ async function provision(opts: {
       }
     }
   ]);
-  return ctx;
 }
 
 // Outside `tasks()`: clack's progress bar (a tick per `<service> Pulled`)

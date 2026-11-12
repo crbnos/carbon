@@ -79,13 +79,22 @@ if [ "$database" = 1 ] && [ "$prepare" = 0 ]; then
 fi
 
 env_file="${CLAUDE_ENV_FILE:-}"
+# The same exports for a shell the session did not start (run by hand).
+shell_env="$HOME/.carbon/cloud-dev.env"
+mkdir -p "$HOME/.carbon"
+: > "$shell_env"
 persist() {
   # Export for this script and, when Claude Code gives us its env file, for
   # every later command of the session.
   export "$1=$2"
+  printf 'export %s=%q\n' "$1" "$2" >> "$shell_env"
   if [ -n "$env_file" ]; then
     printf 'export %s=%q\n' "$1" "$2" >> "$env_file"
   fi
+}
+# Run by hand, nothing passes the exports on to the caller's shell.
+env_hint() {
+  [ -n "$env_file" ] || echo "cloud-dev: for this shell's PATH and settings: source $shell_env"
 }
 
 # --- 1. Node 24.22.1+ (what packages/dev/bin/crbn requires) --------------------
@@ -168,11 +177,25 @@ warm_app() {
 }
 export -f warm_app
 
+crbn_up_running() {
+  # This checkout's crbn up, not another worktree's: compare working directories.
+  local pid
+  for pid in $(pgrep -f "packages/dev/src/main.ts up" 2>/dev/null); do
+    [ "$(readlink "/proc/$pid/cwd" 2>/dev/null)" = "$(pwd -P)" ] && return 0
+  done
+  return 1
+}
+
 # Boot the stack once, end to end: the services migrate and seed the database,
 # the ERP dev server pre-bundles its dependencies, and the login page and the
 # app shell are served. Then stop everything, keeping the volumes and Vite's
 # cache. A failure is not fatal: the first real boot does the same work.
 bake_database() {
+  # A stack this checkout already runs would answer the probes below.
+  if crbn_up_running; then
+    echo "cloud-dev: stopping the running crbn up first"
+    packages/dev/bin/crbn down || true
+  fi
   echo "cloud-dev: booting the stack once to migrate and seed the database and warm Vite"
   local log="$HOME/.carbon/logs/bake.log" pid ok=0 started=$SECONDS
   mkdir -p "$HOME/.carbon/logs"
@@ -202,6 +225,7 @@ bake_database() {
     echo "cloud-dev: database migrated and seeded, Vite warmed"
   else
     echo "cloud-dev: the bake failed (see $log); the first boot will do the work instead" >&2
+    return 1
   fi
 }
 
@@ -212,26 +236,20 @@ if [ "$prepare" = 1 ]; then
       echo "cloud-dev: agent-browser did not install; the UI skills will not run" >&2
   fi
   pull_images
-  if [ "$database" = 1 ]; then
-    bake_database
-    echo "cloud-dev: environment prepared (dependencies, images, database and Vite cache); nothing left running"
-  else
+  if [ "$database" = 0 ]; then
     echo "cloud-dev: environment prepared (dependencies and images); no stack started"
+  elif bake_database; then
+    echo "cloud-dev: environment prepared (dependencies, images, database and Vite cache); no dev server left running"
+  else
+    echo "cloud-dev: environment prepared (dependencies and images; no database or Vite cache)"
   fi
+  env_hint
   exit 0
 fi
 
 # --- 3. The stack, detached ----------------------------------------------------
 mkdir -p "$HOME/.carbon/logs"
 log="$HOME/.carbon/logs/crbn-up.log"
-crbn_up_running() {
-  # This checkout's crbn up, not another worktree's: compare working directories.
-  local pid
-  for pid in $(pgrep -f "packages/dev/src/main.ts up" 2>/dev/null); do
-    [ "$(readlink "/proc/$pid/cwd" 2>/dev/null)" = "$(pwd -P)" ] && return 0
-  done
-  return 1
-}
 if crbn_up_running; then
   echo "cloud-dev: crbn up is already running (log: $log)"
 else
@@ -292,7 +310,9 @@ fi
 
 cat <<MSG
 cloud-dev: the ERP will answer on http://localhost:3000 once the stack is up
-  (a cold boot takes 2-6 minutes; a request made earlier waits for it).
+  (a cold boot takes 2-6 minutes; once the dev server listens, about 40 s in,
+  a request waits for the database instead of failing).
   Sign in as test@carbon.ms — no magic link, no bot check.
   Progress: tail -f $log   State: packages/dev/bin/crbn status
 MSG
+env_hint
