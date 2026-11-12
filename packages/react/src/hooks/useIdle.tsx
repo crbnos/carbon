@@ -32,6 +32,8 @@ type UseIdleOptions = {
   idleMs: number;
   /** Server-observed start of the current idle window, when available. */
   startedAt?: number;
+  /** Server time sampled with startedAt, so client clock skew cannot move the deadline. */
+  serverNow?: number;
   /** Heartbeat throttle while active (SESSION_HEARTBEAT_MS). */
   heartbeatMs: number;
   /** POST target that re-stamps lastActiveAt server-side. */
@@ -46,6 +48,7 @@ export function useIdle({
   enabled,
   idleMs,
   startedAt,
+  serverNow,
   heartbeatMs,
   heartbeatUrl,
   pauseEvents,
@@ -80,9 +83,12 @@ export function useIdle({
       return;
     }
 
+    const now = Date.now();
+    const initialActivityAt =
+      startedAt === undefined ? now : now - ((serverNow ?? now) - startedAt);
     lastActivityRef.current = wasEnabledRef.current
-      ? Math.max(lastActivityRef.current, startedAt ?? 0)
-      : (startedAt ?? Date.now());
+      ? Math.max(lastActivityRef.current, initialActivityAt)
+      : initialActivityAt;
     lastHeartbeatRef.current = 0;
     if (!wasEnabledRef.current) {
       isIdleRef.current = false;
@@ -224,7 +230,15 @@ export function useIdle({
       channel?.close();
       channelRef.current = null;
     };
-  }, [enabled, idleMs, startedAt, heartbeatMs, heartbeatUrl, pauseEvents]);
+  }, [
+    enabled,
+    idleMs,
+    startedAt,
+    serverNow,
+    heartbeatMs,
+    heartbeatUrl,
+    pauseEvents
+  ]);
 
   return { isIdle: enabled && isIdle, resume };
 }

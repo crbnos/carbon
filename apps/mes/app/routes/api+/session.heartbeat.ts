@@ -6,7 +6,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   resolveConsolePinIn,
-  setConsolePinIn
+  setConsolePinActivity
 } from "@carbon/auth/console-pin.server";
 import { touchAuthSession } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
@@ -27,10 +27,11 @@ export async function action({ request }: ActionFunctionArgs) {
       { ok: true },
       {
         headers: {
-          "Set-Cookie": await setConsolePinIn(companyId, sessionUserId, {
-            ...pinIn,
-            pinnedAt: Date.now()
-          })
+          "Set-Cookie": await setConsolePinActivity(
+            companyId,
+            sessionUserId,
+            pinIn.pinId
+          )
         }
       }
     );

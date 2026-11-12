@@ -109,6 +109,7 @@ import {
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 const log = getLogger("mes", "auth");
+const CONSOLE_PIN_PEER_TIMEOUT_MS = 30_000;
 
 // Set from the component when loader data arrives, not in shouldRevalidate:
 // link prefetching calls that too.
@@ -339,6 +340,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       enabled: CONTROLLED_ENVIRONMENT && !(consoleEnabled && consoleMode),
       idleMs: SESSION_IDLE_LOCK_MS,
       consoleIdleMs: consolePinIdleMs(),
+      serverNow: Date.now(),
       heartbeatMs: SESSION_HEARTBEAT_MS,
       // Offer passkey re-auth on the lock overlay when the provider is enabled;
       // the /unlock action gates the actual credential, TOTP stays available.
@@ -399,6 +401,7 @@ export default function AuthenticatedRoute() {
     enabled: consoleMode && !!pinnedInUser,
     idleMs: sessionTimeout.consoleIdleMs,
     startedAt: pinnedInUser?.pinnedAt,
+    serverNow: sessionTimeout.serverNow,
     heartbeatMs: sessionTimeout.heartbeatMs,
     heartbeatUrl: "/api/session/heartbeat",
     pauseEvents: CONSOLE_PIN_PAUSE_EVENTS,
@@ -407,18 +410,27 @@ export default function AuthenticatedRoute() {
   useEffect(() => {
     if (!consoleMode || typeof BroadcastChannel === "undefined") return;
     const channel = new BroadcastChannel(CONSOLE_PIN_CHANNEL);
+    let reloadTimer: number | undefined;
     channel.onmessage = (
       event: MessageEvent<{ type: "start" | "end"; sourceId: string }>
     ) => {
       if (event.data.sourceId === CONSOLE_PIN_SOURCE_ID) return;
       if (event.data.type === "start") {
         window.dispatchEvent(new Event(CONSOLE_PIN_PAUSE_EVENTS.start));
+        reloadTimer ??= window.setTimeout(
+          () => window.location.reload(),
+          CONSOLE_PIN_PEER_TIMEOUT_MS
+        );
       } else if (event.data.type === "end") {
+        window.clearTimeout(reloadTimer);
         // Another tab changed the operator cookie; load its current identity.
         window.location.reload();
       }
     };
-    return () => channel.close();
+    return () => {
+      window.clearTimeout(reloadTimer);
+      channel.close();
+    };
   }, [consoleMode]);
   useNProgress();
   const themeStyle = useThemeStyle();

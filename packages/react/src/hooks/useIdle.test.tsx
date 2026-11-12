@@ -19,15 +19,18 @@ const pauseEvents = { start: "pin-change-start", end: "pin-change-end" };
 
 function Harness({
   startedAt,
+  serverNow,
   onIdle
 }: {
   startedAt?: number;
+  serverNow?: number;
   onIdle?: () => void;
 }) {
   idle = useIdle({
     enabled: true,
     idleMs: HOUR,
     startedAt,
+    serverNow,
     heartbeatMs: 60 * 1000,
     heartbeatUrl: "/api/session/heartbeat",
     pauseEvents,
@@ -36,8 +39,12 @@ function Harness({
   return null;
 }
 
-function mount(startedAt?: number, onIdle?: () => void) {
-  act(() => root.render(<Harness startedAt={startedAt} onIdle={onIdle} />));
+function mount(startedAt?: number, onIdle?: () => void, serverNow?: number) {
+  act(() =>
+    root.render(
+      <Harness startedAt={startedAt} serverNow={serverNow} onIdle={onIdle} />
+    )
+  );
 }
 
 beforeAll(() => {
@@ -129,6 +136,14 @@ it("locks when the server says the operator pin-in has expired", async () => {
 
 it("starts the screen deadline from the server's pin timestamp", () => {
   mount(Date.now() - HOUR + 60 * 1000);
+  act(() => vi.advanceTimersByTime(60 * 1000 + 1000));
+  expect(idle).toBe(true);
+});
+
+it("keeps the server's remaining window when the kiosk clock is ahead", () => {
+  const serverNow = Date.now() - 2 * HOUR;
+  mount(serverNow - HOUR + 60 * 1000, undefined, serverNow);
+  expect(idle).toBe(false);
   act(() => vi.advanceTimersByTime(60 * 1000 + 1000));
   expect(idle).toBe(true);
 });
