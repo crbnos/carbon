@@ -65,8 +65,8 @@ Phase E — labels and picking
 - [x] Task 36: Add the `PickingList` print source
 - [x] Task 37: Print travelers when the ERP starts a picking list
 - [x] Task 38: Print travelers when the MES starts a picking list
-- [ ] Task 39: Print travelers when a first pick starts a Draft list
-- [ ] Task 40: Add "Print travelers" to the MES picking list
+- [x] Task 39: Print travelers when a first pick starts a Draft list
+- [x] Task 40: Add "Print travelers" to the MES picking list
 - [x] Task 41: Print the finished-good label at the last operation
 - [x] Task 42: Create a picking list for each released job
 - [x] Task 43: Show unassigned picking lists to water spiders in the MES
@@ -74,9 +74,9 @@ Phase E — labels and picking
 Phase F — "Need material" and the line feeder screen
 - [x] Task 44: Add the shared `materialRequest` building blocks
 - [x] Task 45: Add the ERP operations `createMaterialRequest` and `resolveMaterialRequest`
-- [ ] Task 46: Add the MES "Need material" modal
+- [x] Task 46: Add the MES "Need material" modal
 - [x] Task 47: Add the pure line-feed row builder
-- [ ] Task 48: Add the MES line feeder screen
+- [x] Task 48: Add the MES line feeder screen
 
 Phase G — settings screens, docs and verification
 - [ ] Task 49: Add the "Line Flow" toggles to Settings → Production
