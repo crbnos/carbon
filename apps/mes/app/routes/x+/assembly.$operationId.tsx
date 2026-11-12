@@ -35,7 +35,8 @@ import {
   getToolsByOperationId,
   getTrackedEntitiesForOperation,
   getWorkCenter,
-  isFirstOperationOfMakeMethod
+  isFirstOperationOfMakeMethod,
+  isLastOperationOfMakeMethod
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
@@ -123,7 +124,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     companySettings,
     abilityWarning,
     openEvent,
-    isFirstOperation
+    isFirstOperation,
+    isLastOperation
   ] = await Promise.all([
     getJob(serviceRole, jobId),
     operationPromise,
@@ -207,6 +209,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // (auto-select), and later ops scan/select (labels exist).
     jobMakeMethodId
       ? isFirstOperationOfMakeMethod(serviceRole, operationId, jobMakeMethodId)
+      : false,
+    jobMakeMethodId
+      ? isLastOperationOfMakeMethod(serviceRole, operationId, jobMakeMethodId)
       : false
   ]);
 
@@ -260,6 +265,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // timer on open (see AutoTimer in AssemblyView). It never auto-ends a timer.
   const autoStartOperationTimer =
     companySettings.data?.autoStartOperationTimer ?? false;
+  const requireTrackedMaterialsIssued =
+    companySettings.data?.requireTrackedMaterialsIssued ?? false;
 
   // Resolve the unit the materials/consume target key off. Only serial/batch parents
   // bind per-unit tracked entities; inventory/non-inventory parents page purely by index,
@@ -341,6 +348,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       jobMakeMethod?.data?.requiresSerialTracking ?? false,
     requiresBatchTracking: jobMakeMethod?.data?.requiresBatchTracking ?? false,
     isFirstOperation,
+    isLastOperation,
+    requireTrackedMaterialsIssued,
     openEvent: openEvent.data ?? null,
     events: events.data ?? [],
     nonConformanceActions,

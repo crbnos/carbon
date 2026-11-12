@@ -36,6 +36,7 @@ import {
   getTrackedEntitiesForOperation,
   getWorkCenter,
   isFirstOperationOfMakeMethod,
+  isLastOperationOfMakeMethod,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
@@ -195,7 +196,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     bomIdMap,
     companySettings,
     abilityWarning,
-    isFirstOperation
+    isFirstOperation,
+    isLastOperation
   ] = await Promise.all([
     getProductionEventsForJobOperation(serviceRole, {
       operationId,
@@ -242,6 +244,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }),
     jobMakeMethodId
       ? isFirstOperationOfMakeMethod(serviceRole, operationId, jobMakeMethodId)
+      : false,
+    jobMakeMethodId
+      ? isLastOperationOfMakeMethod(serviceRole, operationId, jobMakeMethodId)
       : false
   ]);
 
@@ -369,6 +374,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     inventoryShelfLife?.expiredEntityPolicy ?? "Block";
   const autoSelectMaterialWithoutPickingList =
     companySettings.data?.autoSelectMaterialWithoutPickingList ?? false;
+  const requireTrackedMaterialsIssued =
+    companySettings.data?.requireTrackedMaterialsIssued ?? false;
 
   // Is this the first operation in the routing? A serial unit only earns a
   // printed label when it is completed at its first operation, so:
@@ -439,6 +446,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }),
     trackedEntities: trackedEntities?.data ?? [],
     isFirstOperation,
+    isLastOperation,
+    requireTrackedMaterialsIssued,
     nonConformanceActions: getNonConformanceActions(serviceRole, {
       itemId: operation.data?.[0].itemId,
       processId: operation.data?.[0].processId,
@@ -489,6 +498,8 @@ export default function OperationRoute() {
     correctionName,
     trackedEntities,
     isFirstOperation,
+    isLastOperation,
+    requireTrackedMaterialsIssued,
     workCenter,
     nonConformanceActions
   } = useLoaderData<typeof loader>();
@@ -511,6 +522,8 @@ export default function OperationRoute() {
       method={jobMakeMethod}
       trackedEntities={trackedEntities}
       isFirstOperation={isFirstOperation}
+      isLastOperation={isLastOperation}
+      requireTrackedMaterialsIssued={requireTrackedMaterialsIssued}
       nonConformanceActions={nonConformanceActions}
       operation={operation}
       procedure={procedure}

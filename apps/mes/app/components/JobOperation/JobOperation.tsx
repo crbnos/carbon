@@ -236,6 +236,8 @@ type JobOperationProps = {
   correctionName?: string | null;
   trackedEntities: TrackedEntity[];
   isFirstOperation: boolean;
+  isLastOperation?: boolean;
+  requireTrackedMaterialsIssued?: boolean;
   workCenter: Promise<
     PostgrestSingleResponse<{
       name: string;
@@ -272,6 +274,8 @@ export const JobOperation = ({
   correctionName,
   trackedEntities,
   isFirstOperation,
+  isLastOperation = false,
+  requireTrackedMaterialsIssued = false,
   workCenter
 }: JobOperationProps) => {
   const { t } = useLingui();
@@ -3074,6 +3078,8 @@ export const JobOperation = ({
                   parentIsBatch={parentIsBatch}
                   setupProductionEvent={setupProductionEvent}
                   trackedEntityId={trackedEntityId}
+                  isLastOperation={isLastOperation}
+                  requireTrackedMaterialsIssued={requireTrackedMaterialsIssued}
                   returnFocusRef={actionsSheetOpenerRef}
                   onClose={completeModal.onClose}
                 />
