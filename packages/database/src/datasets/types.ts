@@ -282,6 +282,14 @@ export type FoundationData = {
   partyAddressStateProvince: string;
   partyAddressPostalCode: string;
   partyAddressCountryCode: string;
+  /** Line-flow company settings. */
+  lineFlow?: LineFlowSpec;
+};
+
+export type LineFlowSpec = {
+  travelerLabels: boolean;
+  requireTrackedMaterialsIssued: boolean;
+  autoPickingListOnRelease: boolean;
 };
 
 export type ItemType =
@@ -359,6 +367,8 @@ export type BomLineSpec = {
   order: number;
   methodType?: MethodType;
   kit?: boolean;
+  /** The `order` of a bop operation in the same method; written as `methodOperationId`. */
+  operation?: number;
 };
 
 export type BopOperationSpec = {
@@ -596,6 +606,8 @@ export type OpeningStockSpec = {
 
 export type TrackedStockSpec = {
   item: string;
+  /** When set, tier 03 writes the opening ledger of this item at this shelf per lot. */
+  shelf?: string;
   entities: Array<{
     readableId: string;
     quantity: number;
@@ -633,6 +645,8 @@ export type KanbanItemSpec = {
   /** Transfer kanbans only, with toShelf. */
   fromShelf?: string;
   toShelf?: string;
+  /** Transfer kanbans only. */
+  replenishmentLevel?: number;
 };
 
 export type InventoryCountLineSpec = {
@@ -1414,6 +1428,8 @@ export type JobSpec = {
    * from `startOffset` 07:00 — the estimates-vs-actuals KPI compares the two.
    */
   loggedTime?: { startOffset: DayOffset; efficiency: number };
+  /** Serial items only: one readableId per unit, as `assignSerialNumbers` numbers them. */
+  serials?: string[];
 };
 
 export type ShiftEventSpec = {
@@ -2590,6 +2606,8 @@ export type SerialSequenceSpec = {
    * seeded serial of the item that fits prefix + counter + suffix.
    */
   next: number;
+  serialNumberTiming?: "jobCreation" | "jobRelease" | "production";
+  printLabelOnCompletion?: boolean;
 };
 
 /** As the print-job task leaves it. */
@@ -2730,6 +2748,7 @@ export type DatasetKey =
   | "robotics"
   | "precision"
   | "motor"
+  | "motor-line"
   | "defense";
 
 // One industry story's worth of data. The tiers hold the insertion logic; a
@@ -2739,6 +2758,11 @@ export type Dataset = {
   label: string;
   /** industry.id this dataset backs, or null for dev-only datasets. */
   industryId: string | null;
+  /**
+   * Industry folder for bundled assets (CAD model, thumbnails); defaults to
+   * `industryId`. Lets a dev-only dataset reuse an industry's assets.
+   */
+  assetIndustryId?: string;
   foundation: FoundationData;
   items: ItemsData;
   inventory: InventoryData;
