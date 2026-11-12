@@ -3,11 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { KyselyDatabase } from "@carbon/database/client";
-import {
-  groups as companyGroups,
-  getGroupId
-} from "@carbon/database/seed-data";
+import * as seedData from "@carbon/database/seed-data";
 import { type Kysely, sql } from "kysely";
+
+// `@carbon/database` has no `"type": "module"`, so tsx (the backup scripts)
+// loads it as CommonJS and its exports arrive on `default`; a bundler (the
+// jobs) gives the module itself.
+const { groups: companyGroups, getGroupId } =
+  (seedData as { default?: typeof seedData }).default ?? seedData;
 
 /**
  * Loading a backup's `group` rows: a derived group's id is its row's id, so

@@ -96,6 +96,7 @@ import Supplier from "./Supplier";
 import SupplierContact from "./SupplierContact";
 import SupplierLocation from "./SupplierLocation";
 import SupplierProcess from "./SupplierProcess";
+import SupplierStage from "./SupplierStage";
 import SupplierStatus from "./SupplierStatus";
 import Suppliers from "./Suppliers";
 import SupplierType from "./SupplierType";
@@ -195,6 +196,7 @@ export {
   SupplierContact,
   SupplierLocation,
   SupplierProcess,
+  SupplierStage,
   SupplierStatus,
   Suppliers,
   SupplierType,

@@ -2,7 +2,6 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { STRIPE_CONNECT_ENABLED } from "@carbon/env";
 import { Badge, Button, toast } from "@carbon/react";
 import { useCallback, useState } from "react";
 import { z } from "zod";
@@ -20,12 +19,12 @@ export const StripeConnectSettingsSchema = z.object({
 export const StripeConnect = defineIntegration({
   name: "Stripe Connect",
   id: "stripe-connect",
-  // Only offered when the platform has a Stripe secret key configured — without
-  // it every Connect call throws and the pull-sweep backstop no-ops, so the
-  // whole feature is inert. Gated on the browser-safe STRIPE_CONNECT_ENABLED
-  // flag (never the secret itself), mirroring how OAuth integrations gate on
-  // their public clientId.
-  active: STRIPE_CONNECT_ENABLED,
+  // Switched off: no company can install it or start Stripe onboarding, even
+  // where the platform has a Stripe secret key. To offer it again, set this to
+  // STRIPE_CONNECT_ENABLED — the browser-safe flag for "a Stripe secret key is
+  // configured" (never the secret itself); without a key every Connect call
+  // throws and the pull-sweep backstop no-ops.
+  active: false,
   category: "Payments",
   logo: pieceLogo("stripe"),
   description:

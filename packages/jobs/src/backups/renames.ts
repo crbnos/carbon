@@ -65,7 +65,9 @@ export const LIVE_COLUMN_RENAMES: Record<string, Record<string, string>> = {
   // part's own currency, which every pre-rename price was (the base currency;
   // a NULL currencyCode reads as base).
   supplierPart: { unitPrice: "supplierUnitPrice" },
-  supplierPartPrice: { unitPrice: "supplierUnitPrice" }
+  supplierPartPrice: { unitPrice: "supplierUnitPrice" },
+  // 2026-11 (inspection plan name): the column named the plan, not a drawing.
+  inspectionDocument: { drawingNumber: "name" }
 };
 
 /** A live table's column list under its CURRENT column names. */

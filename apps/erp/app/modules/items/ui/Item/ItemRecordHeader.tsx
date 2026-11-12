@@ -12,13 +12,18 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ComponentProps, ReactNode } from "react";
-import { LuGitPullRequestArrow, LuTrash } from "react-icons/lu";
+import {
+  LuGitPullRequestArrow,
+  LuPackageSearch,
+  LuTrash
+} from "react-icons/lu";
 import { useAuditLog } from "~/components/AuditLog";
 import { DetailsTopbar } from "~/components/Layout";
 import { RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useUser } from "~/hooks";
 import { useResolved } from "~/hooks/useResolved";
+import RequestQuoteModal from "~/modules/purchasing/ui/PurchasingRfq/RequestQuoteModal";
 import { path } from "~/utils/path";
 import type { SupersessionMode } from "../../items.models";
 import { CreateChangeNoticeModal } from "../ChangeNotice";
@@ -56,6 +61,7 @@ const ItemRecordHeader = ({
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
   const changeNoticeModal = useDisclosure();
+  const requestQuoteModal = useDisclosure();
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
     entityType: "item",
     entityId: itemId,
@@ -77,6 +83,17 @@ const ItemRecordHeader = ({
     <>
       {auditLogTrigger}
       <DropdownMenuSeparator />
+      <DropdownMenuItem
+        disabled={
+          !permissions.can("create", "purchasing") ||
+          !permissions.can("view", "purchasing") ||
+          !permissions.is("employee")
+        }
+        onClick={requestQuoteModal.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuPackageSearch />} />
+        <Trans>Request Quote</Trans>
+      </DropdownMenuItem>
       {withChangeNotice && (
         <>
           <DropdownMenuItem
@@ -131,6 +148,14 @@ const ItemRecordHeader = ({
         open={changeNoticeModal.isOpen}
         onClose={changeNoticeModal.onClose}
       />
+      {requestQuoteModal.openCount > 0 && (
+        <RequestQuoteModal
+          key={requestQuoteModal.openCount}
+          itemId={itemId}
+          open={requestQuoteModal.isOpen}
+          onClose={requestQuoteModal.onClose}
+        />
+      )}
       {auditLogDrawer}
     </>
   );

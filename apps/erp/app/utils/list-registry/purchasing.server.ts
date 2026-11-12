@@ -10,6 +10,7 @@ import {
   getPurchasingRFQs,
   getSupplierQuotes,
   getSupplierReportContacts,
+  getSupplierStages,
   getSuppliers,
   getSupplierTypes,
   LEASES_PAGING,
@@ -17,11 +18,12 @@ import {
   PURCHASE_RETURN_ORDERS_PAGING,
   PURCHASING_RFQS_PAGING,
   SUPPLIER_QUOTES_PAGING,
+  SUPPLIER_STAGES_PAGING,
   SUPPLIER_TYPES_PAGING,
   SUPPLIERS_PAGING
 } from "~/modules/purchasing/purchasing.service";
 import type { SupplierReportContacts } from "~/modules/purchasing/types";
-import { SUPPLIER_CONTACT_VALUES } from "~/modules/purchasing/ui/Supplier/supplier-list-export";
+import { SUPPLIER_EXPORT_VALUES } from "~/modules/purchasing/ui/Supplier/supplier-list-export";
 import type { ListDefinition, ListRowsContext } from "./index.server";
 import { searchList } from "./index.server";
 
@@ -57,6 +59,13 @@ export const purchaseReturnOrdersList = searchList({
   paging: PURCHASE_RETURN_ORDERS_PAGING,
   service: getPurchaseReturnOrders,
   params: { status: "status", supplierId: "supplierId" }
+});
+
+export const supplierStagesList = searchList({
+  key: "supplier-stages",
+  permission: { view: "purchasing", role: "employee" },
+  paging: SUPPLIER_STAGES_PAGING,
+  service: getSupplierStages
 });
 
 export const supplierTypesList = {
@@ -113,7 +122,7 @@ export const suppliersList = searchList({
   service: getSuppliers,
   params: { type: "type", status: "status" },
   rows: withSupplierReportContacts,
-  exportValues: SUPPLIER_CONTACT_VALUES
+  exportValues: SUPPLIER_EXPORT_VALUES
 });
 
 export const leasesList = searchList({
@@ -128,6 +137,7 @@ export const purchasingLists: Record<string, ListDefinition> = {
   [supplierQuotesList.key]: supplierQuotesList,
   [purchasingRfqsList.key]: purchasingRfqsList,
   [purchaseReturnOrdersList.key]: purchaseReturnOrdersList,
+  [supplierStagesList.key]: supplierStagesList,
   [supplierTypesList.key]: supplierTypesList,
   [suppliersList.key]: suppliersList,
   [leasesList.key]: leasesList

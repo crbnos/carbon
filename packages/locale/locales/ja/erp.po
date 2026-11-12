@@ -222,6 +222,10 @@ msgstr "{0, plural, one {# テスト} other {# テスト}}"
 msgid "{0, plural, one {# tool} other {# tools}}"
 msgstr "{0, plural, one {# 工具} other {# 工具}}"
 
+#. placeholder {0}: plan.versions.length
+msgid "{0, plural, one {# version} other {# versions}}"
+msgstr "{0, plural, one {# バージョン} other {# バージョン}}"
+
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, other {#週}}"
@@ -302,6 +306,11 @@ msgstr "{0}（タイプ）"
 #. placeholder {0}: file.filename
 msgid "{0} (unavailable)"
 msgstr "{0}（利用不可）"
+
+#. placeholder {0}: formatter.format(material.quantity)
+#. placeholder {1}: material.unitOfMeasureCode
+msgid "{0} {1} per unit"
+msgstr "1個あたり {0} {1}"
 
 #. placeholder {0}: formatQuantity(pickedQuantity)
 #. placeholder {1}: formatQuantity(quantity)
@@ -610,6 +619,10 @@ msgstr "{0} 件の支払"
 #. placeholder {0}: formatQuantity(Number(burdenRate))
 msgid "{0} per hour"
 msgstr "{0}/時間"
+
+#. placeholder {0}: row.usedIn.length
+msgid "{0} places"
+msgstr "{0}箇所"
 
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
@@ -1099,6 +1112,9 @@ msgstr "プロバイダーに {missingCount} 件の仕訳が不足していま�
 msgid "{missingCount} missing journals and {mismatchCount} mismatched months"
 msgstr "{missingCount} 件の不足している仕訳と {mismatchCount} ヶ月のミスマッチ"
 
+msgid "{missingSupplier, plural, one {# ticked part needs a supplier. Choose one or untick it.} other {# ticked parts need a supplier. Choose one or untick them.}}"
+msgstr "{missingSupplier, plural, one {#件のチェックした部品に仕入先が必要です。仕入先を選択するか、チェックを外してください。} other {#件のチェックした部品に仕入先が必要です。仕入先を選択するか、チェックを外してください。}}"
+
 msgid "{name} at {station}"
 msgstr "{name}（{station}）"
 
@@ -1116,9 +1132,6 @@ msgstr "{name} は {end} に終了します（以前は期限なし）"
 
 msgid "{name} is inactive. Choose an active storage unit."
 msgstr "{name} は無効です。有効な保管ユニットを選択してください。"
-
-msgid "{name} is nettable now. Choose a non-nettable storage unit."
-msgstr "{name} は MRP 対象になりました。MRP 対象外の保管ユニットを選択してください。"
 
 msgid "{name} needs an account number."
 msgstr "{name} にはアカウント番号が必要です。"
@@ -1196,6 +1209,9 @@ msgstr "{passing}/{total}の資産"
 
 msgid "{percent} picked"
 msgstr "{percent}ピッキング済"
+
+msgid "{percentage}%"
+msgstr "{percentage}%"
 
 msgid "{position} of {total}"
 msgstr "{position}/{total}"
@@ -1975,7 +1991,7 @@ msgid "A nonconformance task that stops the problem recurring elsewhere — dist
 msgstr "問題が他の場所で再発するのを防ぐ不適合タスク—是正措置と封じ込めとは異なります。"
 
 msgid "A number or sign next to a figure changes what it says. Put a word between them."
-msgstr ""
+msgstr "数値のすぐ隣に数字や記号があると、表示内容が変わります。間に文字を入れてください。"
 
 msgid "A part"
 msgstr "部品"
@@ -1985,6 +2001,9 @@ msgstr "パーツには、購入または製造できる特定の品目に関す
 
 msgid "A part in this step may tip once placed — consider a fixture or a second person."
 msgstr "このステップの部品は配置後に転倒する可能性があります。治具または第2作業者の使用を検討してください。"
+
+msgid "A PDF drawing to balloon, or a STEP model. Click to choose a file."
+msgstr "バルーン付けするPDFの図面またはSTEPモデルです。クリックしてファイルを選択してください。"
 
 msgid "A photo or PDF the operator sees on this step"
 msgstr "このステップで作業者が見る写真またはPDF"
@@ -2037,6 +2056,12 @@ msgstr "購買発注明細、問題、またはプロジェクト消費ジョブ
 msgid "A project, or a project and one of its elements, that a job, a purchase order or invoice line, a timesheet entry or a material issue charges its cost to. Only Released projects and chargeable elements in an Unstarted or Started state can be picked."
 msgstr "製造指図、発注書、請求書明細、タイムシート入力、または材料出庫がコストを請求するプロジェクト、またはプロジェクトとそのいずれかの要素。リリース済のプロジェクトおよび未開始または開始状態の請求可能要素のみを選択できます。"
 
+msgid "A promised date is optional to finalize"
+msgstr "確定に回答納期は任意です"
+
+msgid "A promised date is required to finalize"
+msgstr "確定には回答納期が必要です"
+
 msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
 msgstr "会計開始日前に日付した仮仕訳。会計を設定すると開始仕訳に置き換わり、その後は変更できません。"
 
@@ -2048,6 +2073,9 @@ msgstr "仕入先請求書は各期日ごとに作成され、各資産の支払
 
 msgid "A purchase invoice is posted"
 msgstr "仕入先請求書が転記されました"
+
+msgid "A purchase order cannot be finalized until it has a supplier promised date. A date on the order covers every line. Keep this off if suppliers give you a date after they receive the order."
+msgstr "仕入先の回答納期が入るまで、発注書は確定できません。発注書に入力した日付はすべての明細に適用されます。仕入先が発注書の受領後に納期を回答する場合は、この設定をオフにしてください。"
 
 msgid "A purchase order is created"
 msgstr "発注書が作成されました"
@@ -2472,6 +2500,13 @@ msgstr "について（通知）"
 msgid "About this field"
 msgstr "このフィールドについて"
 
+#. placeholder {0}: result.step.maxValue
+msgid "Above {0}"
+msgstr "{0}超"
+
+msgid "Above maximum"
+msgstr "上限超過"
+
 msgid "Above the upper limit"
 msgstr "上限を超えています"
 
@@ -2768,6 +2803,10 @@ msgstr "アクションタイプ"
 msgid "Actions"
 msgstr "アクション"
 
+#. placeholder {0}: inspection.inspectionId
+msgid "Actions for {0}"
+msgstr "{0} のアクション"
+
 msgid "Actions for {attributeName}"
 msgstr "{attributeName} の操作"
 
@@ -2942,6 +2981,9 @@ msgstr "作業の各部分について明細を追加してください：Time &
 msgid "Add a line to the document"
 msgstr "文書に明細を追加"
 
+msgid "Add a List, Inspection or Measurement (with a min or max) step to an operation to map its results to corrections."
+msgstr "リスト、検査、測定（最小値または最大値あり）のステップを工程に追加すると、その結果を補正に割り当てられます。"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "部品表の各項目とその数量をリストアップした材料セクションを追加します。"
 
@@ -2950,6 +2992,9 @@ msgstr "パラメータを追加（手順書のみ）"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "プリンター設定にプリンターを追加して、ラベルを直接印刷します。"
+
+msgid "Add a promised date before you finalize this purchase order."
+msgstr "この発注書を確定する前に、回答納期を追加してください。"
 
 msgid "Add a requirement"
 msgstr "要求事項を追加"
@@ -3489,6 +3534,9 @@ msgstr "後"
 
 msgid "After (calculation method)"
 msgstr "後（計算方法）"
+
+msgid "After the correction"
+msgstr "補正後"
 
 msgid "Afternoon, {name}."
 msgstr "午後、{name}さん。"
@@ -4081,6 +4129,9 @@ msgstr "いずれか"
 msgid "Any day in the month adds that month"
 msgstr "月内のいずれかの日でその月を追加"
 
+msgid "any fields set to update on every push"
+msgstr "プッシュのたびに更新するよう設定されたフィールド"
+
 msgid "Any item group"
 msgstr "任意のアイテムグループ"
 
@@ -4294,6 +4345,12 @@ msgstr "{displayName}を承認"
 msgid "Approve all"
 msgstr "すべて承認"
 
+msgid "Approve and delete"
+msgstr ""
+
+msgid "Approve and Delete"
+msgstr ""
+
 msgid "Approve Request"
 msgstr "リクエスト承認"
 
@@ -4308,6 +4365,21 @@ msgstr "承認者"
 
 msgid "Approved On"
 msgstr "承認日"
+
+msgid "Approving also reverses its receipts {receipts}: the stock they brought in is removed and their postings are reversed. It is refused if that stock was used since."
+msgstr ""
+
+msgid "Approving deletes {readableId} now. This cannot be undone."
+msgstr ""
+
+msgid "Approving deletes the purchase order and all of its lines now. This cannot be undone."
+msgstr ""
+
+msgid "Approving reverses {receipts}, then deletes the purchase order and all of its lines. This cannot be undone."
+msgstr ""
+
+msgid "Approving voids {readableId}, which reverses its postings, then deletes it. This cannot be undone."
+msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "概算 — スケジュール日付から派生; このエントリに対する容量予約は存在しません。"
@@ -4673,6 +4745,10 @@ msgstr "ストレージタイプ: {0} を削除してもよろしいですか？
 #. placeholder {0}: storageUnit.name
 msgid "Are you sure you want to delete the storage unit: {0}? This cannot be undone."
 msgstr "保管ユニット: {0} を削除してもよろしいですか?これは元に戻せません。"
+
+#. placeholder {0}: supplierStage.name
+msgid "Are you sure you want to delete the supplier stage: {0}? This cannot be undone."
+msgstr "仕入先段階「{0}」を削除してもよろしいですか？この操作は元に戻せません。"
 
 #. placeholder {0}: supplierType.name
 msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
@@ -5306,6 +5382,9 @@ msgstr "{plan}プランで利用可能"
 msgid "Available on the Business plan"
 msgstr "ビジネスプランで利用可能"
 
+msgid "Available or On Hold serials and batches. Available ones go On Hold until the inspection is dispositioned."
+msgstr "利用可能または保留中のシリアル番号とバッチ。利用可能なものは、検査の処分が決まるまで保留中になります。"
+
 msgid "Avatar style"
 msgstr "アバターのスタイル"
 
@@ -5583,12 +5662,22 @@ msgstr "提出する前に"
 msgid "Beginning"
 msgstr "開始"
 
+msgid "Being approved now…"
+msgstr ""
+
 #. placeholder {0}: successorItem.readableIdWithRevision
 msgid "Being phased out — successor: <0>{0}</0>"
 msgstr "段階的に廃止されます — 後継品目：<0>{0}</0>"
 
+#. placeholder {0}: result.step.minValue
+msgid "Below {0}"
+msgstr "{0}未満"
+
 msgid "Below level"
 msgstr "レベル以下"
+
+msgid "Below minimum"
+msgstr "下限未満"
 
 msgid "Below safety stock"
 msgstr "安全在庫以下"
@@ -5823,6 +5912,9 @@ msgstr "機械をブロック"
 msgid "Blocks save until resolved"
 msgstr "解決されるまで保存をブロックします"
 
+msgid "Blue"
+msgstr "青"
+
 msgid "Board"
 msgstr "ボード"
 
@@ -5855,6 +5947,9 @@ msgstr "BoM エクスプローラー設定を更新"
 
 msgid "BOM synced successfully"
 msgstr "BOMが正常に同期されました"
+
+msgid "BOM synced. Not written: {notWritten}"
+msgstr "BOMを同期しました。書き込まれなかったもの: {notWritten}"
 
 msgid "BOMs"
 msgstr "BOM"
@@ -5916,9 +6011,6 @@ msgstr "両方のテストが合格しました；資金なし (§41(d)(4)(H)) �
 msgid "Bottleneck"
 msgstr "ボトルネック"
 
-msgid "Bottom of page"
-msgstr "ページ下部"
-
 msgid "Branch an editable copy of this version that you can change and publish."
 msgstr "このバージョンの編集可能なコピーをブランチして、変更して公開できます。"
 
@@ -5930,6 +6022,9 @@ msgstr "部品、BOM、工程表、原価計算をインポート — Carbonの�
 
 msgid "Broadcast reply to channel"
 msgstr "チャネルへの返信をブロードキャスト"
+
+msgid "Brown"
+msgstr "茶色"
 
 msgid "Browse library"
 msgstr "ライブラリを参照"
@@ -5999,6 +6094,9 @@ msgstr "ロールベースの教育訓練教材を構築"
 
 msgid "Build tailored, role-based training materials"
 msgstr "カスタマイズされたロールベースの教育訓練教材を構築"
+
+msgid "Builds"
+msgstr "製造"
 
 msgid "Built after this step"
 msgstr "このステップの後に構築"
@@ -6146,6 +6244,9 @@ msgstr "保管ユニット別"
 msgid "By you · edited <0/>"
 msgstr "あなた · 編集済 <0/>"
 
+msgid "CAD model"
+msgstr "CADモデル"
+
 msgid "CAD Model"
 msgstr "CADモデル"
 
@@ -6231,6 +6332,9 @@ msgstr "キャンセル"
 msgid "Cancel {0}"
 msgstr "{0}をキャンセル"
 
+msgid "Cancel {name}?"
+msgstr "{name} をキャンセルしますか？"
+
 msgid "Cancel {readableId}"
 msgstr "{readableId}をキャンセル"
 
@@ -6245,6 +6349,9 @@ msgstr "変更通知をキャンセル"
 
 msgid "Cancel Contract"
 msgstr "契約をキャンセル"
+
+msgid "Cancel Inspection"
+msgstr "検査をキャンセル"
 
 msgid "Cancel Job"
 msgstr "ジョブをキャンセル"
@@ -6266,6 +6373,9 @@ msgstr "発注書をキャンセル"
 
 msgid "Cancel purchase order {target}"
 msgstr "発注書{target}をキャンセル"
+
+msgid "Cancel Request"
+msgstr ""
 
 msgid "Cancel Return"
 msgstr "返品をキャンセル"
@@ -6835,12 +6945,6 @@ msgstr "得意先を選択"
 msgid "Choose a labor category or an employee"
 msgstr "労務カテゴリまたは従業員を選択してください"
 
-msgid "Choose a non-nettable storage unit at this location for inspected parts."
-msgstr "検査対象の部品には、このロケーションの MRP 対象外の保管ユニットを選択してください。"
-
-msgid "Choose a non-nettable storage unit at this location."
-msgstr "このロケーションの MRP 対象外の保管ユニットを選択してください。"
-
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}が置き換える部品を選択してください。そのルールはその部品に{itemReadableId}を後継品目として保存されます。"
 
@@ -6855,6 +6959,12 @@ msgstr "プールを選択してください"
 
 msgid "Choose a serial number"
 msgstr "シリアル番号を選択"
+
+msgid "Choose a storage unit at this location for inspected parts."
+msgstr "検査対象の部品には、この拠点の保管ユニットを選択してください。"
+
+msgid "Choose a storage unit at this location."
+msgstr "この拠点の保管ユニットを選択してください。"
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
@@ -6875,6 +6985,9 @@ msgstr "オプションを選択"
 msgid "Choose another file"
 msgstr "別のファイルを選択"
 
+msgid "Choose at least one part and a supplier."
+msgstr "部品を1つ以上と仕入先を選択してください。"
+
 msgid "Choose avatar"
 msgstr "アバターを選択"
 
@@ -6892,6 +7005,12 @@ msgstr "{unitName}の返却先を選択"
 
 msgid "Choose stock to move"
 msgstr "移動する在庫を選択"
+
+msgid "Choose supplier"
+msgstr "仕入先を選択"
+
+msgid "Choose suppliers"
+msgstr "仕入先を選択"
 
 msgid "Choose the first day of the current period or of one of the 3 periods before it."
 msgstr "当期または前3会計期間のいずれかの初日を選択してください。"
@@ -7036,9 +7155,6 @@ msgstr "クリックまたはドラッグして置き換え"
 
 msgid "Click to rename"
 msgstr "クリックして名前を変更"
-
-msgid "Click to upload a PDF drawing"
-msgstr "PDFドローイングをアップロードするにはクリック"
 
 msgid "CLIN"
 msgstr "CLIN"
@@ -7841,6 +7957,9 @@ msgstr "続行"
 msgid "Continue Setup"
 msgstr "セットアップを続行"
 
+msgid "Continue to the next operation"
+msgstr "次の工程に進む"
+
 msgid "Contra-asset account for the amortization of right-of-use assets"
 msgstr "使用権資産償却累計額"
 
@@ -8624,6 +8743,9 @@ msgstr "{0}個の値を作成"
 msgid "Create {name}"
 msgstr "{name}を作成"
 
+msgid "Create {rfqCount} RFQs"
+msgstr "{rfqCount}件の見積依頼を作成"
+
 msgid "Create & Release"
 msgstr "作成 & リリース"
 
@@ -8759,6 +8881,9 @@ msgstr "交換を作成"
 msgid "Create Revision"
 msgstr "リビジョンを作成"
 
+msgid "Create RFQ"
+msgstr "見積依頼を作成"
+
 msgid "Create Rule"
 msgstr "ルールを作成"
 
@@ -8798,6 +8923,10 @@ msgstr "作成済み <0/>"
 
 msgid "Created <0/> by <1/>"
 msgstr "<0/>は<1/>により作成"
+
+#. placeholder {0}: created.inspectionId
+msgid "Created <0>{0}</0>"
+msgstr "<0>{0}</0> で作成"
 
 msgid "Created account"
 msgstr "アカウントを作成しました"
@@ -8920,6 +9049,9 @@ msgstr "在庫転送明細を作成しました"
 msgid "Created storage type"
 msgstr "ストレージタイプを作成しました"
 
+msgid "Created supplier stage"
+msgstr "仕入先段階を作成しました"
+
 #. placeholder {0}: created.name
 msgid "Created supplier: {0}"
 msgstr "仕入先を作成しました: {0}"
@@ -8938,6 +9070,9 @@ msgstr "プロジェクトがリリース済のときに作成されます"
 
 msgid "Created work center"
 msgstr "作業区を作成しました"
+
+msgid "Creates {rfqCount, plural, one {# draft RFQ} other {# draft RFQs}}. Nothing goes to a supplier until you finalize."
+msgstr "{rfqCount, plural, one {#件の下書きの見積依頼を作成します。} other {#件の下書きの見積依頼を作成します。}}確定するまで、どの仕入先にも送信されません。"
 
 msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
 msgstr "まだクレジットされていない出荷数量に対して、仕入先クレジットメモの下書きを作成します"
@@ -9960,6 +10095,9 @@ msgstr "契約を削除"
 msgid "Delete Contractor"
 msgstr "外部作業者を削除"
 
+msgid "Delete correction"
+msgstr "補正を削除"
+
 msgid "Delete Count"
 msgstr "カウントを削除"
 
@@ -10007,6 +10145,9 @@ msgstr "グループを削除"
 
 msgid "Delete Holiday"
 msgstr "休日を削除"
+
+msgid "Delete Inspection"
+msgstr "検査を削除"
 
 msgid "Delete Inspection Plan"
 msgstr "検査計画を削除"
@@ -10070,6 +10211,10 @@ msgstr "メモを削除"
 
 msgid "Delete Month"
 msgstr "月を削除"
+
+#. placeholder {0}: row.original.key
+msgid "Delete parameter {0}"
+msgstr "パラメーター {0} を削除"
 
 msgid "Delete Part"
 msgstr "パーツを削除"
@@ -10224,6 +10369,9 @@ msgstr "仕入先見積を削除"
 msgid "Delete Supplier Return"
 msgstr "仕入先返品を削除"
 
+msgid "Delete Supplier Stage"
+msgstr "仕入先段階を削除"
+
 msgid "Delete Supplier Type"
 msgstr "仕入先タイプを削除"
 
@@ -10292,6 +10440,9 @@ msgstr "削除済み"
 
 msgid "Deleted attribute value"
 msgstr "属性値を削除"
+
+msgid "Deleting this correction removes its operations, materials and result mappings. Jobs already created keep their own copy."
+msgstr "この補正を削除すると、その工程、部品、結果の割り当ても削除されます。作成済みの製造指図は独自のコピーを保持します。"
 
 msgid "Deliver"
 msgstr "配送"
@@ -10974,11 +11125,17 @@ msgstr "描画するか、画像をアップロード。"
 msgid "Drawing"
 msgstr "引き出し中"
 
-msgid "Drawing Number"
-msgstr "図面番号"
-
 msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
 msgstr "図面が置き換えられました。バルーン配置は削除されました。特性行は変更されていません。"
+
+msgid "drawings"
+msgstr "図面"
+
+msgid "Drop a drawing or model"
+msgstr "図面またはモデルをドロップ"
+
+msgid "Drop a PDF drawing or a STEP model"
+msgstr "PDFの図面またはSTEPモデルをドロップ"
 
 msgid "Drop an image of your signature"
 msgstr "署名の画像をドロップ"
@@ -11126,9 +11283,6 @@ msgstr "例：Acme Manufacturing"
 msgid "e.g. Detroit"
 msgstr "例：Detroit"
 
-msgid "e.g. DWG-1234"
-msgstr "例：DWG-1234"
-
 msgid "e.g. GB123456789"
 msgstr "例：GB123456789"
 
@@ -11143,6 +11297,9 @@ msgstr "例：Marco + エリアリーダー"
 
 msgid "e.g. MI"
 msgstr "例：MI"
+
+msgid "e.g. R1234 Receipt"
+msgstr "例：R1234 入荷"
 
 msgid "e.g. Suite 200"
 msgstr "例：Suite 200"
@@ -11254,10 +11411,6 @@ msgstr "各期間は1ヶ月で、月額レートが適用されます。"
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "各物理的な個が独自の追跡対象と一意番号を取得します。1 追跡対象 = 1 個。"
-
-#. placeholder {0}: replaced.join(", ")
-msgid "Each push replaces: {0}. Other edits stay."
-msgstr "各プッシュが置き換えるもの: {0}。その他の編集は保持されます。"
 
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "各レンタル契約または契約の営業担当者（またはその作成者）は、毎日その請求書のサマリーを受け取ります。"
@@ -11413,6 +11566,12 @@ msgstr "担当者を編集"
 
 msgid "Edit Contractor"
 msgstr "外部作業者を編集"
+
+msgid "Edit correction"
+msgstr "補正を編集"
+
+msgid "Edit Correction"
+msgstr "補正を編集"
 
 msgid "Edit cost"
 msgstr "原価を編集"
@@ -11627,6 +11786,9 @@ msgstr "生産数量を編集"
 msgid "Edit Project"
 msgstr "プロジェクトを編集"
 
+msgid "Edit Properties"
+msgstr "プロパティを編集"
+
 msgid "Edit purchase order line type"
 msgstr "発注書明細タイプを編集"
 
@@ -11698,6 +11860,9 @@ msgstr "仕入先部品を編集"
 
 msgid "Edit supplier process"
 msgstr "仕入先工法を編集"
+
+msgid "Edit Supplier Stage"
+msgstr "仕入先段階を編集"
 
 msgid "Edit Supplier Type"
 msgstr "仕入先タイプを編集"
@@ -11824,6 +11989,9 @@ msgstr "メール"
 
 msgid "Emails of the attendees (guests)"
 msgstr "参加者（ゲスト）のメールアドレス"
+
+msgid "Emails the sales order to the customer when they accept this quote online."
+msgstr ""
 
 msgid "Emoji"
 msgstr "絵文字"
@@ -12846,6 +13014,9 @@ msgstr "失敗"
 msgid "Failed characteristics"
 msgstr "不合格の特性"
 
+msgid "Failed inspection"
+msgstr "検査不合格"
+
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
 msgstr "行を追加できませんでした — {0} 行中 {addedCount} 行を追加しました"
@@ -12964,6 +13135,10 @@ msgstr "返品理由 {0} を作成できませんでした"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
 msgstr "サービスの作成に失敗しました: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create supplier stage: {0}"
+msgstr "仕入先段階の作成に失敗しました: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create supplier: {0}"
@@ -13268,6 +13443,9 @@ msgstr "PDFのアップロードに失敗しました"
 msgid "Failed to upload signature"
 msgstr "署名のアップロードに失敗"
 
+msgid "Failed to upload the model"
+msgstr "モデルのアップロードに失敗しました"
+
 msgid "Failed to upload thumbnail"
 msgstr "サムネイルのアップロードに失敗しました"
 
@@ -13444,6 +13622,9 @@ msgstr "ファイナンシング"
 msgid "Financing Terms"
 msgstr "ファイナンス条件"
 
+msgid "Find a part"
+msgstr "部品を検索"
+
 msgid "Find an element"
 msgstr "要素を検索"
 
@@ -13494,6 +13675,9 @@ msgstr "すべてのラインがピックされるか「短い」とマークさ
 
 msgid "Fire on quote lines, sales order lines and sales invoice lines."
 msgstr "見積明細、受注明細、売上請求書明細で発動します。"
+
+msgid "First {count}"
+msgstr "最初の {count} 件"
 
 msgid "First invoice"
 msgstr "最初の請求書"
@@ -13671,6 +13855,24 @@ msgstr "例：拠点、発注者"
 
 msgid "For Form 6765 Section E"
 msgstr "フォーム6765セクションE用"
+
+msgid "Force delete"
+msgstr ""
+
+msgid "Force Delete"
+msgstr ""
+
+msgid "Force Delete (Admin)"
+msgstr ""
+
+msgid "Force delete {purchaseOrderReadableId}"
+msgstr ""
+
+msgid "Force delete {readableId}"
+msgstr ""
+
+msgid "Force delete waiting for another Admin's approval"
+msgstr ""
 
 msgid "Forecast"
 msgstr "予測"
@@ -14295,6 +14497,12 @@ msgstr "全員にフルアクセスを付与するのではなく、各ユーザ
 msgid "Grants Ability"
 msgstr "スキルを付与"
 
+msgid "Gray"
+msgstr "グレー"
+
+msgid "Green"
+msgstr "緑"
+
 msgid "Grid layout"
 msgstr "グリッドレイアウト"
 
@@ -14401,6 +14609,7 @@ msgid "Hide"
 msgstr "非表示"
 
 #. placeholder {0}: module.name
+#. placeholder {0}: route.name
 msgid "Hide {0}"
 msgstr "{0} を非表示"
 
@@ -14412,6 +14621,10 @@ msgstr "口座番号を隠す"
 
 msgid "Hide Again"
 msgstr "もう一度非表示"
+
+#. placeholder {0}: group.name
+msgid "Hide all in {0}"
+msgstr "{0} の項目をすべて非表示"
 
 msgid "Hide block"
 msgstr "ブロックを非表示"
@@ -15062,11 +15275,18 @@ msgstr "無効なアクションは選択リストに表示されません。"
 msgid "Inactive categories cannot be picked for new time"
 msgstr "無効なカテゴリは新しい時間に対してピックできません"
 
+msgid "Inactive units are not offered when choosing a unit"
+msgstr ""
+
 msgid "Inbound inspection"
 msgstr "受入検査"
 
 msgid "Inbox"
 msgstr "受信トレイ"
+
+#. placeholder {0}: row.itemReadableId
+msgid "Include {0}"
+msgstr "{0}を含める"
 
 msgid "Include bought components"
 msgstr "購買部品を含める"
@@ -15243,6 +15463,9 @@ msgstr "最初のNを検査"
 msgid "Inspect Item"
 msgstr "検査項目"
 
+msgid "Inspected by"
+msgstr "検査者"
+
 msgid "Inspecting an item you received shows a warning."
 msgstr "受け取った品目の検査時に警告が表示されます。"
 
@@ -15283,6 +15506,9 @@ msgstr "検査ジョブ"
 
 msgid "Inspection Level"
 msgstr "検査水準"
+
+msgid "Inspection Name"
+msgstr "検査名"
 
 msgid "Inspection Passed"
 msgstr "検査合格"
@@ -15851,6 +16077,9 @@ msgstr "明細の価格設定方法を決定します。"
 msgid "It decides what the next step asks for."
 msgstr "次のステップの要件を決定します。"
 
+msgid "It is {status}: approving voids it first, which reverses its postings. If the void refuses, its postings are reversed by journal instead."
+msgstr ""
+
 msgid "It is approved but cannot apply. Reopen it, check these rows, then submit it again."
 msgstr "承認済ですが適用できません。再オープンしてこれらの行を確認してから、もう一度提出してください。"
 
@@ -15859,6 +16088,15 @@ msgstr "近日公開予定です。会社向けに設定するには Carbon に�
 
 msgid "It is still used by a \"{table}\" record; remove that first."
 msgstr "「{table}」レコードで引き続き使用されています。先にそれを除去。"
+
+msgid "It never touches the supplier's side of the books. Void the order's shipments and prepayments first, and remove its lines from purchase invoices. The request is refused until you do."
+msgstr ""
+
+msgid "It permanently deletes {readableId}, whatever its status. It cannot be undone."
+msgstr ""
+
+msgid "It permanently deletes this purchase order and all of its lines, whatever its status or approval. It cannot be undone."
+msgstr ""
 
 msgid "It shows with no hours until you add some."
 msgstr "時間が追加されるまで表示されません"
@@ -15997,6 +16235,9 @@ msgstr "変更通知のリリース前に、そのデザインが変わる可能
 
 msgid "Its revenue goes back to what each line has left to recognize."
 msgstr "その売上高は各明細が計上待ちしている金額に戻ります。"
+
+msgid "Its stock is taken back out, even if it was used since (on-hand can go negative), and what it received is given back to its order."
+msgstr ""
 
 msgid "Job"
 msgstr "ジョブ"
@@ -16147,6 +16388,9 @@ msgstr "かんばん出力"
 msgid "Kanban output setting updated"
 msgstr "かんばん出力設定が更新されました"
 
+msgid "Kanban QR code"
+msgstr "かんばんのQRコード"
+
 msgid "Kanbans"
 msgstr "かんばん"
 
@@ -16178,10 +16422,13 @@ msgid "Keep matching items"
 msgstr "一致する品目を保持"
 
 msgid "Keep mine"
-msgstr ""
+msgstr "自分の変更を保持"
 
 msgid "Keep navigation open"
 msgstr "ナビゲーションを開いたままにする"
+
+msgid "Keep one, or hide {moduleName} itself"
+msgstr "1つ残すか、{moduleName} 自体を非表示にする"
 
 msgid "Keep only items where…"
 msgstr "以下の条件を満たすアイテムのみを保持…"
@@ -16391,7 +16638,7 @@ msgstr "前回の{when}の送信は失敗しました: {0}"
 msgid "Last push {when}:"
 msgstr "最後のプッシュ {when}:"
 
-msgid "Last pushed {lastPushed}."
+msgid "Last pushed {lastPushed}"
 msgstr "最終プッシュ: {lastPushed}"
 
 msgid "Last Quarter"
@@ -16575,6 +16822,12 @@ msgstr "空白のままにして、次のリビジョンを自動的に使用し
 msgid "Leave empty for exact match"
 msgstr "正確な一致のために空のままにしてください"
 
+msgid "Leave empty for no limit. Past it, MES offers only Scrap or a quality issue."
+msgstr "上限を設けない場合は空欄のままにしてください。上限を超えると、MESではスクラップまたは品質問題の登録のみが提示されます。"
+
+msgid "Leave empty to pick a color from the name"
+msgstr "空欄のままにすると、名前から色が選ばれます"
+
 msgid "Leave empty to use the account default"
 msgstr "空白のままにしてアカウントデフォルトを使用します"
 
@@ -16704,6 +16957,9 @@ msgstr "後入先出"
 
 msgid "Light"
 msgstr "ライト"
+
+msgid "Light Gray"
+msgstr "ライトグレー"
 
 msgid "Light, dark, or follow your system setting."
 msgstr "ライト、ダーク、またはシステム設定に従う。"
@@ -16923,7 +17179,7 @@ msgid "Linked Record"
 msgstr "リンクされたレコード"
 
 msgid "Linked to a shared section. Edit it in the library to update it everywhere."
-msgstr ""
+msgstr "共有セクションにリンクされています。すべての箇所を更新するには、ライブラリで編集してください。"
 
 msgid "Links"
 msgstr "リンク"
@@ -17310,6 +17566,9 @@ msgstr "{date}に{amount}を内製"
 msgid "Make {quantity}"
 msgstr "{quantity} を製造"
 
+msgid "Make a new version to change this plan"
+msgstr "この計画を変更するには新しいバージョンを作成してください"
+
 msgid "Make Active"
 msgstr "アクティブにする"
 
@@ -17373,6 +17632,9 @@ msgstr "この文書を再度有効にします。"
 
 msgid "Makes this document active and visible."
 msgstr "この文書を有効にして表示します。"
+
+msgid "Makes this version Active again and archives the Active version."
+msgstr "このバージョンを再び有効にし、有効なバージョンをアーカイブします。"
 
 msgid "Manage"
 msgstr "管理"
@@ -17740,6 +18002,13 @@ msgstr "マトリックス"
 
 msgid "Maturity Analysis"
 msgstr "満期分析"
+
+#. placeholder {0}: correction.maxAttempts
+msgid "Max {0} per unit"
+msgstr "1個あたり最大{0}"
+
+msgid "Max attempts per unit"
+msgstr "1個あたりの最大試行回数"
 
 msgid "Max Lead Time"
 msgstr "最大リードタイム"
@@ -18160,6 +18429,7 @@ msgid "Move"
 msgstr "移動"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: route.name
 msgid "Move {0}"
 msgstr "移動 {0}"
 
@@ -18539,6 +18809,9 @@ msgstr "新規契約"
 msgid "New Contractor"
 msgstr "新規外部作業者"
 
+msgid "New Correction"
+msgstr "新規補正"
+
 msgid "New Cost Center"
 msgstr "新規原価センター"
 
@@ -18620,6 +18893,9 @@ msgstr "新しい休日"
 
 msgid "New IC Transaction"
 msgstr "新しいIC取引"
+
+msgid "New Inspection"
+msgstr "新規検査"
 
 msgid "New Inspection Plan"
 msgstr "新しい検査計画"
@@ -19239,6 +19515,12 @@ msgstr "カットオーバー時に残高がある管理勘定がありません
 msgid "No conversion is required"
 msgstr "変換は不要です"
 
+msgid "No correction"
+msgstr "補正なし"
+
+msgid "No corrections yet."
+msgstr "補正はまだありません。"
+
 msgid "No cost"
 msgstr "原価なし"
 
@@ -19578,9 +19860,6 @@ msgstr "モジュールが見つかりません"
 msgid "No new notifications"
 msgstr "新しい通知はありません"
 
-msgid "No non-nettable storage units at this location"
-msgstr "このロケーションに MRP 対象外の保管ユニットがありません"
-
 msgid "No notes"
 msgstr "メモなし"
 
@@ -19631,6 +19910,9 @@ msgstr "オープン受注明細がありません"
 
 msgid "No open work has a target date."
 msgstr "オープン作業に目標日がありません"
+
+msgid "No operations"
+msgstr "工程なし"
 
 msgid "No operations found."
 msgstr "工程が見つかりません。"
@@ -19921,6 +20203,9 @@ msgstr "このビューに適用されたソートはありません"
 msgid "No statement for this period"
 msgstr "この期間の明細書がありません"
 
+msgid "No step results suggest this correction."
+msgstr "この補正を提案するステップ結果はありません。"
+
 msgid "No step selected"
 msgstr "ステップが選択されていない"
 
@@ -19950,6 +20235,9 @@ msgstr "この拠点には在庫を保管している保管ユニットがあり
 
 msgid "No storage unit is short for open jobs or below zero."
 msgstr "未完了の製造指図に対して不足している、またはマイナスの保管ユニットはありません。"
+
+msgid "No storage units at this location"
+msgstr "この拠点に保管ユニットがありません"
 
 msgid "No storage units or tracking numbers match."
 msgstr "保管ユニットまたはトラッキング番号に一致するものはありません。"
@@ -20027,7 +20315,7 @@ msgid "No values available"
 msgstr "利用可能な値がありません"
 
 msgid "No values found"
-msgstr ""
+msgstr "値が見つかりません"
 
 msgid "No variable matches {query}"
 msgstr "{query}に一致する変数がありません"
@@ -20249,6 +20537,9 @@ msgstr "未同期"
 msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
 msgstr "使用可能な在庫ではありません。MRPと計画には含まれず、ピッキングでも引き当てられません。"
 
+msgid "Not used yet."
+msgstr "まだ使用されていません。"
+
 msgid "Not working today"
 msgstr "今日は勤務していません"
 
@@ -20309,6 +20600,12 @@ msgstr "ここにはまだ何もありません"
 
 msgid "Nothing in the archive"
 msgstr "アーカイブに何もありません"
+
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and it is deleted when one of them approves it."
+msgstr ""
+
+msgid "Nothing is deleted yet. The request goes to the other Admins' approvals, and the order is deleted when one of them approves it."
+msgstr ""
 
 msgid "Nothing is due. Invoices are created automatically when a period comes due."
 msgstr "期限が来ていません。期間が到来すると請求書が自動作成されます。"
@@ -20523,6 +20820,10 @@ msgstr "手持在庫: {before} から {after}"
 
 msgid "On Hold"
 msgstr "保留中"
+
+#. placeholder {0}: entity.quantity
+msgid "On Hold · {0}"
+msgstr "保留中 · {0}"
 
 msgid "On its side"
 msgstr "横向き"
@@ -21172,6 +21473,9 @@ msgstr "または、このシークレットを手動で入力します："
 msgid "Or focus the box or the handle and use the arrow keys (Shift for bigger steps)."
 msgstr "または、ボックスかハンドルにフォーカスして矢印キーを使用してください（大きく動かすには Shift を押します）。"
 
+msgid "Orange"
+msgstr "オレンジ"
+
 msgid "Order"
 msgstr "注文"
 
@@ -21281,6 +21585,9 @@ msgstr "セールスタイプリースのリース投資純額から得られる
 
 msgid "Other Income GL account for the monthly interest earned on the net investment in sales-type leases."
 msgstr "セールスタイプリースのリース投資純額から得られる毎月利息の営業外収益勘定科目。"
+
+msgid "Other payments it funds or refunds are unapplied from it first; they stay posted."
+msgstr ""
 
 msgid "Other Type"
 msgstr "その他のタイプ"
@@ -21816,6 +22123,12 @@ msgstr "支払い"
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "この請求書に適用された支払とクレジット。適用済み金額と為替差損益は会社の基本通貨で表示されます。行をクリックして参照伝票を開きます。"
 
+msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Revenue already recognized from it is reversed."
+msgstr ""
+
+msgid "Payments and memos applied to it are unapplied first: each payment stays posted, as unapplied credit you can apply elsewhere or force delete. Value it added to a capitalized fixed asset is taken back out; depreciation already posted stays."
+msgstr ""
+
 msgid "Payments due before this date were paid outside Carbon"
 msgstr "この日付より前の支払期日は Carbon 外で支払われました"
 
@@ -22157,6 +22470,9 @@ msgstr "WBSコードをピン留め"
 msgid "Pinch or scroll to zoom · drag to pan · double-tap to reset"
 msgstr "ピンチまたはスクロールで拡大縮小 · ドラッグで移動 · ダブルタップでリセット"
 
+msgid "Pink"
+msgstr "ピンク"
+
 msgid "Pinned"
 msgstr "ピン留め"
 
@@ -22318,7 +22634,7 @@ msgid "Playback"
 msgstr "再生"
 
 msgid "Please <0>change it</0>."
-msgstr ""
+msgstr "<0>変更</0>してください。"
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "監査ログを有効にするには、管理者にお問い合わせください。"
@@ -23040,8 +23356,17 @@ msgstr "約束日"
 msgid "Promised Date"
 msgstr "回答納期"
 
+msgid "Promised date optional to finalize purchase orders"
+msgstr "発注書の確定時、回答納期は任意"
+
+msgid "Promised date required to finalize purchase orders"
+msgstr "発注書の確定時、回答納期は必須"
+
 msgid "Properties"
 msgstr "プロパティ"
+
+msgid "Properties (apply to all serials on this line)"
+msgstr "プロパティ（この明細のすべてのシリアル番号に適用）"
 
 msgid "Property"
 msgstr "プロパティ"
@@ -23105,6 +23430,9 @@ msgstr "公開"
 
 msgid "Publish"
 msgstr "公開"
+
+msgid "Publish once your changes are saved."
+msgstr "変更を保存したら公開してください。"
 
 msgid "Publish Training"
 msgstr "教育訓練を公開"
@@ -23205,6 +23533,9 @@ msgstr "発注書承認"
 
 msgid "Purchase order for {supplierName}"
 msgstr "{supplierName}向けの発注書"
+
+msgid "Purchase Order Force Delete"
+msgstr ""
 
 msgid "Purchase Order ID"
 msgstr "発注書ID"
@@ -23326,6 +23657,9 @@ msgstr "購買請求書"
 msgid "Purchasing Unit of Measure"
 msgstr "購買単位"
 
+msgid "Purple"
+msgstr "紫"
+
 msgid "Push"
 msgstr "プッシュ"
 
@@ -23341,14 +23675,14 @@ msgstr "ディメンションなしで仕訳を転記する"
 msgid "Push to accounting"
 msgstr "会計にプッシュ"
 
-msgid "Pushes don't change this item's fields, so edits made here stay."
-msgstr "プッシュはこの品目のフィールドを変更しないため、ここで行われた編集は保持されます。"
+msgid "Pushes from Onshape can update this item's {pushTargets}, but not its fields."
+msgstr "Onshapeからのプッシュでは、この品目の{pushTargets}を更新できますが、フィールドは更新されません。"
 
-msgid "Pushes from Onshape stop updating this item. Pushing this part from Onshape again links it back."
-msgstr "Onshapeからのプッシュがこの品目を更新しなくなります。Onshapeからこの部品を再度プッシュすると、リンクが復元されます。"
+msgid "Pushes from Onshape can update this item's {pushTargets}."
+msgstr "Onshapeからのプッシュでは、この品目の{pushTargets}を更新できます。"
 
-msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
-msgstr "プッシュは、Onshapeの [フィールド] ページで [毎回プッシュで更新] に設定されたフィールドのみを置き換えます。"
+msgid "Pushes stop updating this item, and its current data stays. Any later push that includes this part number links it again."
+msgstr "プッシュによるこの品目の更新は停止し、現在のデータはそのまま残ります。この部品番号を含む以降のプッシュで再びリンクされます。"
 
 msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
 msgstr "停止命令下の契約プロジェクトを保留中にし、90日の終了日を設定して、命令が終わったら再開します。"
@@ -23390,6 +23724,10 @@ msgstr "このかんばんの次の工程を開始するためのQR Code"
 
 msgid "Qty"
 msgstr "数量"
+
+#. placeholder {0}: formatter.format(use.quantity)
+msgid "Qty {0}"
+msgstr "数量 {0}"
 
 msgid "Qty {jobQuantity}"
 msgstr "数量 {jobQuantity}"
@@ -23594,6 +23932,9 @@ msgstr "見積承諾者メール"
 msgid "Quote expired"
 msgstr "見積期限切れ"
 
+msgid "Quote for"
+msgstr "見積対象"
+
 msgid "Quote ID"
 msgstr "見積ID"
 
@@ -23756,6 +24097,9 @@ msgstr "モデルを再変換"
 msgid "Re-date to first open day"
 msgstr "最初の営業日に再日付け"
 
+msgid "Re-inspect at the operation that found it"
+msgstr "発見した工程で再検査"
+
 msgid "Re-keying between quoting, the floor, and finance"
 msgstr "見積、現場、財務間での再入力"
 
@@ -23767,6 +24111,9 @@ msgstr "現在のステップ順序でモーション再計画—完了時にス
 
 msgid "Re-send"
 msgstr "再送信"
+
+msgid "Re-torque nut"
+msgstr "ナットの再締付け"
 
 msgid "Reactivate"
 msgstr "再度有効化"
@@ -23961,20 +24308,14 @@ msgstr "受信済み"
 msgid "Received {0} of {1}"
 msgstr "{1} のうち {0} を受領"
 
-msgid "Received At"
-msgstr "受け取った日時"
-
-msgid "Received By"
-msgstr "受け取った人"
-
 msgid "Received Date"
-msgstr ""
+msgstr "入荷日"
 
 msgid "Received lines from this supplier with quantity remaining to return"
 msgstr "この仕入先から入荷した明細で返却数量が残っているもの"
 
-msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. Both must be non-nettable."
-msgstr "検査が必要な入荷部品は検査用保管ユニットに入ります。却下品は却下品保管ユニットに移動します。どちらも MRP 対象外である必要があります。"
+msgid "Received parts that need inspection go to the inspection storage unit. Rejected stock moves to the rejected storage unit. To keep their stock out of planning, make them non-nettable in their own settings."
+msgstr "検査が必要な受入部品は検査用の保管ユニットに入ります。却下された在庫は却下品用の保管ユニットに移動します。在庫を計画に含めない場合は、各保管ユニットの設定でMRP対象外にしてください。"
 
 msgid "Received Qty"
 msgstr "受け取り数量"
@@ -24175,6 +24516,9 @@ msgstr "毎週繰り返し"
 
 msgid "Recurring per year"
 msgstr "毎年繰り返し"
+
+msgid "Red"
+msgstr "赤"
 
 msgid "Red is short-staffed, green is covered, amber is more people than the work needs."
 msgstr "赤は人手不足、緑は充足、琥珀色は必要人数以上の人員です。"
@@ -24477,7 +24821,7 @@ msgid "Remove authenticator app"
 msgstr "認証アプリを除去"
 
 msgid "Remove block"
-msgstr ""
+msgstr "ブロックを除去"
 
 msgid "Remove clause"
 msgstr "条項を除去"
@@ -24868,7 +25212,16 @@ msgstr "承認を依頼"
 msgid "Request date"
 msgstr "リクエスト日付"
 
+msgid "Request Force Delete"
+msgstr ""
+
+msgid "Request Quote"
+msgstr "見積を依頼"
+
 msgid "Requested"
+msgstr "依頼済み"
+
+msgid "Requested by"
 msgstr ""
 
 msgid "Requested By"
@@ -24888,6 +25241,9 @@ msgstr "サインイン時に認証器アプリから6桁のコードが必要�
 
 msgid "Require a Customer Contact and Location"
 msgstr "得意先の担当者と拠点が必須"
+
+msgid "Require a Promised Date to Finalize Purchase Orders"
+msgstr "発注書の確定には回答納期を必須にする"
 
 msgid "Require a Signature to Approve Purchase Orders"
 msgstr "発注書を承認するには署名が必要です"
@@ -25161,6 +25517,9 @@ msgstr "請求を会員に制限する"
 
 msgid "Result"
 msgstr "結果"
+
+msgid "Result mappings"
+msgstr "結果の割り当て"
 
 msgid "Results"
 msgstr "結果"
@@ -25513,6 +25872,12 @@ msgstr "取り消し済み"
 
 msgid "Rework"
 msgstr "手直し"
+
+msgid "Rework-only operations that a step result suggests, such as a re-torque when a check finds a nut too loose. Normal units never run them."
+msgstr "ステップ結果が示す手直し専用の工程です（例: 点検でナットの緩みが見つかった場合の再締付け）。通常の個体では実行されません。"
+
+msgid "Rework-only operations that a step result suggests. This job keeps its own copy from the make method."
+msgstr "ステップ結果が示す手直し専用の工程です。この製造指図は製造方法からの独自のコピーを保持します。"
 
 msgid "RFQ"
 msgstr "RFQ"
@@ -26610,6 +26975,9 @@ msgstr "すべて選択"
 msgid "Select all jobs"
 msgstr "すべての製造指図を選択"
 
+msgid "Select all parts"
+msgstr "すべての部品を選択"
+
 msgid "Select all rows"
 msgstr "すべての行を選択"
 
@@ -26768,6 +27136,9 @@ msgstr "シリアル {0} を選択"
 msgid "Select station"
 msgstr "ステーションを選択"
 
+msgid "Select Supplier Stage"
+msgstr "仕入先段階を選択"
+
 msgid "Select Supplier Status"
 msgstr "仕入先ステータスを選択"
 
@@ -26864,6 +27235,9 @@ msgstr "招待を送信"
 
 msgid "Send Notifications"
 msgstr "通知を送信"
+
+msgid "Send order confirmation"
+msgstr ""
 
 msgid "Send Reminder"
 msgstr "リマインダーを送信"
@@ -27311,7 +27685,7 @@ msgid "Shared channel"
 msgstr "共有チャネル"
 
 msgid "Shared Section (deleted)"
-msgstr ""
+msgstr "共有セクション（削除済み）"
 
 msgid "Shared Sections"
 msgstr "共有セクション"
@@ -27451,6 +27825,9 @@ msgstr "発送済み {shippedOn}"
 msgid "Shipped <0/>"
 msgstr "出荷済み <0/>"
 
+msgid "Shipped Date"
+msgstr "出荷日"
+
 msgid "Shipped lines for this customer with quantity remaining to return"
 msgstr "この得意先の出荷済明細のうち、返品待ち数量がある行"
 
@@ -27585,6 +27962,7 @@ msgid "Show"
 msgstr "表示"
 
 #. placeholder {0}: group.name
+#. placeholder {0}: route.name
 msgid "Show {0}"
 msgstr "{0}を表示"
 
@@ -27612,6 +27990,10 @@ msgstr "すべて表示"
 
 msgid "Show all hidden on this step"
 msgstr "このステップで非表示になっているすべてを表示"
+
+#. placeholder {0}: group.name
+msgid "Show all in {0}"
+msgstr "{0} の項目をすべて表示"
 
 msgid "Show available batch numbers"
 msgstr "利用可能なバッチ番号を表示"
@@ -27954,7 +28336,7 @@ msgid "Someone"
 msgstr "誰か"
 
 msgid "Someone else just saved this template. Refresh to load their version, or keep editing to overwrite it when you save."
-msgstr ""
+msgstr "ほかのユーザーがこのテンプレートを保存したところです。最新版を読み込むには再読み込みしてください。このまま編集を続けると、保存時に上書きされます。"
 
 msgid "Someone who can update accounting has to enter what it cost to make before it can be capitalized."
 msgstr "会計を更新できるユーザーが製造にかかった原価を入力してからでなければ、資本化できません。"
@@ -27994,6 +28376,12 @@ msgstr "最初に最初に並べ替え"
 
 msgid "Sort latest first"
 msgstr "最初に最新で並べ替え"
+
+msgid "Sorted by activity date, newest first"
+msgstr "アクティビティ日付で並べ替え（新しい順）"
+
+msgid "Sorted by activity date, oldest first"
+msgstr "アクティビティ日付で並べ替え（古い順）"
 
 msgid "Source"
 msgstr "ソース"
@@ -28123,6 +28511,12 @@ msgstr "人員配置要求事項が無効になりました"
 
 msgid "Staffing requirement enabled"
 msgstr "スタッフ要求事項が有効化されました"
+
+msgid "Stage"
+msgstr "段階"
+
+msgid "Stages"
+msgstr "段階"
 
 msgid "Stand up hosting"
 msgstr "ホスティングをセットアップ"
@@ -28590,6 +28984,10 @@ msgstr "部分組立パス"
 msgid "Sub-Departments"
 msgstr "サブ部門"
 
+#. placeholder {0}: module.name
+msgid "Sub-modules of {0}"
+msgstr "{0} のサブモジュール"
+
 msgid "Subassembly"
 msgstr "サブアセンブリ"
 
@@ -28847,6 +29245,10 @@ msgstr "仕入先メール設定が更新されました"
 msgid "Supplier EORI"
 msgstr "仕入先EORI"
 
+#. placeholder {0}: row.itemReadableId
+msgid "Supplier for {0}"
+msgstr "{0} の仕入先"
+
 msgid "Supplier ID"
 msgstr "仕入先ID"
 
@@ -28988,6 +29390,21 @@ msgstr "仕入先RMA #"
 
 msgid "Supplier RMA Number"
 msgstr "仕入先RMA番号"
+
+msgid "supplier stage"
+msgstr "仕入先段階"
+
+msgid "Supplier stage"
+msgstr ""
+
+msgid "Supplier Stage"
+msgstr "仕入先段階"
+
+msgid "supplier stages"
+msgstr "仕入先段階"
+
+msgid "Supplier Stages"
+msgstr "仕入先段階"
 
 msgid "Supplier State and Postal Code"
 msgstr "仕入先都道府県と郵便番号"
@@ -29944,7 +30361,7 @@ msgid "The document could not be downloaded."
 msgstr "文書をダウンロードできませんでした。"
 
 msgid "The document could not be opened."
-msgstr ""
+msgstr "文書を開けませんでした。"
 
 msgid "The early hours, {name}."
 msgstr "早朝の時間、{name}。"
@@ -29966,9 +30383,6 @@ msgstr "得意先への見積から支払い回収までのエンドツーエン
 
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "テーブルが更新されたときに、更新されたデータを含むPOSTリクエストを受け取るエンドポイント"
-
-msgid "The engineering drawing this inspection plan is tied to; inspections recorded against this part reference back to this drawing."
-msgstr "この検査計画が関連付けられているエンジニアリング図面。このパーツに対して記録された検査はこの図面を参照します。"
 
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit. DCAA is turned on and off at Settings → Projects."
 msgstr "従業員が提出時に署名する入力ウィンドウ、タイムカード確認、希釈、および認証。DCAA は設定→プロジェクトでオン/オフになります。"
@@ -30122,6 +30536,12 @@ msgstr "この得意先への出荷時に誰が運送費を支払い、誰がリ
 
 msgid "The indirect cost a pool's rate puts on a project: rate × the project's base, posted to the project ledger as Burden rows, year to date less what earlier runs posted."
 msgstr "プールのレートがプロジェクトに置く間接原価：レート × プロジェクトのベース。プロジェクト台帳に Burden 行として転記。年初来マイナス以前の実行が転記したもの。"
+
+msgid "The inspection is deleted and its tracked entities return to the status they had before it."
+msgstr "検査は削除され、追跡対象は検査前のステータスに戻ります。"
+
+msgid "The inspection leaves the shop floor with no verdict. What it recorded is kept, and its held tracked entities return to the status they had before it."
+msgstr "検査は判定なしで製造現場から取り下げられます。記録された内容は保持され、保留中の追跡対象は検査前のステータスに戻ります。"
 
 msgid "The integration authorized the connection but saving it failed. Try connecting again."
 msgstr "統合は接続を認可しましたが、保存に失敗しました。再度接続してみてください。"
@@ -30514,7 +30934,7 @@ msgid "The preset bundle of tasks and approval requirements applied to this issu
 msgstr "このイシューに適用されるタスクと承認要件のプリセットバンドル。設定されると、イシュータイプのデフォルトワークフローを置き換えます。"
 
 msgid "The preview could not be drawn. It shows the last one that was."
-msgstr ""
+msgstr "プレビューを描画できませんでした。直前に描画できたプレビューを表示しています。"
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr "タイム & マテリアル明細の 1 時間の価格：従業員の明細レート。それ以外の場合は労務カテゴリ。それ以外の場合は労務カテゴリの既定請求レート。その日から有効。"
@@ -31010,6 +31430,12 @@ msgstr "その後、以下のために調整されます"
 msgid "Then by"
 msgstr "次に"
 
+msgid "Then continue"
+msgstr "そのまま続行"
+
+msgid "Then re-inspect"
+msgstr "その後に再検査"
+
 msgid "There are more received than ordered"
 msgstr "受け取ったものが発注数より多い"
 
@@ -31217,8 +31643,17 @@ msgstr "この情報は文書ヘッダーで使用されます"
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "この情報はすべてのユーザーに表示されるため、共有内容に注意してください。"
 
+msgid "this inspection"
+msgstr "この検査"
+
 msgid "this inspection plan"
 msgstr "この検査計画"
+
+msgid "This inspection plan has no parameters."
+msgstr "この検査計画にはパラメータがありません。"
+
+msgid "This inspection plan has no work instructions."
+msgstr "この検査計画には作業手順書がありません。"
 
 msgid "This integration can't be connected on this Carbon instance."
 msgstr "この連携はこのCarbonインスタンスでは接続できません。"
@@ -31253,6 +31688,9 @@ msgstr "これは購買品目です。BOM/BoPはありません。属性とド�
 
 msgid "This is a unique identifier for the webhook"
 msgstr "これはWebhookの一意識別子です"
+
+msgid "This is an Admin override"
+msgstr ""
 
 msgid "This is an ITAR-controlled environment. Access is restricted to U.S. Persons."
 msgstr "これはITAR管理環境です。アクセスは米国人に限定されています。"
@@ -31354,6 +31792,9 @@ msgstr "このパーツは廃止されています（在庫なし）。"
 msgid "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
 msgstr "この部品は置き換えられ、「在庫のみ」に設定されています。スペア予備床にまで補充され、所要量とは無関係です。"
 
+msgid "This part only"
+msgstr "この部品のみ"
+
 msgid "This path only decides what runs next"
 msgstr "このパスは次に何が実行されるかだけを決定します"
 
@@ -31370,7 +31811,7 @@ msgid "This PIN will not be shown again. You will need it to exit console mode o
 msgstr "このPINは再度表示されません。MES 端末でコンソールモードを終了するときに必要です。"
 
 msgid "This preview is paused because a text changes a figure."
-msgstr ""
+msgstr "テキストが数値を変更しているため、このプレビューは一時停止しています。"
 
 msgid "This price was entered manually, so no pricing rules were applied."
 msgstr "この価格は手動で入力されたため、価格設定ルールは適用されていません。"
@@ -31436,7 +31877,7 @@ msgid "This serial"
 msgstr "このシリアル"
 
 msgid "This shared section no longer exists. Remove the block or recreate the section."
-msgstr ""
+msgstr "この共有セクションは存在しません。ブロックを除去するか、セクションを作成し直してください。"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "このステーションはスキル制限のある作業を実行します — 適切なスキルを持つ作業者がシフト中のみ実行されます。人員配置ボードに割り当てられた作業者は、利用可能な労務をさらに決定します。"
@@ -31488,8 +31929,11 @@ msgstr "このバージョンは変更通知<0>{0}</0>に属しています。�
 msgid "This version cannot be opened"
 msgstr "このバージョンは開くことができません"
 
+msgid "This version is a Draft. Publishing makes it Active and archives the Active version."
+msgstr "このバージョンは下書きです。公開すると有効になり、有効なバージョンはアーカイブされます。"
+
 msgid "This version is published"
-msgstr "このバージョンは公開されています"
+msgstr "このバージョンは公開済です"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "このバージョンは公開済です。編集するには新しいバージョンを作成してください。"
@@ -32251,6 +32695,9 @@ msgstr "もう一度お試しください"
 msgid "Tuesday"
 msgstr "火曜日"
 
+msgid "Turn Off"
+msgstr ""
+
 msgid "Turn On"
 msgstr "オンにする"
 
@@ -32317,6 +32764,12 @@ msgstr "変数のために '{' を入力してください"
 #. placeholder {0}: company.name
 msgid "Type {0} to confirm"
 msgstr "{0}を入力して確認してください。"
+
+msgid "Type {purchaseOrderReadableId} to confirm"
+msgstr ""
+
+msgid "Type {readableId} to confirm"
+msgstr ""
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "変数を挿入するために {TRIGGER} を入力してください"
@@ -32474,6 +32927,9 @@ msgstr "未請求の出荷"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "一意、大文字、スペースなし（最大10文字）"
+
+msgid "Unique, without spaces (max 10 characters), such as kg or BX"
+msgstr ""
 
 msgid "Unit"
 msgstr "単位"
@@ -32898,6 +33354,9 @@ msgstr "署名がアップロードされました"
 msgid "Uploaded: {0}"
 msgstr "アップロード完了: {0}"
 
+msgid "Uploading"
+msgstr "アップロード中"
+
 #. placeholder {0}: avatarFile.name
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
@@ -33085,6 +33544,9 @@ msgstr "{0}を使用"
 msgid "Uses {0} · {1}"
 msgstr "{0}を使用 · {1}"
 
+msgid "Uses on this job"
+msgstr "この製造指図での使用"
+
 #. placeholder {0}: use.number
 #. placeholder {1}: use.title
 msgid "Uses sub-assembly {0} · {1}"
@@ -33242,6 +33704,9 @@ msgstr "バージョン {0}"
 msgid "Version {0} is published now and will be replaced."
 msgstr "バージョン {0} は現在公開済であり、置き換えられます。"
 
+msgid "Version published"
+msgstr "バージョンを公開済にしました"
+
 msgid "Version:"
 msgstr "バージョン:"
 
@@ -33341,6 +33806,9 @@ msgstr "新規タブで表示"
 
 msgid "View in project plan"
 msgstr "プロジェクトプランで表示"
+
+msgid "View Inspection"
+msgstr "検査を表示"
 
 msgid "View Issue"
 msgstr "問題を表示"
@@ -33864,6 +34332,9 @@ msgstr "これらの行が何を意味するか"
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "変更前にこのフィールドが保持していたもの。何もない場合は空白のままにしてください。"
 
+msgid "What this inspection plan is called (e.g. R1234 Receipt); it is how the plan is picked for a part's receipt or an inspection operation."
+msgstr "この検査計画の名前です（例：R1234 入荷）。部品の入荷または検査工程で、この検査計画が選択されます。"
+
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "この領収書が満たしているもの — 発注書、返品、受信転送、または親のない手動領収書。"
 
@@ -33878,6 +34349,12 @@ msgstr "このタイムエントリが計算される対象 — 労務（作業�
 
 msgid "What to set up"
 msgstr "セットアップする内容"
+
+msgid "What was entered wrongly, and why it cannot be corrected or voided instead"
+msgstr ""
+
+msgid "What was entered wrongly, and why the order cannot be corrected or closed instead"
+msgstr ""
 
 msgid "What we're assuming"
 msgstr "私たちが想定していること"
@@ -33961,10 +34438,10 @@ msgid "When supplier responses are expected back; suppliers see this date on the
 msgstr "仕入先の回答が返信予定の日付。仕入先は見積依頼ポータルでこの日付を確認できます。Carbonはこの日付後の遅い回答の受け入れを中止します（設定可能）。"
 
 msgid "When the buyer asked for the goods; the supplier may promise something else on Receipt Promised Date and post something else again on Delivery Date."
-msgstr ""
+msgstr "購買担当者が品物を依頼した日です。仕入先は入荷回答納期に別の日付を回答し、納期には別の日付を転記することがあります。"
 
 msgid "When the buyer needs this line's goods on the dock. A new line starts on the order's Receipt Requested Date; planning uses this date for stock-availability and outside-processing scheduling."
-msgstr ""
+msgstr "購買担当者がこの明細の品物を受入場所に必要とする日です。新しい明細は、発注の入荷希望納期から始まります。計画では、この日付を在庫の利用可能性と外注工程のスケジュールに使用します。"
 
 msgid "When the contract runs and what happens when it completes."
 msgstr "契約の実行期間と完了時のアクション。"
@@ -34014,6 +34491,9 @@ msgstr "レンタルが開始されるとき、そしてそれに終了がある
 msgid "When the supplier committed to deliver; planning uses this date for the inbound-stock arrival projection."
 msgstr "仕入先が配達を約束した日時。計画はこの日付を使用して入庫在庫到着の予測を行います。"
 
+msgid "When the supplier sent the goods. You can edit this on the Shipping card after the purchase order is finalized."
+msgstr "仕入先が品物を出荷した日です。発注書の確定後は、出荷カードで編集できます。"
+
 msgid "When the supplier's pricing stops being honored; converting this quote to a PO after this date may need re-quoting."
 msgstr "仕入先の価格設定が有効でなくなる日時。この日付以降にこの見積をPOに変換する場合、再見積が必要な場合があります。"
 
@@ -34052,6 +34532,9 @@ msgstr "かんばん使用時、完全なバーコードは1つではなく工�
 
 msgid "When you committed to deliver; planning treats this as the demand-due-date for fulfillment."
 msgstr "あなたが配送を約束したいつ。計画はこれをフルフィルメントの需要-到期日として扱います。"
+
+msgid "When you expect the goods to arrive, based on how they shipped. It is for your reference and does not change planning, which uses the promised date."
+msgstr "出荷方法に基づき、品物の到着を見込む日です。参考用であり、計画には影響しません。計画では回答納期を使用します。"
 
 msgid "When your fiscal and tax years start"
 msgstr "会計年度および税務年度の開始時期"
@@ -34115,6 +34598,9 @@ msgstr "この明細の商品が入荷時に在庫として格納される場所
 
 msgid "Where this maintenance request originated — operator-reported, scheduled, condition-monitoring trigger, post-job inspection; drives the source breakdown in maintenance reports."
 msgstr "この保全リクエストの発生元—作業者報告、スケジュール、状態監視トリガー、作業後検査。保全レポートのソース内訳を決定します。"
+
+msgid "Where this supplier is in your onboarding, such as Prospect or Qualified. Your company manages this list; it does not affect approvals or which suppliers you can use."
+msgstr "仕入先との取引の進捗段階です（例: 候補、認定済み）。この一覧は貴社が管理しており、承認や利用できる仕入先には影響しません。"
 
 msgid "Where you are today"
 msgstr "今日のあなたの状況"
@@ -34302,6 +34788,9 @@ msgstr "仕掛品"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "{0}の予備費付き"
+
+msgid "With Previous"
+msgstr "前工程と同時"
 
 msgid "Withdraw"
 msgstr "取り下げ"
@@ -34491,6 +34980,9 @@ msgstr "年度末決算"
 
 msgid "Yearly"
 msgstr "年次"
+
+msgid "Yellow"
+msgstr "黄色"
 
 msgid "Yes"
 msgstr "はい"
@@ -34701,6 +35193,9 @@ msgstr "カスタムレート"
 
 msgid "Your real data is loaded and you have checked a sample and approved it."
 msgstr "あなたの実際のデータが読み込まれ、サンプルを確認して承認しました。"
+
+msgid "Your reason and the decision are kept in the audit log."
+msgstr ""
 
 msgid "Your session was locked after inactivity."
 msgstr "非アクティブのためセッションがロック中になりました。"

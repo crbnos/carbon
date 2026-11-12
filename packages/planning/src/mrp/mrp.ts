@@ -390,6 +390,8 @@ export async function runMrp(
         ])
         .where("companyId", "=", companyId)
         .where("makeMethodId", "in", allMethodIds)
+        // Correction materials are drawn only when a correction is used.
+        .where("methodCorrectionId", "is", null)
         .execute()) as typeof allMaterials;
     }
 

@@ -55,7 +55,15 @@ import { getItemReadableId } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback, useEffect, useId, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import {
   LuCalendar,
   LuCircleAlert,
@@ -134,7 +142,6 @@ const ReceiptLines = () => {
     receiptInspections: ReceiptLineInspection[];
     inspectedLineIds: string[];
     heldLineIds: string[];
-    nonNettableStorageUnitIds: string[];
     receiptFiles: PostgrestResponse<StorageItem>;
     receiptLineTracking: ItemTracking[];
     batchProperties: PostgrestResponse<BatchProperty>;
@@ -308,12 +315,6 @@ const ReceiptLines = () => {
                       }
                       needsHeldUnit={
                         !!routeData?.heldLineIds?.includes(line.id ?? "")
-                      }
-                      inNonNettableUnit={
-                        !!line.storageUnitId &&
-                        !!routeData?.nonNettableStorageUnitIds?.includes(
-                          line.storageUnitId
-                        )
                       }
                       isReadOnly={isPosted}
                       onUpdate={onUpdateReceiptLine}
@@ -696,7 +697,6 @@ function ReceiptLineItem({
   inspection,
   requiresInspection,
   needsHeldUnit,
-  inNonNettableUnit,
   className,
   isReadOnly,
   onUpdate,
@@ -715,7 +715,6 @@ function ReceiptLineItem({
   inspection?: ReceiptLineInspection;
   requiresInspection: boolean;
   needsHeldUnit: boolean;
-  inNonNettableUnit: boolean;
   className?: string;
   isReadOnly: boolean;
   files?: PostgrestResponse<StorageItem>;
@@ -760,13 +759,13 @@ function ReceiptLineItem({
   const remainingQuantity =
     (line.outstandingQuantity ?? 0) - (line.receivedQuantity ?? 0);
   const isSurplus = remainingQuantity < 0;
-  const showNettableWarning =
+  const showHeldUnitWarning =
     needsHeldUnit &&
     !isReadOnly &&
     receipt?.sourceDocument === "Purchase Order" &&
     (line.receivedQuantity ?? 0) > 0 &&
-    !inNonNettableUnit;
-  const nettableWarningId = useId();
+    !line.storageUnitId;
+  const heldUnitWarningId = useId();
 
   return (
     <div
@@ -944,7 +943,7 @@ function ReceiptLineItem({
                 isReadOnly={isReadOnly}
                 label={t`Storage unit for ${itemName}`}
                 aria-describedby={
-                  showNettableWarning ? nettableWarningId : undefined
+                  showHeldUnitWarning ? heldUnitWarningId : undefined
                 }
                 onChange={(storageUnit) => {
                   onUpdate({
@@ -955,14 +954,13 @@ function ReceiptLineItem({
                 }}
               />
             </div>
-            {showNettableWarning && (
+            {showHeldUnitWarning && (
               <span
-                id={nettableWarningId}
+                id={heldUnitWarningId}
                 className="text-xs text-destructive w-full"
               >
                 <Trans>
-                  Choose a non-nettable storage unit at this location for
-                  inspected parts.
+                  Choose a storage unit at this location for inspected parts.
                 </Trans>
               </span>
             )}
@@ -1021,6 +1019,7 @@ function ReceiptLineItem({
             serialNumbers={serialNumbers}
             isReadOnly={isReadOnly}
             onSerialNumbersChange={onSerialNumbersChange}
+            batchProperties={batchProperties}
             itemShelfLife={itemShelfLife}
             tracking={tracking}
           />
@@ -1406,6 +1405,77 @@ function SerialForm({
     }
   }, [tracking?.expirationDate]);
 
+  // The line's batch properties: every serial on the line carries the same.
+  // Shown as the server's copy with the person's own unsaved edits on top, so
+  // a revalidation never overwrites a field they are changing. An edit leaves
+  // `edits` once the server holds its value.
+  const serverProperties = useMemo(
+    () => serialProperties(tracking),
+    [tracking]
+  );
+  const [edits, setEdits] = useState<Record<string, unknown>>({});
+  const properties = useMemo(
+    () => ({ ...serverProperties, ...edits }),
+    [serverProperties, edits]
+  );
+
+  useEffect(() => {
+    setEdits((prev) => {
+      const pending = Object.entries(prev).filter(
+        ([key, value]) => serverProperties[key] !== value
+      );
+      return pending.length === Object.keys(prev).length
+        ? prev
+        : Object.fromEntries(pending);
+    });
+  }, [serverProperties]);
+
+  // One save at a time, the latest kept for when it ends: two saves in flight
+  // can land in either order, and the older one would win.
+  const savingProperties = useRef(false);
+  const queuedProperties = useRef<FormData | null>(null);
+  const propertiesFetcher = useAction({
+    onSettled: () => {
+      const next = queuedProperties.current;
+      queuedProperties.current = null;
+      savingProperties.current = next !== null;
+      if (next && receipt?.id) {
+        propertiesFetcher.submit(next, {
+          method: "post",
+          action: path.to.receiptLinesTracking(receipt.id)
+        });
+      }
+    }
+  });
+
+  const handlePropertiesChange = (newProperties: Record<string, unknown>) => {
+    setEdits((prev) => ({
+      ...prev,
+      ...Object.fromEntries(
+        Object.entries(newProperties).filter(
+          ([key, value]) => properties[key] !== value
+        )
+      )
+    }));
+    // With no serial on the line yet there is no unit to store them on (the
+    // server refuses); the first serial save sends them instead.
+    if (!receipt?.id || !tracking) return;
+    const formData = new FormData();
+    formData.append("receiptId", receipt.id);
+    formData.append("receiptLineId", line.id!);
+    formData.append("trackingType", "serialProperties");
+    formData.append("properties", JSON.stringify(newProperties));
+    if (savingProperties.current) {
+      queuedProperties.current = formData;
+      return;
+    }
+    savingProperties.current = true;
+    propertiesFetcher.submit(formData, {
+      method: "post",
+      action: path.to.receiptLinesTracking(receipt.id)
+    });
+  };
+
   const [errors, setErrors] = useState<Record<number, string>>({});
 
   // Check for duplicates within the current form
@@ -1437,6 +1507,9 @@ function SerialForm({
       if (expiryDate) {
         formData.append("expiryDate", expiryDate);
       }
+      if (Object.keys(properties).length > 0) {
+        formData.append("properties", JSON.stringify(properties));
+      }
 
       try {
         const response = await fetch(path.to.receiptLinesTracking(receipt.id), {
@@ -1456,7 +1529,7 @@ function SerialForm({
         return { ok: false, error: "Failed to save the serial number" };
       }
     },
-    [line.id, line.itemId, receipt?.id, expiryDate]
+    [line.id, line.itemId, receipt?.id, expiryDate, properties]
   );
 
   const updateSerialNumber = useCallback(
@@ -1498,6 +1571,16 @@ function SerialForm({
                 })
             }}
           />
+          {batchProperties && (
+            <Button
+              variant="secondary"
+              leftIcon={<LuGroup />}
+              size="md"
+              onClick={propertiesDisclosure.onOpen}
+            >
+              <Trans>Edit Properties</Trans>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1515,6 +1598,36 @@ function SerialForm({
           />
         </div>
       )}
+
+      <Suspense fallback={null}>
+        <Await resolve={batchProperties}>
+          {(resolvedBatchProperties) => {
+            const lineProperties =
+              resolvedBatchProperties?.data?.filter(
+                (p) => p.itemId === line.itemId
+              ) ?? [];
+            if (lineProperties.length === 0) return null;
+            return (
+              <div className="flex flex-col gap-2">
+                <span className="text-xs text-muted-foreground">
+                  <Trans>Properties (apply to all serials on this line)</Trans>
+                </span>
+                <div className="grid grid-cols-1 @min-[42rem]:grid-cols-3 gap-4">
+                  <BatchPropertiesFields
+                    itemId={line.itemId!}
+                    properties={lineProperties}
+                    isReadOnly={isReadOnly}
+                    values={
+                      properties as Record<string, string | number | boolean>
+                    }
+                    onChange={handlePropertiesChange}
+                  />
+                </div>
+              </div>
+            );
+          }}
+        </Await>
+      </Suspense>
 
       <div
         data-serial-boxes
@@ -1591,6 +1704,23 @@ function SerialForm({
         )}
       </div>
     </div>
+  );
+}
+
+const RECEIPT_ATTRIBUTE_KEYS = [
+  "Receipt Line",
+  "Receipt",
+  "Receipt Line Index",
+  "Supplier"
+];
+
+/** A serial's batch properties: its attributes less the receipt's own. */
+function serialProperties(tracking: ItemTracking | undefined) {
+  const attributes = (tracking?.attributes ?? {}) as Record<string, unknown>;
+  return Object.fromEntries(
+    Object.entries(attributes).filter(
+      ([key]) => !RECEIPT_ATTRIBUTE_KEYS.includes(key)
+    )
   );
 }
 

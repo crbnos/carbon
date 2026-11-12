@@ -6,7 +6,7 @@ PDF generation, email templates, ZPL labels, and QR/barcode utilities.
 
 - **Style PDFs with `useTw()` (react-pdf-tailwind), not raw `StyleSheet`** — semantic grays (`gray-600` = heading, `gray-800` = body) keep themes consistent across all blocks
 - **Resolve async work before render** — QR codes, barcodes, images, and fonts must be resolved to data URLs / registered before the synchronous component tree renders
-- **Use `@bwip-js/node` for QR/barcodes** — there is no `qrcode` dependency; call `generateQRCode()` or `generateBarcode()` from `src/qr/`
+- **Use `@bwip-js/node` for QR/barcodes** — there is no `qrcode` dependency; call `generateQRCode()` or `generateBarcode()` from `src/qr/` (`generateQRCodeSVG()` for a dotted SVG with the Carbon mark drawn into it)
 - **Route fonts through `getSafeFontFamily()`** — every render path must use this: it returns the font stack (family, its Latin Ext face, Inter) so Central European letters render, and falls back to Helvetica so unregistered families never throw
 - **Never print a label as a literal in a block** — add it to `template/texts/<doc>.ts` and read it with `makeText` (`t("key")`, `t.shows("key")` for hideable fields and columns); see `.claude/rules/document-template-customizer.md` → Editable texts
 - **Never print a record's value from code in a block** — a value is a `{variable}` in a catalog text; add the token to `MERGE_FIELDS` or `LINE_MERGE_FIELDS` (`template/mergeFields.ts`), flag a figure `amount` and a value one document cannot change `fixed`, fill it and format it in `vars.ts`, and print it with `t("key", row)` or `t.prints`. Images, QR codes, barcodes, signatures and rich text stay in code

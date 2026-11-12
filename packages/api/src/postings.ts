@@ -471,6 +471,36 @@ export const triggerReworkInput = z.object({
   inspectionId: z.string().optional()
 });
 
+/**
+ * Sends units through one of the job's corrections: the correction's
+ * operations (and materials) are added after the triggering operation, scoped
+ * to the units, then the unit re-inspects there or continues.
+ */
+export const triggerCorrectionInput = z.object({
+  jobId: z.string().min(1),
+  triggeredAtJobOperationId: z.string().min(1),
+  jobCorrectionId: z.string().min(1),
+  reason: z.string().min(1),
+  quantity: z.number().positive(),
+  trackedEntityIds: z.array(z.string()).optional(),
+  inspectionId: z.string().optional()
+});
+
+/**
+ * Reject a receipt or manual inspection lot as the ERP's Reject Lot does: the
+ * verdict, the inventory write-off of an untracked Inventory item, and an
+ * optional NCR. MES sends it, since the write-off and NCR are ERP code.
+ * `requireOpen` refuses a lot that is already dispositioned (MES rejects
+ * once); the ERP leaves it off so a failed write-off can be retried.
+ */
+export const rejectInspectionInput = z.object({
+  id: z.string(),
+  nonConformanceTypeId: z.string().nullish(),
+  createNcr: z.boolean().default(true),
+  reason: z.string().trim().max(2000).nullish(),
+  requireOpen: z.boolean().optional()
+});
+
 export const rescheduleInput = z.object({ jobId: z.string() });
 
 export const postMaintenanceEventInput = z.object({
@@ -760,6 +790,8 @@ export const MES_POSTINGS = {
   "batch-operations": ["complete"],
   recalculate: ["jobRequirements"],
   "trigger-rework": null,
+  "trigger-correction": null,
+  "reject-inspection": null,
   "save-timesheet-entry": null,
   "submit-timesheet-week": null,
   "post-timesheet": null

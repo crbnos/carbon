@@ -199,7 +199,7 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
 
 // Lot of 10 at AQL 1.0 / level II → code letter B, n = 3.
 const NEEDLE_PLAN = {
-  drawingNumber: "MW-HK1512 Rev B",
+  name: "MW-HK1512 Rev B",
   aql: 1.0,
   features: [
     {
@@ -265,7 +265,7 @@ export const INSPECTIONS: InspectionSpec[] = [
     ref: "insp:ptfe-bushings",
     receipt: "receipt:midway-restock",
     item: "BSH-PTFE-2012",
-    drawingNumber: "MW-PTFE-2012 Rev A",
+    name: "MW-PTFE-2012 Rev A",
     aql: 1.0,
     features: [
       {
@@ -345,6 +345,26 @@ export const INSPECTIONS: InspectionSpec[] = [
     ref: "insp:shaft-runout",
     job: "floor-shaft",
     status: "Pending",
+    samples: []
+  },
+  {
+    source: "Manual",
+    ref: "insp:manual-hold",
+    status: "Pending",
+    trackedEntities: ["LOT-BRG-2613"],
+    workCenter: "CMM Lab",
+    assignee: "self",
+    notes: "Spin-torque and seal check of the held bearing lot.",
+    samples: []
+  },
+  {
+    source: "Manual",
+    ref: "insp:manual-duplicate",
+    status: "Cancelled",
+    trackedEntities: ["LOT-BRG-2613"],
+    workCenter: "CMM Lab",
+    notes:
+      "Opened twice for the same hold; cancelled in favour of the open inspection.",
     samples: []
   }
 ];

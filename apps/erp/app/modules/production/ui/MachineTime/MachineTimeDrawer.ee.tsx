@@ -181,7 +181,7 @@ const MachineTimeDrawer = ({
     >
       {/* No autofocus: it would ring the Previous button on every row. */}
       <DrawerContent onOpenAutoFocus={(event) => event.preventDefault()}>
-        <DrawerHeader className="flex-row items-center justify-between gap-4 pr-14">
+        <DrawerHeader className="flex-row items-center justify-between gap-4 pr-14 max-md:justify-between max-md:pl-4 max-md:text-left">
           <div className="flex min-w-0 flex-col gap-1">
             <DrawerTitle>{workCenterName}</DrawerTitle>
             <DrawerDescription>

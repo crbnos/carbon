@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { generateQRCodeBuffer } from "@carbon/documents/qr";
+import { generateQRCodeSVG } from "@carbon/documents/qr";
 import { getRequestOrigin } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -44,12 +44,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     qrColor = "2563eb"; // blue-600
   }
 
-  const buffer = await generateQRCodeBuffer(kanbanUrl, 36, qrColor);
+  const svg = generateQRCodeSVG(kanbanUrl, qrColor);
 
-  // @ts-expect-error
-  return new Response(buffer, {
+  return new Response(svg, {
     headers: {
-      "Content-Type": "image/png",
+      "Content-Type": "image/svg+xml",
+      // Only a drawing: nothing in it may load or run.
+      "Content-Security-Policy": "default-src 'none'",
       "Cache-Control": "public, max-age=31536000, immutable"
     }
   });

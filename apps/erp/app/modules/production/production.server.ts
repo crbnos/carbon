@@ -7919,7 +7919,7 @@ export const getTrackedEntitiesByJobId = defineServiceFn({
 });
 
 /**
- * What a job has already received to inventory: its received quantity and the tracked entities its receipts posted
+ * What a job has already received to inventory: its received quantity, the tracked entities its receipts posted, and its Consumed units booked out of stock (issued or shipped), which a completion still receives unless the job already received them
  *
  * @mcp read
  */

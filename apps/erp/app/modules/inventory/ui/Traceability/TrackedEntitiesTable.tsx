@@ -10,22 +10,32 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
   LuBookMarked,
+  LuCalendar,
   LuCalendarClock,
   LuCalendarCog,
   LuCheck,
   LuFile,
   LuHash,
+  LuList,
   LuNetwork,
   LuQrCode,
   LuRotateCcw,
+  LuText,
+  LuToggleRight,
   LuTriangleAlert
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import type { InfiniteOptions } from "~/components/Table";
+import type { ColumnFilterData } from "~/components/Table/components/Filter/types";
 import { useDateFormatter, useDrawerItem, usePermissions } from "~/hooks";
 import { trackedEntityStatus } from "~/modules/inventory/inventory.models";
+import {
+  type BatchPropertyColumn,
+  batchPropertyExportValue,
+  batchPropertyValue
+} from "~/modules/inventory/inventory.utils";
 import type { TrackedEntity } from "~/modules/inventory/types";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { Item } from "~/stores/items";
@@ -53,6 +63,7 @@ type TrackedEntitiesTableProps = {
   count: number;
   infinite: InfiniteOptions;
   nearExpiryWarningDays: number | null;
+  batchPropertyColumns: BatchPropertyColumn[];
 };
 
 const TrackedEntitiesTable = memo(
@@ -60,7 +71,8 @@ const TrackedEntitiesTable = memo(
     data,
     count,
     infinite,
-    nearExpiryWarningDays
+    nearExpiryWarningDays,
+    batchPropertyColumns
   }: TrackedEntitiesTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -77,6 +89,8 @@ const TrackedEntitiesTable = memo(
 
     const editExpiry = useDrawerItem<TrackedEntity>();
     const editingExpiry = editExpiry.item;
+
+    const yesNo = useMemo(() => ({ yes: t`Yes`, no: t`No` }), [t]);
 
     const columns = useMemo<ColumnDef<(typeof data)[number]>[]>(
       () => [
@@ -228,9 +242,46 @@ const TrackedEntitiesTable = memo(
           meta: {
             icon: <LuFile />
           }
-        }
+        },
+        // One column per batch property label, across items. Hidden until
+        // shown; its filter is always in the filter menu.
+        ...batchPropertyColumns.map(
+          (column): ColumnDef<(typeof data)[number]> => ({
+            id: column.key,
+            header: column.label,
+            enableSorting: false,
+            cell: ({ row }) =>
+              formatPropertyValue(
+                column,
+                batchPropertyValue(column, row.original),
+                formatDate,
+                yesNo
+              ),
+            meta: {
+              icon: <PropertyIcon dataType={column.dataType} />,
+              exportValue: (row) => batchPropertyExportValue(column, row),
+              filter: propertyFilter(column, yesNo)
+            }
+          })
+        )
       ],
-      [numberFormatter, items, t, nearExpiryWarningDays, formatDate]
+      [
+        numberFormatter,
+        items,
+        t,
+        nearExpiryWarningDays,
+        formatDate,
+        batchPropertyColumns,
+        yesNo
+      ]
+    );
+
+    const defaultColumnVisibility = useMemo(
+      () =>
+        Object.fromEntries(
+          batchPropertyColumns.map((column) => [column.key, false])
+        ),
+      [batchPropertyColumns]
     );
 
     const renderContextMenu = useCallback(
@@ -285,6 +336,7 @@ const TrackedEntitiesTable = memo(
           columns={columns}
           count={count}
           renderContextMenu={renderContextMenu}
+          defaultColumnVisibility={defaultColumnVisibility}
           title={t`Tracked Entities`}
         />
         {editingExpiry && editingExpiry.status !== "Consumed" && (
@@ -337,6 +389,77 @@ function SourceDocumentLink({
       );
     default:
       return <Enumerable value={data.sourceDocument} />;
+  }
+}
+
+type YesNo = { yes: string; no: string };
+
+function propertyFilter(
+  column: BatchPropertyColumn,
+  yesNo: YesNo
+): ColumnFilterData {
+  switch (column.dataType) {
+    case "boolean":
+      return {
+        type: "static",
+        options: [
+          { value: "true", label: yesNo.yes },
+          { value: "false", label: yesNo.no }
+        ]
+      };
+    case "list":
+      return {
+        type: "static",
+        options: column.listOptions.map((option) => ({
+          value: option,
+          label: <Enumerable value={option} />
+        }))
+      };
+    case "date":
+      return { type: "dateRange" };
+    default:
+      return {
+        type: "fetcher",
+        endpoint: path.to.api.batchPropertyValues(column.key)
+      };
+  }
+}
+
+function formatPropertyValue(
+  column: BatchPropertyColumn,
+  value: unknown,
+  formatDate: (date: string) => string,
+  yesNo: YesNo
+) {
+  if (value === undefined || value === null || value === "") return null;
+  switch (column.dataType) {
+    case "boolean":
+      return value === true || value === "true" ? yesNo.yes : yesNo.no;
+    case "date":
+      return typeof value === "string" ? formatDate(value) : String(value);
+    case "list":
+      return <Enumerable value={String(value)} />;
+    default:
+      return String(value);
+  }
+}
+
+function PropertyIcon({
+  dataType
+}: {
+  dataType: BatchPropertyColumn["dataType"];
+}) {
+  switch (dataType) {
+    case "boolean":
+      return <LuToggleRight />;
+    case "date":
+      return <LuCalendar />;
+    case "list":
+      return <LuList />;
+    case "numeric":
+      return <LuHash />;
+    default:
+      return <LuText />;
   }
 }
 

@@ -115,6 +115,12 @@ export const convertEntityValidator = z.object({
   quantity: z.coerce.number().positive().default(1)
 });
 
+/**
+ * The trigger `listValue` that maps a failed Inspection step; the ERP writes it
+ * (`inspectionFailedResult` in the items module's models).
+ */
+export const inspectionFailedResult = "Failed";
+
 export const stepRecordValidator = z.object({
   index: zfd.numeric(z.number()),
   jobOperationStepId: z.string(),
@@ -319,6 +325,18 @@ export const triggerReworkValidator = z.object({
   inspectionId: zfd.text(z.string().optional())
 });
 
+/** A disposition rework target naming a correction instead of an operation. */
+export const CORRECTION_TARGET_PREFIX = "correction:";
+
+export const triggerCorrectionValidator = z.object({
+  jobId: z.string().min(1),
+  triggeredAtJobOperationId: z.string().min(1),
+  jobCorrectionId: z.string().min(1, { message: "Choose a correction" }),
+  reason: z.string().min(1),
+  quantity: zfd.numeric(z.number().positive().default(1)),
+  trackedEntityId: zfd.text(z.string().optional())
+});
+
 export const maintenanceDispatchValidator = z.object({
   workCenterId: z.string().min(1, { message: "Work Center is required" }),
   priority: z.enum(maintenanceDispatchPriority, {
@@ -432,6 +450,17 @@ export const inspectionSampleValidator = z.object({
     error: "Status is required"
   }),
   notes: zfd.text(z.string().optional())
+});
+
+// A receipt or manual lot's verdict: no production outcome rides on it, so it
+// is only Accept or Reject, with the reason a Reject needs when nothing failed.
+export const inspectionVerdictValidator = z.object({
+  decision: z.enum(["Accept", "Reject"], {
+    error: "Decision is required"
+  }),
+  reason: zfd.text(z.string().optional()),
+  // A reject opens an NCR unless the inspector turns it off, as in the ERP.
+  createNcr: zfd.checkbox()
 });
 
 // One decision surface for closing an inspection lot: the verdict carries its

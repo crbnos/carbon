@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { rmSync } from "node:fs";
+import { stripVTControlCharacters } from "node:util";
 import { box, intro, log, outro } from "@clack/prompts";
 import { execa } from "execa";
 import pc from "picocolors";
@@ -256,11 +257,17 @@ export async function up(opts: UpOpts = {}) {
   if (shouldMigrate) {
     await tasks([
       {
-        title: "Seed smoke-test user (test@carbon.ms)",
-        task: async () =>
-          (await ensureSmokeTestUser(root, ctx.db, ctx.ports.PORT_API)).seeded
-            ? "user created"
-            : "already exists"
+        title: "Seed smoke-test users (test@carbon.ms, test+admin2@carbon.ms)",
+        task: async () => {
+          const { seeded } = await ensureSmokeTestUser(
+            root,
+            ctx.db,
+            ctx.ports.PORT_API
+          );
+          if (seeded === "company") return "users created";
+          if (seeded === "second admin") return "second Admin added";
+          return "already exist";
+        }
       }
     ]);
   }
@@ -610,13 +617,19 @@ function printSummary(ctx: Ctx, apps: AppId[], size: StackSize) {
     db: ctx.db,
     shared: ctx.mode === "shared"
   });
-  // Some non-interactive terminals (Conductor's run pane) report a width of
-  // 0, for which clack's box computes a negative repeat count and throws.
-  if (process.stdout.columns === 0) {
-    log.info(`Carbon dev — ${ctx.slug}`);
+  const title = `Carbon dev — ${ctx.slug}`;
+  // clack's box throws (a negative repeat count) when the terminal is narrower
+  // than the title or a line it cannot wrap (a long URL), and Conductor's pane
+  // can report 0 or a few columns; 9 = guide, borders, padding + an odd column.
+  const widest = Math.max(
+    title.length,
+    ...summary.map((line) => stripVTControlCharacters(line).length)
+  );
+  if ((process.stdout.columns ?? 80) < widest + 9) {
+    log.info(title);
     for (const line of summary) log.message(line);
   } else {
-    box(summary.join("\n"), `Carbon dev — ${ctx.slug}`);
+    box(summary.join("\n"), title);
   }
 }
 
