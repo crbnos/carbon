@@ -329,7 +329,7 @@ these fields. Each one is optional except `materialRequests`; omitted, the row i
 | `TrackedStockSpec.shelf` | tier 03 | writes one opening `itemLedger` row per lot at that shelf, and skips the untracked opening row of that (item, shelf) |
 | `KanbanItemSpec.replenishmentLevel` | tier 03 | Transfer kanbans only |
 | `JobSpec.serials` | tier 06 | serial items only: one `readableId` per unit. `splitSerialUnits` splits the job's one reserved unit into quantity-1 units, each 1 ms after the last, as `assignSerialNumbers` does |
-| `ProductionData.materialRequests` (`MaterialRequestSpec`) | tier 06 | "Need material" rows on the job operation at `operationOrder`, at its work center and the plant. The applying user resolves a Resolved row, dated yesterday. Required: every dataset seeds rows, and the `coverage.ts` floor is 2 |
+| `ProductionData.materialRequests` (`MaterialRequestSpec`) | tier 06 | "Need material" rows on the job operation at `operationOrder`, at its work center and the plant. The applying user resolves a Resolved row, dated yesterday. Required: every dataset except a walkthrough seeds rows, and the `coverage.ts` floor is 2 |
 | `SerialSequenceSpec.serialNumberTiming` / `printLabelOnCompletion` | tier 10 | the `itemSerialSequence` columns; omitted, the column defaults apply |
 
 The validator checks them:
@@ -641,9 +641,27 @@ it reuses; it defaults to `industryId`. Tier 02 (`seedAssembly`), `createItem` a
 assembly graph check read it.
 
 `motor-line` (`data/motor-line/index.ts`, label "Motor line (dev)") is the one dev-only dataset.
-It is `motor` plus the anonymized AJ-3 serial motor line (`aj3.ts`), with `lineFlow` and all 3
-settings on. `aj3.ts` adds processes, work centers, shelves, parts, methods, stock, kanbans, jobs
-and serial sequences. It reuses the `automotive_precision` assets and `buildMotorWorkflows`.
+It is a walkthrough of one product, the anonymized AJ-3 serial motor line (`aj3.ts`), with
+`lineFlow` and all 3 settings on. It keeps only the motor company setup the line needs (plant,
+shift, storage types, printer route, the two AJ-3 suppliers) and seeds no documents: no jobs,
+orders, quality, maintenance or workflows. The chambers (AJ3-CC) and injectors (AJ3-FIA) are on
+shelf WH1-C1 as 3 serials each, so the engine line runs without sub-assembly jobs. The only
+demand is a forecast of 1 AJ3-ENG next week, so MRP suggests one engine to make. A safety stock
+alone does not work here: MRP's planning grid lists only an item with demand, open supply or a
+reorder point.
+
+### Walkthrough datasets
+
+`Dataset.walkthrough: true` marks a dev-only single-product dataset. The validator runs only its
+structural rules on it (`WALKTHROUGH_RULES` in `validate.ts`): names resolve, stock adds up,
+serials do not collide. The coverage checks in those rules go through `ValidationCtx.cover`, which
+skips them. `datasetScope` refuses a walkthrough with an `industryId`, and it requires each slice
+whose rules do not run (sales, purchasing documents, production, quality, accounting documents,
+most of ops, workflow runs) to be empty. `coverageFloorsFor` (`coverage.ts`) gives a walkthrough
+no row-count floors, so `db:check:datasets` still applies it and rolls it back, but counts nothing.
+The job, RFQ and demand stories (`production.eventsJobKey`, `purchasing.rfqHeader`,
+`planning.demandOrder` and the others in `datasetScope`) are null on a walkthrough, and the tiers
+skip them. Every other dataset must set them.
 
 ## Adding an industry
 

@@ -576,7 +576,8 @@ export type ItemsData = {
   customerParts: CustomerPartSpec[];
   priceOverrides: PriceOverrideSpec[];
   pricingRules: PricingRuleSpec[];
-  configuration: ConfigurationSpec;
+  /** Null only on a walkthrough dataset (`Dataset.walkthrough`). */
+  configuration: ConfigurationSpec | null;
   revisionLadder: RevisionLadderSpec[];
   inspectionPlans: InspectionPlanSpec[];
   enforcementRules: EnforcementRuleSpec[];
@@ -1346,7 +1347,11 @@ export type PurchasingData = {
   rfqQuotes: RfqQuoteSpec[];
   rfqWinningQuote: string;
   rfqOrderQuantity: number;
-  rfqHeader: RfqHeaderSpec;
+  /**
+   * Null only on a walkthrough dataset: tier 05 then seeds no RFQ, and
+   * rfqLines, rfqQuotes and the winning-quote orders must be empty.
+   */
+  rfqHeader: RfqHeaderSpec | null;
   lifecycleRfqs: LifecycleRfqSpec[];
   purchaseOrders: PurchaseOrderSpec[];
   standaloneSupplierQuotes: StandaloneSupplierQuoteSpec[];
@@ -1597,13 +1602,14 @@ export type ProductionData = {
   /** Production-event blocks, indexed by operation position — not shift rows. */
   shifts: ShiftEventSpec[][];
   genealogyInputs: GenealogyInputSpec[];
-  genealogyAssembly: GenealogyAssemblySpec;
+  /** Null only on a walkthrough dataset, as are the other job stories below. */
+  genealogyAssembly: GenealogyAssemblySpec | null;
   /** JobSpec.key whose operations get production events. */
-  eventsJobKey: string;
+  eventsJobKey: string | null;
   /** JobSpec.key the as-built genealogy hangs off. */
-  genealogyJobKey: string;
+  genealogyJobKey: string | null;
   /** Open Setup event (null endTime) on the events job; use the op overridden to "In Progress". */
-  openEvent: { operationOrder: number };
+  openEvent: { operationOrder: number } | null;
   /**
    * An Active batch; members are unstarted root operations of different
    * released jobs on one process. `running` is its batch timer today, on the
@@ -1613,8 +1619,8 @@ export type ProductionData = {
   batch: {
     members: { job: string; order: number }[];
     running: { type: "Setup" | "Labor" | "Machine"; startTimeOfDay: string };
-  };
-  rework: ReworkSpec;
+  } | null;
+  rework: ReworkSpec | null;
   pickingLists: PickingListSpec[];
   materialRequests: MaterialRequestSpec[];
 };
@@ -2752,7 +2758,8 @@ export type PlanningData = {
   buyItemIds: string[];
   makeItemIds: string[];
   demandProjections: DemandProjectionSpec[];
-  demandOrder: DemandOrderSpec;
+  /** Null only on a walkthrough dataset: no sales order, so no demand. */
+  demandOrder: DemandOrderSpec | null;
   hq: HqPlanningSpec;
 };
 
@@ -2777,6 +2784,11 @@ export type Dataset = {
    * `industryId`. Lets a dev-only dataset reuse an industry's assets.
    */
   assetIndustryId?: string;
+  /**
+   * A dev-only single-product dataset: only the structural rules run and
+   * coverage floors skip it. Never set with an `industryId`.
+   */
+  walkthrough?: boolean;
   foundation: FoundationData;
   items: ItemsData;
   inventory: InventoryData;

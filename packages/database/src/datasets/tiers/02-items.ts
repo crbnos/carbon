@@ -455,78 +455,80 @@ export async function runTier2(ctx: Ctx): Promise<void> {
   // requiresConfiguration is what shows the Configure button and the rules
   // panel; a rule's field is `${field}:${methodRowId}`, as the BoM/BoP
   // editors key it.
-  ctx.log("configuration parameters + rules");
   const cfg = data.configuration;
-  const cfgItem = needItem(cfg.item);
-  const flagged = await ctx.client.query(
-    `UPDATE "itemReplenishment" SET "requiresConfiguration" = true, "updatedBy" = $3
-     WHERE "itemId" = $1 AND "companyId" = $2`,
-    [cfgItem.id, ctx.companyId, ctx.userId]
-  );
-  if (flagged.rowCount !== 1) {
-    throw new Error(`Seed: "${cfg.item}" has no itemReplenishment row`);
-  }
-  const groupId = await insertId(ctx, "configurationParameterGroup", {
-    itemId: cfgItem.id,
-    name: cfg.group,
-    sortOrder: 1
-  });
-  for (const [index, parameter] of cfg.parameters.entries()) {
-    await insertRow(ctx, "configurationParameter", {
+  if (cfg) {
+    ctx.log("configuration parameters + rules");
+    const cfgItem = needItem(cfg.item);
+    const flagged = await ctx.client.query(
+      `UPDATE "itemReplenishment" SET "requiresConfiguration" = true, "updatedBy" = $3
+       WHERE "itemId" = $1 AND "companyId" = $2`,
+      [cfgItem.id, ctx.companyId, ctx.userId]
+    );
+    if (flagged.rowCount !== 1) {
+      throw new Error(`Seed: "${cfg.item}" has no itemReplenishment row`);
+    }
+    const groupId = await insertId(ctx, "configurationParameterGroup", {
       itemId: cfgItem.id,
-      configurationParameterGroupId: groupId,
-      key: parameter.key,
-      label: parameter.label,
-      dataType: parameter.dataType,
-      listOptions: parameter.listOptions ?? null,
-      sortOrder: index + 1
+      name: cfg.group,
+      sortOrder: 1
     });
-  }
-  const cfgMethodId = needMM(i, cfg.item);
-  for (const rule of cfg.rules) {
-    const row =
-      "component" in rule.target
-        ? await one<{ id: string }>(
-            ctx.client,
-            `SELECT id FROM "methodMaterial"
-             WHERE "makeMethodId" = $1 AND "itemId" = $2 AND "companyId" = $3`,
-            [cfgMethodId, needItem(rule.target.component).id, ctx.companyId]
-          )
-        : await one<{ id: string }>(
-            ctx.client,
-            `SELECT id FROM "methodOperation"
-             WHERE "makeMethodId" = $1 AND "companyId" = $2
-             ORDER BY "order" OFFSET $3 LIMIT 1`,
-            [cfgMethodId, ctx.companyId, rule.target.operation - 1]
-          );
-    await insertRow(ctx, "configurationRule", {
-      itemId: cfgItem.id,
-      field: `${rule.field}:${row.id}`,
-      code: rule.code,
-      updatedBy: ctx.userId
-    });
-  }
-  // The shape normalizePricingRule (sales.service.ts) gives a Configuration
-  // rule: one item, Fixed 0, the prices carrying the parameter's label so the
-  // price trace can name it.
-  if (cfg.prices?.length) {
-    const labelByKey = new Map(cfg.parameters.map((p) => [p.key, p.label]));
-    await insertRow(ctx, "pricingRule", {
-      name: `${cfg.item} Configuration`,
-      ruleType: "Configuration",
-      amountType: "Fixed",
-      amount: 0,
-      priority: 0,
-      itemIds: [cfgItem.id],
-      configurationPrices: JSON.stringify(
-        cfg.prices.map((price) => ({
-          key: price.key,
-          value: price.value ?? null,
-          amount: price.amount,
-          label: labelByKey.get(price.key)
-        }))
-      )
-    });
+    for (const [index, parameter] of cfg.parameters.entries()) {
+      await insertRow(ctx, "configurationParameter", {
+        itemId: cfgItem.id,
+        configurationParameterGroupId: groupId,
+        key: parameter.key,
+        label: parameter.label,
+        dataType: parameter.dataType,
+        listOptions: parameter.listOptions ?? null,
+        sortOrder: index + 1
+      });
+    }
+    const cfgMethodId = needMM(i, cfg.item);
+    for (const rule of cfg.rules) {
+      const row =
+        "component" in rule.target
+          ? await one<{ id: string }>(
+              ctx.client,
+              `SELECT id FROM "methodMaterial"
+               WHERE "makeMethodId" = $1 AND "itemId" = $2 AND "companyId" = $3`,
+              [cfgMethodId, needItem(rule.target.component).id, ctx.companyId]
+            )
+          : await one<{ id: string }>(
+              ctx.client,
+              `SELECT id FROM "methodOperation"
+               WHERE "makeMethodId" = $1 AND "companyId" = $2
+               ORDER BY "order" OFFSET $3 LIMIT 1`,
+              [cfgMethodId, ctx.companyId, rule.target.operation - 1]
+            );
+      await insertRow(ctx, "configurationRule", {
+        itemId: cfgItem.id,
+        field: `${rule.field}:${row.id}`,
+        code: rule.code,
+        updatedBy: ctx.userId
+      });
+    }
+    // The shape normalizePricingRule (sales.service.ts) gives a Configuration
+    // rule: one item, Fixed 0, the prices carrying the parameter's label so the
+    // price trace can name it.
+    if (cfg.prices?.length) {
+      const labelByKey = new Map(cfg.parameters.map((p) => [p.key, p.label]));
+      await insertRow(ctx, "pricingRule", {
+        name: `${cfg.item} Configuration`,
+        ruleType: "Configuration",
+        amountType: "Fixed",
+        amount: 0,
+        priority: 0,
+        itemIds: [cfgItem.id],
+        configurationPrices: JSON.stringify(
+          cfg.prices.map((price) => ({
+            key: price.key,
+            value: price.value ?? null,
+            amount: price.amount,
+            label: labelByKey.get(price.key)
+          }))
+        )
+      });
+    }
   }
 
   ctx.log("enforcement rules");

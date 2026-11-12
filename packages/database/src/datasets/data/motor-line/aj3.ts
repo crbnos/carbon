@@ -5,7 +5,6 @@
 import type {
   BatchPropertySpec,
   ItemSpec,
-  JobSpec,
   KanbanItemSpec,
   MakeMethodSpec,
   OpeningStockSpec,
@@ -19,7 +18,7 @@ import type {
 } from "../../types.ts";
 
 /**
- * The AJ-3 serial motor line that `motor-line` adds on top of `motor`.
+ * The AJ-3 serial motor line: the one product of the `motor-line` walkthrough.
  */
 
 // Every Batch-tracked item needs at least one batch property (validator rule).
@@ -140,7 +139,15 @@ export const AJ3_SHELVES: ShelfSpec[] = [
     storageType: "Bin",
     parent: "WH1-Rack-B"
   },
-  { name: "WH1-B2", warehouse: "WH1", storageType: "Bin", parent: "WH1-Rack-B" }
+  {
+    name: "WH1-B2",
+    warehouse: "WH1",
+    storageType: "Bin",
+    parent: "WH1-Rack-B"
+  },
+  // Finished sub-assemblies: the chambers and injectors the engine line pulls.
+  { name: "WH1-Rack-C", warehouse: "WH1", storageType: "Rack" },
+  { name: "WH1-C1", warehouse: "WH1", storageType: "Bin", parent: "WH1-Rack-C" }
 ];
 
 export const AJ3_MAKE_PARTS: ItemSpec[] = [
@@ -150,6 +157,7 @@ export const AJ3_MAKE_PARTS: ItemSpec[] = [
     type: "Part",
     replenishment: "Make",
     trackingType: "Serial",
+    unitOfMeasureCode: "EA",
     standardCost: 18500,
     unitSalePrice: 32000,
     thumbnail: "MTR-9000"
@@ -160,6 +168,7 @@ export const AJ3_MAKE_PARTS: ItemSpec[] = [
     type: "Part",
     replenishment: "Make",
     trackingType: "Serial",
+    unitOfMeasureCode: "EA",
     standardCost: 2400,
     unitSalePrice: 4200,
     thumbnail: "STA-9000"
@@ -170,6 +179,7 @@ export const AJ3_MAKE_PARTS: ItemSpec[] = [
     type: "Part",
     replenishment: "Make",
     trackingType: "Serial",
+    unitOfMeasureCode: "EA",
     standardCost: 640,
     unitSalePrice: 1100
   }
@@ -615,7 +625,9 @@ export const AJ3_OPENING_STOCK: OpeningStockSpec[] = [
   { item: "AJ3-IGN", qty: 20, shelf: "WH1-B1" },
   { item: "AJ3-LNR", qty: 20, shelf: "WH1-B1" },
   { item: "AJ3-INJ-BDY", qty: 20, shelf: "WH1-B2" },
-  { item: "AJ3-NOZ", qty: 20, shelf: "WH1-B2" }
+  { item: "AJ3-NOZ", qty: 20, shelf: "WH1-B2" },
+  { item: "AJ3-CC", qty: 3, shelf: "WH1-C1" },
+  { item: "AJ3-FIA", qty: 3, shelf: "WH1-C1" }
 ];
 
 export const AJ3_ON_HAND_TRACKED: TrackedStockSpec[] = [
@@ -633,6 +645,26 @@ export const AJ3_ON_HAND_TRACKED: TrackedStockSpec[] = [
     entities: [
       { readableId: "LOT-AJ3BR-01", quantity: 12 },
       { readableId: "LOT-AJ3BR-02", quantity: 8 }
+    ]
+  },
+  // One serial per unit, so the engine line runs without building a chamber
+  // or an injector first.
+  {
+    item: "AJ3-CC",
+    shelf: "WH1-C1",
+    entities: [
+      { readableId: "AJ3C-0001", quantity: 1 },
+      { readableId: "AJ3C-0002", quantity: 1 },
+      { readableId: "AJ3C-0003", quantity: 1 }
+    ]
+  },
+  {
+    item: "AJ3-FIA",
+    shelf: "WH1-C1",
+    entities: [
+      { readableId: "AJ3I-0001", quantity: 1 },
+      { readableId: "AJ3I-0002", quantity: 1 },
+      { readableId: "AJ3I-0003", quantity: 1 }
     ]
   }
 ];
@@ -664,87 +696,14 @@ export const AJ3_KANBAN_ITEMS: KanbanItemSpec[] = [
   }
 ];
 
-// Make-to-stock, one unit per serial. No operationOverrides, so every operation
-// of a Ready job is Ready.
-export const AJ3_JOBS: JobSpec[] = [
-  {
-    key: "aj3-fia-1",
-    item: "AJ3-FIA",
-    status: "Ready",
-    quantity: 2,
-    serials: ["AJ3I-0001", "AJ3I-0002"],
-    dueDateOffset: 3,
-    releasedDateOffset: -1,
-    priority: 16
-  },
-  {
-    key: "aj3-fia-2",
-    item: "AJ3-FIA",
-    status: "Ready",
-    quantity: 1,
-    serials: ["AJ3I-0003"],
-    dueDateOffset: 5,
-    releasedDateOffset: -1,
-    priority: 17
-  },
-  {
-    key: "aj3-cc-1",
-    item: "AJ3-CC",
-    status: "Ready",
-    quantity: 2,
-    serials: ["AJ3C-0001", "AJ3C-0002"],
-    dueDateOffset: 7,
-    releasedDateOffset: -1,
-    priority: 18
-  },
-  {
-    key: "aj3-cc-2",
-    item: "AJ3-CC",
-    status: "Ready",
-    quantity: 1,
-    serials: ["AJ3C-0003"],
-    dueDateOffset: 9,
-    releasedDateOffset: -1,
-    priority: 19
-  },
-  {
-    key: "aj3-eng-1",
-    item: "AJ3-ENG",
-    status: "Ready",
-    quantity: 2,
-    serials: ["AJ3E-0001", "AJ3E-0002"],
-    dueDateOffset: 12,
-    releasedDateOffset: -1,
-    priority: 20
-  },
-  {
-    key: "aj3-eng-2",
-    item: "AJ3-ENG",
-    status: "Ready",
-    quantity: 1,
-    serials: ["AJ3E-0003"],
-    dueDateOffset: 14,
-    releasedDateOffset: -1,
-    priority: 21
-  },
-  {
-    key: "aj3-eng-planned",
-    item: "AJ3-ENG",
-    status: "Planned",
-    quantity: 1,
-    serials: ["AJ3E-0004"],
-    dueDateOffset: 18,
-    priority: 22
-  }
-];
-
-// `next` is the last counter issued, so it covers every seeded serial above.
+// `next` is the last counter issued. The chamber and injector sequences cover
+// the serials on the shelf; the first engine job takes AJ3E-0001.
 export const AJ3_SERIAL_SEQUENCES: SerialSequenceSpec[] = [
   {
     item: "AJ3-ENG",
     prefix: "AJ3E-",
     size: 4,
-    next: 5,
+    next: 0,
     serialNumberTiming: "jobCreation",
     printLabelOnCompletion: true
   },
@@ -752,14 +711,14 @@ export const AJ3_SERIAL_SEQUENCES: SerialSequenceSpec[] = [
     item: "AJ3-CC",
     prefix: "AJ3C-",
     size: 4,
-    next: 4,
+    next: 3,
     serialNumberTiming: "jobCreation"
   },
   {
     item: "AJ3-FIA",
     prefix: "AJ3I-",
     size: 4,
-    next: 4,
+    next: 3,
     serialNumberTiming: "jobCreation"
   }
 ];

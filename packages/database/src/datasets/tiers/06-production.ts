@@ -20,9 +20,11 @@ import {
 import type {
   Ctx,
   DayOffset,
+  GenealogyAssemblySpec,
   JobSpec,
   PickingListSpec,
-  ProductionData
+  ProductionData,
+  ReworkSpec
 } from "../types.ts";
 
 type RootOperation = {
@@ -154,17 +156,31 @@ export async function runTier6(ctx: Ctx): Promise<void> {
 
   // Job refs only exist from here on, so this favorite isn't tier 04's.
   // jobFavorite has no companyId/createdBy, so audit injection no-ops.
-  await insertRow(ctx, "jobFavorite", {
-    jobId: need(ctx.refs.documents, `job:${data.eventsJobKey}`),
-    userId: ctx.userId
-  });
-
-  await seedProductionEvents(ctx, data);
-  await seedOpenEvent(ctx, data);
+  // A walkthrough dataset has no jobs: each job story below is null there.
+  const eventsJobKey = data.eventsJobKey;
+  if (eventsJobKey) {
+    await insertRow(ctx, "jobFavorite", {
+      jobId: need(ctx.refs.documents, `job:${eventsJobKey}`),
+      userId: ctx.userId
+    });
+    await seedProductionEvents(ctx, data, eventsJobKey);
+    if (data.openEvent) {
+      await seedOpenEvent(ctx, eventsJobKey, data.openEvent);
+    }
+  }
   await seedStepRecords(ctx);
-  await seedBatch(ctx, data);
-  await seedRework(ctx, data);
-  await seedGenealogy(ctx, data);
+  if (data.batch) await seedBatch(ctx, data.batch);
+  if (eventsJobKey && data.rework) {
+    await seedRework(ctx, eventsJobKey, data.rework);
+  }
+  if (data.genealogyJobKey && data.genealogyAssembly) {
+    await seedGenealogy(
+      ctx,
+      data,
+      data.genealogyJobKey,
+      data.genealogyAssembly
+    );
+  }
   await seedPickingLists(ctx, data);
   await seedMaterialRequests(ctx, data);
 }
@@ -306,10 +322,11 @@ async function applyOperationDepth(
  */
 async function seedProductionEvents(
   ctx: Ctx,
-  data: ProductionData
+  data: ProductionData,
+  eventsJobKey: string
 ): Promise<void> {
-  const jobId = need(ctx.refs.documents, `job:${data.eventsJobKey}`);
-  const eventsJobSpec = data.jobs.find((job) => job.key === data.eventsJobKey);
+  const jobId = need(ctx.refs.documents, `job:${eventsJobKey}`);
+  const eventsJobSpec = data.jobs.find((job) => job.key === eventsJobKey);
 
   const operations = (await rootOperations(ctx, jobId)).slice(0, 2);
   if (operations.length === 0) return;
@@ -354,12 +371,16 @@ async function seedProductionEvents(
 }
 
 // Without an open event (no endTime) MES's active-operation UI renders nothing.
-async function seedOpenEvent(ctx: Ctx, data: ProductionData): Promise<void> {
-  const jobId = need(ctx.refs.documents, `job:${data.eventsJobKey}`);
+async function seedOpenEvent(
+  ctx: Ctx,
+  eventsJobKey: string,
+  openEvent: NonNullable<ProductionData["openEvent"]>
+): Promise<void> {
+  const jobId = need(ctx.refs.documents, `job:${eventsJobKey}`);
   const operations = await rootOperations(ctx, jobId);
   const operation = rootOperationAt(
     operations,
-    data.openEvent.operationOrder,
+    openEvent.operationOrder,
     "production.openEvent"
   );
 
@@ -376,9 +397,12 @@ async function seedOpenEvent(ctx: Ctx, data: ProductionData): Promise<void> {
 }
 
 // Mirrors batch-operations' "create" with release.
-async function seedBatch(ctx: Ctx, data: ProductionData): Promise<void> {
+async function seedBatch(
+  ctx: Ctx,
+  batch: NonNullable<ProductionData["batch"]>
+): Promise<void> {
   const members: RootOperation[] = [];
-  for (const member of data.batch.members) {
+  for (const member of batch.members) {
     const jobId = need(ctx.refs.documents, `job:${member.job}`);
     members.push(
       rootOperationAt(
@@ -421,12 +445,8 @@ async function seedBatch(ctx: Ctx, data: ProductionData): Promise<void> {
   await insertRow(ctx, "productionEvent", {
     jobOperationId: lead.id,
     jobOperationBatchId: batchId,
-    type: data.batch.running.type,
-    startTime: resolveTimestamp(
-      ctx.anchor,
-      0,
-      data.batch.running.startTimeOfDay
-    ),
+    type: batch.running.type,
+    startTime: resolveTimestamp(ctx.anchor, 0, batch.running.startTimeOfDay),
     endTime: null,
     employeeId: ctx.userId,
     workCenterId: lead.workCenterId,
@@ -612,25 +632,29 @@ async function seedStepRecords(ctx: Ctx): Promise<void> {
 }
 
 /** Mirrors trigger-rework; left open (no completedAt) since the job is still In Progress. */
-async function seedRework(ctx: Ctx, data: ProductionData): Promise<void> {
-  const jobId = need(ctx.refs.documents, `job:${data.eventsJobKey}`);
+async function seedRework(
+  ctx: Ctx,
+  eventsJobKey: string,
+  rework: ReworkSpec
+): Promise<void> {
+  const jobId = need(ctx.refs.documents, `job:${eventsJobKey}`);
   const operations = await rootOperations(ctx, jobId);
   const target = rootOperationAt(
     operations,
-    data.rework.targetOperationOrder,
+    rework.targetOperationOrder,
     "production.rework target"
   );
   const triggeredAt = rootOperationAt(
     operations,
-    data.rework.triggeredAtOperationOrder,
+    rework.triggeredAtOperationOrder,
     "production.rework triggeredAt"
   );
 
   ctx.log("rework");
   await insertRow(ctx, "rework", {
     jobId,
-    quantity: data.rework.quantity,
-    reason: data.rework.reason,
+    quantity: rework.quantity,
+    reason: rework.reason,
     requestedById: ctx.userId,
     targetJobOperationId: target.id,
     triggeredAtJobOperationId: triggeredAt.id
@@ -789,9 +813,13 @@ async function seedMaterialRequests(
  * parent being built. Seeding entities alone leaves the graph empty, which is
  * what it was.
  */
-async function seedGenealogy(ctx: Ctx, data: ProductionData): Promise<void> {
-  const assembly = data.genealogyAssembly;
-  const jobId = need(ctx.refs.documents, `job:${data.genealogyJobKey}`);
+async function seedGenealogy(
+  ctx: Ctx,
+  data: ProductionData,
+  genealogyJobKey: string,
+  assembly: GenealogyAssemblySpec
+): Promise<void> {
+  const jobId = need(ctx.refs.documents, `job:${genealogyJobKey}`);
   const satellite = need(ctx.refs.items, assembly.item, "item");
 
   const assemblyOperation = await rows<{ id: string }>(
