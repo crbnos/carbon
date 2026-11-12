@@ -116,6 +116,20 @@ rows (descendants RPC) against its `Unconsume` rows (ancestors RPC), as MES
 `getTrackedInputs` and projects `loadSerialBuildNodes` (`projects.service.ts`, Build from
 part) do. Neither RPC returns `itemId`; read it from `trackedEntity`.
 
+**`get_traveler_target(p_tracked_entity_id, p_company_id)`** (`20261112180115_get-traveler-target.sql`)
+finds the unit a scanned traveler label travels with now. It starts at the scanned unit and walks
+up the `Consume` edges (input = the unit, output = the parent) while the unit is `Consumed`:
+
+1. At each step, take the newest `Consume` edge that no later `Unconsume` reverses. A reversing
+   `Unconsume` has input = the parent and output = the unit.
+2. Stop at a unit that is not `Consumed`, at a unit with no such edge, or after 20 steps.
+3. Return that unit: `trackedEntityId`, `status`, `jobId`, `jobMakeMethodId`, `itemId` and `depth`
+   (the number of steps). `jobId` and `jobMakeMethodId` come from its `attributes`.
+
+It returns no row when the scanned unit is not in the company. It is `SECURITY INVOKER`, so the
+caller's RLS applies. The MES calls it through `getTravelerTarget` (`apps/mes/app/services/traveler.server.ts`).
+Pinned by `supabase/tests/traveler-target.test.sql`.
+
 **Batch variants** (`20260430090114`, take a `TEXT[]`, add a `sourceEntityId` output column;
 `20260929152451` adds `p_company_id`):
 `get_direct_ancestors_of_tracked_entities_strict` / `get_direct_descendants_of_tracked_entities_strict`

@@ -28,7 +28,10 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
 
 `documentTypeRegistry` entries (`id`, `sourceDocuments[]`, `builtInRenderer: "zpl"|"pdf"|null`,
 `defaultFormat`):
-- `productLabel` — sources `Receipt, Shipment, Operation, Entity, Job, Split, StockTransfer`; default zpl
+- `productLabel` — sources `Receipt, Shipment, Operation, Entity, Job, Split, StockTransfer, PickingList`;
+  default zpl. A `PickingList` prints its travelers, in serial order
+  (`getPickingListTravelerEntities`, `@carbon/database/travelers`). That is one label per live unit
+  (not Consumed, Rejected or Scrapped) of the top-level make method of each job on the list
 - `kanbanCard` — source `Kanban`; default pdf, ZPL on media of 3" x 2" and up (see `kanban-system.md` → Labels)
 - `storageUnitLabel` — source `StorageUnit`; default zpl
 
@@ -54,7 +57,8 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
      workCenterId), workCenterId)`. Falls back to `docType.defaultFormat` and media size `"label2x1"`
      when no config.
    - For each doc-type-for-source: resolve items (`resolvers.ts`: `resolveTrackedEntityData` /
-     `resolveKanbanData` / `resolveStorageUnitData`), then per item create a `printJob` (`generating`),
+     `resolveKanbanData` / `resolveStorageUnitData`; the `PickingList` case of `queryTrackedEntities` calls
+     `getPickingListTravelerEntities`), then per item create a `printJob` (`generating`),
      render (`renderers.tsx`), update content (→ `queued`), and if a `printerUrl` exists collect it
      for delivery (else mark `completed`). After the step, one `step.sendEvent("deliver", …)` sends a
      `carbon/print-job-deliver` event per collected job.
@@ -71,7 +75,9 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
 - `renderItemBuiltIn` — used when no template but `builtInRenderer !== null`. PDF path renders the
   React-PDF component via `renderToStream` → base64. `productLabel` loads the company's
   `documentTemplate` (`documentType="trackingLabel"`) + logo so queued jobs match the customizer.
-  ZPL requires a `labelSize.zpl` config (`requireZplCapable`). A kanban card needs media that
+  ZPL requires a `labelSize.zpl` config (`requireZplCapable`). The default `trackingLabel` QR holds
+  `{label.travelerUrl}`, the MES traveler link `${getMESUrl()}/x/traveler/<trackedEntityId>`
+  (`trackingLabel/vars.ts`). `ProductLabelZPL` sizes the QR slot from the value length (`qrModuleCount`). A kanban card needs media that
   `canHoldKanbanLabel` accepts for ZPL; a PDF printer with smaller media prints the company's
   `kanbanLabelSize` instead.
 - If neither (`builtInRenderer === null`, no template) → job fails asking for a BinderyPress template.
@@ -84,7 +90,7 @@ a ProxyBox HTTP endpoint. There is no Trigger.dev here.
 - **Assignments** live in `companySettings.printing` JSONB (`PrintingSettings` →
   `assignments[locationId]: LocationAssignment`). Contexts (`printerContexts`, `assignments.ts`):
   `default | shipping | receiving | inventory | kanban | workCenter`. `getPrinterContextForSource` maps
-  Shipment→shipping, Receipt→receiving, StockTransfer/StorageUnit→inventory, Kanban→kanban, else
+  Shipment→shipping, Receipt→receiving, StockTransfer/PickingList/StorageUnit→inventory, Kanban→kanban, else
   workCenter if a workCenterId is present, else default. Stored settings written before a context
   existed have no key for it; every reader uses `?.` and resolution falls back to the default.
   `removePrinterRoute` clears the deleted route from every context.
@@ -139,15 +145,37 @@ wrapped in try/catch that never blocks the parent op, then `trigger("print-job",
 - Receipt post `postReceipt` (receiving); Shipment post `postShipment` (shipping; also prints
   `Split` entities); Kanban create `createKanban` (kanban; one card per action, three for Make) — these three through
   `autoPrint` in `inventory.service.ts`; Stock-transfer split, from the line pick operations (Split + Entity reprint) —
-  all in `apps/erp/app/modules/inventory/inventory.server.ts`; MES first-operation completion of a serial or batch unit,
-  `autoPrintFirstOperationLabel` (`apps/mes/app/services/printing.server.ts`, workCenter), called by
-  every completion path: the Complete form (`x+/complete.tsx`), the QR / kanban Complete scan
-  (`x+/end.$operationId.tsx`), and inspection lots (`postSerialCompletions` / `postBulkCompletion`
-  in `services/quality.server.ts`). A new path that completes a tracked unit must call it too, or that
-  path mints serials with no label. "First" is the routing's answer, `isFirstOperationOfMakeMethod`
-  (`services/operations.service.ts`: no `jobOperationDependency` predecessor in the same make method),
-  the check the operation and assembly views use. Counting the unit's `Operation <id>` markers
-  reprinted a label at every later operation whenever the unit completed there had one or none.
+  all in `apps/erp/app/modules/inventory/inventory.server.ts`.
+- **MES operation labels.** `autoPrintOperationLabel` (`apps/mes/app/services/printing.server.ts`,
+  workCenter context) runs on every MES path that completes a serial or batch unit: the Complete form
+  (`x+/complete.tsx`), the QR / kanban Complete scan (`x+/end.$operationId.tsx`), and inspection lots
+  (`postSerialCompletions` / `postBulkCompletion` in `services/quality.server.ts`). A new path that
+  completes a tracked unit must call it too, or that path mints serials with no label.
+  `shouldPrintOperationLabel` (`@carbon/database/travelers`) decides if it prints:
+
+  | Operation | Prints when |
+  |---|---|
+  | Last operation of the top-level make method (`parentMaterialId` null) | `itemSerialSequence.printLabelOnCompletion` is on for the item (the finished-good label) |
+  | First operation of the make method | `companySettings.travelerLabels` is off. When it is on, the travelers printed at picking already carry the label |
+
+  "First" and "last" come from the routing (`services/operations.service.ts`).
+  `isFirstOperationOfMakeMethod`: no `jobOperationDependency` predecessor in the same make method.
+  `isLastOperationOfMakeMethod`: no operation of the same make method depends on this one.
+  The operation and assembly views use the same checks. Counting the unit's `Operation <id>` markers
+  reprinted a label at every later operation, because a unit completed there had one marker or none.
+- **Picking-list travelers.** When `companySettings.travelerLabels` is on, a picking list prints its
+  travelers (`sourceDocument: "PickingList"`, inventory context) once: when it moves from Draft to
+  In Progress (`shouldPrintTravelers`, `@carbon/database/travelers`). A list that returns to In Progress
+  from Completed or Partial does not print again. The print runs after the status write, so a print
+  failure never blocks the change. The callers:
+
+  | App | Status change | First pick (the trigger moves a Draft list to In Progress) |
+  |---|---|---|
+  | ERP | `setPickingListStatus` → `service.autoPrint` | `pickPickingListLineChecked` / `pickPickingListLineEntity` read the status before and after the pick |
+  | MES | `x+/picking.$pickingListId.status.tsx` → `autoPrintPickingListTravelers` (`services/printing.server.ts`) | `x+/picking.$pickingListId.line.quantity.tsx` and `x+/picking.$pickingListId.tracked.$lineId.tsx`, the same before/after read |
+
+  The MES picking list header has a **Print travelers** `PrintButton` (every status except
+  Cancelled); its download routes are `file+/picking-list+/$id.travelers[.]{pdf,zpl}.tsx`.
 
 ## Gotchas
 
