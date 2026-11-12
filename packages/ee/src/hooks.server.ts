@@ -25,7 +25,10 @@ import {
   ONSHAPE_GOVERNMENT_INTEGRATION_ID,
   ONSHAPE_INTEGRATION_ID
 } from "./onshape/lib/connection";
-import { ONSHAPE_V2_INTEGRATION_ID } from "./onshape/lib/integration-id";
+import {
+  ONSHAPE_V2_GOVERNMENT_INTEGRATION_ID,
+  ONSHAPE_V2_INTEGRATION_ID
+} from "./onshape/lib/integration-id";
 import {
   quickbooksOnInstall,
   quickbooksOnUninstall
@@ -133,6 +136,9 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
   },
   "onshape-v2": {
     onHealthcheck: onshapeHealthcheck(ONSHAPE_V2_INTEGRATION_ID)
+  },
+  "onshape-v2-government": {
+    onHealthcheck: onshapeHealthcheck(ONSHAPE_V2_GOVERNMENT_INTEGRATION_ID)
   },
   // The accounting providers' onUpdate re-runs the same subscription
   // convergence as onInstall: a settings save on an existing install

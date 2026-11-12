@@ -4,8 +4,15 @@
 
 import { useCarbon } from "@carbon/auth";
 import type { StandardFieldId } from "@carbon/ee";
-import { everyPushTargets } from "@carbon/ee";
-import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
+import {
+  everyPushTargets,
+  normalizeOnshapeUrl,
+  ONSHAPE_DEFAULT_BASE_URL
+} from "@carbon/ee";
+import {
+  ONSHAPE_PANEL_INTEGRATION_IDS,
+  ONSHAPE_V2_INTEGRATION_ID
+} from "@carbon/ee/onshape/integration-id";
 import {
   Badge,
   Button,
@@ -37,6 +44,14 @@ type ExternalSourceMapping = {
   } | null;
 };
 
+function onshapeOriginOf(metadata: unknown): string {
+  const baseUrl =
+    metadata && typeof metadata === "object" && "baseUrl" in metadata
+      ? (metadata as { baseUrl?: unknown }).baseUrl
+      : undefined;
+  return normalizeOnshapeUrl(baseUrl) ?? ONSHAPE_DEFAULT_BASE_URL;
+}
+
 /** Self-loading `onshape-v2` link card; renders nothing without a link. */
 export function ExternalSourceCard({
   itemId,
@@ -55,6 +70,8 @@ export function ExternalSourceCard({
   const [reload, setReload] = useState(0);
   // Null until read, or when this user lacks settings view.
   const [replaced, setReplaced] = useState<string[] | null>(null);
+  // A Government tenant has its own host; cad.onshape.com until read.
+  const [onshapeOrigin, setOnshapeOrigin] = useState(ONSHAPE_DEFAULT_BASE_URL);
   const itemFieldLabel: Record<StandardFieldId, string> = {
     mpn: t`Manufacturer Part Number`,
     replenishmentSystem: t`Replenishment`,
@@ -94,13 +111,17 @@ export function ExternalSourceCard({
         .from("companyIntegration")
         .select("metadata")
         .eq("companyId", company.id)
-        .eq("id", ONSHAPE_V2_INTEGRATION_ID)
+        .in("id", [...ONSHAPE_PANEL_INTEGRATION_IDS])
+        .order("active", { ascending: false })
+        .order("updatedAt", { ascending: false })
+        .limit(1)
         .maybeSingle();
       if (cancelled) return;
       if (!integration.data) {
         setReplaced(null);
         return;
       }
+      setOnshapeOrigin(onshapeOriginOf(integration.data.metadata));
       const targets = everyPushTargets(integration.data.metadata);
       const fieldNames = new Map<string, string>();
       if (targets.customFieldIds.length > 0) {
@@ -138,8 +159,8 @@ export function ExternalSourceCard({
   const onshapeUrl = !meta.documentId
     ? null
     : meta.wvId && meta.elementId
-      ? `https://cad.onshape.com/documents/${meta.documentId}/${meta.wv ?? "w"}/${meta.wvId}/e/${meta.elementId}`
-      : `https://cad.onshape.com/documents/${meta.documentId}`;
+      ? `${onshapeOrigin}/documents/${meta.documentId}/${meta.wv ?? "w"}/${meta.wvId}/e/${meta.elementId}`
+      : `${onshapeOrigin}/documents/${meta.documentId}`;
   const pushedAt = meta.pushedAt ?? mapping.lastSyncedAt;
   const lastPushed = pushedAt ? formatDateTime(pushedAt) : null;
   // All a push can change: the card cannot tell which ones a push brings.

@@ -190,8 +190,7 @@ import {
   chunkFilterValues,
   DRAFT_MARKER_ENTITY_TYPE,
   exchangeOnshapeAuthorizationCode,
-  getConflictingOnshapeIntegration,
-  isOnshapeIntegrationId,
+  getConflictingOnshapeConnection,
   loadActiveMakeMethods,
   loadMethodLineOwnership,
   loadPartCustomFieldDefinitions,
@@ -205,7 +204,10 @@ import {
   selectInBatches,
   takePanelPlan
 } from "@carbon/ee/onshape";
-import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
+import {
+  ONSHAPE_PANEL_INTEGRATION_IDS,
+  ONSHAPE_V2_INTEGRATION_ID
+} from "@carbon/ee/onshape/integration-id";
 import { panelCompanyChoices } from "@carbon/ee/onshape/panel-session.server";
 import {
   isOnshapeOAuthIntegrationId,
@@ -5552,7 +5554,7 @@ export async function getOnshapePanelCompanies(
       serviceRole
         .from("companyIntegration")
         .select("companyId")
-        .eq("id", ONSHAPE_V2_INTEGRATION_ID)
+        .in("id", [...ONSHAPE_PANEL_INTEGRATION_IDS])
         .eq("active", true)
         .in("companyId", batch),
     { orderBy: "companyId" }
@@ -5687,16 +5689,11 @@ export async function completeOnshapeAuthorization({
 
   const serviceRole = getCarbonServiceRole();
 
-  // A company holds one Onshape sync connection at a time; two would leave
-  // every background job guessing which tenant to talk to. The panel's grant
-  // is outside that rule.
+  // A company holds one Onshape sync connection and one panel connection at a
+  // time; two would leave every background job (or the panel) guessing which
+  // tenant to talk to.
   if (
-    isOnshapeIntegrationId(integrationId) &&
-    (await getConflictingOnshapeIntegration(
-      serviceRole,
-      companyId,
-      integrationId
-    ))
+    await getConflictingOnshapeConnection(serviceRole, companyId, integrationId)
   ) {
     return connectionFailed("connection-conflict");
   }
@@ -9286,7 +9283,17 @@ export async function saveOnshapePropertyMap(
             : sql` - 'defaultUnitOfMeasureCode'`
         })::json`
       })
-      .where("id", "=", ONSHAPE_V2_INTEGRATION_ID)
+      // The row the panel reads: the active one, else the newest.
+      .where("id", "=", (eb) =>
+        eb
+          .selectFrom("companyIntegration as panel")
+          .select("panel.id")
+          .where("panel.companyId", "=", companyId)
+          .where("panel.id", "in", [...ONSHAPE_PANEL_INTEGRATION_IDS])
+          .orderBy("panel.active", "desc")
+          .orderBy("panel.updatedAt", "desc")
+          .limit(1)
+      )
       .where("companyId", "=", companyId)
       .executeTakeFirst();
     updatedRows = updated.numUpdatedRows;

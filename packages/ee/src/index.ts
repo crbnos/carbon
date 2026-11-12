@@ -9,7 +9,7 @@ import { Jira } from "./jira/config";
 import { Linear } from "./linear/config";
 import { Mount } from "./mount/config";
 import { Onshape, OnshapeGovernment } from "./onshape/config";
-import { OnshapeV2 } from "./onshape/config-v2";
+import { OnshapeV2, OnshapeV2Government } from "./onshape/config-v2";
 import { PaperlessParts } from "./paperless-parts/config";
 import { QuickBooks } from "./quickbooks/config";
 // import { Radan } from "./radan/config";
@@ -83,6 +83,7 @@ export const integrations = [
   Onshape,
   OnshapeGovernment,
   OnshapeV2,
+  OnshapeV2Government,
   PaperlessParts,
   QuickBooks,
   Ramp,
@@ -106,13 +107,15 @@ export {
   Onshape,
   OnshapeGovernment
 } from "./onshape/config";
-export { OnshapeV2 } from "./onshape/config-v2";
+export { OnshapeV2, OnshapeV2Government } from "./onshape/config-v2";
 export type { OnshapeDocument } from "./onshape/lib";
 // Client-safe (no client or env imports): lets UI ask "is Onshape connected?"
 // without naming either integration id.
 export {
   hasOnshapeIntegration,
   isOnshapeIntegrationId,
+  normalizeOnshapeUrl,
+  ONSHAPE_DEFAULT_BASE_URL,
   ONSHAPE_INTEGRATION_IDS
 } from "./onshape/lib/connection";
 export type { BomDiagnostics, OnshapeBomNode } from "./onshape/panel/bom";

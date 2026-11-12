@@ -1684,6 +1684,12 @@ msgstr "Um projeto fechado não aceita mais cobranças e não pode ser reaberto.
 msgid "A color sets the accent. Gradient and solid themes also color the navigation, the sidebar and the page."
 msgstr "Uma cor define o destaque. Os temas em gradiente e sólidos também colorem a navegação, a barra lateral e a página."
 
+msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2 Government, then connect Onshape V2."
+msgstr "Uma empresa se conecta a um painel Onshape por vez. Desinstale Onshape V2 Government, então conecte Onshape V2."
+
+msgid "A company connects one Onshape panel at a time. Uninstall Onshape V2, then connect Onshape V2 Government."
+msgstr "Uma empresa se conecta a um painel Onshape por vez. Desinstale Onshape V2, então conecte Onshape V2 Government."
+
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
 msgstr "Uma empresa se conecta a um Onshape por vez. Desinstale Onshape Government, então conecte Onshape."
 
@@ -8642,6 +8648,9 @@ msgstr "Não foi possível concluir a conexão com o Onshape"
 msgid "Couldn't complete the Onshape Government connection"
 msgstr "Não foi possível concluir a conexão com Onshape Government"
 
+msgid "Couldn't complete the Onshape V2 Government connection"
+msgstr "Não foi possível concluir a conexão com Onshape V2 Government"
+
 msgid "Couldn't confirm the account"
 msgstr "Não foi possível confirmar a conta"
 
@@ -8674,6 +8683,9 @@ msgstr "Não foi possível salvar a conexão com o Onshape"
 
 msgid "Couldn't save the Onshape Government connection"
 msgstr "Não foi possível salvar a conexão com Onshape Government"
+
+msgid "Couldn't save the Onshape V2 Government connection"
+msgstr "Não foi possível salvar a conexão com Onshape V2 Government"
 
 msgid "Couldn't save the Ramp connection"
 msgstr "Não foi possível salvar a conexão com o Ramp"
@@ -21074,6 +21086,24 @@ msgstr "O Onshape rejeitou a autorização"
 msgid "Onshape Status"
 msgstr "Status do Onshape"
 
+msgid "Onshape V2 Government denied the connection"
+msgstr "Onshape V2 Government negou a conexão"
+
+msgid "Onshape V2 Government didn't return an authorization code"
+msgstr "Onshape V2 Government não retornou um código de autorização"
+
+msgid "Onshape V2 Government is already connected"
+msgstr "Onshape V2 Government já está conectado"
+
+msgid "Onshape V2 Government isn't configured"
+msgstr "Onshape V2 Government não está configurado"
+
+msgid "Onshape V2 Government rejected the authorization"
+msgstr "Onshape V2 Government rejeitou a autorização"
+
+msgid "Onshape V2 is already connected"
+msgstr "Onshape V2 já está conectado"
+
 msgid "Onshape version"
 msgstr "Versão do Onshape"
 
@@ -21260,6 +21290,9 @@ msgstr "Abra os livros em uma data de transição. Habilitar contabilidade é um
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Abra a integração Onshape Government e salve suas configurações para conectar novamente."
+
+msgid "Open the Onshape V2 Government integration and save its settings to connect again."
+msgstr "Abra a integração Onshape V2 Government e salve suas configurações para conectar novamente."
 
 msgid "Open the Ramp integration and try connecting again to finish setup."
 msgstr "Abra a integração do Ramp e tente conectar novamente para concluir a configuração."
@@ -30829,6 +30862,9 @@ msgstr "A conexão do Onshape venceu"
 
 msgid "The Onshape Government connection expired"
 msgstr "A conexão do Onshape Government venceu"
+
+msgid "The Onshape V2 Government connection expired"
+msgstr "A conexão do Onshape V2 Government venceu"
 
 #. placeholder {0}: formatDate(dayBeforeCutover(cutoverDate))
 msgid "The opening balances are as of the end of {0}."

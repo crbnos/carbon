@@ -7,7 +7,7 @@ import {
   getOnshapeIntegration,
   ONSHAPE_INTEGRATION_IDS
 } from "@carbon/ee/onshape";
-import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
+import { ONSHAPE_PANEL_INTEGRATION_IDS } from "@carbon/ee/onshape/integration-id";
 import { trigger } from "@carbon/jobs";
 import { inngest } from "@carbon/lib/inngest";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -104,7 +104,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const connection = await serviceRole
       .from("companyIntegration")
       .select("id")
-      .in("id", [...ONSHAPE_INTEGRATION_IDS, ONSHAPE_V2_INTEGRATION_ID])
+      .in("id", [...ONSHAPE_INTEGRATION_IDS, ...ONSHAPE_PANEL_INTEGRATION_IDS])
       .eq("companyId", companyId)
       .eq("active", true)
       .limit(1);

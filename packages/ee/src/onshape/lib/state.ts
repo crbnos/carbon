@@ -10,6 +10,7 @@ import {
   ONSHAPE_INTEGRATION_ID
 } from "./connection";
 import {
+  ONSHAPE_V2_GOVERNMENT_INTEGRATION_ID,
   ONSHAPE_V2_INTEGRATION_ID,
   type OnshapeOAuthIntegrationId
 } from "./integration-id";
@@ -26,13 +27,15 @@ const SETTINGS_PATHS: Record<OnshapeOAuthIntegrationId, readonly string[]> = {
     "assetSyncEnabled"
   ],
   // The panel's Fields save owns its keys.
-  [ONSHAPE_V2_INTEGRATION_ID]: []
+  [ONSHAPE_V2_INTEGRATION_ID]: [],
+  [ONSHAPE_V2_GOVERNMENT_INTEGRATION_ID]: ["baseUrl", "clientId"]
 };
 
 const SETTINGS_SECRET_PATHS: Partial<
   Record<OnshapeOAuthIntegrationId, readonly string[]>
 > = {
-  [ONSHAPE_GOVERNMENT_INTEGRATION_ID]: ["clientSecret"]
+  [ONSHAPE_GOVERNMENT_INTEGRATION_ID]: ["clientSecret"],
+  [ONSHAPE_V2_GOVERNMENT_INTEGRATION_ID]: ["clientSecret"]
 };
 
 export function isOnshapeOAuthIntegrationId(

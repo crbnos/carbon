@@ -5,5 +5,6 @@
 // Server-only exports, kept out of `@carbon/ee/onshape` so client modules
 // cannot reach a `.server` file.
 export * from "../oauth.server";
+export * from "./panel-origin.server";
 export * from "./panel-properties.server";
 export * from "./state";
