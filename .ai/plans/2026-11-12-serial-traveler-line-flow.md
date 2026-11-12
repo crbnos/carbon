@@ -52,7 +52,7 @@ Phase C — test data (`motor-line`)
 - [x] Task 27: Add the AJ-3 jobs and serial sequences
 - [x] Task 28: Add `materialRequest` demo rows and a coverage floor
 - [x] Task 29: Run the dataset checks and the scoped typecheck
-- [ ] Task 30: Seed `motor-line` and check the AJ-3 rows (ask the user first)
+- [x] Task 30: Seed `motor-line` and check the AJ-3 rows (ask the user first)
 
 Phase D — required scans
 - [ ] Task 31: Add the pure required-scan helper with tests
