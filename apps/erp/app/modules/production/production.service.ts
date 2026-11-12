@@ -4668,8 +4668,10 @@ export async function updatePlanningJob(
       .eq("companyId", companyId)
       .single();
     if (existing.error) return { updated: false, error: existing.error };
-    const deadlineType = deadlineTypeForPlanningDate(
-      existing.data.deadlineType
+    // as on the job's own panel: a dated ASAP job becomes Soft Deadline
+    const deadlineType = deadlineTypeForDueDate(
+      existing.data.deadlineType,
+      updates.dueDate
     );
     if (deadlineType !== existing.data.deadlineType) {
       updates.deadlineType = deadlineType;
@@ -12103,15 +12105,21 @@ export async function markPlanningActionsActioned(
 }
 
 /**
- * Settle the new-supply suggestions a planning Order just raised. The page's
- * Order button creates PO lines (Buy) or jobs (Make) from the suggested
- * orders, which carry no action id; each one is the week of an Order / Make
- * action (both come from `computePlanningOrders`, and the natural key holds
- * one such action per item, location, segment and week). Without this, the action
- * stayed Open beside the order that answered it until the next MRP run.
- * Dismissed is settled too: the need it suppressed has now been ordered.
- * Pairs are matched as pairs, so a bulk order never settles one item's week
- * because another item was ordered in it.
+ * Settle the Order / Make actions that a planning Order / Make just answered,
+ * by the QUANTITY ordered against each: Actioned when it covers
+ * `suggestedQuantity` (compared at 5 places), otherwise the action keeps its
+ * status (Open or Dismissed) and drops to the remainder. MRP sums a week's
+ * orders into one action, so ordering part of a week (a row removed, lowered,
+ * or refused for starting in the past) must leave the rest of the need open.
+ *
+ * An order settles the action named by its `planningActionId` (kept through
+ * drawer edits, so a row moved to another week settles the week it came
+ * from), and nothing else: an id that no longer matches means that need was
+ * settled or is gone. An order with no id (a row the planner added) settles
+ * its (item, week, segment) action. Only actions of the same item, segment,
+ * type, location and company match. Runs under MRP's advisory lock
+ * (`planning-actions:<companyId>`) and returns the rows it changed, each with
+ * the indexes (in `ordered`) of the orders that answered it.
  */
 export async function settleNewSupplyPlanningActions(
   db: Kysely<KyselyDatabase>,
@@ -12120,44 +12128,107 @@ export async function settleNewSupplyPlanningActions(
     locationId: string;
     userId: string;
     type: "Order" | "Make";
-    /** One per order placed; the segment defaults to common (''). */
-    ordered: { itemId: string; periodId: string; planningSegmentId?: string }[];
+    /** One per order placed, in the action's units (inventory units for an
+     *  Order); the segment defaults to common (''). */
+    ordered: {
+      itemId: string;
+      periodId: string;
+      planningSegmentId?: string;
+      quantity: number;
+      planningActionId?: string | null;
+    }[];
   }
 ) {
-  const byKey = new Map(
-    args.ordered.map((pair) => [
-      `${pair.itemId}\u0000${pair.periodId}\u0000${pair.planningSegmentId ?? ""}`,
-      pair
-    ])
+  // the index is the order's place in `ordered`, which the caller maps back
+  const ordered = args.ordered.flatMap((order, index) =>
+    order.quantity > 0 ? [{ ...order, index }] : []
   );
-  const ordered = [...byKey.values()];
-  return planningActionIdList([...byKey.keys()], () =>
-    db
-      .updateTable("planningAction")
-      .set({
-        status: "Actioned",
-        updatedBy: args.userId,
-        updatedAt: datetime.timestamp()
-      })
-      .where("companyId", "=", args.companyId)
-      .where("locationId", "=", args.locationId)
-      .where("type", "=", args.type)
-      .where("status", "in", ["Open", "Dismissed"])
-      .where((eb) =>
-        eb.or(
-          ordered.map((pair) =>
-            eb.and([
-              eb("itemId", "=", pair.itemId),
-              eb("periodId", "=", pair.periodId),
-              eb("planningSegmentId", "=", pair.planningSegmentId ?? "")
-            ])
+  return planningActionIdList(
+    ordered.map((order) => order.itemId),
+    () =>
+      withTransaction(db, async (trx) => {
+        await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`planning-actions:${args.companyId}`}, 0))`.execute(
+          trx
+        );
+        const values = sql.join(
+          ordered.map(
+            (order) =>
+              sql`(${order.index}::int, ${order.planningActionId ?? null}::text, ${order.itemId}::text, ${order.periodId}::text, ${order.planningSegmentId ?? ""}::text, ${order.quantity}::numeric)`
           )
-        )
-      )
-      // The key fields let a grouped order move the action's pegs to the
-      // supply it created (Projects Phase 3).
-      .returning(["id", "itemId", "periodId", "planningSegmentId"])
-      .execute()
+        );
+        const settleable = sql`
+          SELECT id, "itemId", "periodId", "planningSegmentId"
+          FROM "planningAction"
+          WHERE "companyId" = ${args.companyId}
+            AND "locationId" = ${args.locationId}
+            AND "type" = ${args.type}::"planningActionType"
+            AND "status" IN ('Open', 'Dismissed')
+        `;
+        // Each order answers one action, by id or, with none, by week (the
+        // natural key holds one per week); an action is settled once, by
+        // their sum.
+        const result = await sql<{
+          id: string;
+          itemId: string;
+          periodId: string;
+          planningSegmentId: string;
+          status: "Open" | "Dismissed" | "Actioned";
+          suggestedQuantity: number;
+          orderIndexes: number[];
+        }>`
+          WITH ordered ("index", "planningActionId", "itemId", "periodId", "planningSegmentId", "quantity") AS (
+            VALUES ${values}
+          ),
+          settleable AS (${settleable}),
+          by_id AS (
+            SELECT o."index", s.id
+            FROM ordered o
+            JOIN settleable s
+              ON s.id = o."planningActionId"
+             AND s."itemId" = o."itemId"
+             AND s."planningSegmentId" = o."planningSegmentId"
+          ),
+          by_week AS (
+            SELECT o."index", s.id
+            FROM ordered o
+            JOIN settleable s
+              ON s."itemId" = o."itemId"
+             AND s."planningSegmentId" = o."planningSegmentId"
+             AND s."periodId" = o."periodId"
+            WHERE o."planningActionId" IS NULL
+          ),
+          answered AS (
+            SELECT m.id, SUM(o."quantity") AS "quantity",
+              array_agg(m."index" ORDER BY m."index") AS "orderIndexes"
+            FROM (SELECT * FROM by_id UNION ALL SELECT * FROM by_week) m
+            JOIN ordered o ON o."index" = m."index"
+            GROUP BY m.id
+          )
+          UPDATE "planningAction" pa
+          SET
+            "status" = CASE
+              WHEN round(pa."suggestedQuantity" - a."quantity", 5) <= 0
+                THEN 'Actioned'::"planningActionStatus"
+              ELSE pa."status"
+            END,
+            "suggestedQuantity" = CASE
+              WHEN round(pa."suggestedQuantity" - a."quantity", 5) <= 0
+                THEN pa."suggestedQuantity"
+              ELSE round(pa."suggestedQuantity" - a."quantity", 5)
+            END,
+            "updatedBy" = ${args.userId},
+            "updatedAt" = ${datetime.timestamp()}
+          FROM answered a
+          WHERE pa.id = a.id
+            AND pa."companyId" = ${args.companyId}
+          RETURNING pa.id, pa."itemId", pa."periodId", pa."planningSegmentId",
+            pa."status", pa."suggestedQuantity", a."orderIndexes"
+        `.execute(trx);
+        return result.rows.map((row) => ({
+          ...row,
+          suggestedQuantity: Number(row.suggestedQuantity)
+        }));
+      })
   );
 }
 

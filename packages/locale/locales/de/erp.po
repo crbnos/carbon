@@ -947,6 +947,9 @@ msgstr "{counted} gezählt"
 msgid "{created} created, {updated} updated."
 msgstr "{created} erstellt, {updated} aktualisiert."
 
+msgid "{created} created."
+msgstr "{created} erstellt."
+
 msgid "{days}d"
 msgstr "{days}T"
 
@@ -1236,6 +1239,9 @@ msgstr "{received} von {ordered}"
 
 msgid "{ref} not found"
 msgstr "{ref} nicht gefunden"
+
+msgid "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
+msgstr "{refused, plural, one {# Auftrag beginnt vor heute und wurde nicht erstellt. Planen Sie ihn ab heute neu ein.} other {# Aufträge beginnen vor heute und wurden nicht erstellt. Planen Sie sie ab heute neu ein.}}"
 
 msgid "{rejectedQuantity} will stay held as rejected."
 msgstr "{rejectedQuantity} bleiben als abgelehnt gesperrt."
@@ -25347,6 +25353,12 @@ msgstr "Reparatur erforderlich"
 
 msgid "Requires staffing"
 msgstr "Erfordert Personal"
+
+msgid "Reschedule from today"
+msgstr "Ab heute neu planen"
+
+msgid "Reschedule from today, due {rescheduledDue}"
+msgstr "Ab heute neu planen, fällig am {rescheduledDue}"
 
 msgid "Reschedule tolerance"
 msgstr "Verschiebungstoleranz"

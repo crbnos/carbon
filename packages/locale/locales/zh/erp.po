@@ -947,6 +947,9 @@ msgstr "{counted} 已计数"
 msgid "{created} created, {updated} updated."
 msgstr "已创建 {created} 条，已更新 {updated} 条。"
 
+msgid "{created} created."
+msgstr "已创建 {created} 个。"
+
 msgid "{days}d"
 msgstr "{days}天"
 
@@ -1236,6 +1239,9 @@ msgstr "已收 {received} / 已订购 {ordered}"
 
 msgid "{ref} not found"
 msgstr "未找到 {ref}"
+
+msgid "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
+msgstr "{refused, plural, other {# 个订单的开始日期早于今天，未创建。请从今天起重新安排。}}"
 
 msgid "{rejectedQuantity} will stay held as rejected."
 msgstr "{rejectedQuantity} 将作为拒收保持冻结。"
@@ -25347,6 +25353,12 @@ msgstr "需要维修"
 
 msgid "Requires staffing"
 msgstr "需要人工配置"
+
+msgid "Reschedule from today"
+msgstr "从今天起重新安排"
+
+msgid "Reschedule from today, due {rescheduledDue}"
+msgstr "从今天起重新安排，截止日期 {rescheduledDue}"
 
 msgid "Reschedule tolerance"
 msgstr "改期容差"

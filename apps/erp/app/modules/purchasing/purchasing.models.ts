@@ -9,6 +9,7 @@ import {
   bicMatchesCountry,
   colorNames,
   EPSILON,
+  equals,
   getBankFieldConfig,
   getCompletionAfterQuantityChange,
   getRemainingQuantityToInvoice,
@@ -150,6 +151,8 @@ export const plannedOrderValidator = z.object({
   existingReadableId: zfd.text(z.string().optional()),
   existingStatus: zfd.text(z.enum(purchaseOrderStatusType).optional()),
   supplierId: zfd.text(z.string().optional()),
+  // The Order action this suggestion came from, which Order settles
+  planningActionId: zfd.text(z.string().optional()),
   itemReadableId: zfd.text(z.string().optional()),
   unitPrice: zfd.numeric(z.number().optional()),
   unitOfMeasureCode: zfd.text(z.string().optional()),
@@ -1678,6 +1681,39 @@ export function findPlanningPurchaseOrder<
         (line) =>
           planningPurchaseOrderWeek(line.requiredDate, asOf) === target.week
       )
+  );
+}
+
+/**
+ * The line of a planning PO that a new order adds its quantity to: same item,
+ * required date, owner (project or planning group) and conversion factor. A
+ * line with another factor is never merged: the order's quantity is in the
+ * supplier part's purchase units, so added there it would be the wrong amount.
+ */
+export function findMergeablePlanningLine<
+  L extends {
+    itemId: string | null;
+    requiredDate: string | null;
+    projectId: string | null;
+    planningGroupId: string | null;
+    conversionFactor: number | null;
+  }
+>(
+  lines: L[],
+  target: {
+    itemId: string;
+    requiredDate: string | null;
+    planningSegmentId: string;
+    conversionFactor: number;
+  }
+): L | undefined {
+  return lines.find(
+    (line) =>
+      line.itemId === target.itemId &&
+      line.requiredDate === target.requiredDate &&
+      (line.planningGroupId ?? line.projectId ?? "") ===
+        target.planningSegmentId &&
+      equals(line.conversionFactor ?? 1, target.conversionFactor)
   );
 }
 
