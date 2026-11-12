@@ -11984,6 +11984,9 @@ msgstr "メール"
 msgid "Emails of the attendees (guests)"
 msgstr "参加者（ゲスト）のメールアドレス"
 
+msgid "Emails the sales order to the customer when they accept this quote online."
+msgstr ""
+
 msgid "Emoji"
 msgstr "絵文字"
 
@@ -27220,6 +27223,9 @@ msgstr "招待を送信"
 
 msgid "Send Notifications"
 msgstr "通知を送信"
+
+msgid "Send order confirmation"
+msgstr ""
 
 msgid "Send Reminder"
 msgstr "リマインダーを送信"

@@ -11984,6 +11984,9 @@ msgstr "E-Mails"
 msgid "Emails of the attendees (guests)"
 msgstr "E-Mails der Teilnehmer (Gäste)"
 
+msgid "Emails the sales order to the customer when they accept this quote online."
+msgstr ""
+
 msgid "Emoji"
 msgstr "Emoji"
 
@@ -27220,6 +27223,9 @@ msgstr "Einladungen senden"
 
 msgid "Send Notifications"
 msgstr "Benachrichtigungen senden"
+
+msgid "Send order confirmation"
+msgstr ""
 
 msgid "Send Reminder"
 msgstr "Erinnerung senden"

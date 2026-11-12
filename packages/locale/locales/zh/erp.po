@@ -11984,6 +11984,9 @@ msgstr "电子邮件"
 msgid "Emails of the attendees (guests)"
 msgstr "与会者(客人)的电子邮件"
 
+msgid "Emails the sales order to the customer when they accept this quote online."
+msgstr ""
+
 msgid "Emoji"
 msgstr "表情符号"
 
@@ -27220,6 +27223,9 @@ msgstr "发送邀请"
 
 msgid "Send Notifications"
 msgstr "发送通知"
+
+msgid "Send order confirmation"
+msgstr ""
 
 msgid "Send Reminder"
 msgstr "发送提醒"

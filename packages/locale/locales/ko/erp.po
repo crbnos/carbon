@@ -11984,6 +11984,9 @@ msgstr "이메일"
 msgid "Emails of the attendees (guests)"
 msgstr "참석자(게스트)의 이메일 주소"
 
+msgid "Emails the sales order to the customer when they accept this quote online."
+msgstr ""
+
 msgid "Emoji"
 msgstr "이모지"
 
@@ -27220,6 +27223,9 @@ msgstr "초대 보내기"
 
 msgid "Send Notifications"
 msgstr "알림 보내기"
+
+msgid "Send order confirmation"
+msgstr ""
 
 msgid "Send Reminder"
 msgstr "리마인더 보내기"
