@@ -5,6 +5,7 @@
 import type { Dataset } from "../../types.ts";
 import { motor } from "../motor/index.ts";
 import {
+  AJ3_BATCH_PROPERTIES,
   AJ3_BUY_PARTS,
   AJ3_JOBS,
   AJ3_KANBAN_ITEMS,
@@ -58,6 +59,7 @@ export const motorLine: Dataset = {
     ...motor.items,
     makeParts: [...motor.items.makeParts, ...AJ3_MAKE_PARTS],
     buyParts: [...motor.items.buyParts, ...AJ3_BUY_PARTS],
+    batchProperties: [...motor.items.batchProperties, ...AJ3_BATCH_PROPERTIES],
     methods: [...motor.items.methods, ...AJ3_METHODS],
     supplierLinks: [...motor.items.supplierLinks, ...AJ3_SUPPLIER_PARTS]
   },
