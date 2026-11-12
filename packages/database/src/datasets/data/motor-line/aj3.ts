@@ -28,13 +28,29 @@ export const AJ3_BATCH_PROPERTIES: BatchPropertySpec[] = [
   { item: "AJ3-BRG-R", label: "Heat lot", dataType: "text" }
 ];
 
+// One process per station and step: the scheduler moves an unstarted operation
+// to any work center that runs its process, and a line station is dedicated.
 export const AJ3_PROCESSES: ProcessSpec[] = [
-  { name: "AJ Machining", factor: "Minutes/Piece", type: "Process" },
-  { name: "AJ Welding", factor: "Minutes/Piece", type: "Process" },
-  { name: "AJ Assembly", factor: "Minutes/Piece", type: "Assembly" },
-  { name: "AJ Balancing", factor: "Minutes/Piece", type: "Process" },
-  { name: "AJ Test", factor: "Minutes/Piece", type: "Process" },
-  { name: "AJ Inspection", factor: "Minutes/Piece", type: "Inspection" }
+  { name: "AJ A1 Machining", factor: "Minutes/Piece", type: "Process" },
+  { name: "AJ A2 Assembly", factor: "Minutes/Piece", type: "Assembly" },
+  { name: "AJ A3 Test", factor: "Minutes/Piece", type: "Process" },
+  { name: "AJ A4 Inspection", factor: "Minutes/Piece", type: "Inspection" },
+  { name: "AJ A1 Welding", factor: "Minutes/Piece", type: "Process" },
+  { name: "AJ A2 Machining", factor: "Minutes/Piece", type: "Process" },
+  { name: "AJ A3 Assembly", factor: "Minutes/Piece", type: "Assembly" },
+  { name: "AJ A4 Test", factor: "Minutes/Piece", type: "Process" },
+  { name: "AJ B1 Assembly", factor: "Minutes/Piece", type: "Assembly" },
+  { name: "AJ B2 Assembly", factor: "Minutes/Piece", type: "Assembly" },
+  { name: "AJ B3 Assembly", factor: "Minutes/Piece", type: "Assembly" },
+  { name: "AJ B4 Balancing", factor: "Minutes/Piece", type: "Process" },
+  { name: "AJ M Assembly", factor: "Minutes/Piece", type: "Assembly" },
+  { name: "AJ F1 Assembly", factor: "Minutes/Piece", type: "Assembly" },
+  { name: "AJ F2 Assembly", factor: "Minutes/Piece", type: "Assembly" },
+  { name: "AJ F3 Assembly", factor: "Minutes/Piece", type: "Assembly" },
+  { name: "AJ F4 Assembly", factor: "Minutes/Piece", type: "Assembly" },
+  { name: "AJ F5 Assembly", factor: "Minutes/Piece", type: "Assembly" },
+  { name: "AJ F6 Test", factor: "Minutes/Piece", type: "Process" },
+  { name: "AJ F6 Inspection", factor: "Minutes/Piece", type: "Inspection" }
 ];
 
 // A1–A4 build the sub-assemblies, B1–B4 the rotor group, M merges the
@@ -66,26 +82,26 @@ export const AJ3_WORK_CENTERS: WorkCenterSpec[] = AJ3_STATIONS.map((name) => ({
 }));
 
 export const AJ3_WORK_CENTER_PROCESS_LINKS: Array<[string, string]> = [
-  ["A1", "AJ Machining"],
-  ["A1", "AJ Welding"],
-  ["A2", "AJ Assembly"],
-  ["A2", "AJ Machining"],
-  ["A3", "AJ Test"],
-  ["A3", "AJ Assembly"],
-  ["A4", "AJ Test"],
-  ["A4", "AJ Inspection"],
-  ["B1", "AJ Assembly"],
-  ["B2", "AJ Assembly"],
-  ["B3", "AJ Assembly"],
-  ["B4", "AJ Balancing"],
-  ["M", "AJ Assembly"],
-  ["F1", "AJ Assembly"],
-  ["F2", "AJ Assembly"],
-  ["F3", "AJ Assembly"],
-  ["F4", "AJ Assembly"],
-  ["F5", "AJ Assembly"],
-  ["F6", "AJ Test"],
-  ["F6", "AJ Inspection"]
+  ["A1", "AJ A1 Machining"],
+  ["A2", "AJ A2 Assembly"],
+  ["A3", "AJ A3 Test"],
+  ["A4", "AJ A4 Inspection"],
+  ["A1", "AJ A1 Welding"],
+  ["A2", "AJ A2 Machining"],
+  ["A3", "AJ A3 Assembly"],
+  ["A4", "AJ A4 Test"],
+  ["B1", "AJ B1 Assembly"],
+  ["B2", "AJ B2 Assembly"],
+  ["B3", "AJ B3 Assembly"],
+  ["B4", "AJ B4 Balancing"],
+  ["M", "AJ M Assembly"],
+  ["F1", "AJ F1 Assembly"],
+  ["F2", "AJ F2 Assembly"],
+  ["F3", "AJ F3 Assembly"],
+  ["F4", "AJ F4 Assembly"],
+  ["F5", "AJ F5 Assembly"],
+  ["F6", "AJ F6 Test"],
+  ["F6", "AJ F6 Inspection"]
 ];
 
 export const AJ3_WORK_CENTER_SHIFTS: Array<[string, string]> = AJ3_STATIONS.map(
@@ -303,28 +319,28 @@ export const AJ3_METHODS: MakeMethodSpec[] = [
     ],
     bop: [
       {
-        process: "AJ Machining",
+        process: "AJ A1 Machining",
         workCenter: "A1",
         description: "Machine injector body",
         order: 1,
         laborTime: 0.5
       },
       {
-        process: "AJ Assembly",
+        process: "AJ A2 Assembly",
         workCenter: "A2",
         description: "Fit nozzle tip",
         order: 2,
         laborTime: 0.5
       },
       {
-        process: "AJ Test",
+        process: "AJ A3 Test",
         workCenter: "A3",
         description: "Flow test injector",
         order: 3,
         laborTime: 0.5
       },
       {
-        process: "AJ Inspection",
+        process: "AJ A4 Inspection",
         workCenter: "A4",
         description: "Inspect injector",
         order: 4,
@@ -348,35 +364,35 @@ export const AJ3_METHODS: MakeMethodSpec[] = [
     ],
     bop: [
       {
-        process: "AJ Welding",
+        process: "AJ A1 Welding",
         workCenter: "A1",
         description: "Weld combustion liner",
         order: 1,
         laborTime: 0.75
       },
       {
-        process: "AJ Machining",
+        process: "AJ A2 Machining",
         workCenter: "A2",
         description: "Drill liner cooling holes",
         order: 2,
         laborTime: 0.5
       },
       {
-        process: "AJ Assembly",
+        process: "AJ A3 Assembly",
         workCenter: "A3",
         description: "Install fuel injector and igniter",
         order: 3,
         laborTime: 0.5
       },
       {
-        process: "AJ Test",
+        process: "AJ A4 Test",
         workCenter: "A4",
         description: "Pressure test chamber",
         order: 4,
         laborTime: 0.5
       },
       {
-        process: "AJ Inspection",
+        process: "AJ A4 Inspection",
         workCenter: "A4",
         description: "Inspect chamber",
         order: 5,
@@ -408,28 +424,28 @@ export const AJ3_METHODS: MakeMethodSpec[] = [
     ],
     bop: [
       {
-        process: "AJ Assembly",
+        process: "AJ B1 Assembly",
         workCenter: "B1",
         description: "Prepare front housing",
         order: 1,
         laborTime: 0.5
       },
       {
-        process: "AJ Assembly",
+        process: "AJ B2 Assembly",
         workCenter: "B2",
         description: "Press bearings onto main shaft",
         order: 2,
         laborTime: 0.5
       },
       {
-        process: "AJ Assembly",
+        process: "AJ B3 Assembly",
         workCenter: "B3",
         description: "Fit compressor wheel and diffuser",
         order: 3,
         laborTime: 0.5
       },
       {
-        process: "AJ Balancing",
+        process: "AJ B4 Balancing",
         workCenter: "B4",
         description: "Balance rotor group",
         order: 4,
@@ -437,56 +453,56 @@ export const AJ3_METHODS: MakeMethodSpec[] = [
         laborTime: 0.75
       },
       {
-        process: "AJ Assembly",
+        process: "AJ M Assembly",
         workCenter: "M",
         description: "Merge: install combustion chamber",
         order: 5,
         laborTime: 0.75
       },
       {
-        process: "AJ Assembly",
+        process: "AJ F1 Assembly",
         workCenter: "F1",
         description: "Fit nozzle guide vane ring",
         order: 6,
         laborTime: 0.5
       },
       {
-        process: "AJ Assembly",
+        process: "AJ F2 Assembly",
         workCenter: "F2",
         description: "Fit turbine wheel",
         order: 7,
         laborTime: 0.5
       },
       {
-        process: "AJ Assembly",
+        process: "AJ F3 Assembly",
         workCenter: "F3",
         description: "Fit exhaust cone",
         order: 8,
         laborTime: 0.5
       },
       {
-        process: "AJ Assembly",
+        process: "AJ F4 Assembly",
         workCenter: "F4",
         description: "Route fuel lines",
         order: 9,
         laborTime: 0.5
       },
       {
-        process: "AJ Assembly",
+        process: "AJ F5 Assembly",
         workCenter: "F5",
         description: "Connect igniter and sensor harness",
         order: 10,
         laborTime: 0.5
       },
       {
-        process: "AJ Test",
+        process: "AJ F6 Test",
         workCenter: "F6",
         description: "Engine run test",
         order: 11,
         laborTime: 1.5
       },
       {
-        process: "AJ Inspection",
+        process: "AJ F6 Inspection",
         workCenter: "F6",
         description: "Final inspection",
         order: 12,
