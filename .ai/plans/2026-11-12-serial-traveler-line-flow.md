@@ -55,27 +55,27 @@ Phase C — test data (`motor-line`)
 - [x] Task 30: Seed `motor-line` and check the AJ-3 rows (ask the user first)
 
 Phase D — required scans
-- [ ] Task 31: Add the pure required-scan helper with tests
-- [ ] Task 32: Add the required-scan server building block
+- [x] Task 31: Add the pure required-scan helper with tests
+- [x] Task 32: Add the required-scan server building block
 - [ ] Task 33: Refuse completion on the server in the 3 routes
 - [ ] Task 34: Block the Complete button in `QuantityModal`
 
 Phase E — labels and picking
-- [ ] Task 35: Add the traveler print helpers to `@carbon/database`
-- [ ] Task 36: Add the `PickingList` print source
+- [x] Task 35: Add the traveler print helpers to `@carbon/database`
+- [x] Task 36: Add the `PickingList` print source
 - [ ] Task 37: Print travelers when the ERP starts a picking list
 - [ ] Task 38: Print travelers when the MES starts a picking list
 - [ ] Task 39: Print travelers when a first pick starts a Draft list
 - [ ] Task 40: Add "Print travelers" to the MES picking list
 - [ ] Task 41: Print the finished-good label at the last operation
 - [ ] Task 42: Create a picking list for each released job
-- [ ] Task 43: Show unassigned picking lists to water spiders in the MES
+- [x] Task 43: Show unassigned picking lists to water spiders in the MES
 
 Phase F — "Need material" and the line feeder screen
 - [ ] Task 44: Add the shared `materialRequest` building blocks
 - [ ] Task 45: Add the ERP operations `createMaterialRequest` and `resolveMaterialRequest`
 - [ ] Task 46: Add the MES "Need material" modal
-- [ ] Task 47: Add the pure line-feed row builder
+- [x] Task 47: Add the pure line-feed row builder
 - [ ] Task 48: Add the MES line feeder screen
 
 Phase G — settings screens, docs and verification
