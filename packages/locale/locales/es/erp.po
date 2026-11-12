@@ -14919,6 +14919,9 @@ msgstr "Con qué frecuencia debe recalibrarse este Instrumento de medición; com
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Con qué frecuencia se repite este Mantenimiento — Diario, Semanal, Mensual, En Conteo cíclico; Diario revela el selector de día de la semana, los otros usan matemática de intervalo más simple."
 
+msgid "How planning sizes the orders that replenish this item here."
+msgstr "Cómo la planificación dimensiona los pedidos de reposición de este artículo aquí."
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "Qué tan estrictamente cada propiedad del material debe coincidir para que las operaciones compartan un lote de producción en este proceso."
 
@@ -22618,6 +22621,9 @@ msgstr "Planificación"
 msgid "Planning action"
 msgstr "Acción de planificación"
 
+msgid "Planning and sales"
+msgstr "Planificación y ventas"
+
 msgid "Planning group"
 msgstr "Grupo de planificación"
 
@@ -25134,6 +25140,9 @@ msgstr "Cantidad de Reorden"
 
 msgid "Reorder Quantity:"
 msgstr "Cantidad de Reorden:"
+
+msgid "Reordering"
+msgstr "Reposición"
 
 msgid "Reordering policy"
 msgstr "Política de reaprovisionamiento"
@@ -34733,6 +34742,9 @@ msgstr "Quién posee las acciones de planificación de MRP. Las ubicaciones here
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "Quién es el propietario del arrendamiento aquí: reciben el resumen de facturas y los recordatorios de fecha."
+
+msgid "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
+msgstr "Quién es responsable de las acciones de este artículo aquí, con cuánta antelación mira la planificación y cómo un pedido de venta verifica su fecha prometida."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Quién recibe las facturas, dónde y bajo qué términos."

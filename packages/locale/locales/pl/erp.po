@@ -14919,6 +14919,9 @@ msgstr "Jak często ten przyrząd pomiarowy musi być wzorcowany; połączone z 
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Jak często to utrzymanie ruchu się powtarza — Codziennie, Co tydzień, Co miesiąc, Podczas inwentaryzacji ciągłej; Opcja Codziennie ujawnia selektor dnia tygodnia, inne używają prostszej arytmetyki interwałów."
 
+msgid "How planning sizes the orders that replenish this item here."
+msgstr "Tak planowanie określa wielkość zamówień uzupełniających ten artykuł tutaj."
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "Jak ściśle każda właściwość materiału musi się zgadzać, aby operacje mogły wspólnie tworzyć partię produkcyjną w tym procesie."
 
@@ -22618,6 +22621,9 @@ msgstr "Planowanie"
 msgid "Planning action"
 msgstr "Akcja planowania"
 
+msgid "Planning and sales"
+msgstr "Planowanie i sprzedaż"
+
 msgid "Planning group"
 msgstr "Grupa planowania"
 
@@ -25134,6 +25140,9 @@ msgstr "Ilość do Zamówienia"
 
 msgid "Reorder Quantity:"
 msgstr "Ilość do ponownego zamówienia:"
+
+msgid "Reordering"
+msgstr "Ponowne zamawianie"
 
 msgid "Reordering policy"
 msgstr "Zasady zamawiania"
@@ -34733,6 +34742,9 @@ msgstr "Kto jest właścicielem działań planowania MRP. Lokalizacje dziedzicz�
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "Kto jest właścicielem dzierżawy tutaj: on otrzymuje streszczenie faktury i przypomnienia daty."
+
+msgid "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
+msgstr "Kto odpowiada za działania dotyczące tego artykułu, jak daleko w przód sięga planowanie oraz jak zamówienie sprzedaży sprawdza swoją datę potwierdzoną."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Kto odbiera faktury, gdzie i na jakich warunkach."

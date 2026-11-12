@@ -14919,6 +14919,9 @@ msgstr "이 계측기를 재교정해야 하는 빈도입니다. 마지막 교�
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "이 유지보수가 반복되는 빈도입니다 — 매일, 매주, 매월, 순환 실사 시; 매일을 선택하면 요일 선택 옵션이 표시되고 나머지는 더 간단한 간격 계산을 사용합니다."
 
+msgid "How planning sizes the orders that replenish this item here."
+msgstr "여기서 이 품목을 보충하는 주문의 규모를 계획이 어떻게 산정하는지."
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "이 공정에서 공정이 배치를 공유하기 위해 각 자재 속성이 얼마나 엄격하게 일치해야 하는지"
 
@@ -22618,6 +22621,9 @@ msgstr "계획"
 msgid "Planning action"
 msgstr "계획 조치"
 
+msgid "Planning and sales"
+msgstr "계획 및 영업"
+
 msgid "Planning group"
 msgstr "계획 그룹"
 
@@ -25134,6 +25140,9 @@ msgstr "재주문 수량"
 
 msgid "Reorder Quantity:"
 msgstr "재주문 수량:"
+
+msgid "Reordering"
+msgstr "재발주"
 
 msgid "Reordering policy"
 msgstr "재주문 정책"
@@ -34733,6 +34742,9 @@ msgstr "MRP 계획 조치를 누가 소유하는가. 사업장은 회사 기본�
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "여기서 리스를 소유한 사람: 그들은 송장 요약과 날짜 알림을 받습니다."
+
+msgid "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
+msgstr "여기서 이 품목의 조치 담당자, 계획이 얼마나 앞을 내다보는지, 그리고 수주가 약속일을 어떻게 확인하는지."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "송장을 수령하는 대상, 수령처 및 결제 조건"

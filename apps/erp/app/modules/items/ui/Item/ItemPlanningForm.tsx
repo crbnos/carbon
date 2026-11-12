@@ -20,6 +20,7 @@ import {
   Boolean,
   CustomFormFields,
   Employee,
+  FormGroup,
   Hidden,
   Number,
   Select as SelectForm,
@@ -100,127 +101,141 @@ const ItemPlanningForm = ({
         <CardContent>
           <Hidden name="itemId" />
           <Hidden name="locationId" />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
-            <SelectForm
-              name="reorderingPolicy"
-              label={t`Reordering Policy`}
-              termId="reordering-policy"
-              options={itemReorderingPolicies.map((policy) => ({
-                label: <ItemReorderPolicy reorderingPolicy={policy} />,
-                value: policy
-              }))}
-              onChange={(selected) => {
-                // @ts-expect-error
-                setPolicy(selected?.value || "Manual Reorder");
-              }}
-            />
-            {policy === "Maximum Quantity" && (
-              <>
-                <Number
-                  name="reorderPoint"
-                  label={t`Reorder Point`}
-                  termId="reorder-point"
-                  minValue={0}
+          <div className="flex w-full flex-col gap-6">
+            <FormGroup
+              title={t`Reordering`}
+              description={t`How planning sizes the orders that replenish this item here.`}
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
+                <SelectForm
+                  name="reorderingPolicy"
+                  label={t`Reordering Policy`}
+                  termId="reordering-policy"
+                  options={itemReorderingPolicies.map((policy) => ({
+                    label: <ItemReorderPolicy reorderingPolicy={policy} />,
+                    value: policy
+                  }))}
+                  onChange={(selected) => {
+                    // @ts-expect-error
+                    setPolicy(selected?.value || "Manual Reorder");
+                  }}
                 />
-                <Number
-                  name="maximumInventoryQuantity"
-                  label={t`Maximum Inventory Quantity`}
-                  termId="item-max-inventory-quantity"
-                  minValue={0}
-                />
-              </>
-            )}
+                {policy === "Maximum Quantity" && (
+                  <>
+                    <Number
+                      name="reorderPoint"
+                      label={t`Reorder Point`}
+                      termId="reorder-point"
+                      minValue={0}
+                    />
+                    <Number
+                      name="maximumInventoryQuantity"
+                      label={t`Maximum Inventory Quantity`}
+                      termId="item-max-inventory-quantity"
+                      minValue={0}
+                    />
+                  </>
+                )}
 
-            {policy === "Demand-Based Reorder" && (
-              <>
-                <Number
-                  name="demandAccumulationPeriod"
-                  label={t`Accumulation Period (Weeks)`}
-                  termId="item-accumulation-period-weeks"
-                  minValue={0}
-                />
-                <Number
-                  name="demandAccumulationSafetyStock"
-                  label={t`Safety Stock`}
-                  termId="item-safety-stock"
-                  minValue={0}
-                />
-              </>
-            )}
-            {policy === "Fixed Reorder Quantity" && (
-              <>
-                <Number
-                  name="reorderPoint"
-                  label={t`Reorder Point`}
-                  termId="reorder-point"
-                  minValue={0}
-                />
-                <Number
-                  name="reorderQuantity"
-                  label={t`Reorder Quantity`}
-                  termId="item-reorder-quantity"
-                  minValue={0}
-                />
-              </>
-            )}
-            {policy !== "Fixed Reorder Quantity" && (
-              <>
-                <Number
-                  name="orderMultiple"
-                  label={t`Order Multiple`}
-                  termId="item-planning-order-multiple"
-                  minValue={0}
-                />
-                <Number
-                  name="minimumOrderQuantity"
-                  label={t`Minimum Order Quantity`}
-                  termId="item-planning-moq"
-                  minValue={0}
-                />
-                <Number
-                  name="maximumOrderQuantity"
-                  label={t`Maximum Order Quantity`}
-                  termId="item-planning-max-order-quantity"
-                  minValue={0}
-                />
-              </>
-            )}
-            {/* <Boolean name="critical" label={t`Critical`} /> */}
+                {policy === "Demand-Based Reorder" && (
+                  <>
+                    <Number
+                      name="demandAccumulationPeriod"
+                      label={t`Accumulation Period (Weeks)`}
+                      termId="item-accumulation-period-weeks"
+                      minValue={0}
+                    />
+                    <Number
+                      name="demandAccumulationSafetyStock"
+                      label={t`Safety Stock`}
+                      termId="item-safety-stock"
+                      minValue={0}
+                    />
+                  </>
+                )}
+                {policy === "Fixed Reorder Quantity" && (
+                  <>
+                    <Number
+                      name="reorderPoint"
+                      label={t`Reorder Point`}
+                      termId="reorder-point"
+                      minValue={0}
+                    />
+                    <Number
+                      name="reorderQuantity"
+                      label={t`Reorder Quantity`}
+                      termId="item-reorder-quantity"
+                      minValue={0}
+                    />
+                  </>
+                )}
+                {policy !== "Fixed Reorder Quantity" && (
+                  <>
+                    <Number
+                      name="orderMultiple"
+                      label={t`Order Multiple`}
+                      termId="item-planning-order-multiple"
+                      minValue={0}
+                    />
+                    <Number
+                      name="minimumOrderQuantity"
+                      label={t`Minimum Order Quantity`}
+                      termId="item-planning-moq"
+                      minValue={0}
+                    />
+                    <Number
+                      name="maximumOrderQuantity"
+                      label={t`Maximum Order Quantity`}
+                      termId="item-planning-max-order-quantity"
+                      minValue={0}
+                    />
+                  </>
+                )}
+                {/* <Boolean name="critical" label={t`Critical`} /> */}
+              </div>
+            </FormGroup>
 
-            <Number
-              name="planningHorizonDays"
-              label={t`Planning Horizon (Days)`}
-              termId="item-planning-horizon"
-              minValue={0}
-            />
+            <FormGroup
+              title={t`Planning and sales`}
+              description={t`Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date.`}
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
+                <Number
+                  name="planningHorizonDays"
+                  label={t`Planning Horizon (Days)`}
+                  termId="item-planning-horizon"
+                  minValue={0}
+                />
 
-            <SelectForm
-              name="deliveryDateControl"
-              label={t`Delivery Date Check`}
-              placeholder={t`Company default`}
-              options={[
-                { value: "None", label: t`None` },
-                { value: "Lead Time", label: t`Lead Time` },
-                { value: "Stock", label: t`Stock` },
-                { value: "Capacity", label: t`Capacity` }
-              ]}
-              helperText={t`Leave empty to use the level in Settings → Sales.`}
-            />
+                <SelectForm
+                  name="deliveryDateControl"
+                  label={t`Delivery Date Check`}
+                  placeholder={t`Company default`}
+                  options={[
+                    { value: "None", label: t`None` },
+                    { value: "Lead Time", label: t`Lead Time` },
+                    { value: "Stock", label: t`Stock` },
+                    { value: "Capacity", label: t`Capacity` }
+                  ]}
+                  helperText={t`Leave empty to use the level in Settings → Sales.`}
+                />
 
-            <Employee
-              name="responsibleEmployee"
-              label={t`Responsible Employee`}
-              type="assignee"
-            />
+                <Employee
+                  name="responsibleEmployee"
+                  label={t`Responsible Employee`}
+                  type="assignee"
+                />
 
-            <Boolean
-              bordered
-              name="allowCommonSupplyForProjects"
-              label={t`Unassigned stock for projects`}
-              description={t`Let projects with project stock use spare unassigned stock of this item at this location`}
-            />
+                <Boolean
+                  bordered
+                  name="allowCommonSupplyForProjects"
+                  label={t`Unassigned stock for projects`}
+                  description={t`Let projects with project stock use spare unassigned stock of this item at this location`}
+                />
 
-            <CustomFormFields table="itemPlanning" />
+                <CustomFormFields table="itemPlanning" />
+              </div>
+            </FormGroup>
           </div>
         </CardContent>
         <CardFooter>

@@ -14919,6 +14919,9 @@ msgstr "Ogni quanto questo strumento di misura deve essere ritarato; combinato c
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Ogni quanto questa manutenzione ricorre — Giornaliero, Settimanale, Mensile, Su conteggio ciclico; Giornaliero mostra il selettore del giorno della settimana, gli altri usano semplice aritmetica di intervalli."
 
+msgid "How planning sizes the orders that replenish this item here."
+msgstr "Come la pianificazione dimensiona gli ordini che reintegrano questo articolo qui."
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "Quanto rigorosamente ogni proprietà del materiale deve corrispondere affinché le operazioni condividano un lotto su questo processo."
 
@@ -22618,6 +22621,9 @@ msgstr "Pianificazione"
 msgid "Planning action"
 msgstr "Proposta di pianificazione"
 
+msgid "Planning and sales"
+msgstr "Pianificazione e vendite"
+
 msgid "Planning group"
 msgstr "Gruppo di pianificazione"
 
@@ -25134,6 +25140,9 @@ msgstr "Quantità di Riordino"
 
 msgid "Reorder Quantity:"
 msgstr "Quantità di Riordino:"
+
+msgid "Reordering"
+msgstr "Riordino"
 
 msgid "Reordering policy"
 msgstr "Politica di riordino"
@@ -34733,6 +34742,9 @@ msgstr "Chi è responsabile delle azioni di pianificazione MRP. Le ubicazioni er
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "Chi possiede il contratto di locazione qui: ricevono il digest della fattura e i promemoria della data."
+
+msgid "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
+msgstr "Chi gestisce le azioni di questo articolo qui, con quanto anticipo guarda la pianificazione e come un ordine di vendita verifica la sua data promessa."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Chi riceve le fatture, dove e a quali condizioni."

@@ -14919,6 +14919,9 @@ msgstr "この測定器をどのくらい頻繁に再校正する必要がある
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "この保全がどのくらい頻繁に繰り返されるか — 毎日、毎週、毎月、循環棚卸時。毎日の場合は曜日セレクタが表示され、その他は単純な間隔計算を使用します"
 
+msgid "How planning sizes the orders that replenish this item here."
+msgstr "ここでこの品目を補充する注文の数量を、計画がどのように決めるか。"
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "このプロセスで工程がバッチを共有する場合、各材料特性がどの程度厳密に一致する必要があるか"
 
@@ -22618,6 +22621,9 @@ msgstr "計画"
 msgid "Planning action"
 msgstr "計画提案"
 
+msgid "Planning and sales"
+msgstr "計画と販売"
+
 msgid "Planning group"
 msgstr "計画グループ"
 
@@ -25134,6 +25140,9 @@ msgstr "再注文数量"
 
 msgid "Reorder Quantity:"
 msgstr "リオーダー数量:"
+
+msgid "Reordering"
+msgstr "再発注"
 
 msgid "Reordering policy"
 msgstr "発注方針"
@@ -34733,6 +34742,9 @@ msgstr "MRP計画アクションの所有者。拠点は会社のデフォルト
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "ここでリースを所有する人。彼らは請求書ダイジェストと日付リマインダーを受け取ります。"
+
+msgid "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
+msgstr "ここでこの品目のアクションの担当者、計画が先を見越す期間、および受注が回答納期をどのように確認するか。"
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "誰が請求書を受け取るか、どこで、どのような条件で。"

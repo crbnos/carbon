@@ -14919,6 +14919,9 @@ msgstr "此量具必须多久重新校准一次；与上次校准日期结合自
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "此维护的重复频率——每日、每周、每月、循环盘点；每日会显示星期选择器，其他则使用更简单的间隔计算。"
 
+msgid "How planning sizes the orders that replenish this item here."
+msgstr "计划如何确定此处补货该物料的订单量。"
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "在此工序上，为使多个操作能够共享一个生产批次，每个原材料属性必须匹配的严格程度。"
 
@@ -22618,6 +22621,9 @@ msgstr "计划"
 msgid "Planning action"
 msgstr "计划行动"
 
+msgid "Planning and sales"
+msgstr "计划与销售"
+
 msgid "Planning group"
 msgstr "计划组"
 
@@ -25134,6 +25140,9 @@ msgstr "重新订购数量"
 
 msgid "Reorder Quantity:"
 msgstr "重新订购数量："
+
+msgid "Reordering"
+msgstr "补货"
 
 msgid "Reordering policy"
 msgstr "补货策略"
@@ -34733,6 +34742,9 @@ msgstr "MRP计划行动的所有者。地点继承公司默认值；物料组继
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "谁拥有此租赁：他们获得发票摘要和日期提醒。"
+
+msgid "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
+msgstr "谁负责此处该物料的操作、计划向前看的时间范围，以及销售订单如何检查其承诺日期。"
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "谁接收发票、在哪里以及按什么条款。"

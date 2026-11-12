@@ -14919,6 +14919,9 @@ msgstr "Fréquence d'étalonnage de cet instrument de mesure ; combinée avec la
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Fréquence de récurrence de cette maintenance — Quotidien, Hebdomadaire, Mensuel, À chaque inventaire tournant ; Quotidien affiche le sélecteur de jour de la semaine, les autres utilisent une arithmétique d'intervalle plus simple."
 
+msgid "How planning sizes the orders that replenish this item here."
+msgstr "Comment la planification dimensionne les commandes qui réapprovisionnent cet article ici."
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "Le degré de correspondance requis pour chaque propriété de matière afin que les opérations partagent un lot de production sur ce procédé."
 
@@ -22618,6 +22621,9 @@ msgstr "Planification"
 msgid "Planning action"
 msgstr "Action de planification"
 
+msgid "Planning and sales"
+msgstr "Planification et ventes"
+
 msgid "Planning group"
 msgstr "Groupe de planification"
 
@@ -25134,6 +25140,9 @@ msgstr "Quantité de réapprovisionnement"
 
 msgid "Reorder Quantity:"
 msgstr "Quantité de réapprovisionnement :"
+
+msgid "Reordering"
+msgstr "Réapprovisionnement"
 
 msgid "Reordering policy"
 msgstr "Politique de réapprovisionnement"
@@ -34733,6 +34742,9 @@ msgstr "Qui possède les actions de planification du MRP. Les sites héritent de
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "Qui est propriétaire du bail ici : il reçoit le résumé des factures et les rappels de date."
+
+msgid "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
+msgstr "Qui est responsable des actions de cet article ici, à quelle distance dans le futur la planification regarde, et comment une commande client vérifie sa date promise."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Qui reçoit les factures, où et à quels termes."

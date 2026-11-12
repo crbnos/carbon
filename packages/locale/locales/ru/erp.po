@@ -14919,6 +14919,9 @@ msgstr "Как часто это средство измерения должн�
 msgid "How often this maintenance recurs — Daily, Weekly, Monthly, On Cycle Count; Daily reveals the day-of-week selector, the others use simpler interval math."
 msgstr "Как часто это техобслуживание повторяется — Ежедневно, Еженедельно, Ежемесячно, На циклический пересчет; выбор «Ежедневно» показывает селектор дня недели, остальные используют более простую математику интервалов."
 
+msgid "How planning sizes the orders that replenish this item here."
+msgstr "Как планирование определяет размер заказов на пополнение этой номенклатуры здесь."
+
 msgid "How strictly each material property must match for operations to share a batch on this process."
 msgstr "Насколько строго должны совпадать свойства материала для размещения операций в одной серии на этом процессе."
 
@@ -22618,6 +22621,9 @@ msgstr "Планирование"
 msgid "Planning action"
 msgstr "Действие планирования"
 
+msgid "Planning and sales"
+msgstr "Планирование и продажи"
+
 msgid "Planning group"
 msgstr "Группа планирования"
 
@@ -25134,6 +25140,9 @@ msgstr "Количество переупорядочивания"
 
 msgid "Reorder Quantity:"
 msgstr "Количество переупорядочивания:"
+
+msgid "Reordering"
+msgstr "Пополнение"
 
 msgid "Reordering policy"
 msgstr "Политика пополнения"
@@ -34733,6 +34742,9 @@ msgstr "Кто владеет действиями планирования MRP.
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
 msgstr "Кто владеет арендой здесь: они получают краткое изложение счета-фактуры и напоминания по датам."
+
+msgid "Who owns this item's actions here, how far ahead planning looks, and how a sales order checks its promised date."
+msgstr "Кто отвечает за действия по этой номенклатуре здесь, на какой срок вперёд смотрит планирование и как заказ покупателя проверяет подтвержденную дату."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Кто получает счета-фактуры, где и на каких условиях."
