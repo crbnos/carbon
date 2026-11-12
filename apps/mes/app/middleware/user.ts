@@ -83,7 +83,12 @@ export const userMiddleware: MiddlewareFunction = async (
     consoleEnabled: consoleMode ? consoleEnabled : null,
     effectiveUserId: pinIn?.userId ?? sessionUserId,
     pinnedInUser: pinIn
-      ? { userId: pinIn.userId, name: pinIn.name, avatarUrl: pinIn.avatarUrl }
+      ? {
+          userId: pinIn.userId,
+          name: pinIn.name,
+          avatarUrl: pinIn.avatarUrl,
+          pinnedAt: pinIn.pinnedAt
+        }
       : null
   });
 

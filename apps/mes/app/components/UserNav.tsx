@@ -43,6 +43,7 @@ import {
 } from "react-icons/lu";
 import { useFetcher, useNavigation, useSubmit } from "react-router";
 import { useUser } from "~/hooks";
+import { useConsolePinAction } from "~/hooks/useConsolePinAction";
 import type { action } from "~/root";
 import type { Location } from "~/services/types";
 import type { PinnedInUser } from "~/types";
@@ -112,6 +113,7 @@ export function useUserNav({
   const modePreference = useModePreference();
 
   const fetcher = useFetcher<typeof action>();
+  const { submit: submitPinChange } = useConsolePinAction();
 
   const onModeChange = (value: string) => {
     const parsed = modeValidator.shape.mode.safeParse(value);
@@ -125,7 +127,7 @@ export function useUserNav({
   const switchCompany = useSwitchCompany();
 
   const switchOperator = () => {
-    fetcher.submit(null, { method: "POST", action: path.to.consolePinOut });
+    submitPinChange(null, path.to.consolePinOut);
   };
 
   const toggleConsoleMode = () => {

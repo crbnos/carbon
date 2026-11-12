@@ -19,7 +19,7 @@ import {
   getCarbonForRequest,
   getCarbonServiceRole
 } from "@carbon/auth/client.server";
-import { setConsolePinIn } from "@carbon/auth/console-pin.server";
+import { consolePinIdleMs } from "@carbon/auth/console-pin.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
   destroyAuthSession,
@@ -101,9 +101,15 @@ import {
 } from "~/services/operations.service";
 import { getOpenClockEntry } from "~/services/people.service";
 import { getOpenServiceJobsCount } from "~/services/service.service";
+import {
+  CONSOLE_PIN_CHANNEL,
+  CONSOLE_PIN_PAUSE_EVENTS,
+  CONSOLE_PIN_SOURCE_ID
+} from "~/utils/console-pin-activity";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 const log = getLogger("mes", "auth");
+const CONSOLE_PIN_PEER_TIMEOUT_MS = 30_000;
 
 // Set from the component when loader data arrives, not in shouldRevalidate:
 // link prefetching calls that too.
@@ -294,68 +300,53 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     throw new Error(`No locations found for ${company.name}`);
   }
 
-  // Sliding window: refresh pin-in cookie on every page load
-  const headers = new Headers();
-  if (pinnedInUser && ctx) {
-    headers.append(
-      "Set-Cookie",
-      await setConsolePinIn(companyId, userId, {
-        userId: pinnedInUser.userId,
-        name: pinnedInUser.name,
-        avatarUrl: pinnedInUser.avatarUrl,
-        pinnedAt: Date.now()
-      })
-    );
-  }
-
-  return data(
-    {
-      session: {
-        accessToken,
-        expiresIn,
-        expiresAt
-      },
-      activeEvents: activeEvents.data ?? 0,
-      activeMaintenanceCount: activeMaintenanceCount.count ?? 0,
-      openServiceJobCount: openServiceJobCount.count ?? 0,
-      company,
-      companies: companies.data ?? [],
-      consoleEnabled,
-      canEnterConsoleMode,
-      consoleMode: consoleEnabled && consoleMode,
-      location: locationId,
-      locationEmployeeIds,
-      locations: locations.data ?? [],
-      openClockEntry: openClockEntry?.data
-        ? getOpenClockEntry(client, userId, companyId)
-        : null,
-      effectiveUserId,
-      pinnedInUser,
-      plan: companyPlan?.planId,
-      printing:
-        (companySettings.data?.printing as PrintingSettings | null) ?? null,
-      printerRoutes: printerRoutes.data ?? [],
-      timeCardEnabled,
-      useMetric: companySettings.data?.useMetric ?? false,
-      user: user.data,
-      itarCertification,
-      // Server-decided, never client-inferred — same reason as the ITAR gate.
-      mfaEnrollmentRequired,
-      // Session lock (NIST 3.1.10) — client idle UX config. Console DEVICE
-      // sessions are exempt (their lock is the operator pin-in; a shared kiosk
-      // must not be force-logged-out mid-shift). Server enforcement lives in
-      // requireAuthSession, which also skips console sessions.
-      sessionTimeout: {
-        enabled: CONTROLLED_ENVIRONMENT && !(consoleEnabled && consoleMode),
-        idleMs: SESSION_IDLE_LOCK_MS,
-        heartbeatMs: SESSION_HEARTBEAT_MS,
-        // Offer passkey re-auth on the lock overlay when the provider is enabled;
-        // the /unlock action gates the actual credential, TOTP stays available.
-        hasPasskeyAuth: isAuthProviderEnabled("passkey")
-      }
+  return data({
+    session: {
+      accessToken,
+      expiresIn,
+      expiresAt
     },
-    headers.has("Set-Cookie") ? { headers } : undefined
-  );
+    activeEvents: activeEvents.data ?? 0,
+    activeMaintenanceCount: activeMaintenanceCount.count ?? 0,
+    openServiceJobCount: openServiceJobCount.count ?? 0,
+    company,
+    companies: companies.data ?? [],
+    consoleEnabled,
+    canEnterConsoleMode,
+    consoleMode: consoleEnabled && consoleMode,
+    location: locationId,
+    locationEmployeeIds,
+    locations: locations.data ?? [],
+    openClockEntry: openClockEntry?.data
+      ? getOpenClockEntry(client, userId, companyId)
+      : null,
+    effectiveUserId,
+    pinnedInUser,
+    plan: companyPlan?.planId,
+    printing:
+      (companySettings.data?.printing as PrintingSettings | null) ?? null,
+    printerRoutes: printerRoutes.data ?? [],
+    timeCardEnabled,
+    useMetric: companySettings.data?.useMetric ?? false,
+    user: user.data,
+    itarCertification,
+    // Server-decided, never client-inferred — same reason as the ITAR gate.
+    mfaEnrollmentRequired,
+    // Session lock (NIST 3.1.10) — client idle UX config. Console DEVICE
+    // sessions are exempt (their lock is the operator pin-in; a shared kiosk
+    // must not be force-logged-out mid-shift). Server enforcement lives in
+    // requireAuthSession, which also skips console sessions.
+    sessionTimeout: {
+      enabled: CONTROLLED_ENVIRONMENT && !(consoleEnabled && consoleMode),
+      idleMs: SESSION_IDLE_LOCK_MS,
+      consoleIdleMs: consolePinIdleMs(),
+      serverNow: Date.now(),
+      heartbeatMs: SESSION_HEARTBEAT_MS,
+      // Offer passkey re-auth on the lock overlay when the provider is enabled;
+      // the /unlock action gates the actual credential, TOTP stays available.
+      hasPasskeyAuth: isAuthProviderEnabled("passkey")
+    }
+  });
 }
 
 export default function AuthenticatedRoute() {
@@ -404,23 +395,43 @@ export default function AuthenticatedRoute() {
     heartbeatUrl: "/api/session/heartbeat"
   });
 
-  // Console (shared-kiosk) idle lock (NIST 3.1.10). A controlled-environment
-  // console session is exempt from the session-wide lock above (sessionTimeout.
-  // enabled is false for it) — its lock is the operator pin-in. On idle, reload:
-  // the server-tightened pin-in (console-pin.server) has by then expired, so the
-  // reload surfaces the PinInOverlay and the operator must re-PIN.
-  const { isIdle: consoleIsIdle } = useIdle({
-    enabled: CONTROLLED_ENVIRONMENT && consoleMode,
-    idleMs: sessionTimeout.idleMs,
+  // Console activity renews the operator pin-in on this screen. Once idle,
+  // reload so the server's expired pin-in surfaces the PinInOverlay.
+  useIdle({
+    enabled: consoleMode && !!pinnedInUser,
+    idleMs: sessionTimeout.consoleIdleMs,
+    startedAt: pinnedInUser?.pinnedAt,
+    serverNow: sessionTimeout.serverNow,
     heartbeatMs: sessionTimeout.heartbeatMs,
-    heartbeatUrl: "/api/session/heartbeat"
+    heartbeatUrl: "/api/session/heartbeat",
+    pauseEvents: CONSOLE_PIN_PAUSE_EVENTS,
+    onIdle: () => window.location.reload()
   });
   useEffect(() => {
-    if (consoleIsIdle && typeof window !== "undefined") {
-      window.location.reload();
-    }
-  }, [consoleIsIdle]);
-
+    if (!consoleMode || typeof BroadcastChannel === "undefined") return;
+    const channel = new BroadcastChannel(CONSOLE_PIN_CHANNEL);
+    let reloadTimer: number | undefined;
+    channel.onmessage = (
+      event: MessageEvent<{ type: "start" | "end"; sourceId: string }>
+    ) => {
+      if (event.data.sourceId === CONSOLE_PIN_SOURCE_ID) return;
+      if (event.data.type === "start") {
+        window.dispatchEvent(new Event(CONSOLE_PIN_PAUSE_EVENTS.start));
+        reloadTimer ??= window.setTimeout(
+          () => window.location.reload(),
+          CONSOLE_PIN_PEER_TIMEOUT_MS
+        );
+      } else if (event.data.type === "end") {
+        window.clearTimeout(reloadTimer);
+        // Another tab changed the operator cookie; load its current identity.
+        window.location.reload();
+      }
+    };
+    return () => {
+      window.clearTimeout(reloadTimer);
+      channel.close();
+    };
+  }, [consoleMode]);
   useNProgress();
   const themeStyle = useThemeStyle();
   const mode = useMode();

@@ -13,6 +13,7 @@ import {
 } from "vitest";
 import {
   readConsolePinInCookieUnverified,
+  setConsolePinActivity,
   setConsolePinIn
 } from "./console-pin.server";
 
@@ -63,12 +64,15 @@ describe("console pin-in cookie", () => {
   it("round-trips a signed pin-in", async () => {
     const cookie = await setConsolePinIn(companyId, terminal, operator);
     expect(cookie).toMatch(/HttpOnly/i);
+    // The server's idle window, not a fixed browser cookie age, ends the pin-in.
+    expect(cookie).not.toMatch(/Max-Age=/i);
     const read = await readConsolePinInCookieUnverified(
       requestWithCookie(cookieValue(cookie)),
       companyId,
       terminal
     );
-    expect(read).toEqual(operator);
+    expect(read).toMatchObject(operator);
+    expect(read?.pinId).toEqual(expect.any(String));
   });
 
   it("rejects a hand-crafted unsigned (legacy) cookie", async () => {
@@ -167,5 +171,63 @@ describe("console pin-in cookie", () => {
         terminal
       )
     ).toBeNull();
+  });
+
+  it("renews activity without reissuing the operator identity", async () => {
+    const identity = cookieValue(
+      await setConsolePinIn(companyId, terminal, operator)
+    );
+    const initial = await readConsolePinInCookieUnverified(
+      requestWithCookie(identity),
+      companyId,
+      terminal
+    );
+    expect(initial).not.toBeNull();
+
+    vi.setSystemTime(Date.now() + 50 * 60 * 1000);
+    const activity = cookieValue(
+      await setConsolePinActivity(companyId, terminal, initial!.pinId)
+    );
+    vi.setSystemTime(Date.now() + 20 * 60 * 1000);
+    const renewed = await readConsolePinInCookieUnverified(
+      requestWithCookie(`${identity}; ${activity}`),
+      companyId,
+      terminal
+    );
+    expect(renewed).toMatchObject({
+      userId: operator.userId,
+      pinnedAt: operator.pinnedAt + 50 * 60 * 1000
+    });
+  });
+
+  it("ignores a delayed heartbeat from the previous operator", async () => {
+    const oldIdentity = cookieValue(
+      await setConsolePinIn(companyId, terminal, operator)
+    );
+    const oldPin = await readConsolePinInCookieUnverified(
+      requestWithCookie(oldIdentity),
+      companyId,
+      terminal
+    );
+    const delayedActivity = cookieValue(
+      await setConsolePinActivity(companyId, terminal, oldPin!.pinId)
+    );
+
+    vi.setSystemTime(Date.now() + 5 * 60 * 1000);
+    const nextOperator = {
+      ...operator,
+      userId: "operator-2",
+      pinnedAt: Date.now()
+    };
+    const newIdentity = cookieValue(
+      await setConsolePinIn(companyId, terminal, nextOperator)
+    );
+    const current = await readConsolePinInCookieUnverified(
+      requestWithCookie(`${newIdentity}; ${delayedActivity}`),
+      companyId,
+      terminal
+    );
+    expect(current).toMatchObject(nextOperator);
+    expect(current?.pinId).not.toBe(oldPin?.pinId);
   });
 });
