@@ -52,7 +52,7 @@ async function seedInspectionPlan(
 // `_templates/` paths resolve via getDatasetAssetUrl, not the storage proxy: the
 // modelUpload row points at a bundled file, so nothing is uploaded and the assembler never runs.
 async function seedAssembly(ctx: Ctx, spec: AssemblySpec): Promise<void> {
-  const { industryId } = ctx.dataset;
+  const industryId = ctx.dataset.assetIndustryId ?? ctx.dataset.industryId;
   if (!industryId) return;
 
   const base = `_templates/${industryId}/models/${spec.model}`;

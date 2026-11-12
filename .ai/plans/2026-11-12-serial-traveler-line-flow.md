@@ -37,14 +37,15 @@ Phase B — the traveler scan
 - [x] Task 15: Read traveler links in the Issue dialog Scan tab
 
 Phase C — test data (`motor-line`)
-- [ ] Task 16: Add the optional dataset fields to `types.ts`
+- [x] Task 16: Add the optional dataset fields to `types.ts`
 - [ ] Task 17: Validate the new fields, with a unit test
 - [ ] Task 18: Write the line-flow settings in tier 01
 - [ ] Task 19: Link BOM lines to their operation in tier 02
 - [ ] Task 20: Write per-lot opening ledger rows and kanban levels in tier 03
 - [ ] Task 21: Split serial job units in tier 06
 - [ ] Task 22: Write timing and print-on-completion on serial sequences in tier 10
-- [ ] Task 23: Register the dev-only dataset `motor-line`
+- [x] Task 23: Register the dev-only dataset `motor-line`
+- [ ] Task 23a: Let a dev-only dataset borrow an industry's bundled assets
 - [ ] Task 24: Add the AJ-3 work centers, processes, bins and settings
 - [ ] Task 25: Add the AJ-3 items, methods and supplier links
 - [ ] Task 26: Add the AJ-3 opening stock, bearing lots and Transfer kanbans
@@ -1269,6 +1270,35 @@ pnpm db:check:datasets -- --dataset motor-line
 ```
 
 **Out of scope:** any change to `data/motor/`. Onboarding (`datasetForIndustry` never picks a dataset with `industryId: null`).
+
+---
+
+## Task 23a: Let a dev-only dataset borrow an industry's bundled assets
+
+Added during execution (2026-11-12). With `industryId: null`, tier 02 skips the motor CAD assembly, so 6 coverage floors fail for `motor-line` (`assemblyComponentMapping`, `assemblyInstruction`, `assemblyInstructionStep`, `assemblyInstructionStepMaterial`, `assemblyInstructionStepTool`, `modelUpload`).
+
+**Depends on:** Task 23
+**Files:**
+- Modify: `packages/database/src/datasets/types.ts` — add `assetIndustryId?: string` to `Dataset`
+- Modify: `packages/database/src/datasets/tiers/02-items.ts` (`seedAssembly`, about line 55)
+- Modify: `packages/database/src/datasets/helpers/items.ts` (`thumbnailPath`, about line 65)
+- Modify: `packages/database/src/datasets/validate.ts` (the assembly graph check, about line 4905)
+- Modify: `packages/database/src/datasets/data/motor-line/index.ts` — set `assetIndustryId: "automotive_precision"`
+
+**Steps:**
+1. Add `assetIndustryId?: string` to `Dataset`. Doc comment: "Industry folder for bundled assets (CAD model, thumbnails); defaults to `industryId`. Lets a dev-only dataset reuse an industry's assets."
+2. In each of the 3 code sites, read the folder as `dataset.assetIndustryId ?? dataset.industryId`.
+3. In `motor-line`, set `assetIndustryId` to the `industryId` of `motor`, and keep `industryId: null`.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=@carbon/database
+# Expected: 0 failed
+pnpm db:check:datasets
+# Expected: ✓ for every dataset, motor-line included
+```
+
+**Out of scope:** `datasetForIndustry` (it still never picks a dataset with `industryId: null`) and `coverage.ts`.
 
 ---
 

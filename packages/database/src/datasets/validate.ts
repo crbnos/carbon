@@ -4902,11 +4902,12 @@ export function assembly(ctx: ValidationCtx): void {
   const { toolIds } = ix;
   const { componentsOf } = ix.bom;
   const assembly = dataset.items.assembly;
-  if (assembly && dataset.industryId) {
-    const graph = loadAssemblyGraph(dataset.industryId, assembly.model);
+  const assetIndustryId = dataset.assetIndustryId ?? dataset.industryId;
+  if (assembly && assetIndustryId) {
+    const graph = loadAssemblyGraph(assetIndustryId, assembly.model);
     if (!graph) {
       fail(
-        `items.assembly: no bundled graph at assets/${dataset.industryId}/models/${assembly.model}.graph.json`
+        `items.assembly: no bundled graph at assets/${assetIndustryId}/models/${assembly.model}.graph.json`
       );
     } else {
       if (assembly.componentCount !== graph.componentCount) {
