@@ -4,15 +4,13 @@
 
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { stripVTControlCharacters } from "node:util";
-import retry from "@carbon/utils/retry";
 import { box, intro, log, outro } from "@clack/prompts";
 import { execa } from "execa";
 import pc from "picocolors";
-import { asleepFile, bootingFile } from "../../stack-state.js";
+import { asleepFile, bootingFile, isCloudDev } from "../../stack-state.js";
 import {
   APPS,
   type AppId,
-  isCloudDev,
   LOCALHOST_PORTS,
   ROUTES,
   reactRouterApps,
@@ -28,6 +26,7 @@ import {
   syncHostsFile
 } from "../portless-setup.js";
 import { pickApps, pickBorrowSlug } from "../prompts.js";
+import { withExponentialBackoff } from "../retry.js";
 import {
   assemblerMissingPrerequisite,
   installDeps,
@@ -49,6 +48,7 @@ import {
   devComposeImageRefs,
   ensureDockerRunning,
   ensureSlugAvailable,
+  isTransientPullError,
   listComposeServices,
   listContainers,
   listSharedContainers,
@@ -109,9 +109,6 @@ import {
   stackPorts,
   writeStackMode
 } from "../worktree.js";
-
-// The dev CLI loads utils' TypeScript subpath as CommonJS under tsx.
-const { withExponentialBackoff } = retry;
 
 type UpOpts = {
   migrate?: boolean;
@@ -188,8 +185,8 @@ export async function up(opts: UpOpts = {}) {
     if (interrupted) return;
     interrupted = true;
     process.stderr.write("\ninterrupted — stopping partial stack…\n");
+    // The early dev servers stop on this signal themselves (spawnApps).
     if (bootMarker) rmSync(bootMarker, { force: true });
-    earlyApps?.stop.abort();
     stopAuxApps();
     void teardown(stackAt(root), { plain: true }).finally(() =>
       process.exit(130)
@@ -263,7 +260,7 @@ export async function up(opts: UpOpts = {}) {
     mkdirSync(stateDir, { recursive: true });
     rmSync(asleepFile(stateDir), { force: true });
     bootMarker = bootingFile(stateDir);
-    writeFileSync(bootMarker, "");
+    writeFileSync(bootMarker, String(process.pid));
     const stop = new AbortController();
     earlyApps = {
       stop,
@@ -281,7 +278,7 @@ export async function up(opts: UpOpts = {}) {
     );
   }
 
-  try {
+  const boot = async () => {
     if (!borrowSlug) {
       await pullImages(ctx, { force: opts.pull === true, size });
       await bootDockerStack(ctx, size);
@@ -291,8 +288,7 @@ export async function up(opts: UpOpts = {}) {
       databaseTasks(ctx, {
         migrate: shouldMigrate,
         regen: shouldRegen,
-        swagger: true,
-        cloudTypeFailureOk: isCloudDev()
+        swagger: true
       })
     );
     // The `user` table exists only once migrations ran.
@@ -321,14 +317,32 @@ export async function up(opts: UpOpts = {}) {
         ? reactRouterApps(selectedApps).map((a) => a.id)
         : [];
     if (ctx.prefix !== null) await setupPortless(ctx.prefix, ctx.ports, held);
+  };
+  try {
+    // An early dev server that gives up (spawnApps stops restarting it) ends
+    // the boot now, not after the migrations. A Ctrl+C also ends it: the
+    // shutdown handler above exits then, so that path never settles.
+    await (earlyApps
+      ? Promise.race([
+          boot(),
+          earlyApps.exited.then(() =>
+            interrupted
+              ? new Promise<never>(() => {})
+              : Promise.reject(
+                  new Error(
+                    "the dev server stopped while the database was being prepared — see its output above"
+                  )
+                )
+          )
+        ])
+      : boot());
   } catch (err) {
-    // An unsuccessful boot must not leave a waiting dev server behind.
-    if (bootMarker) rmSync(bootMarker, { force: true });
     earlyApps?.stop.abort();
     await earlyApps?.exited.catch(() => undefined);
     throw err;
+  } finally {
+    if (bootMarker) rmSync(bootMarker, { force: true });
   }
-  if (bootMarker) rmSync(bootMarker, { force: true });
 
   const stripe =
     process.env.CARBON_EDITION === "cloud" ? spawnStripeListener(root) : null;
@@ -365,10 +379,7 @@ export async function up(opts: UpOpts = {}) {
   // one, whose own `crbn up` hibernates it.
   const stateDir = stackAt(root, borrowSlug ?? slug).stateDir;
   // A marker a reused pid keeps alive would hold every request.
-  if (!borrowSlug) {
-    rmSync(asleepFile(stateDir), { force: true });
-    rmSync(bootingFile(stateDir), { force: true });
-  }
+  if (!borrowSlug) rmSync(asleepFile(stateDir), { force: true });
   await runAppsThenTeardown(ctx, selectedApps, size, {
     hibernate: opts.hibernate !== false && !borrowSlug,
     stateDir,
@@ -517,41 +528,48 @@ async function pullImages(ctx: Ctx, opts: { force: boolean; size: StackSize }) {
     }
   }
   const services = await listComposeServices(ctx, opts.size);
-  const bar = progress({ style: "heavy", max: Math.max(services.length, 1) });
-  bar.start(
-    opts.size.minimal
-      ? "Pulling docker images (minimal)"
-      : "Pulling docker images"
-  );
-  const cloud = isCloudDev();
-  const attempts = cloud ? 4 : 1;
+  const title = opts.size.minimal
+    ? "Pulling docker images (minimal)"
+    : "Pulling docker images";
+  // Anonymous registry pulls are rate-limited per IP; a 429 clears in seconds.
+  const attempts = 4;
+  // One bar per attempt: a retry pulls the same services again.
+  let bar: ReturnType<typeof progress> | undefined;
   try {
     await withExponentialBackoff(
-      () =>
-        pullStack(
+      () => {
+        bar = progress({ style: "heavy", max: Math.max(services.length, 1) });
+        bar.start(title);
+        const current = bar;
+        return pullStack(
           ctx,
           (line) => {
-            // Layer progress is too frequent for the terminal progress bar.
+            // Layer lines ("98daf4da4175 Downloading 67.37MB") arrive many
+            // times a second; show the service lines only.
             if (/^[0-9a-f]{12}\b/.test(line)) return;
             const pulled = / Pulled$/.test(line);
-            if (!cloud) bar.message(line.slice(0, 80));
+            // A pipe records every message as a line: keep the pulls only.
+            if (process.stdout.isTTY) current.message(line.slice(0, 80));
             else if (pulled) log.info(line.slice(0, 80));
-            if (pulled) bar.advance(1);
+            if (pulled) current.advance(1);
           },
           opts.size
-        ),
+        );
+      },
       {
         attempts,
+        retryIf: isTransientPullError,
         onRetry: (_error, attempt, delayMs) => {
+          bar?.stop("pull failed");
           log.warn(
-            `docker compose pull failed (attempt ${attempt} of ${attempts}); retrying in ${delayMs / 1000} s`
+            `docker compose pull failed (attempt ${attempt} of ${attempts}); retrying in ${Math.round(delayMs / 1000)} s`
           );
         }
       }
     );
-    bar.stop("images up to date");
+    bar?.stop("images up to date");
   } catch (err) {
-    bar.stop("pull failed");
+    bar?.stop("pull failed");
     throw err;
   }
 }

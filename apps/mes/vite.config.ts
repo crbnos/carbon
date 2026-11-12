@@ -112,27 +112,6 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
       port: 3001,
       strictPort: true,
       allowedHosts: [".ngrok-free.app", ".w.modal.host", ".w.modal.dev", ".dev", ".localhost", "host.docker.internal"],
-      // Cloud container only (scripts/cloud-dev.sh): transform the login page
-      // and the app shell when the server starts, not at the first request,
-      // which otherwise waits about two minutes on a 4-core box; and allow any
-      // host, since the session reaches the server through a forwarded port.
-      ...(process.env.CARBON_DEV_CLOUD === "1"
-        ? {
-            warmup: {
-              ssrFiles: [
-                "./app/root.tsx",
-                "./app/routes/_public+/login.tsx",
-                "./app/routes/x+/_layout.tsx",
-              ],
-              clientFiles: [
-                "./app/entry.client.tsx",
-                "./app/root.tsx",
-                "./app/routes/_public+/login.tsx",
-              ],
-            },
-            allowedHosts: true as const,
-          }
-        : {}),
     },
     plugins: [
       tailwindcss(),
@@ -143,6 +122,19 @@ export default defineConfig(({ command, mode, isSsrBuild }) => {
         locales: true,
         precompress: true,
         splitServer: true,
+        // The login page and the app shell, which a cloud session opens first.
+        cloudWarmup: {
+          ssrFiles: [
+            "./app/root.tsx",
+            "./app/routes/_public+/login.tsx",
+            "./app/routes/x+/_layout.tsx"
+          ],
+          clientFiles: [
+            "./app/entry.client.tsx",
+            "./app/root.tsx",
+            "./app/routes/_public+/login.tsx"
+          ]
+        },
         // unpdf's bundled PDF.js engine is a dead lazy chunk in the browser,
         // which runs react-pdf's pdfjs-dist (see @carbon/files/pdf). Keep it
         // out there only: on the server it is the one engine PDF reading has.

@@ -285,7 +285,7 @@ cp .env.example .env
 pnpm dev
 ```
 
-`pnpm dev` boots the whole backend in Docker (Postgres, PostgREST, auth, storage, realtime, Inngest, Redis and a mail catcher), applies migrations (regenerating types when one applied) and starts the apps:
+`pnpm dev` boots the whole backend in Docker (Postgres, PostgREST, auth, storage, realtime, Inngest, Redis and a mail catcher), applies migrations, generates types and starts the apps:
 
 | Surface      | URL                      |
 | ------------ | ------------------------ |
@@ -330,9 +330,9 @@ Seconds from boot start to the login page being served on a 4-core container, wi
 
 The script sets `CARBON_DEV_CLOUD=1`, and only that switch turns on the container-only boot steps, so these cloud-specific behaviors do not apply to a developer’s own `pnpm dev`:
 
-- `crbn up` starts `dockerd` itself when it is installed but not running (root on Linux), using Docker Hub directly and retrying failed pulls with exponential backoff and jitter (2.5–5, 7.5–15, then 22.5–45 seconds).
+- `crbn up` starts `dockerd` itself when it is installed but not running (root on Linux).
 - The ERP dev server starts before the database is migrated and holds requests until it is, and Vite warms up the login page and app shell at start.
-- The boot passes `--no-regen`: a fresh volume applies every migration, so the type and swagger regeneration would run in every new container (about 30 s) to rewrite committed generated files. The Database types workflow verifies that committed database types match the migrations. When type generation runs in a cloud container, it pulls `postgres-meta` from Docker Hub rather than AWS ECR; a type-generation failure logs a warning and startup continues with the existing types.
+- The boot passes `--no-regen`: a fresh volume applies every migration, so the type and swagger regeneration would run in every new container (about 30 s) to rewrite committed generated files. The Database types workflow verifies that committed database types match the migrations.
 - `BOT_PROTECTION=none`, so `test@carbon.ms` can sign in from a script or a browser automation without the Cloudflare Turnstile widget.
 - A browser for checking the UI: Chrome is in the container (`/usr/bin/google-chrome`, which adds `--no-sandbox` for root) and the script installs `agent-browser`, the CLI the `/auth`, `/test` and `/smoke-test` skills drive it with (pinned by `AGENT_BROWSER_VERSION`; about 4 s, in the background at boot, or in `--prepare`), and sets `AGENT_BROWSER_EXECUTABLE_PATH`. From a cold browser, opening the login page, signing in as the bypass user and reaching the dashboard takes about 15 s; the next page about 8 s the first time.
 

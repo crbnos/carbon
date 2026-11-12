@@ -8,11 +8,13 @@ import { join } from "path";
 const ROOT_ENV_PATH = join(process.cwd(), ".env");
 const ROOT_ENV_LOCAL_PATH = join(process.cwd(), ".env.local");
 
-// Cloud containers can boot without a `.env` file: `crbn up` writes stack
-// configuration to `.env.local`; SESSION_SECRET comes from environment settings.
-const CLOUD_DEV = process.env.CARBON_DEV_CLOUD === "1";
-if (!existsSync(ROOT_ENV_PATH) && !CLOUD_DEV) {
-  throw new Error("No .env file found in root directory");
+// `crbn up` writes the stack's own values to `.env.local`; the one secret it
+// cannot make is SESSION_SECRET, which `.env` or the environment (a cloud
+// container's secret settings) has to give.
+if (!existsSync(ROOT_ENV_PATH) && !process.env.SESSION_SECRET) {
+  throw new Error(
+    "No .env file found in root directory, and SESSION_SECRET is not set: copy .env.example to .env, or set SESSION_SECRET in the environment"
+  );
 }
 
 const APPS_DIR = join(process.cwd(), "apps");

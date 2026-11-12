@@ -9,7 +9,6 @@ import { log } from "@clack/prompts";
 import { execa } from "execa";
 import { join } from "pathe";
 import pg from "pg";
-import { isCloudDev } from "../constants.js";
 import { waitForPort, waitUntil } from "../helpers.js";
 import { type DbTarget, dbUrl } from "../stack.js";
 import type { StackHosts, StackMode } from "../topology.js";
@@ -217,8 +216,6 @@ export function databaseTasks(
     regen: boolean;
     /** Swagger reads the running API, so only `crbn up` and a running stack have it. */
     swagger: boolean;
-    /** Cloud boot can keep committed types if its image pull is blocked. */
-    cloudTypeFailureOk?: boolean;
     /** Default: with `migrate`. A restore sets it: its database has the
      *  table whether it migrates or not, and `--mode prod` keeps the source's. */
     configRow?: boolean;
@@ -260,26 +257,10 @@ export function databaseTasks(
       task: async () => {
         // Always: the checked-in types can lag a database that is already
         // migrated (a branch switch, a stash-pop, reverted generated files).
-        let typesFailed = false;
-        try {
-          await execa("pnpm", ["db:types"], { cwd: root });
-        } catch (err) {
-          if (!opts.cloudTypeFailureOk || !isCloudDev()) throw err;
-          const detail =
-            err instanceof Error ? err.message.split("\n").at(-1) : "";
-          log.warn(
-            `type regen failed — kept the committed types (run \`pnpm db:types\` to see why)${detail ? `: ${detail}` : ""}`
-          );
-          typesFailed = true;
-        }
-        if (!opts.swagger || !applied)
-          return typesFailed
-            ? "type regen failed (kept committed types)"
-            : "types refreshed";
+        await execa("pnpm", ["db:types"], { cwd: root });
+        if (!opts.swagger || !applied) return "types refreshed";
         await execa("pnpm", ["generate:swagger"], { cwd: root });
-        return typesFailed
-          ? "types regen failed (kept committed types); swagger refreshed"
-          : "types + swagger refreshed";
+        return "types + swagger refreshed";
       }
     },
     {

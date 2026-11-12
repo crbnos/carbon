@@ -14,6 +14,7 @@ on:
       - "scripts/generate-db-types.ts"
       - "scripts/lib/generate-db-types.ts"
       - "packages/dev/docker/**"
+      - "packages/dev/src/**"
       - "pnpm-lock.yaml"
       - ".github/workflows/database-types.yml"
 
@@ -57,9 +58,6 @@ jobs:
           CARBON_DEV_YES: "1"
           # The stack's name; otherwise taken from the checkout directory.
           CARBON_WORKTREE: ci-types
-          # The Supabase CLI pulls postgres-meta from public.ecr.aws by default,
-          # whose anonymous pulls share a data quota per runner IP.
-          SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io
         run: packages/dev/bin/crbn migrate
 
       - name: Committed types match the migrations

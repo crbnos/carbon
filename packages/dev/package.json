@@ -18,7 +18,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@carbon/utils": "workspace:*",
     "@bomb.sh/tab": "^0.0.15",
     "@clack/prompts": "^1.3.0",
     "@medicomind/rolldown-compression": "catalog:",

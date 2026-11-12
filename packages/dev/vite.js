@@ -11,8 +11,10 @@ import { brotliCompress, constants } from "node:zlib";
 import { loadEnv, normalizePath } from "vite";
 import {
   activityFile,
-  bootingFile,
+  BOOT_TIMEOUT_MS,
   isAsleepIn,
+  isBootingIn,
+  isCloudDev,
   STACK_STATE_ENV,
   WAKE_TIMEOUT_MS
 } from "./stack-state.js";
@@ -99,12 +101,45 @@ export function linguiWithoutIdQuery(plugins) {
   });
 }
 
+/** Waits while `held()` is true; false when it still is at the deadline. */
+async function waitWhile(held, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  while (held()) {
+    if (Date.now() >= deadline) return false;
+    await new Promise((resolve) => setTimeout(resolve, 200));
+  }
+  return true;
+}
+
+/**
+ * Cloud container only (scripts/cloud-dev.sh): transform the app's `warmup`
+ * files when the server starts, not at the first request, which otherwise
+ * waits about two minutes on a 4-core box; and allow any host, since the
+ * session reaches the server through a forwarded port.
+ *
+ * @param {import("./vite").CarbonOptions["cloudWarmup"]} warmup
+ * @returns {import("vite").Plugin}
+ */
+function cloudDevServer(warmup) {
+  return {
+    name: "carbon:cloud-dev-server",
+    apply: "serve",
+    config(config) {
+      if (!isCloudDev()) return;
+      // Set, not returned: Vite would concatenate `true` onto the app's list.
+      config.server ??= {};
+      config.server.allowedHosts = true;
+      if (warmup) config.server.warmup = warmup;
+    },
+  };
+}
+
 /**
  * Dev-server half of stack hibernation (see `services/hibernate.ts` in this
  * package). Touches `activity` on each request so `crbn up` can tell the apps
  * are in use, and holds a request while the stack is asleep until `crbn up`
- * has started the containers again. It also holds requests during an early
- * cloud boot until the database is ready. Does nothing unless `crbn up` set
+ * has started the containers again, or a cloud boot has the database ready.
+ * Does nothing unless `crbn up` set
  * `CRBN_STACK_STATE`, so a build or a bare `vite dev` is unaffected.
  *
  * `/api/inngest` is not traffic: the Inngest dev server polls it constantly
@@ -122,10 +157,6 @@ function stackActivity() {
       const dir = process.env[STACK_STATE_ENV];
       if (!dir) return;
       const activity = activityFile(dir);
-      // `crbn up` starts the dev servers while it still migrates and seeds
-      // the database; until that marker is gone a request would reach a
-      // half-built schema. A fresh volume takes a few minutes.
-      const booting = bootingFile(dir);
       let touched = 0;
       const touch = (force) => {
         const now = Date.now();
@@ -142,24 +173,15 @@ function stackActivity() {
         touch(false);
         if (isAsleepIn(dir)) {
           touch(true);
-          const deadline = Date.now() + WAKE_TIMEOUT_MS;
-          while (isAsleepIn(dir) && Date.now() < deadline) {
-            await new Promise((resolve) => setTimeout(resolve, 200));
-          }
+          await waitWhile(() => isAsleepIn(dir), WAKE_TIMEOUT_MS);
         }
-        if (fs.existsSync(booting)) {
-          const deadline = Date.now() + 600_000; // Deadline in 10 min
-          while (fs.existsSync(booting) && Date.now() < deadline) {
-            await new Promise((resolve) => setTimeout(resolve, 200));
-          }
-          // Still booting: the schema may be half-built, so the request is
-          // refused in a way the caller retries.
-          if (fs.existsSync(booting)) {
-            res.statusCode = 503;
-            res.setHeader("Retry-After", "5");
-            res.end("The database is still starting. Retry shortly.");
-            return;
-          }
+        // A cloud boot starts the dev servers while it still migrates and
+        // seeds; a request let through earlier would reach a half-built schema.
+        if (!(await waitWhile(() => isBootingIn(dir), BOOT_TIMEOUT_MS))) {
+          res.statusCode = 503;
+          res.setHeader("Retry-After", "5");
+          res.end("The database is still starting. Retry shortly.");
+          return;
         }
         next();
       });
@@ -792,6 +814,7 @@ export async function carbon({
   clientOnly = {},
   splitServer = false,
   precompress = false,
+  cloudWarmup,
 } = {}) {
   if (precompress && !(command && mode)) {
     throw new Error("carbon({ precompress }) needs the config's command and mode");
@@ -799,6 +822,7 @@ export async function carbon({
   const { lingui } = await import("@lingui/vite-plugin");
   return [
     stackActivity(),
+    cloudDevServer(cloudWarmup),
     iconImports(),
     datasetAssets(),
     dropStalledHmrClients(),

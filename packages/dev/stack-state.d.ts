@@ -7,4 +7,7 @@ export function activityFile(dir: string): string;
 export function asleepFile(dir: string): string;
 export function bootingFile(dir: string): string;
 export const WAKE_TIMEOUT_MS: number;
+export const BOOT_TIMEOUT_MS: number;
+export function isCloudDev(): boolean;
 export function isAsleepIn(dir: string): boolean;
+export function isBootingIn(dir: string): boolean;

@@ -54,6 +54,21 @@ describe("withExponentialBackoff", () => {
     await assertion;
   });
 
+  it("throws at once an error retryIf refuses", async () => {
+    let attempts = 0;
+    const error = new Error("manifest unknown");
+    await expect(
+      withExponentialBackoff(
+        async () => {
+          attempts++;
+          throw error;
+        },
+        { retryIf: () => false }
+      )
+    ).rejects.toBe(error);
+    expect(attempts).toBe(1);
+  });
+
   it("does not retry when only one attempt is allowed", async () => {
     let attempts = 0;
     const error = new Error("failed");

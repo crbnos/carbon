@@ -121,9 +121,6 @@ esac
 persist BOT_PROTECTION none
 # The container-only steps of crbn up (see the header).
 persist CARBON_DEV_CLOUD 1
-# Not portless: gotrue and inngest mount /dev/null instead of portless's CA, so
-# Docker does not create a directory at the missing ~/.portless/ca.pem.
-persist PORTLESS_CA_FILE /dev/null
 
 # --- 2. Dependencies -----------------------------------------------------------
 if [ ! -d node_modules ]; then
@@ -133,47 +130,43 @@ if [ ! -d node_modules ]; then
 fi
 
 # --- Images (--prepare only) ---------------------------------------------------
-# The set `crbn up` pulls by default: the worktree's default services plus the
-# `mail` profile, and the shared services. The
-# image tags are literals; DOMAIN and INNGEST_TLS_HOST only have to be
-# non-empty for compose to accept `extra_hosts`.
 pull_images() {
   if ! command -v docker >/dev/null 2>&1; then
     echo "cloud-dev: docker is not installed; no images to pull"
     return 0
   fi
-  if ! docker info >/dev/null 2>&1; then
-    # The same dockerd start crbn up does (stale pid files cleared first).
-    pnpm exec tsx --eval 'import { ensureDockerRunning } from "./packages/dev/src/services/compose.ts"; ensureDockerRunning().then(() => process.exit(0), (e) => { console.error(e.message); process.exit(1); })' ||
-      { echo "cloud-dev: the Docker daemon is not available; no images pulled"; return 0; }
+  # crbn's own dockerd start and image list: the images a default `crbn up`
+  # boots, pulled when missing, retried while the registry throttles.
+  if pnpm exec tsx --eval '
+    import { ensureDockerRunning, pullDefaultImages } from "./packages/dev/src/services/compose.ts";
+    ensureDockerRunning()
+      .then(() => pullDefaultImages(process.cwd()))
+      .then(
+        () => process.exit(0),
+        (e) => { console.error(`cloud-dev: ${e.message}`); process.exit(1); }
+      );
+  '; then
+    echo "cloud-dev: stack images are present"
+  else
+    echo "cloud-dev: some images did not pull; crbn up will pull them" >&2
   fi
-  local refs missing=() ref
-  refs=$({
-    DOMAIN=localhost INNGEST_TLS_HOST=localhost docker compose \
-      -f packages/dev/docker/docker-compose.dev.yml --profile mail config --images 2>/dev/null
-    docker compose -f packages/dev/docker/docker-compose.shared.yml config --images 2>/dev/null
-  } | sort -u) || refs=""
-  if [ -z "$refs" ]; then
-    echo "cloud-dev: could not list the stack's images; leaving the pull to crbn up"
-    return 0
-  fi
-  for ref in $refs; do
-    docker image inspect "$ref" >/dev/null 2>&1 || missing+=("$ref")
-  done
-  if [ "${#missing[@]}" -eq 0 ]; then
-    echo "cloud-dev: all stack images are present"
-    return 0
-  fi
-  echo "cloud-dev: pulling ${#missing[@]} stack images in parallel"
-  printf '%s\n' "${missing[@]}" | xargs -P 8 -I{} pnpm exec tsx --eval '
-    import { execa } from "execa";
-    import { withExponentialBackoff } from "./packages/utils/src/retry.ts";
-    const image = process.argv[1];
-    withExponentialBackoff(() => execa("docker", ["pull", "-q", image]))
-      .catch(() => { console.error(`cloud-dev: could not pull ${image}`); process.exitCode = 1; });
-  ' {} || echo "cloud-dev: some images did not pull; crbn up will retry them" >&2
-  echo "cloud-dev: image pull finished"
 }
+
+# Sign in as the dev bypass user and open the app, so the service router and
+# the app shell are compiled before the first real request. The login page
+# must already answer.
+warm_app() {
+  local jar url ok=1
+  jar=$(mktemp)
+  curl -sf -o /dev/null -c "$jar" -b "$jar" --max-time 600 \
+    -d email=test@carbon.ms http://localhost:3000/login &&
+    url=$(curl -sf -o /dev/null -L -w '%{url_effective}' -c "$jar" -b "$jar" \
+      --max-time 600 http://localhost:3000/x) &&
+    [[ $url != */login* ]] && ok=0
+  rm -f "$jar"
+  return "$ok"
+}
+export -f warm_app
 
 # Boot the stack once, end to end: the services migrate and seed the database,
 # the ERP dev server pre-bundles its dependencies, and the login page and the
@@ -181,7 +174,7 @@ pull_images() {
 # cache. A failure is not fatal: the first real boot does the same work.
 bake_database() {
   echo "cloud-dev: booting the stack once to migrate and seed the database and warm Vite"
-  local log="$HOME/.carbon/logs/bake.log" jar url pid ok=0 started=$SECONDS
+  local log="$HOME/.carbon/logs/bake.log" pid ok=0 started=$SECONDS
   mkdir -p "$HOME/.carbon/logs"
   CARBON_DEV_APPS=erp CARBON_DEV_YES=1 packages/dev/bin/crbn up --no-portless --no-regen \
     >"$log" 2>&1 < /dev/null &
@@ -191,13 +184,7 @@ bake_database() {
     if ! kill -0 "$pid" 2>/dev/null || [ $((SECONDS - started)) -gt 900 ]; then break; fi
     sleep 2
   done
-  jar=$(mktemp)
-  if curl -sf -o /dev/null -c "$jar" -b "$jar" --max-time 300 -d email=test@carbon.ms http://localhost:3000/login &&
-     url=$(curl -sf -o /dev/null -L -w '%{url_effective}' -c "$jar" -b "$jar" --max-time 300 http://localhost:3000/x) &&
-     [[ $url != */login* ]]; then
-    ok=1
-  fi
-  rm -f "$jar"
+  warm_app && ok=1
   # Ctrl+C for crbn: it stops the dev server and the containers. A background
   # job of a script may have SIGINT ignored, so fall back to TERM and KILL.
   kill -INT "$pid" 2>/dev/null || true
@@ -206,10 +193,11 @@ bake_database() {
     kill -TERM "$pid" 2>/dev/null || true
     sleep 3
     kill -KILL "$pid" 2>/dev/null || true
+    wait "$pid" 2>/dev/null || true
+    # crbn up did not run its teardown: stop the containers and its dev servers.
+    packages/dev/bin/crbn down || true
   fi
   wait "$pid" 2>/dev/null || true
-  pkill -f "react-router dev" 2>/dev/null || true
-  packages/dev/bin/crbn down || true
   if [ "$ok" = 1 ]; then
     echo "cloud-dev: database migrated and seeded, Vite warmed"
   else
@@ -272,18 +260,11 @@ else
             sleep 2
           done
           echo "cloud-dev: first page served (GET /login)"
-          # Sign in as the dev bypass user and open the app, so the service
-          # router and the app shell are compiled before the first real request.
-          jar=$(mktemp)
-          if curl -sf -o /dev/null -c "$jar" -b "$jar" --max-time 600 \
-               -d email=test@carbon.ms http://localhost:3000/login \
-             && url=$(curl -sf -o /dev/null -L -w '%{url_effective}' -c "$jar" -b "$jar" --max-time 600 http://localhost:3000/x) \
-             && [[ $url != */login* ]]; then
+          if warm_app; then
             echo "cloud-dev: app page served (GET /x as test@carbon.ms)"
           else
             echo "cloud-dev: could not open /x as test@carbon.ms"
           fi
-          rm -f "$jar"
         ) &
         wait "$crbn"
         echo "cloud-dev: crbn up exited with status $?"

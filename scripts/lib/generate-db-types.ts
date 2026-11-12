@@ -4,13 +4,13 @@
 
 import { spawnSync } from "node:child_process";
 import {
-    closeSync,
-    mkdtempSync,
-    openSync,
-    readFileSync,
-    renameSync,
-    rmSync,
-    writeFileSync
+  closeSync,
+  mkdtempSync,
+  openSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
@@ -154,20 +154,14 @@ export function splitConstants(source: string): {
   };
 }
 
-/**
- * Extract the tail of the CLI's stderr for the error message.
- */
-export function describeFailure(
-  result: { error?: Error; stderr?: Buffer | string | null },
-  dbUrl: string
-): string {
+function describeFailure(result: {
+  error?: Error;
+  stderr?: Buffer | string | null;
+}): string {
   if (result.error) return ` ${result.error.message}`;
   const text = (result.stderr ?? "").toString().trim();
   if (!text) return "";
-  const redacted = text
-    .split(dbUrl)
-    .join("<db-url>")
-    .replace(/postgres(ql)?:\/\/[^\s"']+/g, "<db-url>");
+  const redacted = text.replace(/postgres(ql)?:\/\/[^\s"']+/g, "<db-url>");
   const lines = redacted.split("\n");
   const tail = lines.slice(-12).join("\n");
   return `\n${lines.length > 12 ? "…\n" : ""}${tail}`;
@@ -208,10 +202,11 @@ export function generateDatabaseTypes(databaseUrl: string | undefined): void {
             // run. The explicit --db-url is Carbon's Compose database; give
             // the CLI a different local default so it uses that URL directly.
             SUPABASE_DB_PORT: "1",
-            ...(process.env.CARBON_DEV_CLOUD === "1" &&
-            !process.env.SUPABASE_INTERNAL_IMAGE_REGISTRY
-              ? { SUPABASE_INTERNAL_IMAGE_REGISTRY: "docker.io" }
-              : {})
+            // The CLI pulls postgres-meta from public.ecr.aws by default, whose
+            // anonymous pulls share a data quota per IP (CI runners, cloud
+            // containers); Docker Hub serves the same image.
+            SUPABASE_INTERNAL_IMAGE_REGISTRY:
+              process.env.SUPABASE_INTERNAL_IMAGE_REGISTRY ?? "docker.io"
           }
         }
       );
@@ -220,7 +215,7 @@ export function generateDatabaseTypes(databaseUrl: string | undefined): void {
           result.status === null
             ? "could not complete"
             : `exited ${result.status}`;
-        const detail = describeFailure(result, dbUrl);
+        const detail = describeFailure(result);
         throw new Error(
           `Supabase type generation ${status}; the existing type file was preserved.${detail}`
         );

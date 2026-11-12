@@ -20,14 +20,14 @@ import {
   writeFileSync
 } from "node:fs";
 import { homedir } from "node:os";
-import { setTimeout as sleep } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { log } from "@clack/prompts";
 import { execa } from "execa";
 import { basename, join } from "pathe";
-import { isCloudDev } from "../constants.js";
-import { readLines } from "../helpers.js";
+import { isCloudDev } from "../../stack-state.js";
+import { readLines, waitUntil } from "../helpers.js";
 import { paths } from "../paths.js";
+import { withExponentialBackoff } from "../retry.js";
 import type { Stack } from "../stack.js";
 import {
   COMPOSE_DEV_FILE,
@@ -97,17 +97,21 @@ export async function ensureDockerRunning() {
   if (await dockerResponds()) return;
   if (await startDockerDaemon()) return;
   throw new Error(
-    "Docker isn't running. Start Docker Desktop (or your docker daemon) and re-run `crbn up`."
+    isCloudDev()
+      ? `Docker isn't running and dockerd did not start — see ${DOCKERD_LOG}.`
+      : "Docker isn't running. Start Docker Desktop (or your docker daemon) and re-run `crbn up`."
   );
 }
+
+const DOCKERD_LOG = join(homedir(), ".carbon", "dockerd.log");
 
 async function dockerResponds(): Promise<boolean> {
   const r = await execa("docker", ["info"], { reject: false, stdio: "ignore" });
   return r.exitCode === 0;
 }
 
-// On Linux, we will start the daemon ourselves instead of telling a user who is
-// not there to start Docker Desktop (this is currently just on for cloud containers).
+// A cloud container has no Docker Desktop and nobody to start one, so crbn
+// starts dockerd itself.
 async function startDockerDaemon(): Promise<boolean> {
   if (!isCloudDev()) return false;
   if (process.platform !== "linux" || process.getuid?.() !== 0) return false;
@@ -130,27 +134,33 @@ async function startDockerDaemon(): Promise<boolean> {
     "containerd"
   ]);
 
-  const logDir = join(homedir(), ".carbon");
-  mkdirSync(logDir, { recursive: true });
-  const logFile = join(logDir, "dockerd.log");
-  const fd = openSync(logFile, "a");
+  mkdirSync(join(homedir(), ".carbon"), { recursive: true });
+  const fd = openSync(DOCKERD_LOG, "a");
+  let exited = false;
   try {
     const child = spawn("dockerd", [], {
       detached: true,
       stdio: ["ignore", fd, fd]
     });
+    child.on("error", (err) => {
+      exited = true;
+      log.warn(`dockerd did not start: ${err.message}`);
+    });
+    child.on("exit", () => {
+      exited = true;
+    });
     child.unref();
   } finally {
     closeSync(fd);
   }
-  log.info(`docker daemon not running — started dockerd (log: ${logFile})`);
-  const deadline = Date.now() + 30_000;
-  while (Date.now() < deadline) {
-    if (await dockerResponds()) return true;
-    await sleep(1000);
-  }
-  log.warn(`dockerd did not answer within 30 s — see ${logFile}`);
-  return false;
+  log.info(`docker daemon not running — started dockerd (log: ${DOCKERD_LOG})`);
+  const up = await waitUntil(dockerResponds, {
+    timeoutMs: 30_000,
+    intervalMs: 1000,
+    stopped: () => exited
+  });
+  if (!up) log.warn(`dockerd is not answering — see ${DOCKERD_LOG}`);
+  return up;
 }
 
 // Remove a pid file unless its pid is a live process whose command is one of
@@ -368,9 +378,26 @@ export async function pullStack(
 
   const r = await proc;
   if (r.exitCode !== 0) {
-    process.stderr.write(r.all?.toString() ?? "");
-    throw new Error(`docker compose pull failed (exit ${r.exitCode})`);
+    const output = r.all?.toString() ?? "";
+    process.stderr.write(output);
+    throw Object.assign(
+      new Error(`docker compose pull failed (exit ${r.exitCode})`),
+      { output }
+    );
   }
+}
+
+// What a registry answers when it throttles anonymous pulls or the network
+// drops: worth waiting for. A missing tag or a refused login is not.
+const TRANSIENT_PULL =
+  /toomanyrequests|too many requests|\b429\b|\b50[234]\b|timeout|timed out|connection reset|unexpected EOF|TLS handshake/i;
+
+export function isTransientPullError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const { output, stderr } = error as { output?: string; stderr?: string };
+  return TRANSIENT_PULL.test(
+    `${error.message}\n${output ?? ""}${stderr ?? ""}`
+  );
 }
 
 /** Resolved image refs for the dev compose file (tags as pinned in compose). */
@@ -394,7 +421,11 @@ export async function devComposeImageRefs(
 export async function allImagesPresentLocally(
   refs: string[]
 ): Promise<boolean> {
-  const results = await Promise.all(
+  return (await missingImages(refs)).length === 0;
+}
+
+async function missingImages(refs: string[]): Promise<string[]> {
+  const present = await Promise.all(
     refs.map((ref) =>
       execa("docker", ["image", "inspect", ref], {
         stdio: "ignore",
@@ -402,7 +433,60 @@ export async function allImagesPresentLocally(
       }).then((x) => x.exitCode === 0)
     )
   );
-  return results.every(Boolean);
+  return refs.filter((_, i) => !present[i]);
+}
+
+/**
+ * Pulls the images a default `crbn up` boots (the dev file with its default
+ * profiles, and crbn-shared) that are not present yet. For an environment's
+ * setup step (`cloud-dev.sh --prepare`), before this checkout has a stack.
+ */
+export async function pullDefaultImages(root: string): Promise<void> {
+  const list = async (
+    file: string,
+    args: string[],
+    opts: { env: NodeJS.ProcessEnv; extendEnv?: boolean }
+  ) => {
+    const r = await execa(
+      "docker",
+      ["compose", "-f", file, ...args, "config", "--images"],
+      { cwd: root, reject: false, ...opts }
+    );
+    if (r.exitCode !== 0) throw new Error(`cannot list the images of ${file}`);
+    return r.stdout
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  };
+  // Only `extra_hosts` reads these two, and compose wants them non-empty.
+  const hosts = { DOMAIN: "localhost", INNGEST_TLS_HOST: "localhost" };
+  const refs = [
+    ...(await list(join(root, COMPOSE_DEV_FILE), profileArgs(), {
+      env: hosts
+    })),
+    ...(await list(
+      join(SHARED_SOURCE, "docker-compose.shared.yml"),
+      [],
+      sharedExec()
+    ))
+  ];
+  const missing = await missingImages([...new Set(refs)]);
+  if (missing.length === 0) return;
+  log.info(`pulling ${missing.length} images`);
+  const failed = (
+    await Promise.allSettled(
+      missing.map((ref) =>
+        withExponentialBackoff(() => execa("docker", ["pull", "-q", ref]), {
+          retryIf: isTransientPullError
+        })
+      )
+    )
+  ).filter((r) => r.status === "rejected");
+  if (failed.length > 0) {
+    throw new Error(
+      `${failed.length} of ${missing.length} images did not pull`
+    );
+  }
 }
 
 // Compose first, then by label: compose can't stop a project whose files it

@@ -4,11 +4,6 @@
 
 import type { PortMap } from "./worktree.js";
 
-/** True when scripts/cloud-dev.sh started this process in a cloud container. */
-export function isCloudDev(): boolean {
-  return process.env.CARBON_DEV_CLOUD === "1";
-}
-
 /**
  * The apps `crbn up` offers. `kind` is how one runs: a React Router dev
  * server crbn supervises, another process it spawns, or a compose service.
