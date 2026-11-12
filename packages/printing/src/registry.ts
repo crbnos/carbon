@@ -22,7 +22,8 @@ export const documentTypeRegistry = [
       "Entity",
       "Job",
       "Split",
-      "StockTransfer"
+      "StockTransfer",
+      "PickingList"
     ],
     builtInRenderer: "zpl" as const,
     defaultFormat: "zpl" as const,

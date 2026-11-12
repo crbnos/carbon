@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { getPickingListTravelerEntities } from "@carbon/database/travelers";
 import { type KanbanLabelAction, kanbanLabelCode } from "@carbon/documents/zpl";
 import { ERP_URL } from "@carbon/env";
 import type { ProductLabelItem } from "@carbon/utils";
@@ -268,6 +269,17 @@ async function queryTrackedEntities(
       return {
         trackedEntities,
         readableId: stockTransfer?.stockTransferId ?? null
+      };
+    }
+    case "PickingList": {
+      const result = await getPickingListTravelerEntities(client, {
+        pickingListId: sourceDocumentId,
+        companyId
+      });
+
+      return {
+        trackedEntities: result.data,
+        readableId: result.readableId
       };
     }
     default:
