@@ -13,14 +13,17 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
+import { DocumentForceDeleteBanner } from "~/components/ForceDelete/DocumentForceDelete";
 import {
   getBatchProperties,
   getReceipt,
   getReceiptFiles,
   getReceiptLines,
+  getReceiptPutAwayLines,
   getReceiptRelatedItems,
   getRentalReceiptLines,
-  getShelfLifeForItems
+  getShelfLifeForItems,
+  receiptLinesOpeningLots
 } from "~/modules/inventory/inventory.service";
 import { getReceiptTracking } from "~/modules/inventory/inventory.utils";
 import type { RentalReceiptLine } from "~/modules/inventory/types";
@@ -28,11 +31,10 @@ import {
   ReceiptDocuments,
   ReceiptHeader
 } from "~/modules/inventory/ui/Receipts";
-import {
-  getReceiptInspectedItemIds,
-  getReceiptInspections
-} from "~/modules/quality/quality.service";
+import { getDocumentForceDeleteData } from "~/modules/invoicing/invoicing.service";
+import { getReceiptInspections } from "~/modules/quality/quality.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
@@ -55,7 +57,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.receipt?.receiptId, "Receipt");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     view: "inventory"
   });
 
@@ -64,13 +66,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { receiptId } = params;
   if (!receiptId) throw new Error("Could not find receiptId");
 
-  const [receipt, receiptLines, receiptLineTracking, receiptInspections] =
-    await Promise.all([
-      getReceipt(serviceRole, receiptId),
-      getReceiptLines(serviceRole, receiptId),
-      getReceiptTracking(serviceRole, receiptId, companyId),
-      getReceiptInspections(serviceRole, receiptId, companyId)
-    ]);
+  const [
+    receipt,
+    receiptLines,
+    receiptLineTracking,
+    receiptInspections,
+    forceDelete
+  ] = await Promise.all([
+    getReceipt(serviceRole, receiptId),
+    getReceiptLines(serviceRole, receiptId),
+    getReceiptTracking(serviceRole, receiptId, companyId),
+    getReceiptInspections(serviceRole, receiptId, companyId),
+    // The Admin force-delete override (`force-delete+`).
+    getDocumentForceDeleteData(serviceRole, getDatabaseClient(), {
+      companyId,
+      userId,
+      documentType: "receipt",
+      documentId: receiptId
+    })
+  ]);
 
   if (receipt.error) {
     throw redirect(
@@ -84,15 +98,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   let receiptLineIds: string[] = [];
-  let itemsWithBatchProperties: string[] = [];
   let trackedItemIds: string[] = [];
 
   if (receiptLines.data) {
     receiptLineIds = receiptLines.data.map((line) => line.id!).filter(Boolean);
-    itemsWithBatchProperties = receiptLines.data
-      .filter((line) => line && line.itemId && line.requiresBatchTracking)
-      .map((line) => line.itemId)
-      .filter((itemId) => itemId !== null);
     trackedItemIds = receiptLines.data
       .filter(
         (line) =>
@@ -144,27 +153,67 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       });
   }
 
-  // Only a purchase receipt opens inspection lots, for the lines whose item
-  // has a Receipt-usage inspection plan. Once posted, the lots themselves
-  // (receiptInspections) say which lines were inspected.
-  const inspectedItemIds =
-    receipt.data.sourceDocument === "Purchase Order" &&
-    receipt.data.status !== "Posted"
-      ? await getReceiptInspectedItemIds(serviceRole, companyId, [
-          ...new Set(
-            (receiptLines.data ?? [])
-              .map((line) => line.itemId)
-              .filter((itemId): itemId is string => Boolean(itemId))
-          )
-        ])
-      : { data: [] as string[], error: null };
+  // Only a purchase receipt opens inspection lots. Once posted, the lots
+  // themselves (receiptInspections) say which lines were inspected.
+  const receiptLinesToMark = (receiptLines.data ?? []).flatMap((line) =>
+    line.itemId && line.id
+      ? [{ id: line.id, itemId: line.itemId, lineId: line.lineId }]
+      : []
+  );
+  const isPosted = receipt.data.status === "Posted";
   // The marks only inform: a failed lookup leaves them off rather than
   // failing the receipt, but it must not pass silently for "none needed".
-  if (inspectedItemIds.error) {
-    logger.error("Failed to load the receipt's inspected items", {
+  const [putAwayLines, putAwayTransfers, linesOpeningLots] = await Promise.all([
+    isPosted &&
+    !["Not Required", "Put Away"].includes(receipt.data.inspectionStatus)
+      ? getReceiptPutAwayLines(getDatabaseClient(), companyId, receiptId).catch(
+          (putAwayError: unknown) => {
+            logger.error("Failed to load the receipt's putaway lines", {
+              companyId,
+              receiptId,
+              error: putAwayError
+            });
+            return [];
+          }
+        )
+      : Promise.resolve([]),
+    serviceRole
+      .from("stockTransfer")
+      .select("id, stockTransferId, status")
+      .eq("receiptId", receiptId)
+      .eq("companyId", companyId)
+      .order("createdAt"),
+    receipt.data.sourceDocument === "Purchase Order" &&
+    receipt.data.status !== "Posted" &&
+    receipt.data.status !== "Voided"
+      ? receiptLinesOpeningLots(getDatabaseClient(), companyId, {
+          purchaseOrderId: receipt.data.sourceDocumentId,
+          lines: receiptLinesToMark
+        })
+          .then((lines) => {
+            if (lines === null) {
+              logger.warn(
+                "A line's project cannot take the charge: no inspection marks",
+                { companyId, receiptId }
+              );
+            }
+            return lines;
+          })
+          .catch((error: unknown) => {
+            logger.error("Failed to load the receipt's inspected lines", {
+              companyId,
+              receiptId,
+              error
+            });
+            return null;
+          })
+      : Promise.resolve([])
+  ]);
+  if (putAwayTransfers.error) {
+    logger.error("Failed to load the receipt's putaway state", {
       companyId,
       receiptId,
-      error: inspectedItemIds.error
+      error: putAwayTransfers.error
     });
   }
 
@@ -226,14 +275,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     receipt: receipt.data,
     receiptLines: receiptLines.data ?? [],
     receiptInspections: receiptInspections.data ?? [],
-    inspectedItemIds: inspectedItemIds.data ?? [],
+    inspectedLineIds: (linesOpeningLots ?? []).map((line) => line.id),
+    heldLineIds: (linesOpeningLots ?? [])
+      .filter((line) => line.holdsStock)
+      .map((line) => line.id),
+    putAwayReadyCount: putAwayLines.length,
+    putAwayTransfers: putAwayTransfers.data ?? [],
     fixedAssetLines,
     rentalLines,
     receiptFiles: getReceiptFiles(serviceRole, companyId, receiptLineIds) ?? [],
     receiptLineTracking: receiptLineTracking.data ?? [],
     batchProperties:
-      getBatchProperties(serviceRole, itemsWithBatchProperties, companyId) ??
-      [],
+      getBatchProperties(serviceRole, trackedItemIds, companyId) ?? [],
     companySettings: getCompanySettings(serviceRole, companyId),
     itemShelfLife: await getShelfLifeForItems(serviceRole, trackedItemIds),
     relatedItems: getReceiptRelatedItems(
@@ -248,12 +301,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             line.lineId ? [line.lineId] : []
           )
         : []
-    )
+    ),
+    ...forceDelete
   };
 }
 
 export default function ReceiptRoute() {
-  const { receipt } = useLoaderData<typeof loader>();
+  const data = useLoaderData<typeof loader>();
+  const { receipt } = data;
 
   return (
     <DocumentPage
@@ -269,6 +324,13 @@ export default function ReceiptRoute() {
         />
       }
     >
+      <DocumentForceDeleteBanner
+        documentType="receipt"
+        documentId={receipt.id}
+        readableId={receipt.receiptId ?? receipt.id}
+        status={receipt.status ?? "Draft"}
+        forceDelete={data}
+      />
       <RecordOutlet />
     </DocumentPage>
   );

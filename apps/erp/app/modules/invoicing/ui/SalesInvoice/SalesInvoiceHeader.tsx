@@ -43,6 +43,11 @@ import {
   EditDocumentMenuItem,
   useDocumentEditModal
 } from "~/components/DocumentEditModal";
+import {
+  type DocumentForceDeleteData,
+  DocumentForceDeleteMenuItem,
+  DocumentForceDeleteModal
+} from "~/components/ForceDelete/DocumentForceDelete";
 import { usePanels } from "~/components/Layout/Panels";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
@@ -69,6 +74,7 @@ const SalesInvoiceHeader = () => {
   const postingModal = useDisclosure();
   const voidModal = useDisclosure();
   const deleteModal = useDisclosure();
+  const forceDeleteModal = useDisclosure();
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
     entityType: "salesInvoice",
     // @ts-expect-error TS2322 - TODO: fix type
@@ -99,13 +105,15 @@ const SalesInvoiceHeader = () => {
   if (!invoiceId) throw new Error("invoiceId not found");
 
   const [items] = useItems();
-  const routeData = useRouteData<{
-    salesInvoice: SalesInvoice;
-    salesInvoiceLines: SalesInvoiceLine[];
-    defaultCc: string[];
-    orgHasCredits: boolean;
-    stripeInvoiceUrl: string | null;
-  }>(path.to.salesInvoice(invoiceId));
+  const routeData = useRouteData<
+    {
+      salesInvoice: SalesInvoice;
+      salesInvoiceLines: SalesInvoiceLine[];
+      defaultCc: string[];
+      orgHasCredits: boolean;
+      stripeInvoiceUrl: string | null;
+    } & DocumentForceDeleteData
+  >(path.to.salesInvoice(invoiceId));
 
   if (!routeData?.salesInvoice) throw new Error("salesInvoice not found");
   const { salesInvoice } = routeData;
@@ -288,6 +296,11 @@ const SalesInvoiceHeader = () => {
         <DropdownMenuIcon icon={<LuTrash />} />
         <Trans>Delete Sales Invoice</Trans>
       </DropdownMenuItem>
+      <DocumentForceDeleteMenuItem
+        forceDelete={routeData}
+        canDelete={permissions.can("delete", "invoicing")}
+        onClick={forceDeleteModal.onOpen}
+      />
     </>
   );
   const statusBadges = (
@@ -511,35 +524,42 @@ const SalesInvoiceHeader = () => {
         }
       />
 
-      {postingModal.isOpen && (
-        <SalesInvoicePostModal
-          invoiceId={invoiceId}
-          customerId={salesInvoice.invoiceCustomerId}
-          customerContactId={salesInvoice.invoiceCustomerContactId}
-          dateDue={salesInvoice.dateDue}
-          isOpen={postingModal.isOpen}
-          onClose={postingModal.onClose}
-          linesToShip={linesNotAssociatedWithSO}
-          fetcher={postFetcher}
-          defaultCc={routeData?.defaultCc ?? []}
-        />
-      )}
+      <SalesInvoicePostModal
+        invoiceId={invoiceId}
+        customerId={salesInvoice.invoiceCustomerId}
+        customerContactId={salesInvoice.invoiceCustomerContactId}
+        dateDue={salesInvoice.dateDue}
+        isOpen={postingModal.isOpen}
+        onClose={postingModal.onClose}
+        linesToShip={linesNotAssociatedWithSO}
+        fetcher={postFetcher}
+        defaultCc={routeData?.defaultCc ?? []}
+      />
       <postRules.ViolationModal />
-      {voidModal.isOpen && (
-        <SalesInvoiceVoidModal onClose={voidModal.onClose} />
-      )}
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteSalesInvoice(invoiceId)}
-          isOpen={deleteModal.isOpen}
-          name={salesInvoice.invoiceId ?? "sales invoice"}
-          text={t`Are you sure you want to delete ${salesInvoice.invoiceId}? This cannot be undone.`}
-          onCancel={() => {
-            deleteModal.onClose();
-          }}
-          onSubmit={() => {
-            deleteModal.onClose();
-          }}
+      <SalesInvoiceVoidModal
+        open={voidModal.isOpen}
+        onClose={voidModal.onClose}
+      />
+      <ConfirmDelete
+        isOpen={deleteModal.isOpen}
+        action={path.to.deleteSalesInvoice(invoiceId)}
+        name={salesInvoice.invoiceId ?? "sales invoice"}
+        text={t`Are you sure you want to delete ${salesInvoice.invoiceId}? This cannot be undone.`}
+        onCancel={() => {
+          deleteModal.onClose();
+        }}
+        onSubmit={() => {
+          deleteModal.onClose();
+        }}
+      />
+      {routeData?.isAdmin && (
+        <DocumentForceDeleteModal
+          documentType="salesInvoice"
+          documentId={invoiceId}
+          readableId={salesInvoice.invoiceId ?? invoiceId}
+          status={salesInvoice.status ?? "Draft"}
+          open={forceDeleteModal.isOpen}
+          onClose={forceDeleteModal.onClose}
         />
       )}
       {auditLogDrawer}

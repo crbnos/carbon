@@ -34,7 +34,6 @@ import {
   LuChevronDown,
   LuLaptop,
   LuLogOut,
-  LuMapPin,
   LuMonitor,
   LuMoon,
   LuShieldCheck,
@@ -75,6 +74,31 @@ export function useSwitchCompany() {
   };
 }
 
+/**
+ * Switches the session's location. The pending choice shows at once, as
+ * `optimisticLocation`, until the shell re-runs.
+ */
+export function useLocationSwitch(location: string) {
+  const submit = useSubmit();
+  const navigation = useNavigation();
+
+  // A navigation, not a fetcher (see useSwitchCompany): the action redirects
+  // twice, and a fetcher's submission is dropped on the second redirect, so
+  // the shell never re-ran and the menu kept the old location checked.
+  const updateLocation = (value: string) => {
+    const formData = new FormData();
+    formData.append("location", value);
+    submit(formData, { method: "POST", action: path.to.location });
+  };
+
+  const pendingLocation =
+    navigation.formAction === path.to.location
+      ? (navigation.formData?.get("location") as string | null)
+      : null;
+
+  return { updateLocation, optimisticLocation: pendingLocation ?? location };
+}
+
 /** The user menu's state and actions, shared by the rail menu and the phone More sheet. */
 export function useUserNav({
   consoleMode,
@@ -88,8 +112,6 @@ export function useUserNav({
   const modePreference = useModePreference();
 
   const fetcher = useFetcher<typeof action>();
-  const submit = useSubmit();
-  const navigation = useNavigation();
 
   const onModeChange = (value: string) => {
     const parsed = modeValidator.shape.mode.safeParse(value);
@@ -98,15 +120,6 @@ export function useUserNav({
     const formData = new FormData();
     formData.append("mode", parsed.data);
     fetcher.submit(formData, ROOT_ACTION_SAVE);
-  };
-
-  // A navigation, not a fetcher (see useSwitchCompany): the action redirects
-  // twice, and a fetcher's submission is dropped on the second redirect, so
-  // the shell never re-ran and the menu kept the old location checked.
-  const updateLocation = (value: string) => {
-    const formData = new FormData();
-    formData.append("location", value);
-    submit(formData, { method: "POST", action: path.to.location });
   };
 
   const switchCompany = useSwitchCompany();
@@ -121,11 +134,7 @@ export function useUserNav({
     fetcher.submit(formData, { method: "post", action: path.to.consoleToggle });
   };
 
-  const pendingLocation =
-    navigation.formAction === path.to.location
-      ? (navigation.formData?.get("location") as string | null)
-      : null;
-  const optimisticLocation = pendingLocation ?? location;
+  const { updateLocation, optimisticLocation } = useLocationSwitch(location);
 
   const itarDisclosure = useDisclosure();
 
@@ -167,10 +176,8 @@ export function useUserNav({
 export function UserNav({
   consoleEnabled,
   consoleMode,
-  location,
-  locations,
   pinnedInUser
-}: UserNavProps) {
+}: Omit<UserNavProps, "location" | "locations">) {
   const { t } = useLingui();
   const submit = useSubmit();
   const { isMobile } = useSidebar();
@@ -192,16 +199,14 @@ export function UserNav({
     mode,
     modePreference,
     onModeChange,
-    updateLocation,
     switchOperator,
     toggleConsoleMode,
-    optimisticLocation,
     itarDisclosure,
     isOperatorPinnedIn,
     showingOperator,
     displayName,
     displayAvatar
-  } = useUserNav({ consoleMode, location, pinnedInUser });
+  } = useUserNav({ consoleMode, location: "", pinnedInUser });
 
   return (
     <>
@@ -257,33 +262,6 @@ export function UserNav({
                 <Trans>Account Settings</Trans>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-
-              {locations.length > 1 ? (
-                <>
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                      <DropdownMenuIcon icon={<LuMapPin />} />
-                      <Trans>Location</Trans>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
-                      <DropdownMenuRadioGroup value={optimisticLocation}>
-                        {locations.map((loc) => (
-                          <DropdownMenuRadioItem
-                            key={loc.id}
-                            value={loc.id}
-                            onSelect={() => {
-                              updateLocation(loc.id);
-                            }}
-                          >
-                            {loc.name}
-                          </DropdownMenuRadioItem>
-                        ))}
-                      </DropdownMenuRadioGroup>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
-                  <DropdownMenuSeparator />
-                </>
-              ) : null}
             </>
           )}
           {/* The account settings modal is the station's account, which a

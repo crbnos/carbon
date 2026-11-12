@@ -84,12 +84,14 @@ import DeleteQuoteLine from "./DeleteQuoteLine";
 type QuoteLineFormProps = {
   initialValues: z.infer<typeof quoteLineValidator>;
   type?: "card" | "modal";
+  open?: boolean;
   onClose?: () => void;
 };
 
 const QuoteLineForm = ({
   initialValues,
   type,
+  open = true,
   onClose
 }: QuoteLineFormProps) => {
   const { t, i18n } = useLingui();
@@ -335,6 +337,7 @@ const QuoteLineForm = ({
     <>
       <ModalCardProvider type={type}>
         <ModalCard
+          open={open}
           onClose={onClose}
           defaultCollapsed={false}
           isCollapsible={isEditing}
@@ -624,28 +627,27 @@ const QuoteLineForm = ({
         </ModalCard>
       </ModalCardProvider>
       <rules.ViolationModal />
-      {isEditing && deleteDisclosure.isOpen && (
+      {isEditing && (
         <DeleteQuoteLine
+          isOpen={deleteDisclosure.isOpen}
           line={initialValues as QuotationLine}
           onCancel={deleteDisclosure.onClose}
         />
       )}
-      {requiresConfiguration &&
-        configurationDisclosure.isOpen &&
-        configurationParameters && (
-          <ConfiguratorModal
-            open
-            initialValues={configurationValues || {}}
-            groups={configurationParameters.groups ?? []}
-            parameters={configurationParameters.parameters ?? []}
-            onClose={configurationDisclosure.onClose}
-            onSubmit={(config: Record<string, any>) => {
-              setConfigurationValues(config);
-              setIsConfigured(true);
-              configurationDisclosure.onClose();
-            }}
-          />
-        )}
+      {requiresConfiguration && configurationParameters && (
+        <ConfiguratorModal
+          open={configurationDisclosure.isOpen}
+          initialValues={configurationValues || {}}
+          groups={configurationParameters.groups ?? []}
+          parameters={configurationParameters.parameters ?? []}
+          onClose={configurationDisclosure.onClose}
+          onSubmit={(config: Record<string, any>) => {
+            setConfigurationValues(config);
+            setIsConfigured(true);
+            configurationDisclosure.onClose();
+          }}
+        />
+      )}
     </>
   );
 };

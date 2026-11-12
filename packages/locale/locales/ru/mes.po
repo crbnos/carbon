@@ -18,6 +18,10 @@ msgstr ", не запущен"
 msgid ", running"
 msgstr ", запущен"
 
+#. placeholder {0}: suggestion.reason
+msgid "\"{0}\" calls for a correction on this unit."
+msgstr "«{0}» требует доработки этой единицы."
+
 msgid "\"{column}\" is required."
 msgstr "«{column}» требуется."
 
@@ -135,6 +139,9 @@ msgstr "«{columns}» не соответствует существующему
 msgid "{columns} does not match an existing record."
 msgstr "«{columns}» не соответствует существующей записи."
 
+msgid "{companyName} logo"
+msgstr "Логотип {companyName}"
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} из {quantity}"
 
@@ -226,8 +233,14 @@ msgstr "О данном поле"
 msgid "Above the upper limit"
 msgstr "Выше верхнего предела"
 
+msgid "Ac"
+msgstr "Пр"
+
 msgid "Accept"
 msgstr "Принять"
+
+msgid "Accept inspection?"
+msgstr "Принять контроль?"
 
 msgid "Accept Lot"
 msgstr "Принять партию"
@@ -373,6 +386,12 @@ msgstr "Применить ссылку"
 msgid "Approvals"
 msgstr "Утверждения"
 
+msgid "AQL"
+msgstr "AQL"
+
+msgid "AQL {aql} · Lvl {level} · {severity}"
+msgstr "AQL {aql} · Ур. {level} · {severity}"
+
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "Вы уверены, что хотите удалить этот ключ доступа? Вы больше не сможете использовать его для входа."
 
@@ -414,6 +433,9 @@ msgstr "Исполнитель"
 
 msgid "Attach file"
 msgstr "Прикрепить файл"
+
+msgid "Attempt limit reached"
+msgstr "Достигнут лимит попыток"
 
 msgid "Authentication Error"
 msgstr "Ошибка аутентификации"
@@ -759,6 +781,13 @@ msgstr "Копировать секрет"
 msgid "Copy to clipboard"
 msgstr "Копировать в буфер обмена"
 
+#. placeholder {0}: correction.name
+msgid "Correction: {0}"
+msgstr "Доработка: {0}"
+
+msgid "Correction: {correctionName}"
+msgstr "Доработка: {correctionName}"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Себестоимость внепланового техобслуживания за последние {0} дней"
@@ -856,6 +885,9 @@ msgstr "Описание"
 
 msgid "Details"
 msgstr "Детали"
+
+msgid "Discard"
+msgstr "Отклонить"
 
 msgid "Dismiss"
 msgstr "Отклонить"
@@ -1142,6 +1174,9 @@ msgstr "Завершите настройку вашего аккаунта"
 msgid "Finish with material unpicked?"
 msgstr "Завершить с неподобранным материалом?"
 
+msgid "First"
+msgstr "Первая"
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "Первый срок {0}"
@@ -1172,6 +1207,9 @@ msgstr "Общие"
 
 msgid "Go back to operation"
 msgstr "Вернуться к операции"
+
+msgid "Go back to operation, or run a correction"
+msgstr "Вернуться к операции или выполнить доработку"
 
 msgid "Go to onboarding"
 msgstr "Перейти к первоначальной настройке"
@@ -1277,6 +1315,9 @@ msgstr "Проверить элемент"
 msgid "inspected"
 msgstr "проверенный"
 
+msgid "Inspections"
+msgstr "Контроли"
+
 msgid "Instructions"
 msgstr "Инструкции"
 
@@ -1351,6 +1392,9 @@ msgstr "Детали задания"
 
 msgid "Job due"
 msgstr "Срок производственного заказа"
+
+msgid "Job Operation"
+msgstr "Операция заказа"
 
 msgid "Job Traveler"
 msgstr "Маршрутный лист"
@@ -1460,6 +1504,9 @@ msgstr "Локально"
 msgid "Location"
 msgstr "Расположение"
 
+msgid "Locations"
+msgstr "Площадки"
+
 msgid "Log completed"
 msgstr "Записать завершение"
 
@@ -1519,6 +1566,9 @@ msgstr "Создать замену"
 
 msgid "Manage how you sign in to Carbon."
 msgstr "Управляйте способом входа в Carbon."
+
+msgid "Manual"
+msgstr "Вручную"
 
 msgid "Manually add items to inventory"
 msgstr "Добавить номенклатуру на склад вручную"
@@ -1679,6 +1729,9 @@ msgstr "Для вас не установлен текст сертификац�
 msgid "No color"
 msgstr "Без цвета"
 
+msgid "No correction"
+msgstr "Без доработки"
+
 msgid "No country found."
 msgstr "Страна не найдена."
 
@@ -1700,6 +1753,12 @@ msgstr "Средства измерения не найдены."
 
 msgid "No Impact"
 msgstr "Без влияния"
+
+msgid "No inspection plan"
+msgstr "Нет плана контроля"
+
+msgid "No inspections assigned to you"
+msgstr "Вам не назначено ни одного контроля"
 
 msgid "No issue types configured"
 msgstr "Типы проблем не настроены"
@@ -1727,6 +1786,9 @@ msgstr "Нет материалов"
 
 msgid "No materials on this batch."
 msgstr "На этой серии нет материалов."
+
+msgid "No open inspections"
+msgstr "Нет открытых контролей"
 
 msgid "No open jobs"
 msgstr "Нет открытых производственных заказов"
@@ -1818,6 +1880,9 @@ msgstr "Нет единицы"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его подобрать — количество в наличии станет отрицательным до тех пор, пока инвентаризация не будет согласована."
 
+msgid "No work center"
+msgstr "Нет рабочего центра"
+
 msgid "No Work Center"
 msgstr "Без рабочего центра"
 
@@ -1827,8 +1892,17 @@ msgstr "Нет заблокированных рабочих центров"
 msgid "No work centers exist"
 msgstr "Рабочие центры отсутствуют"
 
+msgid "Non-nettable"
+msgstr "Не учитывается в MRP"
+
 msgid "None"
 msgstr "Нет"
+
+msgid "Normal"
+msgstr "Нормальный"
+
+msgid "Not in this operation"
+msgstr "Нет в этой операции"
 
 msgid "Not scheduled"
 msgstr "Не запланировано"
@@ -1836,8 +1910,15 @@ msgstr "Не запланировано"
 msgid "Not set"
 msgstr "Не установлено"
 
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "Непригодный к использованию запас. MRP и планирование его не учитывают, а комплектация из него не берёт."
+
 msgid "Notes"
 msgstr "Примечания"
+
+#. placeholder {0}: inspection.lotSize
+msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
+msgstr "Отказов пока нет, поэтому укажите причину, по которой единицы отклонены. Все единицы ({0}) будут отклонены."
 
 msgid "Nothing matches your search."
 msgstr "Ничего не совпадает с вашим поиском."
@@ -1993,6 +2074,9 @@ msgstr "Годен"
 msgid "Pass all empty cells of {0}"
 msgstr "Отметить все пустые ячейки {0} как годные"
 
+msgid "Passed"
+msgstr "Пройдено"
+
 msgid "Passed inspection"
 msgstr "Прошла контроль"
 
@@ -2026,6 +2110,12 @@ msgstr "Приостановить таймер: {workTypeLabel}"
 
 msgid "Pause maintenance"
 msgstr "Приостановить техобслуживание"
+
+msgid "Pending"
+msgstr "В ожидании"
+
+msgid "Percentage"
+msgstr "Процент"
 
 msgid "Phone"
 msgstr "Телефон"
@@ -2228,6 +2318,21 @@ msgstr "Очередь пуста"
 msgid "Quotes"
 msgstr "Коммерческие предложения"
 
+msgid "Raise quality issue"
+msgstr "Создать несоответствие по качеству"
+
+msgid "Re"
+msgstr "Бр"
+
+msgid "Reason"
+msgstr "Причина"
+
+msgid "Reason (optional)"
+msgstr "Причина (необязательно)"
+
+msgid "Reason (required)"
+msgstr "Причина (обязательно)"
+
 msgid "Reason for change"
 msgstr "Причина изменения"
 
@@ -2239,6 +2344,12 @@ msgstr "Причина позднего ввода"
 
 msgid "Reason for rework"
 msgstr "Причина доработки"
+
+msgid "Receipt"
+msgstr "Поступление"
+
+msgid "Receipt voided"
+msgstr "Поступление аннулировано"
 
 msgid "Recent"
 msgstr "Недавние"
@@ -2272,6 +2383,9 @@ msgstr "Разделы записи"
 msgid "Recorded"
 msgstr "Записано"
 
+msgid "Reduced"
+msgstr "Ослабленный"
+
 msgid "Reference image"
 msgstr "Справочное изображение"
 
@@ -2280,6 +2394,9 @@ msgstr "Регистрация не удалась"
 
 msgid "Reject"
 msgstr "Отклонить"
+
+msgid "Reject inspection?"
+msgstr "Отклонить контроль?"
 
 msgid "Reject Lot"
 msgstr "Отклонить партию"
@@ -2465,6 +2582,9 @@ msgstr "Количество брака"
 
 msgid "Scrap Reason"
 msgstr "Причина брака"
+
+msgid "Scrap unit"
+msgstr "Отправить единицу в брак"
 
 msgid "Scrapped"
 msgstr "Списано в брак"
@@ -2772,8 +2892,14 @@ msgstr "Запустить {workType}"
 msgid "Start {workTypeLabel} timer"
 msgstr "Запустить таймер: {workTypeLabel}"
 
+msgid "Start a correction?"
+msgstr "Начать доработку?"
+
 msgid "Start clock"
 msgstr "Начать отсчет времени"
+
+msgid "Start correction"
+msgstr "Начать доработку"
 
 msgid "Start Job"
 msgstr "Начать производственный заказ"
@@ -2903,6 +3029,16 @@ msgstr "Дата находится перед окном ввода. Причи
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "Вся партия {0} будет отклонена как несоответствующая — {passes} успешных прохождений и {fails} отказов до сих пор. Отправьте единицы ниже в брак или на доработку, или только запишите результат."
 
+#. placeholder {0}: inspection.lotSize
+msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
+msgstr "Контроль не пройден: прошли образцы — {passes}, не прошли — {fails}. Все единицы ({0}) будут отклонены."
+
+msgid "The inspection will be marked Passed and its units released to Available."
+msgstr "Контроль будет помечен как Пройдено, а его единицы переведены в Доступно."
+
+msgid "The inspection will be marked Passed. Its units are released to Available, except the {fails} that failed a sample, which stay Rejected."
+msgstr "Контроль будет помечен как Пройдено. Его единицы переводятся в Доступно, за исключением не прошедших образец ({fails}) — они останутся отклонёнными."
+
 msgid "The job is closed"
 msgstr "Производственный заказ закрыт"
 
@@ -2940,6 +3076,12 @@ msgstr "Темы"
 msgid "then"
 msgstr "затем"
 
+msgid "Then continues to the next operation"
+msgstr "Затем переход к следующей операции"
+
+msgid "Then re-inspects here"
+msgstr "Затем повторная проверка здесь"
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Для этого материала нет доступных или израсходованных отслеживаемых деталей."
 
@@ -2957,6 +3099,12 @@ msgstr "Эта серия не имеет рабочих инструкций."
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "Эта информация будет видна всем пользователям, поэтому будьте осторожны с тем, что вы делитесь."
+
+msgid "This inspection plan has no parameters."
+msgstr "В этом плане контроля нет параметров."
+
+msgid "This inspection plan has no work instructions."
+msgstr "В этом плане контроля нет рабочих инструкций."
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "Это проверка «годен / не годен». Нажмите P или F."
@@ -2985,6 +3133,9 @@ msgstr "Этот образец был удалён"
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "Это останавливает ваш таймер и проводит рабочее время производственного заказа. Производственный заказ больше не может изменяться."
 
+msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
+msgstr "Эта единица уже использовала эту доработку максимально допустимое число раз. Отправьте её в брак или создайте несоответствие по качеству."
+
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "Эта единица будет окончательно списана, и будет создана единица на замену."
 
@@ -2996,6 +3147,9 @@ msgstr "Миниатюра"
 
 msgid "Tick the jobs this was done for."
 msgstr "Отметьте производственные заказы, для которых это было сделано."
+
+msgid "Tightened"
+msgstr "Усиленный"
 
 msgid "Tighter or roomier layout. The text stays put."
 msgstr "Более плотный или просторный макет. Текст остается на месте."
@@ -3209,6 +3363,11 @@ msgstr "Загрузка {0}"
 
 msgid "Use a different account"
 msgstr "Использовать другой аккаунт"
+
+#. placeholder {0}: correction.uses
+#. placeholder {1}: correction.maxAttempts
+msgid "Used {0} of {1}"
+msgstr "Использовано {0} из {1}"
 
 msgid "Used automatically at completion"
 msgstr "Используется автоматически при завершении"

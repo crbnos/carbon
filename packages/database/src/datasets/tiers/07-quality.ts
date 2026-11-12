@@ -26,6 +26,7 @@ import type {
   InspectionFeatureSpec,
   InspectionSpec,
   JobOperationInspectionSpec,
+  ManualInspectionSpec,
   ReceiptInspectionSpec,
   RiskSpec
 } from "../types.ts";
@@ -350,11 +351,104 @@ async function seedInspections(ctx: Ctx): Promise<void> {
   // shared by every lot of that item.
   const receiptPlans: Record<string, LotPlan> = {};
   for (const spec of ctx.dataset.quality.inspections) {
+    if (spec.source === "Manual") {
+      await insertManualLot(ctx, spec);
+      continue;
+    }
     const lot =
       spec.source === "Receipt"
         ? await receiptLot(ctx, spec, receiptPlans)
         : await jobOperationLot(ctx, spec);
     await insertLot(ctx, spec, lot);
+  }
+}
+
+// Mirrors createManualInspection: no plan (every unit inspected), the lot is
+// its own source document, and its entities are listed in
+// inspectionTrackedEntity. Seeded open over entities already On Hold.
+async function insertManualLot(
+  ctx: Ctx,
+  spec: ManualInspectionSpec
+): Promise<void> {
+  const entityIds = spec.trackedEntities.map((readableId) =>
+    need(ctx.refs.misc, `te:${readableId}`, "tracked entity")
+  );
+  const entities = await rows<{
+    itemId: string;
+    quantity: string;
+    itemTrackingType: string;
+    itemReadableId: string;
+  }>(
+    ctx.client,
+    `SELECT te."itemId", te.quantity, i."itemTrackingType",
+            i."readableIdWithRevision" AS "itemReadableId"
+     FROM "trackedEntity" te JOIN item i ON i.id = te."itemId"
+     WHERE te.id = ANY($1) AND te."companyId" = $2`,
+    [entityIds, ctx.companyId]
+  );
+  const first = entities[0];
+  if (!first || entities.length !== entityIds.length) {
+    throw new Error(
+      `Seed: inspection "${spec.ref}": a tracked entity was not seeded`
+    );
+  }
+  const lotSize = Math.max(
+    1,
+    first.itemTrackingType === "Serial"
+      ? entities.length
+      : entities.reduce((sum, e) => sum + Number(e.quantity), 0)
+  );
+  ctx.log(`inspection ${spec.ref} — Manual lot of ${lotSize} (${spec.status})`);
+
+  // The lot is its own source document.
+  const { id: inspectionId } = await one<{ id: string }>(
+    ctx.client,
+    "SELECT id() AS id"
+  );
+  await insertRow(ctx, "inspection", {
+    id: inspectionId,
+    inspectionId: await nextSequence(ctx, "inspection"),
+    sourceDocument: "Manual",
+    sourceDocumentId: inspectionId,
+    itemId: first.itemId,
+    itemReadableId: first.itemReadableId,
+    workCenterId:
+      spec.workCenter === undefined
+        ? undefined
+        : need(ctx.refs.workCenters, spec.workCenter, "work center"),
+    assignee: spec.assignee === "self" ? ctx.userId : undefined,
+    lotSize,
+    samplingStandard: SEED_SAMPLING_STANDARD,
+    samplingPlanType: "All",
+    sampleSize: lotSize,
+    acceptanceNumber: 0,
+    rejectionNumber: 1,
+    inspectionLevel: "II",
+    severity: "Normal",
+    status: spec.status,
+    notes: spec.notes
+  });
+  ctx.refs.documents[spec.ref] = inspectionId;
+
+  for (const trackedEntityId of entityIds) {
+    // Seeded over entities already On Hold, which is what a cancel restores.
+    await insertRow(ctx, "inspectionTrackedEntity", {
+      inspectionId,
+      trackedEntityId,
+      previousStatus: "On Hold"
+    });
+  }
+
+  // As createManualInspection does: a serial lot's picked units are its
+  // samples from the start, with no verdict.
+  if (first.itemTrackingType === "Serial") {
+    for (const trackedEntityId of entityIds) {
+      await insertRow(ctx, "inspectionSample", {
+        inspectionId,
+        trackedEntityId,
+        status: "Pending"
+      });
+    }
   }
 }
 
@@ -381,7 +475,9 @@ async function insertPlanDocument(
   const rule = inspectionPlan(spec);
   const documentId = await insertId(ctx, "inspectionDocument", {
     partId: itemId,
-    drawingNumber: spec.drawingNumber,
+    name: spec.name,
+    // Receipts and jobs use it, so it is the plan's published version.
+    status: "Active",
     samplingPlanType: rule.type,
     samplingAql: rule.aql,
     samplingInspectionLevel: rule.inspectionLevel,
@@ -431,11 +527,17 @@ async function receiptLot(
     receiptReadableId: string;
     supplierId: string | null;
     receivedQuantity: string;
+    storageUnitId: string | null;
   }>(
     ctx.client,
+    // A seeded line on an ordinary shelf opens a lot that records no unit, as
+    // a lot from before the hold did, so it holds nothing.
     `SELECT r.id AS "receiptId", r."receiptId" AS "receiptReadableId",
-            r."supplierId", rl."receivedQuantity"
+            r."supplierId", rl."receivedQuantity",
+            CASE WHEN su."effectiveNettable" = false THEN rl."storageUnitId" END
+              AS "storageUnitId"
      FROM "receiptLine" rl JOIN receipt r ON r.id = rl."receiptId"
+     LEFT JOIN "storageUnit" su ON su.id = rl."storageUnitId"
      WHERE rl.id = $1 AND rl."companyId" = $2`,
     [receiptLineId, ctx.companyId]
   );
@@ -452,7 +554,8 @@ async function receiptLot(
       sourceDocumentReadableId: line.receiptReadableId,
       itemId: item.id,
       itemReadableId: item.readableId,
-      supplierId: line.supplierId ?? undefined
+      supplierId: line.supplierId ?? undefined,
+      storageUnitId: line.storageUnitId ?? undefined
     }
   };
 }

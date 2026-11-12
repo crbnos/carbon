@@ -666,11 +666,9 @@ const SalesOrdersTable = memo((props: SalesOrdersTableProps) => {
           text={t`Are you sure you want to delete ${selectedSalesOrder.salesOrderId!}? This cannot be undone.`}
           onCancel={() => {
             deleteSalesOrderModal.onClose();
-            setSelectedSalesOrder(null);
           }}
           onSubmit={() => {
             deleteSalesOrderModal.onClose();
-            setSelectedSalesOrder(null);
           }}
         />
       )}

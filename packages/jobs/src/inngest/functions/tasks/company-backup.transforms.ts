@@ -4,11 +4,15 @@
 
 import type { KyselyDatabase } from "@carbon/database/client";
 import {
+  groups as companyGroups,
+  getGroupId
+} from "@carbon/database/seed-data";
+import {
   rewriteValueEditRowKeys,
   type ValueEdits
 } from "@carbon/documents/template";
 import { type Kysely, sql } from "kysely";
-import { ID_REF_COLUMNS } from "../../../backups/id-refs";
+import { ID_REF_COLUMNS, ROW_ID_REF_COLUMNS } from "../../../backups/id-refs";
 import {
   type Catalog,
   type ColumnInfo,
@@ -244,10 +248,17 @@ export async function loadSubstrateIds(
  */
 export function buildIdMaps(
   tables: TableInfo[],
-  dataByTable: Record<string, Array<{ [col: string]: unknown }>>
+  dataByTable: Record<string, Array<{ [col: string]: unknown }>>,
+  companies?: GroupRemap
 ): Map<string, Map<string, string>> {
   const idMaps = new Map<string, Map<string, string>>();
+  let groupTable: TableInfo | undefined;
   for (const table of tables) {
+    // Mapped last: a derived group takes the new id of the row it mirrors.
+    if (table.name === "group") {
+      groupTable = table;
+      continue;
+    }
     // A readable-id table's `id` is a part number other rows match by value
     // (`item."readableId"`), not an identifier — minting a fresh one orphans
     // every row from its item. Skipped in BOTH the restore and the reseed/import
@@ -273,7 +284,75 @@ export function buildIdMaps(
     }
     idMaps.set(table.name, map);
   }
+  if (groupTable) {
+    idMaps.set(
+      "group",
+      mapGroupIds(groupTable, dataByTable.group ?? [], idMaps, companies)
+    );
+  }
   return idMaps;
+}
+
+/**
+ * Groups the database derives from another row (`sync_create_*_group`): the
+ * group's id IS that row's id, which is how a membership, an approver group or
+ * a notification group reaches the customer, supplier or type behind it.
+ */
+const MIRRORED_GROUPS = [
+  ["isCustomerOrgGroup", "customer"],
+  ["isSupplierOrgGroup", "supplier"],
+  ["isCustomerTypeGroup", "customerType"],
+  ["isSupplierTypeGroup", "supplierType"],
+  ["isEmployeeTypeGroup", "employeeType"]
+] as const;
+
+/** What a foreign load needs to give a backup's groups their target ids. */
+export type GroupRemap = {
+  source: string;
+  target: string;
+  /** The target's own employee types by name: a restore keeps them, so the
+   *  backup's employee type groups map onto the same-named kept type. */
+  employeeTypeIdsByName?: ReadonlyMap<string, string>;
+};
+
+/**
+ * New ids for a foreign backup's groups. A derived group follows the row it
+ * mirrors, an employee type group the same-named kept type, and a company-wide
+ * group the target company, so the ids stay equal to what the database derives
+ * and approver or notification groups naming them stay connected; a group of
+ * the person's own gets a fresh id. One with nothing to follow gets a fresh id
+ * too, and `rebuildDerivedGroups` removes it after the load.
+ */
+function mapGroupIds(
+  table: TableInfo,
+  rows: Array<{ [col: string]: unknown }>,
+  idMaps: Map<string, Map<string, string>>,
+  companies?: GroupRemap
+): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const row of rows) {
+    if (typeof row.id !== "string") continue;
+    const id = row.id;
+    const companyWide = companies
+      ? companyGroups.find(
+          (g) => id === getGroupId(g.idPrefix, companies.source)
+        )
+      : undefined;
+    const mirrored =
+      MIRRORED_GROUPS.map(([flag, entity]) =>
+        row[flag] === true ? idMaps.get(entity)?.get(id) : undefined
+      ).find(Boolean) ??
+      (row.isEmployeeTypeGroup === true && typeof row.name === "string"
+        ? companies?.employeeTypeIdsByName?.get(row.name)
+        : undefined);
+    map.set(
+      id,
+      companyWide && companies
+        ? getGroupId(companyWide.idPrefix, companies.target)
+        : (mirrored ?? newIdForTable(table))
+    );
+  }
+  return map;
 }
 
 export type RowTransform = (value: unknown) => unknown;
@@ -359,10 +438,17 @@ export function buildRowTransforms(
     if (table.name === "documentEdit" && col.name === "settings") {
       return (v) => rewriteDocumentEditRowKeys(v, ctx.idRewrite);
     }
+    if (table.name === "trackedEntity" && col.name === "attributes") {
+      return (v) => rewriteTrackedEntityReceiptRefs(v, ctx.idRewrite);
+    }
     if (!fk && ID_REF_COLUMNS[table.name]?.includes(col.name)) {
       const { idRewrite } = ctx;
+      const unmapped =
+        col.isNullable && ROW_ID_REF_COLUMNS[table.name]?.includes(col.name)
+          ? () => null
+          : (id: string) => id;
       const rewrite = (id: unknown) =>
-        typeof id === "string" ? (idRewrite.get(id) ?? id) : id;
+        typeof id === "string" ? (idRewrite.get(id) ?? unmapped(id)) : id;
       return (v) => (Array.isArray(v) ? v.map(rewrite) : rewrite(v));
     }
     if (fk) {
@@ -585,6 +671,28 @@ export async function getUniqueColumnGroups(
     GROUP BY ix.indexrelid
   `.execute(db);
   return result.rows.map((r) => r.cols);
+}
+
+/** A received unit names its receipt and line in `attributes`, which no FK can remap. */
+export function rewriteTrackedEntityReceiptRefs(
+  attributes: unknown,
+  idRewrite: ReadonlyMap<string, string>
+): unknown {
+  const parsed =
+    typeof attributes === "string" ? JSON.parse(attributes) : attributes;
+  if (!parsed || typeof parsed !== "object") return attributes;
+  const next = { ...(parsed as Record<string, unknown>) };
+  let changed = false;
+  for (const key of ["Receipt", "Receipt Line"]) {
+    const remapped =
+      typeof next[key] === "string" ? idRewrite.get(next[key]) : undefined;
+    if (remapped) {
+      next[key] = remapped;
+      changed = true;
+    }
+  }
+  if (!changed) return attributes;
+  return typeof attributes === "string" ? JSON.stringify(next) : next;
 }
 
 /** A document's changed row values are keyed by record ids that a restore changes. */

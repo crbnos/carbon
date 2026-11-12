@@ -16,7 +16,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  useCloseRoute,
+  useRouteDialog,
   VStack
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
@@ -85,14 +85,14 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function PurchaseFixedAssetRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const permissions = usePermissions();
 
   return (
     <Modal
-      open
+      open={dialog.open}
       onOpenChange={(open) => {
-        if (!open) closeRoute();
+        if (!open) dialog.close();
       }}
     >
       <ModalContent>
@@ -110,7 +110,7 @@ export default function PurchaseFixedAssetRoute() {
               <Submit isDisabled={!permissions.can("create", "purchasing")}>
                 Create Purchase Order
               </Submit>
-              <Button size="md" variant="solid" onClick={() => closeRoute()}>
+              <Button size="md" variant="solid" onClick={dialog.close}>
                 Cancel
               </Button>
             </HStack>

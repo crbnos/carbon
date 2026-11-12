@@ -23,19 +23,24 @@ import { z } from "zod";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import { receiptLotIssueType } from "./quality.utils";
 
 const logger = getLogger("erp", "quality");
 
 import { openai } from "@ai-sdk/openai";
-import { NotFoundError } from "@carbon/api/errors";
+import { NotFoundError, raisedMessage } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
-import type { ServiceContext } from "@carbon/api/service-fn.server";
+import type {
+  CarbonError,
+  ServiceContext
+} from "@carbon/api/service-fn.server";
 import {
   loadTrackedEntityStripes,
   trackedEntityStripe
 } from "@carbon/api/stock-stripes";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { withTransaction } from "@carbon/database/client";
 import {
   assertPostingStatusUnchanged,
   journalPostingStatus,
@@ -45,13 +50,17 @@ import * as engine from "@carbon/database/quality";
 import {
   errResult,
   lockIssueDispositions,
-  type Result
+  type Result,
+  setInspectionRelease,
+  withInspectionRelease
 } from "@carbon/database/quality";
-import { inOrder, many, single } from "@carbon/database/rows";
+import { inOrder, many, newIds, single } from "@carbon/database/rows";
 import { openApprovalRequests } from "@carbon/ee/approvals/document.server";
+import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { trigger } from "@carbon/jobs";
 import { NotificationEvent } from "@carbon/notifications";
 import { generateText, Output } from "ai";
+import { sql } from "kysely";
 import template from "lodash.template";
 import { nanoid } from "nanoid";
 import { systemContext } from "~/modules/service-context.server";
@@ -64,15 +73,19 @@ import {
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
   getExternalLink,
+  getLocationTimeZone,
   invokeCreate,
   invokePosting
 } from "~/modules/shared/shared.service";
+import { getUserDefaults } from "~/modules/users/users.service";
+import { ERP_URL, path } from "~/utils/path";
 import type { inspectionStatus } from "../shared/shared.models";
 import type {
   gaugeCalibrationRecordValidator,
   gaugeCalibrationStatus,
   gaugeRole,
   gaugeTypeValidator,
+  InspectionDocumentStatus,
   inspectionDocumentSamplingValidator,
   inspectionDocumentValidator,
   issueTypeValidator,
@@ -2293,7 +2306,9 @@ export async function getInspections(
   let query = client
     .from("inspection")
     .select(
-      "*, item(readableId, name), supplier(name), inspectionSample(status)",
+      // The measurement count lets the row menu offer Delete only on a lot
+      // that recorded nothing, as the server requires.
+      "*, item(readableId, name), supplier(name), workCenter(name), inspectionSample(status), inspectionMeasurement(count)",
       { count: listCount(args) }
     )
     .eq("companyId", companyId);
@@ -2362,30 +2377,6 @@ export async function getReceiptInspections(
     .order("createdAt", { ascending: true });
 }
 
-/**
- * The items, of those given, that are inspected at receipt: each has a
- * Receipt-usage inspection document assigned, which is what makes posting a
- * purchase receipt open an inspection lot for the line.
- */
-export async function getReceiptInspectedItemIds(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  itemIds: string[]
-) {
-  if (itemIds.length === 0) return { data: [] as string[], error: null };
-  const assignments = await client
-    .from("itemInspectionDocumentAssignment")
-    .select("itemId")
-    .eq("usage", "Receipt")
-    .eq("companyId", companyId)
-    .in("itemId", itemIds);
-  if (assignments.error) return { data: null, error: assignments.error };
-  return {
-    data: [...new Set(assignments.data.map((a) => a.itemId))],
-    error: null
-  };
-}
-
 // Receipt-sourced lots only: the received tracked entities are linked to the
 // receipt line through their attributes.
 export async function getInspectionTrackedEntities(
@@ -2397,6 +2388,46 @@ export async function getInspectionTrackedEntities(
     .from("trackedEntity")
     .select("*")
     .eq("attributes ->> Receipt Line", receiptLineId)
+    .eq("companyId", companyId);
+}
+
+// The tracked entities of an item a manual inspection may take: Available or
+// On Hold (a manual inspection holds what it inspects, and releases or rejects
+// it at the verdict).
+// Every unit, not the first 1,000: the New Inspection drawer searches them in
+// the browser, so a cut list would hide units with no sign of it. Paged in
+// `readableId, id` order so the pages neither overlap nor skip a row.
+export async function getInspectableTrackedEntities(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return fetchAllFromTable<{
+    id: string;
+    readableId: string | null;
+    quantity: number;
+    status: Database["public"]["Enums"]["trackedEntityStatus"];
+  }>(client, "trackedEntity", "id, readableId, quantity, status", (query) =>
+    query
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .in("status", ["Available", "On Hold"])
+      .order("readableId", { ascending: true })
+      .order("id", { ascending: true })
+  );
+}
+
+// The tracked entities a manual inspection covers (Receipt lots find theirs
+// through the receipt line: getInspectionTrackedEntities).
+export async function getManualInspectionTrackedEntities(
+  client: SupabaseClient<Database>,
+  inspectionId: string,
+  companyId: string
+) {
+  return client
+    .from("inspectionTrackedEntity")
+    .select("trackedEntity(*)")
+    .eq("inspectionId", inspectionId)
     .eq("companyId", companyId);
 }
 
@@ -2559,18 +2590,22 @@ function fileNameFromPath(storagePath?: string | null) {
 }
 
 function mapInspectionDocument(row: Record<string, unknown>) {
-  const drawingNumber = (row.drawingNumber as string | null) ?? null;
+  const planName = (row.name as string | null) ?? null;
   return {
     id: String(row.id),
-    name: String(drawingNumber ?? row.fileName ?? "Untitled Diagram"),
+    name: String(planName ?? row.fileName ?? "Untitled Diagram"),
     companyId: String(row.companyId),
     partId: (row.partId as string | null) ?? null,
+    version: Number(row.version ?? 0),
+    status: (row.status as InspectionDocumentStatus | null) ?? "Draft",
+    rootInspectionDocumentId:
+      (row.rootInspectionDocumentId as string | null) ?? null,
     createdBy: String(row.createdBy),
     updatedBy: (row.updatedBy as string | null) ?? null,
     createdAt: String(row.createdAt),
     updatedAt: (row.updatedAt as string | null) ?? null,
     content: {
-      drawingNumber,
+      name: planName,
       pdfUrl: toPreviewUrl((row.storagePath as string | null) ?? null),
       annotations: [],
       features: []
@@ -2597,12 +2632,14 @@ function mapInspectionDocument(row: Record<string, unknown>) {
       samplingInspectionLevel:
         (row.samplingInspectionLevel as string | null) ?? null,
       samplingSeverity: (row.samplingSeverity as string | null) ?? null
-    }
+    },
+    // Rich text (Tiptap JSON) the inspector reads on every lot of the plan.
+    workInstruction: (row.workInstruction as Json | null) ?? null
   };
 }
 
 export const INSPECTION_DOCUMENTS_PAGING: Paging = {
-  defaultSorts: [{ column: "drawingNumber", ascending: true }]
+  defaultSorts: [{ column: "name", ascending: true }]
 };
 
 export async function getInspectionDocuments(
@@ -2617,7 +2654,7 @@ export async function getInspectionDocuments(
 
   if (args?.search) {
     query = query.or(
-      searchFilter(["drawingNumber", "fileName", "partReadableId"], args.search)
+      searchFilter(["name", "fileName", "partReadableId"], args.search)
     );
   }
 
@@ -2628,10 +2665,11 @@ export async function getInspectionDocuments(
   const result = await query;
 
   return {
-    // The cursor reads the default sort column from the row.
+    // The cursor reads the default sort column from the row, so `name` is the
+    // stored value here, not mapInspectionDocument's file-name fallback.
     data: (result.data ?? []).map((row: Record<string, unknown>) => ({
       ...mapInspectionDocument(row),
-      drawingNumber: (row.drawingNumber as string | null) ?? null
+      name: (row.name as string | null) ?? null
     })),
     count: result.count ?? 0,
     error: result.error
@@ -2642,11 +2680,19 @@ export const INSPECTION_PLAN_PARTS_PAGING: Paging = {
   defaultSorts: [{ column: "partReadableId", ascending: true }]
 };
 
-/** One plan in a part's `plans` rollup (the `inspectionPlanParts` view). */
+/** One plan in a part's `plans` rollup (the `inspectionPlanParts` view): its
+ *  latest version, with every version of the plan. */
 export type InspectionPlanSummary = {
   id: string;
   name: string | null;
   modelUploadId: string | null;
+  version: number;
+  status: InspectionDocumentStatus;
+  versions: Array<{
+    id: string;
+    version: number;
+    status: InspectionDocumentStatus;
+  }>;
   createdBy: string;
   createdAt: string;
 };
@@ -2691,10 +2737,11 @@ export async function getInspectionDocumentsForItem(
 ) {
   return client
     .from("inspectionDocument")
-    .select("id, fileName, drawingNumber, version")
+    .select("id, fileName, name, version, status")
     .eq("companyId", companyId)
     .eq("partId", itemId)
-    .order("updatedAt", { ascending: false, nullsFirst: false });
+    .order("name", { ascending: true })
+    .order("version", { ascending: false });
 }
 
 export async function getInspectionDocument(
@@ -2715,12 +2762,157 @@ export async function getInspectionDocument(
   };
 }
 
+function lotStateKey(
+  lots: Array<{
+    inspectionId: string;
+    status: string | null;
+    storageUnitId: string | null;
+    acceptedQuantity: number | string | null;
+  }>
+): string {
+  return lots
+    .map(
+      (lot) =>
+        `${lot.inspectionId}:${
+          lot.status === "Pending" || lot.status === "In Progress"
+            ? "open"
+            : (lot.status ?? "")
+        }:${lot.storageUnitId ?? ""}:${
+          lot.acceptedQuantity === null
+            ? ""
+            : round(Number(lot.acceptedQuantity))
+        }`
+    )
+    .sort()
+    .join(",");
+}
+
+async function readRejectWriteOffs(
+  handle: Kysely<KyselyDatabase>,
+  companyId: string,
+  lotIds: string[]
+) {
+  const rows = await handle
+    .selectFrom("itemLedger")
+    .select([
+      "itemId",
+      "locationId",
+      "storageUnitId",
+      "projectId",
+      sql<number>`-SUM("quantity")`.as("quantity")
+    ])
+    .where("companyId", "=", companyId)
+    .where("documentType", "=", "Inbound Inspection")
+    .where("documentId", "in", lotIds)
+    .where("trackedEntityId", "is", null)
+    .groupBy(["itemId", "locationId", "storageUnitId", "projectId"])
+    .execute();
+  return rows
+    .map((row) => ({ ...row, quantity: round(Number(row.quantity)) }))
+    .filter((row) => row.quantity > EPSILON)
+    .sort(
+      (a, b) =>
+        b.quantity - a.quantity ||
+        `${a.locationId}:${a.storageUnitId}:${a.projectId}`.localeCompare(
+          `${b.locationId}:${b.storageUnitId}:${b.projectId}`
+        )
+    );
+}
+
+async function readTrackedEntityBins(
+  handle: Kysely<KyselyDatabase>,
+  companyId: string,
+  entityIds: string[]
+) {
+  const bins = new Map<
+    string,
+    {
+      locationId: string | null;
+      storageUnitId: string | null;
+      quantity: number;
+    }[]
+  >();
+  const stocked = new Set<string>();
+  if (entityIds.length === 0) return { bins, stocked };
+  const balances = await handle
+    .selectFrom("itemLedger")
+    .select([
+      "trackedEntityId",
+      "locationId",
+      "storageUnitId",
+      sql<number>`SUM("quantity")`.as("quantity")
+    ])
+    .where("companyId", "=", companyId)
+    .where("trackedEntityId", "in", entityIds)
+    .groupBy(["trackedEntityId", "locationId", "storageUnitId"])
+    .orderBy(sql`SUM("quantity")`, "desc")
+    .orderBy("locationId")
+    .orderBy("storageUnitId")
+    .execute();
+  for (const balance of balances) {
+    if (!balance.trackedEntityId) continue;
+    stocked.add(balance.trackedEntityId);
+    const quantity = round(Number(balance.quantity));
+    if (quantity <= EPSILON) continue;
+    const list = bins.get(balance.trackedEntityId) ?? [];
+    list.push({
+      locationId: balance.locationId,
+      storageUnitId: balance.storageUnitId,
+      quantity
+    });
+    bins.set(balance.trackedEntityId, list);
+  }
+  return { bins, stocked };
+}
+
+const trackedEntityBinsKey = (read: {
+  bins: Map<string, unknown>;
+  stocked: Set<string>;
+}) => readKey(read.bins) + readKey([...read.stocked].sort());
+
+async function readLinkedLotStates(
+  handle: Kysely<KyselyDatabase>,
+  companyId: string,
+  nonConformanceId: string,
+  options: { lock?: boolean } = {}
+) {
+  const query = handle
+    .selectFrom("nonConformanceInspection as nci")
+    .innerJoin("inspection as i", (join) =>
+      join
+        .onRef("i.id", "=", "nci.inspectionId")
+        .onRef("i.companyId", "=", "nci.companyId")
+    )
+    .select([
+      "nci.inspectionId",
+      "i.status",
+      "i.storageUnitId",
+      "i.acceptedQuantity",
+      "i.sourceDocument",
+      "i.sourceDocumentId",
+      "i.itemId",
+      "i.lotSize"
+    ])
+    .where("nci.nonConformanceId", "=", nonConformanceId)
+    .where("nci.companyId", "=", companyId)
+    .orderBy("nci.createdAt")
+    .orderBy("nci.id");
+  return (options.lock ? query.forShare("i") : query).execute();
+}
+
+const readKey = (value: unknown) =>
+  JSON.stringify(
+    value instanceof Map
+      ? [...value].sort(([a], [b]) => String(a).localeCompare(String(b)))
+      : value
+  );
+
 /**
- * When an inspection plan is created without a drawing number, fall back to the
- * part's readableIdWithRevision. If a plan with that drawing number already
- * exists for the company, append " (1)", " (2)", etc. until it is unique.
+ * When an inspection plan is created without a name, fall back to the part's
+ * readableIdWithRevision. If a plan with that name already exists for the
+ * company, append " (1)", " (2)", etc. until it is unique.
  */
-async function resolveInspectionDocumentDrawingNumber(
+async function resolveInspectionDocumentName(
   client: SupabaseClient<Database>,
   companyId: string,
   partId: string
@@ -2737,13 +2929,13 @@ async function resolveInspectionDocumentDrawingNumber(
 
   const existingResult = await client
     .from("inspectionDocument")
-    .select("drawingNumber")
+    .select("name")
     .eq("companyId", companyId)
-    .not("drawingNumber", "is", null);
+    .not("name", "is", null);
 
   const taken = new Set(
     (existingResult.data ?? [])
-      .map((row) => row.drawingNumber)
+      .map((row) => row.name)
       .filter((value): value is string => Boolean(value))
   );
 
@@ -2781,7 +2973,7 @@ export async function upsertInspectionDocument(
   const {
     id,
     partId,
-    drawingNumber,
+    name,
     pdfUrl,
     pageCount,
     defaultPageWidth,
@@ -2822,8 +3014,8 @@ export async function upsertInspectionDocument(
         updatedBy: updatedBy ?? createdBy,
         updatedAt: datetime.timestamp()
       };
-    if (drawingNumber !== undefined) {
-      updatePayload.drawingNumber = drawingNumber ?? null;
+    if (name !== undefined) {
+      updatePayload.name = name ?? null;
     }
     if (partId !== undefined) {
       updatePayload.partId = partId;
@@ -2843,13 +3035,16 @@ export async function upsertInspectionDocument(
       updatePayload.defaultPageHeight = defaultPageHeight;
     }
 
+    // Only a Draft version is editable; a locked one matches no row and
+    // comes back as no data.
     return client
       .from("inspectionDocument")
       .update(updatePayload)
       .eq("id", id)
       .eq("companyId", companyId)
+      .eq("status", "Draft")
       .select("id")
-      .single();
+      .maybeSingle();
   }
 
   if (!companyId) {
@@ -2859,16 +3054,16 @@ export async function upsertInspectionDocument(
     };
   }
 
-  const resolvedDrawingNumber = drawingNumber?.trim()
-    ? drawingNumber.trim()
-    : await resolveInspectionDocumentDrawingNumber(client, companyId, partId);
+  const resolvedName = name?.trim()
+    ? name.trim()
+    : await resolveInspectionDocumentName(client, companyId, partId);
 
   return client
     .from("inspectionDocument")
     .insert({
       companyId,
       partId,
-      drawingNumber: resolvedDrawingNumber ?? null,
+      name: resolvedName ?? null,
       version: 0,
       ...(storagePath
         ? {
@@ -2888,45 +3083,460 @@ export async function upsertInspectionDocument(
     .single();
 }
 
+/**
+ * Deletes one version of an inspection plan, in one transaction. Refused
+ * (`refused`, nothing deleted) when a lot was inspected against the version:
+ * the delete would cascade to the lot's characteristics and recorded
+ * readings. When it is the first version, its lowest remaining version
+ * becomes the plan's root so the others stay one plan. Returns the drawing's
+ * storage path only when no other version holds the same file, so the caller
+ * never removes a PDF that another version still shows.
+ */
 export async function deleteInspectionDocument(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   id: string,
   companyId: string
-) {
-  const existingResult = await client
-    .from("inspectionDocument")
-    .select("*")
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .single();
+): Promise<{ storagePath: string | null } | { refused: string } | null> {
+  return withTransaction(db, async (trx) => {
+    const plan = await trx
+      .selectFrom("inspectionDocument")
+      .select(["id", "storagePath", "rootInspectionDocumentId"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!plan) return null;
 
-  if (!existingResult.data) {
-    return {
-      data: null,
-      error: { message: "Inspection plan not found" }
-    };
-  }
-
-  const storagePath =
-    (existingResult.data.storagePath as string | null) ?? null;
-
-  const deleteResult = await requireAffected(
-    client
-      .from("inspectionDocument")
-      .delete()
-      .eq("id", id)
-      .eq("companyId", companyId)
+    // The row lock above conflicts with the key-share lock a new lot's
+    // foreign key takes, so no lot can name the version before the delete.
+    const inspected = await trx
+      .selectFrom("inspection")
       .select("id")
-  );
+      .where("inspectionDocumentId", "=", id)
+      .where("companyId", "=", companyId)
+      .limit(1)
+      .executeTakeFirst();
+    if (inspected) {
+      return {
+        refused:
+          "This plan version has inspections, so it cannot be deleted. Publish a new version to replace it."
+      };
+    }
 
-  if (deleteResult.error) {
-    return { data: null, error: deleteResult.error };
+    if (plan.rootInspectionDocumentId === null) {
+      const next = await trx
+        .selectFrom("inspectionDocument")
+        .select("id")
+        .where("rootInspectionDocumentId", "=", id)
+        .where("companyId", "=", companyId)
+        .orderBy("version", "asc")
+        .orderBy("createdAt", "asc")
+        .limit(1)
+        .executeTakeFirst();
+      if (next) {
+        await trx
+          .updateTable("inspectionDocument")
+          .set({ rootInspectionDocumentId: next.id })
+          .where("rootInspectionDocumentId", "=", id)
+          .where("id", "!=", next.id)
+          .where("companyId", "=", companyId)
+          .execute();
+        await trx
+          .updateTable("inspectionDocument")
+          .set({ rootInspectionDocumentId: null })
+          .where("id", "=", next.id)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+    }
+
+    await trx
+      .deleteFrom("inspectionDocument")
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    if (!plan.storagePath) return { storagePath: null };
+    const shared = await trx
+      .selectFrom("inspectionDocument")
+      .select("id")
+      .where("storagePath", "=", plan.storagePath)
+      .where("companyId", "=", companyId)
+      .limit(1)
+      .executeTakeFirst();
+    return { storagePath: shared ? null : plan.storagePath };
+  });
+}
+
+/** Every version of the plan `id` belongs to, newest first. */
+export async function getInspectionDocumentVersions(
+  client: SupabaseClient<Database>,
+  plan: { id: string; rootInspectionDocumentId: string | null },
+  companyId: string
+) {
+  const root = plan.rootInspectionDocumentId ?? plan.id;
+  return client
+    .from("inspectionDocument")
+    .select("id, name, fileName, version, status")
+    .eq("companyId", companyId)
+    .or(`id.eq.${root},rootInspectionDocumentId.eq.${root}`)
+    .order("version", { ascending: false });
+}
+
+/**
+ * The refusal for a write to an inspection plan version that is not a Draft,
+ * else null. Active and Archived versions are what lots were inspected
+ * against, so they never change: a change is a new version.
+ */
+export async function inspectionDocumentLockRefusal(
+  ctx: ServiceContext,
+  id: string
+) {
+  const plan = await ctx.asSystem.pg
+    .selectFrom("inspectionDocument")
+    .select("status")
+    .where("id", "=", id)
+    .where("companyId", "=", ctx.company.id)
+    .executeTakeFirst();
+  if (!plan) {
+    return ctx.error("notFound", "The inspection plan could not be found");
   }
+  if (plan.status !== "Draft") {
+    return ctx.error(
+      "rule",
+      `This inspection plan version is ${plan.status}. Make a new version to change it.`
+    );
+  }
+  return null;
+}
 
-  return {
-    data: { storagePath },
-    error: null
-  };
+/**
+ * Why a write of plan `id` guarded on `status = 'Draft'` changed no row: the
+ * version's lock refusal, else that it changed under the caller.
+ */
+export async function inspectionDocumentWriteRefusal(
+  ctx: ServiceContext,
+  id: string
+) {
+  return (
+    (await inspectionDocumentLockRefusal(ctx, id)) ??
+    ctx.error(
+      "conflict",
+      "The inspection plan changed. Reload it and try again."
+    )
+  );
+}
+
+/**
+ * Records a staged model and makes it the model of plan `id`, in one
+ * transaction: the plan is locked and checked (a Draft with no drawing and no
+ * model) before the `modelUpload` row goes in, so a concurrent attach or a
+ * version locked since rolls the row back. The row's insert queues
+ * `model-optimize` (`queue_model_pipeline`), which goes out at commit only, so
+ * a refused attach starts no job. The row is linked to no item: the model
+ * belongs to the plan.
+ */
+export async function attachModelToInspectionDocument(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    id: string;
+    companyId: string;
+    userId: string;
+    modelId: string;
+    path: string;
+    name: string;
+    size: number;
+  }
+): Promise<
+  | { ok: true }
+  | { ok: false; reason: "notFound" | "hasDrawing" }
+  | { ok: false; reason: "locked"; status: string }
+> {
+  const { id, companyId, userId, modelId, path, name, size } = args;
+  return withTransaction(db, async (trx) => {
+    const plan = await trx
+      .selectFrom("inspectionDocument")
+      .select(["status", "storagePath", "modelUploadId"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!plan) return { ok: false, reason: "notFound" } as const;
+    if (plan.status !== "Draft") {
+      return { ok: false, reason: "locked", status: plan.status } as const;
+    }
+    if (plan.storagePath || plan.modelUploadId) {
+      return { ok: false, reason: "hasDrawing" } as const;
+    }
+
+    await trx
+      .insertInto("modelUpload")
+      .values({
+        id: modelId,
+        modelPath: path,
+        name,
+        size,
+        // As `insertModelUpload`: the as-uploaded size and path stay fixed
+        // while the optimiser repoints `size` and `modelPath`.
+        originalSize: size,
+        originalPath: path,
+        companyId,
+        createdBy: userId
+      })
+      .execute();
+
+    await trx
+      .updateTable("inspectionDocument")
+      .set({
+        modelUploadId: modelId,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { ok: true } as const;
+  });
+}
+
+/**
+ * Makes a new Draft version of an inspection plan as a copy of `copyFromId`,
+ * in one transaction: the plan row (numbered one past the plan's highest
+ * version), its characteristics, balloons and parameters. The copy shares the
+ * drawing file and the model. Returns the new version's id.
+ */
+export async function copyInspectionDocumentAsVersion(
+  db: Kysely<KyselyDatabase>,
+  args: { copyFromId: string; companyId: string; userId: string }
+): Promise<{ id: string; version: number } | null> {
+  const { copyFromId, companyId, userId } = args;
+  return withTransaction(db, async (trx) => {
+    const source = await trx
+      .selectFrom("inspectionDocument")
+      .selectAll()
+      .where("id", "=", copyFromId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!source) return null;
+
+    const root = source.rootInspectionDocumentId ?? source.id;
+    // The root's lock numbers concurrent copies one after the other.
+    await trx
+      .selectFrom("inspectionDocument")
+      .select("id")
+      .where("id", "=", root)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    const highest = await trx
+      .selectFrom("inspectionDocument")
+      .select((eb) => eb.fn.max("version").as("version"))
+      .where("companyId", "=", companyId)
+      .where((eb) =>
+        eb.or([eb("id", "=", root), eb("rootInspectionDocumentId", "=", root)])
+      )
+      .executeTakeFirst();
+    const version = Number(highest?.version ?? source.version) + 1;
+
+    const [planId] = await newIds(trx, "idc", 1);
+    await trx
+      .insertInto("inspectionDocument")
+      .values({
+        id: planId!,
+        companyId,
+        partId: source.partId,
+        name: source.name,
+        version,
+        status: "Draft",
+        rootInspectionDocumentId: root,
+        fileName: source.fileName,
+        storagePath: source.storagePath,
+        pageCount: source.pageCount,
+        defaultPageWidth: source.defaultPageWidth,
+        defaultPageHeight: source.defaultPageHeight,
+        modelUploadId: source.modelUploadId,
+        uploadedBy: source.uploadedBy,
+        samplingPlanType: source.samplingPlanType,
+        samplingSampleSize: source.samplingSampleSize,
+        samplingPercentage: source.samplingPercentage,
+        samplingAql: source.samplingAql,
+        samplingInspectionLevel: source.samplingInspectionLevel,
+        samplingSeverity: source.samplingSeverity,
+        workInstruction: source.workInstruction,
+        createdBy: userId
+      })
+      .execute();
+
+    const [features, balloons, parameters] = await Promise.all([
+      trx
+        .selectFrom("inspectionFeature")
+        .selectAll()
+        .where("inspectionDocumentId", "=", copyFromId)
+        .where("companyId", "=", companyId)
+        .execute(),
+      trx
+        .selectFrom("balloon")
+        .selectAll()
+        .where("inspectionDocumentId", "=", copyFromId)
+        .where("companyId", "=", companyId)
+        .execute(),
+      trx
+        .selectFrom("inspectionDocumentParameter")
+        .selectAll()
+        .where("inspectionDocumentId", "=", copyFromId)
+        .where("companyId", "=", companyId)
+        .execute()
+    ]);
+
+    const featureIds = await newIds(trx, "ift", features.length);
+    const featureIdMap = new Map(
+      features.map((feature, index) => [feature.id, featureIds[index]!])
+    );
+    if (features.length > 0) {
+      await trx
+        .insertInto("inspectionFeature")
+        .values(
+          features.map(
+            ({ id, createdAt, updatedAt, updatedBy, createdBy, ...rest }) => ({
+              ...rest,
+              id: featureIdMap.get(id)!,
+              inspectionDocumentId: planId!,
+              companyId,
+              createdBy: userId
+            })
+          )
+        )
+        .execute();
+    }
+
+    const balloonIds = await newIds(trx, "bbn", balloons.length);
+    if (balloons.length > 0) {
+      await trx
+        .insertInto("balloon")
+        .values(
+          balloons.map(
+            (
+              { id, createdAt, updatedAt, updatedBy, createdBy, ...rest },
+              index
+            ) => ({
+              ...rest,
+              id: balloonIds[index]!,
+              inspectionDocumentId: planId!,
+              // A balloon belongs to its characteristic, copied above.
+              inspectionFeatureId: featureIdMap.get(rest.inspectionFeatureId)!,
+              companyId,
+              createdBy: userId
+            })
+          )
+        )
+        .execute();
+    }
+
+    const parameterIds = await newIds(trx, "idp", parameters.length);
+    if (parameters.length > 0) {
+      await trx
+        .insertInto("inspectionDocumentParameter")
+        .values(
+          parameters.map(
+            (
+              { id, createdAt, updatedAt, updatedBy, createdBy, ...rest },
+              index
+            ) => ({
+              ...rest,
+              id: parameterIds[index]!,
+              inspectionDocumentId: planId!,
+              companyId,
+              createdBy: userId
+            })
+          )
+        )
+        .execute();
+    }
+
+    return { id: planId!, version };
+  });
+}
+
+/**
+ * Makes a version the plan's Active one, in one transaction: archives the
+ * version that was Active, activates this one, and moves the item Receipt
+ * assignments and method operations that name another version of the plan
+ * to it. Job operations, quote operations and lots keep their version.
+ */
+export async function activateInspectionDocumentVersion(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; companyId: string; userId: string }
+): Promise<{
+  id: string;
+  archivedIds: string[];
+  assignments: number;
+  methodOperations: number;
+} | null> {
+  const { id, companyId, userId } = args;
+  return withTransaction(db, async (trx) => {
+    const target = await trx
+      .selectFrom("inspectionDocument")
+      .select(["id", "rootInspectionDocumentId"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!target) return null;
+
+    const root = target.rootInspectionDocumentId ?? target.id;
+    const group = await trx
+      .selectFrom("inspectionDocument")
+      .select(["id", "status"])
+      .where("companyId", "=", companyId)
+      .where((eb) =>
+        eb.or([eb("id", "=", root), eb("rootInspectionDocumentId", "=", root)])
+      )
+      .orderBy("id")
+      .forUpdate()
+      .execute();
+
+    const now = datetime.timestamp();
+    const otherIds = group.map((v) => v.id).filter((vId) => vId !== id);
+    const archivedIds = group
+      .filter((v) => v.id !== id && v.status === "Active")
+      .map((v) => v.id);
+
+    if (archivedIds.length > 0) {
+      await trx
+        .updateTable("inspectionDocument")
+        .set({ status: "Archived", updatedBy: userId, updatedAt: now })
+        .where("id", "in", archivedIds)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    await trx
+      .updateTable("inspectionDocument")
+      .set({ status: "Active", updatedBy: userId, updatedAt: now })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    let assignments = 0;
+    let methodOperations = 0;
+    if (otherIds.length > 0) {
+      const movedAssignments = await trx
+        .updateTable("itemInspectionDocumentAssignment")
+        .set({ inspectionDocumentId: id, updatedBy: userId, updatedAt: now })
+        .where("inspectionDocumentId", "in", otherIds)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      assignments = Number(movedAssignments.numUpdatedRows);
+      const movedOperations = await trx
+        .updateTable("methodOperation")
+        .set({ inspectionDocumentId: id })
+        .where("inspectionDocumentId", "in", otherIds)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      methodOperations = Number(movedOperations.numUpdatedRows);
+    }
+
+    return { id, archivedIds, assignments, methodOperations };
+  });
 }
 
 function mapInspectionFeature(row: Record<string, unknown>) {
@@ -3098,6 +3708,106 @@ export async function getInspectionPlan(
   };
 }
 
+export async function getInspectionDocumentParameters(
+  client: SupabaseClient<Database>,
+  inspectionDocumentId: string,
+  companyId: string
+) {
+  return client
+    .from("inspectionDocumentParameter")
+    .select("id, key, value, sortOrder")
+    .eq("inspectionDocumentId", inspectionDocumentId)
+    .eq("companyId", companyId)
+    .order("sortOrder")
+    .order("id");
+}
+
+/**
+ * Make a plan's parameters exactly `parameters`, in that order: rows not sent
+ * are deleted, the rest upserted by the ids the editor minted. An id that is
+ * another plan's row is refused, so the whole save rolls back. Returns null,
+ * writing nothing, when the plan is not a Draft.
+ */
+export async function replaceInspectionDocumentParameters(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    inspectionDocumentId: string;
+    companyId: string;
+    userId: string;
+    parameters: { id: string; key: string; value: string }[];
+  }
+) {
+  const { inspectionDocumentId, companyId, userId, parameters } = args;
+  return withTransaction(db, async (trx) => {
+    // Locks the plan, so two saves of its parameters run one after the other
+    // and a publish cannot land between the status read and the writes.
+    const document = await trx
+      .selectFrom("inspectionDocument")
+      .select(["id", "status"])
+      .where("id", "=", inspectionDocumentId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!document) throw new Error("Inspection plan not found");
+    if (document.status !== "Draft") return null;
+
+    const ids = parameters.map((p) => p.id);
+    let deletion = trx
+      .deleteFrom("inspectionDocumentParameter")
+      .where("inspectionDocumentId", "=", inspectionDocumentId)
+      .where("companyId", "=", companyId);
+    if (ids.length > 0) deletion = deletion.where("id", "not in", ids);
+    await deletion.execute();
+
+    if (parameters.length > 0) {
+      const now = datetime.timestamp();
+      const written = await trx
+        .insertInto("inspectionDocumentParameter")
+        .values(
+          parameters.map((p, sortOrder) => ({
+            id: p.id,
+            inspectionDocumentId,
+            companyId,
+            key: p.key,
+            value: p.value,
+            sortOrder,
+            createdBy: userId
+          }))
+        )
+        .onConflict((oc) =>
+          oc
+            .columns(["id", "companyId"])
+            .doUpdateSet((eb) => ({
+              key: eb.ref("excluded.key"),
+              value: eb.ref("excluded.value"),
+              sortOrder: eb.ref("excluded.sortOrder"),
+              updatedBy: userId,
+              updatedAt: now
+            }))
+            .where(
+              "inspectionDocumentParameter.inspectionDocumentId",
+              "=",
+              inspectionDocumentId
+            )
+        )
+        .returning("id")
+        .execute();
+      if (written.length !== parameters.length) {
+        throw new Error("A parameter id belongs to another inspection plan");
+      }
+    }
+
+    return trx
+      .selectFrom("inspectionDocumentParameter")
+      .select(["id", "key", "value", "sortOrder"])
+      .where("inspectionDocumentId", "=", inspectionDocumentId)
+      .where("companyId", "=", companyId)
+      .orderBy("sortOrder")
+      .orderBy("id")
+      .execute();
+  });
+}
+
 export async function updateInspectionDocumentSampling(
   client: SupabaseClient<Database>,
   args: z.infer<typeof inspectionDocumentSamplingValidator> & {
@@ -3117,6 +3827,8 @@ export async function updateInspectionDocumentSampling(
       })
       .eq("id", inspectionDocumentId)
       .eq("companyId", companyId)
+      // Only a Draft version is editable: a locked one is not applied.
+      .eq("status", "Draft")
       .select("id")
   );
 }
@@ -3990,7 +4702,7 @@ export async function closeIssue(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   args: { nonConformanceId: string; companyId: string; userId: string }
-): Promise<Result<{ id: string }>> {
+): Promise<Result<{ id: string; warning?: string }>> {
   const { nonConformanceId, companyId, userId } = args;
 
   // Preflight reads via Supabase (uses nested selects / RLS-aware service role)
@@ -4171,31 +4883,163 @@ export async function closeIssue(
 
   // Non-tracked origin: an inspection-rejected Inventory lot was already written
   // off at reject (so Use As Is / Rework restores value); a MES/manual non-tracked
-  // scrap must be written off now. Detected via the NCR's inspection link (only
-  // the reject route creates one).
+  // scrap must be written off now. Detected via the NCR's inspection link.
+  const linkedLots = await readLinkedLotStates(
+    db,
+    companyId,
+    nonConformanceId
+  ).catch((error) => {
+    logger.error("closeIssue: failed to read the linked lots", {
+      companyId,
+      nonConformanceId,
+      error
+    });
+    return null;
+  });
+  if (linkedLots === null) {
+    return errResult("Failed to load the disposition origin");
+  }
+  const partialLot = linkedLots.find(
+    (row) => row.sourceDocument === "Receipt" && row.status === "Partial"
+  );
+  if (partialLot && linkedLots.length > 1) {
+    return errResult(
+      "A Partial inspection lot must be the only lot on its NCR. Remove the other lots from this NCR, then close it."
+    );
+  }
+  if (partialLot && !plan.some((row) => row.itemId === partialLot.itemId)) {
+    const partialItem = await db
+      .selectFrom("item")
+      .select("itemTrackingType")
+      .where("id", "=", partialLot.itemId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst()
+      .catch((error) => {
+        logger.error("closeIssue: failed to read the lot's item", {
+          companyId,
+          nonConformanceId,
+          error
+        });
+        return null;
+      });
+    if (partialItem === null) {
+      return errResult("Failed to load the disposition origin");
+    }
+    if (partialItem?.itemTrackingType === "Inventory") {
+      return errResult(
+        "Add a disposition for the rejected part of the lot, then close this NCR."
+      );
+    }
+  }
+
   const linklessRows = plan.filter((r) => r.links.length === 0);
   const inventoryItemIds = new Set<string>();
   let inspectionOriginated = false;
+  // A Partial receipt lot's rejected remainder is still on hand, held at the
+  // lot's storage unit until this NCR closes: Scrap writes it off from there,
+  // Use As Is / Rework just release it. Other items post at the NCR's location.
+  let heldPartial: {
+    itemId: string;
+    locationId: string | null;
+    storageUnitId: string | null;
+    documentIds: string[];
+    remainder: number;
+    requested: number;
+  } | null = null;
+  let fromPartialReceiptLot = false;
+  const plannedLots = lotStateKey(linkedLots);
+  let writtenOffLotIds: string[] | null = null;
+  let writtenOffKey = "";
+  let writtenOffAtReject: {
+    itemId: string;
+    locationId: string | null;
+    storageUnitId: string | null;
+    projectId: string | null;
+    quantity: number;
+  }[] = [];
+  let restoreCappedAtWriteOff = false;
   if (linklessRows.length > 0) {
     const linklessItemIds = [...new Set(linklessRows.map((r) => r.itemId))];
-    const [trackingRes, inspectionRes] = await Promise.all([
-      client
-        .from("item")
-        .select("id, itemTrackingType")
-        .in("id", linklessItemIds)
-        .eq("companyId", companyId),
-      client
-        .from("nonConformanceInspection")
-        .select("id")
-        .eq("nonConformanceId", nonConformanceId)
-        .eq("companyId", companyId)
-        .limit(1)
-    ]);
+    const trackingRes = await client
+      .from("item")
+      .select("id, itemTrackingType")
+      .in("id", linklessItemIds)
+      .eq("companyId", companyId);
+    if (trackingRes.error) {
+      return errResult("Failed to load the disposition origin");
+    }
     for (const it of trackingRes.data ?? []) {
       if (it.itemTrackingType === "Inventory") inventoryItemIds.add(it.id);
     }
-    inspectionOriginated = (inspectionRes.data?.length ?? 0) > 0;
+    const linkedLot = partialLot ?? null;
+    fromPartialReceiptLot = !!linkedLot;
+    if (linkedLot) {
+      const receiptLine = await inspectionReceiptLine(
+        db,
+        companyId,
+        linkedLot.inspectionId
+      );
+      const storageUnitId =
+        linkedLot.storageUnitId ?? receiptLine.storageUnitId;
+      const lotLocationId =
+        receiptLine.locationId ??
+        receiptLine.unitLocationId ??
+        (storageUnitId
+          ? await engine.storageUnitLocationId(db, companyId, storageUnitId)
+          : null);
+      const remainder = round(
+        Math.max(
+          Number(linkedLot.lotSize ?? 0) -
+            Number(linkedLot.acceptedQuantity ?? 0),
+          0
+        )
+      );
+      heldPartial = {
+        itemId: linkedLot.itemId,
+        locationId: lotLocationId,
+        storageUnitId,
+        documentIds: [linkedLot.inspectionId, linkedLot.sourceDocumentId ?? ""],
+        remainder,
+        requested: 0
+      };
+    }
+    inspectionOriginated = linkedLots.length > 0 && !fromPartialReceiptLot;
+    if (inspectionOriginated) {
+      restoreCappedAtWriteOff = linkedLots.every(
+        (row) => row.sourceDocument === "Receipt"
+      );
+      writtenOffLotIds = linkedLots.map((row) => row.inspectionId);
+      writtenOffAtReject = await readRejectWriteOffs(
+        db,
+        companyId,
+        writtenOffLotIds
+      );
+      writtenOffKey = readKey(writtenOffAtReject);
+    }
   }
+
+  const linkedEntityIds = [
+    ...new Set(
+      plan.flatMap((row) => row.links.map((link) => link.trackedEntityId))
+    )
+  ];
+  const entityStock = await readTrackedEntityBins(
+    db,
+    companyId,
+    linkedEntityIds
+  );
+  const entityBinsKey = trackedEntityBinsKey(entityStock);
+  const hasNoStockLeft = (trackedEntityId: string) =>
+    entityStock.stocked.has(trackedEntityId) &&
+    !entityStock.bins.has(trackedEntityId);
+  const drawable = new Map(
+    [...entityStock.bins].map(([id, list]) => [
+      id,
+      list.map((bin) => ({ ...bin }))
+    ])
+  );
+  const writtenOffShort = new Set<string>();
+  const keptWithoutStock = new Set<string>();
 
   // Build the inventory value movements: tracked Scrap/Return → one −qty per
   // linked entity; non-tracked Inventory → −qty write-off (MES/manual scrap) or
@@ -4204,7 +5048,9 @@ export async function closeIssue(
   const movements: {
     itemId: string;
     locationId: string | null;
+    storageUnitId?: string | null;
     trackedEntityId: string | null;
+    projectId?: string | null;
     quantity: number;
     comment: string;
   }[] = [];
@@ -4229,13 +5075,33 @@ export async function closeIssue(
           ) {
             continue;
           }
-          movements.push({
-            itemId: row.itemId,
-            locationId,
-            trackedEntityId: link.trackedEntityId,
-            quantity: -link.quantity,
-            comment: `NC ${readableNc} ${suffix}`
-          });
+          if (!entityStock.stocked.has(link.trackedEntityId)) {
+            movements.push({
+              itemId: row.itemId,
+              locationId,
+              storageUnitId: null,
+              trackedEntityId: link.trackedEntityId,
+              quantity: -link.quantity,
+              comment: `NC ${readableNc} ${suffix}`
+            });
+            continue;
+          }
+          let left = round(link.quantity);
+          for (const bin of drawable.get(link.trackedEntityId) ?? []) {
+            if (left <= EPSILON) break;
+            const take = round(Math.min(left, bin.quantity));
+            bin.quantity = round(bin.quantity - take);
+            left = round(left - take);
+            movements.push({
+              itemId: row.itemId,
+              locationId: bin.locationId ?? locationId,
+              storageUnitId: bin.storageUnitId,
+              trackedEntityId: link.trackedEntityId,
+              quantity: -take,
+              comment: `NC ${readableNc} ${suffix}`
+            });
+          }
+          if (left > EPSILON) writtenOffShort.add(link.trackedEntityId);
         }
       }
       continue;
@@ -4252,9 +5118,15 @@ export async function closeIssue(
         }
       }
       if (writeOff <= EPSILON) continue;
+      const held = heldPartial?.itemId === row.itemId ? heldPartial : null;
+      if (held) {
+        held.requested = round(held.requested + writeOff);
+        continue;
+      }
       movements.push({
         itemId: row.itemId,
         locationId,
+        storageUnitId: null,
         trackedEntityId: null,
         quantity: -writeOff,
         comment: `NC ${readableNc} scrap`
@@ -4262,50 +5134,49 @@ export async function closeIssue(
       continue;
     }
     if (isKeep && inspectionOriginated) {
-      movements.push({
-        itemId: row.itemId,
-        locationId,
-        trackedEntityId: null,
-        quantity: row.quantity,
-        comment: `NC ${readableNc} ${
-          row.disposition === "Rework" ? "rework" : "use as is"
-        } — restore on-hand`
-      });
-    }
-  }
-
-  // Post the inventory value movements (itemLedger + cost relief + GL) through
-  // the operation BEFORE flipping statuses / closing. Idempotent per NCR, so
-  // a retry after a later failure is safe; a posting failure aborts the close.
-  if (movements.length > 0) {
-    const post = await invokePosting(
-      { db, companyId, userId },
-      "post-nonconformance",
-      {
-        documentType: "Non-Conformance",
-        documentId: nonConformanceId,
-        description: `NC ${readableNc} disposition`,
-        movements
-      },
-      postNonconformance
-    );
-    if (post.error) {
-      return errResult(
-        post.error.message || "Failed to post disposition to the ledger"
-      );
+      const comment = `NC ${readableNc} ${
+        row.disposition === "Rework" ? "rework" : "use as is"
+      } — restore on-hand`;
+      let remaining = round(row.quantity);
+      for (const source of writtenOffAtReject) {
+        if (remaining <= EPSILON) break;
+        if (source.itemId !== row.itemId || source.quantity <= EPSILON) {
+          continue;
+        }
+        const take = round(Math.min(remaining, source.quantity));
+        source.quantity = round(source.quantity - take);
+        remaining = round(remaining - take);
+        movements.push({
+          itemId: row.itemId,
+          locationId: source.locationId ?? locationId,
+          storageUnitId: source.storageUnitId,
+          trackedEntityId: null,
+          projectId: source.projectId,
+          quantity: take,
+          comment
+        });
+      }
+      if (remaining > EPSILON && !restoreCappedAtWriteOff) {
+        movements.push({
+          itemId: row.itemId,
+          locationId,
+          trackedEntityId: null,
+          quantity: remaining,
+          comment
+        });
+      }
     }
   }
 
   try {
+    let warning: string | undefined;
     const result = await db.transaction().execute(async (trx) => {
-      const issue = await trx
-        .selectFrom("nonConformance")
-        .select(["id", "status"])
-        .where("id", "=", nonConformanceId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst();
-      if (!issue) throw new Error("Issue not found");
-      if (issue.status === "Closed") return { id: issue.id };
+      const { status } = await lockIssueDispositions(trx, {
+        nonConformanceId,
+        companyId
+      });
+      if (status === "Closed")
+        return { id: nonConformanceId, closedNow: false };
 
       const nowIso = datetime.timestamp();
       const today = nowIso.slice(0, 10);
@@ -4408,8 +5279,57 @@ export async function closeIssue(
         links: linksByItem.get(row.id) ?? []
       }));
 
+      const plannedRows = new Map(plan.map((row) => [row.id, row]));
+      if (freshPlan.length !== plan.length) {
+        throw new Error("Disposition changed while closing; please retry.");
+      }
+      const linkKey = (links: DispositionLink[]) =>
+        links
+          .map((l) => `${l.trackedEntityId}:${round(l.quantity)}`)
+          .sort()
+          .join(",");
+      const lots = await readLinkedLotStates(trx, companyId, nonConformanceId, {
+        lock: true
+      });
+      if (lotStateKey(lots) !== plannedLots) {
+        throw new Error("Disposition changed while closing; please retry.");
+      }
+      if (
+        writtenOffLotIds &&
+        readKey(await readRejectWriteOffs(trx, companyId, writtenOffLotIds)) !==
+          writtenOffKey
+      ) {
+        throw new Error("Disposition changed while closing; please retry.");
+      }
+      if (linkedEntityIds.length > 0) {
+        await trx
+          .selectFrom("trackedEntity")
+          .select("id")
+          .where("id", "in", linkedEntityIds)
+          .where("companyId", "=", companyId)
+          .orderBy("id")
+          .forUpdate()
+          .execute();
+        const fresh = await readTrackedEntityBins(
+          trx,
+          companyId,
+          linkedEntityIds
+        );
+        if (trackedEntityBinsKey(fresh) !== entityBinsKey) {
+          throw new Error("Disposition changed while closing; please retry.");
+        }
+      }
       for (const row of freshPlan) {
         if (!row.disposition || row.disposition === "Pending") {
+          throw new Error("Disposition changed while closing; please retry.");
+        }
+        const planned = plannedRows.get(row.id);
+        if (
+          !planned ||
+          planned.disposition !== row.disposition ||
+          Math.abs(planned.quantity - row.quantity) > EPSILON ||
+          linkKey(planned.links) !== linkKey(row.links)
+        ) {
           throw new Error("Disposition changed while closing; please retry.");
         }
         if (row.links.length === 0) continue;
@@ -4430,10 +5350,135 @@ export async function closeIssue(
         }
       }
 
-      // Inventory value movements (write-offs / restores) were already posted by
-      // post-nonconformance above. Here we only write disposition genealogy and
-      // flip tracked-entity statuses; non-tracked rows have no entities, so they
-      // need nothing further.
+      const updated = await withInspectionRelease(trx, () =>
+        trx
+          .updateTable("nonConformance")
+          .set({
+            status: "Closed",
+            closeDate: today,
+            updatedBy: userId,
+            updatedAt: nowIso
+          })
+          .where("id", "=", nonConformanceId)
+          .where("companyId", "=", companyId)
+          .returning(["id"])
+          .executeTakeFirstOrThrow()
+      );
+
+      if (heldPartial && heldPartial.requested > EPSILON) {
+        const remainderLocationId =
+          heldPartial.locationId ??
+          (heldPartial.storageUnitId ? null : locationId);
+        if (!remainderLocationId) {
+          throw new Error(
+            "Where the rejected part of the lot is cannot be found. Set the issue's location, then close it again."
+          );
+        }
+        const pairs = new Map<string, { itemId: string; locationId: string }>();
+        for (const m of movements) {
+          if (m.locationId) {
+            pairs.set(`${m.itemId}\u0000${m.locationId}`, {
+              itemId: m.itemId,
+              locationId: m.locationId
+            });
+          }
+        }
+        pairs.set(`${heldPartial.itemId}\u0000${remainderLocationId}`, {
+          itemId: heldPartial.itemId,
+          locationId: remainderLocationId
+        });
+        await engine.lockItemStockRows(trx, companyId, [...pairs.values()]);
+        const unit = {
+          companyId,
+          itemId: heldPartial.itemId,
+          storageUnitId: heldPartial.storageUnitId
+        };
+        const claimable = unit.storageUnitId
+          ? await engine.lotClaimableAtUnit(trx, {
+              ...unit,
+              storageUnitId: unit.storageUnitId,
+              ownHeld: 0,
+              locationId: remainderLocationId,
+              stockRowsLocked: true
+            })
+          : Number.POSITIVE_INFINITY;
+        const stripes = await engine.heldStockStripes(trx, {
+          ...unit,
+          locationId: remainderLocationId,
+          documentIds: heldPartial.documentIds
+        });
+        const scrap = round(
+          Math.min(heldPartial.requested, heldPartial.remainder)
+        );
+        const draws = engine.drawHeldStripes(
+          Math.min(scrap, claimable),
+          stripes,
+          { overflow: false }
+        );
+        const writtenOff = round(
+          draws.reduce((sum, draw) => sum + draw.quantity, 0)
+        );
+        const missing = round(scrap - writtenOff);
+        const overRemainder = round(heldPartial.requested - scrap);
+        if (missing > EPSILON || overRemainder > EPSILON) {
+          const unitName = heldPartial.storageUnitId
+            ? (
+                await trx
+                  .selectFrom("storageUnit")
+                  .select("name")
+                  .where("id", "=", heldPartial.storageUnitId)
+                  .where("companyId", "=", companyId)
+                  .executeTakeFirst()
+              )?.name
+            : undefined;
+          const why = [
+            overRemainder > EPSILON
+              ? `the lot holds only ${scrap} rejected`
+              : null,
+            missing > EPSILON
+              ? `${missing} ${missing === 1 ? "is" : "are"} not in ${
+                  unitName ?? "the location's stock"
+                }, or another lot holds ${missing === 1 ? "it" : "them"}`
+              : null
+          ].filter(Boolean);
+          warning = `${writtenOff} of ${heldPartial.requested} set to Scrap written off: ${why.join("; ")}.`;
+        }
+        for (const draw of draws) {
+          movements.push({
+            itemId: heldPartial.itemId,
+            locationId: remainderLocationId,
+            storageUnitId: heldPartial.storageUnitId,
+            trackedEntityId: null,
+            projectId: draw.projectId,
+            quantity: -draw.quantity,
+            comment: `NC ${readableNc} scrap`
+          });
+        }
+      }
+
+      if (movements.length > 0) {
+        const post = await invokePosting(
+          { db: trx, companyId, userId },
+          "post-nonconformance",
+          {
+            documentType: "Non-Conformance",
+            documentId: nonConformanceId,
+            description: `NC ${readableNc} disposition`,
+            movements
+          },
+          postNonconformance
+        );
+        if (post.error) {
+          const cause = (post.error as { cause?: unknown }).cause;
+          if (post.error.status >= 500 && engine.isDatabaseError(cause)) {
+            throw cause;
+          }
+          throw new Error(
+            post.error.message || "Failed to post disposition to the ledger"
+          );
+        }
+      }
+
       for (const row of freshPlan) {
         if (row.links.length === 0) continue;
 
@@ -4470,7 +5515,14 @@ export async function closeIssue(
 
         if (row.disposition === "Use As Is" || row.disposition === "Rework") {
           const idsToFlip = row.links
-            .filter((l) => l.trackedEntityStatus !== "Available")
+            .filter((l) => {
+              if (l.trackedEntityStatus === "Available") return false;
+              if (hasNoStockLeft(l.trackedEntityId)) {
+                keptWithoutStock.add(l.trackedEntityId);
+                return false;
+              }
+              return true;
+            })
             .map((l) => l.trackedEntityId);
           if (idsToFlip.length > 0) {
             await trx
@@ -4510,27 +5562,32 @@ export async function closeIssue(
         }
       }
 
-      const updated = await trx
-        .updateTable("nonConformance")
-        .set({
-          status: "Closed",
-          closeDate: today,
-          updatedBy: userId,
-          updatedAt: nowIso
-        })
-        .where("id", "=", nonConformanceId)
-        .where("companyId", "=", companyId)
-        .returning(["id"])
-        .executeTakeFirstOrThrow();
-
-      return { id: updated.id };
+      return { id: updated.id, closedNow: true };
     });
 
-    return { data: result, error: null };
+    const { closedNow, ...closed } = result;
+    if (closedNow) {
+      const notes = [warning];
+      if (writtenOffShort.size > 0) {
+        const n = writtenOffShort.size;
+        notes.push(
+          `${n} tracked ${n === 1 ? "unit" : "units"} set to Scrap or Return had less stock than linked: only what was there was written off.`
+        );
+      }
+      if (keptWithoutStock.size > 0) {
+        const n = keptWithoutStock.size;
+        notes.push(
+          `${n} tracked ${n === 1 ? "unit was" : "units were"} left as ${n === 1 ? "it was" : "they were"}: no stock left (written off, shipped or consumed).`
+        );
+      }
+      warning = notes.filter(Boolean).join(" ") || undefined;
+    } else {
+      warning = undefined;
+    }
+    return { data: { ...closed, warning }, error: null };
   } catch (err) {
-    return errResult(
-      err instanceof Error ? err.message : "Failed to close NCR"
-    );
+    logger.error("closeIssue failed", { companyId, nonConformanceId, err });
+    return engine.engineErrResult(err, "Failed to close NCR");
   }
 }
 export type { Result } from "@carbon/database/quality";
@@ -4550,7 +5607,10 @@ export async function dispositionInspection(
   args: z.infer<typeof inspectionDispositionValidator> & {
     companyId: string;
     dispositionedBy: string;
-  } & Pick<engine.InspectionDispositionInput, "requireOpen" | "requireSource">
+  } & Pick<
+      engine.InspectionDispositionInput,
+      "requireOpen" | "requireSource" | "acceptedQuantity"
+    >
 ) {
   return engine.dispositionInspection(db, args);
 }
@@ -4942,6 +6002,121 @@ export function createIssueTasks(ctx: ServiceContext, issueId: string) {
   );
 }
 
+export async function linkIssueTrackedEntities(
+  ctx: ServiceContext,
+  args: { nonConformanceId: string; trackedEntityIds: string[] }
+): Promise<void> {
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+  const { nonConformanceId, trackedEntityIds } = args;
+  if (trackedEntityIds.length === 0) return;
+  const nowIso = datetime.timestamp();
+  await withTransaction(ctx.asSystem.pg, async (trx) => {
+    await lockIssueDispositions(trx, { nonConformanceId, companyId });
+    await trx
+      .insertInto("nonConformanceTrackedEntity")
+      .values(
+        trackedEntityIds.map((trackedEntityId) => ({
+          nonConformanceId,
+          trackedEntityId,
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .execute();
+
+    const units = await trx
+      .selectFrom("trackedEntity as te")
+      .innerJoin(
+        (eb) =>
+          eb
+            .selectFrom("itemLedger")
+            .select([
+              "trackedEntityId",
+              sql<number>`SUM("quantity")`.as("onHand")
+            ])
+            .where("trackedEntityId", "in", trackedEntityIds)
+            .where("companyId", "=", companyId)
+            .groupBy("trackedEntityId")
+            .as("b"),
+        (join) => join.onRef("b.trackedEntityId", "=", "te.id")
+      )
+      .select([
+        "te.id",
+        "te.itemId",
+        sql<number>`LEAST(b."onHand", te."quantity")`.as("quantity")
+      ])
+      .where("te.id", "in", trackedEntityIds)
+      .where("te.companyId", "=", companyId)
+      .where("te.itemId", "is not", null)
+      .where(sql<boolean>`LEAST(b."onHand", te."quantity") > 0`)
+      .orderBy("te.id")
+      .execute()
+      .then((rows) =>
+        rows.filter((row) => round(Number(row.quantity)) > EPSILON)
+      );
+    if (units.length === 0) return;
+
+    const itemIds = [...new Set(units.map((u) => u.itemId as string))];
+    const existing = await trx
+      .selectFrom("nonConformanceItem")
+      .select(["id", "itemId"])
+      .where("nonConformanceId", "=", nonConformanceId)
+      .where("companyId", "=", companyId)
+      .where("itemId", "in", itemIds)
+      .orderBy("createdAt")
+      .orderBy("id")
+      .execute();
+    const rowByItem = new Map<string, string>();
+    for (const row of existing) {
+      if (!rowByItem.has(row.itemId)) rowByItem.set(row.itemId, row.id);
+    }
+    const missing = itemIds.filter((itemId) => !rowByItem.has(itemId));
+    if (missing.length > 0) {
+      const inserted = await trx
+        .insertInto("nonConformanceItem")
+        .values(
+          missing.map((itemId) => ({
+            nonConformanceId,
+            itemId,
+            quantity: 0,
+            companyId,
+            createdBy: userId
+          }))
+        )
+        .returning(["id", "itemId"])
+        .execute();
+      for (const row of inserted) rowByItem.set(row.itemId, row.id);
+    }
+
+    await trx
+      .insertInto("nonConformanceItemTrackedEntity")
+      .values(
+        units.map((u) => ({
+          nonConformanceItemId: rowByItem.get(u.itemId as string) as string,
+          nonConformanceId,
+          trackedEntityId: u.id,
+          quantity: round(Number(u.quantity)),
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .execute();
+    await sql`
+      UPDATE "nonConformanceItem" r
+      SET "quantity" = s.total, "updatedBy" = ${userId}, "updatedAt" = ${nowIso}
+      FROM (
+        SELECT "nonConformanceItemId" AS id, SUM("quantity") AS total
+        FROM "nonConformanceItemTrackedEntity"
+        WHERE "nonConformanceId" = ${nonConformanceId} AND "companyId" = ${companyId}
+        GROUP BY "nonConformanceItemId"
+      ) s
+      WHERE r."id" = s.id AND r."companyId" = ${companyId}
+        AND r."id" = ANY(${[...new Set(rowByItem.values())]}::text[])
+    `.execute(trx);
+  });
+}
+
 /**
  * Links the lot a job operation's make method produced to a new issue: the
  * issue-level tracked-entity links, then the item's disposition row (found
@@ -5186,44 +6361,48 @@ export async function linkJobOperationContext(
     .select("id")
     .eq("attributes->>Job Make Method", jobMakeMethodId)
     .eq("companyId", ctx.company.id);
-  await linkMissingTrackedEntities(ctx, {
+  await linkMissingTrackedEntities(ctx.asSystem.pg, {
     nonConformanceId,
+    companyId: ctx.company.id,
+    userId: ctx.auditUserId,
     trackedEntityIds: (entities.data ?? []).map((e) => e.id)
+  }).catch((error) => {
+    logger.error("Failed to create association", { error });
   });
 }
 
 async function linkMissingTrackedEntities(
-  ctx: ServiceContext,
-  {
-    nonConformanceId,
-    trackedEntityIds
-  }: { nonConformanceId: string; trackedEntityIds: string[] }
-) {
-  if (trackedEntityIds.length === 0) return;
-  const client = ctx.asCaller.supabase;
-
-  const existing = await client
-    .from("nonConformanceTrackedEntity")
-    .select("trackedEntityId")
-    .eq("nonConformanceId", nonConformanceId)
-    .in("trackedEntityId", trackedEntityIds);
-  const already = new Set(
-    (existing.data ?? []).map((r) => r.trackedEntityId as string)
-  );
-  const rows = trackedEntityIds
-    .filter((id) => !already.has(id))
-    .map((trackedEntityId) => ({
-      nonConformanceId,
-      trackedEntityId,
-      createdBy: ctx.auditUserId,
-      companyId: ctx.company.id
-    }));
-  if (rows.length === 0) return;
-
-  const result = await client.from("nonConformanceTrackedEntity").insert(rows);
-  if (result.error) {
-    logger.error("Failed to create association", { error: result.error });
+  db: Kysely<KyselyDatabase>,
+  args: {
+    nonConformanceId: string;
+    companyId: string;
+    userId: string;
+    trackedEntityIds: string[];
   }
+) {
+  const { nonConformanceId, companyId, userId, trackedEntityIds } = args;
+  if (trackedEntityIds.length === 0) return;
+  const existing = await db
+    .selectFrom("nonConformanceTrackedEntity")
+    .select("trackedEntityId")
+    .where("nonConformanceId", "=", nonConformanceId)
+    .where("companyId", "=", companyId)
+    .where("trackedEntityId", "in", trackedEntityIds)
+    .execute();
+  const linked = new Set(existing.map((row) => row.trackedEntityId));
+  const missing = trackedEntityIds.filter((id) => !linked.has(id));
+  if (missing.length === 0) return;
+  await db
+    .insertInto("nonConformanceTrackedEntity")
+    .values(
+      missing.map((trackedEntityId) => ({
+        nonConformanceId,
+        trackedEntityId,
+        companyId,
+        createdBy: userId
+      }))
+    )
+    .execute();
 }
 
 /**
@@ -5231,7 +6410,7 @@ async function linkMissingTrackedEntities(
  * disposition row with it. The inspection link and the row writes share one
  * transaction under the issue lock, so a concurrent quantity edit either
  * lands before (and the row write overwrites it) or sees the inspection link
- * and is refused. False when any step failed.
+ * and is refused. `refusal` carries the words of a link the database refused.
  */
 export async function linkInspectionToIssue(
   ctx: ServiceContext,
@@ -5239,7 +6418,7 @@ export async function linkInspectionToIssue(
     nonConformanceId,
     inspectionId
   }: { nonConformanceId: string; inspectionId: string }
-): Promise<boolean> {
+): Promise<{ ok: true } | { ok: false; refusal?: string }> {
   const client = ctx.asCaller.supabase;
   const companyId = ctx.company.id;
   const userId = ctx.auditUserId;
@@ -5255,7 +6434,7 @@ export async function linkInspectionToIssue(
     .single();
   if (inspection.error) {
     logger.error("Failed to create association", { error: inspection.error });
-    return false;
+    return { ok: false };
   }
 
   const sampledIds = (
@@ -5282,7 +6461,7 @@ export async function linkInspectionToIssue(
       logger.error("Failed to create association", {
         error: receiptLineEntities.error
       });
-      return false;
+      return { ok: false };
     }
     lotEntityIds = [
       ...new Set([
@@ -5306,13 +6485,8 @@ export async function linkInspectionToIssue(
     logger.error("Failed to create association", {
       error: entityQuantities.error
     });
-    return false;
+    return { ok: false };
   }
-
-  await linkMissingTrackedEntities(ctx, {
-    nonConformanceId,
-    trackedEntityIds: lotEntityIds
-  });
 
   const quantityById = new Map(
     (entityQuantities.data ?? []).map((e) => [e.id, Number(e.quantity ?? 1)])
@@ -5337,6 +6511,13 @@ export async function linkInspectionToIssue(
         })
         .execute();
 
+      await linkMissingTrackedEntities(trx, {
+        nonConformanceId,
+        companyId,
+        userId,
+        trackedEntityIds: lotEntityIds
+      });
+
       if (itemId) {
         await linkEntitiesToIssueItemRow(trx, {
           nonConformanceId,
@@ -5351,11 +6532,13 @@ export async function linkInspectionToIssue(
         });
       }
     });
-    return true;
   } catch (err) {
+    const refusal = raisedMessage(err);
+    if (refusal) return { ok: false, refusal };
     logger.error("Failed to create association", { error: err });
-    return false;
+    return { ok: false };
   }
+  return { ok: true };
 }
 
 /** A document-driven lot's failed features, measured values against spec. */
@@ -5650,6 +6833,8 @@ export const postNonConformanceInput = z.object({
       z.object({
         itemId: z.string(),
         locationId: z.string().optional().nullable(),
+        storageUnitId: z.string().optional().nullable(),
+        projectId: z.string().optional().nullable(),
         trackedEntityId: z.string().optional().nullable(),
         // SIGNED: < 0 removes value (scrap/return), > 0 restores value (kept).
         quantity: z.number(),
@@ -5818,10 +7003,6 @@ export async function postNonconformance(
     }
   }
 
-  // Resolve the accounting period BEFORE opening the transaction —
-  // getCurrentAccountingPeriod uses the REST client and calling it
-  // mid-transaction parks the (size 1) pool in idle-in-transaction. A
-  // Provisional journal has no accounting period.
   const accountingPeriodId =
     postingStatus === "Posted"
       ? await getCurrentAccountingPeriod(companyId, db, postingDate)
@@ -5835,7 +7016,7 @@ export async function postNonconformance(
 
   let journalId: string | null = null;
 
-  await db.transaction().execute(async (trx) => {
+  await withTransaction(db, async (trx) => {
     // Idempotent per (documentType, documentId): a reject posts one write-off
     // per inspection, a disposition close posts once per NCR (reopen is blocked
     // after posting). A retry after a partial route failure — e.g. the caller's
@@ -5913,11 +7094,11 @@ export async function postNonconformance(
           itemId: movement.itemId,
           quantity: movement.quantity,
           locationId: movement.locationId ?? null,
-          storageUnitId: null,
+          storageUnitId: movement.storageUnitId ?? null,
           trackedEntityId: movement.trackedEntityId ?? null,
           projectId: movement.trackedEntityId
             ? (entityStripes.get(movement.trackedEntityId) ?? null)
-            : null,
+            : (movement.projectId ?? null),
           entryType:
             movement.quantity < 0 ? "Negative Adjmt." : "Positive Adjmt.",
           documentType,
@@ -5938,4 +7119,418 @@ export async function postNonconformance(
   });
 
   return { journalId: journalId as string | null };
+}
+
+export async function inspectionReceiptLine(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  inspectionId: string
+): Promise<{
+  locationId: string | null;
+  storageUnitId: string | null;
+  unitLocationId: string | null;
+}> {
+  const row = await db
+    .selectFrom("inspection as i")
+    .innerJoin("receiptLine as rl", (join) =>
+      join
+        .onRef("rl.id", "=", "i.sourceDocumentLineId")
+        .onRef("rl.companyId", "=", "i.companyId")
+    )
+    .leftJoin("storageUnit as su", (join) =>
+      join
+        .on(
+          sql`su."id"`,
+          "=",
+          sql`COALESCE(i."storageUnitId", rl."storageUnitId")`
+        )
+        .onRef("su.companyId", "=", "i.companyId")
+    )
+    .select([
+      "rl.locationId",
+      "rl.storageUnitId",
+      "su.locationId as unitLocationId"
+    ])
+    .where("i.id", "=", inspectionId)
+    .where("i.companyId", "=", companyId)
+    .where("i.sourceDocument", "=", "Receipt")
+    .executeTakeFirst();
+  return {
+    locationId: row?.locationId ?? null,
+    storageUnitId: row?.storageUnitId ?? null,
+    unitLocationId: row?.unitLocationId ?? null
+  };
+}
+
+/**
+ * Why an inspection lot's NCR cannot open now (no issue type or no location),
+ * or null. Mirrors `openInspectionNcr`'s refusals, to check before a lot closes.
+ */
+export async function inspectionNcrPrerequisite(
+  ctx: ServiceContext,
+  args: { id: string; nonConformanceTypeId: string | null | undefined }
+): Promise<string | null> {
+  const client = ctx.asCaller.supabase;
+  const [lotLocationId, userDefaults, issueTypes] = await Promise.all([
+    inspectionReceiptLine(ctx.asSystem.pg, ctx.company.id, args.id).then(
+      (line) => line.locationId
+    ),
+    getUserDefaults(client, ctx.auditUserId, ctx.company.id),
+    getIssueTypesList(client, ctx.company.id)
+  ]);
+  // The same choice openInspectionNcr makes.
+  const issueType =
+    issueTypes.data?.find((type) => type.id === args.nonConformanceTypeId) ??
+    receiptLotIssueType(issueTypes.data);
+  if (!issueType) {
+    return "Configure an issue type first. The rejected part of the lot needs an NCR.";
+  }
+  if (!lotLocationId && !userDefaults.data?.locationId) {
+    return "Set your default location. The rejected part of the lot needs an NCR.";
+  }
+  return null;
+}
+
+class LotHasNcrError extends Error {
+  constructor() {
+    super("This lot already has its NCR.");
+  }
+}
+
+export async function getInspectionNcrLink(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  inspectionId: string
+) {
+  return db
+    .selectFrom("nonConformanceInspection")
+    .select("nonConformanceId")
+    .where("inspectionId", "=", inspectionId)
+    .where("companyId", "=", companyId)
+    .orderBy("createdAt")
+    .orderBy("id")
+    .executeTakeFirst();
+}
+/**
+ * Opens the NCR of a rejected or partly rejected receipt inspection lot, with a
+ * Scrap row for `quantity` and `trackedEntityIds` (null: the whole lot). A
+ * failure after the issue was inserted deletes it again.
+ */
+export async function openInspectionNcr(
+  ctx: ServiceContext,
+  args: {
+    id: string;
+    nonConformanceTypeId?: string | null;
+    reason?: string | null;
+    /** The issue title's first words, e.g. "Rejected lot". */
+    title: string;
+    /** What happened to the lot, for error messages, e.g. "Lot rejected". */
+    outcome: string;
+    quantity: number | null;
+    trackedEntityIds: string[] | null;
+  }
+): Promise<{ issueId: string } | CarbonError> {
+  const { id, nonConformanceTypeId, reason } = args;
+  const client = ctx.asCaller.supabase;
+  const serviceRole = ctx.asSystem.supabase;
+  const companyId = ctx.company.id;
+  const userId = ctx.auditUserId;
+
+  const [inspection, lotLocationId, userDefaults, issueTypes] =
+    await Promise.all([
+      getInspection(client, id),
+      inspectionReceiptLine(ctx.asSystem.pg, companyId, id).then(
+        (line) => line.locationId
+      ),
+      getUserDefaults(client, userId, companyId),
+      getIssueTypesList(client, companyId)
+    ]);
+  if (inspection.error || !inspection.data) {
+    return ctx.error(
+      "internal",
+      `${args.outcome}, but failed to load it for NCR`,
+      inspection.error
+    );
+  }
+  // The inspection view embeds joins its generated type does not carry.
+  const insp = inspection.data as any;
+  const quantity = args.quantity ?? Number(insp.lotSize ?? 0);
+
+  const issueType =
+    issueTypes.data?.find((t) => t.id === nonConformanceTypeId) ??
+    receiptLotIssueType(issueTypes.data);
+  const locationId = lotLocationId ?? userDefaults.data?.locationId ?? null;
+  if (!issueType || !locationId) {
+    return ctx.error(
+      "rule",
+      `${args.outcome}. Configure at least one Issue Type and a default user location to auto-create an NCR.`
+    );
+  }
+
+  // A manual lot has no supplier or receipt line: it inspects stock on hand.
+  const isManual = insp.sourceDocument === "Manual";
+  const supplierName = insp.supplier?.name ?? "supplier";
+  const sourceReadableId = insp.sourceDocumentReadableId ?? "";
+  const itemReadableId =
+    insp.item?.readableId ?? insp.itemReadableId ?? insp.itemId;
+  const inspectionReadableId = insp.inspectionId ?? "";
+  const issueTitle = [
+    args.title,
+    inspectionReadableId,
+    itemReadableId && `— ${itemReadableId}`,
+    sourceReadableId && `on ${sourceReadableId}`
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const [failedFeatures, timeZone] = await Promise.all([
+    failedFeatureLines(ctx, id),
+    getLocationTimeZone(client, locationId, companyId)
+  ]);
+  const failedFeaturesBlock =
+    failedFeatures.length > 0
+      ? `\n\nFailed features:\n${failedFeatures.join("\n")}`
+      : "";
+
+  const created = await insertIssue(serviceRole, {
+    name: issueTitle,
+    description: `Auto-created from ${isManual ? "inspection" : "inbound inspection"} ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}.${isManual ? "" : ` Supplier: ${supplierName}.`}${reason ? `\n\nReason: ${reason}` : ""}${failedFeaturesBlock}`,
+    priority: "Medium",
+    source: "Internal",
+    locationId,
+    nonConformanceTypeId: issueType.id,
+    openDate: datetime.today(timeZone).toString(),
+    quantity,
+    items: insp.itemId ? [insp.itemId] : [],
+    // The lot's supplier, stamped from the PO at receipt: it drives the
+    // SCAR report, the action-task supplier picker and the explorer.
+    supplierId: insp.supplierId ?? undefined,
+    companyId,
+    createdBy: userId
+  });
+  if (created.error || !created.data) {
+    return ctx.error(
+      "internal",
+      `${args.outcome}, but failed to create NCR`,
+      created.error
+    );
+  }
+  const { id: issueId, nonConformanceId } = created.data;
+  const removeOpenedIssue = async () => {
+    try {
+      await ctx.asSystem.pg.transaction().execute(async (trx) => {
+        await setInspectionRelease(trx);
+        await trx
+          .deleteFrom("nonConformance")
+          .where("id", "=", issueId)
+          .where("companyId", "=", companyId)
+          .execute();
+      });
+    } catch (error) {
+      logger.error("Failed to delete an inspection NCR that did not open", {
+        companyId,
+        issueId,
+        error
+      });
+    }
+  };
+  const abandon = async (message: string, cause: unknown) => {
+    await removeOpenedIssue();
+    return ctx.error("internal", message, cause);
+  };
+
+  // Every tracked entity in the lot: the sampled ones plus the un-sampled
+  // ones, which the cascade also Rejected. A failed read would link only
+  // part of the lot, so the issue is rolled back and the reject can retry.
+  const sampledIds = (
+    (insp.inspectionSample ?? []) as {
+      trackedEntityId: string | null;
+    }[]
+  )
+    .map((s) => s.trackedEntityId)
+    .filter((id): id is string => Boolean(id));
+  let lotEntityIds = args.trackedEntityIds;
+  if (!lotEntityIds) {
+    // A receipt lot's entities hang off its receipt line; a manual lot lists
+    // its own.
+    const receiptLineEntities = isManual
+      ? await serviceRole
+          .from("inspectionTrackedEntity")
+          .select("id:trackedEntityId")
+          .eq("inspectionId", id)
+          .eq("companyId", companyId)
+      : await serviceRole
+          .from("trackedEntity")
+          .select("id")
+          .eq("attributes ->> Receipt Line", insp.sourceDocumentLineId ?? "")
+          .eq("companyId", companyId);
+    if (receiptLineEntities.error) {
+      return abandon(
+        `${args.outcome}, but failed to read the lot for the NCR`,
+        receiptLineEntities.error
+      );
+    }
+    lotEntityIds = [
+      ...new Set([
+        ...sampledIds,
+        ...(receiptLineEntities.data ?? []).map((r) => r.id)
+      ])
+    ];
+  }
+  const entityQuantities =
+    lotEntityIds.length > 0
+      ? await serviceRole
+          .from("trackedEntity")
+          .select("id, quantity")
+          .in("id", lotEntityIds)
+          .eq("companyId", companyId)
+      : { data: [], error: null };
+  if (entityQuantities.error) {
+    return abandon(
+      `${args.outcome}, but failed to read the lot for the NCR`,
+      entityQuantities.error
+    );
+  }
+
+  // insertIssue inserted the item's disposition row at quantity 0 and
+  // Pending. Now it takes the lot quantity and Scrap (the most conservative
+  // start; the MRB can downgrade or split later), the inspection link, and
+  // a link per entity — under the issue lock every disposition writer
+  // shares, so a quantity edit cannot land between them.
+  try {
+    await ctx.asSystem.pg.transaction().execute(async (trx) => {
+      await trx
+        .selectFrom("inspection")
+        .select("id")
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      const existing = await getInspectionNcrLink(trx, companyId, id);
+      if (existing) throw new LotHasNcrError();
+      await lockIssueDispositions(trx, {
+        nonConformanceId: issueId,
+        companyId
+      });
+
+      let scrapRowId: string | null = null;
+      if (insp.itemId) {
+        const scrapRow = await trx
+          .updateTable("nonConformanceItem")
+          .set({
+            quantity,
+            disposition: "Scrap",
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("nonConformanceId", "=", issueId)
+          .where("itemId", "=", insp.itemId)
+          .where("companyId", "=", companyId)
+          .returning(["id"])
+          .executeTakeFirst();
+        // insertIssue only logs a failed item insert. With no row the NCR
+        // would have no disposition to decide and close with nothing to post.
+        if (!scrapRow) {
+          throw new Error("The NCR's item row was not created");
+        }
+        scrapRowId = scrapRow.id;
+      }
+
+      await trx
+        .insertInto("nonConformanceInspection")
+        .values({
+          nonConformanceId: issueId,
+          inspectionId: insp.id,
+          companyId,
+          createdBy: userId
+        })
+        .execute();
+
+      const entityRows = entityQuantities.data ?? [];
+      if (scrapRowId && entityRows.length > 0) {
+        await trx
+          .insertInto("nonConformanceItemTrackedEntity")
+          .values(
+            entityRows.map((e) => ({
+              nonConformanceItemId: scrapRowId!,
+              nonConformanceId: issueId,
+              trackedEntityId: e.id,
+              quantity: Number(e.quantity ?? 1),
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      }
+
+      // In the NCR's transaction, so a failed link deletes it and a retry opens it whole.
+      if (
+        insp.sourceDocument === "Receipt" &&
+        insp.sourceDocumentLineId &&
+        insp.sourceDocumentId
+      ) {
+        await trx
+          .insertInto("nonConformanceReceiptLine")
+          .values({
+            nonConformanceId: issueId,
+            receiptLineId: insp.sourceDocumentLineId,
+            receiptId: insp.sourceDocumentId,
+            receiptReadableId: insp.sourceDocumentReadableId ?? null,
+            companyId,
+            createdBy: userId
+          })
+          .execute();
+      }
+      if (lotEntityIds && lotEntityIds.length > 0) {
+        await trx
+          .insertInto("nonConformanceTrackedEntity")
+          .values(
+            lotEntityIds.map((trackedEntityId) => ({
+              nonConformanceId: issueId,
+              trackedEntityId,
+              companyId,
+              createdBy: userId
+            }))
+          )
+          .execute();
+      }
+    });
+  } catch (err) {
+    if (err instanceof LotHasNcrError) {
+      await removeOpenedIssue();
+      return ctx.error("conflict", err.message);
+    }
+    return abandon(
+      `${args.outcome}, but failed to link the NCR to the lot`,
+      err
+    );
+  }
+
+  const tasks = await createIssueTasks(ctx, issueId);
+  if (tasks.error) {
+    return abandon(
+      `${args.outcome}, but failed to create NCR tasks`,
+      tasks.error
+    );
+  }
+
+  await notifyIssue(
+    ctx,
+    (integrations) =>
+      notifyIssueCreated({ client, serviceRole }, integrations, {
+        companyId,
+        userId,
+        carbonUrl: `${ERP_URL}${path.to.issue(issueId)}`,
+        issue: {
+          id: issueId,
+          nonConformanceId,
+          title: issueTitle,
+          description: `Auto-created from ${isManual ? "inspection" : "inbound inspection"} ${inspectionReadableId || id}`,
+          severity: "Medium"
+        }
+      }),
+    "Failed to send NCR notifications"
+  );
+
+  return { issueId };
 }

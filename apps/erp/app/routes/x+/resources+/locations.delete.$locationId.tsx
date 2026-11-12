@@ -5,10 +5,11 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
   deleteLocation,
@@ -74,20 +75,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function DeleteLocationRoute() {
   const { locationId } = useParams();
   const { location } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.locations);
   const { t } = useLingui();
 
   if (!location) return null;
   if (!locationId) throw new Error("locationId is not found");
 
-  const onCancel = () => navigate(path.to.locations);
   const name = location.name;
   return (
     <ConfirmDelete
       action={path.to.deleteLocation(locationId)}
       name={name}
       text={t`Are you sure you want to delete the location: ${name}? This cannot be undone.`}
-      onCancel={onCancel}
+      isOpen={dialog.open}
+      onCancel={dialog.close}
     />
   );
 }

@@ -7,9 +7,10 @@ import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData } from "react-router";
 import { moveAccountValidator } from "~/modules/accounting/accounting.models";
 import {
   getAccount,
@@ -94,7 +95,7 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function MoveAccountRoute() {
   const { account, groupAccounts } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.chartOfAccounts);
 
   return (
     <MoveAccountForm
@@ -102,7 +103,8 @@ export default function MoveAccountRoute() {
       accountName={account.name}
       groupAccounts={groupAccounts}
       currentParentId={account.parentId}
-      onClose={() => navigate(path.to.chartOfAccounts)}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

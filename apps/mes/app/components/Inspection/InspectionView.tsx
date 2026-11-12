@@ -3,8 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useAction } from "@carbon/query";
+import type { InspectionParameter, JSONContent } from "@carbon/react";
 import {
-  Badge,
   BottomSheet,
   BottomSheetBody,
   BottomSheetContent,
@@ -19,21 +19,13 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  SidebarTrigger,
-  Spinner,
   useDisclosure,
-  useMode,
   useViewport,
   VStack
 } from "@carbon/react";
-import {
-  formatSpecLabel,
-  INSPECTION_DRAWING_HIDDEN_STORAGE_KEY
-} from "@carbon/utils";
+import { formatSpecLabel } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
-  lazy,
-  Suspense,
   useCallback,
   useEffect,
   useId,
@@ -44,12 +36,8 @@ import {
 import {
   LuCheck,
   LuCheckCheck,
-  LuChevronDown,
-  LuChevronUp,
   LuContrast,
   LuEllipsisVertical,
-  LuEye,
-  LuEyeOff,
   LuFlag,
   LuGitPullRequest,
   LuPause,
@@ -65,12 +53,11 @@ import { QuantityModal } from "~/components/JobOperation/components/QuantityModa
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
 import { MesAppBar } from "~/components/MesAppBar";
 import { useMesBottomBar } from "~/components/MesBottomBar";
-import { useUser } from "~/hooks";
+import { ReworkBadge } from "~/components/ReworkBadge";
 import type { AbilityShortfall } from "~/services/operations.service";
 import type {
   InspectionGauge,
   InspectionMeasurement,
-  Inspection as InspectionRow,
   InspectionSample,
   InspectionSamplingPlan,
   IssueTypeListItem,
@@ -83,46 +70,17 @@ import { OriginInput, useOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 import type { AllocatableUnit, FailedFeatureSummary } from "./DispositionModal";
 import DispositionModal from "./DispositionModal";
-import type { MeasurementSaveResult } from "./InspectionMeasurementMatrix";
-import InspectionMeasurementMatrix from "./InspectionMeasurementMatrix";
+import {
+  InspectionLotBody,
+  InspectionLotHeader,
+  InspectionLotMetaBar
+} from "./InspectionLotLayout";
 import ScanInspectionSample from "./ScanInspectionSample";
-
-const InspectionDrawingPane = lazy(() => import("./InspectionDrawingPane"));
-const ModelUploadPreview = lazy(
-  () => import("@carbon/viewer/model-upload-preview")
-);
-
-// Vertical-stack sizing, mirrored from the ERP quality InspectionView: the PDF
-// pane keeps a pinned height while the features table is expanded; a draggable
-// splitter trades space between them.
-const STACK_SPLITTER_H = 8;
-const MIN_PDF_PANE_PX = 160;
-
-/** When the table is expanded it keeps at least half the stack; PDF height is capped accordingly. */
-function clampPdfPaneHeight(
-  pdfPx: number,
-  stackH: number,
-  gridExpanded: boolean
-): number {
-  if (!gridExpanded || stackH <= STACK_SPLITTER_H + MIN_PDF_PANE_PX) {
-    return Math.max(MIN_PDF_PANE_PX, pdfPx);
-  }
-  const minGrid = stackH * 0.5;
-  const maxPdf = Math.max(MIN_PDF_PANE_PX, stackH - STACK_SPLITTER_H - minGrid);
-  return Math.min(maxPdf, Math.max(MIN_PDF_PANE_PX, pdfPx));
-}
-
-type DrawingBalloonRow = {
-  id: string;
-  inspectionFeatureId: string;
-  pageNumber: number;
-  xCoordinate: number;
-  yCoordinate: number;
-  regionX: number;
-  regionY: number;
-  regionWidth: number;
-  regionHeight: number;
-};
+import type { DrawingBalloonRow, InspectionLot } from "./useInspectionLotState";
+import {
+  isUnsampleableEntityStatus,
+  useInspectionLotState
+} from "./useInspectionLotState";
 
 type WorkType = "Setup" | "Labor" | "Machine";
 
@@ -131,14 +89,9 @@ type InspectionViewProps = {
   operationId: string;
   job: Job;
   operation: OperationWithDetails;
-  inspection: InspectionRow & {
-    item?: {
-      readableId: string | null;
-      name: string | null;
-      type: string | null;
-      itemTrackingType: string | null;
-    } | null;
-  };
+  /** The correction this rework operation belongs to, if any. */
+  correctionName?: string | null;
+  inspection: InspectionLot;
   samples: InspectionSample[];
   features: InspectionSamplingPlan[];
   measurements: InspectionMeasurement[];
@@ -148,6 +101,8 @@ type InspectionViewProps = {
   recentGaugeIds: string[];
   balloons: DrawingBalloonRow[];
   documentName: string | null;
+  parameters: InspectionParameter[];
+  workInstruction: JSONContent | null;
   pdfUrl: string | null;
   /** A plan made from a model's PMI: the drawing pane shows the model. */
   model: { modelUploadId: string; modelPath: string | null } | null;
@@ -174,6 +129,7 @@ export function InspectionView({
   operationId,
   job,
   operation,
+  correctionName,
   inspection,
   samples,
   features,
@@ -182,6 +138,8 @@ export function InspectionView({
   recentGaugeIds,
   balloons,
   documentName,
+  parameters,
+  workInstruction,
   pdfUrl,
   model,
   issueTypes,
@@ -198,224 +156,11 @@ export function InspectionView({
   const { t } = useLingui();
   const origin = useOrigin();
   const { isPhone } = useViewport();
-  const user = useUser();
-  const mode = useMode();
 
   // Which entity the produced lot samples come from: the job make method's
   // WIP entities (the part being made), not receipt entities.
   const isSerial = requiresSerialTracking;
   const isTracked = requiresSerialTracking || requiresBatchTracking;
-
-  const liveFeatures = useMemo(
-    () => features.filter((f) => f.inspectionFeature != null),
-    [features]
-  );
-  const hasFeatures = liveFeatures.length > 0;
-  const hasDrawing = pdfUrl != null || model != null;
-  // "Hide drawing" gives the matrix the whole body (a large batch needs the
-  // rows); the choice persists per browser.
-  const [drawingHidden, setDrawingHidden] = useState(false);
-  useEffect(() => {
-    try {
-      setDrawingHidden(
-        window.localStorage.getItem(INSPECTION_DRAWING_HIDDEN_STORAGE_KEY) ===
-          "true"
-      );
-    } catch {
-      // Storage unavailable: keep the drawing shown.
-    }
-  }, []);
-  const toggleDrawing = useCallback(() => {
-    setDrawingHidden((hidden) => {
-      try {
-        window.localStorage.setItem(
-          INSPECTION_DRAWING_HIDDEN_STORAGE_KEY,
-          String(!hidden)
-        );
-      } catch {
-        // Storage unavailable: the choice lasts for this page only.
-      }
-      return !hidden;
-    });
-  }, []);
-  const showDrawing = hasDrawing && !drawingHidden;
-  // Matrix position -> sample id, kept here so it survives the matrix
-  // remount when the drawing is hidden or shown.
-  const placementRef = useRef<Record<number, string>>({});
-  // A save or bulk run in flight: the disposition buttons wait until every
-  // reading has landed, and the drawing toggle waits so no save is cut off.
-  const [gridBusy, setGridBusy] = useState(false);
-
-  const scannerDisclosure = useDisclosure();
-  const rejectDisclosure = useDisclosure();
-  const partialDisclosure = useDisclosure();
-  const acceptDisclosure = useDisclosure();
-  const actionsSheet = useDisclosure();
-  const qualityModal = useDisclosure();
-  const scrapModal = useDisclosure();
-  const finishModal = useDisclosure();
-  const reworkModal = useDisclosure();
-
-  const [activeFeatureId, setActiveFeatureId] = useState<string | null>(null);
-
-  // PDF-over-table stack (ERP quality InspectionView's layout model): pinned PDF
-  // height while the table is expanded, with a draggable splitter between them.
-  const [gridExpanded, setGridExpanded] = useState(true);
-  const [pdfPaneHeightPx, setPdfPaneHeightPx] = useState(360);
-  const [stackHeightPx, setStackHeightPx] = useState(0);
-  const [isResizingSplit, setIsResizingSplit] = useState(false);
-  const splitDragRef = useRef<{ startY: number; startPdfPx: number } | null>(
-    null
-  );
-  // Until the user drags the splitter, the PDF takes ~45% of the measured stack
-  // (capped by the table's half-stack minimum) instead of a fixed pixel default.
-  const hasUserResizedRef = useRef(false);
-  const stackRef = useRef<HTMLDivElement>(null);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: showDrawing re-attaches the observer when hiding and showing the drawing replaces the stack element.
-  useEffect(() => {
-    if (!stackRef.current) return;
-    const el = stackRef.current;
-    const ro = new ResizeObserver(() => {
-      const h = el.clientHeight;
-      setStackHeightPx(h);
-      setPdfPaneHeightPx((prev) =>
-        clampPdfPaneHeight(
-          hasUserResizedRef.current ? prev : h * 0.45,
-          h,
-          gridExpanded
-        )
-      );
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [gridExpanded, showDrawing]);
-
-  useEffect(() => {
-    if (!isResizingSplit) return;
-    const onMove = (e: MouseEvent) => {
-      const start = splitDragRef.current;
-      if (!start) return;
-      const dy = e.clientY - start.startY;
-      setPdfPaneHeightPx(
-        clampPdfPaneHeight(start.startPdfPx + dy, stackHeightPx, gridExpanded)
-      );
-    };
-    const onUp = () => {
-      setIsResizingSplit(false);
-      splitDragRef.current = null;
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-    return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-    };
-  }, [isResizingSplit, stackHeightPx, gridExpanded]);
-
-  const onSplitResizeMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (!gridExpanded) return;
-      e.preventDefault();
-      hasUserResizedRef.current = true;
-      splitDragRef.current = {
-        startY: e.clientY,
-        startPdfPx: pdfPaneHeightPx
-      };
-      setIsResizingSplit(true);
-    },
-    [gridExpanded, pdfPaneHeightPx]
-  );
-
-  // Per-cell saves are quiet (no revalidation), so measurement + derived
-  // sample statuses are mirrored locally from the save responses and merged
-  // with the loader data for gating.
-  const [measurementOverrides, setMeasurementOverrides] = useState<
-    Record<string, "Pending" | "Passed" | "Failed">
-  >({});
-  const [sampleStatusOverrides, setSampleStatusOverrides] = useState<
-    Record<string, "Pending" | "Passed" | "Failed">
-  >({});
-  const [measurementValueOverrides, setMeasurementValueOverrides] = useState<
-    Record<string, number | null>
-  >({});
-  const onMeasurementSaved = useCallback((result: MeasurementSaveResult) => {
-    const key = `${result.sampleId}:${result.inspectionFeatureId}`;
-    setMeasurementOverrides((prev) => ({
-      ...prev,
-      [key]: result.measurementStatus
-    }));
-    setMeasurementValueOverrides((prev) => ({ ...prev, [key]: result.value }));
-    setSampleStatusOverrides((prev) => ({
-      ...prev,
-      [result.sampleId]: result.sampleStatus
-    }));
-  }, []);
-
-  const effectiveMeasurements = useMemo(() => {
-    const byKey = new Map<
-      string,
-      { featureId: string; status: string; value: number | null }
-    >();
-    for (const m of measurements) {
-      byKey.set(`${m.inspectionSampleId}:${m.inspectionFeatureId}`, {
-        featureId: m.inspectionFeatureId,
-        status: m.status,
-        value: m.value == null ? null : Number(m.value)
-      });
-    }
-    for (const [key, status] of Object.entries(measurementOverrides)) {
-      const featureId = key.split(":")[1] ?? "";
-      byKey.set(key, {
-        featureId,
-        status,
-        value: measurementValueOverrides[key] ?? null
-      });
-    }
-    return byKey;
-  }, [measurements, measurementOverrides, measurementValueOverrides]);
-
-  const featureCounts = useMemo(() => {
-    const counts = new Map<string, { recorded: number; failed: number }>();
-    for (const feature of liveFeatures) {
-      counts.set(feature.inspectionFeatureId, { recorded: 0, failed: 0 });
-    }
-    for (const measurement of effectiveMeasurements.values()) {
-      const entry = counts.get(measurement.featureId);
-      if (!entry) continue;
-      if (measurement.status !== "Pending") entry.recorded += 1;
-      if (measurement.status === "Failed") entry.failed += 1;
-    }
-    return counts;
-  }, [liveFeatures, effectiveMeasurements]);
-
-  const sampleStatuses = useMemo(() => {
-    const statuses = new Map<string, string>();
-    for (const sample of samples) {
-      statuses.set(sample.id, sample.status);
-    }
-    for (const [sampleId, status] of Object.entries(sampleStatusOverrides)) {
-      statuses.set(sampleId, status);
-    }
-    return statuses;
-  }, [samples, sampleStatusOverrides]);
-
-  const passes = [...sampleStatuses.values()].filter(
-    (s) => s === "Passed"
-  ).length;
-  const fails = [...sampleStatuses.values()].filter(
-    (s) => s === "Failed"
-  ).length;
-  const inspected = passes + fails;
-
-  const sampledIds = useMemo(
-    () => new Set(samples.map((s) => s.trackedEntityId)),
-    [samples]
-  );
-  const remaining = useMemo(
-    () => trackedEntities.filter((e) => !sampledIds.has(e.id)),
-    [trackedEntities, sampledIds]
-  );
 
   const lotClosed =
     inspection.dispositionedAt != null &&
@@ -428,18 +173,51 @@ export function InspectionView({
   const abilityBlocked = abilityWarning?.policy === "Block";
   const isLocked = lotClosed || abilityBlocked;
 
+  const lot = useInspectionLotState({
+    inspection,
+    samples,
+    features,
+    measurements,
+    balloons,
+    lotEntities: trackedEntities,
+    pdfUrl,
+    model,
+    isLocked
+  });
+  const {
+    liveFeatures,
+    hasFeatures,
+    effectiveMeasurements,
+    sampleStatuses,
+    passes,
+    fails,
+    inspected,
+    remaining,
+    gridBusy,
+    canAccept,
+    canReject,
+    failedStatistically
+  } = lot;
+  // Add Sample only while a unit the lot can still sample has no column: an
+  // "inspect all" lot starts with every one sampled (prefillInspectionSamples).
+  const canAddSample = isSerial && lot.hasSampleableUnit;
+
+  const scannerDisclosure = useDisclosure();
+  const rejectDisclosure = useDisclosure();
+  const partialDisclosure = useDisclosure();
+  const acceptDisclosure = useDisclosure();
+  const actionsSheet = useDisclosure();
+  const qualityModal = useDisclosure();
+  const scrapModal = useDisclosure();
+  const finishModal = useDisclosure();
+  const reworkModal = useDisclosure();
+
   // Outcome bookkeeping, mirrored from the disposition route's server-side
   // buckets (which recompute and clamp — these drive the header affordances).
   const opAttrKey = `Operation ${operationId}`;
   const entityOpenAtOp = useCallback(
     (entity: TrackedEntity) => {
-      if (
-        entity.status === "Consumed" ||
-        entity.status === "Rejected" ||
-        entity.status === "Scrapped"
-      ) {
-        return false;
-      }
+      if (isUnsampleableEntityStatus(entity.status)) return false;
       const attributes = (entity.attributes ?? {}) as Record<string, unknown>;
       return !attributes[opAttrKey];
     },
@@ -542,45 +320,6 @@ export function InspectionView({
     }
   }, [isSerial, samples.length, isLocked, scannerDisclosure]);
 
-  const maxSampleSize = hasFeatures
-    ? Math.max(1, ...liveFeatures.map((f) => f.sampleSize))
-    : inspection.sampleSize;
-
-  // Accept gating: feature-driven lots gate per feature; lots without
-  // features gate at the lot level on the "Overall result" pass/fail counts.
-  // Reject is open at any time — an inspector can condemn a lot for reasons
-  // no characteristic captures (damage, wrong part, contamination).
-  let canAccept: boolean;
-  let failedStatistically: boolean;
-  if (hasFeatures) {
-    const allFeaturesSatisfied = liveFeatures.every((feature) => {
-      const counts = featureCounts.get(feature.inspectionFeatureId) ?? {
-        recorded: 0,
-        failed: 0
-      };
-      return (
-        counts.recorded >= feature.sampleSize &&
-        counts.failed <= feature.acceptanceNumber
-      );
-    });
-    const anyFeatureRejectable = liveFeatures.some((feature) => {
-      const counts = featureCounts.get(feature.inspectionFeatureId);
-      return counts != null && counts.failed >= feature.rejectionNumber;
-    });
-    canAccept = !isLocked && allFeaturesSatisfied;
-    failedStatistically = anyFeatureRejectable || fails > 0;
-  } else {
-    canAccept =
-      !isLocked &&
-      inspected >= inspection.sampleSize &&
-      fails <= inspection.acceptanceNumber;
-    failedStatistically = fails > inspection.acceptanceNumber;
-  }
-  // No disposition while a reading is still saving: the lot would close
-  // before it lands.
-  if (gridBusy) canAccept = false;
-  const canReject = !isLocked && !gridBusy;
-
   const failedFeatureSummary = useMemo<FailedFeatureSummary[]>(() => {
     if (!hasFeatures) return [];
     return liveFeatures
@@ -600,51 +339,6 @@ export function InspectionView({
       })
       .filter(Boolean) as FailedFeatureSummary[];
   }, [hasFeatures, liveFeatures, effectiveMeasurements]);
-
-  const pmiLinks = useMemo(
-    () =>
-      liveFeatures.map((f) => ({
-        id: f.inspectionFeatureId,
-        pmiItemId: f.inspectionFeature!.pmiItemId ?? null
-      })),
-    [liveFeatures]
-  );
-  const drawingBalloons = useMemo(() => {
-    const labelByFeatureId = new Map(
-      liveFeatures.map((f) => [
-        f.inspectionFeatureId,
-        f.inspectionFeature!.label
-      ])
-    );
-    return balloons
-      .filter((b) => labelByFeatureId.has(b.inspectionFeatureId))
-      .map((b) => ({
-        id: b.id,
-        inspectionFeatureId: b.inspectionFeatureId,
-        pageNumber: b.pageNumber,
-        xCoordinate: b.xCoordinate,
-        yCoordinate: b.yCoordinate,
-        regionX: b.regionX,
-        regionY: b.regionY,
-        regionWidth: b.regionWidth,
-        regionHeight: b.regionHeight,
-        label: labelByFeatureId.get(b.inspectionFeatureId) ?? ""
-      }));
-  }, [balloons, liveFeatures]);
-
-  const statusBadgeVariant =
-    inspection.status === "Passed"
-      ? ("green" as const)
-      : inspection.status === "Failed"
-        ? ("red" as const)
-        : inspection.status === "Partial"
-          ? ("yellow" as const)
-          : ("secondary" as const);
-
-  const planSummary =
-    inspection.samplingPlanType === "AQL"
-      ? `AQL ${inspection.aql ?? ""} · Lvl ${inspection.inspectionLevel ?? ""} · ${inspection.severity ?? ""}`
-      : inspection.samplingPlanType;
 
   // Timers: one control per configured work type (single-phase clocking, same
   // contract as the assembly view's TimerControl → /x/event).
@@ -680,9 +374,6 @@ export function InspectionView({
       ? (trackedEntities[quantityComplete]?.id ?? trackedEntities[0]?.id ?? "")
       : "";
 
-  const companyLogo =
-    mode === "dark" ? user.company.logoDarkIcon : user.company.logoLightIcon;
-
   return (
     <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-background text-foreground">
       {/* ── HEADER ── */}
@@ -713,132 +404,100 @@ export function InspectionView({
         }
       />
       {/* Phones use the app bar above; one header mounts so its timers do too. */}
-      {!isPhone && (
-        <header className="flex h-[52px] shrink-0 items-center bg-card border-b border-border max-md:hidden">
-          <SidebarTrigger className="h-full w-auto shrink-0 rounded-none border-r border-border px-2 hover:bg-accent md:px-4" />
-          {companyLogo ? (
-            <div className="hidden h-full shrink-0 items-center border-r border-border px-4 sm:flex">
-              <img
-                src={companyLogo}
-                alt={`${user.company.name} logo`}
-                className="h-7 w-auto max-w-[140px] object-contain"
-              />
-            </div>
-          ) : null}
-
-          <div className="flex h-full min-w-0 items-center gap-2 border-r border-border px-3 md:px-5">
-            {/* The lot number and status never give way to the actions. */}
-            <h1 className="shrink-0 text-sm font-semibold">
-              {inspection.inspectionId}
-            </h1>
-            <Badge
-              variant={statusBadgeVariant}
-              className="shrink-0 max-lg:hidden"
-            >
-              {inspection.status}
-            </Badge>
-            <span className="hidden text-muted-foreground xl:inline">·</span>
-            <span className="hidden truncate text-sm text-foreground/90 xl:inline">
-              {inspection.itemReadableId ?? job?.itemReadableIdWithRevision}
-            </span>
-            {operation?.description ? (
-              <>
-                <span className="hidden text-muted-foreground xl:inline">
-                  ·
-                </span>
-                <span className="hidden truncate text-sm text-foreground/90 xl:inline">
-                  {operation.description}
-                </span>
-              </>
-            ) : null}
-          </div>
-
-          <div className="flex-1" />
-
-          {isSerial && !isLocked ? (
-            <button
-              type="button"
-              onClick={scannerDisclosure.onOpen}
-              className={cn(
-                "hidden h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] md:gap-2 md:px-4 lg:flex",
-                !allSamplesLoaded && "text-primary"
-              )}
-            >
-              <LuScan className="size-4" />
-              <Trans>Add Sample</Trans>
-            </button>
-          ) : null}
-          {!isLocked && completablePassed > 0 ? (
-            <CompletePassedButton
-              inspectionId={inspection.id}
-              operationId={operationId}
-              count={completablePassed}
-              eventIds={eventIds}
-              gridBusy={gridBusy}
-            />
-          ) : null}
+      <InspectionLotHeader
+        inspection={inspection}
+        lot={lot}
+        itemLabel={inspection.itemReadableId ?? job?.itemReadableIdWithRevision}
+        detail={operation?.description}
+        badge={
+          operation?.reworkId ? (
+            <ReworkBadge correctionName={correctionName} />
+          ) : null
+        }
+      >
+        {canAddSample && !isLocked ? (
           <button
-            title={t`Reject`}
-            aria-label={t`Reject`}
             type="button"
-            onClick={rejectDisclosure.onOpen}
-            disabled={!canReject}
-            className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-red-600 transition-colors hover:bg-accent active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-400 md:gap-2 md:px-4"
+            onClick={scannerDisclosure.onOpen}
+            className={cn(
+              "hidden h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium transition-colors hover:bg-accent active:scale-[0.98] md:gap-2 md:px-4 lg:flex",
+              !allSamplesLoaded && "text-primary"
+            )}
           >
-            <LuX className="size-4" />
+            <LuScan className="size-4" />
+            <Trans>Add Sample</Trans>
+          </button>
+        ) : null}
+        {!isLocked && completablePassed > 0 ? (
+          <CompletePassedButton
+            inspectionId={inspection.id}
+            operationId={operationId}
+            count={completablePassed}
+            eventIds={eventIds}
+            gridBusy={gridBusy}
+          />
+        ) : null}
+        <button
+          title={t`Reject`}
+          aria-label={t`Reject`}
+          type="button"
+          onClick={rejectDisclosure.onOpen}
+          disabled={!canReject}
+          className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-red-600 transition-colors hover:bg-accent active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:text-red-400 md:gap-2 md:px-4"
+        >
+          <LuX className="size-4" />
+          <span className="hidden lg:inline">
+            <Trans>Reject</Trans>
+          </span>
+        </button>
+        {canPartial ? (
+          <button
+            title={t`Partial`}
+            aria-label={t`Partial`}
+            type="button"
+            onClick={partialDisclosure.onOpen}
+            disabled={gridBusy}
+            className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-amber-600 transition-colors hover:bg-accent active:scale-[0.98] dark:text-amber-400 md:gap-2 md:px-4"
+          >
+            <LuContrast className="size-4" />
             <span className="hidden lg:inline">
-              <Trans>Reject</Trans>
+              <Trans>Partial</Trans>
             </span>
           </button>
-          {canPartial ? (
-            <button
-              title={t`Partial`}
-              aria-label={t`Partial`}
-              type="button"
-              onClick={partialDisclosure.onOpen}
-              disabled={gridBusy}
-              className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-amber-600 transition-colors hover:bg-accent active:scale-[0.98] dark:text-amber-400 md:gap-2 md:px-4"
-            >
-              <LuContrast className="size-4" />
-              <span className="hidden lg:inline">
-                <Trans>Partial</Trans>
-              </span>
-            </button>
-          ) : null}
-          <button
-            title={t`Accept`}
-            aria-label={t`Accept`}
-            type="button"
-            onClick={acceptDisclosure.onOpen}
-            disabled={!canAccept}
-            className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-emerald-600 transition-colors hover:bg-accent active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:text-emerald-400 md:gap-2 md:px-4"
-          >
-            <LuCheck className="size-4" />
-            <span className="hidden lg:inline">
-              <Trans>Accept</Trans>
-            </span>
-          </button>
-          <button
-            type="button"
-            aria-label={t`More actions`}
-            onClick={actionsSheet.onOpen}
-            className="flex h-full shrink-0 items-center justify-center border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] md:px-4"
-          >
-            <LuEllipsisVertical className="size-4" />
-          </button>
+        ) : null}
+        <button
+          title={t`Accept`}
+          aria-label={t`Accept`}
+          type="button"
+          onClick={acceptDisclosure.onOpen}
+          disabled={!canAccept}
+          className="flex h-full shrink-0 items-center gap-1 border-l border-border px-2 text-sm font-medium text-emerald-600 transition-colors hover:bg-accent active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:text-emerald-400 md:gap-2 md:px-4"
+        >
+          <LuCheck className="size-4" />
+          <span className="hidden lg:inline">
+            <Trans>Accept</Trans>
+          </span>
+        </button>
+        <button
+          type="button"
+          aria-label={t`More actions`}
+          onClick={actionsSheet.onOpen}
+          className="flex h-full shrink-0 items-center justify-center border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] md:px-4"
+        >
+          <LuEllipsisVertical className="size-4" />
+        </button>
 
-          {workTypes.map((wt) => (
-            <TimerControl
-              key={wt}
-              operationId={operationId}
-              workCenterId={operation.workCenterId ?? undefined}
-              openEvent={openEventForWorkType(wt)}
-              workType={wt}
-              startDisabled={abilityBlocked}
-            />
-          ))}
-        </header>
-      )}
+        {workTypes.map((wt) => (
+          <TimerControl
+            key={wt}
+            operationId={operationId}
+            workCenterId={operation.workCenterId ?? undefined}
+            openEvent={openEventForWorkType(wt)}
+            workType={wt}
+            startDisabled={abilityBlocked}
+          />
+        ))}
+      </InspectionLotHeader>
 
       {abilityWarning && (
         <div className="shrink-0 px-4 pt-3">
@@ -846,213 +505,34 @@ export function InspectionView({
         </div>
       )}
 
-      {/* Phones: the meta bar scrolls away with the body. */}
-      <div className="contents max-md:flex max-md:min-h-0 max-md:flex-1 max-md:flex-col max-md:overflow-y-auto">
-        {/* ── META BAR ── */}
-        <div className="flex h-9 shrink-0 items-center gap-3 overflow-x-auto bg-card border-b border-border px-5 scrollbar-hide max-md:h-auto max-md:flex-wrap max-md:gap-x-3 max-md:gap-y-1 max-md:px-4 max-md:py-1.5">
-          <Badge variant={statusBadgeVariant} className="shrink-0 lg:hidden">
-            {inspection.status}
-          </Badge>
-          <span className="whitespace-nowrap text-xs text-muted-foreground tabular-nums">
-            {inspected} / {inspection.sampleSize} <Trans>inspected</Trans> · Ac{" "}
-            {inspection.acceptanceNumber} · Re {inspection.rejectionNumber}
-            {inspection.codeLetter ? ` · ${inspection.codeLetter}` : ""}
-          </span>
-          <span className="whitespace-nowrap text-xs text-muted-foreground">
-            {planSummary}
-          </span>
-          <span className="whitespace-nowrap text-xs text-muted-foreground tabular-nums">
-            <Trans>Lot</Trans> {inspection.lotSize}
-          </span>
-          {documentName ? (
-            <span className="truncate text-xs text-muted-foreground max-md:max-w-full">
-              {documentName}
+      <InspectionLotBody
+        inspection={inspection}
+        lot={lot}
+        isSerial={isSerial}
+        features={features}
+        samples={samples}
+        measurements={measurements}
+        gauges={gauges}
+        recentGaugeIds={recentGaugeIds}
+        parameters={parameters}
+        workInstruction={workInstruction}
+        pdfUrl={pdfUrl}
+        model={model}
+        metaBar={
+          <InspectionLotMetaBar
+            inspection={inspection}
+            lot={lot}
+            documentName={documentName}
+          >
+            <div className="flex-1 max-md:hidden" />
+            <span className="whitespace-nowrap text-xs text-muted-foreground tabular-nums max-md:order-first">
+              <Trans>Completed</Trans> {productionQuantities.production} ·{" "}
+              <Trans>Scrap</Trans> {productionQuantities.scrap} ·{" "}
+              <Trans>Rework</Trans> {productionQuantities.rework}
             </span>
-          ) : null}
-          <div className="flex-1 max-md:hidden" />
-          <span className="whitespace-nowrap text-xs text-muted-foreground tabular-nums max-md:order-first">
-            <Trans>Completed</Trans> {productionQuantities.production} ·{" "}
-            <Trans>Scrap</Trans> {productionQuantities.scrap} ·{" "}
-            <Trans>Rework</Trans> {productionQuantities.rework}
-          </span>
-        </div>
-
-        {/* ── BODY ── */}
-        {showDrawing ? (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2">
-            <div
-              ref={stackRef}
-              className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden"
-            >
-              {/* PDF viewer — pinned height while the features table is expanded */}
-              <div
-                className={cn(
-                  "flex min-h-0 min-w-full flex-col overflow-hidden rounded-lg border bg-muted",
-                  gridExpanded ? "shrink-0" : "min-h-[220px] flex-1"
-                )}
-                style={{
-                  ...(gridExpanded ? { height: pdfPaneHeightPx } : undefined),
-                  minWidth: "100%"
-                }}
-              >
-                <ClientOnly
-                  fallback={
-                    <div className="flex h-full items-center justify-center">
-                      <Spinner />
-                    </div>
-                  }
-                >
-                  {() => (
-                    <Suspense
-                      fallback={
-                        <div className="flex h-full items-center justify-center">
-                          <Spinner />
-                        </div>
-                      }
-                    >
-                      {model ? (
-                        <ModelUploadPreview
-                          modelUploadId={model.modelUploadId}
-                          modelPath={model.modelPath}
-                          companyId={user.company.id}
-                          pmiLinks={pmiLinks}
-                          selectedLinkId={activeFeatureId}
-                          onLinkSelect={setActiveFeatureId}
-                          className="h-full rounded-none"
-                        />
-                      ) : (
-                        <InspectionDrawingPane
-                          pdfUrl={pdfUrl!}
-                          balloons={drawingBalloons}
-                          activeFeatureId={activeFeatureId}
-                          onBalloonClick={setActiveFeatureId}
-                        />
-                      )}
-                    </Suspense>
-                  )}
-                </ClientOnly>
-              </div>
-
-              {gridExpanded ? (
-                <div
-                  role="separator"
-                  aria-orientation="horizontal"
-                  aria-label={t`Drag to resize drawing and characteristics`}
-                  aria-valuenow={Math.round(pdfPaneHeightPx)}
-                  className={cn(
-                    "group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80",
-                    isResizingSplit && "bg-muted"
-                  )}
-                  onMouseDown={onSplitResizeMouseDown}
-                >
-                  <span className="h-1 w-14 shrink-0 rounded-full bg-muted-foreground/40 group-hover:bg-muted-foreground/65" />
-                </div>
-              ) : null}
-
-              {/* Features table — collapsible bottom panel */}
-              <div
-                className={cn(
-                  "flex min-w-0 flex-col overflow-hidden rounded-lg border bg-card",
-                  gridExpanded ? "min-h-0 flex-1" : "max-h-[14rem] shrink-0"
-                )}
-                style={
-                  gridExpanded && stackHeightPx > 0
-                    ? { minHeight: stackHeightPx * 0.5 }
-                    : undefined
-                }
-              >
-                <InspectionMeasurementMatrix
-                  inspectionId={inspection.id}
-                  isReadOnly={isLocked}
-                  isSerial={isSerial}
-                  features={features}
-                  samples={samples}
-                  measurements={measurements}
-                  gauges={gauges}
-                  recentGaugeIds={recentGaugeIds}
-                  maxSampleSize={maxSampleSize}
-                  lotSize={inspection.lotSize}
-                  lotAcceptanceNumber={inspection.acceptanceNumber}
-                  lotRejectionNumber={inspection.rejectionNumber}
-                  activeFeatureId={activeFeatureId}
-                  onActiveFeatureChange={setActiveFeatureId}
-                  onMeasurementSaved={onMeasurementSaved}
-                  placementRef={placementRef}
-                  onBusyChange={setGridBusy}
-                  toolbarActions={
-                    <>
-                      <IconButton
-                        type="button"
-                        variant="ghost"
-                        aria-label={t`Hide drawing`}
-                        title={t`Hide drawing`}
-                        icon={<LuEyeOff className="h-4 w-4" />}
-                        isDisabled={gridBusy}
-                        onClick={toggleDrawing}
-                      />
-                      <IconButton
-                        type="button"
-                        variant="ghost"
-                        aria-expanded={gridExpanded}
-                        aria-label={
-                          gridExpanded
-                            ? t`Collapse characteristics table`
-                            : t`Expand characteristics table`
-                        }
-                        icon={
-                          gridExpanded ? (
-                            <LuChevronDown className="h-4 w-4" />
-                          ) : (
-                            <LuChevronUp className="h-4 w-4" />
-                          )
-                        }
-                        onClick={() => setGridExpanded((v) => !v)}
-                      />
-                    </>
-                  }
-                />
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4 pt-2 max-md:flex-none max-md:overflow-visible">
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg border bg-card max-md:flex-initial">
-              <InspectionMeasurementMatrix
-                inspectionId={inspection.id}
-                isReadOnly={isLocked}
-                isSerial={isSerial}
-                features={features}
-                samples={samples}
-                measurements={measurements}
-                gauges={gauges}
-                recentGaugeIds={recentGaugeIds}
-                maxSampleSize={maxSampleSize}
-                lotSize={inspection.lotSize}
-                lotAcceptanceNumber={inspection.acceptanceNumber}
-                lotRejectionNumber={inspection.rejectionNumber}
-                activeFeatureId={activeFeatureId}
-                onActiveFeatureChange={setActiveFeatureId}
-                onMeasurementSaved={onMeasurementSaved}
-                placementRef={placementRef}
-                onBusyChange={setGridBusy}
-                toolbarActions={
-                  hasDrawing ? (
-                    <IconButton
-                      type="button"
-                      variant="ghost"
-                      aria-label={t`Show drawing`}
-                      title={t`Show drawing`}
-                      icon={<LuEye className="h-4 w-4" />}
-                      isDisabled={gridBusy}
-                      onClick={toggleDrawing}
-                    />
-                  ) : undefined
-                }
-              />
-            </div>
-          </div>
-        )}
-      </div>
+          </InspectionLotMetaBar>
+        }
+      />
 
       {/* Phones: the lot actions as labelled 48px buttons in thumb reach. */}
       {isPhone && (
@@ -1115,69 +595,65 @@ export function InspectionView({
       )}
 
       {/* ── MODALS ── */}
-      {scannerDisclosure.isOpen && (
-        <ScanInspectionSample
-          inspectionId={inspection.id}
-          isSerial={isSerial}
-          remaining={remaining}
-          inspected={inspected}
-          sampleSize={inspection.sampleSize}
-          fails={fails}
-          acceptanceNumber={inspection.acceptanceNumber}
-          onClose={scannerDisclosure.onClose}
-        />
-      )}
+      <ScanInspectionSample
+        open={scannerDisclosure.isOpen}
+        inspectionId={inspection.id}
+        isSerial={isSerial}
+        remaining={remaining}
+        inspected={inspected}
+        sampleSize={inspection.sampleSize}
+        fails={fails}
+        acceptanceNumber={inspection.acceptanceNumber}
+        onClose={scannerDisclosure.onClose}
+      />
 
-      {acceptDisclosure.isOpen && (
-        <AcceptLotModal
-          inspectionId={inspection.id}
-          operationId={operationId}
-          fails={fails}
-          remaining={acceptRemaining}
-          eventIds={eventIds}
-          onClose={acceptDisclosure.onClose}
-        />
-      )}
+      <AcceptLotModal
+        open={acceptDisclosure.isOpen}
+        inspectionId={inspection.id}
+        operationId={operationId}
+        fails={fails}
+        remaining={acceptRemaining}
+        eventIds={eventIds}
+        onClose={acceptDisclosure.onClose}
+      />
 
-      {rejectDisclosure.isOpen && (
-        <DispositionModal
-          decision="Reject"
-          inspectionId={inspection.id}
-          operationId={operationId}
-          isSerial={isSerial}
-          units={allocatableUnits}
-          maxAllocatable={opRemaining}
-          completions={0}
-          issueTypes={issueTypes}
-          summary={
-            failedStatistically
-              ? t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s). Route the units below to scrap or rework, or record the verdict only.`
-              : t`The entire lot of ${inspection.lotSize} will be rejected as non-conforming — ${passes} sampled pass(es) and ${fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only.`
-          }
-          failedFeatureSummary={failedFeatureSummary}
-          eventIds={eventIds}
-          onCancel={rejectDisclosure.onClose}
-          onSubmit={rejectDisclosure.onClose}
-        />
-      )}
+      <DispositionModal
+        open={rejectDisclosure.isOpen}
+        decision="Reject"
+        inspectionId={inspection.id}
+        operationId={operationId}
+        isSerial={isSerial}
+        units={allocatableUnits}
+        maxAllocatable={opRemaining}
+        completions={0}
+        issueTypes={issueTypes}
+        summary={
+          failedStatistically
+            ? t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s). Route the units below to scrap or rework, or record the verdict only.`
+            : t`The entire lot of ${inspection.lotSize} will be rejected as non-conforming — ${passes} sampled pass(es) and ${fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only.`
+        }
+        failedFeatureSummary={failedFeatureSummary}
+        eventIds={eventIds}
+        onCancel={rejectDisclosure.onClose}
+        onSubmit={rejectDisclosure.onClose}
+      />
 
-      {partialDisclosure.isOpen && (
-        <DispositionModal
-          decision="Partial"
-          inspectionId={inspection.id}
-          operationId={operationId}
-          isSerial={isSerial}
-          units={allocatableUnits.filter((unit) => unit.failed)}
-          maxAllocatable={isSerial ? fails : Math.min(fails, opRemaining)}
-          completions={completablePassed}
-          issueTypes={issueTypes}
-          summary={t`Every unit has a verdict: ${passes} passed and ${fails} failed. The lot closes with each unit routed to its own outcome.`}
-          failedFeatureSummary={failedFeatureSummary}
-          eventIds={eventIds}
-          onCancel={partialDisclosure.onClose}
-          onSubmit={partialDisclosure.onClose}
-        />
-      )}
+      <DispositionModal
+        open={partialDisclosure.isOpen}
+        decision="Partial"
+        inspectionId={inspection.id}
+        operationId={operationId}
+        isSerial={isSerial}
+        units={allocatableUnits.filter((unit) => unit.failed)}
+        maxAllocatable={isSerial ? fails : Math.min(fails, opRemaining)}
+        completions={completablePassed}
+        issueTypes={issueTypes}
+        summary={t`Every unit has a verdict: ${passes} passed and ${fails} failed. The lot closes with each unit routed to its own outcome.`}
+        failedFeatureSummary={failedFeatureSummary}
+        eventIds={eventIds}
+        onCancel={partialDisclosure.onClose}
+        onSubmit={partialDisclosure.onClose}
+      />
 
       <QualityIssueModal
         operationId={operationId}
@@ -1188,8 +664,10 @@ export function InspectionView({
         onClose={qualityModal.onClose}
       />
 
-      {scrapModal.isOpen && operation && (
+      {operation && scrapModal.openCount > 0 && (
         <QuantityModal
+          key={`scrap-${scrapModal.openCount}`}
+          open={scrapModal.isOpen}
           type="scrap"
           operation={operation}
           parentIsSerial={requiresSerialTracking}
@@ -1202,8 +680,10 @@ export function InspectionView({
         />
       )}
 
-      {finishModal.isOpen && operation && (
+      {operation && finishModal.openCount > 0 && (
         <QuantityModal
+          key={`finish-${finishModal.openCount}`}
+          open={finishModal.isOpen}
           type="finish"
           operation={operation}
           parentIsSerial={requiresSerialTracking}
@@ -1217,8 +697,9 @@ export function InspectionView({
         />
       )}
 
-      {reworkModal.isOpen && operation && jobId && (
+      {operation && jobId && reworkModal.openCount > 0 && (
         <ReworkModal
+          key={`rework-${reworkModal.openCount}`}
           operation={operation}
           jobId={jobId}
           isOpen={reworkModal.isOpen}
@@ -1273,7 +754,7 @@ export function InspectionView({
                   qualityModal.onOpen();
                 }}
               />
-              {isSerial && !isLocked ? (
+              {canAddSample && !isLocked ? (
                 <ActionSheetButton
                   icon={<LuScan className="size-4 shrink-0" />}
                   label={t`Add Sample`}
@@ -1420,6 +901,45 @@ function AcceptLotModal({
   fails,
   remaining,
   eventIds,
+  open,
+  onClose
+}: {
+  inspectionId: string;
+  operationId: string;
+  fails: number;
+  remaining: number;
+  eventIds: ProductionEventIdFields;
+  open: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <AcceptLotBody
+          inspectionId={inspectionId}
+          operationId={operationId}
+          fails={fails}
+          remaining={remaining}
+          eventIds={eventIds}
+          onClose={onClose}
+        />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function AcceptLotBody({
+  inspectionId,
+  operationId,
+  fails,
+  remaining,
+  eventIds,
   onClose
 }: {
   inspectionId: string;
@@ -1440,61 +960,53 @@ function AcceptLotModal({
   const submitted = useRef(false);
 
   return (
-    <Modal
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Accept lot?</Trans>
-          </ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <VStack spacing={2}>
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Accept lot?</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={2}>
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              The lot will be marked Passed and {remaining} remaining unit(s)
+              will be completed at this operation.
+            </Trans>
+          </p>
+          {fails > 0 ? (
             <p className="text-sm text-muted-foreground">
               <Trans>
-                The lot will be marked Passed and {remaining} remaining unit(s)
-                will be completed at this operation.
+                {fails} sampled failure(s) are recorded and will NOT be
+                completed — resolve them from the actions menu.
               </Trans>
             </p>
-            {fails > 0 ? (
-              <p className="text-sm text-muted-foreground">
-                <Trans>
-                  {fails} sampled failure(s) are recorded and will NOT be
-                  completed — resolve them from the actions menu.
-                </Trans>
-              </p>
-            ) : null}
-          </VStack>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <fetcher.Form
-            method="post"
-            action={path.to.inspectionDisposition(inspectionId)}
-            onSubmit={() => (submitted.current = true)}
+          ) : null}
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <fetcher.Form
+          method="post"
+          action={path.to.inspectionDisposition(inspectionId)}
+          onSubmit={() => (submitted.current = true)}
+        >
+          <input type="hidden" name="decision" value="Accept" />
+          <input type="hidden" name="operationId" value={operationId} />
+          <EventIdInputs eventIds={eventIds} />
+          <OriginInput />
+          <Button
+            type="submit"
+            isLoading={fetcher.state !== "idle"}
+            isDisabled={fetcher.state !== "idle"}
           >
-            <input type="hidden" name="decision" value="Accept" />
-            <input type="hidden" name="operationId" value={operationId} />
-            <EventIdInputs eventIds={eventIds} />
-            <OriginInput />
-            <Button
-              type="submit"
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-            >
-              <Trans>Accept Lot</Trans>
-            </Button>
-          </fetcher.Form>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+            <Trans>Accept Lot</Trans>
+          </Button>
+        </fetcher.Form>
+      </ModalFooter>
+    </>
   );
 }
 

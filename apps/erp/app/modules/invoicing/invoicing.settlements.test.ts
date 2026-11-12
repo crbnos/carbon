@@ -24,6 +24,13 @@ function clientFor(
   return {
     calls,
     client: {
+      rpc(
+        this: { from(table: string): any },
+        name: string,
+        args: { _company_id: string }
+      ) {
+        return this.from(name).eq("companyId", args._company_id);
+      },
       from(table: string) {
         const call = {
           table,
@@ -44,6 +51,12 @@ function clientFor(
           order: () => q,
           or: () => q,
           gt: () => q,
+          not: (key: string, _op: string, value: unknown) => {
+            result = result.filter(
+              (row) => row[key] !== undefined && row[key] !== value
+            );
+            return q;
+          },
           eq: (key: string, value: unknown) => {
             call.filters.push([key, value]);
             result = result.filter(
@@ -90,7 +103,7 @@ function databaseFor(tables: Record<string, Row[]>) {
     insertInto: (table: string) => query(table, "insert")
   };
   function query(table: string, mode = "select") {
-    let rows = tables[table] ?? [];
+    let rows = tables[table.split(/\s+as\s+/)[0]!] ?? [];
     const q: any = {
       select: () => q,
       selectAll: () => q,
@@ -639,6 +652,83 @@ describe("replaceInvoiceSettlements", () => {
       sourceAmount: 110,
       fxGainLossAmount: 8.33334
     });
+  });
+});
+
+describe("supplier prepayments fund only their own purchase order", () => {
+  const payable = {
+    ...invoice,
+    customerId: undefined,
+    supplierId: "sup",
+    partyId: "sup",
+    status: "Open"
+  };
+  const disbursement = {
+    ...current,
+    paymentType: "Disbursement",
+    customerId: null,
+    supplierId: "sup"
+  };
+  const prepayment = {
+    ...payment,
+    id: "prepayment",
+    paymentType: "Disbursement",
+    customerId: null,
+    supplierId: "sup",
+    purchaseOrderId: "po-1"
+  };
+  const apDraft = {
+    ...draft,
+    targetSalesInvoiceId: undefined,
+    targetPurchaseInvoiceId: "invoice"
+  };
+  const billsOrder = (purchaseOrderId: string) => ({
+    purchaseInvoice: [payable],
+    purchaseInvoices: [payable],
+    journalLine: [{ documentId: "invoice", amount: 100 }],
+    purchaseInvoiceLine: [
+      { invoiceId: "invoice", companyId: "co", purchaseOrderId }
+    ]
+  });
+
+  it("does not draw a prior prepayment for an invoice of another order", async () => {
+    const { db, inserts } = draftDb({
+      payment: [{ ...disbursement, totalAmount: 0 }, prepayment],
+      ...billsOrder("po-2")
+    });
+    await expect(replace(db, [apDraft])).rejects.toThrow(
+      "Insufficient payment funding for target: invoice"
+    );
+    expect(inserts).toEqual([]);
+  });
+
+  it("draws a prior prepayment for an invoice that bills its order", async () => {
+    const { db, inserts } = draftDb({
+      payment: [{ ...disbursement, totalAmount: 0 }, prepayment],
+      ...billsOrder("po-1")
+    });
+    await replace(db, [apDraft]);
+    expect(inserts).toEqual([
+      expect.objectContaining({
+        sourcePaymentId: "prepayment",
+        sourceAmount: 110,
+        appliedAmount: 100
+      })
+    ]);
+  });
+
+  it("refuses a prepayment payment applied to another order's invoice", async () => {
+    const { db, inserts } = draftDb({
+      payment: [{ ...disbursement, purchaseOrderId: "po-1" }],
+      purchaseOrder: [
+        { id: "po-1", companyId: "co", purchaseOrderId: "PO000012" }
+      ],
+      ...billsOrder("po-2")
+    });
+    await expect(replace(db, [apDraft])).rejects.toThrow(
+      "A prepayment for PO000012 can only be applied to that order's invoices"
+    );
+    expect(inserts).toEqual([]);
   });
 });
 
@@ -1306,4 +1396,105 @@ describe("customer deposits fund only their own document", () => {
       salesOrderIds: ["so-1"]
     });
   });
+});
+
+it("a supplier refund removes returned principal from the composer and new refund choices", async () => {
+  const { client } = clientFor({
+    ...config,
+    payment: [
+      {
+        ...payment,
+        customerId: null,
+        supplierId: "supplier",
+        paymentType: "Disbursement",
+        purchaseOrderId: "po"
+      }
+    ],
+    get_supplier_prepayment_refund_currencies: [
+      { purchaseOrderId: "po", refundableCurrencyCodes: [] }
+    ],
+    purchaseOrder: [
+      {
+        id: "po",
+        purchaseOrderId: "PO1",
+        companyId: "co",
+        supplierId: "supplier",
+        status: "Completed"
+      }
+    ],
+    invoiceSettlement: [
+      {
+        paymentId: "refund",
+        sourcePaymentId: "prior",
+        sourceAmount: 110,
+        appliedAmount: 100,
+        fxGainLossAmount: 0,
+        payment: { status: "Posted" },
+        "payment.paymentType": "Receipt",
+        "payment.supplierId": "supplier",
+        "payment.currencyCode": "EUR"
+      }
+    ]
+  });
+  expect(
+    await onAccountSources(client, {
+      paymentType: "Disbursement",
+      supplierId: "supplier"
+    })
+  ).toEqual({
+    data: { sources: [], availableDocumentAmount: 0, availableBaseAmount: 0 },
+    error: null
+  });
+  expect(await service.getDepositDocuments(client, "co", [], ["po"])).toEqual([
+    {
+      id: "po",
+      readableId: "PO1",
+      partyId: "supplier",
+      kind: "purchaseOrder",
+      status: "Completed",
+      open: false,
+      refundableCurrencyCodes: []
+    }
+  ]);
+});
+
+it("keeps saved rental and contract documents beyond the first response page", async () => {
+  const rentalAgreement = Array.from({ length: 1001 }, (_, index) => ({
+    id: `ra-${index}`,
+    rentalAgreementId: `RA${index}`,
+    customerId: "customer",
+    companyId: "co",
+    status: "Active"
+  }));
+  const customerContract = Array.from({ length: 1001 }, (_, index) => ({
+    id: `contract-${index}`,
+    customerContractId: `C${index}`,
+    customerId: "customer",
+    companyId: "co",
+    status: "Active"
+  }));
+  const { client } = clientFor({
+    ...config,
+    rentalAgreement,
+    customerContract
+  });
+  const documents = await service.getDepositDocuments(client, "co");
+  expect(documents.find((document) => document.id === "ra-1000")).toEqual({
+    id: "ra-1000",
+    readableId: "RA1000",
+    partyId: "customer",
+    kind: "rentalAgreement",
+    status: "Active",
+    open: true
+  });
+  expect(documents.find((document) => document.id === "contract-1000")).toEqual(
+    {
+      id: "contract-1000",
+      readableId: "C1000",
+      partyId: "customer",
+      kind: "customerContract",
+      status: "Active",
+      open: true
+    }
+  );
 });

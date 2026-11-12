@@ -7,7 +7,8 @@ import type {
   OnshapeBomNode,
   OnshapePropertyValue,
   PlanItemRow,
-  PlanMappingContext
+  PlanMappingContext,
+  StandardSources
 } from "@carbon/ee";
 import {
   buildReleasePlan,
@@ -15,10 +16,12 @@ import {
   drawingModels,
   groupRevisionsIntoReleases,
   isModelReleaseItem,
+  mapsPartProperties,
   missingBomColumnsMessage,
   parseBomTree,
   parseProperties,
   releaseBomKey,
+  releaseSources,
   withoutProperties
 } from "@carbon/ee";
 import type { StoredReleasePlan } from "@carbon/ee/onshape";
@@ -28,6 +31,7 @@ import {
   loadActiveMakeMethods,
   loadPlanMapping,
   loadPlanOptions,
+  loadStandardSources,
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
   onshapeFailure,
@@ -39,7 +43,10 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { findOpenReleaseNotice } from "~/modules/settings/settings.service";
+import {
+  findOpenReleaseNotice,
+  loadLockedRevisions
+} from "~/modules/settings/settings.service";
 
 export const config = {
   runtime: "nodejs"
@@ -210,6 +217,22 @@ export async function action({ request }: ActionFunctionArgs) {
       .map(releaseBomKey)
   );
 
+  // The map's Item, Quantity, Name and Description columns; a release keeps
+  // Onshape's own Part number and Revision.
+  let sources: StandardSources;
+  try {
+    sources = releaseSources(await loadStandardSources(serviceRole, companyId));
+  } catch (error) {
+    logger.error("Failed to read the Onshape property map", {
+      companyId,
+      error
+    });
+    return data(
+      { error: "Failed to read the Onshape property map" },
+      { status: 500 }
+    );
+  }
+
   // BOMs are read sequentially: parallel bursts hit Onshape rate limits. Null
   // lines (a failed read) tell the apply to leave the method alone; an empty
   // array is an empty BOM. Keyed by `releaseBomKey`: two configurations of one
@@ -232,7 +255,10 @@ export async function action({ request }: ActionFunctionArgs) {
         item.elementId,
         item.configuration ?? null
       );
-      const { lines, missingColumns } = parseBomTree(bom);
+      const { lines, missingColumns, blankColumns } = parseBomTree(
+        bom,
+        sources
+      );
       if (missingColumns.length > 0) {
         bomLinesByElementId[bomKey] = null;
         const unread = {
@@ -257,7 +283,8 @@ export async function action({ request }: ActionFunctionArgs) {
         });
         warnings.push(
           `${item.partNumber} Rev ${item.revision}: ${missingBomColumnsMessage(
-            missingColumns
+            missingColumns,
+            blankColumns
           )}`
         );
         continue;
@@ -334,7 +361,9 @@ export async function action({ request }: ActionFunctionArgs) {
   // theirs on the BOM row.
   const propertiesByPartNumber = new Map<string, OnshapePropertyValue[]>();
   const needsProperties =
-    mapping.map.length > 0 ||
+    mapsPartProperties(mapping.map) ||
+    sources.identity.name !== undefined ||
+    sources.identity.description !== undefined ||
     mapping.descriptionModes.name === "everyPush" ||
     mapping.descriptionModes.description === "everyPush";
   if (needsProperties) {
@@ -413,9 +442,36 @@ export async function action({ request }: ActionFunctionArgs) {
       { status: 500 }
     );
   }
-  const plan = openNotice.data
-    ? { ...built, existingChangeNotice: openNotice.data.changeNoticeId }
-    : built;
+  // For the review only: the push checks again, so a failed read marks nothing.
+  const locks = await loadLockedRevisions(
+    client,
+    companyId,
+    built.items.flatMap((item) =>
+      item.action === "reuse" && item.existingItemId
+        ? [item.existingItemId]
+        : []
+    )
+  );
+  if (locks.error !== null) {
+    logger.warn("Couldn't read the change notices holding reused revisions", {
+      companyId,
+      releaseId,
+      error: locks.error
+    });
+  }
+  const plan = {
+    ...built,
+    items: built.items.map((item) => {
+      const locked =
+        item.action === "reuse" && item.existingItemId
+          ? locks.data?.get(item.existingItemId)
+          : undefined;
+      return locked ? { ...item, locked } : item;
+    }),
+    ...(openNotice.data
+      ? { existingChangeNotice: openNotice.data.changeNoticeId }
+      : {})
+  };
 
   // Only the stored copy carries the BOM lines the apply walks, minus cells.
   const stored: StoredReleasePlan = {

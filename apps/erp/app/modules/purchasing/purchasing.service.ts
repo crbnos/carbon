@@ -36,8 +36,9 @@ import {
 } from "@carbon/database/journal-posting-status";
 import { toJson } from "@carbon/database/json";
 import type { AccountClass } from "@carbon/database/ledger";
-import { toStoredAmount } from "@carbon/database/ledger";
+import { debit, toStoredAmount } from "@carbon/database/ledger";
 import { assertBalanced, equals } from "@carbon/database/precision";
+import { withInspectionRelease } from "@carbon/database/quality";
 import {
   gte,
   inOrder,
@@ -46,7 +47,7 @@ import {
   selectRows,
   updateRowsById
 } from "@carbon/database/rows";
-import { getNextSequence } from "@carbon/database/sequence";
+import { getNextSequence, getNextSequences } from "@carbon/database/sequence";
 import {
   findStorageObjectBuckets,
   listStorageObjects
@@ -139,7 +140,12 @@ import {
   createDocumentUploadUrl,
   upsertDocument
 } from "~/modules/documents/documents.service";
+import {
+  assertNoRejectedUntrackedLot,
+  removeUnpickedPutAways
+} from "~/modules/inventory/inventory.service";
 import { shippableEntityStatuses } from "~/modules/inventory/inventory.utils";
+import { EACH_UNIT_OF_MEASURE_CODE } from "~/modules/items/items.models";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.service";
 import { getEmployeeJob } from "~/modules/people/people.service";
 import { isEmailableContact } from "~/modules/settings/party-contact";
@@ -170,10 +176,15 @@ import { planningSegmentFilter } from "../production/ui/Planning/planning-action
 import * as sharedPostings from "../shared/shared.service";
 import {
   allocateJournalLineIds,
+  attributesContain,
+  type BookAdjustmentArgs,
+  bookAdjustment,
   createAdjustmentJournal,
   currencyDecimals,
   cutLeasePaymentRows,
   fromServerFn,
+  getCurrentAccountingPeriod,
+  getDefaultPostingGroup,
   getSupplierPartPriceConverter,
   insertNegatedJournal,
   invokePosting,
@@ -194,6 +205,7 @@ import type {
   purchaseReturnOrderLineValidator,
   purchaseReturnOrderStatusType,
   purchasingRfqStatusType,
+  RequestQuoteLine,
   selectedLinesValidator,
   supplierBankAccountValidator,
   supplierContactValidator,
@@ -209,6 +221,7 @@ import type {
 import {
   exceedsApprovedAmount,
   isPurchaseOrderAmendable,
+  isPurchaseOrderMissingPromisedDate,
   leaseDetailFields,
   leaseLineColumns,
   leaseLinePaymentFields,
@@ -221,8 +234,10 @@ import {
   PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS,
   PURCHASE_ORDER_LINE_VERSION_COLUMNS,
   PURCHASE_ORDER_LOCKED_STATUSES,
+  PURCHASE_ORDER_RELEASED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
   type PurchaseOrderDateField,
+  type PurchaseOrderForceDeleteBlockers,
   type PurchaseOrderFundsIntent,
   type PurchaseOrderLineDateField,
   type PurchaseOrderLineIdentity,
@@ -231,17 +246,27 @@ import {
   planningLineCurrencyCode,
   planningQuantityChange,
   planPurchaseOrderRestore,
+  planReceiptReversal,
   purchaseOrderEditRefusal,
+  purchaseOrderForceDeleteNotificationId,
+  purchaseOrderForceDeletePendingReceiptMessage,
+  purchaseOrderForceDeleteUnsupportedReceiptMessage,
+  purchaseOrderForceDeleteUsedStockMessage,
   purchaseOrderFundsRefusal,
   purchaseOrderLineAmendRefusal,
   purchaseOrderLineDateOfOrderDate,
   purchaseOrderLineDateRefusal,
   purchaseOrderLineDeleteRefusal,
   purchaseOrderPromisedDateRefusal,
+  purchaseOrderStatusAfterReversal,
+  type ReceiptReceivedStock,
+  type ReceiptStockRemoval,
+  receivedAfterReceiptReversal,
   SUPPLIER_CONTACT_EMAIL_REQUIRED,
   shortClosePurchaseOrderLineRefusal,
   splitRfqFileAttachments,
-  taxPairForQuantity
+  taxPairForQuantity,
+  toPurchaseQuantity
 } from "./purchasing.models";
 import { renderPurchaseOrderPdf } from "./purchasing.pdf";
 import type {
@@ -256,10 +281,10 @@ import type {
 // out orderCount and partCount (grouped counts), externalId (a subquery) and
 // embedding lets Postgres skip them.
 const SUPPLIERS_LIST_COLUMNS =
-  "id,readableId,name,supplierTypeId,status,type,accountManagerId,tags,website,currencyCode,phone,fax,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy" as const;
+  "id,readableId,name,supplierTypeId,status,type,supplierStageId,stage,accountManagerId,tags,website,currencyCode,phone,fax,customFields,companyId,createdAt,createdBy,updatedAt,updatedBy" as const;
 
 const PURCHASE_ORDERS_LIST_COLUMNS =
-  "id,purchaseOrderId,revisionId,status,orderDate,supplierId,supplierReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,orderTotal,receivableQuantity,receivedQuantity,shippingMethodId,receiptRequestedDate,receiptPromisedDate,deliveryDate,dropShipment,paymentTermId,createdByFullName,assigneeFullName" as const;
+  "id,purchaseOrderId,revisionId,status,orderDate,supplierId,supplierReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,orderTotal,receivableQuantity,receivedQuantity,shippingMethodId,receiptRequestedDate,receiptPromisedDate,deliveryDate,shippedDate,expectedReceiptDate,dropShipment,paymentTermId,createdByFullName,assigneeFullName" as const;
 
 const logger = getLogger("erp", "purchasing-service");
 
@@ -1460,6 +1485,111 @@ export async function getSupplierType(
     .select("*")
     .eq("id", supplierTypeId)
     .single();
+}
+
+export async function getSupplierStage(
+  client: SupabaseClient<Database>,
+  supplierStageId: string,
+  companyId: string
+) {
+  return client
+    .from("supplierStage")
+    .select("*")
+    .eq("id", supplierStageId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export const SUPPLIER_STAGES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
+export async function getSupplierStages(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("supplierStage")
+    .select("id, name, color", {
+      count: listCount(args)
+    })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, SUPPLIER_STAGES_PAGING);
+  }
+
+  return query;
+}
+
+export async function getSupplierStagesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("supplierStage")
+    .select("id, name, color")
+    .eq("companyId", companyId)
+    .order("name");
+}
+
+export async function deleteSupplierStage(
+  client: SupabaseClient<Database>,
+  supplierStageId: string,
+  companyId: string
+) {
+  return requireAffected(
+    client
+      .from("supplierStage")
+      .delete()
+      .eq("id", supplierStageId)
+      .eq("companyId", companyId)
+      .select("id")
+  );
+}
+
+export async function insertSupplierStage(
+  client: SupabaseClient<Database>,
+  supplierStage: {
+    name: string;
+    color: string | null;
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  return client.from("supplierStage").insert([supplierStage]).select("id");
+}
+
+export async function updateSupplierStage(
+  client: SupabaseClient<Database>,
+  supplierStage: {
+    id: string;
+    name: string;
+    /** Left out, the stage keeps its color; null clears it. */
+    color?: string | null;
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  const { id, companyId, name, color, updatedBy } = supplierStage;
+  return requireAffected(
+    client
+      .from("supplierStage")
+      .update({
+        name,
+        ...(color !== undefined && { color }),
+        updatedBy,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select("id")
+  );
 }
 
 export const SUPPLIER_TYPES_PAGING: Paging = {
@@ -4766,6 +4896,202 @@ export async function upsertPurchasingRFQSuppliers(
     .select("id");
 }
 
+/**
+ * Why the company's promised date rule refuses this order, or null when the
+ * rule is off or the order passes.
+ */
+export async function requiredPromisedDateRefusal(
+  ctx: ServiceContext,
+  purchaseOrderId: string
+): Promise<string | null> {
+  const companyId = ctx.company.id;
+  const settings = await getCompanySettings(ctx.asSystem.supabase, companyId);
+  // Fails closed, as the planning approval bypass does: an unread setting may be on.
+  if (settings.error) {
+    logger.error("Failed to read the promised date rule", {
+      companyId,
+      purchaseOrderId,
+      error: settings.error
+    });
+    return "The promised date rule could not be checked. Try again.";
+  }
+  if (!settings.data?.requirePromisedDateToFinalizePurchaseOrder) return null;
+
+  const [lines, delivery] = await Promise.all([
+    ctx.asSystem.pg
+      .selectFrom("purchaseOrderLine")
+      .select(["purchaseOrderLineType", "promisedDate"])
+      .where("companyId", "=", companyId)
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .execute(),
+    ctx.asSystem.pg
+      .selectFrom("purchaseOrderDelivery")
+      .select("receiptPromisedDate")
+      .where("companyId", "=", companyId)
+      .where("id", "=", purchaseOrderId)
+      .executeTakeFirst()
+  ]);
+  return isPurchaseOrderMissingPromisedDate(
+    lines,
+    delivery?.receiptPromisedDate
+  )
+    ? "Add a promised date before you finalize this purchase order."
+    : null;
+}
+
+/**
+ * Creates Draft RFQs for `groups`, each with its suppliers and lines. A line's
+ * quantity comes in the inventory unit and goes out in the purchase unit: a
+ * single supplier's supplier part sets that unit, else the item's own unit. A
+ * service is always EA, 1:1. This runs without RLS, and the RFQ's item and
+ * location foreign keys do not include the company, so it checks them here.
+ */
+export async function insertRequestQuoteRfqs(
+  db: Kysely<KyselyDatabase>,
+  input: {
+    companyId: string;
+    userId: string;
+    rfqDate: string;
+    locationId?: string;
+    groups: { supplierIds: string[]; lines: RequestQuoteLine[] }[];
+  }
+) {
+  const { companyId, userId, rfqDate, locationId, groups } = input;
+  return withTransaction(db, async (trx) => {
+    const itemIds = [
+      ...new Set(groups.flatMap((g) => g.lines.map((l) => l.itemId)))
+    ];
+    const supplierIds = [...new Set(groups.flatMap((g) => g.supplierIds))];
+
+    const items = await trx
+      .selectFrom("item")
+      .select(["id", "name", "type", "unitOfMeasureCode"])
+      .where("companyId", "=", companyId)
+      .where("id", "in", itemIds)
+      .execute();
+    const suppliers = await trx
+      .selectFrom("supplier")
+      .select("id")
+      .where("companyId", "=", companyId)
+      .where("id", "in", supplierIds)
+      .execute();
+    const location = locationId
+      ? await trx
+          .selectFrom("location")
+          .select("id")
+          .where("companyId", "=", companyId)
+          .where("id", "=", locationId)
+          .executeTakeFirst()
+      : null;
+    if (
+      items.length !== itemIds.length ||
+      suppliers.length !== supplierIds.length ||
+      (locationId && !location)
+    ) {
+      throw new InvalidInputError("Item, supplier or location not found");
+    }
+
+    const supplierParts = await trx
+      .selectFrom("supplierPart")
+      .select([
+        "itemId",
+        "supplierId",
+        "supplierUnitOfMeasureCode",
+        "conversionFactor"
+      ])
+      .where("companyId", "=", companyId)
+      .where("itemId", "in", itemIds)
+      .where("supplierId", "in", supplierIds)
+      .execute();
+
+    const itemById = new Map(items.map((item) => [item.id, item]));
+    const partByItemAndSupplier = new Map(
+      supplierParts.map((part) => [`${part.itemId}|${part.supplierId}`, part])
+    );
+
+    const rfqIds = await getNextSequences(
+      trx,
+      "purchasingRfq",
+      companyId,
+      groups.length
+    );
+    const created = await trx
+      .insertInto("purchasingRfq")
+      .values(
+        rfqIds.map((rfqId) => ({
+          rfqId,
+          rfqDate,
+          locationId,
+          employeeId: userId,
+          status: "Draft" as const,
+          companyId,
+          createdBy: userId,
+          updatedBy: userId
+        }))
+      )
+      .returning(["id", "rfqId"])
+      .execute();
+    const idByRfqId = new Map(created.map((rfq) => [rfq.rfqId, rfq.id]));
+    const rfqOf = groups.map((_, index) => {
+      const id = idByRfqId.get(rfqIds[index]!);
+      if (!id) throw new Error("RFQ not created");
+      return id;
+    });
+
+    await trx
+      .insertInto("purchasingRfqSupplier")
+      .values(
+        groups.flatMap((group, index) =>
+          group.supplierIds.map((supplierId) => ({
+            purchasingRfqId: rfqOf[index]!,
+            supplierId,
+            companyId,
+            createdBy: userId
+          }))
+        )
+      )
+      .execute();
+
+    await trx
+      .insertInto("purchasingRfqLine")
+      .values(
+        groups.flatMap((group, groupIndex) =>
+          group.lines.map((line, index) => {
+            const item = itemById.get(line.itemId);
+            const isService = item?.type === "Service";
+            const inventoryUnit = isService
+              ? EACH_UNIT_OF_MEASURE_CODE
+              : (item?.unitOfMeasureCode ?? EACH_UNIT_OF_MEASURE_CODE);
+            const part =
+              !isService && group.supplierIds.length === 1
+                ? partByItemAndSupplier.get(
+                    `${line.itemId}|${group.supplierIds[0]}`
+                  )
+                : undefined;
+            const factor = Number(part?.conversionFactor) || 1;
+            return {
+              purchasingRfqId: rfqOf[groupIndex]!,
+              itemId: line.itemId,
+              description: item?.name,
+              quantity: [toPurchaseQuantity(line.quantity, factor)],
+              purchaseUnitOfMeasureCode:
+                part?.supplierUnitOfMeasureCode ?? inventoryUnit,
+              inventoryUnitOfMeasureCode: inventoryUnit,
+              conversionFactor: factor,
+              order: index + 1,
+              companyId,
+              createdBy: userId,
+              updatedBy: userId
+            };
+          })
+        )
+      )
+      .execute();
+
+    return rfqOf.map((id, index) => ({ id, rfqId: rfqIds[index]! }));
+  });
+}
+
 export async function updatePurchasingRFQStatus(
   client: SupabaseClient<Database>,
   args: {
@@ -7013,8 +7339,9 @@ export async function getLeaseRelatedDocuments(
   // In groups of ids, so each `.in()` fits in the request URL.
   const [invoices, journals] = await Promise.all([
     fetchAllByIds(invoiceIds, (batch) =>
+      // The view, not the table: Paid and Overdue exist only in the view.
       client
-        .from("purchaseInvoice")
+        .from("purchaseInvoices")
         .select("id, invoiceId, status, dateIssued")
         .in("id", batch)
         .eq("companyId", companyId)
@@ -7035,9 +7362,12 @@ export async function getLeaseRelatedDocuments(
   return {
     data: {
       // Newest first. ISO dates sort as strings.
-      purchaseInvoices: invoices.data.sort((a, b) =>
-        (b.dateIssued ?? "").localeCompare(a.dateIssued ?? "")
-      ),
+      purchaseInvoices: (
+        invoices.data as Pick<
+          Database["public"]["Tables"]["purchaseInvoice"]["Row"],
+          "id" | "invoiceId" | "status" | "dateIssued"
+        >[]
+      ).sort((a, b) => (b.dateIssued ?? "").localeCompare(a.dateIssued ?? "")),
       journals: journals.data.sort((a, b) =>
         b.postingDate.localeCompare(a.postingDate)
       )
@@ -7376,13 +7706,23 @@ async function releaseLeasePayments(
  * lease payment rows it billed to Pending (see `releaseLeasePayments`).
  * Checked here under a row lock, because releasing a POSTED invoice's rows
  * would bill them twice. Throws on a missing or non-Draft invoice.
+ *
+ * `voided` is the Admin force delete: it also deletes a Voided invoice (the
+ * void already returned its lease rows), inside the caller's transaction,
+ * which has set `app.force_delete` so the database's Draft-only guard steps
+ * aside.
  */
 export async function deletePurchaseInvoiceReleasingLeases(
-  db: Kysely<KyselyDatabase>,
-  args: { companyId: string; invoiceId: string; userId: string }
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: {
+    companyId: string;
+    invoiceId: string;
+    userId: string;
+    voided?: boolean;
+  }
 ): Promise<void> {
   const { companyId, invoiceId, userId } = args;
-  await db.transaction().execute(async (trx) => {
+  await withTransaction(db, async (trx) => {
     const invoice = await trx
       .selectFrom("purchaseInvoice")
       .select(["id", "status"])
@@ -7391,7 +7731,10 @@ export async function deletePurchaseInvoiceReleasingLeases(
       .forUpdate()
       .executeTakeFirst();
     if (!invoice) throw new Error("Purchase invoice not found");
-    if (invoice.status !== "Draft") {
+    if (
+      invoice.status !== "Draft" &&
+      !(args.voided && invoice.status === "Voided")
+    ) {
       throw new Error(
         `Cannot delete purchase invoice with status "${invoice.status}". Only Draft invoices can be deleted.`
       );
@@ -8224,6 +8567,992 @@ export async function cancelPendingApprovals(
     .execute();
 }
 
+/** The active Admins of the company (`isCompanyAdmin`, @carbon/ee), as user ids. */
+export async function getCompanyAdminIds(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<string[]> {
+  const rows = await db
+    .selectFrom("employee")
+    .innerJoin("employeeType", (join) =>
+      join
+        .onRef("employeeType.id", "=", "employee.employeeTypeId")
+        .onRef("employeeType.companyId", "=", "employee.companyId")
+    )
+    .select("employee.id")
+    .where("employee.companyId", "=", companyId)
+    .where("employee.active", "=", true)
+    .where("employeeType.systemType", "=", "Admin")
+    .execute();
+  return rows.map((row) => row.id);
+}
+
+/**
+ * The documents that still name the order and keep a force delete from
+ * running (`purchaseOrderForceDeleteBlockerMessage`). Its receipts are not
+ * among them: the force delete reverses those
+ * (`planPurchaseOrderReceiptReversal`). Runs on the caller's connection, so
+ * the delete re-reads them inside its own transaction.
+ */
+export async function getPurchaseOrderForceDeleteBlockers(
+  db: Kysely<KyselyDatabase>,
+  { companyId, purchaseOrderId }: { companyId: string; purchaseOrderId: string }
+): Promise<PurchaseOrderForceDeleteBlockers> {
+  const [shipments, invoices, payments] = await Promise.all([
+    db
+      .selectFrom("shipment")
+      .select(["shipmentId as readableId", "status"])
+      .where("companyId", "=", companyId)
+      .where("sourceDocument", "=", "Purchase Order")
+      .where("sourceDocumentId", "=", purchaseOrderId)
+      .where("status", "<>", "Voided")
+      .orderBy("shipmentId")
+      .execute(),
+    db
+      .selectFrom("purchaseInvoice")
+      .select([
+        "purchaseInvoice.invoiceId as readableId",
+        "purchaseInvoice.status"
+      ])
+      .where("purchaseInvoice.companyId", "=", companyId)
+      .where((eb) =>
+        eb.exists(
+          eb
+            .selectFrom("purchaseInvoiceLine")
+            .select("purchaseInvoiceLine.id")
+            .whereRef(
+              "purchaseInvoiceLine.invoiceId",
+              "=",
+              "purchaseInvoice.id"
+            )
+            .where((line) =>
+              line.or([
+                line(
+                  "purchaseInvoiceLine.purchaseOrderId",
+                  "=",
+                  purchaseOrderId
+                ),
+                line(
+                  "purchaseInvoiceLine.purchaseOrderLineId",
+                  "in",
+                  line
+                    .selectFrom("purchaseOrderLine")
+                    .select("purchaseOrderLine.id")
+                    .where(
+                      "purchaseOrderLine.purchaseOrderId",
+                      "=",
+                      purchaseOrderId
+                    )
+                )
+              ])
+            )
+        )
+      )
+      .orderBy("purchaseInvoice.invoiceId")
+      .execute(),
+    db
+      .selectFrom("payment")
+      .select(["paymentId as readableId", "status"])
+      .where("companyId", "=", companyId)
+      .where("purchaseOrderId", "=", purchaseOrderId)
+      .where("status", "<>", "Voided")
+      .orderBy("paymentId")
+      .execute()
+  ]);
+  return {
+    shipments: shipments.map((s) => ({ ...s, readableId: s.readableId ?? "" })),
+    invoices: invoices.map((i) => ({ ...i, readableId: i.readableId ?? "" })),
+    payments: payments.map((p) => ({ ...p, readableId: p.readableId ?? "" }))
+  };
+}
+
+/** A receipt of the order that a force delete reverses (or deletes). */
+export type PurchaseOrderForceDeleteReceipt = {
+  id: string;
+  readableId: string;
+  status: Database["public"]["Enums"]["receiptStatus"];
+  postingDate: string | null;
+};
+
+/**
+ * The order's receipts that are not Voided, by number. `lock` takes them FOR
+ * UPDATE, so a receipt cannot be posted or voided under the force delete.
+ */
+export async function getPurchaseOrderForceDeleteReceipts(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    purchaseOrderId,
+    lock = false
+  }: { companyId: string; purchaseOrderId: string; lock?: boolean }
+): Promise<PurchaseOrderForceDeleteReceipt[]> {
+  const query = db
+    .selectFrom("receipt")
+    .select(["id", "receiptId", "status", "postingDate"])
+    .where("companyId", "=", companyId)
+    .where("sourceDocument", "=", "Purchase Order")
+    .where("sourceDocumentId", "=", purchaseOrderId)
+    .where("status", "<>", "Voided")
+    .orderBy("receiptId");
+  const rows = await (lock ? query.forUpdate() : query).execute();
+  return rows.map((row) => ({
+    id: row.id,
+    readableId: row.receiptId ?? row.id,
+    status: row.status,
+    postingDate: row.postingDate ? String(row.postingDate) : null
+  }));
+}
+
+/**
+ * Plans taking back what the posted receipts put on hand, from the stock
+ * there is now (`planReceiptReversal`). Read-only: the request runs it to
+ * refuse early, the approval again inside its transaction before it books.
+ *
+ * `unsupported` names receipts it cannot reverse: one that issued its stock
+ * straight to a project, or received a fixed asset. Those reverse only
+ * through their own void.
+ */
+export async function planPurchaseOrderReceiptReversal(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    receipts
+  }: { companyId: string; receipts: PurchaseOrderForceDeleteReceipt[] }
+): Promise<{
+  removals: ReceiptStockRemoval[];
+  short: string[];
+  unsupported: string[];
+}> {
+  const posted = receipts.filter((receipt) => receipt.status === "Posted");
+  if (posted.length === 0) return { removals: [], short: [], unsupported: [] };
+  const receiptIds = posted.map((receipt) => receipt.id);
+
+  const [ledgerRows, assetLines] = await Promise.all([
+    db
+      .selectFrom("itemLedger")
+      .select([
+        "documentId",
+        "documentType",
+        "itemId",
+        "locationId",
+        "storageUnitId",
+        "trackedEntityId",
+        "projectId",
+        "quantity"
+      ])
+      .where("companyId", "=", companyId)
+      .where("documentId", "in", receiptIds)
+      .where("documentType", "in", ["Purchase Receipt", "Project Issue"])
+      .execute(),
+    db
+      .selectFrom("receiptFixedAssetLine")
+      .select("receiptId")
+      .where("companyId", "=", companyId)
+      .where("receiptId", "in", receiptIds)
+      .where("received", "=", true)
+      .execute()
+  ]);
+
+  const unsupportedIds = new Set([
+    ...assetLines.map((line) => line.receiptId),
+    ...ledgerRows
+      .filter((row) => row.documentType === "Project Issue")
+      .map((row) => row.documentId as string)
+  ]);
+
+  // What each receipt put on hand, net, per position.
+  const received = new Map<string, ReceiptReceivedStock>();
+  for (const receipt of posted) {
+    if (unsupportedIds.has(receipt.id)) continue;
+    for (const row of ledgerRows) {
+      if (row.documentId !== receipt.id) continue;
+      const position = {
+        itemId: row.itemId,
+        locationId: row.locationId ?? null,
+        storageUnitId: row.storageUnitId ?? null,
+        trackedEntityId: row.trackedEntityId ?? null,
+        projectId: row.projectId ?? null
+      };
+      const key = [receipt.id, ...Object.values(position)].join("|");
+      const entry = received.get(key) ?? {
+        ...position,
+        receiptId: receipt.id,
+        receiptReadableId: receipt.readableId,
+        quantity: 0
+      };
+      entry.quantity += Number(row.quantity);
+      received.set(key, entry);
+    }
+  }
+
+  const receivedRows = [...received.values()];
+  const itemIds = [...new Set(receivedRows.map((row) => row.itemId))];
+  const locationIds = [
+    ...new Set(receivedRows.flatMap((row) => row.locationId ?? []))
+  ];
+  const withoutLocation = receivedRows.some((row) => row.locationId === null);
+  const onHand =
+    itemIds.length === 0
+      ? []
+      : await db
+          .selectFrom("itemLedger")
+          .select([
+            "itemId",
+            "locationId",
+            "storageUnitId",
+            "trackedEntityId",
+            "projectId",
+            (eb) => eb.fn.sum<number>("quantity").as("quantity")
+          ])
+          .where("companyId", "=", companyId)
+          .where("itemId", "in", itemIds)
+          .where((eb) =>
+            eb.or([
+              ...(locationIds.length > 0
+                ? [eb("locationId", "in", locationIds)]
+                : []),
+              ...(withoutLocation ? [eb("locationId", "is", null)] : [])
+            ])
+          )
+          .groupBy([
+            "itemId",
+            "locationId",
+            "storageUnitId",
+            "trackedEntityId",
+            "projectId"
+          ])
+          .execute();
+
+  const plan = planReceiptReversal(
+    receivedRows,
+    onHand.map((row) => ({
+      itemId: row.itemId,
+      locationId: row.locationId ?? null,
+      storageUnitId: row.storageUnitId ?? null,
+      trackedEntityId: row.trackedEntityId ?? null,
+      projectId: row.projectId ?? null,
+      quantity: Number(row.quantity ?? 0)
+    }))
+  );
+  return {
+    ...plan,
+    unsupported: posted
+      .filter((receipt) => unsupportedIds.has(receipt.id))
+      .map((receipt) => receipt.readableId)
+  };
+}
+
+/**
+ * Why the order's receipts keep a force delete from going ahead (`refusal`),
+ * else the plan that reverses them. Refused for one
+ * still being posted, or one whose stock was since used or moved to another
+ * location (`planPurchaseOrderReceiptReversal`). After step 1's voids
+ * (`afterVoid`), a posted receipt left that an adjustment cannot stand in for
+ * is refused too.
+ */
+export async function forceDeleteReceiptRefusal(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    receipts,
+    afterVoid = false
+  }: {
+    companyId: string;
+    receipts: PurchaseOrderForceDeleteReceipt[];
+    afterVoid?: boolean;
+  }
+): Promise<
+  | { refusal: string; plan: null }
+  | {
+      refusal: null;
+      plan: Awaited<ReturnType<typeof planPurchaseOrderReceiptReversal>>;
+    }
+> {
+  const pending = receipts.filter((receipt) => receipt.status === "Pending");
+  if (pending.length > 0) {
+    return {
+      refusal: purchaseOrderForceDeletePendingReceiptMessage(
+        pending.map((receipt) => receipt.readableId)
+      ),
+      plan: null
+    };
+  }
+  const plan = await planPurchaseOrderReceiptReversal(db, {
+    companyId,
+    receipts
+  });
+  if (plan.short.length > 0) {
+    return {
+      refusal: purchaseOrderForceDeleteUsedStockMessage(plan.short),
+      plan: null
+    };
+  }
+  if (afterVoid && plan.unsupported.length > 0) {
+    return {
+      refusal: purchaseOrderForceDeleteUnsupportedReceiptMessage(
+        plan.unsupported
+      ),
+      plan: null
+    };
+  }
+  return { refusal: null, plan };
+}
+
+/**
+ * Gives back to the order what a receipt reversed by adjustment had received,
+ * as the receipt's void does: each line's `quantityReceived` drops by what
+ * the receipt received (in the purchase unit, never below 0) and
+ * `receivedComplete` follows. The order's status is set again from its lines
+ * while it is released. For a receipt force deleted on its own; a purchase
+ * order force delete deletes the order instead.
+ */
+export async function restorePurchaseOrderReceived(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  {
+    companyId,
+    userId,
+    receiptId,
+    purchaseOrderId
+  }: {
+    companyId: string;
+    userId: string;
+    receiptId: string;
+    purchaseOrderId: string;
+  }
+): Promise<void> {
+  await withTransaction(db, async (trx) => {
+    const [receiptLines, orderLines] = await Promise.all([
+      trx
+        .selectFrom("receiptLine")
+        .select(["lineId", "receivedQuantity", "conversionFactor"])
+        .where("companyId", "=", companyId)
+        .where("receiptId", "=", receiptId)
+        .execute(),
+      trx
+        .selectFrom("purchaseOrderLine")
+        .select([
+          "id",
+          "purchaseOrderLineType",
+          "purchaseQuantity",
+          "quantityReceived",
+          "quantityInvoiced"
+        ])
+        .where("companyId", "=", companyId)
+        .where("purchaseOrderId", "=", purchaseOrderId)
+        .forUpdate()
+        .execute()
+    ]);
+    const updates = receivedAfterReceiptReversal(
+      orderLines.map((line) => ({
+        ...line,
+        purchaseQuantity: Number(line.purchaseQuantity ?? 0),
+        quantityReceived: Number(line.quantityReceived ?? 0)
+      })),
+      receiptLines.map((line) => ({
+        ...line,
+        receivedQuantity: Number(line.receivedQuantity ?? 0),
+        conversionFactor: Number(line.conversionFactor ?? 1)
+      }))
+    );
+    const ids = Object.keys(updates);
+    if (ids.length === 0) return;
+    const now = datetime.timestamp();
+    await updateRowsById(
+      trx,
+      "purchaseOrderLine",
+      companyId,
+      ids.map((id) => ({
+        id,
+        data: { ...updates[id], updatedBy: userId, updatedAt: now }
+      }))
+    );
+
+    const status = purchaseOrderStatusAfterReversal(
+      orderLines.map((line) => ({
+        purchaseOrderLineType: line.purchaseOrderLineType,
+        purchaseQuantity: Number(line.purchaseQuantity ?? 0),
+        quantityInvoiced: Number(line.quantityInvoiced ?? 0),
+        quantityReceived:
+          updates[line.id]?.quantityReceived ??
+          Number(line.quantityReceived ?? 0)
+      }))
+    );
+    await trx
+      .updateTable("purchaseOrder")
+      .set({ status, updatedBy: userId, updatedAt: now })
+      .where("id", "=", purchaseOrderId)
+      .where("companyId", "=", companyId)
+      .where("status", "in", [...PURCHASE_ORDER_RELEASED_STATUSES])
+      .execute();
+  });
+}
+
+/**
+ * The accounting an adjust-out reversal posts with, resolved before the
+ * transaction opens (`getCurrentAccountingPeriod` commits its own short
+ * transaction), as `postInventoryAdjustment` does.
+ */
+export type ForceDeleteReversalAccounting = {
+  today: string;
+  cutoverDate: string | null;
+  goodsReceivedNotInvoicedAccount: string;
+  accounting: Omit<
+    NonNullable<BookAdjustmentArgs["accounting"]>,
+    "description"
+  >;
+};
+
+export async function resolveForceDeleteReversalAccounting(
+  db: Kysely<KyselyDatabase>,
+  { companyId, userId }: { companyId: string; userId: string }
+): Promise<ForceDeleteReversalAccounting> {
+  const today = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .toString();
+  const postingStatus = await journalPostingStatus(db, companyId);
+  const cutoverDate = await readAccountingCutoverDate(db, companyId);
+  const accountDefaults = await getDefaultPostingGroup(db, companyId);
+  if (accountDefaults.error || !accountDefaults.data) {
+    throw new Error("Error getting account defaults");
+  }
+  const company = await db
+    .selectFrom("company")
+    .select("companyGroupId")
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const dimensions = await db
+    .selectFrom("dimension")
+    .select(["id", "entityType"])
+    .where("companyGroupId", "=", company.companyGroupId as string)
+    .where("active", "=", true)
+    .where("entityType", "in", ["Item", "ItemPostingGroup", "Location"])
+    .execute();
+  const dimensionMap: Record<string, string> = {};
+  for (const dim of dimensions) {
+    if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
+  }
+  const accountingPeriodId =
+    postingStatus === "Posted"
+      ? await getCurrentAccountingPeriod(companyId, db, today)
+      : null;
+  return {
+    today,
+    cutoverDate: cutoverDate ? String(cutoverDate) : null,
+    goodsReceivedNotInvoicedAccount:
+      accountDefaults.data.goodsReceivedNotInvoicedAccount,
+    accounting: {
+      postingStatus,
+      accountingPeriodId,
+      accountDefaults: {
+        rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
+        finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
+        inventoryAdjustmentVarianceAccount:
+          accountDefaults.data.inventoryAdjustmentVarianceAccount
+      },
+      userId,
+      dimensions: dimensionMap
+    }
+  };
+}
+
+/**
+ * Reverses receipts the void refused by adjusting their stock out
+ * (`planPurchaseOrderReceiptReversal`'s removals), inside the force delete's
+ * transaction, and marks them Voided.
+ *
+ * The offset is the account the receipt credited: Goods Received Not
+ * Invoiced, so the accrual it opened closes. A receipt from before the
+ * accounting cutover posted no ledger journal, and its stock came in through
+ * the opening balance, so its removal is a write-down to the inventory
+ * adjustment variance account. The receipt's serials and batches go to zero,
+ * as its void sets them.
+ */
+export async function reverseReceiptsByAdjustment(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: {
+    companyId: string;
+    userId: string;
+    purchaseOrderId: string;
+    purchaseOrderReadableId: string;
+    receipts: PurchaseOrderForceDeleteReceipt[];
+    removals: ReceiptStockRemoval[];
+    reversal: ForceDeleteReversalAccounting;
+  }
+): Promise<void> {
+  const { companyId, userId, receipts, removals, reversal } = args;
+  if (receipts.length === 0) return;
+  await withTransaction(db, async (trx) => {
+    const itemIds = [...new Set(removals.map((removal) => removal.itemId))];
+    const [items, itemCosts] =
+      itemIds.length === 0
+        ? [[], []]
+        : await Promise.all([
+            trx
+              .selectFrom("item")
+              .select(["id", "itemTrackingType", "replenishmentSystem"])
+              .where("companyId", "=", companyId)
+              .where("id", "in", itemIds)
+              .execute(),
+            trx
+              .selectFrom("itemCost")
+              .select([
+                "itemId",
+                "costingMethod",
+                "unitCost",
+                "standardCost",
+                "itemPostingGroupId"
+              ])
+              .where("companyId", "=", companyId)
+              .where("itemId", "in", itemIds)
+              .execute()
+          ]);
+
+    // What the void does before it moves stock, for every receipt first: their
+    // Put Aways go (refused when one has picked stock), a rejected lot refuses,
+    // and their open inspections are cancelled. Stock held for any of their
+    // inspections cannot move, so no receipt's stock moves until all of them
+    // have released theirs.
+    for (const receipt of receipts) {
+      await removeUnpickedPutAways(trx, companyId, receipt.id);
+      await assertNoRejectedUntrackedLot(trx, companyId, receipt.id);
+      await withInspectionRelease(trx, () =>
+        trx
+          .updateTable("inspection")
+          .set({
+            status: "Cancelled",
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("companyId", "=", companyId)
+          .where("sourceDocument", "=", "Receipt")
+          .where("sourceDocumentId", "=", receipt.id)
+          .where("status", "in", ["Pending", "In Progress"])
+          .execute()
+      );
+    }
+
+    for (const receipt of receipts) {
+      const beforeCutover = isBeforeCutover(
+        receipt.postingDate ?? reversal.today,
+        reversal.cutoverDate
+      );
+      const description = `Force delete of ${args.purchaseOrderReadableId}: reverses ${receipt.readableId}`;
+      for (const removal of removals) {
+        if (removal.receiptId !== receipt.id) continue;
+        const item = items.find((row) => row.id === removal.itemId);
+        const itemCost = itemCosts.find((row) => row.itemId === removal.itemId);
+        if (!item || !itemCost) {
+          throw new Error(`Item ${removal.itemId} has no item or cost record`);
+        }
+        await bookAdjustment(trx, {
+          ledger: {
+            postingDate: reversal.today,
+            itemId: removal.itemId,
+            quantity: -removal.quantity,
+            locationId: removal.locationId,
+            storageUnitId: removal.storageUnitId,
+            trackedEntityId: removal.trackedEntityId,
+            entryType: "Negative Adjmt.",
+            documentId: receipt.id,
+            comment: description,
+            projectId: removal.projectId,
+            companyId,
+            createdBy: userId
+          },
+          item: {
+            itemTrackingType: item.itemTrackingType,
+            replenishmentSystem: item.replenishmentSystem,
+            itemPostingGroupId: itemCost.itemPostingGroupId
+          },
+          itemCost: {
+            costingMethod: itemCost.costingMethod,
+            unitCost:
+              itemCost.unitCost === null ? null : Number(itemCost.unitCost),
+            standardCost:
+              itemCost.standardCost === null
+                ? null
+                : Number(itemCost.standardCost)
+          },
+          accounting: {
+            ...reversal.accounting,
+            offsetAccount: beforeCutover
+              ? null
+              : reversal.goodsReceivedNotInvoicedAccount,
+            // GR/IR is a liability: the reversal debits it, closing the
+            // accrual the receipt opened.
+            offsetAccountType: beforeCutover ? "expense" : "liability",
+            offsetDescription: beforeCutover
+              ? "Inventory Adjustment Variance Account"
+              : "Goods Received Not Invoiced Account",
+            description
+          }
+        });
+      }
+
+      // Stock leaves at its carrying value, which can differ from what the
+      // receipt booked (other layers, an average cost that moved). GR/IR is
+      // cleared at exactly the receipt's amount; the difference is a cost
+      // variance.
+      if (!beforeCutover) {
+        await trueUpGoodsReceivedNotInvoiced(trx, {
+          companyId,
+          receiptId: receipt.id,
+          reversal,
+          description
+        });
+      }
+
+      // The receipt's serials and batches, as its void leaves them.
+      const entities = await trx
+        .selectFrom("trackedEntity")
+        .select(["id", "quantity", "status"])
+        .where("companyId", "=", companyId)
+        .where(attributesContain({ Receipt: receipt.id }))
+        .execute();
+      if (entities.length > 0) {
+        const activity = await trx
+          .insertInto("trackedActivity")
+          .values({
+            type: "Void Receipt",
+            sourceDocument: "Receipt",
+            sourceDocumentId: receipt.id,
+            sourceDocumentReadableId: receipt.readableId,
+            attributes: {
+              "Purchase Order": args.purchaseOrderId,
+              Receipt: receipt.id,
+              Employee: userId
+            },
+            companyId,
+            createdBy: userId,
+            createdAt: reversal.today
+          })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        for (const entity of entities) {
+          await trx
+            .updateTable("trackedEntity")
+            .set({
+              quantity: 0,
+              status:
+                entity.status === "Scrapped" || entity.status === "Rejected"
+                  ? entity.status
+                  : "Consumed"
+            })
+            .where("id", "=", entity.id)
+            .where("companyId", "=", companyId)
+            .execute();
+          await trx
+            .insertInto("trackedActivityInput")
+            .values({
+              trackedActivityId: activity.id,
+              trackedEntityId: entity.id,
+              quantity: Number(entity.quantity ?? 0),
+              companyId,
+              createdBy: userId,
+              createdAt: reversal.today
+            })
+            .execute();
+        }
+      }
+
+      await trx
+        .updateTable("receipt")
+        .set({
+          status: "Voided",
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", receipt.id)
+        .where("companyId", "=", companyId)
+        .execute();
+      await sql`SELECT public.refresh_receipt_inspection_status(${receipt.id})`.execute(
+        trx
+      );
+    }
+  });
+}
+
+/**
+ * Clears what a reversed receipt left on Goods Received Not Invoiced: its own
+ * GR/IR lines and the reversal's net to zero, the difference against the
+ * inventory adjustment variance account. Signed by each account's type
+ * (GR/IR a liability, the variance an expense) and checked as balanced.
+ */
+async function trueUpGoodsReceivedNotInvoiced(
+  trx: KyselyTx,
+  args: {
+    companyId: string;
+    receiptId: string;
+    reversal: ForceDeleteReversalAccounting;
+    description: string;
+  }
+): Promise<void> {
+  const { companyId, receiptId, reversal } = args;
+  const grir = reversal.goodsReceivedNotInvoicedAccount;
+  const net = await trx
+    .selectFrom("journalLine")
+    .select((eb) => eb.fn.sum<number>("amount").as("amount"))
+    .where("companyId", "=", companyId)
+    .where("documentId", "=", receiptId)
+    .where("accountId", "=", grir)
+    .executeTakeFirst();
+  // Stored by natural sign: a liability's credit is positive.
+  const grirNet = round(Number(net?.amount ?? 0));
+  if (Math.abs(grirNet) < EPSILON) return;
+
+  const lines = [
+    {
+      accountId: grir,
+      description: "Goods Received Not Invoiced Account",
+      amount: round(-grirNet)
+    },
+    {
+      accountId:
+        reversal.accounting.accountDefaults.inventoryAdjustmentVarianceAccount,
+      description: "Inventory Adjustment Variance Account",
+      amount: round(-grirNet)
+    }
+  ];
+  // Debits = credits: each stored amount times its account's debit sign.
+  assertBalanced(
+    round(
+      lines[0]!.amount * debit("liability", 1) +
+        lines[1]!.amount * debit("expense", 1)
+    ),
+    0,
+    EPSILON,
+    "Force delete GR/IR true-up"
+  );
+
+  const journalId = await createAdjustmentJournal(trx, {
+    companyId,
+    accountingPeriodId: reversal.accounting.accountingPeriodId,
+    status: reversal.accounting.postingStatus,
+    description: args.description,
+    postingDate: reversal.today,
+    userId: reversal.accounting.userId
+  });
+  const journalLineReference = nanoid();
+  await trx
+    .insertInto("journalLine")
+    .values(
+      lines.map((line) => ({
+        ...line,
+        journalId,
+        quantity: 0,
+        documentType: "Receipt" as const,
+        documentId: receiptId,
+        journalLineReference,
+        companyId
+      }))
+    )
+    .execute();
+}
+
+export type PurchaseOrderForceDeleteRequest = {
+  id: string;
+  /** Pending, or Approving while an Admin's approval runs. */
+  status: string;
+  /** An Approving claim older than ten minutes: it may be approved again. */
+  claimExpired: boolean;
+  reason: string;
+  requestedBy: string;
+  requestedAt: string;
+  purchaseOrderStatus: string;
+};
+
+/** The order's Pending force delete request, or null. */
+/**
+ * Claims a Pending purchase order force delete for `userId`'s approval
+ * (Approving), as `claimForceDeleteRequest` does for documents: its receipt
+ * voids commit on their own, so a cancel or reject cannot run meanwhile.
+ */
+export async function claimPurchaseOrderForceDeleteRequest(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    requestId,
+    userId
+  }: { companyId: string; requestId: string; userId: string }
+): Promise<boolean> {
+  const claimed = await db
+    .updateTable("purchaseOrderForceDeleteRequest")
+    .set({
+      status: "Approving",
+      decidedBy: userId,
+      decidedAt: sql`now()`,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("requestedBy", "<>", userId)
+    .where((eb) =>
+      eb.or([
+        eb("status", "=", "Pending"),
+        eb.and([
+          eb("status", "=", "Approving"),
+          eb.or([
+            eb("decidedBy", "=", userId),
+            eb("decidedAt", "<", sql<string>`now() - interval '10 minutes'`)
+          ])
+        ])
+      ])
+    )
+    .returning("id")
+    .executeTakeFirst();
+  return !!claimed;
+}
+
+/** Gives back a purchase order force delete claim left for ten minutes. */
+export async function releaseExpiredPurchaseOrderForceDeleteClaim(
+  db: Kysely<KyselyDatabase>,
+  { companyId, requestId }: { companyId: string; requestId: string }
+): Promise<void> {
+  await db
+    .updateTable("purchaseOrderForceDeleteRequest")
+    .set({ status: "Pending", decidedBy: null, decidedAt: null })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Approving")
+    .where("decidedAt", "<", sql<string>`now() - interval '10 minutes'`)
+    .execute();
+}
+
+/** Gives a purchase order force delete claim back (Pending). */
+export async function releasePurchaseOrderForceDeleteClaim(
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    requestId,
+    userId
+  }: { companyId: string; requestId: string; userId: string }
+): Promise<void> {
+  await db
+    .updateTable("purchaseOrderForceDeleteRequest")
+    .set({
+      status: "Pending",
+      decidedBy: null,
+      decidedAt: null,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("id", "=", requestId)
+    .where("companyId", "=", companyId)
+    .where("status", "=", "Approving")
+    .where("decidedBy", "=", userId)
+    .execute();
+}
+
+export async function getPendingPurchaseOrderForceDeleteRequest(
+  db: Kysely<KyselyDatabase>,
+  { companyId, purchaseOrderId }: { companyId: string; purchaseOrderId: string }
+): Promise<PurchaseOrderForceDeleteRequest | null> {
+  const request = await db
+    .selectFrom("purchaseOrderForceDeleteRequest")
+    .select([
+      "id",
+      "status",
+      "reason",
+      "requestedBy",
+      "requestedAt",
+      "purchaseOrderStatus",
+      sql<boolean>`coalesce("decidedAt" < now() - interval '10 minutes', false)`.as(
+        "claimExpired"
+      )
+    ])
+    .where("companyId", "=", companyId)
+    .where("purchaseOrderId", "=", purchaseOrderId)
+    .where("status", "in", ["Pending", "Approving"])
+    .executeTakeFirst();
+  return request
+    ? { ...request, requestedAt: String(request.requestedAt) }
+    : null;
+}
+
+/**
+ * Tells about a force delete: `Requested` goes to every Admin but the one who
+ * asked; `Approved` / `Rejected` go to the one who asked. The notice names
+ * the order and the request (`purchaseOrderForceDeleteNotificationId`), so its
+ * content and link still work once the order is deleted. Never throws.
+ */
+export async function notifyForceDelete(
+  ctx: ServiceContext,
+  {
+    event,
+    purchaseOrderId,
+    requestId,
+    requestedBy
+  }: {
+    event: "Requested" | "Approved" | "Rejected";
+    purchaseOrderId: string;
+    requestId: string;
+    requestedBy: string;
+  }
+) {
+  const companyId = ctx.company.id;
+  try {
+    const userIds =
+      event === "Requested"
+        ? (await getCompanyAdminIds(ctx.asSystem.pg, companyId)).filter(
+            (id) => id !== requestedBy
+          )
+        : requestedBy === ctx.auditUserId
+          ? []
+          : [requestedBy];
+    if (userIds.length === 0) return;
+    await trigger("notify", {
+      event:
+        event === "Requested"
+          ? NotificationEvent.ApprovalRequested
+          : event === "Approved"
+            ? NotificationEvent.ApprovalApproved
+            : NotificationEvent.ApprovalRejected,
+      companyId,
+      documentId: purchaseOrderForceDeleteNotificationId(
+        purchaseOrderId,
+        requestId
+      ),
+      documentType: "purchaseOrderForceDelete",
+      recipient: { type: "users", userIds },
+      from: ctx.auditUserId
+    });
+  } catch (e) {
+    logger.error("Failed to notify about a purchase order force delete", {
+      error: e
+    });
+  }
+}
+
+/** Best-effort: a failed audit write never undoes the override. */
+export async function auditForceDelete(
+  ctx: ServiceContext,
+  entry: {
+    purchaseOrderId: string;
+    requestId: string;
+    operation: "INSERT" | "UPDATE" | "DELETE";
+    diff: Record<string, { old: unknown; new: unknown }>;
+  }
+) {
+  try {
+    await insertAuditLogEntries(ctx.asSystem.supabase, ctx.company.id, [
+      {
+        tableName: "purchaseOrderForceDeleteRequest",
+        entityType: "purchaseOrder",
+        entityId: entry.purchaseOrderId,
+        recordId: entry.requestId,
+        operation: entry.operation,
+        actorId: ctx.auditUserId,
+        diff: entry.diff
+      }
+    ]);
+  } catch (err) {
+    logger.warn("audit write skipped for a purchase order force delete", {
+      error: err
+    });
+  }
+}
+
 /** A file's size as the documents table stores it: whole kilobytes. */
 export function kilobytes(file: Buffer): number {
   return Math.round(file.byteLength / 1024);
@@ -8473,19 +9802,6 @@ export async function releaseApprovedPurchaseOrder(
 }
 
 // ── Purchasing planning ─────────────────────────────────────────────────────
-
-/**
- * The date the supplier promised for a PO line: the line's own, else its
- * order's delivery date — the same COALESCE the `openPurchaseOrderLines` view
- * gives MRP. MRP dates the line by this ahead of the required date, so a
- * planning date change (which writes the required date) cannot move it.
- */
-export function promisedDateOf(line: {
-  promisedDate: string | null;
-  receiptPromisedDate: string | null | undefined;
-}): string | null {
-  return line.promisedDate ?? line.receiptPromisedDate ?? null;
-}
 
 /** Sums forecasts that land on the same (item, location, period). */
 export function deduplicateForecasts<

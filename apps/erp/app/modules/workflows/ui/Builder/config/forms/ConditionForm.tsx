@@ -36,8 +36,9 @@ import { CSS } from "@dnd-kit/utilities";
 import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
-import { useState } from "react";
 import { LuGripVertical, LuPlus, LuX } from "react-icons/lu";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
+import { POINTER_SENSOR_OPTIONS } from "~/utils/drag-sensors";
 import { useBuilderStore } from "../../context";
 import { OutputHandle } from "../../OutputHandle";
 import { conditionPathLabel } from "../../ports";
@@ -45,10 +46,6 @@ import ClauseRow from "../ClauseRow";
 import { CombinatorToggle } from "../CombinatorToggle";
 import { FormStack } from "../layout";
 import type { NodeFormProps } from "./index";
-
-// Module constants: a new options object makes a new sensor, and with it new
-// listeners for every draggable on every render.
-const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
 
 const newClause = (): Clause => ({
   left: {
@@ -116,7 +113,7 @@ function SortableClauseItem({
       type="button"
       aria-label={t`Drag to reorder`}
       disabled={isReadOnly}
-      className="nodrag nopan flex h-8 w-5 shrink-0 cursor-grab items-center justify-center text-muted-foreground active:cursor-grabbing"
+      className="nodrag nopan flex h-8 w-5 shrink-0 cursor-grab touch-none items-center justify-center text-muted-foreground active:cursor-grabbing"
       {...attributes}
       {...listeners}
     >
@@ -161,10 +158,7 @@ export function ConditionForm({
   const edges = useBuilderStore((s) => s.edges);
   const { t } = useLingui();
   // A path whose removal would disconnect edges waits here for confirmation.
-  const [pendingRemoval, setPendingRemoval] = useState<{
-    pathId: string;
-    count: number;
-  } | null>(null);
+  const pendingRemoval = useDrawerItem<{ pathId: string; count: number }>();
 
   const { paths } = node.data;
 
@@ -207,7 +201,7 @@ export function ConditionForm({
   function removePath(pathId: string) {
     const count = connectionsOf(pathId).length;
     if (count > 0) {
-      setPendingRemoval({ pathId, count });
+      pendingRemoval.open({ pathId, count });
       return;
     }
     setPaths(paths.filter((p) => p.id !== pathId));
@@ -254,6 +248,7 @@ export function ConditionForm({
     useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
     useSensor(KeyboardSensor)
   );
+  const removal = pendingRemoval.item;
 
   return (
     <FormStack spacing={4}>
@@ -403,11 +398,11 @@ export function ConditionForm({
           <Trans>Add otherwise</Trans>
         </Button>
       )}
-      {pendingRemoval && (
+      {removal && (
         <Modal
-          open
+          open={pendingRemoval.isOpen}
           onOpenChange={(open) => {
-            if (!open) setPendingRemoval(null);
+            if (!open) pendingRemoval.close();
           }}
         >
           <ModalOverlay />
@@ -417,7 +412,7 @@ export function ConditionForm({
             </ModalHeader>
             <ModalBody>
               <p className="text-sm text-muted-foreground">
-                {t`${plural(pendingRemoval.count, {
+                {t`${plural(removal.count, {
                   one: "Removing this path will also disconnect # connection.",
                   other:
                     "Removing this path will also disconnect # connections."
@@ -425,17 +420,14 @@ export function ConditionForm({
               </p>
             </ModalBody>
             <ModalFooter>
-              <Button
-                variant="secondary"
-                onClick={() => setPendingRemoval(null)}
-              >
+              <Button variant="secondary" onClick={pendingRemoval.close}>
                 <Trans>Cancel</Trans>
               </Button>
               <Button
                 variant="destructive"
                 onClick={() => {
-                  confirmRemovePath(pendingRemoval.pathId);
-                  setPendingRemoval(null);
+                  confirmRemovePath(removal.pathId);
+                  pendingRemoval.close();
                 }}
               >
                 <Trans>Remove</Trans>

@@ -75,7 +75,7 @@ const ProjectHeader = () => {
     switcherOptions: ProjectSwitcherOption[];
   }>(path.to.project(projectId));
   const project = routeData?.project;
-  const [placing, setPlacing] = useState(false);
+  const placeModal = useDisclosure();
   const [stoppingWork, setStoppingWork] = useState(false);
 
   const permissions = usePermissions();
@@ -171,7 +171,7 @@ const ProjectHeader = () => {
       {canPlaceInService && (
         <DropdownMenuItem
           disabled={!canUpdate || !permissions.can("create", "accounting")}
-          onClick={() => setPlacing(true)}
+          onClick={placeModal.onOpen}
         >
           <DropdownMenuIcon icon={<LuBuilding2 />} />
           <Trans>Place in service</Trans>
@@ -290,30 +290,27 @@ const ProjectHeader = () => {
         onToggleExplorer={toggleExplorer}
         toolsPlacement="end"
       />
-      {stoppingWork && (
-        <StopWorkModal
-          projectId={projectId}
-          onClose={() => setStoppingWork(false)}
-        />
-      )}
-      {placing && (
-        <PlaceInServiceModal
-          projectId={projectId}
-          onClose={() => setPlacing(false)}
-        />
-      )}
-      {closeDisclosure.isOpen && (
-        <Confirm
-          action={path.to.projectStatus(projectId)}
-          title={t`Close ${project.identifier}`}
-          text={t`A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done.`}
-          confirmText={t`Close Project`}
-          onCancel={closeDisclosure.onClose}
-          onSubmit={closeDisclosure.onClose}
-        >
-          <input type="hidden" name="status" value="Closed" />
-        </Confirm>
-      )}
+      <StopWorkModal
+        open={stoppingWork}
+        projectId={projectId}
+        onClose={() => setStoppingWork(false)}
+      />
+      <PlaceInServiceModal
+        open={placeModal.isOpen}
+        projectId={projectId}
+        onClose={placeModal.onClose}
+      />
+      <Confirm
+        action={path.to.projectStatus(projectId)}
+        isOpen={closeDisclosure.isOpen}
+        title={t`Close ${project.identifier}`}
+        text={t`A closed project takes no more charges and cannot be reopened. Close it only when every purchase order line and job on it is done.`}
+        confirmText={t`Close Project`}
+        onCancel={closeDisclosure.onClose}
+        onSubmit={closeDisclosure.onClose}
+      >
+        <input type="hidden" name="status" value="Closed" />
+      </Confirm>
     </>
   );
 };

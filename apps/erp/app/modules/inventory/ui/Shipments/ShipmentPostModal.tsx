@@ -41,7 +41,33 @@ import { isShippable } from "./ShipmentLines";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
-const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
+type ShipmentPostModalProps = {
+  open?: boolean;
+  onClose: () => void;
+};
+
+const ShipmentPostModal = ({
+  open = true,
+  onClose
+}: ShipmentPostModalProps) => {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <ShipmentPostBody onClose={onClose} />
+      </ModalContent>
+    </Modal>
+  );
+};
+
+const ShipmentPostBody = ({
+  onClose
+}: Omit<ShipmentPostModalProps, "open">) => {
   const { shipmentId } = useParams();
   if (!shipmentId) throw new Error("shipmentId not found");
 
@@ -262,143 +288,135 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
   const { fetcher } = ruleViolations;
 
   return (
-    <Modal
-      open={true}
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            <Trans>Post Shipment</Trans>
-          </ModalTitle>
-        </ModalHeader>
-        <ModalBody>
-          <p className="text-sm text-muted-foreground mb-4">
-            <Trans>Are you sure you want to post this shipment?</Trans>
-          </p>
-          {isDelivery && (
-            <FormControl className="mb-4">
-              <FormLabel>
-                <Trans>Delivered on</Trans>
-              </FormLabel>
-              <DatePicker
-                aria-label={t`Delivered on`}
-                value={parseDate(postingDate)}
-                maxValue={parseDate(companyToday)}
-                onChange={(d) => d && setPostingDate(d.toString())}
-              />
-            </FormControl>
-          )}
-          {validationErrors.length > 0 && (
-            <Alert variant="destructive">
-              <LuTriangleAlert className="h-4 w-4" />
-              <AlertTitle>
-                <Trans>Missing Information</Trans>
-              </AlertTitle>
-              <AlertDescription>
-                <ul className="list-disc pl-4 mt-2 space-y-1">
-                  {validationErrors.map((error, index) => (
-                    <li key={index} className="text-sm font-medium">
-                      <span className="font-mono">{error.itemReadableId}</span>
-                      <span className="text-muted-foreground ml-2">
-                        {error.shippedQuantity}
-                      </span>
-                      <span className="block mt-0.5 text-red-500 font-normal">
-                        {error.shippedQuantityError}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
-          {expiredErrors.length > 0 && (
-            <Alert variant="destructive" className="mt-4">
-              <LuTriangleAlert className="h-4 w-4" />
-              <AlertTitle>
-                <Trans>Expired Batches</Trans>
-              </AlertTitle>
-              <AlertDescription>
-                <Trans>
-                  Cannot post — shipment contains expired tracked entities.
-                </Trans>
-                <ul className="list-disc pl-4 mt-2 space-y-1">
-                  {expiredErrors.map((w, index) => (
-                    <li key={index} className="text-sm font-medium">
-                      <span className="font-mono">{w.itemReadableId}</span>
-                      <span className="text-muted-foreground ml-2">
-                        {w.readableId}
-                      </span>
-                      <span className="block mt-0.5 text-red-500 font-normal">
-                        Expired on{" "}
-                        <DateTime value={w.expirationDate} variant="date" />
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
-          {expiredWarnings.length > 0 && (
-            <Alert variant="warning" className="mt-4">
-              <LuTriangleAlert className="h-4 w-4" />
-              <AlertTitle>
-                <Trans>Expired Batches</Trans>
-              </AlertTitle>
-              <AlertDescription>
-                <ul className="list-disc pl-4 mt-2 space-y-1">
-                  {expiredWarnings.map((w, index) => (
-                    <li key={index} className="text-sm font-medium">
-                      <span className="font-mono">{w.itemReadableId}</span>
-                      <span className="text-muted-foreground ml-2">
-                        {w.readableId}
-                      </span>
-                      <span className="block mt-0.5 text-amber-600 font-normal">
-                        Expired on{" "}
-                        <DateTime value={w.expirationDate} variant="date" />
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
-        </ModalBody>
-        <ModalFooter>
-          <HStack>
-            <Button variant="solid" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData();
-                if (isDelivery) formData.set("postingDate", postingDate);
-                ruleViolations.submit(formData);
-              }}
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Post Shipment</Trans>
+        </ModalTitle>
+      </ModalHeader>
+      <ModalBody>
+        <p className="text-sm text-muted-foreground mb-4">
+          <Trans>Are you sure you want to post this shipment?</Trans>
+        </p>
+        {isDelivery && (
+          <FormControl className="mb-4">
+            <FormLabel>
+              <Trans>Delivered on</Trans>
+            </FormLabel>
+            <DatePicker
+              aria-label={t`Delivered on`}
+              value={parseDate(postingDate)}
+              maxValue={parseDate(companyToday)}
+              onChange={(d) => d && setPostingDate(d.toString())}
+            />
+          </FormControl>
+        )}
+        {validationErrors.length > 0 && (
+          <Alert variant="destructive">
+            <LuTriangleAlert className="h-4 w-4" />
+            <AlertTitle>
+              <Trans>Missing Information</Trans>
+            </AlertTitle>
+            <AlertDescription>
+              <ul className="list-disc pl-4 mt-2 space-y-1">
+                {validationErrors.map((error, index) => (
+                  <li key={index} className="text-sm font-medium">
+                    <span className="font-mono">{error.itemReadableId}</span>
+                    <span className="text-muted-foreground ml-2">
+                      {error.shippedQuantity}
+                    </span>
+                    <span className="block mt-0.5 text-red-500 font-normal">
+                      {error.shippedQuantityError}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
+        {expiredErrors.length > 0 && (
+          <Alert variant="destructive" className="mt-4">
+            <LuTriangleAlert className="h-4 w-4" />
+            <AlertTitle>
+              <Trans>Expired Batches</Trans>
+            </AlertTitle>
+            <AlertDescription>
+              <Trans>
+                Cannot post — shipment contains expired tracked entities.
+              </Trans>
+              <ul className="list-disc pl-4 mt-2 space-y-1">
+                {expiredErrors.map((w, index) => (
+                  <li key={index} className="text-sm font-medium">
+                    <span className="font-mono">{w.itemReadableId}</span>
+                    <span className="text-muted-foreground ml-2">
+                      {w.readableId}
+                    </span>
+                    <span className="block mt-0.5 text-red-500 font-normal">
+                      Expired on{" "}
+                      <DateTime value={w.expirationDate} variant="date" />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
+        {expiredWarnings.length > 0 && (
+          <Alert variant="warning" className="mt-4">
+            <LuTriangleAlert className="h-4 w-4" />
+            <AlertTitle>
+              <Trans>Expired Batches</Trans>
+            </AlertTitle>
+            <AlertDescription>
+              <ul className="list-disc pl-4 mt-2 space-y-1">
+                {expiredWarnings.map((w, index) => (
+                  <li key={index} className="text-sm font-medium">
+                    <span className="font-mono">{w.itemReadableId}</span>
+                    <span className="text-muted-foreground ml-2">
+                      {w.readableId}
+                    </span>
+                    <span className="block mt-0.5 text-amber-600 font-normal">
+                      Expired on{" "}
+                      <DateTime value={w.expirationDate} variant="date" />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
+      </ModalBody>
+      <ModalFooter>
+        <HStack>
+          <Button variant="solid" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData();
+              if (isDelivery) formData.set("postingDate", postingDate);
+              ruleViolations.submit(formData);
+            }}
+          >
+            <Button
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={
+                fetcher.state !== "idle" ||
+                navigation.state !== "idle" ||
+                !validated ||
+                validationErrors.length > 0 ||
+                expiredErrors.length > 0
+              }
+              type="submit"
             >
-              <Button
-                isLoading={fetcher.state !== "idle"}
-                isDisabled={
-                  fetcher.state !== "idle" ||
-                  navigation.state !== "idle" ||
-                  !validated ||
-                  validationErrors.length > 0 ||
-                  expiredErrors.length > 0
-                }
-                type="submit"
-              >
-                Post Shipment
-              </Button>
-            </form>
-          </HStack>
-        </ModalFooter>
-      </ModalContent>
+              Post Shipment
+            </Button>
+          </form>
+        </HStack>
+      </ModalFooter>
       <ruleViolations.ViolationModal />
-    </Modal>
+    </>
   );
 };
 

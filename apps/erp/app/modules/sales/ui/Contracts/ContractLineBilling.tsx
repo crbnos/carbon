@@ -224,16 +224,15 @@ export default function ContractLineBilling({
 
       <ContractLineBillableItems items={items} currencyCode={currencyCode} />
 
-      {editingFunding && (
-        <EditFundingModal
-          action={path.to.contractLineFunding(contractId, line.id)}
-          line={line}
-          currencyCode={currencyCode}
-          fundedByActions={fundedByActions}
-          title={t`Edit Funding`}
-          onClose={() => setEditingFunding(false)}
-        />
-      )}
+      <EditFundingModal
+        open={editingFunding}
+        action={path.to.contractLineFunding(contractId, line.id)}
+        line={line}
+        currencyCode={currencyCode}
+        fundedByActions={fundedByActions}
+        title={t`Edit Funding`}
+        onClose={() => setEditingFunding(false)}
+      />
     </VStack>
   );
 }
@@ -379,6 +378,7 @@ function ContractLineBillableItems({
 
 /** Edit Funding: a funding modification on a Draft or Active contract. */
 function EditFundingModal({
+  open,
   action,
   line,
   currencyCode,
@@ -386,6 +386,7 @@ function EditFundingModal({
   title,
   onClose
 }: {
+  open: boolean;
   action: string;
   line: ContractLine;
   currencyCode: string;
@@ -403,7 +404,7 @@ function EditFundingModal({
     value === null ? undefined : Number(value);
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
       <ModalContent size="large">
         <ValidatedForm
           validator={contractLineFundingValidator}

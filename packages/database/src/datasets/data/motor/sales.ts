@@ -10,6 +10,7 @@ import type {
   ContractSpec,
   CustomerAssetSpec,
   PriceBreak,
+  RentalAgreementSpec,
   SalesData,
   SalesOpportunitySpec,
   SalesReturnSpec,
@@ -1232,6 +1233,65 @@ export const SERVICE_JOBS: ServiceJobSpec[] = [
   }
 ];
 
+// Rental agreements over the fleet units (accounting FIXED_ASSETS "fleet-*").
+// The Active one is open-ended, so every line classifies as a Rental.
+export const RENTAL_AGREEMENTS: RentalAgreementSpec[] = [
+  {
+    key: "active",
+    customer: "Wabash Industrial Supply",
+    primaryContact: "Boone",
+    contacts: [{ contact: "Castellano", role: "Site contact" }],
+    status: "Active",
+    startOffset: -45,
+    billingCycle: "Calendar Month",
+    billingTiming: "Advance",
+    lines: [
+      {
+        fixedAsset: "fleet-1",
+        rateUnit: "Month",
+        rate: 210,
+        fairValue: 2670,
+        economicLifeMonths: 60,
+        deliveredOffset: -40
+      },
+      {
+        fixedAsset: "fleet-2",
+        rateUnit: "Month",
+        rate: 210,
+        fairValue: 2670,
+        economicLifeMonths: 60
+      }
+    ],
+    charges: [
+      {
+        line: 1,
+        description: "Freight and alignment check",
+        amount: 180,
+        dateOffset: -40
+      }
+    ]
+  },
+  {
+    key: "draft",
+    customer: "Ridgeline Drive Systems",
+    primaryContact: "Raghavan",
+    status: "Draft",
+    startOffset: 14,
+    endOffset: 379,
+    billingCycle: "Calendar Month",
+    billingTiming: "Advance",
+    lines: [
+      {
+        fixedAsset: "fleet-3",
+        rateUnit: "Month",
+        rate: 135,
+        fairValue: 1620,
+        economicLifeMonths: 60
+      }
+    ]
+  }
+];
+
 export const motorSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
@@ -1285,5 +1345,6 @@ export const motorSales: SalesData = {
   ],
   customerAssets: CUSTOMER_ASSETS,
   serviceLaborRates: { cost: 58, bill: 135 },
-  serviceJobs: SERVICE_JOBS
+  serviceJobs: SERVICE_JOBS,
+  rentalAgreements: RENTAL_AGREEMENTS
 };

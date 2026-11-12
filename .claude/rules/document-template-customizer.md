@@ -107,7 +107,7 @@ with a live-record preview combobox), `context.tsx` (state/actions), plus
 
 Every rail section folds (`PanelSection`; `RememberedSection` keeps the state in
 local storage per section id). Left rail: Top of page (header, logo, watermark), Body (the
-sortable blocks on the page, with Add block; the Summary is nested under Line Items and `keepSummaryWithLineItems` keeps it directly after them in the stored order and when a template resolves), Bottom of page (footer), Not on the
+sortable blocks on the page, with Add block; the Summary is nested under Line Items and `keepSummaryWithLineItems` keeps it directly after them in the stored order and when a template resolves), Footer, Not on the
 page (body blocks switched off, folded, only when there are some), Font, Colors.
 Hiding a block never moves it, so showing it again puts it back in place. Right
 panel: a block's own settings under "Options", then its texts, one at a time.

@@ -208,7 +208,7 @@ const PurchaseOrdersTable = memo(
         },
         {
           accessorKey: "receiptRequestedDate",
-          header: t`Requested Date`,
+          header: t`Receipt Requested Date`,
           cell: (item) => (
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
@@ -221,7 +221,7 @@ const PurchaseOrdersTable = memo(
         },
         {
           accessorKey: "receiptPromisedDate",
-          header: t`Promised Date`,
+          header: t`Receipt Promised Date`,
           cell: ({ row }) => {
             const isReceivedOnTime =
               row.original.deliveryDate &&
@@ -251,6 +251,32 @@ const PurchaseOrdersTable = memo(
               </span>
             );
           },
+          meta: {
+            filter: {
+              type: "dateRange"
+            },
+            icon: <LuCalendar />
+          }
+        },
+        {
+          accessorKey: "shippedDate",
+          header: t`Shipped Date`,
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
+          meta: {
+            filter: {
+              type: "dateRange"
+            },
+            icon: <LuCalendar />
+          }
+        },
+        {
+          accessorKey: "expectedReceiptDate",
+          header: t`Expected Receipt Date`,
+          cell: (item) => (
+            <DateTime value={item.getValue<string>()} variant="date" />
+          ),
           meta: {
             filter: {
               type: "dateRange"
@@ -569,11 +595,9 @@ const PurchaseOrdersTable = memo(
             text={`Are you sure you want to delete ${selectedPurchaseOrder.purchaseOrderId!}? This cannot be undone.`}
             onCancel={() => {
               deletePurchaseOrderModal.onClose();
-              setSelectedPurchaseOrder(null);
             }}
             onSubmit={() => {
               deletePurchaseOrderModal.onClose();
-              setSelectedPurchaseOrder(null);
             }}
           />
         )}

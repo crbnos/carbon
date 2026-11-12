@@ -37,6 +37,7 @@ export function TimesheetReasonModal({
   requiresReason,
   requiresLateReason,
   isSaving,
+  open = true,
   onConfirm,
   onCancel
 }: {
@@ -49,6 +50,7 @@ export function TimesheetReasonModal({
   requiresReason: boolean;
   requiresLateReason: boolean;
   isSaving: boolean;
+  open?: boolean;
   onConfirm: (reasons: TimesheetReasons) => void;
   onCancel: () => void;
 }) {
@@ -61,7 +63,10 @@ export function TimesheetReasonModal({
     (!requiresLateReason || lateReason.trim() !== "");
 
   return (
-    <Modal open onOpenChange={(open) => !open && !isSaving && onCancel()}>
+    <Modal
+      open={open}
+      onOpenChange={(open) => !open && !isSaving && onCancel()}
+    >
       <ModalOverlay />
       <ModalContent>
         <form

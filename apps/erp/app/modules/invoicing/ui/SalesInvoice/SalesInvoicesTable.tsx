@@ -426,11 +426,9 @@ const SalesInvoicesTable = memo((props: SalesInvoicesTableProps) => {
           text={t`Are you sure you want to permanently delete ${selectedSalesInvoice.invoiceId!}?`}
           onCancel={() => {
             closeSalesInvoiceModal.onClose();
-            setSelectedSalesInvoice(null);
           }}
           onSubmit={() => {
             closeSalesInvoiceModal.onClose();
-            setSelectedSalesInvoice(null);
           }}
         />
       )}

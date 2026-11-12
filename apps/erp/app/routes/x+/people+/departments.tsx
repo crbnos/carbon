@@ -20,19 +20,21 @@ import {
   Tabs,
   TabsContent,
   TabsList,
-  TabsTrigger
+  TabsTrigger,
+  useDisclosure
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { LuDownload, LuEllipsis } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useLoaderData, useNavigate, useSearchParams } from "react-router";
 import { New } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { AppBarAction } from "~/components/New";
+import { usePersistentPageTab } from "~/hooks/usePersistentPageTab";
 import { getDepartmentsTree } from "~/modules/people/people.service";
 import {
   DepartmentsListView,
@@ -40,11 +42,14 @@ import {
 } from "~/modules/people/ui/Departments";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { revalidateIgnoringTabDisplay } from "~/utils/revalidate";
 
 export const handle: Handle = {
   breadcrumb: msg`Departments`,
   to: path.to.departments
 };
+
+export const shouldRevalidate = revalidateIgnoringTabDisplay;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -74,6 +79,13 @@ export default function Route() {
   const { departments } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const { t } = useLingui();
+  const [, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = usePersistentPageTab(
+    "view",
+    ["tree", "list"],
+    "tree",
+    "tab"
+  );
 
   const handleEdit = useCallback(
     (id: string) => {
@@ -92,7 +104,7 @@ export default function Route() {
   // Departments render a bespoke tree/list rather than the shared <Table>, so
   // the Bulk Import entry cannot arrive through its `importCSV` prop. Same
   // dropdown shape as TableHeader so the control is where users expect it.
-  const [importOpen, setImportOpen] = useState(false);
+  const importModal = useDisclosure();
   // Named `label` deliberately: Lingui bakes the placeholder name into the
   // msgid, so this must match TableHeader's `Import {label} CSV` to reuse its
   // existing translation rather than create a second, untranslated key.
@@ -111,7 +123,7 @@ export default function Route() {
         <Trans>Bulk Import</Trans>
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
-      <DropdownMenuItem onClick={() => setImportOpen(true)}>
+      <DropdownMenuItem onClick={importModal.onOpen}>
         <DropdownMenuIcon icon={<LuDownload />} />
         {/* Reuses TableHeader's parameterized msgid rather than
             introducing a second one that every catalog would have to
@@ -127,7 +139,22 @@ export default function Route() {
     "max-md:hit-area max-md:min-h-9 max-md:rounded-md max-md:border-b-0 max-md:px-3 max-md:data-[state=active]:bg-card max-md:data-[state=active]:shadow-button-base";
 
   return (
-    <Tabs defaultValue="tree" className="w-full">
+    <Tabs
+      value={activeTab}
+      onValueChange={(tab) => {
+        setActiveTab(tab);
+        setSearchParams(
+          (previous) => {
+            const next = new URLSearchParams(previous);
+            if (tab === "list") next.set("tab", "list");
+            else next.delete("tab");
+            return next;
+          },
+          { replace: true, preventScrollReset: true }
+        );
+      }}
+      className="w-full"
+    >
       <div className="flex px-4 py-3 items-center space-x-4 justify-between bg-card border-b border-border w-full">
         {/* The app bar already names the section on phones. */}
         <Heading size="h3" className="max-md:hidden">
@@ -185,10 +212,12 @@ export default function Route() {
         />
       </TabsContent>
 
-      {importOpen && (
+      {importModal.openCount > 0 && (
         <ImportCSVModal
+          key={importModal.openCount}
+          open={importModal.isOpen}
           table="department"
-          onClose={() => setImportOpen(false)}
+          onClose={importModal.onClose}
         />
       )}
 

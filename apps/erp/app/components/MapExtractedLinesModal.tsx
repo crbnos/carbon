@@ -45,16 +45,32 @@ export type MapExtractedLinesModalProps = {
    * badges (rendered inside a `flex items-start justify-between` row).
    */
   renderSummary: (map: any) => ReactNode;
+  open?: boolean;
   onClose: () => void;
 };
 
 export default function MapExtractedLinesModal({
+  open = true,
+  onClose,
+  ...props
+}: MapExtractedLinesModalProps) {
+  return (
+    <Modal open={open} onOpenChange={(val) => !val && onClose()}>
+      <ModalOverlay />
+      <ModalContent size="xlarge">
+        <MapExtractedLinesForm onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function MapExtractedLinesForm({
   endpoint,
   party,
   title,
   renderSummary,
   onClose
-}: MapExtractedLinesModalProps) {
+}: Omit<MapExtractedLinesModalProps, "open">) {
   const { t } = useLingui();
   const fetcher = useFetcher<any>();
   const [mappings, setMappings] = useState<any[]>([]);
@@ -132,146 +148,132 @@ export default function MapExtractedLinesModal({
   const isEmpty = mappings.length === 0 && !isLoading;
 
   return (
-    <Modal open={true} onOpenChange={(val) => !val && onClose()}>
-      <ModalOverlay />
-      <ModalContent size="xlarge">
-        <ValidatedForm validator={dummyValidator} onSubmit={handleSubmit}>
-          <ModalHeader>
-            <ModalTitle>{title}</ModalTitle>
-            <ModalClose />
-          </ModalHeader>
-          <ModalBody>
-            <div className="mb-6 space-y-1">
-              <p className="max-w-[70ch] text-pretty text-sm text-muted-foreground">
-                <Trans>
-                  Some lines extracted from the PDF could not be automatically
-                  mapped to your inventory items. Review and map each line
-                  below.
-                </Trans>
+    <ValidatedForm validator={dummyValidator} onSubmit={handleSubmit}>
+      <ModalHeader>
+        <ModalTitle>{title}</ModalTitle>
+        <ModalClose />
+      </ModalHeader>
+      <ModalBody>
+        <div className="mb-6 space-y-1">
+          <p className="max-w-[70ch] text-pretty text-sm text-muted-foreground">
+            <Trans>
+              Some lines extracted from the PDF could not be automatically
+              mapped to your inventory items. Review and map each line below.
+            </Trans>
+          </p>
+          {mappings.length > 0 && (
+            <p className="text-xs text-muted-foreground tabular-nums">
+              <Trans>{mappings.length} lines to map</Trans>
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          {mappings.length === 0 &&
+            isLoading &&
+            [0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-border bg-card p-4"
+              >
+                <div className="h-4 w-40 animate-pulse rounded bg-muted" />
+                <div className="mt-2 h-3 w-64 animate-pulse rounded bg-muted" />
+                <div className="mt-4 h-9 w-full animate-pulse rounded bg-muted" />
+              </div>
+            ))}
+
+          {isEmpty && (
+            <div className="rounded-lg border border-dashed border-border py-12 text-center">
+              <p className="text-sm text-muted-foreground">
+                <Trans>No lines to map</Trans>
               </p>
-              {mappings.length > 0 && (
-                <p className="text-xs text-muted-foreground tabular-nums">
-                  <Trans>{mappings.length} lines to map</Trans>
-                </p>
-              )}
             </div>
+          )}
 
-            <div className="space-y-2">
-              {mappings.length === 0 &&
-                isLoading &&
-                [0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="rounded-lg border border-border bg-card p-4"
-                  >
-                    <div className="h-4 w-40 animate-pulse rounded bg-muted" />
-                    <div className="mt-2 h-3 w-64 animate-pulse rounded bg-muted" />
-                    <div className="mt-4 h-9 w-full animate-pulse rounded bg-muted" />
-                  </div>
-                ))}
-
-              {isEmpty && (
-                <div className="rounded-lg border border-dashed border-border py-12 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    <Trans>No lines to map</Trans>
-                  </p>
+          {mappings.map((map) => {
+            const lineLabel =
+              map.customerPartId ?? map.description ?? map.lineId;
+            return (
+              <div
+                key={map.lineId}
+                className="rounded-lg border border-border bg-card transition-colors hover:border-foreground/20"
+              >
+                <div className="flex items-start justify-between gap-4 px-4 py-3">
+                  {renderSummary(map)}
                 </div>
-              )}
 
-              {mappings.map((map) => {
-                const lineLabel =
-                  map.customerPartId ?? map.description ?? map.lineId;
-                return (
-                  <div
-                    key={map.lineId}
-                    className="rounded-lg border border-border bg-card transition-colors hover:border-foreground/20"
+                <div className="grid grid-cols-1 gap-3 border-t border-border px-4 py-3 sm:grid-cols-[minmax(0,200px)_1fr] sm:items-center">
+                  <CarbonSelect
+                    value={map.action}
+                    onValueChange={(val) => handleActionChange(map.lineId, val)}
                   >
-                    <div className="flex items-start justify-between gap-4 px-4 py-3">
-                      {renderSummary(map)}
-                    </div>
+                    <SelectTrigger aria-label={t`Action for ${lineLabel}`}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="map">Select existing item</SelectItem>
+                      <SelectItem value="create">Create new item</SelectItem>
+                      <SelectItem value="ignore">Leave unmapped</SelectItem>
+                    </SelectContent>
+                  </CarbonSelect>
 
-                    <div className="grid grid-cols-1 gap-3 border-t border-border px-4 py-3 sm:grid-cols-[minmax(0,200px)_1fr] sm:items-center">
-                      <CarbonSelect
-                        value={map.action}
-                        onValueChange={(val) =>
-                          handleActionChange(map.lineId, val)
+                  <div className="min-w-0">
+                    {map.action === "map" && (
+                      <>
+                        <Combobox
+                          aria-label={t`Item for ${lineLabel}`}
+                          options={itemOptions}
+                          value={map.itemId}
+                          onChange={(val) => handleItemSelect(map.lineId, val)}
+                          placeholder="Select item"
+                          isClearable
+                        />
+                        <input
+                          type="hidden"
+                          name={`item-${map.lineId}`}
+                          value={map.itemId ?? ""}
+                        />
+                      </>
+                    )}
+                    {map.action === "create" && (
+                      <Input
+                        aria-label={t`New item name for ${lineLabel}`}
+                        placeholder="New item name"
+                        value={
+                          map.createName ??
+                          map.customerPartId ??
+                          map.description ??
+                          ""
                         }
-                      >
-                        <SelectTrigger aria-label={t`Action for ${lineLabel}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="map">
-                            Select existing item
-                          </SelectItem>
-                          <SelectItem value="create">
-                            Create new item
-                          </SelectItem>
-                          <SelectItem value="ignore">Leave unmapped</SelectItem>
-                        </SelectContent>
-                      </CarbonSelect>
-
-                      <div className="min-w-0">
-                        {map.action === "map" && (
-                          <>
-                            <Combobox
-                              aria-label={t`Item for ${lineLabel}`}
-                              options={itemOptions}
-                              value={map.itemId}
-                              onChange={(val) =>
-                                handleItemSelect(map.lineId, val)
-                              }
-                              placeholder="Select item"
-                              isClearable
-                            />
-                            <input
-                              type="hidden"
-                              name={`item-${map.lineId}`}
-                              value={map.itemId ?? ""}
-                            />
-                          </>
-                        )}
-                        {map.action === "create" && (
-                          <Input
-                            aria-label={t`New item name for ${lineLabel}`}
-                            placeholder="New item name"
-                            value={
-                              map.createName ??
-                              map.customerPartId ??
-                              map.description ??
-                              ""
-                            }
-                            onChange={(e) =>
-                              handleCreateNameChange(map.lineId, e.target.value)
-                            }
-                          />
-                        )}
-                        {map.action === "ignore" && (
-                          <p className="text-sm text-muted-foreground">
-                            <Trans>Will remain as a comment line</Trans>
-                          </p>
-                        )}
-                      </div>
-                    </div>
+                        onChange={(e) =>
+                          handleCreateNameChange(map.lineId, e.target.value)
+                        }
+                      />
+                    )}
+                    {map.action === "ignore" && (
+                      <p className="text-sm text-muted-foreground">
+                        <Trans>Will remain as a comment line</Trans>
+                      </p>
+                    )}
                   </div>
-                );
-              })}
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <HStack spacing={2} className="w-full justify-end">
-              <ModalClose asChild>
-                <Button variant="secondary" onClick={onClose}>
-                  <Trans>Cancel</Trans>
-                </Button>
-              </ModalClose>
-              <Button type="submit" isLoading={isLoading}>
-                <Trans>Confirm Mapping</Trans>
-              </Button>
-            </HStack>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        <HStack spacing={2} className="w-full justify-end">
+          <ModalClose asChild>
+            <Button variant="secondary" onClick={onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+          </ModalClose>
+          <Button type="submit" isLoading={isLoading}>
+            <Trans>Confirm Mapping</Trans>
+          </Button>
+        </HStack>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }

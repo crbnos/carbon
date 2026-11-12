@@ -36,6 +36,7 @@ export type EntityKey =
   | "assetClass"
   | "customerType"
   | "customerStatus"
+  | "supplierStage"
   | "supplierType"
   | "itemPostingGroup"
   | "materialType"
@@ -199,6 +200,15 @@ const useEntityCopy = (entity: EntityKey): EntityCopy => {
         noun: t`customer status`,
         pluralNoun: t`customer statuses`,
         moduleLabel: t`sales`
+      };
+    case "supplierStage":
+      return {
+        module: "purchasing",
+        action: "create",
+        route: path.to.newSupplierStage,
+        noun: t`supplier stage`,
+        pluralNoun: t`supplier stages`,
+        moduleLabel: t`purchasing`
       };
     case "supplierType":
       return {

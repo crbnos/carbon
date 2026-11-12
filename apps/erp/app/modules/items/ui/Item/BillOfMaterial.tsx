@@ -147,6 +147,10 @@ type BillOfMaterialProps = {
   isDisabled?: boolean;
   // What to tell the user when isDisabled is what made this read-only.
   disabledReason?: ReactNode;
+  // Set when this edits a correction's materials: new lines are created inside
+  // the correction, and the card takes `title`.
+  methodCorrectionId?: string;
+  title?: ReactNode;
 } & ReleaseLockProps;
 
 type OrderState = {
@@ -187,7 +191,9 @@ const BillOfMaterial = ({
   revisionStatus,
   releaseControl,
   isDisabled = false,
-  disabledReason
+  disabledReason,
+  methodCorrectionId,
+  title
 }: BillOfMaterialProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
@@ -307,7 +313,8 @@ const BillOfMaterial = ({
       ...initialMethodMaterial,
       id: materialId,
       order: newOrder,
-      makeMethodId
+      makeMethodId,
+      methodCorrectionId: methodCorrectionId ?? null
     };
 
     setTemporaryItems((prev) => ({
@@ -493,7 +500,7 @@ const BillOfMaterial = ({
       <HStack className="justify-between">
         <CardHeader>
           <CardTitle className="flex flex-row items-center gap-2">
-            <Trans>Bill of Material</Trans>
+            {title ?? <Trans>Bill of Material</Trans>}
             {itemName && (
               <span className="text-xs text-muted-foreground font-normal">
                 {itemName}
@@ -608,7 +615,7 @@ const BillOfMaterial = ({
           renderItem={renderListItem}
         />
       </CardContent>
-      {configuratorDisclosure.isOpen && configuration && (
+      {configuration && (
         <ConfigurationEditor
           configuration={configuration}
           open={configuratorDisclosure.isOpen}
@@ -873,6 +880,8 @@ function MaterialForm({
       <div>
         <Hidden name="id" />
         <Hidden name="makeMethodId" />
+        {/* Read on create only: a line stays in its correction. */}
+        <Hidden name="methodCorrectionId" />
         <Hidden name="order" />
         <Hidden name="kit" value={itemData.kit.toString()} />
         <Hidden

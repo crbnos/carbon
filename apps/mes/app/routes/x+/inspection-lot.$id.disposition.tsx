@@ -12,7 +12,10 @@ import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { erpPosting } from "~/services/erp";
-import { inspectionDispositionValidator } from "~/services/models";
+import {
+  CORRECTION_TARGET_PREFIX,
+  inspectionDispositionValidator
+} from "~/services/models";
 import {
   abilityBlockRefusal,
   finishJobOperation,
@@ -334,21 +337,33 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (reworkTotal > 0 && targetOperationId && reworkReason) {
-    const rework = await erpPosting(
-      "trigger-rework",
-      { companyId, userId },
-      {
-        jobId: state.jobId,
-        triggeredAtJobOperationId: state.jobOperationId,
-        targetJobOperationId: targetOperationId,
-        reason: reworkReason,
-        quantity: reworkTotal,
-        trackedEntityIds: state.requiresSerialTracking
-          ? reworkEntityIds
-          : undefined,
-        inspectionId: id
-      }
-    );
+    // The target is an earlier operation, or one of the part's corrections.
+    const jobCorrectionId = targetOperationId.startsWith(
+      CORRECTION_TARGET_PREFIX
+    )
+      ? targetOperationId.slice(CORRECTION_TARGET_PREFIX.length)
+      : null;
+    const shared = {
+      jobId: state.jobId,
+      triggeredAtJobOperationId: state.jobOperationId,
+      reason: reworkReason,
+      quantity: reworkTotal,
+      trackedEntityIds: state.requiresSerialTracking
+        ? reworkEntityIds
+        : undefined,
+      inspectionId: id
+    };
+    const rework = jobCorrectionId
+      ? await erpPosting(
+          "trigger-correction",
+          { companyId, userId },
+          { ...shared, jobCorrectionId }
+        )
+      : await erpPosting(
+          "trigger-rework",
+          { companyId, userId },
+          { ...shared, targetJobOperationId: targetOperationId }
+        );
     if (rework.error) {
       return fail(
         rework.error,

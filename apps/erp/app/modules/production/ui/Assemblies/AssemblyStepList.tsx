@@ -79,6 +79,8 @@ import { useFetcher, useParams, useSearchParams } from "react-router";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
+import { useDrawerItem } from "~/hooks/useDrawerItem";
+import { POINTER_SENSOR_OPTIONS } from "~/utils/drag-sensors";
 import { path } from "~/utils/path";
 import { assemblyStepStatuses } from "../../production.models";
 import type { AssemblyInstructionStepRow } from "../../types";
@@ -88,10 +90,6 @@ import {
   normalizeStepStatus,
   useStepStatusLabel
 } from "./AssemblyStepStatus";
-
-// Module constants: a new options object makes a new sensor, and with it new
-// listeners for every draggable on every render.
-const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
 
 /** The search param that opens a sub-assembly: the list and player show only its steps. */
 export const SUB_ASSEMBLY_PARAM = "subAssembly";
@@ -426,7 +424,7 @@ export default function AssemblyStepList({
       action: path.to.assemblySubAssemblyUngroup(id, headerId)
     });
   };
-  const [headerToDelete, setHeaderToDelete] = useState<string | null>(null);
+  const headerToDelete = useDrawerItem<string>();
 
   const sensors = useSensors(
     useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
@@ -613,7 +611,7 @@ export default function AssemblyStepList({
           }
           onOpen={() => setOpenHeader(step.id)}
           onUngroup={() => ungroup(step.id)}
-          onDelete={() => setHeaderToDelete(step.id)}
+          onDelete={() => headerToDelete.open(step.id)}
         />
       );
     }
@@ -738,15 +736,16 @@ export default function AssemblyStepList({
           <Trans>No steps match "{search}"</Trans>
         </p>
       )}
-      {headerToDelete && (
+      {headerToDelete.item && (
         <ConfirmDelete
-          action={path.to.assemblySubAssemblyDelete(id, headerToDelete)}
-          name={stepTitles.get(headerToDelete) ?? t`Sub-Assembly`}
+          action={path.to.assemblySubAssemblyDelete(id, headerToDelete.item)}
+          isOpen={headerToDelete.isOpen}
+          name={stepTitles.get(headerToDelete.item) ?? t`Sub-Assembly`}
           text={t`Delete this sub-assembly and all of its steps? This cannot be undone.`}
-          onCancel={() => setHeaderToDelete(null)}
+          onCancel={headerToDelete.close}
           onSubmit={() => {
-            if (openHeaderId === headerToDelete) setOpenHeader(null);
-            setHeaderToDelete(null);
+            if (openHeaderId === headerToDelete.item) setOpenHeader(null);
+            headerToDelete.close();
           }}
         />
       )}
@@ -824,7 +823,7 @@ function DragHandle({
       variant="ghost"
       size="sm"
       disabled={!canDrag}
-      className="size-6 shrink-0 cursor-grab touch-none text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing"
+      className="size-6 shrink-0 cursor-grab touch-none text-muted-foreground/50 hover:text-muted-foreground active:cursor-grabbing pointer-coarse:hit-area"
       onClick={(e) => e.stopPropagation()}
       {...sortable.attributes}
       {...sortable.listeners}

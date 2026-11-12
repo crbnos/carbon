@@ -44,6 +44,7 @@ import type {
   scrapQuantityValidator,
   stepRecordValidator
 } from "./models";
+import { inspectionFailedResult } from "./models";
 import { planStepBackflush } from "./step-backflush";
 import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
 
@@ -822,6 +823,40 @@ export async function getJobAttributesByOperationId(
 }
 
 /**
+ * Why an operation is not on the floor, or null when it is. The operation,
+ * assembly and inspection views share it: a batched operation follows its
+ * batch (a Planned batch is off the floor), any other follows its job, which
+ * must be released (Ready, In Progress or Paused).
+ */
+export async function floorRefusal(
+  client: SupabaseClient<Database>,
+  args: {
+    jobStatus: string | null | undefined;
+    jobOperationBatchId: string | null | undefined;
+    companyId: string;
+  }
+): Promise<string | null> {
+  if (args.jobOperationBatchId) {
+    const batch = await client
+      .from("jobOperationBatch")
+      .select("status")
+      .eq("id", args.jobOperationBatchId)
+      .eq("companyId", args.companyId)
+      .maybeSingle();
+    if (batch.error || !batch.data) {
+      return "This operation's batch could not be checked";
+    }
+    return batch.data.status === "Planned"
+      ? "This operation is part of a batch that has not been released to the floor"
+      : null;
+  }
+  return args.jobStatus &&
+    (activeJobStatuses as readonly string[]).includes(args.jobStatus)
+    ? null
+    : "This operation's job has not been released to the floor";
+}
+
+/**
  * Tenant check for a caller-supplied job operation id. Routes read operations
  * with a service-role client (operators often lack RLS rights), so this scoped
  * lookup is the boundary: null data means the id is not in the company.
@@ -934,6 +969,7 @@ export type BatchMaterialTotal = {
   itemType: string | null;
   // Where the members' rows say to pick it from (the first one set).
   storageUnitName: string | null;
+  storageUnitEffectiveNettable: boolean | null;
   unitOfMeasureCode: string | null;
   requiresBatchTracking: boolean;
   requiresSerialTracking: boolean;
@@ -966,7 +1002,7 @@ export async function getBatchMaterialTotals(
   const rows = await client
     .from("jobMaterial")
     .select(
-      "itemId, jobOperationId, jobMakeMethodId, estimatedQuantity, quantityIssued, description, unitOfMeasureCode, requiresBatchTracking, requiresSerialTracking, item(readableIdWithRevision, thumbnailPath, type), storageUnit(name)"
+      "itemId, jobOperationId, jobMakeMethodId, estimatedQuantity, quantityIssued, description, unitOfMeasureCode, requiresBatchTracking, requiresSerialTracking, item(readableIdWithRevision, thumbnailPath, type), storageUnit(name, effectiveNettable)"
     )
     .or(
       [
@@ -993,13 +1029,17 @@ export async function getBatchMaterialTotals(
       thumbnailPath: r.item?.thumbnailPath ?? null,
       itemType: r.item?.type ?? null,
       storageUnitName: null,
+      storageUnitEffectiveNettable: null,
       name: r.description ?? null,
       unitOfMeasureCode: r.unitOfMeasureCode ?? null,
       requiresBatchTracking: Boolean(r.requiresBatchTracking),
       requiresSerialTracking: Boolean(r.requiresSerialTracking),
       perMember: []
     });
-    t.storageUnitName ??= r.storageUnit?.name ?? null;
+    if (!t.storageUnitName && r.storageUnit?.name) {
+      t.storageUnitName = r.storageUnit.name;
+      t.storageUnitEffectiveNettable = r.storageUnit.effectiveNettable;
+    }
     const required = Number(r.estimatedQuantity ?? 0);
     t.required += required;
     t.issued += Number(r.quantityIssued ?? 0);
@@ -1264,7 +1304,7 @@ export async function getJobMaterialsByOperationId(
   const [materials, trackedInputs] = await Promise.all([
     client
       .from("jobMaterialWithMakeMethodId")
-      .select("*")
+      .select("*, storageUnit(effectiveNettable)")
       .eq("jobMakeMethodId", operation.jobMakeMethodId)
       .order("itemReadableId", { ascending: true })
       .order("id", { ascending: true }),
@@ -1279,7 +1319,7 @@ export async function getJobMaterialsByOperationId(
   if (kittedMakeMethodIds.size) {
     const kittedMaterials = await client
       .from("jobMaterialWithMakeMethodId")
-      .select("*")
+      .select("*, storageUnit(effectiveNettable)")
       .in("jobMakeMethodId", Array.from(kittedMakeMethodIds))
       .neq("methodType", "Make to Order");
 
@@ -2019,7 +2059,14 @@ export async function getTrackedEntitiesByMakeMethodId(
 type SerialEntityForSelection = Pick<
   Database["public"]["Tables"]["trackedEntity"]["Row"],
   "attributes" | "status"
->;
+> & {
+  /**
+   * False when the operation applies to other units only (a rework copy
+   * scoped to the units sent into it). Set by `getTrackedEntitiesForOperation`;
+   * absent means the operation applies to every unit.
+   */
+  inOperationScope?: boolean;
+};
 
 /**
  * A serial tracked entity is still "incomplete" for a job operation when its
@@ -2035,6 +2082,7 @@ export function isSerialEntityIncompleteForOperation(
   // Scrapped is terminal like Consumed — a scrapped unit is never a work
   // candidate; its replacement is the spawned Reserved entity.
   return (
+    entity.inOperationScope !== false &&
     !(`Operation ${jobOperationId}` in attributes) &&
     entity.status !== "Consumed" &&
     entity.status !== "Scrapped"
@@ -2060,7 +2108,10 @@ export function getNextIncompleteSerialEntity<
   // unit Consumed on a finished subassembly), preserving the prior behavior of
   // always returning something when entities exist.
   const selectable = entities.filter(
-    (entity) => entity.status !== "Consumed" && entity.status !== "Scrapped"
+    (entity) =>
+      entity.inOperationScope !== false &&
+      entity.status !== "Consumed" &&
+      entity.status !== "Scrapped"
   );
   return (
     selectable.find((entity) =>
@@ -2069,6 +2120,272 @@ export function getNextIncompleteSerialEntity<
     selectable[selectable.length - 1] ??
     entities[entities.length - 1]
   );
+}
+
+/**
+ * The units of an operation's make method, in unit-axis order, each flagged
+ * with whether the operation applies to it. A rework copy applies only to the
+ * units sent into it (`jobOperationTrackedEntity`); every other operation has
+ * no scope rows and applies to every unit.
+ *
+ * The list is never narrowed: step records are keyed by a unit's position in
+ * the full axis, so a filtered list would shift every position after a skipped
+ * unit. Consumers read `inOperationScope` (via
+ * `isSerialEntityIncompleteForOperation`) instead.
+ */
+export async function getTrackedEntitiesForOperation(
+  client: SupabaseClient<Database>,
+  args: { operationId: string; jobMakeMethodId: string; companyId: string }
+) {
+  const [entities, scope] = await Promise.all([
+    getTrackedEntitiesByMakeMethodId(
+      client,
+      args.jobMakeMethodId,
+      args.companyId
+    ),
+    client
+      .from("jobOperationTrackedEntity")
+      .select("trackedEntityId")
+      .eq("jobOperationId", args.operationId)
+      .eq("companyId", args.companyId)
+  ]);
+
+  if (entities.error) return { data: null, error: entities.error };
+  if (scope.error) return { data: null, error: scope.error };
+
+  const scopedIds =
+    scope.data.length > 0
+      ? new Set(scope.data.map((row) => row.trackedEntityId))
+      : null;
+
+  return {
+    data: entities.data.map((entity) => ({
+      ...entity,
+      inOperationScope: scopedIds ? scopedIds.has(entity.id) : true
+    })),
+    error: null
+  };
+}
+
+/**
+ * The name of the correction a rework operation belongs to, or null for a
+ * plain rework (or an operation that is not a rework).
+ */
+export async function getReworkCorrectionName(
+  client: SupabaseClient<Database>,
+  reworkId: string | null | undefined,
+  companyId: string
+): Promise<string | null> {
+  if (!reworkId) return null;
+  const rework = await client
+    .from("rework")
+    .select("jobCorrectionId")
+    .eq("id", reworkId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  const jobCorrectionId = rework.data?.jobCorrectionId;
+  if (!jobCorrectionId) return null;
+  const correction = await client
+    .from("jobCorrection")
+    .select("name")
+    .eq("id", jobCorrectionId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  return correction.data?.name ?? null;
+}
+
+/** The job's corrections for an operation's part (its job make method). */
+export async function getOperationCorrections(
+  client: SupabaseClient<Database>,
+  operationId: string,
+  companyId: string
+) {
+  const operation = await client
+    .from("jobOperation")
+    .select("jobMakeMethodId")
+    .eq("id", operationId)
+    .eq("companyId", companyId)
+    .single();
+  if (operation.error || !operation.data.jobMakeMethodId) {
+    return { data: [], error: operation.error };
+  }
+  return client
+    .from("jobCorrection")
+    .select("id, name, returnTo")
+    .eq("jobMakeMethodId", operation.data.jobMakeMethodId)
+    .eq("companyId", companyId)
+    .order("order", { ascending: true });
+}
+
+export type CorrectionSuggestion = {
+  jobId: string;
+  triggeredAtJobOperationId: string;
+  /** The recorded result, stored as the rework's reason. */
+  reason: string;
+  trackedEntityId: string | null;
+  suggestedJobCorrectionId: string;
+  corrections: {
+    id: string;
+    name: string;
+    returnTo: string;
+    maxAttempts: number | null;
+    /** Earlier uses of this correction by the unit. */
+    uses: number;
+  }[];
+};
+
+/**
+ * The correction a just-recorded step result maps to, with the unit's earlier
+ * uses of it, or null when the result maps to none. A List value matches a
+ * mapped value; a failed Inspection matches `inspectionFailedResult`; a
+ * Measurement matches "Below Minimum" or "Above Maximum".
+ */
+export async function getCorrectionSuggestion(
+  client: SupabaseClient<Database>,
+  args: {
+    jobOperationStepId: string;
+    index: number;
+    value?: string | null;
+    numericValue?: number | null;
+    booleanValue?: boolean | null;
+    companyId: string;
+  }
+): Promise<CorrectionSuggestion | null> {
+  const triggers = await client
+    .from("jobCorrectionTrigger")
+    .select("jobCorrectionId, listValue, measurementCondition")
+    .eq("jobOperationStepId", args.jobOperationStepId)
+    .eq("companyId", args.companyId);
+  if (triggers.error || !triggers.data?.length) return null;
+
+  const step = await client
+    .from("jobOperationStep")
+    .select("type, minValue, maxValue, operationId")
+    .eq("id", args.jobOperationStepId)
+    .eq("companyId", args.companyId)
+    .single();
+  if (step.error) return null;
+
+  let match: { jobCorrectionId: string; reason: string } | undefined;
+  if (step.data.type === "List") {
+    const trigger = triggers.data.find(
+      (t) => args.value && t.listValue === args.value
+    );
+    if (trigger && args.value) {
+      match = { jobCorrectionId: trigger.jobCorrectionId, reason: args.value };
+    }
+  } else if (step.data.type === "Inspection") {
+    // An Inspection records pass or fail; its `value` is the attached file.
+    const trigger =
+      args.booleanValue === false
+        ? triggers.data.find((t) => t.listValue === inspectionFailedResult)
+        : undefined;
+    if (trigger) {
+      match = {
+        jobCorrectionId: trigger.jobCorrectionId,
+        reason: "Failed inspection"
+      };
+    }
+  } else if (
+    step.data.type === "Measurement" &&
+    args.numericValue !== null &&
+    args.numericValue !== undefined
+  ) {
+    const condition =
+      step.data.minValue !== null && args.numericValue < step.data.minValue
+        ? "Below Minimum"
+        : step.data.maxValue !== null && args.numericValue > step.data.maxValue
+          ? "Above Maximum"
+          : null;
+    const trigger = condition
+      ? triggers.data.find((t) => t.measurementCondition === condition)
+      : undefined;
+    if (trigger) {
+      match = {
+        jobCorrectionId: trigger.jobCorrectionId,
+        reason: `${args.numericValue} (${condition})`
+      };
+    }
+  }
+  if (!match) return null;
+
+  const operation = await client
+    .from("jobOperation")
+    .select("id, jobId, jobMakeMethodId")
+    .eq("id", step.data.operationId)
+    .eq("companyId", args.companyId)
+    .single();
+  if (operation.error || !operation.data.jobMakeMethodId) return null;
+
+  const [corrections, jobMakeMethod] = await Promise.all([
+    // Only the correction the result maps to: a result names its fix, so
+    // the operation's other corrections are not offered here.
+    client
+      .from("jobCorrection")
+      .select("id, name, returnTo, maxAttempts")
+      .eq("id", match.jobCorrectionId)
+      .eq("jobMakeMethodId", operation.data.jobMakeMethodId)
+      .eq("companyId", args.companyId),
+    client
+      .from("jobMakeMethod")
+      .select("requiresSerialTracking")
+      .eq("id", operation.data.jobMakeMethodId)
+      .eq("companyId", args.companyId)
+      .single()
+  ]);
+  if (corrections.error || jobMakeMethod.error) return null;
+
+  // A serial unit is the record's position in the unit axis.
+  let trackedEntityId: string | null = null;
+  const uses = new Map<string, number>();
+  if (jobMakeMethod.data.requiresSerialTracking) {
+    const entities = await getTrackedEntitiesByMakeMethodId(
+      client,
+      operation.data.jobMakeMethodId,
+      args.companyId
+    );
+    trackedEntityId = entities.data?.[args.index]?.id ?? null;
+  }
+  if (trackedEntityId) {
+    const scoped = await client
+      .from("jobOperationTrackedEntity")
+      .select("jobOperation!inner(reworkId)")
+      .eq("trackedEntityId", trackedEntityId)
+      .eq("companyId", args.companyId);
+    const reworkIds = [
+      ...new Set(
+        (scoped.data ?? [])
+          .map((row) => row.jobOperation?.reworkId)
+          .filter((id): id is string => !!id)
+      )
+    ];
+    if (reworkIds.length > 0) {
+      const reworks = await client
+        .from("rework")
+        .select("jobCorrectionId")
+        .in("id", reworkIds)
+        .eq("companyId", args.companyId);
+      for (const rework of reworks.data ?? []) {
+        if (!rework.jobCorrectionId) continue;
+        uses.set(
+          rework.jobCorrectionId,
+          (uses.get(rework.jobCorrectionId) ?? 0) + 1
+        );
+      }
+    }
+  }
+
+  return {
+    jobId: operation.data.jobId,
+    triggeredAtJobOperationId: operation.data.id,
+    reason: match.reason,
+    trackedEntityId,
+    suggestedJobCorrectionId: match.jobCorrectionId,
+    corrections: corrections.data.map((correction) => ({
+      ...correction,
+      uses: uses.get(correction.id) ?? 0
+    }))
+  };
 }
 
 export async function getTrackedEntity(

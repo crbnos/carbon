@@ -60,7 +60,7 @@ Deployment files are in [`contrib/deploying/simple-docker-caddy`](https://github
   <Step>
   ### Configure
 
-  Edit `.env`: set `CARBON_REPO`, your `*_HOST` / `*_URL` hostnames, `ACME_EMAIL`, and SMTP settings.
+  Edit `.env`: set `CARBON_REPO`, your `*_HOST` / `*_URL` hostnames, `ACME_EMAIL`, `ADMIN_EMAIL`, and SMTP settings. Sign-ups are off, so `ADMIN_EMAIL` is the first account: the deploy creates it, and it signs in by magic link.
 
   ```bash
   $EDITOR .env
@@ -69,17 +69,16 @@ Deployment files are in [`contrib/deploying/simple-docker-caddy`](https://github
   <Step>
   ### Set the operator secrets
 
-  `init` creates placeholder values for deployment. Replace them with production secrets. ERP **does not start** with an empty Resend key.
+  `init` creates a placeholder SMTP password so the stack deploys. Replace it with the real one: Auth and the apps send email over the SMTP server in `.env`.
 
   ```bash
-  ./deploy.sh secret resend_api_key re_xxxxxxxx
   ./deploy.sh secret smtp_password 'your-smtp-password'
   ```
   </Step>
   <Step>
   ### Deploy
 
-  Build the images, deploy the stack, wait for the database, and apply migrations.
+  Build the images, deploy the stack, wait for the database, apply migrations, and seed the first-boot data and the `ADMIN_EMAIL` account.
 
   ```bash
   ./deploy.sh up
@@ -93,6 +92,8 @@ Deployment files are in [`contrib/deploying/simple-docker-caddy`](https://github
   curl -fsS https://$ERP_HOST/health   # -> 200
   curl -fsS https://$MES_HOST/health   # -> 200
   ```
+
+  Then open `https://$ERP_HOST`, sign in as `ADMIN_EMAIL`, and set up your company. Invite everyone else from the app.
   </Step>
 </Steps>
 
@@ -109,7 +110,7 @@ PGRST_DB_URI: postgres://authenticator:__POSTGRES_PASSWORD__@postgres:5432/postg
 GOTRUE_JWT_SECRET: __JWT_SECRET__
 ```
 
-`deploy.sh init` generates `postgres_password`, `session_secret`, the Inngest keys, and the Supabase key trio (`jwt_secret`, `anon_key`, `service_role_key`). You supply `resend_api_key` and `smtp_password`.
+`deploy.sh init` generates `postgres_password`, `session_secret`, the Inngest keys, and the Supabase key trio (`jwt_secret`, `anon_key`, `service_role_key`). You supply `smtp_password`, and `saml_private_key` if you enable SAML.
 
 <Callout type="warn">
 `inngest_signing_key` must be **plain hex**. The self-hosted Inngest server rejects the `signkey-` prefix. `init` generates it correctly.
@@ -121,7 +122,7 @@ GOTRUE_JWT_SECRET: __JWT_SECRET__
 | --- | --- |
 | Status | `./deploy.sh status` |
 | Follow logs | `./deploy.sh logs <service>` (e.g. `erp`, `caddy`) |
-| Update to a new release | `git pull && ./deploy.sh init && ./deploy.sh build && ./deploy.sh deploy && ./deploy.sh migrate` |
+| Update to a new release | `git pull && ./deploy.sh init && ./deploy.sh up` (`up` restarts the apps on the new images; `deploy` alone keeps the old ones running) |
 | Back up | `./scripts/backup.sh` (Postgres dump + storage archive) |
 | Stop | `./deploy.sh down` (add `--volumes` to also wipe data) |
 
@@ -133,7 +134,7 @@ docker exec -it $(docker ps -qf name=carbon_postgres.1) psql -U postgres
 
 The `.1` avoids also matching `carbon_postgrest`. Or run Studio (`STUDIO_REPLICAS=1`) and expose it behind HTTP basic-auth by setting `STUDIO_HOST` and uncommenting the studio block in the `Caddyfile`.
 
-**Database events.** Postgres delivers its events (the event queue behind webhooks, workflows and search, part embeddings, job notifications) straight to Inngest, at a URL `./deploy.sh migrate` stores in the database once the `erp` service is running. If `migrate` warns that it could not wire them, run it again once the stack is up. After rotating `inngest_event_key`, run `./deploy.sh migrate` again.
+**Database events.** Postgres delivers its events (the event queue behind webhooks, workflows and search, part embeddings, job notifications) straight to Inngest, at a URL `./deploy.sh migrate` stores in the database. After rotating `inngest_event_key`, run `./deploy.sh migrate` again.
 
 **Rotate a secret.** Swarm secrets are immutable while in use, so bring the stack down first:
 
@@ -151,7 +152,7 @@ set -a; . ./.env; set +a
 docker stack rm "$STACK_NAME"
 while docker ps -q --filter "label=com.docker.stack.namespace=$STACK_NAME" | grep -q .; do sleep 2; done
 docker volume rm "${STACK_NAME}_pgdata" "${STACK_NAME}_pgconfig"
-git pull && ./deploy.sh build && ./deploy.sh deploy
+git pull && ./deploy.sh init && ./deploy.sh build && ./deploy.sh deploy
 gunzip -c backups/carbon-<timestamp>/db.sql.gz \
   | docker exec -i "$(docker ps -qf name=${STACK_NAME}_postgres.1)" psql -U supabase_admin postgres
 ./deploy.sh migrate
@@ -167,7 +168,7 @@ Schedule `backup.sh`, copy its output **offsite**, and enable provider volume sn
 
 - Host hardened (`harden.sh`): firewall limited to SSH + 80/443, fail2ban, swap.
 - HTTPS issuing cleanly — `./deploy.sh logs caddy`.
-- Real `resend_api_key` and working SMTP set (Auth needs SMTP for invites and magic links).
+- Working SMTP set, with the real `smtp_password` (Auth needs it for invites and magic links).
 - Postgres tuning sized to the box (the `PG_*` values in `.env`).
 - Backups scheduled and shipped offsite.
 - Studio not publicly exposed (or behind basic-auth).

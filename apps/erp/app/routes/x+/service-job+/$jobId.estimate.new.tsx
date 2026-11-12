@@ -4,9 +4,10 @@
 
 import { carbon } from "@carbon/api/carbon.server";
 import { validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { isServiceJobLocked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { serviceJobEstimateLineValidator } from "~/modules/service/service.models";
 import type { ServiceJobDetail } from "~/modules/service/types";
@@ -29,7 +30,7 @@ export async function action(args: ActionFunctionArgs) {
 export default function NewServiceJobEstimateLineRoute() {
   const { jobId } = useParams();
   if (!jobId) throw new Error("Could not find jobId");
-  const navigate = useNavigate();
+  const dialog = useRouteDialog(path.to.serviceJob(jobId));
   const routeData = useRouteData<{ job: ServiceJobDetail }>(
     path.to.serviceJob(jobId)
   );
@@ -50,7 +51,8 @@ export default function NewServiceJobEstimateLineRoute() {
         job?.estimateStatus === "Sent" ||
         job?.estimateStatus === "Accepted"
       }
-      onClose={() => navigate(path.to.serviceJob(jobId))}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

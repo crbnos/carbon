@@ -31,9 +31,87 @@ Search **Purchasing → Purchase Orders** with whatever the packing slip shows: 
   <Status name="Voided" terminal>Reversed after posting.</Status>
 </StatusFlow>
 
-<Callout type="info">
-Receive an item flagged for inspection and its units land **On Hold**, with an inbound inspection opened at *Pending* — they don't become available stock until the inspection clears.
+## Parts that need inspection
+
+A part needs inspection at receipt when it has an inspection plan assigned to **Receipt** (the part's **Quality** tab, **Inspection Plan Assignments**). Posting its purchase-order receipt opens an <Term id="inbound-inspection">inbound inspection</Term> lot. The stock stays held in a quarantine area until quality decides the lot. Outside processing receipts are not inspected. A non-inventory part with a plan still gets a lot, but it has no stock to hold, so it needs no inspection storage unit. A line that delivers to another location is held at that location: it takes that location's inspection storage unit.
+
+### Set up goods-in storage
+
+Each location needs an inspection storage unit before it can receive a part that needs inspection. You need update permission for Settings and for Resources.
+
+<Steps>
+  <Step>Open **Settings → Quality** and find the **Goods-in storage** card. It has one row per location.</Step>
+  <Step>In **Inspection**, choose the storage unit where received parts wait for inspection.</Step>
+  <Step>Optionally, in **Rejected**, choose the storage unit where rejected stock goes.</Step>
+</Steps>
+
+Both pickers offer the active storage units at that location. Held stock cannot move until its lot is decided, whatever the unit. To keep it out of MRP's supply and off picking lists too, mark the unit <Term id="non-nettable">non-nettable</Term> in its own settings: see [locations and storage units](/docs/reference/inventory#locations-and-storage-units).
+
+<Screenshot label="Settings → Quality, Goods-in storage card with an Inspection and a Rejected storage unit picker per location" />
+
+### On the receipt
+
+A new purchase-order receipt puts each line that needs inspection in the location's inspection storage unit. The line and the receipt header show an **"Inspection required"** badge. You can change the line to another unit at the same location, for an overflow area. A line with no storage unit warns you.
+
+Posting refuses a line that needs inspection in three cases:
+
+- The location has no inspection storage unit.
+- The line has no storage unit.
+- The line's storage unit is at another location.
+
+A non-inventory part is not checked. It has no stock to hold, so its lot names no storage unit and the receipt's inspection status ignores it.
+
+A sales return receipt line also defaults to the location's inspection storage unit, when the location has one. It opens no inspection lot.
+
+### Inspection status
+
+The receipt stays **"Posted"** after it posts. A separate inspection status follows its lots and shows next to the receipt status. A receipt with no lot reads **"Not Required"** and shows no inspection badge.
+
+<StatusFlow entity="receiptInspection">
+  <Status name="Pending Inspection">Every lot is waiting. No sample is recorded yet.</Status>
+  <Status name="Inspection In Progress">At least one lot is still open, and at least one has a sample or a decision.</Status>
+  <Status name="Inspection Passed">Every lot passed. The stock is ready for putaway.</Status>
+  <Status name="Partially Passed">Every lot is decided, and the results are mixed or a lot was marked Partial. The passed part is ready for putaway.</Status>
+  <Status name="Put Away" accent>Completed putaway transfers cover all the passed stock.</Status>
+  <Status name="Inspection Failed" terminal>Every lot failed. Nothing is put away.</Status>
+</StatusFlow>
+
+The receipts list has an **Inspection** column with a filter. The **Inventory** sidebar has three links to the list with the filter already set:
+
+| Link | Shows receipts at |
+|---|---|
+| **Pending inspection** | "Pending Inspection", "Inspection In Progress" |
+| **Ready for putaway** | "Inspection Passed", "Partially Passed" |
+| **Inspection failed** | "Inspection Failed" |
+
+### What the hold blocks
+
+Held stock cannot leave its storage unit. Carbon refuses a stock transfer, a pick, a sales shipment, a job issue or a return shipment that takes it. The rejected remainder of an untracked **Partial** lot can ship to a supplier while its NCR is open, but not to a customer. A return to a supplier takes only **Available** and **Rejected** serial or batch units.
+
+- **Serial and batch parts.** Each unit is **On Hold** until its lot is decided.
+- **Untracked parts.** An open lot holds its lot size at its storage unit. Other stock of the same part in that unit stays free: with 100 bolts held and 20 more on the shelf, you can move 20.
+
+<Callout type="warn" title="An inventory count can still move held stock">
+A count records where stock really is, so it posts even when held stock was found in another unit. A serial or batch unit stays On Hold. The post message names each part found outside its storage unit. Move untracked stock back with a stock transfer. A serial or batch unit whose lot is still open must wait for Quality to decide the lot. See [inventory counts](/docs/reference/inventory-count).
 </Callout>
+
+### Put Away
+
+When passed stock waits in the inspection storage unit, a posted receipt shows a **Put Away** button. It needs create permission for Inventory.
+
+1. Click **Put Away**. Carbon creates a **"Released"** stock transfer linked to the receipt and opens it, one per location when the receipt's lines deliver to more than one. If a line has no To storage unit, the transfer is **"Draft"**: set the unit, then release it. A Put Away line's item, From unit and quantity are fixed; you can change only its To unit.
+2. Check each line's To storage unit. Carbon fills in the part's default nettable storage unit at the location. With none, the line has no To unit. Choose one before you pick the line: Carbon refuses the pick without it.
+3. Pick and complete the transfer as usual. The receipt moves to **"Put Away"** when completed transfers cover all passed stock.
+
+The transfer takes only passed stock. For a serial or batch part, that is its **Available** units, so a lot accepted with a failed unit puts away the units that passed. For an untracked part, it is the lot size of a passed lot, or the accepted quantity of a Partial lot. If more lots pass later, click **Put Away** again: the new transfer takes only the stock that no linked transfer has yet. The receipt's menu lists each linked transfer as **"Putaway"** and its number.
+
+A sales return receipt has no Put Away button. Move its stock with an ordinary stock transfer.
+
+### Voiding a receipt with open lots
+
+Voiding the receipt sets each **Pending** or **In Progress** lot to **Cancelled**. A cancelled lot holds nothing. A lot that is already **Passed**, **Failed** or **Partial** keeps its status. A voided receipt always reads **"Not Required"**, whatever its lots.
+
+A void deletes an open Put Away transfer of the receipt that has picked nothing, and refuses an open one with picked stock: unpick it first. Carbon also refuses a receipt with an untracked lot that is **Failed** or **Partial**. A serial or batch unit moved to the rejected storage unit goes back with the void.
 
 ## Rental receipts
 
@@ -54,6 +132,9 @@ The post dialog asks for **"Returned on"**, which cannot be later than today. Po
   </Card>
   <Card title="Rental agreements" href="/docs/reference/rental-agreements">
     Units returned on a rental receipt.
+  </Card>
+  <Card title="Inspections and sampling" href="/docs/reference/inspections">
+    How quality decides a held lot.
   </Card>
 </Cards>
 
@@ -85,6 +166,30 @@ This receipt was generated by posting a purchase invoice, so it must be reversed
 
 ### "Cannot delete a posted receipt"
 A posted receipt is history and can't be deleted. Void it instead, which writes reversing entries; only Draft and Pending receipts can be deleted.
+
+### "… has no inspection storage unit. Set one in Settings → Quality."
+A line's part has an inspection plan assigned to Receipt, and the receipt's location has no inspection storage unit. Set one on the **Goods-in storage** card in Settings → Quality, then post again. Outside processing receipts never need one.
+
+### "… needs inspection. Choose a storage unit at …."
+A line that needs inspection sits in a unit of another location, or in none. Change the line to the location's inspection storage unit or another unit at that location.
+
+### "… is held for inspection in …. Quality must decide its inspection lot before it can move."
+The movement would take stock that an open inspection lot holds. For an untracked part, only the held quantity is blocked: other stock of the part in that unit can still move. An untracked Partial lot keeps holding its rejected quantity until its NCR is Closed. The variant without "in …" is a serial or batch unit at **On Hold**. Decide the lot on the inspection page first.
+
+### "Nothing is ready for putaway on this receipt." / "Only a posted receipt can be put away."
+Put Away found no passed stock still in the unit it was received into and not already on a linked transfer, or the receipt is not Posted. Check the receipt's inspection status and its linked putaway transfers in the menu.
+
+### "Choose an active storage unit." / "Choose a storage unit at this location."
+Refusals from the Goods-in storage card in Settings → Quality. Both units must be active and belong to the row's location. "You do not have permission to change this location" means the user lacks Resources update permission. A storage unit set on the card cannot be deleted; clear the setting first.
+
+### "Choose the To storage unit of every Put Away line first."
+A Put Away line has no To storage unit, so the transfer cannot be released or picked. Open the line, choose the To unit, then release the transfer.
+
+### "A Put Away line moves what the receipt holds. Only its To storage unit can change."
+The edit changed a Put Away line's item, From unit or quantity. Those come from the receipt. Change only the To unit. To put away a different quantity, pick less and complete the transfer short.
+
+### "Cannot void: Put Away … has picked stock. Unpick it first."
+A Put Away transfer of the receipt is still open and has moved some stock. Unpick its lines, then void the receipt. A Put Away that picked nothing is deleted with the void.
 
 ### "Failed to post receipt"
 The generic wrapper when the posting function fails. Most common underlying causes: the [accounting period](/docs/reference/accounting) for the posting date is closed or locked, or the company's default accounts (inventory, goods received not invoiced) aren't configured — the underlying message is then "Error getting account defaults". Check the period first, then the default accounts, and ask the user for the full error text if they have it.

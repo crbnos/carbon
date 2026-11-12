@@ -5,7 +5,7 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs } from "react-router";
@@ -42,7 +42,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function DeleteCustomerBankAccountRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const { t } = useLingui();
   const { customerId, id } = useParams();
   if (!customerId) throw new Error("Could not find customerId");
@@ -60,10 +60,10 @@ export default function DeleteCustomerBankAccountRoute() {
   return (
     <ConfirmDelete
       action={path.to.deleteCustomerBankAccount(customerId, id)}
-      isOpen
+      isOpen={dialog.open}
       name={bankAccount.name}
       text={t`Are you sure you want to permanently delete this bank account?`}
-      onCancel={() => closeRoute()}
+      onCancel={dialog.close}
     />
   );
 }

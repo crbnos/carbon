@@ -18,6 +18,10 @@ msgstr ", 停止中"
 msgid ", running"
 msgstr ", 実行中"
 
+#. placeholder {0}: suggestion.reason
+msgid "\"{0}\" calls for a correction on this unit."
+msgstr "この個品には「{0}」による修正が必要です。"
+
 msgid "\"{column}\" is required."
 msgstr "「{column}」は必須です。"
 
@@ -135,6 +139,9 @@ msgstr "{columns}は既存の「{target}」と一致しません。"
 msgid "{columns} does not match an existing record."
 msgstr "{columns}は既存のレコードと一致しません。"
 
+msgid "{companyName} logo"
+msgstr "{companyName} のロゴ"
+
 msgid "{completed} of {quantity}"
 msgstr "{completed} / {quantity}"
 
@@ -226,8 +233,14 @@ msgstr "このフィールドについて"
 msgid "Above the upper limit"
 msgstr "上限を超えています"
 
+msgid "Ac"
+msgstr "合格判定"
+
 msgid "Accept"
 msgstr "承諾"
+
+msgid "Accept inspection?"
+msgstr "検査を承諾しますか？"
 
 msgid "Accept Lot"
 msgstr "ロット承諾"
@@ -373,6 +386,12 @@ msgstr "リンクを適用"
 msgid "Approvals"
 msgstr "承認"
 
+msgid "AQL"
+msgstr "AQL"
+
+msgid "AQL {aql} · Lvl {level} · {severity}"
+msgstr "AQL {aql} · 検査水準 {level} · {severity}"
+
 msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
 msgstr "このパスキーを削除してもよろしいですか？削除後、このパスキーを使ってサインインできなくなります。"
 
@@ -414,6 +433,9 @@ msgstr "担当者"
 
 msgid "Attach file"
 msgstr "ファイルを添付"
+
+msgid "Attempt limit reached"
+msgstr "試行回数の上限に到達しました"
 
 msgid "Authentication Error"
 msgstr "認証エラー"
@@ -759,6 +781,13 @@ msgstr "シークレットをコピー"
 msgid "Copy to clipboard"
 msgstr "クリップボードにコピー"
 
+#. placeholder {0}: correction.name
+msgid "Correction: {0}"
+msgstr "修正: {0}"
+
+msgid "Correction: {correctionName}"
+msgstr "修正: {correctionName}"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "過去{0}日間の未計画保全原価"
@@ -856,6 +885,9 @@ msgstr "説明"
 
 msgid "Details"
 msgstr "詳細"
+
+msgid "Discard"
+msgstr "破棄"
 
 msgid "Dismiss"
 msgstr "閉じる"
@@ -1142,6 +1174,9 @@ msgstr "アカウントのセットアップを完了する"
 msgid "Finish with material unpicked?"
 msgstr "材料がピッキングされていない状態で終了しますか?"
 
+msgid "First"
+msgstr "初品"
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "最初の期日 {0}"
@@ -1172,6 +1207,9 @@ msgstr "一般"
 
 msgid "Go back to operation"
 msgstr "操作に戻る"
+
+msgid "Go back to operation, or run a correction"
+msgstr "工程に戻るか、修正を実行してください"
 
 msgid "Go to onboarding"
 msgstr "オンボーディングに移動"
@@ -1277,6 +1315,9 @@ msgstr "アイテムを検査"
 msgid "inspected"
 msgstr "検査済み"
 
+msgid "Inspections"
+msgstr "検査"
+
 msgid "Instructions"
 msgstr "作業手順"
 
@@ -1351,6 +1392,9 @@ msgstr "ジョブ詳細"
 
 msgid "Job due"
 msgstr "製造指図の納期"
+
+msgid "Job Operation"
+msgstr "指図工程"
 
 msgid "Job Traveler"
 msgstr "製造指図現品票"
@@ -1460,6 +1504,9 @@ msgstr "ローカル"
 msgid "Location"
 msgstr "ロケーション"
 
+msgid "Locations"
+msgstr "拠点"
+
 msgid "Log completed"
 msgstr "完了をログ記録"
 
@@ -1519,6 +1566,9 @@ msgstr "代替品を作成"
 
 msgid "Manage how you sign in to Carbon."
 msgstr "Carbon へのサインイン方法を管理します。"
+
+msgid "Manual"
+msgstr "手動"
 
 msgid "Manually add items to inventory"
 msgstr "手動で在庫に品目を追加"
@@ -1679,6 +1729,9 @@ msgstr "認証テキストが設定されていません。管理者に設定 �
 msgid "No color"
 msgstr "色なし"
 
+msgid "No correction"
+msgstr "修正なし"
+
 msgid "No country found."
 msgstr "国が見つかりません。"
 
@@ -1700,6 +1753,12 @@ msgstr "測定器が見つかりません。"
 
 msgid "No Impact"
 msgstr "影響なし"
+
+msgid "No inspection plan"
+msgstr "検査計画がありません"
+
+msgid "No inspections assigned to you"
+msgstr "割り当てられた検査はありません"
 
 msgid "No issue types configured"
 msgstr "構成されたイシュータイプがありません"
@@ -1727,6 +1786,9 @@ msgstr "材料なし"
 
 msgid "No materials on this batch."
 msgstr "このバッチに材料がありません。"
+
+msgid "No open inspections"
+msgstr "オープン中の検査はありません"
 
 msgid "No open jobs"
 msgstr "オープンな製造指図はありません。"
@@ -1818,6 +1880,9 @@ msgstr "ユニットなし"
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。在庫数が負になるまで、実在庫は負のままになります。"
 
+msgid "No work center"
+msgstr "作業区がありません"
+
 msgid "No Work Center"
 msgstr "作業区未設定"
 
@@ -1827,8 +1892,17 @@ msgstr "ブロックされた作業区はありません。"
 msgid "No work centers exist"
 msgstr "作業区が存在しません。"
 
+msgid "Non-nettable"
+msgstr "MRP対象外"
+
 msgid "None"
 msgstr "なし"
+
+msgid "Normal"
+msgstr "通常検査"
+
+msgid "Not in this operation"
+msgstr "この工程にはありません"
 
 msgid "Not scheduled"
 msgstr "スケジュール未設定"
@@ -1836,8 +1910,15 @@ msgstr "スケジュール未設定"
 msgid "Not set"
 msgstr "未設定"
 
+msgid "Not usable stock. MRP and planning do not count it, and picking does not take from it."
+msgstr "使用可能な在庫ではありません。MRPと計画には含まれず、ピッキングでも引き当てられません。"
+
 msgid "Notes"
 msgstr "メモ"
+
+#. placeholder {0}: inspection.lotSize
+msgid "Nothing has failed yet, so say why the units are rejected. All {0} unit(s) will be Rejected."
+msgstr "まだ不合格はありません。個体を却下する理由を入力してください。全{0}個が却下済になります。"
 
 msgid "Nothing matches your search."
 msgstr "検索に該当するものがありません。"
@@ -1993,6 +2074,9 @@ msgstr "合格"
 msgid "Pass all empty cells of {0}"
 msgstr "{0} の空のセルをすべて合格にする"
 
+msgid "Passed"
+msgstr "合格"
+
 msgid "Passed inspection"
 msgstr "検査合格"
 
@@ -2026,6 +2110,12 @@ msgstr "{workTypeLabel} タイマーを一時停止"
 
 msgid "Pause maintenance"
 msgstr "保全を一時停止"
+
+msgid "Pending"
+msgstr "待機中"
+
+msgid "Percentage"
+msgstr "割合"
 
 msgid "Phone"
 msgstr "電話"
@@ -2228,6 +2318,21 @@ msgstr "キューが空です"
 msgid "Quotes"
 msgstr "見積"
 
+msgid "Raise quality issue"
+msgstr "品質問題を起票"
+
+msgid "Re"
+msgstr "不合格判定"
+
+msgid "Reason"
+msgstr "理由"
+
+msgid "Reason (optional)"
+msgstr "理由（任意）"
+
+msgid "Reason (required)"
+msgstr "理由（必須）"
+
 msgid "Reason for change"
 msgstr "変更理由"
 
@@ -2239,6 +2344,12 @@ msgstr "遅延入力の理由"
 
 msgid "Reason for rework"
 msgstr "手直しの理由"
+
+msgid "Receipt"
+msgstr "入荷"
+
+msgid "Receipt voided"
+msgstr "入荷取消済"
 
 msgid "Recent"
 msgstr "最近"
@@ -2272,6 +2383,9 @@ msgstr "レコードのセクション"
 msgid "Recorded"
 msgstr "記録済"
 
+msgid "Reduced"
+msgstr "ゆるい検査"
+
 msgid "Reference image"
 msgstr "参照画像"
 
@@ -2280,6 +2394,9 @@ msgstr "登録に失敗しました"
 
 msgid "Reject"
 msgstr "却下"
+
+msgid "Reject inspection?"
+msgstr "検査を却下しますか？"
 
 msgid "Reject Lot"
 msgstr "ロットを却下"
@@ -2465,6 +2582,9 @@ msgstr "スクラップ数量"
 
 msgid "Scrap Reason"
 msgstr "不良理由"
+
+msgid "Scrap unit"
+msgstr "個をスクラップ"
 
 msgid "Scrapped"
 msgstr "スクラップ済み"
@@ -2772,8 +2892,14 @@ msgstr "{workType} を開始"
 msgid "Start {workTypeLabel} timer"
 msgstr "{workTypeLabel} タイマーを開始"
 
+msgid "Start a correction?"
+msgstr "修正を開始しますか？"
+
 msgid "Start clock"
 msgstr "クロック開始"
+
+msgid "Start correction"
+msgstr "修正を開始"
 
 msgid "Start Job"
 msgstr "製造指図を開始"
@@ -2903,6 +3029,16 @@ msgstr "日付がエントリー期間前です。理由はエントリーと共
 msgid "The entire lot of {0} will be rejected as non-conforming — {passes} sampled pass(es) and {fails} failure(s) so far. Route the units below to scrap or rework, or record the verdict only."
 msgstr "ロット全体{0}は不適合として却下されます—{passes}サンプル合格と{fails}不合格があります。以下のユニットをスクラップまたは手直しにルーティングするか、判決のみを記録してください。"
 
+#. placeholder {0}: inspection.lotSize
+msgid "The inspection failed: {passes} sample(s) passed and {fails} failed. All {0} unit(s) will be Rejected."
+msgstr "検査は不合格です：{passes}件のサンプルが合格、{fails}件が不合格でした。全{0}個が却下済になります。"
+
+msgid "The inspection will be marked Passed and its units released to Available."
+msgstr "検査は合格とされ、個体は利用可能に振り替えられます。"
+
+msgid "The inspection will be marked Passed. Its units are released to Available, except the {fails} that failed a sample, which stay Rejected."
+msgstr "検査は合格とされます。個体は、サンプルで不合格となった{fails}個を除き利用可能に振り替えられます。その{fails}個は却下済のまま残ります。"
+
 msgid "The job is closed"
 msgstr "製造指図はクローズ済です"
 
@@ -2940,6 +3076,12 @@ msgstr "テーマ"
 msgid "then"
 msgstr "その後"
 
+msgid "Then continues to the next operation"
+msgstr "その後、次の工程へ進みます"
+
+msgid "Then re-inspects here"
+msgstr "その後、ここで再検査します"
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "このマテリアルについて、利用可能または消費済みの追跡部品がありません。"
 
@@ -2957,6 +3099,12 @@ msgstr "このバッチには作業手順書がありません。"
 
 msgid "This information will be visible to all users, so be careful what you share."
 msgstr "この情報はすべてのユーザーに表示されるため、共有内容に注意してください。"
+
+msgid "This inspection plan has no parameters."
+msgstr "この検査計画にはパラメータがありません。"
+
+msgid "This inspection plan has no work instructions."
+msgstr "この検査計画には作業手順書がありません。"
 
 msgid "This is a pass / fail check. Press P or F."
 msgstr "これは合否判定の項目です。P または F を押してください。"
@@ -2985,6 +3133,9 @@ msgstr "このサンプルは削除されました"
 msgid "This stops your clock and posts the job's time. The job can no longer change."
 msgstr "これはクロックを停止して、製造指図の時間を転記します。製造指図は変更できなくなります。"
 
+msgid "This unit has used this correction its limit number of times. Scrap it or raise a quality issue instead."
+msgstr "この個品はこの修正の上限回数に達しました。代わりにスクラップするか、品質問題を起票してください。"
+
 msgid "This unit will be permanently scrapped and a replacement unit will be created."
 msgstr "このユニットは永久にスクラップされ、代替ユニットが作成されます。"
 
@@ -2996,6 +3147,9 @@ msgstr "サムネイル"
 
 msgid "Tick the jobs this was done for."
 msgstr "これが完了した製造指図をチェック"
+
+msgid "Tightened"
+msgstr "きつい検査"
 
 msgid "Tighter or roomier layout. The text stays put."
 msgstr "より狭いまたはより広いレイアウト。テキストは変わりません。"
@@ -3209,6 +3363,11 @@ msgstr "{0} をアップロード中"
 
 msgid "Use a different account"
 msgstr "別のアカウントを使用"
+
+#. placeholder {0}: correction.uses
+#. placeholder {1}: correction.maxAttempts
+msgid "Used {0} of {1}"
+msgstr "{0} / {1} 回使用"
 
 msgid "Used automatically at completion"
 msgstr "完了時に自動使用"

@@ -252,11 +252,9 @@ const PickingListsTable = memo((props: PickingListsTableProps) => {
           text={`Are you sure you want to delete ${selectedPickingList.pickingListId}? This cannot be undone.`}
           onCancel={() => {
             deleteModal.onClose();
-            setSelectedPickingList(null);
           }}
           onSubmit={() => {
             deleteModal.onClose();
-            setSelectedPickingList(null);
           }}
         />
       )}

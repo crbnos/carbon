@@ -161,6 +161,7 @@ function useBomMaterialIds(itemId: string | null | undefined) {
         .select("itemId, methodType")
         .eq("makeMethodId", makeMethod.data.id)
         .eq("companyId", company.id)
+        .is("methodCorrectionId", null)
         .order("order", { ascending: true });
       if (cancelled) return;
       setItemIds([
@@ -220,22 +221,8 @@ function BomMaterialPicks({
   );
 }
 
-/**
- * Issues stock to a project, or returns it. Opened from an element, the
- * charge number is fixed to it; opened from Inventory, the user picks it.
- * A posting refusal shows in the modal, which stays open.
- */
-export function IssueMaterialModal({
-  projectId,
-  element,
-  defaultLocationId,
-  action = path.to.projectIssue,
-  hiddenFields,
-  variant = "project",
-  defaultItemId,
-  defaultQuantity,
-  onClose
-}: {
+type IssueMaterialModalProps = {
+  open?: boolean;
   /** Fixed charge number; leave both out to pick one (Inventory). */
   projectId?: string;
   element?: {
@@ -256,7 +243,39 @@ export function IssueMaterialModal({
   defaultItemId?: string;
   defaultQuantity?: number;
   onClose: () => void;
-}) {
+};
+
+/**
+ * Issues stock to a project, or returns it. Opened from an element, the
+ * charge number is fixed to it; opened from Inventory, the user picks it.
+ * A posting refusal shows in the modal, which stays open.
+ */
+export function IssueMaterialModal({
+  open = true,
+  onClose,
+  ...props
+}: IssueMaterialModalProps) {
+  return (
+    <Modal open={open} onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <IssueMaterialBody onClose={onClose} {...props} />
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function IssueMaterialBody({
+  projectId,
+  element,
+  defaultLocationId,
+  action = path.to.projectIssue,
+  hiddenFields,
+  variant = "project",
+  defaultItemId,
+  defaultQuantity,
+  onClose
+}: Omit<IssueMaterialModalProps, "open">) {
   const { t } = useLingui();
   const user = useUser();
   const [items] = useItems();
@@ -303,133 +322,121 @@ export function IssueMaterialModal({
   );
 
   return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        <ValidatedForm
-          validator={projectIssueValidator}
-          method="post"
-          action={action}
-          fetcher={fetcher}
-          defaultValues={{
-            projectId: projectId ?? "",
-            projectElementId: element?.id,
-            itemId: defaultItemId ?? "",
-            locationId: locationId ?? "",
-            storageUnitId: undefined,
-            trackedEntityId: undefined,
-            quantity: defaultQuantity || 1,
-            direction: "Issue"
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Issue Material</Trans>
-            </ModalTitle>
-            {element && (
-              <ModalDescription>
-                <span className="font-mono">{element.readableId}</span>{" "}
-                {element.name}
-              </ModalDescription>
-            )}
-          </ModalHeader>
-          <ModalBody>
-            <VStack spacing={4}>
-              {errorMessage && (
-                <Alert variant="destructive">
-                  <LuTriangleAlert />
-                  <AlertDescription>{errorMessage}</AlertDescription>
-                </Alert>
-              )}
-              {Object.entries(hiddenFields ?? {}).map(([name, value]) => (
-                <Hidden key={name} name={name} value={value} />
-              ))}
-              {isFixed ? (
-                <>
-                  <Hidden name="projectId" />
-                  <Hidden name="projectElementId" />
-                </>
-              ) : (
-                <ChargeNumber label={t`Charge Number`} termId="charge-number" />
-              )}
-              <Select
-                name="direction"
-                label={t`Direction`}
-                options={[
-                  {
-                    value: "Issue",
-                    label:
-                      variant === "service"
-                        ? t`Issue to the service order`
-                        : t`Issue to the project`
-                  },
-                  { value: "Return", label: t`Return to stock` }
-                ]}
-                onChange={(option) =>
-                  setDirection((option?.value as Direction) ?? "Issue")
-                }
-              />
-              {!defaultItemId && (
-                <BomMaterialPicks
-                  itemIds={stockedBomItemIds}
-                  onPick={setItemId}
-                />
-              )}
-              <Item
-                name="itemId"
-                label={t`Item`}
-                type="Item"
-                whitelist={stockedItemIds}
-                onChange={(option) => setItemId(option?.value ?? null)}
-              />
-              <Location
-                name="locationId"
-                label={t`Location`}
-                onChange={(location) => setLocationId(location?.value ?? null)}
-              />
-              <StorageUnit
-                name="storageUnitId"
-                label={t`Storage Unit`}
-                locationId={locationId}
-                itemId={itemId ?? undefined}
-                isOptional
-                allowCreate={false}
-                onChange={(unit) => setStorageUnitId(unit?.id ?? null)}
-              />
-              {isTracked && (
-                <Select
-                  name="trackedEntityId"
-                  label={
-                    item?.itemTrackingType === "Serial"
-                      ? t`Serial Number`
-                      : t`Batch Number`
-                  }
-                  options={trackedOptions}
-                />
-              )}
-              <NumberField
-                name="quantity"
-                label={t`Quantity`}
-                minValue={0}
-                formatOptions={INPUT_FORMAT.quantity}
-                step={INPUT_STEP.quantity}
-              />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit withBlocker={false}>
-              {direction === "Issue" ? (
-                <Trans>Issue</Trans>
-              ) : (
-                <Trans>Return</Trans>
-              )}
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
+    <ValidatedForm
+      validator={projectIssueValidator}
+      method="post"
+      action={action}
+      fetcher={fetcher}
+      defaultValues={{
+        projectId: projectId ?? "",
+        projectElementId: element?.id,
+        itemId: defaultItemId ?? "",
+        locationId: locationId ?? "",
+        storageUnitId: undefined,
+        trackedEntityId: undefined,
+        quantity: defaultQuantity || 1,
+        direction: "Issue"
+      }}
+    >
+      <ModalHeader>
+        <ModalTitle>
+          <Trans>Issue Material</Trans>
+        </ModalTitle>
+        {element && (
+          <ModalDescription>
+            <span className="font-mono">{element.readableId}</span>{" "}
+            {element.name}
+          </ModalDescription>
+        )}
+      </ModalHeader>
+      <ModalBody>
+        <VStack spacing={4}>
+          {errorMessage && (
+            <Alert variant="destructive">
+              <LuTriangleAlert />
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
+          )}
+          {Object.entries(hiddenFields ?? {}).map(([name, value]) => (
+            <Hidden key={name} name={name} value={value} />
+          ))}
+          {isFixed ? (
+            <>
+              <Hidden name="projectId" />
+              <Hidden name="projectElementId" />
+            </>
+          ) : (
+            <ChargeNumber label={t`Charge Number`} termId="charge-number" />
+          )}
+          <Select
+            name="direction"
+            label={t`Direction`}
+            options={[
+              {
+                value: "Issue",
+                label:
+                  variant === "service"
+                    ? t`Issue to the service order`
+                    : t`Issue to the project`
+              },
+              { value: "Return", label: t`Return to stock` }
+            ]}
+            onChange={(option) =>
+              setDirection((option?.value as Direction) ?? "Issue")
+            }
+          />
+          {!defaultItemId && (
+            <BomMaterialPicks itemIds={stockedBomItemIds} onPick={setItemId} />
+          )}
+          <Item
+            name="itemId"
+            label={t`Item`}
+            type="Item"
+            whitelist={stockedItemIds}
+            onChange={(option) => setItemId(option?.value ?? null)}
+          />
+          <Location
+            name="locationId"
+            label={t`Location`}
+            onChange={(location) => setLocationId(location?.value ?? null)}
+          />
+          <StorageUnit
+            name="storageUnitId"
+            label={t`Storage Unit`}
+            locationId={locationId}
+            itemId={itemId ?? undefined}
+            isOptional
+            allowCreate={false}
+            onChange={(unit) => setStorageUnitId(unit?.id ?? null)}
+          />
+          {isTracked && (
+            <Select
+              name="trackedEntityId"
+              label={
+                item?.itemTrackingType === "Serial"
+                  ? t`Serial Number`
+                  : t`Batch Number`
+              }
+              options={trackedOptions}
+            />
+          )}
+          <NumberField
+            name="quantity"
+            label={t`Quantity`}
+            minValue={0}
+            formatOptions={INPUT_FORMAT.quantity}
+            step={INPUT_STEP.quantity}
+          />
+        </VStack>
+      </ModalBody>
+      <ModalFooter>
+        <Button variant="secondary" onClick={onClose}>
+          <Trans>Cancel</Trans>
+        </Button>
+        <Submit withBlocker={false}>
+          {direction === "Issue" ? <Trans>Issue</Trans> : <Trans>Return</Trans>}
+        </Submit>
+      </ModalFooter>
+    </ValidatedForm>
   );
 }

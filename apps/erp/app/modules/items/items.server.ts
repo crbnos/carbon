@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { ServerFnError } from "@carbon/api/errors";
+import { raisedMessage, ServerFnError } from "@carbon/api/errors";
 import { CarbonError, defineServiceFn } from "@carbon/api/service-fn.server";
 import { paged, payload, unwrap } from "@carbon/api/service-tools.server";
 import {
@@ -29,6 +29,7 @@ import {
 } from "@carbon/utils";
 import { z } from "zod";
 import { flattenTree } from "~/components/TreeView";
+import { postingFailure } from "~/modules/inventory/inventory.service";
 import { replanAfterItemChange } from "~/modules/production/production.server";
 import {
   booleanField,
@@ -92,10 +93,11 @@ const itemIdsInput = z.array(z.string()).min(1);
  * Change items' tracking type.
  *
  * @remarks
- * Writes `itemTrackingType` on every item, then carries the serial and batch
- * flags onto the open jobs, receipts, shipments and stock transfers that copied
- * them (`cascadeItemTrackingType`). A failed carry-over leaves the items
- * changed and returns an error.
+ * Writes `itemTrackingType` on every item. In the same statement the database
+ * (`sync_item_tracking_type_change`) gives the new serial and batch flags to
+ * the Draft and Planned jobs, and the Draft receipts, shipments and stock
+ * transfers, that copied them. It refuses the change while an item has stock
+ * the new type cannot use, or is on a released job that is not finished.
  *
  * @mcp
  */
@@ -107,7 +109,6 @@ export const setItemTrackingType = defineServiceFn({
   permission: { update: "parts" },
 
   async run(ctx, { ids, itemTrackingType }) {
-    const companyId = ctx.company.id;
     const update = await ctx.asCaller.supabase
       .from("item")
       .update({
@@ -116,20 +117,15 @@ export const setItemTrackingType = defineServiceFn({
         updatedAt: datetime.timestamp()
       })
       .in("id", ids)
-      .eq("companyId", companyId);
+      .eq("companyId", ctx.company.id);
     if (update.error) {
-      return ctx.error("internal", update.error.message, update.error);
-    }
-
-    try {
-      await service.cascadeItemTrackingType(ctx.asSystem.pg, {
-        itemIds: ids,
-        companyId,
-        newType: itemTrackingType,
-        userId: ctx.auditUserId
-      });
-    } catch (err) {
-      return ctx.error("internal", "Failed to cascade tracking flags", err);
+      const refusal = raisedMessage(update.error);
+      if (refusal) return ctx.error("rule", refusal, update.error);
+      return ctx.error(
+        "internal",
+        "Failed to change the tracking type",
+        update.error
+      );
     }
     return { ids };
   }
@@ -1101,6 +1097,12 @@ export const createMethodVersion = defineServiceFn({
  * or updates the parts it names and rewrites the method's materials. The
  * method's item is then mapped to the Onshape document, version and element
  * (replacing its earlier mapping), stamped with the sync time.
+ *
+ * It writes nothing into a Draft a change notice holds, or into a released
+ * (Production) revision when release control enforces it, as the Onshape
+ * panel refuses them (`loadMethodWriteRefusals`): a refused method given is
+ * a `rule` error and nothing is written; a refused sub-assembly keeps its
+ * BOM and is listed in `skipped` as `<part number>: <reason>`.
  */
 export const syncOnshapeMethod = defineServiceFn({
   input: z.object({
@@ -1135,7 +1137,8 @@ export const syncOnshapeMethod = defineServiceFn({
       service.syncMakeMethod
     );
     if (synced.error) {
-      return ctx.error("internal", "Failed to sync onshape data", synced.error);
+      // Below 500 the sync refused, in words for the person.
+      return postingFailure(ctx, synced.error, "Failed to sync onshape data");
     }
 
     const cleared = await ctx.asSystem.supabase
@@ -1168,7 +1171,7 @@ export const syncOnshapeMethod = defineServiceFn({
       });
     }
 
-    return { itemId };
+    return { itemId, skipped: synced.data.skipped };
   }
 });
 
@@ -1323,7 +1326,9 @@ export const recalculateItemCost = defineServiceFn({
             "*, ...process(processName:name), ...workCenter(workCenterName:name, laborRate, machineRate, overheadRate)"
           )
           .in("makeMethodId", makeMethodIds)
-          .eq("companyId", companyId),
+          .eq("companyId", companyId)
+          // Corrections are exceptional work, not part of the standard cost.
+          .is("methodCorrectionId", null),
         client
           .from("workCenters")
           .select("id, active, laborRate, machineRate, overheadRate, processes")
@@ -6095,6 +6100,12 @@ export const createUnitOfMeasure = defineServiceFn({
   input: z.looseObject({
     code: z.string().min(1).max(10),
     name: z.string().min(1).max(50),
+    active: z
+      .boolean()
+      .describe(
+        "Inactive units stay out of the unit pickers. Defaults to true."
+      )
+      .optional(),
     customFields: z.unknown().optional(),
     id: z
       .string()
@@ -6114,6 +6125,48 @@ export const createUnitOfMeasure = defineServiceFn({
 });
 
 /**
+ * Turn units of measure on or off
+ *
+ * @remarks
+ * Every company holds Carbon's standard units of measure; the units of the
+ * other measurement system start inactive. An inactive unit stays out of the
+ * unit pickers, and records that use it keep it. Each (EA) is always active and
+ * is left unchanged.
+ *
+ * @param ids - Ids of the units to change.
+ * @param active - true to turn the units on, false to turn them off.
+ * @returns `updated`, the ids of the units changed.
+ *
+ * @mcp
+ */
+export const updateUnitsOfMeasureActive = defineServiceFn({
+  input: z.object({
+    ids: z.array(z.string().min(1)).min(1),
+    active: z.boolean()
+  }),
+  permission: { update: "parts" },
+  async run(ctx, input) {
+    const result = await service.updateUnitsOfMeasureActive(
+      ctx.asCaller.supabase,
+      {
+        companyId: ctx.company.id,
+        ids: input.ids,
+        active: input.active,
+        updatedBy: ctx.auditUserId
+      }
+    );
+    if (result.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update units of measure",
+        result.error
+      );
+    }
+    return { updated: (result.data ?? []).map((unit) => unit.id) };
+  }
+});
+
+/**
  * Update a unit of measure
  *
  * @remarks
@@ -6126,6 +6179,10 @@ export const updateUnitOfMeasure = defineServiceFn({
     .looseObject({
       code: z.string().min(1).max(10),
       name: z.string().min(1).max(50),
+      active: z
+        .boolean()
+        .describe("Inactive units stay out of the unit pickers.")
+        .optional(),
       customFields: z.unknown().optional(),
       id: z
         .string()

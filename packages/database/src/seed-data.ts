@@ -35,6 +35,13 @@ export const supplierStatuses = [
   "Rejected"
 ] as const;
 
+export const supplierStages = [
+  "Prospect",
+  "Sampling",
+  "Qualified",
+  "Production"
+] as const;
+
 export const customerStatuses = [
   "Active",
   "Inactive",
@@ -121,25 +128,11 @@ export const paymentTerms = [
   }
 ] as const;
 
-export const unitOfMeasures = [
-  { name: "Each", code: "EA", createdBy: "system" },
-  { name: "Case", code: "CS", createdBy: "system" },
-  { name: "Pack", code: "PK", createdBy: "system" },
-  { name: "Pallet", code: "PL", createdBy: "system" },
-  { name: "Roll", code: "RL", createdBy: "system" },
-  { name: "Box", code: "BX", createdBy: "system" },
-  { name: "Bag", code: "BG", createdBy: "system" },
-  { name: "Drum", code: "DR", createdBy: "system" },
-  { name: "Gallon", code: "GL", createdBy: "system" },
-  { name: "Liter", code: "LT", createdBy: "system" },
-  { name: "Ounce", code: "OZ", createdBy: "system" },
-  { name: "Pound", code: "LB", createdBy: "system" },
-  { name: "Ton", code: "TN", createdBy: "system" },
-  { name: "Yard", code: "YD", createdBy: "system" },
-  { name: "Meter", code: "MT", createdBy: "system" },
-  { name: "Inch", code: "INCH", createdBy: "system" },
-  { name: "Foot", code: "FOOT", createdBy: "system" }
-] as const;
+export {
+  getStandardUnitOfMeasure,
+  seedUnitsOfMeasure,
+  unitOfMeasureCatalog
+} from "./units-of-measure.ts";
 
 export const gaugeTypes = [
   "Gauge Block",
@@ -2592,6 +2585,19 @@ export const periodCloseTaskDefinitions = [
     taskType: "Auto",
     autoCheckKey: "timesheets-complete",
     sortOrder: 9,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
+  },
+  // A shipment posts cost of goods sold; the sales invoice posts the revenue.
+  // Warns while a shipment posted in the period has lines with no posted
+  // invoice by the period end, so the cost and its revenue land together.
+  {
+    name: "Invoice shipped sales orders",
+    taskType: "Auto",
+    autoCheckKey: "shipped-not-invoiced",
+    sortOrder: 10,
     required: true,
     severity: "Warning",
     active: true,

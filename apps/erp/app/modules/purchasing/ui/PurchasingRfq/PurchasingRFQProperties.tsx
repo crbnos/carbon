@@ -247,17 +247,16 @@ const PurchasingRFQProperties = () => {
             onUpdateSuppliers(selected);
           }}
           onCreateOption={(option) => {
-            newSupplierModal.onOpen();
             setCreated(option);
+            newSupplierModal.onOpen();
           }}
         />
-        {newSupplierModal.isOpen && (
+        {newSupplierModal.openCount > 0 && (
           <SupplierForm
+            key={newSupplierModal.openCount}
+            open={newSupplierModal.isOpen}
             type="modal"
-            onClose={() => {
-              setCreated("");
-              newSupplierModal.onClose();
-            }}
+            onClose={newSupplierModal.onClose}
             initialValues={{
               name: created
             }}

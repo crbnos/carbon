@@ -19,7 +19,6 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
 import {
   LuCircleCheck,
   LuCirclePlay,
@@ -33,7 +32,7 @@ import { DateTime, EmployeeAvatar } from "~/components";
 import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
 import { DocumentPageHeader } from "~/components/DocumentPage";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { usePermissions, useRouteData } from "~/hooks";
+import { useDrawerItem, usePermissions, useRouteData } from "~/hooks";
 import { isPickingListLocked } from "~/modules/inventory/inventory.models";
 import type {
   getPickingList,
@@ -67,14 +66,14 @@ const PickingListHeader = () => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
-  const [acknowledgeLines, setAcknowledgeLines] = useState<
-    UnresolvedPickingListLine[] | null
-  >(null);
+  const acknowledge = useDrawerItem<UnresolvedPickingListLine[]>();
+  const acknowledgeLines = acknowledge.item;
   // A status change redirects; only lines left unpicked come back as data.
   const statusFetcher = useAction<typeof statusAction>({
     onSuccess: ({ data }) => {
       if (data && "needsAcknowledgement" in data) {
-        setAcknowledgeLines(data.unresolvedLines ?? null);
+        if (data.unresolvedLines) acknowledge.open(data.unresolvedLines);
+        else acknowledge.close();
       }
     }
   });
@@ -96,7 +95,7 @@ const PickingListHeader = () => {
       : pickingList.assignee;
 
   const submitStatus = (next: string, acknowledged?: boolean) => {
-    if (acknowledged !== true) setAcknowledgeLines(null);
+    if (acknowledged !== true) acknowledge.close();
     statusFetcher.submit(
       acknowledged ? { status: next, acknowledged: "true" } : { status: next },
       { method: "post", action: path.to.pickingListStatus(pickingListId) }
@@ -205,9 +204,9 @@ const PickingListHeader = () => {
 
       {acknowledgeLines && (
         <Modal
-          open
+          open={acknowledge.isOpen}
           onOpenChange={(open) => {
-            if (!open) setAcknowledgeLines(null);
+            if (!open) acknowledge.close();
           }}
         >
           <ModalOverlay />
@@ -246,7 +245,7 @@ const PickingListHeader = () => {
             <ModalFooter>
               <Button
                 variant="secondary"
-                onClick={() => setAcknowledgeLines(null)}
+                onClick={acknowledge.close}
                 isDisabled={isSubmitting}
               >
                 <Trans>Keep picking</Trans>
@@ -254,7 +253,7 @@ const PickingListHeader = () => {
               <Button
                 variant="solid"
                 onClick={() => {
-                  setAcknowledgeLines(null);
+                  acknowledge.close();
                   submitStatus("Completed", true);
                 }}
                 isLoading={isSubmitting}
@@ -267,16 +266,14 @@ const PickingListHeader = () => {
         </Modal>
       )}
 
-      {deleteModal.isOpen && (
-        <ConfirmDelete
-          action={path.to.pickingListDelete(pickingListId)}
-          isOpen={deleteModal.isOpen}
-          name={pickingList.pickingListId ?? "picking list"}
-          text={t`Are you sure you want to delete ${pickingList.pickingListId}? This cannot be undone.`}
-          onCancel={deleteModal.onClose}
-          onSubmit={deleteModal.onClose}
-        />
-      )}
+      <ConfirmDelete
+        action={path.to.pickingListDelete(pickingListId)}
+        isOpen={deleteModal.isOpen}
+        name={pickingList.pickingListId ?? "picking list"}
+        text={t`Are you sure you want to delete ${pickingList.pickingListId}? This cannot be undone.`}
+        onCancel={deleteModal.onClose}
+        onSubmit={deleteModal.onClose}
+      />
     </>
   );
 };

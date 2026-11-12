@@ -79,6 +79,7 @@ export const path = {
     erpAccountSecurity: `${ERP_URL}/x/account/security`,
     // The ERP's API routes, through the proxy (`x+/proxy.$.tsx`).
     erpApi: `${x}/proxy/api`,
+    erpInspection: (id: string) => `${ERP_URL}/x/inspection/${id}`,
     file: {
       // The load-sheet route lives in ERP (like the traveler); MES links to it
       // cross-origin.
@@ -167,6 +168,9 @@ export const path = {
     inspectionSample: (id: string) =>
       generatePath(`${x}/inspection-lot/${id}/sample`),
     inspectionSteps: `${x}/steps/inspection`,
+    inspections: `${x}/inspections`,
+    inspectionVerdict: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/verdict`),
     inventoryAdjustment: `${x}/adjustment`,
     issue: `${x}/issue`,
     issueTrackedEntity: `${x}/issue-tracked-entity`,
@@ -187,6 +191,8 @@ export const path = {
     maintenanceDisplay: (workCenterId: string) =>
       generatePath(`${display}/${workCenterId}/maintenance`),
     maintenanceEvent: `${x}/maintenance-event`,
+    manualInspection: (id: string) =>
+      generatePath(`${x}/manual-inspection/${id}`),
     manualPrint: `${x}/print`,
     messagingNotify: `${x}/proxy/api/messaging/notify`,
     mfa: "/mfa",
@@ -234,6 +240,7 @@ export const path = {
     timeCardPage: `${x}/timecard`,
     timecard: `${api}/timecard`,
     timesheet: `${x}/timesheet`,
+    triggerCorrection: `${x}/trigger-correction`,
     triggerRework: `${x}/trigger-rework`,
     unconsume: `${x}/unconsume`,
     workCenter: (workCenter: string) =>

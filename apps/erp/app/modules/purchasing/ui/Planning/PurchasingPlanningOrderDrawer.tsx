@@ -627,7 +627,8 @@ export const PurchasingPlanningOrderDrawer = memo(
                 selectedItem.readableIdWithRevision,
                 selectedItem.name
               ) && <DrawerDescription>{selectedItem.name}</DrawerDescription>}
-              <div className="absolute top-4 right-12">
+              {/* Phones: under the centred title, not over it. */}
+              <div className="absolute top-4 right-12 max-md:static max-md:mt-2">
                 <TabsList>
                   <TabsTrigger value="ordering">
                     <Trans>Ordering</Trans>
@@ -724,8 +725,10 @@ export const PurchasingPlanningOrderDrawer = memo(
                     >
                       <Trans>Add Supplier</Trans>
                     </Button>
-                    {supplierDisclosure.isOpen && (
+                    {supplierDisclosure.openCount > 0 && (
                       <SupplierPartForm
+                        key={`supplierDisclosure-${supplierDisclosure.openCount}`}
+                        open={supplierDisclosure.isOpen}
                         type="Part"
                         initialValues={{
                           itemId: selectedItem.id,

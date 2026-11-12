@@ -61,6 +61,7 @@ type DemandProjectionsFormProps = {
   initialValues?: z.infer<typeof demandProjectionValidator>;
   consumedValues?: Record<number, number>;
   isEditing?: boolean;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -128,6 +129,7 @@ const DemandProjectionsForm = ({
   initialValues: propInitialValues,
   consumedValues,
   isEditing = false,
+  open = true,
   onClose
 }: DemandProjectionsFormProps) => {
   const permissions = usePermissions();
@@ -240,7 +242,7 @@ const DemandProjectionsForm = ({
 
   return (
     <Drawer
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose?.();
       }}

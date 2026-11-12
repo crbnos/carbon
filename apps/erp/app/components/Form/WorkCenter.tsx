@@ -5,10 +5,9 @@
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useLoaderQuery } from "@carbon/query";
-import { useDisclosure } from "@carbon/react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { Enumerable } from "~/components/Enumerable";
-import { useUser } from "~/hooks";
+import { useDrawerItem, useUser } from "~/hooks";
 import type { getWorkCentersList } from "~/modules/resources/resources.service";
 import WorkCenterForm from "~/modules/resources/ui/WorkCenters/WorkCenterForm";
 import { path } from "~/utils/path";
@@ -32,9 +31,8 @@ const WorkCenterPreview = (
 };
 
 const WorkCenter = (props: WorkCenterSelectProps) => {
-  const newWorkCenterModal = useDisclosure();
+  const create = useDrawerItem<string>();
   const { defaults } = useUser();
-  const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const { options, workCenterFetcher } = useWorkCenters({
@@ -43,7 +41,7 @@ const WorkCenter = (props: WorkCenterSelectProps) => {
   });
 
   const emptyMessage = useEmptyState("workCenter", {
-    onCreate: () => newWorkCenterModal.onOpen()
+    onCreate: () => create.open("")
   });
 
   return (
@@ -65,20 +63,20 @@ const WorkCenter = (props: WorkCenterSelectProps) => {
         inline={props.inline ? WorkCenterPreview : undefined}
         label={props?.label ?? "Work Center"}
         onCreateOption={(option) => {
-          newWorkCenterModal.onOpen();
-          setCreated(option);
+          create.open(option);
         }}
       />
-      {newWorkCenterModal.isOpen && (
+      {create.item !== null && (
         <WorkCenterForm
+          key={create.key}
+          open={create.isOpen}
           type="modal"
           onClose={() => {
-            setCreated("");
-            newWorkCenterModal.onClose();
-            triggerRef.current?.click();
+            create.close();
+            create.afterClose(() => triggerRef.current?.click());
           }}
           initialValues={{
-            name: created,
+            name: create.item,
             description: "",
             overheadRate: 0,
             laborRate: 0,

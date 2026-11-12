@@ -257,16 +257,14 @@ const TrainingsTable = memo((props: TrainingsTableProps) => {
         table="training"
         withSavedView
       />
-      {deleteDisclosure.isOpen && selectedTraining && (
+      {selectedTraining && (
         <ConfirmDelete
           action={path.to.deleteTraining(selectedTraining.id!)}
-          isOpen
+          isOpen={deleteDisclosure.isOpen}
           onCancel={() => {
-            setSelectedTraining(null);
             deleteDisclosure.onClose();
           }}
           onSubmit={() => {
-            setSelectedTraining(null);
             deleteDisclosure.onClose();
           }}
           name={selectedTraining.name ?? "training"}

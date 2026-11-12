@@ -27,7 +27,7 @@ licences, test tools): `.ai/research/scim-provisioning.md`. User docs:
 | `apps/erp/app/routes/x+/settings+/scim.tsx` | Action-only, like `sso.tsx`: intents `create`, `update`, `regenerate`, `mapGroup`, `delete` |
 | `ScimProvisioning.ee.tsx` | The Provisioning section of Settings → Security |
 
-Tables (migration `20261106192020_scim-provisioning.sql`): `scimConnection`
+Tables (migration `20261112042955_scim-provisioning.sql`): `scimConnection`
 (one per company, `UNIQUE ("companyId")`, `tokenHash` + `tokenPreview`, the
 default employee type and location), `scimUser` (the IdP's view of one person,
 `id` is the SCIM resource id, unique `lower("userName")` per company),

@@ -334,6 +334,7 @@ function itemHref(
         : path.to.memo(id);
     case "Unapplied Credit":
     case "Customer Deposit":
+    case "Supplier Prepayment":
       return id ? path.to.payment(id) : null;
     case "Work in Progress":
       return id ? path.to.job(id) : null;

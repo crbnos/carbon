@@ -19,7 +19,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback } from "react";
+import { Suspense, useCallback, useState } from "react";
 import {
   LuCopy,
   LuExternalLink,
@@ -201,6 +201,16 @@ const PartProperties = ({
       toastServiceError(data);
     }
   });
+  // A refused change leaves the tracking type select showing the refused
+  // value; a new key remounts it on the stored value. It has its own fetcher,
+  // so a refusal of another field never resets it.
+  const [trackingRefusals, setTrackingRefusals] = useState(0);
+  const trackingFetcher = useAction<typeof action>({
+    onError: (data) => {
+      toastServiceError(data);
+      setTrackingRefusals((count) => count + 1);
+    }
+  });
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const onUpdate = useCallback(
     (
@@ -224,10 +234,13 @@ const PartProperties = ({
       formData.append("field", field);
 
       formData.append("value", value?.toString() ?? "");
-      fetcher.submit(formData, {
-        method: "post",
-        action: path.to.bulkUpdateItems
-      });
+      (field === "itemTrackingType" ? trackingFetcher : fetcher).submit(
+        formData,
+        {
+          method: "post",
+          action: path.to.bulkUpdateItems
+        }
+      );
     },
 
     [routeData?.partSummary?.id]
@@ -564,6 +577,7 @@ const PartProperties = ({
       </ValidatedForm>
 
       <ValidatedForm
+        key={`itemTrackingType-${trackingRefusals}`}
         defaultValues={{
           itemTrackingType:
             routeData?.partSummary?.itemTrackingType ?? undefined

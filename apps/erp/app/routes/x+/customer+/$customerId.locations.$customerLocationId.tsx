@@ -12,9 +12,10 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { customerLocationValidator } from "~/modules/sales/sales.models";
 import {
   getCustomerLocation,
@@ -98,10 +99,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function EditCustomerLocationRoute() {
   const { location } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
-
   const { customerId } = useParams();
   if (!customerId) throw new Error("customerId not found");
+  const dialog = useRouteDialog(path.to.customerLocations(customerId));
 
   const initialValues = {
     id: location?.id ?? undefined,
@@ -122,7 +122,8 @@ export default function EditCustomerLocationRoute() {
       key={initialValues.id}
       customerId={customerId}
       initialValues={initialValues}
-      onClose={() => navigate(path.to.customerLocations(customerId))}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

@@ -40,6 +40,7 @@ type EmployeeAbilityFormProps = {
    */
   mode: "new-employee" | "new-ability" | "edit";
   initialValues: z.infer<typeof employeeAbilityCellValidator>;
+  open?: boolean;
   onClose: () => void;
 };
 
@@ -48,6 +49,7 @@ const EmployeeAbilityForm = ({
   title,
   mode,
   initialValues,
+  open = true,
   onClose
 }: EmployeeAbilityFormProps) => {
   const { t } = useLingui();
@@ -60,7 +62,7 @@ const EmployeeAbilityForm = ({
   return (
     <ModalDrawerProvider type="drawer">
       <ModalDrawer
-        open
+        open={open}
         onOpenChange={(isOpen) => {
           if (!isOpen) onClose();
         }}

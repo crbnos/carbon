@@ -8,7 +8,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { SINGLE_TENANT } from "@carbon/env";
 import { validator } from "@carbon/form";
-import { useCloseRoute } from "@carbon/react";
+import { useRouteDialog } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -57,7 +57,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export default function EditApiKeyRoute() {
-  const closeRoute = useCloseRoute();
+  const dialog = useRouteDialog();
   const { apiKey, companyId, canSetRateLimit } = useLoaderData<typeof loader>();
 
   const initialValues = {
@@ -74,7 +74,8 @@ export default function EditApiKeyRoute() {
       companyId={companyId}
       existingScopes={apiKey.scopes as Record<string, string[]> | null}
       canSetRateLimit={canSetRateLimit}
-      onClose={() => closeRoute()}
+      open={dialog.open}
+      onClose={dialog.close}
     />
   );
 }

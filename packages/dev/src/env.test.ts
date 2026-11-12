@@ -2,8 +2,11 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "pathe";
 import { describe, expect, it } from "vitest";
-import { forcedKeys, omitForcedKeys, renderEnv } from "./env.js";
+import { renderEnv, writeEnv } from "./env.js";
 import type { JwtCreds, PortMap } from "./worktree.js";
 
 const ports: PortMap = {
@@ -31,7 +34,9 @@ const base = (overrides: Partial<Parameters<typeof renderEnv>[0]> = {}) =>
     ports,
     redisDb: 0,
     jwt,
-    portless: false,
+    prefix: null,
+    mode: "isolated",
+    database: "postgres",
     ...overrides
   });
 
@@ -57,7 +62,7 @@ describe("renderEnv", () => {
       ]
     }
   ])("writes the app URLs for portless=$portless", ({ portless, expected }) => {
-    const out = base({ slug: "feat-x", portless, branchPrefix: "feat-x" });
+    const out = base({ slug: "feat-x", prefix: portless ? "feat-x" : null });
     expect(out).toContain("CARBON_WORKTREE=feat-x");
     for (const line of expected) expect(out).toContain(line);
     if (!portless) expect(out).not.toContain("PORTLESS_TLD");
@@ -96,7 +101,7 @@ describe("renderEnv", () => {
   });
 
   it("points shared mode at the shared containers and the worktree database", () => {
-    const out = base({ mode: "shared" });
+    const out = base({ mode: "shared", database: "wt_s" });
     for (const line of [
       "PORT_DB=54322",
       "PORT_POOLER=54329",
@@ -151,37 +156,43 @@ describe("renderEnv", () => {
 });
 
 describe("#force escape hatch", () => {
-  it("collects keys marked with a trailing #force comment", () => {
+  const write = (dotEnv: string, content: string) => {
+    const dir = mkdtempSync(join(tmpdir(), "crbn-env-"));
+    try {
+      writeFileSync(join(dir, ".env"), dotEnv);
+      writeEnv(dir, content);
+      return readFileSync(join(dir, ".env.local"), "utf8");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  };
+
+  it("leaves out of .env.local the keys .env pins with a trailing #force", () => {
     const dotEnv = [
-      "OPENAI_API_KEY=sk-123",
       "ASSEMBLER_SERVICE_URL=https://xxx.execute-api.us-east-1.amazonaws.com #force",
       "ASSEMBLER_SERVICE_API_KEY=abc  # FORCE",
       'ONSHAPE_V2_OAUTH_REDIRECT_URL="https://tunnel.example/oauth" #force',
       "# a comment mentioning force",
       "NOT_FORCED=1 # forceful suffix means nothing"
     ].join("\n");
-    expect(forcedKeys(dotEnv)).toEqual(
-      new Set([
-        "ASSEMBLER_SERVICE_URL",
-        "ASSEMBLER_SERVICE_API_KEY",
-        "ONSHAPE_V2_OAUTH_REDIRECT_URL"
-      ])
+    const out = write(
+      dotEnv,
+      [
+        "ASSEMBLER_SERVICE_URL=https://assembler.s.dev",
+        "ASSEMBLER_SERVICE_API_KEY=dev-local-key",
+        "ONSHAPE_V2_OAUTH_REDIRECT_URL=https://erp.s.dev/oauth",
+        "NOT_FORCED=2"
+      ].join("\n")
     );
+    expect(out.split("\n")).toEqual([
+      "# ASSEMBLER_SERVICE_URL omitted — #force'd in .env",
+      "# ASSEMBLER_SERVICE_API_KEY omitted — #force'd in .env",
+      "# ONSHAPE_V2_OAUTH_REDIRECT_URL omitted — #force'd in .env",
+      "NOT_FORCED=2"
+    ]);
   });
 
-  it("omits forced keys from the generated .env.local content", () => {
-    const dotEnv = "ASSEMBLER_SERVICE_URL=https://remote #force\n";
-    const content = [
-      "ASSEMBLER_SERVICE_URL=https://assembler.s.dev",
-      "ASSEMBLER_SERVICE_API_KEY=dev-local-key"
-    ].join("\n");
-    const out = omitForcedKeys(content, dotEnv);
-    expect(out).not.toContain("ASSEMBLER_SERVICE_URL=");
-    expect(out).toContain("ASSEMBLER_SERVICE_API_KEY=dev-local-key");
-  });
-
-  it("leaves the content untouched when nothing is forced", () => {
-    const content = "A=1\nB=2";
-    expect(omitForcedKeys(content, "A=1\nB=2")).toBe(content);
+  it("writes the content as it is when nothing is forced", () => {
+    expect(write("A=1\nB=2", "A=3\nB=4")).toBe("A=3\nB=4");
   });
 });

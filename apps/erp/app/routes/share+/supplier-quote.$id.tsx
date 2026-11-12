@@ -383,47 +383,45 @@ const NotesEditorModal = ({
           {hasNotes ? "Edit Notes" : "Add Notes"}
         </Button>
 
-        {modal.isOpen && (
-          <Modal
-            open
-            onOpenChange={(open) => {
-              if (!open) handleCancel();
-            }}
+        <Modal
+          open={modal.isOpen}
+          onOpenChange={(open) => {
+            if (!open) handleCancel();
+          }}
+        >
+          <ModalOverlay />
+          <ModalContent
+            className="max-w-4xl"
+            onClick={(e) => e.stopPropagation()}
           >
-            <ModalOverlay />
-            <ModalContent
-              className="max-w-4xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ModalHeader>
-                <ModalTitle>Edit Notes</ModalTitle>
-                <ModalDescription>
-                  Add or edit notes for this line item
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                <VStack spacing={4} className="w-full">
-                  <div className="flex flex-col gap-2 w-full">
-                    <Label>Notes</Label>
-                    <Editor
-                      label={t`Notes`}
-                      initialValue={editorContent}
-                      onChange={handleEditorChange}
-                      className="min-h-[300px] p-4 border rounded-lg transition-colors"
-                      disableFileUpload
-                    />
-                  </div>
-                </VStack>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="secondary" onClick={handleCancel}>
-                  Cancel
-                </Button>
-                <Button onClick={handleSave}>Save Notes</Button>
-              </ModalFooter>
-            </ModalContent>
-          </Modal>
-        )}
+            <ModalHeader>
+              <ModalTitle>Edit Notes</ModalTitle>
+              <ModalDescription>
+                Add or edit notes for this line item
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <VStack spacing={4} className="w-full">
+                <div className="flex flex-col gap-2 w-full">
+                  <Label>Notes</Label>
+                  <Editor
+                    label={t`Notes`}
+                    initialValue={editorContent}
+                    onChange={handleEditorChange}
+                    className="min-h-[300px] p-4 border rounded-lg transition-colors"
+                    disableFileUpload
+                  />
+                </div>
+              </VStack>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={handleCancel}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave}>Save Notes</Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       </>
     );
   }
@@ -1094,127 +1092,123 @@ const Quote = ({
         </CardContent>
       </Card>
 
-      {submitModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) submitModal.onClose();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ValidatedForm
-              validator={externalSupplierQuoteValidator}
-              action={path.to.api.digitalSupplierQuote(id)}
-              method="post"
-              fetcher={fetcher}
-              onSubmit={() => {
-                submitted.current = true;
-              }}
-            >
-              <ModalHeader>
-                <ModalTitle>Submit Quote</ModalTitle>
-                <ModalDescription>
-                  Are you sure you want to submit the updated pricing?
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                <input type="hidden" name="intent" value="submit" />
-                <input
-                  type="hidden"
-                  name="selectedLines"
-                  value={JSON.stringify(selectedLines)}
+      <Modal
+        open={submitModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) submitModal.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ValidatedForm
+            validator={externalSupplierQuoteValidator}
+            action={path.to.api.digitalSupplierQuote(id)}
+            method="post"
+            fetcher={fetcher}
+            onSubmit={() => {
+              submitted.current = true;
+            }}
+          >
+            <ModalHeader>
+              <ModalTitle>Submit Quote</ModalTitle>
+              <ModalDescription>
+                Are you sure you want to submit the updated pricing?
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <input type="hidden" name="intent" value="submit" />
+              <input
+                type="hidden"
+                name="selectedLines"
+                value={JSON.stringify(selectedLines)}
+              />
+              <div className="space-y-4 py-4">
+                <Input
+                  name="digitalSupplierQuoteSubmittedBy"
+                  label={t`Your Name`}
+                  placeholder="Enter your name"
                 />
-                <div className="space-y-4 py-4">
-                  <Input
-                    name="digitalSupplierQuoteSubmittedBy"
-                    label={t`Your Name`}
-                    placeholder="Enter your name"
-                  />
-                  <Input
-                    name="digitalSupplierQuoteSubmittedByEmail"
-                    label={t`Your Email`}
-                    placeholder="Enter your email"
-                  />
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="secondary" onClick={submitModal.onClose}>
-                  Cancel
-                </Button>
-                <Button
-                  isLoading={fetcher.state !== "idle"}
-                  isDisabled={fetcher.state !== "idle"}
-                  type="submit"
-                >
-                  Submit
-                </Button>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
+                <Input
+                  name="digitalSupplierQuoteSubmittedByEmail"
+                  label={t`Your Email`}
+                  placeholder="Enter your email"
+                />
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={submitModal.onClose}>
+                Cancel
+              </Button>
+              <Button
+                isLoading={fetcher.state !== "idle"}
+                isDisabled={fetcher.state !== "idle"}
+                type="submit"
+              >
+                Submit
+              </Button>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
 
-      {declineModal.isOpen && (
-        <Modal
-          open
-          onOpenChange={(open) => {
-            if (!open) declineModal.onClose();
-          }}
-        >
-          <ModalOverlay />
-          <ModalContent>
-            <ValidatedForm
-              validator={externalSupplierQuoteValidator}
-              action={path.to.api.digitalSupplierQuote(id)}
-              method="post"
-              fetcher={fetcher}
-              onSubmit={() => {
-                submitted.current = true;
-              }}
-            >
-              <ModalHeader>
-                <ModalTitle>Decline Quote</ModalTitle>
-                <ModalDescription>
-                  Are you sure you want to decline this quote?
-                </ModalDescription>
-              </ModalHeader>
-              <ModalBody>
-                <input type="hidden" name="intent" value="decline" />
-                <div className="space-y-4 py-4">
-                  <TextArea
-                    name="note"
-                    label={t`Reason for declining (Optional)`}
-                  />
-                  <Input
-                    name="digitalSupplierQuoteSubmittedBy"
-                    label={t`Your Name`}
-                    placeholder="Enter your name"
-                  />
-                  <Input
-                    name="digitalSupplierQuoteSubmittedByEmail"
-                    label={t`Your Email`}
-                    placeholder="Enter your email"
-                  />
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="ghost" onClick={declineModal.onClose}>
-                  Cancel
-                </Button>
-                <Button
-                  isLoading={fetcher.state !== "idle"}
-                  isDisabled={fetcher.state !== "idle"}
-                  type="submit"
-                  variant="destructive"
-                >
-                  Decline Quote
-                </Button>
-              </ModalFooter>
-            </ValidatedForm>
-          </ModalContent>
-        </Modal>
-      )}
+      <Modal
+        open={declineModal.isOpen}
+        onOpenChange={(open) => {
+          if (!open) declineModal.onClose();
+        }}
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ValidatedForm
+            validator={externalSupplierQuoteValidator}
+            action={path.to.api.digitalSupplierQuote(id)}
+            method="post"
+            fetcher={fetcher}
+            onSubmit={() => {
+              submitted.current = true;
+            }}
+          >
+            <ModalHeader>
+              <ModalTitle>Decline Quote</ModalTitle>
+              <ModalDescription>
+                Are you sure you want to decline this quote?
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <input type="hidden" name="intent" value="decline" />
+              <div className="space-y-4 py-4">
+                <TextArea
+                  name="note"
+                  label={t`Reason for declining (Optional)`}
+                />
+                <Input
+                  name="digitalSupplierQuoteSubmittedBy"
+                  label={t`Your Name`}
+                  placeholder="Enter your name"
+                />
+                <Input
+                  name="digitalSupplierQuoteSubmittedByEmail"
+                  label={t`Your Email`}
+                  placeholder="Enter your email"
+                />
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="ghost" onClick={declineModal.onClose}>
+                Cancel
+              </Button>
+              <Button
+                isLoading={fetcher.state !== "idle"}
+                isDisabled={fetcher.state !== "idle"}
+                type="submit"
+                variant="destructive"
+              >
+                Decline Quote
+              </Button>
+            </ModalFooter>
+          </ValidatedForm>
+        </ModalContent>
+      </Modal>
     </VStack>
   );
 };

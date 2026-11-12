@@ -15,6 +15,7 @@ import { useRouteData } from "~/hooks";
 import {
   getMakeMethodById,
   getMakeMethods,
+  getMethodCorrectionsData,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId
 } from "~/modules/items/items.service";
@@ -22,8 +23,10 @@ import type { ServiceSummary } from "~/modules/items/types";
 import {
   BillOfMaterial,
   BillOfProcess,
-  MakeMethodTools
+  MakeMethodTools,
+  MethodCorrections
 } from "~/modules/items/ui/Item";
+import { toMethodCorrectionsProps } from "~/modules/items/ui/Item/MethodCorrections";
 import { getTagsList } from "~/modules/shared/shared.service";
 import type { MethodItemType, MethodType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
@@ -74,7 +77,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const methodCorrections = await getMethodCorrectionsData(
+    client,
+    makeMethodId,
+    companyId
+  );
+
   return {
+    corrections: toMethodCorrectionsProps(methodCorrections.data),
     makeMethod: makeMethod.data,
     methodMaterials:
       methodMaterials.data?.map((m) => ({
@@ -148,6 +158,13 @@ export default function ServiceMakeMethodPage() {
         materials={methodMaterials}
         operations={methodOperations}
         replenishmentSystem={serviceData?.serviceSummary?.replenishmentSystem}
+      />
+      <MethodCorrections
+        key={`corrections:${makeMethod.id}`}
+        makeMethod={makeMethod}
+        {...loaderData.corrections}
+        routingOperations={methodOperations as never}
+        tags={tags}
       />
     </VStack>
   );

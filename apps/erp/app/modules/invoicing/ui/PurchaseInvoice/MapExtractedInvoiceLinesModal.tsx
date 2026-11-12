@@ -8,12 +8,14 @@ import SharedMapExtractedLinesModal from "~/components/MapExtractedLinesModal";
 export type MapExtractedInvoiceLinesModalProps = {
   invoiceId: string;
   supplierId: string | undefined;
+  open?: boolean;
   onClose: () => void;
 };
 
 export default function MapExtractedInvoiceLinesModal({
   invoiceId,
   supplierId,
+  open,
   onClose
 }: MapExtractedInvoiceLinesModalProps) {
   return (
@@ -21,6 +23,7 @@ export default function MapExtractedInvoiceLinesModal({
       endpoint={`/api/purchase-invoice/${invoiceId}/map-lines`}
       party={{ field: "supplierId", id: supplierId }}
       title={<Trans>Map Extracted Invoice Lines</Trans>}
+      open={open}
       onClose={onClose}
       renderSummary={(map) => (
         <>

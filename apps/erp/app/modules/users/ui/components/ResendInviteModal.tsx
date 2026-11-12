@@ -43,12 +43,28 @@ type ResendInviteModalProps = {
 };
 
 const ResendInviteModal = ({
-  userIds,
   isOpen,
+  onClose,
+  ...props
+}: ResendInviteModalProps) => (
+  <Modal
+    open={isOpen}
+    onOpenChange={(open) => {
+      if (!open) onClose();
+    }}
+  >
+    <ModalContent>
+      <ResendInviteBody onClose={onClose} {...props} />
+    </ModalContent>
+  </Modal>
+);
+
+const ResendInviteBody = ({
+  userIds,
   allMatching,
   allMatchingFetcher,
   onClose
-}: ResendInviteModalProps) => {
+}: Omit<ResendInviteModalProps, "isOpen">) => {
   const { t } = useLingui();
   // The modal stays open until the action answers: it unmounts when it
   // closes, and the result is read here.
@@ -64,85 +80,76 @@ const ResendInviteModal = ({
   const isSingleUser = !allMatching && userIds.length === 1;
 
   return (
-    <Modal
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>
-            {isSingleUser ? (
-              <Trans>Send Invite</Trans>
-            ) : (
-              <Trans>Send Invites</Trans>
-            )}
-          </ModalTitle>
-        </ModalHeader>
-
-        <ModalBody>
-          <p className="text-sm text-muted-foreground mb-2">
-            {isSingleUser ? (
-              <Trans>
-                Are you sure you want to send an invite to this user?
-              </Trans>
-            ) : (
-              <Trans>
-                Are you sure you want to send an invite to these users?
-              </Trans>
-            )}
-          </p>
-          <p className="text-sm text-muted-foreground mb-2">
-            <Trans>
-              A new invite link is sent. A link sent before stops working.
-            </Trans>
-          </p>
-          {allMatching ? (
-            <AllMatchingUsersNote />
+    <>
+      <ModalHeader>
+        <ModalTitle>
+          {isSingleUser ? (
+            <Trans>Send Invite</Trans>
           ) : (
-            <UserSelect value={userIds} readOnly isMulti />
+            <Trans>Send Invites</Trans>
           )}
-        </ModalBody>
-        <ModalFooter>
-          <HStack>
-            <Button variant="ghost" onClick={onClose}>
-              <Trans>Cancel</Trans>
+        </ModalTitle>
+      </ModalHeader>
+
+      <ModalBody>
+        <p className="text-sm text-muted-foreground mb-2">
+          {isSingleUser ? (
+            <Trans>Are you sure you want to send an invite to this user?</Trans>
+          ) : (
+            <Trans>
+              Are you sure you want to send an invite to these users?
+            </Trans>
+          )}
+        </p>
+        <p className="text-sm text-muted-foreground mb-2">
+          <Trans>
+            A new invite link is sent. A link sent before stops working.
+          </Trans>
+        </p>
+        {allMatching ? (
+          <AllMatchingUsersNote />
+        ) : (
+          <UserSelect value={userIds} readOnly isMulti />
+        )}
+      </ModalBody>
+      <ModalFooter>
+        <HStack>
+          <Button variant="ghost" onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </Button>
+          <ValidatedForm
+            method="post"
+            action={path.to.resendInvite}
+            validator={
+              allMatching
+                ? resendInviteAllMatchingValidator
+                : resendInviteValidator
+            }
+            onSubmit={allMatching ? onClose : undefined}
+            fetcher={allMatching ? allMatchingFetcher : fetcher}
+          >
+            {allMatching && (
+              <input
+                type="hidden"
+                name="allMatching"
+                value={JSON.stringify(allMatchingRequest(allMatching))}
+              />
+            )}
+            {(allMatching ? [] : userIds).map((id, index) => (
+              <input
+                key={id}
+                type="hidden"
+                name={`users[${index}]`}
+                value={id}
+              />
+            ))}
+            <Button type="submit" isLoading={fetcher.isPending}>
+              <Trans>Send</Trans>
             </Button>
-            <ValidatedForm
-              method="post"
-              action={path.to.resendInvite}
-              validator={
-                allMatching
-                  ? resendInviteAllMatchingValidator
-                  : resendInviteValidator
-              }
-              onSubmit={allMatching ? onClose : undefined}
-              fetcher={allMatching ? allMatchingFetcher : fetcher}
-            >
-              {allMatching && (
-                <input
-                  type="hidden"
-                  name="allMatching"
-                  value={JSON.stringify(allMatchingRequest(allMatching))}
-                />
-              )}
-              {(allMatching ? [] : userIds).map((id, index) => (
-                <input
-                  key={id}
-                  type="hidden"
-                  name={`users[${index}]`}
-                  value={id}
-                />
-              ))}
-              <Button type="submit" isLoading={fetcher.isPending}>
-                <Trans>Send</Trans>
-              </Button>
-            </ValidatedForm>
-          </HStack>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+          </ValidatedForm>
+        </HStack>
+      </ModalFooter>
+    </>
   );
 };
 
