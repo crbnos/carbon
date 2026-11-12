@@ -100,7 +100,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     readableIdLookups.push(
       client
         .from("purchaseOrderLine")
-        .select("purchaseOrder(id, purchaseOrderId)")
+        .select(
+          "purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(id, purchaseOrderId)"
+        )
         .eq("id", line.data.purchaseOrderLineId)
         .eq("companyId", companyId)
         .maybeSingle()

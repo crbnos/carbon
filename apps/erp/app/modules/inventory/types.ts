@@ -5,6 +5,8 @@
 import type { Database } from "@carbon/database";
 import type {
   getBatchProperties,
+  getInventoryCountGroupSummaries,
+  getInventoryCountGroups,
   getInventoryCountLines,
   getInventoryCounts,
   getInventoryItems,
@@ -12,7 +14,6 @@ import type {
   getInventoryValuationTieOut,
   getItemLedgerPage,
   getKanbanItems,
-  getPurchaseOrderLinesToReceive,
   getReceiptLines,
   getReceipts,
   getShipmentLines,
@@ -66,6 +67,14 @@ export type InventoryCount = NonNullable<
 
 export type InventoryCountLine = NonNullable<
   Awaited<ReturnType<typeof getInventoryCountLines>>["data"]
+>[number];
+
+export type InventoryCountGroup = NonNullable<
+  Awaited<ReturnType<typeof getInventoryCountGroups>>["data"]
+>[number];
+
+export type InventoryCountGroupSummary = Awaited<
+  ReturnType<typeof getInventoryCountGroupSummaries>
 >[number];
 
 export type Receipt = NonNullable<
@@ -228,32 +237,4 @@ export type IssueContainment = {
   status: string;
   priority: string | null;
   trackedEntityId: string;
-};
-
-export type PurchaseOrderLineToReceive = NonNullable<
-  Awaited<ReturnType<typeof getPurchaseOrderLinesToReceive>>["data"]
->[number];
-
-/** Another order still waiting on a line's item. */
-export type ReceivingOrder = {
-  id: string;
-  readableId: string | null;
-  revisionId: number | null;
-};
-
-/** A Draft receipt already started for an order. */
-export type ReceivingDraftReceipt = {
-  id: string;
-  receiptId: string;
-};
-
-/**
- * A row of Inventory → Receiving: a line to receive (the view's keys are never
- * null; the generated view type cannot say so), with the other orders still
- * waiting on its item.
- */
-export type ReceivingRow = PurchaseOrderLineToReceive & {
-  id: string;
-  purchaseOrderId: string;
-  alsoOpenOn: ReceivingOrder[];
 };

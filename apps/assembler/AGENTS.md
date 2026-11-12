@@ -61,10 +61,16 @@ fixed per-target default (macOS-arm `/opt/homebrew/opt/<pkg>`, Linux `/usr`) —
 
 **Deploy (Docker):** OCCT and FCL/ccd are **static-linked into the binary**, so the
 runtime image is just the ~24 MB binary + OpenBLAS/libstdc++ (no collision or OCCT
-shared objects). `occt.Dockerfile` builds a kept base image `carbon-occt` (OCCT
-**V8_0_0_p1** static + the thread_local allocator patch in `occt-patches/`);
-`Dockerfile` builds FCL 0.7 + libccd static (`FCL_STATIC_LIBRARY=ON`, no octomap)
-and links it all in. Build the base image once; app-image builds then take minutes.
+shared objects). `occt.Dockerfile` builds a kept base image (OCCT **V8_0_0_p1**
+static + the thread_local allocator patch in `occt-patches/`); `Dockerfile` builds
+FCL 0.7 + libccd static (`FCL_STATIC_LIBRARY=ON`, no octomap) and links it all in.
+Carbon's CI publishes the base to `public.ecr.aws/b8l5b8t9/carbon/occt:<hash>`
+(hash of `occt.Dockerfile` + `occt-patches/`, `.github/scripts/build-images.sh`).
+`Dockerfile`'s default `OCCT_IMAGE` pins that tag, so a local build compiles no
+OCCT. It is linux/amd64 only: on Apple Silicon pass `--platform linux/amd64`.
+When the OCCT sources change, move the pin (and `.oss-scanner/Dockerfile`'s) to
+the new hash once CI has published it. CI uses its own registry's copy, then the
+public one with the same tag, and compiles only when neither has it.
 
 ## Why bind the same C++ libs (not parry3d / pure-Rust)
 
@@ -165,7 +171,11 @@ lost. It accepts `?wait=<secs>` (a long poll, capped at 25 s), but
 `runAssemblerJob` never sends it: a long poll is an executing Inngest step, so
 it held a slot of the shared concurrency key for its whole wait. The runner
 polls once per wake and waits between polls in `waitForEvent`, which holds no
-slot. A 5xx poll counts as unreachable, not as a lost job. When the runner gives
+slot. Inngest matches only events sent after the wait is registered, so a
+callback that lands between a poll and its wait is seen at the next poll. The
+waits therefore start at 15 s and double to 5 min (`waitSliceMs`), restarting
+at each resubmit: a missed callback on a short job costs seconds, not five
+minutes. A 5xx poll counts as unreachable, not as a lost job. When the runner gives
 up on a job that is still queued or running, it calls
 `POST /v1/jobs/{id}/cancel` (best effort) so the job does not keep its memory.
 
@@ -325,11 +335,6 @@ Built to sit as a small always-on pod beside other workloads.
   pod's memory limit. The server clears downloaded sources (`geometry-*`) left
   by an earlier process when it starts: a killed container skips its own
   cleanup and the volume outlives the restart.
-
-## Not yet done
-
-- **CI + registry** — no workflow yet builds/publishes the `carbon-occt` base or
-  the `carbon-assembler` image, or deploys the container.
 
 ## Fetch
 

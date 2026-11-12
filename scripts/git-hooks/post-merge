@@ -18,7 +18,8 @@ fi
 # service file, regenerate so the header/tool list matches the merged source.
 if echo "$changed" | grep -q '\.service\.ts$'; then
     echo "🔧 Merge touched *.service.ts — regenerating MCP tool metadata..."
-    npx tsx scripts/generate-mcp.ts
+    # Using turbo to cache this so we can avoid a 100 s ts-morph pass
+    pnpm exec turbo run //#generate:mcp --output-logs=errors-only 
 fi
 
 # The merge commit is already made, so any normalization above is unstaged.

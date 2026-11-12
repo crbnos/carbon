@@ -13,6 +13,9 @@ import {
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -47,6 +50,7 @@ import {
   LuTruck,
   LuUser
 } from "react-icons/lu";
+import { Link } from "react-router";
 import {
   CustomerAvatar,
   DateTime,
@@ -60,6 +64,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
 import type { InfiniteOptions } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
@@ -237,6 +242,61 @@ const SalesOrdersTable = memo((props: SalesOrdersTableProps) => {
             />
           );
 
+          const jobsStatusLabel = everyMadeLineIsCompleted
+            ? t`complete`
+            : everyMadeLineHasSufficientJobs
+              ? t`in progress`
+              : t`not enough jobs to cover quantity`;
+
+          const orderId = row.original.salesOrderId;
+          const jobCount = jobs.length;
+          const firstJob = jobs[0];
+
+          const jobList = (
+            <div className="flex flex-col w-full gap-4 text-sm">
+              {(
+                jobs as {
+                  id: string;
+                  jobId: string;
+                  dueDate?: string;
+                  status: (typeof jobStatus)[number];
+                }[]
+              ).map((job) => (
+                <div
+                  key={job.id}
+                  className="flex items-center justify-between gap-2"
+                >
+                  <Hyperlink
+                    to={path.to.jobDetails(job.id)}
+                    className="flex items-center justify-start gap-1"
+                  >
+                    {job.jobId}
+                  </Hyperlink>
+                  <div className="flex items-center justify-end gap-1 flex-wrap">
+                    <JobStatus status={job.status} />
+                    {[
+                      "Draft",
+                      "Planned",
+                      "In Progress",
+                      "Ready",
+                      "Paused"
+                    ].includes(job.status ?? "") && (
+                      <>
+                        {job.dueDate &&
+                          isSameDay(parseDate(job.dueDate), todaysDate) && (
+                            <JobStatus status="Due Today" />
+                          )}
+                        {job.dueDate && parseDate(job.dueDate) < todaysDate && (
+                          <JobStatus status="Overdue" />
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+
           return (
             <div
               className={cn(
@@ -260,67 +320,47 @@ const SalesOrdersTable = memo((props: SalesOrdersTableProps) => {
                   </TooltipContent>
                 </Tooltip>
               )}
-              {jobs.length > 0 && (
+              {jobCount === 1 && firstJob && (
                 <HoverCard>
-                  <HoverCardTrigger>
-                    <Badge variant="secondary" className="cursor-pointer">
-                      {statusIcon}
-                      {jobs.length}{" "}
-                      {jobs.length > 1 ? (
-                        <Trans>Jobs</Trans>
-                      ) : (
-                        <Trans>Job</Trans>
-                      )}
-                      <LuEllipsisVertical className="w-3 h-3 ml-2" />
-                    </Badge>
+                  <HoverCardTrigger asChild>
+                    <Link
+                      to={path.to.jobDetails(firstJob.id)}
+                      aria-label={t`Job ${firstJob.jobId} for ${orderId}, ${jobsStatusLabel}`}
+                      className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <Badge variant="secondary" className="cursor-pointer">
+                        {statusIcon}
+                        {jobs.length} <Trans>Job</Trans>
+                        <LuEllipsisVertical className="w-3 h-3 ml-2" />
+                      </Badge>
+                    </Link>
                   </HoverCardTrigger>
                   <HoverCardContent className="w-[400px]">
-                    <div className="flex flex-col w-full gap-4 text-sm">
-                      {(
-                        jobs as {
-                          id: string;
-                          jobId: string;
-                          dueDate?: string;
-                          status: (typeof jobStatus)[number];
-                        }[]
-                      ).map((job) => (
-                        <div
-                          key={job.id}
-                          className="flex items-center justify-between gap-2"
-                        >
-                          <Hyperlink
-                            to={path.to.jobDetails(job.id)}
-                            className="flex items-center justify-start gap-1"
-                          >
-                            {job.jobId}
-                          </Hyperlink>
-                          <div className="flex items-center justify-end gap-1 flex-wrap">
-                            <JobStatus status={job.status} />
-                            {[
-                              "Draft",
-                              "Planned",
-                              "In Progress",
-                              "Ready",
-                              "Paused"
-                            ].includes(job.status ?? "") && (
-                              <>
-                                {job.dueDate &&
-                                  isSameDay(
-                                    parseDate(job.dueDate),
-                                    todaysDate
-                                  ) && <JobStatus status="Due Today" />}
-                                {job.dueDate &&
-                                  parseDate(job.dueDate) < todaysDate && (
-                                    <JobStatus status="Overdue" />
-                                  )}
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    {jobList}
                   </HoverCardContent>
                 </HoverCard>
+              )}
+              {jobCount > 1 && (
+                <Popover>
+                  <PopoverTrigger
+                    // "Jobs for X: 3" needs no plural agreement, so no plural() here: with
+                    // variables inside its branches it is left to run at render and throws.
+                    aria-label={t`Jobs for ${orderId}: ${jobCount}, ${jobsStatusLabel}`}
+                    className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <Badge variant="secondary" className="cursor-pointer">
+                      {statusIcon}
+                      {jobs.length} <Trans>Jobs</Trans>
+                      <LuEllipsisVertical className="w-3 h-3 ml-2" />
+                    </Badge>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-[400px]"
+                    aria-label={t`Jobs for ${orderId}`}
+                  >
+                    {jobList}
+                  </PopoverContent>
+                </Popover>
               )}
             </div>
           );
@@ -451,7 +491,12 @@ const SalesOrdersTable = memo((props: SalesOrdersTableProps) => {
       {
         accessorKey: "dropShipment",
         header: t`Drop Shipment`,
-        cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+        cell: (item) => (
+          <Checkbox
+            aria-label={t`Drop Shipment`}
+            isChecked={item.getValue<boolean>()}
+          />
+        ),
         meta: {
           filter: {
             type: "static",
@@ -580,12 +625,16 @@ const SalesOrdersTable = memo((props: SalesOrdersTableProps) => {
     );
   }, [deleteSalesOrderModal, edit, permissions /*receive*/]);
 
+  const lineItemRows = useLineItemRows<SalesOrderListItem>("sales-orders");
+
   return (
     <>
       <Table<SalesOrderListItem>
+        getRowLabel={(row) => row.salesOrderId ?? undefined}
         count={count}
         columns={columns}
         data={data}
+        {...lineItemRows}
         infinite={infinite}
         defaultColumnPinning={{
           left: ["salesOrderId"]

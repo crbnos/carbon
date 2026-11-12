@@ -3,7 +3,13 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { describe, expect, it } from "vitest";
-import { isSearchParamOnlyNavigation } from "./revalidate";
+import {
+  deferRootActionPost,
+  isRootActionPost,
+  isSearchParamOnlyNavigation,
+  ROOT_ACTION_SAVE,
+  rootShouldRevalidate
+} from "./revalidate";
 
 const url = (href: string) => new URL(href, "https://erp.test");
 
@@ -65,6 +71,75 @@ describe("isSearchParamOnlyNavigation", () => {
       isSearchParamOnlyNavigation({
         currentUrl: url("/x/items/parts?a=1"),
         nextUrl: url("/x/items/parts?a=1")
+      })
+    ).toBe(true);
+  });
+});
+
+describe("isRootActionPost", () => {
+  it("is true for a post to the root action", () => {
+    expect(isRootActionPost({ formAction: "/", formMethod: "POST" })).toBe(
+      true
+    );
+  });
+
+  it.each([
+    { formAction: "/x/items", formMethod: "POST" },
+    { formAction: "/", formMethod: "GET" },
+    { formAction: undefined, formMethod: undefined }
+  ])("is false for $formMethod $formAction", (args) => {
+    expect(isRootActionPost(args)).toBe(false);
+  });
+});
+
+// What React Router passes every route after an appearance save.
+const appearanceSave = {
+  currentUrl: url("/x/production"),
+  nextUrl: url("/x/production"),
+  formAction: ROOT_ACTION_SAVE.action,
+  formMethod: ROOT_ACTION_SAVE.method.toUpperCase(),
+  defaultShouldRevalidate: ROOT_ACTION_SAVE.defaultShouldRevalidate
+};
+
+describe("an appearance save", () => {
+  it("re-runs the root loader", () => {
+    expect(rootShouldRevalidate(appearanceSave)).toBe(true);
+  });
+
+  it("re-runs no route whose own rule re-runs after every post", () => {
+    const afterEveryPost = deferRootActionPost(() => true);
+    expect(afterEveryPost(appearanceSave)).toBe(false);
+  });
+
+  it("leaves other posts to the route's own rule", () => {
+    const afterEveryPost = deferRootActionPost(() => true);
+    expect(
+      afterEveryPost({
+        ...appearanceSave,
+        formAction: "/x/sales/orders/new",
+        defaultShouldRevalidate: true
+      })
+    ).toBe(true);
+  });
+});
+
+describe("rootShouldRevalidate", () => {
+  it("skips a same-page search-param change", () => {
+    expect(
+      rootShouldRevalidate({
+        currentUrl: url("/x/items?page=1"),
+        nextUrl: url("/x/items?page=2"),
+        defaultShouldRevalidate: true
+      })
+    ).toBe(false);
+  });
+
+  it("follows the default for any other navigation or post", () => {
+    expect(
+      rootShouldRevalidate({
+        currentUrl: url("/x/items"),
+        nextUrl: url("/x/sales"),
+        defaultShouldRevalidate: true
       })
     ).toBe(true);
   });

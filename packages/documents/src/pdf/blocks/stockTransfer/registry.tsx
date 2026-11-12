@@ -16,7 +16,7 @@ export const stockTransferBlockRegistry: Partial<
 > = {
   ...extensionBlocks,
   header: ({ data }) => <HeaderBlock data={data} />,
-  details: ({ data }) => <DetailsBlock data={data} />,
+  details: ({ block, data }) => <DetailsBlock block={block} data={data} />,
   lineItems: ({ block, data }) =>
     block.type === "lineItems" ? (
       <LineItemsBlock block={block} data={data} />

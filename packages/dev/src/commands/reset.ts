@@ -5,17 +5,21 @@
 import { cancel, intro, log } from "@clack/prompts";
 import { confirmReset } from "../prompts.js";
 import {
+  bootSharedServices,
   destroyProject,
   ensureDockerRunning,
   flushDb,
-  listCarbonProjects,
-  REDIS_CONTAINER
+  listCarbonProjects
 } from "../services/compose.js";
+import { dropWorktreeData } from "../services/shared-db.js";
 import {
   getSlot,
   getWorktreeRoot,
   listSlugs,
   projectName,
+  readDevJwt,
+  readStackMode,
+  recordedStackMode,
   resolveSlug
 } from "../worktree.js";
 import { up } from "./up.js";
@@ -45,6 +49,14 @@ export async function reset() {
   // label, and force-removes them. stopStack tries compose first (which can
   // fail silently when .env.local is missing) then falls back to this anyway.
   await destroyProject(project, true);
+  // Shared mode: the data is the worktree database. `up` clones it again.
+  // Booted first: a reset that can't drop the database would keep the data.
+  if (recordedStackMode(slug) === "shared") {
+    const warning = await bootSharedServices(readDevJwt());
+    if (warning) log.warn(warning);
+    await dropWorktreeData(slug);
+    log.info("dropped the worktree database");
+  }
 
   const slot = getSlot(slug);
   if (slot && typeof slot.redisDb === "number") {
@@ -59,9 +71,7 @@ export async function reset() {
   knownProjects.add(projectName(slug));
 
   const allProjects = await listCarbonProjects();
-  const orphans = allProjects.filter(
-    (p) => !knownProjects.has(p) && p !== REDIS_CONTAINER
-  );
+  const orphans = allProjects.filter((p) => !knownProjects.has(p));
   if (orphans.length > 0) {
     log.warn(
       `cleaning ${orphans.length} orphan project(s): ${orphans.join(", ")}`
@@ -69,5 +79,6 @@ export async function reset() {
     await Promise.all(orphans.map((p) => destroyProject(p)));
   }
 
-  await up();
+  // Keep the worktree's mode: plain `up` means shared.
+  await up({ isolated: readStackMode(slug) === "isolated" });
 }

@@ -129,7 +129,7 @@ const SalesReturnOrderForm = ({ initialValues }: SalesReturnOrderFormProps) => {
         isDisabled={isEditing && isLocked}
       >
         <CardHeader>
-          <CardTitle>
+          <CardTitle aria-level={isEditing ? undefined : 1}>
             {isEditing ? <Trans>RMA</Trans> : <Trans>New RMA</Trans>}
           </CardTitle>
           {!isEditing && (

@@ -17,7 +17,11 @@ import {
   postMaintenanceEventInput,
   postPickingInput,
   postProductionEventInput,
+  postServiceJobInput,
+  postTimesheetInput,
   recalculateInput,
+  saveTimesheetEntryInput,
+  submitTimesheetWeekInput,
   triggerReworkInput
 } from "@carbon/api/postings";
 import type { Postings } from "@carbon/api/postings.server";
@@ -25,9 +29,11 @@ import * as accounting from "./accounting/accounting.service";
 import * as inventory from "./inventory/inventory.service";
 import * as invoicing from "./invoicing/invoicing.service";
 import * as production from "./production/production.service";
+import * as projects from "./projects/projects.service";
 import * as purchasing from "./purchasing/purchasing.service";
 import * as resources from "./resources/resources.service";
 import * as sales from "./sales/sales.service";
+import * as service from "./service/service.service";
 import * as shared from "./shared/shared.service";
 import { invokePosting } from "./shared/shared.service";
 
@@ -46,18 +52,25 @@ export const postingPermissions = {
   "kanban-replenish": inventory.replenishKanbanPermission,
   "create-rental-invoices": sales.createRentalInvoicesPermission,
   "create-contract-invoices": sales.createContractInvoicesPermission,
+  "create-project-billing-invoices":
+    sales.createProjectBillingInvoicesPermission,
   "create-lease-invoices": purchasing.createLeaseInvoicesPermission,
   "propose-revenue-recognition-run":
     accounting.proposeRevenueRecognitionRunPermission,
+  "post-project-burden": projects.postProjectBurdenPermission,
   issue: inventory.issueMaterialPermission,
   "post-picking": inventory.postPickingPermission,
   "post-production-event": production.postProductionEventPermission,
   "post-maintenance-event": resources.postMaintenanceEventPermission,
+  "post-service-job": service.postServiceJobPermission,
   "post-inventory-adjustment": inventory.postInventoryAdjustmentPermission,
   create: shared.createDocumentPermission,
   "batch-operations": production.batchOperationPermission,
   recalculate: production.recalculateRequirementsPermission,
-  "trigger-rework": production.triggerReworkPermission
+  "trigger-rework": production.triggerReworkPermission,
+  "save-timesheet-entry": projects.saveTimesheetEntryPermission,
+  "submit-timesheet-week": projects.submitTimesheetWeekPermission,
+  "post-timesheet": projects.postTimesheetPermission
 };
 
 export const postings: Postings = {
@@ -147,6 +160,17 @@ export const postings: Postings = {
         schema: sales.createContractInvoicesInput
       }
     ),
+  "create-project-billing-invoices": (handles, input) =>
+    invokePosting(
+      handles,
+      "create-project-billing-invoices",
+      input,
+      sales.createProjectBillingInvoices,
+      {
+        as: postingPermissions["create-project-billing-invoices"],
+        schema: sales.createProjectBillingInvoicesInput
+      }
+    ),
   "create-lease-invoices": (handles, input) =>
     invokePosting(
       handles,
@@ -167,6 +191,17 @@ export const postings: Postings = {
       {
         as: postingPermissions["propose-revenue-recognition-run"],
         schema: accounting.proposeRevenueRecognitionRunInput
+      }
+    ),
+  "post-project-burden": (handles, input) =>
+    invokePosting(
+      handles,
+      "post-project-burden",
+      input,
+      projects.postProjectBurden,
+      {
+        as: postingPermissions["post-project-burden"],
+        schema: projects.postProjectBurdenInput
       }
     ),
   issue: (handles, input) =>
@@ -201,6 +236,11 @@ export const postings: Postings = {
         schema: postMaintenanceEventInput
       }
     ),
+  "post-service-job": (handles, input) =>
+    invokePosting(handles, "post-service-job", input, service.postServiceJob, {
+      as: postingPermissions["post-service-job"],
+      schema: postServiceJobInput
+    }),
   "post-inventory-adjustment": (handles, input) =>
     invokePosting(
       handles,
@@ -240,5 +280,32 @@ export const postings: Postings = {
     invokePosting(handles, "trigger-rework", input, production.triggerRework, {
       as: postingPermissions["trigger-rework"],
       schema: triggerReworkInput
+    }),
+  "save-timesheet-entry": (handles, input) =>
+    invokePosting(
+      handles,
+      "save-timesheet-entry",
+      input,
+      projects.saveTimesheetEntry,
+      {
+        as: postingPermissions["save-timesheet-entry"],
+        schema: saveTimesheetEntryInput
+      }
+    ),
+  "submit-timesheet-week": (handles, input) =>
+    invokePosting(
+      handles,
+      "submit-timesheet-week",
+      input,
+      projects.submitTimesheetWeek,
+      {
+        as: postingPermissions["submit-timesheet-week"],
+        schema: submitTimesheetWeekInput
+      }
+    ),
+  "post-timesheet": (handles, input) =>
+    invokePosting(handles, "post-timesheet", input, projects.postTimesheet, {
+      as: postingPermissions["post-timesheet"],
+      schema: postTimesheetInput
     })
 };

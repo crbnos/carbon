@@ -36,9 +36,8 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuFactory, LuSettings2, LuX } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { data, useFetcher, useLoaderData } from "react-router";
-
 import type { ColumnFilter } from "~/components/Filter";
 import { ActiveFilters, Filter, useFilters } from "~/components/Filter";
 import type { Column, DisplaySettings, Item } from "~/components/Kanban";
@@ -53,6 +52,7 @@ import {
   getActiveJobOperationsByLocation,
   getCustomers,
   getJobOperationBatchMembers,
+  getJobProjects,
   getMyPeopleAssignment,
   getProcessesList,
   getWorkCentersByLocation
@@ -61,6 +61,7 @@ import { getPeopleOverride } from "~/services/people.server";
 import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/durations";
 import type { Handle } from "~/utils/handle";
+import { pageMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -168,6 +169,8 @@ function collapseBatches(
   }
   return result;
 }
+
+export const meta: MetaFunction = () => pageMeta("Schedule");
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});
@@ -382,7 +385,17 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
     }) ?? [];
 
   const customerIds = filteredOperations.map((op) => op.jobCustomerId);
-  const customers = await getCustomers(serviceRole, companyId, customerIds);
+  const [customers, jobProjects] = await Promise.all([
+    getCustomers(serviceRole, companyId, customerIds),
+    getJobProjects(
+      serviceRole,
+      companyId,
+      Array.from(new Set(filteredOperations.map((op) => op.jobId)))
+    )
+  ]);
+  if (jobProjects.error) {
+    log.error("Failed to load job projects", { error: jobProjects.error });
+  }
 
   // Get unique tags and assignees for filters
   const availableTags = Array.from(
@@ -440,6 +453,7 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
             salesOrderReadableId: op.salesOrderReadableId,
             salesOrderId: op.salesOrderId,
             salesOrderLineId: op.salesOrderLineId,
+            ...jobProjects.data[op.jobId],
             status: op.operationStatus,
             thumbnailPath: op.thumbnailPath,
             quantity: op.operationQuantity,
@@ -491,6 +505,7 @@ const defaultDisplaySettings: DisplaySettings = {
   showProgress: true,
   showStatus: true,
   showSalesOrder: true,
+  showProject: true,
   showThumbnail: true
 };
 
@@ -669,6 +684,7 @@ function KanbanSchedule() {
           { key: "showProgress", label: t`Progress` },
           { key: "showStatus", label: t`Status` },
           { key: "showSalesOrder", label: t`Sales Order` },
+          { key: "showProject", label: t`Project` },
           { key: "showThumbnail", label: t`Thumbnail` }
         ].map(({ key, label }) => (
           <Switch

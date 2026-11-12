@@ -1,6 +1,7 @@
 ---
 paths:
   - "apps/erp/app/modules/inventory/**"
+  - "packages/api/src/stock-stripes.ts"
   - "packages/database/supabase/migrations/**"
 ---
 
@@ -25,7 +26,8 @@ All inventory service code lives in a single module: `apps/erp/app/modules/inven
 
 Key service functions (verified):
 - `getInventoryItems` / `getInventoryItemsCount` — call the `get_inventory_quantities` RPC
-  (args `{ location_id, company_id }`, `count: "exact"`); supports search + generic filters.
+  (args `{ location_id, company_id }`, plus `project_id` from `getInventoryItems`'s
+  `projectId`; `count: "exact"`); supports search + generic filters.
 - `getItemLedgerPage` — paginated item-ledger history for an item at a location.
 - `insertManualInventoryAdjustment` — thin wrapper over the **`post-inventory-adjustment`
   posting** (`postInventoryAdjustment`, `inventory.service.ts`; MES has a matching wrapper in `apps/mes/app/services/inventory.service.ts`).
@@ -50,7 +52,19 @@ Key service functions (verified):
   shipment's ledger rows) and `issue`'s `createMaterialWipEntries`. Receipt and job-output
   layers cover many units and stay unstamped, so a received serial is still FIFO-costed.
   Pinned by `apps/erp/test/database/lib/cost-layer-order.test.ts` and the database test
-  `apps/erp/test/database/lib/calculate-cogs.test.ts`.
+  `apps/erp/test/database/lib/calculate-cogs.test.ts`. **Children of a layer** (`appliesToCostLedgerId`,
+  `adjustment = true`: purchase price variance, a `Revaluation` and
+  write-down) are applied with their parent. On an unstamped layer the children cover
+  its units in turn (`createdAt` order, each only up to the quantity taken). On a layer
+  stamped for one serial every child belongs to that unit and is applied in full. The SQL
+  backflush (`backflush_job_materials`, migration `20261021003200`) follows the same rules:
+  it issues only untracked material, so it takes unstamped layers first and a stamped
+  layer last, and it applies every open child of a stamped layer in full. Pinned by
+  `supabase/tests/backflush-layer-children.test.sql`.
+  **`get_inventory_valuation`** (migration
+  `20261021003000_valuation-child-rows.sql`) counts only parent rows as layers and adds each
+  open child's remaining cost to its parent; it counted an open child as a layer of its
+  own before.
   **Serial unit cost and Recost.** `previewSerialUnitCosts` (`inventory.service.ts`,
   ported from the `preview-serial-unit-costs` server function; `{ itemId,
   locationId? }`, `view: accounting`) values every on-hand serial of an item
@@ -66,7 +80,7 @@ Key service functions (verified):
   offsetAccountId?, postingDate }`, `update: accounting`): exactly one unit on
   hand at one location; relieves it via `calculateCOGS` (its own layer first)
   and books −1 at the old cost / +1 stamped at the new, both
-  `costLedgerType 'Revaluation'` (the only writer of that type; no
+  `costLedgerType 'Revaluation'` (no
   `itemLedger` row — nothing moves); posts an `'Inventory
   Adjustment'` journal (Provisional before the accounting cutover) of the difference, inventory account vs the offset
   account (`getOffsetAccount`, `shared.service.ts`, signed by the offset
@@ -110,6 +124,11 @@ Key service functions (verified):
   loader returns the authoritative effective quantity for the modal pre-fill). Corrections
   render as normal flat rows with an `isCorrection` badge — no nesting/expandable grouping.
   Inventory counts have NO count-level rectify; Posted is terminal.
+  A count of tracked units is grouped by (item, storage unit) (`inventoryCountGroups`
+  view) and counted by scan, Add unit or CSV import. A unit counted in another bin
+  posts as a move: 2 `Transfer` rows with `documentType` `Inventory Count`, no GL —
+  so `getInventoryCountMovements` (which reads that document type) lists it. See
+  `apps/erp/app/modules/inventory/AGENTS.md` → Inventory Count.
 - Storage units: `getStorageUnit(s)`, `getStorageUnitRoots`, `getStorageUnitChildren`,
   `getStorageUnitTree`, `getStorageUnitsTreeForLocation`,
   `getDefaultStorageUnitOrStorageUnitWithHighestQuantity`, and `getDefaultStorageUnitForJob`
@@ -169,8 +188,10 @@ Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptVal
 - **`itemPlanning`** / **`itemReplenishment`** — reorder/planning params and replenishment strategy.
 - **`enforcementRule`** + assignment tables — ONE table for storage and sales rules, discriminated by `family` (`20260817143022`/`20260817143512`). Storage-family reads must filter `family = 'storage'`. Lineage: `itemRule` → `customRule` → `storageRule` → merged into `enforcementRule`.
 
-`get_inventory_quantities(company_id TEXT, location_id TEXT, item_id TEXT DEFAULT NULL)` — the central
-read. Newest definition is `20261006130001_demand-forecast-consumption.sql` (the
+`get_inventory_quantities(company_id TEXT, location_id TEXT, item_id TEXT DEFAULT NULL, project_id TEXT DEFAULT NULL)` — the central
+read. Newest definition is `20261021004300_inventory-rpcs-project-stripe.sql`, which adds
+`project_id` (NULL: every stripe; `''`: unassigned stock; an id: that project's stock — see
+*Project stock* below) to the body of `20261006130001_demand-forecast-consumption.sql` (the
 `20260713235406_item-ledger-snapshot.sql` body — snapshot + delta via `itemLedgerSnapshot`,
 `item_id` restricts to one item for detail-page loads — plus a net-projection demand arm:
 `GREATEST("forecastQuantity" - "consumedQuantity", 0)` of `demandProjection`). Returns ~52 cols:
@@ -185,6 +206,72 @@ Relevant enums: `itemLedgerType`, `itemLedgerDocumentType` (includes `Scrap`,
 `20260807090400`), `trackedEntityStatus`
 (`Available`, `Reserved`, `On Hold`, `Consumed`, `Rejected`, `Scrapped`), `warehouseTransferStatus`,
 `itemTrackingType`, `itemReplenishmentSystem`, `itemReorderingPolicy`.
+
+## Project stock (stock stripes)
+
+Projects Phase 2a (`.ai/plans/2026-10-08-projects-phase-2a.md`, execution notes; spec
+`.ai/specs/2026-10-03-projects.md` → *Project stock*). A project with `project.projectStock`
+owns the stock received for it. The model is **valuated striping**: `itemLedger.projectId` and
+`costLedger.projectId` name the owning project, and NULL is unassigned stock.
+`itemStockQuantities.projectId` is part of its primary key, with `''` for unassigned stock (a key
+column cannot be NULL). `trackedEntity` has no `projectId`: a partial transfer leaves one lot in
+two stripes, and a lot's stripe is the stripe of its rows with the most net on-hand
+(`trackedEntityStripe`).
+
+- **The stripe rule.** A row that creates stock sets the stripe its source names (a PO line
+  charged to a project with project stock; a job with `receiveToProjectStock`; a Transfer). A
+  row that draws stock sets the stripe it drew. A reversal or correction copies the row it
+  reverses.
+- **The stripe set of a demand.** A job or a plan line of a project with project stock draws
+  that project's stock, then unassigned stock. Every other demand draws unassigned stock only.
+  Another project's stock needs a Transfer or a Borrow first. The helpers are in
+  `packages/api/src/stock-stripes.ts` (`@carbon/api/stock-stripes`, shared with the MES): `stripesForDemand`,
+  `loadDemandStripes`, `splitAcrossStripes` / `drawFromStripes` (one row per stripe drawn),
+  `itemLedgerInStripes`, `stripeKey` (`''` for unassigned stock), `assertEntitiesInStripes`,
+  `assertEntitiesInCommonStock`, `loadProjectStock`, `withStripe`.
+- **Handler and key order.** `20261021003600_item-stock-quantities-project.sql` changes the
+  primary key and `reconcile_item_stock_quantities`. The generated authz migration
+  `20261021003700_item-stock-quantities-project-handler.sql` changes the
+  `apply_item_stock_quantities` ON CONFLICT to the new key. Between the two every
+  `itemLedger` insert fails, so they always apply together.
+- **Costing.** `calculateCOGS` takes `projectId` and relieves only that stripe's layers; the SQL
+  backflush (`20261021003900`) and job completion (`20261021004100`) follow it.
+  `bookAdjustment`, `buildItemLedgerRow` and `buildCostLedgerRow` take `projectId` (all in
+  `shared/shared.service.ts`).
+- **Pickers.** `get_available_tracked_entities` takes `p_project_ids`;
+  `get_item_quantities_by_tracking_id` returns `projectId`; the picking-list RPCs and
+  `get_picking_schedule` read the line's or job's stripes (`20261021004000`,
+  `20261021004200`). `pickingListLine.projectId` and `inventoryCountLine.projectId` carry the
+  stripe.
+- **Unassigned stock only.** Sales shipments, direct sales invoices, return-to-customer shipments,
+  warehouse transfers and maintenance draw unassigned stock. A purchase return draws the stripe
+  its stock came in on.
+- **Counts** give one line per (item, bin, lot, stripe). The `inventoryCountLines` view
+  (`20261021004400`) carries `projectId`, `projectIdentifier` and `projectName`, and the count
+  table shows a **Stock Owner** column. A scan or an import row counts the bin, not an owner:
+  it spreads over every line of that item (or lot) in the bin with `spreadBatchCount`, up to
+  each line's expected quantity, and the CSV export sums those lines into one row. Only the
+  line table counts one owner at a time. A unit counted in another bin keeps its owner: the
+  added line takes the unit's stripe, and the 2 `Transfer` rows of a move carry it.
+- **Reads.** `itemLedgerSnapshot` is grouped by `COALESCE("projectId", '')` and its unique
+  index includes it. `get_inventory_valuation` returns one row per (location, item, stripe)
+  with a trailing `projectId`. `get_inventory_tie_out`, `get_item_ledger_balance` and
+  `get_inventory_value_by_location` still sum every stripe. The quantities page takes
+  `?project` (absent, `common` or a project id) and the item's storage-unit card groups rows
+  by owner. `postInventoryAdjustment` takes `projectId` for untracked stock and a new lot
+  (`postInventoryAdjustmentInput`, `@carbon/api/postings`).
+- **Planning** nets a project with project stock in its own segment, and a planning group's
+  members in the group's segment (Projects Phase 2b and 3, `mrp-system.md`).
+- **Grouped receipts and completions** (Projects Phase 3). A PO line or job with
+  `planningGroupId` is received or completed into its members' stripes by its pegs:
+  `harden_pegs_for_supply` returns one row per member plus the excess (the exception project,
+  else unassigned stock), and `postReceipt` (`inventory/grouped-receipt.ts`) /
+  `complete_job_to_inventory` write one item ledger
+  row and one cost layer per row, at the receipt's or the job's unit cost. A negative receipt
+  takes units back through `soften_pegs_for_return`. Details: `projects-system.md` →
+  *Planning groups, pegging and distribution*.
+- **Transfer, Borrow, Payback** post through `postProjectStockTransfer` (`projects.service.ts`); the costing is in
+  `projects-system.md` → *Project stock*.
 
 ## Non-nettable storage
 
@@ -235,23 +322,55 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   also refuses a pick (untracked, serial or batch) whose source unit is non-nettable at post
   time (`assertPickSourceNettable`), since a bin can become one after the list was
   generated; it still does not re-check lineside. Shipments are not restricted: a shipment line can
-  name a non-nettable bin.
+  name a non-nettable bin. A new sales order shipment line for an untracked item keeps the bin
+  the order line names, even when short; a line with no bin takes a bin that holds its stock
+  (`shipmentSourceBinChooser` → `chooseSourceBin`, `shared.service.ts`), and so does a quote
+  line converted with no default bin. `postShipment` warns
+  (`shipmentStockWarnings`, rule id `SHIPMENT_BIN_STOCK_RULE_ID`) when an untracked line's bin
+  holds less than it ships, naming the bins that hold the item; the user acknowledges it.
+  A purchase order (outside processing), rental or contract shipment writes no item ledger row
+  and is not checked.
 - **A guessed bin is never non-nettable.** When no bin was chosen, consumption (the
   completion backflush and manual issue in `issueJobOperationMaterials` / `issueMaterial`,
   the maintenance spare-part issue) and a new job material (`getStorageUnitId`, and its
   set-based twins in get-method) take the item's pick method default only when it is
   nettable (`getNettableDefaultStorageUnitId`, `shared.service.ts`), then fall back to
-  `getStorageUnitWithHighestQuantity`, which only considers nettable units; the backflush's
-  second fallback (the fullest bin when the proposed one is short) and
-  `getDefaultStorageUnitForJob` (`inventory.utils.ts`) skip them the same way, and so does
-  job completion's SQL backflush (`backflush_job_materials`, migration
-  `20261029091503_non-nettable-guessed-bins.sql`). The bin the material itself names is
+  `getStorageUnitWithHighestQuantity`, which only considers nettable units;
+  `getDefaultStorageUnitForJob` (`inventory.utils.ts`) skips them the same way. The bin the material itself names is
   still used as named. A DESTINATION is not guessed: a job's output bin and a PO line's bin
   (a kanban scan included) keep a non-nettable pick method default, since receiving into an
   inspection area is a deliberate setup. Under strict backflush a non-nettable Pull From
   counts as none at activation and release (production `AGENTS.md` → Strict backflush).
   Pinned by `apps/erp/test/database/non-nettable-fullest-bin.test.ts` and
   `strict-backflush.test.ts`.
+- **An untracked draw takes stock from the bins that hold it.** Outside strict backflush, the
+  completion backflush (`issueJobOperationMaterials`), the manual and step issue
+  (`partToOperation`) and job completion's SQL backflush (`backflush_job_materials`,
+  `20261105230630_backflush-split-across-bins.sql`) split a draw with
+  `planStripedUntrackedDraw` (`@carbon/database/picked-consumption`), stripe by stripe: a
+  project job takes its project's stock in every bin before common stock. Within a stripe the
+  bin the material names (else the item's nettable default) gives what it holds, then the other
+  bins with untracked stock give the rest, fullest first. Those are active, nettable bins under
+  no work center (`get_effective_work_center_id`, so a child of a lineside unit is lineside too)
+  and no storage unit. A real shortfall goes to the last (common) stripe, on the named bin, else
+  the first bin drawn, else no storage unit. The bin reads come from `getUntrackedBinStock`
+  (`shared.service.ts`, one row per bin and stripe). Before it reads, each path locks every
+  (location, item) it draws (`lockUntrackedDraws`, key `untracked-draw:<companyId>:<locationId>:<itemId>`,
+  `untrackedDrawLockKey`; the SQL locks the same keys in the same key-hash order outside strict
+  backflush), so two draws never plan from the same on-hand. A draw records what picked and
+  lineside budgets already took from a bin before it plans the rest. Pinned by
+  `picked-consumption.test.ts`, `apps/erp/test/database/consumption-bins.test.ts` and
+  `supabase/tests/backflush-split-across-bins.test.sql`.
+- **An operation completion issues what its units still need.** `issueJobOperationMaterials`
+  reads `quantityComplete + quantityScrapped` under the operation lock and issues
+  `min(quantity × units, estimatedQuantity) − quantityIssued`, as `backflush_job_materials` does
+  for the job. Material issued first by a manual or step issue counts, and a resent completion
+  issues nothing. A serial completion (`jobOperationSerialComplete`) locks the operation and
+  refuses a unit already complete on it ("This unit is already complete on this operation"), so
+  a resent one writes no second production row. `partToOperation` locks the operation it was
+  called for and the material's own operation (in id order; the material must be on that job),
+  then the draw, then the job material row, so a step issue and the completion it triggers run
+  one after the other.
 - **A non-nettable unit is never made a default by itself.** Placing an item's first stock
   in one does not set it as the pick method default (`updatePickMethodDefaultStorageUnitIfNeeded`,
   and `complete_job_to_inventory` in the same migration). A new BoM line does not seed its
@@ -293,7 +412,7 @@ not supply (migration `20261029090412_non-nettable-storage.sql`). The form field
   `pol."receivedComplete" = false` (`20260708204214`). A line short-closed via
   `shortClosePurchaseOrderLine` ("Stop Receiving") keeps `quantityToReceive > 0` but is excluded from
   `quantityOnPurchaseOrder`.
-- **`get_inventory_quantities` has many revisions.** Always read the newest (`20261006130001`), not the
+- **`get_inventory_quantities` has many revisions.** Always read the newest (`20261021004300`), not the
   first match. `quantityOnHand` is status-aware: `Rejected` tracked entities are excluded, and tracked
   rows are always computed live (never from `itemLedgerSnapshot`) so status flips are never stale.
 - On-hand math comes from `itemLedger` (and the `get_inventory_quantities` RPC), not from summing

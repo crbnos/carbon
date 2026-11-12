@@ -55,10 +55,12 @@ import useInvoicingSubmodules from "~/modules/invoicing/ui/useInvoicingSubmodule
 import useItemsSubmodules from "~/modules/items/ui/useItemsSubmodules";
 import usePeopleSubmodules from "~/modules/people/ui/usePeopleSubmodules";
 import useProductionSubmodules from "~/modules/production/ui/useProductionSubmodules";
+import useProjectsSubmodules from "~/modules/projects/ui/useProjectsSubmodules";
 import usePurchasingSubmodules from "~/modules/purchasing/ui/usePurchasingSubmodules";
 import useQualitySubmodules from "~/modules/quality/ui/useQualitySubmodules";
 import useResourcesSubmodules from "~/modules/resources/ui/useResourcesSubmodules";
 import useSalesSubmodules from "~/modules/sales/ui/useSalesSubmodules";
+import useServiceSubmodules from "~/modules/service/ui/useServiceSubmodules";
 import useSettingsSubmodules from "~/modules/settings/ui/useSettingsSubmodules";
 import useUsersSubmodules from "~/modules/users/ui/useUsersSubmodules";
 import useWorkflowsSubmodules from "~/modules/workflows/ui/useWorkflowsSubmodules";
@@ -235,6 +237,7 @@ export const SearchModal = () => {
       }}
     >
       <ModalContent
+        data-instant=""
         className="rounded-lg p-0 h-[520px] max-w-2xl overflow-hidden dark:shadow-button max-md:h-[calc(100dvh-env(safe-area-inset-top)-12px)] max-md:max-h-none max-md:max-w-none max-md:pt-4"
         withCloseButton={false}
         // Sheets keep focus off their fields on phones; search is the
@@ -252,6 +255,7 @@ export const SearchModal = () => {
           <div className="contents max-md:flex max-md:items-center max-md:border-b max-md:border-border max-md:pr-1 max-md:[&>[cmdk-input-wrapper]]:flex-1 max-md:[&>[cmdk-input-wrapper]]:border-b-0">
             <CommandInput
               ref={inputRef}
+              aria-label={t`Search Carbon`}
               placeholder={t`Search across your workspace...`}
               value={input}
               onValueChange={onInputChange}
@@ -271,7 +275,10 @@ export const SearchModal = () => {
           />
 
           {/* Results */}
-          <CommandList className="flex-1 max-h-none overflow-y-auto px-2 py-2">
+          <CommandList
+            aria-label={t`Results`}
+            className="flex-1 max-h-none overflow-y-auto px-2 py-2"
+          >
             {/* Recent Searches */}
             {visibleRecentResults.length > 0 && (
               <>
@@ -338,10 +345,14 @@ export const SearchModal = () => {
                         )}
                         <button
                           type="button"
+                          aria-label={t`Remove ${result.name} from recent searches`}
                           onClick={(e) => removeRecentSearch(result.to, e)}
-                          className="flex-shrink-0 p-1 rounded hover:bg-muted md:opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="flex-shrink-0 p-1 rounded hover:bg-muted md:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                         >
-                          <LuX className="w-4 h-4 text-muted-foreground" />
+                          <LuX
+                            className="w-4 h-4 text-muted-foreground"
+                            aria-hidden
+                          />
                         </button>
                       </CommandItem>
                     );
@@ -393,7 +404,7 @@ export const SearchModal = () => {
                           {item.name}
                         </span>
                       </span>
-                      <LuCornerDownLeft className="w-4 h-4 text-muted-foreground md:opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <LuCornerDownLeft className="w-4 h-4 text-muted-foreground md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity" />
                     </CommandItem>
                   ))}
                 </CommandGroup>
@@ -446,7 +457,7 @@ export const SearchModal = () => {
                         </span>
                       )}
                     </VStack>
-                    <LuChevronRight className="w-4 h-4 text-muted-foreground md:opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <LuChevronRight className="w-4 h-4 text-muted-foreground md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity" />
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -579,8 +590,10 @@ function useNavigationItems(): NavigationItem[] {
   const users = useUsersSubmodules();
   const settings = useSettingsSubmodules();
   const people = usePeopleSubmodules();
+  const projects = useProjectsSubmodules();
   const quality = useQualitySubmodules();
   const resources = useResourcesSubmodules();
+  const service = useServiceSubmodules();
   const workflows = useWorkflowsSubmodules();
   const groupedSubmodules: Record<
     string,
@@ -601,7 +614,9 @@ function useNavigationItems(): NavigationItem[] {
     invoicing,
     people,
     production,
+    projects,
     resources,
+    service,
     settings,
     users,
     workflows

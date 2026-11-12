@@ -21,13 +21,20 @@ else → this operation view. Each route opens with a redirect guard that only
 redirects kinds it does not serve (no loops).
 
 - **Route:** `apps/mes/app/routes/x+/operation.$operationId.tsx` — `/x/operation/:operationId`.
-- **Loader** (uses `getCarbonServiceRole()`, not the user client) fetches via
-  `~/services/operations.service`: `getJobOperationById`, `getJobByOperationId`,
-  `getProductionEventsForJobOperation`, `getProductionQuantitiesForJobOperation`,
-  `getTrackedEntitiesByMakeMethodId`, `getJobMakeMethod`, `getKanbanByJobId`,
-  plus deferred promises for `files`, `materials`, `procedure`, `workCenter`,
-  `nonConformanceActions`. `operation` is wrapped with `makeDurations(...)` →
-  `OperationWithDetails`. Quantities are reduced into `{ scrap, production, rework }`.
+- **Loader** (uses `getCarbonServiceRole()`, not the user client) first runs the
+  company check `getJobOperationForCompany`, which also returns the operation's
+  `jobId`, `jobMakeMethodId` and `jobOperationBatchId`. Every other read starts
+  right after it in ONE `Promise.all`, before the redirect checks:
+  `getJobOperationById`, `getJob`, `getProductionEventsForJobOperation`,
+  `getProductionQuantitiesForJobOperation`, `getTrackedEntitiesByMakeMethodId`,
+  `getJobMakeMethod`, `getKanbanByJobId`, `isFirstOperationOfMakeMethod`, the
+  batch reads when the op is in a batch, and the thumbnail (chained on the
+  operation read). A redirect throws those reads away; the ids are the
+  company's, so nothing leaks. Keep new reads in that wave rather than adding
+  a step after it. Deferred promises: `files`, `materials`, `procedure`,
+  `workCenter`, `nonConformanceActions`. `operation` is wrapped with
+  `makeDurations(...)` → `OperationWithDetails`. Quantities are reduced into
+  `{ scrap, production, rework }`.
 - If serial-tracked and no `?trackedEntityId` is set, the loader **redirects** to the
   same URL with the last tracked entity appended.
 - The default export passes everything to `<JobOperation key={...} .../>`.
@@ -266,6 +273,14 @@ of a paused URL, which is itself a valid link.
   next or spawned one), so the view's held-unit edge (`useOperation`, and
   `heldEntityRef` in `AssemblyView`) asks for the next scan. A scan through the
   ERP URL names no unit and still takes the route's pick.
+- A completion is recorded once per unit. The ERP refuses a serial unit
+  already complete on the operation (its `Operation <id>` marker, which also
+  hides the unit here). No production row names its unit, so deleting one
+  does not reopen a unit. The `AssemblyView` auto-complete of an untracked parent
+  sends `expectedQuantityComplete` (the count its page showed); `complete.tsx`
+  records nothing and returns `{ alreadyRecorded: true }` when the operation's
+  `quantityComplete` has moved on, since an untracked unit is addressed by
+  that count. A manual completion sends no count.
 - All three wedges (layout, `JobOperation`, `AssemblyView`) set `inTextFields`: a matching scan is taken even while a field
   has focus, and the field is set back to its value from before the scan.
   A scan no handler takes stays in the field.

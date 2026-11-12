@@ -408,9 +408,9 @@ export const GAUGES: GaugeSpec[] = [
     gaugeType: "Ring Gauge",
     description:
       "52 mm class XX master setting ring — zero reference for the bearing-bore gauges",
+    manufacturer: "Mahr",
     modelNumber: "SR-52XX",
     serialNumber: "RG-21-3307",
-    supplier: "Precision Gauge Services",
     role: "Master",
     status: "Active",
     calibrationIntervalInMonths: 12,
@@ -436,6 +436,7 @@ export const GAUGES: GaugeSpec[] = [
     key: "bore-gauge",
     gaugeType: "Bore Gauge",
     description: "35–60 mm dial bore gauge — new unit for VMC Cell 2",
+    manufacturer: "Mahr",
     modelNumber: "DBG-3560",
     serialNumber: "BG24-10582",
     role: "Standard",
@@ -449,6 +450,7 @@ export const GAUGES: GaugeSpec[] = [
     gaugeType: "Thread Gauge",
     description:
       "M6 x 1.0 6H GO/NO-GO thread plug — retired after failed calibration",
+    manufacturer: "Vermont Gage",
     modelNumber: "TPG-M6-6H",
     serialNumber: "TP19-00871",
     role: "Standard",

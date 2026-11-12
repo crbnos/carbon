@@ -113,13 +113,15 @@
     "./Chart": "./src/Chart.tsx",
     "./Carousel": "./src/Carousel.tsx",
     "./Editor": "./src/Editor/index.ts",
+    "./DocumentHidden": "./src/DocumentHidden.tsx",
     "./ErrorBoundary": "./src/ErrorBoundary/index.ts",
     "./FunnelChart": "./src/FunnelChart.tsx",
     "./GeneratedAvatar": "./src/GeneratedAvatar.tsx",
-    "./Halloween": "./src/Halloween/HalloweenLayer.tsx",
     "./HTML": "./src/HTML.tsx",
     "./RichText": "./src/RichText/index.ts",
-    "./VariableText": "./src/VariableText/index.ts"
+    "./RouteAnnouncer": "./src/RouteAnnouncer.tsx",
+    "./VariableText": "./src/VariableText/index.ts",
+    "./WeekHours": "./src/WeekHours/index.ts"
   },
   "peerDependencies": {
     "@internationalized/date": "catalog:",

@@ -4,6 +4,7 @@
 
 import { existsSync } from "node:fs";
 import { cancel, intro, log, outro } from "@clack/prompts";
+import { execa } from "execa";
 import pc from "picocolors";
 import {
   listWorktrees as gitListWorktrees,
@@ -13,13 +14,15 @@ import {
   removeCleanWorktree,
   type Worktree
 } from "../git.js";
+import { tryConnect } from "../helpers.js";
 import { confirmPrune } from "../prompts.js";
 import { killOrphanedApps } from "../services/apps.js";
 import {
   destroyProject,
   ensureDockerRunning,
   flushDb,
-  listCarbonStacks
+  listCarbonStacks,
+  stopSharedServices
 } from "../services/compose.js";
 import {
   findStaleAliases,
@@ -27,12 +30,21 @@ import {
   removeAliases
 } from "../services/portless.js";
 import {
+  deleteStorageTenant,
+  dropWorktreeDatabase,
+  listWorktreeDatabases
+} from "../services/shared-db.js";
+import {
   getWorktreeRoot,
   listSlugs,
   projectName,
+  readDevJwt,
+  recordedStackMode,
   removeSlot,
+  SHARED_DB_PORT,
   sameWorktreePath,
-  slugForWorktreePath
+  slugForWorktreePath,
+  worktreeDatabaseName
 } from "../worktree.js";
 
 type Slots = Record<string, { worktreeRoot: string }>;
@@ -62,6 +74,36 @@ export function planPrune(
     ...stackProjects.filter((p) => opts.all || !live.has(p))
   ]);
   return { deadSlugs, projects: [...projects].sort() };
+}
+
+// The isolated stack's volumes (docker-compose.isolated.yml).
+const ISOLATED_VOLUMES = ["pgdata", "pgconfig", "storage", "inbucket"];
+
+/**
+ * The shared-Postgres side of a prune. `databases`: every wt_ database no
+ * live slot owns (with `all`, every wt_ database). `volumes`: the old private
+ * volumes of live worktrees now in shared mode, which nothing reads.
+ */
+export function planSharedPrune(
+  live: string[],
+  databases: string[],
+  volumes: string[],
+  opts: { all?: boolean; isShared: (slug: string) => boolean }
+): { databases: string[]; volumes: string[] } {
+  const owned = new Set(live.map(worktreeDatabaseName));
+  const existing = new Set(volumes);
+  return {
+    databases: databases.filter((d) => opts.all || !owned.has(d)),
+    // --all destroys every project with its volumes already.
+    volumes: opts.all
+      ? []
+      : live
+          .filter(opts.isShared)
+          .flatMap((slug) =>
+            ISOLATED_VOLUMES.map((v) => `${projectName(slug)}_${v}`)
+          )
+          .filter((v) => existing.has(v))
+  };
 }
 
 export async function prune(opts: { all?: boolean; tree?: boolean } = {}) {
@@ -115,8 +157,44 @@ export async function prune(opts: { all?: boolean; tree?: boolean } = {}) {
     );
   const routes = staleRoutes();
 
-  if (projects.length === 0 && trees.length === 0) {
+  // Shared Postgres down: no database to list, `prune` drops them next time.
+  const databases = (await tryConnect("127.0.0.1", SHARED_DB_PORT, 500))
+    ? await listWorktreeDatabases()
+    : [];
+  const volumeLs = await execa("docker", ["volume", "ls", "-q"], {
+    reject: false
+  });
+  // A project with a postgres container runs a private stack now: an older
+  // crbn (one that writes no mode) started it after a shared `up`.
+  const privatePg = await execa(
+    "docker",
+    [
+      "ps",
+      "-a",
+      "--filter",
+      "label=com.docker.compose.service=postgres",
+      "--format",
+      '{{.Label "com.docker.compose.project"}}'
+    ],
+    { reject: false }
+  );
+  const runsPrivate = new Set((privatePg.stdout ?? "").split("\n"));
+  const shared = planSharedPrune(
+    Object.keys(slots).filter((slug) => !dead.has(slug)),
+    databases,
+    (volumeLs.stdout ?? "").split("\n").filter(Boolean),
+    {
+      all: opts.all,
+      isShared: (slug) =>
+        recordedStackMode(slug) === "shared" &&
+        !runsPrivate.has(projectName(slug))
+    }
+  );
+  const sharedCount = shared.databases.length + shared.volumes.length;
+
+  if (projects.length === 0 && trees.length === 0 && sharedCount === 0) {
     await forgetMissingTrees();
+    if (opts.all) await stopSharedServices();
     if (routes.length === 0) {
       outro("nothing to prune");
       return;
@@ -143,6 +221,19 @@ export async function prune(opts: { all?: boolean; tree?: boolean } = {}) {
     );
   }
 
+  if (sharedCount > 0) {
+    log.warn(
+      [
+        ...shared.databases.map(
+          (d) => `${pc.bold(d)}  ${pc.dim("worktree database, no slot")}`
+        ),
+        ...shared.volumes.map(
+          (v) => `${pc.bold(v)}  ${pc.dim("old private volume, now shared")}`
+        )
+      ].join("\n")
+    );
+  }
+
   if (trees.length > 0) {
     log.warn(
       `worktrees to remove (branches are kept):\n${trees.map((w) => `${pc.bold(w.branch ?? "(detached)")}  ${pc.dim(w.path)}`).join("\n")}`
@@ -154,17 +245,46 @@ export async function prune(opts: { all?: boolean; tree?: boolean } = {}) {
     );
   }
 
-  if (!(await confirmPrune(projects.length, trees.length))) {
+  if (!(await confirmPrune(projects.length, trees.length, sharedCount))) {
     cancel("prune aborted");
     process.exit(0);
   }
 
   await Promise.all(projects.map((p) => destroyProject(p)));
+  if (shared.databases.length > 0) {
+    const jwt = readDevJwt();
+    // Storage can be down while Postgres is up. The database then stays, so
+    // the next prune finds it and deletes the tenant too; the rest of the
+    // prune (slots, worktrees) still runs.
+    for (const database of shared.databases) {
+      const tenantGone = await deleteStorageTenant(database, jwt).then(
+        () => true,
+        (err: Error) => {
+          log.warn(
+            `${database}: kept, Storage tenant not deleted (${err.message})`
+          );
+          return false;
+        }
+      );
+      if (!tenantGone) continue;
+      await dropWorktreeDatabase(database).catch((err: Error) =>
+        log.warn(`${database}: not dropped (${err.message})`)
+      );
+    }
+  }
+  if (shared.volumes.length > 0) {
+    await execa("docker", ["volume", "rm", ...shared.volumes], {
+      reject: false,
+      stdio: "ignore"
+    });
+  }
+  // Flush before stopping the shared containers: redis is one of them.
   for (const slug of Object.keys(slots)) {
     if (!dead.has(slug) && !opts.all) continue;
     await flushDb(slots[slug]!.redisDb);
     if (dead.has(slug)) removeSlot(slug);
   }
+  if (opts.all) await stopSharedServices();
   await forgetMissingTrees();
   let removedTrees = 0;
   const removedSlugs = new Set<string>();
@@ -193,6 +313,6 @@ export async function prune(opts: { all?: boolean; tree?: boolean } = {}) {
   await removeAliases(cleared);
 
   outro(
-    `removed ${projects.length} stack(s) and ${removedTrees} worktree(s), released ${deadSlugs.length} slot(s), cleared ${cleared.length} stale portless route(s)`
+    `removed ${projects.length} stack(s), ${shared.databases.length} worktree database(s), ${shared.volumes.length} old volume(s) and ${removedTrees} worktree(s), released ${deadSlugs.length} slot(s), cleared ${cleared.length} stale portless route(s)`
   );
 }

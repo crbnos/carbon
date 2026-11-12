@@ -34,6 +34,7 @@
   },
   "exports": {
     "./async": "./src/async.ts",
+    "./document-edit.server": "./src/document-edit.server.ts",
     "./email.server": "./src/email.server.ts",
     "./events": "./src/events.ts",
     "./inngest": "./src/inngest/client.ts",

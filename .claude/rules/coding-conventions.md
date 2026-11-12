@@ -133,6 +133,12 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   component that stays mounted across records passes the record id as its third
   argument (`useResolved(promise, null, itemId)`), or it shows the previous record's
   value until the new one arrives.
+- Every page has its own document title. A record route exports
+  `meta = ({ data }) => recordMeta(...)`, a new-record route
+  `meta = newRecordMeta("Sales Order")` and a module layout
+  `meta = moduleMeta("Sales")` (`~/utils/meta`), which titles each list and
+  settings page from its breadcrumbs. `RouteAnnouncer` reads that title aloud
+  on navigation, so a route without one is announced as the bare module.
 - A route under `/x` renders `<RecordOutlet />` from `@carbon/react`, never a plain
   `<Outlet />`. React Router keeps a page mounted when only its params change, so
   a form's default values, an editor's content or a `useState` copy would stay the
@@ -215,20 +221,36 @@ URL strings in links, redirects, and form actions.
 
 ## Theme System
 
-Themes are defined in `packages/utils/src/themes.ts` (`themes`, the only list
-of theme names) and selected via the `useTheme()` hook
-(`apps/erp/app/hooks/useTheme.tsx`). Each theme supplies HSL values for CSS
+A theme may carry **colors** (`Theme.colors`): the 16 presets in
+`presetThemes` and any `custom:<base>:<highlight>:<g|s>` name. Such a theme
+keeps the default accent and also colors the app frame (the `NavRail` and the
+gutter around the content card), the ERP module sidebar, and lightly the page,
+solid or gradient (`packages/utils/src/theme-colors.ts`). It is stored in the
+same `theme` cookie as every theme. `useThemeStyle` (`@carbon/react`) reads the
+theme to render (`useThemeValue`: a preview, a pending pick, the root loader)
+and paints the ERP and MES `SidebarProvider`; the shell passes the same style
+down with `ThemeStyleProvider`, which the desktop `NavRail` and
+`CollapsibleSidebar` read with `useShellThemeStyle`; the root `Document` sets `useThemeContent(mode)` on
+`<html>`, inside `/x` only, and never touches `--primary` or the status colors.
+Spec: `.ai/specs/2026-11-03-theme-colors.md`.
+
+Themes are defined in `packages/utils/src/themes.ts` (`themes`, the color
+themes, and `presetThemes`; `isThemeName` is the one test of a stored name). The browser reads the theme
+to render with `useThemeValue()` (`@carbon/react`; the order is
+`resolveThemeValue` in `@carbon/utils`). Each theme supplies HSL values for CSS
 variables (`--primary`, `--background`, `--foreground`, `--card`, `--popover`,
 `--secondary`, `--muted`, `--accent`, `--destructive`) and its four `mesh`
 colors per mode (the ERP's onboarding backdrop). Theme names: `zinc`
 (the default, `DEFAULT_THEME_NAME`), `neutral`, `red`, `orange`, `yellow`,
-`green`, `blue`, `violet`, plus seasonal ones.
+`green`, `blue`, `violet`, the 16 presets in `presetThemes` (`forge`,
+`graphite`, …), any `custom:<base>:<highlight>:<g|s>` name, plus seasonal ones.
 
 The choice is a `theme` cookie per browser, never a database column. Each app's
 `getTheme` (`services/theme.server.ts`) is the theme to RENDER: it resolves
 through `themeForRequest` and `resolveTheme`, which return the default for a
-name no longer in `themes`, so removing a theme needs no migration and breaks
-no browser that still holds it. The pickers show `getTheme` as chosen. The
+name that is no theme (`storedTheme`: not in `themes` or `presetThemes`, and
+no valid `custom:` value), so removing a theme needs no migration and breaks
+no browser that still holds it. The picker shows `useThemeValue()` as chosen, which falls back to `getTheme`. The
 root `Document` renders the loader's name with `themeByName`, so the season is
 decided once, on the server.
 
@@ -238,8 +260,9 @@ onboarding) gets the stored everyday theme, so public pages always show the
 brand, and the onboarding theme step lists only `themes`. Inside the app it is
 on by default while in season: it replaces every theme for everyone who has not
 picked another one, and when the season ends everyone is back on their own
-cookie. While in season every picker inside the app (the ERP avatar menu and
-mobile profile sheet, Account → Appearance) lists it first (`pickableThemes`),
+cookie. While in season the in-app picker (Account → Appearance, which every
+app's avatar menu Appearance item opens, except for a pinned-in MES console
+operator) lists it first (`pickableThemes`),
 and `themeColorValidator` accepts it. What a pick writes is
 `themeCookieWrites` (`@carbon/utils`, as data; each app's `setTheme`
 serializes it with its cookie domain): an everyday theme is stored, and when
@@ -248,34 +271,14 @@ picked inside the app (`inApp`) while a seasonal theme is on, a second cookie,
 `themeForRequest` passes to `resolveTheme` as `seasonalOff`. Onboarding's pick
 (`inApp: false`) only stores the theme. Picking the seasonal theme clears that
 cookie and keeps the stored one. Its season is the `available` window on the
-theme (`ThemeWindow`, month and day inside one calendar year; Halloween is
-October 27 to 31), and that window is the only switch: no flag, no deploy on
-the day. The server has no time zone for the user, so `isInSeason` is true
+theme (`ThemeWindow`, month and day inside one calendar year), and that
+window is the only switch: no flag, no deploy on the day. The server has no time zone for the user, so `isInSeason` is true
 while it is the season anywhere on Earth (UTC+14 reaches `from`, UTC-12 has
 not left `to`); a fixed UTC check turned it on hours late east of UTC. To
 preview one locally, widen its window. A seasonal theme lives in its own file
-(`halloween-theme.ts`) and declares everything about itself on the
+(`<name>-theme.ts`) and declares everything about itself on the
 `SeasonalTheme` object (its window, its colors and `mesh`), so no other code
 names it: removing it is that file,
 its `seasonalThemes` entry and its `index.ts` export. `themes.test.ts` tests
 the window on a fixture and loops over `seasonalThemes`, so it survives the
 removal unchanged.
-
-The Halloween decorations (spider, bats, fog, witch on the loading bar, hat,
-Oct 31 date marker, the "boo" ghost) live in `packages/react/src/Halloween/`,
-exported as `@carbon/react/Halloween` and mounted once in each shell
-(`<HalloweenLayer />` in the ERP and MES `x+/_layout.tsx`). `useHalloween`
-(`season.ts`) is the one check they sit behind — the root loader's theme is
-`halloween` — so nothing renders, styles or listens for anyone else, and
-`HalloweenLayer.tsx` is all the shells import: the decorations
-(`Decorations.tsx`) are their own chunk, loaded only while it is on. The
-folder's shared maths (seeded randomness, easing, whole-number helpers built
-on `Math.trunc` because `no-raw-rounding` scans `packages/react/src`) is
-`Halloween/math.ts`. The
-stylesheet hangs off `data-user-menu` (ERP avatar trigger), `data-date`
-(calendar cells) and `data-app-card` (MES page card); those attributes do
-nothing on their own and may stay when the folder is deleted. **The removal
-checklist** (theme plus decorations) is the header of
-`packages/react/src/Halloween/HalloweenLayer.tsx`: the folder and its
-export, two mounts, the theme file with its two registrations, the doc
-lines that name them, then `lingui:extract`.

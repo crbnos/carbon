@@ -99,11 +99,43 @@ export function getProcessPool(): pg.Pool {
   return processPool;
 }
 
+// The pooler URL only when it serves the connection SUPABASE_DB_URL names:
+// the same database as the same user (Supavisor's user carries a .<tenant>
+// suffix). A pooler on localhost is crbn's (.env.local), which fronts the
+// PORT_DB crbn wrote next to it: a caller pointed at a remote server or at
+// another local stack must not land on it. A pooler on another host (the
+// self-host recipe's supavisor) was set on purpose, next to its own database.
+const isLocalHost = (host: string) =>
+  host === "localhost" || host === "127.0.0.1" || host === "[::1]";
+const dbUser = (u: URL) => decodeURIComponent(u.username).split(".")[0];
+
+export function localPoolerUrl(
+  url: string,
+  pooler = process.env.SUPABASE_DB_POOLER_URL,
+  directPort = process.env.PORT_DB
+): string {
+  if (!pooler) return url;
+  try {
+    const p = new URL(pooler);
+    const u = new URL(url);
+    if (p.pathname !== u.pathname || dbUser(p) !== dbUser(u)) return url;
+    if (isLocalHost(p.hostname)) {
+      if (!isLocalHost(u.hostname)) return url;
+      if (directPort && u.port !== directPort) return url;
+    }
+    return pooler;
+  } catch {
+    return url;
+  }
+}
+
 function createPostgresConnectionPool(connections: number): pg.Pool {
   const url = process.env.SUPABASE_DB_URL!;
+  // Hosted: Supavisor's transaction port. Local dev: `crbn`'s PgBouncer, so
+  // session-state bugs show up before production.
   const connectionPoolerUrl = url.includes("supabase.co")
     ? url.replace("5432", "6543")
-    : url;
+    : localPoolerUrl(url);
   const pool = new pg.Pool({
     connectionString: connectionPoolerUrl,
     max: connections,

@@ -25,6 +25,7 @@ import {
   LuCircleCheck,
   LuCirclePlay,
   LuClipboardCheck,
+  LuFolderKanban,
   LuSquareUser,
   LuTimer,
   LuTrash,
@@ -93,6 +94,7 @@ export function ItemCard({
   showProgress,
   showStatus,
   showSalesOrder,
+  showProject,
   showThumbnail
 }: ItemCardProps) {
   const { t } = useLingui();
@@ -147,7 +149,7 @@ export function ItemCard({
         <CardHeader className="flex flex-col justify-between relative gap-2 max-md:pb-1">
           <div className="flex w-full max-w-full justify-between items-start gap-2">
             {showThumbnail && item.thumbnailPath && (
-              <PhoneThumbnail path={item.thumbnailPath} alt={item.title} />
+              <PhoneThumbnail path={item.thumbnailPath} alt="" />
             )}
             <div className="flex flex-col space-y-0 min-w-0 max-md:flex-1">
               {item.itemReadableId && (
@@ -164,8 +166,16 @@ export function ItemCard({
             <HStack spacing={2} className="flex-shrink-0">
               {item.hasConflict && (
                 <Tooltip>
-                  <TooltipTrigger>
-                    <LuTriangleAlert className="h-4 w-4 text-red-500 flex-shrink-0" />
+                  <TooltipTrigger asChild>
+                    <span className="inline-flex">
+                      <LuTriangleAlert
+                        aria-hidden
+                        className="h-4 w-4 text-red-500 flex-shrink-0"
+                      />
+                      <span className="sr-only">
+                        {item.conflictReason ?? t`Scheduling conflict`}
+                      </span>
+                    </span>
                   </TooltipTrigger>
                   <TooltipContent className="whitespace-pre-line">
                     {item.conflictReason ?? t`Scheduling conflict`}
@@ -186,7 +196,9 @@ export function ItemCard({
               Number.isFinite(item?.duration) &&
               Number(progress) >= 0 &&
               Number(item?.duration) > 0 && (
-                <HStack className="mt-2">
+                // Inside the card link a progressbar adds its raw value to the
+                // link's name; the time left is spelled out below.
+                <HStack className="mt-2" aria-hidden="true">
                   <BarProgress
                     gradient
                     invertGradient
@@ -204,37 +216,52 @@ export function ItemCard({
                       100
                     )}
                   />
-                  <LuTimer className="text-muted-foreground w-4 h-4" />
+                  <LuTimer
+                    className="text-muted-foreground w-4 h-4"
+                    aria-hidden
+                  />
                 </HStack>
               )}
             {showProgress &&
               Number.isFinite(item.quantity) &&
               Number(item.quantity) > 0 && (
-                <HStack className="mt-2">
-                  <BarProgress
-                    segments={[
-                      {
-                        value: item.quantityCompleted ?? 0,
-                        className: "bg-emerald-500"
-                      },
-                      {
-                        value: item.quantityReworked ?? 0,
-                        className: "bg-yellow-500"
-                      },
-                      {
-                        value: item.quantityScrapped ?? 0,
-                        className: "bg-red-500"
+                // Hidden from the link's name like the time bar; the count
+                // completed is spoken instead.
+                <>
+                  {Number(item.quantityCompleted) > 0 && (
+                    <span className="sr-only">
+                      {t`${item.quantityCompleted} of ${item.targetQuantity} complete`}
+                    </span>
+                  )}
+                  <HStack className="mt-2" aria-hidden="true">
+                    <BarProgress
+                      segments={[
+                        {
+                          value: item.quantityCompleted ?? 0,
+                          className: "bg-emerald-500"
+                        },
+                        {
+                          value: item.quantityReworked ?? 0,
+                          className: "bg-yellow-500"
+                        },
+                        {
+                          value: item.quantityScrapped ?? 0,
+                          className: "bg-red-500"
+                        }
+                      ]}
+                      max={item.targetQuantity || 1}
+                      progress={
+                        item.quantityCompleted && item.targetQuantity
+                          ? (item.quantityCompleted / item.targetQuantity) * 100
+                          : 0
                       }
-                    ]}
-                    max={item.targetQuantity || 1}
-                    progress={
-                      item.quantityCompleted && item.targetQuantity
-                        ? (item.quantityCompleted / item.targetQuantity) * 100
-                        : 0
-                    }
-                  />
-                  <LuCircleCheck className="text-muted-foreground w-4 h-4" />
-                </HStack>
+                    />
+                    <LuCircleCheck
+                      className="text-muted-foreground w-4 h-4"
+                      aria-hidden
+                    />
+                  </HStack>
+                </>
               )}
           </div>
         </CardHeader>
@@ -244,13 +271,13 @@ export function ItemCard({
             <div className="flex justify-center max-md:hidden">
               <img
                 src={getPrivateUrl(item.thumbnailPath)}
-                alt={item.title}
+                alt=""
                 className="w-full h-auto rounded-lg"
               />
             </div>
           )}
           <HStack className="justify-start space-x-2 max-md:col-span-2">
-            <LuCirclePlay className="text-muted-foreground" />
+            <LuCirclePlay className="text-muted-foreground" aria-hidden />
             <span className="text-sm line-clamp-1">
               {isBatch && item.batchJobReadableIds?.length
                 ? item.batchJobReadableIds.join(", ")
@@ -261,13 +288,16 @@ export function ItemCard({
 
           {showDescription && item.description && (
             <HStack className="justify-start space-x-2 max-md:col-span-2">
-              <LuClipboardCheck className="text-muted-foreground" />
+              <LuClipboardCheck className="text-muted-foreground" aria-hidden />
               <span className="text-sm line-clamp-1">{item.description}</span>
             </HStack>
           )}
           {showStatus && status && (
             <HStack className="justify-start space-x-2">
-              <OperationStatusIcon status={status} />
+              {/* The status is spelled out next to the icon. */}
+              <span className="inline-flex" aria-hidden="true">
+                <OperationStatusIcon status={status} />
+              </span>
               <span className="text-sm">{status}</span>
             </HStack>
           )}
@@ -281,17 +311,19 @@ export function ItemCard({
                 overdue={isOverdue}
               />
               <Tooltip>
-                <TooltipTrigger>
-                  <span
-                    className={cn("text-sm", isOverdue ? "text-red-500" : "")}
-                  >
-                    {["ASAP", "No Deadline"].includes(item.deadlineType)
-                      ? item.deadlineType
-                      : item.dueDate
-                        ? t`Due ${formatRelativeTime(
-                            convertDateStringToIsoString(item.dueDate)
-                          )}`
-                        : "–"}
+                <TooltipTrigger asChild>
+                  <span className="inline-flex">
+                    <span
+                      className={cn("text-sm", isOverdue ? "text-red-500" : "")}
+                    >
+                      {["ASAP", "No Deadline"].includes(item.deadlineType)
+                        ? item.deadlineType
+                        : item.dueDate
+                          ? t`Due ${formatRelativeTime(
+                              convertDateStringToIsoString(item.dueDate)
+                            )}`
+                          : "–"}
+                    </span>
                   </span>
                 </TooltipTrigger>
                 <TooltipContent side="right">
@@ -302,8 +334,13 @@ export function ItemCard({
           )}
           {showDueDate && item.dueDate && (
             <HStack className="justify-start space-x-2">
-              <LuCalendarDays />
+              <LuCalendarDays aria-hidden />
               <span className="text-sm">
+                <span className="sr-only">
+                  {item.dueDateScope === "operation"
+                    ? t`Operation due`
+                    : t`Job due`}{" "}
+                </span>
                 <DateTime value={item.dueDate} variant="date" />
               </span>
             </HStack>
@@ -319,9 +356,27 @@ export function ItemCard({
               </HStack>
             )}
 
+          {showProject && item.projectReadableId && (
+            <HStack className="justify-start space-x-2 min-w-0">
+              <LuFolderKanban className="text-muted-foreground shrink-0" />
+              <span className="text-sm truncate">
+                {item.projectReadableId}
+                {item.projectName && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    {item.projectName}
+                  </span>
+                )}
+              </span>
+            </HStack>
+          )}
+
           {Array.isArray(employeeIds) && employeeIds.length > 0 && (
             <HStack className="justify-start space-x-2 max-md:order-1">
-              <Avatar size="xs" name="Active Employee" />
+              {/* Decorative: the count beside it says who is active. */}
+              <span className="inline-flex" aria-hidden="true">
+                <Avatar size="xs" name="Active Employee" />
+              </span>
               <span className="text-sm">
                 <Trans>{employeeIds.length} Active</Trans>
               </span>
@@ -330,9 +385,15 @@ export function ItemCard({
 
           {showCustomer && item.customerId && (
             <HStack className="justify-start space-x-2 min-w-0">
-              <LuSquareUser className="text-muted-foreground shrink-0" />
+              <LuSquareUser
+                aria-hidden
+                className="text-muted-foreground shrink-0"
+              />
               <HStack className="min-w-0 truncate no-underline hover:no-underline">
-                <Avatar size="xs" name={customer?.name ?? ""} />
+                {/* The name follows; the avatar's initials would repeat it. */}
+                <span className="inline-flex" aria-hidden="true">
+                  <Avatar size="xs" name={customer?.name ?? ""} />
+                </span>
                 <span className="truncate">{customer?.name}</span>
               </HStack>
             </HStack>

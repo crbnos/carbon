@@ -9,7 +9,8 @@ import {
   memoValidator,
   paymentValidator,
   purchaseInvoiceSupplierChange,
-  salesInvoiceCustomerChange
+  salesInvoiceCustomerChange,
+  salesInvoiceLineValidator
 } from "./invoicing.models";
 
 describe("paymentValidator", () => {
@@ -183,5 +184,41 @@ describe("invoice party change", () => {
       invoiceSupplierLocationId: null,
       ...eur
     });
+  });
+});
+
+describe("salesInvoiceLineValidator: a Service line with no item", () => {
+  // A service job's labor line, as the line form posts it: no item, method
+  // or location.
+  const labor = {
+    invoiceId: "inv1",
+    invoiceLineType: "Service",
+    description: "Labor",
+    quantity: 3,
+    unitPrice: 95
+  };
+
+  it("accepts an edit of an existing line", () => {
+    expect(
+      salesInvoiceLineValidator.safeParse({ ...labor, id: "line1" }).success
+    ).toBe(true);
+  });
+
+  it("refuses a new line: a new Service line needs an item", () => {
+    const r = salesInvoiceLineValidator.safeParse(labor);
+    expect(r.success).toBe(false);
+    expect(r.error?.issues.map((issue) => issue.path)).toContainEqual([
+      "itemId"
+    ]);
+  });
+
+  it("refuses the type Labor: old Labor lines save as Service", () => {
+    expect(
+      salesInvoiceLineValidator.safeParse({
+        ...labor,
+        id: "line1",
+        invoiceLineType: "Labor"
+      }).success
+    ).toBe(false);
   });
 });

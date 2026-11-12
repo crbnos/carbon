@@ -20,6 +20,8 @@ import type { ValidationBehaviorOptions } from "../internal/getInputProps";
 type FormInputOTPProps = {
   name: string;
   label?: ReactNode;
+  /** Names the field without showing a label, for screens whose heading already says what the code is. */
+  "aria-label"?: string;
   autoFocus?: boolean;
   isConfigured?: boolean;
   isOptional?: boolean;
@@ -35,6 +37,7 @@ const InputOTP = forwardRef<HTMLInputElement, FormInputOTPProps>(
     {
       name,
       label,
+      "aria-label": ariaLabel,
       autoFocus,
       isConfigured,
       isOptional,
@@ -97,7 +100,10 @@ const InputOTP = forwardRef<HTMLInputElement, FormInputOTPProps>(
 
         <InputOTPBase
           // FormLabel points at FormControl's generated id, not this input.
-          aria-label={typeof label === "string" && label ? label : undefined}
+          aria-label={
+            ariaLabel ??
+            (typeof label === "string" && label ? label : undefined)
+          }
           name={name}
           maxLength={6}
           value={value}

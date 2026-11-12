@@ -19,6 +19,7 @@ export function ToggleRow({
       <span className="text-sm">{label}</span>
       <Switch
         variant="small"
+        aria-label={label}
         checked={checked}
         onCheckedChange={(value) => onChange(Boolean(value))}
       />

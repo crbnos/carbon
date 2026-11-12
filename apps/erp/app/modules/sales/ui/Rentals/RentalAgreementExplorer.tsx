@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  PrefetchLink,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -25,7 +26,7 @@ import {
   LuTruck,
   LuUndo2
 } from "react-icons/lu";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import { Empty, ItemThumbnail } from "~/components";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
@@ -156,7 +157,6 @@ function ExplorerLine({
 }) {
   const { t } = useLingui();
   const location = useOptimisticLocation();
-  const navigate = useNavigate();
 
   const to = path.to.rentalAgreementLine(agreementId, line.id);
   const isSelected = location.pathname === to;
@@ -173,31 +173,36 @@ function ExplorerLine({
         "group w-full p-2 items-center border-b hover:bg-accent/30 cursor-pointer relative",
         isSelected && "bg-accent/60 hover:bg-accent/50"
       )}
-      onClick={() => {
-        if (!isSelected) navigate(to);
-      }}
     >
-      <HStack spacing={2} className="flex-grow min-w-0 pr-10">
-        <ItemThumbnail thumbnailPath={line.item?.thumbnailPath} type="Part" />
-        <VStack spacing={0} className="min-w-0">
-          <span className="font-semibold line-clamp-1">
-            {line.fixedAsset?.fixedAssetId ?? rentalUnitLabel(line)}
-          </span>
-          <span className="text-muted-foreground text-xs truncate line-clamp-1">
-            {[line.item?.readableIdWithRevision, line.fixedAsset?.serialNumber]
-              .filter(Boolean)
-              .join(" · ")}
-          </span>
-        </VStack>
-      </HStack>
-      <HStack spacing={1} className="absolute right-2">
+      <PrefetchLink
+        to={to}
+        className="flex min-w-0 flex-grow outline-none after:absolute after:inset-0 focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-ring"
+      >
+        <HStack spacing={2} className="flex-grow min-w-0 pr-10">
+          <ItemThumbnail thumbnailPath={line.item?.thumbnailPath} type="Part" />
+          <VStack spacing={0} className="min-w-0">
+            <span className="font-semibold line-clamp-1">
+              {line.fixedAsset?.fixedAssetId ?? rentalUnitLabel(line)}
+            </span>
+            <span className="text-muted-foreground text-xs truncate line-clamp-1">
+              {[
+                line.item?.readableIdWithRevision,
+                line.fixedAsset?.serialNumber
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
+          </VStack>
+        </HStack>
+      </PrefetchLink>
+      <HStack spacing={1} className="pointer-events-none absolute right-2 z-10">
         <RentalStatus status={line.status} />
         {hasActions && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <IconButton
                 aria-label={t`Unit actions`}
-                className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                className="pointer-events-auto opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                 icon={<LuEllipsisVertical />}
                 size="md"
                 variant="solid"

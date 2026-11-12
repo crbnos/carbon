@@ -61,8 +61,7 @@ export const Sense = defineIntegration({
         {
           value: "staging",
           label: "Staging",
-          description:
-            "bifrost-staging.sensemfg.com — testing only, plain HTTP, refused in production"
+          description: "bifrost-staging.sensemfg.com — testing only"
         }
       ],
       required: true,
@@ -97,6 +96,7 @@ function SetupInstructions() {
 function Logo(props: ComponentProps<"svg">) {
   return (
     <svg
+      aria-hidden="true"
       {...props}
       viewBox="0 0 2737 1118"
       fill="currentColor"

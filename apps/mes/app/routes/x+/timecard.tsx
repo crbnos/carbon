@@ -11,7 +11,6 @@ import {
   Card,
   CardContent,
   CardHeader,
-  CardTitle,
   cn,
   DateTimePicker,
   DropdownMenu,
@@ -39,6 +38,8 @@ import {
 } from "@carbon/react";
 import {
   datetime,
+  formatDate,
+  formatDateTime,
   fromLocalDateTime,
   requireAffected,
   toLocalDateTime
@@ -56,7 +57,11 @@ import {
   LuPlay,
   LuTrash
 } from "react-icons/lu";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { DateTime } from "~/components";
 import { MesAppBar } from "~/components/MesAppBar";
@@ -67,6 +72,7 @@ import {
   getOpenClockEntry,
   updateTimeCardEntry
 } from "~/services/people.service";
+import { pageMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 function formatDuration(clockInStr: string, clockOutStr: string | null) {
@@ -93,12 +99,14 @@ function formatTotalHours(
 }
 
 function formatDay(dateStr: string, locale: string) {
-  return new Date(dateStr).toLocaleDateString(locale, {
-    weekday: "short",
-    month: "short",
-    day: "numeric"
-  });
+  return formatDate(
+    dateStr,
+    { weekday: "short", month: "short", day: "numeric" },
+    locale
+  );
 }
+
+export const meta: MetaFunction = () => pageMeta("My Hours");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
@@ -151,10 +159,13 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (intent === "clockOut") {
+    // "Forgot to clock out?" sends the time the person stopped working.
+    const at = formData.get("clockOut");
     const result = await clockOut(client, {
       employeeId: userId,
       companyId,
-      updatedBy: userId
+      updatedBy: userId,
+      clockOut: typeof at === "string" && at ? at : undefined
     });
     return { success: !result.error, error: result.error?.message };
   }
@@ -288,7 +299,7 @@ export default function MESTimecardPage() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <IconButton
-          aria-label={t`More options`}
+          aria-label={t`More options for ${formatDateTime(entry.clockIn, locale)}`}
           variant="ghost"
           size={size}
           icon={<LuEllipsisVertical />}
@@ -327,9 +338,10 @@ export default function MESTimecardPage() {
           <Card className="overflow-hidden">
             <CardHeader className={cn(!openEntry && "max-md:hidden")}>
               <HStack className="justify-between items-center">
-                <CardTitle className="max-md:hidden">
+                {/* The page's h1 from md (phones get it from MesAppBar). */}
+                <h1 className="text-base font-medium leading-none tracking-tight text-foreground/90 text-pretty line-clamp-2 max-md:hidden">
                   <Trans>My Hours</Trans>
-                </CardTitle>
+                </h1>
                 {!isPhone && (
                   <HStack className="gap-1 max-md:hidden">
                     {renderClockForm("md")}

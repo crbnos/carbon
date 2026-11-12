@@ -7,8 +7,11 @@ import {
   addDays,
   addMonths,
   bicMatchesCountry,
+  EPSILON,
   getBankFieldConfig,
   getCompletionAfterQuantityChange,
+  getRemainingQuantityToInvoice,
+  groupBy,
   isValidSwiftBic,
   RoundingMode,
   round,
@@ -26,7 +29,14 @@ import {
 } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { address, contact } from "~/types/validators";
+import {
+  address,
+  contact,
+  contactEmailRequiredMessage,
+  contactNameOrEmailMessage,
+  hasContactEmail,
+  hasContactNameOrEmail
+} from "~/types/validators";
 import {
   incoterms,
   itemType,
@@ -179,7 +189,8 @@ export const supplierQuoteFinalizeValidator = z
   .object({
     notification: z.enum(["Email", "Share"]).optional(),
     supplierContact: zfd.text(z.string().optional()),
-    cc: z.array(z.string()).optional()
+    cc: z.array(z.string()).optional(),
+    partFiles: z.array(z.string()).optional()
   })
   .refine(
     (data) => (data.notification === "Email" ? data.supplierContact : true),
@@ -245,6 +256,8 @@ export const purchaseOrderLineValidator = z
     itemId: zfd.text(z.string().optional()),
     accountId: zfd.text(z.string().optional()),
     costCenterId: zfd.text(z.string().optional()),
+    projectId: zfd.text(z.string().optional()),
+    projectElementId: zfd.text(z.string().optional()),
     assetId: zfd.text(z.string().optional()),
     conversionFactor: zfd.numeric(z.number().optional()),
     description: zfd.text(z.string().optional()),
@@ -415,11 +428,20 @@ export const supplierTaxValidator = z
     }
   );
 
-export const supplierContactValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  ...contact,
-  supplierLocationId: zfd.text(z.string().optional())
-});
+export const supplierContactValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    ...contact,
+    supplierLocationId: zfd.text(z.string().optional())
+  })
+  .refine(hasContactNameOrEmail, contactNameOrEmailMessage);
+
+/** The supplier contact form when Purchasing settings require an email on supplier contacts. */
+export const supplierContactEmailRequiredValidator =
+  supplierContactValidator.refine(hasContactEmail, contactEmailRequiredMessage);
+
+export const SUPPLIER_CONTACT_EMAIL_REQUIRED =
+  "Every supplier contact needs an email (see Purchasing settings).";
 
 export const supplierLocationValidator = z.object({
   id: zfd.text(z.string().optional()),
@@ -709,7 +731,8 @@ export const purchasingRfqFinalizeValidator = z.object({
       rfqSupplierId: z.string().min(1),
       contactId: zfd.text(z.string().optional())
     })
-  )
+  ),
+  partFiles: z.array(z.string()).optional()
 });
 
 // RFQ Status Helpers
@@ -754,6 +777,377 @@ export function isPurchaseOrderLocked(
   return PURCHASE_ORDER_LOCKED_STATUSES.includes(
     status as PurchaseOrderLockedStatus
   );
+}
+
+/**
+ * Released statuses: the approval (or finalize, when no rule applied) is done,
+ * so goods may be received and invoiced against the order.
+ */
+export const PURCHASE_ORDER_RELEASED_STATUSES = [
+  "To Receive",
+  "To Receive and Invoice",
+  "To Invoice",
+  "Completed"
+] as const satisfies readonly (typeof purchaseOrderStatusType)[number][];
+
+/**
+ * Released statuses an order may still be edited in. An edit keeps the order
+ * released while its total stays within the approved amount; above it the
+ * order goes back to Needs Approval (`settlePurchaseOrderAmendment`).
+ */
+export const PURCHASE_ORDER_AMENDABLE_STATUSES = [
+  "To Receive",
+  "To Receive and Invoice",
+  "To Invoice"
+] as const satisfies readonly (typeof purchaseOrderStatusType)[number][];
+
+/**
+ * Statuses an order may be invoiced in: the released ones and Closed. A
+ * closed order takes nothing more from the supplier, but what it already
+ * received under its approval is still billed.
+ */
+export const PURCHASE_ORDER_INVOICEABLE_STATUSES = [
+  ...PURCHASE_ORDER_RELEASED_STATUSES,
+  "Closed"
+] as const satisfies readonly (typeof purchaseOrderStatusType)[number][];
+
+/** Statuses no edit may change: waiting for an approver, or finished. */
+export const PURCHASE_ORDER_EDIT_LOCKED_STATUSES = [
+  "Needs Approval",
+  "Completed",
+  "Closed"
+] as const satisfies readonly (typeof purchaseOrderStatusType)[number][];
+
+export function isPurchaseOrderReleased(
+  status: string | null | undefined
+): boolean {
+  return PURCHASE_ORDER_RELEASED_STATUSES.some((s) => s === status);
+}
+
+export function isPurchaseOrderAmendable(
+  status: string | null | undefined
+): boolean {
+  return PURCHASE_ORDER_AMENDABLE_STATUSES.some((s) => s === status);
+}
+
+/**
+ * Whether the order's lines, header, delivery and payment are read-only.
+ * Not the same list as `isPurchaseOrderLocked`, which decides reopen and
+ * revisions: a released order that is not complete is still editable.
+ */
+export function isPurchaseOrderEditLocked(
+  status: string | null | undefined
+): boolean {
+  return PURCHASE_ORDER_EDIT_LOCKED_STATUSES.some((s) => s === status);
+}
+
+/**
+ * Why an edit of a purchase order is refused, or null when it is allowed.
+ * `changesSupplierOrCurrency`: the edit names another supplier or currency,
+ * which a released order never takes (that is a new order).
+ */
+export function purchaseOrderEditRefusal(
+  status: string | null | undefined,
+  {
+    changesSupplierOrCurrency = false
+  }: { changesSupplierOrCurrency?: boolean } = {}
+): string | null {
+  if (status === "Needs Approval") {
+    return "This purchase order is waiting for approval. Reopen it to make changes.";
+  }
+  if (status === "Completed" || status === "Closed") {
+    return "Cannot modify a completed or closed purchase order. Reopen it to make changes.";
+  }
+  if (changesSupplierOrCurrency && isPurchaseOrderAmendable(status)) {
+    return "Cannot change the supplier or currency of a released purchase order. Reopen it to make changes.";
+  }
+  return null;
+}
+
+/** The line fields a receipt or invoice was posted against. */
+export type PurchaseOrderLineIdentity = {
+  purchaseOrderLineType: string | null;
+  itemId: string | null;
+  assetId: string | null;
+  purchaseUnitOfMeasureCode: string | null;
+  conversionFactor: number | null;
+};
+
+/**
+ * Why a line edit is refused, or null. A line never goes below what was
+ * already received or invoiced, and a line with either cannot be deleted, in
+ * any status: a reopened or rejected order keeps its receipts and invoices.
+ * Such a line also keeps its type, item, asset, purchase unit and conversion
+ * factor: the posted receipt and invoice lines name them, and the received
+ * quantity is read through the factor. The type is compared too, since a
+ * new type drops the item or asset on write. `purchaseQuantity` undefined means the edit leaves
+ * it alone; null means the line is being deleted. `edit` holds the identity
+ * fields the edit sends, compared with the line's own.
+ */
+export function purchaseOrderLineAmendRefusal(
+  line: {
+    quantityReceived: number | null;
+    quantityInvoiced: number | null;
+  } & Partial<PurchaseOrderLineIdentity>,
+  purchaseQuantity: number | null | undefined,
+  edit: Partial<PurchaseOrderLineIdentity> = {}
+): string | null {
+  const floor = Math.max(
+    Number(line.quantityReceived ?? 0),
+    Number(line.quantityInvoiced ?? 0)
+  );
+  if (purchaseQuantity === null) {
+    return floor > 0
+      ? "Cannot delete a line that has been received or invoiced."
+      : null;
+  }
+  if (purchaseQuantity !== undefined && purchaseQuantity < floor) {
+    return `The quantity cannot be lower than the ${floor} already received or invoiced.`;
+  }
+  if (floor > 0) {
+    if (
+      edit.purchaseOrderLineType !== undefined &&
+      edit.purchaseOrderLineType !== line.purchaseOrderLineType
+    ) {
+      return "Cannot change the type of a line that has been received or invoiced.";
+    }
+    if (edit.itemId !== undefined && edit.itemId !== line.itemId) {
+      return "Cannot change the item of a line that has been received or invoiced.";
+    }
+    if (edit.assetId !== undefined && edit.assetId !== line.assetId) {
+      return "Cannot change the fixed asset of a line that has been received or invoiced.";
+    }
+    if (
+      edit.purchaseUnitOfMeasureCode !== undefined &&
+      edit.purchaseUnitOfMeasureCode !== line.purchaseUnitOfMeasureCode
+    ) {
+      return "Cannot change the unit of measure of a line that has been received or invoiced.";
+    }
+    if (
+      edit.conversionFactor !== undefined &&
+      Number(edit.conversionFactor) !== Number(line.conversionFactor ?? 1)
+    ) {
+      return "Cannot change the conversion factor of a line that has been received or invoiced.";
+    }
+  }
+  return null;
+}
+
+/**
+ * Why a line may not be deleted from an order in this status, or null. A
+ * released order keeps every line it was sent with: lower the quantity
+ * instead, or reopen the order.
+ */
+export function purchaseOrderLineDeleteRefusal(
+  status: string | null | undefined
+): string | null {
+  return isPurchaseOrderAmendable(status)
+    ? "Cannot delete a line from a released purchase order. Lower its quantity, or reopen the order to make changes."
+    : null;
+}
+
+/**
+ * Whether a released order's total is above what was approved. With no
+ * approved request the order was released without one (no rule matched at
+ * finalize, or the planning bypass), so there is nothing to exceed.
+ */
+export function exceedsApprovedAmount(
+  total: number | null | undefined,
+  approvedAmount: number | null | undefined
+): boolean {
+  if (approvedAmount === null || approvedAmount === undefined) return false;
+  return Number(total ?? 0) > Number(approvedAmount) + EPSILON;
+}
+
+/**
+ * What a purchase order line still bills, given its order's status. A line
+ * short-closed by hand bills what was received; a Closed order takes nothing
+ * more from the supplier, so every line of one bills the same way.
+ */
+export function purchaseOrderLineRemainingToInvoice(
+  status: string | null | undefined,
+  line: Parameters<typeof getRemainingQuantityToInvoice>[0]
+): number {
+  return getRemainingQuantityToInvoice(
+    status === "Closed" ? { ...line, receivedComplete: true } : line
+  );
+}
+
+/** What a caller of the funds gate moves against the order. */
+export type PurchaseOrderFundsIntent = "receive" | "invoice";
+
+/**
+ * Why goods may not be received or invoiced against an order, or null. The
+ * order must be released, and its total within its approved amount. An
+ * invoice also takes a Closed order, but only one something was received
+ * against: a Draft or unapproved order that was cancelled was never released,
+ * and has nothing to bill.
+ */
+export function purchaseOrderFundsRefusal(
+  order: {
+    readableId?: string | null;
+    status: string | null | undefined;
+    total: number | null | undefined;
+    approvedAmount: number | null | undefined;
+    receivedQuantity?: number | null;
+  },
+  intent: PurchaseOrderFundsIntent
+): string | null {
+  const name = order.readableId
+    ? `Purchase order ${order.readableId}`
+    : "The purchase order";
+  const allowed: readonly string[] =
+    intent === "invoice"
+      ? PURCHASE_ORDER_INVOICEABLE_STATUSES
+      : PURCHASE_ORDER_RELEASED_STATUSES;
+  if (!allowed.includes(order.status ?? "")) {
+    return order.status === "Closed"
+      ? `${name} is closed. Nothing more can be received against it.`
+      : `${name} must be approved and released before it can be received or invoiced.`;
+  }
+  if (order.status === "Closed" && !(Number(order.receivedQuantity ?? 0) > 0)) {
+    return `${name} is closed with nothing received, so there is nothing to invoice.`;
+  }
+  if (exceedsApprovedAmount(order.total, order.approvedAmount)) {
+    return `${name} totals more than its approved amount. It must be approved again before it can be received or invoiced.`;
+  }
+  return null;
+}
+
+/**
+ * The line columns an edit of a released order can change, put back when the
+ * approval of that edit is rejected. Not the promised date (it stays editable
+ * while the order waits for approval), and nothing posting writes.
+ */
+export const PURCHASE_ORDER_LINE_VERSION_COLUMNS = [
+  "purchaseOrderLineType",
+  "itemId",
+  "description",
+  "purchaseQuantity",
+  "purchaseUnitOfMeasureCode",
+  "inventoryUnitOfMeasureCode",
+  "conversionFactor",
+  "supplierUnitPrice",
+  "supplierShippingCost",
+  "supplierTaxAmount",
+  "taxPercent",
+  "setupPrice",
+  "exchangeRate",
+  "locationId",
+  "storageUnitId",
+  "accountId",
+  "assetId",
+  "costCenterId",
+  "jobId",
+  "jobOperationId",
+  "supplierPartId",
+  "requiredDate",
+  "customFields",
+  "tags",
+  "sortOrder",
+  "externalNotes",
+  "internalNotes",
+  "modelUploadId",
+  "ownerId"
+] as const;
+
+/**
+ * The delivery columns put back with the lines. Not the promised or delivery
+ * date, which stay editable while the order waits for approval.
+ */
+export const PURCHASE_ORDER_DELIVERY_VERSION_COLUMNS = [
+  "locationId",
+  "shippingMethodId",
+  "shippingTermId",
+  "receiptRequestedDate",
+  "notes",
+  "trackingNumber",
+  "dropShipment",
+  "customerId",
+  "customerLocationId",
+  "customFields",
+  "supplierShippingCost",
+  "incoterm",
+  "incotermLocation"
+] as const;
+
+/**
+ * A released order as it was just before an edit that sent it back to
+ * approval: the rows of `purchaseOrderVersion` and `purchaseOrderLineVersion`
+ * kept with the approval request, read back into one value. Rejecting the
+ * request restores it. Each line is keyed by the live line's id (`id`).
+ */
+export type PurchaseOrderVersion = {
+  exchangeRate: number | null;
+  delivery: Record<string, unknown> | null;
+  lines: ({ id: string } & Record<string, unknown>)[];
+};
+
+export type PurchaseOrderRestoreLine = {
+  id: string;
+  purchaseQuantity: number | null;
+  quantityReceived: number | null;
+  quantityInvoiced: number | null;
+  receivedComplete: boolean;
+};
+
+/**
+ * How to put an order's lines back to `version`: each line it had gets its
+ * columns back (never below what was received or invoiced since), with its
+ * completion restated for that quantity, and each line added since is deleted.
+ * Not restorable when a line it had is gone (the order was restored into
+ * another company, which gives lines new ids) or a line added since has
+ * anything received or invoiced: then the rejection leaves the lines alone.
+ */
+export function planPurchaseOrderRestore(
+  version: PurchaseOrderVersion,
+  current: PurchaseOrderRestoreLine[]
+):
+  | { restorable: false }
+  | {
+      restorable: true;
+      updates: { id: string; data: Record<string, unknown> }[];
+      deleteIds: string[];
+    } {
+  const currentById = new Map(current.map((line) => [line.id, line]));
+  const versionIds = new Set(version.lines.map((line) => line.id));
+  if (version.lines.some((line) => !currentById.has(line.id))) {
+    return { restorable: false };
+  }
+
+  const added = current.filter((line) => !versionIds.has(line.id));
+  const floorOf = (line: PurchaseOrderRestoreLine) =>
+    Math.max(
+      Number(line.quantityReceived ?? 0),
+      Number(line.quantityInvoiced ?? 0)
+    );
+  if (added.some((line) => floorOf(line) > 0)) return { restorable: false };
+
+  const updates = version.lines.map((versionLine) => {
+    const line = currentById.get(versionLine.id)!;
+    const data: Record<string, unknown> = {};
+    for (const column of PURCHASE_ORDER_LINE_VERSION_COLUMNS) {
+      if (column in versionLine) data[column] = versionLine[column];
+    }
+    if (typeof versionLine.purchaseQuantity === "number") {
+      const purchaseQuantity = Math.max(
+        versionLine.purchaseQuantity,
+        floorOf(line)
+      );
+      data.purchaseQuantity = purchaseQuantity;
+      Object.assign(
+        data,
+        getCompletionAfterQuantityChange(line, purchaseQuantity)
+      );
+    }
+    return { id: line.id, data };
+  });
+
+  return {
+    restorable: true,
+    updates,
+    deleteIds: added.map((line) => line.id)
+  };
 }
 
 /** The statuses the purchase orders table's bulk Delete acts on. */
@@ -827,8 +1221,8 @@ export function purchaseOrderLineDateRefusal(
 ): string | null {
   switch (field) {
     case "requiredDate":
-      return isPurchaseOrderLocked(line.status)
-        ? "Cannot change the requested date of a confirmed purchase order."
+      return isPurchaseOrderEditLocked(line.status)
+        ? "Cannot change the requested date of a purchase order in approval or completed."
         : null;
     case "promisedDate":
       return (
@@ -840,6 +1234,61 @@ export function purchaseOrderLineDateRefusal(
     case "receivedDate":
       return null;
   }
+}
+
+export const purchaseOrderLineReceivingIntents = ["close", "reopen"] as const;
+export type PurchaseOrderLineReceivingIntent =
+  (typeof purchaseOrderLineReceivingIntents)[number];
+
+export const purchaseOrderLineReceivingValidator = z.object({
+  intent: z.enum(purchaseOrderLineReceivingIntents)
+});
+
+/** The statuses a line's receiving can be stopped or resumed in: the order
+ *  is released, so stopping never stands in for approval. Closed is out —
+ *  its lines are not being received. */
+const PURCHASE_ORDER_RECEIVABLE_STATUSES: ReadonlySet<string> = new Set([
+  "To Receive",
+  "To Receive and Invoice",
+  "To Invoice",
+  "Completed"
+]);
+
+/**
+ * Why a line's receiving cannot be stopped or resumed, or null when it can.
+ * Checked inside `shortClosePurchaseOrderLine`'s transaction, so every
+ * caller (page, API, MCP, workflow) is held to it: the write recomputes the
+ * header status from the line flags, and on an unreleased order that would
+ * release it with no approval.
+ */
+export function shortClosePurchaseOrderLineRefusal(
+  intent: PurchaseOrderLineReceivingIntent,
+  line: {
+    status: string | null | undefined;
+    purchaseOrderLineType: string | null | undefined;
+    quantityToReceive: number | null | undefined;
+    receivedComplete: boolean | null | undefined;
+  }
+): string | null {
+  if (!PURCHASE_ORDER_RECEIVABLE_STATUSES.has(line.status ?? "")) {
+    return "Receiving can only be closed or reopened on a released purchase order";
+  }
+  if (
+    line.purchaseOrderLineType === "Comment" ||
+    line.purchaseOrderLineType === "G/L Account"
+  ) {
+    return "This line cannot be received";
+  }
+  if ((line.quantityToReceive ?? 0) <= 0) {
+    return "This line has no outstanding quantity to receive";
+  }
+  if (intent === "close" && line.receivedComplete) {
+    return "Receiving is already closed for this line";
+  }
+  if (intent === "reopen" && !line.receivedComplete) {
+    return "Receiving is not closed for this line";
+  }
+  return null;
 }
 
 export const purchaseOrderLineDateValidator = z.object({
@@ -1692,23 +2141,40 @@ export const leasePurchaseValidator = z.object({
 });
 
 /**
- * Which RFQ models go in the email and which go as download links: in line
- * order, each model that still fits in `budgetBytes` is attached, the rest are
- * linked, so one large model does not push out the small ones after it.
+ * The files a supplier gets, in item order (first appearance in `itemIds`),
+ * each item's files in the order given. With `onlyPaths`, just the files whose
+ * `path` is in it (the files the sender ticked); a path that is not one of
+ * these items' files is ignored.
  */
-export function splitRfqModelAttachments<T extends { size: number }>(
-  models: T[],
+export function orderItemSupplierFiles<
+  T extends { itemId: string; path: string }
+>(itemIds: string[], files: T[], onlyPaths?: string[]): T[] {
+  const only = onlyPaths ? new Set(onlyPaths) : null;
+  const byItem = groupBy(
+    only ? files.filter((file) => only.has(file.path)) : files,
+    (file) => file.itemId
+  );
+  return [...new Set(itemIds)].flatMap((itemId) => byItem[itemId] ?? []);
+}
+
+/**
+ * Which item files go in a supplier email and which go as download links: in
+ * line order, each file that still fits in `budgetBytes` is attached, the rest
+ * are linked, so one large file does not push out the small ones after it.
+ */
+export function splitRfqFileAttachments<T extends { size: number }>(
+  files: T[],
   budgetBytes: number
 ): { attach: T[]; link: T[] } {
   const attach: T[] = [];
   const link: T[] = [];
   let left = budgetBytes;
-  for (const model of models) {
-    if (model.size <= left) {
-      attach.push(model);
-      left -= model.size;
+  for (const file of files) {
+    if (file.size <= left) {
+      attach.push(file);
+      left -= file.size;
     } else {
-      link.push(model);
+      link.push(file);
     }
   }
   return { attach, link };

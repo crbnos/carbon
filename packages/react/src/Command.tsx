@@ -13,15 +13,17 @@ import type {
   ElementRef,
   HTMLAttributes
 } from "react";
-import { forwardRef } from "react";
+import { forwardRef, useCallback, useMemo } from "react";
 import { LuChevronDown } from "react-icons/lu";
 import { RxMagnifyingGlass } from "react-icons/rx";
 import {
+  useContentLabel,
   useFormControl,
   useFormControlLabelledBy
 } from "./Form/useFormControl";
 import { Modal, ModalContent, ModalTitle } from "./Modal";
 import { cn } from "./utils/cn";
+import { mergeRefs } from "./utils/react";
 import { HitArea, useViewport } from "./Viewport";
 
 const Command = forwardRef<
@@ -52,6 +54,7 @@ const CommandDialog = ({
   return (
     <Modal {...props}>
       <ModalContent
+        data-instant=""
         aria-describedby={undefined}
         className="overflow-hidden p-0 [&>button[type=button]]:top-1 [&>button[type=button]]:right-2 [&>button[type=button]]:p-3"
       >
@@ -63,6 +66,20 @@ const CommandDialog = ({
     </Modal>
   );
 };
+
+/** cmdk 0.2 forces `aria-labelledby` on its input (an empty hidden label)
+ *  and list (the input, so the list is named by the query) and overrides
+ *  any `aria-label` on the list. A caller's `aria-label` wins here instead. */
+function useCallerAccessibleName(label: string | undefined) {
+  return useCallback(
+    (node: HTMLElement | null) => {
+      if (!node || !label) return;
+      node.removeAttribute("aria-labelledby");
+      node.setAttribute("aria-label", label);
+    },
+    [label]
+  );
+}
 
 const commandInputVariants = cva(
   "flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50",
@@ -84,24 +101,27 @@ interface CommandInputProps
 const CommandInput = forwardRef<
   ElementRef<typeof CommandPrimitive.Input>,
   CommandInputProps
->(({ className, size, ...props }, ref) => (
-  <div
-    className="flex items-center border-b border-border px-3"
-    cmdk-input-wrapper=""
-  >
-    <RxMagnifyingGlass className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-    <CommandPrimitive.Input
-      ref={ref}
-      className={cn(
-        commandInputVariants({
-          size
-        }),
-        className
-      )}
-      {...props}
-    />
-  </div>
-));
+>(({ className, size, ...props }, ref) => {
+  const nameRef = useCallerAccessibleName(props["aria-label"]);
+  return (
+    <div
+      className="flex items-center border-b border-border px-3"
+      cmdk-input-wrapper=""
+    >
+      <RxMagnifyingGlass className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+      <CommandPrimitive.Input
+        ref={mergeRefs(ref, nameRef)}
+        className={cn(
+          commandInputVariants({
+            size
+          }),
+          className
+        )}
+        {...props}
+      />
+    </div>
+  );
+});
 
 CommandInput.displayName = CommandPrimitive.Input.displayName;
 
@@ -189,16 +209,19 @@ CommandInputTextField.displayName = "CommandInputTextField";
 const CommandList = forwardRef<
   ElementRef<typeof CommandPrimitive.List>,
   ComponentPropsWithoutRef<typeof CommandPrimitive.List>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.List
-    ref={ref}
-    className={cn(
-      "max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent overflow-x-hidden",
-      className
-    )}
-    {...props}
-  />
-));
+>(({ className, ...props }, ref) => {
+  const nameRef = useCallerAccessibleName(props["aria-label"]);
+  return (
+    <CommandPrimitive.List
+      ref={mergeRefs(ref, nameRef)}
+      className={cn(
+        "max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent overflow-x-hidden",
+        className
+      )}
+      {...props}
+    />
+  );
+});
 
 CommandList.displayName = CommandPrimitive.List.displayName;
 
@@ -376,9 +399,16 @@ const CommandTrigger = forwardRef<ElementRef<"button">, CommandTriggerProps>(
     const { isPhone } = useViewport();
     const labelledBy = useFormControlLabelledBy(props);
     const { ariaProps } = useFormControl(props);
+    const contentLabel = useContentLabel<HTMLButtonElement>(
+      props.role === "combobox" && !labelledBy && !props["aria-label"]
+    );
+    const mergedRef = useMemo(
+      () => mergeRefs<HTMLButtonElement | null>(ref, contentLabel.ref),
+      [ref, contentLabel.ref]
+    );
     return (
       <button
-        ref={ref}
+        ref={mergedRef}
         type="button"
         className={cn(
           commandTriggerVariants({
@@ -390,6 +420,7 @@ const CommandTrigger = forwardRef<ElementRef<"button">, CommandTriggerProps>(
         {...props}
         {...ariaProps}
         aria-labelledby={labelledBy}
+        aria-label={props["aria-label"] ?? contentLabel.label}
       >
         {asButton && isPhone && <HitArea />}
         {children}

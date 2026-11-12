@@ -30,6 +30,10 @@ import { openai } from "@ai-sdk/openai";
 import { NotFoundError } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
 import type { ServiceContext } from "@carbon/api/service-fn.server";
+import {
+  loadTrackedEntityStripes,
+  trackedEntityStripe
+} from "@carbon/api/stock-stripes";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
@@ -396,7 +400,13 @@ export async function getGauges(
   if (args?.search) {
     query = query.or(
       searchFilter(
-        ["gaugeId", "description", "modelNumber", "serialNumber"],
+        [
+          "gaugeId",
+          "description",
+          "manufacturer",
+          "modelNumber",
+          "serialNumber"
+        ],
         args.search
       )
     );
@@ -603,12 +613,14 @@ export async function getIssueActionTasks(
         .select("entityId, metadata")
         .eq("entityType", "nonConformanceActionTask")
         .eq("integration", "linear")
+        .eq("companyId", companyId)
         .in("entityId", taskIds),
       client
         .from("externalIntegrationMapping")
         .select("entityId, metadata")
         .eq("entityType", "nonConformanceActionTask")
         .eq("integration", "jira")
+        .eq("companyId", companyId)
         .in("entityId", taskIds)
     ]);
 
@@ -1508,7 +1520,7 @@ export async function insertGauge(
     gaugeTypeId: string;
     gaugeRole: (typeof gaugeRole)[number];
     gaugeCalibrationStatus: (typeof gaugeCalibrationStatus)[number];
-    supplierId?: string;
+    manufacturer?: string;
     modelNumber?: string;
     serialNumber?: string;
     description?: string;
@@ -1552,7 +1564,7 @@ export async function insertGauge(
       gaugeTypeId: input.gaugeTypeId,
       gaugeRole: input.gaugeRole,
       gaugeCalibrationStatus: input.gaugeCalibrationStatus,
-      supplierId: input.supplierId ?? null,
+      manufacturer: input.manufacturer ?? null,
       modelNumber: input.modelNumber ?? null,
       serialNumber: input.serialNumber ?? null,
       description: input.description ?? null,
@@ -1587,7 +1599,7 @@ export async function updateGauge(
     gaugeTypeId?: string;
     gaugeRole?: (typeof gaugeRole)[number];
     gaugeCalibrationStatus?: (typeof gaugeCalibrationStatus)[number];
-    supplierId?: string | null;
+    manufacturer?: string | null;
     modelNumber?: string | null;
     serialNumber?: string | null;
     description?: string | null;
@@ -2316,13 +2328,19 @@ export async function getInspection(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return (client as any)
-    .from("inspection")
-    .select(
-      "*, item(readableId, name, type, itemTrackingType), supplier(name), inspectionSample(*, trackedEntity(id, readableId, attributes, status, sourceDocumentReadableId))"
-    )
-    .eq("id", id)
-    .single();
+  return (
+    (client as any)
+      .from("inspection")
+      .select(
+        "*, item(readableId, name, type, itemTrackingType), supplier(name), inspectionSample(*, trackedEntity(id, readableId, attributes, status, sourceDocumentReadableId))"
+      )
+      .eq("id", id)
+      // Samples in the order they were made: an embed has no order of its own,
+      // and an UPDATE moves a row, so the grids' positions would shift.
+      .order("createdAt", { referencedTable: "inspectionSample" })
+      .order("id", { referencedTable: "inspectionSample" })
+      .single()
+  );
 }
 
 // All inspection lots created for a receipt (one per inspected receipt line),
@@ -3564,11 +3582,13 @@ async function subdivideBatchEntity(
   // against it so per-storage-unit on-hand stays consistent.
   const sourceLedgerRows = await trx
     .selectFrom("itemLedger")
-    .select(["trackedEntityId", "storageUnitId", "quantity"])
+    .select(["trackedEntityId", "storageUnitId", "quantity", "projectId"])
     .where("trackedEntityId", "=", source.id)
     .where("companyId", "=", companyId)
     .execute();
   const storageUnitId = resolveTrackedEntityBin(sourceLedgerRows, source.id);
+  // The split stays in the source lot's stock stripe (Projects Phase 2a).
+  const projectId = trackedEntityStripe(sourceLedgerRows, source.id);
 
   const split = buildBatchSplitRecords({
     parent: {
@@ -3676,6 +3696,7 @@ async function subdivideBatchEntity(
         ...ledger,
         // Non-null in the node Insert type; the builder types it nullable.
         itemId,
+        projectId,
         comment: `NC ${readableNc} batch split`
       }))
     )
@@ -5694,6 +5715,17 @@ export async function postNonconformance(
 
   const itemIds = [...new Set(effectiveMovements.map((m) => m.itemId))];
 
+  // A movement of a tracked entity books in the entity's stock stripe
+  // (Projects Phase 2a); an untracked movement names no stripe and books
+  // common stock.
+  const entityStripes = await loadTrackedEntityStripes(
+    db,
+    companyId,
+    effectiveMovements
+      .map((m) => m.trackedEntityId)
+      .filter((id): id is string => Boolean(id))
+  );
+
   const [itemsResult, itemCostsResult] = await inOrder([
     () =>
       many(
@@ -5883,6 +5915,9 @@ export async function postNonconformance(
           locationId: movement.locationId ?? null,
           storageUnitId: null,
           trackedEntityId: movement.trackedEntityId ?? null,
+          projectId: movement.trackedEntityId
+            ? (entityStripes.get(movement.trackedEntityId) ?? null)
+            : null,
           entryType:
             movement.quantity < 0 ? "Negative Adjmt." : "Positive Adjmt.",
           documentType,

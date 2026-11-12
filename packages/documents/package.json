@@ -38,6 +38,7 @@
     "sst": "catalog:",
     "tsup": "catalog:",
     "typescript": "catalog:",
+    "unpdf": "1.8.1",
     "vitest": "catalog:"
   },
   "exports": {

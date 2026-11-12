@@ -1,8 +1,20 @@
 ###
-# Worktree-isolated dev stack. Boot via `npm run dev:up` (see packages/dev/src/cli.ts).
+# The worktree's own containers: GoTrue, PostgREST, Realtime, the API gateway
+# and Inngest, plus Studio, Postgres-Meta and the edge runtime on demand.
 # COMPOSE_PROJECT_NAME=carbon-<slug> namespaces every container, network, volume.
-# Required env (provided by .env via --env-file): PORT_*, SUPABASE_JWT_SECRET,
+#
+# Shared mode (the default): Postgres, PgBouncer, Storage, imgproxy and Inbucket
+# are the shared containers on the `carbon-shared` network
+# (docker-compose.shared.yml), and DB_HOST/DB_NAME point at this worktree's
+# database there. `crbn up --isolated` adds docker-compose.isolated.yml, which
+# starts those 5 services inside this project instead, as before.
+#
+# Required env (written by crbn to .env.local): PORT_*, DB_HOST, DB_NAME,
+# STORAGE_HOST, STORAGE_TENANT, SMTP_HOST, SLOT_NAME_SUFFIX, SUPABASE_JWT_SECRET,
 # SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, plus user secrets passed through.
+#
+# Redis is shared across worktrees — booted directly as the `carbon-redis`
+# container by the dev CLI (packages/dev/src/services/compose.ts), not here.
 ###
 
 # `restart: on-failure` on every service: a crashed container comes back, but
@@ -10,74 +22,16 @@
 # with its `crbn up` running, and `unless-stopped` brought every stack whose
 # terminal had died back to life on each Docker start.
 services:
-  postgres:
-    image: supabase/postgres:15.14.1.112
+  gotrue:
+    image: supabase/gotrue:v2.197.0
     restart: on-failure
-    deploy:
-      resources:
-        limits:
-          # Defaults are sized so one stack runs smoothly while a machine can
-          # host several worktree stacks at once (limits are ceilings, not
-          # reservations — idle usage is far below them). Override any of these
-          # per worktree via MEM_*/CPU_* in that worktree's .env.
-          memory: ${MEM_POSTGRES:-1g}
-          cpus: ${CPU_POSTGRES:-2}
+    # On carbon-shared every worktree's gotrue answers to "gotrue", so
+    # Envoy reaches it by this alias, which only this project has.
     networks:
       default:
         aliases:
-          - db
-    ports:
-      - "${PORT_DB}:5432"
-    environment:
-      TZ: UTC
-      POSTGRES_HOST: /var/run/postgresql
-      POSTGRES_PORT: 5432
-      PGPORT: 5432
-      POSTGRES_DB: postgres
-      PGDATABASE: postgres
-      POSTGRES_PASSWORD: postgres
-      PGPASSWORD: postgres
-      JWT_SECRET: ${SUPABASE_JWT_SECRET}
-      JWT_EXP: 3600
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-      - pgconfig:/etc/postgresql-custom
-      - ./packages/dev/docker/init.sql:/docker-entrypoint-initdb.d/zz-carbon-roles.sql:ro
-    command:
-      - postgres
-      - -c
-      - config_file=/etc/postgresql/postgresql.conf
-      - -c
-      - log_min_messages=fatal
-      - -c
-      - shared_buffers=${PG_SHARED_BUFFERS:-128MB}
-      - -c
-      - effective_cache_size=${PG_EFFECTIVE_CACHE_SIZE:-256MB}
-      - -c
-      - work_mem=${PG_WORK_MEM:-4MB}
-      - -c
-      - maintenance_work_mem=${PG_MAINTENANCE_WORK_MEM:-64MB}
-      - -c
-      - max_connections=${PG_MAX_CONNECTIONS:-100}
-      - -c
-      - fsync=off
-      - -c
-      - synchronous_commit=off
-      - -c
-      - full_page_writes=off
-      - -c
-      - max_wal_size=256MB
-      - -c
-      - jit=off
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-
-  gotrue:
-    image: supabase/gotrue:v2.189.0
-    restart: on-failure
+          - local-gotrue
+      carbon-shared: {}
     deploy:
       resources:
         limits:
@@ -88,7 +42,7 @@ services:
       GOTRUE_API_PORT: 9999
       API_EXTERNAL_URL: ${SUPABASE_URL}
       GOTRUE_DB_DRIVER: postgres
-      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:postgres@postgres:5432/postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:postgres@${DB_HOST}:5432/${DB_NAME}
       GOTRUE_SITE_URL: ${ERP_URL}
       # `/**` so a callback carrying `?redirectTo=` still matches — an exact
       # entry does not, and GoTrue then falls back to GOTRUE_SITE_URL (the
@@ -103,7 +57,7 @@ services:
       GOTRUE_JWT_AUD: authenticated
       GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
       GOTRUE_MAILER_AUTOCONFIRM: "true"
-      GOTRUE_SMTP_HOST: ${GOTRUE_SMTP_HOST:-inbucket}
+      GOTRUE_SMTP_HOST: ${GOTRUE_SMTP_HOST:-${SMTP_HOST}}
       GOTRUE_SMTP_PORT: ${GOTRUE_SMTP_PORT:-2500}
       GOTRUE_SMTP_USER: ${GOTRUE_SMTP_USER:-}
       GOTRUE_SMTP_PASS: ${GOTRUE_SMTP_PASS:-}
@@ -130,23 +84,24 @@ services:
       - "${DOMAIN}:host-gateway"
     volumes:
       - ${HOME}/.portless/ca.pem:/etc/ssl/certs/portless-ca.pem:ro
-    depends_on:
-      postgres:
-        condition: service_healthy
 
   postgrest:
     image: postgrest/postgrest:v13.0.8
     restart: on-failure
+    # On carbon-shared every worktree's postgrest answers to "postgrest", so
+    # Envoy reaches it by this alias, which only this project has.
+    networks:
+      default:
+        aliases:
+          - local-postgrest
+      carbon-shared: {}
     deploy:
       resources:
         limits:
           memory: ${MEM_POSTGREST:-256m}
           cpus: ${CPU_POSTGREST:-1}
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
-      PGRST_DB_URI: postgres://authenticator:postgres@postgres:5432/postgres
+      PGRST_DB_URI: postgres://authenticator:postgres@${DB_HOST}:5432/${DB_NAME}
       PGRST_DB_SCHEMAS: public,storage,graphql_public
       PGRST_DB_ANON_ROLE: anon
       PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET}
@@ -157,31 +112,36 @@ services:
       PGRST_DB_POOL: ${PGRST_DB_POOL:-25}
       PGRST_DB_POOL_ACQUISITION_TIMEOUT: ${PGRST_DB_POOL_ACQUISITION_TIMEOUT:-10}
       PGRST_DB_USE_LEGACY_GUCS: "false"
+      # Hosted values (config.toml [api]): a read returns at most 1000 rows,
+      # and unqualified extension functions resolve.
+      PGRST_DB_MAX_ROWS: 1000
+      PGRST_DB_EXTRA_SEARCH_PATH: public,extensions
       PGRST_APP_SETTINGS_JWT_SECRET: ${SUPABASE_JWT_SECRET}
       PGRST_APP_SETTINGS_JWT_EXP: 3600
 
   realtime:
-    image: supabase/realtime:v2.89.0
+    image: supabase/realtime:v2.148.3
     restart: on-failure
     deploy:
       resources:
         limits:
           memory: ${MEM_REALTIME:-384m}
           cpus: ${CPU_REALTIME:-0.5}
-    depends_on:
-      postgres:
-        condition: service_healthy
     networks:
       default:
         aliases:
           - realtime-dev
+      carbon-shared: {}
     environment:
       PORT: 4000
-      DB_HOST: postgres
+      DB_HOST: ${DB_HOST}
       DB_PORT: 5432
       DB_USER: supabase_admin
       DB_PASSWORD: postgres
-      DB_NAME: postgres
+      DB_NAME: ${DB_NAME}
+      # Slot names are unique per cluster. In shared mode every worktree's
+      # Realtime uses the shared Postgres, so each gets its own suffix.
+      SLOT_NAME_SUFFIX: ${SLOT_NAME_SUFFIX:-}
       DB_AFTER_CONNECT_QUERY: "SET search_path TO _realtime"
       DB_ENC_KEY: supabaserealtime
       API_JWT_SECRET: ${SUPABASE_JWT_SECRET}
@@ -195,92 +155,32 @@ services:
       RUN_JANITOR: "true"
       DISABLE_HEALTHCHECK_LOGGING: "true"
 
-  storage:
-    image: supabase/storage-api:v1.58.4
-    restart: on-failure
-    deploy:
-      resources:
-        limits:
-          # GB-scale CAD: temp-staging allows 2.5 GB objects. Serving a 1.85 GB
-          # object, storage-api is CPU-bound (reads/hashes the whole file before
-          # streaming) — at the old 0.25-core limit it never produced a byte
-          # before the client timed out. Give it real cores + headroom RAM. Limits
-          # are ceilings (idle ~160 MB / ~0%), only used when serving a big file.
-          # Paired with kong `proxy_buffering off` so the response streams.
-          memory: ${MEM_STORAGE:-2g}
-          cpus: ${CPU_STORAGE:-2}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      ANON_KEY: ${SUPABASE_ANON_KEY}
-      SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
-      POSTGREST_URL: http://postgrest:3000
-      PGRST_JWT_SECRET: ${SUPABASE_JWT_SECRET}
-      DATABASE_URL: postgres://supabase_storage_admin:postgres@postgres:5432/postgres
-      # 2.5 GB global storage ceiling (must be >= the largest per-bucket limit;
-      # effective per-bucket = min(this, bucket limit)). Per-bucket limits then
-      # differentiate: `private` = 50 MB (served artifacts), `temp-staging` =
-      # 2.5 GB (raw CAD). Keep in sync with config.toml [storage].
-      FILE_SIZE_LIMIT: 2500000000
-      STORAGE_BACKEND: file
-      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
-      TENANT_ID: stub
-      REGION: stub
-      GLOBAL_S3_BUCKET: stub
-      ENABLE_IMAGE_TRANSFORMATION: "true"
-      IMGPROXY_URL: http://imgproxy:5001
-    volumes:
-      - storage:/var/lib/storage:z
-
-  # Image transformations (resize + HEIC→JPEG decode) for the storage API.
-  # Internal only — never publish a port: direct imgproxy access reads the
-  # storage volume with no RLS.
-  imgproxy:
-    image: darthsim/imgproxy:v3.8.0
-    restart: on-failure
-    profiles: ["full"]
-    deploy:
-      resources:
-        limits:
-          memory: ${MEM_IMGPROXY:-512m}
-          cpus: ${CPU_IMGPROXY:-1}
-    environment:
-      IMGPROXY_BIND: ":5001"
-      IMGPROXY_LOCAL_FILESYSTEM_ROOT: /
-      IMGPROXY_USE_ETAG: "true"
-      # Default is 16.8Mpx, which rejects 48MP iPhone photos.
-      IMGPROXY_MAX_SRC_RESOLUTION: "60"
-    healthcheck:
-      test: ["CMD", "imgproxy", "health"]
-      interval: 5s
-      timeout: 5s
-      retries: 30
-    volumes:
-      - storage:/var/lib/storage:z
-
   meta:
-    image: supabase/postgres-meta:v0.96.5
+    image: supabase/postgres-meta:v0.100.0
     restart: on-failure
+    # On carbon-shared every worktree's meta answers to "meta", so
+    # Envoy reaches it by this alias, which only this project has.
+    networks:
+      default:
+        aliases:
+          - local-meta
+      carbon-shared: {}
     deploy:
       resources:
         limits:
           memory: ${MEM_META:-128m}
           cpus: ${CPU_META:-0.25}
     profiles: ["full", "studio"]
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
       PG_META_PORT: 8080
-      PG_META_DB_HOST: postgres
+      PG_META_DB_HOST: ${DB_HOST}
       PG_META_DB_PORT: 5432
-      PG_META_DB_NAME: postgres
+      PG_META_DB_NAME: ${DB_NAME}
       PG_META_DB_USER: supabase_admin
       PG_META_DB_PASSWORD: postgres
 
   studio:
-    image: supabase/studio:2026.04.28-sha-89d08a2
+    image: supabase/studio:2026.11.02-sha-a05e7ec
     restart: on-failure
     deploy:
       resources:
@@ -295,6 +195,11 @@ services:
       - "${PORT_STUDIO}:3000"
     environment:
       STUDIO_PG_META_URL: http://meta:8080
+      # Studio sends postgres-meta the database to query, built from these.
+      # Unset, it is db:5432/postgres, a host neither mode has.
+      POSTGRES_HOST: ${DB_HOST}
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${DB_NAME}
       POSTGRES_PASSWORD: postgres
       DEFAULT_ORGANIZATION_NAME: Carbon
       DEFAULT_PROJECT_NAME: carbon-${CARBON_WORKTREE}
@@ -308,28 +213,19 @@ services:
       # mounted volume on purpose — snippets are scratch SQL, not project state.
       SNIPPETS_MANAGEMENT_FOLDER: /app/snippets
 
-  inbucket:
-    image: inbucket/inbucket:3.1.1
-    restart: on-failure
-    deploy:
-      resources:
-        limits:
-          memory: ${MEM_INBUCKET:-64m}
-          cpus: ${CPU_INBUCKET:-0.25}
-    profiles: ["mail"]
-    ports:
-      - "${PORT_INBUCKET}:9000"
-    # The image declares /config and /storage as volumes; left unmounted, each
-    # `down` strands two anonymous volumes. /config is empty in the image.
-    tmpfs:
-      - /config
-    volumes:
-      - inbucket:/storage
-
+  # This worktree's own runtime, serving its checkout's functions: for editing
+  # them. Without it (the default) Envoy sends /functions/v1/ to crbn-shared's
+  # carbon-edge-runtime, which serves the functions crbn last copied.
   edge-runtime:
-    image: supabase/edge-runtime:v1.74.0
+    image: supabase/edge-runtime:v1.77.9
     restart: on-failure
     profiles: ["full"]
+    # Envoy reaches it by this alias: on carbon-shared, the bare name
+    # "edge-runtime" is crbn-shared's service.
+    networks:
+      default:
+        aliases:
+          - local-edge-runtime
     deploy:
       resources:
         limits:
@@ -338,9 +234,6 @@ services:
           # and requests hang mid-kill.
           memory: ${MEM_EDGE:-1g}
           cpus: ${CPU_EDGE:-3}
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
       TZ: UTC
       JWT_SECRET: ${SUPABASE_JWT_SECRET}
@@ -358,22 +251,33 @@ services:
       - --main-service
       - /home/deno/main
 
-  kong:
-    image: kong:2.8.1
+  # The API gateway: Envoy, as on the hosted platform and upstream self-hosting.
+  # Config is vendored from upstream (packages/dev/docker/envoy). The `kong`
+  # alias keeps internal URLs (http://kong:8000 in the config row, Studio, the
+  # edge runtime) working.
+  api-gw:
+    image: envoyproxy/envoy:v1.39.6
     restart: on-failure
     deploy:
       resources:
         limits:
-          memory: ${MEM_KONG:-256m}
-          cpus: ${CPU_KONG:-0.5}
+          memory: ${MEM_API_GW:-256m}
+          cpus: ${CPU_API_GW:-0.5}
+    networks:
+      default:
+        aliases:
+          - kong
+          - envoy
+      # pg_net requests from the shared Postgres reach this gateway here.
+      carbon-shared:
+        aliases:
+          - ${CARBON_WORKTREE}-api-gw
     depends_on:
       gotrue:
         condition: service_started
       postgrest:
         condition: service_started
       realtime:
-        condition: service_started
-      storage:
         condition: service_started
       meta:
         condition: service_started
@@ -383,27 +287,38 @@ services:
         required: false
     ports:
       - "${PORT_API}:8000"
+    entrypoint: ["/bin/sh", "/docker-entrypoint.sh"]
     environment:
-      KONG_DATABASE: "off"
-      KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
-      KONG_DNS_ORDER: LAST,A,CNAME
-      KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
-      KONG_NGINX_WORKER_PROCESSES: ${KONG_WORKERS:-1}
-      # Stream proxied responses instead of buffering them. Default nginx
-      # `proxy_buffering on` buffers the whole upstream response (to RAM then a
-      # temp file capped at 1 GB) before sending — so a >1 GB storage download
-      # (2.5 GB temp-staging cap) stalls/aborts. `off` streams upstream→client.
-      KONG_NGINX_PROXY_PROXY_BUFFERING: "off"
+      ANON_KEY: ${SUPABASE_ANON_KEY}
+      SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_PUBLIC_URL: ${SUPABASE_URL}
+      # Guards the gateway's `/` route to Studio. Studio has its own port
+      # here (PORT_STUDIO), so nothing uses this route.
+      DASHBOARD_USERNAME: supabase
+      DASHBOARD_PASSWORD: postgres
+      # The shared or the private Storage, and this worktree's tenant in it.
+      STORAGE_HOST: ${STORAGE_HOST}
+      STORAGE_TENANT: ${STORAGE_TENANT}
+      STORAGE_PUBLIC_HOST: ${STORAGE_PUBLIC_HOST}
+      STORAGE_PUBLIC_PROTO: ${STORAGE_PUBLIC_PROTO}
+      STORAGE_PUBLIC_PORT: ${STORAGE_PUBLIC_PORT}
+      # This gateway on carbon-shared, sent to the shared edge runtime.
+      FUNCTIONS_API_URL: http://${CARBON_WORKTREE}-api-gw:8000
     volumes:
-      - ./packages/dev/docker/kong.yml:/home/kong/kong.yml:ro
-
-  # Redis is shared across worktrees — booted directly as the `carbon-redis`
-  # container by the dev CLI (packages/dev/src/services/compose.ts), not here.
-  # Each worktree gets its own logical DB index (0-15) via REDIS_URL.
+      - ./packages/dev/docker/envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./packages/dev/docker/envoy/cds.template.yaml:/etc/envoy/cds.template.yaml:ro
+      - ./packages/dev/docker/envoy/lds.template.yaml:/etc/envoy/lds.template.yaml:ro
+      - ./packages/dev/docker/envoy/docker-entrypoint.sh:/docker-entrypoint.sh:ro
 
   inngest:
     image: inngest/inngest:v1.19.4
     restart: on-failure
+    networks:
+      default: {}
+      # The shared Postgres sends this worktree's events here.
+      carbon-shared:
+        aliases:
+          - ${CARBON_WORKTREE}-inngest
     deploy:
       resources:
         limits:
@@ -424,9 +339,10 @@ services:
       - inngest:/data
       - ${HOME}/.portless/ca.pem:/etc/ssl/certs/portless-ca.pem:ro
 
+networks:
+  carbon-shared:
+    name: carbon-shared
+    external: true
+
 volumes:
-  pgdata:
-  pgconfig:
-  storage:
   inngest:
-  inbucket:

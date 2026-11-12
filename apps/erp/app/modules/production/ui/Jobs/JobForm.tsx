@@ -13,6 +13,14 @@ import {
   CardHeader,
   CardTitle,
   cn,
+  ModalCard,
+  ModalCardBody,
+  ModalCardContent,
+  ModalCardDescription,
+  ModalCardFooter,
+  ModalCardHeader,
+  ModalCardProvider,
+  ModalCardTitle,
   Tabs,
   TabsContent,
   TabsList,
@@ -25,9 +33,12 @@ import { scrapAllowance } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuDiamond, LuLayers } from "react-icons/lu";
+import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import {
+  Boolean,
+  ChargeNumber,
   Combobox,
   Customer,
   CustomFormFields,
@@ -40,7 +51,8 @@ import {
   Select,
   SelectControlled,
   SequenceOrCustomId,
-  Submit
+  Submit,
+  useChargeNumbers
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import { usePermissions, useUser } from "~/hooks";
@@ -49,7 +61,7 @@ import type {
   ConfigurationParameter,
   ConfigurationParameterGroup
 } from "~/modules/items/types";
-import type { MethodItemType } from "~/modules/shared/types";
+import type { ItemType, MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import type { jobStatus } from "../../production.models";
 import {
@@ -81,13 +93,24 @@ type JobFormProps = {
     fixedAssetId: string;
     name: string;
   }[];
+  /** "modal": one job (no Many Jobs tab) in a dialog, created through the
+   *  New Job route, which opens the job; a refusal shows on its field. */
+  type?: "card" | "modal";
+  onClose?: () => void;
+  /** The item types the job may make; Part and Tool by default. */
+  validItemTypes?: ItemType[];
 };
 
 const JobForm = ({
   initialValues,
   fixedAssetClasses = [],
-  underConstructionAssets = []
+  underConstructionAssets = [],
+  type: formType = "card",
+  onClose,
+  validItemTypes = ["Part", "Tool"]
 }: JobFormProps) => {
+  const fetcher = useFetcher<{}>();
+  const isModal = formType === "modal";
   const permissions = usePermissions();
   const { t, i18n } = useLingui();
   const { company } = useUser();
@@ -185,6 +208,59 @@ const JobForm = ({
   const canEditCompleteTo =
     initialValues.status === "Draft" || initialValues.status === "Planned";
 
+  // Consume to project: on by default when the picked project is Expense or
+  // Contract; never for a Statistical project (it has no account), and never
+  // with a Make to Asset target.
+  const chargeNumbers = useChargeNumbers();
+  // Undefined until the user picks: a charge number passed in by the page is
+  // looked up in the list.
+  const [pickedTreatment, setPickedTreatment] = useState<
+    string | null | undefined
+  >(undefined);
+  const chargeTreatment =
+    pickedTreatment !== undefined
+      ? pickedTreatment
+      : (chargeNumbers.find((row) => row.projectId === initialValues.projectId)
+          ?.costTreatment ?? null);
+  const [consumeToProject, setConsumeToProject] = useState<boolean>(
+    initialValues.consumeToProject ?? false
+  );
+  // A Capitalize charge number builds its asset under construction: the job
+  // sweeps its cost onto that asset (job.fixedAssetId) and never consumes to
+  // the project.
+  const isCapitalCharge = chargeTreatment === "Capitalize";
+  // Undefined until the user picks, as for the treatment above.
+  const [pickedAssetLabel, setPickedAssetLabel] = useState<
+    string | null | undefined
+  >(undefined);
+  const capitalAssetLabel =
+    pickedAssetLabel !== undefined
+      ? pickedAssetLabel
+      : fixedAssetId
+        ? (chargeNumbers.find((row) => row.targetFixedAssetId === fixedAssetId)
+            ?.targetFixedAssetLabel ?? null)
+        : null;
+  const canConsumeToProject =
+    completeTo === "inventory" &&
+    chargeTreatment !== null &&
+    chargeTreatment !== "Statistical" &&
+    !isCapitalCharge;
+  // Receive to project stock: only when the charge number's project keeps
+  // its own stock. Undefined until the user picks, as for the treatment.
+  const [pickedProjectStock, setPickedProjectStock] = useState<
+    boolean | undefined
+  >(undefined);
+  const chargeProjectStock =
+    pickedProjectStock !== undefined
+      ? pickedProjectStock
+      : (chargeNumbers.find((row) => row.projectId === initialValues.projectId)
+          ?.projectStock ?? false);
+  const [receiveToProjectStock, setReceiveToProjectStock] = useState<boolean>(
+    initialValues.receiveToProjectStock ?? false
+  );
+  const canReceiveToProjectStock =
+    completeTo === "inventory" && chargeProjectStock && !isCapitalCharge;
+
   const onTypeChange = (t: MethodItemType | "Item") => {
     setType(t as MethodItemType);
     setItemData({
@@ -279,7 +355,7 @@ const JobForm = ({
     <>
       <Tabs defaultValue="job">
         <VStack className="w-full items-center relative">
-          {!isEditing && (
+          {!isEditing && !isModal && (
             <TabsList className="absolute top-6 right-4 z-50 max-md:static max-md:self-start max-md:mb-3">
               <TabsTrigger value="job">
                 <LuDiamond className="mr-1" />
@@ -293,248 +369,342 @@ const JobForm = ({
           )}
 
           <TabsContent value="job" className="w-full">
-            <Card>
-              <ValidatedForm
-                method="post"
-                validator={jobValidator}
-                defaultValues={formDefaults}
-                isDisabled={isEditing && isLocked}
-              >
-                <CardHeader>
-                  <CardTitle>{isEditing ? "Job" : "New Job"}</CardTitle>
-                  {!isEditing && (
-                    <CardDescription>
-                      A job is a set of work to be done to fulfill an order or
-                      increase inventory
-                    </CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  <Hidden name="id" />
-                  <Hidden
-                    name="modelUploadId"
-                    value={itemData.modelUploadId ?? undefined}
-                  />
-                  <Hidden name="unitOfMeasureCode" value={itemData.uom} />
-                  {!isEditing && requiresConfiguration && (
-                    <Hidden
-                      name="configuration"
-                      value={JSON.stringify(configurationValues)}
-                    />
-                  )}
-                  {/* Only the chosen target is submitted; the other is cleared
-                      so the two never both land on the row. */}
-                  <Hidden
-                    name="fixedAssetClassId"
-                    value={completeTo === "class" ? fixedAssetClassId : ""}
-                  />
-                  <Hidden
-                    name="fixedAssetId"
-                    value={completeTo === "asset" ? fixedAssetId : ""}
-                  />
-                  <VStack>
-                    <div
-                      className={cn(
-                        "grid w-full gap-x-8 gap-y-4",
-                        isEditing
-                          ? "grid-cols-1 lg:grid-cols-3"
-                          : "grid-cols-1 md:grid-cols-2"
-                      )}
-                    >
-                      {isEditing ? (
-                        <Input name="jobId" label={t`Job ID`} isReadOnly />
-                      ) : (
-                        <SequenceOrCustomId
-                          name="jobId"
-                          label={t`Job ID`}
-                          table="job"
-                        />
-                      )}
-
-                      <Item
-                        autoFocus={!isEditing}
-                        name="itemId"
-                        label={i18n._(itemTypeLabel(type))}
-                        type={type}
-                        value={itemData.itemId}
-                        locationId={initialValues.locationId ?? undefined}
-                        validItemTypes={["Part", "Tool"]}
-                        replenishmentSystem="Make"
-                        onChange={(value) => {
-                          onItemChange(value?.value as string);
-                        }}
-                        onTypeChange={onTypeChange}
-                      />
-
-                      {isEditing && (
-                        <InputControlled
-                          name="description"
-                          label={t`Short Description`}
-                          value={itemData.description}
-                          isReadOnly
-                        />
-                      )}
-
-                      <NumberControlled
-                        name="quantity"
-                        label={t`Quantity`}
-                        value={itemData.quantity}
-                        onChange={(value) =>
-                          setItemData((prev) => ({
-                            ...prev,
-                            quantity: value,
-                            scrapQuantity: scrapAllowance(
-                              value,
-                              prev.scrapPercentage
-                            )
-                          }))
-                        }
-                        minValue={0}
-                      />
-                      <NumberControlled
-                        name="scrapQuantity"
-                        label={t`Estimated Scrap Quantity`}
-                        termId="job-estimated-scrap-quantity"
-                        value={itemData.scrapQuantity}
-                        onChange={(value) =>
-                          setItemData((prev) => ({
-                            ...prev,
-                            scrapQuantity: value,
-                            scrapPercentage:
-                              prev.quantity > 0 ? value / prev.quantity : 1
-                          }))
-                        }
-                        minValue={0}
-                      />
-
-                      <Location name="locationId" label={t`Location`} />
-
-                      <SelectControlled
-                        name="completeTo"
-                        label={t`Complete To`}
-                        value={completeTo}
-                        onChange={(option) =>
-                          setCompleteTo(
-                            (option?.value as CompleteTo | undefined) ??
-                              "inventory"
-                          )
-                        }
-                        options={[
-                          { value: "inventory", label: t`Inventory` },
-                          { value: "class", label: t`Fixed Asset Class` },
-                          // Hidden while construction in progress is; a
-                          // saved job that already targets an asset still
-                          // shows it.
-                          ...(CONSTRUCTION_IN_PROGRESS_ENABLED ||
-                          completeTo === "asset"
-                            ? [
-                                {
-                                  value: "asset",
-                                  label: t`Asset Under Construction`
-                                }
-                              ]
-                            : [])
-                        ]}
-                        isDisabled={!canEditCompleteTo}
-                      />
-
-                      {completeTo === "class" && (
-                        <SelectControlled
-                          name="fixedAssetClassSelect"
-                          label={t`Fixed Asset Class`}
-                          value={fixedAssetClassId}
-                          onChange={(option) =>
-                            setFixedAssetClassId(option?.value ?? "")
-                          }
-                          options={fixedAssetClasses.map((assetClass) => ({
-                            value: assetClass.id,
-                            label: assetClass.name
-                          }))}
-                          isDisabled={!canEditCompleteTo}
-                        />
-                      )}
-
-                      {completeTo === "asset" && (
-                        <Combobox
-                          name="fixedAssetSelect"
-                          label={t`Asset Under Construction`}
-                          value={fixedAssetId}
-                          onChange={(option) =>
-                            setFixedAssetId(option?.value ?? "")
-                          }
-                          options={underConstructionAssets.map((asset) => ({
-                            value: asset.id,
-                            label: `${asset.fixedAssetId} — ${asset.name}`
-                          }))}
-                          isReadOnly={!canEditCompleteTo}
-                        />
-                      )}
-
-                      {showDueDate && (
-                        <DatePicker
-                          name="dueDate"
-                          label={t`Due Date`}
-                          isDisabled={isCustomer}
-                        />
-                      )}
-                      <Select
-                        name="deadlineType"
-                        label={t`Deadline Type`}
-                        termId="job-deadline-type"
-                        onChange={(option) =>
-                          setDeadlineType(option?.value ?? "")
-                        }
-                        options={deadlineTypes.map((d) => ({
-                          value: d,
-                          label: (
-                            <div className="flex gap-1 items-center">
-                              {getDeadlineIcon(d)}
-                              <span>{d}</span>
-                            </div>
-                          )
-                        }))}
-                      />
-
-                      {isEditing && (
-                        <Customer
-                          name="customerId"
-                          label={t`Customer`}
-                          isOptional
-                        />
-                      )}
-
-                      <CustomFormFields table="job" />
-                    </div>
-                  </VStack>
-                </CardContent>
-                <CardFooter>
-                  {!isEditing && requiresConfiguration && (
-                    <Button
-                      type="button"
-                      variant={isConfigured ? "secondary" : "primary"}
-                      onClick={() => {
-                        configurationDisclosure.onOpen();
-                      }}
-                    >
-                      Configure
-                    </Button>
-                  )}
-                  <Submit
-                    isDisabled={
-                      (requiresConfiguration && !isConfigured) ||
-                      isDisabled ||
-                      (isEditing
-                        ? !permissions.can("update", "production")
-                        : !permissions.can("create", "production"))
-                    }
+            <ModalCardProvider type={formType}>
+              <ModalCard onClose={onClose}>
+                <ModalCardContent size="xlarge">
+                  <ValidatedForm
+                    method="post"
+                    action={isModal ? path.to.newJob : undefined}
+                    fetcher={isModal ? fetcher : undefined}
+                    validator={jobValidator}
+                    defaultValues={formDefaults}
+                    isDisabled={isEditing && isLocked}
                   >
-                    Save
-                  </Submit>
-                </CardFooter>
-              </ValidatedForm>
-            </Card>
+                    <ModalCardHeader>
+                      {/* The page's h1 when the form is the page. */}
+                      <ModalCardTitle
+                        aria-level={isEditing || isModal ? undefined : 1}
+                      >
+                        {isEditing ? "Job" : "New Job"}
+                      </ModalCardTitle>
+                      {!isEditing && (
+                        <ModalCardDescription>
+                          A job is a set of work to be done to fulfill an order
+                          or increase inventory
+                        </ModalCardDescription>
+                      )}
+                    </ModalCardHeader>
+                    <ModalCardBody>
+                      <Hidden name="id" />
+                      <Hidden
+                        name="modelUploadId"
+                        value={itemData.modelUploadId ?? undefined}
+                      />
+                      <Hidden name="unitOfMeasureCode" value={itemData.uom} />
+                      {!isEditing && requiresConfiguration && (
+                        <Hidden
+                          name="configuration"
+                          value={JSON.stringify(configurationValues)}
+                        />
+                      )}
+                      {/* Only the chosen target is submitted; the other is cleared
+                      so the two never both land on the row. */}
+                      <Hidden
+                        name="fixedAssetClassId"
+                        value={completeTo === "class" ? fixedAssetClassId : ""}
+                      />
+                      <Hidden
+                        name="fixedAssetId"
+                        value={completeTo === "asset" ? fixedAssetId : ""}
+                      />
+                      <VStack>
+                        <div
+                          className={cn(
+                            "grid w-full gap-x-8 gap-y-4",
+                            isEditing
+                              ? "grid-cols-1 lg:grid-cols-3"
+                              : "grid-cols-1 md:grid-cols-2"
+                          )}
+                        >
+                          {isEditing ? (
+                            <Input name="jobId" label={t`Job ID`} isReadOnly />
+                          ) : (
+                            <SequenceOrCustomId
+                              name="jobId"
+                              label={t`Job ID`}
+                              table="job"
+                            />
+                          )}
+
+                          <Item
+                            autoFocus={!isEditing}
+                            name="itemId"
+                            label={i18n._(itemTypeLabel(type))}
+                            type={type}
+                            value={itemData.itemId}
+                            locationId={initialValues.locationId ?? undefined}
+                            validItemTypes={validItemTypes}
+                            replenishmentSystem="Make"
+                            onChange={(value) => {
+                              onItemChange(value?.value as string);
+                            }}
+                            onTypeChange={onTypeChange}
+                          />
+
+                          {isEditing && (
+                            <InputControlled
+                              name="description"
+                              label={t`Short Description`}
+                              value={itemData.description}
+                              isReadOnly
+                            />
+                          )}
+
+                          <NumberControlled
+                            name="quantity"
+                            label={t`Quantity`}
+                            value={itemData.quantity}
+                            onChange={(value) =>
+                              setItemData((prev) => ({
+                                ...prev,
+                                quantity: value,
+                                scrapQuantity: scrapAllowance(
+                                  value,
+                                  prev.scrapPercentage
+                                )
+                              }))
+                            }
+                            minValue={0}
+                          />
+                          <NumberControlled
+                            name="scrapQuantity"
+                            label={t`Estimated Scrap Quantity`}
+                            termId="job-estimated-scrap-quantity"
+                            value={itemData.scrapQuantity}
+                            onChange={(value) =>
+                              setItemData((prev) => ({
+                                ...prev,
+                                scrapQuantity: value,
+                                scrapPercentage:
+                                  prev.quantity > 0 ? value / prev.quantity : 1
+                              }))
+                            }
+                            minValue={0}
+                          />
+
+                          <Location name="locationId" label={t`Location`} />
+
+                          <SelectControlled
+                            name="completeTo"
+                            label={t`Complete To`}
+                            value={completeTo}
+                            onChange={(option) => {
+                              const next =
+                                (option?.value as CompleteTo | undefined) ??
+                                "inventory";
+                              setCompleteTo(next);
+                              if (next !== "inventory")
+                                setConsumeToProject(false);
+                            }}
+                            options={[
+                              { value: "inventory", label: t`Inventory` },
+                              { value: "class", label: t`Fixed Asset Class` },
+                              // Hidden while construction in progress is; a
+                              // saved job that already targets an asset still
+                              // shows it.
+                              ...(CONSTRUCTION_IN_PROGRESS_ENABLED ||
+                              completeTo === "asset"
+                                ? [
+                                    {
+                                      value: "asset",
+                                      label: t`Asset Under Construction`
+                                    }
+                                  ]
+                                : [])
+                            ]}
+                            isDisabled={!canEditCompleteTo || isCapitalCharge}
+                          />
+
+                          {completeTo === "class" && (
+                            <SelectControlled
+                              name="fixedAssetClassSelect"
+                              label={t`Fixed Asset Class`}
+                              value={fixedAssetClassId}
+                              onChange={(option) =>
+                                setFixedAssetClassId(option?.value ?? "")
+                              }
+                              options={fixedAssetClasses.map((assetClass) => ({
+                                value: assetClass.id,
+                                label: assetClass.name
+                              }))}
+                              isDisabled={!canEditCompleteTo}
+                            />
+                          )}
+
+                          {completeTo === "asset" && isCapitalCharge && (
+                            <div className="flex flex-col gap-1 text-sm">
+                              <span className="text-muted-foreground">
+                                <Trans>Asset Under Construction</Trans>
+                              </span>
+                              <span>
+                                {capitalAssetLabel ??
+                                  t`The capital project has no asset under construction yet`}
+                              </span>
+                            </div>
+                          )}
+
+                          {completeTo === "asset" && !isCapitalCharge && (
+                            <Combobox
+                              name="fixedAssetSelect"
+                              label={t`Asset Under Construction`}
+                              value={fixedAssetId}
+                              onChange={(option) =>
+                                setFixedAssetId(option?.value ?? "")
+                              }
+                              options={underConstructionAssets.map((asset) => ({
+                                value: asset.id,
+                                label: `${asset.fixedAssetId} — ${asset.name}`
+                              }))}
+                              isReadOnly={!canEditCompleteTo}
+                            />
+                          )}
+
+                          <ChargeNumber
+                            label={t`Charge Number`}
+                            isOptional
+                            isReadOnly={!canEditCompleteTo}
+                            onChange={(row) => {
+                              const treatment = row?.costTreatment ?? null;
+                              setPickedTreatment(treatment);
+                              setPickedProjectStock(row?.projectStock ?? false);
+                              if (!row?.projectStock) {
+                                setReceiveToProjectStock(false);
+                              }
+                              if (treatment === "Capitalize") {
+                                setConsumeToProject(false);
+                                setCompleteTo("asset");
+                                setFixedAssetId(row?.targetFixedAssetId ?? "");
+                                setPickedAssetLabel(
+                                  row?.targetFixedAssetLabel ?? null
+                                );
+                                return;
+                              }
+                              if (isCapitalCharge) {
+                                // Leaving a capital charge number frees the
+                                // job to complete to inventory again.
+                                setCompleteTo("inventory");
+                                setFixedAssetId("");
+                                setPickedAssetLabel(null);
+                              }
+                              setConsumeToProject(
+                                (isCapitalCharge ||
+                                  completeTo === "inventory") &&
+                                  (treatment === "Expense" ||
+                                    treatment === "Contract")
+                              );
+                            }}
+                          />
+                          <Select
+                            name="deadlineType"
+                            label={t`Deadline Type`}
+                            termId="job-deadline-type"
+                            onChange={(option) =>
+                              setDeadlineType(option?.value ?? "")
+                            }
+                            options={deadlineTypes.map((d) => ({
+                              value: d,
+                              label: (
+                                <div className="flex gap-1 items-center">
+                                  {getDeadlineIcon(d)}
+                                  <span>{d}</span>
+                                </div>
+                              )
+                            }))}
+                          />
+                          {showDueDate && (
+                            <DatePicker
+                              name="dueDate"
+                              label={t`Due Date`}
+                              isDisabled={isCustomer}
+                            />
+                          )}
+
+                          {/* The two switches share one row, whatever precedes them. */}
+                          <div className="col-span-full grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
+                            <Boolean
+                              bordered
+                              name="consumeToProject"
+                              label={t`Consume to project`}
+                              description={t`The job's cost goes to the project when it completes, instead of into stock`}
+                              value={consumeToProject && canConsumeToProject}
+                              onChange={(value) => {
+                                setConsumeToProject(value);
+                                if (value) setReceiveToProjectStock(false);
+                              }}
+                              isDisabled={
+                                !canConsumeToProject || !canEditCompleteTo
+                              }
+                            />
+                            {canReceiveToProjectStock && (
+                              <Boolean
+                                bordered
+                                name="receiveToProjectStock"
+                                label={t`Receive to project stock`}
+                                description={t`The job's output enters the project's stock instead of unassigned stock`}
+                                value={
+                                  receiveToProjectStock && !consumeToProject
+                                }
+                                onChange={(value) => {
+                                  setReceiveToProjectStock(value);
+                                  if (value) setConsumeToProject(false);
+                                }}
+                                isDisabled={!canEditCompleteTo}
+                              />
+                            )}
+                          </div>
+
+                          {isEditing && (
+                            <Customer
+                              name="customerId"
+                              label={t`Customer`}
+                              isOptional
+                            />
+                          )}
+
+                          <CustomFormFields table="job" />
+                        </div>
+                      </VStack>
+                    </ModalCardBody>
+                    <ModalCardFooter>
+                      {!isEditing && requiresConfiguration && (
+                        <Button
+                          type="button"
+                          variant={isConfigured ? "secondary" : "primary"}
+                          onClick={() => {
+                            configurationDisclosure.onOpen();
+                          }}
+                        >
+                          Configure
+                        </Button>
+                      )}
+                      <Submit
+                        isDisabled={
+                          (requiresConfiguration && !isConfigured) ||
+                          isDisabled ||
+                          (isEditing
+                            ? !permissions.can("update", "production")
+                            : !permissions.can("create", "production"))
+                        }
+                      >
+                        Save
+                      </Submit>
+                    </ModalCardFooter>
+                  </ValidatedForm>
+                </ModalCardContent>
+              </ModalCard>
+            </ModalCardProvider>
           </TabsContent>
-          {!isEditing && (
+          {!isEditing && !isModal && (
             <TabsContent value="bulk" className="w-full">
               <Card>
                 <ValidatedForm
@@ -544,7 +714,7 @@ const JobForm = ({
                   defaultValues={bulkInitialValues}
                 >
                   <CardHeader>
-                    <CardTitle>
+                    <CardTitle aria-level={1}>
                       <Trans>Bulk Jobs</Trans>
                     </CardTitle>
                     <CardDescription>

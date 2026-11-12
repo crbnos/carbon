@@ -48,9 +48,23 @@ types `MethodType` / `SourcingType` in `apps/erp/app/modules/shared/types.ts`
 
 - Part: `apps/erp/app/modules/items/ui/Parts/PartProperties.tsx` — "Default
   Method Type" `<Select>` + `<SourcingTypeProperty />`.
-- Tool: `apps/erp/app/modules/items/ui/Tools/ToolProperties.tsx` — same.
-- The Sourcing control (`SourcingTypeProperty.tsx`) renders `null` unless
-  `replenishmentSystem === "Buy and Make"`.
+- Tool, Material, Consumable: `ToolProperties.tsx`, `MaterialProperties.tsx`,
+  `ConsumableProperties.tsx` — same. `get_material_details` /
+  `get_consumable_details` return `sourcingType` since
+  `20261103174329_material-consumable-sourcing-type.sql`.
+- The bill of material's Sourcing card (below): its select writes the
+  component ITEM's sourcing through the same `bulkUpdateItems` post.
+- Sourcing is how a "Buy and Make" parent's component is fulfilled, so it is
+  shown on the COMPONENT, never because the item itself is Buy and Make. The
+  Sourcing control (`SourcingTypeProperty.tsx`) renders `null` unless
+  `useIsComponentOfBuyAndMake` (same file) says so: on the item's own page it
+  looks for a Buy and Make parent among `usedIn.methodMaterials` (the page's
+  streamed Used In data, joined to the `useItems` store for each parent's
+  replenishment); in the BOM tree's sidebar (`SelectedItemProperties`, which
+  injects `data` and has no Used In) the tree passes
+  `data.isComponentOfBuyAndMake` from the selected line's parent node. A Make item is not
+  offered `Drop Ship`, which would set `Purchase to Order`. The guard is UI
+  only: `setItemSourcing` does not refuse it.
 - Both submit via `onUpdate(field, value)` → `fetcher.submit(..., { action: path.to.bulkUpdateItems })`.
 
 ## Server-side update + sourcing → method-type mapping
@@ -90,9 +104,13 @@ cascades via `cascadeItemTrackingType`.)
 ## BOM editor display (read-only)
 
 `apps/erp/app/modules/items/ui/Item/BillOfMaterial.tsx`:
-- Sourcing section (~L859) is gated on the **component** item's replenishment
-  (`itemData.itemReplenishmentSystem === "Buy and Make"`), not the parent's, and
-  renders the `sourcingType` `<Select isReadOnly>`.
+- Sourcing section is gated on the **parent** item's replenishment
+  (`showSourcing`: the `replenishmentSystem` prop is `"Buy and Make"`), the
+  same test as the row's sourcing icon (`makeItem`). Its select is editable
+  and writes the component item (`onSourcingChange` → `bulkUpdateItems`), so
+  it changes the item everywhere: the Properties value, every Draft method
+  using it, and possibly the item's `defaultMethodType` (Drop Ship → Purchase
+  to Order). Read-only while the BOM is, or before an item is picked.
 - Method Type section (~L922) shows a read-only `<DefaultMethodType isReadOnly>`;
   label is "Finish To" when `methodType === "Make to Order"`, else "Pull From".
 - Values are submitted via hidden inputs only to satisfy `methodMaterialValidator`;

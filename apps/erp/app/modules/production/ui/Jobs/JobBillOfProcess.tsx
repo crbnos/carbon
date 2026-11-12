@@ -65,6 +65,8 @@ import {
   INPUT_FORMAT
 } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useLocale, useNumberFormatter } from "@react-aria/i18n";
 import type { DragControls } from "motion/react";
@@ -267,7 +269,7 @@ function makeItems(
   tags: { name: string }[],
   temporaryItems: TemporaryItems,
   urlParams: { [key: string]: string },
-  t: ReturnType<typeof useLingui>["t"],
+  t: (descriptor: MessageDescriptor) => string,
   locale: string
 ): ItemWithData[] {
   return operations.map((operation) =>
@@ -280,7 +282,7 @@ function makeItem(
   tags: { name: string }[],
   temporaryItems: TemporaryItems,
   urlParams: { [key: string]: string },
-  t: ReturnType<typeof useLingui>["t"],
+  t: (descriptor: MessageDescriptor) => string,
   locale: string
 ): ItemWithData {
   // Forward forecast vs backward need-by target: calendar-day comparison via
@@ -373,18 +375,22 @@ function makeItem(
           <JobOperationTags operation={operation} availableTags={tags} />
           <Tooltip>
             <TooltipTrigger asChild>
-              <a
-                href={path.to.external.mesJobOperation(operation.id!)}
-                title={t`Open in MES`}
+              {/* One control: the link styled as the icon button. A button
+                  inside a link is two controls with one name. */}
+              <Button
+                asChild
+                isIcon
+                variant="secondary"
+                size="sm"
                 className="max-md:hidden"
               >
-                <IconButton
-                  icon={<LuPlay />}
-                  variant="secondary"
-                  aria-label={t`Open in MES`}
-                  size="sm"
-                />
-              </a>
+                <a
+                  href={path.to.external.mesJobOperation(operation.id!)}
+                  aria-label={t(msg`Open in MES`)}
+                >
+                  <LuPlay aria-hidden />
+                </a>
+              </Button>
             </TooltipTrigger>
             <TooltipContent>
               <span>
@@ -394,18 +400,20 @@ function makeItem(
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link
-                to={newIssueUrl(operation, urlParams)}
-                title={t`Create Issue`}
+              <Button
+                asChild
+                isIcon
+                variant="secondary"
+                size="sm"
                 className="max-md:hidden"
               >
-                <IconButton
-                  icon={<LuShieldX />}
-                  variant="secondary"
-                  aria-label={t`Create Issue`}
-                  size="sm"
-                ></IconButton>
-              </Link>
+                <Link
+                  to={newIssueUrl(operation, urlParams)}
+                  aria-label={t(msg`Create Issue`)}
+                >
+                  <LuShieldX aria-hidden />
+                </Link>
+              </Button>
             </TooltipTrigger>
             <TooltipContent>
               <span>
@@ -819,15 +827,7 @@ const JobBillOfProcess = ({
         label: t`Details`,
         content: (
           <div className="flex w-full flex-col pr-2 py-2">
-            <motion.div
-              initial={{ opacity: 0, filter: "blur(4px)" }}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              transition={{
-                type: "spring",
-                bounce: 0,
-                duration: 0.3
-              }}
-            >
+            <div>
               <OperationForm
                 item={item}
                 itemId={itemId}
@@ -848,7 +848,7 @@ const JobBillOfProcess = ({
                   });
                 }}
               />
-            </motion.div>
+            </div>
           </div>
         )
       },
@@ -863,6 +863,7 @@ const JobBillOfProcess = ({
             <div>
               {permissions.can("update", "parts") ? (
                 <Editor
+                  label={t`Work Instructions`}
                   initialValue={
                     workInstructions[item.id] ?? ({} as JSONContent)
                   }
@@ -979,22 +980,14 @@ const JobBillOfProcess = ({
         label: t`Events`,
         content: (
           <div className="flex w-full flex-col pr-2 py-6 min-h-[300px]">
-            <motion.div
-              initial={{ opacity: 0, filter: "blur(4px)" }}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              transition={{
-                type: "spring",
-                bounce: 0,
-                duration: 0.3
-              }}
-            >
+            <div>
               <InfiniteScroll
                 component={ProductionEventActivity}
                 items={productionEvents}
                 loadMore={loadMoreProductionEvents}
                 hasMore={hasMore}
               />
-            </motion.div>
+            </div>
           </div>
         )
       },
@@ -1095,6 +1088,7 @@ const JobBillOfProcess = ({
       </HStack>
       <CardContent>
         <SortableList
+          label={t`Bill of Process`}
           isReadOnly={isReadOnly}
           items={items}
           onReorder={onReorder}
@@ -1563,6 +1557,7 @@ function StepsForm({
                   <Trans>Description</Trans>
                 </Label>
                 <Editor
+                  label={t`Description`}
                   initialValue={description}
                   onUpload={onUploadImage}
                   onChange={(value) => {
@@ -2220,6 +2215,7 @@ function StepsListItem({
                 <Trans>Description</Trans>
               </Label>
               <Editor
+                label={t`Description`}
                 initialValue={description}
                 onUpload={onUploadImage}
                 onChange={(value) => {
@@ -2496,10 +2492,16 @@ function PreviewStepRecord({
   return (
     <>
       {attribute.type === "Task" && (
-        <Checkbox checked={record.booleanValue ?? false} />
+        <Checkbox
+          checked={record.booleanValue ?? false}
+          aria-label={attribute.name}
+        />
       )}
       {attribute.type === "Checkbox" && (
-        <Checkbox checked={record.booleanValue ?? false} />
+        <Checkbox
+          checked={record.booleanValue ?? false}
+          aria-label={attribute.name}
+        />
       )}
       {attribute.type === "Value" && <p className="text-sm">{record.value}</p>}
       {attribute.type === "Measurement" &&
@@ -2563,7 +2565,10 @@ function PreviewStepRecord({
               </a>
             </>
           )}
-          <Checkbox checked={record.booleanValue ?? false} />
+          <Checkbox
+            checked={record.booleanValue ?? false}
+            aria-label={attribute.name}
+          />
         </div>
       )}
     </>
@@ -3190,6 +3195,7 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
+                  aria-expanded={setupDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     setupDisclosure.isOpen ? t`Collapse Setup` : t`Expand Setup`
@@ -3272,6 +3278,7 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
+                  aria-expanded={laborDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     laborDisclosure.isOpen ? t`Collapse Labor` : t`Expand Labor`
@@ -3355,6 +3362,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={machineDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       machineDisclosure.isOpen
@@ -3432,6 +3440,7 @@ function OperationForm({
               </HStack>
               <HStack>
                 <IconButton
+                  aria-expanded={costingDisclosure.isOpen}
                   icon={<LuChevronRight />}
                   aria-label={
                     costingDisclosure.isOpen
@@ -3526,6 +3535,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={procedureDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       procedureDisclosure.isOpen
@@ -3615,6 +3625,7 @@ function OperationForm({
                     </Badge>
                   )}
                   <IconButton
+                    aria-expanded={assemblyDisclosure.isOpen}
                     icon={<LuChevronRight />}
                     aria-label={
                       assemblyDisclosure.isOpen
@@ -3725,22 +3736,13 @@ function OperationForm({
           )}
         </>
       )}
-      <motion.div
-        className="flex w-full items-center justify-end p-2"
-        initial={{ opacity: 0, filter: "blur(4px)" }}
-        animate={{ opacity: 1, filter: "blur(0px)" }}
-        transition={{
-          type: "spring",
-          bounce: 0,
-          duration: 0.25
-        }}
-      >
+      <div className="flex w-full items-center justify-end p-2">
         <motion.div layout className="ml-auto mr-1 pt-2">
           <Submit isDisabled={isDisabled}>
             <Trans>Save</Trans>
           </Submit>
         </motion.div>
-      </motion.div>
+      </div>
     </ValidatedForm>
   );
 }

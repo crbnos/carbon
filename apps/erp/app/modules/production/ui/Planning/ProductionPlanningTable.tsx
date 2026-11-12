@@ -70,8 +70,15 @@ import {
   openNewSupplyActions,
   productionOrdersFromActions
 } from "~/modules/production/ui/Planning/planned-orders-from-actions";
+import {
+  PLANNING_SEGMENT_COLUMN,
+  planningRowKey
+} from "~/modules/production/ui/Planning/planning-action-scope";
 import { splitOrdersByFence } from "~/modules/production/ui/Planning/planning-fence";
-import { planningColumns } from "~/modules/production/ui/Planning/planningColumns";
+import {
+  type PlanningSegmentProject,
+  planningColumns
+} from "~/modules/production/ui/Planning/planningColumns";
 import { useJobPlanningRelease } from "~/modules/production/ui/Planning/useJobPlanningRelease";
 import { usePlanningActions } from "~/modules/production/ui/Planning/usePlanningActions";
 import { usePlanningWeekLabel } from "~/modules/production/ui/Planning/usePlanningWeekLabel";
@@ -101,6 +108,8 @@ type ProductionPlanningTableProps = {
   /** The Actions-column filter in effect; null when the grid is not filtered
    *  by action type. */
   actionTypes: string[] | null;
+  /** The projects that net in their own segment, for the Segment column. */
+  segmentProjects: PlanningSegmentProject[];
   /** Today on the location's calendar (ISO date). */
   locationToday: string;
 };
@@ -113,6 +122,7 @@ const ProductionPlanningTable = ({
   locationId,
   periods,
   actionTypes,
+  segmentProjects,
   locationToday
 }: ProductionPlanningTableProps) => {
   const permissions = usePermissions();
@@ -169,9 +179,9 @@ const ProductionPlanningTable = ({
     actionHandlers: changeActionHandlers,
     isActionsBusy,
     timeFence,
-    actionsByItemId,
-    fencedActionsByItemId,
-    visibleActionsByItemId,
+    actionsByRowKey,
+    fencedActionsByRowKey,
+    visibleActionsByRowKey,
     submitActions
   } = usePlanningActions({
     data: drawerRows,
@@ -295,18 +305,21 @@ const ProductionPlanningTable = ({
   // moved expedited supply, folded a shortfall into an open job as an
   // Increase, and summed each week. They seed the drawer, size the Make
   // button, and are what a bulk Create Jobs submits for rows never opened.
-  const ordersByItemId = useMemo(
+  const ordersByRowKey = useMemo(
     () =>
       new Map(
         loadedRows.map((row) => [
-          row.id,
+          planningRowKey(row),
           productionOrdersFromActions(
-            openNewSupplyActions(actionsByItemId.get(row.id), "Make"),
+            openNewSupplyActions(
+              actionsByRowKey.get(planningRowKey(row)),
+              "Make"
+            ),
             { item: row, todayDate: locationToday }
           )
         ])
       ),
-    [loadedRows, actionsByItemId, locationToday]
+    [loadedRows, actionsByRowKey, locationToday]
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -322,10 +335,10 @@ const ProductionPlanningTable = ({
             // The fallback stops at the row's time fence: a bulk order raises
             // what is due inside the planning horizon, not the whole window.
             const sourceOrders =
-              row.id! in ordersMap
-                ? ordersMap[row.id!]!
+              planningRowKey(row) in ordersMap
+                ? ordersMap[planningRowKey(row)]!
                 : splitOrdersByFence(
-                    ordersByItemId.get(row.id!) ?? [],
+                    ordersByRowKey.get(planningRowKey(row)) ?? [],
                     timeFence.fenceDateFor(row)
                   ).inside;
             const ordersWithPeriods = sourceOrders.map((order) => {
@@ -357,6 +370,7 @@ const ProductionPlanningTable = ({
 
             return {
               id: row.id,
+              planningSegmentId: row.planningSegmentId ?? "",
               orders: ordersWithPeriods
             };
           }),
@@ -369,7 +383,7 @@ const ProductionPlanningTable = ({
       });
     },
 
-    [bulkUpdateFetcher, locationId, ordersMap, ordersByItemId, timeFence]
+    [bulkUpdateFetcher, locationId, ordersMap, ordersByRowKey, timeFence]
   );
 
   // Moving a row's fence changes which suggested orders its drawer opens on.
@@ -381,9 +395,12 @@ const ProductionPlanningTable = ({
     (itemId: string, date: string | null) => {
       setFenceDate(itemId, date);
       setOrdersMap((prev) => {
-        if (!(itemId in prev)) return prev;
-        const { [itemId]: _dropped, ...rest } = prev;
-        return rest;
+        // the fence is per item, so every segment row of the item re-seeds
+        const kept = Object.entries(prev).filter(
+          ([key]) => key.split("\u001f")[0] !== itemId
+        );
+        if (kept.length === Object.keys(prev).length) return prev;
+        return Object.fromEntries(kept);
       });
     },
     [setFenceDate]
@@ -406,7 +423,7 @@ const ProductionPlanningTable = ({
       if (item.id) {
         setOrdersMap((prev) => ({
           ...prev,
-          [item.id!]: orders
+          [planningRowKey(item)]: orders
         }));
       }
     },
@@ -441,10 +458,10 @@ const ProductionPlanningTable = ({
   const selectedOrders = useMemo(() => {
     if (!selectedItem?.id) return { inside: [], beyond: [] };
     return splitOrdersByFence(
-      ordersByItemId.get(selectedItem.id) ?? [],
+      ordersByRowKey.get(planningRowKey(selectedItem)) ?? [],
       timeFence.fenceDateFor(selectedItem)
     );
-  }, [selectedItem, ordersByItemId, timeFence]);
+  }, [selectedItem, ordersByRowKey, timeFence]);
 
   // The drawer's Open Orders table shows the selected row's change actions on existing
   // jobs (Expedite, Defer, Increase, …). Order / Make actions are left out —
@@ -453,11 +470,11 @@ const ProductionPlanningTable = ({
   const selectedActions = useMemo(
     () =>
       selectedItem?.id
-        ? (fencedActionsByItemId.get(selectedItem.id) ?? []).filter(
-            (action) => !isNewSupplyAction(action)
-          )
+        ? (
+            fencedActionsByRowKey.get(planningRowKey(selectedItem)) ?? []
+          ).filter((action) => !isNewSupplyAction(action))
         : [],
-    [selectedItem, fencedActionsByItemId]
+    [selectedItem, fencedActionsByRowKey]
   );
 
   // The drawer's Open Orders rows carry the same Apply / Dismiss / Reopen /
@@ -474,7 +491,8 @@ const ProductionPlanningTable = ({
       unitOfMeasures,
       itemPostingGroups,
       timeFence,
-      onFenceChange
+      onFenceChange,
+      segmentProjects
     });
 
     return [
@@ -521,12 +539,15 @@ const ProductionPlanningTable = ({
         header: t`Item Name`,
         value: (row) => row.name ?? null
       }),
+      shared.segment,
       {
         id: PLANNING_ACTIONS_COLUMN,
         header: t`Actions`,
         cell: ({ row }) => (
           <PlanningActionsCell
-            actions={visibleActionsByItemId.get(row.original.id) ?? []}
+            actions={
+              visibleActionsByRowKey.get(planningRowKey(row.original)) ?? []
+            }
           />
         ),
         meta: {
@@ -537,7 +558,9 @@ const ProductionPlanningTable = ({
             options: actionTypeOptions
           },
           exportValue: (row: ProductionPlanningItem) =>
-            planningActionsExportValue(visibleActionsByItemId.get(row.id) ?? [])
+            planningActionsExportValue(
+              visibleActionsByRowKey.get(planningRowKey(row)) ?? []
+            )
         }
       },
       {
@@ -547,8 +570,10 @@ const ProductionPlanningTable = ({
           <EmployeeAvatarGroup
             employeeIds={[
               ...new Set(
-                (visibleActionsByItemId.get(row.original.id) ?? []).flatMap(
-                  (action) => (action.assignee ? [action.assignee] : [])
+                (
+                  visibleActionsByRowKey.get(planningRowKey(row.original)) ?? []
+                ).flatMap((action) =>
+                  action.assignee ? [action.assignee] : []
                 )
               )
             ]}
@@ -567,8 +592,8 @@ const ProductionPlanningTable = ({
           exportValue: (row: ProductionPlanningItem) =>
             [
               ...new Set(
-                (visibleActionsByItemId.get(row.id) ?? []).flatMap((action) =>
-                  action.assignee ? [action.assignee] : []
+                (visibleActionsByRowKey.get(planningRowKey(row)) ?? []).flatMap(
+                  (action) => (action.assignee ? [action.assignee] : [])
                 )
               )
             ]
@@ -600,7 +625,7 @@ const ProductionPlanningTable = ({
           // only what is due inside the row's time fence
           const orders = row.original.id
             ? splitOrdersByFence(
-                ordersByItemId.get(row.original.id) ?? [],
+                ordersByRowKey.get(planningRowKey(row.original)) ?? [],
                 timeFence.fenceDateFor(row.original)
               ).inside
             : [];
@@ -617,7 +642,7 @@ const ProductionPlanningTable = ({
           // the dot too; a Decrease, Defer or Cancel does not.
           const dot =
             planningActionDot(
-              visibleActionsByItemId.get(row.original.id) ?? []
+              visibleActionsByRowKey.get(planningRowKey(row.original)) ?? []
             ) ?? (hasOrders ? "green" : null);
           return (
             <div className="flex justify-end">
@@ -634,7 +659,10 @@ const ProductionPlanningTable = ({
                   t`Blocked`
                 ) : dot ? (
                   <HStack>
-                    <PulsingDot variant={dot} />
+                    <PulsingDot
+                      variant={dot}
+                      label={dot === "red" ? t`Urgent` : t`Action needed`}
+                    />
                     <span>{hasOrders ? t`Make ${quantity}` : t`Make`}</span>
                   </HStack>
                 ) : (
@@ -655,12 +683,13 @@ const ProductionPlanningTable = ({
     formatQuantity,
     unitOfMeasures,
     isDisabled,
-    visibleActionsByItemId,
+    visibleActionsByRowKey,
     actionTypeOptions,
     people,
     itemPostingGroups,
-    ordersByItemId,
+    ordersByRowKey,
     timeFence,
+    segmentProjects,
     locationToday,
     weekLabel
     // Note: ordersMap is intentionally not in deps to avoid column regeneration
@@ -671,7 +700,7 @@ const ProductionPlanningTable = ({
     (selectedRows: ProductionPlanningItem[]) => {
       // inside each row's time fence only — what the row is showing
       const applyableIds = selectedRows.flatMap((row) =>
-        (visibleActionsByItemId.get(row.id) ?? [])
+        (visibleActionsByRowKey.get(planningRowKey(row)) ?? [])
           .filter(isApplyablePlanningAction)
           .map((action) => action.id)
       );
@@ -714,7 +743,7 @@ const ProductionPlanningTable = ({
     [
       bulkUpdateFetcher.state,
       onBulkUpdate,
-      visibleActionsByItemId,
+      visibleActionsByRowKey,
       canUpdateActions,
       isActionsBusy,
       submitActions
@@ -723,25 +752,27 @@ const ProductionPlanningTable = ({
 
   const canExpandRow = useCallback(
     (row: ProductionPlanningItem) =>
-      (visibleActionsByItemId.get(row.id)?.length ?? 0) > 0,
-    [visibleActionsByItemId]
+      (visibleActionsByRowKey.get(planningRowKey(row))?.length ?? 0) > 0,
+    [visibleActionsByRowKey]
   );
 
   const renderExpandedRow = useCallback(
     (row: ProductionPlanningItem) => (
       <PlanningActionLines
-        actions={visibleActionsByItemId.get(row.id) ?? []}
+        actions={visibleActionsByRowKey.get(planningRowKey(row)) ?? []}
         todayIso={locationToday}
         {...actionHandlers}
         onOrder={() => openDrawer(row)}
       />
     ),
-    [visibleActionsByItemId, locationToday, actionHandlers, openDrawer]
+    [visibleActionsByRowKey, locationToday, actionHandlers, openDrawer]
   );
 
   const defaultColumnVisibility = {
     // carries the Assignee filter; the avatars are opt-in
     [PLANNING_ASSIGNEE_COLUMN]: false,
+    // only a company with project stock has more than one segment
+    [PLANNING_SEGMENT_COLUMN]: segmentProjects.length > 0,
     type: false
   };
 
@@ -762,6 +793,7 @@ const ProductionPlanningTable = ({
         primaryAction={
           <div className="flex items-center gap-2">
             <Combobox
+              aria-label={t`Location`}
               asButton
               size="sm"
               value={locationId}
@@ -828,7 +860,7 @@ const ProductionPlanningTable = ({
           row={selectedItem}
           orders={
             selectedItem.id
-              ? ordersMap[selectedItem.id] || selectedOrders.inside
+              ? ordersMap[planningRowKey(selectedItem)] || selectedOrders.inside
               : []
           }
           beyondFenceOrders={selectedOrders.beyond}

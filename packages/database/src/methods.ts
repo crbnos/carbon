@@ -12,7 +12,7 @@ import {
   many,
   notIn,
   single,
-  updateRows
+  updateRowsById
 } from "./rows.ts";
 import {
   buildSupplierPriceMap,
@@ -730,25 +730,21 @@ export async function calculateQuoteLinePrices(
   ];
   const priceMap = await getSupplierPriceBreaksForItems(client, buyItemIds);
 
-  for (const mat of buyMaterials.data ?? []) {
-    if (mat.unitCostSource === "manual") continue;
+  const priceChanges = (buyMaterials.data ?? []).flatMap((mat) => {
+    if (mat.unitCostSource === "manual") return [];
     const price = resolveBuyUnitCost(mat, 1, priceMap);
-    if (price !== mat.unitCost) {
-      if (isKysely(client)) {
-        await updateRows(
-          client,
-          "quoteMaterial",
-          { unitCost: price },
-          {
-            id: mat.id
-          }
-        );
-      } else {
-        await client
-          .from("quoteMaterial")
-          .update({ unitCost: price })
-          .eq("id", mat.id);
-      }
+    return price !== mat.unitCost
+      ? [{ id: mat.id, data: { unitCost: price } }]
+      : [];
+  });
+  if (isKysely(client)) {
+    await updateRowsById(client, "quoteMaterial", companyId, priceChanges);
+  } else {
+    for (const change of priceChanges) {
+      await client
+        .from("quoteMaterial")
+        .update(change.data)
+        .eq("id", change.id);
     }
   }
 

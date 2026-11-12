@@ -9,7 +9,12 @@ import { parse } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
 import { dirname, join } from "pathe";
 import pc from "picocolors";
-import { isAtLeastAsNew, onShutdown, readLines } from "../helpers.js";
+import {
+  isAtLeastAsNew,
+  lineWriter,
+  onShutdown,
+  readLines
+} from "../helpers.js";
 import { type PortMap, sameWorktreePath } from "../worktree.js";
 
 const APP_COLORS: Record<string, (s: string) => string> = {
@@ -26,6 +31,20 @@ function isNoiseLine(line: string): boolean {
   const plain = line.replace(/\x1b\[[0-9;]*m/g, "");
   return NOISE_PATTERNS.some((re) => re.test(plain));
 }
+
+// Rolldown pre-bundles dependencies with one worker per core, and its allocator
+// keeps what the workers freed: on a 14-core Mac about 1 GB stayed in each dev
+// server after a re-bundle, 320 MB with these (rolldown/rolldown#10985,
+// #11233). Read when the binding loads, so they must be set before Node starts.
+// Only for the react-router dev servers `crbn` spawns: the assembler's planner
+// uses rayon too, and an app's own `dev` script does not get them. The shell or
+// a `.env` file overrides them.
+const ROLLDOWN_MEMORY_ENV = {
+  MIMALLOC_ARENA_PURGE_MULT: "0",
+  ROLLDOWN_WORKER_THREADS: "4",
+  ROLLDOWN_MAX_BLOCKING_THREADS: "4",
+  RAYON_NUM_THREADS: "4"
+};
 
 // `portless` inherits `crbn`'s `process.env`; a stale shell `SUPABASE_URL`
 // (e.g. `http://127.0.0.1:54321`) would otherwise win over `crbn`'s repo-root
@@ -115,6 +134,7 @@ export function spawnApps(opts: {
     const child = execa(file, args, {
       cwd: join(root, "apps", id),
       env: {
+        ...ROLLDOWN_MEMORY_ENV,
         ...appEnv,
         ...extraCaEnv,
         HOST: "127.0.0.1",
@@ -133,11 +153,12 @@ export function spawnApps(opts: {
       sink: NodeJS.WriteStream
     ) => {
       if (!stream) return;
+      const write = lineWriter(sink);
       disposers.push(
         readLines(stream, (line) => {
           // Mute shutdown noise (EPIPE, ELIFECYCLE 143, esbuild "stopped").
           if (shuttingDown || isNoiseLine(line)) return;
-          sink.write(`${prefix}${line}\n`);
+          write(`${prefix}${line}\n`);
         })
       );
     };
@@ -417,9 +438,10 @@ export function spawnAssembler(opts: {
     sink: NodeJS.WriteStream
   ) => {
     if (!stream) return;
+    const write = lineWriter(sink);
     readLines(stream, (line) => {
       if (isNoiseLine(line)) return;
-      sink.write(`${prefix}${line}\n`);
+      write(`${prefix}${line}\n`);
     });
   };
   pipe(child.stdout, process.stdout);
@@ -471,9 +493,10 @@ export function spawnEmailPreview(opts: {
     sink: NodeJS.WriteStream
   ) => {
     if (!stream) return;
+    const write = lineWriter(sink);
     readLines(stream, (line) => {
       if (isNoiseLine(line) || isEmailStartupLine(line)) return;
-      sink.write(`${EMAIL_PREFIX}${line}\n`);
+      write(`${EMAIL_PREFIX}${line}\n`);
     });
   };
   pipe(child.stdout, process.stdout);

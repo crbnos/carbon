@@ -41,7 +41,7 @@ import {
 } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 import {
   LuChevronRight,
@@ -457,6 +457,7 @@ function LineItems({
             ? (line as any).assetReadableId || "Fixed Asset"
             : line.itemReadableId;
         const description = distinctItemText(title, line.description);
+        const lineName = title ?? "";
 
         const isService = line.salesOrderLineType === "Service";
         const { jobLabel, jobVariant, jobs } = getSalesOrderJobStatus(
@@ -466,13 +467,7 @@ function LineItems({
         );
 
         return (
-          <motion.div
-            key={line.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="border-b border-input py-6 w-full"
-          >
+          <div key={line.id} className="border-b border-input py-6 w-full">
             <HStack spacing={4} className="items-start">
               {line.thumbnailPath ? (
                 <img
@@ -487,9 +482,13 @@ function LineItems({
               )}
 
               <VStack spacing={0} className="flex-1 min-w-0">
+                {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
                 <div
                   className="flex flex-col cursor-pointer w-full"
-                  onClick={() => toggleOpen(line.id!)}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("a, button")) return;
+                    toggleOpen(line.id!);
+                  }}
                 >
                   {/* The text column must shrink (flex-1 min-w-0) or a long
                       description shoves the totals out of the card, and its
@@ -531,14 +530,28 @@ function LineItems({
                           currency={currencyCode}
                           decimalPlaces={currencyDecimals}
                         />
-                        <motion.div
+                        <motion.button
+                          type="button"
+                          aria-expanded={openItems.includes(line.id)}
+                          aria-controls={
+                            openItems.includes(line.id)
+                              ? `sales-order-line-details-${line.id}`
+                              : undefined
+                          }
+                          aria-label={
+                            openItems.includes(line.id)
+                              ? t`Hide details for ${lineName}`
+                              : t`Show details for ${lineName}`
+                          }
+                          className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          onClick={() => toggleOpen(line.id!)}
                           animate={{
                             rotate: openItems.includes(line.id) ? 90 : 0
                           }}
-                          transition={{ duration: 0.3 }}
+                          transition={{ duration: 0.2 }}
                         >
-                          <LuChevronRight size={24} />
-                        </motion.div>
+                          <LuChevronRight size={24} aria-hidden />
+                        </motion.button>
                       </HStack>
                       <div className="flex items-center gap-2">
                         <Badge
@@ -576,7 +589,7 @@ function LineItems({
                               <LuEllipsisVertical className="w-3 h-3 ml-2" />
                             </Badge>
                           </TooltipTrigger>
-                          <TooltipContent>
+                          <TooltipContent className="max-w-none">
                             <div className="flex flex-col w-full gap-4 text-sm">
                               {jobs.map((job) => (
                                 <div
@@ -624,146 +637,153 @@ function LineItems({
               </VStack>
             </HStack>
 
-            <motion.div
-              initial="collapsed"
-              animate={openItems.includes(line.id) ? "open" : "collapsed"}
-              variants={{
-                open: { opacity: 1, height: "auto", marginTop: 16 },
-                collapsed: { opacity: 0, height: 0, marginTop: 0 }
-              }}
-              transition={{ duration: 0.3 }}
-              className="w-full overflow-hidden"
-            >
-              <div className="flex flex-col gap-y-4 w-full">
-                <Table>
-                  <Tbody>
-                    <Tr>
-                      <Td>Quantity</Td>
-                      <Td className="text-right">{line.saleQuantity}</Td>
-                    </Tr>
-                    <Tr>
-                      <Td>Unit Price</Td>
-                      <Td className="text-right">
-                        <MotionMoney
-                          value={line.convertedUnitPrice ?? 0}
-                          currency={currencyCode}
-                          decimalPlaces={currencyDecimals}
-                          rate
-                        />
-                      </Td>
-                    </Tr>
-                    <Tr className="border-b border-border">
-                      <Td>Extended Price</Td>
-                      <Td className="text-right">
-                        <MotionMoney
-                          value={
-                            (line.convertedUnitPrice ?? 0) *
-                            (line.saleQuantity ?? 0)
-                          }
-                          currency={currencyCode}
-                          decimalPlaces={currencyDecimals}
-                        />
-                      </Td>
-                    </Tr>
+            <AnimatePresence initial={false}>
+              {openItems.includes(line.id) ? (
+                <motion.div
+                  key="panel"
+                  id={`sales-order-line-details-${line.id}`}
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                  className="w-full overflow-hidden"
+                >
+                  <div className="flex flex-col gap-y-4 w-full">
+                    <Table>
+                      <Tbody>
+                        <Tr>
+                          <Td>Quantity</Td>
+                          <Td className="text-right">{line.saleQuantity}</Td>
+                        </Tr>
+                        <Tr>
+                          <Td>Unit Price</Td>
+                          <Td className="text-right">
+                            <MotionMoney
+                              value={line.convertedUnitPrice ?? 0}
+                              currency={currencyCode}
+                              decimalPlaces={currencyDecimals}
+                              rate
+                            />
+                          </Td>
+                        </Tr>
+                        <Tr className="border-b border-border">
+                          <Td>Extended Price</Td>
+                          <Td className="text-right">
+                            <MotionMoney
+                              value={
+                                (line.convertedUnitPrice ?? 0) *
+                                (line.saleQuantity ?? 0)
+                              }
+                              currency={currencyCode}
+                              decimalPlaces={currencyDecimals}
+                            />
+                          </Td>
+                        </Tr>
 
-                    {Number(line.addOnCost ?? 0) > 0 && (
-                      <Tr>
-                        <Td>Additional Charges</Td>
-                        <Td className="text-right">
-                          <MotionMoney
-                            value={line.addOnCost ?? 0}
-                            currency={currencyCode}
-                            decimalPlaces={currencyDecimals}
-                          />
-                        </Td>
-                      </Tr>
+                        {Number(line.addOnCost ?? 0) > 0 && (
+                          <Tr>
+                            <Td>Additional Charges</Td>
+                            <Td className="text-right">
+                              <MotionMoney
+                                value={line.addOnCost ?? 0}
+                                currency={currencyCode}
+                                decimalPlaces={currencyDecimals}
+                              />
+                            </Td>
+                          </Tr>
+                        )}
+
+                        {Number(line.nonTaxableAddOnCost ?? 0) > 0 && (
+                          <Tr>
+                            <Td>Non-Taxable Charges</Td>
+                            <Td className="text-right">
+                              <MotionMoney
+                                value={line.nonTaxableAddOnCost ?? 0}
+                                currency={currencyCode}
+                                decimalPlaces={currencyDecimals}
+                              />
+                            </Td>
+                          </Tr>
+                        )}
+
+                        <Tr key="subtotal">
+                          <Td>Subtotal</Td>
+                          <Td className="text-right">
+                            <MotionMoney
+                              value={
+                                (line.convertedUnitPrice ?? 0) *
+                                  (line.saleQuantity ?? 0) +
+                                (line.convertedAddOnCost ?? 0) +
+                                (line.convertedNonTaxableAddOnCost ?? 0) +
+                                (line.convertedShippingCost ?? 0)
+                              }
+                              currency={currencyCode}
+                              decimalPlaces={currencyDecimals}
+                            />
+                          </Td>
+                        </Tr>
+
+                        <Tr key="tax" className="border-b border-border">
+                          <Td>
+                            Tax ({percentFormatter.format(line.taxPercent ?? 0)}
+                            )
+                          </Td>
+                          <Td className="text-right">
+                            <MotionMoney
+                              value={
+                                ((line.convertedUnitPrice ?? 0) *
+                                  (line.saleQuantity ?? 0) +
+                                  (line.convertedAddOnCost ?? 0) +
+                                  (line.convertedShippingCost ?? 0)) *
+                                (line.taxPercent ?? 0)
+                              }
+                              currency={currencyCode}
+                              decimalPlaces={currencyDecimals}
+                            />
+                          </Td>
+                        </Tr>
+
+                        <Tr key="total" className="font-semibold">
+                          <Td>Total</Td>
+                          <Td className="text-right">
+                            <MotionMoney
+                              value={getSalesOrderLineTotal(line)}
+                              currency={currencyCode}
+                              decimalPlaces={currencyDecimals}
+                            />
+                          </Td>
+                        </Tr>
+                      </Tbody>
+                    </Table>
+
+                    {isMade && jobs.length > 0 && (
+                      <div className="border rounded-lg">
+                        {jobs
+                          .sort((a, b) =>
+                            (a.jobId ?? "").localeCompare(b.jobId ?? "")
+                          )
+                          .map((job, index) => (
+                            <div
+                              key={job.id}
+                              className={cn(
+                                "border-b p-6",
+                                index === jobs.length - 1 && "border-b-0"
+                              )}
+                            >
+                              <SalesOrderJobItem
+                                // @ts-expect-error TS2739
+                                job={job}
+                                isService={isService}
+                              />
+                            </div>
+                          ))}
+                      </div>
                     )}
-
-                    {Number(line.nonTaxableAddOnCost ?? 0) > 0 && (
-                      <Tr>
-                        <Td>Non-Taxable Charges</Td>
-                        <Td className="text-right">
-                          <MotionMoney
-                            value={line.nonTaxableAddOnCost ?? 0}
-                            currency={currencyCode}
-                            decimalPlaces={currencyDecimals}
-                          />
-                        </Td>
-                      </Tr>
-                    )}
-
-                    <Tr key="subtotal">
-                      <Td>Subtotal</Td>
-                      <Td className="text-right">
-                        <MotionMoney
-                          value={
-                            (line.convertedUnitPrice ?? 0) *
-                              (line.saleQuantity ?? 0) +
-                            (line.convertedAddOnCost ?? 0) +
-                            (line.convertedNonTaxableAddOnCost ?? 0) +
-                            (line.convertedShippingCost ?? 0)
-                          }
-                          currency={currencyCode}
-                          decimalPlaces={currencyDecimals}
-                        />
-                      </Td>
-                    </Tr>
-
-                    <Tr key="tax" className="border-b border-border">
-                      <Td>
-                        Tax ({percentFormatter.format(line.taxPercent ?? 0)})
-                      </Td>
-                      <Td className="text-right">
-                        <MotionMoney
-                          value={
-                            ((line.convertedUnitPrice ?? 0) *
-                              (line.saleQuantity ?? 0) +
-                              (line.convertedAddOnCost ?? 0) +
-                              (line.convertedShippingCost ?? 0)) *
-                            (line.taxPercent ?? 0)
-                          }
-                          currency={currencyCode}
-                          decimalPlaces={currencyDecimals}
-                        />
-                      </Td>
-                    </Tr>
-
-                    <Tr key="total" className="font-semibold">
-                      <Td>Total</Td>
-                      <Td className="text-right">
-                        <MotionMoney
-                          value={getSalesOrderLineTotal(line)}
-                          currency={currencyCode}
-                          decimalPlaces={currencyDecimals}
-                        />
-                      </Td>
-                    </Tr>
-                  </Tbody>
-                </Table>
-
-                {isMade && jobs.length > 0 && (
-                  <div className="border rounded-lg">
-                    {jobs
-                      .sort((a, b) =>
-                        (a.jobId ?? "").localeCompare(b.jobId ?? "")
-                      )
-                      .map((job, index) => (
-                        <div
-                          key={job.id}
-                          className={cn(
-                            "border-b p-6",
-                            index === jobs.length - 1 && "border-b-0"
-                          )}
-                        >
-                          {/* @ts-expect-error TS2739 */}
-                          <SalesOrderJobItem job={job} isService={isService} />
-                        </div>
-                      ))}
                   </div>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </div>
         );
       })}
     </VStack>

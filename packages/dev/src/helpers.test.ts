@@ -5,9 +5,15 @@
 import { mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:net";
 import { tmpdir } from "node:os";
+import { Writable } from "node:stream";
 import { join } from "pathe";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { isAtLeastAsNew, requireNumberEnv, tryConnect } from "./helpers.js";
+import {
+  isAtLeastAsNew,
+  lineWriter,
+  requireNumberEnv,
+  tryConnect
+} from "./helpers.js";
 
 describe("tryConnect", () => {
   let server: Server;
@@ -107,5 +113,51 @@ describe("requireNumberEnv", () => {
   it("throws on non-numeric", () => {
     process.env[KEY] = "not-a-number";
     expect(() => requireNumberEnv(KEY)).toThrow(/not a number/);
+  });
+});
+
+describe("lineWriter", () => {
+  // A sink that holds every chunk until released, like a pipe whose reader stalls.
+  function stalledSink() {
+    const written: string[] = [];
+    const held: Array<() => void> = [];
+    const sink = new Writable({
+      highWaterMark: 16,
+      write(chunk, _encoding, done) {
+        written.push(String(chunk));
+        held.push(done);
+      }
+    });
+    const release = async () => {
+      while (held.length > 0) {
+        held.shift()?.();
+        await new Promise((resolve) => setImmediate(resolve));
+      }
+    };
+    return { sink, written, release };
+  }
+
+  it("drops lines past the limit, then reports how many once the sink drains", async () => {
+    const { sink, written, release } = stalledSink();
+    const write = lineWriter(sink, 25);
+    for (let i = 0; i < 10; i++) write(`line ${i}\n`); // 7 bytes each
+    // 4 lines take 28 bytes, past 25: the other 6 are dropped, not queued.
+    expect(sink.writableLength).toBe(28);
+    await release();
+    expect(written.slice(0, 4)).toEqual([
+      "line 0\n",
+      "line 1\n",
+      "line 2\n",
+      "line 3\n"
+    ]);
+    expect(written[4]).toBe(
+      "crbn | 6 log lines dropped: the output fell behind\n"
+    );
+    expect(written).toHaveLength(5);
+  });
+
+  it("is one writer per sink, so apps writing to it share the limit", () => {
+    const { sink } = stalledSink();
+    expect(lineWriter(sink, 25)).toBe(lineWriter(sink, 25));
   });
 });

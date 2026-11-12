@@ -19,5 +19,4 @@ export * from "./Security";
 export * from "./Sequences";
 export * from "./SerialNumbers";
 export * from "./StrictBackflush";
-export * from "./Theme";
 export { useSettingsSubmodules };

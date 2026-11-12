@@ -35,6 +35,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 import {
   LuCheck,
@@ -62,12 +63,19 @@ interface ItemDetails {
 export function MaintenanceAddPartModal({
   dispatchId,
   itemOptions,
-  onClose
+  onClose,
+  action,
+  title
 }: {
   dispatchId: string;
   itemOptions: ItemOption[];
   onClose: () => void;
+  /** Where the part posts; a dispatch's add-and-issue route by default. */
+  action?: string;
+  title?: ReactNode;
 }) {
+  const submitTo =
+    action ?? path.to.addAndIssueMaintenanceDispatchItem(dispatchId);
   const { t } = useLingui();
   const fetcher = useFetcher<{ success: boolean; message: string }>();
   const { carbon } = useCarbon();
@@ -239,7 +247,7 @@ export function MaintenanceAddPartModal({
 
       fetcher.submit(JSON.stringify(payload), {
         method: "post",
-        action: path.to.addAndIssueMaintenanceDispatchItem(dispatchId),
+        action: submitTo,
         encType: "application/json"
       });
     } else if (trackingType === "Batch") {
@@ -268,7 +276,7 @@ export function MaintenanceAddPartModal({
 
       fetcher.submit(JSON.stringify(payload), {
         method: "post",
-        action: path.to.addAndIssueMaintenanceDispatchItem(dispatchId),
+        action: submitTo,
         encType: "application/json"
       });
     } else {
@@ -286,7 +294,7 @@ export function MaintenanceAddPartModal({
 
       fetcher.submit(JSON.stringify(payload), {
         method: "post",
-        action: path.to.addAndIssueMaintenanceDispatchItem(dispatchId),
+        action: submitTo,
         encType: "application/json"
       });
     }
@@ -298,7 +306,7 @@ export function MaintenanceAddPartModal({
     selectedBatches,
     validateSerialNumber,
     validateBatch,
-    dispatchId,
+    submitTo,
     fetcher,
     t
   ]);
@@ -318,9 +326,7 @@ export function MaintenanceAddPartModal({
     <Modal open onOpenChange={onClose}>
       <ModalContent>
         <ModalHeader>
-          <ModalTitle>
-            <Trans>Add Spare Part</Trans>
-          </ModalTitle>
+          <ModalTitle>{title ?? <Trans>Add Spare Part</Trans>}</ModalTitle>
           <ModalDescription>
             <Trans>Select an item and specify the quantity to issue</Trans>
           </ModalDescription>
@@ -334,6 +340,7 @@ export function MaintenanceAddPartModal({
               </label>
               <ComboboxBase
                 placeholder={t`Select an item...`}
+                aria-label={t`Item`}
                 value={selectedItemId}
                 onChange={handleItemChange}
                 options={itemOptions}
@@ -355,6 +362,7 @@ export function MaintenanceAddPartModal({
                     <Trans>Quantity</Trans>
                   </label>
                   <NumberField
+                    aria-label={t`Quantity`}
                     value={quantity}
                     onChange={(value) => setQuantity(value)}
                     minValue={1}
@@ -399,6 +407,7 @@ export function MaintenanceAddPartModal({
                             <InputGroup>
                               <Input
                                 placeholder={t`Serial Number ${index + 1}`}
+                                aria-label={t`Serial number ${index + 1}`}
                                 value={sn.id}
                                 onChange={(e) => {
                                   const newValue = e.target.value;
@@ -438,7 +447,10 @@ export function MaintenanceAddPartModal({
                           </div>
                         </div>
                         {serialErrors[index] && (
-                          <span className="text-xs text-destructive">
+                          <span
+                            role="alert"
+                            className="text-xs text-destructive"
+                          >
                             {serialErrors[index]}
                           </span>
                         )}
@@ -457,6 +469,7 @@ export function MaintenanceAddPartModal({
                           <div className="flex-1">
                             <ComboboxBase
                               placeholder={t`Select Serial ${index + 1}`}
+                              aria-label={t`Serial number ${index + 1}`}
                               value={sn.id}
                               onChange={(value) => {
                                 setSelectedSerialNumbers((prev) => {
@@ -483,7 +496,10 @@ export function MaintenanceAddPartModal({
                           </div>
                         </div>
                         {serialErrors[index] && (
-                          <span className="text-xs text-destructive">
+                          <span
+                            role="alert"
+                            className="text-xs text-destructive"
+                          >
                             {serialErrors[index]}
                           </span>
                         )}
@@ -519,6 +535,7 @@ export function MaintenanceAddPartModal({
                             <InputGroup>
                               <Input
                                 placeholder={t`Batch Number ${index + 1}`}
+                                aria-label={t`Batch number ${index + 1}`}
                                 value={batch.id}
                                 onChange={(e) => {
                                   const newValue = e.target.value;
@@ -562,6 +579,7 @@ export function MaintenanceAddPartModal({
                           </div>
                           <div className="w-20">
                             <NumberField
+                              aria-label={t`Quantity ${index + 1}`}
                               value={batch.quantity}
                               onChange={(value) => {
                                 setSelectedBatches((prev) => {
@@ -590,7 +608,10 @@ export function MaintenanceAddPartModal({
                           </div>
                         </div>
                         {batchErrors[index] && (
-                          <span className="text-xs text-destructive">
+                          <span
+                            role="alert"
+                            className="text-xs text-destructive"
+                          >
                             {batchErrors[index]}
                           </span>
                         )}
@@ -609,6 +630,7 @@ export function MaintenanceAddPartModal({
                           <div className="flex-1">
                             <ComboboxBase
                               placeholder={t`Select Batch ${index + 1}`}
+                              aria-label={t`Batch number ${index + 1}`}
                               value={batch.id}
                               onChange={(value) => {
                                 setSelectedBatches((prev) => {
@@ -636,6 +658,7 @@ export function MaintenanceAddPartModal({
                           </div>
                           <div className="w-20">
                             <NumberField
+                              aria-label={t`Quantity ${index + 1}`}
                               value={batch.quantity}
                               onChange={(value) => {
                                 setSelectedBatches((prev) => {
@@ -660,7 +683,10 @@ export function MaintenanceAddPartModal({
                           </div>
                         </div>
                         {batchErrors[index] && (
-                          <span className="text-xs text-destructive">
+                          <span
+                            role="alert"
+                            className="text-xs text-destructive"
+                          >
                             {batchErrors[index]}
                           </span>
                         )}

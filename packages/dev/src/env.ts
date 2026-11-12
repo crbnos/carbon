@@ -2,10 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "pathe";
 import { APP_CHOICES } from "./constants.js";
-import { type JwtCreds, type PortMap, SHARED_REDIS_PORT } from "./worktree.js";
+import {
+  type JwtCreds,
+  type PortMap,
+  SHARED_REDIS_PORT,
+  type StackMode,
+  stackDatabase,
+  stackPorts
+} from "./worktree.js";
 
 /**
  * Keys copied from `.env`, which `crbn up` loads into process.env before this
@@ -42,19 +50,35 @@ export function renderEnv(opts: {
    * pinned in `.env` via `#force` wins regardless.
    */
   includeAssembler?: boolean;
+  /** Shared containers or a private stack. Omitted → isolated (the private stack). */
+  mode?: StackMode;
+  /** The worktree database in shared mode. Omitted → computed from `slug`. */
+  database?: string;
 }): string {
   const {
     slug,
-    ports,
     redisDb,
     jwt,
     portless,
     branchPrefix,
-    includeAssembler = true
+    includeAssembler = true,
+    mode = "isolated"
   } = opts;
+  const shared = mode === "shared";
+  const database = shared
+    ? (opts.database ?? stackDatabase(slug, mode))
+    : "postgres";
+  const ports = stackPorts(opts.ports, mode);
 
   const host = (sub: string) => `${sub}.${branchPrefix}.dev`;
   const local = (port: number) => `http://localhost:${port}`;
+  const supabaseUrl = portless
+    ? `https://${host("api")}`
+    : local(ports.PORT_API);
+  // The API URL Storage puts in resumable-upload URLs. A private Storage has
+  // it as STORAGE_PUBLIC_URL; the shared one serves every worktree, so each
+  // worktree's Envoy sends it (lds.template.yaml).
+  const publicApi = new URL(supabaseUrl);
   const erpUrl = portless ? `https://${host("erp")}` : local(ports.PORT_ERP);
 
   const lines: string[] = [];
@@ -67,6 +91,30 @@ export function renderEnv(opts: {
   lines.push("");
   lines.push("# Internal compose ports (apps do not read these directly)");
   for (const [k, v] of Object.entries(ports)) lines.push(`${k}=${v}`);
+  lines.push("");
+  lines.push(
+    shared
+      ? "# Compose hosts: the shared containers (crbn-shared)"
+      : "# Compose hosts: this worktree's private stack (--isolated)"
+  );
+  // Never a bare service name: the worktree's services also sit on
+  // carbon-shared, where every worktree's (and crbn-shared's) "postgres",
+  // "storage" and "inbucket" answer to it.
+  lines.push(`DB_HOST=${shared ? "carbon-postgres" : "local-postgres"}`);
+  lines.push(`DB_NAME=${database}`);
+  // Realtime stays per worktree. Its replication slot names are unique per
+  // cluster and Postgres caps them at 63 characters, so the suffix is a hash.
+  lines.push(
+    `SLOT_NAME_SUFFIX=${shared ? createHash("sha1").update(database).digest("hex").slice(0, 8) : ""}`
+  );
+  lines.push(`STORAGE_HOST=${shared ? "carbon-storage" : "local-storage"}`);
+  lines.push(`STORAGE_TENANT=${shared ? database : "stub"}`);
+  lines.push(`STORAGE_PUBLIC_HOST=${publicApi.host}`);
+  lines.push(`STORAGE_PUBLIC_PROTO=${publicApi.protocol.replace(":", "")}`);
+  lines.push(
+    `STORAGE_PUBLIC_PORT=${publicApi.port || (publicApi.protocol === "https:" ? "443" : "80")}`
+  );
+  lines.push(`SMTP_HOST=${shared ? "carbon-inbucket" : "local-inbucket"}`);
   lines.push("");
   lines.push("# From .env, or crbn's default when it has one");
   for (const { key, fallback } of FROM_DOT_ENV) {
@@ -90,11 +138,15 @@ export function renderEnv(opts: {
   lines.push(
     "# Supabase (per-worktree dev keys, minted from random JWT_SECRET)"
   );
+  lines.push(`SUPABASE_URL=${supabaseUrl}`);
   lines.push(
-    `SUPABASE_URL=${portless ? `https://${host("api")}` : local(ports.PORT_API)}`
+    `SUPABASE_DB_URL=postgresql://postgres:postgres@localhost:${ports.PORT_DB}/${database}`
   );
+  // The apps' pool goes through PgBouncer, as production's goes through
+  // Supavisor. A borrowed stack from before the pooler has no port for it: an
+  // empty value (read as unset) replaces a stale URL from an earlier render.
   lines.push(
-    `SUPABASE_DB_URL=postgresql://postgres:postgres@localhost:${ports.PORT_DB}/postgres`
+    `SUPABASE_DB_POOLER_URL=${ports.PORT_POOLER ? `postgresql://postgres:postgres@localhost:${ports.PORT_POOLER}/${database}` : ""}`
   );
   lines.push("PGSSLMODE=disable");
   lines.push(`SUPABASE_JWT_SECRET=${jwt.secret}`);

@@ -10,19 +10,20 @@ BEGIN
   -- whose unit no longer exists, is nettable.
   IF TG_OP = 'INSERT' THEN
     INSERT INTO "itemStockQuantities" AS isq
-      ("itemId", "companyId", "locationId", "quantityOnHand", "quantityNonNettable")
+      ("itemId", "companyId", "locationId", "projectId", "quantityOnHand", "quantityNonNettable")
     SELECT
       b."itemId",
       b."companyId",
       COALESCE(b."locationId", ''),
+      COALESCE(b."projectId", ''),
       SUM(item_ledger_on_hand_contribution(b."quantity", b."trackedEntityStatus")),
       COALESCE(SUM(item_ledger_on_hand_contribution(b."quantity", b."trackedEntityStatus"))
         FILTER (WHERE su."effectiveNettable" = false), 0)
     FROM batched_new b
     LEFT JOIN "storageUnit" su ON su."id" = b."storageUnitId"
-    GROUP BY b."itemId", b."companyId", COALESCE(b."locationId", '')
-    ORDER BY 1, 2, 3
-    ON CONFLICT ("itemId", "companyId", "locationId")
+    GROUP BY b."itemId", b."companyId", COALESCE(b."locationId", ''), COALESCE(b."projectId", '')
+    ORDER BY 1, 2, 3, 4
+    ON CONFLICT ("itemId", "companyId", "locationId", "projectId")
     DO UPDATE SET
       "quantityOnHand" = isq."quantityOnHand" + EXCLUDED."quantityOnHand",
       "quantityNonNettable" = isq."quantityNonNettable" + EXCLUDED."quantityNonNettable";
@@ -33,13 +34,14 @@ BEGIN
     -- trackedEntityStatus flip) and any future quantity/location/item edit
     -- without special-casing.
     INSERT INTO "itemStockQuantities" AS isq
-      ("itemId", "companyId", "locationId", "quantityOnHand", "quantityNonNettable")
-    SELECT "itemId", "companyId", "locationId", SUM(delta), SUM(non_nettable_delta)
+      ("itemId", "companyId", "locationId", "projectId", "quantityOnHand", "quantityNonNettable")
+    SELECT "itemId", "companyId", "locationId", "projectId", SUM(delta), SUM(non_nettable_delta)
     FROM (
       SELECT
         b."itemId",
         b."companyId",
         COALESCE(b."locationId", '') AS "locationId",
+        COALESCE(b."projectId", '') AS "projectId",
         -item_ledger_on_hand_contribution(b."quantity", b."trackedEntityStatus") AS delta,
         CASE WHEN su."effectiveNettable" = false
           THEN -item_ledger_on_hand_contribution(b."quantity", b."trackedEntityStatus")
@@ -52,6 +54,7 @@ BEGIN
         b."itemId",
         b."companyId",
         COALESCE(b."locationId", ''),
+        COALESCE(b."projectId", ''),
         item_ledger_on_hand_contribution(b."quantity", b."trackedEntityStatus"),
         CASE WHEN su."effectiveNettable" = false
           THEN item_ledger_on_hand_contribution(b."quantity", b."trackedEntityStatus")
@@ -60,12 +63,12 @@ BEGIN
       FROM batched_new b
       LEFT JOIN "storageUnit" su ON su."id" = b."storageUnitId"
     ) d
-    GROUP BY "itemId", "companyId", "locationId"
+    GROUP BY "itemId", "companyId", "locationId", "projectId"
     -- A key whose net deltas are zero already holds the right numbers; skipping
     -- it avoids taking a lock on every row a wide UPDATE happened to touch.
     HAVING SUM(delta) <> 0 OR SUM(non_nettable_delta) <> 0
-    ORDER BY 1, 2, 3
-    ON CONFLICT ("itemId", "companyId", "locationId")
+    ORDER BY 1, 2, 3, 4
+    ON CONFLICT ("itemId", "companyId", "locationId", "projectId")
     DO UPDATE SET
       "quantityOnHand" = isq."quantityOnHand" + EXCLUDED."quantityOnHand",
       "quantityNonNettable" = isq."quantityNonNettable" + EXCLUDED."quantityNonNettable";
@@ -75,19 +78,20 @@ BEGIN
     -- at zero with no backing ledger rows is removed by the nightly
     -- reconciliation.
     INSERT INTO "itemStockQuantities" AS isq
-      ("itemId", "companyId", "locationId", "quantityOnHand", "quantityNonNettable")
+      ("itemId", "companyId", "locationId", "projectId", "quantityOnHand", "quantityNonNettable")
     SELECT
       b."itemId",
       b."companyId",
       COALESCE(b."locationId", ''),
+      COALESCE(b."projectId", ''),
       -SUM(item_ledger_on_hand_contribution(b."quantity", b."trackedEntityStatus")),
       -COALESCE(SUM(item_ledger_on_hand_contribution(b."quantity", b."trackedEntityStatus"))
         FILTER (WHERE su."effectiveNettable" = false), 0)
     FROM batched_old b
     LEFT JOIN "storageUnit" su ON su."id" = b."storageUnitId"
-    GROUP BY b."itemId", b."companyId", COALESCE(b."locationId", '')
-    ORDER BY 1, 2, 3
-    ON CONFLICT ("itemId", "companyId", "locationId")
+    GROUP BY b."itemId", b."companyId", COALESCE(b."locationId", ''), COALESCE(b."projectId", '')
+    ORDER BY 1, 2, 3, 4
+    ON CONFLICT ("itemId", "companyId", "locationId", "projectId")
     DO UPDATE SET
       "quantityOnHand" = isq."quantityOnHand" + EXCLUDED."quantityOnHand",
       "quantityNonNettable" = isq."quantityNonNettable" + EXCLUDED."quantityNonNettable";

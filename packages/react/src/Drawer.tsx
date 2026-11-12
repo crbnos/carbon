@@ -12,7 +12,7 @@ import type {
   ElementRef,
   HTMLAttributes
 } from "react";
-import { forwardRef } from "react";
+import { forwardRef, useEffect } from "react";
 
 import { LuX } from "react-icons/lu";
 import { ActionPresentationBoundary } from "./ActionPresentation";
@@ -23,6 +23,7 @@ import {
   useDialogDismissable
 } from "./Modal";
 import { cn } from "./utils/cn";
+import { returnFocusOnClose, trackPageFocus } from "./utils/dialog";
 import { usePhoneOpenAutoFocus, useViewport } from "./Viewport";
 
 const Drawer = DialogRoot;
@@ -102,12 +103,12 @@ const sheetVariants = cva(
   {
     variants: {
       position: {
-        top: "data-[state=open]:animate-in data-[state=open]:slide-in-from-top data-[state=closed]:animate-out data-[state=closed]:slide-out-to-top data-[state=closed]:duration-200 w-full duration-300 ease-out",
+        top: "data-[state=open]:animate-in data-[state=open]:slide-in-from-top data-[state=closed]:animate-out data-[state=closed]:slide-out-to-top data-[state=closed]:duration-200 w-full duration-300 ease-drawer",
         bottom:
-          "data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=closed]:duration-200 w-full duration-300 ease-out",
-        left: "data-[state=open]:animate-in data-[state=open]:slide-in-from-left data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=closed]:duration-200 h-full duration-300 ease-out",
+          "data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=closed]:duration-200 w-full duration-300 ease-drawer",
+        left: "data-[state=open]:animate-in data-[state=open]:slide-in-from-left data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=closed]:duration-200 h-full duration-300 ease-drawer",
         right:
-          "data-[state=open]:animate-in data-[state=open]:slide-in-from-right data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=closed]:duration-200 h-full duration-300 ease-out"
+          "data-[state=open]:animate-in data-[state=open]:slide-in-from-right data-[state=closed]:animate-out data-[state=closed]:slide-out-to-right data-[state=closed]:duration-200 h-full duration-300 ease-drawer"
       },
       size: {
         content: "",
@@ -208,10 +209,12 @@ const DrawerContent = forwardRef<
       container,
       className,
       children,
+      onCloseAutoFocus,
       ...props
     },
     ref
   ) => {
+    useEffect(trackPageFocus, []);
     const dismissable = useDialogDismissable();
     const { isPhone } = useViewport();
     const onOpenAutoFocus = usePhoneOpenAutoFocus(props.onOpenAutoFocus);
@@ -225,6 +228,7 @@ const DrawerContent = forwardRef<
               className={cn(sheetVariants({ position, size }), className)}
               {...props}
               onOpenAutoFocus={onOpenAutoFocus}
+              onCloseAutoFocus={returnFocusOnClose(onCloseAutoFocus)}
             >
               {isPhone && (
                 <div className="mx-auto mt-1.5 h-[5px] w-9 shrink-0 rounded-full bg-muted-foreground/20" />

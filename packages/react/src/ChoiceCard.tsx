@@ -34,7 +34,8 @@ type ChoiceCardGroupProps<V extends string = string> = {
   options: ChoiceCardOption<V>[];
   /**
    * Layout direction for the cards. `"column"` (default) stacks vertically;
-   * `"row"` lays them out horizontally with equal-width columns.
+   * `"row"` lays them out horizontally with equal-width columns: two per
+   * row, or all three when there are three.
    */
   direction?: "row" | "column";
   /**
@@ -89,17 +90,26 @@ export function ChoiceCardGroup<V extends string = string>({
   return (
     <div className={cn("space-y-2 w-full", className)}>
       {label && (
-        <span className="text-xs font-medium text-muted-foreground">
+        <span
+          id={`${groupId}-label`}
+          className="text-xs font-medium text-muted-foreground"
+        >
           {label}
         </span>
       )}
       <RadioGroup
         ref={groupRef}
+        aria-labelledby={label ? `${groupId}-label` : undefined}
         value={value}
         onValueChange={(v) => onChange(v as V)}
         className={cn(
           "gap-2",
-          direction === "row" ? "grid grid-cols-2" : "flex flex-col"
+          direction === "row"
+            ? // Three choices share one row; two keep their halves.
+              options.length === 3
+              ? "grid grid-cols-1 md:grid-cols-3"
+              : "grid grid-cols-2"
+            : "flex flex-col"
         )}
       >
         {options.map((opt) => {

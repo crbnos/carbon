@@ -6,10 +6,16 @@ import { useLingui } from "@lingui/react/macro";
 import { matchSorter, rankings } from "match-sorter";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useMemo, useState } from "react";
-import { LuPlus, LuSettings2, LuX } from "react-icons/lu";
+import { LuX } from "react-icons/lu";
 import { CommandTrigger } from "./Command";
+import {
+  useClearLabel,
+  useInlineTriggerLabel,
+  usePickerLabel
+} from "./Form/useFormControl";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
+import { InlineTrigger } from "./InlineTrigger";
 import type { PickerListOption } from "./PickerList";
 import { PickerList } from "./PickerList";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
@@ -53,6 +59,8 @@ export type ComboboxProps = Omit<
     value: string,
     options: { value: string; label: string | JSX.Element; helper?: string }[]
   ) => React.ReactNode;
+  /** Inline mode: what the empty field reads, "Add owner". */
+  inlinePlaceholder?: ReactNode;
   itemHeight?: number;
 };
 
@@ -72,12 +80,16 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
       emptyMessage,
       onChange,
       inline,
+      inlinePlaceholder,
       itemHeight = 40,
       ...props
     },
     ref
   ) => {
     const { t } = useLingui();
+    const inlineTriggerLabel = useInlineTriggerLabel(!!value);
+    const pickerLabel = usePickerLabel(props["aria-label"]);
+    const clearLabel = useClearLabel(props["aria-label"]);
     // An item option's helper is its name, which for a service repeats the
     // readable id in the label.
     const options = useMemo(
@@ -129,27 +141,26 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
         className={cn(isInlinePreview ? "w-full" : "min-w-0 flex-grow")}
         spacing={isInlinePreview ? 2 : 1}
       >
-        {isInlinePreview && value && (
-          <span className="flex flex-grow line-clamp-1 items-center">
-            {inline(value, options)}
-          </span>
-        )}
-
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger disabled={isReadOnly} asChild>
             {inline ? (
-              <IconButton
-                size={size ?? "sm"}
-                variant="secondary"
-                aria-label={value ? "Edit" : "Add"}
-                icon={value ? <LuSettings2 /> : <LuPlus />}
-                isDisabled={isReadOnly}
-                disabled={isReadOnly}
+              <InlineTrigger
+                // The field and its value: "Edit Customer: ORBSEC Defense".
+                aria-label={
+                  value && selectedOptionText
+                    ? `${inlineTriggerLabel}: ${selectedOptionText}`
+                    : inlineTriggerLabel
+                }
                 ref={ref}
+                isEmpty={!value}
+                placeholder={inlinePlaceholder ?? t`Add`}
+                isDisabled={isReadOnly}
                 onClick={() => {
                   if (!isReadOnly) setOpen(true);
                 }}
-              />
+              >
+                {value ? inline(value, options) : null}
+              </InlineTrigger>
             ) : (
               <CommandTrigger
                 asButton={asButton}
@@ -181,6 +192,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
             )}
           </PopoverTrigger>
           <PopoverContent
+            aria-label={pickerLabel}
             align="start"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
@@ -200,13 +212,14 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
               emptyMessage
             ) : (
               <PickerList
+                label={pickerLabel}
                 options={options}
                 filter={filter ?? filterComboboxOptions}
                 selectionMode="single"
                 value={value}
                 itemHeight={itemHeight}
                 getItemValue={getComboboxItemValue}
-                isChecked={(_, itemValue) => itemValue === value}
+                isChecked={(item) => item.value === value}
                 emptyMessage={t`No option found.`}
                 onSelect={(item, { setSearch }) => {
                   onChange?.(item.value);
@@ -220,7 +233,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
         {isClearable && !isReadOnly && value && (
           <IconButton
             variant="ghost"
-            aria-label="Clear"
+            aria-label={clearLabel}
             icon={<LuX />}
             onClick={() => onChange?.("")}
             size={size === "sm" ? "md" : size}

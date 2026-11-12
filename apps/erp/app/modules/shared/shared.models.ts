@@ -139,7 +139,7 @@ export const noteValidator = z.object({
 // === "Outside Processing"; in-house logic keys on !== "Outside Processing"
 // (never an enumeration of the in-house values) so future in-house types inherit
 // costing/scheduling/PO behavior unchanged.
-// See .ai/specs/2026-07-20-operation-type-consolidation.md.
+// See .ai/specs/implemented/2026-07-20-operation-type-consolidation.md.
 export const operationTypes = [
   "Process",
   "Assembly",
@@ -153,7 +153,7 @@ export type OperationType = (typeof operationTypes)[number];
 // procedureId, Assembly → assemblyInstructionId, Inspection →
 // inspectionDocumentId. Writes go through this so a stale pointer can't survive
 // a type change (sanitize() only nullifies present-undefined keys — it never
-// clears an omitted field). See .ai/specs/2026-07-21-operation-instruction-sources.md.
+// clears an omitted field). See .ai/specs/implemented/2026-07-21-operation-instruction-sources.md.
 // The same holds for the work center: Outside Processing runs at the supplier,
 // and a work center left over from an in-house type put the operation on the
 // MES Work Centers board.

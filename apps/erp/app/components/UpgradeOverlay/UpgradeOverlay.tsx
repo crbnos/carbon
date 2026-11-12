@@ -15,6 +15,7 @@ import {
 import { Edition } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
+import { LuLock } from "react-icons/lu";
 import { Link } from "react-router";
 import { path } from "~/utils/path";
 
@@ -116,6 +117,7 @@ function UpgradeOverlayStickyGradient({
         className
       )}
     >
+      {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: optional mouse shortcut over the panel; its actions are real buttons in UpgradeOverlayActions */}
       <div
         onClick={onClick}
         className="pointer-events-auto px-4 w-full flex flex-col items-center text-center gap-3 max-w-md mx-auto cursor-pointer rounded-md"
@@ -183,6 +185,39 @@ function UpgradeOverlaySection({
   );
 }
 
+/**
+ * The compact gate: ONE row inside a busy page (a settings card, a costs
+ * section) instead of a blurred overlay. A page whose whole subject is the
+ * feature keeps the full overlay.
+ */
+function UpgradeOverlayRow({
+  title,
+  plan,
+  className
+}: {
+  title: ReactNode;
+  plan: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm",
+        className
+      )}
+    >
+      <LuLock className="size-4 shrink-0 text-muted-foreground" />
+      <span className="min-w-0 truncate font-medium">{title}</span>
+      <span className="min-w-0 truncate text-muted-foreground">
+        <Trans>Available on the {plan} plan</Trans>
+      </span>
+      <div className="ml-auto shrink-0">
+        <UpgradeOverlayUpgradeButton />
+      </div>
+    </div>
+  );
+}
+
 function UpgradeOverlayUpgradeButton({
   children,
   to
@@ -227,6 +262,7 @@ export {
   UpgradeOverlayIcon,
   UpgradeOverlayInline,
   UpgradeOverlayPreview,
+  UpgradeOverlayRow,
   UpgradeOverlaySection,
   UpgradeOverlayStickyGradient,
   UpgradeOverlayTitle,

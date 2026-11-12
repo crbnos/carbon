@@ -55,6 +55,7 @@ import { useParams } from "react-router";
 import type { z } from "zod";
 import {
   Account,
+  ChargeNumber,
   ConversionFactor,
   CostCenter,
   CustomFormFields,
@@ -815,6 +816,7 @@ const PurchaseInvoiceLineForm = ({
                           )}
                         </>
                       )}
+                      <ChargeNumber label={t`Charge Number`} isOptional />
                       <CustomFormFields table="purchaseInvoiceLine" />
                     </div>
 
@@ -841,6 +843,7 @@ const PurchaseInvoiceLineForm = ({
                             </Badge>
                           )}
                           <IconButton
+                            aria-expanded={costsDisclosure.isOpen}
                             icon={<LuChevronRight />}
                             aria-label={
                               costsDisclosure.isOpen
@@ -945,6 +948,7 @@ const PurchaseInvoiceLineForm = ({
                               termId="cost-center"
                               isOptional
                             />
+                            <ChargeNumber label={t`Charge Number`} isOptional />
                           </>
                         ) : (
                           <>
@@ -1072,6 +1076,7 @@ const PurchaseInvoiceLineForm = ({
                               </Badge>
                             )}
                             <IconButton
+                              aria-expanded={indirectCostsDisclosure.isOpen}
                               icon={<LuChevronRight />}
                               aria-label={
                                 indirectCostsDisclosure.isOpen

@@ -10,7 +10,7 @@ import {
   needsPullFrom
 } from "@carbon/database/strict-backflush";
 import { ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import { toastServiceError, useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -97,6 +97,7 @@ import type {
 } from "~/modules/shared/types";
 import type { action as updateMaterialAction } from "~/routes/x+/items+/methods+/material.$id";
 import type { action as createMaterialAction } from "~/routes/x+/items+/methods+/material.new";
+import type { action as updateItemsAction } from "~/routes/x+/items+/update";
 import type { Item as ItemType } from "~/stores";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -579,6 +580,7 @@ const BillOfMaterial = ({
           <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
         )}
         <SortableList
+          label={t`Bill of Materials`}
           emptyState={
             isPhone ? (
               <CompactEmpty
@@ -827,6 +829,31 @@ function MaterialForm({
 
   const isTracked =
     itemData.requiresBatchTracking || itemData.requiresSerialTracking;
+  // Sourcing is how a "Buy and Make" parent's component is fulfilled, so the
+  // card follows the parent's replenishment (as the row's icon does), not the
+  // component's.
+  const showSourcing = replenishmentSystem === "Buy and Make";
+
+  // Sourcing belongs to the component item, not to this line: a change writes
+  // the item (as its Properties panel does), which cascades to every Draft
+  // method that uses it and may change its default method type.
+  const sourcingFetcher = useAction<typeof updateItemsAction>({
+    onError: (data) => {
+      toastServiceError(data);
+    }
+  });
+  const onSourcingChange = (value: SourcingType) => {
+    if (!itemData.itemId || value === itemData.sourcingType) return;
+    setItemData((d) => ({ ...d, sourcingType: value }));
+    const formData = new FormData();
+    formData.append("items", itemData.itemId);
+    formData.append("field", "sourcingType");
+    formData.append("value", value);
+    sourcingFetcher.submit(formData, {
+      method: "post",
+      action: path.to.bulkUpdateItems
+    });
+  };
 
   return (
     <ValidatedForm
@@ -857,7 +884,7 @@ function MaterialForm({
             methodMaterialValidator, but upsertMethodMaterial re-derives both
             from the component item, so the submitted values are display-only —
             don't treat them as the source of truth. */}
-        {itemData.itemReplenishmentSystem !== "Buy and Make" && (
+        {!showSourcing && (
           <Hidden name="sourcingType" value={itemData.sourcingType} />
         )}
       </div>
@@ -937,7 +964,7 @@ function MaterialForm({
           }
         />
       </div>
-      {itemData.itemReplenishmentSystem === "Buy and Make" && (
+      {showSourcing && (
         <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 w-full">
           <HStack
             className="w-full justify-between cursor-pointer"
@@ -956,6 +983,7 @@ function MaterialForm({
                 {itemData.sourcingType}
               </Badge>
               <IconButton
+                aria-expanded={sourcingDisclosure.isOpen}
                 icon={<LuChevronRight />}
                 aria-label={
                   sourcingDisclosure.isOpen
@@ -979,22 +1007,35 @@ function MaterialForm({
               sourcingDisclosure.isOpen ? "" : "hidden"
             }`}
           >
-            {/* Read-only: sourcing is set at the item level (Properties
-                sidebar) and mirrored here. */}
             <Select
               name="sourcingType"
               label={t`Sourcing Type`}
               value={itemData.sourcingType}
-              isReadOnly
-              options={sourcingType.map((s) => ({
-                value: s,
-                label: (
-                  <span className="flex items-center gap-2">
-                    <SourcingTypeIcon type={s} />
-                    {s}
-                  </span>
+              isReadOnly={
+                isReadOnly ||
+                !itemData.itemId ||
+                sourcingFetcher.state !== "idle"
+              }
+              options={sourcingType
+                // Drop Ship sets Purchase to Order, which a Make item does
+                // not allow.
+                .filter(
+                  (s) =>
+                    itemData.itemReplenishmentSystem !== "Make" ||
+                    s !== "Drop Ship"
                 )
-              }))}
+                .map((s) => ({
+                  value: s,
+                  label: (
+                    <span className="flex items-center gap-2">
+                      <SourcingTypeIcon type={s} />
+                      {s}
+                    </span>
+                  )
+                }))}
+              onChange={(option) => {
+                if (option) onSourcingChange(option.value as SourcingType);
+              }}
             />
           </div>
         </div>
@@ -1051,6 +1092,7 @@ function MaterialForm({
               </Badge>
             )}
             <IconButton
+              aria-expanded={sourceDisclosure.isOpen}
               icon={<LuChevronRight />}
               aria-label={
                 sourceDisclosure.isOpen ? "Collapse Source" : "Expand Source"
@@ -1147,6 +1189,7 @@ function MaterialForm({
                 : "First Operation"}
             </Badge>
             <IconButton
+              aria-expanded={backflushDisclosure.isOpen}
               icon={<LuChevronRight />}
               aria-label={
                 backflushDisclosure.isOpen
@@ -1192,16 +1235,7 @@ function MaterialForm({
         </div>
       </div>
 
-      <motion.div
-        className="flex flex-1 items-center justify-end w-full"
-        initial={{ opacity: 0, filter: "blur(4px)" }}
-        animate={{ opacity: 1, filter: "blur(0px)" }}
-        transition={{
-          type: "spring",
-          bounce: 0,
-          duration: 0.25
-        }}
-      >
+      <div className="flex flex-1 items-center justify-end w-full">
         <motion.div
           layout
           className="flex items-center justify-between gap-2 w-full"
@@ -1271,7 +1305,7 @@ function MaterialForm({
             </Submit>
           </div>
         </motion.div>
-      </motion.div>
+      </div>
     </ValidatedForm>
   );
 }

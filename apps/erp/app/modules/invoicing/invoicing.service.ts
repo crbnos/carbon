@@ -9,6 +9,7 @@ import {
 } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
 import type { ServiceContext } from "@carbon/api/service-fn.server";
+import { withStripe } from "@carbon/api/stock-stripes";
 import { SUPABASE_URL } from "@carbon/auth";
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
@@ -67,7 +68,8 @@ import {
   maybeSingle,
   selectRows,
   single,
-  updateRows
+  updateRows,
+  updateRowsById
 } from "@carbon/database/rows";
 import type {
   SalesPostingAccount,
@@ -122,6 +124,7 @@ import {
   datetime,
   debit,
   distributeRoundingResidual,
+  EMAIL_ATTACHMENT_URL_SECONDS,
   EPSILON,
   equals,
   type FundingConsumptionRow,
@@ -171,9 +174,22 @@ import {
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import {
+  buildProjectCipRow,
+  reverseProjectCipRows,
+  writeProjectCipRows
+} from "~/modules/projects/project-cip";
+import {
+  buildProjectLedgerRow,
+  insertProjectLedgerRows,
+  reverseProjectLedgerRows
+} from "~/modules/projects/project-posting";
+import { PURCHASE_ORDER_RELEASED_STATUSES } from "~/modules/purchasing/purchasing.models";
+import {
+  getPurchaseOrderFundsRefusal,
   getSupplierPayment,
   getSupplierShipping,
-  insertSupplierInteraction
+  insertSupplierInteraction,
+  purchaseOrderFundsGate
 } from "~/modules/purchasing/purchasing.service";
 import {
   getCustomer,
@@ -186,10 +202,12 @@ import {
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import {
   type AverageCostChange,
+  allocateJournalLineIds,
   applyAverageCostChanges,
   assertNoMigrationClearing,
   assertPostable,
   calculateCOGS,
+  copyJournalLineDimensions,
   documentJournalLines,
   FixedAssetWrites,
   getCompanyTimeZone as getCachedCompanyTimeZone,
@@ -215,6 +233,7 @@ import {
 import { getUser } from "~/modules/users/users.service";
 import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { listCount, setGenericQueryFilters } from "~/utils/query";
+import { searchTerms, withSearchLines } from "~/utils/search";
 import { sanitize } from "~/utils/supabase";
 import { getExchangeRate } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
@@ -223,6 +242,7 @@ import {
   getCustomerPayment,
   getCustomerShipping
 } from "../sales/sales.service";
+import { isEmailableContact } from "../settings/party-contact";
 import * as sharedPostings from "../shared/shared.service";
 import { invokeCreate, invokePosting } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
@@ -249,13 +269,17 @@ import {
   isSalesInvoiceLocked,
   type stripeCustomerActions
 } from "./invoicing.models";
+import {
+  type InvoiceProjectCharges,
+  loadInvoiceProjectCharges
+} from "./project-charges";
 import type { StripeCustomerSources } from "./stripe-customer.mapper";
 import { buildStripeCustomerInput } from "./stripe-customer.mapper";
 
 const logger = getLogger("erp", "invoicing");
 
 const PURCHASE_INVOICES_LIST_COLUMNS =
-  "id,invoiceId,supplierId,invoiceSupplierId,supplierReference,postingDate,dateIssued,dateDue,datePaid,balance,assignee,createdBy,createdAt,updatedBy,updatedAt,customFields,companyId,thumbnailPath,itemType,orderTotal,status,paymentTermName" as const;
+  "id,invoiceId,supplierId,invoiceSupplierId,supplierReference,purchaseOrderIds,purchaseOrderReadableIds,postingDate,dateIssued,dateDue,datePaid,balance,assignee,createdBy,createdAt,updatedBy,updatedAt,customFields,companyId,thumbnailPath,itemType,orderTotal,status,paymentTermName" as const;
 
 const SALES_INVOICES_LIST_COLUMNS =
   "id,invoiceId,status,customerId,customerReference,invoiceCustomerId,postingDate,dateIssued,dateDue,datePaid,balance,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,thumbnailPath,itemType,invoiceTotal,paymentTermName,needsReview,automationHoldReason,sendError,sentAt" as const;
@@ -414,6 +438,30 @@ export async function createPurchaseInvoiceFromPurchaseOrder(
   companyId: string,
   userId: string
 ) {
+  // Invoiced only once approved and released (or since closed), within the
+  // approved amount.
+  const funds = await getPurchaseOrderFundsRefusal(
+    client,
+    companyId,
+    [purchaseOrderId],
+    "invoice"
+  );
+  if (funds.error) {
+    return {
+      data: null,
+      error: new ServerFnError(
+        "Failed to read the purchase order",
+        500,
+        {},
+        {
+          cause: funds.error
+        }
+      )
+    };
+  }
+  if (funds.data) {
+    return { data: null, error: new ServerFnError(funds.data, 400) };
+  }
   return invokePosting(
     { client, db, companyId, userId },
     "convert",
@@ -579,13 +627,24 @@ export async function getPurchaseInvoices(
 ) {
   let query = client
     .from("purchaseInvoices")
-    .select(PURCHASE_INVOICES_LIST_COLUMNS, {
+    .select(withSearchLines(PURCHASE_INVOICES_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.ilike("invoiceId", `%${args.search}%`);
+  // Every word must occur in the invoice or one of its lines. `searchPurchaseInvoices`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchPurchaseInvoices",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(PURCHASE_INVOICES_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   if (args.supplierId) {
@@ -667,13 +726,24 @@ export async function getSalesInvoices(
 ) {
   let query = client
     .from("salesInvoices")
-    .select(SALES_INVOICES_LIST_COLUMNS, {
+    .select(withSearchLines(SALES_INVOICES_LIST_COLUMNS, args), {
       count: listCount(args)
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.ilike("invoiceId", `%${args.search}%`);
+  // Every word must occur in the invoice or one of its lines. `searchSalesInvoices`
+  // returns the view's rows, so the filters below apply as they are.
+  const terms = searchTerms(args.search);
+  if (terms.length > 0) {
+    query = client
+      .rpc(
+        "searchSalesInvoices",
+        { company_id: companyId, terms },
+        { count: listCount(args), get: true }
+      )
+      .select(
+        withSearchLines(SALES_INVOICES_LIST_COLUMNS, args)
+      ) as unknown as typeof query;
   }
 
   if (args.customerId) {
@@ -1843,6 +1913,7 @@ export async function upsertReimbursementLines(
           accountId: line.accountId,
           costCenterId: line.costCenterId ?? null,
           projectId: line.projectId ?? null,
+          projectElementId: line.projectElementId ?? null,
           description: line.description ?? null,
           amount: line.amount,
           sequence: index,
@@ -2446,8 +2517,9 @@ async function getOpenInvoicesForParty(
   >;
   type DocumentLineRow = Pick<
     Database["public"]["Tables"]["salesInvoiceLine"]["Row"],
-    "invoiceId" | "rentalAgreementId" | "salesOrderId"
+    "invoiceId" | "rentalAgreementId" | "salesOrderId" | "customerContractId"
   >;
+  type ContractInvoiceRow = { id: string; customerContractId: string | null };
   const [invoices, company] = await Promise.all([
     fetchAllFromTable<OpenInvoiceRow>(
       client,
@@ -2484,79 +2556,144 @@ async function getOpenInvoicesForParty(
   const settlements: SettlementRow[] = [];
   const controls: ControlRow[] = [];
   const documentLines: DocumentLineRow[] = [];
+  const contractInvoices: ContractInvoiceRow[] = [];
   // Bound filter URLs as well as response pages. A single invoice can itself
   // have more than one response page of control lines or settlements.
   for (const batch of chunkArray(ids, 100)) {
-    const [batchSettlements, batchControls, batchDocumentLines] =
-      await Promise.all([
-        fetchAllFromTable<SettlementRow>(
-          client,
-          "invoiceSettlement",
-          "paymentId, memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, sourceAmount, appliedAmount, discountAmount, writeOffAmount, appliedViaPaymentId, payment:payment!invoiceSettlement_paymentId_fkey(status), memo:memo!invoiceSettlement_memoId_fkey(status), appliedViaPayment:payment!invoiceSettlement_appliedViaPaymentId_fkey(status)",
-          (query) =>
-            query
-              .eq("companyId", companyId)
-              .in(
-                isAR ? "targetSalesInvoiceId" : "targetPurchaseInvoiceId",
-                batch
-              )
-              .order("id")
-        ),
-        fetchAllFromTable<ControlRow>(
-          client,
-          "journalLine",
-          "documentId, amount, journal:journalId!inner(status,sourceType,companyId)",
-          (query) =>
-            query
-              .eq("companyId", companyId)
-              .eq("journal.companyId", companyId)
-              .eq("journal.status", "Posted")
-              .eq(
-                "journal.sourceType",
-                isAR ? "Sales Invoice" : "Purchase Invoice"
-              )
-              .eq("documentType", "Invoice")
-              .in(
-                "description",
-                isAR
-                  ? RECEIVABLE_POSTING_DESCRIPTIONS
-                  : PAYABLE_POSTING_DESCRIPTIONS
-              )
-              .in("documentId", batch)
-              .order("id")
-        ),
-        // The documents each invoice bills: a customer deposit funds only an
-        // invoice of its own rental agreement or sales order.
-        isAR
-          ? fetchAllFromTable<DocumentLineRow>(
-              client,
-              "salesInvoiceLine",
-              "invoiceId, rentalAgreementId, salesOrderId",
-              (query) =>
-                query
-                  .eq("companyId", companyId)
-                  .in("invoiceId", batch)
-                  .or("rentalAgreementId.not.is.null,salesOrderId.not.is.null")
-                  .order("id")
+    const [
+      batchSettlements,
+      batchControls,
+      batchDocumentLines,
+      batchContractInvoices
+    ] = await Promise.all([
+      fetchAllFromTable<SettlementRow>(
+        client,
+        "invoiceSettlement",
+        "paymentId, memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, sourceAmount, appliedAmount, discountAmount, writeOffAmount, appliedViaPaymentId, payment:payment!invoiceSettlement_paymentId_fkey(status), memo:memo!invoiceSettlement_memoId_fkey(status), appliedViaPayment:payment!invoiceSettlement_appliedViaPaymentId_fkey(status)",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .in(
+              isAR ? "targetSalesInvoiceId" : "targetPurchaseInvoiceId",
+              batch
             )
-          : { data: [] as DocumentLineRow[], error: null }
-      ]);
+            .order("id")
+      ),
+      fetchAllFromTable<ControlRow>(
+        client,
+        "journalLine",
+        "documentId, amount, journal:journalId!inner(status,sourceType,companyId)",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .eq("journal.companyId", companyId)
+            .eq("journal.status", "Posted")
+            .eq(
+              "journal.sourceType",
+              isAR ? "Sales Invoice" : "Purchase Invoice"
+            )
+            .eq("documentType", "Invoice")
+            .in(
+              "description",
+              isAR
+                ? RECEIVABLE_POSTING_DESCRIPTIONS
+                : PAYABLE_POSTING_DESCRIPTIONS
+            )
+            .in("documentId", batch)
+            .order("id")
+      ),
+      // The documents each invoice bills: a customer deposit funds only an
+      // invoice of its own rental agreement, sales order or contract.
+      isAR
+        ? fetchAllFromTable<DocumentLineRow>(
+            client,
+            "salesInvoiceLine",
+            "invoiceId, rentalAgreementId, salesOrderId, customerContractId",
+            (query) =>
+              query
+                .eq("companyId", companyId)
+                .in("invoiceId", batch)
+                .or(
+                  "rentalAgreementId.not.is.null,salesOrderId.not.is.null,customerContractId.not.is.null"
+                )
+                .order("id")
+          )
+        : { data: [] as DocumentLineRow[], error: null },
+      isAR
+        ? fetchAllFromTable<ContractInvoiceRow>(
+            client,
+            "salesInvoice",
+            "id, customerContractId",
+            (query) =>
+              query
+                .eq("companyId", companyId)
+                .in("id", batch)
+                .or("customerContractId.not.is.null")
+                .order("id")
+          )
+        : { data: [] as ContractInvoiceRow[], error: null }
+    ]);
     const error =
-      batchSettlements.error ?? batchControls.error ?? batchDocumentLines.error;
+      batchSettlements.error ??
+      batchControls.error ??
+      batchDocumentLines.error ??
+      batchContractInvoices.error;
     if (error) return { data: null, error };
     settlements.push(...(batchSettlements.data ?? []));
     controls.push(...(batchControls.data ?? []));
     documentLines.push(...(batchDocumentLines.data ?? []));
+    contractInvoices.push(...(batchContractInvoices.data ?? []));
+  }
+  // A delivery invoice of a contract's own sales order bills the contract.
+  const lineOrderIds = [
+    ...new Set(documentLines.map((line) => line.salesOrderId))
+  ].filter((id): id is string => Boolean(id));
+  const contractsByOrder = new Map<string, string[]>();
+  for (const batch of chunkArray(lineOrderIds, 100)) {
+    const contracts = await client
+      .from("customerContract")
+      .select("id, salesOrderId")
+      .eq("companyId", companyId)
+      .in("salesOrderId", batch);
+    if (contracts.error) return { data: null, error: contracts.error };
+    for (const contract of contracts.data ?? []) {
+      if (!contract.salesOrderId) continue;
+      const list = contractsByOrder.get(contract.salesOrderId) ?? [];
+      list.push(contract.id);
+      contractsByOrder.set(contract.salesOrderId, list);
+    }
   }
   const documentsByInvoice = new Map<
     string,
-    { rentalAgreementIds: string[]; salesOrderIds: string[] }
+    {
+      rentalAgreementIds: string[];
+      salesOrderIds: string[];
+      customerContractIds: string[];
+    }
   >();
-  for (const line of documentLines) {
-    const documents = documentsByInvoice.get(line.invoiceId) ?? {
+  const documentsOf = (invoiceId: string) => {
+    const documents = documentsByInvoice.get(invoiceId) ?? {
       rentalAgreementIds: [],
-      salesOrderIds: []
+      salesOrderIds: [],
+      customerContractIds: []
     };
+    documentsByInvoice.set(invoiceId, documents);
+    return documents;
+  };
+  const addContract = (invoiceId: string, contractId: string | null) => {
+    if (!contractId) return;
+    const documents = documentsOf(invoiceId);
+    if (!documents.customerContractIds.includes(contractId))
+      documents.customerContractIds.push(contractId);
+  };
+  for (const invoice of contractInvoices)
+    addContract(invoice.id, invoice.customerContractId);
+  for (const line of documentLines) {
+    addContract(line.invoiceId, line.customerContractId);
+    for (const contractId of contractsByOrder.get(line.salesOrderId ?? "") ??
+      [])
+      addContract(line.invoiceId, contractId);
+    const documents = documentsOf(line.invoiceId);
     if (
       line.rentalAgreementId &&
       !documents.rentalAgreementIds.includes(line.rentalAgreementId)
@@ -2611,7 +2748,9 @@ async function getOpenInvoicesForParty(
             remainingDocument: remaining.remainingDocument,
             rentalAgreementIds:
               documentsByInvoice.get(i.id)?.rentalAgreementIds ?? [],
-            salesOrderIds: documentsByInvoice.get(i.id)?.salesOrderIds ?? []
+            salesOrderIds: documentsByInvoice.get(i.id)?.salesOrderIds ?? [],
+            customerContractIds:
+              documentsByInvoice.get(i.id)?.customerContractIds ?? []
           };
         })
         .filter((i) => i.remainingDocument > 0),
@@ -2872,8 +3011,10 @@ async function loadOnAccountSources(
   type OnAccountPaymentRow = FundingPaymentRow & {
     rentalAgreementId: string | null;
     salesOrderId: string | null;
+    customerContractId: string | null;
     depositAgreement: { readableId: string } | null;
     depositOrder: { readableId: string } | null;
+    depositContract: { readableId: string } | null;
   };
   const [payments, company] = await Promise.all([
     fetchAllFromTable<OnAccountPaymentRow>(
@@ -2881,7 +3022,7 @@ async function loadOnAccountSources(
       "payment",
       // A deposit's document comes along with its readable id so the composer
       // can say which document the deposit is reserved for.
-      "id, totalAmount, exchangeRate, postingDate, paymentDate, currencyCode, rentalAgreementId, salesOrderId, depositAgreement:rentalAgreement!payment_rentalAgreementId_fkey(readableId:rentalAgreementId), depositOrder:salesOrder!payment_salesOrderId_fkey(readableId:salesOrderId)",
+      "id, totalAmount, exchangeRate, postingDate, paymentDate, currencyCode, rentalAgreementId, salesOrderId, customerContractId, depositAgreement:rentalAgreement!payment_rentalAgreementId_fkey(readableId:rentalAgreementId), depositOrder:salesOrder!payment_salesOrderId_fkey(readableId:salesOrderId), depositContract:customerContract!payment_customerContract_fkey(readableId:customerContractId)",
       (query) => {
         query = query
           .eq("companyId", companyId)
@@ -2949,7 +3090,9 @@ async function loadOnAccountSources(
             readableId:
               (scope.type === "rentalAgreement"
                 ? payment.depositAgreement?.readableId
-                : payment.depositOrder?.readableId) ?? null
+                : scope.type === "customerContract"
+                  ? payment.depositContract?.readableId
+                  : payment.depositOrder?.readableId) ?? null
           }
         };
       }),
@@ -3059,6 +3202,7 @@ export async function upsertPayment(
           supplierId: payment.supplierId ?? null,
           salesOrderId: payment.salesOrderId ?? null,
           rentalAgreementId: payment.rentalAgreementId ?? null,
+          customerContractId: payment.customerContractId ?? null,
           employeeId: payment.employeeId ?? null
         }
       ])
@@ -3073,6 +3217,7 @@ export async function upsertPayment(
       supplierId: payment.supplierId ?? null,
       salesOrderId: payment.salesOrderId ?? null,
       rentalAgreementId: payment.rentalAgreementId ?? null,
+      customerContractId: payment.customerContractId ?? null,
       // Explicit null, like the two trade parties: switching a Draft payment's
       // payee must CLEAR the other two, or the widened one-of-three CHECK
       // rejects the update.
@@ -4757,33 +4902,48 @@ export async function getDepositDocuments(
   companyId: string,
   keepSalesOrderIds: (string | null | undefined)[] = []
 ): Promise<DepositDocument[]> {
-  const [deposits, rentalAgreements, openOrders] = await Promise.all([
-    client
-      .from("payment")
-      .select("salesOrderId")
-      .eq("companyId", companyId)
-      .eq("paymentType", "Receipt")
-      .eq("status", "Posted")
-      .not("salesOrderId", "is", null),
-    client
-      .from("rentalAgreement")
-      .select("id, rentalAgreementId, customerId, status")
-      .eq("companyId", companyId)
-      .order("rentalAgreementId", { ascending: false }),
-    fetchAllFromTable<{
-      id: string;
-      salesOrderId: string;
-      customerId: string;
-      status: string;
-    }>(client, "salesOrder", "id, salesOrderId, customerId, status", (query) =>
-      query
+  const [deposits, rentalAgreements, openOrders, contracts] = await Promise.all(
+    [
+      client
+        .from("payment")
+        .select("salesOrderId")
         .eq("companyId", companyId)
-        .in("status", [...OPEN_SALES_ORDER_STATUSES])
-        .order("salesOrderId", { ascending: false })
-    )
-  ]);
+        .eq("paymentType", "Receipt")
+        .eq("status", "Posted")
+        .not("salesOrderId", "is", null),
+      client
+        .from("rentalAgreement")
+        .select("id, rentalAgreementId, customerId, status")
+        .eq("companyId", companyId)
+        .order("rentalAgreementId", { ascending: false }),
+      fetchAllFromTable<{
+        id: string;
+        salesOrderId: string;
+        customerId: string;
+        status: string;
+      }>(
+        client,
+        "salesOrder",
+        "id, salesOrderId, customerId, status",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .in("status", [...OPEN_SALES_ORDER_STATUSES])
+            .order("salesOrderId", { ascending: false })
+      ),
+      // A contract deposit receives a progress or performance-based payment.
+      client
+        .from("customerContract")
+        .select("id, customerContractId, customerId, status")
+        .eq("companyId", companyId)
+        .order("customerContractId", { ascending: false })
+    ]
+  );
   const firstError =
-    deposits.error ?? rentalAgreements.error ?? openOrders.error;
+    deposits.error ??
+    rentalAgreements.error ??
+    openOrders.error ??
+    contracts.error;
   if (firstError) throw new Error(firstError.message);
   const listed = new Set((openOrders.data ?? []).map((order) => order.id));
   const missingOrderIds = [
@@ -4810,6 +4970,14 @@ export async function getDepositDocuments(
       kind: "rentalAgreement" as const,
       status: agreement.status,
       open: agreement.status === "Draft" || agreement.status === "Active"
+    })),
+    ...(contracts.data ?? []).map((contract) => ({
+      id: contract.id,
+      readableId: contract.customerContractId,
+      customerId: contract.customerId,
+      kind: "customerContract" as const,
+      status: contract.status,
+      open: contract.status === "Draft" || contract.status === "Active"
     })),
     ...[...(openOrders.data ?? []), ...(closedOrders.data ?? [])].map(
       (order) => ({
@@ -4841,14 +5009,17 @@ export async function checkDepositDocument(
     customerId?: string | null;
     salesOrderId?: string | null;
     rentalAgreementId?: string | null;
+    customerContractId?: string | null;
   },
   saved: {
     salesOrderId?: string | null;
     rentalAgreementId?: string | null;
+    customerContractId?: string | null;
   } = {}
 ): Promise<string | null> {
-  const { salesOrderId, rentalAgreementId, customerId } = payment;
-  if (!salesOrderId && !rentalAgreementId) return null;
+  const { salesOrderId, rentalAgreementId, customerContractId, customerId } =
+    payment;
+  if (!salesOrderId && !rentalAgreementId && !customerContractId) return null;
   // The validator already requires a customer for a deposit.
   if (!customerId) return "Only a customer payment can be a deposit";
 
@@ -4859,12 +5030,19 @@ export async function checkDepositDocument(
         .eq("id", salesOrderId)
         .eq("companyId", companyId)
         .maybeSingle()
-    : await client
-        .from("rentalAgreement")
-        .select("customerId, status")
-        .eq("id", rentalAgreementId!)
-        .eq("companyId", companyId)
-        .maybeSingle();
+    : rentalAgreementId
+      ? await client
+          .from("rentalAgreement")
+          .select("customerId, status")
+          .eq("id", rentalAgreementId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : await client
+          .from("customerContract")
+          .select("customerId, status")
+          .eq("id", customerContractId!)
+          .eq("companyId", companyId)
+          .maybeSingle();
   if (document.error) throw new Error(document.error.message);
   if (!document.data) return "The deposit document was not found";
   if (document.data.customerId !== customerId) {
@@ -4873,7 +5051,9 @@ export async function checkDepositDocument(
 
   const unchanged = salesOrderId
     ? salesOrderId === saved.salesOrderId
-    : rentalAgreementId === saved.rentalAgreementId;
+    : rentalAgreementId
+      ? rentalAgreementId === saved.rentalAgreementId
+      : customerContractId === saved.customerContractId;
   if (payment.paymentType !== "Receipt" || unchanged) return null;
 
   const status = document.data.status as string;
@@ -4883,7 +5063,9 @@ export async function checkDepositDocument(
   if (open) return null;
   return salesOrderId
     ? `The sales order is ${status} and cannot take a new deposit`
-    : `The rental agreement is ${status} and cannot take a new deposit`;
+    : rentalAgreementId
+      ? `The rental agreement is ${status} and cannot take a new deposit`
+      : `The contract is ${status} and cannot take a new deposit`;
 }
 
 /**
@@ -5362,6 +5544,9 @@ export async function sendPostedSalesInvoice(
       ]);
       const contact = customer?.data?.contact;
       if (!contact) return fail("Failed to get customer contact");
+      if (!isEmailableContact(contact)) {
+        return fail("The invoice contact has no email");
+      }
       if (!seller.data) return fail("Failed to get user");
 
       // The same reads the PDF rendered from.
@@ -5383,7 +5568,7 @@ export async function sendPostedSalesInvoice(
       const text = await render(template, { plainText: true });
       const signed = await storage(serviceRole)
         .company(companyId)
-        .createSignedUrl(filed.path, 3600);
+        .createSignedUrl(filed.path, EMAIL_ATTACHMENT_URL_SECONDS);
       if (signed.error) {
         logger.error("Failed to create signed URL for attachment", {
           storagePath: filed.path,
@@ -5393,7 +5578,7 @@ export async function sendPostedSalesInvoice(
 
       await trigger("send-email", {
         document: true,
-        to: [seller.data.email, contact.email!],
+        to: [seller.data.email, contact.email ?? ""],
         cc: args.cc?.length ? args.cc : undefined,
         from: seller.data.email,
         subject: `Invoice ${filed.document.invoiceReadableId} from ${filed.document.email.company.name}`,
@@ -6195,6 +6380,7 @@ export async function linkStripeCustomerForBilling({
     if (contact.data && !contact.data.contact?.email) {
       const update = await updateCustomerContact(serviceRole, {
         contactId: contact.data.contactId,
+        companyId,
         contact: {
           firstName: contact.data.contact?.firstName ?? "",
           lastName: contact.data.contact?.lastName ?? "",
@@ -6453,6 +6639,119 @@ export function planContractInvoiceLine(args: {
   }
   return { movement, revenueLegs, reclass };
 }
+
+export type ServiceJobPostingAccounts = {
+  /** Service Revenue, or Sales when the default is empty. */
+  serviceRevenue: SalesPostingAccount;
+  /** Null when the default is empty; required only to clear an accrual. */
+  contractAsset: SalesPostingAccount | null;
+};
+
+/** An unbilled Accrual row of a service job (any status). */
+export type ServiceJobAccrualFact = { id: string; amount: number };
+
+/** A service job line, with its revenue in base (`salesRevenueBase`). */
+export type ServiceJobLineFact = {
+  id: string;
+  serviceJobId: string;
+  sortOrder: number;
+  revenueBase: number;
+};
+
+export type ServiceJobRevenuePlan = {
+  /** The Contract Assets share of each line, by invoice line id. */
+  shares: Map<string, number>;
+  /** The accrual left after a job's last line, by that line's id. */
+  excess: Map<string, number>;
+  /** Accrual row id → the invoice line that bills it: the job's first. */
+  billedAccruals: Map<string, string>;
+};
+
+/**
+ * Spreads each job's unbilled accrual over the job's invoice lines in sort
+ * order: each line takes min(accrual left, its revenue) off Contract Assets.
+ * What is left after the job's last line is its `excess`, which that line
+ * reclasses (`planServiceJobLine`). A revenue leg can never be larger than
+ * its line (`buildSalesPostingLines`), so one line cannot take it all.
+ */
+export function planServiceJobRevenue(
+  lines: readonly ServiceJobLineFact[],
+  accruals: ReadonlyMap<string, readonly ServiceJobAccrualFact[]>
+): ServiceJobRevenuePlan {
+  const plan: ServiceJobRevenuePlan = {
+    shares: new Map(),
+    excess: new Map(),
+    billedAccruals: new Map()
+  };
+  const byJob = Map.groupBy(lines, (line) => line.serviceJobId);
+  for (const [serviceJobId, jobLines] of byJob) {
+    const ordered = [...jobLines].sort(
+      (a, b) =>
+        a.sortOrder - b.sortOrder || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+    );
+    const rows = accruals.get(serviceJobId) ?? [];
+    let left = round(rows.reduce((sum, row) => sum + row.amount, 0));
+    for (const line of ordered) {
+      const share =
+        left > 0 && line.revenueBase > 0
+          ? round(Math.min(left, line.revenueBase))
+          : 0;
+      plan.shares.set(line.id, share);
+      left = round(left - share);
+    }
+    const last = ordered[ordered.length - 1]!;
+    if (left !== 0) plan.excess.set(last.id, left);
+    for (const row of rows) plan.billedAccruals.set(row.id, ordered[0]!.id);
+  }
+  return plan;
+}
+
+/**
+ * One service job line's revenue side: a Contract Assets leg for its share
+ * of the job's accrual, then Service Revenue for the rest of the line. On
+ * the job's last line, `excess` (accrual no line could take) becomes reclass
+ * lines, Cr Contract Assets / Dr Service Revenue, that sum to zero: the
+ * revenue the run accrued beyond what was billed comes back off Service
+ * Revenue, and Contract Assets is cleared.
+ */
+export function planServiceJobLine(args: {
+  share: number;
+  excess: number;
+  accounts: ServiceJobPostingAccounts;
+}): { revenueLegs: SalesRevenueLeg[]; reclass: ContractReclassLine[] } {
+  const { share, excess, accounts } = args;
+  const serviceRevenue = {
+    account: accounts.serviceRevenue,
+    accountClass: "Revenue" as const,
+    description: "Service Revenue"
+  };
+  if (share === 0 && excess === 0) {
+    return { revenueLegs: [serviceRevenue], reclass: [] };
+  }
+  if (!isLeaf(accounts.contractAsset, "Asset")) {
+    throw new InvalidInputError(
+      "Service job invoices that clear accrued revenue need the Contract Assets account mapped in the accounting defaults"
+    );
+  }
+  const contractAsset = {
+    account: accounts.contractAsset,
+    accountClass: "Asset" as const,
+    description: "Contract Assets"
+  };
+  return {
+    revenueLegs:
+      share === 0
+        ? [serviceRevenue]
+        : [{ ...contractAsset, amount: share }, serviceRevenue],
+    reclass:
+      excess === 0
+        ? []
+        : [
+            { ...contractAsset, credit: excess },
+            { ...serviceRevenue, credit: round(-excess) }
+          ]
+  };
+}
 type Tables = Database["public"]["Tables"];
 
 type AccountDefaults = Tables["accountDefault"]["Row"];
@@ -6467,6 +6766,9 @@ export type SalesInvoiceAccountNeeds = {
   rental: { purchaseOption: boolean } | null;
   /** The invoice has contract lines. */
   contract: boolean;
+  /** The invoice has service job lines: they credit Service Revenue and
+   *  clear the job's accrued revenue off Contract Assets. */
+  serviceJob?: boolean;
   /** Other accounts that a line posts to, read with the defaults. */
   accountIds: (string | null | undefined)[];
 };
@@ -6568,6 +6870,26 @@ export function planSalesInvoiceAccounts(
       defaults.realizedExchangeLossAccount
     );
   }
+
+  // Service job lines credit Service Revenue (Sales when it is empty) and
+  // clear the job's accrued revenue off Contract Assets. Contract Assets is
+  // required only when a job has accrued revenue to clear.
+  const serviceJobAccountIds = needs.serviceJob
+    ? {
+        serviceRevenue: resolveDefaultAccount(
+          defaults,
+          "serviceRevenueAccount",
+          postingStatus
+        ).accountId,
+        contractAsset: defaults.contractAssetAccount
+      }
+    : null;
+  if (serviceJobAccountIds) {
+    read(
+      serviceJobAccountIds.serviceRevenue,
+      serviceJobAccountIds.contractAsset
+    );
+  }
   read(...needs.accountIds);
 
   return {
@@ -6577,6 +6899,7 @@ export function planSalesInvoiceAccounts(
     shippingAccountId,
     deferredRevenueAccountId,
     rentalAccountIds,
+    serviceJobAccountIds,
     contract: needs.contract,
     /** The ids to read. A stand-in is not an account. */
     accountIds: [...ids].filter((id) => !standIns.isPlaceholder(id))
@@ -6712,6 +7035,22 @@ export function resolveSalesInvoiceAccounts(
     leaf(defaults.salesAccount, "Revenue", "Sales", true);
   }
 
+  // Contract Assets is checked by the line that clears an accrual
+  // (`planServiceJobLine`): a job with nothing accrued never needs it.
+  let serviceJob: ServiceJobPostingAccounts | null = null;
+  if (plan.serviceJobAccountIds) {
+    const serviceRevenue = account(plan.serviceJobAccountIds.serviceRevenue);
+    if (!isLeaf(serviceRevenue, "Revenue")) {
+      throw new Error(
+        "Service Revenue account is invalid; expected an active Revenue leaf in this company group"
+      );
+    }
+    serviceJob = {
+      serviceRevenue,
+      contractAsset: account(plan.serviceJobAccountIds.contractAsset) ?? null
+    };
+  }
+
   const receivablesAccountId = (intercompany: boolean) =>
     intercompany ? plan.receivables.intercompany : plan.receivables.standard;
 
@@ -6726,11 +7065,13 @@ export function resolveSalesInvoiceAccounts(
       receivables: account(receivablesAccountId(intercompany)),
       sales: account(plan.defaults.salesAccount),
       shipping: account(plan.shippingAccountId),
-      tax: account(plan.defaults.salesTaxPayableAccount)
+      tax: account(plan.defaults.salesTaxPayableAccount),
+      serviceRevenue: serviceJob?.serviceRevenue ?? null
     }),
     deferredRevenue,
     rental,
-    contract
+    contract,
+    serviceJob
   };
 }
 
@@ -6799,7 +7140,11 @@ export type SalesInvoiceLine = Pick<
   | "rentalAgreementLineId"
   | "rentalBillingPeriodId"
   | "rentalLineType"
->;
+> &
+  // Read by the service job book only (`planServiceJobRevenue`).
+  Partial<
+    Pick<Tables["salesInvoiceLine"]["Row"], "serviceJobId" | "sortOrder">
+  >;
 
 /** The line types that sell an item. */
 export const ITEM_LINE_TYPES: ReadonlySet<string> = new Set([
@@ -6815,12 +7160,17 @@ export const ITEM_LINE_TYPES: ReadonlySet<string> = new Set([
  * An item line with no sales order that is not built to order. Its posting
  * ships it: it writes the shipment and the item ledger, and its COGS pair
  * is in the invoice journal. A sales-order or Make-to-Order line keeps the
- * COGS that its shipment posted.
+ * COGS that its shipment posted. A contract line never ships: a project
+ * contract line may name a part, but its job already charged the cost to the
+ * project, and its delivery moves no stock. A Service line with no item (a
+ * service job's labor or fixed price line) ships nothing and has no cost.
  */
 export function isDirectItemLine(line: SalesInvoiceLine): boolean {
   return (
     ITEM_LINE_TYPES.has(line.invoiceLineType) &&
+    line.itemId !== null &&
     line.salesOrderLineId === null &&
+    line.customerContractLineId === null &&
     line.methodType !== "Make to Order"
   );
 }
@@ -6855,13 +7205,23 @@ export type SalesLineRevenue =
   | { book: "contract" }
   /** The rental agreement line (`planRentalLine`). */
   | { book: "rental" }
+  /** The service job: Contract Assets for its accrued revenue, then Service
+   *  Revenue (`planServiceJobRevenue`). */
+  | { book: "service"; serviceJobId: string }
   /** The asset's disposal: proceeds against its carrying value. */
   | { book: "disposal" };
 
 /** Where the posting books a line's revenue. A Comment line posts nothing
  *  and never gets here. */
 export function postingLineRevenue(line: SalesInvoiceLine): SalesLineRevenue {
-  if (ITEM_LINE_TYPES.has(line.invoiceLineType)) {
+  // "Labor" is the type a service job's item-less lines had before they
+  // became Service lines. Old rows post as Service lines.
+  const lineType =
+    line.invoiceLineType === "Labor" ? "Service" : line.invoiceLineType;
+  if (line.serviceJobId && ITEM_LINE_TYPES.has(lineType)) {
+    return { book: "service", serviceJobId: line.serviceJobId };
+  }
+  if (ITEM_LINE_TYPES.has(lineType)) {
     if (line.customerContractLineId) return { book: "contract" };
     const period = deferredServicePeriod(line);
     return period ? { book: "deferral", ...period } : { book: "sales" };
@@ -6900,6 +7260,9 @@ export function postingAccountNeeds(
     contract: lines.some(
       (line) =>
         !!line.customerContractLineId && line.invoiceLineType !== "Comment"
+    ),
+    serviceJob: lines.some(
+      (line) => !!line.serviceJobId && line.invoiceLineType !== "Comment"
     ),
     accountIds: [...assetClasses].flatMap((assetClass) => [
       assetClass?.assetAccountId,
@@ -7009,6 +7372,11 @@ export type SalesInvoiceJournalFacts = {
   rental: SalesInvoiceRentalFacts | null;
   /** Required by a `disposal` line. */
   disposal: SalesInvoiceDisposalFacts | null;
+  /** A `service` line's job accruals: unbilled Accrual rows (any status),
+   *  by service job. None means nothing accrued. */
+  serviceJob?: {
+    accruals: ReadonlyMap<string, readonly ServiceJobAccrualFact[]>;
+  } | null;
 };
 
 /** What the posting writes with the journal, from the same lines. */
@@ -7216,6 +7584,30 @@ export function buildSalesInvoiceJournal(
     });
   };
 
+  // Each service job's accrual, spread over its lines before any posts.
+  const serviceLines: ServiceJobLineFact[] = [];
+  for (const line of facts.lines) {
+    if (line.invoiceLineType === "Comment") continue;
+    const revenue = facts.revenue(line);
+    if (revenue.book !== "service") continue;
+    serviceLines.push({
+      id: line.id,
+      serviceJobId: revenue.serviceJobId,
+      sortOrder: line.sortOrder ?? 0,
+      revenueBase: roundSalesPostingAmounts({
+        ...line,
+        allocatedHeaderShipping: facts.headerShipping.get(line.id) ?? 0
+      }).salesRevenueBase
+    });
+  }
+  const servicePlan = planServiceJobRevenue(
+    serviceLines,
+    facts.serviceJob?.accruals ?? new Map()
+  );
+  for (const [accrualId, lineId] of servicePlan.billedAccruals) {
+    journal.billedAccruals.set(accrualId, lineId);
+  }
+
   for (const line of facts.lines) {
     if (line.invoiceLineType === "Comment") continue;
     const revenue = facts.revenue(line);
@@ -7356,6 +7748,44 @@ export function buildSalesInvoiceJournal(
             movement: plan.movement
           });
         }
+        break;
+      }
+      case "service": {
+        // A service job line: Cr Contract Assets for its share of the job's
+        // accrued revenue, the rest Cr Service Revenue. The job's last line
+        // reclasses the accrual no line could take.
+        const plan = planServiceJobLine({
+          share: servicePlan.shares.get(line.id) ?? 0,
+          excess: servicePlan.excess.get(line.id) ?? 0,
+          accounts: required(
+            accounts.serviceJob,
+            "the service revenue accounts"
+          )
+        });
+        const built = buildSalesPostingLines({
+          line: postingLine,
+          context,
+          accounts: charges,
+          revenueLegs: plan.revenueLegs,
+          metadata
+        });
+        push(built.lines, built.metadata);
+        // Same journal line reference, so a VOID reverses them with the line.
+        push(
+          plan.reclass.map((reclass) => ({
+            accountId: reclass.account.id,
+            description: reclass.description,
+            amount: signedCreditAmount(reclass.accountClass, reclass.credit),
+            quantity: round(line.quantity),
+            documentType: "Invoice" as const,
+            documentId: invoice.id,
+            externalDocumentId: context.externalDocumentId,
+            documentLineReference: context.documentLineReference,
+            journalLineReference: context.journalLineReference,
+            companyId
+          })),
+          metadata
+        );
         break;
       }
       case "disposal": {
@@ -8629,6 +9059,66 @@ export async function postSalesInvoice(
           return byLine;
         };
 
+        // Each service job's revenue the run accrued and no invoice billed
+        // yet, Planned or Posted: the job's lines bill it off Contract Assets.
+        const serviceJobIds = [
+          ...new Set(
+            salesInvoiceLines.data
+              .filter(
+                (line: InvoiceLineRecord) =>
+                  !!line.serviceJobId && line.invoiceLineType !== "Comment"
+              )
+              .map((line: InvoiceLineRecord) => line.serviceJobId!)
+          )
+        ];
+        const serviceAccruals = await (serviceJobIds.length > 0
+          ? many(
+              db,
+              "revenueRecognitionSchedule",
+              {
+                companyId,
+                serviceJobId: serviceJobIds,
+                type: "Accrual",
+                billedBySalesInvoiceLineId: isNull
+              },
+              { columns: ["id", "serviceJobId", "amount"], orderBy: ["id"] }
+            )
+          : noRows<
+              Pick<
+                rows.Tables["revenueRecognitionSchedule"]["Row"],
+                "id" | "serviceJobId" | "amount"
+              >
+            >());
+        if (serviceAccruals.error)
+          throw new Error("Failed to fetch service job accruals");
+        const serviceAccrualsByJob = new Map<string, ServiceJobAccrualFact[]>();
+        for (const row of serviceAccruals.data ?? []) {
+          if (!row.serviceJobId) continue;
+          const facts = serviceAccrualsByJob.get(row.serviceJobId) ?? [];
+          facts.push({ id: row.id, amount: Number(row.amount) });
+          serviceAccrualsByJob.set(row.serviceJobId, facts);
+        }
+
+        // Lines that bill a project's billable items or a service job: a
+        // part issued to either already left stock and posted its cost, so
+        // these lines post revenue only. One query per invoice.
+        const invoiceLineIds = salesInvoiceLines.data.map((line) => line.id);
+        const billedServiceLineIds = new Set<string | null>([
+          ...salesInvoiceLines.data
+            .filter((line) => line.serviceJobId)
+            .map((line) => line.id),
+          ...(invoiceLineIds.length === 0
+            ? []
+            : (
+                await db
+                  .selectFrom("projectBillableItem")
+                  .select("salesInvoiceLineId")
+                  .where("salesInvoiceLineId", "in", invoiceLineIds)
+                  .where("companyId", "=", companyId)
+                  .execute()
+              ).map((row) => row.salesInvoiceLineId))
+        ]);
+
         const journal = buildSalesInvoiceJournal({
           companyId,
           companyGroupId: companyGroupId!,
@@ -8653,8 +9143,9 @@ export async function postSalesInvoice(
           accounts,
           revenue: postingLineRevenue,
           // Built at zero; the posting transaction relieves the cost and
-          // fills the pair in (fillDirectCogs).
-          directCost: () => 0,
+          // fills the pair in (fillDirectCogs). A line billing a project's
+          // billable items or a service job has no COGS pair.
+          directCost: (line) => (billedServiceLineIds.has(line.id) ? null : 0),
           contract: {
             positions: contractPositionsRead,
             rate: invoiceExchangeRate
@@ -8676,14 +9167,19 @@ export async function postSalesInvoice(
           disposal: {
             assets: assetsById,
             latestDisposal: latestDisposalByAsset
-          }
+          },
+          serviceJob: { accruals: serviceAccrualsByJob }
         });
         const journalLineInserts = journal.lines;
 
         // A direct item line ships on the invoice: a shipment (never for a
         // service) and, for a stocked item, the item ledger.
         for (const invoiceLine of salesInvoiceLines.data) {
-          if (!isDirectItemLine(invoiceLine)) continue;
+          if (
+            !isDirectItemLine(invoiceLine) ||
+            billedServiceLineIds.has(invoiceLine.id)
+          )
+            continue;
           if (invoiceLine.invoiceLineType !== "Service") {
             shipmentLineInserts.push({
               itemId: invoiceLine.itemId!,
@@ -8820,16 +9316,15 @@ export async function postSalesInvoice(
             }
           }
 
-          for await (const [salesOrderLineId, update] of Object.entries(
-            salesOrderLineUpdates
-          )) {
-            await trx
-              .updateTable("salesOrderLine")
-              .set(update)
-              .where("id", "=", salesOrderLineId)
-              .where("companyId", "=", companyId)
-              .execute();
-          }
+          await updateRowsById(
+            trx,
+            "salesOrderLine",
+            companyId,
+            Object.entries(salesOrderLineUpdates).map(([id, data]) => ({
+              id,
+              data
+            }))
+          );
 
           const salesOrdersUpdated = Object.values(
             salesOrderLineUpdates
@@ -8896,7 +9391,8 @@ export async function postSalesInvoice(
             (line) =>
               line.salesOrderLineId === null &&
               line.itemId &&
-              line.invoiceLineType !== "Rental"
+              line.invoiceLineType !== "Rental" &&
+              !billedServiceLineIds.has(line.id)
           );
 
           for (const directLine of directInvoiceItems) {
@@ -8908,10 +9404,12 @@ export async function postSalesInvoice(
 
             if (itemTrackingType !== "Inventory") continue;
 
+            // A direct invoice ships common stock only (Projects Phase 2a).
             const cogsResult = await calculateCOGS(trx, {
               itemId: directLine.itemId,
               quantity: directLine.quantity,
-              companyId
+              companyId,
+              projectId: null
             });
 
             // The pair the journal builder wrote at zero.
@@ -8934,6 +9432,7 @@ export async function postSalesInvoice(
                   quantity: round(-directLine.quantity),
                   cost: round(-cogsResult.totalCost),
                   remainingQuantity: 0,
+                  projectId: null,
                   companyId,
                   postingDate: today
                 })
@@ -9062,12 +9561,13 @@ export async function postSalesInvoice(
                 .execute();
             }
 
-            // Accrued rent this invoice bills moved off the contract asset;
-            // stamp each Accrual row with the line that billed it. A row still
-            // Planned debits the contract asset when its run posts, cancelling
-            // this credit, so the balance nets to zero whichever posts first.
-            // The guard columns make a concurrent bill fail loudly instead of
-            // crediting the contract asset twice.
+            // Accrued rent or service revenue this invoice bills moved off
+            // the contract asset; stamp each Accrual row with the line that
+            // billed it (a service job's rows with the job's first line). A
+            // row still Planned debits the contract asset when its run posts,
+            // cancelling this credit, so the balance nets to zero whichever
+            // posts first. The guard columns make a concurrent bill fail
+            // loudly instead of crediting the contract asset twice.
             if (journal.billedAccruals.size > 0) {
               const billed = [...journal.billedAccruals];
               const stamped = await trx
@@ -9094,7 +9594,7 @@ export async function postSalesInvoice(
                 .executeTakeFirst();
               if (Number(stamped.numUpdatedRows) !== billed.length) {
                 throw new Error(
-                  "A rental accrual changed while this invoice was posting; post it again"
+                  "An accrual changed while this invoice was posting; post it again"
                 );
               }
             }
@@ -9126,7 +9626,8 @@ export async function postSalesInvoice(
           if (itemLedgerInserts.length > 0) {
             await trx
               .insertInto("itemLedger")
-              .values(itemLedgerInserts)
+              // Every row draws common stock.
+              .values(withStripe(itemLedgerInserts, null))
               .returning(["id"])
               .execute();
           }
@@ -9155,7 +9656,8 @@ export async function postSalesInvoice(
                 controlAccountId: receivablesAccountId,
                 revenueAccountIds: [
                   defaults.salesAccount,
-                  accounts.shippingAccountId
+                  accounts.shippingAccountId,
+                  accounts.serviceJob?.serviceRevenue.id
                 ].filter((id): id is string => !!id),
                 cogsAccountId: cogsAccount
               }
@@ -9509,10 +10011,14 @@ export async function postSalesInvoice(
         }
 
         // Create reversing journal entries
+        const reversedJournalEntries = [
+          ...journalEntries,
+          ...rentalJournalEntries
+        ];
         const reversingJournalEntries: Omit<
           rows.Tables["journalLine"]["Insert"],
           "journalId"
-        >[] = [...journalEntries, ...rentalJournalEntries].map((entry) => ({
+        >[] = reversedJournalEntries.map((entry) => ({
           accountId: entry.accountId,
           // A reversed stand-in line names the same default, so the enable
           // re-points both sides together.
@@ -9563,6 +10069,8 @@ export async function postSalesInvoice(
               documentType: "Sales Shipment",
               documentId: invoiceHeader.id ?? undefined,
               externalDocumentId: entry.externalDocumentId,
+              // A reversal copies the row it reverses.
+              projectId: entry.projectId ?? null,
               createdBy: userId,
               companyId
             });
@@ -9603,6 +10111,25 @@ export async function postSalesInvoice(
               .deleteFrom("revenueRecognitionSchedule")
               .where("companyId", "=", companyId)
               .where("salesInvoiceLineId", "in", invoiceLineIds)
+              .execute();
+          }
+
+          // A service job's accruals are unbilled again: the reversed journal
+          // restores the contract asset they were billed off.
+          const serviceLineIds = salesInvoiceLines.data
+            .filter((line) => !!line.serviceJobId)
+            .map((line) => line.id);
+          if (serviceLineIds.length > 0) {
+            await trx
+              .updateTable("revenueRecognitionSchedule")
+              .set({
+                billedBySalesInvoiceLineId: null,
+                updatedBy: userId,
+                updatedAt: datetime.timestamp()
+              })
+              .where("companyId", "=", companyId)
+              .where("type", "=", "Accrual")
+              .where("billedBySalesInvoiceLineId", "in", serviceLineIds)
               .execute();
           }
 
@@ -9701,17 +10228,64 @@ export async function postSalesInvoice(
             .where("salesInvoiceId", "=", invoiceId)
             .execute();
 
-          // Update sales order lines to reverse invoiced quantities
-          for await (const [salesOrderLineId, update] of Object.entries(
-            salesOrderLineUpdates
-          )) {
+          // A project billing or service order invoice: its billable items
+          // are billable again, remembering the voided invoice so a re-bill
+          // is held for review (project billing P4).
+          if (invoiceLineIds.length > 0) {
             await trx
-              .updateTable("salesOrderLine")
-              .set(update)
-              .where("id", "=", salesOrderLineId)
+              .updateTable("projectBillableItem")
+              .set({
+                status: "Unbilled",
+                salesInvoiceLineId: null,
+                voidedSalesInvoiceId: invoiceId,
+                updatedBy: userId,
+                updatedAt: datetime.timestamp()
+              })
               .where("companyId", "=", companyId)
+              .where("salesInvoiceLineId", "in", invoiceLineIds)
+              .where("status", "=", "Billed")
               .execute();
           }
+
+          // A service job invoice: the job is Completed again, with no
+          // invoice, so it can be invoiced again.
+          const voidedServiceJobIds = [
+            ...new Set(
+              salesInvoiceLines.data.flatMap((line) =>
+                line.serviceJobId ? [line.serviceJobId] : []
+              )
+            )
+          ];
+          await trx
+            .updateTable("serviceJob")
+            .set({
+              status: "Completed",
+              salesInvoiceId: null,
+              updatedBy: userId,
+              updatedAt: datetime.timestamp()
+            })
+            .where("companyId", "=", companyId)
+            .where("status", "=", "Invoiced")
+            .where((eb) =>
+              voidedServiceJobIds.length > 0
+                ? eb.or([
+                    eb("salesInvoiceId", "=", invoiceId),
+                    eb("id", "in", voidedServiceJobIds)
+                  ])
+                : eb("salesInvoiceId", "=", invoiceId)
+            )
+            .execute();
+
+          // Update sales order lines to reverse invoiced quantities
+          await updateRowsById(
+            trx,
+            "salesOrderLine",
+            companyId,
+            Object.entries(salesOrderLineUpdates).map(([id, data]) => ({
+              id,
+              data
+            }))
+          );
 
           // Update sales orders status - fetch fresh data after updates
           const salesOrdersUpdated = Object.values(
@@ -9921,16 +10495,30 @@ export async function postSalesInvoice(
               .returning(["id"])
               .executeTakeFirstOrThrow();
 
+            // Ids allocated first, so each reversing line can carry the
+            // dimensions of the line it negates. The contract reclass lines
+            // pushed after them negate nothing.
+            const reversingLineIds = await allocateJournalLineIds(
+              trx,
+              reversingJournalEntries.length
+            );
             await trx
               .insertInto("journalLine")
               .values(
-                reversingJournalEntries.map((line) => ({
+                reversingJournalEntries.map((line, index) => ({
                   ...line,
+                  id: reversingLineIds[index],
                   journalId: voidJournalResult.id
                 }))
               )
-              .returning(["id"])
               .execute();
+            await copyJournalLineDimensions(trx, {
+              companyId,
+              reversals: reversedJournalEntries.map((entry, index) => ({
+                originalLineId: entry.id,
+                reversingLineId: reversingLineIds[index]!
+              }))
+            });
 
             if (contractVoidEntries.length > 0) {
               await trx
@@ -9956,19 +10544,22 @@ export async function postSalesInvoice(
 
           // Delete invoice-created shipments
           if (invoiceShipments && invoiceShipments.length > 0) {
+            const shipmentUpdates: {
+              id: string;
+              data: Database["public"]["Tables"]["shipment"]["Update"];
+            }[] = [];
             for (const shipment of invoiceShipments) {
-              await trx
-                .updateTable("shipment")
-                .set({
+              shipmentUpdates.push({
+                id: shipment.id,
+                data: {
                   invoiced: false,
                   status: "Voided",
                   updatedAt: today,
                   updatedBy: userId
-                })
-                .where("id", "=", shipment.id)
-                .where("companyId", "=", companyId)
-                .execute();
+                }
+              });
             }
+            await updateRowsById(trx, "shipment", companyId, shipmentUpdates);
           }
 
           // Remove invoiced flag from related shipment if it exists
@@ -11441,6 +12032,7 @@ export function paymentKind(
     | "paymentType"
     | "rentalAgreementId"
     | "salesOrderId"
+    | "customerContractId"
   >
 ) {
   // An employee payee is a reimbursement payout: always cash OUT against the
@@ -11469,11 +12061,16 @@ export function paymentKind(
     isAR,
     cashIn,
     isRefund,
-    // A payment that references a sales order or rental agreement is a
-    // customer deposit: its unapplied cash is a liability on the prepayment
-    // account rather than on-account receivable credit. The builder ignores
-    // the flag for supplier payments.
-    isDeposit: Boolean(payment.rentalAgreementId ?? payment.salesOrderId),
+    // A payment that references a sales order, rental agreement or customer
+    // contract is a customer deposit: its unapplied cash is a liability on
+    // the prepayment account rather than on-account receivable credit. A
+    // contract deposit is how a progress payment is received. The builder
+    // ignores the flag for supplier payments.
+    isDeposit: Boolean(
+      payment.rentalAgreementId ??
+        payment.salesOrderId ??
+        payment.customerContractId
+    ),
     partyId,
     targetColumn: isReimbursement
       ? ("targetReimbursementId" as const)
@@ -13684,6 +14281,8 @@ export type InvoicedPurchaseOrderLine = {
   isOutsideProcessing: boolean;
   processId: string | null;
   coverage: VarianceCoverage;
+  /** A PO line made for a planning group (Projects Phase 3). */
+  planningGroupId?: string | null;
 };
 
 type LineBase = {
@@ -13729,6 +14328,7 @@ export type PurchaseInvoicePostingLine = LineBase &
         account: { id: string; name: string };
         costCenterId: string | null;
         projectId: string | null;
+        projectElementId?: string | null;
       }
     | {
         /** A lessee lease's line, its accounts from `resolveLeasePostingLine`.
@@ -13760,6 +14360,25 @@ export type BuildPurchaseInvoicePostingLinesInput = {
   };
   /** The invoice's lines in order, comments left out. */
   lines: PurchaseInvoicePostingLine[];
+  /** The project charges of the invoice's lines (`loadInvoiceProjectCharges`).
+   *  Absent: no line is charged to a project. */
+  projectCharges?: InvoiceProjectCharges | null;
+};
+
+/** One projectLedger row the posting writes once the journal line ids exist:
+ *  `journalLineIndex` is the index of its line in `lines`. */
+export type PurchaseInvoiceProjectDraft = {
+  invoiceLineId: string;
+  projectId: string;
+  projectElementId: string | null;
+  costType: "Purchased Service" | "Other Direct" | "Material Variance";
+  itemId: string | null;
+  quantity: number;
+  amount: number;
+  journalLineIndex: number | null;
+  fixedAssetId: string | null;
+  postCapitalization: boolean;
+  unallowable: boolean;
 };
 
 /** The units a line cleared from GR/IR and what their variance did. */
@@ -13780,6 +14399,8 @@ export type PurchaseInvoicePosting = {
   /** By invoice line id: each PO item line that cleared received units, and
    *  each fixed asset line a receipt brought in. */
   receivedVariances: Map<string, ReceivedVariance>;
+  /** The project ledger rows of the lines charged to a project. */
+  projectDrafts: PurchaseInvoiceProjectDraft[];
 };
 
 /** A line of an item: `direct` with no PO, else `ordered`. */
@@ -13944,6 +14565,8 @@ export function buildPurchaseInvoicePostingLines(
   input: BuildPurchaseInvoicePostingLinesInput
 ): PurchaseInvoicePosting {
   const { invoice, accounts, payables, supplierTypeId } = input;
+  const projectCharges = input.projectCharges ?? null;
+  const projectDrafts: PurchaseInvoiceProjectDraft[] = [];
   // An Average item's on-hand still free to take a write-up, per item.
   const averageOnHandLeft = new Map<string, number>();
 
@@ -13954,6 +14577,15 @@ export function buildPurchaseInvoicePostingLines(
     if (line.kind !== "ordered") continue;
     const clearing = clearReceipts(line);
     if (!clearing) continue;
+    // A line its receipt charged to a project has no layers: its whole
+    // variance goes to the account the receipt debited.
+    if (
+      projectCharges?.chargedAtReceipt(
+        line.purchaseOrderLine.purchaseOrderLineId
+      )
+    ) {
+      clearing.usesLayers = false;
+    }
     clearings.set(line.id, clearing);
     const itemId = line.item.itemId;
     if (
@@ -13979,6 +14611,7 @@ export function buildPurchaseInvoicePostingLines(
     locationId: string | null;
     costCenterId: string | null;
     projectId: string | null;
+    projectElementId?: string | null;
     processId: string | null;
     fixedAssetClassId: string | null;
   };
@@ -14000,6 +14633,7 @@ export function buildPurchaseInvoicePostingLines(
         Location: meta.locationId,
         CostCenter: meta.costCenterId,
         Project: meta.projectId,
+        ProjectElement: meta.projectElementId ?? null,
         Process: meta.processId,
         FixedAssetClass: meta.fixedAssetClassId
       }
@@ -14030,6 +14664,12 @@ export function buildPurchaseInvoicePostingLines(
         const trackingType = item.itemTrackingType ?? "Inventory";
         let debitAccount: string;
         let debitDescription: string;
+        // A Non-Inventory line charged to a non-Statistical project debits
+        // the project account.
+        const directProjectCharge =
+          trackingType === "Non-Inventory"
+            ? (projectCharges?.forLine(line.id) ?? null)
+            : null;
         if (trackingType === "Inventory" && line.receivedWithInvoice) {
           const inventory = resolveInventoryAccount(
             item.replenishmentSystem,
@@ -14037,6 +14677,9 @@ export function buildPurchaseInvoicePostingLines(
           );
           debitAccount = inventory.account;
           debitDescription = inventory.description;
+        } else if (directProjectCharge) {
+          debitAccount = directProjectCharge.accountId;
+          debitDescription = "Project Account";
         } else if (trackingType === "Non-Inventory") {
           debitAccount = accounts.indirectCostAccount;
           debitDescription = "Indirect Cost Account";
@@ -14055,6 +14698,24 @@ export function buildPurchaseInvoicePostingLines(
           processId: null,
           fixedAssetClassId: null
         };
+        if (directProjectCharge) {
+          projectDrafts.push({
+            invoiceLineId: line.id,
+            projectId: directProjectCharge.projectId,
+            projectElementId: directProjectCharge.projectElementId,
+            fixedAssetId: directProjectCharge.fixedAssetId,
+            postCapitalization: directProjectCharge.postCapitalization,
+            unallowable: directProjectCharge.unallowable,
+            costType:
+              line.invoiceLineType === "Service"
+                ? "Purchased Service"
+                : "Other Direct",
+            itemId: item.itemId,
+            quantity,
+            amount: total,
+            journalLineIndex: lines.length
+          });
+        }
         push(
           {
             accountId: debitAccount,
@@ -14063,7 +14724,13 @@ export function buildPurchaseInvoicePostingLines(
             quantity: round(quantity),
             journalLineReference
           },
-          meta
+          directProjectCharge
+            ? {
+                ...meta,
+                projectId: directProjectCharge.projectId,
+                projectElementId: directProjectCharge.projectElementId
+              }
+            : meta
         );
         push(payable(total, quantity, { journalLineReference }), meta);
         break;
@@ -14138,9 +14805,15 @@ export function buildPurchaseInvoicePostingLines(
             },
             meta
           );
+          const receiptProjectCharge =
+            projectCharges?.chargedAtReceipt(
+              purchaseOrderLine.purchaseOrderLineId
+            ) ?? null;
           // The on-hand share writes up inventory; the consumed share is
           // purchase variance.
+          let inventoryVarianceLineIndex: number | null = null;
           if (Math.abs(allocation.inventoryShare) > VARIANCE_THRESHOLD) {
+            inventoryVarianceLineIndex = lines.length;
             const inventory = resolveInventoryAccount(
               item.replenishmentSystem,
               accounts
@@ -14155,16 +14828,164 @@ export function buildPurchaseInvoicePostingLines(
               meta
             );
           }
-          if (Math.abs(allocation.ppvShare) > VARIANCE_THRESHOLD) {
+          // A PO line made for a planning group (Projects Phase 3): the
+          // consumed share of a member stripe's layer is that member's cost.
+          // It posts to the member's project account with a Material Variance
+          // row; the rest stays in PPV.
+          let remainingPpvShare = allocation.ppvShare;
+          if (purchaseOrderLine.planningGroupId && projectCharges) {
+            const consumedByProject = new Map<
+              string,
+              { quantity: number; cost: number }
+            >();
+            for (const entry of allocation.consumed ?? []) {
+              if (!entry.projectId) continue;
+              const total = consumedByProject.get(entry.projectId) ?? {
+                quantity: 0,
+                cost: 0
+              };
+              consumedByProject.set(entry.projectId, {
+                quantity: total.quantity + entry.quantity,
+                cost: total.cost + entry.cost
+              });
+            }
+            for (const [memberProjectId, share] of consumedByProject) {
+              const amount = round(share.cost);
+              if (Math.abs(amount) <= VARIANCE_THRESHOLD) continue;
+              const memberCharge =
+                projectCharges.stripeVarianceCharge(memberProjectId);
+              if (!memberCharge) continue;
+              projectDrafts.push({
+                invoiceLineId: line.id,
+                projectId: memberProjectId,
+                projectElementId: null,
+                fixedAssetId: memberCharge.fixedAssetId,
+                postCapitalization: memberCharge.postCapitalization,
+                unallowable: memberCharge.unallowable,
+                costType: "Material Variance",
+                itemId: item.itemId,
+                quantity: share.quantity,
+                amount,
+                journalLineIndex: lines.length
+              });
+              push(
+                {
+                  accountId: memberCharge.accountId,
+                  description: "Project Account (Price Variance)",
+                  amount: round(debit("expense", amount)),
+                  ...keys,
+                  quantity: round(share.quantity)
+                },
+                { ...meta, projectId: memberProjectId, projectElementId: null }
+              );
+              remainingPpvShare -= amount;
+            }
+          }
+          // Charge at receipt into project stock (Projects Phase 2a): the
+          // receipt charged the project at receipt cost while the goods
+          // entered its stock, so the project's ledger gets the price variance
+          // too, on the line that carries it. Units still on hand carry it on
+          // the inventory write-up; units already issued left inventory for
+          // the project, so their share debits the project account, not PPV.
+          const stockReceiptCharge = receiptProjectCharge
+            ? null
+            : (projectCharges?.stockChargedAtReceipt(
+                purchaseOrderLine.purchaseOrderLineId
+              ) ?? null);
+          const consumedCharge = stockReceiptCharge?.consumedCharge ?? null;
+          if (
+            consumedCharge &&
+            Math.abs(remainingPpvShare) > VARIANCE_THRESHOLD
+          ) {
+            projectDrafts.push({
+              invoiceLineId: line.id,
+              projectId: consumedCharge.projectId,
+              projectElementId: consumedCharge.projectElementId,
+              fixedAssetId: consumedCharge.fixedAssetId,
+              postCapitalization: consumedCharge.postCapitalization,
+              unallowable: consumedCharge.unallowable,
+              costType: "Material Variance",
+              itemId: item.itemId,
+              quantity: clearing.quantity,
+              amount: remainingPpvShare,
+              journalLineIndex: lines.length
+            });
             push(
               {
-                accountId: accounts.purchaseVarianceAccount,
-                description: "Purchase Price Variance",
-                amount: round(debit("expense", allocation.ppvShare)),
+                accountId: consumedCharge.accountId,
+                description: "Project Account (Price Variance)",
+                amount: round(debit("expense", remainingPpvShare)),
                 ...keys
               },
-              meta
+              {
+                ...meta,
+                projectId: consumedCharge.projectId,
+                projectElementId: consumedCharge.projectElementId
+              }
             );
+            remainingPpvShare = 0;
+          }
+          let ppvLineIndex: number | null = null;
+          if (Math.abs(remainingPpvShare) > VARIANCE_THRESHOLD) {
+            ppvLineIndex = lines.length;
+            if (receiptProjectCharge) {
+              projectDrafts.push({
+                invoiceLineId: line.id,
+                projectId: receiptProjectCharge.projectId,
+                projectElementId: receiptProjectCharge.projectElementId,
+                fixedAssetId: receiptProjectCharge.fixedAssetId,
+                postCapitalization: receiptProjectCharge.postCapitalization,
+                unallowable: receiptProjectCharge.unallowable,
+                costType: "Material Variance",
+                itemId: item.itemId,
+                quantity: clearing.quantity,
+                amount: remainingPpvShare,
+                journalLineIndex: ppvLineIndex
+              });
+            }
+            push(
+              {
+                accountId:
+                  receiptProjectCharge?.accountId ??
+                  accounts.purchaseVarianceAccount,
+                description: receiptProjectCharge
+                  ? "Project Account (Price Variance)"
+                  : "Purchase Price Variance",
+                amount: round(debit("expense", remainingPpvShare)),
+                ...keys
+              },
+              receiptProjectCharge
+                ? {
+                    ...meta,
+                    projectId: receiptProjectCharge.projectId,
+                    projectElementId: receiptProjectCharge.projectElementId
+                  }
+                : meta
+            );
+          }
+          // What the lines above did not already give the project: the
+          // inventory write-up, plus any consumed share left in PPV.
+          const stockVariance = round(
+            allocation.inventoryShare + remainingPpvShare
+          );
+          if (
+            stockReceiptCharge &&
+            Math.abs(stockVariance) > VARIANCE_THRESHOLD
+          ) {
+            projectDrafts.push({
+              invoiceLineId: line.id,
+              projectId: stockReceiptCharge.projectId,
+              projectElementId: stockReceiptCharge.projectElementId,
+              // Stock builds no asset until it is issued.
+              fixedAssetId: null,
+              postCapitalization: false,
+              unallowable: stockReceiptCharge.unallowable,
+              costType: "Material Variance",
+              itemId: item.itemId,
+              quantity: clearing.quantity,
+              amount: stockVariance,
+              journalLineIndex: inventoryVarianceLineIndex ?? ppvLineIndex
+            });
           }
           push(payable(clearing.invoiceCost, clearing.quantity, keys), meta);
         }
@@ -14176,16 +14997,40 @@ export function buildPurchaseInvoicePostingLines(
           const quantityToAccrue = quantity - quantityCleared;
           const accrualCost = quantityToAccrue * line.amounts.inventoryUnitCost;
           const isService = line.invoiceLineType === "Service";
+          // A service charged to a non-Statistical project debits the project
+          // account instead of indirect cost.
+          const serviceProjectCharge = isService
+            ? (projectCharges?.forLine(line.id) ?? null)
+            : null;
           const keys = {
             quantity: round(quantityToAccrue),
             documentLineReference,
             journalLineReference: nanoid()
           };
+          if (serviceProjectCharge) {
+            projectDrafts.push({
+              invoiceLineId: line.id,
+              projectId: serviceProjectCharge.projectId,
+              projectElementId: serviceProjectCharge.projectElementId,
+              fixedAssetId: serviceProjectCharge.fixedAssetId,
+              postCapitalization: serviceProjectCharge.postCapitalization,
+              unallowable: serviceProjectCharge.unallowable,
+              costType: "Purchased Service",
+              itemId: item.itemId,
+              quantity: quantityToAccrue,
+              amount: accrualCost,
+              journalLineIndex: lines.length
+            });
+          }
           push(
             isService
               ? {
-                  accountId: accounts.indirectCostAccount,
-                  description: "Indirect Cost Account",
+                  accountId:
+                    serviceProjectCharge?.accountId ??
+                    accounts.indirectCostAccount,
+                  description: serviceProjectCharge
+                    ? "Project Account"
+                    : "Indirect Cost Account",
                   amount: round(debit("asset", accrualCost)),
                   ...keys
                 }
@@ -14196,7 +15041,13 @@ export function buildPurchaseInvoicePostingLines(
                   amount: round(debit("liability", accrualCost)),
                   ...keys
                 },
-            meta
+            serviceProjectCharge
+              ? {
+                  ...meta,
+                  projectId: serviceProjectCharge.projectId,
+                  projectElementId: serviceProjectCharge.projectElementId
+                }
+              : meta
           );
           push(
             payable(accrualCost, quantityToAccrue, {
@@ -14282,16 +15133,36 @@ export function buildPurchaseInvoicePostingLines(
       }
 
       case "glAccount": {
+        // A non-Statistical project replaces the line's account.
+        const glProjectCharge = projectCharges?.forLine(line.id) ?? null;
         const meta: Dimensions = {
           supplierTypeId: null,
           itemPostingGroupId: null,
           itemId: null,
           locationId: line.locationId,
           costCenterId: line.costCenterId,
-          projectId: line.projectId,
+          projectId: glProjectCharge?.projectId ?? line.projectId,
+          projectElementId: glProjectCharge
+            ? glProjectCharge.projectElementId
+            : (line.projectElementId ?? null),
           processId: null,
           fixedAssetClassId: null
         };
+        if (glProjectCharge) {
+          projectDrafts.push({
+            invoiceLineId: line.id,
+            projectId: glProjectCharge.projectId,
+            projectElementId: glProjectCharge.projectElementId,
+            fixedAssetId: glProjectCharge.fixedAssetId,
+            postCapitalization: glProjectCharge.postCapitalization,
+            unallowable: glProjectCharge.unallowable,
+            costType: "Other Direct",
+            itemId: null,
+            quantity,
+            amount: total,
+            journalLineIndex: lines.length
+          });
+        }
         const keys = {
           quantity: round(quantity),
           documentLineReference: line.purchaseOrderLineId
@@ -14301,8 +15172,10 @@ export function buildPurchaseInvoicePostingLines(
         };
         push(
           {
-            accountId: line.account.id,
-            description: line.account.name,
+            accountId: glProjectCharge?.accountId ?? line.account.id,
+            description: glProjectCharge
+              ? "Project Account"
+              : line.account.name,
             amount: round(debit("asset", total)),
             ...keys
           },
@@ -14363,7 +15236,7 @@ export function buildPurchaseInvoicePostingLines(
     }
   }
 
-  return { lines, receivedVariances };
+  return { lines, receivedVariances, projectDrafts };
 }
 export type PurchasePostingLine = {
   id: string;
@@ -14883,6 +15756,8 @@ export async function postPurchaseInvoice(
           documentType: entry.documentType,
           documentId: entry.documentId,
           externalDocumentId: entry.externalDocumentId,
+          // a reversal copies the stripe of the row it reverses
+          projectId: entry.projectId,
           createdBy: userId,
           companyId
         }));
@@ -14977,6 +15852,7 @@ export async function postPurchaseInvoice(
           nominalCost: -entry.nominalCost,
           cost: -entry.cost,
           supplierId: entry.supplierId,
+          projectId: entry.projectId,
           companyId,
           postingDate: today
         }));
@@ -14989,26 +15865,38 @@ export async function postPurchaseInvoice(
 
       await db.transaction().execute(async (trx) => {
         await assertPostingStatusUnchanged(trx, companyId, postingStatus);
-        for await (const [purchaseOrderLineId, update] of Object.entries(
-          purchaseOrderLineUpdatesVoid
-        )) {
-          const { purchaseOrderId: _purchaseOrderId, ...lineUpdate } = update;
-          await trx
-            .updateTable("purchaseOrderLine")
-            .set(lineUpdate)
-            .where("id", "=", purchaseOrderLineId)
-            .where("companyId", "=", companyId)
-            .execute();
-        }
-
-        for await (const [purchaseOrderId, status] of Object.entries(
+        await updateRowsById(
+          trx,
+          "purchaseOrderLine",
+          companyId,
+          Object.entries(purchaseOrderLineUpdatesVoid).map(
+            ([id, { purchaseOrderId: _purchaseOrderId, ...data }]) => ({
+              id,
+              data
+            })
+          )
+        );
+        // Only a released order follows its lines: a void never releases an
+        // order that is closed or waiting for approval. One update per status.
+        const voidOrderIdsByStatus = new Map<
+          (typeof purchaseOrderStatusUpdatesVoid)[string],
+          string[]
+        >();
+        for (const [id, status] of Object.entries(
           purchaseOrderStatusUpdatesVoid
         )) {
+          voidOrderIdsByStatus.set(status, [
+            ...(voidOrderIdsByStatus.get(status) ?? []),
+            id
+          ]);
+        }
+        for (const [status, ids] of voidOrderIdsByStatus) {
           await trx
             .updateTable("purchaseOrder")
             .set({ status })
-            .where("id", "=", purchaseOrderId)
+            .where("id", "in", ids)
             .where("companyId", "=", companyId)
+            .where("status", "in", [...PURCHASE_ORDER_RELEASED_STATUSES])
             .execute();
         }
 
@@ -15027,6 +15915,7 @@ export async function postPurchaseInvoice(
             .execute();
         }
 
+        const reversalByOriginal = new Map<string, string>();
         if (reversingJournalLines.length > 0) {
           const voidJournalEntryId = await getNextSequence(
             trx,
@@ -15054,15 +15943,34 @@ export async function postPurchaseInvoice(
           const journalId = journal[0]!.id;
           if (!journalId) throw new Error("Failed to insert journal");
 
+          // Ids allocated first, so each project ledger reversal row can
+          // name the line that negates its original line.
+          const reversingLineIds = await allocateJournalLineIds(
+            trx,
+            reversingJournalLines.length
+          );
           await trx
             .insertInto("journalLine")
             .values(
-              reversingJournalLines.map((journalLine) => ({
+              reversingJournalLines.map((journalLine, index) => ({
                 ...journalLine,
+                id: reversingLineIds[index],
                 journalId
               }))
             )
             .execute();
+          for (const [index, line] of originalJournalLines.entries()) {
+            reversalByOriginal.set(line.id, reversingLineIds[index]!);
+          }
+          await copyJournalLineDimensions(trx, {
+            companyId,
+            reversals: [...reversalByOriginal].map(
+              ([originalLineId, reversingLineId]) => ({
+                originalLineId,
+                reversingLineId
+              })
+            )
+          });
         }
 
         // Before the reversing item ledger rows: on-hand as it stood.
@@ -15077,6 +15985,22 @@ export async function postPurchaseInvoice(
             .values(reversingItemLedger)
             .execute();
         }
+
+        // Reverse the project charges of this invoice.
+        await reverseProjectLedgerRows(trx, {
+          companyId,
+          documentType: "Purchase Invoice",
+          documentId: invoiceId,
+          postingDate: today,
+          userId,
+          reversalLineIds: reversalByOriginal
+        });
+        await reverseProjectCipRows(trx, {
+          companyId,
+          userId,
+          sourceType: "Purchase Invoice",
+          sourceDocumentId: invoiceId
+        });
 
         if (reversingCostLedger.length > 0) {
           await trx
@@ -15115,6 +16039,7 @@ export async function postPurchaseInvoice(
                 cost: round(-child.cost),
                 remainingQuantity: round(child.remainingQuantity),
                 supplierId: child.supplierId,
+                projectId: child.projectId,
                 companyId,
                 postingDate: today
               })
@@ -15149,6 +16074,7 @@ export async function postPurchaseInvoice(
                 cost: round(-layer.cost),
                 remainingQuantity: 0,
                 supplierId: layer.supplierId,
+                projectId: layer.projectId,
                 companyId,
                 postingDate: today
               })
@@ -15237,6 +16163,7 @@ export async function postPurchaseInvoice(
               "Location",
               "CostCenter",
               "Project",
+              "ProjectElement",
               "Process",
               "FixedAssetClass"
             ]
@@ -15251,8 +16178,28 @@ export async function postPurchaseInvoice(
       throw new NotFoundError("Purchase invoice not found");
     if (purchaseInvoiceLines.error)
       throw new Error("Failed to fetch receipt lines");
+
+    // Funds are released only against approved, released purchase orders
+    // whose totals are within their approved amounts. Here, not in the
+    // service function, so every caller of the posting (the Ramp bill sync
+    // included) is held to it. Posting would otherwise also set an
+    // unapproved order's status to a released one.
+    const fundsRefused = await purchaseOrderFundsGate(
+      ctx,
+      purchaseInvoiceLines.data.map((line) => line.purchaseOrderId),
+      {
+        intent: "invoice",
+        purchaseOrderLineIds: purchaseInvoiceLines.data.map(
+          (line) => line.purchaseOrderLineId
+        )
+      }
+    );
+    // 422: a rule refusal, in the gate's own words, for every caller.
+    if (fundsRefused) throw new ServerFnError(fundsRefused.message, 422);
+
     if (purchaseInvoiceDelivery.error)
       throw new Error("Failed to fetch purchase invoice delivery");
+
     if (dimensions.error) {
       postPurchaseInvoiceLogger.error("Failed to fetch dimensions", {
         error: dimensions.error
@@ -15601,7 +16548,8 @@ export async function postPurchaseInvoice(
                 "documentId",
                 "itemId",
                 "quantity",
-                "remainingQuantity"
+                "remainingQuantity",
+                "projectId"
               ],
               orderBy: ["postingDate", "createdAt"]
             }
@@ -15624,7 +16572,8 @@ export async function postPurchaseInvoice(
             .map((layer) => ({
               id: layer.id,
               quantity: Number(layer.quantity),
-              remainingQuantity: Number(layer.remainingQuantity ?? 0)
+              remainingQuantity: Number(layer.remainingQuantity ?? 0),
+              projectId: layer.projectId
             }))
         ];
       })
@@ -15732,6 +16681,15 @@ export async function postPurchaseInvoice(
       fixedAssets.map((asset) => [asset.id, asset])
     );
 
+    // Lines charged to a non-Statistical project debit its account. A
+    // purchase order line its receipt already charged writes only its price
+    // variance here.
+    const projectCharges = await loadInvoiceProjectCharges(db, companyId, {
+      invoiceLines: purchaseInvoiceLines.data,
+      purchaseOrderLines: purchaseOrderLines.data,
+      postingDate: today
+    });
+
     // Lease lines: the leases, payment rows and lease accounts they name.
     const leaseFacts = await loadLeasePostingFacts(db, {
       companyId,
@@ -15781,6 +16739,7 @@ export async function postPurchaseInvoice(
               ] ?? []
             ),
             isOutsideProcessing: !!purchaseOrderLine?.jobOperationId,
+            planningGroupId: purchaseOrderLine?.planningGroupId ?? null,
             processId: purchaseOrderLine?.jobOperationId
               ? (processIdByJobOperationId.get(
                   purchaseOrderLine.jobOperationId
@@ -15848,7 +16807,8 @@ export async function postPurchaseInvoice(
             purchaseOrderLineId: invoiceLine.purchaseOrderLineId,
             account,
             costCenterId: invoiceLine.costCenterId ?? null,
-            projectId: invoiceLine.projectId ?? null
+            projectId: invoiceLine.projectId ?? null,
+            projectElementId: invoiceLine.projectElementId ?? null
           });
           break;
         }
@@ -15874,7 +16834,8 @@ export async function postPurchaseInvoice(
       supplierTypeId: supplier.data.supplierTypeId ?? null,
       accounts: accountDefaults.data,
       payables,
-      lines: postingLines
+      lines: postingLines,
+      projectCharges
     });
     const journalLineInserts = posting.lines.map(
       ({ dimensions: _dimensions, ...line }) => ({ ...line, companyId })
@@ -15906,6 +16867,12 @@ export async function postPurchaseInvoice(
 
         // With no PO line the invoice receives the part itself.
         if (invoiceLine.purchaseOrderLineId === null) {
+          // A stocked item charged to a project with project stock enters
+          // that project's stock (Projects Phase 2a).
+          const directStockStripe =
+            itemTrackingType === "Non-Inventory"
+              ? null
+              : projectCharges.stockStripe(invoiceLine.id);
           // Services are never received, so they must not materialize a
           // receipt document — only the expense + AP entries.
           if (invoiceLine.invoiceLineType !== "Service") {
@@ -15945,6 +16912,7 @@ export async function postPurchaseInvoice(
               documentId: purchaseInvoice.data?.id ?? undefined,
               externalDocumentId:
                 purchaseInvoice.data?.supplierReference ?? undefined,
+              projectId: directStockStripe,
               createdBy: userId,
               companyId
             });
@@ -15967,6 +16935,7 @@ export async function postPurchaseInvoice(
               cost: round(totalLineCostWithWeightedShipping),
               remainingQuantity: round(invoiceLineQuantityInInventoryUnit),
               supplierId: purchaseInvoice.data?.supplierId,
+              projectId: directStockStripe,
               companyId,
               postingDate: today
             });
@@ -15991,7 +16960,8 @@ export async function postPurchaseInvoice(
         }
 
         // Subledger: adjustment child rows on the covered layers, consumed
-        // alongside their parent by calculateCOGS.
+        // alongside their parent by calculateCOGS. A child carries its
+        // parent layer's stock stripe.
         for (const entry of received.allocation.perLayer) {
           costLedgerInserts.push({
             itemLedgerType: "Purchase",
@@ -16008,6 +16978,7 @@ export async function postPurchaseInvoice(
             cost: round(entry.adjustmentCost),
             remainingQuantity: round(entry.appliedQuantity),
             supplierId: purchaseInvoice.data?.supplierId,
+            projectId: entry.projectId ?? null,
             companyId,
             postingDate: today
           });
@@ -16040,6 +17011,7 @@ export async function postPurchaseInvoice(
             ),
             remainingQuantity: round(coveredQuantity),
             supplierId: purchaseInvoice.data?.supplierId,
+            projectId: projectCharges.stockStripe(invoiceLine.id),
             companyId,
             postingDate: today
           });
@@ -16131,9 +17103,56 @@ export async function postPurchaseInvoice(
         : null;
 
     const createdReceiptIds: string[] = [];
+    const invoicePurchaseOrderIds = purchaseInvoiceLines.data
+      .map((line) => line.purchaseOrderId)
+      .filter((id): id is string => Boolean(id));
+    const invoicePurchaseOrderLineIds = purchaseInvoiceLines.data
+      .map((line) => line.purchaseOrderLineId)
+      .filter((id): id is string => Boolean(id));
 
     await db.transaction().execute(async (trx) => {
       await assertPostingStatusUnchanged(trx, companyId, postingStatus);
+
+      // The gate above ran before this transaction. Lock the invoice's orders
+      // and check again: an edit that sent one back to approval in between
+      // either committed first (and is refused here) or waits on this lock,
+      // since a re-submit locks the order before it changes the status.
+      if (
+        invoicePurchaseOrderIds.length > 0 ||
+        invoicePurchaseOrderLineIds.length > 0
+      ) {
+        await trx
+          .selectFrom("purchaseOrder")
+          .select("id")
+          .where("companyId", "=", companyId)
+          .where((eb) =>
+            eb.or([
+              eb("id", "in", [...invoicePurchaseOrderIds, ""]),
+              eb("id", "in", (sub) =>
+                sub
+                  .selectFrom("purchaseOrderLine")
+                  .select("purchaseOrderId")
+                  .where("companyId", "=", companyId)
+                  .where("id", "in", [...invoicePurchaseOrderLineIds, ""])
+              )
+            ])
+          )
+          .orderBy("id")
+          .forUpdate()
+          .execute();
+        const lockedFundsRefused = await purchaseOrderFundsGate(
+          ctx,
+          invoicePurchaseOrderIds,
+          {
+            intent: "invoice",
+            purchaseOrderLineIds: invoicePurchaseOrderLineIds
+          }
+        );
+        if (lockedFundsRefused) {
+          throw new ServerFnError(lockedFundsRefused.message, 422);
+        }
+      }
+
       await fixedAssetWrites.apply(trx, companyId);
       if (receiptLineInserts.length > 0) {
         const receiptLinesGroupedByLocationId = receiptLineInserts.reduce<
@@ -16195,16 +17214,15 @@ export async function postPurchaseInvoice(
         }
       }
 
-      for await (const [purchaseOrderLineId, update] of Object.entries(
-        purchaseOrderLineUpdates
-      )) {
-        await trx
-          .updateTable("purchaseOrderLine")
-          .set(update)
-          .where("id", "=", purchaseOrderLineId)
-          .where("companyId", "=", companyId)
-          .execute();
-      }
+      await updateRowsById(
+        trx,
+        "purchaseOrderLine",
+        companyId,
+        Object.entries(purchaseOrderLineUpdates).map(([id, data]) => ({
+          id,
+          data
+        }))
+      );
 
       const purchaseOrdersUpdated = Object.values(
         purchaseOrderLineUpdates
@@ -16251,6 +17269,8 @@ export async function postPurchaseInvoice(
           status = "To Invoice";
         }
 
+        // Only a released order follows its lines: a Closed one stays
+        // closed, and one waiting for approval is never released by a post.
         await trx
           .updateTable("purchaseOrder")
           .set({
@@ -16258,10 +17278,12 @@ export async function postPurchaseInvoice(
           })
           .where("id", "=", purchaseOrderId)
           .where("companyId", "=", companyId)
+          .where("status", "in", [...PURCHASE_ORDER_RELEASED_STATUSES])
           .execute();
       }
 
       let invoiceJournalId: string | null = null;
+      let invoiceJournalLineIds: string[] = [];
       if (journalLineInserts.length > 0) {
         const journalEntryId = await getNextSequence(
           trx,
@@ -16300,6 +17322,7 @@ export async function postPurchaseInvoice(
           )
           .returning(["id"])
           .execute();
+        invoiceJournalLineIds = journalLineResults.map((jl) => jl.id);
 
         if (dimensionMap.size > 0) {
           const journalLineDimensionInserts = journalLineDimensionRows({
@@ -16497,6 +17520,57 @@ export async function postPurchaseInvoice(
               .execute();
           }
         }
+      }
+
+      const projectLedgerDrafts = posting.projectDrafts;
+      if (projectLedgerDrafts.length > 0) {
+        await insertProjectLedgerRows(trx, {
+          companyId,
+          userId,
+          rows: projectLedgerDrafts.map((draft) =>
+            buildProjectLedgerRow({
+              companyId,
+              projectId: draft.projectId,
+              projectElementId: draft.projectElementId,
+              postingDate: today,
+              costType: draft.costType,
+              documentType: "Purchase Invoice",
+              documentId: invoiceId,
+              documentLineId: draft.invoiceLineId,
+              itemId: draft.itemId,
+              supplierId: purchaseInvoice.data?.supplierId ?? null,
+              quantity: draft.quantity,
+              amount: draft.amount,
+              journalLineId:
+                draft.journalLineIndex === null
+                  ? null
+                  : (invoiceJournalLineIds[draft.journalLineIndex] ?? null),
+              unallowable: draft.unallowable,
+              createdBy: userId
+            })
+          )
+        });
+
+        // A line charged to a Capitalize project builds its asset.
+        await writeProjectCipRows(trx, {
+          companyId,
+          userId,
+          rows: projectLedgerDrafts.map((draft) =>
+            buildProjectCipRow({
+              resolved: draft,
+              companyId,
+              userId,
+              projectId: draft.projectId,
+              projectElementId: draft.projectElementId,
+              sourceType: "Purchase Invoice",
+              sourceDocumentId: invoiceId,
+              sourceDocumentLineId: draft.invoiceLineId,
+              amount: draft.amount,
+              costDate: today,
+              journalId: invoiceJournalId
+            })
+          )
+        });
       }
 
       if (cipCostInserts.length > 0) {

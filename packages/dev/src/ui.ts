@@ -40,11 +40,58 @@ function calm<T>(make: () => T): T {
   }
 }
 
+// Every 80 ms clack erases the spinner line in one write and draws it again in
+// the next. A terminal that paints between the two shows an empty line: the
+// flicker. Hold writes that only move the cursor or erase, and send them with
+// the next write that has text, as one synchronized update (DEC mode 2026;
+// terminals without it ignore the markers).
+export function steady(stream: NodeJS.WriteStream): NodeJS.WriteStream {
+  let held = "";
+  let callbacks: Array<(err?: Error | null) => void> = [];
+  const flush = () => {
+    if (!held) return;
+    const data = `\x1b[?2026h${held}\x1b[?2026l`;
+    const done = callbacks;
+    held = "";
+    callbacks = [];
+    stream.write(data, (err) => {
+      for (const cb of done) cb(err);
+    });
+  };
+  // A write held when the process exits right after a spinner stops would be
+  // lost, and with it the cursor-show: the terminal keeps a hidden cursor.
+  process.once("exit", flush);
+  // The rest of the stream (columns, isTTY, events) stays the real one:
+  // clack's block() gives it to readline.
+  const out = Object.create(stream) as NodeJS.WriteStream;
+  out.write = ((chunk: string | Uint8Array, ...rest: unknown[]) => {
+    const cb = rest.find((a) => typeof a === "function");
+    if (cb) callbacks.push(cb as (err?: Error | null) => void);
+    const text =
+      typeof chunk === "string" ? chunk : Buffer.from(chunk).toString();
+    if (!held) queueMicrotask(flush);
+    held += text;
+    if (stripVTControlCharacters(text).trim()) flush();
+    return true;
+  }) as NodeJS.WriteStream["write"];
+  return out;
+}
+
+// ◆ while running, ◇ when done: clack's own pair for an active and a finished
+// step. Its default spinner frames (◒◐◓◑) come from a fallback font in most
+// terminals and draw larger than the ◇ beside them.
+// A pipe or a file gets the plain stream: no terminal paints it, and the
+// sync markers would land in the log.
+const SPINNER = {
+  frames: ["◆"],
+  output: process.stdout.isTTY ? steady(process.stdout) : process.stdout
+};
+
 export const spinner: typeof clackSpinner = (opts) =>
-  calm(() => clackSpinner(opts));
+  calm(() => clackSpinner({ ...SPINNER, ...opts }));
 
 export const progress: typeof clackProgress = (opts) =>
-  calm(() => clackProgress(opts));
+  calm(() => clackProgress({ ...SPINNER, ...opts }));
 
 export async function tasks(list: Task[]) {
   for (const t of list) {
@@ -117,6 +164,7 @@ export function worktreesTable(
     current: boolean;
     slug: string | null;
     dockerState: string | null;
+    mode?: string | null;
   }[],
   // Columns the table may use; clack's gutter takes four. A pipe has no width
   // and is never narrowed.
@@ -132,7 +180,9 @@ export function worktreesTable(
     const path = r.path.startsWith(`${home}/`)
       ? `~${r.path.slice(home.length)}`
       : r.path;
-    const project = r.slug ? projectName(r.slug) : "—";
+    const project = r.slug
+      ? `${projectName(r.slug)}${r.mode ? ` · ${r.mode}` : ""}`
+      : "—";
     const stack = !r.slug
       ? pc.gray("not initialized")
       : r.dockerState === "running"
@@ -196,12 +246,14 @@ export function summaryLines(
   /** When provided, show portless hostnames; otherwise show localhost URLs. */
   branchPrefix?: string,
   /** False when the boot left Studio out; the row then says how to start it. */
-  studioRunning = true
+  studioRunning = true,
+  /** Shared mode: the worktree database in the shared Postgres. */
+  sharedDatabase?: string
 ): string[] {
   const url = branchPrefix
     ? (sub: string, _port?: number) => `https://${sub}.${branchPrefix}.${TLD}`
     : (sub: string, port: number) => `http://localhost:${port}`;
-  const dbUrl = `postgresql://postgres:postgres@localhost:${ports.PORT_DB}/postgres`;
+  const dbUrl = `postgresql://postgres:postgres@localhost:${ports.PORT_DB}/${sharedDatabase ?? "postgres"}`;
   const lines: string[] = [];
   if (apps.includes("erp"))
     lines.push(row(pc.cyan, "ERP", url("erp", ports.PORT_ERP)));
@@ -256,6 +308,12 @@ export function summaryLines(
       : []),
     `${pc.gray(pc.bold("Postgres".padEnd(8)))}  ${pc.gray(dbUrl)}`
   );
+  if (sharedDatabase) {
+    lines.push(
+      `${pc.gray(pc.bold("Pooler".padEnd(8)))}  ${pc.gray(`postgresql://postgres:postgres@localhost:${ports.PORT_POOLER}/${sharedDatabase}`)}`,
+      `${pc.gray(pc.bold("Shared".padEnd(8)))}  ${pc.gray("Postgres, PgBouncer, Storage, Mail, Redis and the edge runtime run in crbn-shared")}`
+    );
+  }
   return lines;
 }
 

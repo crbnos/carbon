@@ -31,6 +31,7 @@ import type { DownloadProps } from "../Download";
 import type { ColumnFilter } from "../Filter/types";
 import { InfiniteStatus } from "../InfiniteStatus";
 import { RowLimitNote } from "../RowLimitNote";
+import { rowLabelOf } from "../SyntheticColumns";
 import { CompactEmpty, CompactLoading, CompactNoResults } from "./CompactEmpty";
 import { CompactRow } from "./CompactRow";
 import { CompactToolbar } from "./CompactToolbar";
@@ -375,7 +376,8 @@ export function CompactList<T>({
           selecting
             ? {
                 selected: row.getIsSelected(),
-                onToggle: () => row.toggleSelected()
+                onToggle: () => row.toggleSelected(),
+                label: rowLabelOf(row, table.options.meta?.getRowLabel)
               }
             : undefined
         }

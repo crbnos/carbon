@@ -163,6 +163,86 @@ export function resolveShortcutKeys(
   });
 }
 
+const ARIA_MODIFIERS: Record<Exclude<Modifier, "mod">, string> = {
+  alt: "Alt",
+  ctrl: "Control",
+  meta: "Meta",
+  shift: "Shift"
+};
+
+const ARIA_KEYS: Record<string, string> = {
+  enter: "Enter",
+  return: "Enter",
+  escape: "Escape",
+  esc: "Escape",
+  space: "Space",
+  backspace: "Backspace",
+  delete: "Delete",
+  del: "Delete",
+  tab: "Tab",
+  up: "ArrowUp",
+  down: "ArrowDown",
+  left: "ArrowLeft",
+  right: "ArrowRight",
+  arrowup: "ArrowUp",
+  arrowdown: "ArrowDown",
+  arrowleft: "ArrowLeft",
+  arrowright: "ArrowRight",
+  home: "Home",
+  end: "End",
+  pageup: "PageUp",
+  pagedown: "PageDown",
+  slash: "/",
+  comma: ",",
+  period: "."
+};
+
+function ariaKey(key: string): string {
+  const lower = key.toLowerCase();
+  if (ARIA_KEYS[lower]) return ARIA_KEYS[lower];
+  if (lower.length === 1) return lower.toUpperCase();
+  if (/^f\d{1,2}$/.test(lower)) return lower.toUpperCase();
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
+/**
+ * The `aria-keyshortcuts` value for one-or-many bindings: ARIA key names
+ * (`"Meta+Enter Control+Enter"`), space-separated. `mod` and a
+ * dual-platform definition list both platforms' combos, so the value is the
+ * same on the server and in every browser.
+ */
+export function ariaKeyShortcuts(
+  shortcut: ShortcutInput | ShortcutInput[] | undefined
+): string | undefined {
+  if (!shortcut) return undefined;
+  const bindings = Array.isArray(shortcut) ? shortcut : [shortcut];
+  const combos: string[] = [];
+  for (const binding of bindings) {
+    const resolved =
+      typeof binding !== "string" && "mac" in binding
+        ? [binding.mac, binding.windows]
+        : [parseShortcut(binding, true)];
+    for (const one of resolved) {
+      if (!one) continue;
+      const modifiers = one.modifiers ?? [];
+      const variants = modifiers.includes("mod")
+        ? [
+            modifiers.map((m) => (m === "mod" ? "meta" : m)),
+            modifiers.map((m) => (m === "mod" ? "ctrl" : m))
+          ]
+        : [modifiers];
+      for (const mods of variants) {
+        const names = (mods as Exclude<Modifier, "mod">[]).map(
+          (m) => ARIA_MODIFIERS[m]
+        );
+        const combo = [...names, ariaKey(String(one.key))].join("+");
+        if (!combos.includes(combo)) combos.push(combo);
+      }
+    }
+  }
+  return combos.length ? combos.join(" ") : undefined;
+}
+
 export type ShortcutKeyMapEntry = {
   shortcut: ShortcutInput;
   action: (event: KeyboardEvent) => void;

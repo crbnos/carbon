@@ -5,10 +5,16 @@
 import { useLingui } from "@lingui/react/macro";
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useEffect, useMemo, useState } from "react";
-import { LuPlus, LuSettings2, LuX } from "react-icons/lu";
+import { LuX } from "react-icons/lu";
 import { CommandTrigger } from "./Command";
+import {
+  useClearLabel,
+  useInlineTriggerLabel,
+  usePickerLabel
+} from "./Form/useFormControl";
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
+import { InlineTrigger } from "./InlineTrigger";
 import type { PickerListOption } from "./PickerList";
 import { PickerList } from "./PickerList";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
@@ -41,7 +47,8 @@ export type CreatableComboboxProps = Omit<
     value: string,
     options: { value: string; label: string | JSX.Element; helper?: string }[]
   ) => React.ReactNode;
-  inlineAddLabel?: string;
+  /** Inline mode: what the empty field reads, "Add tool". */
+  inlinePlaceholder?: ReactNode;
   onChange?: (selected: string) => void;
   onCreateOption?: (inputValue: string) => void;
   itemHeight?: number;
@@ -63,13 +70,16 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
       label,
       itemHeight = 40,
       inline,
-      inlineAddLabel,
+      inlinePlaceholder,
       onCreateOption,
       ...props
     },
     ref
   ) => {
     const { t } = useLingui();
+    const inlineTriggerLabel = useInlineTriggerLabel(!!value);
+    const pickerLabel = usePickerLabel(props["aria-label"]);
+    const clearLabel = useClearLabel(props["aria-label"]);
     // An item option's helper is its name, which for a service repeats the
     // readable id in the label.
     const options = useMemo(
@@ -119,39 +129,29 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
         className={cn(isInlinePreview ? "w-full" : "min-w-0 flex-grow")}
         spacing={1}
       >
-        {isInlinePreview && value && (
-          <span className="flex flex-grow line-clamp-1 items-center">
-            {inline(value, options)}
-          </span>
-        )}
-
-        {/* In inline mode the trigger is a non-button HStack, so its `disabled`
-            is inert — guard onOpenChange so no surface can open while read-only. */}
         <Popover
           open={open}
           onOpenChange={(next) => setOpen(isReadOnly ? false : next)}
         >
           <PopoverTrigger disabled={isReadOnly} asChild>
             {inline ? (
-              <HStack>
-                <IconButton
-                  size={size ?? "sm"}
-                  variant="secondary"
-                  aria-label={value ? "Edit" : "Add"}
-                  icon={value ? <LuSettings2 /> : <LuPlus />}
-                  ref={ref}
-                  isDisabled={isReadOnly}
-                  disabled={isReadOnly}
-                  onClick={() => {
-                    if (!isReadOnly) setOpen(true);
-                  }}
-                />
-                {!value && inlineAddLabel && (
-                  <span className="text-muted-foreground text-sm">
-                    {inlineAddLabel}
-                  </span>
-                )}
-              </HStack>
+              <InlineTrigger
+                // The field and its value: "Edit Customer: ORBSEC Defense".
+                aria-label={
+                  value && selectedOptionText
+                    ? `${inlineTriggerLabel}: ${selectedOptionText}`
+                    : inlineTriggerLabel
+                }
+                ref={ref}
+                isEmpty={!value}
+                placeholder={inlinePlaceholder ?? t`Add`}
+                isDisabled={isReadOnly}
+                onClick={() => {
+                  if (!isReadOnly) setOpen(true);
+                }}
+              >
+                {value ? inline(value, options) : null}
+              </InlineTrigger>
             ) : (
               <CommandTrigger
                 size={size}
@@ -181,17 +181,14 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
             )}
           </PopoverTrigger>
           <PopoverContent
+            aria-label={pickerLabel}
             align="start"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
             onOpenAutoFocus={openAutoFocus}
             className={cn(
               "w-auto max-w-[min(560px,calc(100vw-2rem))] p-1",
-              // Inline mode's trigger is a small icon button, so falling back to
-              // the trigger width collapses the popover. Floor it to a usable width.
-              inline
-                ? "min-w-[220px]"
-                : "min-w-[max(var(--radix-popover-trigger-width),14rem)]"
+              "min-w-[max(var(--radix-popover-trigger-width),14rem)]"
             )}
           >
             {/* Zero-height sizer: the widest option, so the auto width fits it
@@ -206,6 +203,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
               emptyMessage
             ) : (
               <PickerList
+                label={pickerLabel}
                 options={options}
                 filter={filterCreatableComboboxOptions}
                 selectionMode="single"
@@ -236,7 +234,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
         {isClearable && !isReadOnly && value && (
           <IconButton
             variant={isInlinePreview ? "secondary" : "ghost"}
-            aria-label="Clear"
+            aria-label={clearLabel}
             icon={<LuX />}
             onClick={() => onChange?.("")}
             size={isInlinePreview ? "sm" : size}

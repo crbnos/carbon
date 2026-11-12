@@ -53,7 +53,8 @@ export const SECRET_KEYS: Record<string, string[]> = {
   ],
   rillet: ["credentials.apiKey", "credentials.providerMetadata.webhookToken"],
   "paperless-parts": ["apiKey", "secretKey"],
-  sense: ["apiKey"],
+  // The webhook secret is Carbon's to set (`ensureSenseWebhook`), not a form field.
+  sense: ["apiKey", "webhookSigningSecret"],
   resend: ["apiKey"],
   // email carries a secret in EITHER variant: Resend `apiKey` or SMTP `password`
   // (top-level). splitSecrets omits whichever is absent for the active provider.

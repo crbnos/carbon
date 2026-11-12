@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { datetime } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   ActiveWorkPanel,
@@ -24,6 +24,10 @@ import {
 } from "~/services/display.service";
 import type { WorkAlertReason } from "~/utils/display";
 import { getWorkDisplayState } from "~/utils/display";
+import { recordMeta } from "~/utils/meta";
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.workCenter?.name, "Work Display");
 
 export async function loader({ context, params, request }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});

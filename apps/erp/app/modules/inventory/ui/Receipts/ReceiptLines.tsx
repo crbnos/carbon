@@ -50,6 +50,7 @@ import {
   VStack
 } from "@carbon/react";
 import type { TrackedEntityAttributes } from "@carbon/utils";
+import { getItemReadableId } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
@@ -403,8 +404,11 @@ function ReceiptFixedAssetLineItem({
   isReadOnly: boolean;
   className?: string;
 }) {
+  const { t } = useLingui();
   const fetcher = useAction();
   const [serialNumber, setSerialNumber] = useState(line.serialNumber ?? "");
+  const assetName =
+    line.assetName ?? line.assetReadableId ?? line.description ?? "";
 
   const updateField = (field: string, value: string) => {
     const formData = new FormData();
@@ -425,6 +429,7 @@ function ReceiptFixedAssetLineItem({
       )}
     >
       <Checkbox
+        aria-label={t`Received: ${assetName}`}
         isChecked={line.received}
         disabled={isReadOnly}
         onCheckedChange={(checked) =>
@@ -443,6 +448,7 @@ function ReceiptFixedAssetLineItem({
       </VStack>
       <Input
         placeholder="Serial Number"
+        aria-label={t`Serial number for ${line.assetName ?? line.assetReadableId ?? line.description ?? ""}`}
         value={serialNumber}
         isDisabled={isReadOnly}
         className="w-48 max-md:w-full"
@@ -717,6 +723,7 @@ function ReceiptLineItem({
   const { t } = useLingui();
   const [items] = useItems();
   const item = items.find((p) => p.id === line.itemId);
+  const itemName = item?.readableIdWithRevision ?? line.itemId ?? "";
   const unitsOfMeasure = useUnitOfMeasure();
   const splitDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
@@ -736,7 +743,7 @@ function ReceiptLineItem({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <IconButton
-              aria-label={t`Line options`}
+              aria-label={t`Line options for ${itemName}`}
               variant="secondary"
               icon={<LuEllipsisVertical />}
               size="sm"
@@ -808,6 +815,7 @@ function ReceiptLineItem({
               </label>
 
               <NumberField
+                aria-label={t`Received quantity for ${itemName}`}
                 value={line.receivedQuantity ?? 0}
                 onChange={(value) => {
                   // Default to 0 if value is NaN, null, or undefined
@@ -884,6 +892,7 @@ function ReceiptLineItem({
             </label>
             <StorageUnit
               locationId={line.locationId}
+              label={t`Storage unit for ${itemName}`}
               value={line.storageUnitId}
               isReadOnly={isReadOnly}
               onChange={(storageUnit) => {
@@ -1038,6 +1047,8 @@ function BatchForm({
   tracking: ItemTracking | undefined;
 }) {
   const { t } = useLingui();
+  const [items] = useItems();
+  const itemReadableId = getItemReadableId(items, line.itemId) ?? "";
   const submit = useSubmit();
   const shelfLife = itemShelfLife?.data?.find(
     (sl) => sl.itemId === line.itemId
@@ -1208,6 +1219,7 @@ function BatchForm({
 
           <Input
             placeholder={`Batch number`}
+            aria-label={t`Batch number for ${itemReadableId}`}
             isDisabled={isReadOnly}
             value={values.number}
             onChange={(e) => {
@@ -1228,6 +1240,7 @@ function BatchForm({
               <LuCalendar /> <Trans>Expiration Date</Trans>
             </label>
             <DatePicker
+              aria-label={t`Expiration date`}
               isDisabled={isReadOnly}
               value={
                 values.expirationDate ? parseDate(values.expirationDate) : null
@@ -1315,6 +1328,9 @@ function SerialForm({
   ) => void;
   tracking: ItemTracking | undefined;
 }) {
+  const { t } = useLingui();
+  const [items] = useItems();
+  const itemReadableId = getItemReadableId(items, line.itemId) ?? "";
   const shelfLife = itemShelfLife?.data?.find(
     (sl) => sl.itemId === line.itemId
   );
@@ -1429,6 +1445,7 @@ function SerialForm({
             <Trans>Expiration Date (applies to all serials on this line)</Trans>
           </label>
           <DatePicker
+            aria-label={t`Expiration date`}
             isDisabled={isReadOnly}
             value={expiryDate ? parseDate(expiryDate) : null}
             onChange={(date) => setExpiryDate(date?.toString() ?? "")}
@@ -1447,6 +1464,7 @@ function SerialForm({
           >
             <Input
               placeholder={`Serial ${index + 1}`}
+              aria-label={t`Serial number ${index + 1} for ${itemReadableId}`}
               isDisabled={isReadOnly}
               value={serialNumber.number}
               onChange={(e) => {

@@ -4,7 +4,6 @@
 
 import { getQuoteDisplayId } from "@carbon/documents/utils";
 import {
-  BarProgress,
   HStack,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
@@ -37,6 +36,7 @@ import {
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
 import type { InfiniteOptions } from "~/components/Table";
 import { usePermissions } from "~/hooks";
@@ -135,29 +135,7 @@ const QuotesTable = memo(({ data, count, infinite }: QuotesTableProps) => {
       {
         accessorKey: "status",
         header: t`Status`,
-        cell: ({ row }) => {
-          const status = row.original.status;
-          const lines = row.original.lines ?? 0;
-          const completedLines = row.original.completedLines ?? 0;
-          return status === "Draft" ? (
-            <>
-              <BarProgress
-                className="max-md:hidden"
-                gradient
-                progress={lines === 0 ? 0 : (completedLines / lines) * 100}
-              />
-              {/* Phones: the status and the count in words, not a bare bar. */}
-              <span className="flex min-w-0 items-center gap-1.5 md:hidden">
-                <QuoteStatus status="Draft" />
-                <span className="truncate text-xs text-muted-foreground">
-                  {t`${completedLines} of ${lines} lines complete`}
-                </span>
-              </span>
-            </>
-          ) : (
-            <QuoteStatus status={status} />
-          );
-        },
+        cell: ({ row }) => <QuoteStatus status={row.original.status} />,
         meta: {
           mobile: "P2",
           filter: {
@@ -349,13 +327,17 @@ const QuotesTable = memo(({ data, count, infinite }: QuotesTableProps) => {
     );
   }, [deleteQuotationModal, navigate, permissions]);
 
+  const lineItemRows = useLineItemRows<QuotationListItem>("quotes");
+
   return (
     <>
       <Table<QuotationListItem>
+        getRowLabel={(row) => row.quoteId ?? undefined}
         count={count}
         infinite={infinite}
         columns={columns}
         data={data}
+        {...lineItemRows}
         defaultColumnPinning={{
           left: ["quoteId"]
         }}

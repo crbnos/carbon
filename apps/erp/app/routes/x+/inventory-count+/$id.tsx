@@ -9,17 +9,20 @@ import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
 import { pluckUnique, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   getInventoryCount,
+  getInventoryCountGroupSummaries,
   getInventoryCountLineSummary,
   getInventoryCountLines,
   getInventoryCountMovements,
+  getInventoryCountOtherBins,
   getStorageTypesList,
   getStorageUnitsListForLocation,
   INVENTORY_COUNT_LINES_PAGING
 } from "~/modules/inventory/inventory.service";
+import { inventoryCountGroupId } from "~/modules/inventory/inventory.utils";
 import { InventoryCountDetails } from "~/modules/inventory/ui";
 import {
   getMaterialFormsList,
@@ -29,6 +32,7 @@ import { getTagsList } from "~/modules/shared/shared.service";
 import { toPage } from "~/utils/cursor";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { listErrorPage } from "~/utils/list-registry/load.server";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -45,6 +49,9 @@ export const handle: Handle = {
   ),
   module: "inventory"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.inventoryCount?.inventoryCountId, "Inventory Count");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -151,9 +158,50 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : line
   );
 
+  // Headers for the tracked groups on the first page (a later page appends
+  // lines only, and its headers sum the loaded lines), and the bin a unit
+  // moved to or from.
+  const trackedLines = lineData.filter(
+    (line) =>
+      line.itemTrackingType === "Serial" || line.itemTrackingType === "Batch"
+  );
+  const [groupSummaries, otherBins] = await Promise.all([
+    getInventoryCountGroupSummaries(client, {
+      inventoryCountId: id,
+      companyId,
+      groupIds: isFirstPage
+        ? pluckUnique(trackedLines, (line) =>
+            inventoryCountGroupId({
+              inventoryCountId: id,
+              itemId: line.itemId!,
+              storageUnitId: line.storageUnitId ?? null
+            })
+          )
+        : []
+    }),
+    getInventoryCountOtherBins(client, {
+      inventoryCountId: id,
+      companyId,
+      lines: trackedLines.map((line) => ({
+        id: line.id!,
+        trackedEntityId: line.trackedEntityId ?? null,
+        storageUnitId: line.storageUnitId ?? null,
+        foundDuringCount: Boolean(line.foundDuringCount)
+      }))
+    })
+  ]);
   return {
     inventoryCount: inventoryCount.data,
-    lines: lineData,
+    lines: lineData.map((line) => ({
+      ...line,
+      otherBinName: otherBins.get(line.id!) ?? null
+    })),
+    // Counted, missing and not-counted units come from what the counter
+    // entered, which the sheet shows anyway (blind or not); the system
+    // quantity is not in a summary.
+    groupSummaries: Object.fromEntries(
+      groupSummaries.map((group) => [group.id, group])
+    ),
     count: lines.count ?? 0,
     nextCursor: page.nextCursor,
     summary: summary ?? { uncounted: 0, variances: 0 },
@@ -170,6 +218,7 @@ export default function InventoryCountDetailRoute() {
   const {
     inventoryCount,
     lines,
+    groupSummaries,
     count,
     nextCursor,
     summary,
@@ -187,6 +236,7 @@ export default function InventoryCountDetailRoute() {
         <InventoryCountDetails
           inventoryCount={inventoryCount}
           lines={lines}
+          groupSummaries={groupSummaries}
           count={count}
           nextCursor={nextCursor}
           summary={summary}

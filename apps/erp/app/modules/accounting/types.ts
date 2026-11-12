@@ -15,12 +15,12 @@ import type {
   getDimensionPivot,
   getDimensionPivotLines,
   getDimensions,
+  getGeneralLedgerDimensions,
   getGeneralLedgerLines,
   getJournalEntries,
   getJournalEntry,
   getPaymentTerms,
   getPeriodCloseReadiness,
-  getProjects,
   getPurchaseLinePivotLines,
   getReportViews
 } from "./accounting.service";
@@ -407,10 +407,6 @@ export type PaymentTerm = NonNullable<
   Awaited<ReturnType<typeof getPaymentTerms>>["data"]
 >[number];
 
-export type Project = NonNullable<
-  Awaited<ReturnType<typeof getProjects>>["data"]
->[number];
-
 export type Transaction = {
   number: string;
   netChange: number;
@@ -458,8 +454,14 @@ export type GeneralLedgerLine = NonNullable<
   NonNullable<Awaited<ReturnType<typeof getGeneralLedgerLines>>>["data"]
 >[number];
 
-/** A general ledger line with the customer or supplier and invoice it was posted from. */
-export type GeneralLedgerRow = GeneralLedgerLine & GeneralLedgerCounterparty;
+/** A general ledger line with the customer or supplier and invoice it was
+ *  posted from, and its dimension values' names keyed by dimension id. */
+export type GeneralLedgerRow = GeneralLedgerLine &
+  GeneralLedgerCounterparty & { dimensions: Record<string, string> };
+
+export type GeneralLedgerDimension = NonNullable<
+  Awaited<ReturnType<typeof getGeneralLedgerDimensions>>["data"]
+>[number];
 
 export type JournalEntryListItem = NonNullable<
   NonNullable<Awaited<ReturnType<typeof getJournalEntries>>>["data"]
@@ -513,6 +515,8 @@ export type AccountLedgerLine = {
 export type AccountLedgerSummary = {
   opening: number;
   netChange: number;
+  /** The trial balance's unposted year-end close; no ledger line shows it. */
+  close?: number;
   closing: number;
 };
 

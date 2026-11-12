@@ -73,7 +73,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const logo = await resolveLabelLogo(companyLogo, template, labelSize);
 
   const zplOutput = items
-    .map((item) => generateProductLabelZPL(item, labelSize, template, logo))
+    .map((item) =>
+      generateProductLabelZPL(item, labelSize, template, logo, companyLogo)
+    )
     .join("\n");
 
   return new Response(zplOutput, {

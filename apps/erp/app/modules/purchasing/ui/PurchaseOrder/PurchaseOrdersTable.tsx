@@ -49,6 +49,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
+import { useLineItemRows } from "~/components/LineItemRows";
 import { ConfirmDelete } from "~/components/Modals";
 import type { BulkActionScope, InfiniteOptions } from "~/components/Table";
 import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
@@ -327,7 +328,12 @@ const PurchaseOrdersTable = memo(
         {
           accessorKey: "dropShipment",
           header: t`Drop Shipment`,
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          cell: (item) => (
+            <Checkbox
+              aria-label={t`Drop Shipment`}
+              isChecked={item.getValue<boolean>()}
+            />
+          ),
           meta: {
             filter: {
               type: "static",
@@ -520,12 +526,17 @@ const PurchaseOrdersTable = memo(
       [deletePurchaseOrderModal, edit, fetcher, permissions, receive]
     );
 
+    const lineItemRows =
+      useLineItemRows<PurchaseOrderListItem>("purchase-orders");
+
     return (
       <>
         <Table<PurchaseOrderListItem>
+          getRowLabel={(row) => row.purchaseOrderId ?? undefined}
           count={count}
           columns={columns}
           data={data}
+          {...lineItemRows}
           infinite={infinite}
           defaultColumnPinning={{
             left: ["purchaseOrderId"]

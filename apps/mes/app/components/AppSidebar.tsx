@@ -19,6 +19,7 @@ import {
   HStack,
   NavRail,
   NavRailGroup,
+  NavRailItem,
   NavRailLink,
   NavRailSwitcher,
   useMode,
@@ -35,6 +36,7 @@ import {
   LuChevronsUpDown,
   LuCirclePlay,
   LuClipboardList,
+  LuHeadphones,
   LuHistory,
   LuMonitorPlay,
   LuPackageCheck,
@@ -55,6 +57,7 @@ import { UserNav, useSwitchCompany } from "./UserNav";
 export function AppSidebar({
   activeEvents,
   activeMaintenanceCount,
+  openServiceJobCount,
   company,
   companies,
   consoleEnabled,
@@ -69,6 +72,7 @@ export function AppSidebar({
 }: {
   activeEvents: number;
   activeMaintenanceCount: number;
+  openServiceJobCount: number;
   company: Company;
   companies: Company[];
   consoleEnabled?: boolean;
@@ -91,7 +95,8 @@ export function AppSidebar({
     <QueueLinks
       counts={{
         active: activeEvents,
-        maintenance: activeMaintenanceCount
+        maintenance: activeMaintenanceCount,
+        service: openServiceJobCount
       }}
     />
   );
@@ -296,7 +301,8 @@ export const QUEUES: { key: QueueKey; icon: typeof LuActivity; to: string }[] =
     { key: "recent", icon: LuHistory, to: path.to.recent },
     { key: "jobs", icon: LuCirclePlay, to: path.to.jobs },
     { key: "maintenance", icon: LuWrench, to: path.to.maintenance },
-    { key: "picking", icon: LuPackageCheck, to: path.to.picking }
+    { key: "picking", icon: LuPackageCheck, to: path.to.picking },
+    { key: "service", icon: LuHeadphones, to: path.to.service }
   ];
 
 /** `path.to.operations` carries a `?saved=1` query; activity matches on paths. */
@@ -313,7 +319,8 @@ export function useQueueTitles(): Record<QueueKey, string> {
       recent: t`Recent`,
       jobs: t`Jobs`,
       maintenance: t`Maintenance`,
-      picking: t`Picking`
+      picking: t`Picking`,
+      service: t`Service`
     }),
     [t]
   );
@@ -368,16 +375,18 @@ function DisplaysLink() {
   const { t } = useLingui();
 
   return (
-    <NavRailLink
-      to={path.to.displays}
+    // NavRailItem directly (not NavRailLink) so the name can say the link
+    // opens a new tab while the visible label stays "Displays".
+    <NavRailItem
+      asChild
       icon={<LuMonitorPlay />}
       label={t`Displays`}
-      external
-      target="_blank"
-      rel="noreferrer"
+      aria-label={t`Displays (opens in new tab)`}
       trailing={
         <LuArrowUpRight className="hidden size-4 text-muted-foreground max-md:block" />
       }
-    />
+    >
+      <Link to={path.to.displays} target="_blank" rel="noreferrer" />
+    </NavRailItem>
   );
 }

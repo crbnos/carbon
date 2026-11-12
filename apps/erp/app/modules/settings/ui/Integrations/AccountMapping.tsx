@@ -403,6 +403,7 @@ export function AccountMapping({
                 <LuSearch className="size-4 text-muted-foreground" />
               </InputLeftElement>
               <Input
+                aria-label={t`Search accounts`}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder={t`Search accounts`}
@@ -583,6 +584,7 @@ function AccountMappingRow({
     currentExternalCode,
     currentExternalName
   ]);
+  const accountLabel = accountName ?? accountId;
 
   return (
     <div
@@ -613,6 +615,7 @@ function AccountMappingRow({
             value={value}
             options={options}
             placeholder={t`Select provider account`}
+            aria-label={t`Provider account for ${accountLabel}`}
             isReadOnly={!canUpdate}
             onChange={onChange}
           />

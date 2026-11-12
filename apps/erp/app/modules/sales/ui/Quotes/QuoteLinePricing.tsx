@@ -886,6 +886,7 @@ const QuoteLinePricing = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {/* biome-ignore lint/a11y/noStaticElementInteractions: stops clicks/keys in the custom-markup input from closing the dropdown menu; the inner NumberField and button are the controls */}
                   <div
                     className="flex items-center gap-1 px-2 py-1.5 border-b border-border mb-1"
                     onClick={(e) => e.stopPropagation()}
@@ -897,6 +898,7 @@ const QuoteLinePricing = ({
                       }
                       minValue={0}
                       formatOptions={INPUT_FORMAT.percentPoints}
+                      aria-label={t`Custom markup percent`}
                       onChange={(val) => {
                         if (Number.isFinite(val)) setCustomMarkup(String(val));
                       }}
@@ -1011,6 +1013,7 @@ const QuoteLinePricing = ({
                     className="group-hover:bg-muted/50"
                   >
                     <EditableNumberCell
+                      aria-label={t`Lead time for quantity ${quantity}`}
                       value={leadTime}
                       formatOptions={{
                         style: "unit",
@@ -1047,6 +1050,7 @@ const QuoteLinePricing = ({
                   ) : (
                     <Td key={index} className="group-hover:bg-muted/50">
                       <EditableNumberCell
+                        aria-label={t`Unit cost`}
                         value={editableFields.unitCost}
                         formatOptions={INPUT_FORMAT.rate(
                           baseCurrency,
@@ -1087,6 +1091,7 @@ const QuoteLinePricing = ({
                     <Td key={quantity.toString()}>
                       {cost > 0 ? (
                         <EditableNumberCell
+                          aria-label={t`Markup for quantity ${quantity}`}
                           value={markup}
                           formatOptions={INPUT_FORMAT.percent}
                           minValue={0}
@@ -1112,6 +1117,7 @@ const QuoteLinePricing = ({
                 <Tr>
                   <Td className={costRowLabelCellClass}>
                     <Button
+                      aria-expanded={showCategoryMarkups}
                       variant="ghost"
                       className="-ml-3"
                       rightIcon={
@@ -1145,11 +1151,13 @@ const QuoteLinePricing = ({
                           const markupValue =
                             categoryMarkupsByQuantity[quantity]?.[category] ??
                             0;
+                          const categoryLabel = categoryLabels[category];
                           return (
                             <Td key={quantity.toString()}>
                               {categoryCost > 0 ? (
                                 <VStack spacing={0}>
                                   <EditableNumberCell
+                                    aria-label={t`${categoryLabel} markup for quantity ${quantity}`}
                                     value={markupValue / 100}
                                     formatOptions={INPUT_FORMAT.percent}
                                     minValue={0}
@@ -1203,6 +1211,7 @@ const QuoteLinePricing = ({
                 return (
                   <Td key={quantity.toString()}>
                     <EditableNumberCell
+                      aria-label={t`Unit price for quantity ${quantity}`}
                       value={price}
                       formatOptions={INPUT_FORMAT.rate(
                         baseCurrency,
@@ -1230,6 +1239,7 @@ const QuoteLinePricing = ({
                 return (
                   <Td key={index}>
                     <EditableNumberCell
+                      aria-label={t`Discount for quantity ${quantity}`}
                       value={discount}
                       formatOptions={INPUT_FORMAT.percent}
                       minValue={0}
@@ -1331,6 +1341,7 @@ const QuoteLinePricing = ({
                 return (
                   <Td key={quantity.toString()}>
                     <EditableNumberCell
+                      aria-label={t`Shipping cost for quantity ${quantity}`}
                       value={shippingCost}
                       formatOptions={INPUT_FORMAT.money(
                         baseCurrency,
@@ -1350,7 +1361,8 @@ const QuoteLinePricing = ({
               .sort((a, b) => {
                 return a[1].description.localeCompare(b[1].description);
               })
-              .map(([chargeId, charge]) => {
+              .map(([chargeId, charge], index) => {
+                const chargeNumber = index + 1;
                 const isDeleting =
                   fetcher.state === "loading" &&
                   fetcher.formAction ===
@@ -1361,6 +1373,7 @@ const QuoteLinePricing = ({
                     <Td className={costRowLabelCellClass}>
                       <HStack className="w-full justify-between ">
                         <Input
+                          aria-label={t`Description for charge ${chargeNumber}`}
                           defaultValue={charge.description}
                           size="sm"
                           className="border-0 -ml-3 shadow-none"
@@ -1381,6 +1394,7 @@ const QuoteLinePricing = ({
                             <TooltipTrigger>
                               <Switch
                                 variant="small"
+                                aria-label={t`Taxable for charge ${chargeNumber}`}
                                 checked={charge.taxable !== false}
                                 disabled={!isEditable}
                                 onCheckedChange={(checked) =>
@@ -1429,6 +1443,7 @@ const QuoteLinePricing = ({
                         <Td key={quantity.toString()}>
                           <VStack spacing={0}>
                             <EditableNumberCell
+                              aria-label={t`Charge ${chargeNumber} for quantity ${quantity}`}
                               value={amount}
                               formatOptions={INPUT_FORMAT.money(
                                 baseCurrency,
@@ -1512,6 +1527,7 @@ const QuoteLinePricing = ({
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <EditableNumberCell
+                      aria-label={t`Tax percent for quantity ${quantity}`}
                       value={taxPercent}
                       formatOptions={INPUT_FORMAT.percent}
                       minValue={0}

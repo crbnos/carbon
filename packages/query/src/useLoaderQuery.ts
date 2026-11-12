@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useQuery } from "@tanstack/react-query";
-import { LoaderRequestError, loaderQuery } from "./cache";
+import { loaderQuery, loaderRetry } from "./cache";
 
 /**
  * What a read returns. `T` is the data itself, or the route's `typeof loader`
@@ -45,8 +45,6 @@ export function useLoaderQuery<T>(
     ...loaderQuery<LoaderData<T>>(url ?? "", options),
     refetchInterval: options?.refetchInterval,
     enabled: url !== null,
-    // A 403 or an expired session fails the same way every time.
-    retry: (failures, error) =>
-      !(error instanceof LoaderRequestError) && failures < 3
+    retry: loaderRetry
   });
 }

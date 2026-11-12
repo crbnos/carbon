@@ -7,6 +7,7 @@ import type { JSONContent } from "@carbon/react";
 import type {
   DocumentBlock,
   DocumentTheme,
+  DocumentValues,
   HeaderOptions
 } from "../../../template";
 import type {
@@ -41,7 +42,12 @@ export interface SalesOrderData {
   /** Unit-price COLUMN only — a rate, not a settlement amount. */
   rateFormatter: Intl.NumberFormat;
   vars: Record<string, string>;
+  values: DocumentValues;
   headerOptions: HeaderOptions;
+  /** The printed document title, from the template's document texts. */
+  documentTitle: string;
+  /** The printed document number, from the template's document texts. */
+  documentNumber?: string;
 }
 
 export type BlockRenderer = (args: {

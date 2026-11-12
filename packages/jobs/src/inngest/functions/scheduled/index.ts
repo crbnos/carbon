@@ -18,6 +18,7 @@ export {
   markScheduleStaleFunction,
   scheduleReplanWaveFunction
 } from "./schedule-inputs-changed";
+export { timesheetMissingTimeFunction } from "./timesheet-missing-time";
 export { updateExchangeRatesFunction } from "./update-exchange-rates";
 export { weeklyFunction } from "./weekly";
 export { workflowRunRetentionFunction } from "./workflow-run-retention";

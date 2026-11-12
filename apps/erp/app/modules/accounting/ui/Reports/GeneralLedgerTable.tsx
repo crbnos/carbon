@@ -8,6 +8,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import {
+  LuAxis3D,
   LuBookmark,
   LuCalendar,
   LuCircleDollarSign,
@@ -16,6 +17,7 @@ import {
   LuLandmark,
   LuQrCode,
   LuReceipt,
+  LuShoppingCart,
   LuTag
 } from "react-icons/lu";
 import { DateTime, Hyperlink, Table } from "~/components";
@@ -26,7 +28,11 @@ import {
   journalEntrySourceTypes,
   journalLineDocumentType
 } from "../../accounting.models";
-import type { AccountClass, GeneralLedgerRow } from "../../types";
+import type {
+  AccountClass,
+  GeneralLedgerDimension,
+  GeneralLedgerRow
+} from "../../types";
 import JournalEntryStatus from "../JournalEntries/JournalEntryStatus";
 
 type GeneralLedgerTableProps = {
@@ -35,6 +41,8 @@ type GeneralLedgerTableProps = {
   // The loader's cursor for the next page (infinite scroll).
   nextCursor: string | null;
   accounts: { id: string; number: string | null; name: string | null }[];
+  // The company group's active dimensions, one column each
+  dimensions: GeneralLedgerDimension[];
   currencyCode: string;
 };
 
@@ -68,6 +76,7 @@ const GeneralLedgerTable = memo(
     count,
     nextCursor,
     accounts,
+    dimensions,
     currencyCode
   }: GeneralLedgerTableProps) => {
     const { t } = useLingui();
@@ -227,9 +236,29 @@ const GeneralLedgerTable = memo(
             icon: <LuQrCode />,
             exportValue: (row) => row.supplierInvoiceNumber
           }
-        }
+        },
+        {
+          id: "purchaseOrderNumber",
+          header: t`Purchase Order`,
+          cell: ({ row }) => row.original.purchaseOrderNumber ?? "",
+          meta: {
+            icon: <LuShoppingCart />,
+            exportValue: (row) => row.purchaseOrderNumber
+          }
+        },
+        // The value's name (an item's readable id, a customer's name), read
+        // from the line's dimension assignments
+        ...dimensions.map<ColumnDef<GeneralLedgerRow>>((dimension) => ({
+          id: `dimension_${dimension.id}`,
+          header: dimension.name,
+          cell: ({ row }) => row.original.dimensions[dimension.id] ?? "",
+          meta: {
+            icon: <LuAxis3D />,
+            exportValue: (row) => row.dimensions[dimension.id] ?? null
+          }
+        }))
       ],
-      [accounts, currencyFormatter, t]
+      [accounts, currencyFormatter, dimensions, t]
     );
 
     return (

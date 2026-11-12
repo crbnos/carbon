@@ -2,12 +2,54 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Badge, cn, toast } from "@carbon/react";
+import type { MeasurementFeatureSpec } from "@carbon/database/inspection-verdict";
+import {
+  measurementDeviation,
+  parseSpecNumber,
+  toleranceLimits,
+  valuateMeasurement
+} from "@carbon/database/inspection-verdict";
+import {
+  Badge,
+  cn,
+  IconButton,
+  ToggleGroup,
+  ToggleGroupItem,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TruncatedTooltipText,
+  toast
+} from "@carbon/react";
+import type { InspectionGridLayout } from "@carbon/utils";
+import {
+  compareSamplesByCreation,
+  defaultInspectionGridLayout,
+  formatReading,
+  formatSpecLabel,
+  formatToleranceLimits,
+  INPUT_FORMAT,
+  INSPECTION_GRID_LAYOUT_STORAGE_KEY,
+  isInspectionGridLayout,
+  isMultiCellPaste,
+  parseAttributeToken,
+  parseClipboardGrid,
+  parseMeasurementToken,
+  passAllTargets,
+  placeSamples,
+  planPaste
+} from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LuCheck, LuX } from "react-icons/lu";
+import {
+  LuCheck,
+  LuCheckCheck,
+  LuRows3,
+  LuTableProperties,
+  LuX
+} from "react-icons/lu";
 import { Table } from "~/components";
 import type { EditableTableCellComponentProps } from "~/components/Editable";
 import { EditableNumber } from "~/components/Editable";
@@ -33,19 +75,36 @@ export type MeasurementSaveResult = {
   passed: boolean | null;
 };
 
-type FeatureGridRow = {
+type Verdict = "Pending" | "Passed" | "Failed";
+
+// One characteristic of the lot: a feature of the inspection document, or the
+// synthetic "Overall result" of a lot with no document.
+type Characteristic = {
   featureId: string;
   label: string;
   description: string | null;
-  pageNumber: number;
   isNumeric: boolean;
+  spec: MeasurementFeatureSpec | null;
+  // "9.90 – 10.10 mm" for a numeric characteristic, else null.
+  limitsLabel: string | null;
+  // The plan's own notation ("10 +0.1/−0.1 mm", or an attribute's text).
   specLabel: string;
   sampleSize: number;
   acceptanceNumber: number;
   rejectionNumber: number;
   gaugeTypeId: string | null;
   gaugeTypeName: string | null;
+};
+
+// By characteristic a row is one characteristic (`characteristicIndex`); by
+// part a row is one sample (`sampleIndex`). The other index is -1.
+type GridRow = {
+  rowKey: string;
+  characteristicIndex: number;
+  sampleIndex: number;
 } & Record<string, unknown>;
+
+type CellPayload = { value?: string; passed?: "true" | "false" };
 
 type InspectionMeasurementGridProps = {
   inspectionId: string;
@@ -57,8 +116,8 @@ type InspectionMeasurementGridProps = {
   gauges: InspectionGauge[];
   recentGaugeIds: string[];
   maxSampleSize: number;
-  // Lot size caps how many sample columns can exist — a feature's n is the
-  // required minimum, but the inspector may record up to the whole lot.
+  // Lot size caps how many samples can exist — a feature's n is the required
+  // minimum, but the inspector may record up to the whole lot.
   lotSize: number;
   // Lot-level acceptance/rejection numbers, used only for the synthetic
   // "Overall result" row shown when the lot has no inspection-document features.
@@ -67,12 +126,20 @@ type InspectionMeasurementGridProps = {
   activeFeatureId: string | null;
   onActiveFeatureChange: (id: string | null) => void;
   onMeasurementSaved: (result: MeasurementSaveResult) => void;
-  // Rendered in the Table header (e.g. the collapse/expand toggle when the
-  // grid is the bottom panel of the execution view).
   primaryAction?: React.ReactNode;
+  // Grid position -> sample id, owned by the view so it survives a remount
+  // (Hide / Show drawing). A save still running in the old grid writes here,
+  // so the new grid's next save reuses that sample instead of making another.
+  placementRef?: React.MutableRefObject<Record<number, string>>;
+  // True while any save or bulk run is in flight.
+  onBusyChange?: (busy: boolean) => void;
 };
 
-const sampleKey = (columnIndex: number) => `sample-${columnIndex}`;
+const sampleKey = (sampleIndex: number) => `sample-${sampleIndex}`;
+const featureKey = (characteristicIndex: number) =>
+  `feature-${characteristicIndex}`;
+// The position of a sample the grid shows but no save has made yet.
+const newSampleKey = (sampleIndex: number) => `new-${sampleIndex}`;
 
 // Mirrors RECENT_INSPECTION_GAUGE_LIMIT in packages/database/src/quality.ts
 // (the server's "recently used" cap) — that module is server-only (Kysely), so
@@ -84,23 +151,42 @@ const RECENT_INSPECTION_GAUGE_LIMIT = 10;
 // sample route) rather than a per-feature measurement.
 const OVERALL_ROW_ID = "__overall__";
 
-function parseSpecNumber(value: string | null | undefined): number | null {
-  if (value == null) return null;
-  const trimmed = value.trim();
-  if (trimmed === "") return null;
-  const parsed = Number(trimmed.replace(/^\+/, ""));
-  return Number.isNaN(parsed) ? null : parsed;
+// Only a failure is coloured: a passing reading is ordinary data, so the few
+// out-of-tolerance cells are what the eye finds in a large batch.
+function verdictFill(status: string | undefined) {
+  return status === "Failed"
+    ? "bg-red-50 font-medium text-red-700 dark:bg-red-950/50 dark:text-red-300"
+    : undefined;
 }
 
-// Features x samples measurement grid (1factory "Spreadsheet View"). Built on
-// the shared Table's inline-editing machinery — the same pattern as
-// InventoryCountLines, with N editable sample columns instead of one.
+// The same fill for a display cell, painted over the whole table cell (it is
+// `relative`) whatever the row's height. The cell's text sits in a `relative`
+// child so it stays above the fill.
+function verdictCellFill(status: string | undefined) {
+  return status === "Failed"
+    ? "font-medium text-red-700 dark:text-red-300 before:pointer-events-none before:absolute before:inset-0 before:bg-red-50 dark:before:bg-red-950/50"
+    : undefined;
+}
+
+// The cell of a deleted serial part: no entry marker, so keyboard entry skips it.
+function FreedCell() {
+  return (
+    <span className="-mx-4 -my-2 flex h-11 items-center justify-center bg-muted/40 text-sm text-muted-foreground/50">
+      —
+    </span>
+  );
+}
+
+// Features × samples measurement grid (1factory "Spreadsheet View"), with a
+// transposed "by part" layout for large batches. Built on the shared Table's
+// inline-editing machinery — the same pattern as InventoryCountGroups.
+// Spec: .ai/specs/2026-11-05-inspection-entry-ergonomics.md.
 const InspectionMeasurementGrid = ({
   inspectionId,
   isReadOnly,
   isSerial,
   features,
-  samples,
+  samples: unorderedSamples,
   measurements,
   gauges,
   recentGaugeIds,
@@ -111,7 +197,9 @@ const InspectionMeasurementGrid = ({
   activeFeatureId,
   onActiveFeatureChange,
   onMeasurementSaved,
-  primaryAction
+  primaryAction,
+  placementRef,
+  onBusyChange
 }: InspectionMeasurementGridProps) => {
   const { t } = useLingui();
 
@@ -132,87 +220,282 @@ const InspectionMeasurementGrid = ({
   );
 
   // Lots without an inspection document have no features to measure, so
-  // the grid collapses to a single "Overall result" pass/fail row per sample.
+  // the grid collapses to a single "Overall result" pass/fail characteristic.
   const hasFeatures = liveFeatures.length > 0;
 
-  // Column model: serial lots get one column per scanned sample; non-serial
-  // lots pre-create columns up to the max required n plus one spare, growing
-  // as columns are used, capped at the lot size (sample rows are created
-  // server-side on the first measurement into a column). n is a minimum —
-  // recording MORE than n samples is always allowed, up to the full lot.
-  const columnCount = isSerial
-    ? samples.length
-    : Math.min(lotSize, Math.max(maxSampleSize, samples.length + 1));
+  const characteristics = useMemo<Characteristic[]>(() => {
+    if (!hasFeatures) {
+      return [
+        {
+          featureId: OVERALL_ROW_ID,
+          label: "1",
+          description: t`Overall result`,
+          isNumeric: false,
+          spec: null,
+          limitsLabel: null,
+          specLabel: "",
+          sampleSize: maxSampleSize,
+          acceptanceNumber: lotAcceptanceNumber,
+          rejectionNumber: lotRejectionNumber,
+          gaugeTypeId: null,
+          gaugeTypeName: null
+        }
+      ];
+    }
+    return liveFeatures.map((lotFeature) => {
+      const feature = lotFeature.inspectionFeature!;
+      const spec: MeasurementFeatureSpec = {
+        type: feature.type,
+        nominalValue: feature.nominalValue,
+        tolerancePlus: feature.tolerancePlus,
+        toleranceMinus: feature.toleranceMinus
+      };
+      const isNumeric =
+        feature.type === "Measurement" &&
+        parseSpecNumber(feature.nominalValue) !== null;
+      const limits = isNumeric ? toleranceLimits(spec) : null;
+      return {
+        featureId: feature.id,
+        label: feature.label,
+        description: feature.description,
+        isNumeric,
+        spec,
+        limitsLabel: limits
+          ? formatToleranceLimits(limits, feature.unit)
+          : null,
+        specLabel: isNumeric
+          ? formatSpecLabel(feature)
+          : (feature.nominalValue ?? ""),
+        sampleSize: lotFeature.sampleSize,
+        acceptanceNumber: lotFeature.acceptanceNumber,
+        rejectionNumber: lotFeature.rejectionNumber,
+        gaugeTypeId: feature.gaugeTypeId ?? null,
+        gaugeTypeName: feature.gaugeType?.name ?? null
+      };
+    });
+  }, [
+    hasFeatures,
+    liveFeatures,
+    maxSampleSize,
+    lotAcceptanceNumber,
+    lotRejectionNumber,
+    t
+  ]);
 
-  // Column index -> sample id. Anonymous columns resolve lazily from save
-  // responses; keyed by index because unsaved columns have no id yet.
+  // Samples in the order they were made: the loader's embed has none.
+  const samples = useMemo(
+    () => [...unorderedSamples].sort(compareSamplesByCreation),
+    [unorderedSamples]
+  );
+  const sampleById = useMemo(
+    () => new Map(samples.map((sample) => [sample.id, sample])),
+    [samples]
+  );
+
+  // Grid position (column by characteristic, row by part) -> sample id. A
+  // sample keeps its position across reloads (`placeSamples`); a position no
+  // save has used yet has no sample. The ref is the same map, read by queued
+  // saves that run after a render.
+  const ownPlacementRef = useRef<Record<number, string>>({});
+  const sampleIdRef = placementRef ?? ownPlacementRef;
   const [sampleIdByColumn, setSampleIdByColumn] = useState<
     Record<number, string>
-  >({});
+  >(() => {
+    const placed = placeSamples(
+      sampleIdRef.current,
+      samples.map((sample) => sample.id),
+      { dropMissing: isSerial }
+    );
+    sampleIdRef.current = placed;
+    return placed;
+  });
   useEffect(() => {
     setSampleIdByColumn((prev) => {
-      const next = { ...prev };
-      samples.forEach((sample, index) => {
-        next[index] = sample.id;
-      });
+      const next = placeSamples(
+        prev,
+        samples.map((sample) => sample.id),
+        { dropMissing: isSerial }
+      );
+      sampleIdRef.current = next;
       return next;
     });
-  }, [samples]);
+  }, [samples, sampleIdRef, isSerial]);
+  const sampleAt = useCallback(
+    (sampleIndex: number) => {
+      const id = sampleIdByColumn[sampleIndex];
+      return id ? sampleById.get(id) : undefined;
+    },
+    [sampleIdByColumn, sampleById]
+  );
+  // Cell state is keyed by sample, so it follows the sample, not the position.
+  const positionKey = useCallback(
+    (sampleIndex: number) =>
+      sampleIdByColumn[sampleIndex] ?? newSampleKey(sampleIndex),
+    [sampleIdByColumn]
+  );
+  // A serial position whose part was deleted: shown, but takes no entry.
+  const isFreedPosition = useCallback(
+    (sampleIndex: number) => isSerial && !sampleIdByColumn[sampleIndex],
+    [isSerial, sampleIdByColumn]
+  );
 
-  // Measurement status + value per cell, seeded from the loader and patched by
-  // save responses (per-cell saves are quiet — no revalidation). The value
-  // mirror matters because the rows memo rebuilds from loader data on every
-  // local-state change, which would otherwise discard the Table's in-place
-  // patch and blank the cell until a reload.
+  const knownSampleCount = Math.max(
+    samples.length,
+    ...Object.keys(sampleIdByColumn).map((index) => Number(index) + 1)
+  );
+
+  // Serial lots get one sample per scanned entity; non-serial lots show up to
+  // the max required n plus one spare, growing as samples are used, capped at
+  // the lot size. n is a minimum — recording MORE is always allowed.
+  const columnCount = isSerial
+    ? knownSampleCount
+    : Math.min(
+        lotSize,
+        Math.max(maxSampleSize, knownSampleCount + (isReadOnly ? 0 : 1))
+      );
+
+  // The inspector's choice persists per browser; until they choose, the
+  // default is decided once, on the first non-empty grid, so scanning samples
+  // never flips the layout mid-entry.
+  const [layoutChoice, setLayoutChoice] = useState<InspectionGridLayout | null>(
+    null
+  );
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(
+        INSPECTION_GRID_LAYOUT_STORAGE_KEY
+      );
+      if (isInspectionGridLayout(stored)) setLayoutChoice(stored);
+    } catch {
+      // Storage unavailable (private window): keep the default.
+    }
+  }, []);
+  const [autoLayout, setAutoLayout] = useState<InspectionGridLayout | null>(
+    null
+  );
+  const computedLayout = defaultInspectionGridLayout({
+    sampleCount: columnCount,
+    characteristicCount: characteristics.length
+  });
+  useEffect(() => {
+    if (autoLayout !== null || columnCount === 0) return;
+    setAutoLayout(computedLayout);
+  }, [autoLayout, columnCount, computedLayout]);
+  // A serial lot with no scanned sample has no part rows to show.
+  const layout: InspectionGridLayout =
+    columnCount === 0
+      ? "byCharacteristic"
+      : (layoutChoice ?? autoLayout ?? computedLayout);
+  const onLayoutChange = useCallback((value: string) => {
+    if (!isInspectionGridLayout(value)) return;
+    setLayoutChoice(value);
+    try {
+      window.localStorage.setItem(INSPECTION_GRID_LAYOUT_STORAGE_KEY, value);
+    } catch {
+      // Storage unavailable: the choice lasts for this page only.
+    }
+  }, []);
+
+  // Server status + value per cell, patched by save responses: per-cell saves
+  // are quiet (no revalidation), so the loader data lags behind them.
   const [statusByCell, setStatusByCell] = useState<Record<string, string>>({});
   const [valueByCell, setValueByCell] = useState<Record<string, number | null>>(
     {}
   );
+  // The client verdict of a cell whose save is in flight: shown at once,
+  // replaced by the server's when it answers.
+  const [optimisticByCell, setOptimisticByCell] = useState<
+    Record<string, Verdict>
+  >({});
+  const [sampleStatusById, setSampleStatusById] = useState<
+    Record<string, string>
+  >({});
+
+  // First measurement per sample and feature.
+  const measurementIndex = useMemo(() => {
+    const index = new Map<string, InspectionMeasurement>();
+    for (const measurement of measurements) {
+      const key = `${measurement.inspectionSampleId}:${measurement.inspectionFeatureId}`;
+      if (!index.has(key)) index.set(key, measurement);
+    }
+    return index;
+  }, [measurements]);
   const measurementFor = useCallback(
     (sampleId: string | undefined, featureId: string) =>
-      sampleId
-        ? measurements.find(
-            (m) =>
-              m.inspectionSampleId === sampleId &&
-              m.inspectionFeatureId === featureId
-          )
-        : undefined,
-    [measurements]
+      sampleId ? measurementIndex.get(`${sampleId}:${featureId}`) : undefined,
+    [measurementIndex]
   );
+
   const cellStatus = useCallback(
-    (columnIndex: number, featureId: string): string | undefined => {
-      const override = statusByCell[`${columnIndex}:${featureId}`];
-      if (override) return override;
+    (sampleIndex: number, featureId: string): string | undefined => {
+      const key = `${positionKey(sampleIndex)}:${featureId}`;
+      const optimistic = optimisticByCell[key];
+      if (optimistic) return optimistic;
+      const saved = statusByCell[key];
+      if (saved) return saved;
       // The "Overall result" row has no measurement — its verdict is the
       // sample's own status (Pending shows as an untoggled cell).
       if (featureId === OVERALL_ROW_ID) {
-        return samples[columnIndex]?.status;
+        return sampleAt(sampleIndex)?.status;
       }
-      return measurementFor(sampleIdByColumn[columnIndex], featureId)?.status;
+      return measurementFor(sampleIdByColumn[sampleIndex], featureId)?.status;
     },
-    [statusByCell, sampleIdByColumn, measurementFor, samples]
+    [
+      optimisticByCell,
+      statusByCell,
+      sampleIdByColumn,
+      measurementFor,
+      positionKey,
+      sampleAt
+    ]
+  );
+  // The latest cellStatus, for a bulk run that checks each cell as it goes.
+  const cellStatusRef = useRef(cellStatus);
+  cellStatusRef.current = cellStatus;
+
+  const cellValue = useCallback(
+    (sampleIndex: number, featureId: string): number | null => {
+      const key = `${positionKey(sampleIndex)}:${featureId}`;
+      if (key in valueByCell) return valueByCell[key] ?? null;
+      const measurement = measurementFor(
+        sampleIdByColumn[sampleIndex],
+        featureId
+      );
+      return measurement?.value == null ? null : Number(measurement.value);
+    },
+    [valueByCell, sampleIdByColumn, measurementFor, positionKey]
+  );
+
+  const sampleStatus = useCallback(
+    (sampleIndex: number) => {
+      const id = sampleIdByColumn[sampleIndex];
+      return id
+        ? (sampleStatusById[id] ?? sampleById.get(id)?.status)
+        : undefined;
+    },
+    [sampleIdByColumn, sampleStatusById, sampleById]
   );
 
   // Document-driven cell: record a per-feature measurement.
   const persistMeasurement = useCallback(
     async (
-      row: FeatureGridRow,
-      columnIndex: number,
-      payload: { value?: string; passed?: "true" | "false" }
+      characteristic: Characteristic,
+      sampleIndex: number,
+      payload: CellPayload
     ): Promise<MeasurementSaveResult | null> => {
       const formData = new FormData();
       formData.set("inspectionId", inspectionId);
-      const sampleId = sampleIdByColumn[columnIndex];
+      const sampleId = sampleIdRef.current[sampleIndex];
       if (sampleId) formData.set("sampleId", sampleId);
-      formData.set("inspectionFeatureId", row.featureId);
+      formData.set("inspectionFeatureId", characteristic.featureId);
       if (payload.value !== undefined) formData.set("value", payload.value);
       if (payload.passed !== undefined) formData.set("passed", payload.passed);
 
       const response = await fetch(
         path.to.inspectionMeasurement(inspectionId),
         { method: "post", body: formData }
-      );
-      const body = (await response.json().catch(() => null)) as {
+      ).catch(() => null);
+      const body = (await response?.json().catch(() => null)) as {
         data?: {
           sampleId: string;
           measurementId: string;
@@ -222,7 +505,7 @@ const InspectionMeasurementGrid = ({
         error?: { message: string } | null;
       } | null;
 
-      if (!response.ok || !body?.data || body.error) {
+      if (!response?.ok || !body?.data || body.error) {
         toast.error(body?.error?.message ?? t`Failed to save measurement`);
         return null;
       }
@@ -230,12 +513,10 @@ const InspectionMeasurementGrid = ({
       return {
         sampleId: body.data.sampleId,
         measurementId: body.data.measurementId,
-        measurementStatus: body.data
-          .measurementStatus as MeasurementSaveResult["measurementStatus"],
-        sampleStatus: body.data
-          .sampleStatus as MeasurementSaveResult["sampleStatus"],
-        inspectionFeatureId: row.featureId,
-        columnIndex,
+        measurementStatus: body.data.measurementStatus as Verdict,
+        sampleStatus: body.data.sampleStatus as Verdict,
+        inspectionFeatureId: characteristic.featureId,
+        columnIndex: sampleIndex,
         value:
           payload.value !== undefined && payload.value !== ""
             ? Number(payload.value)
@@ -243,37 +524,39 @@ const InspectionMeasurementGrid = ({
         passed: payload.passed !== undefined ? payload.passed === "true" : null
       };
     },
-    [inspectionId, sampleIdByColumn, t]
+    [inspectionId, sampleIdRef, t]
   );
 
   // No-document cell: set the sample's Pass/Fail status directly. Serial
-  // columns already carry a scanned tracked entity (upsert by it); anonymous
-  // columns update in place by sampleId once one exists.
+  // samples already carry a scanned tracked entity (upsert by it); anonymous
+  // samples update in place by sampleId once one exists.
   const persistOverall = useCallback(
     async (
-      columnIndex: number,
-      payload: { passed?: "true" | "false" }
+      sampleIndex: number,
+      payload: CellPayload
     ): Promise<MeasurementSaveResult | null> => {
       const status = payload.passed === "true" ? "Passed" : "Failed";
       const formData = new FormData();
       formData.set("inspectionId", inspectionId);
       formData.set("status", status);
       formData.set("quiet", "true");
-      const sampleId = sampleIdByColumn[columnIndex];
+      const sampleId = sampleIdRef.current[sampleIndex];
       if (sampleId) formData.set("sampleId", sampleId);
-      const trackedEntityId = samples[columnIndex]?.trackedEntityId;
+      const trackedEntityId = sampleId
+        ? sampleById.get(sampleId)?.trackedEntityId
+        : undefined;
       if (trackedEntityId) formData.set("trackedEntityId", trackedEntityId);
 
       const response = await fetch(
         `${path.to.inspection(inspectionId)}/sample`,
         { method: "post", body: formData }
-      );
-      const body = (await response.json().catch(() => null)) as {
+      ).catch(() => null);
+      const body = (await response?.json().catch(() => null)) as {
         sampleId?: string;
         error?: { message: string } | null;
       } | null;
 
-      if (!response.ok || !body?.sampleId || body.error) {
+      if (!response?.ok || !body?.sampleId || body.error) {
         toast.error(body?.error?.message ?? t`Failed to save result`);
         return null;
       }
@@ -284,64 +567,419 @@ const InspectionMeasurementGrid = ({
         measurementStatus: status,
         sampleStatus: status,
         inspectionFeatureId: OVERALL_ROW_ID,
-        columnIndex,
+        columnIndex: sampleIndex,
         value: null,
         passed: status === "Passed"
       };
     },
-    [inspectionId, sampleIdByColumn, samples, t]
+    [inspectionId, sampleById, sampleIdRef, t]
   );
+
+  // Saves of one sample run one at a time: the first save of an anonymous
+  // sample creates it, and the next must reuse its id, not make a second one.
+  const sampleQueue = useRef<Record<number, Promise<unknown>>>({});
+  // Per cell (position and feature): the latest request's token, and how many
+  // of its saves are in flight. Only the latest request clears the cell's
+  // optimistic state; a reload never overwrites a cell with a save in flight.
+  const requestSeq = useRef(0);
+  const latestRequestByCell = useRef<Record<string, number>>({});
+  const inFlightByCell = useRef<Record<string, number>>({});
+  const [inFlightCount, setInFlightCount] = useState(0);
+  // The last value the server accepted per cell, restored when a save fails.
+  const acceptedValueByCell = useRef<Record<string, number | null>>({});
 
   const persistCell = useCallback(
-    async (
-      row: FeatureGridRow,
-      columnIndex: number,
-      payload: { value?: string; passed?: "true" | "false" }
+    (
+      characteristic: Characteristic,
+      sampleIndex: number,
+      payload: CellPayload
     ): Promise<MeasurementSaveResult | null> => {
-      // The "Overall result" row (no-document lots) sets the sample's status
-      // directly through the sample route instead of recording a measurement.
-      const result =
-        row.featureId === OVERALL_ROW_ID
-          ? await persistOverall(columnIndex, payload)
-          : await persistMeasurement(row, columnIndex, payload);
-      if (!result) return null;
+      // A serial position whose sample was deleted takes no reading: the
+      // save would make an anonymous sample on a lot of scanned parts.
+      if (isSerial && !sampleIdRef.current[sampleIndex]) {
+        toast.error(t`This sample was removed`);
+        return Promise.resolve(null);
+      }
+      const featureId = characteristic.featureId;
+      const cellId = `${sampleIndex}:${featureId}`;
+      // The cell's state key now: the anonymous key until the sample exists.
+      const keyNow = () =>
+        `${sampleIdRef.current[sampleIndex] ?? newSampleKey(sampleIndex)}:${featureId}`;
+      const key = keyNow();
+      const token = ++requestSeq.current;
+      latestRequestByCell.current[cellId] = token;
+      inFlightByCell.current[cellId] =
+        (inFlightByCell.current[cellId] ?? 0) + 1;
+      setInFlightCount((n) => n + 1);
 
-      setSampleIdByColumn((prev) =>
-        prev[columnIndex] === result.sampleId
-          ? prev
-          : { ...prev, [columnIndex]: result.sampleId }
-      );
-      setStatusByCell((prev) => ({
-        ...prev,
-        [`${columnIndex}:${row.featureId}`]: result.measurementStatus
-      }));
-      setValueByCell((prev) => ({
-        ...prev,
-        [`${columnIndex}:${row.featureId}`]: result.value
-      }));
-      onMeasurementSaved(result);
-      return result;
+      const numericValue =
+        payload.value !== undefined && payload.value !== ""
+          ? Number(payload.value)
+          : null;
+      const optimistic: Verdict =
+        payload.passed !== undefined
+          ? payload.passed === "true"
+            ? "Passed"
+            : "Failed"
+          : characteristic.spec
+            ? valuateMeasurement(characteristic.spec, numericValue)
+            : "Pending";
+      setOptimisticByCell((prev) => ({ ...prev, [key]: optimistic }));
+      if (payload.value !== undefined) {
+        setValueByCell((prev) => ({ ...prev, [key]: numericValue }));
+      }
+
+      const run = async () => {
+        try {
+          const result =
+            characteristic.featureId === OVERALL_ROW_ID
+              ? await persistOverall(sampleIndex, payload)
+              : await persistMeasurement(characteristic, sampleIndex, payload);
+          const isLatest = latestRequestByCell.current[cellId] === token;
+
+          if (!result) {
+            if (isLatest) {
+              const current = keyNow();
+              setOptimisticByCell((prev) => {
+                const next = { ...prev };
+                delete next[current];
+                return next;
+              });
+              setValueByCell((prev) => {
+                const next = { ...prev };
+                delete next[current];
+                if (current in acceptedValueByCell.current) {
+                  next[current] = acceptedValueByCell.current[current] ?? null;
+                }
+                return next;
+              });
+            }
+            return null;
+          }
+
+          // From here the cell is keyed by the sample the server saved it on.
+          // The first save of a new sample moves every pending entry of that
+          // position (other characteristics saved meanwhile) to the sample id.
+          const savedKey = `${result.sampleId}:${featureId}`;
+          const anonymousPrefix = `${newSampleKey(sampleIndex)}:`;
+          const adopt = <T,>(prev: Record<string, T>) => {
+            let changed = false;
+            const next = { ...prev };
+            for (const entry of Object.keys(prev)) {
+              if (!entry.startsWith(anonymousPrefix)) continue;
+              next[
+                `${result.sampleId}:${entry.slice(anonymousPrefix.length)}`
+              ] = prev[entry]!;
+              delete next[entry];
+              changed = true;
+            }
+            return changed ? next : prev;
+          };
+          setOptimisticByCell((prev) => {
+            const next = adopt(prev);
+            if (!isLatest) return next;
+            const cleared = { ...next };
+            delete cleared[savedKey];
+            return cleared;
+          });
+          if (payload.value !== undefined) {
+            acceptedValueByCell.current[savedKey] = numericValue;
+          }
+          setValueByCell((prev) => {
+            const next = adopt(prev);
+            // A newer edit of this cell keeps its own typed value.
+            if (!isLatest || payload.value === undefined) return next;
+            return { ...next, [savedKey]: numericValue };
+          });
+
+          // A realtime reload may already have placed this sample at another
+          // position: it keeps only the position it was saved at.
+          const keepOnePosition = (prev: Record<number, string>) => {
+            if (prev[sampleIndex] === result.sampleId) {
+              const elsewhere = Object.entries(prev).some(
+                ([position, id]) =>
+                  id === result.sampleId && Number(position) !== sampleIndex
+              );
+              if (!elsewhere) return prev;
+            }
+            const next: Record<number, string> = {};
+            for (const [position, id] of Object.entries(prev)) {
+              if (id !== result.sampleId) next[Number(position)] = id;
+            }
+            next[sampleIndex] = result.sampleId;
+            return next;
+          };
+          sampleIdRef.current = keepOnePosition(sampleIdRef.current);
+          setSampleIdByColumn(keepOnePosition);
+          setStatusByCell((prev) => ({
+            ...prev,
+            [savedKey]: result.measurementStatus
+          }));
+          setSampleStatusById((prev) => ({
+            ...prev,
+            [result.sampleId]: result.sampleStatus
+          }));
+          onMeasurementSaved(result);
+          return result;
+        } finally {
+          inFlightByCell.current[cellId] =
+            (inFlightByCell.current[cellId] ?? 1) - 1;
+          setInFlightCount((n) => n - 1);
+        }
+      };
+
+      const queued = (sampleQueue.current[sampleIndex] ?? Promise.resolve())
+        .catch(() => undefined)
+        .then(run);
+      sampleQueue.current[sampleIndex] = queued;
+      return queued;
     },
-    [persistMeasurement, persistOverall, onMeasurementSaved]
+    [
+      isSerial,
+      persistMeasurement,
+      persistOverall,
+      onMeasurementSaved,
+      sampleIdRef,
+      t
+    ]
   );
+
+  // A reload is the record: once the loader holds a cell's reading (another
+  // inspector's edit included), drop the local copy, unless that cell still
+  // has a save in flight.
+  useEffect(() => {
+    const positionOf = (sampleId: string) => {
+      for (const [position, id] of Object.entries(sampleIdRef.current)) {
+        if (id === sampleId) return position;
+      }
+      return undefined;
+    };
+    const settled = (entry: string) => {
+      if (!measurementIndex.has(entry)) return false;
+      const separator = entry.indexOf(":");
+      const position = positionOf(entry.slice(0, separator));
+      const cellId = `${position}:${entry.slice(separator + 1)}`;
+      return (inFlightByCell.current[cellId] ?? 0) === 0;
+    };
+    const prune = <T,>(prev: Record<string, T>) => {
+      const stale = Object.keys(prev).filter(settled);
+      if (stale.length === 0) return prev;
+      const next = { ...prev };
+      for (const entry of stale) {
+        delete next[entry];
+        delete acceptedValueByCell.current[entry];
+      }
+      return next;
+    };
+    setValueByCell(prune);
+    setStatusByCell(prune);
+  }, [measurementIndex, sampleIdRef]);
+
+  const [bulkProgress, setBulkProgress] = useState<{
+    done: number;
+    total: number;
+  } | null>(null);
+
+  // One save at a time, in sample order; stops at the first refused save.
+  // `onlyIfPending` (Pass all) re-checks each cell just before its save and
+  // leaves alone any cell that got a result after the run started.
+  const runBulk = useCallback(
+    async (
+      cells: {
+        characteristic: Characteristic;
+        sampleIndex: number;
+        payload: CellPayload;
+      }[],
+      skipped = 0,
+      options: { onlyIfPending?: boolean } = {}
+    ) => {
+      if (cells.length === 0) {
+        if (skipped > 0) toast.error(t`No cell could take the pasted values`);
+        return;
+      }
+      setBulkProgress({ done: 0, total: cells.length });
+      let progress = 0;
+      let done = 0;
+      let stopped = false;
+      for (const cell of cells) {
+        if (options.onlyIfPending) {
+          const status = cellStatusRef.current(
+            cell.sampleIndex,
+            cell.characteristic.featureId
+          );
+          if (status != null && status !== "Pending") {
+            progress += 1;
+            setBulkProgress({ done: progress, total: cells.length });
+            continue;
+          }
+        }
+        const result = await persistCell(
+          cell.characteristic,
+          cell.sampleIndex,
+          cell.payload
+        );
+        if (!result) {
+          stopped = true;
+          break;
+        }
+        progress += 1;
+        done += 1;
+        setBulkProgress({ done: progress, total: cells.length });
+      }
+      setBulkProgress(null);
+      if (!stopped) {
+        toast.success(
+          skipped > 0
+            ? t`Results recorded: ${done}. Values skipped: ${skipped}.`
+            : t`Results recorded: ${done}`
+        );
+      }
+    },
+    [persistCell, t]
+  );
+
+  const passAll = useCallback(
+    (characteristicIndex: number) => {
+      const characteristic = characteristics[characteristicIndex];
+      if (!characteristic || characteristic.isNumeric) return;
+      const statuses = Array.from({ length: columnCount }, (_, sampleIndex) =>
+        cellStatus(sampleIndex, characteristic.featureId)
+      );
+      // A freed serial position takes no result.
+      const targets = passAllTargets({
+        statuses,
+        sampleSize: characteristic.sampleSize,
+        existingSamples: knownSampleCount,
+        columnCount
+      }).filter((sampleIndex) => !isSerial || sampleIdRef.current[sampleIndex]);
+      runBulk(
+        targets.map((sampleIndex) => ({
+          characteristic,
+          sampleIndex,
+          payload: { passed: "true" as const }
+        })),
+        0,
+        { onlyIfPending: true }
+      );
+    },
+    [
+      characteristics,
+      columnCount,
+      cellStatus,
+      knownSampleCount,
+      runBulk,
+      isSerial,
+      sampleIdRef
+    ]
+  );
+
+  const onPasteCapture = useCallback(
+    (event: React.ClipboardEvent) => {
+      if (isReadOnly || bulkProgress) return;
+      const grid = parseClipboardGrid(event.clipboardData.getData("text"));
+      // A single value pastes into the cell's own input.
+      if (!isMultiCellPaste(grid)) return;
+      const cell = (event.target as HTMLElement).closest<HTMLElement>(
+        "[data-row][data-column]"
+      );
+      const marker = cell?.querySelector<HTMLElement>("[data-entry-cell]");
+      if (!marker) return;
+      const characteristicIndex = characteristics.findIndex(
+        (c) => c.featureId === marker.dataset.featureId
+      );
+      const sampleIndex = Number(marker.dataset.sampleIndex);
+      if (characteristicIndex < 0 || Number.isNaN(sampleIndex)) return;
+      event.preventDefault();
+      event.stopPropagation();
+
+      const plan = planPaste({
+        grid,
+        layout,
+        origin: { characteristicIndex, sampleIndex },
+        characteristicCount: characteristics.length,
+        // Serial positions keep their place when a sample is deleted, so the
+        // shown range can be wider than the sample count.
+        sampleLimit: isSerial ? columnCount : lotSize
+      });
+      let skipped = plan.outOfRange;
+      const cells: {
+        characteristic: Characteristic;
+        sampleIndex: number;
+        payload: CellPayload;
+      }[] = [];
+      for (const planned of plan.cells) {
+        if (isSerial && !sampleIdRef.current[planned.sampleIndex]) {
+          skipped += 1;
+          continue;
+        }
+        const characteristic = characteristics[planned.characteristicIndex]!;
+        if (characteristic.isNumeric) {
+          const value = parseMeasurementToken(planned.token);
+          if (value === null) skipped += 1;
+          else
+            cells.push({
+              characteristic,
+              sampleIndex: planned.sampleIndex,
+              payload: { value: formatReading(value) }
+            });
+        } else {
+          const passed = parseAttributeToken(planned.token);
+          if (passed === null) skipped += 1;
+          else
+            cells.push({
+              characteristic,
+              sampleIndex: planned.sampleIndex,
+              payload: { passed: passed ? "true" : "false" }
+            });
+        }
+      }
+      (document.activeElement as HTMLElement | null)?.blur();
+      runBulk(cells, skipped);
+    },
+    [
+      isReadOnly,
+      bulkProgress,
+      characteristics,
+      layout,
+      isSerial,
+      columnCount,
+      lotSize,
+      runBulk,
+      sampleIdRef
+    ]
+  );
+
+  const isBusy = inFlightCount > 0 || bulkProgress !== null;
+  useEffect(() => {
+    onBusyChange?.(isBusy);
+  }, [isBusy, onBusyChange]);
+  useEffect(() => () => onBusyChange?.(false), [onBusyChange]);
 
   // EditableNumber-compatible mutation for numeric cells.
   const onCellEdit = useCallback(
     async (
       accessorKey: string,
       value: unknown,
-      row: FeatureGridRow
+      row: GridRow
     ): Promise<PostgrestSingleResponse<unknown>> => {
-      const columnIndex = Number(accessorKey.replace("sample-", ""));
-      const result = await persistCell(row, columnIndex, {
-        value: value === "" || value == null ? "" : String(value)
-      });
+      const { characteristicIndex, sampleIndex } = cellAt(accessorKey, row);
+      const characteristic = characteristics[characteristicIndex];
+      const result = characteristic
+        ? await persistCell(characteristic, sampleIndex, {
+            value:
+              value === "" || value == null
+                ? ""
+                : typeof value === "number"
+                  ? formatReading(value)
+                  : String(value)
+          })
+        : null;
       return {
         data: null,
         error: result ? null : { message: t`Failed to save measurement` }
       } as unknown as PostgrestSingleResponse<unknown>;
     },
-    [persistCell, t]
+    [characteristics, persistCell, t]
   );
 
   // The gauge recorded per feature: the plan rows' value, overridden
@@ -481,89 +1119,113 @@ const InspectionMeasurementGrid = ({
     [inspectionId, t]
   );
 
-  const rows = useMemo<FeatureGridRow[]>(() => {
-    if (!hasFeatures) {
-      // Single synthetic pass/fail row for lots with no inspection document.
-      return [
-        {
-          featureId: OVERALL_ROW_ID,
-          label: "1",
-          description: t`Overall result`,
-          pageNumber: 1,
-          isNumeric: false,
-          specLabel: "",
-          sampleSize: maxSampleSize,
-          acceptanceNumber: lotAcceptanceNumber,
-          rejectionNumber: lotRejectionNumber,
-          gaugeTypeId: null,
-          gaugeTypeName: null
-        }
-      ];
-    }
-    return liveFeatures.map((lotFeature) => {
-      const feature = lotFeature.inspectionFeature!;
-      const isNumeric =
-        feature.type === "Measurement" &&
-        parseSpecNumber(feature.nominalValue) !== null;
-      const spec = isNumeric
-        ? [
-            feature.nominalValue,
-            feature.tolerancePlus != null || feature.toleranceMinus != null
-              ? `+${feature.tolerancePlus ?? "0"}/−${feature.toleranceMinus ?? "0"}`
-              : null,
-            feature.unit
-          ]
-            .filter(Boolean)
-            .join(" ")
-        : (feature.nominalValue ?? "");
-
-      const row: FeatureGridRow = {
-        featureId: feature.id,
-        label: feature.label,
-        description: feature.description,
-        pageNumber: feature.pageNumber ?? 1,
-        isNumeric,
-        specLabel: spec,
-        sampleSize: lotFeature.sampleSize,
-        acceptanceNumber: lotFeature.acceptanceNumber,
-        rejectionNumber: lotFeature.rejectionNumber,
-        gaugeTypeId: feature.gaugeTypeId ?? null,
-        gaugeTypeName: feature.gaugeType?.name ?? null
-      };
-      for (let i = 0; i < columnCount; i++) {
-        const override = valueByCell[`${i}:${feature.id}`];
-        const measurement = measurementFor(sampleIdByColumn[i], feature.id);
-        row[sampleKey(i)] =
-          override !== undefined ? override : (measurement?.value ?? null);
-      }
-      return row;
-    });
-  }, [
-    hasFeatures,
-    liveFeatures,
-    columnCount,
-    sampleIdByColumn,
-    valueByCell,
-    measurementFor,
-    maxSampleSize,
-    lotAcceptanceNumber,
-    lotRejectionNumber,
-    t
-  ]);
-
-  // Pass/fail chip counts per feature (loader data + local overrides).
   const featureCounts = useCallback(
-    (row: FeatureGridRow) => {
+    (characteristic: Characteristic) => {
       let passed = 0;
       let failed = 0;
       for (let i = 0; i < columnCount; i++) {
-        const status = cellStatus(i, row.featureId);
+        const status = cellStatus(i, characteristic.featureId);
         if (status === "Passed") passed += 1;
         if (status === "Failed") failed += 1;
       }
       return { passed, failed, recorded: passed + failed };
     },
     [columnCount, cellStatus]
+  );
+  const failedReadings = characteristics.reduce(
+    (sum, characteristic) => sum + featureCounts(characteristic).failed,
+    0
+  );
+
+  const rows = useMemo<GridRow[]>(() => {
+    if (layout === "byPart") {
+      return Array.from({ length: columnCount }, (_, sampleIndex) => {
+        const sample = sampleAt(sampleIndex);
+        const row: GridRow = {
+          // A new key remounts the row and the input open in it, so the
+          // save that creates a non-serial sample must not change it.
+          rowKey: isSerial
+            ? positionKey(sampleIndex)
+            : `position-${sampleIndex}`,
+          characteristicIndex: -1,
+          sampleIndex,
+          sampleLabel: isSerial
+            ? sample
+              ? (sample.trackedEntity?.readableId ?? `${sampleIndex + 1}`)
+              : t`Removed`
+            : `${sampleIndex + 1}`
+        };
+        characteristics.forEach((characteristic, characteristicIndex) => {
+          row[featureKey(characteristicIndex)] = characteristic.isNumeric
+            ? cellValue(sampleIndex, characteristic.featureId)
+            : null;
+        });
+        return row;
+      });
+    }
+    return characteristics.map((characteristic, characteristicIndex) => {
+      const row: GridRow = {
+        rowKey: characteristic.featureId,
+        characteristicIndex,
+        sampleIndex: -1,
+        label: characteristic.label
+      };
+      for (let i = 0; i < columnCount; i++) {
+        row[sampleKey(i)] = characteristic.isNumeric
+          ? cellValue(i, characteristic.featureId)
+          : null;
+      }
+      return row;
+    });
+  }, [
+    layout,
+    columnCount,
+    sampleAt,
+    positionKey,
+    isSerial,
+    characteristics,
+    cellValue,
+    t
+  ]);
+
+  const renderReading = useCallback(
+    (characteristic: Characteristic, sampleIndex: number) => {
+      if (isFreedPosition(sampleIndex)) return <FreedCell />;
+      const value = cellValue(sampleIndex, characteristic.featureId);
+      const status = cellStatus(sampleIndex, characteristic.featureId);
+      const deviation =
+        status === "Failed" && characteristic.spec
+          ? measurementDeviation(characteristic.spec, value)
+          : null;
+      return (
+        <span
+          data-entry-cell
+          data-feature-id={characteristic.featureId}
+          data-sample-index={sampleIndex}
+          className={cn(
+            // h-11 is the smallest row height; the fill covers the whole cell.
+            "-mx-4 -my-2 flex h-11 min-w-[64px] items-center justify-center px-2 text-sm tabular-nums",
+            verdictCellFill(status),
+            value == null && "text-muted-foreground/50"
+          )}
+        >
+          <span className="relative flex items-center gap-1">
+            {value == null ? "—" : formatReading(value)}
+            {deviation && (
+              <span>
+                <span aria-hidden>{deviation === "above" ? "↑" : "↓"}</span>
+                <span className="sr-only">
+                  {deviation === "above"
+                    ? t`Above the upper limit`
+                    : t`Below the lower limit`}
+                </span>
+              </span>
+            )}
+          </span>
+        </span>
+      );
+    },
+    [cellValue, cellStatus, isFreedPosition, t]
   );
 
   // Attribute pass/fail: a segmented, color-coded toggle. Each half is a
@@ -572,95 +1234,328 @@ const InspectionMeasurementGrid = ({
   // cell AND the editable cell so opening a cell (keyboard nav / focus) keeps
   // the same buttons on screen instead of swapping them for an empty editor.
   const renderPassFail = useCallback(
-    (original: FeatureGridRow, i: number) => {
-      const status = cellStatus(i, original.featureId);
+    (characteristic: Characteristic, sampleIndex: number) => {
+      if (isFreedPosition(sampleIndex)) return <FreedCell />;
+      const status = cellStatus(sampleIndex, characteristic.featureId);
       const passed = status === "Passed";
       const failed = status === "Failed";
+      // A closed lot shows the recorded result as text, like a reading, not
+      // as buttons that look clickable but are not.
+      if (isReadOnly) {
+        return (
+          <span
+            data-entry-cell
+            data-attribute
+            data-feature-id={characteristic.featureId}
+            data-sample-index={sampleIndex}
+            className={cn(
+              "-mx-4 -my-2 flex h-11 items-center justify-center px-2 text-sm",
+              verdictCellFill(status),
+              passed && "text-emerald-700 dark:text-emerald-400",
+              !passed && !failed && "text-muted-foreground/50"
+            )}
+          >
+            <span className="relative flex items-center gap-1">
+              {passed ? (
+                <>
+                  <LuCheck className="size-4" aria-hidden />
+                  {t`Pass`}
+                </>
+              ) : failed ? (
+                <>
+                  <LuX className="size-4" aria-hidden />
+                  {t`Fail`}
+                </>
+              ) : (
+                "—"
+              )}
+            </span>
+          </span>
+        );
+      }
       return (
         <div
-          data-sample-col={i}
+          data-entry-cell
+          data-attribute
+          data-feature-id={characteristic.featureId}
+          data-sample-index={sampleIndex}
           className="-mx-4 -my-2 flex justify-center px-1.5 py-1"
         >
-          {/* Negative margins cancel the cell's px-4 py-2 so the segmented
-              control fills the full cell for a large, finger-friendly target;
-              a shared divider splits pass / fail. */}
-          <div className="flex h-10 w-full min-w-[92px] max-w-[152px] items-stretch overflow-hidden rounded-lg border border-border bg-background">
+          {/* h-9 + py-1 is the 44 px row height, the same as a reading's. */}
+          <div className="flex h-9 w-full min-w-[88px] max-w-[136px] items-stretch overflow-hidden rounded-md border border-border bg-card">
             <button
               type="button"
               aria-label={t`Pass`}
               aria-pressed={passed}
-              disabled={isReadOnly}
+              disabled={isReadOnly || bulkProgress !== null}
               tabIndex={-1}
               onClick={(e) => {
                 e.stopPropagation();
-                persistCell(original, i, { passed: "true" });
+                persistCell(characteristic, sampleIndex, { passed: "true" });
               }}
               className={cn(
-                "flex flex-1 items-center justify-center transition-transform active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50",
+                "flex flex-1 items-center justify-center transition-[background-color,color,transform] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
                 passed
-                  ? "bg-emerald-500 text-white"
-                  : "text-muted-foreground hover:bg-emerald-500/10 hover:text-emerald-600"
+                  ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                  : "text-muted-foreground/60 hover:bg-accent hover:text-foreground"
               )}
             >
-              <LuCheck className="h-5 w-5" />
+              <LuCheck className="size-4" />
             </button>
             <button
               type="button"
               aria-label={t`Fail`}
               aria-pressed={failed}
-              disabled={isReadOnly}
+              disabled={isReadOnly || bulkProgress !== null}
               tabIndex={-1}
               onClick={(e) => {
                 e.stopPropagation();
-                persistCell(original, i, { passed: "false" });
+                persistCell(characteristic, sampleIndex, { passed: "false" });
               }}
               className={cn(
-                "flex flex-1 items-center justify-center border-l border-border transition-transform active:scale-[0.96] disabled:pointer-events-none disabled:opacity-50",
+                "flex flex-1 items-center justify-center border-l border-border transition-[background-color,color,transform] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50",
                 failed
-                  ? "bg-red-500 text-white"
-                  : "text-muted-foreground hover:bg-red-500/10 hover:text-red-600"
+                  ? "bg-red-500/15 text-red-700 dark:text-red-400"
+                  : "text-muted-foreground/60 hover:bg-accent hover:text-foreground"
               )}
             >
-              <LuX className="h-5 w-5" />
+              <LuX className="size-4" />
             </button>
           </div>
         </div>
       );
     },
-    [cellStatus, isReadOnly, persistCell, t]
+    [cellStatus, isReadOnly, bulkProgress, persistCell, isFreedPosition, t]
   );
 
-  const columns = useMemo<ColumnDef<FeatureGridRow>[]>(() => {
-    const cols: ColumnDef<FeatureGridRow>[] = [
+  const renderPassAll = useCallback(
+    (characteristicIndex: number) => {
+      const characteristic = characteristics[characteristicIndex];
+      if (!characteristic || characteristic.isNumeric || isReadOnly) {
+        return null;
+      }
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <IconButton
+              type="button"
+              size="sm"
+              variant="ghost"
+              aria-label={t`Pass all empty cells of ${characteristic.label}`}
+              icon={<LuCheckCheck />}
+              isDisabled={bulkProgress !== null || columnCount === 0}
+              onClick={(event) => {
+                event.stopPropagation();
+                passAll(characteristicIndex);
+              }}
+            />
+          </TooltipTrigger>
+          <TooltipContent>{t`Pass all empty cells`}</TooltipContent>
+        </Tooltip>
+      );
+    },
+    [characteristics, isReadOnly, bulkProgress, columnCount, passAll, t]
+  );
+
+  const renderProgress = useCallback(
+    (characteristic: Characteristic) => {
+      const counts = featureCounts(characteristic);
+      const complete =
+        counts.recorded >= characteristic.sampleSize &&
+        counts.failed <= characteristic.acceptanceNumber;
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {/* On phones a cell is capped narrow: wrap rather than clip. */}
+            <span className="flex shrink-0 items-center gap-1 max-md:flex-wrap">
+              <Badge
+                variant={complete ? "green" : "secondary"}
+                className="tabular-nums"
+              >
+                {t`${counts.recorded} of ${characteristic.sampleSize}`}
+              </Badge>
+              {counts.failed > 0 && (
+                <Badge variant="red" className="tabular-nums">
+                  {t`${counts.failed} failed`}
+                </Badge>
+              )}
+            </span>
+          </TooltipTrigger>
+          {/* Below the badges, so it never covers the name and limits above. */}
+          <TooltipContent side="bottom">
+            {t`Sample size ${characteristic.sampleSize} · accept up to ${characteristic.acceptanceNumber} failed · reject at ${characteristic.rejectionNumber}`}
+          </TooltipContent>
+        </Tooltip>
+      );
+    },
+    [featureCounts, t]
+  );
+
+  const renderCharacteristic = useCallback(
+    (characteristic: Characteristic, characteristicIndex: number) => {
+      const isActive =
+        hasFeatures && characteristic.featureId === activeFeatureId;
+      const limits = characteristic.limitsLabel ?? characteristic.specLabel;
+      return (
+        <div className="flex w-full min-w-0 items-center gap-2 whitespace-normal">
+          {hasFeatures && (
+            <span
+              className={cn(
+                "flex size-6 shrink-0 items-center justify-center rounded-md font-mono text-xs font-medium tabular-nums",
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-foreground"
+              )}
+            >
+              {characteristic.label}
+            </span>
+          )}
+          <span className="flex min-w-0 flex-1 flex-col">
+            <TruncatedTooltipText
+              className="block w-full truncate text-xs font-medium text-foreground"
+              tooltip={characteristic.description}
+            >
+              {hasFeatures
+                ? (characteristic.description ?? "—")
+                : t`Overall result`}
+            </TruncatedTooltipText>
+            {limits && hasFeatures ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="w-fit truncate text-xs tabular-nums text-muted-foreground">
+                    {limits}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{characteristic.specLabel}</TooltipContent>
+              </Tooltip>
+            ) : null}
+          </span>
+          {renderPassAll(characteristicIndex)}
+        </div>
+      );
+    },
+    [hasFeatures, activeFeatureId, renderPassAll, t]
+  );
+
+  const renderGauge = useCallback(
+    (characteristic: Characteristic, variant: "cell" | "chip" = "cell") => (
+      <InspectionGaugePicker
+        variant={variant}
+        gauges={gauges}
+        characteristicLabel={characteristic.label}
+        recentGaugeIds={recentGauges}
+        gaugeTypeId={characteristic.gaugeTypeId}
+        gaugeTypeName={characteristic.gaugeTypeName}
+        value={gaugeFor(characteristic.featureId)}
+        isReadOnly={isReadOnly}
+        onChange={(gaugeId) => persistGauge(characteristic.featureId, gaugeId)}
+      />
+    ),
+    [gauges, recentGauges, gaugeFor, isReadOnly, persistGauge]
+  );
+
+  const columns = useMemo<ColumnDef<GridRow>[]>(() => {
+    if (layout === "byPart") {
+      const cols: ColumnDef<GridRow>[] = [
+        {
+          accessorKey: "sampleLabel",
+          header: t`Sample`,
+          meta: { shrinkToFit: true },
+          cell: ({ row }) => {
+            const status = sampleStatus(row.original.sampleIndex);
+            return (
+              <span className="flex items-center gap-2 pr-2">
+                <span
+                  aria-hidden
+                  className={cn(
+                    "size-2 shrink-0 rounded-full",
+                    status === "Passed"
+                      ? "bg-emerald-500"
+                      : status === "Failed"
+                        ? "bg-red-500"
+                        : "bg-muted-foreground/30"
+                  )}
+                />
+                <span className="sr-only">
+                  {status === "Passed"
+                    ? t`Passed`
+                    : status === "Failed"
+                      ? t`Failed`
+                      : t`Pending`}
+                </span>
+                <span
+                  className={cn(
+                    "max-w-[160px] truncate text-sm font-medium tabular-nums",
+                    isSerial && "font-mono text-xs"
+                  )}
+                >
+                  {String(row.original.sampleLabel)}
+                </span>
+              </span>
+            );
+          }
+        }
+      ];
+      characteristics.forEach((characteristic, characteristicIndex) => {
+        cols.push({
+          accessorKey: featureKey(characteristicIndex),
+          header: () => (
+            // Keyboard twin of the click. Not role="button": the header also
+            // holds the gauge picker, which a button would hide from
+            // assistive tech.
+            // biome-ignore lint/a11y/noStaticElementInteractions: focusable header that shows its characteristic on the drawing; the gauge picker inside is its own control
+            <div
+              data-feature-header={characteristic.featureId}
+              tabIndex={hasFeatures ? 0 : undefined}
+              onClick={() =>
+                hasFeatures && onActiveFeatureChange(characteristic.featureId)
+              }
+              onKeyDown={(event) => {
+                if (
+                  hasFeatures &&
+                  event.target === event.currentTarget &&
+                  (event.key === "Enter" || event.key === " ")
+                ) {
+                  event.preventDefault();
+                  onActiveFeatureChange(characteristic.featureId);
+                }
+              }}
+              className="flex w-full min-w-[180px] flex-col gap-1.5 whitespace-normal py-1 font-normal"
+            >
+              {renderCharacteristic(characteristic, characteristicIndex)}
+              {/* Progress and gauge share one row: the gauge is a compact
+                  chip, not a full-width field on a row of its own. */}
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                {renderProgress(characteristic)}
+                {hasFeatures && (
+                  <div data-gauge-picker className="min-w-0 max-w-full">
+                    {renderGauge(characteristic, "chip")}
+                  </div>
+                )}
+              </div>
+            </div>
+          ),
+          meta: { headerClassName: "w-full" },
+          cell: ({ row }) =>
+            characteristic.isNumeric
+              ? renderReading(characteristic, row.original.sampleIndex)
+              : renderPassFail(characteristic, row.original.sampleIndex)
+        });
+      });
+      return cols;
+    }
+
+    const cols: ColumnDef<GridRow>[] = [
       {
         accessorKey: "label",
-        header: "#",
-        cell: ({ row }) => (
-          <span className="font-mono text-xs font-semibold">
-            {row.original.label}
-          </span>
-        )
-      },
-      {
-        accessorKey: "description",
         header: t`Characteristic`,
         cell: ({ row }) => (
-          <span
-            className="line-clamp-2 min-w-[180px] max-w-[320px] whitespace-normal break-words text-xs max-md:min-w-0 max-md:max-w-[180px]"
-            title={row.original.description ?? undefined}
-          >
-            {row.original.description ?? "—"}
-          </span>
-        ),
-        meta: { mobile: "P1" }
-      },
-      {
-        accessorKey: "specLabel",
-        header: t`Spec`,
-        cell: ({ row }) => (
-          <span className="whitespace-nowrap font-mono text-xs">
-            {row.original.specLabel || "—"}
-          </span>
+          <div className="min-w-[220px] max-w-[320px]">
+            {renderCharacteristic(
+              characteristics[row.original.characteristicIndex]!,
+              row.original.characteristicIndex
+            )}
+          </div>
         )
       },
       ...(hasFeatures
@@ -673,168 +1568,277 @@ const InspectionMeasurementGrid = ({
                 // button fills the whole cell. `data-gauge-picker` lets the
                 // grid's Enter/Tab handler leave the picker's keys alone.
                 <div data-gauge-picker className="-mx-4 -my-2 h-10">
-                  <InspectionGaugePicker
-                    gauges={gauges}
-                    characteristicLabel={row.original.label}
-                    recentGaugeIds={recentGauges}
-                    gaugeTypeId={row.original.gaugeTypeId}
-                    gaugeTypeName={row.original.gaugeTypeName}
-                    value={gaugeFor(row.original.featureId)}
-                    isReadOnly={isReadOnly}
-                    onChange={(gaugeId) =>
-                      persistGauge(row.original.featureId, gaugeId)
-                    }
-                  />
+                  {renderGauge(
+                    characteristics[row.original.characteristicIndex]!
+                  )}
                 </div>
               )
-            } satisfies ColumnDef<FeatureGridRow>
+            } satisfies ColumnDef<GridRow>
           ]
         : []),
       {
-        accessorKey: "sampleSize",
-        header: "n / Ac",
-        cell: ({ row }) => (
-          <span className="whitespace-nowrap font-mono text-xs text-muted-foreground">
-            {row.original.sampleSize} / {row.original.acceptanceNumber}
-          </span>
-        )
-      },
-      {
         id: "progress",
         header: t`Result`,
-        cell: ({ row }) => {
-          const counts = featureCounts(row.original);
-          const exceeded = counts.failed >= row.original.rejectionNumber;
-          return (
-            <Badge
-              variant={
-                exceeded
-                  ? "destructive"
-                  : counts.recorded >= row.original.sampleSize &&
-                      counts.failed <= row.original.acceptanceNumber
-                    ? "green"
-                    : "secondary"
-              }
-              className="font-mono text-[0.625rem]"
-            >
-              {counts.passed}/{row.original.sampleSize}
-              {counts.failed > 0 ? ` · ${counts.failed}F` : ""}
-            </Badge>
-          );
-        }
+        cell: ({ row }) =>
+          renderProgress(characteristics[row.original.characteristicIndex]!)
       }
     ];
 
     for (let i = 0; i < columnCount; i++) {
-      const key = sampleKey(i);
-      const sample = samples[i];
-      const header = isSerial
-        ? (sample?.trackedEntity?.readableId ?? `${i + 1}`)
-        : `${i + 1}`;
+      const sample = sampleAt(i);
       cols.push({
-        accessorKey: key,
-        header,
+        accessorKey: sampleKey(i),
+        header: isSerial
+          ? sample
+            ? (sample.trackedEntity?.readableId ?? `${i + 1}`)
+            : t`Removed`
+          : `${i + 1}`,
         meta: { headerClassName: "justify-center" },
         cell: ({ row }) => {
-          const original = row.original;
-          const status = cellStatus(i, original.featureId);
-          if (original.isNumeric) {
-            const value = original[key];
-            return (
-              <span
-                data-sample-col={i}
-                className={cn(
-                  "block min-w-[48px] text-center font-mono text-xs tabular-nums",
-                  status === "Failed" && "font-semibold text-red-500",
-                  value == null && "text-muted-foreground/60"
-                )}
-              >
-                {value == null ? "—" : String(value)}
-              </span>
-            );
-          }
-          // Attribute pass/fail toggle — shared with the editable cell so
-          // focusing the cell keeps the buttons visible.
-          return renderPassFail(original, i);
+          const characteristic =
+            characteristics[row.original.characteristicIndex]!;
+          return characteristic.isNumeric
+            ? renderReading(characteristic, i)
+            : renderPassFail(characteristic, i);
         }
       });
     }
-
     return cols;
   }, [
+    layout,
     columnCount,
-    samples,
+    sampleAt,
     isSerial,
-    featureCounts,
-    cellStatus,
-    renderPassFail,
+    characteristics,
     hasFeatures,
-    gauges,
-    recentGauges,
-    gaugeFor,
-    isReadOnly,
-    persistGauge,
+    onActiveFeatureChange,
+    sampleStatus,
+    renderReading,
+    renderPassFail,
+    renderProgress,
+    renderGauge,
+    renderCharacteristic,
     t
   ]);
 
-  // Numeric sample cells edit through the shared Editable machinery; attribute
-  // cells render the SAME Pass/Fail control as the display cell, so opening a
-  // cell (single click, or keyboard nav that clicks the next cell) keeps the
-  // buttons on screen instead of swapping them for an empty placeholder.
-  const editableComponents = useMemo(() => {
-    const components: Record<
+  // Attribute cells render the same Pass/Fail control as the display cell, so
+  // opening one keeps the buttons on screen. Each column's editor is made once
+  // and reads the grid's state through a ref: a new editor type would remount
+  // the open input and drop what was typed. Strings go in translated, as
+  // Lingui's `t` is a macro, not a value.
+  const editorState = {
+    characteristics,
+    onCellEdit,
+    renderPassFail,
+    isFreedPosition,
+    aboveLabel: t`Above the upper limit`,
+    belowLabel: t`Below the lower limit`
+  };
+  const editorStateRef = useRef(editorState);
+  editorStateRef.current = editorState;
+  const entryKeys = useMemo(
+    () =>
+      layout === "byPart"
+        ? Array.from({ length: characteristics.length }, (_, i) =>
+            featureKey(i)
+          )
+        : Array.from({ length: columnCount }, (_, i) => sampleKey(i)),
+    [layout, characteristics.length, columnCount]
+  );
+  const editorCache = useRef<
+    Record<
       string,
-      (props: EditableTableCellComponentProps<FeatureGridRow>) => JSX.Element
-    > = {};
-    for (let i = 0; i < columnCount; i++) {
-      const key = sampleKey(i);
-      const NumberEditor = EditableNumber<FeatureGridRow>(
-        onCellEdit,
-        { formatOptions: { maximumFractionDigits: 6 } },
+      (props: EditableTableCellComponentProps<GridRow>) => JSX.Element
+    >
+  >({});
+  const editableComponents = useMemo(() => {
+    const components: typeof editorCache.current = {};
+    const specAt = (key: string, row: GridRow) =>
+      editorStateRef.current.characteristics[
+        cellAt(key, row).characteristicIndex
+      ]?.spec;
+    for (const key of entryKeys) {
+      const cached = editorCache.current[key];
+      if (cached) {
+        components[key] = cached;
+        continue;
+      }
+      const NumberEditor = EditableNumber<GridRow>(
+        (accessorKey, value, row) =>
+          editorStateRef.current.onCellEdit(accessorKey, value, row),
+        { className: "h-full", formatOptions: INPUT_FORMAT.measurement },
         {
-          clearable: true
+          clearable: true,
+          inputClassName: "h-full text-center text-sm tabular-nums",
+          liveInputClassName: (row, value) => {
+            const spec = specAt(key, row);
+            if (!spec || value === null) return undefined;
+            return verdictFill(valuateMeasurement(spec, value));
+          },
+          // The display cell's ↑ / ↓ is unmounted while the editor is open.
+          liveAdornment: (row, value) => {
+            const spec = specAt(key, row);
+            if (!spec || value === null) return null;
+            if (valuateMeasurement(spec, value) !== "Failed") return null;
+            const deviation = measurementDeviation(spec, value);
+            if (!deviation) return null;
+            const { aboveLabel, belowLabel } = editorStateRef.current;
+            return (
+              <span className="text-sm text-red-700 dark:text-red-300">
+                <span aria-hidden>{deviation === "above" ? "↑" : "↓"}</span>
+                <span className="sr-only">
+                  {deviation === "above" ? aboveLabel : belowLabel}
+                </span>
+              </span>
+            );
+          }
         }
       );
       components[key] = (props) => {
-        if (!props.row.isNumeric) {
-          return renderPassFail(props.row, i);
+        const { characteristics, renderPassFail, isFreedPosition } =
+          editorStateRef.current;
+        const { characteristicIndex, sampleIndex } = cellAt(key, props.row);
+        const characteristic = characteristics[characteristicIndex];
+        if (!characteristic) return <span />;
+        if (isFreedPosition(sampleIndex)) return <FreedCell />;
+        if (!characteristic.isNumeric) {
+          return renderPassFail(characteristic, sampleIndex);
         }
-        // The marker keeps the cell recognisable as a sample column while
-        // its editor is open (the display cell's marker is unmounted).
+        // Keeps the open cell an entry cell for keyboard navigation, and
+        // covers the table cell so the editor's fill meets its edges.
         return (
-          <div data-sample-col={i} className="contents">
+          <div
+            data-entry-cell
+            data-feature-id={characteristic.featureId}
+            data-sample-index={sampleIndex}
+            className="absolute inset-0"
+          >
             <NumberEditor {...props} />
           </div>
         );
       };
+      editorCache.current[key] = components[key];
     }
     return components;
-  }, [columnCount, onCellEdit, renderPassFail]);
+  }, [entryKeys]);
 
   const gridRef = useRef<HTMLDivElement>(null);
+  const rowCount = rows.length;
 
-  // Balloon click direction: scroll the active feature's row into view.
   useEffect(() => {
     if (!activeFeatureId) return;
-    const index = rows.findIndex((r) => r.featureId === activeFeatureId);
+    if (layout === "byPart") {
+      gridRef.current
+        ?.querySelector(`[data-feature-header="${activeFeatureId}"]`)
+        ?.scrollIntoView({ block: "nearest", inline: "nearest" });
+      return;
+    }
+    const index = rows.findIndex((r) => r.rowKey === activeFeatureId);
     if (index < 0) return;
     gridRef.current
       ?.querySelector(`[data-row="${index}"]`)
       ?.scrollIntoView({ block: "nearest" });
-  }, [activeFeatureId, rows]);
+  }, [activeFeatureId, rows, layout]);
 
-  // Spreadsheet-style entry across the sample columns: Enter/Tab advance to
-  // the next sample cell in the row, wrapping to the next row; Shift+Tab
-  // reverses. Adapted from InventoryCountLines' capture-phase model — sample
-  // columns are resolved live from the DOM via the `data-sample-col` markers.
+  // Spreadsheet-style entry: Enter/Tab advance to the next entry cell in the
+  // row, wrapping to the next row; Shift+Tab reverses. By characteristic
+  // that walks a characteristic's samples; by part, a part's characteristics.
+  // Entry cells are resolved live from the DOM via the `data-entry-cell` markers.
+  // The go / no-go cell a reading was typed into: Enter there stays put.
+  const strayKeyCellRef = useRef<HTMLElement | null>(null);
   const onGridKeyDownCapture = useCallback(
     (event: React.KeyboardEvent) => {
       if (isReadOnly) return;
-      if (event.key !== "Enter" && event.key !== "Tab") return;
       const cell = (event.target as HTMLElement).closest<HTMLElement>(
         "[data-row][data-column]"
       );
       if (!cell || !gridRef.current?.contains(cell)) return;
+      // An Enter that confirms IME composition (full-width digits) is not a
+      // move: it would commit and leave the cell before the text is final.
+      if (event.nativeEvent.isComposing || event.keyCode === 229) return;
+      const rowIndex = Number(cell.getAttribute("data-row"));
+      const currentColumn = Number(cell.getAttribute("data-column"));
+
+      // The next entry cell. The Table renders only the rows near the view, so
+      // when the adjacent row exists but is not mounted, bring this row to the
+      // middle (its neighbours mount) and look again on the next frame.
+      const moveOn = (reverse: boolean) => {
+        const go = (target: HTMLElement) => {
+          target.scrollIntoView({ block: "nearest", inline: "nearest" });
+          target.click();
+        };
+        const target = nextEntryCell(cell, reverse);
+        if (target) {
+          go(target);
+          return true;
+        }
+        const adjacent = rowIndex + (reverse ? -1 : 1);
+        if (adjacent < 0 || adjacent >= rowCount) return false;
+        cell.scrollIntoView({ block: "center", inline: "nearest" });
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            const current = gridRef.current?.querySelector<HTMLElement>(
+              `[data-row="${rowIndex}"][data-column="${currentColumn}"]`
+            );
+            const retry = current ? nextEntryCell(current, reverse) : null;
+            if (retry) go(retry);
+          })
+        );
+        return true;
+      };
+
+      // A selected go / no-go cell: P records a pass, F a fail, then the
+      // selection moves on as Enter would — keyboard-only entry never stalls.
+      const verdict = verdictForKey(event);
+      const attributeCell = cell.querySelector<HTMLElement>(
+        "[data-entry-cell][data-attribute]"
+      );
+      const onAttributeCell =
+        attributeCell !== null &&
+        (event.target as HTMLElement).tagName !== "INPUT";
+      if (strayKeyCellRef.current !== (onAttributeCell ? cell : null)) {
+        strayKeyCellRef.current = null;
+      }
+      // A reading typed into a go / no-go cell: say so, and keep the next
+      // Enter from moving on as if the cell had been answered.
+      if (onAttributeCell && isReadingKey(event)) {
+        event.preventDefault();
+        event.stopPropagation();
+        strayKeyCellRef.current = cell;
+        toast.warning(t`This is a pass / fail check. Press P or F.`, {
+          id: "inspection-attribute-key"
+        });
+        return;
+      }
+      if (
+        event.key === "Enter" &&
+        onAttributeCell &&
+        strayKeyCellRef.current === cell
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      if (
+        verdict &&
+        attributeCell &&
+        (event.target as HTMLElement).tagName !== "INPUT"
+      ) {
+        const characteristic = characteristics.find(
+          (c) => c.featureId === attributeCell.dataset.featureId
+        );
+        const sampleIndex = Number(attributeCell.dataset.sampleIndex);
+        if (characteristic && !Number.isNaN(sampleIndex)) {
+          event.preventDefault();
+          event.stopPropagation();
+          strayKeyCellRef.current = null;
+          persistCell(characteristic, sampleIndex, { passed: verdict });
+          moveOn(false);
+        }
+        return;
+      }
+
+      if (event.key !== "Enter" && event.key !== "Tab") return;
 
       // The Gauge cell: Enter opens its picker. Keep the event from the
       // Table's own Enter navigation; a focused trigger button opens on its
@@ -851,67 +1855,39 @@ const InspectionMeasurementGrid = ({
         return;
       }
 
-      const rowIndex = Number(cell.getAttribute("data-row"));
-      const currentColumn = Number(cell.getAttribute("data-column"));
-
-      const sampleColumnsForRow = (r: number): number[] => {
-        const markers = gridRef.current?.querySelectorAll<HTMLElement>(
-          `[data-row="${r}"][data-column] [data-sample-col]`
-        );
-        const columnsSet = new Set<number>();
-        markers?.forEach((marker) => {
-          const column = marker
-            .closest<HTMLElement>("[data-column]")
-            ?.getAttribute("data-column");
-          if (column != null) columnsSet.add(Number(column));
-        });
-        return [...columnsSet].sort((a, b) => a - b);
-      };
-
-      // Every sample cell carries a marker, the open editor included, so a
-      // cell without one (label, spec, gauge, …) is not a sample column.
-      const columns = sampleColumnsForRow(rowIndex);
-      if (columns.length === 0) return;
+      // Every entry cell carries a marker, the open editor included, so a
+      // cell without one (characteristic, gauge, result) is not an entry cell.
+      const entryColumns = gridRef.current
+        ? entryColumnsForRow(gridRef.current, rowIndex)
+        : [];
+      if (entryColumns.length === 0) return;
 
       const active = document.activeElement as HTMLElement | null;
+      const go = (target: HTMLElement) => {
+        target.scrollIntoView({ block: "nearest", inline: "nearest" });
+        target.click();
+      };
 
-      // From a non-sample cell, jump into the row's first sample cell.
-      const position = columns.indexOf(currentColumn);
+      // From a non-entry cell, jump into the row's first entry cell.
+      const position = entryColumns.indexOf(currentColumn);
       if (position < 0) {
         event.preventDefault();
         event.stopPropagation();
-        gridRef.current
-          ?.querySelector<HTMLElement>(
-            `[data-row="${rowIndex}"][data-column="${columns[0]}"]`
-          )
-          ?.click();
+        const first = gridRef.current?.querySelector<HTMLElement>(
+          `[data-row="${rowIndex}"][data-column="${entryColumns[0]}"]`
+        );
+        if (first) go(first);
         return;
       }
 
       const reverse = event.key === "Tab" && event.shiftKey;
-      let targetRow = rowIndex;
-      let targetColumn: number | undefined = reverse
-        ? columns[position - 1]
-        : columns[position + 1];
-
-      if (targetColumn === undefined) {
-        // Wrap to the adjacent row.
-        targetRow = rowIndex + (reverse ? -1 : 1);
-        const nextColumns = sampleColumnsForRow(targetRow);
-        targetColumn = reverse
-          ? nextColumns[nextColumns.length - 1]
-          : nextColumns[0];
-      }
-
-      const target =
-        targetColumn !== undefined
-          ? gridRef.current?.querySelector<HTMLElement>(
-              `[data-row="${targetRow}"][data-column="${targetColumn}"]`
-            )
-          : null;
+      const atEdge =
+        !nextEntryCell(cell, reverse) &&
+        (rowIndex + (reverse ? -1 : 1) < 0 ||
+          rowIndex + (reverse ? -1 : 1) >= rowCount);
 
       // Let Tab exit the grid at the boundary rather than trapping focus.
-      if (event.key === "Tab" && !target) {
+      if (event.key === "Tab" && atEdge) {
         event.stopPropagation();
         return;
       }
@@ -919,51 +1895,184 @@ const InspectionMeasurementGrid = ({
       event.preventDefault();
       event.stopPropagation();
       if (active?.tagName === "INPUT") active.blur(); // commit before moving
-      if (target) {
-        target.click();
-      } else {
-        cell.focus();
-      }
+      if (!moveOn(reverse)) cell.focus();
     },
-    [isReadOnly]
+    [isReadOnly, characteristics, persistCell, rowCount, t]
   );
 
   return (
     <div
       ref={gridRef}
       onKeyDownCapture={onGridKeyDownCapture}
+      onPasteCapture={onPasteCapture}
       onClickCapture={(event) => {
+        const marker = (event.target as HTMLElement).closest<HTMLElement>(
+          "[data-entry-cell]"
+        );
+        if (marker?.dataset.featureId && hasFeatures) {
+          onActiveFeatureChange(marker.dataset.featureId);
+          return;
+        }
+        if (layout !== "byCharacteristic") return;
         const cell = (event.target as HTMLElement).closest<HTMLElement>(
           "[data-row][data-column]"
         );
         if (!cell) return;
         const rowIndex = Number(cell.getAttribute("data-row"));
-        const featureId = rows[rowIndex]?.featureId;
-        if (featureId) onActiveFeatureChange(featureId);
+        const featureId = rows[rowIndex]?.rowKey;
+        if (featureId && hasFeatures) onActiveFeatureChange(featureId);
       }}
-      className="flex h-full min-h-0 w-full flex-col"
+      // Header cells align to the top, so characteristic headers of
+      // different heights (a wrapped gauge chip) still line up.
+      className="flex h-full min-h-0 w-full flex-col [&_thead_th]:align-top"
     >
-      <Table<FeatureGridRow>
+      <Table<GridRow>
+        // Pinning and the editor are per layout: remount on a switch.
+        key={layout}
         mobileLayout="table"
         compact
         columns={columns}
         data={rows}
         count={rows.length}
+        getRowId={(row) => row.rowKey}
         editableComponents={editableComponents}
+        defaultColumnPinning={{
+          left: [layout === "byPart" ? "sampleLabel" : "label"]
+        }}
+        // Search, sort and column reordering mean nothing on a fixed grid.
+        withSimpleSorting={false}
+        withSearch={false}
+        withColumnOrdering={false}
+        sort={null}
+        // No toolbar row: its controls (export, the row count) cost a row of
+        // height on every lot and answer nothing an inspector asks here.
+        withCsvExport={false}
+        withPagination={false}
         getRowClassName={(row) =>
-          row.featureId === activeFeatureId ? "bg-accent/40" : undefined
+          layout === "byCharacteristic" && row.rowKey === activeFeatureId
+            ? "bg-accent/40"
+            : undefined
         }
         titleBadge={
-          <span className="min-w-0 truncate text-sm font-medium text-foreground">
-            {hasFeatures ? `${t`Characteristics`} (${rows.length})` : t`Result`}
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="min-w-0 truncate text-sm font-medium text-foreground">
+              {hasFeatures
+                ? `${t`Characteristics`} (${characteristics.length})`
+                : t`Result`}
+            </span>
+            {failedReadings > 0 && (
+              <Badge variant="red" className="tabular-nums">
+                {t`${failedReadings} failed`}
+              </Badge>
+            )}
+            {bulkProgress && (
+              <Badge variant="secondary" className="tabular-nums">
+                {t`Saving ${bulkProgress.done}/${bulkProgress.total}`}
+              </Badge>
+            )}
           </span>
         }
-        primaryAction={primaryAction}
+        primaryAction={
+          <span className="flex items-center gap-1">
+            {columnCount > 0 && (
+              <ToggleGroup
+                type="single"
+                size="sm"
+                value={layout}
+                onValueChange={onLayoutChange}
+                aria-label={t`Grid layout`}
+              >
+                <ToggleGroupItem
+                  value="byCharacteristic"
+                  title={t`One row per characteristic`}
+                >
+                  <LuRows3 className="mr-1.5 size-4" />
+                  {t`By characteristic`}
+                </ToggleGroupItem>
+                <ToggleGroupItem value="byPart" title={t`One row per part`}>
+                  <LuTableProperties className="mr-1.5 size-4" />
+                  {t`By part`}
+                </ToggleGroupItem>
+              </ToggleGroup>
+            )}
+            {primaryAction}
+          </span>
+        }
         withInlineEditing={!isReadOnly}
         forceEditMode={!isReadOnly}
       />
     </div>
   );
 };
+
+// A key that starts or continues a reading: a digit, a decimal mark, a sign.
+function isReadingKey(event: React.KeyboardEvent): boolean {
+  if (event.metaKey || event.ctrlKey || event.altKey) return false;
+  return /^[\d.,+-]$/.test(event.key);
+}
+
+function verdictForKey(event: React.KeyboardEvent): "true" | "false" | null {
+  if (event.metaKey || event.ctrlKey || event.altKey) return null;
+  const key = event.key.toLowerCase();
+  if (key === "p") return "true";
+  if (key === "f") return "false";
+  return null;
+}
+
+function entryColumnsForRow(grid: HTMLElement, row: number): number[] {
+  const columns = new Set<number>();
+  grid
+    .querySelectorAll<HTMLElement>(
+      `[data-row="${row}"][data-column] [data-entry-cell]`
+    )
+    .forEach((marker) => {
+      const column = marker
+        .closest<HTMLElement>("[data-column]")
+        ?.getAttribute("data-column");
+      if (column != null) columns.add(Number(column));
+    });
+  return [...columns].sort((a, b) => a - b);
+}
+
+// The entry cell after (or before) `cell`, wrapping to the adjacent row.
+function nextEntryCell(
+  cell: HTMLElement,
+  reverse: boolean
+): HTMLElement | null {
+  const grid = cell.closest<HTMLElement>("table");
+  if (!grid) return null;
+  const row = Number(cell.getAttribute("data-row"));
+  const column = Number(cell.getAttribute("data-column"));
+  const columns = entryColumnsForRow(grid, row);
+  const position = columns.indexOf(column);
+  let targetRow = row;
+  let targetColumn = reverse ? columns[position - 1] : columns[position + 1];
+  if (targetColumn === undefined) {
+    targetRow = row + (reverse ? -1 : 1);
+    const nextColumns = entryColumnsForRow(grid, targetRow);
+    targetColumn = reverse
+      ? nextColumns[nextColumns.length - 1]
+      : nextColumns[0];
+  }
+  if (targetColumn === undefined) return null;
+  return grid.querySelector<HTMLElement>(
+    `[data-row="${targetRow}"][data-column="${targetColumn}"]`
+  );
+}
+
+// Which characteristic and sample an entry cell is: by characteristic the
+// column names the sample, by part it names the characteristic.
+function cellAt(accessorKey: string, row: GridRow) {
+  if (accessorKey.startsWith("sample-")) {
+    return {
+      characteristicIndex: row.characteristicIndex,
+      sampleIndex: Number(accessorKey.slice("sample-".length))
+    };
+  }
+  return {
+    characteristicIndex: Number(accessorKey.slice("feature-".length)),
+    sampleIndex: row.sampleIndex
+  };
+}
 
 export default InspectionMeasurementGrid;

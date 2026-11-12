@@ -23,8 +23,9 @@ import {
   useMode,
   VStack
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
@@ -160,6 +161,7 @@ const LineItems = ({
   lines: PurchasingRFQLine[];
   thumbnails: Record<string, string | null>;
 }) => {
+  const { t } = useLingui();
   // @ts-expect-error TS2345 - TODO: fix type
   const [openItems, setOpenItems] = useState<string[]>(() =>
     lines.map((line) => line.id).filter(Boolean)
@@ -176,14 +178,10 @@ const LineItems = ({
       {lines.map((line) => {
         if (!line.id) return null;
 
+        const lineName = line.itemReadableId ?? t`Item`;
+
         return (
-          <motion.div
-            key={line.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="border-b border-input py-6 w-full"
-          >
+          <div key={line.id} className="border-b border-input py-6 w-full">
             <HStack spacing={4} className="items-start">
               {thumbnails[line.id] ? (
                 <img
@@ -202,10 +200,13 @@ const LineItems = ({
                   thumbnail beside it, pushing the description past the card
                   edge. min-w-0 is what lets truncate bite. */}
               <VStack spacing={0} className="flex-1 min-w-0">
+                {/* biome-ignore lint/a11y/noStaticElementInteractions lint/a11y/useKeyWithClickEvents: pointer-only shortcut so a click anywhere on the header toggles; the chevron button is the keyboard/AT toggle */}
                 <div
                   className="flex flex-col cursor-pointer w-full min-w-0"
-                  // @ts-expect-error TS2345 - TODO: fix type
-                  onClick={() => toggleOpen(line.id)}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).closest("a, button")) return;
+                    toggleOpen(line.id!);
+                  }}
                 >
                   <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
                     {/* min-w-0 so a long item id wraps inside the card
@@ -214,14 +215,28 @@ const LineItems = ({
                       {line.itemReadableId ?? "Item"}
                     </Heading>
                     <HStack spacing={4} className="shrink-0">
-                      <motion.div
+                      <motion.button
+                        type="button"
+                        aria-expanded={openItems.includes(line.id)}
+                        aria-controls={
+                          openItems.includes(line.id)
+                            ? `rfq-line-details-${line.id}`
+                            : undefined
+                        }
+                        aria-label={
+                          openItems.includes(line.id)
+                            ? t`Hide details for ${lineName}`
+                            : t`Show details for ${lineName}`
+                        }
+                        className="rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        onClick={() => toggleOpen(line.id!)}
                         animate={{
                           rotate: openItems.includes(line.id) ? 90 : 0
                         }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ duration: 0.2 }}
                       >
-                        <LuChevronRight size={24} />
-                      </motion.div>
+                        <LuChevronRight size={24} aria-hidden />
+                      </motion.button>
                     </HStack>
                   </div>
                   <TruncatedTooltipText
@@ -234,20 +249,23 @@ const LineItems = ({
               </VStack>
             </HStack>
 
-            <motion.div
-              initial="collapsed"
-              animate={openItems.includes(line.id) ? "open" : "collapsed"}
-              variants={{
-                open: { opacity: 1, height: "auto", marginTop: 16 },
-                collapsed: { opacity: 0, height: 0, marginTop: 0 }
-              }}
-              transition={{ duration: 0.3 }}
-              className="w-full overflow-hidden"
-            >
-              <LinePricing line={line} />
-            </motion.div>
+            <AnimatePresence initial={false}>
+              {openItems.includes(line.id) ? (
+                <motion.div
+                  id={`rfq-line-details-${line.id}`}
+                  key="panel"
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, height: "auto", marginTop: 16 }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                  className="w-full overflow-hidden"
+                >
+                  <LinePricing line={line} />
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
             <NotesDisplay notes={(line.externalNotes as JSONContent) || null} />
-          </motion.div>
+          </div>
         );
       })}
     </VStack>

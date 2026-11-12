@@ -97,8 +97,10 @@ import { useInfiniteRows } from "./useInfiniteRows";
 import { useInfiniteScroll } from "./useInfiniteScroll";
 import { useVirtualRows } from "./useVirtualRows";
 import {
+  bodyRowPositions,
   buildColumnMaps,
   getAccessorKey,
+  getColumnLabel,
   hasUniqueRowIds,
   isServerSortable
 } from "./utils";
@@ -192,6 +194,9 @@ interface TableProps<T extends object> {
   // list past 1,000 rows (only `selectedRows` are loaded then).
   renderActions?: (selectedRows: T[], scope?: BulkActionScope) => ReactNode;
   renderContextMenu?: (row: T) => JSX.Element | null;
+  /** Names a row in its select and action controls ("Actions for
+   *  PO-000123"). Defaults to the first visible text column's value. */
+  getRowLabel?: (row: T) => string | undefined;
   renderExpandedRow?: (row: T) => ReactNode;
   // Pin an expanded row's content (`sticky left-0`) to the scroll container's
   // visible width, so on a table several viewports wide (the 48-week planning
@@ -203,10 +208,16 @@ interface TableProps<T extends object> {
   // + toggle). Defaults to all rows. Use it so only parents with children get an
   // affordance, like a tree's `hasChildren`.
   canExpandRow?: (row: T) => boolean;
+  // Called when the user presses a closed row's chevron, before the click: a
+  // row that loads its content when opened can start the read early.
+  prefetchExpandedRow?: (row: T) => void;
   // While set, every expandable row starts expanded: a list's search, so the
   // matches in the expanded rows show, or `true` for always. A row the user
   // toggles keeps their choice until the value changes.
   expandRowsFor?: string | true | null;
+  // While `expandRowsFor` is set, which expandable rows start expanded.
+  // Defaults to all of them.
+  expandRowByDefault?: (row: T) => boolean;
   // Renders a full-width header row above each run of consecutive rows that
   // share a key (e.g. a report grouped by date). Grouping follows `data`'s
   // order, so the caller sorts by the key; `header` receives the run's rows.
@@ -214,7 +225,12 @@ interface TableProps<T extends object> {
   // scrolls sideways, so it can put actions at its right edge.
   groupRowsBy?: {
     key: (row: T) => string;
-    header: (rows: T[]) => ReactNode;
+    // A header that returns null is not drawn (a run that needs none). `group`
+    // collapses the run: its rows hide behind the header until toggled back.
+    header: (
+      rows: T[],
+      group?: { collapsed: boolean; toggle: () => void }
+    ) => ReactNode;
   };
   // Phones: "list" (default) renders 3-line rows from the columns'
   // `meta.mobile` priorities; "table" keeps the grid, scrolling sideways with
@@ -222,6 +238,11 @@ interface TableProps<T extends object> {
   mobileLayout?: "list" | "table";
   /** Phones: extra items first in the list toolbar ⋯ (e.g. Recalculate). */
   mobileMenuItems?: ReactNode;
+  // The table is as tall as its rows, for a short grid inside a page that
+  // scrolls: no inner scroll, no fixed-height parent, and no footer row
+  // unless a column has a total or a footer. By default the container is
+  // `contain: strict` and takes its height from its parent.
+  autoHeight?: boolean;
 }
 
 type AggregateFunction = "sum" | "average" | "min" | "max" | "median" | "count";
@@ -285,6 +306,7 @@ function aggregateForCol<TData extends RowData>(
 
 interface AggregateSelectorProps {
   value: number;
+  columnLabel?: string;
   aggregateFunction: AggregateFunction;
   onAggregateFunctionChange: (fn: AggregateFunction) => void;
   formatter?: (
@@ -294,10 +316,12 @@ interface AggregateSelectorProps {
 
 const AggregateSelector = ({
   value,
+  columnLabel,
   aggregateFunction,
   onAggregateFunctionChange,
   formatter
 }: AggregateSelectorProps) => {
+  const { t } = useLingui();
   const numberFormatter = useNumberFormatter();
   const currentFunction = aggregateFunctions.find(
     (fn) => fn.value === aggregateFunction
@@ -308,13 +332,26 @@ const AggregateSelector = ({
       ? numberFormatter.format(value)
       : formatter(value);
 
+  const functionLabel = currentFunction?.label ?? "";
+  // The trigger shows only an icon and a number: name the total by its
+  // column and function so the menu button is identifiable on its own.
+  const triggerLabel = columnLabel
+    ? t`${columnLabel} ${functionLabel}: ${formattedValue}`
+    : t`${functionLabel}: ${formattedValue}`;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div className="flex justify-start items-center gap-2 cursor-pointer">
-          <span className="text-muted-foreground">{currentFunction?.icon}</span>
+        <button
+          type="button"
+          aria-label={triggerLabel}
+          className="flex justify-start items-center gap-2 cursor-pointer bg-transparent border-0 p-0 text-inherit rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span aria-hidden="true" className="text-muted-foreground">
+            {currentFunction?.icon}
+          </span>
           <span className="font-medium">{formattedValue}</span>
-        </div>
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         <DropdownMenuRadioGroup value={aggregateFunction}>
@@ -373,13 +410,17 @@ const Table = <T extends object>({
   onSelectedRowsChange,
   renderActions,
   renderContextMenu,
+  getRowLabel,
   renderExpandedRow,
   pinExpandedRows = false,
   canExpandRow,
+  prefetchExpandedRow,
   expandRowsFor,
+  expandRowByDefault,
   groupRowsBy,
   mobileLayout = "list",
-  mobileMenuItems
+  mobileMenuItems,
+  autoHeight = false
 }: TableProps<T>) => {
   const { t } = useLingui();
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -406,27 +447,11 @@ const Table = <T extends object>({
   /* Expandable Rows (keyed by row id): the rows the user toggled, over
      `expandRowsFor` */
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
-  const expandRowsByDefault = !!expandRowsFor;
   const [expandedRowsFor, setExpandedRowsFor] = useState(expandRowsFor);
   if (expandedRowsFor !== expandRowsFor) {
     setExpandedRowsFor(expandRowsFor);
     setExpandedRows({});
   }
-
-  const isRowExpanded = useCallback(
-    (rowId: string) => expandedRows[rowId] ?? expandRowsByDefault,
-    [expandedRows, expandRowsByDefault]
-  );
-
-  const toggleRowExpanded = useCallback(
-    (rowId: string) => {
-      setExpandedRows((prev) => ({
-        ...prev,
-        [rowId]: !(prev[rowId] ?? expandRowsByDefault)
-      }));
-    },
-    [expandRowsByDefault]
-  );
 
   /* Rows: the loader's rows, then the pages loaded on scroll (`infinite`).
      With `infiniteRows` the parent runs the hook, and this one stays off. */
@@ -475,6 +500,32 @@ const Table = <T extends object>({
   useEffect(() => {
     setEdits((current) => pruneRowEdits(current, sourceRows, rowKey, syncedAt));
   }, [sourceRows, rowKey, syncedAt]);
+
+  const rowsExpandedByDefault = useMemo(() => {
+    if (!expandRowsFor) return new Set<string>();
+    return new Set(
+      tableData.flatMap((row, index) =>
+        !expandRowByDefault || expandRowByDefault(row)
+          ? [rowKey(row, index)]
+          : []
+      )
+    );
+  }, [expandRowsFor, expandRowByDefault, tableData, rowKey]);
+
+  const isRowExpanded = useCallback(
+    (rowId: string) => expandedRows[rowId] ?? rowsExpandedByDefault.has(rowId),
+    [expandedRows, rowsExpandedByDefault]
+  );
+
+  const toggleRowExpanded = useCallback(
+    (rowId: string) => {
+      setExpandedRows((prev) => ({
+        ...prev,
+        [rowId]: !(prev[rowId] ?? rowsExpandedByDefault.has(rowId))
+      }));
+    },
+    [rowsExpandedByDefault]
+  );
 
   /* Selectable Rows, with "Select all matching" */
   const selection = useSelectAllMatching({
@@ -525,6 +576,17 @@ const Table = <T extends object>({
     () => currentView?.columnPinning ?? getDefaultColumnPinning()
   );
 
+  // "Expand" stays first on the left whenever rows can expand: a list can
+  // turn expansion on after mount (a search), and a saved view from before
+  // that does not name the column.
+  const effectiveColumnPinning = useMemo<ColumnPinningState>(() => {
+    const left = (columnPinning.left ?? []).filter((id) => id !== "Expand");
+    return {
+      ...columnPinning,
+      left: renderExpandedRow ? ["Expand", ...left] : left
+    };
+  }, [columnPinning, renderExpandedRow]);
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (currentView) {
@@ -572,7 +634,8 @@ const Table = <T extends object>({
             expandRow: t`Expand row`,
             collapseRow: t`Collapse row`
           },
-          canExpandRow
+          canExpandRow,
+          prefetchExpandedRow
         )
       );
     }
@@ -581,7 +644,13 @@ const Table = <T extends object>({
     }
     result.push(...columns);
     if (renderContextMenu) {
-      result.push(...getActionColumn<T>(renderContextMenu, t`Actions`));
+      result.push(
+        ...getActionColumn<T>(
+          renderContextMenu,
+          t`Actions`,
+          (rowLabel) => t`Actions for ${rowLabel}`
+        )
+      );
     }
     return result;
   }, [
@@ -590,6 +659,7 @@ const Table = <T extends object>({
     withSelectableRows,
     renderExpandedRow,
     canExpandRow,
+    prefetchExpandedRow,
     isRowExpanded,
     toggleRowExpanded,
     t
@@ -601,7 +671,7 @@ const Table = <T extends object>({
     state: {
       columnVisibility: effectiveColumnVisibility,
       columnOrder,
-      columnPinning,
+      columnPinning: effectiveColumnPinning,
       rowSelection
     },
     onColumnVisibilityChange: setColumnVisibility,
@@ -613,6 +683,7 @@ const Table = <T extends object>({
     meta: {
       // These are not part of the standard API, but are accessible via table.options.meta
       editableComponents,
+      getRowLabel,
       updateData: (rowIndex, updates) => {
         const row = tableData[rowIndex];
         if (!row) return;
@@ -968,11 +1039,17 @@ const Table = <T extends object>({
 
   const rows = table.getRowModel().rows;
   const visibleColumns = table.getVisibleLeafColumns();
+  // A footer row has something to show: a column total or a column footer.
+  const hasFooter = visibleColumns.some(
+    (column) => column.columnDef.meta?.renderTotal || column.columnDef.footer
+  );
 
-  // Row id → the rows of the group that row starts (only group starts appear).
-  const groupStarts = useMemo(() => {
+  // Row id → the rows of the group that row starts (only group starts appear),
+  // and row id → its group's key, for collapsing.
+  const { groupStarts, groupKeyByRowId } = useMemo(() => {
     const starts = new Map<string, T[]>();
-    if (!groupRowsBy) return starts;
+    const keys = new Map<string, string>();
+    if (!groupRowsBy) return { groupStarts: starts, groupKeyByRowId: keys };
     let current: T[] = [];
     let previousKey: string | undefined;
     for (const row of rows) {
@@ -983,9 +1060,69 @@ const Table = <T extends object>({
         previousKey = key;
       }
       current.push(row.original);
+      keys.set(row.id, key);
     }
-    return starts;
+    return { groupStarts: starts, groupKeyByRowId: keys };
   }, [rows, groupRowsBy]);
+  const [collapsedGroups, setCollapsedGroups] = useState<
+    Record<string, boolean>
+  >({});
+
+  // Each drawn group header, by the row that starts its group (a header that
+  // returns null draws none). Built for every group, not only the ones in
+  // view, so the row numbers below count them.
+  const groupHeaders = useMemo(() => {
+    const headers = new Map<string, ReactNode>();
+    if (!groupRowsBy) return headers;
+    for (const [rowId, groupRows] of groupStarts) {
+      const groupKey = groupKeyByRowId.get(rowId);
+      if (!groupKey) continue;
+      const header = groupRowsBy.header(groupRows, {
+        collapsed: !!collapsedGroups[groupKey],
+        toggle: () =>
+          setCollapsedGroups((current) => ({
+            ...current,
+            [groupKey]: !current[groupKey]
+          }))
+      });
+      if (header !== null && header !== undefined) headers.set(rowId, header);
+    }
+    return headers;
+  }, [groupStarts, groupKeyByRowId, groupRowsBy, collapsedGroups]);
+
+  const isGroupCollapsed = (rowId: string) => {
+    const groupKey = groupKeyByRowId.get(rowId);
+    return groupKey ? !!collapsedGroups[groupKey] : false;
+  };
+  const isRowExpandable = (row: T) =>
+    !!renderExpandedRow && (!canExpandRow || canExpandRow(row));
+
+  // Where each data row's group header, row and expanded row sit among the
+  // drawn body rows, so every one of them gets its own `aria-rowindex`.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: isGroupCollapsed and isRowExpandable read only the listed values
+  const bodyRows = useMemo(
+    () =>
+      bodyRowPositions(
+        rows.map((row) => {
+          const hidden = isGroupCollapsed(row.id);
+          return {
+            groupHeader: groupHeaders.has(row.id),
+            hidden,
+            expanded:
+              !hidden && isRowExpandable(row.original) && isRowExpanded(row.id)
+          };
+        })
+      ),
+    [
+      rows,
+      groupHeaders,
+      groupKeyByRowId,
+      collapsedGroups,
+      renderExpandedRow,
+      canExpandRow,
+      isRowExpanded
+    ]
+  );
 
   /* Row virtualization: only the rows in view (plus overscan) are in the DOM.
      One virtual item is one data row, with its group header and expanded row
@@ -1189,6 +1326,15 @@ const Table = <T extends object>({
     };
   }, [visibleColumns, columnOrder, pinnedColumnsKey]);
 
+  // An expanded row's content can line up with the first data column: the
+  // measured width of the expand and select columns before it.
+  const expandedRowStyle = {
+    "--expanded-row-indent": `${["Expand", "Select"].reduce(
+      (width, id) => width + (columnSizeMap.get(id)?.width ?? 0),
+      0
+    )}px`
+  } as CSSProperties;
+
   // Primitive the memoized Row/Cell comparators can compare — see Cell.tsx.
   // `getPinnedStyles` is a fresh closure every render, so this has to encode
   // everything it can return: the scrolled edges that drive the shadow, and
@@ -1335,6 +1481,22 @@ const Table = <T extends object>({
       ? undefined
       : primaryAction;
 
+  // Only the rows in view are rendered, and an infinite list loads the rest
+  // on scroll, so the table says how many rows it has (-1: not known) and
+  // each rendered row says where it sits. Without it the accessibility tree
+  // shows the rows in view as the whole table. Group headers and expanded
+  // rows count as rows; the rows not loaded yet count one each.
+  const headerRowCount = table.getHeaderGroups().length;
+  const bodyRowCount = !hasMore
+    ? bodyRows.total
+    : countIsExact
+      ? bodyRows.total + Math.max(count - rows.length, 0)
+      : -1;
+  const ariaRowCount =
+    bodyRowCount < 0
+      ? -1
+      : headerRowCount + bodyRowCount + table.getFooterGroups().length;
+
   // The rows in view are each in their own `<tbody>`; an empty one stands in
   // for each run of rows that is not rendered.
   const spacerRow = (key: string, height: number) => (
@@ -1366,7 +1528,7 @@ const Table = <T extends object>({
       key={view ?? tableName ?? ""}
       spacing={0}
       className={cn(
-        "h-full bg-card",
+        autoHeight ? "bg-card" : "h-full bg-card",
         !compact && "flex flex-col w-full px-0 md:px-4 lg:px-6",
         // Phones (grid mode): the toolbar spans the full width.
         "max-md:items-stretch"
@@ -1438,13 +1600,16 @@ const Table = <T extends object>({
       <div
         id="table-container"
         className={cn(
-          "w-full h-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
+          "w-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
+          !autoHeight && "h-full",
           // Phones, grids kept as grids: sideways scroll with an
           // edge fade, 16pt inset, and a sticky first column of at most 150pt.
           mobileLayout === "table" &&
             "max-md:scroll-fade-x max-md:px-4 max-md:[&_tr>*:first-child]:sticky max-md:[&_tr>*:first-child]:left-0 max-md:[&_tr>*:first-child]:z-10 max-md:[&_tr>*:first-child]:max-w-[150px] max-md:[&_tr>*:first-child]:bg-card"
         )}
-        style={{ contain: "strict" }}
+        // Auto height drops size containment on the block axis only, so a
+        // wide grid still scrolls sideways inside its own width.
+        style={{ contain: autoHeight ? "inline-size" : "strict" }}
         ref={tableContainerRef}
         onKeyDownCapture={editMode ? onKeyDown : undefined}
       >
@@ -1483,6 +1648,11 @@ const Table = <T extends object>({
             <TableBase
               ref={tableRef}
               full
+              // In edit mode the table is a spreadsheet-like grid with its own
+              // keyboard model; each cell says whether it is selected and
+              // whether it can be edited (Cell.tsx). Read-only, a plain table.
+              role={editMode ? "grid" : undefined}
+              aria-rowcount={ariaRowCount}
               className="relative border-collapse border-spacing-0"
             >
               <Thead ref={theadRef} className="sticky top-0 z-10">
@@ -1499,6 +1669,9 @@ const Table = <T extends object>({
                       const sortKey =
                         header.column.columnDef.meta?.sortBy ?? accessorKey;
                       const sorted = isSorted(sortKey ?? "");
+                      const columnLabel = getColumnLabel(
+                        header.column.columnDef
+                      );
 
                       return (
                         <Th
@@ -1521,19 +1694,29 @@ const Table = <T extends object>({
                           )}
                           style={{
                             ...getPinnedStyles(header.column),
-                            width: header.getSize(),
-                            minWidth: minWidthStyle(
-                              columnMinWidths.get(header.column.id)
-                            )
+                            ...(header.column.columnDef.meta?.shrinkToFit
+                              ? { width: "1%" }
+                              : {
+                                  width: header.getSize(),
+                                  minWidth: minWidthStyle(
+                                    columnMinWidths.get(header.column.id)
+                                  )
+                                })
                           }}
                         >
                           {!header.isPlaceholder &&
                             (sortable ? (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <div
+                                  <button
+                                    type="button"
+                                    aria-label={
+                                      columnLabel
+                                        ? t`${columnLabel} sort options`
+                                        : undefined
+                                    }
                                     className={cn(
-                                      "group flex items-center gap-2",
+                                      "group flex w-full items-center gap-2 bg-transparent border-0 p-0 text-inherit cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                                       header.column.columnDef.meta
                                         ?.headerClassName ?? "justify-start"
                                     )}
@@ -1562,11 +1745,11 @@ const Table = <T extends object>({
                                       ) : (
                                         <LuArrowUpDown
                                           aria-hidden="true"
-                                          className="text-muted-foreground/50 md:opacity-0 transition-opacity group-hover:opacity-100"
+                                          className="text-muted-foreground/50 md:opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100"
                                         />
                                       )}
                                     </span>
-                                  </div>
+                                  </button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="start">
                                   <DropdownMenuRadioGroup
@@ -1621,10 +1804,17 @@ const Table = <T extends object>({
               </Thead>
               {renderVirtualRows((virtualIndex) => {
                 const row = rows[virtualIndex]!;
-                const rowExpandable =
-                  !!renderExpandedRow &&
-                  (!canExpandRow || canExpandRow(row.original));
+                const rowExpandable = isRowExpandable(row.original);
                 const rowIsExpanded = rowExpandable && isRowExpanded(row.id);
+                const groupHeader = groupHeaders.get(row.id);
+                const groupCollapsed = isGroupCollapsed(row.id);
+                // 1-based, after the header rows: this data row's first drawn
+                // row (its group header when it has one), then the row, then
+                // its expanded row.
+                const firstRowIndex =
+                  headerRowCount + (bodyRows.starts[virtualIndex] ?? 0) + 1;
+                const rowIndex =
+                  groupHeader !== undefined ? firstRowIndex + 1 : firstRowIndex;
                 const handleRowClick = rowExpandable
                   ? () => toggleRowExpanded(row.id)
                   : undefined;
@@ -1646,6 +1836,7 @@ const Table = <T extends object>({
                           onCellClick={onCellClick}
                           onCellUpdate={onCellUpdate}
                           onClick={handleRowClick}
+                          aria-rowindex={rowIndex}
                           className={cn(
                             rowExpandable && "cursor-pointer",
                             getRowClassName?.(row.original)
@@ -1673,6 +1864,7 @@ const Table = <T extends object>({
                     onCellClick={onCellClick}
                     onCellUpdate={onCellUpdate}
                     onClick={handleRowClick}
+                    aria-rowindex={rowIndex}
                     className={cn(
                       rowExpandable && "cursor-pointer",
                       getRowClassName?.(row.original)
@@ -1680,16 +1872,14 @@ const Table = <T extends object>({
                   />
                 );
 
-                const groupRows = groupStarts.get(row.id);
-
                 return (
                   <Tbody
                     key={row.id}
                     ref={rowVirtualizer.measureElement}
                     data-index={virtualIndex}
                   >
-                    {groupRows && groupRowsBy && (
-                      <Tr>
+                    {groupHeader !== undefined && (
+                      <Tr aria-rowindex={firstRowIndex}>
                         <Td
                           colSpan={visibleColumns.length}
                           className="p-0 bg-muted/40 border-b border-border"
@@ -1707,17 +1897,18 @@ const Table = <T extends object>({
                                 : undefined
                             }
                           >
-                            {groupRowsBy.header(groupRows)}
+                            {groupHeader}
                           </div>
                         </Td>
                       </Tr>
                     )}
-                    {rowContent}
-                    {rowIsExpanded && (
-                      <Tr>
+                    {!groupCollapsed && rowContent}
+                    {!groupCollapsed && rowIsExpanded && renderExpandedRow && (
+                      <Tr aria-rowindex={rowIndex + 1}>
                         <Td
                           colSpan={visibleColumns.length}
                           className="p-0 bg-muted/20 border-b border-border"
+                          style={expandedRowStyle}
                         >
                           {pinExpandedRows ? (
                             <div
@@ -1768,66 +1959,72 @@ const Table = <T extends object>({
                 </tbody>
               )}
               <Tbody>
-                {table.getFooterGroups().map((footerGroup) => (
-                  <Tr key={footerGroup.id} className="h-10">
-                    {footerGroup.headers.map((footer) => {
-                      const aggregateFn =
-                        columnAggregates[footer.column.id] ?? "sum";
-                      const total = aggregateForCol(
-                        table,
-                        footer.column.id,
-                        aggregateFn
-                      );
-                      return (
-                        <Th
-                          key={footer.id}
-                          colSpan={footer.colSpan}
-                          id={`header-${footer.id}`}
-                          className={cn(
-                            "px-4 py-3 whitespace-nowrap bg-card",
-                            editMode && "border-r-1 border-border"
-                          )}
-                          style={{
-                            ...getPinnedStyles(footer.column),
-                            width: footer.getSize()
-                          }}
-                        >
-                          {!footer.isPlaceholder &&
-                            (footer.column.columnDef.meta?.renderTotal ? (
-                              <AggregateSelector
-                                value={total}
-                                aggregateFunction={aggregateFn}
-                                onAggregateFunctionChange={(fn) => {
-                                  setColumnAggregates((prev) => ({
-                                    ...prev,
-                                    [footer.column.id]: fn
-                                  }));
-                                }}
-                                formatter={
-                                  footer.column.columnDef.meta?.formatter
-                                }
-                              />
-                            ) : footer.column.columnDef.footer ? (
-                              // A caller-defined footer (e.g. a grid's
-                              // per-column remainder), never editable.
-                              flexRender(
-                                footer.column.columnDef.footer,
-                                footer.getContext()
-                              )
-                            ) : footer.id === footerLabelId ? (
-                              <span className="font-normal text-muted-foreground">
-                                <Plural
-                                  value={rows.length}
-                                  one="Total of # loaded row"
-                                  other="Total of # loaded rows"
+                {(!autoHeight || hasFooter) &&
+                  table.getFooterGroups().map((footerGroup) => (
+                    <Tr key={footerGroup.id} className="h-10">
+                      {footerGroup.headers.map((footer) => {
+                        const aggregateFn =
+                          columnAggregates[footer.column.id] ?? "sum";
+                        const total = aggregateForCol(
+                          table,
+                          footer.column.id,
+                          aggregateFn
+                        );
+                        return (
+                          <Th
+                            key={footer.id}
+                            colSpan={footer.colSpan}
+                            id={`header-${footer.id}`}
+                            className={cn(
+                              "px-4 py-3 whitespace-nowrap bg-card",
+                              editMode && "border-r-1 border-border"
+                            )}
+                            style={{
+                              ...getPinnedStyles(footer.column),
+                              ...(footer.column.columnDef.meta?.shrinkToFit
+                                ? { width: "1%" }
+                                : { width: footer.getSize() })
+                            }}
+                          >
+                            {!footer.isPlaceholder &&
+                              (footer.column.columnDef.meta?.renderTotal ? (
+                                <AggregateSelector
+                                  value={total}
+                                  columnLabel={getColumnLabel(
+                                    footer.column.columnDef
+                                  )}
+                                  aggregateFunction={aggregateFn}
+                                  onAggregateFunctionChange={(fn) => {
+                                    setColumnAggregates((prev) => ({
+                                      ...prev,
+                                      [footer.column.id]: fn
+                                    }));
+                                  }}
+                                  formatter={
+                                    footer.column.columnDef.meta?.formatter
+                                  }
                                 />
-                              </span>
-                            ) : null)}
-                        </Th>
-                      );
-                    })}
-                  </Tr>
-                ))}
+                              ) : footer.column.columnDef.footer ? (
+                                // A caller-defined footer (e.g. a grid's
+                                // per-column remainder), never editable.
+                                flexRender(
+                                  footer.column.columnDef.footer,
+                                  footer.getContext()
+                                )
+                              ) : footer.id === footerLabelId ? (
+                                <span className="font-normal text-muted-foreground">
+                                  <Plural
+                                    value={rows.length}
+                                    one="Total of # loaded row"
+                                    other="Total of # loaded rows"
+                                  />
+                                </span>
+                              ) : null)}
+                          </Th>
+                        );
+                      })}
+                    </Tr>
+                  ))}
               </Tbody>
             </TableBase>
           )}

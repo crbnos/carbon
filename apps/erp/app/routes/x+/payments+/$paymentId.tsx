@@ -9,7 +9,11 @@ import { validationError, validator } from "@carbon/form";
 import type { FundingSource } from "@carbon/utils";
 import { fundingScopeOf, getErrorMessage, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  MetaFunction
+} from "react-router";
 import { data, useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
@@ -41,6 +45,7 @@ import {
 } from "~/modules/invoicing/ui";
 import { setCustomFields } from "~/utils/form";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
+import { recordMeta } from "~/utils/meta";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -50,6 +55,9 @@ export const handle: Handle = {
   ),
   module: "invoicing"
 };
+
+export const meta: MetaFunction<typeof loader> = ({ data }) =>
+  recordMeta(data?.payment?.paymentId, "Payment");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -118,7 +126,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         remainingDocument: reimbursement.remainingDocument,
         status: "Posted",
         rentalAgreementIds: [],
-        salesOrderIds: []
+        salesOrderIds: [],
+        customerContractIds: []
       }));
     } else if (payment.data.status === "Draft") {
       const isAR = Boolean(payment.data.customerId);
@@ -153,7 +162,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           remainingDocument: memo.remainingDocument,
           status: "Posted",
           rentalAgreementIds: [],
-          salesOrderIds: []
+          salesOrderIds: [],
+          customerContractIds: []
         }));
       } else {
         const [invoices, credit, credits, staged] = await Promise.all([
@@ -364,6 +374,7 @@ export default function PaymentDetailRoute() {
     memo: payment.memo ?? "",
     salesOrderId: payment.salesOrderId ?? "",
     rentalAgreementId: payment.rentalAgreementId ?? "",
+    customerContractId: payment.customerContractId ?? "",
     status: payment.status ?? undefined
   };
 
@@ -421,7 +432,8 @@ export default function PaymentDetailRoute() {
             remainingDocument: inv.remainingDocument,
             status: inv.status,
             rentalAgreementIds: inv.rentalAgreementIds,
-            salesOrderIds: inv.salesOrderIds
+            salesOrderIds: inv.salesOrderIds,
+            customerContractIds: inv.customerContractIds
           }))}
           existingApplications={applications.map((a) => ({
             targetSalesInvoiceId: a.targetSalesInvoiceId,

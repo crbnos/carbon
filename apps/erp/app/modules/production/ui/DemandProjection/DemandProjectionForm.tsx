@@ -17,11 +17,12 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  useUiScale,
   VStack
 } from "@carbon/react";
 import type { ChartConfig } from "@carbon/react/Chart";
 import { ChartContainer, ChartTooltip } from "@carbon/react/Chart";
-import { formatDate } from "@carbon/utils";
+import { formatDate, TEXT_SIZES } from "@carbon/utils";
 import {
   getLocalTimeZone,
   parseDate,
@@ -74,6 +75,49 @@ const QUARTERS = [
 // Coerce the react-aria onChange value (or an initialValues entry) to a finite
 // number. NOTE: the imported `Number` form component SHADOWS the global Number
 // in this file, so we use parseFloat / isFinite / unary + instead of Number().
+// Compact axis ticks (1.5K, 6K, 1.2M) so a 4- to 7-digit total still fits the
+// fixed axis width. Module-level so useNumberFormatter keeps one instance.
+const COMPACT_TICK_OPTIONS: Intl.NumberFormatOptions = {
+  notation: "compact",
+  compactDisplay: "short"
+};
+
+// Recharts 2 has no width="auto", and a compact label's width depends on the
+// locale ("6K", "6000", "100.000", "10 लाख"), so each Y axis is sized from its
+// widest likely tick. Recharts' ticks are round values between 0 and about
+// 1.5x the max, and a compact label's width depends on its tier and digit
+// count, so every eighth of the max up to 1.5x is measured: that reaches each
+// tier a tick can land in ("400 mil" next to "1,6 M"). Ticks are text-xs
+// (0.75rem), so the font follows the text size setting. Canvas measures the
+// real font; the estimate covers SSR.
+const AXIS_TICK_SAMPLES = Array.from({ length: 12 }, (_, i) => (i + 1) / 8);
+const AXIS_TICK_REM = 0.75;
+const AXIS_TICK_GAP_PX = 12;
+const AXIS_MIN_WIDTH_PX = 32;
+let tickMeasureContext: CanvasRenderingContext2D | null | undefined;
+
+function measureTickLabel(label: string, fontPx: number) {
+  if (typeof document === "undefined") return label.length * fontPx * 0.6;
+  if (tickMeasureContext === undefined) {
+    tickMeasureContext = document.createElement("canvas").getContext("2d");
+  }
+  if (!tickMeasureContext) return label.length * fontPx * 0.6;
+  tickMeasureContext.font = `${fontPx}px ${getComputedStyle(document.body).fontFamily}`;
+  return tickMeasureContext.measureText(label).width;
+}
+
+function yAxisWidth(
+  max: number,
+  format: (value: number) => string,
+  fontPx: number
+) {
+  const widest = AXIS_TICK_SAMPLES.reduce(
+    (width, k) => Math.max(width, measureTickLabel(format(max * k), fontPx)),
+    0
+  );
+  return Math.max(AXIS_MIN_WIDTH_PX, widest + AXIS_TICK_GAP_PX);
+}
+
 const toFinite = (value: unknown): number => {
   if (typeof value === "number") return isFinite(value) ? value : 0;
   const parsed = parseFloat(String(value ?? ""));
@@ -349,11 +393,41 @@ const DemandChart = memo(function DemandChart({
   chartConfig,
   numberFormatter
 }: DemandChartProps) {
+  const { t } = useLingui();
+  // The chart is pointer-only (values live in its tooltip), so it carries a
+  // text summary; the exact weekly values are the week inputs below it.
+  const total = chartData.at(-1)?.cumulative ?? 0;
+  const peak = chartData.reduce<(typeof chartData)[number] | undefined>(
+    (best, d) => (!best || d.demand > best.demand ? d : best),
+    undefined
+  );
+  const summary =
+    peak && peak.demand > 0
+      ? t`Demand chart: ${numberFormatter.format(total)} total over ${chartData.length} weeks, peaking at ${numberFormatter.format(peak.demand)} in week ${peak.week}.`
+      : t`Demand chart: no demand entered.`;
+  const tickFormatter = useNumberFormatter(COMPACT_TICK_OPTIONS);
+  const formatTick = (value: number) => tickFormatter.format(value);
+  const { textSize } = useUiScale();
+  const { demandAxisWidth, cumulativeAxisWidth } = useMemo(() => {
+    const format = (value: number) => tickFormatter.format(value);
+    const fontPx = TEXT_SIZES[textSize] * AXIS_TICK_REM;
+    const maxDemand = chartData.reduce((m, d) => Math.max(m, d.demand), 0);
+    const maxCumulative = chartData.at(-1)?.cumulative ?? 0;
+    return {
+      demandAxisWidth: yAxisWidth(maxDemand, format, fontPx),
+      cumulativeAxisWidth: yAxisWidth(maxCumulative, format, fontPx)
+    };
+  }, [chartData, tickFormatter, textSize]);
   return (
-    <ChartContainer config={chartConfig} className="w-full h-[180px]">
+    <ChartContainer
+      config={chartConfig}
+      className="w-full h-[180px]"
+      role="img"
+      aria-label={summary}
+    >
       <ComposedChart
         data={chartData}
-        margin={{ top: 8, right: 8, bottom: 0, left: -8 }}
+        margin={{ top: 8, right: 0, bottom: 0, left: 0 }}
       >
         <CartesianGrid vertical={false} />
         <XAxis
@@ -363,17 +437,31 @@ const DemandChart = memo(function DemandChart({
           minTickGap={16}
           tickFormatter={(value) => `${value}`}
         />
+        {/* Weekly demand and the running total differ by ~50x, so each gets
+            its own axis — on one shared axis the bars sit flat at the bottom. */}
         <YAxis
+          yAxisId="demand"
           tickLine={false}
           axisLine={false}
-          width={40}
+          width={demandAxisWidth}
           allowDecimals={false}
+          tickFormatter={formatTick}
+        />
+        <YAxis
+          yAxisId="cumulative"
+          orientation="right"
+          tickLine={false}
+          axisLine={false}
+          width={cumulativeAxisWidth}
+          allowDecimals={false}
+          tickFormatter={formatTick}
         />
         <ChartTooltip
           cursor={{ fill: "hsl(var(--muted) / 0.4)" }}
           content={<DemandChartTooltip formatter={numberFormatter} />}
         />
         <Bar
+          yAxisId="demand"
           dataKey="demand"
           fill="hsl(var(--primary))"
           fillOpacity={0.6}
@@ -381,6 +469,7 @@ const DemandChart = memo(function DemandChart({
           isAnimationActive={false}
         />
         <Line
+          yAxisId="cumulative"
           type="monotone"
           dataKey="cumulative"
           stroke="hsl(var(--muted-foreground))"

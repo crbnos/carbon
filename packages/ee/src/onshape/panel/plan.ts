@@ -17,6 +17,7 @@ import {
   ITEM_TRACKING_TYPES,
   VALID_METHOD_TYPES_BY_REPLENISHMENT
 } from "./item-values";
+import { type ModelExport, modelExportFor } from "./part-models";
 import type { OnshapePushDefaults } from "./preferences";
 import type {
   DescriptionModes,
@@ -1023,6 +1024,11 @@ export type PartPlanRow = MappedRowPlan & {
   name: string;
   description: string | null;
   revision: string | null;
+  /**
+   * What the part's model is named by and "unchanged" compares: the
+   * workspace's parts state (`workspaceSourceStates`) on a workspace, else
+   * Onshape's part microversion.
+   */
   microversionId: string | null;
   action: PartPlanAction;
   itemId: string | null;
@@ -1060,12 +1066,24 @@ export function buildPartPlan({
   options,
   mapping,
   propertiesByPartId,
-  released = new Map()
+  released = new Map(),
+  sourceState,
+  versionId
 }: {
   documentId: string;
   elementId: string;
   configuration?: string | null;
   parts: OnshapeElementPart[];
+  /**
+   * A workspace's source state; null when it could not be read (the push then
+   * exports every part). Absent on a version: the part microversion stands.
+   */
+  sourceState?: string | null;
+  /**
+   * On a version, its id. A link whose model an assembly push exported from
+   * this version (`metadata.modelVersionId`) is unchanged: a version never changes.
+   */
+  versionId?: string;
   requestedPartIds: string[];
   mappings: PlanMappingRow[];
   items: PlanItemRow[];
@@ -1125,7 +1143,8 @@ export function buildPartPlan({
       name: part.name,
       description: part.description ?? null,
       revision: part.revision ?? null,
-      microversionId: part.microversionId ?? null,
+      microversionId:
+        sourceState !== undefined ? sourceState : (part.microversionId ?? null),
       itemId: null as string | null,
       item: null as PartPlanRow["item"],
       proposed: null as ProposedItem | null,
@@ -1160,9 +1179,10 @@ export function buildPartPlan({
     if (mapped && linked) {
       const lastMicroversion = mapped.metadata?.microversionId;
       const unchanged =
-        !!part.microversionId &&
-        typeof lastMicroversion === "string" &&
-        part.microversionId === lastMicroversion;
+        (!!base.microversionId &&
+          typeof lastMicroversion === "string" &&
+          base.microversionId === lastMicroversion) ||
+        (!!versionId && mapped.metadata?.modelVersionId === versionId);
       const planned = existingPlan(linked, part);
       const writes =
         planned.changes.length > 0 ||
@@ -1283,6 +1303,17 @@ export type AssemblyPlanItem = MappedRowPlan & {
   isAssembly: boolean;
   /** "Show Assembly only" in Onshape: the push writes no BOM for it. */
   shownAsUnit?: true;
+  /**
+   * The files an assembly push can export onto this row's item. Absent on a
+   * row that takes none: standard content, released in Carbon, or linked to
+   * another source.
+   */
+  assets?: AssemblyRowAssets;
+};
+
+export type AssemblyRowAssets = {
+  /** The row's STEP export; null when its source cannot export. */
+  model: ModelExport | null;
 };
 
 export type AssemblyPlanMethodStatus =
@@ -1570,6 +1601,33 @@ export function buildAssemblyPlan({
     );
   };
 
+  // The first row per part number names the source `linkChildParts` links.
+  const firstNodeByPartNumber = new Map<string, OnshapeBomNode>();
+  for (const node of everything) {
+    if (node.partNumber && !firstNodeByPartNumber.has(node.partNumber)) {
+      firstNodeByPartNumber.set(node.partNumber, node);
+    }
+  }
+  // Files go only to an item the push leaves linked to the row's source:
+  // linked there already, or linked by this push because neither the item nor
+  // the source is linked and the source carries one part number.
+  const rowAssets = (
+    partNumber: string,
+    existing: PlanItemRow | undefined
+  ): AssemblyRowAssets | undefined => {
+    const node = firstNodeByPartNumber.get(partNumber);
+    if (!node || node.standardContent) return undefined;
+    const externalId = externalIdForBomLine(node.itemSource ?? null);
+    if (!externalId) return undefined;
+    const linkedId = linkedItemIdByExternalId.get(externalId);
+    const linksHere =
+      linkedId !== undefined
+        ? !!existing && linkedId === existing.id
+        : (numbersBySource.get(externalId)?.size ?? 0) === 1 &&
+          (!existing || (!!linkedItemIds && !linkedItemIds.has(existing.id)));
+    return linksHere ? { model: modelExportFor(node) } : undefined;
+  };
+
   const planItems: AssemblyPlanItem[] = [];
   const seen = new Set<string>([root.partNumber]);
   const skipped: string[] = [];
@@ -1608,6 +1666,7 @@ export function buildAssemblyPlan({
       });
       continue;
     }
+    const assets = rowAssets(node.partNumber, existing);
     if (existing) {
       planItems.push({
         ...identity,
@@ -1618,12 +1677,14 @@ export function buildAssemblyPlan({
         itemId: existing.id,
         ...(!linkedPartNumbers.has(node.partNumber) ? { conflict: true } : {}),
         current: currentItemFields(existing),
-        proposed: null
+        proposed: null,
+        ...(assets ? { assets } : {})
       });
       continue;
     }
     planItems.push({
       ...identity,
+      ...(assets ? { assets } : {}),
       ...planCreatedItem(
         {
           partNumber: node.partNumber,
@@ -1775,6 +1836,45 @@ export function buildAssemblyPlan({
       partCount: deeperPartNumbers.size
     }
   };
+}
+
+/** `externalId`: the key of the item's link to the row's source. */
+export type ModelExportRow = ModelExport & {
+  itemId: string;
+  externalId: string;
+};
+
+/**
+ * The STEP models to export onto the items of the rows that offer one.
+ * `modelRows` picks rows by part number; absent, every row that offers a
+ * model and is not `excluded`. The root is never a row here: its model goes
+ * with every push. `linkFor` names a row's item and the key of its link to
+ * that source, or null when the row has no item linked to it: its model
+ * counts as `unlinked`.
+ */
+export function assemblyAssetRows(input: {
+  plan: AssemblyPlan;
+  modelRows?: ReadonlySet<string>;
+  excluded?: ReadonlySet<string>;
+  linkFor: (
+    partNumber: string,
+    source: ModelExport
+  ) => { itemId: string; externalId: string } | null;
+}): { models: ModelExportRow[]; unlinked: number } {
+  const models: ModelExportRow[] = [];
+  let unlinked = 0;
+  for (const item of input.plan.items) {
+    const model = item.assets?.model;
+    if (!model || input.excluded?.has(item.partNumber)) continue;
+    if (input.modelRows && !input.modelRows.has(item.partNumber)) continue;
+    const link = input.linkFor(item.partNumber, model);
+    if (link) {
+      models.push({ ...model, ...link });
+    } else {
+      unlinked++;
+    }
+  }
+  return { models, unlinked };
 }
 
 /**

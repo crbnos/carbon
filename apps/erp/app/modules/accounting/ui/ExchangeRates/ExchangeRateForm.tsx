@@ -129,6 +129,7 @@ const CurrencyForm = ({
   );
 
   const hasHistory = chartData.length > 0;
+  const latestRate = chartData.at(-1)?.rate;
 
   const onDownloadCSV = useCallback(() => {
     if (!exchangeRateHistory.length) return;
@@ -264,6 +265,12 @@ const CurrencyForm = ({
                     <TabsContent value="chart">
                       <ChartContainer
                         config={chartConfig}
+                        aria-label={t`Market rate history`}
+                        summary={
+                          latestRate === undefined
+                            ? undefined
+                            : t`Latest rate ${latestRate}`
+                        }
                         className="h-[200px] w-full"
                       >
                         <AreaChart data={chartData}>
