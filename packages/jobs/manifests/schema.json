@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261111152339",
+  "schemaVersion": "20261112030415",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-11-11T15:30:05.940Z",
+  "exportedAt": "2026-11-12T09:16:28.586Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -6251,7 +6251,8 @@
         "digitalQuoteRejectedByEmail",
         "opportunityId",
         "completedDate",
-        "customerEngineeringContactId"
+        "customerEngineeringContactId",
+        "emailOrderOnAcceptance"
       ]
     },
     {

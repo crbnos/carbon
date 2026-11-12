@@ -947,6 +947,9 @@ msgstr "{counted} がカウント済"
 msgid "{created} created, {updated} updated."
 msgstr "{created} 件作成、{updated} 件更新されました。"
 
+msgid "{created} created."
+msgstr "{created} 件作成しました。"
+
 msgid "{days}d"
 msgstr "{days}日"
 
@@ -1236,6 +1239,9 @@ msgstr "{ordered} 中 {received}"
 
 msgid "{ref} not found"
 msgstr "{ref}が見つかりません"
+
+msgid "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
+msgstr "{refused, plural, other {# 件の注文は開始日が今日より前のため作成されませんでした。今日から再スケジュールしてください。}}"
 
 msgid "{rejectedQuantity} will stay held as rejected."
 msgstr "{rejectedQuantity} は却下として保留されます。"
@@ -12010,6 +12016,9 @@ msgstr "メール"
 
 msgid "Emails of the attendees (guests)"
 msgstr "参加者（ゲスト）のメールアドレス"
+
+msgid "Emails the sales order to the customer when they accept this quote online."
+msgstr ""
 
 msgid "Emoji"
 msgstr "絵文字"
@@ -25379,6 +25388,12 @@ msgstr "修理が必要"
 msgid "Requires staffing"
 msgstr "スタッフが必要"
 
+msgid "Reschedule from today"
+msgstr "今日から再スケジュール"
+
+msgid "Reschedule from today, due {rescheduledDue}"
+msgstr "今日から再スケジュール（期日 {rescheduledDue}）"
+
 msgid "Reschedule tolerance"
 msgstr "再スケジュール許容日数"
 
@@ -27279,6 +27294,9 @@ msgstr "招待を送信"
 
 msgid "Send Notifications"
 msgstr "通知を送信"
+
+msgid "Send order confirmation"
+msgstr ""
 
 msgid "Send Reminder"
 msgstr "リマインダーを送信"

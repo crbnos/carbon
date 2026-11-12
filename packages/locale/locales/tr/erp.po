@@ -947,6 +947,9 @@ msgstr "{counted} sayıldı"
 msgid "{created} created, {updated} updated."
 msgstr "{created} oluşturuldu, {updated} güncellendi."
 
+msgid "{created} created."
+msgstr "{created} oluşturuldu."
+
 msgid "{days}d"
 msgstr "{days}g"
 
@@ -1236,6 +1239,9 @@ msgstr "{received} / {ordered}"
 
 msgid "{ref} not found"
 msgstr "{ref} bulunamadı"
+
+msgid "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
+msgstr "{refused, plural, one {# sipariş bugünden önce başlıyor ve oluşturulmadı. Bugünden itibaren yeniden planlayın.} other {# sipariş bugünden önce başlıyor ve oluşturulmadı. Bugünden itibaren yeniden planlayın.}}"
 
 msgid "{rejectedQuantity} will stay held as rejected."
 msgstr "{rejectedQuantity} reddedilmiş olarak bekletilecek."
@@ -12010,6 +12016,9 @@ msgstr "E-posta Adresleri"
 
 msgid "Emails of the attendees (guests)"
 msgstr "Katılımcıların e-postaları (misafirler)"
+
+msgid "Emails the sales order to the customer when they accept this quote online."
+msgstr ""
 
 msgid "Emoji"
 msgstr "Emoji"
@@ -25379,6 +25388,12 @@ msgstr "Onarım Gerektirir"
 msgid "Requires staffing"
 msgstr "Personel gerektirir"
 
+msgid "Reschedule from today"
+msgstr "Bugünden itibaren yeniden planla"
+
+msgid "Reschedule from today, due {rescheduledDue}"
+msgstr "Bugünden itibaren yeniden planla, son tarih {rescheduledDue}"
+
 msgid "Reschedule tolerance"
 msgstr "Yeniden planlama toleransı"
 
@@ -27279,6 +27294,9 @@ msgstr "Davet Gönder"
 
 msgid "Send Notifications"
 msgstr "Bildirim Gönder"
+
+msgid "Send order confirmation"
+msgstr ""
 
 msgid "Send Reminder"
 msgstr "Hatırlatıcı Gönder"

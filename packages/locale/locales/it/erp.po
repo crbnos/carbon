@@ -947,6 +947,9 @@ msgstr "{counted} contato"
 msgid "{created} created, {updated} updated."
 msgstr "{created} creati, {updated} aggiornati."
 
+msgid "{created} created."
+msgstr "{created} creati."
+
 msgid "{days}d"
 msgstr "{days}g"
 
@@ -1236,6 +1239,9 @@ msgstr "{received} di {ordered}"
 
 msgid "{ref} not found"
 msgstr "{ref} non trovato"
+
+msgid "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
+msgstr "{refused, plural, one {# ordine inizia prima di oggi e non è stato creato. Ripianificalo da oggi.} other {# ordini iniziano prima di oggi e non sono stati creati. Ripianificali da oggi.}}"
 
 msgid "{rejectedQuantity} will stay held as rejected."
 msgstr "{rejectedQuantity} resteranno bloccati come rifiutati."
@@ -12010,6 +12016,9 @@ msgstr "Email"
 
 msgid "Emails of the attendees (guests)"
 msgstr "Email dei partecipanti (ospiti)"
+
+msgid "Emails the sales order to the customer when they accept this quote online."
+msgstr ""
 
 msgid "Emoji"
 msgstr "Emoji"
@@ -25379,6 +25388,12 @@ msgstr "Richiede Riparazione"
 msgid "Requires staffing"
 msgstr "Richiede personale"
 
+msgid "Reschedule from today"
+msgstr "Ripianifica da oggi"
+
+msgid "Reschedule from today, due {rescheduledDue}"
+msgstr "Ripianifica da oggi, scadenza {rescheduledDue}"
+
 msgid "Reschedule tolerance"
 msgstr "Tolleranza di riprogrammazione"
 
@@ -27279,6 +27294,9 @@ msgstr "Invia inviti"
 
 msgid "Send Notifications"
 msgstr "Invia notifiche"
+
+msgid "Send order confirmation"
+msgstr ""
 
 msgid "Send Reminder"
 msgstr "Invia promemoria"

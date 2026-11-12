@@ -947,6 +947,9 @@ msgstr "{counted} गिना गया"
 msgid "{created} created, {updated} updated."
 msgstr "{created} बनाया गया, {updated} अपडेट किया गया।"
 
+msgid "{created} created."
+msgstr "{created} बनाए गए।"
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -1236,6 +1239,9 @@ msgstr "{received} / {ordered}"
 
 msgid "{ref} not found"
 msgstr "{ref} नहीं मिला"
+
+msgid "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
+msgstr "{refused, plural, one {# ऑर्डर आज से पहले शुरू होता है और नहीं बनाया गया। इसे आज से पुनर्निर्धारित करें।} other {# ऑर्डर आज से पहले शुरू होते हैं और नहीं बनाए गए। इन्हें आज से पुनर्निर्धारित करें।}}"
 
 msgid "{rejectedQuantity} will stay held as rejected."
 msgstr "{rejectedQuantity} अस्वीकृत के रूप में रोके रहेंगे।"
@@ -12010,6 +12016,9 @@ msgstr "ईमेल"
 
 msgid "Emails of the attendees (guests)"
 msgstr "प्रतिभागियों (मेहमानों) के ईमेल"
+
+msgid "Emails the sales order to the customer when they accept this quote online."
+msgstr ""
 
 msgid "Emoji"
 msgstr "इमोजी"
@@ -25379,6 +25388,12 @@ msgstr "मरम्मत की आवश्यकता है"
 msgid "Requires staffing"
 msgstr "स्टाफिंग आवश्यक है"
 
+msgid "Reschedule from today"
+msgstr "आज से पुनर्निर्धारित करें"
+
+msgid "Reschedule from today, due {rescheduledDue}"
+msgstr "आज से पुनर्निर्धारित करें, देय {rescheduledDue}"
+
 msgid "Reschedule tolerance"
 msgstr "पुनर्निर्धारण सहिष्णुता"
 
@@ -27279,6 +27294,9 @@ msgstr "आमंत्रण भेजें"
 
 msgid "Send Notifications"
 msgstr "सूचनाएं भेजें"
+
+msgid "Send order confirmation"
+msgstr ""
 
 msgid "Send Reminder"
 msgstr "अनुस्मारक भेजें"

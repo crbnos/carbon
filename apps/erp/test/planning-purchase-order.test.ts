@@ -15,6 +15,7 @@ vi.mock("@carbon/content/glossary", () => ({
 
 import { parseDate } from "@internationalized/date";
 import {
+  findMergeablePlanningLine,
   findPlanningPurchaseOrder,
   isPurchaseOrderEditableFromPlanning,
   planningPurchaseOrderWeek,
@@ -211,5 +212,60 @@ describe("findPlanningPurchaseOrder", () => {
     expect(
       findPlanningPurchaseOrder([po("empty", [])], target("2026-10-04"), asOf)
     ).toBeUndefined();
+  });
+});
+
+describe("findMergeablePlanningLine", () => {
+  const line = (overrides: object = {}) => ({
+    id: "l1",
+    itemId: "item1",
+    requiredDate: "2026-11-12",
+    projectId: null,
+    planningGroupId: null,
+    conversionFactor: 1,
+    ...overrides
+  });
+  const target = {
+    itemId: "item1",
+    requiredDate: "2026-11-12",
+    planningSegmentId: "",
+    conversionFactor: 1
+  };
+
+  it("adds to the line of the same item, date, owner and factor", () => {
+    expect(findMergeablePlanningLine([line()], target)?.id).toBe("l1");
+  });
+
+  // an order of 1 box of 12 added to a line in eaches would bring 1, not 12
+  it("never merges into a line with another conversion factor", () => {
+    expect(
+      findMergeablePlanningLine([line()], { ...target, conversionFactor: 12 })
+    ).toBeUndefined();
+  });
+
+  it("reads a line with no factor as a factor of 1", () => {
+    expect(
+      findMergeablePlanningLine([line({ conversionFactor: null })], target)?.id
+    ).toBe("l1");
+  });
+
+  it.each([
+    ["another item", { itemId: "item2" }],
+    ["another date", { requiredDate: "2026-11-13" }],
+    ["a project's line", { projectId: "prj1" }],
+    ["a planning group's line", { planningGroupId: "grp1" }]
+  ])("does not merge into %s", (_, overrides) => {
+    expect(
+      findMergeablePlanningLine([line(overrides)], target)
+    ).toBeUndefined();
+  });
+
+  it("matches a project's order to that project's line", () => {
+    expect(
+      findMergeablePlanningLine([line({ projectId: "prj1" })], {
+        ...target,
+        planningSegmentId: "prj1"
+      })?.id
+    ).toBe("l1");
   });
 });

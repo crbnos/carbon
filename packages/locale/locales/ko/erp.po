@@ -947,6 +947,9 @@ msgstr "{counted} 계산 완료"
 msgid "{created} created, {updated} updated."
 msgstr "{created} 생성됨, {updated} 업데이트됨."
 
+msgid "{created} created."
+msgstr "{created}개 생성됨."
+
 msgid "{days}d"
 msgstr "{days}일"
 
@@ -1236,6 +1239,9 @@ msgstr "{received} / {ordered}"
 
 msgid "{ref} not found"
 msgstr "{ref} 찾을 수 없음"
+
+msgid "{refused, plural, one {# order starts before today and was not created. Reschedule it from today.} other {# orders start before today and were not created. Reschedule them from today.}}"
+msgstr "{refused, plural, other {#개 주문은 시작일이 오늘 이전이라 생성되지 않았습니다. 오늘부터 일정을 다시 잡으세요.}}"
 
 msgid "{rejectedQuantity} will stay held as rejected."
 msgstr "{rejectedQuantity}개는 반려로 보류됩니다."
@@ -12010,6 +12016,9 @@ msgstr "이메일"
 
 msgid "Emails of the attendees (guests)"
 msgstr "참석자(게스트)의 이메일 주소"
+
+msgid "Emails the sales order to the customer when they accept this quote online."
+msgstr ""
 
 msgid "Emoji"
 msgstr "이모지"
@@ -25379,6 +25388,12 @@ msgstr "수리 필요"
 msgid "Requires staffing"
 msgstr "인력 필수"
 
+msgid "Reschedule from today"
+msgstr "오늘부터 일정 변경"
+
+msgid "Reschedule from today, due {rescheduledDue}"
+msgstr "오늘부터 일정 변경, 마감일 {rescheduledDue}"
+
 msgid "Reschedule tolerance"
 msgstr "재일정 허용 범위"
 
@@ -27279,6 +27294,9 @@ msgstr "초대 보내기"
 
 msgid "Send Notifications"
 msgstr "알림 보내기"
+
+msgid "Send order confirmation"
+msgstr ""
 
 msgid "Send Reminder"
 msgstr "리마인더 보내기"
