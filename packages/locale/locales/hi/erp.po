@@ -12137,6 +12137,9 @@ msgstr "ईमेल सूचनाएँ आपकी कंपनी की �
 msgid "Email notifications not configured"
 msgstr "ईमेल सूचनाएं कॉन्फ़िगर नहीं की गई हैं"
 
+msgid "Email order on acceptance"
+msgstr "स्वीकृति पर ऑर्डर ईमेल करें"
+
 msgid "Email recipients"
 msgstr "ईमेल प्राप्तकर्ता"
 

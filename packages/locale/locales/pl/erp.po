@@ -12137,6 +12137,9 @@ msgstr "Powiadomienia e-mail nie są uwzględnione w bieżącym planie Twojej fi
 msgid "Email notifications not configured"
 msgstr "Powiadomienia e-mail nie są skonfigurowane"
 
+msgid "Email order on acceptance"
+msgstr "Wyślij zamówienie e-mailem po akceptacji"
+
 msgid "Email recipients"
 msgstr "Odbiorcy e-mail"
 

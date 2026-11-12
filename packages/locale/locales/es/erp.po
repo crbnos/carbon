@@ -12137,6 +12137,9 @@ msgstr "Las notificaciones por correo electrónico no se incluyen en el plan act
 msgid "Email notifications not configured"
 msgstr "Notificaciones por correo electrónico no configuradas"
 
+msgid "Email order on acceptance"
+msgstr "Enviar pedido por correo al aceptar"
+
 msgid "Email recipients"
 msgstr "Destinatarios de correo"
 

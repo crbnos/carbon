@@ -12137,6 +12137,9 @@ msgstr "E-Mail-Benachrichtigungen sind nicht in Ihrem aktuellen Unternehmensplan
 msgid "Email notifications not configured"
 msgstr "E-Mail-Benachrichtigungen nicht konfiguriert"
 
+msgid "Email order on acceptance"
+msgstr "Auftrag bei Annahme per E-Mail senden"
+
 msgid "Email recipients"
 msgstr "E-Mail-Empfänger"
 

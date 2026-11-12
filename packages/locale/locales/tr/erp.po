@@ -12137,6 +12137,9 @@ msgstr "E-posta bildirimleri şirketinizin mevcut planına dahil değildir; e-po
 msgid "Email notifications not configured"
 msgstr "E-posta bildirimleri yapılandırılmamış"
 
+msgid "Email order on acceptance"
+msgstr "Kabulde siparişi e-postayla gönder"
+
 msgid "Email recipients"
 msgstr "E-posta alıcıları"
 

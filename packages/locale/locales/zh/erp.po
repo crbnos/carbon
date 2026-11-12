@@ -12137,6 +12137,9 @@ msgstr "电子邮件通知不包含在贵公司的当前计划中；如果启用
 msgid "Email notifications not configured"
 msgstr "电子邮件通知未配置"
 
+msgid "Email order on acceptance"
+msgstr "接受时通过电子邮件发送订单"
+
 msgid "Email recipients"
 msgstr "电子邮件收件人"
 

@@ -12137,6 +12137,9 @@ msgstr "メール通知はあなたの会社の現在のプランに含まれて
 msgid "Email notifications not configured"
 msgstr "メール通知が設定されていません"
 
+msgid "Email order on acceptance"
+msgstr "承認時に注文をメール送信"
+
 msgid "Email recipients"
 msgstr "メール受信者"
 

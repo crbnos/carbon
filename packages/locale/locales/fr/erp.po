@@ -12137,6 +12137,9 @@ msgstr "Les notifications par e-mail ne sont pas incluses dans le plan actuel de
 msgid "Email notifications not configured"
 msgstr "Les notifications par e-mail ne sont pas configurées"
 
+msgid "Email order on acceptance"
+msgstr "Envoyer la commande par e-mail à l'acceptation"
+
 msgid "Email recipients"
 msgstr "Destinataires de l'e-mail"
 

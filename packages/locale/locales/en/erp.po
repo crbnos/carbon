@@ -12137,6 +12137,9 @@ msgstr "Email notifications are not included in your company's current plan; ema
 msgid "Email notifications not configured"
 msgstr "Email notifications not configured"
 
+msgid "Email order on acceptance"
+msgstr "Email order on acceptance"
+
 msgid "Email recipients"
 msgstr "Email recipients"
 

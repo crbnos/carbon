@@ -423,6 +423,7 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "entity.quote.digitalQuoteRejectedBy": msg`Digital quote rejected by`,
   "entity.quote.digitalQuoteRejectedByEmail": msg`Digital quote rejected by email`,
   "entity.quote.dueDate": msg`Due date`,
+  "entity.quote.emailOrderOnAcceptance": msg`Email order on acceptance`,
   "entity.quote.estimatorId": msg`Estimator`,
   "entity.quote.exchangeRate": msg`Exchange rate`,
   "entity.quote.exchangeRateUpdatedAt": msg`Exchange rate updated at`,

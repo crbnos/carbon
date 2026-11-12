@@ -12137,6 +12137,9 @@ msgstr "Уведомления по электронной почте не вк�
 msgid "Email notifications not configured"
 msgstr "Уведомления по электронной почте не настроены"
 
+msgid "Email order on acceptance"
+msgstr "Отправлять заказ по электронной почте при принятии"
+
 msgid "Email recipients"
 msgstr "Получатели e-mail"
 
