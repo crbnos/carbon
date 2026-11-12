@@ -2,8 +2,8 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { ONSHAPE_CLIENT_ID } from "@carbon/auth";
-import { type SVGProps, useEffect, useState } from "react";
+import { getAppUrl, ONSHAPE_CLIENT_ID } from "@carbon/auth";
+import type { SVGProps } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
 import { beginOAuthPopup } from "../oauth-popup";
@@ -189,10 +189,9 @@ export const OnshapeGovernment = defineIntegration({
 });
 
 function GovernmentSetupInstructions() {
-  // The callback is this Carbon instance's own address. Read after mount so the
-  // server render and the first client render agree.
-  const [origin, setOrigin] = useState("");
-  useEffect(() => setOrigin(window.location.origin), []);
+  // The address the OAuth redirect is built on, which an alias the admin
+  // browses through may not be.
+  const origin = getAppUrl();
   const callbackUrl = `${origin}${ONSHAPE_GOVERNMENT_OAUTH_CALLBACK_PATH}`;
   const launchUrl = `${origin}/x/settings/integrations/${ONSHAPE_GOVERNMENT_INTEGRATION_ID}`;
 

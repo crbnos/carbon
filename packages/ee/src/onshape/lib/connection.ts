@@ -134,6 +134,7 @@ export async function getConflictingOnshapeIntegration(
     .eq("active", true)
     .limit(1)
     .maybeSingle();
+  if (result.error) throw conflictReadError(result.error);
   return result.data && isOnshapeIntegrationId(result.data.id)
     ? result.data.id
     : null;
@@ -183,6 +184,24 @@ export async function getOnshapePanelIntegration(
   };
 }
 
+/**
+ * The Onshape origin the company's panel links open on. Item viewers cannot
+ * read `companyIntegration`, so a loader reads it for them; only the origin
+ * leaves the server.
+ */
+export async function getOnshapePanelOrigin(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<string> {
+  const panel = await getOnshapePanelIntegration(client, companyId);
+  const metadata = panel.data?.metadata;
+  const baseUrl =
+    metadata && typeof metadata === "object" && !Array.isArray(metadata)
+      ? metadata.baseUrl
+      : undefined;
+  return normalizeOnshapeUrl(baseUrl) ?? ONSHAPE_DEFAULT_BASE_URL;
+}
+
 /** Two live panel grants would make the panel's Onshape tenant arbitrary. */
 export async function getConflictingOnshapePanelIntegration(
   client: SupabaseClient<Database>,
@@ -200,9 +219,17 @@ export async function getConflictingOnshapePanelIntegration(
     .eq("active", true)
     .limit(1)
     .maybeSingle();
+  if (result.error) throw conflictReadError(result.error);
   return result.data && (others as readonly string[]).includes(result.data.id)
     ? (result.data.id as OnshapePanelIntegrationId)
     : null;
+}
+
+// A failed read must not pass for "no other connection is active".
+function conflictReadError(error: { message: string }) {
+  return new Error(
+    `Failed to read the company's Onshape connections: ${error.message}`
+  );
 }
 
 /** A sync connection and a panel connection never conflict. */

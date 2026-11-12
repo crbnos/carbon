@@ -114,8 +114,6 @@ export type { OnshapeDocument } from "./onshape/lib";
 export {
   hasOnshapeIntegration,
   isOnshapeIntegrationId,
-  normalizeOnshapeUrl,
-  ONSHAPE_DEFAULT_BASE_URL,
   ONSHAPE_INTEGRATION_IDS
 } from "./onshape/lib/connection";
 export type { BomDiagnostics, OnshapeBomNode } from "./onshape/panel/bom";
