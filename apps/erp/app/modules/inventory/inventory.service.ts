@@ -210,6 +210,7 @@ import {
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
   getExpiredEntityPolicy,
+  getManualPostingPeriod,
   getNettableDefaultStorageUnitId,
   getOffsetAccount,
   getStorageUnitWithHighestQuantity,
@@ -225,6 +226,7 @@ import {
   refuseVoidBeforeCutover,
   resolveAccountingPeriod,
   resolveInventoryAccount,
+  resolveManualPostingDate,
   STOCK_CORRECTION_BEFORE_CUTOVER_ERROR,
   serialUnitCost,
   type UnitCostChild,
@@ -10556,7 +10558,10 @@ class SerialQuantityError extends InvalidLinesError {
 // happens per-movement via the correct-stock-movement server function, which
 // links the fix through itemLedger.correctionOfItemLedgerId.
 export const postInventoryCountInput = z.object({
-  inventoryCountId: z.string()
+  inventoryCountId: z.string(),
+  // The day the variances are booked on (YYYY-MM-DD). Omitted: today. Never
+  // in the future, and never before the company's accounting cutover.
+  postingDate: z.string().optional().nullable()
 });
 
 export const postInventoryCountPermission = {
@@ -10568,7 +10573,8 @@ export async function postInventoryCount(
   ctx: ServiceContext,
   raw: z.input<typeof postInventoryCountInput>
 ) {
-  const { inventoryCountId } = postInventoryCountInput.parse(raw);
+  const { inventoryCountId, postingDate: requestedPostingDate } =
+    postInventoryCountInput.parse(raw);
 
   const db = ctx.asSystem.pg;
   const companyId = ctx.company.id;
@@ -10576,6 +10582,12 @@ export async function postInventoryCount(
   const today = datetime
     .today(await getCompanyTimeZone(db, companyId))
     .toString();
+  const postingDate = await resolveManualPostingDate(
+    db,
+    companyId,
+    requestedPostingDate,
+    today
+  );
   const nowIso = datetime.timestamp();
 
   const inventoryCount = await single(db, "inventoryCount", {
@@ -10814,7 +10826,7 @@ export async function postInventoryCount(
   // A Provisional journal has no accounting period.
   const accountingPeriodId =
     postingStatus === "Posted"
-      ? await getCurrentAccountingPeriod(companyId, db, today)
+      ? await getManualPostingPeriod(companyId, db, postingDate, today)
       : null;
 
   // Active dimensions for the company group (post-shipment precedent) —
@@ -10894,7 +10906,7 @@ export async function postInventoryCount(
             accountingPeriodId: accounting.accountingPeriodId,
             status: postingStatus,
             description: accounting.description,
-            postingDate: today,
+            postingDate,
             userId
           });
         }
@@ -10926,7 +10938,7 @@ export async function postInventoryCount(
         .values(
           moves.flatMap((move) => {
             const moveRow = {
-              postingDate: today,
+              postingDate,
               itemId: itemIdByEntity.get(move.trackedEntityId) as string,
               locationId: inventoryCount.data.locationId,
               trackedEntityId: move.trackedEntityId,
@@ -11118,7 +11130,7 @@ export async function postInventoryCount(
 
       const booked = await bookAdjustment(trx, {
         ledger: {
-          postingDate: today,
+          postingDate,
           itemId: line.itemId,
           quantity: delta,
           locationId: line.locationId,
@@ -24033,6 +24045,7 @@ export async function postInventoryAdjustment(
     originalStorageUnitId,
     expirationDate: providedExpirationDate,
     comment,
+    postingDate: requestedPostingDate,
     scrapReasonId,
     unscrapOfItemLedgerId,
     projectId
@@ -24111,6 +24124,12 @@ export async function postInventoryAdjustment(
   const today = datetime
     .today(await getCompanyTimeZone(db, companyId))
     .toString();
+  const postingDate = await resolveManualPostingDate(
+    db,
+    companyId,
+    requestedPostingDate,
+    today
+  );
   const nowIso = datetime.timestamp();
 
   const [storageUnitQuantities, itemResult, itemCostResult, shelfLife] =
@@ -24219,7 +24238,7 @@ export async function postInventoryAdjustment(
   // commits its own short transaction. A Provisional journal has no period.
   const accountingPeriodId =
     postingStatus === "Posted"
-      ? await getCurrentAccountingPeriod(companyId, db, today)
+      ? await getManualPostingPeriod(companyId, db, postingDate, today)
       : null;
   const accounting = {
     postingStatus,
@@ -24267,7 +24286,7 @@ export async function postInventoryAdjustment(
     : requestedStripe;
 
   const ledgerBase = {
-    postingDate: today,
+    postingDate,
     itemId,
     locationId,
     storageUnitId: storageUnitId ?? null,
@@ -24299,7 +24318,7 @@ export async function postInventoryAdjustment(
       shelfLife.data?.mode === "Fixed Duration" &&
       shelfLife.data.days
     ) {
-      return parseDate(today)
+      return parseDate(postingDate)
         .add({ days: Number(shelfLife.data.days) })
         .toString();
     }
@@ -24465,7 +24484,7 @@ export async function postInventoryAdjustment(
             itemLedgerItemId: itemId,
             companyId,
             userId,
-            postingDate: today,
+            postingDate,
             childStatus: "Scrapped"
           });
           await trx

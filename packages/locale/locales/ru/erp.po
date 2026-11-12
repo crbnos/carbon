@@ -11424,6 +11424,9 @@ msgstr "Внешние операции каждого поставщика из
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "Справедливая стоимость и экономический срок службы каждой единицы определяют, покрывает ли срок большую часть ее. Нажмите на ячейку, чтобы изменить ее."
 
+msgid "Each variance is booked as an inventory adjustment on the posting date. Posted is final."
+msgstr "Каждое отклонение проводится как корректировка запасов на дату проведения. Проведённая инвентаризация окончательна."
+
 msgid "Each week is headed with its ISO 8601 week of the year: Week 44, Week 45, Week 46."
 msgstr "Каждая неделя подписывается номером недели года по ISO 8601: Неделя 44, Неделя 45, Неделя 46."
 
@@ -22722,6 +22725,9 @@ msgstr "Провести применяемую нагрузку для конт
 
 msgid "Post Comment"
 msgstr "Опубликовать комментарий"
+
+msgid "Post Count"
+msgstr "Провести инвентаризацию"
 
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"

@@ -11424,6 +11424,9 @@ msgstr "प्रत्येक आपूर्तिकर्ता की ब
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "प्रत्येक इकाई का उचित मूल्य और आर्थिक जीवन तय करता है कि क्या अवधि इसके अधिकांश को कवर करती है। इसे बदलने के लिए एक सेल पर क्लिक करें।"
 
+msgid "Each variance is booked as an inventory adjustment on the posting date. Posted is final."
+msgstr "प्रत्येक विचलन पोस्टिंग तारीख पर इन्वेंटरी समायोजन के रूप में दर्ज किया जाता है। पोस्ट होने के बाद यह अंतिम है।"
+
 msgid "Each week is headed with its ISO 8601 week of the year: Week 44, Week 45, Week 46."
 msgstr "प्रत्येक सप्ताह के शीर्ष पर वर्ष का ISO 8601 सप्ताह होता है: सप्ताह 44, सप्ताह 45, सप्ताह 46।"
 
@@ -22722,6 +22725,9 @@ msgstr "अनुबंध प्रोजेक्ट के लिए पो�
 
 msgid "Post Comment"
 msgstr "टिप्पणी पोस्ट करें"
+
+msgid "Post Count"
+msgstr "गिनती पोस्ट करें"
 
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"

@@ -11424,6 +11424,9 @@ msgstr "每个供应商的外协工序从每个工单转至一份新采购订单
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "每件的公允价值和经济生命周期决定该条款是否涵盖大部分。点击单元格进行更改。"
 
+msgid "Each variance is booked as an inventory adjustment on the posting date. Posted is final."
+msgstr "每项差异按过账日期记为库存调整。过账后不可更改。"
+
 msgid "Each week is headed with its ISO 8601 week of the year: Week 44, Week 45, Week 46."
 msgstr "每周以其 ISO 8601 年度周数作为标题：第 44 周、第 45 周、第 46 周。"
 
@@ -22722,6 +22725,9 @@ msgstr "为合同项目过账应用的负担"
 
 msgid "Post Comment"
 msgstr "发布评论"
+
+msgid "Post Count"
+msgstr "过账盘点"
 
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"

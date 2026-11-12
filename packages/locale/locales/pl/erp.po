@@ -11424,6 +11424,9 @@ msgstr "Operacje zewnętrzne każdego dostawcy z każdego zlecenia produkcyjnego
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "Godziwa wartość i okres ekonomiczny każdej sztuki decydują, czy okres umowy obejmuje większość jej wartości. Kliknij komórkę, aby zmienić."
 
+msgid "Each variance is booked as an inventory adjustment on the posting date. Posted is final."
+msgstr "Każde odchylenie jest księgowane jako korekta zapasów w dacie księgowania. Zaksięgowana inwentaryzacja jest ostateczna."
+
 msgid "Each week is headed with its ISO 8601 week of the year: Week 44, Week 45, Week 46."
 msgstr "Każdy tydzień jest opisany numerem tygodnia roku według ISO 8601: Tydzień 44, Tydzień 45, Tydzień 46."
 
@@ -22722,6 +22725,9 @@ msgstr "Zaksięguj stosowane obciążenie dla projektów kontraktowych"
 
 msgid "Post Comment"
 msgstr "Opublikuj komentarz"
+
+msgid "Post Count"
+msgstr "Zaksięguj inwentaryzację"
 
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"

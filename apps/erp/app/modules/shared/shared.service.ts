@@ -16342,6 +16342,54 @@ export async function getAccountingPeriodForDate(
   return (await resolveAccountingPeriod(db, companyId, date, "historical")).id;
 }
 
+/**
+ * The posting date of a manual stock movement (an inventory adjustment or an
+ * inventory count): `today` unless the person chose another day. A date in the
+ * future is refused, and so is a date before the company's accounting cutover.
+ * Before the cutover any earlier day is allowed: the journal is Provisional.
+ */
+export async function resolveManualPostingDate(
+  db: Kysely<DB>,
+  companyId: string,
+  requested: string | null | undefined,
+  today: string
+): Promise<string> {
+  if (!requested) return today;
+  let date: CalendarDate;
+  try {
+    date = parseDate(requested);
+  } catch {
+    throw new InvalidInputError("The posting date is not a valid date");
+  }
+  if (date.compare(parseDate(today)) > 0) {
+    throw new InvalidInputError("The posting date cannot be in the future");
+  }
+  const postingDate = date.toString();
+  const cutoverDate = await readAccountingCutoverDate(db, companyId);
+  if (isBeforeCutover(postingDate, cutoverDate)) {
+    throw new InvalidInputError(
+      `The posting date cannot be before the accounting cutover (${cutoverDate})`
+    );
+  }
+  return postingDate;
+}
+
+/**
+ * The period a Posted journal of a manual stock movement goes into: the
+ * current period for today, else the period of its own date
+ * (`getAccountingPeriodForDate`, which refuses a Locked or Closed one).
+ */
+export async function getManualPostingPeriod(
+  companyId: string,
+  db: Kysely<DB>,
+  postingDate: string,
+  today: string
+) {
+  return postingDate === today
+    ? getCurrentAccountingPeriod(companyId, db, today)
+    : getAccountingPeriodForDate(companyId, db, postingDate);
+}
+
 /** Pass the same business day used by the caller's journal and ledger rows. */
 export async function getCurrentAccountingPeriod(
   companyId: string,

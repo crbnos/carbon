@@ -11424,6 +11424,9 @@ msgstr "Die Fremdarbeitsgänge jedes Lieferanten aus jedem Fertigungsauftrag wer
 msgid "Each unit's fair value and economic life decide whether the term covers most of it. Click a cell to change it."
 msgstr "Der beizulegende Zeitwert jeder Einheit und ihre wirtschaftliche Lebensdauer bestimmen, ob die Laufzeit den Großteil abdeckt. Klicken Sie auf eine Zelle, um sie zu ändern."
 
+msgid "Each variance is booked as an inventory adjustment on the posting date. Posted is final."
+msgstr "Jede Abweichung wird zum Buchungsdatum als Bestandskorrektur gebucht. Eine gebuchte Zählung ist endgültig."
+
 msgid "Each week is headed with its ISO 8601 week of the year: Week 44, Week 45, Week 46."
 msgstr "Jede Woche wird mit ihrer ISO-8601-Kalenderwoche überschrieben: Woche 44, Woche 45, Woche 46."
 
@@ -22722,6 +22725,9 @@ msgstr "Angewendete Last für Vertragsprojekte buchen"
 
 msgid "Post Comment"
 msgstr "Kommentar posten"
+
+msgid "Post Count"
+msgstr "Zählung buchen"
 
 #. placeholder {0}: run.readableId
 msgid "Post draft run {0}"

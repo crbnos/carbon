@@ -3643,13 +3643,18 @@ export const createReceiptPutAway = defineServiceFn({
  * inspection unit, with `awaitingInspection` set for a serial or batch unit
  * whose inspection lot Quality has still to decide.
  *
+ * @param postingDate - The day the variances are booked on (YYYY-MM-DD), today when omitted. A date in the future, or before the company's accounting cutover, is refused; after the cutover the date's accounting period must be open.
+ *
  * @mcp
  */
 export const postInventoryCount = defineServiceFn({
-  input: z.object({ inventoryCountId: z.string() }),
+  input: z.object({
+    inventoryCountId: z.string(),
+    postingDate: z.string().optional()
+  }),
   permission: { update: "inventory" },
 
-  async run(ctx, { inventoryCountId }) {
+  async run(ctx, { inventoryCountId, postingDate }) {
     const header = await service.getInventoryCount(
       ctx.asCaller.supabase,
       inventoryCountId,
@@ -3665,7 +3670,7 @@ export const postInventoryCount = defineServiceFn({
     const posted = await invokePosting(
       ctx,
       "post-inventory-count",
-      { inventoryCountId },
+      { inventoryCountId, postingDate },
       service.postInventoryCount
     );
     if (posted.error) {
@@ -3708,6 +3713,8 @@ export const postInventoryCount = defineServiceFn({
  * Every adjustment but an unscrap needs `locationId`; an unscrap resolves its
  * location, bin and cost from the original scrap.
  *
+ * @param postingDate - The day the movement is booked on (YYYY-MM-DD), today when omitted. A date in the future, or before the company's accounting cutover, is refused; after the cutover the date's accounting period must be open.
+ *
  * @mcp
  */
 export const adjustInventory = defineServiceFn({
@@ -3724,6 +3731,7 @@ export const adjustInventory = defineServiceFn({
       readableId: z.string().optional(),
       expirationDate: z.string().optional(),
       comment: z.string().optional(),
+      postingDate: z.string().optional(),
       scrapReasonId: z.string().optional(),
       unscrapOfItemLedgerId: z.string().optional(),
       acknowledged: z.boolean().default(false)
