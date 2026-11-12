@@ -285,6 +285,15 @@ export async function updateScimGroupMapping(
     }
   }
 
+  const previous = await db
+    .selectFrom("scimGroup")
+    .select("employeeTypeId")
+    .where("id", "=", input.groupId)
+    .where("companyId", "=", input.companyId)
+    .executeTakeFirst();
+  const mappingRemoved =
+    Boolean(previous?.employeeTypeId) && !input.employeeTypeId;
+
   const updated = await serviceRole
     .from("scimGroup")
     .update({
@@ -315,9 +324,23 @@ export async function updateScimGroupMapping(
     return { data: null, error: "SCIM is not set up for this company" };
   }
 
-  // A priority or mapping change can move anyone in any mapped group.
+  // Removing a mapping moves only this group's members, and must move them
+  // even when it was the last mapped group. Any other change can move anyone
+  // in any mapped group.
+  const scimUserIds = mappingRemoved
+    ? (
+        await db
+          .selectFrom("scimGroupMember")
+          .select("scimUserId")
+          .where("groupId", "=", input.groupId)
+          .where("companyId", "=", input.companyId)
+          .execute()
+      ).map((member) => member.scimUserId)
+    : undefined;
   const reconciled = await reconcileEmployeeTypes(db, serviceRole, {
-    connection: connection.data
+    connection: connection.data,
+    scimUserIds,
+    mappingRemoved
   });
   return { data: reconciled, error: null };
 }

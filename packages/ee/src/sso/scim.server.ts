@@ -1431,54 +1431,64 @@ async function writeGroup(
   state: ScimGroupState
 ): Promise<string[]> {
   const wanted = new Set(await knownMembers(ctx, state.memberIds));
+  return ctx.db
+    .transaction()
+    .execute((trx) => writeGroupRows(trx, ctx, groupId, state, wanted));
+}
 
-  return ctx.db.transaction().execute(async (trx) => {
+/** `writeGroup` inside a transaction the caller owns. */
+async function writeGroupRows(
+  trx: Transaction<KyselyDatabase>,
+  ctx: Ctx,
+  groupId: string,
+  state: ScimGroupState,
+  wanted: Set<string>
+): Promise<string[]> {
+  await trx
+    .updateTable("scimGroup")
+    .set({
+      displayName: state.displayName,
+      externalId: state.externalId,
+      updatedBy: SYSTEM_USER_ID,
+      updatedAt: sql`now()`
+    })
+    .where("id", "=", groupId)
+    .where("companyId", "=", ctx.companyId)
+    .execute();
+
+  const current = await trx
+    .selectFrom("scimGroupMember")
+    .select("scimUserId")
+    .where("groupId", "=", groupId)
+    .where("companyId", "=", ctx.companyId)
+    .execute();
+  const have = new Set(current.map((row) => row.scimUserId));
+
+  const removed = [...have].filter((id) => !wanted.has(id));
+  const added = [...wanted].filter((id) => !have.has(id));
+
+  if (removed.length > 0) {
     await trx
-      .updateTable("scimGroup")
-      .set({
-        displayName: state.displayName,
-        externalId: state.externalId,
-        updatedBy: SYSTEM_USER_ID,
-        updatedAt: sql`now()`
-      })
-      .where("id", "=", groupId)
-      .where("companyId", "=", ctx.companyId)
-      .execute();
-
-    const current = await trx
-      .selectFrom("scimGroupMember")
-      .select("scimUserId")
+      .deleteFrom("scimGroupMember")
       .where("groupId", "=", groupId)
       .where("companyId", "=", ctx.companyId)
+      .where("scimUserId", "in", removed)
       .execute();
-    const have = new Set(current.map((row) => row.scimUserId));
-
-    const removed = [...have].filter((id) => !wanted.has(id));
-    const added = [...wanted].filter((id) => !have.has(id));
-
-    if (removed.length > 0) {
-      await trx
-        .deleteFrom("scimGroupMember")
-        .where("groupId", "=", groupId)
-        .where("companyId", "=", ctx.companyId)
-        .where("scimUserId", "in", removed)
-        .execute();
-    }
-    if (added.length > 0) {
-      await trx
-        .insertInto("scimGroupMember")
-        .values(
-          added.map((scimUserId) => ({
-            groupId,
-            scimUserId,
-            companyId: ctx.companyId
-          }))
-        )
-        .onConflict((oc) => oc.doNothing())
-        .execute();
-    }
-    return [...removed, ...added];
-  });
+  }
+  if (added.length > 0) {
+    await trx
+      .insertInto("scimGroupMember")
+      .values(
+        added.map((scimUserId) => ({
+          groupId,
+          scimUserId,
+          companyId: ctx.companyId
+        }))
+      )
+      .onConflict((oc) => oc.doNothing())
+      .execute();
+  }
+  return [...removed, ...added];
 }
 
 async function createGroup(ctx: Ctx, body: unknown): Promise<Response> {
@@ -1487,20 +1497,35 @@ async function createGroup(ctx: Ctx, body: unknown): Promise<Response> {
   const parsed = readGroupResource(body);
   if (!parsed.ok) return scimError(400, parsed.detail, parsed.scimType);
 
+  // The group and its members commit together: a group left without its
+  // members would answer the IdP's retry with 409 and never be filled.
+  const wanted = new Set(await knownMembers(ctx, parsed.value.memberIds));
   let groupId: string;
+  let changed: string[];
   try {
-    const inserted = await ctx.db
-      .insertInto("scimGroup")
-      .values({
-        companyId: ctx.companyId,
-        connectionId: ctx.connection.id,
-        displayName: parsed.value.displayName,
-        externalId: parsed.value.externalId,
-        createdBy: SYSTEM_USER_ID
-      })
-      .returning("id")
-      .executeTakeFirstOrThrow();
-    groupId = inserted.id;
+    ({ groupId, changed } = await ctx.db.transaction().execute(async (trx) => {
+      const inserted = await trx
+        .insertInto("scimGroup")
+        .values({
+          companyId: ctx.companyId,
+          connectionId: ctx.connection.id,
+          displayName: parsed.value.displayName,
+          externalId: parsed.value.externalId,
+          createdBy: SYSTEM_USER_ID
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      return {
+        groupId: inserted.id,
+        changed: await writeGroupRows(
+          trx,
+          ctx,
+          inserted.id,
+          parsed.value,
+          wanted
+        )
+      };
+    }));
   } catch (err) {
     if (isUniqueViolation(err)) {
       return scimError(
@@ -1512,7 +1537,6 @@ async function createGroup(ctx: Ctx, body: unknown): Promise<Response> {
     throw err;
   }
 
-  const changed = await writeGroup(ctx, groupId, parsed.value);
   await reconcileEmployeeTypes(ctx.db, ctx.serviceRole, {
     connection: ctx.connection,
     scimUserIds: changed
@@ -1606,14 +1630,16 @@ async function deleteGroup(ctx: Ctx, id: string): Promise<Response> {
   const row = await readGroup(ctx, id);
   if (!row) return scimError(404, "Group not found.");
   const { memberIds } = await groupState(ctx, row);
-  await ctx.db
+  const deleted = await ctx.db
     .deleteFrom("scimGroup")
     .where("id", "=", row.id)
     .where("companyId", "=", ctx.companyId)
-    .execute();
+    .returning("employeeTypeId")
+    .executeTakeFirst();
   await reconcileEmployeeTypes(ctx.db, ctx.serviceRole, {
     connection: ctx.connection,
-    scimUserIds: memberIds
+    scimUserIds: memberIds,
+    mappingRemoved: Boolean(deleted?.employeeTypeId)
   });
   return new Response(null, { status: 204 });
 }
@@ -1645,18 +1671,30 @@ async function hasMappedGroup(
  *
  * `scimUserIds` limits the pass to the people a group change touched; omit it
  * to reconcile everyone (after a mapping or default-type change).
+ *
+ * `mappingRemoved` says a mapped group was just deleted or unmapped, and
+ * `scimUserIds` are its members. When it was the last mapped group, they still
+ * hold its type and grants, so they move to the default type instead of being
+ * left as they are.
  */
 export async function reconcileEmployeeTypes(
   db: Kysely<KyselyDatabase>,
   serviceRole: SupabaseClient<Database>,
   {
     connection,
-    scimUserIds
-  }: { connection: ScimConnectionRow; scimUserIds?: string[] }
+    scimUserIds,
+    mappingRemoved = false
+  }: {
+    connection: ScimConnectionRow;
+    scimUserIds?: string[];
+    mappingRemoved?: boolean;
+  }
 ): Promise<{ changed: number }> {
   const { companyId } = connection;
   if (scimUserIds && scimUserIds.length === 0) return { changed: 0 };
-  if (!(await hasMappedGroup(db, companyId))) return { changed: 0 };
+  if (!mappingRemoved && !(await hasMappedGroup(db, companyId))) {
+    return { changed: 0 };
+  }
 
   let peopleQuery = db
     .selectFrom("scimUser")

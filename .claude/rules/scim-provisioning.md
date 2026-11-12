@@ -70,7 +70,10 @@ with the service role and stamps `createdBy` / `updatedBy` with
 - **Groups → employee types.** `reconcileEmployeeTypes` gives each active
   provisioned person the type of their mapped group with the lowest
   `priority`, else the connection's default. With no mapped group at all it
-  does nothing. A type change rewrites this company's slice of
+  does nothing, except after the LAST mapped group is deleted or unmapped
+  (`mappingRemoved`, from `deleteGroup` and `updateScimGroupMapping`): that
+  group's members still hold its type and grants, so they move to the
+  default. A type change rewrites this company's slice of
   `userPermission` with `replaceCompanyGrants`. It runs after every group
   write and after a mapping or default-type save.
 - **Create** adopts an active employee with the same email as is, adds a

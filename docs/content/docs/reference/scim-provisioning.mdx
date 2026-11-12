@@ -61,6 +61,7 @@ Groups your identity provider pushes appear in **"Group Mappings"**. For each gr
 - A member of several mapped groups gets the type of the group with the lowest priority.
 - A member of no mapped group gets the default employee type.
 - Until you map one group, SCIM never changes an employee type after it adds the person.
+- If you delete the last mapped group, or set it to **"Not mapped"**, its members go back to the default employee type.
 
 A type change replaces the person's permissions in your company with the type's permissions.
 
