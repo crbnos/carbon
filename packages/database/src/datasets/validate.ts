@@ -1165,7 +1165,11 @@ export function buildIndex(dataset: Dataset): DatasetIndex {
     workCenter: workCenters,
     maintainedWorkCenter: new Set([...workCenters, f.hqWorkCenter.name]),
     warehouse: new Set(f.warehouses.map((w) => w.key)),
-    shelf: new Set(f.shelves.map((s) => s.name)),
+    // Tier 01 registers each work center's shelf as `wc:<name>`.
+    shelf: new Set([
+      ...f.shelves.map((s) => s.name),
+      ...f.workCenters.map((w) => `wc:${w.name}`)
+    ]),
     shift: new Set(f.shifts.map((shift) => shift.name)),
     storageType: new Set(f.storageTypes),
     customerType: new Set(f.customerTypes),
@@ -1702,8 +1706,14 @@ export function items(ctx: ValidationCtx): void {
     if (!makePartIds.has(method.readableId)) {
       fail(`${where}: not a makePart readableId`);
     }
+    const bopOrders = new Set(method.bop.map((op) => op.order));
     for (const line of method.bom) {
       need("item", `${where} bom`, line.component);
+      if (line.operation !== undefined && !bopOrders.has(line.operation)) {
+        fail(
+          `${where} bom "${line.component}": operation ${line.operation} is not a bop order`
+        );
+      }
     }
     for (const op of method.bop) {
       need("process", `${where} bop order ${op.order}`, op.process);
@@ -2253,6 +2263,24 @@ export function trackedStockAndMovements(ctx: ValidationCtx): void {
   const trackedStatuses = new Set<string>();
   for (const tracked of dataset.inventory.onHandTracked) {
     need("item", "inventory.onHandTracked", tracked.item);
+    if (tracked.shelf !== undefined) {
+      // Tier 03 writes the opening ledger per lot at this shelf, so the lots
+      // must be live and must add up to the (item, shelf) opening stock.
+      const where = `inventory.onHandTracked "${tracked.item}" shelf`;
+      need("shelf", where, tracked.shelf);
+      if (tracked.entities.some((entity) => entity.status === "Scrapped")) {
+        fail(`${where}: a Scrapped entity cannot sit on a tracked shelf`);
+      }
+      const lotSum = tracked.entities.reduce((sum, e) => sum + e.quantity, 0);
+      const opening = dataset.inventory.openingStock
+        .filter((s) => s.item === tracked.item && s.shelf === tracked.shelf)
+        .reduce((sum, s) => sum + s.qty, 0);
+      if (lotSum !== opening) {
+        fail(
+          `${where}: entity quantities sum to ${lotSum}, not the openingStock ${opening} at "${tracked.shelf}"`
+        );
+      }
+    }
     for (const entity of tracked.entities) {
       if (trackedEntityQty.has(entity.readableId)) {
         fail(
@@ -2334,6 +2362,19 @@ export function trackedStockAndMovements(ctx: ValidationCtx): void {
         if (kanban.fromShelf === kanban.toShelf) {
           fail(`${where}: Transfer kanban's shelves must differ`);
         }
+      }
+    }
+    if (kanban.replenishmentLevel !== undefined) {
+      if (system !== "Transfer") {
+        fail(`${where}: replenishmentLevel is set on a ${system} kanban`);
+      }
+      if (
+        !Number.isInteger(kanban.replenishmentLevel) ||
+        kanban.replenishmentLevel < 0
+      ) {
+        fail(
+          `${where}: replenishmentLevel ${kanban.replenishmentLevel} is not an integer of 0 or more`
+        );
       }
     }
   }
@@ -4228,12 +4269,39 @@ export function jobs(ctx: ValidationCtx): void {
   const seenOperationStatuses = new Set<string>();
   const seenQuantityTypes = new Set<string>();
   const { documentRefs } = ix;
+  const onHandTrackedIds = new Set(
+    dataset.inventory.onHandTracked.flatMap((tracked) =>
+      tracked.entities.map((entity) => entity.readableId)
+    )
+  );
+  const jobSerials = new Set<string>();
   for (const [jobIndex, job] of dataset.production.jobs.entries()) {
     const seen = documentRefs.seenBy.jobs[jobIndex]!;
     const where = `production.jobs "${job.key}"`;
     if (jobKeys.has(job.key)) fail(`${where}: duplicate job key`);
     jobKeys.add(job.key);
     need("item", where, job.item);
+    if (job.serials !== undefined) {
+      if (ix.trackingByItem.get(job.item) !== "Serial") {
+        fail(`${where}: serials on "${job.item}", which is not Serial-tracked`);
+      }
+      if (job.serials.length !== job.quantity) {
+        fail(
+          `${where}: serials has ${job.serials.length} entries, not the job quantity ${job.quantity}`
+        );
+      }
+      for (const serial of job.serials) {
+        if (jobSerials.has(serial)) {
+          fail(`${where}: serials "${serial}" repeats across jobs`);
+        }
+        jobSerials.add(serial);
+        if (onHandTrackedIds.has(serial)) {
+          fail(
+            `${where}: serials "${serial}" is an inventory.onHandTracked readableId`
+          );
+        }
+      }
+    }
     const orderRefs = [job.salesOrder, job.salesOrderLine, job.customer];
     const orderRefCount = orderRefs.filter((r) => r !== undefined).length;
     if (orderRefCount !== 0 && orderRefCount !== 3) {
