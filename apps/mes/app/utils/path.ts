@@ -80,6 +80,8 @@ export const path = {
     // The ERP's API routes, through the proxy (`x+/proxy.$.tsx`).
     erpApi: `${x}/proxy/api`,
     erpInspection: (id: string) => `${ERP_URL}/x/inspection/${id}`,
+    erpTraceability: (id: string) =>
+      `${getAppUrl()}${x}/traceability/graph?trackedEntityId=${id}`,
     file: {
       // The load-sheet route lives in ERP (like the traveler); MES links to it
       // cross-origin.
@@ -240,6 +242,8 @@ export const path = {
     timeCardPage: `${x}/timecard`,
     timecard: `${api}/timecard`,
     timesheet: `${x}/timesheet`,
+    traveler: (id: string) => generatePath(`${x}/traveler/${id}`),
+    travelerResolve: `${x}/traveler/resolve`,
     triggerCorrection: `${x}/trigger-correction`,
     triggerRework: `${x}/trigger-rework`,
     unconsume: `${x}/unconsume`,
