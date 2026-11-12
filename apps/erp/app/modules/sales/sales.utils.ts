@@ -1009,11 +1009,10 @@ export function priceListOverrideScopes(
 }
 
 // The customer portal is an open link: anyone holding it sees what it shows.
-// It serves photos and PDFs recorded on a job's steps, never CAD models or
-// drawings, which can be export-controlled. SVG is left out because it can
-// carry script and is served from the app's own origin.
+// It serves job-step photos. Customer PDFs require an explicit document type
+// and source check in the dedicated portal download route. SVG is left out
+// because it can carry script and is served from the app's own origin.
 const CUSTOMER_PORTAL_FILE_TYPES = new Set([
-  "pdf",
   "jpg",
   "jpeg",
   "png",

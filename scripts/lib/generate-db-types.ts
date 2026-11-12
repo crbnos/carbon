@@ -170,6 +170,7 @@ export function generateDatabaseTypes(databaseUrl: string | undefined): void {
         [
           "gen",
           "types",
+          "--lang",
           "typescript",
           "--db-url",
           dbUrl,

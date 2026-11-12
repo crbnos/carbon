@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { createHash } from "node:crypto";
 import { openai } from "@ai-sdk/openai";
 import { InvalidInputError, NotFoundError } from "@carbon/api/errors";
 import type { PermissionRule } from "@carbon/api/permissions";
@@ -10,6 +11,7 @@ import type {
   ServiceContext
 } from "@carbon/api/service-fn.server";
 import { hasPermission } from "@carbon/auth";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json, Tables } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
@@ -88,7 +90,11 @@ import {
   resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
 import {
+  getFileExtension,
+  hasCompanyPrivateObjectPathPrefix,
   isStoredDocumentPdf,
+  isUnsafeStoragePath,
+  safeStorageFileName,
   storage,
   storedDocumentPdfName,
   TEMP_STAGING_BUCKET
@@ -172,6 +178,7 @@ import { upsertPart } from "~/modules/items/items.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.utils";
 import { getEmployeeJob } from "~/modules/people/people.service";
 import { generateTimeAndMaterialsItems } from "~/modules/projects/project-posting";
+import { shareLinkContext } from "~/modules/service-context.server";
 import { isEmailableContact } from "~/modules/settings/party-contact";
 import {
   getCompany,
@@ -289,6 +296,7 @@ import type { CategoryMarkups, QuoteLinePriceSource } from "./sales.utils";
 import {
   applyPriceRules,
   asConfiguration,
+  CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES,
   type CustomerPortalRefusal,
   configuredQuoteBasePrice,
   customerPortalRefusal,
@@ -360,12 +368,13 @@ export async function convertQuoteToOrder(
   db: Kysely<KyselyDatabase>,
   payload: {
     id: string;
-    selectedLines: z.infer<typeof selectedLinesValidator>;
+    selectedLines: Record<string, { quantity: number }>;
     companyId: string;
     purchaseOrderNumber?: string;
     userId: string;
     digitalQuoteAcceptedBy?: string;
     digitalQuoteAcceptedByEmail?: string;
+    customerPortalSubmissionId?: string;
   }
 ) {
   const { companyId, userId, ...input } = payload;
@@ -405,6 +414,50 @@ export async function convertQuoteToOrder(
   }
 
   return result;
+}
+
+/** Serialize staff decisions for one PO, including recovery of an order committed before its receipt. */
+export async function withLockedCustomerPortalPoSubmission<T>(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  submissionId: string,
+  work: (
+    trx: KyselyTx,
+    submission: Database["public"]["Tables"]["customerPortalSubmission"]["Row"]
+  ) => Promise<T>
+): Promise<T | null> {
+  return db.transaction().execute(async (trx) => {
+    const submission = await trx
+      .selectFrom("customerPortalSubmission")
+      .selectAll()
+      .where("id", "=", submissionId)
+      .where("companyId", "=", companyId)
+      .where("submissionType", "=", "PO")
+      .forUpdate()
+      .executeTakeFirst();
+    if (!submission) return null;
+    return work(
+      trx,
+      submission as Database["public"]["Tables"]["customerPortalSubmission"]["Row"]
+    );
+  });
+}
+
+/** Find an order whose creation committed before the PO review receipt did. */
+export async function findCustomerPortalOrderByMarker(
+  db: KyselyTx,
+  companyId: string,
+  customerId: string,
+  submissionId: string
+) {
+  const marker = JSON.stringify({ customerPortalSubmissionId: submissionId });
+  return db
+    .selectFrom("salesOrder")
+    .select(["id", "opportunityId"])
+    .where("companyId", "=", companyId)
+    .where("customerId", "=", customerId)
+    .where(sql<boolean>`"salesOrder"."customFields" @> ${marker}::jsonb`)
+    .executeTakeFirst();
 }
 
 export async function copyQuoteLine(
@@ -1396,6 +1449,143 @@ export type ActiveCustomerPortal =
       refusal: "error" | "notFound" | "plan" | CustomerPortalRefusal;
     };
 
+const PORTAL_FILE_LIMIT = 10 * 1024 * 1024;
+
+/** Check extension and bytes; the browser-supplied MIME header is not trusted. */
+async function portalUploadContentType(file: File, poOnly = false) {
+  if (file.size === 0 || file.size > PORTAL_FILE_LIMIT) return null;
+  const safeName = safeStorageFileName(file.name);
+  if (!safeName) return null;
+  const extension = safeName.split(".").pop()?.toLowerCase();
+  if (!extension) return null;
+  const bytes = Buffer.from(await file.arrayBuffer());
+  if (extension === "pdf" && bytes.subarray(0, 5).toString() === "%PDF-") {
+    return { safeName, contentType: "application/pdf" };
+  }
+  if (poOnly) return null;
+  if (
+    extension === "png" &&
+    bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
+  ) {
+    return { safeName, contentType: "image/png" };
+  }
+  if (extension === "jpg" || extension === "jpeg") {
+    if (bytes.subarray(0, 3).equals(Buffer.from([255, 216, 255]))) {
+      return { safeName, contentType: "image/jpeg" };
+    }
+  }
+  if (
+    bytes.subarray(0, 4).equals(Buffer.from([80, 75, 3, 4])) &&
+    bytes.includes(Buffer.from("[Content_Types].xml"))
+  ) {
+    if (
+      extension === "docx" &&
+      bytes.includes(Buffer.from("word/document.xml"))
+    ) {
+      return {
+        safeName,
+        contentType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      };
+    }
+    if (
+      extension === "xlsx" &&
+      bytes.includes(Buffer.from("xl/workbook.xml"))
+    ) {
+      return {
+        safeName,
+        contentType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      };
+    }
+  }
+  return null;
+}
+
+/** Resolve the public link and its audit actor without trusting form data. */
+export async function customerPortalSubmissionContext(portalId: string) {
+  const client = getCarbonServiceRole();
+  const portal = await getActiveCustomerPortal(client, portalId);
+  if (portal.refusal) return null;
+  const customer = await client
+    .from("customer")
+    .select("id, createdBy")
+    .eq("id", portal.data.customerId)
+    .eq("companyId", portal.data.companyId)
+    .single();
+  if (!customer.data?.createdBy) return null;
+  const ctx = await shareLinkContext({
+    companyId: portal.data.companyId,
+    createdBy: customer.data.createdBy
+  });
+  if (!ctx) return null;
+  return { ctx, customerId: customer.data.id };
+}
+
+export async function removePortalUploads(
+  ctx: ServiceContext,
+  paths: string[]
+) {
+  if (paths.length === 0) return;
+  const removed = await storage(ctx.asSystem.supabase)
+    .company(ctx.company.id)
+    .remove(paths);
+  if (removed.error)
+    logger.error("Failed to clean up portal upload", {
+      companyId: ctx.company.id,
+      error: removed.error
+    });
+}
+
+export async function uploadPortalFiles(
+  ctx: ServiceContext,
+  folder: string,
+  files: File[],
+  poOnly = false
+) {
+  const checked = await Promise.all(
+    files.map((file) => portalUploadContentType(file, poOnly))
+  );
+  if (checked.some((value) => !value))
+    return { paths: [], error: "Invalid attachment type, name, or size" };
+  const paths: string[] = [];
+  for (let index = 0; index < files.length; index++) {
+    const file = files[index];
+    const valid = checked[index]!;
+    const path = `${ctx.company.id}/${folder}/${crypto.randomUUID()}-${valid.safeName}`;
+    const upload = await storage(ctx.asSystem.supabase)
+      .company(ctx.company.id)
+      .upload(path, file, { contentType: valid.contentType });
+    if (upload.error) {
+      await removePortalUploads(ctx, paths);
+      logger.error("Failed to upload portal attachment", {
+        companyId: ctx.company.id,
+        error: upload.error
+      });
+      return { paths: [], error: "Failed to upload attachment" };
+    }
+    paths.push(path);
+  }
+  return { paths, error: null };
+}
+
+export async function portalSubmissionFingerprint(
+  fields: unknown,
+  files: File[]
+) {
+  const hash = createHash("sha256");
+  hash.update(JSON.stringify(fields));
+  for (const file of files) {
+    hash.update("\0");
+    hash.update(file.name);
+    hash.update("\0");
+    hash.update(file.type);
+    hash.update("\0");
+    hash.update(Buffer.from(await file.arrayBuffer()));
+  }
+  return hash.digest("hex");
+}
+
 /**
  * The customer portal a signed-out share route may serve, or why not. Every
  * share route loads its portal through this, so the plan and expiry checks
@@ -1440,6 +1630,776 @@ export async function getActiveCustomerPortal(
   }
 
   return { data: { ...portal.data, customerId: portal.data.customerId } };
+}
+
+type PortalScope = { companyId: string; customerId: string };
+
+export type CustomerPortalDocumentType =
+  | "quote"
+  | "invoice"
+  | "packing-slip"
+  | "acknowledgement"
+  | "coc"
+  | "test-report";
+
+type PortalDocumentRow = Pick<
+  Tables<"document">,
+  "name" | "path" | "sourceDocument" | "sourceDocumentId"
+>;
+
+function portalPdf(
+  documents: PortalDocumentRow[],
+  sourceDocument: NonNullable<PortalDocumentRow["sourceDocument"]>,
+  sourceDocumentId: string,
+  folder: string | null,
+  readableId: string
+) {
+  if (!folder) return null;
+  return (
+    documents.find(
+      (document) =>
+        document.sourceDocument === sourceDocument &&
+        document.sourceDocumentId === sourceDocumentId &&
+        document.path === `${folder}${document.name}` &&
+        isStoredDocumentPdf(document.name, [readableId])
+    ) ?? null
+  );
+}
+
+/** The customer-facing document lists behind an already validated portal link. */
+export async function getCustomerPortalOverview(
+  client: SupabaseClient<Database>,
+  { companyId, customerId }: PortalScope
+) {
+  const [orders, quotes, invoices, pendingPos, rfqSubmissions, releases] =
+    await Promise.all([
+      client
+        .from("salesOrder")
+        .select(
+          "id,salesOrderId,customerReference,orderDate,status,opportunityId"
+        )
+        .eq("companyId", companyId)
+        .eq("customerId", customerId)
+        .not(
+          "status",
+          "in",
+          `(${CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES.map((s) => `"${s}"`).join(",")})`
+        )
+        .order("orderDate", { ascending: false }),
+      client
+        .from("quote")
+        .select(
+          "id,quoteId,revisionId,customerReference,expirationDate,status,opportunityId"
+        )
+        .eq("companyId", companyId)
+        .eq("customerId", customerId)
+        .in("status", ["Sent", "Ordered", "Partial"])
+        .order("createdAt", { ascending: false }),
+      client
+        .from("salesInvoice")
+        .select(
+          "id,invoiceId,dateIssued,dateDue,status,totalAmount,currencyCode,customerReference,opportunityId,postingDate"
+        )
+        .eq("companyId", companyId)
+        .eq("customerId", customerId)
+        .in("status", ["Submitted", "Paid", "Partially Paid", "Overdue"])
+        .not("postingDate", "is", null)
+        .order("dateIssued", { ascending: false }),
+      client
+        .from("customerPortalSubmission")
+        .select("id,poNumber,quoteId,requestedDelivery,createdAt,status")
+        .eq("companyId", companyId)
+        .eq("customerId", customerId)
+        .eq("submissionType", "PO")
+        .eq("status", "Pending")
+        .order("createdAt", { ascending: false }),
+      client
+        .from("customerPortalSubmission")
+        .select("id,salesRfqId,createdAt,status")
+        .eq("companyId", companyId)
+        .eq("customerId", customerId)
+        .eq("submissionType", "RFQ")
+        .order("createdAt", { ascending: false }),
+      client
+        .from("customerPortalDocument")
+        .select(
+          "id,documentType,title,salesOrderId,shipmentId,documentPath,createdAt"
+        )
+        .eq("companyId", companyId)
+        .eq("customerId", customerId)
+        .order("createdAt", { ascending: false })
+    ]);
+  const firstError =
+    orders.error ??
+    quotes.error ??
+    invoices.error ??
+    pendingPos.error ??
+    rfqSubmissions.error ??
+    releases.error;
+  if (firstError) return { data: null, error: firstError };
+
+  const orderRows = orders.data ?? [];
+  const quoteRows = quotes.data ?? [];
+  const invoiceRows = invoices.data ?? [];
+  const orderIds = orderRows.map((row) => row.id);
+  const shipments = orderIds.length
+    ? await client
+        .from("shipment")
+        .select(
+          "id,shipmentId,sourceDocumentId,postingDate,trackingNumber,status,customerId"
+        )
+        .eq("companyId", companyId)
+        .eq("customerId", customerId)
+        .eq("sourceDocument", "Sales Order")
+        .in("sourceDocumentId", orderIds)
+        .eq("status", "Posted")
+        .order("postingDate", { ascending: false })
+    : null;
+  if (shipments?.error) return { data: null, error: shipments.error };
+  const shipmentRows = shipments?.data ?? [];
+
+  const rfqIds = (rfqSubmissions.data ?? [])
+    .map((row) => row.salesRfqId)
+    .filter((id): id is string => !!id);
+  const rfqs = rfqIds.length
+    ? await client
+        .from("salesRfq")
+        .select("id,rfqId,customerReference,status")
+        .eq("companyId", companyId)
+        .eq("customerId", customerId)
+        .in("id", rfqIds)
+    : null;
+  if (rfqs?.error) return { data: null, error: rfqs.error };
+  const rfqById = new Map((rfqs?.data ?? []).map((row) => [row.id, row]));
+
+  const sourceIds = [
+    ...orderIds,
+    ...quoteRows.map((row) => row.id),
+    ...invoiceRows.map((row) => row.id),
+    ...shipmentRows.map((row) => row.id)
+  ];
+  const documents = sourceIds.length
+    ? await client
+        .from("document")
+        .select("name,path,sourceDocument,sourceDocumentId")
+        .eq("companyId", companyId)
+        .eq("active", true)
+        .eq("type", "PDF")
+        .in("sourceDocumentId", sourceIds)
+        .in("sourceDocument", [
+          "Quote",
+          "Sales Order",
+          "Sales Invoice",
+          "Shipment"
+        ])
+        .order("createdAt", { ascending: false })
+    : null;
+  if (documents?.error) return { data: null, error: documents.error };
+  const documentRows = documents?.data ?? [];
+  const orderById = new Map(orderRows.map((row) => [row.id, row]));
+
+  const visibleQuotes = quoteRows.flatMap((row) => {
+    const pdf = portalPdf(
+      documentRows,
+      "Quote",
+      row.id,
+      row.opportunityId
+        ? `${companyId}/opportunity/${row.opportunityId}/`
+        : null,
+      row.quoteId
+    );
+    return pdf
+      ? [
+          {
+            id: row.id,
+            quoteId: row.quoteId,
+            revisionId: row.revisionId,
+            customerReference: row.customerReference,
+            expirationDate: row.expirationDate,
+            status: row.status,
+            hasPdf: true
+          }
+        ]
+      : [];
+  });
+  const visibleInvoices = invoiceRows.flatMap((row) => {
+    const folder = row.opportunityId
+      ? `${companyId}/opportunity/${row.opportunityId}/`
+      : `${companyId}/sales-invoice/${row.id}/`;
+    const pdf = portalPdf(
+      documentRows,
+      "Sales Invoice",
+      row.id,
+      folder,
+      row.invoiceId
+    );
+    return pdf
+      ? [
+          {
+            id: row.id,
+            invoiceId: row.invoiceId,
+            dateIssued: row.dateIssued,
+            dateDue: row.dateDue,
+            status: row.status,
+            totalAmount: row.totalAmount,
+            currencyCode: row.currencyCode,
+            customerReference: row.customerReference,
+            hasPdf: true
+          }
+        ]
+      : [];
+  });
+  const visibleShipments = shipmentRows.flatMap((row) => {
+    const order = row.sourceDocumentId
+      ? orderById.get(row.sourceDocumentId)
+      : null;
+    const pdf = portalPdf(
+      documentRows,
+      "Shipment",
+      row.id,
+      order?.opportunityId
+        ? `${companyId}/opportunity/${order.opportunityId}/`
+        : null,
+      row.shipmentId
+    );
+    return pdf
+      ? [
+          {
+            id: row.id,
+            shipmentId: row.shipmentId,
+            sourceDocumentId: row.sourceDocumentId,
+            postingDate: row.postingDate,
+            trackingNumber: row.trackingNumber,
+            hasPdf: true
+          }
+        ]
+      : [];
+  });
+  const shipmentById = new Map(shipmentRows.map((row) => [row.id, row]));
+
+  return {
+    data: {
+      orders: orderRows.map((row) => ({
+        id: row.id,
+        salesOrderId: row.salesOrderId,
+        customerReference: row.customerReference,
+        orderDate: row.orderDate,
+        status: row.status,
+        hasAcknowledgement: !!portalPdf(
+          documentRows,
+          "Sales Order",
+          row.id,
+          row.opportunityId
+            ? `${companyId}/opportunity/${row.opportunityId}/`
+            : null,
+          row.salesOrderId
+        )
+      })),
+      quotes: visibleQuotes,
+      invoices: visibleInvoices,
+      shipments: visibleShipments,
+      rfqs: (rfqSubmissions.data ?? []).map((row) => {
+        const rfq = row.salesRfqId ? rfqById.get(row.salesRfqId) : null;
+        return {
+          id: row.id,
+          salesRfqId: rfq?.id ?? null,
+          rfqId: rfq?.rfqId ?? null,
+          customerReference: rfq?.customerReference ?? null,
+          status: rfq?.status ?? row.status,
+          createdAt: row.createdAt
+        };
+      }),
+      pendingPos: pendingPos.data ?? [],
+      releasedDocuments: (releases.data ?? []).flatMap((row) => {
+        const sourceDocument = row.salesOrderId ? "Sales Order" : "Shipment";
+        const sourceId = row.salesOrderId ?? row.shipmentId;
+        const order = row.salesOrderId
+          ? orderById.get(row.salesOrderId)
+          : orderById.get(
+              shipmentById.get(row.shipmentId ?? "")?.sourceDocumentId ?? ""
+            );
+        if (!sourceId || !order?.opportunityId) return [];
+        const attached = documentRows.find(
+          (document) =>
+            document.sourceDocument === sourceDocument &&
+            document.sourceDocumentId === sourceId &&
+            document.path === row.documentPath &&
+            document.path ===
+              `${companyId}/opportunity/${order.opportunityId}/${document.name}` &&
+            getFileExtension(document.name) === "pdf"
+        );
+        if (!attached) return [];
+        return [
+          {
+            id: row.id,
+            documentType: row.documentType,
+            title: row.title,
+            salesOrderId: row.salesOrderId,
+            shipmentId: row.shipmentId,
+            createdAt: row.createdAt
+          }
+        ];
+      })
+    },
+    error: null
+  };
+}
+
+async function getPortalIssuedPdf(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  sourceDocument: NonNullable<PortalDocumentRow["sourceDocument"]>,
+  sourceDocumentId: string,
+  folder: string | null,
+  readableId: string
+) {
+  if (!folder) return null;
+  const result = await client
+    .from("document")
+    .select("name,path,sourceDocument,sourceDocumentId")
+    .eq("companyId", companyId)
+    .eq("sourceDocument", sourceDocument)
+    .eq("sourceDocumentId", sourceDocumentId)
+    .eq("active", true)
+    .eq("type", "PDF")
+    .order("createdAt", { ascending: false });
+  if (result.error) throw result.error;
+  return portalPdf(
+    result.data ?? [],
+    sourceDocument,
+    sourceDocumentId,
+    folder,
+    readableId
+  );
+}
+
+/** Resolve a typed portal download, never a path provided by the link holder. */
+export async function resolveCustomerPortalDocument(
+  client: SupabaseClient<Database>,
+  scope: PortalScope,
+  documentType: CustomerPortalDocumentType,
+  documentId: string
+): Promise<{ path: string; name: string } | null> {
+  const { companyId, customerId } = scope;
+
+  if (documentType === "quote") {
+    const quote = await client
+      .from("quote")
+      .select("id,quoteId,opportunityId")
+      .eq("id", documentId)
+      .eq("companyId", companyId)
+      .eq("customerId", customerId)
+      .in("status", ["Sent", "Ordered", "Partial"])
+      .maybeSingle();
+    if (quote.error) throw quote.error;
+    if (!quote.data?.opportunityId) return null;
+    return getPortalIssuedPdf(
+      client,
+      companyId,
+      "Quote",
+      quote.data.id,
+      `${companyId}/opportunity/${quote.data.opportunityId}/`,
+      quote.data.quoteId
+    );
+  }
+
+  if (documentType === "invoice") {
+    const invoice = await client
+      .from("salesInvoice")
+      .select("id,invoiceId,opportunityId")
+      .eq("id", documentId)
+      .eq("companyId", companyId)
+      .eq("customerId", customerId)
+      .in("status", ["Submitted", "Paid", "Partially Paid", "Overdue"])
+      .not("postingDate", "is", null)
+      .maybeSingle();
+    if (invoice.error) throw invoice.error;
+    if (!invoice.data) return null;
+    const folder = invoice.data.opportunityId
+      ? `${companyId}/opportunity/${invoice.data.opportunityId}/`
+      : `${companyId}/sales-invoice/${invoice.data.id}/`;
+    return getPortalIssuedPdf(
+      client,
+      companyId,
+      "Sales Invoice",
+      invoice.data.id,
+      folder,
+      invoice.data.invoiceId
+    );
+  }
+
+  if (documentType === "acknowledgement") {
+    const order = await client
+      .from("salesOrder")
+      .select("id,salesOrderId,opportunityId")
+      .eq("id", documentId)
+      .eq("companyId", companyId)
+      .eq("customerId", customerId)
+      .not(
+        "status",
+        "in",
+        `(${CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES.map((s) => `"${s}"`).join(",")})`
+      )
+      .maybeSingle();
+    if (order.error) throw order.error;
+    if (!order.data?.opportunityId) return null;
+    return getPortalIssuedPdf(
+      client,
+      companyId,
+      "Sales Order",
+      order.data.id,
+      `${companyId}/opportunity/${order.data.opportunityId}/`,
+      order.data.salesOrderId
+    );
+  }
+
+  if (documentType === "packing-slip") {
+    const shipment = await client
+      .from("shipment")
+      .select("id,shipmentId,sourceDocument,sourceDocumentId")
+      .eq("id", documentId)
+      .eq("companyId", companyId)
+      .eq("customerId", customerId)
+      .eq("sourceDocument", "Sales Order")
+      .eq("status", "Posted")
+      .maybeSingle();
+    if (shipment.error) throw shipment.error;
+    if (!shipment.data?.sourceDocumentId) return null;
+    const order = await client
+      .from("salesOrder")
+      .select("id,opportunityId")
+      .eq("id", shipment.data.sourceDocumentId)
+      .eq("companyId", companyId)
+      .eq("customerId", customerId)
+      .not(
+        "status",
+        "in",
+        `(${CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES.map((s) => `"${s}"`).join(",")})`
+      )
+      .maybeSingle();
+    if (order.error) throw order.error;
+    if (!order.data?.opportunityId) return null;
+    return getPortalIssuedPdf(
+      client,
+      companyId,
+      "Shipment",
+      shipment.data.id,
+      `${companyId}/opportunity/${order.data.opportunityId}/`,
+      shipment.data.shipmentId
+    );
+  }
+
+  const release = await client
+    .from("customerPortalDocument")
+    .select("documentPath,documentType,salesOrderId,shipmentId")
+    .eq("id", documentId)
+    .eq("companyId", companyId)
+    .eq("customerId", customerId)
+    .eq("documentType", documentType === "coc" ? "CoC" : "Test Report")
+    .maybeSingle();
+  if (release.error) throw release.error;
+  if (!release.data) return null;
+  const { documentPath, salesOrderId, shipmentId } = release.data;
+  if (
+    isUnsafeStoragePath(documentPath) ||
+    !hasCompanyPrivateObjectPathPrefix(companyId, documentPath) ||
+    getFileExtension(documentPath) !== "pdf"
+  ) {
+    return null;
+  }
+  let sourceDocument: "Sales Order" | "Shipment";
+  let sourceDocumentId: string;
+  let sourceFolder: string;
+  if (salesOrderId && !shipmentId) {
+    const order = await client
+      .from("salesOrder")
+      .select("id,opportunityId")
+      .eq("id", salesOrderId)
+      .eq("companyId", companyId)
+      .eq("customerId", customerId)
+      .not(
+        "status",
+        "in",
+        `(${CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES.map((s) => `"${s}"`).join(",")})`
+      )
+      .maybeSingle();
+    if (order.error) throw order.error;
+    if (!order.data?.opportunityId) return null;
+    sourceDocument = "Sales Order";
+    sourceDocumentId = order.data.id;
+    sourceFolder = `${companyId}/opportunity/${order.data.opportunityId}/`;
+  } else if (shipmentId && !salesOrderId) {
+    const shipment = await client
+      .from("shipment")
+      .select("id,sourceDocumentId")
+      .eq("id", shipmentId)
+      .eq("companyId", companyId)
+      .eq("customerId", customerId)
+      .eq("sourceDocument", "Sales Order")
+      .eq("status", "Posted")
+      .maybeSingle();
+    if (shipment.error) throw shipment.error;
+    if (!shipment.data?.sourceDocumentId) return null;
+    const order = await client
+      .from("salesOrder")
+      .select("id,opportunityId")
+      .eq("id", shipment.data.sourceDocumentId)
+      .eq("companyId", companyId)
+      .eq("customerId", customerId)
+      .not(
+        "status",
+        "in",
+        `(${CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES.map((s) => `"${s}"`).join(",")})`
+      )
+      .maybeSingle();
+    if (order.error) throw order.error;
+    if (!order.data?.opportunityId) return null;
+    sourceDocument = "Shipment";
+    sourceDocumentId = shipment.data.id;
+    sourceFolder = `${companyId}/opportunity/${order.data.opportunityId}/`;
+  } else {
+    return null;
+  }
+  const document = await client
+    .from("document")
+    .select("name,path")
+    .eq("companyId", companyId)
+    .eq("sourceDocument", sourceDocument)
+    .eq("sourceDocumentId", sourceDocumentId)
+    .eq("path", documentPath)
+    .eq("active", true)
+    .eq("type", "PDF")
+    .maybeSingle();
+  if (document.error) throw document.error;
+  if (
+    !document.data ||
+    document.data.path !== documentPath ||
+    document.data.path !== `${sourceFolder}${document.data.name}`
+  ) {
+    return null;
+  }
+  return { path: document.data.path, name: document.data.name };
+}
+
+/** Files staff can explicitly release from this customer's orders or shipments. */
+export async function getCustomerPortalReleaseOptions(
+  client: SupabaseClient<Database>,
+  { companyId, customerId }: PortalScope
+) {
+  const [orders, shipments, releases] = await Promise.all([
+    client
+      .from("salesOrder")
+      .select("id,salesOrderId,opportunityId")
+      .eq("companyId", companyId)
+      .eq("customerId", customerId)
+      .not(
+        "status",
+        "in",
+        `(${CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES.map((s) => `"${s}"`).join(",")})`
+      ),
+    client
+      .from("shipment")
+      .select("id,shipmentId,sourceDocumentId")
+      .eq("companyId", companyId)
+      .eq("customerId", customerId)
+      .eq("sourceDocument", "Sales Order")
+      .eq("status", "Posted"),
+    client
+      .from("customerPortalDocument")
+      .select("id,title,documentType,createdAt")
+      .eq("companyId", companyId)
+      .eq("customerId", customerId)
+      .order("createdAt", { ascending: false })
+  ]);
+  const firstError = orders.error ?? shipments.error ?? releases.error;
+  if (firstError) return { data: null, error: firstError };
+  const orderById = new Map((orders.data ?? []).map((row) => [row.id, row]));
+  const sources = [
+    ...(orders.data ?? []).map((row) => row.id),
+    ...(shipments.data ?? []).map((row) => row.id)
+  ];
+  const documents = sources.length
+    ? await client
+        .from("document")
+        .select("id,name,path,sourceDocument,sourceDocumentId")
+        .eq("companyId", companyId)
+        .eq("active", true)
+        .eq("type", "PDF")
+        .in("sourceDocument", ["Sales Order", "Shipment"])
+        .in("sourceDocumentId", sources)
+        .order("createdAt", { ascending: false })
+    : null;
+  if (documents?.error) return { data: null, error: documents.error };
+  const shipmentById = new Map(
+    (shipments.data ?? []).map((row) => [row.id, row])
+  );
+  return {
+    data: {
+      files: (documents?.data ?? []).flatMap((document) => {
+        const order =
+          document.sourceDocument === "Sales Order" && document.sourceDocumentId
+            ? orderById.get(document.sourceDocumentId)
+            : document.sourceDocument === "Shipment" &&
+                document.sourceDocumentId
+              ? orderById.get(
+                  shipmentById.get(document.sourceDocumentId)
+                    ?.sourceDocumentId ?? ""
+                )
+              : null;
+        if (
+          !order?.opportunityId ||
+          getFileExtension(document.name) !== "pdf" ||
+          isUnsafeStoragePath(document.path) ||
+          document.path !==
+            `${companyId}/opportunity/${order.opportunityId}/${document.name}`
+        ) {
+          return [];
+        }
+        const sourceLabel =
+          document.sourceDocument === "Sales Order"
+            ? order.salesOrderId
+            : shipmentById.get(document.sourceDocumentId ?? "")?.shipmentId;
+        if (!sourceLabel) return [];
+        return [{ id: document.id, name: document.name, sourceLabel }];
+      }),
+      releases: releases.data ?? []
+    },
+    error: null
+  };
+}
+
+/** Validate an exact attached PDF before recording an explicit staff release. */
+export async function releaseCustomerPortalDocument(
+  client: SupabaseClient<Database>,
+  serviceRole: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    portalId: string;
+    documentId: string;
+    documentType: "CoC" | "Test Report";
+    userId: string;
+  }
+) {
+  const portal = await getCustomerPortal(
+    serviceRole,
+    args.portalId,
+    args.companyId
+  );
+  if (portal.error || !portal.data?.customerId) {
+    return { data: null, refusal: "Portal not found" };
+  }
+  const document = await client
+    .from("document")
+    .select("id,name,path,sourceDocument,sourceDocumentId")
+    .eq("id", args.documentId)
+    .eq("companyId", args.companyId)
+    .eq("active", true)
+    .eq("type", "PDF")
+    .maybeSingle();
+  if (document.error) throw document.error;
+  if (
+    !document.data?.sourceDocumentId ||
+    !["Sales Order", "Shipment"].includes(document.data.sourceDocument ?? "") ||
+    getFileExtension(document.data.name) !== "pdf" ||
+    isUnsafeStoragePath(document.data.path) ||
+    !hasCompanyPrivateObjectPathPrefix(args.companyId, document.data.path)
+  ) {
+    return {
+      data: null,
+      refusal: "Select a PDF attached to an order or shipment"
+    };
+  }
+
+  let salesOrderId: string | null = null;
+  let shipmentId: string | null = null;
+  if (document.data.sourceDocument === "Sales Order") {
+    salesOrderId = document.data.sourceDocumentId;
+  } else {
+    const shipment = await serviceRole
+      .from("shipment")
+      .select("id,sourceDocumentId")
+      .eq("id", document.data.sourceDocumentId)
+      .eq("companyId", args.companyId)
+      .eq("customerId", portal.data.customerId)
+      .eq("sourceDocument", "Sales Order")
+      .eq("status", "Posted")
+      .maybeSingle();
+    if (shipment.error) throw shipment.error;
+    if (!shipment.data?.sourceDocumentId) {
+      return { data: null, refusal: "Shipment not found for this customer" };
+    }
+    shipmentId = shipment.data.id;
+    salesOrderId = shipment.data.sourceDocumentId;
+  }
+  const order = await serviceRole
+    .from("salesOrder")
+    .select("id,opportunityId")
+    .eq("id", salesOrderId)
+    .eq("companyId", args.companyId)
+    .eq("customerId", portal.data.customerId)
+    .not(
+      "status",
+      "in",
+      `(${CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES.map((s) => `"${s}"`).join(",")})`
+    )
+    .maybeSingle();
+  if (order.error) throw order.error;
+  if (
+    !order.data?.opportunityId ||
+    document.data.path !==
+      `${args.companyId}/opportunity/${order.data.opportunityId}/${document.data.name}`
+  ) {
+    return {
+      data: null,
+      refusal: "Document is not attached to this customer's order"
+    };
+  }
+  const exists = await storage(serviceRole)
+    .company(args.companyId)
+    .exists(document.data.path);
+  if (!exists.data) {
+    return { data: null, refusal: "Document file no longer exists" };
+  }
+  const existing = await serviceRole
+    .from("customerPortalDocument")
+    .select("id")
+    .eq("companyId", args.companyId)
+    .eq("customerId", portal.data.customerId)
+    .eq("documentPath", document.data.path)
+    .eq("documentType", args.documentType)
+    .limit(1)
+    .maybeSingle();
+  if (existing.error) throw existing.error;
+  if (existing.data) return { data: existing.data, refusal: null };
+  const inserted = await serviceRole
+    .from("customerPortalDocument")
+    .insert({
+      companyId: args.companyId,
+      customerId: portal.data.customerId,
+      salesOrderId: shipmentId ? null : salesOrderId,
+      shipmentId,
+      documentPath: document.data.path,
+      documentType: args.documentType,
+      title: document.data.name,
+      createdBy: args.userId
+    })
+    .select("id")
+    .single();
+  if (inserted.error?.code === "23505") {
+    // Another staff request released the same PDF after the lookup above.
+    const winner = await serviceRole
+      .from("customerPortalDocument")
+      .select("id")
+      .eq("companyId", args.companyId)
+      .eq("customerId", portal.data.customerId)
+      .eq("documentPath", document.data.path)
+      .eq("documentType", args.documentType)
+      .single();
+    if (winner.error) throw winner.error;
+    return { data: winner.data, refusal: null };
+  }
+  if (inserted.error) throw inserted.error;
+  return { data: inserted.data, refusal: null };
 }
 
 export async function getModelByQuoteLineId(
@@ -6338,6 +7298,110 @@ export async function insertSalesOrder(
   return { data: { id: orderId, salesOrderId }, error: null };
 }
 
+/** Create a portal PO's Draft header and its required defaults in one transaction. */
+export async function insertCustomerPortalDraftOrder(
+  trx: KyselyTx,
+  client: SupabaseClient<Database>,
+  input: {
+    companyId: string;
+    customerId: string;
+    createdBy: string;
+    submissionId: string;
+    poNumber: string | null;
+    requestedDelivery: string | null;
+  }
+) {
+  const [
+    sequence,
+    customerPayment,
+    customerShipping,
+    seller,
+    company,
+    timeZone
+  ] = await Promise.all([
+    client.rpc("get_next_sequence", {
+      sequence_name: "salesOrder",
+      company_id: input.companyId
+    }),
+    getCustomerPayment(client, input.customerId, input.companyId),
+    getCustomerShipping(client, input.customerId, input.companyId),
+    getEmployeeJob(client, input.createdBy, input.companyId),
+    trx
+      .selectFrom("company")
+      .select("baseCurrencyCode")
+      .where("id", "=", input.companyId)
+      .executeTakeFirstOrThrow(),
+    getCompanyTimeZone(client, input.companyId)
+  ]);
+  if (sequence.error || !sequence.data)
+    throw sequence.error ?? new Error("Failed to generate sales order number");
+  if (customerPayment.error || !customerPayment.data)
+    throw (
+      customerPayment.error ??
+      new Error("Customer payment defaults are missing")
+    );
+  if (customerShipping.error || !customerShipping.data)
+    throw (
+      customerShipping.error ??
+      new Error("Customer shipping defaults are missing")
+    );
+  const currencyCode = company.baseCurrencyCode ?? "USD";
+  const exchange = await getExchangeRate(client, input.companyId, currencyCode);
+  if (exchange.error) throw exchange.error;
+  const locationId = seller.data?.locationId ?? null;
+  const opportunity = await trx
+    .insertInto("opportunity")
+    .values({ customerId: input.customerId, companyId: input.companyId })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  const order = await trx
+    .insertInto("salesOrder")
+    .values({
+      salesOrderId: sequence.data,
+      customerId: input.customerId,
+      customerReference: input.poNumber,
+      opportunityId: opportunity.id,
+      status: "Draft",
+      orderDate: datetime.today(timeZone).toString(),
+      currencyCode,
+      exchangeRate: exchange.data,
+      exchangeRateUpdatedAt: datetime.timestamp(),
+      locationId,
+      customFields: toJson({ customerPortalSubmissionId: input.submissionId }),
+      companyId: input.companyId,
+      createdBy: input.createdBy,
+      updatedBy: input.createdBy
+    })
+    .returning("id")
+    .executeTakeFirstOrThrow();
+  await trx
+    .insertInto("salesOrderShipment")
+    .values({
+      id: order.id,
+      locationId,
+      receiptRequestedDate: input.requestedDelivery,
+      shippingMethodId: customerShipping.data.shippingMethodId,
+      shippingTermId: customerShipping.data.shippingTermId,
+      incoterm: customerShipping.data.incoterm,
+      incotermLocation: customerShipping.data.incotermLocation,
+      companyId: input.companyId
+    })
+    .execute();
+  await trx
+    .insertInto("salesOrderPayment")
+    .values({
+      id: order.id,
+      paymentTermId: customerPayment.data.paymentTermId,
+      invoiceCustomerId:
+        customerPayment.data.invoiceCustomerId ?? input.customerId,
+      invoiceCustomerContactId: customerPayment.data.invoiceCustomerContactId,
+      invoiceCustomerLocationId: customerPayment.data.invoiceCustomerLocationId,
+      companyId: input.companyId
+    })
+    .execute();
+  return { id: order.id, opportunityId: opportunity.id };
+}
+
 export async function updateSalesOrder(
   client: SupabaseClient<Database>,
   input: {
@@ -6529,6 +7593,33 @@ export async function upsertSalesOrderShipment(
     .single();
 }
 
+/** Customer-facing progress copy is separate from commercial line edits. */
+export async function updateSalesOrderLinePortalMessage(
+  client: SupabaseClient<Database>,
+  input: {
+    companyId: string;
+    salesOrderId: string;
+    id: string;
+    portalLateReason: string | null;
+    portalDeliveryUpdate: string | null;
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("salesOrderLine")
+    .update({
+      portalLateReason: input.portalLateReason,
+      portalDeliveryUpdate: input.portalDeliveryUpdate,
+      updatedBy: input.updatedBy,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", input.id)
+    .eq("companyId", input.companyId)
+    .eq("salesOrderId", input.salesOrderId)
+    .select("id")
+    .single();
+}
+
 /** Not published: `sales.order.line.create` / `update` also refuse a locked order. */
 export async function upsertSalesOrderLine(
   client: SupabaseClient<Database>,
@@ -6669,6 +7760,247 @@ export async function upsertSalesOrderPayment(
     .insert([salesOrderPayment])
     .select("id")
     .single();
+}
+
+/** A portal idempotency key belongs to one form type for this link. */
+export async function findCustomerPortalSubmission(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; portalId: string; idempotencyKey: string }
+) {
+  return db
+    .selectFrom("customerPortalSubmission")
+    .select(["id", "submissionType", "salesRfqId", "requestFingerprint"])
+    .where("companyId", "=", args.companyId)
+    .where("portalId", "=", args.portalId)
+    .where("idempotencyKey", "=", args.idempotencyKey)
+    .executeTakeFirst();
+}
+
+/** A quote named by a public PO must belong to the portal customer and be Sent. */
+export async function isSentCustomerQuote(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; customerId: string; quoteId: string }
+) {
+  const quote = await db
+    .selectFrom("quote")
+    .select("id")
+    .where("id", "=", args.quoteId)
+    .where("companyId", "=", args.companyId)
+    .where("customerId", "=", args.customerId)
+    .where("status", "=", "Sent")
+    .executeTakeFirst();
+  return !!quote;
+}
+
+function isPortalSubmissionKeyConflict(error: unknown): boolean {
+  const pg = error as { code?: string; constraint?: string; cause?: unknown };
+  return (
+    (pg.code === "23505" &&
+      pg.constraint ===
+        "customerPortalSubmission_companyId_portalId_idempotencyKey_key") ||
+    (!!pg.cause && isPortalSubmissionKeyConflict(pg.cause))
+  );
+}
+
+type PortalSubmissionBase = {
+  companyId: string;
+  portalId: string;
+  customerId: string;
+  createdBy: string;
+  idempotencyKey: string;
+  requestFingerprint: string;
+  documentPaths: string[];
+};
+
+function matchingPortalSubmission<T extends { requestFingerprint: string }>(
+  existing: T,
+  requestFingerprint: string
+) {
+  if (existing.requestFingerprint !== requestFingerprint)
+    throw new Error("IDEMPOTENCY_CONFLICT");
+  return { ...existing, duplicate: true as const };
+}
+
+export async function insertCustomerPortalRfqSubmission(
+  db: Kysely<KyselyDatabase>,
+  args: PortalSubmissionBase & {
+    opportunityId: string;
+    rfqDate: string;
+    quoteNeededBy?: string;
+    customerReference?: string;
+    notes?: string;
+    lines: Array<{
+      partNumber: string;
+      description?: string;
+      quantity: number;
+      unitOfMeasureCode: string;
+      delivery?: string;
+    }>;
+  }
+) {
+  const existing = await findCustomerPortalSubmission(db, args);
+  if (existing)
+    return matchingPortalSubmission(existing, args.requestFingerprint);
+
+  try {
+    return await db.transaction().execute(async (trx) => {
+      // Claim the unique key first. A competing transaction cannot create a
+      // second RFQ, opportunity, or sequence allocation for the same request.
+      const submission = await trx
+        .insertInto("customerPortalSubmission")
+        .values({
+          companyId: args.companyId,
+          portalId: args.portalId,
+          customerId: args.customerId,
+          createdBy: args.createdBy,
+          idempotencyKey: args.idempotencyKey,
+          requestFingerprint: args.requestFingerprint,
+          submissionType: "RFQ",
+          status: "Pending",
+          lines: toJson(args.lines),
+          documentPaths: toJson(args.documentPaths)
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const opportunity = await trx
+        .insertInto("opportunity")
+        .values({
+          id: args.opportunityId,
+          companyId: args.companyId,
+          customerId: args.customerId
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      const rfqId = await getNextSequence(trx, "salesRfq", args.companyId);
+      const notes = args.notes
+        ? toJson({
+            type: "doc",
+            content: [
+              {
+                type: "paragraph",
+                content: [{ type: "text", text: args.notes }]
+              }
+            ]
+          })
+        : null;
+      const rfq = await trx
+        .insertInto("salesRfq")
+        .values({
+          rfqId,
+          customerId: args.customerId,
+          customerReference: args.customerReference ?? null,
+          rfqDate: args.rfqDate,
+          expirationDate: args.quoteNeededBy ?? null,
+          status: "Draft",
+          internalNotes: notes,
+          opportunityId: opportunity.id,
+          companyId: args.companyId,
+          createdBy: args.createdBy,
+          updatedBy: args.createdBy
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      await trx
+        .insertInto("salesRfqLine")
+        .values(
+          args.lines.map((line, index) => ({
+            salesRfqId: rfq.id,
+            customerPartId: line.partNumber,
+            description: line.description ?? null,
+            quantity: [line.quantity],
+            unitOfMeasureCode: line.unitOfMeasureCode,
+            order: index + 1,
+            companyId: args.companyId,
+            createdBy: args.createdBy,
+            customFields: toJson({})
+          }))
+        )
+        .execute();
+      await trx
+        .updateTable("customerPortalSubmission")
+        .set({ salesRfqId: rfq.id })
+        .where("id", "=", submission.id)
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirstOrThrow();
+      return {
+        id: submission.id,
+        submissionType: "RFQ",
+        salesRfqId: rfq.id,
+        duplicate: false
+      };
+    });
+  } catch (error) {
+    if (!isPortalSubmissionKeyConflict(error)) throw error;
+    const winner = await findCustomerPortalSubmission(db, args);
+    if (!winner) throw error;
+    return matchingPortalSubmission(winner, args.requestFingerprint);
+  }
+}
+
+export async function insertCustomerPortalPoSubmission(
+  db: Kysely<KyselyDatabase>,
+  args: PortalSubmissionBase & {
+    poNumber: string;
+    requestedDelivery?: string;
+    quoteId?: string;
+    lines: Array<{
+      partNumber: string;
+      description?: string;
+      quantity: number;
+      unitOfMeasureCode: string;
+      unitPrice?: number;
+    }>;
+  }
+) {
+  const existing = await findCustomerPortalSubmission(db, args);
+  if (existing)
+    return matchingPortalSubmission(existing, args.requestFingerprint);
+  try {
+    return await db.transaction().execute(async (trx) => {
+      if (args.quoteId) {
+        const quote = await trx
+          .selectFrom("quote")
+          .select("id")
+          .where("id", "=", args.quoteId)
+          .where("companyId", "=", args.companyId)
+          .where("customerId", "=", args.customerId)
+          .where("status", "=", "Sent")
+          .forShare()
+          .executeTakeFirst();
+        if (!quote) throw new Error("QUOTE_NOT_AVAILABLE");
+      }
+      const submission = await trx
+        .insertInto("customerPortalSubmission")
+        .values({
+          companyId: args.companyId,
+          portalId: args.portalId,
+          customerId: args.customerId,
+          createdBy: args.createdBy,
+          idempotencyKey: args.idempotencyKey,
+          requestFingerprint: args.requestFingerprint,
+          submissionType: "PO",
+          status: "Pending",
+          poNumber: args.poNumber,
+          requestedDelivery: args.requestedDelivery ?? null,
+          quoteId: args.quoteId ?? null,
+          lines: toJson(args.lines),
+          documentPaths: toJson(args.documentPaths)
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+      return {
+        id: submission.id,
+        submissionType: "PO",
+        salesRfqId: null,
+        duplicate: false
+      };
+    });
+  } catch (error) {
+    if (!isPortalSubmissionKeyConflict(error)) throw error;
+    const winner = await findCustomerPortalSubmission(db, args);
+    if (!winner) throw error;
+    return matchingPortalSubmission(winner, args.requestFingerprint);
+  }
 }
 
 export async function insertSalesRFQ(

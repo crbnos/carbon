@@ -997,6 +997,18 @@ function isValidServicePeriod(data: {
   }
 }
 
+export const customerPortalLateReasons = [
+  "Production",
+  "Supplier",
+  "Export licence",
+  "Your change"
+] as const;
+
+export const customerPortalLineUpdateValidator = z.object({
+  portalLateReason: zfd.text(z.enum(customerPortalLateReasons).optional()),
+  portalDeliveryUpdate: zfd.text(z.string().max(2000).optional())
+});
+
 export const salesOrderLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -1155,6 +1167,73 @@ export const salesRfqValidator = z.object({
   status: z.enum(salesRFQStatusType).optional(),
   salesPersonId: zfd.text(z.string().optional())
 });
+
+// Public customer-portal submissions accept only customer-entered fields. The
+// portal link supplies the company, customer, and audit actor server-side.
+const portalSubmissionLine = z.object({
+  partNumber: z.string().trim().min(1).max(120),
+  description: z.string().trim().max(1000).optional(),
+  quantity: z.number().positive().max(1_000_000),
+  unitOfMeasureCode: z.string().trim().min(1).max(20).default("EA")
+});
+
+const portalSubmissionBase = z.object({
+  idempotencyKey: z.string().uuid(),
+  lines: z.array(portalSubmissionLine).min(1).max(50)
+});
+
+const portalDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .refine((value) => {
+    try {
+      parseDate(value);
+      return true;
+    } catch {
+      return false;
+    }
+  }, "Invalid date")
+  .optional();
+const portalSubmissionFile = z
+  .instanceof(File)
+  .refine(
+    (file) => file.size > 0 && file.size <= 10 * 1024 * 1024,
+    "Attachment must be 10 MB or less"
+  );
+
+export const customerPortalRfqValidator = portalSubmissionBase.extend({
+  customerReference: z.string().trim().max(120).optional(),
+  quoteNeededBy: portalDate,
+  notes: z.string().trim().max(5000).optional(),
+  lines: z
+    .array(
+      portalSubmissionLine.extend({
+        delivery: z.string().trim().max(200).optional()
+      })
+    )
+    .min(1)
+    .max(50),
+  files: z.array(portalSubmissionFile).max(5)
+});
+
+export const customerPortalPoValidator = portalSubmissionBase
+  .extend({
+    poNumber: z.string().trim().min(1).max(120),
+    quoteId: z.string().trim().min(1).max(120).optional(),
+    requestedDelivery: portalDate,
+    lines: z
+      .array(
+        portalSubmissionLine.extend({
+          unitPrice: z.number().nonnegative().max(1_000_000_000).optional()
+        })
+      )
+      .max(50),
+    file: portalSubmissionFile
+  })
+  .refine((input) => !!input.quoteId || input.lines.length > 0, {
+    path: ["lines"],
+    message: "Add at least one line when the PO is not against a quote"
+  });
 
 export const salesRfqDragValidator = z.object({
   id: z.string(),

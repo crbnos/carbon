@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -13,7 +14,10 @@ import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { customerPortalValidator } from "~/modules/sales/sales.models";
-import { getCustomerPortal } from "~/modules/sales/sales.service";
+import {
+  getCustomerPortal,
+  getCustomerPortalReleaseOptions
+} from "~/modules/sales/sales.service";
 import {
   customerPortalExpiresAt,
   customerPortalExpiryDate,
@@ -44,15 +48,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const timeZone = await getCompanyTimeZone(client, companyId);
+  const [timeZone, releaseOptions] = await Promise.all([
+    getCompanyTimeZone(client, companyId),
+    getCustomerPortalReleaseOptions(client, {
+      companyId,
+      customerId: customerPortal.data.customerId ?? ""
+    })
+  ]);
+  if (releaseOptions.error) {
+    throw new Error("Failed to load customer portal documents");
+  }
 
   return {
     customerPortal: customerPortal.data,
-    expiresOn: customerPortalExpiryDate(customerPortal.data.expiresAt, timeZone)
+    expiresOn: customerPortalExpiryDate(
+      customerPortal.data.expiresAt,
+      timeZone
+    ),
+    releaseOptions: releaseOptions.data
   };
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await requirePermissions(request, {
     update: "sales"
@@ -67,6 +84,30 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
+  if (formData.get("intent") === "releaseDocument") {
+    const portalId = params.id;
+    const documentId = formData.get("documentId");
+    const documentType = formData.get("documentType");
+    if (
+      !portalId ||
+      typeof documentId !== "string" ||
+      !documentId ||
+      (documentType !== "CoC" && documentType !== "Test Report")
+    ) {
+      return data({ releaseError: "Choose a PDF and document type" });
+    }
+    const api = await carbon(request);
+    const released = await api.sales.releaseCustomerPortalDocument({
+      portalId,
+      documentId,
+      documentType
+    });
+    return data(
+      released.error
+        ? { releaseError: released.error.message }
+        : { released: true }
+    );
+  }
   const validation = await validator(customerPortalValidator).validate(
     formData
   );
@@ -133,7 +174,8 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function EditCustomerPortalRoute() {
-  const { customerPortal, expiresOn } = useLoaderData<typeof loader>();
+  const { customerPortal, expiresOn, releaseOptions } =
+    useLoaderData<typeof loader>();
   const dialog = useRouteDialog();
 
   const initialValues = {
@@ -148,6 +190,7 @@ export default function EditCustomerPortalRoute() {
       initialValues={initialValues}
       open={dialog.open}
       onClose={dialog.close}
+      releaseOptions={releaseOptions}
     />
   );
 }

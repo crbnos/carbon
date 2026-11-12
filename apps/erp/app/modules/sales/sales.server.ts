@@ -86,6 +86,9 @@ import {
   customerContractFundingValidator,
   customerContractTypes,
   customerContractValidator,
+  customerPortalLineUpdateValidator,
+  customerPortalPoValidator,
+  customerPortalRfqValidator,
   invoiceAutomations,
   isQuoteLocked,
   isSalesOrderLocked,
@@ -118,6 +121,11 @@ import type {
   QuoteLinePriceRow
 } from "./sales.service";
 import * as service from "./sales.service";
+import {
+  portalSubmissionFingerprint,
+  removePortalUploads,
+  uploadPortalFiles
+} from "./sales.service";
 import * as utils from "./sales.utils";
 import { reconcileQuantityBreaks } from "./sales.utils";
 
@@ -131,6 +139,156 @@ const customFieldValues = z.record(
   z.string(),
   z.union([z.string(), z.number(), z.boolean()])
 );
+// --- Public customer-portal submissions -------------------------------------
+
+export const submitCustomerPortalRfq = defineServiceFn({
+  input: customerPortalRfqValidator.extend({
+    portalId: z.string().uuid(),
+    customerId: z.string().min(1)
+  }),
+  permission: "system",
+  async run(ctx, { files, ...input }) {
+    const db = ctx.asSystem.pg;
+    const requestFingerprint = await portalSubmissionFingerprint(input, files);
+    const key = {
+      companyId: ctx.company.id,
+      portalId: input.portalId,
+      idempotencyKey: input.idempotencyKey
+    };
+    const existing = await service.findCustomerPortalSubmission(db, key);
+    if (existing) {
+      if (
+        existing.submissionType !== "RFQ" ||
+        existing.requestFingerprint !== requestFingerprint
+      )
+        return ctx.error(
+          "conflict",
+          "This submission key was already used for different content"
+        );
+      return { submissionId: existing.id, salesRfqId: existing.salesRfqId };
+    }
+    const opportunityId = crypto.randomUUID();
+    // The RFQ's opportunity document list reads this exact folder. Allocate
+    // its id before upload, then insert the opportunity in the DB transaction.
+    const upload = await uploadPortalFiles(
+      ctx,
+      `opportunity/${opportunityId}`,
+      files
+    );
+    if (upload.error) return ctx.error("validation", upload.error);
+    try {
+      const rfqDate = datetime
+        .today(await getCompanyTimeZone(ctx.asSystem.supabase, ctx.company.id))
+        .toString();
+      const result = await service.insertCustomerPortalRfqSubmission(db, {
+        ...input,
+        ...key,
+        createdBy: ctx.auditUserId,
+        requestFingerprint,
+        opportunityId,
+        rfqDate,
+        documentPaths: upload.paths
+      });
+      if (result.duplicate) await removePortalUploads(ctx, upload.paths);
+      if (result.submissionType !== "RFQ")
+        return ctx.error("rule", "This submission key was already used");
+      return { submissionId: result.id, salesRfqId: result.salesRfqId };
+    } catch (error) {
+      await removePortalUploads(ctx, upload.paths);
+      if (error instanceof Error && error.message === "IDEMPOTENCY_CONFLICT")
+        return ctx.error(
+          "conflict",
+          "This submission key was already used for different content"
+        );
+      logger.error("Failed to save portal RFQ", {
+        companyId: ctx.company.id,
+        error
+      });
+      return ctx.error("internal", "Failed to save request", error);
+    }
+  }
+});
+
+export const submitCustomerPortalPo = defineServiceFn({
+  input: customerPortalPoValidator.safeExtend({
+    portalId: z.string().uuid(),
+    customerId: z.string().min(1)
+  }),
+  permission: "system",
+  async run(ctx, { file, ...input }) {
+    const db = ctx.asSystem.pg;
+    const requestFingerprint = await portalSubmissionFingerprint(input, [file]);
+    const key = {
+      companyId: ctx.company.id,
+      portalId: input.portalId,
+      idempotencyKey: input.idempotencyKey
+    };
+    const existing = await service.findCustomerPortalSubmission(db, key);
+    if (existing) {
+      if (
+        existing.submissionType !== "PO" ||
+        existing.requestFingerprint !== requestFingerprint
+      )
+        return ctx.error(
+          "conflict",
+          "This submission key was already used for different content"
+        );
+      return { submissionId: existing.id };
+    }
+    if (
+      input.quoteId &&
+      !(await service.isSentCustomerQuote(db, {
+        companyId: ctx.company.id,
+        customerId: input.customerId,
+        quoteId: input.quoteId
+      }))
+    ) {
+      return ctx.error(
+        "validation",
+        "Quote is not available for this customer"
+      );
+    }
+    const upload = await uploadPortalFiles(
+      ctx,
+      `customer-portal/${input.portalId}`,
+      [file],
+      true
+    );
+    if (upload.error) return ctx.error("validation", upload.error);
+    try {
+      const result = await service.insertCustomerPortalPoSubmission(db, {
+        ...input,
+        ...key,
+        createdBy: ctx.auditUserId,
+        requestFingerprint,
+        documentPaths: upload.paths
+      });
+      if (result.duplicate) await removePortalUploads(ctx, upload.paths);
+      if (result.submissionType !== "PO")
+        return ctx.error("rule", "This submission key was already used");
+      return { submissionId: result.id };
+    } catch (error) {
+      await removePortalUploads(ctx, upload.paths);
+      if (error instanceof Error && error.message === "QUOTE_NOT_AVAILABLE") {
+        return ctx.error(
+          "validation",
+          "Quote is not available for this customer"
+        );
+      }
+      if (error instanceof Error && error.message === "IDEMPOTENCY_CONFLICT")
+        return ctx.error(
+          "conflict",
+          "This submission key was already used for different content"
+        );
+      logger.error("Failed to save portal PO", {
+        companyId: ctx.company.id,
+        error
+      });
+      return ctx.error("internal", "Failed to save purchase order", error);
+    }
+  }
+});
+
 // --- Sales RFQs -------------------------------------------------------------
 
 const salesRfqFields = [
@@ -1358,6 +1516,272 @@ export const convertQuote = defineServiceFn({
     return { salesOrderId, warning };
   }
 });
+
+/** Staff approval of a portal PO. The order carries a durable submission marker so a retry can finish a receipt after an interrupted write. */
+export const acceptCustomerPortalPoSubmission = defineServiceFn({
+  input: z.object({
+    submissionId: z.string(),
+    selectedLines: z
+      .record(z.string(), z.object({ quantity: z.number().min(0) }))
+      .default({}),
+    acknowledged: z.boolean().default(false)
+  }),
+  permission: { update: "sales" },
+  async run(ctx, input) {
+    const companyId = ctx.company.id;
+    const client = ctx.asSystem.supabase;
+    try {
+      const result = await service.withLockedCustomerPortalPoSubmission(
+        ctx.asSystem.pg,
+        companyId,
+        input.submissionId,
+        async (trx, submission) => {
+          if (submission.status === "Rejected")
+            return { kind: "rejected" as const };
+          if (submission.status === "Accepted" && submission.salesOrderId) {
+            return {
+              kind: "accepted" as const,
+              salesOrderId: submission.salesOrderId
+            };
+          }
+          if (submission.status !== "Pending")
+            return { kind: "invalid" as const };
+
+          // Both creation paths write the marker in the same transaction as the
+          // order. If a process died before recording Accepted, find that order.
+          const committed = await service.findCustomerPortalOrderByMarker(
+            trx,
+            companyId,
+            submission.customerId,
+            submission.id
+          );
+          let salesOrderId = committed?.id;
+          let opportunityId = committed?.opportunityId;
+          let ruleCheck:
+            | Awaited<ReturnType<typeof service.salesDocumentGate>>["check"]
+            | null = null;
+
+          if (!salesOrderId && submission.quoteId) {
+            const quote = await trx
+              .selectFrom("quote")
+              .select(["id", "customerId", "status", "opportunityId"])
+              .where("id", "=", submission.quoteId)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst();
+            if (
+              !quote ||
+              quote.customerId !== submission.customerId ||
+              quote.status !== "Sent"
+            ) {
+              return { kind: "quoteUnavailable" as const };
+            }
+            const selected = new Set(
+              Object.entries(input.selectedLines)
+                .filter(([, line]) => line.quantity > 0)
+                .map(([id]) => id)
+            );
+            if (selected.size === 0) return { kind: "noLines" as const };
+            const gate = await service.salesDocumentGate(ctx, {
+              documentType: "quote",
+              documentId: quote.id,
+              acknowledged: input.acknowledged,
+              lineIds: selected
+            });
+            if (gate.blocked)
+              return { kind: "blocked" as const, check: gate.blocked };
+            ruleCheck = gate.check;
+            const converted = await service.convertQuoteToOrder(
+              client,
+              ctx.asSystem.pg,
+              {
+                id: quote.id,
+                selectedLines: input.selectedLines,
+                purchaseOrderNumber: submission.poNumber ?? "",
+                customerPortalSubmissionId: submission.id,
+                companyId,
+                userId: ctx.auditUserId
+              }
+            );
+            if (converted.error || !converted.data?.convertedId) {
+              throw converted.error ?? new Error("Failed to convert quote");
+            }
+            salesOrderId = converted.data.convertedId;
+            opportunityId = quote.opportunityId;
+          } else if (!salesOrderId) {
+            const created = await service.insertCustomerPortalDraftOrder(
+              trx,
+              client,
+              {
+                customerId: submission.customerId,
+                companyId,
+                createdBy: ctx.auditUserId,
+                submissionId: submission.id,
+                poNumber: submission.poNumber,
+                requestedDelivery: submission.requestedDelivery
+              }
+            );
+            salesOrderId = created.id;
+            opportunityId = created.opportunityId;
+          }
+
+          if (!opportunityId) {
+            const order = await trx
+              .selectFrom("salesOrder")
+              .select("opportunityId")
+              .where("id", "=", salesOrderId)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst();
+            opportunityId = order?.opportunityId;
+          }
+          const paths = Array.isArray(submission.documentPaths)
+            ? submission.documentPaths
+            : [];
+          const source = paths.find(
+            (p): p is string =>
+              typeof p === "string" &&
+              p.startsWith(
+                `${companyId}/customer-portal/${submission.portalId}/`
+              ) &&
+              p.toLowerCase().endsWith(".pdf")
+          );
+          if (!source || !opportunityId)
+            throw new Error("Submitted PO PDF or opportunity is missing");
+          const destination = `${companyId}/opportunity/${opportunityId}/Customer-PO-${submission.id}.pdf`;
+          const bucket = storage(client).company(companyId);
+          const exists = await bucket.exists(destination);
+          if (exists.error) throw exists.error;
+          if (!exists.data) {
+            const copied = await bucket.copy(source, destination);
+            if (copied.error) throw copied.error;
+          }
+          await trx
+            .updateTable("opportunity")
+            .set({ purchaseOrderDocumentPath: destination })
+            .where("id", "=", opportunityId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirstOrThrow();
+          await trx
+            .updateTable("customerPortalSubmission")
+            .set({
+              status: "Accepted",
+              salesOrderId,
+              updatedBy: ctx.auditUserId,
+              updatedAt: datetime.timestamp()
+            })
+            .where("id", "=", submission.id)
+            .where("companyId", "=", companyId)
+            .executeTakeFirstOrThrow();
+          return {
+            kind: "accepted" as const,
+            salesOrderId,
+            ruleCheck,
+            quoteId: submission.quoteId
+          };
+        }
+      );
+      if (!result)
+        return ctx.error("notFound", "Purchase order submission not found");
+      if (result.kind === "rejected")
+        return ctx.error("rule", "Purchase order submission was rejected");
+      if (result.kind === "invalid")
+        return ctx.error("rule", "Purchase order submission is not pending");
+      if (result.kind === "quoteUnavailable")
+        return ctx.error("rule", "Quote is no longer available for conversion");
+      if (result.kind === "noLines")
+        return ctx.error("validation", "Select at least one quoted line");
+      if (result.kind === "blocked") return result.check;
+      if (result.ruleCheck && result.quoteId) {
+        await service.recordSalesRuleOutcome(client, {
+          companyId,
+          userId: ctx.auditUserId,
+          documentType: "quote",
+          documentId: result.quoteId,
+          outcome: "acknowledged",
+          ...result.ruleCheck
+        });
+        try {
+          const pdf = await service.attachSalesOrderPdf(ctx, {
+            salesOrderId: result.salesOrderId,
+            locale: "en-US"
+          });
+          if (pdf instanceof Error) throw pdf;
+        } catch (error) {
+          logger.error(
+            "Failed to attach sales order PDF after portal PO approval",
+            {
+              companyId,
+              salesOrderId: result.salesOrderId,
+              error
+            }
+          );
+        }
+      }
+      return { salesOrderId: result.salesOrderId };
+    } catch (error) {
+      logger.error("Failed to accept portal PO", {
+        companyId,
+        submissionId: input.submissionId,
+        error
+      });
+      return ctx.error(
+        "internal",
+        getErrorMessage(error, "Failed to accept purchase order"),
+        error
+      );
+    }
+  }
+});
+
+export const rejectCustomerPortalPoSubmission = defineServiceFn({
+  input: z.object({ submissionId: z.string() }),
+  permission: { update: "sales" },
+  async run(ctx, { submissionId }) {
+    const result = await service.withLockedCustomerPortalPoSubmission(
+      ctx.asSystem.pg,
+      ctx.company.id,
+      submissionId,
+      async (trx, submission) => {
+        if (submission.status === "Accepted")
+          return { status: "Accepted" as const };
+        if (submission.status === "Rejected")
+          return { status: "Rejected" as const };
+        // An interrupted approval can leave a committed order with a Pending receipt.
+        // Refuse rejection in that state; approval retry completes the receipt.
+        const committed = await service.findCustomerPortalOrderByMarker(
+          trx,
+          ctx.company.id,
+          submission.customerId,
+          submission.id
+        );
+        if (committed) return { status: "OrderExists" as const };
+        await trx
+          .updateTable("customerPortalSubmission")
+          .set({
+            status: "Rejected",
+            updatedBy: ctx.auditUserId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", submission.id)
+          .where("companyId", "=", ctx.company.id)
+          .executeTakeFirstOrThrow();
+        return { status: "Rejected" as const };
+      }
+    );
+    if (!result)
+      return ctx.error("notFound", "Purchase order submission not found");
+    if (result.status === "Accepted")
+      return ctx.error(
+        "rule",
+        "Purchase order submission was already accepted"
+      );
+    if (result.status === "OrderExists")
+      return ctx.error(
+        "rule",
+        "An order was already created for this PO. Accept it to finish recording the review."
+      );
+    return result;
+  }
+});
 /**
  * Configure a Make to Order quote line.
  *
@@ -2375,6 +2799,43 @@ export const updateSalesOrderLine = defineServiceFn({
       "acknowledged",
       gate.check
     );
+    return { salesOrderLineId: id };
+  }
+});
+
+/** Update optional customer-facing progress text without changing order terms. */
+export const updateSalesOrderLinePortalMessage = defineServiceFn({
+  input: customerPortalLineUpdateValidator.extend({
+    id: z.string(),
+    salesOrderId: z.string()
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, { id, salesOrderId, portalLateReason, portalDeliveryUpdate }) {
+    const refused = await refuseUnlessOwned(ctx, "salesOrderLine", {
+      id,
+      salesOrderId
+    });
+    if (refused) return refused;
+
+    const updated = await service.updateSalesOrderLinePortalMessage(
+      ctx.asCaller.supabase,
+      {
+        id,
+        salesOrderId,
+        companyId: ctx.company.id,
+        portalLateReason: portalLateReason?.trim() || null,
+        portalDeliveryUpdate: portalDeliveryUpdate?.trim() || null,
+        updatedBy: ctx.auditUserId
+      }
+    );
+    if (updated.error) {
+      return ctx.error(
+        "internal",
+        "Failed to update customer portal progress",
+        updated.error
+      );
+    }
     return { salesOrderLineId: id };
   }
 });
@@ -11314,5 +11775,29 @@ export const getProjectBillingBackup = defineServiceFn({
         salesInvoiceId
       })
     );
+  }
+});
+
+/** Release an attached order or shipment PDF to a customer's portal. */
+export const releaseCustomerPortalDocument = defineServiceFn({
+  input: z.object({
+    portalId: z.string(),
+    documentId: z.string(),
+    documentType: z.enum(["CoC", "Test Report"])
+  }),
+  permission: { update: "sales" },
+
+  async run(ctx, input) {
+    const result = await service.releaseCustomerPortalDocument(
+      ctx.asCaller.supabase,
+      ctx.asSystem.supabase,
+      {
+        ...input,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      }
+    );
+    if (result.refusal) return ctx.error("rule", result.refusal);
+    return result.data;
   }
 });

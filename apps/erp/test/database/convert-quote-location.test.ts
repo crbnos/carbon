@@ -16,6 +16,7 @@ import {
   unwrap
 } from "./fixtures/always-post";
 import { databaseTest } from "./fixtures/local-database";
+import { findCustomerPortalOrderByMarker } from "../../app/modules/sales/sales.service";
 import {
   convertDocument,
   invokePosting
@@ -23,7 +24,7 @@ import {
 
 // A Sent quote of one Pull from Inventory line for 4 of the fixture's part,
 // converted to a sales order. Returns the order id.
-async function convertQuote(f: Fixture) {
+async function convertQuote(f: Fixture, customerPortalSubmissionId?: string) {
   const quoteId = `${f.prefix}-quote`;
   const quoteLineId = `${f.prefix}-quote-line`;
   await seed(f, async (trx) => {
@@ -93,13 +94,54 @@ async function convertQuote(f: Fixture) {
       {
         type: "quoteToSalesOrder",
         id: quoteId,
-        selectedLines: { [quoteLineId]: { quantity: 4 } }
+        selectedLines: { [quoteLineId]: { quantity: 4 } },
+        customerPortalSubmissionId
       },
       convertDocument
     )
   );
   return convertedId!;
 }
+
+databaseTest(
+  "a portal PO marker survives quote conversion and a repeated conversion creates no order",
+  async () => {
+    const f = await alwaysPostFixture();
+    try {
+      const submissionId = `${f.prefix}-portal-po`;
+      const convertedId = await convertQuote(f, submissionId);
+      const recovered = await f.db.transaction().execute((trx) =>
+        findCustomerPortalOrderByMarker(trx, f.companyId, f.customerId, submissionId)
+      );
+      expect(recovered?.id).toBe(convertedId);
+      const wrongCustomer = await f.db.transaction().execute((trx) =>
+        findCustomerPortalOrderByMarker(trx, f.companyId, `${f.prefix}-other-customer`, submissionId)
+      );
+      expect(wrongCustomer).toBeUndefined();
+
+      const repeated = await invokePosting(
+        f.service,
+        "convert",
+        {
+          type: "quoteToSalesOrder",
+          id: `${f.prefix}-quote`,
+          selectedLines: { [`${f.prefix}-quote-line`]: { quantity: 4 } },
+          customerPortalSubmissionId: submissionId
+        },
+        convertDocument
+      );
+      expect(repeated.error).toBeTruthy();
+      const orders = await f.db.selectFrom("salesOrder")
+        .select("id")
+        .where("companyId", "=", f.companyId)
+        .where("customerId", "=", f.customerId)
+        .execute();
+      expect(orders.map((order) => order.id)).toEqual([convertedId]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
 
 databaseTest(
   "a quote with no location converts to an order at the first location",

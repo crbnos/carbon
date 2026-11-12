@@ -9130,7 +9130,8 @@ export const convertInput = z.discriminatedUnion("type", [
       })
     ),
     digitalQuoteAcceptedBy: z.string().optional(),
-    digitalQuoteAcceptedByEmail: z.string().optional()
+    digitalQuoteAcceptedByEmail: z.string().optional(),
+    customerPortalSubmissionId: z.string().optional()
   }),
 
   z.object({
@@ -9688,7 +9689,8 @@ export async function convertDocument(
         selectedLines,
         purchaseOrderNumber,
         digitalQuoteAcceptedBy,
-        digitalQuoteAcceptedByEmail
+        digitalQuoteAcceptedByEmail,
+        customerPortalSubmissionId
       } = payload;
       const [
         quote,
@@ -9848,7 +9850,10 @@ export async function convertDocument(
               exchangeRate: quote.data.exchangeRate ?? 1,
               exchangeRateUpdatedAt:
                 quote.data.exchangeRateUpdatedAt ?? datetime.timestamp(),
-              opportunityId: quote.data.opportunityId
+              opportunityId: quote.data.opportunityId,
+              ...(customerPortalSubmissionId
+                ? { customFields: toJson({ customerPortalSubmissionId }) }
+                : {})
             }
           ])
           .returning(["id"])

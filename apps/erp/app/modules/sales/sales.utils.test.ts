@@ -850,7 +850,8 @@ describe("customerPortalServesFile", () => {
     ["co/job/op/step/abc/photo.png", true],
     ["co/job/op/step/abc/PHOTO.JPEG", true],
     ["co/job/op/step/abc/scan.heic", true],
-    ["co/job/op/step/abc/report.pdf", true],
+    // PDFs are checked against released documents by the portal download route.
+    ["co/job/op/step/abc/report.pdf", false],
     // CAD and drawings can be export-controlled.
     ["co/job/op/step/abc/housing.step", false],
     ["co/job/op/step/abc/housing.stl", false],

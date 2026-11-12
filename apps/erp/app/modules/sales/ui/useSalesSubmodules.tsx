@@ -5,6 +5,7 @@
 import { useLingui } from "@lingui/react/macro";
 import {
   LuBan,
+  LuClipboardList,
   LuFolderKanban,
   LuGlobe,
   LuKeyRound,
@@ -46,6 +47,12 @@ export default function useSalesSubmodules() {
           to: path.to.customerPortals,
           role: "employee",
           icon: <LuGlobe />
+        },
+        {
+          name: t`Portal POs`,
+          to: path.to.customerPortalSubmissions,
+          role: "employee",
+          icon: <LuClipboardList />
         }
       ]
     },

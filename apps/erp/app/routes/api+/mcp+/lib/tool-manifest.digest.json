@@ -1506,7 +1506,7 @@
     {"name":"sales_getCustomerTypes","classification":"READ","schema":"cd40ae40fad5","response":"e0001a83b60b","permission":"sales:view","paginates":true},
     {"name":"sales_getCustomerTypesList","classification":"READ","schema":"31b84d65b2ac","response":"ce08332e0ce6","permission":"sales:view","paginates":false},
     {"name":"sales_getDefaultRentalRates","classification":"READ","schema":"cc8d9bde4c1a","response":"aebd7c76789d","permission":"sales:view","paginates":false},
-    {"name":"sales_getExternalSalesOrderLines","classification":"READ","schema":"f0a92eed06c1","response":"7b8bd29508cd","permission":"sales:view","paginates":true},
+    {"name":"sales_getExternalSalesOrderLines","classification":"READ","schema":"f0a92eed06c1","response":"3f4ad157c708","permission":"sales:view","paginates":true},
     {"name":"sales_getItemRentalRate","classification":"READ","schema":"ddd591f1b7ad","response":"d1badca592c6","permission":"sales:view","paginates":false},
     {"name":"sales_getModelByQuoteLineId","classification":"READ","schema":"6a436dd20bf0","response":"none","permission":"sales:view","paginates":false},
     {"name":"sales_getNoQuoteReason","classification":"READ","schema":"6bffe4d17593","response":"4bbb50609deb","permission":"sales:view","paginates":false},

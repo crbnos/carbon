@@ -43,6 +43,7 @@ import {
   SalesOrderLineForm,
   SalesOrderLineJobs
 } from "~/modules/sales/ui/SalesOrder";
+import { SalesOrderLinePortalUpdate } from "~/modules/sales/ui/SalesOrder/SalesOrderLinePortalUpdate";
 import { SalesOrderLineShipments } from "~/modules/sales/ui/SalesOrder/SalesOrderLineShipments";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -61,10 +62,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const serviceRole = await getCarbonServiceRole();
 
-  const [line, jobs, shipments] = await Promise.all([
+  const [line, jobs, shipments, portalMessage] = await Promise.all([
     getSalesOrderLine(serviceRole, lineId),
     getJobsBySalesOrderLine(serviceRole, lineId),
-    getSalesOrderLineShipments(serviceRole, lineId)
+    getSalesOrderLineShipments(serviceRole, lineId),
+    serviceRole
+      .from("salesOrderLine")
+      .select("portalLateReason, portalDeliveryUpdate")
+      .eq("id", lineId)
+      .eq("salesOrderId", orderId)
+      .eq("companyId", companyId)
+      .single()
   ]);
 
   if (line.error) {
@@ -84,11 +92,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
     throw notFound("Sales order line not found");
   }
+  if (portalMessage.error) {
+    throw new Error("Failed to load customer portal update");
+  }
 
   const itemId = line.data.itemId;
 
   return {
     line: line?.data ?? null,
+    portalMessage: portalMessage.data,
     itemReplenishment:
       itemId && line.data.methodType === "Make to Order"
         ? getItemReplenishment(serviceRole, itemId, companyId)
@@ -124,7 +136,7 @@ export async function action(args: ActionFunctionArgs) {
 
 export default function EditSalesOrderLineRoute() {
   const { t } = useLingui();
-  const { line, jobs, itemReplenishment, files, shipments } =
+  const { line, jobs, itemReplenishment, files, shipments, portalMessage } =
     useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const { orderId, lineId } = useParams();
@@ -178,6 +190,14 @@ export default function EditSalesOrderLineRoute() {
         key={initialValues.id}
         // @ts-expect-error
         initialValues={initialValues}
+      />
+
+      <SalesOrderLinePortalUpdate
+        orderId={orderId}
+        lineId={lineId}
+        lateReason={portalMessage.portalLateReason}
+        deliveryUpdate={portalMessage.portalDeliveryUpdate}
+        canEdit={permissions.can("update", "sales")}
       />
 
       <OpportunityLineNotes

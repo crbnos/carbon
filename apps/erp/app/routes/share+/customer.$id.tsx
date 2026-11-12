@@ -4,11 +4,11 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
-import { Avatar } from "@carbon/react";
+import { Avatar, Button } from "@carbon/react";
 import { async, SCALE_FORMAT } from "@carbon/utils";
-import { useLocale, useNumberFormatter } from "@react-aria/i18n";
+import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { LuBookMarked, LuImage, LuShield, LuShieldCheck } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -24,6 +24,7 @@ import { getJobOperationAttachments } from "~/modules/production/production.serv
 import { salesOrderStatusType } from "~/modules/sales/sales.models";
 import {
   getActiveCustomerPortal,
+  getCustomerPortalOverview,
   getExternalSalesOrderLines
 } from "~/modules/sales/sales.service";
 import {
@@ -37,6 +38,12 @@ import {
   PortalSort,
   type SortableColumn
 } from "~/modules/sales/ui/CustomerPortal";
+import {
+  CustomerPortalOrderDocuments,
+  CustomerPortalPendingOrders,
+  CustomerPortalRecords
+} from "~/modules/sales/ui/CustomerPortal/CustomerPortalRecords";
+import { CustomerPortalSubmissionForms } from "~/modules/sales/ui/CustomerPortal/CustomerPortalSubmissionForms";
 import { SalesStatus } from "~/modules/sales/ui/SalesOrder";
 import { getCompany } from "~/modules/settings/settings.service";
 import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service";
@@ -78,7 +85,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   const search = searchParams.get("search");
   const { sorts, filters } = getGenericQueryFilters(searchParams);
 
-  const [company, salesOrderLines] = await Promise.all([
+  const [company, salesOrderLines, overview] = await Promise.all([
     getCompany(serviceRole, customer.data.companyId),
     getExternalSalesOrderLines(serviceRole, customer.data.customerId, {
       search,
@@ -88,6 +95,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       sorts,
       filters,
       hiddenStatuses: CUSTOMER_PORTAL_HIDDEN_ORDER_STATUSES
+    }),
+    getCustomerPortalOverview(serviceRole, {
+      companyId: customer.data.companyId,
+      customerId: customer.data.customerId
     })
   ]);
 
@@ -96,6 +107,12 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       error: salesOrderLines.error
     });
     throw new Error("Sales order lines not found");
+  }
+  if (overview.error) {
+    logger.error("Customer portal overview not found", {
+      error: overview.error
+    });
+    throw new Error("Customer portal overview not found");
   }
 
   const jobOperationIds = jobOperationValidator
@@ -133,7 +150,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     {}
   );
 
-  // Link only the files the portal serves (photos and PDFs).
+  // Link only the files the portal serves on job steps.
   const servedAttachments = Object.fromEntries(
     Object.entries(jobOperationAttachments).map(([operationId, paths]) => [
       operationId,
@@ -144,6 +161,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   return {
     customer: customer.data,
     company: company.data,
+    portalOverview: overview.data,
     salesOrderLines: salesOrderLines.data ?? [],
     isTruncated: (salesOrderLines.data?.length ?? 0) >= SINGLE_LOAD_LIMIT,
     jobOperationAttachments: servedAttachments,
@@ -157,14 +175,24 @@ export default function CustomerPortal() {
     count,
     customer,
     company,
+    portalOverview,
     salesOrderLines,
     isTruncated,
     thumbnails,
     jobOperationAttachments
   } = useLoaderData<typeof loader>();
 
-  const { locale } = useLocale();
   const formatter = useNumberFormatter(SCALE_FORMAT);
+  const [section, setSection] = useState<
+    "orders" | "quotes" | "invoices" | "shipments"
+  >("orders");
+  const [openForm, setOpenForm] = useState<
+    { type: "rfq" } | { type: "po"; quoteId?: string } | null
+  >(null);
+
+  function openRequest(form: "rfq" | "po", quoteId?: string) {
+    setOpenForm(form === "rfq" ? { type: "rfq" } : { type: "po", quoteId });
+  }
 
   const columns = useMemo<ColumnDef<(typeof salesOrderLines)[number]>[]>(() => {
     return [
@@ -362,9 +390,48 @@ export default function CustomerPortal() {
             />
           );
         }
+      },
+      {
+        id: "customerUpdate",
+        header: "Update",
+        cell: ({ row }) =>
+          row.original.portalLateReason || row.original.portalDeliveryUpdate ? (
+            <div className="max-w-72 space-y-1 text-sm">
+              {row.original.portalLateReason && (
+                <p className="text-amber-700 dark:text-amber-300">
+                  {row.original.portalLateReason}
+                </p>
+              )}
+              {row.original.portalDeliveryUpdate && (
+                <p>{row.original.portalDeliveryUpdate}</p>
+              )}
+            </div>
+          ) : null
+      },
+      {
+        id: "documents",
+        header: "Documents",
+        cell: ({ row }) => {
+          const order = portalOverview.orders.find(
+            (entry) => entry.salesOrderId === row.original.salesOrderId
+          );
+          return order ? (
+            <CustomerPortalOrderDocuments
+              portalId={customer.id}
+              overview={portalOverview}
+              orderId={order.id}
+            />
+          ) : null;
+        }
       }
     ];
-  }, [formatter, thumbnails, jobOperationAttachments, locale, customer.id]);
+  }, [
+    formatter,
+    thumbnails,
+    jobOperationAttachments,
+    customer.id,
+    portalOverview
+  ]);
 
   const sortableColumns = useMemo<SortableColumn[]>(
     () =>
@@ -380,7 +447,7 @@ export default function CustomerPortal() {
   );
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-background">
+    <div className="flex min-h-screen w-full flex-col bg-background">
       <div className="flex justify-between items-center py-3 px-4 bg-background border-b w-full">
         <Breadcrumbs>
           <BreadcrumbItem>
@@ -395,20 +462,105 @@ export default function CustomerPortal() {
           )}
         </Breadcrumbs>
       </div>
-      <div className="flex flex-1 overflow-hidden">
-        <Table<(typeof salesOrderLines)[number]>
-          data={salesOrderLines}
-          columns={columns}
-          count={count ?? 0}
-          isTruncated={isTruncated}
-          compact
-          // Signed out: the export names ids from the signed-in company's
-          // lists, and there is no company here to read them from.
-          withCsvExport={false}
-          defaultColumnPinning={defaultColumnPinning}
-          sort={<PortalSort columns={sortableColumns} />}
-        />
-      </div>
+      <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-5 p-4 sm:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold">
+              {customer?.customer?.name ?? "Customer portal"}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Track your orders and download issued documents.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => openRequest("rfq")}
+            >
+              Request a quote
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => openRequest("po")}
+            >
+              Send a PO
+            </Button>
+          </div>
+        </div>
+        {openForm && (
+          <CustomerPortalSubmissionForms
+            key={`${openForm.type}:${openForm.type === "po" ? (openForm.quoteId ?? "") : ""}`}
+            portalId={customer.id}
+            quotes={portalOverview.quotes}
+            initialForm={openForm.type}
+            initialQuoteId={
+              openForm.type === "po" ? openForm.quoteId : undefined
+            }
+            onClose={() => setOpenForm(null)}
+          />
+        )}
+        <nav
+          className="flex gap-2 overflow-x-auto border-b pb-2"
+          aria-label="Portal sections"
+        >
+          {(
+            [
+              [
+                "orders",
+                "Orders",
+                salesOrderLines.length + portalOverview.pendingPos.length
+              ],
+              [
+                "quotes",
+                "Quotes",
+                portalOverview.quotes.length + portalOverview.rfqs.length
+              ],
+              ["invoices", "Invoices", portalOverview.invoices.length],
+              ["shipments", "Packing slips", portalOverview.shipments.length]
+            ] as const
+          ).map(([key, label, total]) => (
+            <Button
+              key={key}
+              type="button"
+              variant={section === key ? "active" : "ghost"}
+              aria-current={section === key ? "page" : undefined}
+              onClick={() => setSection(key)}
+            >
+              {label} <span className="ml-1 text-xs opacity-70">{total}</span>
+            </Button>
+          ))}
+        </nav>
+        {section === "orders" ? (
+          <div className="flex min-h-[560px] flex-col gap-4">
+            <CustomerPortalPendingOrders
+              pendingPos={portalOverview.pendingPos}
+            />
+            <div className="flex min-h-[480px] flex-1 overflow-hidden rounded-lg border">
+              <Table<(typeof salesOrderLines)[number]>
+                data={salesOrderLines}
+                columns={columns}
+                count={count ?? 0}
+                isTruncated={isTruncated}
+                compact
+                // Signed out: the export names ids from the signed-in company's
+                // lists, and there is no company here to read them from.
+                withCsvExport={false}
+                defaultColumnPinning={defaultColumnPinning}
+                sort={<PortalSort columns={sortableColumns} />}
+              />
+            </div>
+          </div>
+        ) : (
+          <CustomerPortalRecords
+            portalId={customer.id}
+            overview={portalOverview}
+            section={section}
+            onOrderQuote={(quoteId) => openRequest("po", quoteId)}
+          />
+        )}
+      </main>
     </div>
   );
 }
