@@ -60,6 +60,7 @@ import {
   getLocationTimeZone,
   isActiveCompanyEmployee
 } from "~/modules/shared/shared.service";
+import { decodeCursor } from "~/utils/cursor";
 import {
   invokeCreate,
   invokePosting,
@@ -6739,6 +6740,82 @@ export const getDemandProjections = defineServiceFn({
         payload(ctx, input).build() as never
       )
     );
+  }
+});
+
+/**
+ * Get dated demand forecasts for a management report
+ *
+ * @remarks Returns one row per item and week for the selected location. Forecast
+ * quantity is the original planner forecast; consumed quantity is the portion
+ * matched to open sales orders or job materials by MRP. Remaining quantity is
+ * their nonnegative difference.
+ * Results are ordered by week and item in fixed pages of 100. Pass nextCursor
+ * from one response as cursor on the next request; null means the report is complete.
+ *
+ * @param locationId - Location whose forecasts to read.
+ * @param itemId - Optional item to narrow the report.
+ * @param startDate - Optional first week start date, in YYYY-MM-DD format.
+ * @param endDate - Optional last week start date, in YYYY-MM-DD format.
+ * @param cursor - Opaque nextCursor returned by the previous page.
+ * @mcp read
+ */
+export const getDemandForecastReport = defineServiceFn({
+  input: z.object({
+    locationId: z.string().min(1),
+    itemId: z.string().min(1).optional(),
+    startDate: z.iso.date().optional(),
+    endDate: z.iso.date().optional(),
+    cursor: z.string().min(1).optional()
+  }),
+  permission: { view: "production" },
+  async run(ctx, input) {
+    if (input.startDate && input.endDate && input.startDate > input.endDate) {
+      return ctx.error("validation", "startDate must be on or before endDate");
+    }
+    const cursorKeys = [
+      "demandForecastReport:v1",
+      ctx.company.id,
+      input.locationId,
+      input.itemId ?? "",
+      input.startDate ?? "",
+      input.endDate ?? ""
+    ];
+    const cursor = decodeCursor(input.cursor ?? null);
+    const cursorStartDate = cursor?.values[0];
+    const cursorItemId = cursor?.values[1];
+    if (
+      input.cursor &&
+      (!cursor ||
+        cursor.keys.length !== cursorKeys.length ||
+        cursor.keys.some((key, index) => key !== cursorKeys[index]) ||
+        cursor.values.length !== 2 ||
+        typeof cursorStartDate !== "string" ||
+        !z.iso.date().safeParse(cursorStartDate).success ||
+        typeof cursorItemId !== "string" ||
+        !cursorItemId ||
+        !cursor.id)
+    ) {
+      return ctx.error("validation", "Invalid demand forecast cursor");
+    }
+    return service.getDemandForecastReport(ctx.asSystem.pg, {
+      companyId: ctx.company.id,
+      locationId: input.locationId,
+      itemId: input.itemId,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      cursorKeys,
+      after:
+        typeof cursorStartDate === "string" &&
+        typeof cursorItemId === "string" &&
+        cursor
+          ? {
+              startDate: cursorStartDate,
+              itemId: cursorItemId,
+              id: cursor.id
+            }
+          : undefined
+    });
   }
 });
 

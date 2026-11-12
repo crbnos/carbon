@@ -1,5 +1,5 @@
 {
-  "totalTools": 1806,
+  "totalTools": 1807,
   "modules": 16,
   "tools": [
     {"name":"accounting_closePeriod","classification":"WRITE","schema":"7e5905ac5974","response":"7e5905ac5974","permission":"accounting:update","paginates":false},
@@ -739,6 +739,7 @@
     {"name":"production_getBatchOutputLots","classification":"READ","schema":"1a62d6c430a5","response":"7783e113d7a1","permission":"production:view","paginates":false},
     {"name":"production_getCapacityReservationsForResources","classification":"READ","schema":"d874cc588311","response":"34765d1f4c98","permission":"production:view","paginates":false},
     {"name":"production_getCompletionJobs","classification":"READ","schema":"b5a5e3c76726","response":"7bef4749f130","permission":"production:view","paginates":false},
+    {"name":"production_getDemandForecastReport","classification":"READ","schema":"bba4a0beb877","response":"60c1769233df","permission":"production:view","paginates":false},
     {"name":"production_getDemandProjections","classification":"READ","schema":"7ba7393da5e8","response":"f963e0e91868","permission":"production:view","paginates":false},
     {"name":"production_getFailureMode","classification":"READ","schema":"2557649b1a5e","response":"412854326fc3","permission":"production:view","paginates":false},
     {"name":"production_getFailureModes","classification":"READ","schema":"cd40ae40fad5","response":"b5d9b684eccd","permission":"production:view","paginates":true},
