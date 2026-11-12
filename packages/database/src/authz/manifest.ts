@@ -1112,6 +1112,16 @@ export const manifest = {
     update: inCompany("companyId", "parts_update"),
     delete: inCompany("companyId", "parts_delete")
   }),
+  // Any employee raises a "Need material" request. A line feeder
+  // (inventory_update) or its author resolves it. USING is also the CHECK,
+  // so an update never moves a row to another company.
+  materialRequest: company("inventory", {
+    create: "employee",
+    update: or(
+      inCompany("companyId", "inventory_update"),
+      and(owner("createdBy"), inCompany("companyId", "employee"))
+    )
+  }),
   materialSubstance: policies({
     select: or(isNull("companyId"), inCompany("companyId", "parts_view")),
     insert: inCompany("companyId", "parts_create"),
