@@ -6009,6 +6009,10 @@ class PickingReadError extends Error {
   }
 }
 
+/** The refusal of `generatePickingList` when no line needs picking. */
+export const NO_MATERIALS_TO_PICK =
+  "No materials require picking for the selected operations";
+
 export async function generatePickingList(
   client: SupabaseClient<Database>,
   args: {
@@ -6686,7 +6690,7 @@ export async function generatePickingList(
     await client.from("pickingList").delete().eq("id", plId);
     return {
       data: null,
-      error: "No materials require picking for the selected operations"
+      error: NO_MATERIALS_TO_PICK
     };
   }
 
@@ -8274,10 +8278,10 @@ export async function autoPrint(
     locationId,
     context
   }: {
-    sourceDocument: "Receipt" | "Shipment" | "Kanban";
+    sourceDocument: "Receipt" | "Shipment" | "Kanban" | "PickingList";
     sourceDocumentId: string;
     locationId: string | null;
-    context: "receiving" | "shipping" | "kanban";
+    context: "receiving" | "shipping" | "kanban" | "inventory";
   }
 ) {
   if (!locationId) return;

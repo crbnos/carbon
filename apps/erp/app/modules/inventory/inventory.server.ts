@@ -10,7 +10,9 @@ import {
 } from "@carbon/api/service-fn.server";
 import { paged, payload, run, unwrap } from "@carbon/api/service-tools.server";
 import type { Json } from "@carbon/database";
+import * as materialRequests from "@carbon/database/material-request";
 import { convertUnitPrice } from "@carbon/database/supplier-part-price";
+import { shouldPrintTravelers } from "@carbon/database/travelers";
 import {
   dedupeViolations,
   evaluateSalesRuleLines,
@@ -65,6 +67,7 @@ import {
   getLocationTimeZone,
   invokeCreate,
   invokePosting,
+  refuseKeyWithout,
   refuseUnlessOwned
 } from "~/modules/shared/shared.service";
 import { resolveSupplierPrice } from "~/modules/shared/shared.utils";
@@ -3875,7 +3878,7 @@ export const setPickingListStatus = defineServiceFn({
 
     const current = await client
       .from("pickingList")
-      .select("status")
+      .select("status, locationId")
       .eq("id", pickingListId)
       .eq("companyId", companyId)
       .maybeSingle();
@@ -3967,7 +3970,115 @@ export const setPickingListStatus = defineServiceFn({
         { discriminator: finalStatus }
       );
     }
+
+    // After the status write, so a print failure never blocks the change.
+    if (shouldPrintTravelers(current.data.status, finalStatus)) {
+      const settings = await getCompanySettings(
+        ctx.asSystem.supabase,
+        companyId
+      );
+      if (settings.data?.travelerLabels === true) {
+        await service.autoPrint(ctx, {
+          sourceDocument: "PickingList",
+          sourceDocumentId: pickingListId,
+          locationId: current.data.locationId,
+          context: "inventory"
+        });
+      }
+    }
+
     return { pickingListId, status: finalStatus };
+  }
+});
+
+/**
+ * Ask for material at a job operation.
+ *
+ * @remarks
+ * Opens a material request at the operation's work center, at that work
+ * center's location. Any member of the company can ask; an API key needs
+ * `create: inventory`. The item and note are optional.
+ *
+ * @param jobOperationId - The job operation that needs the material.
+ * @param itemId - The item it needs, when known.
+ * @param note - What is needed, in the requester's words.
+ *
+ * @returns The new request's `materialRequestId`.
+ *
+ * @mcp
+ */
+export const createMaterialRequest = defineServiceFn({
+  input: z.object({
+    jobOperationId: z.string().min(1),
+    itemId: z.string().optional(),
+    note: z.string().optional()
+  }),
+  permission: {},
+  async run(ctx, { jobOperationId, itemId, note }) {
+    const keyRefused = refuseKeyWithout(ctx, { create: "inventory" });
+    if (keyRefused) return keyRefused;
+
+    const created = await materialRequests.createMaterialRequest(
+      ctx.asCaller.supabase,
+      {
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId,
+        jobOperationId,
+        itemId: itemId ?? null,
+        note: note ?? null
+      }
+    );
+    if (created.error || !created.data) {
+      return ctx.error(
+        "rule",
+        created.error ?? "The material request could not be created"
+      );
+    }
+    return { materialRequestId: created.data.id };
+  }
+});
+
+/**
+ * Resolve an open material request.
+ *
+ * @remarks
+ * Marks the request Resolved. Only the requester or an inventory editor can
+ * resolve it (the row's RLS); an API key needs `update: inventory`. A request
+ * that is already resolved is refused.
+ *
+ * @param materialRequestId - The request to resolve.
+ *
+ * @mcp
+ */
+export const resolveMaterialRequest = defineServiceFn({
+  input: z.object({ materialRequestId: z.string().min(1) }),
+  permission: {},
+  async run(ctx, { materialRequestId }) {
+    const keyRefused = refuseKeyWithout(ctx, { update: "inventory" });
+    if (keyRefused) return keyRefused;
+
+    const resolved = await materialRequests.resolveMaterialRequest(
+      ctx.asCaller.supabase,
+      {
+        id: materialRequestId,
+        companyId: ctx.company.id,
+        userId: ctx.auditUserId
+      }
+    );
+    if (resolved.error?.code === "CARBON_NOT_APPLIED") {
+      return ctx.error(
+        "forbidden",
+        "Only the requester or an inventory editor can resolve this request"
+      );
+    }
+    if (resolved.error) {
+      return ctx.error(
+        "internal",
+        "Failed to resolve the material request",
+        resolved.error
+      );
+    }
+    return { materialRequestId };
   }
 });
 

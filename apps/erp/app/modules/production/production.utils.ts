@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import type { AssemblyStep } from "@carbon/viewer";
 import { isPlanFlagged } from "@carbon/viewer/steps";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -149,4 +149,22 @@ export function toViewerStep(step: AssemblyInstructionStepRow): AssemblyStep {
     durationSeconds: step.durationSeconds,
     flagged: isPlanFlagged(step.warnings, step.motion) ? true : undefined
   };
+}
+
+/**
+ * Add one paragraph of text to the end of a Tiptap `notes` document. A value
+ * that is not a document is replaced by a new one.
+ */
+export function appendNoteParagraph(notes: Json | null, text: string): Json {
+  const paragraph = { type: "paragraph", content: [{ type: "text", text }] };
+  if (
+    notes !== null &&
+    typeof notes === "object" &&
+    !Array.isArray(notes) &&
+    notes.type === "doc"
+  ) {
+    const content = Array.isArray(notes.content) ? notes.content : [];
+    return { ...notes, content: [...content, paragraph] };
+  }
+  return { type: "doc", content: [paragraph] };
 }
