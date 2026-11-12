@@ -45,7 +45,7 @@ Phase C — test data (`motor-line`)
 - [x] Task 21: Split serial job units in tier 06
 - [x] Task 22: Write timing and print-on-completion on serial sequences in tier 10
 - [x] Task 23: Register the dev-only dataset `motor-line`
-- [ ] Task 23a: Let a dev-only dataset borrow an industry's bundled assets
+- [x] Task 23a: Let a dev-only dataset borrow an industry's bundled assets
 - [x] Task 24: Add the AJ-3 work centers, processes, bins and settings
 - [x] Task 25: Add the AJ-3 items, methods and supplier links
 - [x] Task 26: Add the AJ-3 opening stock, bearing lots and Transfer kanbans

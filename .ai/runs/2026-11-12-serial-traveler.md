@@ -29,6 +29,8 @@ Approval mode: the user decided at each gate. The grill resolutions live in the 
   - Phase C done to Task 29 (2026-11-12): dataset `motor-line` validates with 0 violations; `db:check:datasets` passes for all 6 datasets. Plan gaps fixed during execution: Task 23a (`Dataset.assetIndustryId`, so a dev-only dataset reuses the motor CAD assets) and the bearing batch properties in Task 25.
   - Task 30 done 2026-11-12 with the user's approval: `motor-line` seeded (company `dbr02to440h3qi4ggcdg`); every row check matched. The seed needs `NODE_EXTRA_CA_CERTS=$HOME/.portless/ca.pem` under portless, and the stack must be awake (it hibernates).
   - Paused after phase C for the user's scan test.
+  - Phases D–F done 2026-11-12 in 3 waves (Tasks 31–48). ERP, MES and package typechecks pass; `check:manifest` passes with the updated digest. Deviations: `@carbon/database/material-request` writes its "no row" check inline and uses a native timestamp (the package cannot import `@carbon/utils`); `ShortcutHelp.tsx` has no entry for the new `alt+0` shortcut; the new MES strings are extracted but not translated.
+  - Remaining: Phase G (Tasks 49–52).
   - Incident: the untracked spec, plan and run record files disappeared from `.ai/` during execution, cause not found. The plan was rebuilt from the scratch drafts, the spec and this record from the session. They are now committed to the branch.
   - Incident 2: the run record was deleted again and the plan's progress reverted to its committed state, during Phase B. Cause not found; the pre-commit hook does no stash or clean. From now on the plan progress and this record are committed after each update.
 
