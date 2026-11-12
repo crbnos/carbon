@@ -137,6 +137,8 @@ export async function runTier6(ctx: Ctx): Promise<void> {
     await applyOperationDepth(ctx, id, spec);
     if (spec.loggedTime) await seedLoggedTime(ctx, id, spec);
 
+    if (spec.serials) await splitSerialUnits(ctx, id, spec.key, spec.serials);
+
     // The interceptor's reserved entity for the unit being built has no
     // readableId, so the MES assembly view labels the first serial with a raw
     // id. Name it after the job.
@@ -164,6 +166,54 @@ export async function runTier6(ctx: Ctx): Promise<void> {
   await seedRework(ctx, data);
   await seedGenealogy(ctx, data);
   await seedPickingLists(ctx, data);
+}
+
+// The interceptor reserves ONE entity for the whole job quantity. A serial job
+// is one entity per unit, so split it the way assignSerialNumbers (step 8,
+// production.service.ts) does: the seed becomes unit 0 with serials[0], and
+// each later serial is a quantity-1 copy dated one millisecond after the last,
+// because createdAt is the unit axis step records are indexed against.
+async function splitSerialUnits(
+  ctx: Ctx,
+  jobId: string,
+  jobKey: string,
+  serials: string[]
+): Promise<void> {
+  const roots = await rows<{ id: string }>(
+    ctx.client,
+    `SELECT te.id FROM "trackedEntity" te
+     JOIN "jobMakeMethod" jmm ON jmm.id = te.attributes->>'Job Make Method'
+     WHERE jmm."jobId" = $1 AND jmm."parentMaterialId" IS NULL
+       AND te."companyId" = $2`,
+    [jobId, ctx.companyId]
+  );
+  const seed = roots[0];
+  if (roots.length !== 1 || !seed) {
+    throw new Error(
+      `Seed: job "${jobKey}" has ${roots.length} root tracked entities, expected 1`
+    );
+  }
+
+  await ctx.client.query(
+    `UPDATE "trackedEntity" SET "readableId" = $1, quantity = 1
+     WHERE id = $2 AND "companyId" = $3`,
+    [serials[0], seed.id, ctx.companyId]
+  );
+
+  for (let n = 1; n < serials.length; n++) {
+    await ctx.client.query(
+      `INSERT INTO "trackedEntity" (
+         "sourceDocument", "sourceDocumentId", "sourceDocumentReadableId",
+         status, attributes, "itemId", "companyId", "createdBy",
+         quantity, "readableId", "createdAt"
+       )
+       SELECT "sourceDocument", "sourceDocumentId", "sourceDocumentReadableId",
+         status, attributes, "itemId", "companyId", "createdBy",
+         1, $1, "createdAt" + $2::int * interval '1 millisecond'
+       FROM "trackedEntity" WHERE id = $3 AND "companyId" = $4`,
+      [serials[n], n, seed.id, ctx.companyId]
+    );
+  }
 }
 
 async function applyOperationDepth(
