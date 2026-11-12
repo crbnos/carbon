@@ -1275,6 +1275,107 @@ async function buildEventContent(
         };
       }
 
+      if (opts.documentType === "documentForceDelete") {
+        // The document id is "<documentType>:<documentId>:<requestId>": the
+        // request outlives the document, so it is read by its own id.
+        const requestId = documentId.split(":").pop() ?? documentId;
+        const request = await client
+          .from("forceDeleteRequest")
+          .select("documentType, documentReadableId, documentStatus, reason")
+          .eq("id", requestId)
+          .eq("companyId", opts.companyId)
+          .single();
+
+        const fallback =
+          outcome === "requested"
+            ? "A force delete requires your approval"
+            : `Your force delete was ${outcome}`;
+        if (request.error || !request.data) {
+          console.error(
+            "Failed to retrieve force delete request for approval notification",
+            request.error
+          );
+          return { description: fallback, details: [] };
+        }
+
+        const label = {
+          purchaseInvoice: "purchase invoice",
+          salesInvoice: "sales invoice",
+          receipt: "receipt",
+          payment: "payment"
+        }[request.data.documentType];
+        const readableId = request.data.documentReadableId;
+        return {
+          description:
+            outcome === "requested"
+              ? `Force delete of ${label} ${readableId} requires your approval`
+              : outcome === "approved"
+                ? `Force delete of ${label} ${readableId} was approved: it was deleted`
+                : `Force delete of ${label} ${readableId} was rejected`,
+          reference: readableId,
+          details: buildDetails([
+            { label: "Reason", value: request.data.reason },
+            {
+              label: "Status when requested",
+              value: request.data.documentStatus
+            }
+          ])
+        };
+      }
+
+      if (opts.documentType === "purchaseOrderForceDelete") {
+        // The document id is "<purchaseOrderId>:<requestId>": the request
+        // outlives the order, so it is read by its own id.
+        const requestId = documentId.split(":").pop() ?? documentId;
+        const request = await client
+          .from("purchaseOrderForceDeleteRequest")
+          .select(
+            "purchaseOrderId, purchaseOrderReadableId, purchaseOrderStatus, reason"
+          )
+          .eq("id", requestId)
+          .eq("companyId", opts.companyId)
+          .single();
+
+        const fallback =
+          outcome === "requested"
+            ? "A purchase order force delete requires your approval"
+            : `Your purchase order force delete was ${outcome}`;
+        if (request.error || !request.data) {
+          console.error(
+            "Failed to retrieve force delete request for approval notification",
+            request.error
+          );
+          return { description: fallback, details: [] };
+        }
+
+        const order = request.data.purchaseOrderId
+          ? await client
+              .from("purchaseOrder")
+              .select("supplier(name)")
+              .eq("id", request.data.purchaseOrderId)
+              .eq("companyId", opts.companyId)
+              .maybeSingle()
+          : null;
+        const readableId = request.data.purchaseOrderReadableId;
+        return {
+          description:
+            outcome === "requested"
+              ? `Force delete of purchase order ${readableId} requires your approval`
+              : outcome === "approved"
+                ? `Force delete of purchase order ${readableId} was approved: the order was deleted`
+                : `Force delete of purchase order ${readableId} was rejected`,
+          reference: readableId,
+          details: buildDetails([
+            { label: "Reason", value: request.data.reason },
+            { label: "Supplier", value: order?.data?.supplier?.name },
+            {
+              label: "Status when requested",
+              value: request.data.purchaseOrderStatus
+            }
+          ])
+        };
+      }
+
       if (opts.documentType === "projectChangeRequest") {
         // The document id is "<projectId>:<changeRequestId>", so the link can
         // open the page; a bare change request id reads too.

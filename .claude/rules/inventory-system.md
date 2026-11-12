@@ -433,7 +433,7 @@ held unit stays `On Hold`. A direct edit cannot release the hold either: BEFORE
 interceptors refuse changing a held unit's `On Hold` status, a receipt lot's
 status, unit or accepted quantity, deleting a lot that holds stock, closing or
 deleting the NCR of a Partial lot's held remainder or moving its link, or
-making a goods-in storage unit nettable, inactive or another location's,
+making a goods-in storage unit inactive or another location's,
 outside a release posting (a company deletion is never refused) (detail in
 `inspection-system.md`). A PO line its project consumes at receipt opens no lot. Put Away offers an untracked line no more than is free
 in its unit (on-hand less what open lots hold).

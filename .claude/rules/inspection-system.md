@@ -17,7 +17,7 @@ paths:
 
 Generic quality-inspection execution keyed by `sourceDocument` /
 `sourceDocumentId` / `sourceDocumentLineId` / `sourceDocumentReadableId`
-(enum `inspectionSourceDocument`: 'Receipt' and 'Job Operation', both live; no
+(enum `inspectionSourceDocument`: 'Receipt', 'Job Operation' and 'Manual'; no
 FKs on the generic ids, unique per `(sourceDocument, sourceDocumentLineId)` —
 a **partial** unique index `WHERE "sourceDocumentLineId" IS NOT NULL`).
 Renamed from the receipt-only "Inbound Inspections" in `20260722132135_inspections-refactor.sql`
@@ -58,6 +58,17 @@ full-screen execution UI at `/x/inspection/{id}` (`InspectionView` +
   opens the scanner; it is `variant="primary"` until `samples.length >=
   inspection.sampleSize`, then `secondary`. A fresh serial lot (0 samples)
   auto-opens the scanner once on mount.
+- **Prefilled samples (inspect all)** — when a serial lot's sample size covers
+  every one of its units, there is nothing to choose: `prefillInspectionSamples`
+  (`@carbon/database/quality`) adds a Pending sample per unit (serial order,
+  `createdAt` a microsecond apart, `ON CONFLICT DO NOTHING` on the per-inspection
+  index), so the scanner never auto-opens and Add Sample is hidden (both views
+  show it only while a unit has no sample). Units: a receipt line's
+  (`attributes ->> 'Receipt Line'`), a job make method's (`'Job Make Method'`,
+  not Consumed / Rejected / Scrapped), a manual lot's own. Called on every load
+  by the ERP `x+/inspection+/$id.tsx` and MES `inspection.$operationId.tsx`
+  loaders (idempotent); a lot sampling a subset is left to the scanner. Pinned by
+  `apps/erp/test/database/inspection-prefill.test.ts`.
 
 (The pre-unification "fallback" samples table and the scanner's `mode="record"`
 pass/fail path were removed 2026-07-25; scanning is always identify.)
@@ -110,8 +121,12 @@ strings (cosmetic).
 - `inspectionSample` — one row per recorded result: `inspectionId`,
   `trackedEntityId` (**nullable** since `20260612151947`), `status`
   (`inspectionSampleStatusType`: Pending/Passed/Failed), `inspectedBy`/`inspectedAt`.
-  A **partial** unique index `inspectionSample_trackedEntityId_key WHERE trackedEntityId
-  IS NOT NULL` keeps a serial entity sampleable once while allowing many anonymous samples.
+  A **partial** unique index `inspectionSample_inspectionId_trackedEntityId_key
+  (inspectionId, trackedEntityId) WHERE trackedEntityId IS NOT NULL` keeps a serial
+  sampleable once **per inspection** while allowing many anonymous samples. A unit is
+  inspected again in a later lot (a manual re-inspection, a rework lot): the old
+  global `inboundInspectionSample_trackedEntityId_key` was dropped by
+  `20261109202741_inspection-sample-per-inspection.sql`.
 - `inspectionHistory` — one row per disposition (skeleton for future plan auto-switching).
 - `nonConformanceInspection` (`20260421091238`) — links an auto-created NCR back to
   the inspection (unique `(nonConformanceId, inspectionId)`).
@@ -213,6 +228,137 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
 - PMI ids are per-kind counters in file order, stable for one file. An extractor
   change that reorders items would point an old plan's features at other items.
 
+## Plan versions (`20261109214614_inspection-plan-versions.sql`)
+
+An inspection plan has versions, as procedures and quality documents do. The
+siblings are procedures (status, `VersionMenu`, New Version) and assembly
+instructions (row per version grouped by a root id, activation that repoints
+references).
+
+- **Schema** — `inspectionDocument.status` (enum `inspectionDocumentStatus`:
+  Draft / Active / Archived, default Draft; the migration set every existing
+  plan Active) and `rootInspectionDocumentId` (composite self FK, ON DELETE SET
+  NULL on that column only). The first version has no root; every later version
+  names it. The group is `rootInspectionDocumentId ?? id`. The name is not the
+  key: it is nullable and renamable. The PMI unique index
+  `inspectionDocument_part_model_key` counts roots only, so copies of a PMI
+  plan do not collide; `createPmiInspectionPlan`'s ON CONFLICT matches it.
+- **New Version** — `copyInspectionDocumentAsVersion` (`quality.service.ts`,
+  Kysely, one transaction; operation `createInspectionDocumentVersion`,
+  `create: quality`, route `x+/inspection-document+/$id.version.tsx`). It locks
+  the root, numbers the copy one past the group's highest `version`, and copies
+  the plan row (drawing `storagePath` and `modelUploadId` are shared, not
+  duplicated), its characteristics (new ids), balloons (remapped to the new
+  characteristics) and parameters. The copy is a Draft.
+- **Publish** — `activateInspectionDocumentVersion` (operation of the same name,
+  `update: quality`, route `$id.activate.tsx`). One transaction locks the group,
+  archives the Active version, activates this one, and moves
+  `itemInspectionDocumentAssignment` and `methodOperation.inspectionDocumentId`
+  from the other versions to it. Job operations, quote operations and lots keep
+  their version. An Archived version is reactivated the same way. Publish
+  takes no approval (decided 2026-11-10; quality documents do, plans do not).
+  A Draft may be assigned to an item's Receipt slot or a method operation
+  (decided 2026-11-10): the pickers list every version with its status, and a
+  lot on a Draft reads its edits live until it is published.
+- **Lock** — only a Draft is editable. The lock is part of each write: the
+  name, work instruction, model, sampling and `upsertInspectionDocument`
+  updates carry `status = 'Draft'` in the UPDATE, and a write that changes no
+  row is refused by `inspectionDocumentWriteRefusal`;
+  `replaceInspectionDocumentParameters` reads the status under its row lock.
+  `save_inspection_document_atomic` (characteristics and balloons) refuses a
+  version that is not a Draft under its `FOR UPDATE` lock on the plan row
+  (`20261110133830_inspection-plan-save-draft-lock.sql`), so a Publish racing a
+  save, or a direct API call, cannot write into a locked version. A lot reads its plan
+  live, so a locked version is what keeps a lot's characteristics fixed. The
+  editor disables every edit on a locked version (grids, drawing drags, the
+  Sampling cell, annotation actions) and Publish while a change is unsaved.
+- **Delete** — `deleteInspectionDocument` (Kysely; operation `delete: quality`)
+  refuses a version any `inspection` used: its characteristics cascade to the
+  lots' measurements. Otherwise it makes the lowest remaining version the root
+  when it deletes the root, and returns the drawing path only when no other
+  version holds the file, so the operation never removes a PDF another version
+  shows.
+- **Screens** — the editor shows a `V{n}` version menu (versions with status,
+  New Version) beside the title, Publish (Draft) or Reactivate (Archived) next
+  to it, and the status badge for Active / Archived. A locked version hides the
+  add buttons and row actions and makes the grids read-only. The plans list
+  (`inspectionPlanParts`) shows one row per version group: its latest version,
+  with `version`, `status` and `versions`. The plan picker shows each version
+  with its status. New plans (by hand and by the PMI job) start Draft; the
+  datasets seed their plans Active. Pinned by
+  `apps/erp/test/database/inspection-plan-versions.test.ts`.
+
+## Plan parameters (`20261109200337_inspection-plan-parameters.sql`)
+
+Fixed key/value pairs on a plan ("Ambient temp" / "20 ±2 °C", "Fixture" /
+"F-12") that the inspector reads before measuring. The sibling is procedure
+parameters (`procedureParameter`), with two differences: a `sortOrder` column
+(the editor keeps the author's order) and no snapshot — a lot reads its plan's
+parameters live, as it reads the characteristics.
+
+- **Schema** — `inspectionDocumentParameter` (`id` `idp`, `inspectionDocumentId`
+  composite FK ON DELETE CASCADE, `key`, `value` default `''`, `sortOrder`),
+  RLS `company("quality")`, shipped by `20261109200419_inspection-plan-parameters-rls.sql`.
+- **Save** — through the editor's autosave, not per-row routes. The editor mints
+  the ids (`newParameterId`, `ui/InspectionDocument/autosave.ts`) and sends the
+  whole list as `parameters` only when it changed (`sendableParameters`: trimmed,
+  a row with no key stays in the browser). `saveInspectionDocument` passes it to
+  `replaceInspectionDocumentParameters` (`quality.service.ts`, Kysely): it locks
+  the plan, deletes the rows not sent and upserts the rest by id; an id that is
+  another plan's row throws and rolls the save back. Pinned by
+  `apps/erp/test/database/inspection-plan-parameters.test.ts`.
+- **Editor** — `Characteristics | Parameters` tabs sit in the header after the
+  title's ⋮ menu (no counts), with the matching Add Characteristic / Add Parameter
+  button in the header's actions; the bottom pane shows the chosen `Grid` (the
+  Parameters grid is Key, Value, delete). Add Selector and the zoom controls show
+  only when the plan has a PDF.
+  A plan with no PDF and no model has no viewer: the tabs fill the page and a
+  right sidebar (`InspectionDocumentDropzone`) takes a dropped or picked PDF
+  (the editor's own `uploadPdfAndSave`) or STEP file. A STEP file is staged with
+  `useModelUpload` and attached by `attachInspectionDocumentModel`
+  (`quality.server.ts`, `@mcp`, `update: "quality"`; route
+  `x+/inspection-document+/$id.model.tsx`): one transaction
+  (`attachModelToInspectionDocument`, `quality.service.ts`) locks the plan,
+  checks it is a Draft with no PDF (`storagePath`) and no model, inserts the
+  `modelUpload` as the system with no item link (a quality user need not hold
+  `parts`) and sets `inspectionDocument.modelUploadId`; `model-optimize` is sent
+  only after it commits, so a refused attach leaves no upload to process. Once a PDF or model exists the
+  viewer takes the top half and the sidebar is gone. The PMI job only plans for
+  ITEMS on a model, so an attached model's PMI does not fill the plan's
+  characteristics.
+- **Execution** — read by `getInspectionDocumentParameters` (ERP `$id` loader)
+  and by MES `getInspectionDocumentWithBalloons` (`parameters`). The ERP
+  `InspectionMeasurementGrid` and the MES `InspectionMeasurementMatrix` take
+  `parameters` and show `Characteristics | Parameters` tabs in their toolbar
+  (a key/value list, or "This inspection plan has no parameters"). The views
+  pass `parameters` only when the lot has a plan, so a planned lot always shows
+  the tab and a lot with no plan shows none.
+
+## Plan work instructions (`20261109231722_inspection-plan-work-instructions.sql`)
+
+Rich text on a plan that the inspector reads on every lot (how to fixture the
+part, which gauge to zero first). The sibling is a method operation's
+`workInstruction`: the same Tiptap JSON column, the same `Editor` with image
+upload, the same `generateHTML` read-only render.
+
+- **Schema** — `inspectionDocument.workInstruction` JSONB, nullable. No
+  snapshot: a lot reads it live, like the parameters.
+- **Save** — not through the autosave. The editor's **Instructions** tab (after
+  Characteristics | Parameters) debounces each change (1 s, flushed on unmount)
+  and posts it as JSON to `x+/inspection-document+/$id.update-work-instruction.tsx`
+  → `setInspectionDocumentWorkInstruction` (`quality.server.ts`, `@mcp`,
+  `update: "quality"`; takes Markdown or a Tiptap document through
+  `optionalTiptapDoc`). It is refused on an Active or Archived version
+  (`inspectionDocumentLockRefusal`); a locked version renders the HTML.
+  `copyInspectionDocumentAsVersion` copies it (pinned by
+  `apps/erp/test/database/inspection-plan-versions.test.ts`).
+- **Execution** — `getInspectionDocument` (`mapInspectionDocument`'s
+  `workInstruction`) for the ERP `$id` loader, MES
+  `getInspectionDocumentWithBalloons` for both MES views. The ERP grid and the
+  MES matrix show an **Instructions** tab beside Parameters whenever they get
+  `parameters` (the lot has a plan); a plan with none (null, or only empty
+  paragraphs) shows "This inspection plan has no work instructions."
+
 ## Gauges (`20260929203517_inspection-gauges.sql`)
 
 - **Plan side** — `inspectionFeature.gaugeTypeId` (nullable FK → `gaugeType`,
@@ -276,19 +422,19 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
 ## Goods-in inspection hold (spec `.ai/specs/2026-11-03-goods-in-inspection-hold.md`)
 
 - **Where it lands.** `location.inspectionStorageUnitId` / `rejectedStorageUnitId`
-  (both non-nettable, refused otherwise by `updateQualitySettings`; card
-  `GoodsInStorageCard` on Settings → Quality, saved with the company settings
-  in one transaction; inactive units are refused too, and so is one unit for
-  both. The card sends only the unit that changed; `setLocationGoodsInStorage`
+  (ordinary storage units, nettable or not: a unit's own Non-nettable setting
+  decides whether its stock is supply; card `GoodsInStorageCard` on Settings →
+  Quality, saved with the company settings in one transaction; inactive units
+  are refused, and so is one unit for both. The card sends only the unit that changed; `setLocationGoodsInStorage`
   keeps an unsent one and checks the pair under the location's row lock). The BEFORE interceptor
   `check_location_goods_in_storage_units` refuses a unit of another location
-  or company, an inactive unit and a nettable one. The two FKs are `NO ACTION
+  or company and an inactive unit. The two FKs are `NO ACTION
   DEFERRABLE INITIALLY DEFERRED`, so a restore or company delete can load and
   clear `location` and `storageUnit` in one transaction. `createDocument` sets
   `receiptLine.requiresInspection` (a snapshot) and defaults the line to the
   inspection unit; sales return lines default there too (the RMA disposition
   releases them, no lot). `postReceipt` refuses an inspected Purchase Order line
-  on a nettable unit, on a unit of another location, or at a location with no
+  with no storage unit, on a unit of another location, or at a location with no
   inspection unit. A Non-Inventory part is not checked: it has no stock to
   hold. The receipt's Draft "Inspection required" marks read
   `receiptLinesOpeningLots` (`inventory.service.ts`: planned, stocked, not outside
@@ -355,9 +501,11 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   which counts it (`inspection_held_quantity`'s `p_open_lots_only` is false).
   Untracked on-hand at an (item, unit) has one definition,
   `inspection_untracked_on_hand`, which the guard and every pre-check call. A lot
-  holds untracked stock only in a non-nettable unit: lots open before the hold
-  existed were left without a `storageUnitId`, and the roll-up counts only
-  such lots (`20261110041024`). Its on-hand read is served by the partial
+  holds untracked stock in the unit it records, nettable or not. Lots open
+  before the hold existed in a nettable unit were left without a
+  `storageUnitId` (`20261110041024`, and the Passed ones by
+  `20261110084113`); the roll-up counts a lot that records a unit, and a
+  Failed lot with none only when its line's unit is non-nettable. Its on-hand read is served by the partial
   index `itemLedger_untracked_storageUnit_item_idx` (`storageUnitId, itemId,
   companyId` INCLUDE `quantity`, untracked rows only), an index-only scan.
 - **No release by a direct edit.** Seven BEFORE interceptors (the generated
@@ -394,14 +542,11 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   `itemTrackingType` while a receipt lot is open, or holds its remainder, or
   while a serial Partial with no Closed NCR would start holding one); and
   `check_goods_in_storage_unit` on `storageUnit` (a change that makes
-  `effectiveNettable` true, `active` false, or moves the unit to another
-  `locationId`, while a location names the unit as `inspectionStorageUnitId`
+  `active` false or moves the unit to another `locationId`, while a location names the unit as `inspectionStorageUnitId`
   or `rejectedStorageUnitId`, or while a lot still holds stock in it, per
   `inspection_lot_holds`, so a unit Settings no longer names stays protected
-  until its lots are decided). `effectiveNettable`
-  is only written by `util.refresh_storage_unit_nettable` as an UPDATE of the
-  unit, so a change of the unit's own flag, a parent's or a storage type's all
-  reach that check. A company restore or import sets `app.inspection_release`
+  until its lots are decided). Making a goods-in unit nettable is allowed
+  (`20261110084113`). A company restore or import sets `app.inspection_release`
   (not `app.sync_in_progress`, which would also stop the event queue and the
   other sync handlers) in its load transaction, so without replica mode the
   guard and these checks step aside for restored and wiped rows. A foreign
@@ -537,7 +682,8 @@ ON DELETE SET NULL) and no PDF; each feature names its PMI item
   then `insertReceiptPutAway` locks the receipt, reads `getReceiptPutAwayLines`
   and inserts one stock transfer (`stockTransfer.receiptId`, line
   `receiptLineId`) in one Kysely transaction, from the receipt line's own
-  storage unit. A line of
+  storage unit, to the part's nettable default (none when that default is the
+  received unit itself). A lot that records no unit is not offered. A line of
   a completed transfer counts only what it picked, so a putaway completed short
   offers the rest again. An untracked line is also capped by what is free in
   its unit: untracked on-hand less `inspection_held_quantity` less the unpicked
@@ -662,8 +808,8 @@ Mechanics (in order, per POST):
    make-method entities; quantities clamped to the **op-column remaining** =
    `target − complete − scrapped − reworked`, so escape-hatch menu postings are
    never double-counted; serial divergence blocks with an error).
-2. `dispositionInspection({ requireOpen: true })` closes the lot FIRST — the
-   one-shot status UPDATE is the serialization point; a concurrent second POST
+2. `dispositionInspection({ requireOpen: true })` closes the lot FIRST — its
+   locked first read is the serialization point; a concurrent second POST
    dies before any posting can re-run (a re-POST can never re-clone the rework
    path).
 3. Postings, each carrying provenance links (`productionQuantity.inspectionId`
@@ -678,6 +824,95 @@ Mechanics (in order, per POST):
 The action sheet keeps Scrap/Rework (escape hatches for non-quality losses),
 Finish, and Quality Issue; **Log Completed was removed** (verdict-driven
 completion replaced it).
+
+## Manual inspections (`20261109141852_manual-inspections.sql`)
+
+A person inspects specific tracked entities of one item (a quality hold on stock
+on hand, a re-check, a complaint). `sourceDocument = 'Manual'` is the type, and it
+decides the behaviour: **hold → release / reject**, exactly a receipt lot's entity
+semantics, with no job completion and no bin move (a receipt Accept does not move
+stock to its shelf either).
+
+- **Schema** — `inspection.workCenterId` (nullable, composite FK to `workCenter`,
+  `ON DELETE SET NULL ("workCenterId")`) and `inspection.assignee` (nullable FK to
+  `user`): where and by whom. Set on manual lots only; a Job Operation lot's work
+  center and assignee are its operation's. `inspectionTrackedEntity`
+  (`inspectionId`, `trackedEntityId`, unique pair) lists a manual lot's entities —
+  a receipt lot finds its own through `attributes ->> 'Receipt Line'`. A manual
+  lot is its own source: `sourceDocumentId` is the lot's id,
+  `sourceDocumentLineId` / `sourceDocumentReadableId` are null.
+- **Create** — `createManualInspection` (`@carbon/database/quality`; ERP
+  operation `quality.createManualInspection`, `@mcp`, `create: "quality"`; route
+  `x+/quality+/inspections.new.tsx`, drawer `ui/Inspections/ManualInspectionForm.tsx`,
+  entity options from `api+/quality.inspection-tracked-entities.$itemId.ts`). The
+  drawer requires an inspection plan (`manualInspectionValidator`); the operation
+  still takes none, which the datasets use. The route returns the result, and the
+  drawer toasts a link to the new lot (`inspectionId`) and goes back to the list. One
+  transaction: entities `FOR UPDATE`, all of one item, all `Available` / `On Hold`,
+  none in another open manual lot or an open receipt lot of their receipt line;
+  lot size = serial count or the batches' summed quantity; sampling from the
+  chosen plan via the shared `resolveLotSamplingPlans` / `insertLotSamplingPlans`
+  (also used by `getOrCreateJobOperationInspection`); `Available` entities flip to
+  `On Hold`. The plan must be an Active version of the item's own plans (the
+  drawer lists only those). **The picked serials are the samples**: a serial lot gets one Pending
+  `inspectionSample` per entity at creation (serial order, each `createdAt` a
+  microsecond apart so the grid keeps it), so nothing is scanned — the ERP view's
+  `scansSamples` is false for Manual lots (no Add Sample, no auto-opened scanner) and
+  the MES lot view opens no scanner for one. Receipt and Job Operation lots still scan their
+  samples in. A batch lot keeps the grid's anonymous columns.
+- **Engine** — `holdsLotEntities(sourceDocument)` (Receipt or Manual) gates the
+  sample / measurement entity flips; `dispositionInspection` reads a manual lot's
+  entities from `inspectionTrackedEntity`; a serial sample must be one of the
+  lot's units (`assertSampleEntityInLot`: a manual lot's entities, a receipt
+  lot's receipt line). A closed manual lot is never dispositioned again, and a
+  re-disposition of a receipt lot leaves alone the units another open lot holds.
+  Sample and measurement saves lock the lot first and never write over a closed
+  status, so a save that waited on a Cancel or a disposition is refused. `requireSource` takes one source or a list: the ERP
+  Accept / Partial routes and `rejectInspection` pass `["Receipt", "Manual"]`.
+  No write-off: a manual lot is always tracked. `rejectInspection` opens the NCR
+  for a manual lot with the lot's own entities and no supplier or receipt line.
+- **ERP** — `InspectionView`'s `hasErpDisposition` (Receipt or Manual) shows
+  Accept / Reject; the list has a New button, a Manual source filter and Work
+  Center / Assignee columns. Pinned by `apps/erp/test/database/manual-inspection.test.ts`.
+- **Cancel and delete** (`20261109201803_manual-inspection-cancel.sql`) — manual
+  lots only. `inspectionTrackedEntity.previousStatus` records each entity's
+  status at create. `cancelManualInspection` (`@carbon/database/quality`;
+  operation `quality.cancelManualInspection`, `update: quality`) sets the new
+  terminal status `Cancelled` (in `INSPECTION_CLOSED_STATUSES`, so samples,
+  measurements, gauges and document swaps are refused; `dispositionInspection`
+  refuses it too, also under a racing UPDATE). It keeps what was recorded and
+  leaves the MES queue (which lists Pending / In Progress only).
+  `deleteManualInspection` (`delete: quality`, `@mcp destructive`) is refused once the lot has a
+  non-Pending sample, a measurement, a gauge, an `inspectionHistory` row or an
+  NCR link; a serial lot's Pending samples made at create are not activity. Both
+  lock the lot and give every entity still On Hold its `previousStatus` (NULL →
+  Available, for lots made before the column). Routes `x+/inspection+/$id.cancel.tsx`
+  / `$id.delete.tsx`; triggers in the list's ⋯ row menu (`InspectionsTable`) and
+  the ⋮ menu beside the inspection id (`InspectionView`), confirmed by
+  `ManualInspectionConfirm`. The datasets seed
+  one Cancelled manual lot each (the validator allows Cancelled on manual lots only).
+- **MES lot view (receipt and manual)** — the MES queue opens a receipt lot
+  in the same view as a manual one (`x+/manual-inspection.$id.tsx`,
+  `ManualInspectionView`); only a job-operation lot opens around its
+  operation. The loader reads a receipt lot's units from its receipt line
+  (`getReceiptInspectionTrackedEntities`), prefills an inspect-all serial lot
+  (`prefillInspectionSamples`) and passes `receiptVoided`, which locks the view.
+  A serial receipt lot that samples a subset scans its units in
+  (`ScanInspectionSample`, Add Sample; auto-opened on 0 samples). Accept runs
+  `dispositionInspection` (`["Receipt", "Manual"]`, `requireOpen`); Reject is
+  the `reject-inspection` posting (`@carbon/api/postings`, `rejectInspectionInput`,
+  in `MES_POSTINGS`), which runs the ERP's own `rejectInspection` operation
+  (`apps/erp/app/modules/postings.server.ts`), so the write-off of an untracked
+  Inventory item and the optional NCR ("Open an NCR for MRB disposition", on by
+  default) are the ERP's code (`x+/inspection-lot.$id.verdict.tsx`). Both
+  are one-shot: Accept passes `requireOpen`, and Reject sends `requireOpen` in
+  the posting (an optional field of `rejectInspectionInput`; the ERP's own
+  Reject leaves it off to keep its write-off retry).
+- **No timer.** Only production work is clocked: a job-operation lot's time is
+  a `productionEvent` on its operation, costed and corrected like any other.
+  A receipt or manual lot has no clock, no time record and no labor posting.
+  An `inspectionEvent` table was built and removed (2026-11-09) on purpose:
+  time that is never costed or corrected is not worth recording.
 
 ## Tracking types
 
@@ -765,6 +1000,12 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   List, File, Task, Inspection) is a pass / fail cell. A failed cell is red to its edges:
   the ERP display cell paints the fill as a `before:` layer over the whole table cell, and
   the open editor fills the cell.
+- **Header**: the lot's Change Document / Cancel Inspection / Delete Inspection sit
+  in a ⋮ menu beside the inspection id (`lotActions` in `InspectionView`; on phones
+  the same entries go to the record ⋯ sheet through `RecordAction`). The By
+  characteristic grid has no Result column. A click inside `[data-gauge-picker]`
+  does not make its row active: that re-render rebuilt the columns and closed the
+  picker the click had opened.
 - **Sample modal**: `.../ui/Inspections/ScanInspectionSample.tsx` — identify-only; opened by the
   header **"Add Sample"** button (`InspectionView`, serial lots; primary until the sample size is
   covered, auto-opened once on a fresh 0-sample lot). `isSerial` shows Scan/Select tabs (entity
@@ -794,9 +1035,10 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
     dispositions with "The receipt of this inspection was voided", and the `$id` loader
     passes `receiptVoided` so `InspectionView` treats the lot as closed and shows a
     "Receipt voided" badge. Since 2026-11-03 the void also sets the open lots
-    `Cancelled`; lots of receipts voided earlier were backfilled.
-  - **Closed guards + linked-sample locks (2026-07-27):** all three terminal
-    statuses (Passed/Failed/**Partial**) block `upsertInspectionSample` (guard
+    `Cancelled`; lots of receipts voided earlier were backfilled. (A manual lot
+    is `Cancelled` by `cancelManualInspection`.)
+  - **Closed guards + linked-sample locks (2026-07-27):** the terminal
+    statuses (Passed/Failed/**Partial**, and `Cancelled`) block `upsertInspectionSample` (guard
     is NEW — it had none) and `upsertInspectionMeasurement` ("Inspection is
     closed") and `changeInspectionDocument`. Updating an EXISTING sample (or a
     measurement on one) additionally fails when a `productionQuantity` row
@@ -804,9 +1046,20 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
     verdict; deleting the row in the ERP unlocks it (`assertSampleNotLinked`).
   - `upsertInspectionSample` — upsert precedence: by `trackedEntityId` (serial),
     else by `sampleId` (the "Overall result" row re-toggling an anonymous column
-    in place), else insert a fresh anonymous sample. A Receipt lot's sample
-    records a `trackedActivity` (`recordSampleInspectActivity`) and leaves the
-    unit On Hold; skipped for `Pending` (identify-only) samples. The `$id.sample.tsx` route returns the `sampleId` and,
+    in place), else insert a fresh anonymous sample. A Receipt or Manual lot's
+    sample links its unit to the lot's Inspect activity
+    (`recordSampleInspectActivity`) and leaves the unit On Hold until the lot is
+    decided; skipped for `Pending` (identify-only) samples. A lot has ONE
+    `Inspect` activity (`sourceDocumentId` = the lot, `sourceDocumentReadableId`
+    = its readable id), made by the first verdict under an advisory lock; each
+    unit with a verdict is linked to it once, as an input at the unit's quantity
+    and with no output (nothing is consumed or made). The traceability graph
+    draws an inspection as one dashed edge per unit with no new state
+    (`isInspectActivity`, `metadata.ts`: the exact type `Inspect`, never a
+    substring, so a production operation named "Final Inspection" keeps its
+    output), and `normalizeInspectionLinks` (`utils.ts`) reads older
+    inspections, stored as zero-quantity input + output self-loops, the same
+    way. The `$id.sample.tsx` route returns the `sampleId` and,
     when `quiet=true` (grid overall-result POST), suppresses the success flash.
   - `valuateMeasurement` (exported, unit-tested) — numeric in `[nominal − |tol−|, nominal + |tol+|]`;
     unparseable nominal / non-Measurement types valuate as attributes.
@@ -830,13 +1083,14 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
     Rejected (and for a non-tracked Inventory item returns a `writeOff` descriptor the
     caller posts through `post-nonconformance`); Partial on a receipt lot sets the
     same units Accept would; writes `inspectionHistory` on the decision that closes the lot.
-    Optional **`requireOpen`** (one-shot mode, MES disposition route only): the
-    status UPDATE gains `WHERE status NOT IN (Passed,Failed,Partial,Cancelled)` and the
-    call throws "Inspection is already dispositioned" on zero rows — concurrency
-    safe because a second transaction blocks on the row lock, re-evaluates the
-    predicate against the committed terminal status, and matches nothing. ERP
-    receipt lots do NOT pass it: the engine decides a receipt lot once by
-    itself, and lets only Reject repeat on a Failed lot (it writes off nothing new).
+    The lot is read `FOR UPDATE` before any entity, so a disposition and a Cancel
+    take the same lock in the same order. Optional **`requireOpen`** (one-shot
+    mode: the MES disposition and verdict routes) throws "Inspection is already
+    dispositioned" when that locked read finds a closed lot — a second
+    transaction waits on the lock and then sees the committed terminal status.
+    ERP receipt lots do NOT pass it: the engine decides a receipt lot once by
+    itself, and lets only Reject repeat on a Failed lot (it writes off nothing
+    new). A closed manual lot is refused either way.
   - NCR auto-creation lives in the **`rejectInspection` operation** (`quality.server.ts`,
     called by `x+/inspection+/$id.reject.tsx`), optional via `createNcr`, linking through `nonConformanceInspection`; the description
     includes the `reason` and a "Failed features" block built from the lot's measurements,
@@ -867,16 +1121,25 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   the `20260419163058` migration (and newer) for the real shape. One lot per received line
   (partial unique index on `sourceDocumentLineId`).
 - **Inspection-required tracked entities post `On Hold`, not Available.** They still count
-  in on-hand (`get_inventory_quantities` reports them as `quantityOnHold`); the inspection
-  storage unit being non-nettable is what keeps them out of MRP and picking, and
+  in on-hand (`get_inventory_quantities` reports them as `quantityOnHold`).
   `check_inspection_hold` (statement handler on `itemLedger`) is what keeps them from moving.
+  Whether held stock counts as supply for MRP depends on the inspection unit's own
+  Non-nettable setting; a nettable inspection unit's held stock is supply, and a pick
+  of it is refused by the guard at post.
 - **`trackedEntityId` is nullable** on samples; serial uniqueness is enforced by a *partial* index.
 - **Inspection *documents* ("Inspection Plans") are authored in the quality module** (list
   at `/x/quality/inspection-plans`, editor at `/x/inspection-document/{id}`; `inspectionDocument`/
   `inspectionFeature`/`balloon` + `save_inspection_document_atomic`, newest def
   `20261001022635`) and are now *consumed* by this flow via the item's Receipt-usage
   assignment. The lot references the document **live** — measurement rows store the
-  valuation at entry, so later tolerance edits never rewrite recorded results.
+  valuation at entry, so later tolerance edits never rewrite recorded results. Only
+  a Draft version can be edited (see Plan versions), so an Active plan in use
+  does not change under its lots.
+- **A plan's name is `inspectionDocument.name`** (labelled "Inspection Name"; the
+  column was `drawingNumber` until `20261109193418_inspection-plan-name.sql`, which
+  also recreated `inspectionDocuments` and `inspectionPlanParts`). It names the plan
+  ("R1234 Receipt"), not a drawing; pickers show `name ?? fileName`. Old backups
+  map the column through `LIVE_COLUMN_RENAMES` (`packages/jobs/src/backups/renames.ts`).
 - **The plan editor autosaves** — there is no Save button. A debounced effect posts the
   whole diff to `x+/inspection-document+/$id.save.tsx` while the editor is quiet (a drag
   saves when it ends), one save at a time; the toolbar shows Saving… / Saved / Could not

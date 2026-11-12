@@ -132,6 +132,57 @@ export const FIXED_ASSETS: FixedAssetSpec[] = [
       { monthsBack: 1, unitsProduced: 4100 }
     ],
     depreciationCharge: 820
+  },
+  {
+    key: "fleet-1",
+    className: "Rental Fleet",
+    location: "Plant",
+    name: "TD-9000 Servo Motor Assembly (Rental Unit 1)",
+    description: "Rental fleet unit, rented out from the plant",
+    serialNumber: "MTR-9000-RNT-001",
+    status: "Active",
+    depreciationMethod: "Straight Line",
+    usefulLifeMonths: 60,
+    residualValuePercent: 20,
+    acquisitionCost: 2670,
+    acquisitionOffset: -200,
+    depreciationStartOffset: -180,
+    accumulatedDepreciation: 0,
+    fleet: { item: "MTR-9000", serial: "MTR-9000-RNT-001" }
+  },
+  {
+    key: "fleet-2",
+    className: "Rental Fleet",
+    location: "Plant",
+    name: "TD-9000 Servo Motor Assembly (Rental Unit 2)",
+    description: "Rental fleet unit, rented out from the plant",
+    serialNumber: "MTR-9000-RNT-002",
+    status: "Active",
+    depreciationMethod: "Straight Line",
+    usefulLifeMonths: 60,
+    residualValuePercent: 20,
+    acquisitionCost: 2670,
+    acquisitionOffset: -200,
+    depreciationStartOffset: -180,
+    accumulatedDepreciation: 0,
+    fleet: { item: "MTR-9000", serial: "MTR-9000-RNT-002" }
+  },
+  {
+    key: "fleet-3",
+    className: "Rental Fleet",
+    location: "Plant",
+    name: "TD-4500 Servo Motor Assembly (Rental Unit 3)",
+    description: "Rental fleet unit, rented out from the plant",
+    serialNumber: "MTR-4500-RNT-001",
+    status: "Active",
+    depreciationMethod: "Straight Line",
+    usefulLifeMonths: 60,
+    residualValuePercent: 20,
+    acquisitionCost: 1620,
+    acquisitionOffset: -200,
+    depreciationStartOffset: -180,
+    accumulatedDepreciation: 0,
+    fleet: { item: "MTR-4500", serial: "MTR-4500-RNT-001" }
   }
 ];
 

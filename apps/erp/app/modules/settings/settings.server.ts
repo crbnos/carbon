@@ -511,6 +511,7 @@ export const updatePurchasingSettings = defineServiceFn({
     requireSupplierContactEmail: z.boolean().optional(),
     includeSupplierPartFiles: z.boolean().optional(),
     requirePurchaseOrderApprovalSignature: z.boolean().optional(),
+    requirePromisedDateToFinalizePurchaseOrder: z.boolean().optional(),
     purchasePriceUpdateTiming: z
       .enum(purchasePriceUpdateTimingTypes)
       .optional(),
@@ -562,7 +563,7 @@ export const updatePurchasingSettings = defineServiceFn({
  * gauge goes out of calibration. Then one location's goods-in storage units:
  * the inspection storage unit received parts wait in, and the rejected
  * storage unit rejected stock moves to (null clears one). Each must be an
- * active, non-nettable storage unit at that location. A location is a
+ * active storage unit at that location. A location is a
  * resources record: without the resources update permission it is refused.
  * The location and the company settings are written in one transaction.
  *
@@ -604,7 +605,7 @@ export const updateQualitySettings = defineServiceFn({
       if (ids.length > 0) {
         const units = await ctx.asCaller.supabase
           .from("storageUnit")
-          .select("id, locationId, effectiveNettable, active")
+          .select("id, locationId, active")
           .eq("companyId", ctx.company.id)
           .in("id", ids);
         if (units.error) {
@@ -619,9 +620,6 @@ export const updateQualitySettings = defineServiceFn({
           ids.some((id) => unitById.get(id)?.locationId !== location.locationId)
         ) {
           return ctx.error("rule", "Choose a storage unit at this location.");
-        }
-        if (ids.some((id) => unitById.get(id)?.effectiveNettable === true)) {
-          return ctx.error("rule", "Choose a non-nettable storage unit.");
         }
         if (ids.some((id) => unitById.get(id)?.active !== true)) {
           return ctx.error("rule", "Choose an active storage unit.");

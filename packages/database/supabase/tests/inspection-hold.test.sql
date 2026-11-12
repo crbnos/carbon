@@ -429,9 +429,8 @@ BEGIN
   PERFORM pg_temp.expect('roll-up: cancelled lot',
     (SELECT "inspectionStatus"::text FROM "receipt" WHERE "id" = rcpt), 'Not Required');
 
-  -- A lot in a nettable unit never held its stock (lots from before the
-  -- hold): the roll-up leaves its receipt Not Required, so it is never
-  -- offered for putaway.
+  -- A goods-in unit may be nettable: a lot that names a nettable unit counts
+  -- in the roll-up like any other.
   INSERT INTO "storageUnit" ("name", "locationId", "companyId", "createdBy")
   VALUES ('BIN-HOLD-TEST-' || substr(md5(random()::text), 1, 8), location, company, usr)
   RETURNING "id" INTO bin;
@@ -450,7 +449,7 @@ BEGIN
     'Receipt', rcpt3, rline3, bin, 'Passed'
   );
   PERFORM pg_temp.expect('roll-up: a lot in a nettable unit',
-    (SELECT "inspectionStatus"::text FROM "receipt" WHERE "id" = rcpt3), 'Not Required');
+    (SELECT "inspectionStatus"::text FROM "receipt" WHERE "id" = rcpt3), 'Inspection Passed');
 
   -- A location's goods-in units must be its own (check_location_goods_in_storage_units).
   DECLARE
@@ -477,9 +476,10 @@ BEGIN
     typed_unit text;
     free_unit text;
   BEGIN
-    PERFORM pg_temp.expect('the inspection unit is not made nettable',
+    PERFORM pg_temp.expect('the inspection unit may be made nettable',
       pg_temp.refused_edit(format('UPDATE "storageUnit" SET "nettable" = true WHERE "id" = %L', unit),
-        '%goods-in storage unit of%')::text, 'true');
+        '%goods-in storage unit of%')::text, 'false');
+    UPDATE "storageUnit" SET "nettable" = false WHERE "id" = unit;
     INSERT INTO "storageType" ("name", "nettable", "companyId", "createdBy")
     VALUES ('HOLD-TEST-TYPE-' || substr(md5(random()::text), 1, 8), false, company, usr)
     RETURNING "id" INTO held_type;
@@ -489,12 +489,14 @@ BEGIN
     PERFORM pg_temp.expect('a unit of a non-nettable type is non-nettable',
       (SELECT "effectiveNettable"::text FROM "storageUnit" WHERE "id" = typed_unit), 'false');
     UPDATE "location" l SET "rejectedStorageUnitId" = typed_unit WHERE l."id" = location;
-    PERFORM pg_temp.expect('the rejected unit''s storage type is not made nettable',
+    PERFORM pg_temp.expect('the rejected unit''s storage type may be made nettable',
       pg_temp.refused_edit(format('UPDATE "storageType" SET "nettable" = true WHERE "id" = %L', held_type),
-        '%goods-in storage unit of%')::text, 'true');
-    PERFORM pg_temp.expect('a unit a lot holds stock in is not made nettable',
+        '%goods-in storage unit of%')::text, 'false');
+    UPDATE "storageType" SET "nettable" = false WHERE "id" = held_type;
+    PERFORM pg_temp.expect('a unit a lot holds stock in may be made nettable',
       pg_temp.refused_edit(format('UPDATE "storageUnit" SET "nettable" = true WHERE "id" = %L', unit2),
-        '%holds stock of inspection lot%')::text, 'true');
+        '%holds stock of inspection lot%')::text, 'false');
+    UPDATE "storageUnit" SET "nettable" = false WHERE "id" = unit2;
     PERFORM pg_temp.expect('the inspection unit is not deactivated',
       pg_temp.refused_edit(format('UPDATE "storageUnit" SET "active" = false WHERE "id" = %L', unit),
         '%goods-in storage unit of%')::text, 'true');
@@ -521,9 +523,10 @@ BEGIN
     PERFORM pg_temp.expect('an inactive unit is not named a goods-in unit',
       pg_temp.refused_edit(format('UPDATE "location" SET "rejectedStorageUnitId" = %L WHERE "id" = %L', inactive_unit, location),
         '%must be active%')::text, 'true');
-    PERFORM pg_temp.expect('a nettable unit is not named a goods-in unit',
+    PERFORM pg_temp.expect('a nettable unit may be named a goods-in unit',
       pg_temp.refused_edit(format('UPDATE "location" SET "inspectionStorageUnitId" = %L WHERE "id" = %L', bin, location),
-        '%must be non-nettable%')::text, 'true');
+        '%must be%')::text, 'false');
+    UPDATE "location" SET "inspectionStorageUnitId" = unit WHERE "id" = location;
   END;
 
   DECLARE

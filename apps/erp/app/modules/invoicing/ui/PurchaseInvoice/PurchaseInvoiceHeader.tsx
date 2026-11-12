@@ -28,6 +28,11 @@ import {
 } from "react-icons/lu";
 import { Link, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
+import {
+  type DocumentForceDeleteData,
+  DocumentForceDeleteMenuItem,
+  DocumentForceDeleteModal
+} from "~/components/ForceDelete/DocumentForceDelete";
 import { usePanels } from "~/components/Layout/Panels";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
@@ -60,6 +65,7 @@ const PurchaseInvoiceHeader = () => {
   const postingModal = useDisclosure();
   const voidModal = useDisclosure();
   const deleteModal = useDisclosure();
+  const forceDeleteModal = useDisclosure();
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
     entityType: "purchaseInvoice",
     // @ts-expect-error TS2322 - TODO: fix type
@@ -82,16 +88,18 @@ const PurchaseInvoiceHeader = () => {
 
   const [items] = useItems();
   const [suppliers] = useSuppliers();
-  const routeData = useRouteData<{
-    purchaseInvoice: PurchaseInvoice;
-    purchaseInvoiceLines: PurchaseInvoiceLine[];
-    orgHasCredits: boolean;
-    rampMapping: {
-      id: string;
-      externalId: string | null;
-      metadata: { deepLink?: string } | null;
-    } | null;
-  }>(path.to.purchaseInvoice(invoiceId));
+  const routeData = useRouteData<
+    {
+      purchaseInvoice: PurchaseInvoice;
+      purchaseInvoiceLines: PurchaseInvoiceLine[];
+      orgHasCredits: boolean;
+      rampMapping: {
+        id: string;
+        externalId: string | null;
+        metadata: { deepLink?: string } | null;
+      } | null;
+    } & DocumentForceDeleteData
+  >(path.to.purchaseInvoice(invoiceId));
   const rampMapping = routeData?.rampMapping ?? null;
   const rampDeepLink = rampMapping?.metadata?.deepLink ?? null;
 
@@ -237,6 +245,11 @@ const PurchaseInvoiceHeader = () => {
         <DropdownMenuIcon icon={<LuTrash />} />
         <Trans>Delete Purchase Invoice</Trans>
       </DropdownMenuItem>
+      <DocumentForceDeleteMenuItem
+        forceDelete={routeData}
+        canDelete={permissions.can("delete", "invoicing")}
+        onClick={forceDeleteModal.onOpen}
+      />
     </>
   );
   const statusBadges = (
@@ -400,6 +413,16 @@ const PurchaseInvoiceHeader = () => {
           deleteModal.onClose();
         }}
       />
+      {routeData?.isAdmin && (
+        <DocumentForceDeleteModal
+          documentType="purchaseInvoice"
+          documentId={invoiceId}
+          readableId={purchaseInvoice.invoiceId ?? invoiceId}
+          status={purchaseInvoice.status ?? "Draft"}
+          open={forceDeleteModal.isOpen}
+          onClose={forceDeleteModal.onClose}
+        />
+      )}
       {auditLogDrawer}
     </>
   );

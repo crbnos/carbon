@@ -5,6 +5,7 @@
 import { carbon } from "@carbon/api/carbon.server";
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { FundingSource } from "@carbon/utils";
@@ -17,6 +18,7 @@ import type {
 } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
+import { DocumentForceDeleteBanner } from "~/components/ForceDelete/DocumentForceDelete";
 import {
   isPaymentLocked,
   paymentValidator
@@ -25,6 +27,7 @@ import {
   checkDepositDocument,
   getAvailableCreditsForParty,
   getDepositDocuments,
+  getDocumentForceDeleteData,
   getInvoiceSettlements,
   getOpenPurchaseInvoicesForSupplier,
   getOpenReimbursementsForEmployee,
@@ -43,6 +46,7 @@ import {
   PaymentForm,
   PaymentHeader
 } from "~/modules/invoicing/ui";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { recordMeta } from "~/utils/meta";
@@ -60,14 +64,21 @@ export const meta: MetaFunction<typeof loader> = ({ data }) =>
   recordMeta(data?.payment?.paymentId, "Payment");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     view: "invoicing"
   });
   const { paymentId } = params;
   if (!paymentId) throw notFound("Missing paymentId");
-  const [payment, applications] = await Promise.all([
+  const [payment, applications, forceDelete] = await Promise.all([
     getPayment(client, paymentId, companyId),
-    getInvoiceSettlements(client, companyId, paymentId)
+    getInvoiceSettlements(client, companyId, paymentId),
+    // The Admin force-delete override (`force-delete+`).
+    getDocumentForceDeleteData(getCarbonServiceRole(), getDatabaseClient(), {
+      companyId,
+      userId,
+      documentType: "payment",
+      documentId: paymentId
+    })
   ]);
   if (payment.error || !payment.data)
     throw redirect(
@@ -234,7 +245,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         targets: applications.data ?? [],
         appliedViaPaymentId: payment.data.id,
         appliedViaPaymentStaged: payment.data.status === "Draft"
-      })
+      }),
+      ...forceDelete
     };
   } catch (e) {
     throw redirect(
@@ -343,7 +355,9 @@ export default function PaymentDetailRoute() {
     currencyDecimals,
     availableCredits,
     stagedCredits,
-    depositDocuments
+    depositDocuments,
+    isAdmin,
+    forceDeleteRequest
   } = useLoaderData<typeof loader>();
   const locked = isPaymentLocked(payment.status);
   const isReimbursement = Boolean(payment.employeeId);
@@ -399,6 +413,13 @@ export default function PaymentDetailRoute() {
         />
       }
     >
+      <DocumentForceDeleteBanner
+        documentType="payment"
+        documentId={payment.id}
+        readableId={payment.paymentId ?? payment.id}
+        status={payment.status ?? "Draft"}
+        forceDelete={{ isAdmin, forceDeleteRequest }}
+      />
       <PaymentForm
         key={payment.id}
         initialValues={initialValues}

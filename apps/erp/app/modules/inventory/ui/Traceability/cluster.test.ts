@@ -8,7 +8,7 @@ import type {
   ActivityOutput,
   TrackedEntity
 } from "~/modules/inventory/types";
-import { clusterEntities, edgeKey } from "./cluster";
+import { clusterEntities, edgeKey, sharedMemberAttributes } from "./cluster";
 
 type EntityOverrides = Partial<
   Pick<
@@ -296,5 +296,54 @@ describe("clusterEntities", () => {
 
     expect(clusters).toHaveLength(1);
     expect(clusters[0].members.map((m) => m.id)).toEqual(["S1", "S2", "S3"]);
+  });
+});
+
+describe("sharedMemberAttributes", () => {
+  const withAttributes = (id: string, attributes: Record<string, unknown>) =>
+    ({ id, attributes }) as Pick<TrackedEntity, "id" | "attributes">;
+
+  it("keeps the values every serial on a receipt line shares", () => {
+    const entities = [
+      withAttributes("S1", {
+        Receipt: "R1",
+        "Receipt Line Index": 0,
+        "Heat Number": "H-42",
+        Certified: true
+      }),
+      withAttributes("S2", {
+        Receipt: "R1",
+        "Receipt Line Index": 1,
+        "Heat Number": "H-42",
+        Certified: true
+      })
+    ];
+
+    expect(
+      sharedMemberAttributes([{ id: "S1" }, { id: "S2" }], entities)
+    ).toEqual({ Receipt: "R1", "Heat Number": "H-42", Certified: true });
+  });
+
+  it("drops a value one serial lacks or holds differently", () => {
+    const entities = [
+      withAttributes("S1", { "Heat Number": "H-42", Coating: "Zinc" }),
+      withAttributes("S2", { "Heat Number": "H-43", Coating: "Zinc" }),
+      withAttributes("S3", { Coating: "Zinc" })
+    ];
+
+    expect(
+      sharedMemberAttributes(
+        [{ id: "S1" }, { id: "S2" }, { id: "S3" }],
+        entities
+      )
+    ).toEqual({ Coating: "Zinc" });
+  });
+
+  it("shares nothing when a member is not in the payload", () => {
+    const entities = [withAttributes("S1", { Coating: "Zinc" })];
+
+    expect(
+      sharedMemberAttributes([{ id: "S1" }, { id: "S2" }], entities)
+    ).toEqual({});
   });
 });

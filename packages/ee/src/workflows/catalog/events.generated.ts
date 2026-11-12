@@ -1194,7 +1194,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     digitalQuoteRejectedByEmail: { kind: "primitive", of: "string" },
     opportunityId: { kind: "primitive", of: "string" },
     completedDate: { kind: "primitive", of: "date" },
-    customerEngineeringContactId: { kind: "primitive", of: "string" }
+    customerEngineeringContactId: { kind: "primitive", of: "string" },
+    emailOrderOnAcceptance: { kind: "primitive", of: "boolean" }
   },
   receipt: {
     id: { kind: "primitive", of: "string" },
@@ -1324,7 +1325,8 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     defaultCc: { kind: "list", of: { kind: "primitive", of: "string" } },
     supplierStatus: { kind: "primitive", of: "string" },
     intercompanyCompanyId: { kind: "primitive", of: "string" },
-    readableId: { kind: "primitive", of: "string" }
+    readableId: { kind: "primitive", of: "string" },
+    supplierStageId: { kind: "primitive", of: "string" }
   },
   user: {
     id: { kind: "primitive", of: "string" },

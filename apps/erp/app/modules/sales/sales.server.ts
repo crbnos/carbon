@@ -21,6 +21,7 @@ import { NotificationEvent } from "@carbon/notifications";
 import { getStripeConnectAccountId } from "@carbon/stripe/send-sales-invoice.server";
 import {
   breakQuantities,
+  colorNames,
   datetime,
   getErrorMessage,
   getSalesOrderStatus,
@@ -1090,6 +1091,7 @@ export const finalizeAndSendQuote = defineServiceFn({
   input: z.object({
     quoteId: z.string(),
     acknowledged: z.boolean().default(false),
+    emailOrderOnAcceptance: z.boolean().optional(),
     ...documentNotification,
     locale: z.string().default("en-US")
   }),
@@ -1187,7 +1189,8 @@ export const finalizeAndSendQuote = defineServiceFn({
       serviceRole,
       quoteId,
       userId,
-      companyId
+      companyId,
+      { emailOrderOnAcceptance: input.emailOrderOnAcceptance }
     );
     if (finalized.error) {
       return ctx.error("internal", "Failed to finalize quote", finalized.error);
@@ -1334,7 +1337,7 @@ export const convertQuote = defineServiceFn({
           companyId,
           companyGroupId: ctx.company.groupId,
           userId,
-          customerContactId: customerContact,
+          recipient: { customerContactId: customerContact },
           cc: input.cc,
           documentFilePath: pdf.documentFilePath,
           fileName: pdf.fileName,
@@ -1564,9 +1567,11 @@ export const attachQuoteFile = defineServiceFn({
  * rule error on a selected line refuses with a neutral message (the customer
  * must never read internal compliance text) and is recorded for the seller;
  * warnings are logged and the order proceeds. The quote converts to a sales
- * order with the customer's name and email, its PDF is filed, the company's
- * digital-quote group is notified, and an attached purchase order file is
- * stored on the opportunity (its name, without `.pdf`, is the PO number).
+ * order with the customer's name and email, its PDF is filed and (when the
+ * quote's `emailOrderOnAcceptance` is on) emailed to the customer and the
+ * order's sales person, the company's digital-quote group is notified, and an
+ * attached purchase order file is stored on the opportunity (its name, without
+ * `.pdf`, is the PO number).
  */
 export const acceptDigitalQuote = defineServiceFn({
   input: z.object({
@@ -1657,18 +1662,28 @@ export const acceptDigitalQuote = defineServiceFn({
     const salesOrderId = convert.data?.convertedId;
     if (salesOrderId) {
       await service.checkConvertedSalesOrderDeliveryDates(ctx, salesOrderId);
-      // The order stands without its PDF.
+      // The order stands without its PDF or its email.
       const pdf = await service
         .attachSalesOrderPdf(ctx, {
           salesOrderId,
           locale: "en-US"
         })
-        .catch((err: unknown) => err);
+        .catch((err: unknown) =>
+          err instanceof Error ? err : new Error(String(err))
+        );
       if (pdf instanceof Error) {
         logger.error("Failed to generate PDF after digital quote acceptance", {
           companyId,
           salesOrderId,
           error: pdf
+        });
+      } else if (quote.emailOrderOnAcceptance) {
+        await service.emailDigitalQuoteOrder(ctx, {
+          salesOrderId,
+          acceptedBy: input.acceptedBy,
+          acceptedByEmail: input.acceptedByEmail,
+          documentFilePath: pdf.documentFilePath,
+          fileName: pdf.fileName
         });
       }
     }
@@ -2103,7 +2118,7 @@ export const confirmSalesOrder = defineServiceFn({
         companyId,
         companyGroupId: ctx.company.groupId,
         userId,
-        customerContactId: customerContact,
+        recipient: { customerContactId: customerContact },
         cc: input.cc,
         documentFilePath: pdf.documentFilePath,
         fileName: pdf.fileName,
@@ -8028,6 +8043,7 @@ export const updatePricingRule = defineServiceFn({
 export const createCustomerStatus = defineServiceFn({
   input: z.looseObject({
     name: z.string().min(1),
+    color: z.enum(colorNames).nullish(),
     customFields: z.unknown().optional(),
     id: z
       .string()
@@ -8058,6 +8074,7 @@ export const updateCustomerStatus = defineServiceFn({
   input: z
     .looseObject({
       name: z.string().min(1),
+      color: z.enum(colorNames).nullish(),
       customFields: z.unknown().optional(),
       id: z
         .string()

@@ -11,7 +11,11 @@ import type { SupplierReportContacts } from "../../types";
  * these values, and the background CSV export writes the same ones
  * (`suppliersList.exportValues`).
  */
-type Row = { reportContacts?: SupplierReportContacts | null };
+type Row = {
+  reportContacts?: SupplierReportContacts | null;
+  stage?: string | null;
+  type?: string | null;
+};
 
 const purchasingContact = (row: Row) =>
   row.reportContacts?.purchasingContact?.contact ?? null;
@@ -55,4 +59,12 @@ export const SUPPLIER_CONTACT_VALUES = {
   shippingContactName: (row: Row) => shippingContact(row)?.fullName ?? null,
   shippingContactEmail: (row: Row) => shippingContact(row)?.email ?? null,
   shippingContactPhone: (row: Row) => shippingContact(row)?.workPhone ?? null
+} satisfies Record<string, (row: Row) => string | null>;
+
+/** What the background CSV export cannot read off the row: the contacts, and
+ * the Stage and Type names for the ids the row holds. */
+export const SUPPLIER_EXPORT_VALUES = {
+  ...SUPPLIER_CONTACT_VALUES,
+  supplierStageId: (row: Row) => row.stage ?? null,
+  supplierTypeId: (row: Row) => row.type ?? null
 } satisfies Record<string, (row: Row) => string | null>;

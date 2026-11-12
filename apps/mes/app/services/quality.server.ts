@@ -13,7 +13,7 @@ import { getDatabaseClient } from "~/services/database.server";
 import { erpPosting } from "~/services/erp";
 import {
   getJobMakeMethod,
-  getTrackedEntitiesByMakeMethodId,
+  getTrackedEntitiesForOperation,
   insertProductionQuantity
 } from "~/services/operations.service";
 import { autoPrintFirstOperationLabel } from "~/services/printing.server";
@@ -367,11 +367,11 @@ export async function getInspectionOutcomeState(
 
   const trackedEntities =
     requiresSerialTracking && operation.jobMakeMethodId
-      ? await getTrackedEntitiesByMakeMethodId(
-          serviceRole,
-          operation.jobMakeMethodId,
-          args.companyId
-        )
+      ? await getTrackedEntitiesForOperation(serviceRole, {
+          operationId: jobOperationId,
+          jobMakeMethodId: operation.jobMakeMethodId,
+          companyId: args.companyId
+        })
       : null;
 
   const samples: InspectionOutcomeSample[] = [
@@ -411,13 +411,16 @@ export async function getInspectionOutcomeState(
   const entities = (trackedEntities?.data ?? []).map((e) => ({
     id: e.id,
     status: e.status,
-    attributes: e.attributes
+    attributes: e.attributes,
+    inOperationScope: e.inOperationScope
   }));
   const opAttrKey = `Operation ${jobOperationId}`;
   const entityById = new Map(entities.map((e) => [e.id, e]));
   const entityEligible = (entityId: string) => {
     const entity = entityById.get(entityId);
     if (!entity) return false;
+    // A rework copy of the inspection completes only the units sent into it.
+    if (!entity.inOperationScope) return false;
     if (entity.status === "Consumed" || entity.status === "Rejected") {
       return false;
     }

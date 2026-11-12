@@ -32,7 +32,7 @@ BEGIN
       AND v_unit IS NOT DISTINCT FROM p_old->>v_column
       AND (p_new->>'companyId') IS NOT DISTINCT FROM (p_old->>'companyId');
 
-    SELECT su."name", su."active", su."effectiveNettable" INTO v_found
+    SELECT su."name", su."active" INTO v_found
     FROM "storageUnit" su
     WHERE su."id" = v_unit
       AND su."companyId" = p_new->>'companyId'
@@ -42,9 +42,6 @@ BEGIN
     END IF;
     IF NOT COALESCE(v_found."active", true) THEN
       RAISE EXCEPTION '% is inactive. A goods-in storage unit must be active.', v_found."name";
-    END IF;
-    IF COALESCE(v_found."effectiveNettable", true) THEN
-      RAISE EXCEPTION '% is nettable. A goods-in storage unit must be non-nettable.', v_found."name";
     END IF;
   END LOOP;
 END;

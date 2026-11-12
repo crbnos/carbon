@@ -204,8 +204,13 @@ export function NavRail({
 
   const content = (
     <NavRailHoldContext.Provider value={hold}>
-      <VStack spacing={1} className="flex flex-col justify-between h-full px-2">
-        <VStack spacing={1}>
+      <VStack spacing={1} className="flex flex-col justify-between h-full">
+        {/* Only the list scrolls, so the footer stays in view. A color theme makes
+            the rail transparent, so nothing can paint over a scrolling list. */}
+        <VStack
+          spacing={1}
+          className="min-h-0 flex-1 px-2 pb-1 overflow-x-hidden overflow-y-auto hide-scrollbar scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+        >
           {header ? (
             // As tall as the app's top bar (ERP `--topbar-height`, MES
             // `--header-height`) and as far down: the rail's padding plus the
@@ -217,7 +222,11 @@ export function NavRail({
           ) : null}
           {children}
         </VStack>
-        {footer ? <VStack spacing={1}>{footer}</VStack> : null}
+        {footer ? (
+          <VStack spacing={1} className="shrink-0 px-2">
+            {footer}
+          </VStack>
+        ) : null}
       </VStack>
     </NavRailHoldContext.Provider>
   );

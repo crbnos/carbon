@@ -4,7 +4,9 @@
 
 import { Button, cn, PrefetchLink, pulseNavIcon, VStack } from "@carbon/react";
 import { useUrlParams } from "~/hooks";
+import { useSubmoduleLayout } from "~/hooks/useModules";
 import type { Route } from "~/types";
+import { arrangedGroups } from "~/utils/submodule-visibility";
 import { SidebarLinks, useSidebarLocation } from "./CollapsibleSidebar";
 import {
   SheetNavGroup,
@@ -19,6 +21,10 @@ const ContentSidebar = ({ links }: { links: Route[] }) => {
   const [params] = useUrlParams();
   const filter = params.get("q") ?? undefined;
   const presentation = useSidebarPresentation();
+  const submoduleLayout = useSubmoduleLayout();
+  // The compact title reads `links`, so it still names a hidden page.
+  const shownLinks = arrangedGroups([{ routes: links }], submoduleLayout)[0]
+    .routes;
   const isActive = (route: Route) =>
     location.pathname.includes(route.to) && route.q === filter;
 
@@ -30,7 +36,7 @@ const ContentSidebar = ({ links }: { links: Route[] }) => {
   if (presentation === "sheet") {
     return (
       <SheetNavGroup>
-        {links.map((route) => (
+        {shownLinks.map((route) => (
           <SheetNavRow
             key={route.name}
             to={route.to + (route.q ? `?q=${route.q}` : "")}
@@ -48,7 +54,7 @@ const ContentSidebar = ({ links }: { links: Route[] }) => {
     <SidebarLinks>
       <VStack>
         <VStack spacing={1} className="p-2">
-          {links.map((route) => {
+          {shownLinks.map((route) => {
             const active = isActive(route);
             return (
               <Button
