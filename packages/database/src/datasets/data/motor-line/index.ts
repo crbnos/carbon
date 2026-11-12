@@ -107,7 +107,9 @@ export const motorLine: Dataset = {
     ],
     inspectionShelf: "QC-Inspection",
     rejectedShelf: "MRB-Hold",
-    printerRoute: PRINTER_ROUTE,
+    // The plant default, so the traveler at the pick and the engine's serial
+    // label at F6 both reach the printer.
+    printerRoute: { ...PRINTER_ROUTE, plantDefault: true },
     holidays: HOLIDAYS,
     tags: TAGS,
     materialTaxonomy: MATERIAL_TAXONOMY,

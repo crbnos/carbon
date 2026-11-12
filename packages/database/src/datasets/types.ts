@@ -198,6 +198,12 @@ export type PrinterRouteSpec = {
   name: string;
   format: string;
   printerUrl: string;
+  /**
+   * Make the route the plant's default printer (Settings → Printing). Every
+   * context at the plant inherits it, so travelers and finished-good labels
+   * reach it. Off for the onboarding demos: their printer URLs are fake.
+   */
+  plantDefault?: boolean;
 };
 
 export type ContractorAgencySpec = {

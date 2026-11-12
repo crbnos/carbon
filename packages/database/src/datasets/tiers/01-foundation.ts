@@ -560,13 +560,35 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   // ── Printer routes ─────────────────────────────────────────────────────────
   if (data.printerRoute) {
     ctx.log("printer routes");
-    await insertRow(ctx, "printerRoute", {
+    const printerRouteId = await insertId(ctx, "printerRoute", {
       name: data.printerRoute.name,
       locationId: plantId,
       format: data.printerRoute.format,
       printerUrl: data.printerRoute.printerUrl,
       companyId
     });
+    if (data.printerRoute.plantDefault) {
+      // The shape of emptyLocationAssignment (@carbon/printing) with the
+      // default set; the contexts and work centers inherit it.
+      const inherit = { printerRouteId: null, autoPrint: true };
+      const printing = {
+        assignments: {
+          [plantId]: {
+            defaultPrinterRouteId: printerRouteId,
+            defaultAutoPrint: true,
+            shipping: inherit,
+            receiving: inherit,
+            inventory: inherit,
+            kanban: inherit,
+            workCenters: {}
+          }
+        }
+      };
+      await ctx.client.query(
+        `UPDATE "companySettings" SET printing = $1 WHERE id = $2`,
+        [JSON.stringify(printing), companyId]
+      );
+    }
   }
 
   // ── Procedures (shop-floor work instructions) ─────────────────────────────
