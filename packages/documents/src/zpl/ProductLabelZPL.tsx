@@ -37,6 +37,19 @@ function zplBarcode(
   }
 }
 
+/** Level-M byte-mode capacities of QR versions 1-10. */
+const QR_BYTE_CAPACITY_M = [14, 26, 42, 62, 84, 106, 122, 152, 180, 213];
+
+/**
+ * Module count per side of the smallest level-M QR code that holds
+ * `byteLength` bytes. Values past version 10 are sized as version 10.
+ */
+export function qrModuleCount(byteLength: number): number {
+  const index = QR_BYTE_CAPACITY_M.findIndex((cap) => byteLength <= cap);
+  const version = index === -1 ? QR_BYTE_CAPACITY_M.length : index + 1;
+  return 17 + 4 * version;
+}
+
 /**
  * Generate ZPL for a tracked-entity label. Honors the `trackingLabel` template:
  * only visible fields are emitted, and the text fields stack in block order
@@ -67,7 +80,6 @@ export function generateProductLabelZPL(
   // Top-right code slot, scaled to the stock. All dot values are rounded —
   // ZPL coordinates and sizes must be integers.
   const qrModuleSize = Math.max(2, Math.min(8, Math.round(4 * scale)));
-  const qrPixelSize = qrModuleSize * 29;
   const qrSlotSize = Math.round(Math.min(heightDots * 0.7, widthDots * 0.3));
   const qrStartX = widthDots - qrSlotSize - margin;
   // Reserve for the bottom entity-id line so flowed barcodes clear it.
@@ -158,6 +170,9 @@ export function generateProductLabelZPL(
           } else {
             // Top-right slot. QR positions by its real pixel width.
             const isQr = block.symbology === "qrcode";
+            const qrPixelSize =
+              qrModuleSize *
+              qrModuleCount(new TextEncoder().encode(value).length);
             const bcX = isQr ? widthDots - qrPixelSize - margin : qrStartX;
             zpl += `^FO${bcX > 0 ? bcX : margin},${Math.round(30 * hScale)}`;
             zpl += zplBarcode(
