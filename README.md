@@ -103,8 +103,8 @@ Carbon puts ERP, MRP, MES and QMS in **one Postgres database you can inspect, ow
 
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/one-database-dark.webp" />
-    <img alt="Why one database: in the usual setup, planning, production, quality and accounting each keep their own copy of the data and are joined by re-keying and connectors; in Carbon, sales, engineering, planning, production, quality, inventory and accounting all read and write the same Postgres database" src=".github/assets/readme/one-database-light.webp" width="900" />
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/where-carbon-fits-dark.webp" />
+    <img alt="Where Carbon fits: your sales tools (CRM and quoting, online store, customer portal) send orders in, and your factory (machines and robots, sensors and testing, your own software) gets work out, both through the Carbon API. In the middle, Carbon plans, runs and tracks the work: orders, planning, scheduling, shop floor, quality and inventory, all on one shared Postgres database. Analytics sees across all three." src=".github/assets/readme/where-carbon-fits-light.webp" width="900" />
   </picture>
 </p>
 
@@ -182,7 +182,7 @@ ERP and MES are React Router apps over a single Postgres database. Permissions (
 <a href="https://docs.carbon.ms/docs/building/architecture">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/architecture-dark.webp" />
-    <img alt="How Carbon fits together: shop floor staff use the MES; office staff, customers, suppliers, your code and AI agents reach the ERP. Both apps check permissions and write to Postgres, which enforces row-level security, computes totals in views and queues change events in the same transaction. After commit, Inngest calls the ERP back to run jobs that update search, the audit log, webhooks, workflows, accounting sync, Linear and Jira, email and Slack. Realtime pushes live updates to screens." src=".github/assets/readme/architecture-light.webp" width="900" />
+    <img alt="How Carbon works: 1, shop floor staff, office staff, customers and suppliers, and your code and AI use Carbon; 2, inside Carbon, the MES for the shop floor and the ERP for the office, the API and MCP, both save to one shared database that decides who can see what and keeps totals correct, and screens update live; 3, after each save, background jobs send email and Slack, sync accounting, call webhooks, run workflows and sync Linear and Jira, plus search and the audit log." src=".github/assets/readme/architecture-light.webp" width="900" />
   </picture>
 </a>
 
@@ -192,7 +192,7 @@ Carbon is intended to be the core of a bespoke end-to-end manufacturing system. 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/build-on-carbon-dark.webp" />
-  <img alt="Ways to build on Carbon: your own app (from apps/starter), scripts and other systems use the Carbon API, AI agents use the MCP server, and reports use the Data API. All of them get the same permissions as the signed-in user or API key. The API and MCP run the same operations the ERP uses; the Data API goes straight to tables and views. On a change, Carbon calls out through webhooks, workflows and integrations." src=".github/assets/readme/build-on-carbon-light.webp" width="900" />
+  <img alt="Build on Carbon: 1, you connect your own app and scripts through the API, AI agents through MCP and reports through the Data API; 2, Carbon gives every way in the same permissions as the person or API key and the same actions the Carbon app uses, on one shared database; 3, Carbon tells others through webhooks, workflows and integrations such as Onshape, SolidWorks, Slack, Xero and Jira." src=".github/assets/readme/build-on-carbon-light.webp" width="900" />
 </picture>
 
 <br />
