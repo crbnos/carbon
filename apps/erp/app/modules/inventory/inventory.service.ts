@@ -6022,6 +6022,12 @@ export async function generatePickingList(
     createdBy: string;
     assignee?: string | null;
     dueDate?: string | null;
+    /**
+     * Leave out materials whose item is made in-house (replenishment Make). A
+     * release picking list sets it: a sub-assembly comes from its own line,
+     * not from the warehouse.
+     */
+    excludeMadeParts?: boolean;
   }
 ) {
   // 1. Get the next sequence number
@@ -6122,6 +6128,24 @@ export async function generatePickingList(
   if (materials.error) {
     await client.from("pickingList").delete().eq("id", plId);
     return { data: null, error: materials.error };
+  }
+
+  if (args.excludeMadeParts && (materials.data ?? []).length > 0) {
+    const itemIds = Array.from(
+      new Set((materials.data ?? []).map((m) => m.itemId))
+    );
+    const madeItems = await client
+      .from("item")
+      .select("id")
+      .in("id", itemIds)
+      .eq("companyId", args.companyId)
+      .eq("replenishmentSystem", "Make");
+    if (madeItems.error) {
+      await client.from("pickingList").delete().eq("id", plId);
+      return { data: null, error: madeItems.error };
+    }
+    const made = new Set((madeItems.data ?? []).map((i) => i.id));
+    materials.data = (materials.data ?? []).filter((m) => !made.has(m.itemId));
   }
 
   // Supersession config for every demanded material, so a pick can honor an

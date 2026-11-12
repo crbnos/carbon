@@ -4679,7 +4679,8 @@ export async function createReleasePickingList(
     jobOperationIds,
     locationId: job.data.locationId,
     companyId,
-    createdBy: userId
+    createdBy: userId,
+    excludeMadeParts: true
   });
   if (generated.error === inventoryPostings.NO_MATERIALS_TO_PICK) {
     return { created: false, error: null };
